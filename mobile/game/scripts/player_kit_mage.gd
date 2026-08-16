@@ -899,21 +899,19 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable()) -> void:
 		var impact_flash := Color(1.0, 0.75, 0.4)
 		var impact_pop := Color(1.0, 0.9, 0.5)
 		game.hud.flash_screen(impact_flash, 0.55, 0.35)
-		game.burst(pos, col, 30)
-		game.burst(pos, impact_pop, 16)
-		_ring_fx(pos, col, 150.0 * float(fx_copy.get("radius_mult", 1.0)))
-		# Scorched ground lingers for a moment.
-		var scorch := Sprite2D.new()
-		scorch.texture = Art.tex("glow")
-		scorch.modulate = Color(col, 0.6)
-		scorch.global_position = pos
-		scorch.scale = Vector2(4.2, 4.2)
-		scorch.z_index = -5
-		game.add_child(scorch)
-		var s_tw := scorch.create_tween()
-		s_tw.tween_property(scorch, "modulate:a", 0.0, 1.3)
-		s_tw.tween_callback(scorch.queue_free)
 		var radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
+		# The landing (2026-08-15): a generated fire-explosion strip whose
+		# shockwave ring spans the real radius and whose cracked scorch
+		# lingers — the theme hue-shift rides it (a glacial comet lands blue).
+		# Replaces the old ring + square-particle burst + glow scorch.
+		var impact_mat: Material = null
+		if skin == "" and _themed:
+			var m := ShaderMaterial.new()
+			m.shader = MAGE_ELEMENT_HUE_SHADER
+			m.set_shader_parameter("target_hue", col.h)
+			impact_mat = m
+		_meteor_impact_fx(pos, radius, col, impact_mat)
+		game.burst(pos, impact_pop, 8)
 		# The comet falls for 0.62s while the mage keeps casting — resolve the
 		# impact with the CAST's payload snapshot, not whatever _tfx holds by
 		# landing time (the Consecration save-restore idiom).
@@ -1046,8 +1044,20 @@ func _crystal_archmage_ult_scene(pos: Vector2, hit_scale: float,
 	# telegraph rim without inventing a second, cosmetic range.
 	var scene_scale := radius / 78.0
 	sequence.scale = Vector2.ONE * scene_scale
-	sequence.z_index = 18
+	# FX layering rule (2026-08-15): the court's BODY sits under the actors on
+	# the mark; a translucent ghost of the same frames rides over them so the
+	# condemned still read as encircled — the old z 18 hid them for 0.62 s.
+	sequence.z_index = -1
 	game.add_child(sequence)
+	var court_ghost := Sprite2D.new()
+	court_ghost.texture = sequence.texture
+	court_ghost.hframes = 8
+	court_ghost.frame = 0
+	court_ghost.global_position = pos
+	court_ghost.scale = sequence.scale
+	court_ghost.z_index = 9
+	court_ghost.modulate = Color(1, 1, 1, 0.45)
+	game.add_child(court_ghost)
 	var convene := sequence.create_tween()
 	for beat in [
 		[0.08, 1], # Four witnesses finish materializing.
@@ -1058,6 +1068,7 @@ func _crystal_archmage_ult_scene(pos: Vector2, hit_scale: float,
 	]:
 		convene.tween_interval(float(beat[0]))
 		convene.tween_callback(sequence.set_frame.bind(int(beat[1])))
+		convene.tween_callback(court_ghost.set_frame.bind(int(beat[1])))
 	# Keep Meteor's original 0.62s resolution exactly. The first fully formed
 	# lotus is the judgment and therefore the only gameplay-impact frame.
 	# Use the same explicit timer as the other skin instead of accumulating
@@ -1068,9 +1079,20 @@ func _crystal_archmage_ult_scene(pos: Vector2, hit_scale: float,
 		if is_instance_valid(mark):
 			mark.queue_free()
 		sequence.frame = 6
-		# The orbiting court remains readable above actors; its resulting sigil
-		# belongs to the ground and cannot hide the condemned combatants.
+		# The verdict sigil belongs to the ground; the ghost has done its job.
 		sequence.z_index = -4
+		if is_instance_valid(court_ghost):
+			court_ghost.frame = 6
+			var gh := court_ghost.create_tween()
+			gh.tween_property(court_ghost, "modulate:a", 0.0, 0.18)
+			gh.tween_callback(court_ghost.queue_free)
+		# The landing itself (2026-08-15): the shared ground-burst strip, re-hued
+		# to crystal light — the skin used to skip it and land on a flash + 10
+		# squares. Body under the actors, ghost over (the helper's default).
+		var crystal_mat := ShaderMaterial.new()
+		crystal_mat.shader = MAGE_ELEMENT_HUE_SHADER
+		crystal_mat.set_shader_parameter("target_hue", col.h)
+		_meteor_impact_fx(pos, radius, col, crystal_mat)
 		_resolve_mage_skin_ult(pos, hit_scale, on_land, fx_copy, col, "crystal")
 		var dissolve := sequence.create_tween()
 		# Hold the verdict long enough to read as a lotus on the impact itself;
@@ -1089,7 +1111,8 @@ func _resolve_mage_skin_ult(pos: Vector2, hit_scale: float, on_land: Callable,
 		game.hud.flash_screen(Color(0.50, 0.20, 0.88), 0.18, 0.22)
 	else:
 		game.hud.flash_screen(Color(0.75, 0.90, 1.0), 0.27, 0.30)
-	game.burst(pos, col, 10)
+	if kind == "void":
+		game.burst(pos, col, 10)  # crystal lands on _meteor_impact_fx's embers instead
 	var radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
 	var saved := _tfx
 	_tfx = fx_copy

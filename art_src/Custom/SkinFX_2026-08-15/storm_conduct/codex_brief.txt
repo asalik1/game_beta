@@ -1,0 +1,36 @@
+You are generating ONE game visual-effect animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/palette.png : the BINDING colour palette for this effect (five swatches on magenta: #FFFFFF white core, #CFF0FF pale electric, #7FD4FF sky lightning, #2F8FE8 storm blue, #123C6E dark storm). Ignore the magenta around the swatches — it is only there to show what the chroma key looks like.
+- Image 2 = refs/style_fx_strip.png : a shipped FX animation strip from this game (a violet thread eruption). Match its LEVEL OF FINISH — crisp high-resolution game FX, hard readable clusters, glowing rims over a darker body, no blur, no photo texture. Do NOT copy its subject, shape or colour.
+
+TASK: generate exactly ONE new 4x2 source sheet for a small ONE-SHOT STORM DISCHARGE (lightning snapping off a charged blade) with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: game asset
+Output size: 1536x1024 landscape.
+Asset type: high-resolution 8-frame game visual-effect animation source, to be cropped into a horizontal sprite strip.
+Scene/backdrop: a perfectly flat uniform #ff00ff magenta chroma-key background filling every pixel, including the seams between cells. No scenery, floor plane, ground texture, platform, cast shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly EIGHT separate equal square effect cells laid out as a clean 4-column by 2-row contact sheet in reading order (top row left to right = frames 1-4, bottom row left to right = frames 5-8). All cells have identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat magenta between neighbouring cells and around the sheet edge.
+Subject: a compact electric discharge: a bright white-blue spark core with three to five jagged forked lightning tendrils snapping outward in every direction, a thin ring of pale electric haze, and small crackling sparks; then the forks break up into stray sparks and go out. Lightning and static — NOT fire, NOT a ball of plasma, NOT a lightning BOLT from the sky, NOT a face, NO weapon (the blade is drawn by the game).
+Style/medium: crisp high-resolution dark-fantasy game FX art with hard readable clusters and a controlled palette; not painterly, not 3D-rendered, not photographic, not anime, not blurred.
+Composition/framing and ANCHOR RULE: the effect's centre is the exact centre of every square cell; it grows out from that centre and never leaves the cell — at its widest it fills about 75% of the cell width with clear magenta margin on every side. The centre never drifts, the camera never moves.
+ONE-SHOT storyboard — eight VISIBLY DIFFERENT stages, small to snap to gone:
+ frame 1: a tiny white spark with two short forks — 20% wide
+ frame 2: the core flares, forks jumping outward in three directions, a haze ring starting — 45% wide
+ frame 3: PEAK: five jagged forks at full reach in every direction, bright core, haze ring at 75% wide
+ frame 4: forks re-routed (different jagged paths than frame 3), core dimming — 70% wide
+ frame 5: forks breaking into stray sparks, haze thinning
+ frame 6: only sparks and a faint core
+ frame 7: two or three fading sparks
+ frame 8: almost nothing — one speck
+Constraints: output only the cells on magenta; no text, watermark, UI, characters, weapons, scenery, ground texture, shadow, or separators. Do NOT use #ff00ff, pink, purple or any magenta anywhere in the effect. Stay inside the five palette colours plus their in-between shades (whites and blues only). Do not use pure #00ff00. Every frame must be clearly different from every other frame.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./storm_conduct_master_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./storm_conduct_master_v1_keyed.png (auto-key sampling from the border, soft matte, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all cells were produced with visibly different frames (frame by frame), whether the effect kept the same centre and size in every cell, and any deviation from the brief (a cell missing, cells overlapping or touching, key colour inside the effect, drift, an extra cell, a ground plane drawn). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

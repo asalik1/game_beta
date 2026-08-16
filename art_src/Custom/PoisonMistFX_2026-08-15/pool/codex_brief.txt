@@ -1,0 +1,32 @@
+You are generating ONE game visual-effect animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/palette_poison.png : the BINDING colour palette for this effect (five swatches on magenta). Use ONLY greens in this family: #73F24D acid rim, #B9F55F hot highlight, #3E9A2E mid green, #245C1F dark body, #132E12 shadow. Ignore the magenta around the swatches — it is only there to show what the chroma key looks like.
+- Image 2 = refs/style_fx_strip.png : a shipped FX animation strip from this game (a violet thread eruption). Match its LEVEL OF FINISH — crisp high-resolution game FX, hard readable clusters, glowing rims over a dark body, no blur, no photo texture. Do NOT copy its subject, shape or colour.
+
+TASK: generate exactly ONE new 2x2 source sheet for a LOOPING VENOM POOL (ground puddle) with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: game asset
+Output size: 1024x1024 square.
+Asset type: high-resolution 4-frame game visual-effect animation source, to be cropped into a horizontal sprite strip.
+Scene/backdrop: a perfectly flat uniform #ff00ff magenta chroma-key background filling every pixel, including the seams between cells. No scenery, floor plane, ground texture, platform, cast shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly FOUR separate equal square effect cells as a clean 2x2 contact sheet in reading order top-left, top-right, bottom-left, bottom-right. All four cells have identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat magenta between the two columns and between the two rows and around the sheet edge.
+Subject: ONE puddle of glowing venom lying flat on the ground, seen from a high three-quarter game camera: a roughly circular pool, only slightly wider than it is deep, with an irregular splattered outline and two or three small satellite drips just outside the main rim. Dark murky green liquid body (#245C1F / #132E12) with a brighter #3E9A2E surface sheen, a thin acid-green rim light (#73F24D) along the puddle edge, and a few fat bubbles domed on the surface with #B9F55F highlights. Thin acid-green vapour wisps rise faintly off the surface. Liquid poison on the ground — NOT lava, NOT water, NOT slime creature, NOT a face, NOT a portal.
+Style/medium: crisp high-resolution dark-fantasy game FX art with hard readable clusters and a controlled palette; not painterly, not 3D-rendered, not photographic, not anime, not blurred.
+Composition/framing and ANCHOR RULE: the puddle is centred in each square cell and fills about 80% of the cell width, with clear magenta margin on every side. It stays in the SAME spot with the SAME outline in every cell — the puddle shape, size and position do not change at all between frames; the camera never moves. Only the bubbles and wisps change.
+LOOP storyboard - four VISIBLY DIFFERENT bubble states of THIS SAME puddle that loop seamlessly (frame 4 flows back into frame 1):
+ frame 1 (top-left): two small bubbles just forming near the left, surface calm, one thin wisp on the right
+ frame 2 (top-right): the left bubbles swollen large and domed, a new tiny bubble at the front-right, wisp drifting up
+ frame 3 (bottom-left): the left bubbles POP into little ring splashes with a couple of flung specks, the front-right bubble growing
+ frame 4 (bottom-right): pop rings fading, the front-right bubble large and about to burst, a fresh tiny bubble near the left again so the loop closes into frame 1
+Constraints: output only the four cells on magenta; no text, watermark, UI, characters, scenery, ground texture, shadow, or separators. Do NOT use #ff00ff, pink, purple or any magenta anywhere in the puddle. Do not use pure #00ff00 either — stay inside the five palette greens plus their in-between shades. Frames 1 through 4 must each be clearly different from every other frame in the bubbles only, while the puddle outline stays identical.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./pool_master_2x2_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./pool_master_2x2_v1_keyed.png (auto-key sampling from the border, soft matte, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all four cells were produced with visibly different bubble states (frame by frame), whether the puddle outline stayed identical in every cell, and any deviation from the brief you noticed (a cell missing, cells overlapping or touching, magenta or pink inside the effect, the puddle changing shape or drifting, an extra cell, a ground texture drawn, the effect reading as lava or water). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

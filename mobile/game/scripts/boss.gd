@@ -112,7 +112,7 @@ func _aimed_speed() -> float:
 ## frame, which no reaction kit could answer). Charge/pounce CONTACT hits
 ## must NOT route here: the charge telegraph was their wind-up, and a
 ## mid-overshoot re-check would let every committed dash whiff for free.
-func _melee_swing(victim: Player, base_reach: float, amount: float, action := "melee") -> void:
+func _melee_swing(victim: Player, base_reach: float, amount: float, action := "attack") -> void:
 	_strike(action, func() -> void:
 		if is_instance_valid(victim) and not victim.dead \
 				and global_position.distance_to(victim.global_position) \
@@ -273,6 +273,43 @@ func _boss_telegraph(pos: Vector2, radius: float, delay: float, damage: float,
 	game.telegraph(pos, radius, delay, damage, audio_opts)
 
 
+## DEV-MORPH preview fire (dev_morph.gd only): spawn this action's REAL
+## projectiles/telegraphs + play the REAL audio, so the codex Transform rig
+## reviews the full effect, not just the clip. Boss abilities are inline in
+## `_think` (cooldown-gated, no per-ability trigger), so this is not the exact
+## AI pattern — but the projectile TYPE, damage, dmg_type and audio family are
+## the real ones, fired in a sensible pattern for the action. Overrides
+## Enemy.dev_fire. Never called in a real fight.
+func dev_fire(action: String, aim: Vector2) -> void:
+	if game == null or dying:
+		return
+	var d := aim.normalized() if aim != Vector2.ZERO else Vector2.RIGHT
+	match action:
+		"idle", "walk", "death", "enrage", "blink", "shift", "leap", "charge", "pack", "surface":
+			# tells / locomotion / transforms: audio only (roar), no projectile
+			roar()
+		"bolt", "cast":
+			game.sfx(_boss_cast_sfx())
+			for s in [-0.25, 0.0, 0.25]:
+				_bolt(d.rotated(s) * _aimed_speed(), dmg)
+		"attack", "melee", "stab", "throw", "arc", "beam":
+			game.sfx(_boss_cast_sfx())
+			_bolt(d * _aimed_speed(), dmg)
+		"ring":
+			roar()
+			for i in 12:
+				_bolt(Vector2.RIGHT.rotated(TAU * i / 12.0) * Balance.BOSS_BOLT_RING, dmg)
+		"slam", "quench", "piston":
+			game.sfx(_boss_impact_sfx())
+			_boss_telegraph(global_position + d * 90.0, 74.0, 0.3, dmg)
+		"rain", "storm", "summon", "verdict", "blade", "toll", "wail", "hymn", "freeze", "breath":
+			roar()
+			_boss_telegraph(global_position + d * 150.0, 84.0, 0.5, dmg)
+		_:
+			game.sfx(_boss_cast_sfx())
+			_bolt(d * _aimed_speed(), dmg)
+
+
 func _boss_telegraph_safe(centers: Array, radius: float, delay: float, damage: float,
 		opts := {}) -> void:
 	var audio_opts: Dictionary = opts.duplicate()
@@ -390,7 +427,7 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 			charging = false
 		if dist < _reach(70.0) and attack_cd <= 0.0:
 			attack_cd = 0.72
-			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
+			play_action("attack")  # shared basic attack strip; signature actions stay on their own strips
 			player.take_damage(dmg * 1.4, dmg_type, self)
 		return charge_dir * 620.0
 
@@ -532,7 +569,7 @@ func _morwen(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		ability_cd = 2.6
 		game.sfx(_boss_cast_sfx())
 		var aim := (_floor_target(true).global_position - global_position).normalized()
-		_strike("bolt", func() -> void:
+		_strike("attack", func() -> void:
 			for spread in [-0.25, 0.0, 0.25]:
 				_bolt(aim.rotated(spread) * _aimed_speed(), dmg))
 
@@ -1614,7 +1651,7 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 			charging = false
 		if dist < _reach(76.0) and attack_cd <= 0.0:
 			attack_cd = 0.8
-			play_action("melee")  # swing on melee contact (ability-swing fallback; a dedicated <key>_melee auto-takes-over if added)
+			play_action("attack")  # shared basic attack strip; signature actions stay on their own strips
 			player.take_damage(dmg * (1.5 if plated else 1.3), dmg_type, self)
 		return charge_dir * 600.0
 

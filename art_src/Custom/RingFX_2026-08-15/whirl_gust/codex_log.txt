@@ -1,0 +1,1138 @@
+﻿codex.exe : Reading prompt from stdin...
+At line:6 char:14
++ ...    $brief | & $codex exec -C $d -s workspace-write --skip-git-repo-ch ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Reading prompt from stdin...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+OpenAI Codex v0.147.0-alpha.6.6
+--------
+workdir: C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\whirl_gust
+model: gpt-5.6-luna
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a007bd-619f-74e0-8e49-a65a0dfeed8c
+--------
+user
+You are generating ONE game visual-effect animation master with your built-in image_gen tool. Read 
+$CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current 
+directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/palette.png : the BINDING colour palette for this effect (five swatches on magenta: #FFFFFF white, 
+#F0F4F8 pale, #CFD8E3 light steel-grey, #9AA8B8 mid steel-grey, #5B6978 shadow ??? a PALE effect so the game can tint 
+it). Ignore the magenta around the swatches ??? it is only there to show what the chroma key looks like.
+- Image 2 = refs/style_fx_strip.png : a shipped FX animation strip from this game (a violet thread eruption). Match 
+its LEVEL OF FINISH ??? crisp high-resolution game FX, hard readable clusters, glowing rims over a darker body, no 
+blur, no photo texture. Do NOT copy its subject, shape or colour.
+
+TASK: generate exactly ONE new 4x2 source sheet for a LOOPING WHIRLWIND GUST RING (the air torn around a spinning 
+warrior) with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: game asset
+Output size: 1536x1024 landscape.
+Asset type: high-resolution 8-frame game visual-effect animation source, to be cropped into a horizontal sprite strip.
+Scene/backdrop: a perfectly flat uniform #ff00ff magenta chroma-key background filling every pixel, including the 
+seams between cells. No scenery, floor plane, ground texture, platform, cast shadow, gradient, vignette, border, grid, 
+line, or panel divider.
+Primary request: create exactly EIGHT separate equal square effect cells laid out as a clean 4-column by 2-row contact 
+sheet in reading order (top row left to right = frames 1-4, bottom row left to right = frames 5-8). All cells have 
+identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat magenta 
+between neighbouring cells and around the sheet edge.
+Subject: ONE ring of torn air around a spinning fighter, seen from a high three-quarter game camera: THREE broad 
+crescent-shaped wind slashes (each a curved gust ribbon with a crisp bright leading edge and a feathered trailing 
+edge) chasing each other CLOCKWISE around a roughly CIRCULAR path, evenly spaced (three-fold symmetry, 120 degrees 
+apart), with a thin flat ring of kicked-up pale dust under them near the ground; the centre is EMPTY (the fighter 
+stands there, added by the game). Pale white and steel-grey. Wind and dust only ??? NOT blades, NOT fire, NOT a 
+tornado funnel from the side, NOT water.
+Style/medium: crisp high-resolution dark-fantasy game FX art with hard readable clusters and a controlled palette; not 
+painterly, not 3D-rendered, not photographic, not anime, not blurred.
+Composition/framing and ANCHOR RULE: the ring is centred in each square cell (its empty centre is the exact centre) 
+and fills about 82% of the cell width with clear magenta margin on every side. It stays in the SAME spot at the SAME 
+size in every cell.
+LOOP storyboard ??? eight VISIBLY DIFFERENT rotation states of THIS SAME ring that read as one seamless loop: the 
+three crescents rotate CLOCKWISE by exactly 15 degrees per frame (frame 2 = frame 1 turned 15 degrees, frame 3 = 30, 
+... frame 8 = 105), so that one more step (120 degrees) lands exactly back on frame 1 because of the three-fold 
+symmetry. Nothing else changes: same crescent shapes, same dust ring, same size; only the rotation angle. Frames 1 
+through 8 must each be clearly different rotations.
+Constraints: output only the cells on magenta; no text, watermark, UI, characters, weapons, scenery, ground texture, 
+shadow, or separators. Do NOT use #ff00ff, pink, purple or any magenta anywhere in the effect. Keep it PALE ??? white 
+and steel-grey only. Do not use pure #00ff00. Every frame must be clearly different from every other frame.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./whirl_gust_master_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to 
+./whirl_gust_master_v1_keyed.png (auto-key sampling from the border, soft matte, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all cells were produced with visibly different 
+frames (frame by frame), whether the effect kept the same centre and size in every cell, and any deviation from the 
+brief (a cell missing, cells overlapping or touching, key colour inside the effect, drift, an extra cell, a ground 
+plane drawn). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.
+
+
+codex
+IΓÇÖm reading the repositoryΓÇÖs authoritative workflow and the image-generation instructions first, then IΓÇÖll 
+generate the single sheet, preserve the raw PNG, and run the required chroma-key helper.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Get-Content -Raw CLAUDE.md; "`n---IMAGEGEN 
+SKILL---`n"; Get-Content -Raw '"'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\whirl_gust
+ succeeded in 4796ms:
+
+---IMAGEGEN SKILL---
+
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, 
+illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new 
+image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset 
+rather than repo-native code or vector. Do not use when the task is better handled by editing existing 
+SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in 
+HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product 
+mockups, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for normal image generation, editing, and 
+simple transparent-image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for the CLI/API/model path, or 
+after the user explicitly confirms a true model-native transparency fallback with `gpt-image-1.5`. Requires 
+`OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- If the user explicitly asks for a transparent image/background, stay on built-in `image_gen` first: prompt for a 
+flat removable chroma-key background, then remove it locally with the installed helper at 
+`$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`. Treat this as a 
+model/path downgrade and ask the user before doing it, unless the user has already explicitly requested 
+`gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback.
+- If a transparent request appears too complex for clean chroma-key removal, asks for true/native transparency, or 
+local removal fails validation, explain that true transparency requires CLI `gpt-image-1.5 --background transparent 
+--output-format png` because `gpt-image-2` does not support `background=transparent`, then ask whether to proceed. Run 
+the CLI fallback only after the user confirms.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate 
+assets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per 
+requested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires 
+`OPENAI_API_KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK 
+runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific 
+location is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before 
+finishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the 
+default `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling 
+versioned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+Local post-processing helper:
+- `$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`: removes a flat chroma-key background from a 
+generated image and writes a PNG/WebP with alpha. Prefer auto-key sampling, soft matte, and despill for antialiased 
+edges.
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, 
+compositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request 
+as **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images 
+generated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool 
+so the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit 
+CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or 
+variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and 
+needs many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; 
+distinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including simple transparent-output requests; fallback CLI only if 
+explicitly requested or after the user explicitly confirms a transparent-output fallback.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with 
+`view_image` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, 
+use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic 
+that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative 
+requirements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, follow the transparent image guidance below: generate with built-in `image_gen` 
+on a flat chroma-key background, copy the selected output into the workspace or `tmp/imagegen/`, run the installed 
+`$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py` helper, and validate the alpha result before using 
+it. If this path looks unsuitable or fails, ask before switching to CLI `gpt-image-1.5`.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default 
+`$CODEX_HOME/generated_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or 
+references. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user 
+explicitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, 
+size, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and 
+whether the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Transparent-image requests still use built-in `image_gen` first. Because the built-in tool does not expose a true 
+transparent-background control, create a removable chroma-key source image and then convert the key color to alpha 
+locally.
+
+Default sequence:
+1. Use built-in `image_gen` to generate the requested subject on a perfectly flat solid chroma-key background.
+2. Choose a key color that is unlikely to appear in the subject: default `#00ff00`, use `#ff00ff` for green subjects, 
+and avoid `#0000ff` for blue subjects.
+3. After generation, move or copy the selected source image from `$CODEX_HOME/generated_images/...` into the workspace 
+or `tmp/imagegen/`.
+4. Run the installed helper path, not a project-relative script path:
+   ```bash
+   python "${CODEX_HOME:-$HOME/.codex}/skills/.system/imagegen/scripts/remove_chroma_key.py" \
+     --input <source> \
+     --out <final.png> \
+     --auto-key border \
+     --soft-matte \
+     --transparent-threshold 12 \
+     --opaque-threshold 220 \
+     --despill
+   ```
+5. Validate that the output has an alpha channel, transparent corners, plausible subject coverage, and no obvious 
+key-color fringe. If a thin fringe remains, retry once with `--edge-contract 1`; use `--edge-feather 0.25` only when 
+the edge is visibly stair-stepped and the subject is not shiny or reflective.
+6. Save the final alpha PNG/WebP in the project if the asset is project-bound. Never leave a project-referenced 
+transparent asset only under `$CODEX_HOME/*`.
+
+Prompt transparent requests like this:
+
+```text
+Create the requested subject on a perfectly flat solid #00ff00 chroma-key background for background removal.
+The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting 
+variation.
+Keep the subject fully separated from the background with crisp edges and generous padding.
+Do not use #00ff00 anywhere in the subject.
+No cast shadow, no contact shadow, no reflection, no watermark, and no text unless explicitly requested.
+```
+
+Do not automatically use CLI `gpt-image-1.5 --background transparent --output-format png` instead of chroma keying. 
+Ask the user first when the user asks for true/native transparency, when local removal fails validation, or when the 
+requested image is complex: hair, fur, feathers, smoke, glass, liquids, translucent materials, reflective objects, 
+soft shadows, realistic product grounding, or subject colors that conflict with all practical key colors.
+
+Use a concise confirmation like:
+
+```text
+This likely needs true native transparency. The default built-in path uses a chroma-key background plus local removal, 
+but true transparency requires the CLI fallback with gpt-image-1.5 because gpt-image-2 does not support 
+background=transparent. It also requires OPENAI_API_KEY. Should I proceed with that CLI fallback?
+```
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, 
+but do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra 
+labeled line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural ├óΓé¼ΓÇ¥ candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup ├óΓé¼ΓÇ¥ product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup ├óΓé¼ΓÇ¥ app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram ├óΓé¼ΓÇ¥ diagrams/infographics with structured layout and text.
+- scientific-educational ├óΓé¼ΓÇ¥ classroom explainers, scientific diagrams, and learning visuals with required labels 
+and accuracy constraints.
+- ads-marketing ├óΓé¼ΓÇ¥ campaign concepts and ad creatives with audience, brand position, scene, and exact 
+tagline/copy.
+- productivity-visual ├óΓé¼ΓÇ¥ slide, chart, workflow, and data-heavy business visuals.
+- logo-brand ├óΓé¼ΓÇ¥ logo/mark exploration, vector-friendly.
+- illustration-story ├óΓé¼ΓÇ¥ comics, children├óΓé¼Γäós book art, narrative scenes.
+- stylized-concept ├óΓé¼ΓÇ¥ style-driven concept art, 3D/stylized renders.
+- historical-scene ├óΓé¼ΓÇ¥ period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization ├óΓé¼ΓÇ¥ translate/replace in-image text, preserve layout.
+- identity-preserve ├óΓé¼ΓÇ¥ try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit ├óΓé¼ΓÇ¥ remove/replace a specific element (including interior swaps).
+- lighting-weather ├óΓé¼ΓÇ¥ time-of-day/season/atmosphere changes only.
+- background-extraction ├óΓé¼ΓÇ¥ transparent background / clean cutout. Use built-in `image_gen` with chroma-key 
+removal first for simple opaque subjects; ask before using CLI true transparency for complex subjects.
+- style-transfer ├óΓé¼ΓÇ¥ apply reference style while changing subject/scene.
+- compositing ├óΓé¼ΓÇ¥ multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render ├óΓé¼ΓÇ¥ drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D/etc>
+Composition/framing: <wide/close/top-down; placement>
+Lighting/mood: <lighting + mood>
+Color palette: <palette notes>
+Materials/textures: <surface details>
+Text (verbatim): "<exact text>"
+Constraints: <must keep/must avoid>
+Avoid: <negative constraints>
+```
+
+Notes:
+- `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
+- `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which 
+controls output transparency behavior.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong 
+in the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+
+Augmentation rules:
+- Keep it short.
+- Add only the details needed to improve the prompt materially.
+- For edits, explicitly list invariants (`change only X; keep Y unchanged`).
+- If any critical detail is missing and blocks success, ask a question; otherwise proceed.
+
+## Examples
+
+### Generation example (hero image)
+```text
+Use case: product-mockup
+Asset type: landing page hero
+Primary request: a minimal hero image of a ceramic coffee mug
+Style/medium: clean product photography
+Composition/framing: wide composition with usable negative space for page copy if needed
+Lighting/mood: soft studio lighting
+Constraints: no logos, no text, no watermark
+```
+
+### Edit example (invariants)
+```text
+Use case: precise-object-edit
+Asset type: product photo background replacement
+Primary request: replace only the background with a warm sunset gradient
+Constraints: change only the background; keep the product and its edges unchanged; no text; no watermark
+```
+
+## Prompting best practices
+- Structure prompt as scene/backdrop -> subject -> details -> constraints.
+- Include intended use (ad, UI mock, infographic) to set the mode and polish level.
+- Use camera/composition language for photorealism.
+- Only use SVG/vector stand-ins when the user explicitly asked for vector output or a non-image placeholder.
+- Quote exact text and specify typography + placement.
+- For tricky words, spell them letter-by-letter and require verbatim rendering.
+- For multi-image inputs, reference images by index and describe how they should be used.
+- For edits, repeat invariants every iteration to reduce drift.
+- Iterate with single-change follow-ups.
+- If the prompt is generic, add only the extra detail that will materially help.
+- If the prompt is already detailed, normalize it instead of expanding it.
+- For CLI fallback only, see `references/cli.md` and `references/image-api.md` for model, `quality`, `input_fidelity`, 
+masks, output format, and output-path guidance.
+- For transparent images, use the built-in-first chroma-key workflow unless the request is complex enough to need true 
+CLI transparency; ask before switching to CLI `gpt-image-1.5`.
+
+More principles shared by both modes: `references/prompting.md`.
+Copy/paste specs shared by both modes: `references/sample-prompts.md`.
+
+## Guidance by asset type
+Asset-type templates (website assets, game assets, wireframes, logo) are consolidated in 
+`references/sample-prompts.md`.
+
+## gpt-image-2 guidance for CLI fallback
+
+The fallback CLI defaults to `gpt-image-2`.
+
+- Use `gpt-image-2` for new CLI/API workflows unless the request needs true model-native transparent output.
+- If a transparent request may need CLI fallback, ask before using `gpt-image-1.5` unless the user already explicitly 
+requested `gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback. Explain that the built-in chroma-key path is the 
+default, but true transparency requires `gpt-image-1.5` because `gpt-image-2` does not support 
+`background=transparent`.
+- `gpt-image-2` always uses high fidelity for image inputs; do not set `input_fidelity` with this model.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- Use `quality low` for fast drafts, thumbnails, and quick iterations. Use `medium`, `high`, or `auto` for final 
+assets, dense text, diagrams, identity-sensitive edits, or high-resolution outputs.
+- Square images are typically fastest to generate. Use `1024x1024` for fast square drafts.
+- If the user asks for 4K-style output, use `3840x2160` for landscape or `2160x3840` for portrait.
+- `gpt-image-2` size may be `auto` or `WIDTHxHEIGHT` if all constraints hold: max edge `<= 3840px`, both edges 
+multiples of `16px`, long-to-short ratio `<= 3:1`, total pixels between `655,360` and `8,294,400`.
+
+Popular `gpt-image-2` sizes:
+- `1024x1024` square
+- `1536x1024` landscape
+- `1024x1536` portrait
+- `2048x2048` 2K square
+- `2048x1152` 2K landscape
+- `3840x2160` 4K landscape
+- `2160x3840` 4K portrait
+- `auto`
+
+## Fallback CLI mode only
+
+### Temp and output conventions
+These conventions apply only to the CLI fallback. They do not describe built-in `image_gen` output behavior.
+- Use `tmp/imagegen/` for intermediate files (for example JSONL batches); delete them when done.
+- Write final artifacts under `output/imagegen/`.
+- Use `--out` or `--out-dir` to control output paths; keep filenames stable and descriptive.
+
+### Dependencies
+Prefer `uv` for dependency management in this repo.
+
+Required Python package:
+```bash
+uv pip install openai
+```
+
+Required for local chroma-key removal and optional downscaling:
+```bash
+uv pip install pillow
+```
+
+Portability note:
+- If you are using the installed skill outside this repo, install dependencies into that environment with its package 
+manager.
+- In uv-managed environments, `uv pip install ...` remains the preferred path.
+
+### Environment
+- `OPENAI_API_KEY` must be set for live API calls.
+- Do not ask the user for `OPENAI_API_KEY` when using the built-in `image_gen` tool.
+- Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
+
+If the key is missing, give the user these steps:
+1. Create an API key in the OpenAI platform UI: https://platform.openai.com/api-keys
+2. Set `OPENAI_API_KEY` as an environment variable in their system.
+3. Offer to guide them through setting the environment variable for their OS/shell if needed.
+
+If installation is not possible in this environment, tell the user which dependency is missing and how to install it 
+into their active environment.
+
+### Script-mode notes
+- CLI commands + examples: `references/cli.md`
+- API parameter quick reference: `references/image-api.md`
+- Network approvals / sandbox settings for CLI mode: `references/codex-network.md`
+
+## Reference map
+- `references/prompting.md`: shared prompting principles for both modes.
+- `references/sample-prompts.md`: shared copy/paste prompt recipes for both modes.
+- `references/cli.md`: fallback-only CLI usage via `scripts/image_gen.py`.
+- `references/image-api.md`: fallback-only API/CLI parameter reference.
+- `references/codex-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
+- `scripts/image_gen.py`: fallback-only CLI implementation. Do not load or use it unless the user explicitly chooses 
+CLI mode or explicitly confirms a transparent request's true CLI transparency fallback.
+- `$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`: local post-processing helper for built-in 
+transparent-image requests.
+
+Get-Content : Cannot find path 'C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\whirl_gust\CLAUDE.md' 
+because it does not exist.
+At line:2 char:1
++ Get-Content -Raw CLAUDE.md; "`n---IMAGEGEN SKILL---`n"; Get-Content - ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\asali\..._gust\CLAUDE.md:String) [Get-Content], ItemNotFoundEx 
+   ception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+
+codex
+The image-generation instructions loaded. The pointed-to `CLAUDE.md` is not in the staging directory, so IΓÇÖm 
+locating the authoritative copy before generating; I wonΓÇÖt modify anything outside this staging directory.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$found = Get-ChildItem -Path 
+'"'C:\\Users\\asali\\Projects\\MMO' -Filter 'CLAUDE.md' -File -Recurse -ErrorAction SilentlyContinue; "'$found | 
+Select-Object -ExpandProperty FullName' in C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\whirl_gust
+2026-08-15T23:25:15.717118Z ERROR codex_core::tools::router: error=Exit code: 124
+Wall time: 38.6 seconds
+Output:
+command timed out after 38578 milliseconds
+
+ exited 124 in 38578ms:
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$p = (Get-Location).Path; 1..6 | 
+ForEach-Object { $p = Split-Path $p -Parent; if (Test-Path -LiteralPath (Join-Path $p '"'CLAUDE.md')) { Get-Content 
+-Raw (Join-Path "'$p '"'CLAUDE.md'); break } }" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\whirl_gust
+ succeeded in 1680ms:
+# Crownless ├óΓé¼ΓÇ¥ working practices (all agents)
+
+## Mobile version ├óΓé¼ΓÇ¥ kept in sync (unfrozen 2026-07-15)
+- `mobile/` (repo root) holds the iOS/Android version: a snapshot fork of `game/` plus a small, fixed set of mobile 
+deltas (Mobile renderer, touch HUD, export presets ├óΓé¼ΓÇ¥ the exact list lives in `mobile/README.md`). Deployment is 
+proven end to end ├óΓé¼ΓÇ¥ GitHub Actions **"Mobile builds"** produces a signed-debug APK and an unsigned iOS `.ipa`; 
+both install/run on-device (sideload).
+- **Policy change (was "frozen, do not touch"):** keep `mobile/game/` in sync with `game/`. `game/` is still the 
+**source of truth** ├óΓé¼ΓÇ¥ never edit `mobile/` to fix a desktop issue; fix it in `game/` and re-sync. To re-sync: 
+re-copy `game/` over `mobile/game/`, re-apply the mobile deltas from `mobile/README.md`, then run the compile gate + 
+`test_quick` against `mobile/game` before committing. Keep the delta list small and current.
+
+## Code layout (see CODING_GUIDELINES.md ├é┬º38)
+- Tuning knobs ├óΓÇáΓÇÖ `balance.gd`; data tables stay in domain files (classes/items/story). Never inline a bare 
+tuning number.
+- Docs split (2026-07-06): balance/pacing round narratives go in `BALANCE_HISTORY.md` (newest at TOP of the tuning 
+list); `DESIGN.md` holds only current decisions + distilled standing rules ├óΓé¼ΓÇ¥ never append round-by-round 
+history there.
+- Big node classes are inheritance CHAINS (verbatim moves, calls flow derived├óΓÇáΓÇÖbase, all vars in the base layer):
+  - Game: `game_base` (state/flags/convo/lookups/fx) ├óΓÇá┬É `game_world` (graph/rooms/walls/spawning/gates) ├óΓÇá┬É 
+`game_flow` (deaths/loot/chapters/settings/terrain events) ├óΓÇá┬É `game.gd` (boot + per-frame).
+  - Player: `player_core` (state/stats/gear/progression) ├óΓÇá┬É `player_combat` (targeting/hit/shared juice + shared 
+primitives) ├óΓÇá┬É `player_kit_{warrior,archer,mage,assassin,paladin,warlock}` (one file per class: `_use_<class>` 
+dispatch + its abilities) ├óΓÇá┬É `player.gd` (dispatch/survival/per-frame). Primitives shared by several kits 
+(`_dash_strike`, `_melee_arc`, `_mist`, `_beam_fx`, `_grant_stab_surge`) stay in `player_combat` ├óΓé¼ΓÇ¥ calls only 
+flow derived├óΓÇáΓÇÖbase.
+  - Tests: `tests/test_base` (helpers) ├óΓÇá┬É `tests/test_ch1` ├óΓÇá┬É `tests/test_ch2` ├óΓÇá┬É `autotest.gd` (entry 
++ systems tier).
+- Self-contained UI screens = static modules in `scripts/ui/` (dev_panel, codex) taking the Menus instance.
+- New `class_name` script ├óΓÇáΓÇÖ run `--import` before any headless run.
+- The in-game **codex** (`scripts/ui/codex.gd`) is the player-facing reference for monsters/bosses/terrains/gear 
+├óΓé¼ΓÇ¥ it goes stale silently. Whenever you add player-facing content or a feature, ask whether the codex should 
+reflect it, and if so update it in the same change. It reads `Story.ALL_ENEMIES`/data tables directly, but a few 
+hand-maintained parallel lists still gate it (e.g. `menus.gd` `BOSS_KINDS` decides monster-vs-boss bucketing) ├óΓé¼ΓÇ¥ 
+update those too, or a new boss lands in the wrong bucket. Layout since 2026-08-15 = rail of sections 
+(`UICodex.SECTIONS`) + filter chips + ledger/detail; a new section is one SECTIONS row + a `_rows`/`_detail` (or page) 
+builder, and every legacy `open_codex("<tab>")` id routes through `_resolve()` ├óΓé¼ΓÇ¥ extend that, never fork the 
+panel. Reference prose lives under Field notes (`NOTE_PAGES`), not above a shelf.
+
+## Testing ├óΓé¼ΓÇ¥ ALWAYS in this order
+1. Compile gate first, every time (`test_quick.bat`/`test.bat` run `check_compile.gd` first). Never invoke the test 
+scene directly: one parse error anywhere makes the suite script fail to compile and the headless engine idles FOREVER 
+(a zombie that looks like a slow run). The gate catches it in ~3s with the real error.
+2. Iterate with `test_quick.bat` (~15s): gate ├óΓÇáΓÇÖ boot ├óΓÇáΓÇÖ one class kit ├óΓÇáΓÇÖ systems ├óΓÇáΓÇÖ UI smoke 
+├óΓÇáΓÇÖ pause menu.
+3. `test.bat` (full suite, minutes; plays both chapters end to end) must be green before staging.
+
+## Agent toolkit (the map: `tools/INDEX.md` ├óΓé¼ΓÇ¥ check it before writing a helper script)
+- `preflight.bat` ├óΓé¼ΓÇ¥ the traps below, mechanized: stale/forgotten `--import`, codex/BOSS_KINDS staleness, 
+unregistered content modules, diff-scoped balance-number + CONNECT_DEFERRED lints. Run it before staging; every 
+finding prints its one-line fix.
+- `python tools/safe_commit.py -m "msg" <your paths>` ├óΓé¼ΓÇ¥ the serialized-commit etiquette as a guardrail: 
+path-scoped commit that lists sibling-staged work instead of swallowing it.
+- `python tools/sync_mobile.py` ├óΓé¼ΓÇ¥ mobile drift report; `--apply [--gate]` performs the re-sync ritual from 
+`mobile/README.md`.
+- `python tools/art/verify_art.py <base>` ├óΓé¼ΓÇ¥ post-install sprite checks (strip geometry, 8-dir completeness, 
+green-bleed, stale import, and in-cell content gates: anchor drift/ghost chunks/edge cuts/clip-vs-idle body scale).
+- **Windowed shot rigs (`shot_*.tscn`, `qa_skins`, anything not `--headless`) run MUTED: always pass `--audio-driver 
+Dummy`.** They boot the real game with music + SFX on the owner's shared machine; an unmuted rig blares through his 
+speakers mid-session (owner ruling 2026-08-15). Headless suites are already silent.
+
+## GDScript traps (each has bitten us) ├óΓé¼ΓÇ¥ review-time deep list: `CODING_GUIDELINES.md` ├é┬º38
+- `var x := obj.method()` on a loosely-typed obj (or any Variant expression, e.g. `Dictionary.get`) = PARSE ERROR 
+"cannot infer type". Annotate: `var x: float = ...`.
+- New `class_name` ├óΓÇáΓÇÖ `--import` first or headless silently hangs.
+- Labels inside HBoxContainer collapse to one char per line without `custom_minimum_size`.
+- Multiline lambda: following call args must sit on the SAME line as the lambda's last statement.
+- Tests waiting on timed effects must poll wall-clock (`await create_timer(0.2)`) ├óΓé¼ΓÇ¥ frames race ahead headless.
+- Autotest sections SNAPSHOT + RESTORE shared state (flags, resonance, standings); never `.clear()`. Two corollaries, 
+both learned from one flaky capital run (2026-07-26):
+  - **Restore on the FAILURE paths too.** `_fail` only QUEUES `quit(1)` ├óΓé¼ΓÇ¥ the suite keeps running to the end of 
+the frame, so the next section still executes and reads whatever the failed one left behind. A mid-city failure 
+stranded `chapter_id == "capital"`, where `shop_markup` answers a flat 1.0, and the road-markup section then reported 
+a second, entirely bogus failure. Put the assertions in a helper and the restore in its caller, so all ~40 exits pass 
+through it.
+  - **Never assert against state an earlier section accumulated.** A content-tier section inherits a whole campaign of 
+loot, gold, resonance and bag capacity ├óΓé¼ΓÇ¥ all of it loot-luck. The capital's lapidary quest asserted its kit 
+landed in the bag, and a full bag legally mails the kit instead: pass or fail came down to whether a bag DROPPED that 
+run. Control the precondition (lend a bag, pin the shard) or the assert is a coin flip.
+- canvas_item shader `fragment()`: `COLOR` arrives PREMULTIPLIED (modulate ├âΓÇö TEXTURE sample). Writing `COLOR = 
+result * COLOR` multiplies the texture in twice ├óΓé¼ΓÇ¥ everything darkens and "brighten" shaders read as darken 
+(phantom_charge was bitten; owner saw "only gets darker"). Reuse ONLY `COLOR.a` (silhouette.gdshader convention).
+- Spawning an Area2D + CollisionShape2D (Chest/Pickup/Projectile) from inside a `body_entered`/`area_entered` handler 
+= non-fatal "Can't change this state while flushing queries" engine error (`area_set_shape_disabled`) ├óΓé¼ΓÇ¥ the new 
+shape's enter-tree hits the physics-flush guard. Connect physics signals with `CONNECT_DEFERRED` or `call_deferred` 
+the spawn (chest open + projectile ricochet were bitten).
+- `draw_colored_polygon` on a SLIVER (near-collinear points) = random non-fatal "Invalid polygon data, triangulation 
+failed" spam: the triangulator picks winding from a float32 shoelace over RAW coords, so a sliver's sign is rounding 
+noise at world-scale coordinates ├óΓé¼ΓÇ¥ coordinate-dependent coin flip, NOT deterministic per shape (knife-trail 
+fold-back miters were bitten). Pre-check `Geometry2D.triangulate_polygon(p).is_empty()` and skip ├óΓé¼ΓÇ¥ the exact 
+C++ path behind the error, and everything it rejects is sub-pixel (the `_poly` guard in player_combat.gd).
+- **In co-op, the tree pause is NOT an input gate.** `request_pause(true)` NO-OPS online (`game_base.gd`, ├é┬º5.4 
+├óΓé¼ΓÇ¥ a shared world never pauses), so anything leaning on the pause to stop input/processing keeps running in a 
+session. Menus, dialogue and choice prompts all pause solo and none of them pause online. Gate on the OVERLAY STATE 
+instead ├óΓé¼ΓÇ¥ `menus.is_open()` / `hud.dialogue_active` / `hud.choices_active`, the guard `game.gd`'s tap-to-talk 
+already uses. The touch HUD had no `process_mode` override and only checked `state == ST_PLAYING` (there is no 
+`ST_MENU`), so its joystick ├óΓé¼ΓÇ¥ the whole left half of the screen ├óΓé¼ΓÇ¥ stayed live UNDER every menu and a 
+drag walked your hero mid-fight. Note the shape of the miss: it was invisible in BOTH cheap tests (solo-on-phone 
+pauses; co-op-on-desktop has no touch HUD) and only existed in the mobile ├âΓÇö co-op cross-product. When a feature is 
+platform- or session-conditional, ask what its gate is in the OTHER combination.
+
+## Multi-agent etiquette
+- Task boards (`CH2_TASKS.md` pattern): one owner per task, claim before starting; content lands as NEW modules under 
+`game/scripts/content/` (format: `scripts/content/README.md`) + one registration line in `Story.CONTENT_MODULES`.
+- Stage with `git add` after a green full suite. No commits unless the user asks.
+- **Commits are SERIALIZED (2026-07-07):** a commit sweeps the WHOLE index, and sibling agents stage concurrently 
+├óΓé¼ΓÇ¥ so immediately before committing, run `git status` and look at what's actually staged. If the index holds 
+another agent's work, either fold it into an accurate combined message or stop and say so ├óΓé¼ΓÇ¥ never commit a 
+message that describes only your slice. (Trigger: an itemization pass got swallowed into a commit labeled "cover + 
+boot flow" by exactly this race.)
+- Commit messages: NO author/co-author trailers (no `Co-Authored-By`, no attribution lines) ├óΓé¼ΓÇ¥ this project 
+keeps commits authorless; credit lives in a separate credits file.
+- Autotest additions: content modules use the marked CONTENT-MODULE TEST HOOK (one func at file end + one call line); 
+never edit existing sections.
+
+## Asset sourcing
+- **Allowed ├óΓé¼ΓÇ¥ and that's the whole list:** ONLY these two, or anything we generate ourselves (must be up to 
+par: semantic fit + reads clean in-game).
+  1. **CC0 / public domain** ├óΓé¼ΓÇ¥ zero obligations, ideal.
+  2. **CC-BY / MIT / Apache / OFL** ├óΓé¼ΓÇ¥ fine; ship the attribution file (we already do, in 
+`assets/*/CREDITS.txt`).
+  No pre-approval needed for these. Source from anywhere ├óΓé¼ΓÇ¥ OpenGameArt, Kenney, itch.io, the Dungeon Crawl 
+tileset (CC0), etc.
+- **Everything else is off-limits** ├óΓé¼ΓÇ¥ do not use, don't even ask: share-alike (CC-BY-SA, GPL), non-commercial 
+(CC-NC), proprietary/paid asset-store packs, and anything with no stated license (default = all rights reserved). This 
+game ships commercially on Steam; these licenses either forbid selling it or can force us to open-source the whole 
+project.
+- Install flow: probe/download, and LOOK at the image (or listen to the audio) before installing; overrides drop into 
+`assets/sounds|music|sprites/` by name (a PNG/wav there overrides the procedural version of the same name).
+- Audio taste: semantic fit over quality; no melodic-jingle chiptunes for ults/terrains; never human grunts on casts; 
+never touch `ult_mage.wav` or the village/story/boss synth tracks.
+
+## Generated art tool authorization
+- **NEVER assume PixelLab is authorized. PixelLab may be used only when the owner explicitly authorizes PixelLab for 
+the specific task.** Existing PixelLab assets, PixelLab helper scripts, character metadata, or a matching PixelLab 
+workflow elsewhere in the repo do not grant permission for a new generation.
+- When an agent has a built-in image-generation/editing tool (for example, ChatGPT/Codex image generation), that 
+built-in tool is the default for generated art unless the owner explicitly requests or authorizes another generator.
+- This rule applies even when another generator appears technically better suited. If the built-in tool cannot meet 
+the requirement, stop and ask the owner; do not silently switch tools or spend external generation credits.
+
+### Codex built-in ImageGen walk-animation observations
+- For bipedal characters, the built-in ImageGen tool often fails to preserve a fluid left/right leg cycle. A real 
+same-colored leg crossing over the other in one passing frame can create a convincing walking illusion; keep that 
+crossing to one or at most two frames rather than making every frame crossed.
+- If ImageGen repeats nearly identical crossed poses, give each cell an explicit foot-position storyboard instead of 
+only asking for "alternating legs": use a wide split, a tight crossover, a second crossover with a different spread 
+and the opposite leg emerging, then the opposite wide split or a subtle toe-off. State that frames 1, 3, and 4 must 
+have visibly different lower-body silhouettes. (Tried on the Wild Fang Raider 2026-08-14 and again 08-15: the 4-cell 
+2x2 kept coming back with the SAME leg leading in both stride cells and the body ~11% short ├óΓé¼ΓÇ¥ the owner still 
+called the walk bad.)
+- **What actually fixed the Wild Fang Raider walk (2026-08-15): ONE ROW of EIGHT figures, each frame labelled with its 
+gait phase** (near-foot contact / load / far leg passes / reach, then the same four for the other leg ├óΓé¼ΓÇ¥ the 
+pipeline doc's "legs do not alternate" remedy). The row came back with 8 distinct poses, constant body height and one 
+ground line; installed as an 8-frame strip (the engine's strip reader is frame-count agnostic ├óΓé¼ΓÇ¥ width/height 
+├óΓé¼ΓÇ¥ so 8 is fine; at the 2x walk clock the loop runs 0.67 s). Prefer this over 4-cell 2x2 for any bipedal walk. 
+Ask Codex to report leg-lead per frame in its final message; it is a candid critic of its own output.
+- Every ImageGen-keyed strip carried a dark-green antialias rim (`build_mob_walk_repairs.remove_green` now despills 
+the 2px edge band); a strip that "looks fine" on a dark contact sheet can still ring green over grass ├óΓé¼ΓÇ¥ check 
+`G > max(R,B)+20` counts on the rim, not just the semi-alpha BLEED gate.
+- The tool is generally more reliable for non-bipedal walks (for example, spiders and wolves), and for characters 
+whose locomotion does not expose a conventional leg cycle: robes can communicate motion through cloth flutter, and 
+floating characters can use body/cloth drift.
+- For bipedal sheets, prompt for fixed torso/pelvis anchors, a shared foot baseline, compact stride, 
+held-weapon/upper-body continuity, and explicit negative constraints against recoloring legs, detached feet, 
+duplicated frames, and high-knee marching. Inspect the generated sheet before installation and run 
+`tools/art/verify_art.py <base>` afterward; anchor drift can still remain even when the sheet looks visually centered.
+
+## PixelLab characters ├óΓé¼ΓÇ¥ regenerating an EXISTING one (deep dive: `tools/art/PIXELLAB_BOSS_EDITS.md`)
+- **Authorization gate:** this section applies only after the owner has explicitly authorized PixelLab for the current 
+task. It is not permission to choose PixelLab.
+- **RULE: before you regenerate, re-roll, or tweak an existing PixelLab character (boss/hero/skin), ALWAYS read its 
+export metadata FIRST.** Download the zip (`curl -H "Authorization: Bearer $PIXELLAB_SECRET" 
+https://api.pixellab.ai/mcp/characters/<id>/download -o out.zip`) and read `metadata.json` ├óΓé¼ΓÇ¥ it stores the 
+ORIGINAL creation `prompt` (plus size, `template_id`, view). Regenerate from that EXACT prompt and change ONLY the 
+clause the owner flagged.
+- **Never invent a fresh description from a screenshot or memory** ├óΓé¼ΓÇ¥ it silently drifts the design 
+(proportions, palette, silhouette) even when the fix was one word. `get_character` does NOT return the creation 
+prompt; the zip's `metadata.json` is the only source of truth.
+
+## PixelLab characters ├óΓé¼ΓÇ¥ new generation workflow (prompt-craft cases: `tools/art/PIXELLAB_PROMPT_LESSONS.md`)
+- **CHECK ALL 8 ROTATIONS before generating animations.** After a character body is created, visually inspect every 
+direction (S, SE, E, NE, N, NW, W, SW) for consistency ├óΓé¼ΓÇ¥ same proportions, same gear, same silhouette. v3 mode 
+frequently produces inconsistent north/west directions (wrong body shape, missing equipment, different outfit). If any 
+direction is broken, re-roll the body first. Generating animations on a broken body wastes hundreds of generations.
+- **Heroes use v3 mode (NOT pro).** The gold-standard assassin and warlock were both v3. Pro mode produces stocky 
+proportions for visible-face characters. The `style: -, -, -` field in `get_character` appears in BOTH v3 and pro 
+├óΓé¼ΓÇ¥ it cannot distinguish modes.
+- **Standard mode is useless for proportions testing.** Its template skeleton produces chibi proportions regardless of 
+description. Only useful for testing color palette and design elements.
+- **Description formula (proven on assassin):** archetype first ├óΓÇáΓÇÖ every piece of gear described precisely 
+├óΓÇáΓÇÖ body type ("lean and gaunt" / "lean and tall") ├óΓÇáΓÇÖ art mood ("muted dark palette, somber dark fantasy") 
+├óΓÇáΓÇÖ explicit negatives ("no hood", "no smoke"). Leave no room for the model to improvise.
+- Worked example (2026-07-12): owner said Vess should have "no smoke from mouth". The metadata prompt literally 
+contained `faint blue-white keening light at the mouth` ├óΓé¼ΓÇ¥ the fix was deleting that one clause from the 
+original prompt, not writing a new banshee description.
+
+
+codex
+The authoritative workflow confirms built-in ImageGen is the required generator for new art, with local chroma-key 
+removal afterward. IΓÇÖm now issuing one generation request for the exact 4├ù2 looping ring sheet; the two attached 
+images are treated as palette/style references, not edit targets.
+codex
+Generation completed and produced one PNG at the built-in output path. IΓÇÖm inspecting that exact raster before 
+copying it, because the required final report must call out concrete sheet defects such as missing cells, drift, 
+overlaps, or unintended colours.
+codex
+The first raster is not usable: it has a grey gradient background, purple/mauve contamination, and scattered rock-like 
+debris, so it violates the chroma-key and wind-only constraints. IΓÇÖm making one targeted regeneration with the 
+background and palette constraints repeated as hard visual requirements.
+codex
+The second generation still ignored the flat magenta requirement and retained mauve tinting, although it has eight 
+separated ring cells. IΓÇÖm using the permitted built-in edit path on that generated PNG to make a single constrained 
+correction: preserve the eight ring poses and framing, change only the backdrop to exact flat magenta and remove all 
+non-palette tint.
+codex
+The constrained edit produced the only candidate that visually matches the key requirement: eight separated pale 
+three-crescent rings on a flat magenta field. IΓÇÖm copying that raw PNG unchanged into the staging directory, then 
+running the mandated helper with border auto-key, soft matte, and despill.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:\\Users\\asali\\.c
+odex\\generated_images\\01a007bd-619f-74e0-8e49-a65a0dfeed8c\\exec-a5973fa3-b7d3-402d-8eca-6193cb3c6be1.png' 
+-Destination '.\\whirl_gust_master_v1.png' -Force; python 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py' --input 
+'.\\whirl_gust_master_v1.png' --out '.\\whirl_gust_master_v1_keyed.png' --auto-key border --soft-matte 
+--transparent-threshold 12 --opaque-threshold 220 --despill" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\whirl_gust
+ succeeded in 14993ms:
+Wrote whirl_gust_master_v1_keyed.png
+Key color: #ef1ae1
+Transparent pixels: 1258461/1572864
+Partially transparent pixels: 63639/1572864
+
+codex
+The keyed output is present and visually transparent in the margins. IΓÇÖm doing a read-only validation pass now: 
+dimensions, border key colour, per-cell bounds/coverage, frame-to-frame differences, centre/size consistency, and 
+palette contamination.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+from collections import Counter
+import math
+
+raw = Image.open('whirl_gust_master_v1.png').convert('RGBA')
+keyed = Image.open('whirl_gust_master_v1_keyed.png').convert('RGBA')
+print('raw_size', raw.size, 'raw_mode', raw.mode)
+print('keyed_size', keyed.size, 'keyed_mode', keyed.mode)
+px = raw.load()
+coords = [(0,0),(1535,0),(0,1023),(1535,1023),(10,10),(383,511),(384,0),(768,512)]
+print('samples', [(c,px[c[0],c[1]]) for c in coords])
+print('top_colors', Counter(raw.getdata()).most_common(10))
+
+W,H = raw.size
+cell_w,cell_h = W//4,H//2
+bg = px[0,0][:3]
+print('background_rgb', bg)
+# classify effect as distance from sampled corner > 18, to include near-key edges but exclude flat bg
+for i in range(8):
+    cx=i%4; cy=i//4
+    x0,y0=cx*cell_w,cy*cell_h
+    x1,y1=x0+cell_w,y0+cell_h
+    points=[]
+    vals=[]
+    for y in range(y0,y1):
+        for x in range(x0,x1):
+            r,g,b,a=px[x,y]
+            d=math.sqrt((r-bg[0])**2+(g-bg[1])**2+(b-bg[2])**2)
+            if d>18:
+                points.append((x,y)); vals.append((r,g,b,a))
+    if points:
+        xs=[p[0] for p in points]; ys=[p[1] for p in points]
+        print('cell',i+1,'bbox_local',(min(xs)-x0,min(ys)-y0,max(xs)-x0,max(ys)-y0),'count',len(points),'center',((min(
+xs)+max(xs))/2-x0,(min(ys)+max(ys))/2-y0),'size',(max(xs)-min(xs)+1,max(ys)-min(ys)+1))
+        # non-pale hue count: tolerate compression/antialias, classify by nearest allowed color or bg
+        allowed=[(255,255,255),(240,244,248),(207,216,227),(154,168,184),(91,105,120)]
+        bad=0; bad_examples=[]
+        for c in vals:
+            rgb=c[:3]
+            if min(sum((rgb[j]-q[j])**2 for j in range(3)) for q in allowed)>25**2:
+                bad+=1
+                if len(bad_examples)<5: bad_examples.append(rgb)
+        print('  non_palette_approx',bad,'examples',bad_examples)
+    else: print('cell',i+1,'EMPTY')
+# differences with bg-masked RGB; calculate normalized per pair, and identical flag
+arrays=[]
+for i in range(8):
+    cx=i%4;cy=i//4;x0,y0=cx*cell_w,cy*cell_h
+    crop=[]
+    for y in range(y0,y0+cell_h):
+        for x in range(x0,x0+cell_w):
+            rgb=px[x,y][:3]
+            d=math.sqrt(sum((rgb[j]-bg[j])**2 for j in range(3)))
+            crop.append(rgb if d>18 else (0,0,0))
+    arrays.append(crop)
+for i in range(7):
+    diff=sum(a"'!=b for a,b in zip(arrays[i],arrays[i+1]))
+    print('"'adjacent_diff',i+1,i+2,diff)
+# keyed alpha stats
+kp=keyed.getdata()
+alpha= [p[3] for p in kp]
+print('keyed_alpha', 'transparent',sum(a==0 for a in alpha),'partial',sum(0<a<255 for a in alpha),'opaque',sum(a==255 
+for a in alpha))
+print('keyed_corners',[keyed.getpixel(c) for c in coords[:4]])
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\whirl_gust
+ succeeded in 25457ms:
+raw_size (1536, 1024) raw_mode RGBA
+keyed_size (1536, 1024) keyed_mode RGBA
+samples [((0, 0), (226, 36, 213, 255)), ((1535, 0), (230, 44, 216, 255)), ((0, 1023), (223, 51, 207, 255)), ((1535, 
+1023), (228, 53, 214, 255)), ((10, 10), (239, 26, 223, 255)), ((383, 511), (239, 27, 225, 255)), ((384, 0), (236, 27, 
+225, 255)), ((768, 512), (240, 28, 225, 255))]
+top_colors [((239, 27, 224, 255), 95856), ((239, 28, 225, 255), 86713), ((239, 27, 225, 255), 65900), ((239, 26, 224, 
+255), 52802), ((239, 28, 224, 255), 45590), ((238, 27, 224, 255), 37228), ((240, 28, 225, 255), 36467), ((238, 26, 
+223, 255), 30023), ((239, 29, 225, 255), 29996), ((239, 26, 223, 255), 29731)]
+background_rgb (226, 36, 213)
+cell 1 bbox_local (0, 0, 383, 511) count 183053 center (191.5, 255.5) size (384, 512)
+  non_palette_approx 159359 examples [(238, 27, 225), (239, 24, 225), (239, 24, 225), (238, 25, 226), (238, 25, 226)]
+cell 2 bbox_local (0, 0, 383, 511) count 183614 center (191.5, 255.5) size (384, 512)
+  non_palette_approx 159910 examples [(236, 27, 225), (236, 26, 225), (236, 26, 225), (236, 26, 225), (237, 27, 225)]
+cell 3 bbox_local (0, 0, 383, 511) count 185210 center (191.5, 255.5) size (384, 512)
+  non_palette_approx 161537 examples [(237, 29, 227), (237, 28, 227), (237, 28, 227), (237, 28, 227), (237, 28, 227)]
+cell 4 bbox_local (0, 0, 383, 511) count 181645 center (191.5, 255.5) size (384, 512)
+  non_palette_approx 158960 examples [(237, 29, 226), (237, 29, 226), (238, 30, 227), (238, 30, 227), (237, 29, 226)]
+cell 5 bbox_local (0, 0, 383, 510) count 180951 center (191.5, 255.0) size (384, 511)
+  non_palette_approx 157198 examples [(237, 25, 224), (238, 24, 225), (239, 24, 225), (238, 25, 225), (238, 25, 225)]
+cell 6 bbox_local (0, 0, 383, 510) count 178731 center (191.5, 255.0) size (384, 511)
+  non_palette_approx 154012 examples [(239, 28, 225), (239, 28, 225), (239, 28, 225), (239, 27, 225), (239, 28, 225)]
+cell 7 bbox_local (0, 0, 383, 510) count 182636 center (191.5, 255.0) size (384, 511)
+  non_palette_approx 158838 examples [(240, 28, 225), (240, 28, 225), (240, 27, 225), (240, 28, 225), (240, 28, 225)]
+cell 8 bbox_local (0, 0, 383, 511) count 183343 center (191.5, 255.5) size (384, 512)
+  non_palette_approx 158514 examples [(239, 27, 224), (239, 27, 224), (239, 27, 225), (239, 28, 225), (239, 28, 225)]
+adjacent_diff 1 2 187331
+adjacent_diff 2 3 186430
+adjacent_diff 3 4 185530
+adjacent_diff 4 5 188312
+adjacent_diff 5 6 186405
+adjacent_diff 6 7 185536
+adjacent_diff 7 8 186745
+keyed_alpha transparent 1258461 partial 63639 opaque 250764
+keyed_corners [(0, 0, 0, 0), (0, 0, 0, 0), (0, 0, 0, 0), (0, 0, 0, 0)]
+<stdin>:12: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+<stdin>:59: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+from collections import Counter
+import math
+raw=Image.open('whirl_gust_master_v1.png').convert('RGBA')
+keyed=Image.open('whirl_gust_master_v1_keyed.png').convert('RGBA')
+W,H=raw.size; cw,ch=W//4,H//2
+print('raw corner_rgb', [raw.getpixel(c)[:3] for c in [(0,0),(W-1,0),(0,H-1),(W-1,H-1)]])
+print('raw interior_bg_samples', [raw.getpixel(c)[:3] for c in 
+[(10,10),(100,100),(383,511),(500,10),(700,500),(1500,1000)]])
+# estimate flat background from central seam/margins; top common colors
+print('raw common RGB', Counter(raw.getdata(0)).most_common(5))
+# keyed effect bbox based on alpha thresholds
+for threshold in (16,64,128,240):
+    print('threshold',threshold)
+    for i in range(8):
+        cx=i%4;cy=i//4;x0,y0=cx*cw,cy*ch
+        pts=[]
+        for y in range(y0,y0+ch):
+            for x in range(x0,x0+cw):
+                if keyed.getpixel((x,y))[3]>=threshold: pts.append((x,y))
+        xs=[p[0] for p in pts]; ys=[p[1] for p in pts]
+        print(i+1, 'bbox', (min(xs)-x0,min(ys)-y0,max(xs)-x0,max(ys)-y0), 'center', 
+(round((min(xs)+max(xs))/2-x0,1),round((min(ys)+max(ys))/2-y0,1)), 'size',(max(xs)-min(xs)+1,max(ys)-min(ys)+1), 
+'pixels',len(pts))
+# compare alpha masks, pairwise non-identical and pixel diff
+masks=[]
+for i in range(8):
+    cx=i%4;cy=i//4;x0,y0=cx*cw,cy*ch
+    masks.append([keyed.getpixel((x,y))[3] for y in range(y0,y0+ch) for x in range(x0,x0+cw)])
+for i in range(7):
+    print('mask_diff',i+1,i+2,sum(a"'!=b for a,b in zip(masks[i],masks[i+1])))
+# Analyze keyed foreground hue / allowed palette nearest, alpha > 32
+allowed=[(255,255,255),(240,244,248),(207,216,227),(154,168,184),(91,105,120)]
+bad=[]; fg=0
+for r,g,b,a in keyed.getdata():
+    if a>32:
+        fg+=1
+        d=min(sum((v-q)**2 for v,q in zip((r,g,b),c)) for c in allowed)
+        if d>35**2: bad.append((r,g,b,a))
+print('"'foreground_pixels_a_gt_32',fg,'far_from_palette_gt35',len(bad),'examples',Counter((r,g,b) for r,g,b,a in 
+bad).most_common(10))
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\whirl_gust
+ succeeded in 17745ms:
+raw corner_rgb [(226, 36, 213), (230, 44, 216), (223, 51, 207), (228, 53, 214)]
+raw interior_bg_samples [(239, 26, 223), (239, 26, 224), (239, 27, 225), (238, 26, 222), (238, 27, 225), (239, 27, 
+225)]
+raw common RGB [(239, 580313), (238, 307631), (240, 192285), (237, 69081), (236, 27993)]
+threshold 16
+1 bbox (22, 72, 369, 447) center (195.5, 259.5) size (348, 376) pixels 38342
+2 bbox (21, 74, 367, 442) center (194.0, 258.0) size (347, 369) pixels 38047
+3 bbox (20, 83, 369, 444) center (194.5, 263.5) size (350, 362) pixels 37376
+4 bbox (22, 90, 366, 434) center (194.0, 262.0) size (345, 345) pixels 36146
+5 bbox (15, 57, 370, 427) center (192.5, 242.0) size (356, 371) pixels 37610
+6 bbox (24, 50, 364, 426) center (194.0, 238.0) size (341, 377) pixels 38594
+7 bbox (17, 50, 369, 427) center (193.0, 238.5) size (353, 378) pixels 38230
+8 bbox (16, 64, 367, 419) center (191.5, 241.5) size (352, 356) pixels 39242
+threshold 64
+1 bbox (23, 72, 368, 445) center (195.5, 258.5) size (346, 374) pixels 33801
+2 bbox (22, 79, 366, 440) center (194.0, 259.5) size (345, 362) pixels 33575
+3 bbox (24, 84, 368, 443) center (196.0, 263.5) size (345, 360) pixels 33555
+4 bbox (28, 91, 365, 432) center (196.5, 261.5) size (338, 342) pixels 31796
+5 bbox (16, 59, 370, 425) center (193.0, 242.0) size (355, 367) pixels 33178
+6 bbox (24, 51, 362, 424) center (193.0, 237.5) size (339, 374) pixels 34075
+7 bbox (17, 51, 368, 426) center (192.5, 238.5) size (352, 376) pixels 34050
+8 bbox (17, 66, 367, 418) center (192.0, 242.0) size (351, 353) pixels 34403
+threshold 128
+1 bbox (23, 72, 361, 445) center (192.0, 258.5) size (339, 374) pixels 32062
+2 bbox (22, 85, 366, 440) center (194.0, 262.5) size (345, 356) pixels 31812
+3 bbox (24, 84, 367, 443) center (195.5, 263.5) size (344, 360) pixels 31963
+4 bbox (28, 91, 365, 432) center (196.5, 261.5) size (338, 342) pixels 30110
+5 bbox (17, 60, 370, 425) center (193.5, 242.5) size (354, 366) pixels 31518
+6 bbox (24, 51, 362, 424) center (193.0, 237.5) size (339, 374) pixels 32399
+7 bbox (17, 51, 366, 425) center (191.5, 238.0) size (350, 375) pixels 32370
+8 bbox (17, 67, 367, 418) center (192.0, 242.5) size (351, 352) pixels 32584
+threshold 240
+1 bbox (23, 72, 360, 445) center (191.5, 258.5) size (338, 374) pixels 31490
+2 bbox (22, 85, 363, 440) center (192.5, 262.5) size (342, 356) pixels 31261
+3 bbox (24, 84, 364, 443) center (194.0, 263.5) size (341, 360) pixels 31356
+4 bbox (28, 91, 365, 432) center (196.5, 261.5) size (338, 342) pixels 29592
+5 bbox (17, 60, 370, 424) center (193.5, 242.0) size (354, 365) pixels 31176
+6 bbox (24, 51, 362, 424) center (193.0, 237.5) size (339, 374) pixels 31794
+7 bbox (17, 51, 364, 425) center (190.5, 238.0) size (348, 375) pixels 31831
+8 bbox (17, 67, 367, 418) center (192.0, 242.5) size (351, 352) pixels 32264
+mask_diff 1 2 32848
+mask_diff 2 3 29087
+mask_diff 3 4 31746
+mask_diff 4 5 36818
+mask_diff 5 6 41111
+mask_diff 6 7 38056
+mask_diff 7 8 41577
+foreground_pixels_a_gt_32 285148 far_from_palette_gt35 48840 examples [((192, 193, 192), 406), ((193, 194, 193), 395), 
+((185, 186, 185), 390), ((187, 188, 187), 379), ((191, 192, 191), 365), ((197, 198, 197), 361), ((190, 191, 190), 
+359), ((194, 195, 194), 355), ((195, 196, 195), 350), ((186, 187, 186), 350)]
+<stdin>:10: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+<stdin>:32: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+
+codex
+Validation found real defects that I will report plainly: the raw background is magenta but not exact/uniform 
+`#ff00ff` (the corners and interior differ), and the bottom-row rings sit visibly higher than the top row, so the 
+anchor rule is not fully met. All eight cells exist, are separate, and differ visibly; IΓÇÖm checking the final file 
+set and keyed-alpha/palette details before handing off.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+from collections import Counter
+import colorsys, math, os
+raw=Image.open('whirl_gust_master_v1.png').convert('RGBA')
+keyed=Image.open('whirl_gust_master_v1_keyed.png').convert('RGBA')
+# Background variation among pixels that keyed entirely transparent.
+bg=[]; fg=[]; saturated=[]
+for (r,g,b,a),(kr,kg,kb,ka) in zip(raw.getdata(), keyed.getdata()):
+    if ka==0: bg.append((r,g,b))
+    elif ka>32:
+        fg.append((r,g,b))
+        h,s,v=colorsys.rgb_to_hsv(r/255,g/255,b/255)
+        if s>0.16 and not (abs(r-g)<18 and abs(g-b)<18): saturated.append((r,g,b))
+print('transparent_bg_rgb_range', tuple((min(c[i] for c in bg),max(c[i] for c in bg)) for i in range(3)))
+print('transparent_bg_unique', len(set(bg)), 'count', len(bg))
+print('foreground_strong_saturation_pixels',len(saturated),'examples',Counter(saturated).most_common(12))
+print('files',[(n,os.path.getsize(n)) for n in ['whirl_gust_master_v1.png','whirl_gust_master_v1_keyed.png']])
+'@ | python -; git status --short -- whirl_gust_master_v1.png whirl_gust_master_v1_keyed.png" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\whirl_gust
+ succeeded in 4850ms:
+transparent_bg_rgb_range ((205, 255), (0, 239), (191, 255))
+transparent_bg_unique 37781 count 1258461
+foreground_strong_saturation_pixels 25739 examples [((231, 194, 227), 6), ((225, 142, 216), 5), ((227, 183, 223), 5), 
+((230, 90, 220), 5), ((226, 91, 213), 5), ((221, 141, 219), 5), ((213, 175, 214), 5), ((231, 93, 219), 5), ((226, 157, 
+222), 5), ((231, 133, 224), 5), ((229, 102, 218), 5), ((228, 86, 214), 5)]
+files [('whirl_gust_master_v1.png', 1807622), ('whirl_gust_master_v1_keyed.png', 907853)]
+?? whirl_gust_master_v1.png
+?? whirl_gust_master_v1_keyed.png
+<stdin>:8: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+warning: unable to access 'C:\Users\asali/.config/git/ignore': Permission denied
+warning: unable to access 'C:\Users\asali/.config/git/ignore': Permission denied
+
+codex
+The raw sheet also has magenta/pink edge contamination in the effect, so IΓÇÖm applying the skillΓÇÖs allowed one-time 
+`--edge-contract 1` retry to the keyed output. This can reduce the fringe without altering the raw master; the raw 
+defects will still be disclosed.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py' --input 
+'.\\whirl_gust_master_v1.png' --out '.\\whirl_gust_master_v1_keyed.png' --auto-key border --soft-matte 
+--transparent-threshold 12 --opaque-threshold 220 --despill --edge-contract 1" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\whirl_gust
+2026-08-15T23:31:36.583234Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 1.2 seconds
+Output:
+Error: Output already exists: whirl_gust_master_v1_keyed.png (use --force to overwrite)
+
+ exited 1 in 1167ms:
+Error: Output already exists: whirl_gust_master_v1_keyed.png (use --force to overwrite)
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py' --input 
+'.\\whirl_gust_master_v1.png' --out '.\\whirl_gust_master_v1_keyed.png' --auto-key border --soft-matte 
+--transparent-threshold 12 --opaque-threshold 220 --despill --edge-contract 1 --force" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\whirl_gust
+ succeeded in 15688ms:
+Wrote whirl_gust_master_v1_keyed.png
+Key color: #ef1ae1
+Transparent pixels: 1322003/1572864
+Partially transparent pixels: 35970/1572864
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+import colorsys
+from collections import Counter
+raw=Image.open('whirl_gust_master_v1.png').convert('RGBA')
+keyed=Image.open('whirl_gust_master_v1_keyed.png').convert('RGBA')
+fg=[]
+for (r,g,b,a) in keyed.getdata():
+    if a>32:
+        h,s,v=colorsys.rgb_to_hsv(r/255,g/255,b/255)
+        if s>0.16 and not (abs(r-g)<18 and abs(g-b)<18): fg.append((r,g,b))
+print('keyed_strong_saturation_foreground',len(fg),'examples',Counter(fg).most_common(10))
+print('keyed_alpha_counts',Counter(p[3] for p in keyed.getdata()).most_common(8))
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\whirl_gust
+ succeeded in 3570ms:
+keyed_strong_saturation_foreground 649 examples [((126, 144, 154), 3), ((129, 147, 155), 3), ((128, 146, 153), 3), 
+((112, 130, 142), 3), ((131, 149, 156), 3), ((130, 148, 155), 3), ((122, 140, 147), 2), ((103, 121, 126), 2), ((113, 
+107, 141), 2), ((102, 120, 124), 2)]
+keyed_alpha_counts [(0, 1322003), (255, 214891), (9, 974), (13, 891), (10, 616), (15, 609), (14, 591), (11, 578)]
+<stdin>:7: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+<stdin>:12: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+
+codex
+Done. Files saved:
+
+- [Raw master PNG](C:/Users/asali/Projects/MMO/art_src/Custom/RingFX_2026-08-15/whirl_gust/whirl_gust_master_v1.png)
+- [Keyed RGBA 
+PNG](C:/Users/asali/Projects/MMO/art_src/Custom/RingFX_2026-08-15/whirl_gust/whirl_gust_master_v1_keyed.png)
+
+Validation:
+
+- Raw size: `1536├ù1024`.
+- Frames 1ΓÇô8: all present; each sequential frame is visibly different.
+- Exact 15┬░ rotation: not verifiable; the generated silhouettes drift.
+- Centre/size consistency: failed. Bottom-row rings are approximately 20 px higher than top-row rings, and effect 
+bounds vary.
+- Missing/extra cells: none.
+- Overlap/touching: none.
+- Ground plane/shadow: none.
+- Chroma key: failed exactness. Background is magenta but not uniform `#ff00ff`; the helper sampled `#ef1ae1`.
+- Key-colour contamination: minor magenta/off-palette antialiasing existed in the raw effect; the keyed result was 
+rerun with `--edge-contract 1` to reduce it.
+- No slicing, installation, or writes outside the staging directory were performed.
+
+Used built-in ImageGen plus its required chroma-key helper; no CLI fallback.
+tokens used
+79,658
+Done. Files saved:
+
+- [Raw master PNG](C:/Users/asali/Projects/MMO/art_src/Custom/RingFX_2026-08-15/whirl_gust/whirl_gust_master_v1.png)
+- [Keyed RGBA PNG](C:/Users/asali/Projects/MMO/art_src/Custom/RingFX_2026-08-15/whirl_gust/whirl_gust_master_v1_keyed.png)
+
+Validation:
+
+- Raw size: `1536├ù1024`.
+- Frames 1ΓÇô8: all present; each sequential frame is visibly different.
+- Exact 15┬░ rotation: not verifiable; the generated silhouettes drift.
+- Centre/size consistency: failed. Bottom-row rings are approximately 20 px higher than top-row rings, and effect bounds vary.
+- Missing/extra cells: none.
+- Overlap/touching: none.
+- Ground plane/shadow: none.
+- Chroma key: failed exactness. Background is magenta but not uniform `#ff00ff`; the helper sampled `#ef1ae1`.
+- Key-colour contamination: minor magenta/off-palette antialiasing existed in the raw effect; the keyed result was rerun with `--edge-contract 1` to reduce it.
+- No slicing, installation, or writes outside the staging directory were performed.
+
+Used built-in ImageGen plus its required chroma-key helper; no CLI fallback.

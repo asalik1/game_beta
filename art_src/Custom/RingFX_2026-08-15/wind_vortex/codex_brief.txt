@@ -1,0 +1,28 @@
+You are generating ONE game visual-effect animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/palette.png : the BINDING colour palette for this effect (five swatches on magenta: #FFFFFF white, #EEF6F2 pale mist, #CFDFD8 light grey-mint, #9DB5AE mid grey-mint, #5F7770 shadow — a PALE near-white effect so the game can tint it per theme). Ignore the magenta around the swatches — it is only there to show what the chroma key looks like.
+- Image 2 = refs/style_fx_strip.png : a shipped FX animation strip from this game (a violet thread eruption). Match its LEVEL OF FINISH — crisp high-resolution game FX, hard readable clusters, glowing rims over a darker body, no blur, no photo texture. Do NOT copy its subject, shape or colour.
+
+TASK: generate exactly ONE new 4x2 source sheet for a LOOPING WIND VORTEX on the ground (the eye of an archer's Arrow Storm) with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: game asset
+Output size: 1536x1024 landscape.
+Asset type: high-resolution 8-frame game visual-effect animation source, to be cropped into a horizontal sprite strip.
+Scene/backdrop: a perfectly flat uniform #ff00ff magenta chroma-key background filling every pixel, including the seams between cells. No scenery, floor plane, ground texture, platform, cast shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly EIGHT separate equal square effect cells laid out as a clean 4-column by 2-row contact sheet in reading order (top row left to right = frames 1-4, bottom row left to right = frames 5-8). All cells have identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat magenta between neighbouring cells and around the sheet edge.
+Subject: ONE flat swirling VORTEX of wind lying on the ground, seen from directly above / a high game camera: a roughly CIRCULAR spiral of pale wind streaks and gust ribbons curling COUNTER-CLOCKWISE into the centre, with FOUR-FOLD rotational symmetry (four matching spiral arms), a soft pale haze between the arms, and a few small dust motes; the centre is an open calm eye (empty — the archer stands there, added by the game). Pale white and grey-mint; the streaks have crisp bright edges. Air and wind only — NOT water, NOT a portal, NOT clouds from the side, NOT a tornado funnel seen sideways.
+Style/medium: crisp high-resolution dark-fantasy game FX art with hard readable clusters and a controlled palette; not painterly, not 3D-rendered, not photographic, not anime, not blurred.
+Composition/framing and ANCHOR RULE: the vortex is centred in each square cell (its eye is the exact centre) and fills about 82% of the cell width with clear magenta margin on every side. It stays in the SAME spot at the SAME size in every cell.
+LOOP storyboard — eight VISIBLY DIFFERENT rotation states of THIS SAME vortex that read as one seamless loop: the whole four-armed spiral rotates COUNTER-CLOCKWISE by exactly 11.25 degrees per frame (frame 2 = frame 1 turned 11.25 degrees, frame 3 = 22.5, ... frame 8 = 78.75), so that one more step (90 degrees) lands exactly back on frame 1 because of the four-fold symmetry. Nothing else changes: same arm shapes, same haze, same size; only the rotation angle. Frames 1 through 8 must each be clearly different rotations.
+Constraints: output only the cells on magenta; no text, watermark, UI, characters, weapons, scenery, ground texture, shadow, or separators. Do NOT use #ff00ff, pink, purple or any magenta anywhere in the effect. Keep it PALE — white and grey-mint only. Do not use pure #00ff00. Every frame must be clearly different from every other frame.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./wind_vortex_master_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./wind_vortex_master_v1_keyed.png (auto-key sampling from the border, soft matte, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all cells were produced with visibly different frames (frame by frame), whether the effect kept the same centre and size in every cell, and any deviation from the brief (a cell missing, cells overlapping or touching, key colour inside the effect, drift, an extra cell, a ground plane drawn). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

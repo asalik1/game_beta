@@ -35,8 +35,6 @@ var daily_glow: Sprite2D        # pulsing shine behind the ★
 var quest_btn: Button           # ! opens the Quest Log; shines when a reward waits
 var quest_glow: Sprite2D        # red/orange pulse behind ! when the weekly vault is claimable
 var quest_sparkles: Array = []  # twinkles around ! during the shine
-var crucible_btn: Button        # 🔥 endgame — The Crucible; row under the mailbox, shown once Act 1 is cleared
-var depths_btn: Button          # 🕯 endgame — The Waking Depths
 var inv_btn: Button             # bag icon — opens the inventory
 var codex_btn: Button           # book icon — opens the codex
 var skills_btn: Button          # skill-tree icon — opens the talents/skill tree
@@ -390,13 +388,10 @@ func _ready() -> void:
 			game.menus.open_daily())
 	add_child(daily_btn)
 
-	# Endgame trials: a short row of mode icons DIRECTLY UNDER the mailbox, shown
-	# once Act 1 is cleared (never buried in the pause menu). Like every HUD icon,
-	# a click opens a backable screen — here a confirm with your record + the
-	# rules — rather than tearing the world down on a stray click. Visibility is
-	# toggled per-frame in update_stats (hidden during a run itself).
-	crucible_btn = _endgame_icon("🔥", "The Crucible — Boss Rush", Vector2(16, 226), "crucible")
-	depths_btn = _endgame_icon("🕯", "The Waking Depths — Marathon", Vector2(45, 226), "depths")
+	# (The endgame trials — Crucible / Waking Depths — used to hang two glyph
+	# icons under the mailbox once Act 1 was cleared. Owner ruling 2026-08-15:
+	# hardcore modes do not belong on the HUD; their doors are the Wayfinder
+	# Sanctum portals in Crownfall, via menus.confirm_endgame.)
 
 	# ---------------------------------------------------- quest tracker ---
 	_panel(Vector2(350, 8), Vector2(580, 56))
@@ -1677,31 +1672,6 @@ func _layout_hud_icons() -> void:
 
 # ----------------------------------------------------------- API used by game
 
-## One endgame-mode HUD icon: a flat glyph button that opens a confirm (your
-## record + the rules) for `mode`, gated to safe moments. Returned so
-## update_stats can toggle its visibility.
-func _endgame_icon(glyph: String, tip: String, pos: Vector2, mode: String) -> Button:
-	var b := Button.new()
-	b.flat = true
-	b.text = glyph
-	b.tooltip_text = tip
-	b.add_theme_font_size_override("font_size", 20)
-	b.add_theme_color_override("font_color", Color(1.0, 0.72, 0.55))
-	b.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0))
-	b.position = pos
-	b.size = Vector2(32, 30)
-	b.visible = false
-	b.pressed.connect(func() -> void:
-		# not-online: the trials are SOLO (menus.confirm_endgame explains if
-		# reached; game_flow.enter_endgame is the hard backstop — the arena
-		# swap is local-only, no session fan exists).
-		if game.play_started and not game.menus.is_open() and not game.endgame_active \
-				and not game.net_online():
-			game.menus.confirm_endgame(mode))
-	add_child(b)
-	return b
-
-
 func update_stats(p: Player) -> void:
 	# A menu opened (e.g. via hotkey) over an open HUD popover — dismiss it so
 	# it doesn't linger behind the paused menu.
@@ -1758,14 +1728,6 @@ func update_stats(p: Player) -> void:
 	mail_badge.visible = unread > 0
 	if unread > 0:
 		mail_badge_num.text = str(unread) if unread < 10 else "9+"
-
-	# Endgame trial icons: shown once Act 1 is cleared, hidden during a run —
-	# and hidden IN-SESSION: the trials are solo (the arena swap is local-only,
-	# no session fan), so the icons vanish rather than dangle a dead door.
-	var eg_show: bool = game.play_started and not game.endgame_active \
-		and game.endgame_unlocked() and not game.net_online()
-	crucible_btn.visible = eg_show
-	depths_btn.visible = eg_show
 
 	# The party chip is the persistent session affordance. It stays present for
 	# a lone host, unlike ally frames, and names the occupied seats at a glance.

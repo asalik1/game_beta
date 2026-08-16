@@ -1,0 +1,884 @@
+﻿codex.exe : Reading prompt from stdin...
+At line:6 char:14
++ ...    $brief | & $codex exec -C $d -s workspace-write --skip-git-repo-ch ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Reading prompt from stdin...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+OpenAI Codex v0.147.0-alpha.6.6
+--------
+workdir: C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud
+model: gpt-5.6-luna
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0075b-631f-7ce3-8157-1ea6c08cb924
+--------
+user
+You are generating ONE game visual-effect animation master with your built-in image_gen tool. Read 
+$CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current 
+directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/palette_poison.png : the BINDING colour palette for this effect (five swatches on magenta). Use ONLY 
+greens in this family: #73F24D acid rim, #B9F55F hot highlight, #3E9A2E mid green, #245C1F dark body, #132E12 shadow. 
+Ignore the magenta around the swatches ??? it is only there to show what the chroma key looks like.
+- Image 2 = refs/style_fx_strip.png : a shipped FX animation strip from this game (a violet thread eruption). Match 
+its LEVEL OF FINISH ??? crisp high-resolution game FX, hard readable clusters, glowing rims over a dark body, no blur, 
+no photo texture. Do NOT copy its subject, shape or colour.
+
+TASK: generate exactly ONE new 4x2 source sheet for a LOOPING TOXIC GAS CLOUD with this image_gen prompt (adapt only 
+if the tool's parameters require it; keep every constraint):
+
+---
+Use case: game asset
+Output size: 1536x1024 landscape.
+Asset type: high-resolution 8-frame game visual-effect animation source, to be cropped into a horizontal sprite strip.
+Scene/backdrop: a perfectly flat uniform #ff00ff magenta chroma-key background filling every pixel, including the 
+seams between cells. No scenery, floor plane, ground, platform, cast shadow, contact shadow, gradient, vignette, 
+border, grid, line, or panel divider.
+Primary request: create exactly EIGHT separate equal square effect cells laid out as a clean 4-column by 2-row contact 
+sheet in reading order (top row left to right = frames 1-4, bottom row left to right = frames 5-8). All eight cells 
+have identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat magenta 
+between neighbouring cells and around the sheet edge.
+Subject: ONE lingering cloud of poisonous toxic gas resting on the ground, seen from a high three-quarter game camera: 
+a roughly CIRCULAR footprint (as wide as it is deep, only slightly taller at the centre), a dense mound of billowing 
+rounded smoke puffs. The body of the cloud is dark murky green (#245C1F / #132E12 shadows, #3E9A2E mid), and every 
+puff has a bright acid-green rim light (#73F24D) with a few hot #B9F55F glints; thin acid-green wisps and tiny rising 
+bubbles/motes peel off the top and sides. Sickly, venomous, heavy gas ??? NOT fire, NOT a fireball, NOT smoke from a 
+chimney, NOT a mushroom cloud, NOT a face.
+Style/medium: crisp high-resolution dark-fantasy game FX art with hard readable clusters and a controlled palette; not 
+painterly, not 3D-rendered, not photographic, not anime, not blurred.
+Composition/framing and ANCHOR RULE: the cloud is centred in each square cell and fills about 75% of the cell width, 
+with clear magenta margin on every side (wisps must not touch the cell edge). It stays in the SAME spot and the SAME 
+overall size in every cell ??? the footprint centre and the outer silhouette radius do not drift, the camera never 
+moves. Only the puffs churn.
+LOOP storyboard - eight VISIBLY DIFFERENT churn states of THIS SAME cloud that read as one continuous seamless loop 
+(frame 8 must flow back into frame 1):
+ frame 1: puffs settled, a large puff bulging on the LEFT, wisps drifting up-right
+ frame 2: the left puff rolls toward the centre-top, a new puff swelling at the front-right
+ frame 3: the front-right puff peaks, a wisp curls off the top, two bubbles rising on the left
+ frame 4: puffs rotate clockwise a step further; the top-left sinks, the right side lifts
+ frame 5: the right puff rolls over the top toward the left, bubbles pop at the rim
+ frame 6: a big puff bulging on the RIGHT (mirror of frame 1's mood), wisps drifting up-left
+ frame 7: that right puff sinks toward the front, a new puff swelling at the back-left
+ frame 8: the back-left puff rises to nearly frame 1's position so the loop closes into frame 1
+Rotate the churn slowly and consistently clockwise across the eight frames; every frame keeps the same footprint and 
+silhouette size. Every frame is a full, complete cloud ??? never a partial or faded cloud.
+Constraints: output only the eight cells on magenta; no text, watermark, UI, characters, scenery, ground, shadow, or 
+separators. Do NOT use #ff00ff, pink, purple or any magenta anywhere in the cloud. Do not use pure #00ff00 either ??? 
+stay inside the five palette greens plus their in-between shades. Frames 1 through 8 must each be clearly different 
+from every other frame while remaining the same cloud at the same size and place.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./cloud_master_4x2_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to 
+./cloud_master_4x2_v1_keyed.png (auto-key sampling from the border, soft matte, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all eight cells were produced with visibly 
+different churn states (frame by frame), whether the cloud kept the same size and position in every cell, and any 
+deviation from the brief you noticed (a cell missing, cells overlapping or touching, magenta or pink inside the cloud, 
+the cloud drifting or resizing, an extra ninth cell, a ground plane drawn, the effect reading as fire or smoke instead 
+of toxic gas). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.
+
+
+codex
+IΓÇÖm using the imagegen skill because this is a bitmap game-FX generation task. IΓÇÖll read its instructions first, 
+then generate the single source sheet and create only the two requested files in the current staging directory.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud
+ succeeded in 3079ms:
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, 
+illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new 
+image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset 
+rather than repo-native code or vector. Do not use when the task is better handled by editing existing 
+SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in 
+HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product 
+mockups, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for normal image generation, editing, and 
+simple transparent-image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for the CLI/API/model path, or 
+after the user explicitly confirms a true model-native transparency fallback with `gpt-image-1.5`. Requires 
+`OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- If the user explicitly asks for a transparent image/background, stay on built-in `image_gen` first: prompt for a 
+flat removable chroma-key background, then remove it locally with the installed helper at 
+`$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`. Treat this as a 
+model/path downgrade and ask the user before doing it, unless the user has already explicitly requested 
+`gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback.
+- If a transparent request appears too complex for clean chroma-key removal, asks for true/native transparency, or 
+local removal fails validation, explain that true transparency requires CLI `gpt-image-1.5 --background transparent 
+--output-format png` because `gpt-image-2` does not support `background=transparent`, then ask whether to proceed. Run 
+the CLI fallback only after the user confirms.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate 
+assets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per 
+requested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires 
+`OPENAI_API_KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK 
+runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific 
+location is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before 
+finishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the 
+default `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling 
+versioned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+Local post-processing helper:
+- `$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`: removes a flat chroma-key background from a 
+generated image and writes a PNG/WebP with alpha. Prefer auto-key sampling, soft matte, and despill for antialiased 
+edges.
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, 
+compositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request 
+as **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images 
+generated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool 
+so the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit 
+CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or 
+variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and 
+needs many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; 
+distinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including simple transparent-output requests; fallback CLI only if 
+explicitly requested or after the user explicitly confirms a transparent-output fallback.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with 
+`view_image` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, 
+use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic 
+that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative 
+requirements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, follow the transparent image guidance below: generate with built-in `image_gen` 
+on a flat chroma-key background, copy the selected output into the workspace or `tmp/imagegen/`, run the installed 
+`$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py` helper, and validate the alpha result before using 
+it. If this path looks unsuitable or fails, ask before switching to CLI `gpt-image-1.5`.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default 
+`$CODEX_HOME/generated_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or 
+references. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user 
+explicitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, 
+size, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and 
+whether the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Transparent-image requests still use built-in `image_gen` first. Because the built-in tool does not expose a true 
+transparent-background control, create a removable chroma-key source image and then convert the key color to alpha 
+locally.
+
+Default sequence:
+1. Use built-in `image_gen` to generate the requested subject on a perfectly flat solid chroma-key background.
+2. Choose a key color that is unlikely to appear in the subject: default `#00ff00`, use `#ff00ff` for green subjects, 
+and avoid `#0000ff` for blue subjects.
+3. After generation, move or copy the selected source image from `$CODEX_HOME/generated_images/...` into the workspace 
+or `tmp/imagegen/`.
+4. Run the installed helper path, not a project-relative script path:
+   ```bash
+   python "${CODEX_HOME:-$HOME/.codex}/skills/.system/imagegen/scripts/remove_chroma_key.py" \
+     --input <source> \
+     --out <final.png> \
+     --auto-key border \
+     --soft-matte \
+     --transparent-threshold 12 \
+     --opaque-threshold 220 \
+     --despill
+   ```
+5. Validate that the output has an alpha channel, transparent corners, plausible subject coverage, and no obvious 
+key-color fringe. If a thin fringe remains, retry once with `--edge-contract 1`; use `--edge-feather 0.25` only when 
+the edge is visibly stair-stepped and the subject is not shiny or reflective.
+6. Save the final alpha PNG/WebP in the project if the asset is project-bound. Never leave a project-referenced 
+transparent asset only under `$CODEX_HOME/*`.
+
+Prompt transparent requests like this:
+
+```text
+Create the requested subject on a perfectly flat solid #00ff00 chroma-key background for background removal.
+The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting 
+variation.
+Keep the subject fully separated from the background with crisp edges and generous padding.
+Do not use #00ff00 anywhere in the subject.
+No cast shadow, no contact shadow, no reflection, no watermark, and no text unless explicitly requested.
+```
+
+Do not automatically use CLI `gpt-image-1.5 --background transparent --output-format png` instead of chroma keying. 
+Ask the user first when the user asks for true/native transparency, when local removal fails validation, or when the 
+requested image is complex: hair, fur, feathers, smoke, glass, liquids, translucent materials, reflective objects, 
+soft shadows, realistic product grounding, or subject colors that conflict with all practical key colors.
+
+Use a concise confirmation like:
+
+```text
+This likely needs true native transparency. The default built-in path uses a chroma-key background plus local removal, 
+but true transparency requires the CLI fallback with gpt-image-1.5 because gpt-image-2 does not support 
+background=transparent. It also requires OPENAI_API_KEY. Should I proceed with that CLI fallback?
+```
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, 
+but do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra 
+labeled line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural ├óΓé¼ΓÇ¥ candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup ├óΓé¼ΓÇ¥ product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup ├óΓé¼ΓÇ¥ app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram ├óΓé¼ΓÇ¥ diagrams/infographics with structured layout and text.
+- scientific-educational ├óΓé¼ΓÇ¥ classroom explainers, scientific diagrams, and learning visuals with required labels 
+and accuracy constraints.
+- ads-marketing ├óΓé¼ΓÇ¥ campaign concepts and ad creatives with audience, brand position, scene, and exact 
+tagline/copy.
+- productivity-visual ├óΓé¼ΓÇ¥ slide, chart, workflow, and data-heavy business visuals.
+- logo-brand ├óΓé¼ΓÇ¥ logo/mark exploration, vector-friendly.
+- illustration-story ├óΓé¼ΓÇ¥ comics, children├óΓé¼Γäós book art, narrative scenes.
+- stylized-concept ├óΓé¼ΓÇ¥ style-driven concept art, 3D/stylized renders.
+- historical-scene ├óΓé¼ΓÇ¥ period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization ├óΓé¼ΓÇ¥ translate/replace in-image text, preserve layout.
+- identity-preserve ├óΓé¼ΓÇ¥ try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit ├óΓé¼ΓÇ¥ remove/replace a specific element (including interior swaps).
+- lighting-weather ├óΓé¼ΓÇ¥ time-of-day/season/atmosphere changes only.
+- background-extraction ├óΓé¼ΓÇ¥ transparent background / clean cutout. Use built-in `image_gen` with chroma-key 
+removal first for simple opaque subjects; ask before using CLI true transparency for complex subjects.
+- style-transfer ├óΓé¼ΓÇ¥ apply reference style while changing subject/scene.
+- compositing ├óΓé¼ΓÇ¥ multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render ├óΓé¼ΓÇ¥ drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D/etc>
+Composition/framing: <wide/close/top-down; placement>
+Lighting/mood: <lighting + mood>
+Color palette: <palette notes>
+Materials/textures: <surface details>
+Text (verbatim): "<exact text>"
+Constraints: <must keep/must avoid>
+Avoid: <negative constraints>
+```
+
+Notes:
+- `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
+- `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which 
+controls output transparency behavior.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong 
+in the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+
+Augmentation rules:
+- Keep it short.
+- Add only the details needed to improve the prompt materially.
+- For edits, explicitly list invariants (`change only X; keep Y unchanged`).
+- If any critical detail is missing and blocks success, ask a question; otherwise proceed.
+
+## Examples
+
+### Generation example (hero image)
+```text
+Use case: product-mockup
+Asset type: landing page hero
+Primary request: a minimal hero image of a ceramic coffee mug
+Style/medium: clean product photography
+Composition/framing: wide composition with usable negative space for page copy if needed
+Lighting/mood: soft studio lighting
+Constraints: no logos, no text, no watermark
+```
+
+### Edit example (invariants)
+```text
+Use case: precise-object-edit
+Asset type: product photo background replacement
+Primary request: replace only the background with a warm sunset gradient
+Constraints: change only the background; keep the product and its edges unchanged; no text; no watermark
+```
+
+## Prompting best practices
+- Structure prompt as scene/backdrop -> subject -> details -> constraints.
+- Include intended use (ad, UI mock, infographic) to set the mode and polish level.
+- Use camera/composition language for photorealism.
+- Only use SVG/vector stand-ins when the user explicitly asked for vector output or a non-image placeholder.
+- Quote exact text and specify typography + placement.
+- For tricky words, spell them letter-by-letter and require verbatim rendering.
+- For multi-image inputs, reference images by index and describe how they should be used.
+- For edits, repeat invariants every iteration to reduce drift.
+- Iterate with single-change follow-ups.
+- If the prompt is generic, add only the extra detail that will materially help.
+- If the prompt is already detailed, normalize it instead of expanding it.
+- For CLI fallback only, see `references/cli.md` and `references/image-api.md` for model, `quality`, `input_fidelity`, 
+masks, output format, and output-path guidance.
+- For transparent images, use the built-in-first chroma-key workflow unless the request is complex enough to need true 
+CLI transparency; ask before switching to CLI `gpt-image-1.5`.
+
+More principles shared by both modes: `references/prompting.md`.
+Copy/paste specs shared by both modes: `references/sample-prompts.md`.
+
+## Guidance by asset type
+Asset-type templates (website assets, game assets, wireframes, logo) are consolidated in 
+`references/sample-prompts.md`.
+
+## gpt-image-2 guidance for CLI fallback
+
+The fallback CLI defaults to `gpt-image-2`.
+
+- Use `gpt-image-2` for new CLI/API workflows unless the request needs true model-native transparent output.
+- If a transparent request may need CLI fallback, ask before using `gpt-image-1.5` unless the user already explicitly 
+requested `gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback. Explain that the built-in chroma-key path is the 
+default, but true transparency requires `gpt-image-1.5` because `gpt-image-2` does not support 
+`background=transparent`.
+- `gpt-image-2` always uses high fidelity for image inputs; do not set `input_fidelity` with this model.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- Use `quality low` for fast drafts, thumbnails, and quick iterations. Use `medium`, `high`, or `auto` for final 
+assets, dense text, diagrams, identity-sensitive edits, or high-resolution outputs.
+- Square images are typically fastest to generate. Use `1024x1024` for fast square drafts.
+- If the user asks for 4K-style output, use `3840x2160` for landscape or `2160x3840` for portrait.
+- `gpt-image-2` size may be `auto` or `WIDTHxHEIGHT` if all constraints hold: max edge `<= 3840px`, both edges 
+multiples of `16px`, long-to-short ratio `<= 3:1`, total pixels between `655,360` and `8,294,400`.
+
+Popular `gpt-image-2` sizes:
+- `1024x1024` square
+- `1536x1024` landscape
+- `1024x1536` portrait
+- `2048x2048` 2K square
+- `2048x1152` 2K landscape
+- `3840x2160` 4K landscape
+- `2160x3840` 4K portrait
+- `auto`
+
+## Fallback CLI mode only
+
+### Temp and output conventions
+These conventions apply only to the CLI fallback. They do not describe built-in `image_gen` output behavior.
+- Use `tmp/imagegen/` for intermediate files (for example JSONL batches); delete them when done.
+- Write final artifacts under `output/imagegen/`.
+- Use `--out` or `--out-dir` to control output paths; keep filenames stable and descriptive.
+
+### Dependencies
+Prefer `uv` for dependency management in this repo.
+
+Required Python package:
+```bash
+uv pip install openai
+```
+
+Required for local chroma-key removal and optional downscaling:
+```bash
+uv pip install pillow
+```
+
+Portability note:
+- If you are using the installed skill outside this repo, install dependencies into that environment with its package 
+manager.
+- In uv-managed environments, `uv pip install ...` remains the preferred path.
+
+### Environment
+- `OPENAI_API_KEY` must be set for live API calls.
+- Do not ask the user for `OPENAI_API_KEY` when using the built-in `image_gen` tool.
+- Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
+
+If the key is missing, give the user these steps:
+1. Create an API key in the OpenAI platform UI: https://platform.openai.com/api-keys
+2. Set `OPENAI_API_KEY` as an environment variable in their system.
+3. Offer to guide them through setting the environment variable for their OS/shell if needed.
+
+If installation is not possible in this environment, tell the user which dependency is missing and how to install it 
+into their active environment.
+
+### Script-mode notes
+- CLI commands + examples: `references/cli.md`
+- API parameter quick reference: `references/image-api.md`
+- Network approvals / sandbox settings for CLI mode: `references/codex-network.md`
+
+## Reference map
+- `references/prompting.md`: shared prompting principles for both modes.
+- `references/sample-prompts.md`: shared copy/paste prompt recipes for both modes.
+- `references/cli.md`: fallback-only CLI usage via `scripts/image_gen.py`.
+- `references/image-api.md`: fallback-only API/CLI parameter reference.
+- `references/codex-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
+- `scripts/image_gen.py`: fallback-only CLI implementation. Do not load or use it unless the user explicitly chooses 
+CLI mode or explicitly confirms a transparent request's true CLI transparency fallback.
+- `$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`: local post-processing helper for built-in 
+transparent-image requests.
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw 'CLAUDE.md'" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud
+2026-08-15T21:37:35.581011Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 3 seconds
+Output:
+Get-Content : Cannot find path 'C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud\CLAUDE.md' 
+because it does not exist.
+At line:2 char:1
++ Get-Content -Raw 'CLAUDE.md'
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\asali\...cloud\CLAUDE.md:String) [Get-Content], ItemNotFoundEx 
+   ception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+
+ exited 1 in 2972ms:
+Get-Content : Cannot find path 'C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud\CLAUDE.md' 
+because it does not exist.
+At line:2 char:1
++ Get-Content -Raw 'CLAUDE.md'
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\asali\...cloud\CLAUDE.md:String) [Get-Content], ItemNotFoundEx 
+   ception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg --files -g 'CLAUDE.md' -g 
+'"'!**/.git/**'"' .." in C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud
+2026-08-15T21:37:50.596899Z ERROR codex_core::tools::router: error=Exit code: 124
+Wall time: 11 seconds
+Output:
+command timed out after 11002 milliseconds
+
+ exited 124 in 11002ms:
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -Path 
+'C:\\Users\\asali\\Projects\\MMO\\art_src\\Custom\\PoisonMistFX_2026-08-15' -Filter 'CLAUDE.md' -Recurse -Depth 3 
+-Force | Select-Object -ExpandProperty FullName" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud
+ succeeded in 3329ms:
+codex
+The repository pointer asks for `CLAUDE.md`, but that file is not present in the current staging tree (and a bounded 
+search found no copy nearby). IΓÇÖm proceeding with the explicit task brief and the imagegen instructions.
+codex
+Generation completed and produced one PNG at the imagegen output path. IΓÇÖm copying that raw file into the staging 
+directory unchanged, then IΓÇÖll inspect it before running the requested chroma-key helper.
+2026-08-15T21:39:19.740999Z ERROR codex_core::tools::router: 
+error=`"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$src = '"'C:\\Users\\asali\\.codex\\g
+enerated_images\\01a0075b-631f-7ce3-8157-1ea6c08cb924\\exec-dd4373ef-46f4-4d16-9265-8b2efb870dbd.png'; "'$dst = 
+Join-Path (Get-Location) '"'cloud_master_4x2_v1.png'; if (Test-Path -LiteralPath "'$dst) { Remove-Item -LiteralPath 
+$dst -Force }; Copy-Item -LiteralPath $src -Destination $dst; Get-Item -LiteralPath $dst | Select-Object 
+FullName,Length'` rejected: blocked by policy
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$src = '"'C:\\Users\\asali\\.codex\\generate
+d_images\\01a0075b-631f-7ce3-8157-1ea6c08cb924\\exec-dd4373ef-46f4-4d16-9265-8b2efb870dbd.png'; "'$dst = Join-Path 
+(Get-Location) '"'cloud_master_4x2_v1.png'; if (Test-Path -LiteralPath "'$dst) { Remove-Item -LiteralPath $dst -Force 
+}; Copy-Item -LiteralPath $src -Destination $dst; Get-Item -LiteralPath $dst | Select-Object FullName,Length' in 
+C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud
+ declined in 0ms:
+`"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$src = '"'C:\\Users\\asali\\.codex\\generat
+ed_images\\01a0075b-631f-7ce3-8157-1ea6c08cb924\\exec-dd4373ef-46f4-4d16-9265-8b2efb870dbd.png'; "'$dst = Join-Path 
+(Get-Location) '"'cloud_master_4x2_v1.png'; if (Test-Path -LiteralPath "'$dst) { Remove-Item -LiteralPath $dst -Force 
+}; Copy-Item -LiteralPath $src -Destination $dst; Get-Item -LiteralPath $dst | Select-Object FullName,Length'` 
+rejected: blocked by policy
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$src = '"'C:\\Users\\asali\\.codex\\generate
+d_images\\01a0075b-631f-7ce3-8157-1ea6c08cb924\\exec-dd4373ef-46f4-4d16-9265-8b2efb870dbd.png'; "'$dst = Join-Path 
+(Get-Location) '"'cloud_master_4x2_v1.png'; [pscustomobject]@{ SourceExists = Test-Path -LiteralPath "'$src; 
+DestinationExists = Test-Path -LiteralPath $dst }' in 
+C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud
+ succeeded in 2143ms:
+
+SourceExists DestinationExists
+------------ -----------------
+        True             False
+
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$src = '"'C:\\Users\\asali\\.codex\\generate
+d_images\\01a0075b-631f-7ce3-8157-1ea6c08cb924\\exec-dd4373ef-46f4-4d16-9265-8b2efb870dbd.png'; "'$dst = Join-Path 
+(Get-Location) '"'cloud_master_4x2_v1.png'; Copy-Item -LiteralPath "'$src -Destination $dst; Get-Item -LiteralPath 
+$dst | Select-Object FullName,Length' in C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud
+ succeeded in 1763ms:
+
+FullName                                                                                          Length
+--------                                                                                          ------
+C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud\cloud_master_4x2_v1.png 2339390
+
+
+
+codex
+The first render has the right eight-cell cloud subject, but it fails a hard requirement: the background is a green 
+atmospheric gradient instead of uniform magenta. IΓÇÖm making one targeted imagegen correction to replace only the 
+background while preserving the eight cloud states and their framing.
+codex
+The targeted correction succeeded visually: the sheet now has a flat magenta field with eight separated cells, while 
+the green clouds remain in place. IΓÇÖm replacing the staging raw file with this corrected PNG and running the exact 
+helper command with border auto-key, soft matte, and despill.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$src = '"'C:\\Users\\asali\\.codex\\generate
+d_images\\01a0075b-631f-7ce3-8157-1ea6c08cb924\\exec-1cc7ad08-042f-40c6-a864-1d81e11be2eb.png'; "'$dst = Join-Path 
+(Get-Location) '"'cloud_master_4x2_v1.png'; Copy-Item -LiteralPath "'$src -Destination $dst -Force; Get-Item 
+-LiteralPath $dst | Select-Object FullName,Length' in 
+C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud
+ succeeded in 1810ms:
+
+FullName                                                                                          Length
+--------                                                                                          ------
+C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud\cloud_master_4x2_v1.png 1966434
+
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py' --input 
+'C:\\Users\\asali\\Projects\\MMO\\art_src\\Custom\\PoisonMistFX_2026-08-15\\cloud\\cloud_master_4x2_v1.png' --out 
+'C:\\Users\\asali\\Projects\\MMO\\art_src\\Custom\\PoisonMistFX_2026-08-15\\cloud\\cloud_master_4x2_v1_keyed.png' 
+--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud
+ succeeded in 15371ms:
+Wrote C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud\cloud_master_4x2_v1_keyed.png
+Key color: #f314ee
+Transparent pixels: 979006/1572864
+Partially transparent pixels: 26186/1572864
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+from collections import Counter
+from pathlib import Path
+for name in ['cloud_master_4x2_v1.png','cloud_master_4x2_v1_keyed.png']:
+    p=Path(name)
+    im=Image.open(p)
+    print(name, 'size=', im.size, 'mode=', im.mode)
+    if name.endswith('.png') and 'keyed' not in name:
+        rgb=im.convert('RGB')
+        pts=[rgb.getpixel((0,0)), rgb.getpixel((100,100)), rgb.getpixel((767,511)), rgb.getpixel((1535,1023))]
+        print(' border_samples=', pts)
+        c=Counter(rgb.getdata())
+        print(' top_colors=', c.most_common(6))
+        print(' exact_ff00ff=', c[(255,0,255)])
+    else:
+        a=im.getchannel('A')
+        print(' alpha_extrema=', a.getextrema(), 'transparent=', sum(v==0 for v in a.getdata()))
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud
+ succeeded in 5071ms:
+cloud_master_4x2_v1.png size= (1536, 1024) mode= RGB
+ border_samples= [(230, 29, 228), (242, 20, 238), (244, 22, 238), (231, 48, 225)]
+ top_colors= [((243, 21, 238), 70727), ((243, 21, 237), 57500), ((243, 22, 238), 55007), ((242, 21, 237), 53474), 
+((243, 20, 237), 48623), ((242, 20, 237), 46438)]
+ exact_ff00ff= 0
+cloud_master_4x2_v1_keyed.png size= (1536, 1024) mode= RGBA
+ alpha_extrema= (0, 255) transparent= 979006
+<stdin>:12: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+<stdin>:17: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+im=Image.open('cloud_master_4x2_v1.png').convert('RGB')
+p=im.load()
+for row in range(2):
+    for col in range(4):
+        x0,x1=col*384,(col+1)*384
+        y0,y1=row*512,(row+1)*512
+        pts=[]
+        for y in range(y0,y1):
+            for x in range(x0,x1):
+                r,g,b=p[x,y]
+                if g > r*1.15 and g > b*1.05 and g > 60:
+                    pts.append((x,y))
+        xs=[q[0] for q in pts]; ys=[q[1] for q in pts]
+        if pts:
+            print(f'frame {row*4+col+1}: area={len(pts)} bbox=({min(xs)-x0},{min(ys)-y0})-({max(xs)-x0},{max(ys)-y0}) 
+center=({sum(xs)/len(xs)-x0:.1f},{sum(ys)/len(ys)-y0:.1f})')
+        else: print('frame',row*4+col+1,'no mask')
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud
+ succeeded in 4529ms:
+frame 1: area=53764 bbox=(29,98)-(349,415) center=(184.7,273.7)
+frame 2: area=54427 bbox=(25,89)-(355,420) center=(193.8,276.2)
+frame 3: area=54264 bbox=(25,94)-(353,422) center=(190.3,282.5)
+frame 4: area=57141 bbox=(23,98)-(354,423) center=(190.0,276.4)
+frame 5: area=58410 bbox=(24,56)-(359,403) center=(194.4,249.3)
+frame 6: area=53802 bbox=(32,59)-(355,405) center=(196.9,255.8)
+frame 7: area=51880 bbox=(23,81)-(354,410) center=(184.7,260.8)
+frame 8: area=55184 bbox=(23,77)-(347,404) center=(178.5,257.3)
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+from collections import Counter
+im=Image.open('cloud_master_4x2_v1.png').convert('RGB')
+col=Counter()
+for r,g,b in im.getdata():
+    if g>60 and not (g > r*1.15 and g > b*1.05):
+        col[(r,g,b)] += 1
+print('non-green-ish pixels with G>60:', sum(col.values()))
+print('most common:', col.most_common(20))
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud
+ succeeded in 4432ms:
+non-green-ish pixels with G>60: 54851
+most common: [((254, 254, 246), 8), ((234, 253, 31), 8), ((254, 254, 155), 8), ((253, 254, 75), 7), ((254, 254, 216), 
+7), ((254, 254, 201), 7), ((254, 253, 138), 7), ((253, 254, 94), 7), ((254, 253, 178), 6), ((254, 254, 238), 6), 
+((254, 254, 249), 6), ((254, 254, 221), 6), ((254, 253, 115), 6), ((246, 253, 48), 6), ((238, 253, 26), 6), ((252, 
+254, 64), 6), ((254, 254, 226), 6), ((254, 254, 223), 6), ((254, 254, 187), 6), ((251, 253, 58), 6)]
+<stdin>:5: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+
+codex
+Validation found additional hard deviations in the corrected render: the raw background is near-magenta but not 
+pixel-uniform or exact `#ff00ff`, and the cloud contains pale/white-yellow fringe pixels outside the five-green 
+family. IΓÇÖm applying one final targeted palette/background cleanup while keeping the eight states and layout locked.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$src = '"'C:\\Users\\asali\\.codex\\generate
+d_images\\01a0075b-631f-7ce3-8157-1ea6c08cb924\\exec-aecf8d23-bdaa-457f-9c1b-bf49a08b1790.png'; "'$dst = Join-Path 
+(Get-Location) '"'cloud_master_4x2_v1.png'; Copy-Item -LiteralPath "'$src -Destination $dst -Force; Get-Item 
+-LiteralPath $dst | Select-Object FullName,Length' in 
+C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud
+ succeeded in 1423ms:
+
+FullName                                                                                          Length
+--------                                                                                          ------
+C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud\cloud_master_4x2_v1.png 1938170
+
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py' --input 
+'C:\\Users\\asali\\Projects\\MMO\\art_src\\Custom\\PoisonMistFX_2026-08-15\\cloud\\cloud_master_4x2_v1.png' --out 
+'C:\\Users\\asali\\Projects\\MMO\\art_src\\Custom\\PoisonMistFX_2026-08-15\\cloud\\cloud_master_4x2_v1_keyed.png' 
+--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud
+2026-08-15T21:43:29.679691Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 1.2 seconds
+Output:
+Error: Output already exists: 
+C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud\cloud_master_4x2_v1_keyed.png (use --force to 
+overwrite)
+
+ exited 1 in 1202ms:
+Error: Output already exists: 
+C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud\cloud_master_4x2_v1_keyed.png (use --force to 
+overwrite)
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py' --input 
+'C:\\Users\\asali\\Projects\\MMO\\art_src\\Custom\\PoisonMistFX_2026-08-15\\cloud\\cloud_master_4x2_v1.png' --out 
+'C:\\Users\\asali\\Projects\\MMO\\art_src\\Custom\\PoisonMistFX_2026-08-15\\cloud\\cloud_master_4x2_v1_keyed.png' 
+--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill --force" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud
+ succeeded in 13754ms:
+Wrote C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud\cloud_master_4x2_v1_keyed.png
+Key color: #ee0adf
+Transparent pixels: 984660/1572864
+Partially transparent pixels: 18182/1572864
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+from collections import Counter
+im=Image.open('cloud_master_4x2_v1.png').convert('RGB')
+print('size=', im.size, 'mode=', im.mode)
+print('samples=', [im.getpixel(p) for p in [(0,0),(100,100),(767,511),(1535,1023)]])
+c=Counter(im.getdata())
+print('exact_ff00ff=', c[(255,0,255)], 'unique=', len(c), 'top=', c.most_common(5))
+for row in range(2):
+    for col in range(4):
+        x0,x1=col*384,(col+1)*384; y0,y1=row*512,(row+1)*512; pts=[]
+        for y in range(y0,y1):
+            for x in range(x0,x1):
+                r,g,b=im.getpixel((x,y))
+                if g > r*1.15 and g > b*1.05 and g > 60: pts.append((x,y))
+        xs=[q[0] for q in pts]; ys=[q[1] for q in pts]
+        print(f'frame {row*4+col+1}: area={len(pts)} bbox=({min(xs)-x0},{min(ys)-y0})-({max(xs)-x0},{max(ys)-y0}) 
+center=({sum(xs)/len(xs)-x0:.1f},{sum(ys)/len(ys)-y0:.1f})')
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud
+ succeeded in 5585ms:
+size= (1536, 1024) mode= RGB
+samples= [(226, 17, 212), (240, 10, 221), (239, 12, 223), (225, 36, 211)]
+exact_ff00ff= 0 unique= 171933 top= [((239, 11, 222), 97384), ((238, 11, 222), 63597), ((239, 11, 223), 58795), ((239, 
+10, 222), 58355), ((238, 10, 222), 48449)]
+frame 1: area=53767 bbox=(27,82)-(350,417) center=(183.4,270.5)
+frame 2: area=54626 bbox=(25,88)-(355,422) center=(193.7,273.3)
+frame 3: area=53587 bbox=(25,73)-(353,423) center=(191.8,281.0)
+frame 4: area=56041 bbox=(23,88)-(355,423) center=(190.3,274.8)
+frame 5: area=57523 bbox=(25,55)-(359,405) center=(194.2,246.2)
+frame 6: area=52053 bbox=(31,51)-(355,405) center=(197.3,252.9)
+frame 7: area=49111 bbox=(21,80)-(354,411) center=(181.9,258.9)
+frame 8: area=52989 bbox=(22,75)-(348,404) center=(177.5,253.2)
+<stdin>:6: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+from collections import Counter
+raw=Image.open('cloud_master_4x2_v1.png').convert('RGB')
+key=Image.open('cloud_master_4x2_v1_keyed.png').convert('RGBA')
+non_green=0
+for r,g,b in raw.getdata():
+    if g>60 and not (g > r*1.15 and g > b*1.05): non_green += 1
+print('raw_non_green_subject_like_pixels=', non_green)
+print('keyed_size_mode=', key.size, key.mode, 'alpha_extrema=', key.getchannel('A').getextrema())
+print('keyed_corner_alpha=', [key.getpixel(p)[3] for p in [(0,0),(1535,0),(0,1023),(1535,1023)]])
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\cloud
+ succeeded in 4685ms:
+raw_non_green_subject_like_pixels= 29860
+keyed_size_mode= (1536, 1024) RGBA alpha_extrema= (0, 255)
+keyed_corner_alpha= [0, 0, 0, 0]
+<stdin>:6: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+
+codex
+Created:
+
+- [cloud_master_4x2_v1.png](C:/Users/asali/Projects/MMO/art_src/Custom/PoisonMistFX_2026-08-15/cloud/cloud_master_4x2_v
+1.png)
+- [cloud_master_4x2_v1_keyed.png](C:/Users/asali/Projects/MMO/art_src/Custom/PoisonMistFX_2026-08-15/cloud/cloud_master
+_4x2_v1_keyed.png)
+
+Raw size: 1536├ù1024 pixels. The keyed output is RGBA with transparent corners.
+
+- Eight cells present; all visibly different churn states.
+- No missing/ninth cell, overlap, touching, ground plane, or cast shadow.
+- Effect reads as toxic gas, not fire.
+- Strict anchor rule fails: silhouettes and positions drift slightly, especially frames 5ΓÇô8.
+- Strict background rule fails: raw background is near-magenta but not uniform/exact `#ff00ff`.
+- Small pale/gray/peach off-palette fringes remain around some wisps and rims.
+tokens used
+77,718
+Created:
+
+- [cloud_master_4x2_v1.png](C:/Users/asali/Projects/MMO/art_src/Custom/PoisonMistFX_2026-08-15/cloud/cloud_master_4x2_v1.png)
+- [cloud_master_4x2_v1_keyed.png](C:/Users/asali/Projects/MMO/art_src/Custom/PoisonMistFX_2026-08-15/cloud/cloud_master_4x2_v1_keyed.png)
+
+Raw size: 1536├ù1024 pixels. The keyed output is RGBA with transparent corners.
+
+- Eight cells present; all visibly different churn states.
+- No missing/ninth cell, overlap, touching, ground plane, or cast shadow.
+- Effect reads as toxic gas, not fire.
+- Strict anchor rule fails: silhouettes and positions drift slightly, especially frames 5ΓÇô8.
+- Strict background rule fails: raw background is near-magenta but not uniform/exact `#ff00ff`.
+- Small pale/gray/peach off-palette fringes remain around some wisps and rims.

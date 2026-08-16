@@ -1,0 +1,32 @@
+You are generating ONE game visual-effect animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/palette.png : the BINDING colour palette for this effect (five swatches on magenta: #FFFFFF core light, #FFF7CF pale gold, #FFE28A gold, #E8B84A deep gold, #8C6A22 shadow gold). Ignore the magenta around the swatches — it is only there to show what the chroma key looks like.
+- Image 2 = refs/style_fx_strip.png : a shipped FX animation strip from this game (a violet thread eruption). Match its LEVEL OF FINISH — crisp high-resolution game FX, hard readable clusters, glowing rims over a darker body, no blur, no photo texture. Do NOT copy its subject, shape or colour.
+
+TASK: generate exactly ONE new 2x2 source sheet for a LOOPING HOLY SPRING (a mending floor patch) with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: game asset
+Output size: 1024x1024 square.
+Asset type: high-resolution 4-frame game visual-effect animation source, to be cropped into a horizontal sprite strip.
+Scene/backdrop: a perfectly flat uniform #ff00ff magenta chroma-key background filling every pixel, including the seams between cells. No scenery, floor plane, ground texture, platform, cast shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly FOUR separate equal square effect cells laid out as a clean 2x2 contact sheet in reading order (top-left, top-right, bottom-left, bottom-right). All cells have identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat magenta between neighbouring cells and around the sheet edge.
+Subject: ONE pool of gently glowing holy light lying flat on the ground, seen from a high three-quarter game camera: a roughly circular pool, slightly wider than it is deep, with a soft irregular outline; a warm pale-gold liquid-light surface (#FFF7CF / #FFE28A) with brighter concentric ripple rings (#FFFFFF), and small motes of light rising off it. Blessed water/light — NOT fire, NOT lava, NOT a rune circle with symbols, NOT a portal.
+Style/medium: crisp high-resolution dark-fantasy game FX art with hard readable clusters and a controlled palette; not painterly, not 3D-rendered, not photographic, not anime, not blurred.
+Composition/framing and ANCHOR RULE: the patch is centred in each square cell and fills about 80% of the cell width, with clear magenta margin on every side. It stays in the SAME spot with the SAME outline in every cell — the patch shape, size and position do not change at all between frames; the camera never moves. Only the surface details named in the storyboard change.
+LOOP storyboard — four VISIBLY DIFFERENT surface states of THIS SAME pool that loop seamlessly (frame 4 flows back into frame 1):
+ frame 1 (top-left): a small bright ripple ring near the centre, two motes low over the surface
+ frame 2 (top-right): the ripple ring wider, motes rising higher, a second small ring starting near the centre
+ frame 3 (bottom-left): the first ring reaching the rim and fading, the second ring mid-size, motes drifting up and dimming
+ frame 4 (bottom-right): the second ring wide, a fresh tiny ring at the centre and new low motes so the loop closes into frame 1
+Constraints: output only the cells on magenta; no text, watermark, UI, characters, weapons, scenery, ground texture, shadow, or separators. Do NOT use #ff00ff, pink, purple or any magenta anywhere in the effect. Stay inside the five palette colours plus their in-between shades (whites, pale golds, gold only). Do not use pure #00ff00 or red. Every frame must be clearly different from every other frame.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./hazard_heal_master_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./hazard_heal_master_v1_keyed.png (auto-key sampling from the border, soft matte, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all cells were produced with visibly different frames (frame by frame), whether the effect kept the same centre and size in every cell, and any deviation from the brief (a cell missing, cells overlapping or touching, key colour inside the effect, drift, an extra cell, a ground plane drawn). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

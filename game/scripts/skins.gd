@@ -170,6 +170,11 @@ const SKINS := {
 		{"id": "phantom", "name": "Phantom", "tier": "mythic",
 			"sprite": "skins/mythic/assassin_phantom_awakened",
 			"splash": "splash_skin_assassin_phantom_awakened"},
+		# PROTOTYPE (owner ruling 2026-08-15): body sheet + splash only, no FX
+		# identity of its own — every skin branch tests `skin == "phantom"`
+		# exactly, so it plays the base assassin's effects. Deliberately left out
+		# of the 2026-08-15 skin-FX pass; do not spend art on it until it has a
+		# design.
 		{"id": "phantom_umbral", "name": "Umbral Phantom", "tier": "elite",
 			"sprite": "skins/mythic/assassin_phantom",
 			"splash": "splash_skin_assassin_phantom"},
@@ -188,6 +193,10 @@ const SKINS := {
 			"sprite": "skins/elite/warlock_hellfire_inquisitor"},
 		# The former Eldritch Herald is retained as an elite under its new identity.
 		# Its existing green kit remains untouched and receives no awakening pass.
+		# PROTOTYPE (owner ruling 2026-08-15): its FX (eye bolt/curse, stretched
+		# eye seal, ring+ray rift burst) are placeholder-grade by design and were
+		# deliberately left out of the 2026-08-15 skin-FX pass; do not spend art
+		# on it until it has a design.
 		{"id": "arcane_warlock", "name": "Arcane Warlock", "tier": "elite",
 			"sprite": "skins/mythic/warlock_eldritch_herald"},
 		# Eldritch Warlock inherits the exact Void Weaver character art. The Mage

@@ -1,0 +1,740 @@
+﻿codex.exe : Reading prompt from stdin...
+At line:6 char:14
++ ...    $brief | & $codex exec -C $d -s workspace-write --skip-git-repo-ch ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Reading prompt from stdin...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+OpenAI Codex v0.147.0-alpha.6.6
+--------
+workdir: C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor
+model: gpt-5.6-luna
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a00762-190b-7372-9a22-04089b0536e1
+--------
+user
+You are generating ONE game visual-effect animation master with your built-in image_gen tool. Read 
+$CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current 
+directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/palette_fire.png : the BINDING colour palette for this effect (five swatches on green). Use ONLY this 
+warm family: #FFF1B0 white-hot core, #FFB13A flame yellow-orange, #F0561E ember orange-red, #8A1F0E deep ember red, 
+#2A0F0A soot/scorch. Ignore the green around the swatches ??? it is only there to show what the chroma key looks like.
+- Image 2 = refs/style_fx_strip.png : a shipped FX animation strip from this game (a violet thread eruption). Match 
+its LEVEL OF FINISH ??? crisp high-resolution game FX, hard readable clusters, glowing rims over a dark body, no blur, 
+no photo texture. Do NOT copy its subject, shape or colour.
+
+TASK: generate exactly ONE new 4x2 source sheet for a ONE-SHOT METEOR IMPACT EXPLOSION with this image_gen prompt 
+(adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: game asset
+Output size: 1536x1024 landscape.
+Asset type: high-resolution 8-frame game visual-effect animation source, to be cropped into a horizontal sprite strip.
+Scene/backdrop: a perfectly flat uniform #00ff00 green chroma-key background filling every pixel, including the seams 
+between cells. No scenery, floor plane, ground texture, platform, cast shadow, gradient, vignette, border, grid, line, 
+or panel divider.
+Primary request: create exactly EIGHT separate equal square effect cells laid out as a clean 4-column by 2-row contact 
+sheet in reading order (top row left to right = frames 1-4, bottom row left to right = frames 5-8). All eight cells 
+have identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat green 
+between neighbouring cells and around the sheet edge.
+Subject: the ground-impact EXPLOSION of a falling meteor, seen from a high three-quarter game camera: a roughly 
+CIRCULAR fiery blast centred on the impact point ??? a white-hot core (#FFF1B0) blooming into a dome of rolling flame 
+(#FFB13A / #F0561E) with dark ember-red undersides (#8A1F0E), a flat expanding shockwave ring of fire and dust racing 
+outward along the ground, glowing rock fragments and embers flung up and out, and finally a dark cracked scorch stain 
+(#2A0F0A with ember-red cracks) left on the ground. Cataclysmic magical fire ??? NOT a nuclear mushroom cloud, NOT 
+smoke only, NOT sparks only, NOT a sun, NOT a face.
+Style/medium: crisp high-resolution dark-fantasy game FX art with hard readable clusters and a controlled palette; not 
+painterly, not 3D-rendered, not photographic, not anime, not blurred.
+Composition/framing and ANCHOR RULE: the impact point is the exact centre of every square cell; the effect grows out 
+from that centre and never leaves the cell ??? at its widest (frames 3-4) the shockwave ring fills about 85% of the 
+cell width with clear green margin on every side. The centre point never drifts, the camera never moves.
+ONE-SHOT storyboard - eight VISIBLY DIFFERENT stages of one explosion, small to huge to scorch:
+ frame 1: a blinding white-hot flash at the centre with a small tight fireball, thin bright ring just starting ??? 
+about 25% of the cell wide
+ frame 2: the fireball dome swells, flame tongues curling up, the shockwave ring pushing out with a rim of dust and 
+embers ??? about 50% wide
+ frame 3: PEAK: a huge dome of rolling flame over the centre, the shockwave ring at about 80% width, rock fragments 
+and embers flying outward and up in every direction
+ frame 4: the flame dome breaks apart into rising flame plumes and dark ember-red smoke, the ring at 85% width 
+thinning to dust, embers arcing down
+ frame 5: flames dying to dark red and soot, the ring gone, embers falling, the cracked scorch stain visible at the 
+centre
+ frame 6: only dark smoke wisps and glowing ember-red cracks in the scorch stain, a few falling embers
+ frame 7: the scorch stain with fading ember cracks and a couple of last drifting embers, wisps almost gone
+ frame 8: a faint dark scorch stain alone, ember cracks nearly out ??? nearly empty cell
+Every frame keeps the same centre. Frames 1 through 8 must each be clearly different from every other frame.
+Constraints: output only the eight cells on green; no text, watermark, UI, characters, meteor rock in flight, scenery, 
+ground texture, shadow, or separators. Do NOT use #00ff00 or any green anywhere in the effect. Stay inside the five 
+palette colours plus their in-between shades (warm oranges, reds, yellows, dark browns only).
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./meteor_master_4x2_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to 
+./meteor_master_4x2_v1_keyed.png (auto-key sampling from the border, soft matte, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all eight cells were produced with visibly 
+different stages (frame by frame, small to huge to scorch), whether the centre stayed fixed in every cell, and any 
+deviation from the brief you noticed (a cell missing, cells overlapping or touching, green inside the effect, the 
+burst drifting off-centre, an extra ninth cell, a ground plane drawn, a mushroom cloud). Be blunt about defects; do 
+not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.
+
+
+codex
+IΓÇÖm using the imagegen skill as required, then IΓÇÖll generate one raw sheet, copy it into the current staging 
+directory, run the mandated chroma-key helper, and inspect the result for the listed defects.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor
+ succeeded in 1417ms:
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, 
+illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new 
+image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset 
+rather than repo-native code or vector. Do not use when the task is better handled by editing existing 
+SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in 
+HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product 
+mockups, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for normal image generation, editing, and 
+simple transparent-image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for the CLI/API/model path, or 
+after the user explicitly confirms a true model-native transparency fallback with `gpt-image-1.5`. Requires 
+`OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- If the user explicitly asks for a transparent image/background, stay on built-in `image_gen` first: prompt for a 
+flat removable chroma-key background, then remove it locally with the installed helper at 
+`$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`. Treat this as a 
+model/path downgrade and ask the user before doing it, unless the user has already explicitly requested 
+`gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback.
+- If a transparent request appears too complex for clean chroma-key removal, asks for true/native transparency, or 
+local removal fails validation, explain that true transparency requires CLI `gpt-image-1.5 --background transparent 
+--output-format png` because `gpt-image-2` does not support `background=transparent`, then ask whether to proceed. Run 
+the CLI fallback only after the user confirms.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate 
+assets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per 
+requested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires 
+`OPENAI_API_KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK 
+runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific 
+location is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before 
+finishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the 
+default `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling 
+versioned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+Local post-processing helper:
+- `$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`: removes a flat chroma-key background from a 
+generated image and writes a PNG/WebP with alpha. Prefer auto-key sampling, soft matte, and despill for antialiased 
+edges.
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, 
+compositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request 
+as **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images 
+generated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool 
+so the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit 
+CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or 
+variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and 
+needs many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; 
+distinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including simple transparent-output requests; fallback CLI only if 
+explicitly requested or after the user explicitly confirms a transparent-output fallback.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with 
+`view_image` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, 
+use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic 
+that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative 
+requirements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, follow the transparent image guidance below: generate with built-in `image_gen` 
+on a flat chroma-key background, copy the selected output into the workspace or `tmp/imagegen/`, run the installed 
+`$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py` helper, and validate the alpha result before using 
+it. If this path looks unsuitable or fails, ask before switching to CLI `gpt-image-1.5`.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default 
+`$CODEX_HOME/generated_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or 
+references. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user 
+explicitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, 
+size, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and 
+whether the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Transparent-image requests still use built-in `image_gen` first. Because the built-in tool does not expose a true 
+transparent-background control, create a removable chroma-key source image and then convert the key color to alpha 
+locally.
+
+Default sequence:
+1. Use built-in `image_gen` to generate the requested subject on a perfectly flat solid chroma-key background.
+2. Choose a key color that is unlikely to appear in the subject: default `#00ff00`, use `#ff00ff` for green subjects, 
+and avoid `#0000ff` for blue subjects.
+3. After generation, move or copy the selected source image from `$CODEX_HOME/generated_images/...` into the workspace 
+or `tmp/imagegen/`.
+4. Run the installed helper path, not a project-relative script path:
+   ```bash
+   python "${CODEX_HOME:-$HOME/.codex}/skills/.system/imagegen/scripts/remove_chroma_key.py" \
+     --input <source> \
+     --out <final.png> \
+     --auto-key border \
+     --soft-matte \
+     --transparent-threshold 12 \
+     --opaque-threshold 220 \
+     --despill
+   ```
+5. Validate that the output has an alpha channel, transparent corners, plausible subject coverage, and no obvious 
+key-color fringe. If a thin fringe remains, retry once with `--edge-contract 1`; use `--edge-feather 0.25` only when 
+the edge is visibly stair-stepped and the subject is not shiny or reflective.
+6. Save the final alpha PNG/WebP in the project if the asset is project-bound. Never leave a project-referenced 
+transparent asset only under `$CODEX_HOME/*`.
+
+Prompt transparent requests like this:
+
+```text
+Create the requested subject on a perfectly flat solid #00ff00 chroma-key background for background removal.
+The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting 
+variation.
+Keep the subject fully separated from the background with crisp edges and generous padding.
+Do not use #00ff00 anywhere in the subject.
+No cast shadow, no contact shadow, no reflection, no watermark, and no text unless explicitly requested.
+```
+
+Do not automatically use CLI `gpt-image-1.5 --background transparent --output-format png` instead of chroma keying. 
+Ask the user first when the user asks for true/native transparency, when local removal fails validation, or when the 
+requested image is complex: hair, fur, feathers, smoke, glass, liquids, translucent materials, reflective objects, 
+soft shadows, realistic product grounding, or subject colors that conflict with all practical key colors.
+
+Use a concise confirmation like:
+
+```text
+This likely needs true native transparency. The default built-in path uses a chroma-key background plus local removal, 
+but true transparency requires the CLI fallback with gpt-image-1.5 because gpt-image-2 does not support 
+background=transparent. It also requires OPENAI_API_KEY. Should I proceed with that CLI fallback?
+```
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, 
+but do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra 
+labeled line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural ├óΓé¼ΓÇ¥ candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup ├óΓé¼ΓÇ¥ product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup ├óΓé¼ΓÇ¥ app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram ├óΓé¼ΓÇ¥ diagrams/infographics with structured layout and text.
+- scientific-educational ├óΓé¼ΓÇ¥ classroom explainers, scientific diagrams, and learning visuals with required labels 
+and accuracy constraints.
+- ads-marketing ├óΓé¼ΓÇ¥ campaign concepts and ad creatives with audience, brand position, scene, and exact 
+tagline/copy.
+- productivity-visual ├óΓé¼ΓÇ¥ slide, chart, workflow, and data-heavy business visuals.
+- logo-brand ├óΓé¼ΓÇ¥ logo/mark exploration, vector-friendly.
+- illustration-story ├óΓé¼ΓÇ¥ comics, children├óΓé¼Γäós book art, narrative scenes.
+- stylized-concept ├óΓé¼ΓÇ¥ style-driven concept art, 3D/stylized renders.
+- historical-scene ├óΓé¼ΓÇ¥ period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization ├óΓé¼ΓÇ¥ translate/replace in-image text, preserve layout.
+- identity-preserve ├óΓé¼ΓÇ¥ try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit ├óΓé¼ΓÇ¥ remove/replace a specific element (including interior swaps).
+- lighting-weather ├óΓé¼ΓÇ¥ time-of-day/season/atmosphere changes only.
+- background-extraction ├óΓé¼ΓÇ¥ transparent background / clean cutout. Use built-in `image_gen` with chroma-key 
+removal first for simple opaque subjects; ask before using CLI true transparency for complex subjects.
+- style-transfer ├óΓé¼ΓÇ¥ apply reference style while changing subject/scene.
+- compositing ├óΓé¼ΓÇ¥ multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render ├óΓé¼ΓÇ¥ drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D/etc>
+Composition/framing: <wide/close/top-down; placement>
+Lighting/mood: <lighting + mood>
+Color palette: <palette notes>
+Materials/textures: <surface details>
+Text (verbatim): "<exact text>"
+Constraints: <must keep/must avoid>
+Avoid: <negative constraints>
+```
+
+Notes:
+- `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
+- `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which 
+controls output transparency behavior.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong 
+in the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+
+Augmentation rules:
+- Keep it short.
+- Add only the details needed to improve the prompt materially.
+- For edits, explicitly list invariants (`change only X; keep Y unchanged`).
+- If any critical detail is missing and blocks success, ask a question; otherwise proceed.
+
+## Examples
+
+### Generation example (hero image)
+```text
+Use case: product-mockup
+Asset type: landing page hero
+Primary request: a minimal hero image of a ceramic coffee mug
+Style/medium: clean product photography
+Composition/framing: wide composition with usable negative space for page copy if needed
+Lighting/mood: soft studio lighting
+Constraints: no logos, no text, no watermark
+```
+
+### Edit example (invariants)
+```text
+Use case: precise-object-edit
+Asset type: product photo background replacement
+Primary request: replace only the background with a warm sunset gradient
+Constraints: change only the background; keep the product and its edges unchanged; no text; no watermark
+```
+
+## Prompting best practices
+- Structure prompt as scene/backdrop -> subject -> details -> constraints.
+- Include intended use (ad, UI mock, infographic) to set the mode and polish level.
+- Use camera/composition language for photorealism.
+- Only use SVG/vector stand-ins when the user explicitly asked for vector output or a non-image placeholder.
+- Quote exact text and specify typography + placement.
+- For tricky words, spell them letter-by-letter and require verbatim rendering.
+- For multi-image inputs, reference images by index and describe how they should be used.
+- For edits, repeat invariants every iteration to reduce drift.
+- Iterate with single-change follow-ups.
+- If the prompt is generic, add only the extra detail that will materially help.
+- If the prompt is already detailed, normalize it instead of expanding it.
+- For CLI fallback only, see `references/cli.md` and `references/image-api.md` for model, `quality`, `input_fidelity`, 
+masks, output format, and output-path guidance.
+- For transparent images, use the built-in-first chroma-key workflow unless the request is complex enough to need true 
+CLI transparency; ask before switching to CLI `gpt-image-1.5`.
+
+More principles shared by both modes: `references/prompting.md`.
+Copy/paste specs shared by both modes: `references/sample-prompts.md`.
+
+## Guidance by asset type
+Asset-type templates (website assets, game assets, wireframes, logo) are consolidated in 
+`references/sample-prompts.md`.
+
+## gpt-image-2 guidance for CLI fallback
+
+The fallback CLI defaults to `gpt-image-2`.
+
+- Use `gpt-image-2` for new CLI/API workflows unless the request needs true model-native transparent output.
+- If a transparent request may need CLI fallback, ask before using `gpt-image-1.5` unless the user already explicitly 
+requested `gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback. Explain that the built-in chroma-key path is the 
+default, but true transparency requires `gpt-image-1.5` because `gpt-image-2` does not support 
+`background=transparent`.
+- `gpt-image-2` always uses high fidelity for image inputs; do not set `input_fidelity` with this model.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- Use `quality low` for fast drafts, thumbnails, and quick iterations. Use `medium`, `high`, or `auto` for final 
+assets, dense text, diagrams, identity-sensitive edits, or high-resolution outputs.
+- Square images are typically fastest to generate. Use `1024x1024` for fast square drafts.
+- If the user asks for 4K-style output, use `3840x2160` for landscape or `2160x3840` for portrait.
+- `gpt-image-2` size may be `auto` or `WIDTHxHEIGHT` if all constraints hold: max edge `<= 3840px`, both edges 
+multiples of `16px`, long-to-short ratio `<= 3:1`, total pixels between `655,360` and `8,294,400`.
+
+Popular `gpt-image-2` sizes:
+- `1024x1024` square
+- `1536x1024` landscape
+- `1024x1536` portrait
+- `2048x2048` 2K square
+- `2048x1152` 2K landscape
+- `3840x2160` 4K landscape
+- `2160x3840` 4K portrait
+- `auto`
+
+## Fallback CLI mode only
+
+### Temp and output conventions
+These conventions apply only to the CLI fallback. They do not describe built-in `image_gen` output behavior.
+- Use `tmp/imagegen/` for intermediate files (for example JSONL batches); delete them when done.
+- Write final artifacts under `output/imagegen/`.
+- Use `--out` or `--out-dir` to control output paths; keep filenames stable and descriptive.
+
+### Dependencies
+Prefer `uv` for dependency management in this repo.
+
+Required Python package:
+```bash
+uv pip install openai
+```
+
+Required for local chroma-key removal and optional downscaling:
+```bash
+uv pip install pillow
+```
+
+Portability note:
+- If you are using the installed skill outside this repo, install dependencies into that environment with its package 
+manager.
+- In uv-managed environments, `uv pip install ...` remains the preferred path.
+
+### Environment
+- `OPENAI_API_KEY` must be set for live API calls.
+- Do not ask the user for `OPENAI_API_KEY` when using the built-in `image_gen` tool.
+- Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
+
+If the key is missing, give the user these steps:
+1. Create an API key in the OpenAI platform UI: https://platform.openai.com/api-keys
+2. Set `OPENAI_API_KEY` as an environment variable in their system.
+3. Offer to guide them through setting the environment variable for their OS/shell if needed.
+
+If installation is not possible in this environment, tell the user which dependency is missing and how to install it 
+into their active environment.
+
+### Script-mode notes
+- CLI commands + examples: `references/cli.md`
+- API parameter quick reference: `references/image-api.md`
+- Network approvals / sandbox settings for CLI mode: `references/codex-network.md`
+
+## Reference map
+- `references/prompting.md`: shared prompting principles for both modes.
+- `references/sample-prompts.md`: shared copy/paste prompt recipes for both modes.
+- `references/cli.md`: fallback-only CLI usage via `scripts/image_gen.py`.
+- `references/image-api.md`: fallback-only API/CLI parameter reference.
+- `references/codex-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
+- `scripts/image_gen.py`: fallback-only CLI implementation. Do not load or use it unless the user explicitly chooses 
+CLI mode or explicitly confirms a transparent request's true CLI transparency fallback.
+- `$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`: local post-processing helper for built-in 
+transparent-image requests.
+
+
+codex
+The skill confirms the built-in image generator is the correct path: generate on flat chroma-key green, then locally 
+remove the key. IΓÇÖm passing both attached references explicitlyΓÇöpalette as binding color guidance and the FX strip 
+for finish level only.
+codex
+Generation completed at 1536├ù1024 with eight apparent cells. IΓÇÖm now copying that raw PNG into the staging 
+directory and running the required helper with border auto-key, soft matte, and despill enabled.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$raw='"'C:\\Users\\asali\\.codex\\generated_
+images\\01a00762-190b-7372-9a22-04089b0536e1\\exec-ee455ccc-7e71-4b59-bf45-578a7d384ef9.png'; "'$dest=Join-Path 
+(Get-Location) '"'meteor_master_4x2_v1.png'; Copy-Item -LiteralPath "'$raw -Destination $dest -Force; python 
+'"'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py' --input "'$dest --out 
+(Join-Path (Get-Location) '"'meteor_master_4x2_v1_keyed.png') --auto-key border --soft-matte --transparent-threshold 
+12 --opaque-threshold 220 --despill; Get-Item -LiteralPath "'$dest,(Join-Path (Get-Location) 
+'"'meteor_master_4x2_v1_keyed.png') | Select-Object FullName,Length" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor
+ succeeded in 14177ms:
+Wrote C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor\meteor_master_4x2_v1_keyed.png
+Key color: #03f703
+Transparent pixels: 1192709/1572864
+Partially transparent pixels: 84252/1572864
+
+FullName                                                                                              Length
+--------                                                                                              ------
+C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor\meteor_master_4x2_v1.png       1856692
+C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor\meteor_master_4x2_v1_keyed.png 1094468
+
+
+
+2026-08-15T21:46:04.359968Z ERROR codex_core::tools::router: error=unable to locate image at 
+`C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor\meteor_master_4x2_keyed.png`: The system cannot 
+find the file specified. (os error 2)
+codex
+The required pass succeeded, but inspection shows a real defect: the generated edge halos contain yellow-green chroma 
+spill around the fire and scorch borders after keying. IΓÇÖm applying the skillΓÇÖs permitted one-time 
+`--edge-contract 1` retry to reduce that fringe while keeping the raw PNG unchanged.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$dest=Join-Path (Get-Location) 
+'"'meteor_master_4x2_v1.png'; "'$keyed=Join-Path (Get-Location) '"'meteor_master_4x2_v1_keyed.png'; python 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py' --input "'$dest --out $keyed 
+--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill --edge-contract 1; Get-Item 
+-LiteralPath $keyed | Select-Object FullName,Length' in 
+C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor
+ succeeded in 2718ms:
+
+FullName                                                                                              Length
+--------                                                                                              ------
+C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor\meteor_master_4x2_v1_keyed.png 1094468
+
+
+Error: Output already exists: 
+C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor\meteor_master_4x2_v1_keyed.png (use --force to 
+overwrite)
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$dest=Join-Path (Get-Location) 
+'"'meteor_master_4x2_v1.png'; "'$keyed=Join-Path (Get-Location) '"'meteor_master_4x2_v1_keyed.png'; python 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py' --input "'$dest --out $keyed 
+--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill --edge-contract 1 --force; 
+Get-Item -LiteralPath $keyed | Select-Object FullName,Length' in 
+C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor
+ succeeded in 15201ms:
+Wrote C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor\meteor_master_4x2_v1_keyed.png
+Key color: #03f703
+Transparent pixels: 1221580/1572864
+Partially transparent pixels: 76551/1572864
+
+FullName                                                                                              Length
+--------                                                                                              ------
+C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor\meteor_master_4x2_v1_keyed.png 1058988
+
+
+
+codex
+The one-time edge-contract retry completed. The keyed preview still shows a green/olive fringe, so IΓÇÖm doing a final 
+read-only check of dimensions, alpha, and per-cell placement before handing off; I will not regenerate or slice.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+from pathlib import Path
+root = Path.cwd()
+raw = Image.open(root/'meteor_master_4x2_v1.png').convert('RGB')
+keyed = Image.open(root/'meteor_master_4x2_v1_keyed.png')
+print('raw_size', raw.size, 'raw_mode', Image.open(root/'meteor_master_4x2_v1.png').mode)
+print('keyed_size', keyed.size, 'keyed_mode', keyed.mode)
+# Background sample spread on a sparse set of border pixels.
+p = raw.load()
+samples=[]
+for y in [0,1,10,511,512,1023]:
+    for x in [0,1,10,383,384,767,768,1151,1152,1535]:
+        samples.append(p[x,y])
+print('border_rgb_minmax', tuple(min(c[i] for c in samples) for i in range(3)), tuple(max(c[i] for c in samples) for i 
+in range(3)))
+# Foreground bounding boxes using non-green-ish pixels, per 384x512 row band.
+for i in range(8):
+    col=i%4; row=i//4
+    x0,x1=col*384,(col+1)*384
+    y0,y1=row*512,(row+1)*512
+    pts=[]
+    for y in range(y0,y1):
+        for x in range(x0,x1):
+            r,g,b=p[x,y]
+            if not (g > r*1.35 and g > b*1.35 and g > 80):
+                pts.append((x,y))
+    if pts:
+        xs=[q[0] for q in pts]; ys=[q[1] for q in pts]
+        print('frame',i+1,'bbox',min(xs)-x0,min(ys)-y0,max(xs)-x0,max(ys)-y0,'bbox_center',round((min(xs)+max(xs)-2*x0)
+/2,1),round((min(ys)+max(ys)-2*y0)/2,1))
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor
+ succeeded in 6749ms:
+raw_size (1536, 1024) raw_mode RGB
+keyed_size (1536, 1024) keyed_mode RGBA
+border_rgb_minmax (3, 238, 3) (20, 248, 14)
+frame 1 bbox 105 261 265 395 bbox_center 185.0 328.0
+frame 2 bbox 12 199 383 425 bbox_center 197.5 312.0
+frame 3 bbox 0 84 383 466 bbox_center 191.5 275.0
+frame 4 bbox 0 132 363 466 bbox_center 181.5 299.0
+frame 5 bbox 17 43 365 377 bbox_center 191.0 210.0
+frame 6 bbox 21 93 327 361 bbox_center 174.0 227.0
+frame 7 bbox 35 94 308 346 bbox_center 171.5 220.0
+frame 8 bbox 41 222 301 333 bbox_center 171.0 277.5
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+p=Image.open('meteor_master_4x2_v1.png').convert('RGB').load()
+for cutoff in [150,100,70]:
+ print('g_cutoff',cutoff)
+ for i in range(8):
+  c=i%4; row=i//4; x0=c*384; y0=row*512
+  pts=[]
+  for y in range(y0,y0+512):
+   for x in range(x0,x0+384):
+    r,g,b=p[x,y]
+    if r>20 and g<cutoff:
+     pts.append((x,y))
+  if pts:
+   xs=[q[0] for q in pts]; ys=[q[1] for q in pts]
+   print(i+1,(min(xs)-x0,min(ys)-y0,max(xs)-x0,max(ys)-y0))
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor
+ succeeded in 7258ms:
+g_cutoff 150
+1 (106, 314, 262, 387)
+2 (17, 202, 383, 420)
+3 (0, 84, 383, 463)
+4 (0, 126, 363, 466)
+5 (15, 43, 365, 378)
+6 (18, 101, 334, 371)
+7 (23, 161, 319, 346)
+8 (31, 213, 305, 340)
+g_cutoff 100
+1 (131, 333, 247, 382)
+2 (25, 242, 383, 419)
+3 (0, 85, 383, 460)
+4 (0, 132, 361, 465)
+5 (17, 43, 365, 377)
+6 (21, 135, 327, 360)
+7 (34, 191, 309, 346)
+8 (40, 214, 301, 334)
+g_cutoff 70
+2 (25, 243, 383, 416)
+3 (0, 121, 383, 460)
+4 (0, 133, 360, 464)
+5 (17, 43, 362, 377)
+6 (22, 147, 325, 353)
+7 (37, 203, 299, 345)
+8 (42, 223, 300, 333)
+
+codex
+Created the requested files:
+
+- [meteor_master_4x2_v1.png](C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor\meteor_master_4x2_v1
+.png)
+- [meteor_master_4x2_v1_keyed.png](C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor\meteor_master_
+4x2_v1_keyed.png)
+
+Raw size: 1536├ù1024 pixels. Keyed output is RGBA and unchanged in size.
+
+Assessment:
+
+- Eight cells produced, with visibly different stages from flash to scorch.
+- No ninth cell, ground plane, or actual cell-to-cell collision.
+- The impact centers are not perfectly centered: they sit low, with several stages also shifted left.
+- Frame 3ΓÇÖs peak ring encroaches into the neighboring nominal cell region.
+- Defect: raw chroma background is not perfectly uniform `#00ff00`; it samples around `#03f703`ΓÇô`#14f80E`.
+- Defect: visible yellow-green fringe remains around effect edges after keying.
+- No clear nuclear mushroom cloud, though frame 4 has a tall flame/smoke plume.
+tokens used
+44,385
+Created the requested files:
+
+- [meteor_master_4x2_v1.png](C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor\meteor_master_4x2_v1.png)
+- [meteor_master_4x2_v1_keyed.png](C:\Users\asali\Projects\MMO\art_src\Custom\ImpactFX_2026-08-15\meteor\meteor_master_4x2_v1_keyed.png)
+
+Raw size: 1536├ù1024 pixels. Keyed output is RGBA and unchanged in size.
+
+Assessment:
+
+- Eight cells produced, with visibly different stages from flash to scorch.
+- No ninth cell, ground plane, or actual cell-to-cell collision.
+- The impact centers are not perfectly centered: they sit low, with several stages also shifted left.
+- Frame 3ΓÇÖs peak ring encroaches into the neighboring nominal cell region.
+- Defect: raw chroma background is not perfectly uniform `#00ff00`; it samples around `#03f703`ΓÇô`#14f80E`.
+- Defect: visible yellow-green fringe remains around effect edges after keying.
+- No clear nuclear mushroom cloud, though frame 4 has a tall flame/smoke plume.

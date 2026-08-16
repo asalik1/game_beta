@@ -17,7 +17,7 @@ only the number of facet lines.
 | Family | Runtime stat | Lore motif |
 |---|---|---|
 | Ruby | `atk_flat` | raw red chip → killing-weight jewel → held-blood drop |
-| Garnet | `hp_pct` | Vale pebble → stubborn shield-boss |
+| Garnet | `hp_flat` (was `hp_pct` until 2026-08-07) | Vale pebble → stubborn shield-boss |
 | Topaz | `crit` | accidental facet → flaw-seeking unwavering point |
 | Onyx | `physres` | dense nub → anvil block → mirror-dark impact boss |
 | Lapis | `magres` | ward-paint lump → ward wall → closed Concord seal |
@@ -38,10 +38,17 @@ install the native 32x32 sprites with:
 python tools/art/build_gem_icons.py
 ```
 
-The builder preserves the authored 5x2 geometry, removes only edge-connected
-chroma, writes `game/assets/icons/gem_<stat>_lv<1..10>.png`, mirrors them to
-mobile, validates hard alpha and per-level uniqueness, and refreshes
-`qa_contact_sheet.png`.
+The builder removes only edge-connected chroma, finds every gem as its own
+connected blob (ImageGen does not honour "equal spacing and centers" — gems
+drift off the grid, tall ones cross the row midline, and the garnet master
+drew SIX gems on its second row; the fixed-grid cut used until 2026-08-15
+shipped off-centre, clipped icons with neighbour slivers), re-centres each
+gem in a cell-sized window at the shared cell scale (so the level ladder keeps
+its size growth; oversize gems shrink just enough to keep a 1px clear edge),
+writes `game/assets/icons/gem_<stat>_lv<1..10>.png`, mirrors them to mobile,
+validates hard alpha / centring / per-level uniqueness, and refreshes
+`qa_contact_sheet.png`. Garnet's sixth row-2 gem (the plain round brilliant)
+is dropped via `ROW_DROPS` in the builder.
 
 ## Prompt contract
 

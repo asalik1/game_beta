@@ -2,14 +2,22 @@
 """Build the lore-authored gem level icons from ImageGen 5x2 masters.
 
 Each master contains levels 1-5 on the first row and levels 6-10 on the
-second. The artificial green/magenta screen is removed before the fixed grid
-is sampled down to the game's native 32x32 icon size.
+second. The artificial green/magenta screen is removed, every gem is found as
+its own connected blob, and each blob is re-centred in its cut window before
+the window is sampled down to the game's native 32x32 icon size.
+
+Why blobs and not a fixed grid (2026-08-15): ImageGen does not honour "equal
+spacing and centers" — gems drift up to ~15% of a cell off the grid centre,
+tall gems cross the row midline, and one master (garnet) drew SIX gems on its
+second row. The original fixed-grid cut shipped icons that sat off-centre in
+their sockets, clipped tips, and carried slivers of the neighbouring gem.
 """
 
 from __future__ import annotations
 
 import argparse
 from collections import deque
+import os
 from pathlib import Path
 import shutil
 
@@ -24,11 +32,29 @@ DEFAULT_MOBILE = ROOT / "mobile" / "game" / "assets" / "icons"
 TARGET = 32
 SHEET_COLS = 5
 SHEET_ROWS = 2
+# Every gem keeps at least this many transparent pixels to each icon edge, so
+# nothing kisses the socket border. Gems whose master art is taller than the
+# nominal cell (topaz/bloodstone/sunstone L9-10 and friends) are scaled down
+# to honour it instead of being clipped.
+EDGE_MARGIN = 1
+# Coarse factor for the blob labelling pass (a 4x4 max-pool merges the gem's
+# outline with any hairline-separated highlight; gem-to-gem gaps are 30+ px).
+LABEL_POOL = 4
+
+# Masters whose rows hold MORE gems than the contract. Value: per row, the
+# 0-based blob indices (sorted left-to-right) to DROP so five remain.
+#   garnet row 2 came back with six gems: shield-boss, plain round brilliant,
+#   round brilliant with star cut, tiered dome, rayed round, ring with a lit
+#   core. The plain round brilliant (index 1) is the least distinct from its
+#   star-cut neighbour, so it is the one that goes.
+ROW_DROPS: dict[str, dict[int, tuple[int, ...]]] = {
+    "garnet": {1: (1,)},
+}
 
 # Source family -> the exact Items.GEM_STATS key used by the runtime.
 FAMILIES = {
     "ruby": "atk_flat",
-    "garnet": "hp_pct",
+    "garnet": "hp_flat",  # was hp_pct until the 2026-08-07 flat-HP ruling; the icon name must track Items.GEM_STATS
     "topaz": "crit",
     "sunstone": "dmg_pct",
     "sapphire": "cdr",
@@ -138,18 +164,114 @@ def remove_connected_chroma(cell: Image.Image) -> Image.Image:
     return Image.fromarray(pixels, "RGBA")
 
 
-def square_cell(master: Image.Image, row: int, column: int) -> Image.Image:
-    """Crop the centered square authored area from one fixed grid cell."""
-    left = round(column * master.width / SHEET_COLS)
-    right = round((column + 1) * master.width / SHEET_COLS)
-    top = round(row * master.height / SHEET_ROWS)
-    bottom = round((row + 1) * master.height / SHEET_ROWS)
-    width = right - left
-    height = bottom - top
-    side = min(width, height)
-    left += (width - side) // 2
-    top += (height - side) // 2
-    return master.crop((left, top, left + side, top + side))
+def save_atomic(image: Image.Image, destination: Path) -> None:
+    """Write via a sibling temp file + os.replace. A truncating open on a PNG
+    that another process (editor thumbnailer, indexer) has memory-mapped fails
+    with a bare EINVAL on Windows; replace succeeds and is atomic besides."""
+    tmp = destination.with_name(destination.name + ".tmp")
+    image.save(tmp, format="PNG", optimize=True)
+    os.replace(tmp, destination)
+
+
+def label_blobs(mask: np.ndarray, pool: int = LABEL_POOL) -> tuple[np.ndarray, int]:
+    """8-connected component labels for a boolean mask.
+
+    Labelling runs on a max-pooled copy (pure-Python BFS over ~100k cells is
+    quick; the full 1.5M-pixel master is not) and the labels are broadcast back
+    to full resolution, masked by the original alpha. Returns (labels, count)
+    with labels 1..count and 0 for background.
+    """
+    height, width = mask.shape
+    coarse_h = -(-height // pool)
+    coarse_w = -(-width // pool)
+    padded = np.zeros((coarse_h * pool, coarse_w * pool), dtype=bool)
+    padded[:height, :width] = mask
+    coarse = padded.reshape(coarse_h, pool, coarse_w, pool).any(axis=(1, 3))
+    labels = np.zeros((coarse_h, coarse_w), dtype=np.int32)
+    count = 0
+    for y in range(coarse_h):
+        for x in range(coarse_w):
+            if not coarse[y, x] or labels[y, x]:
+                continue
+            count += 1
+            labels[y, x] = count
+            queue: deque[tuple[int, int]] = deque([(y, x)])
+            while queue:
+                cy, cx = queue.popleft()
+                for dy in (-1, 0, 1):
+                    for dx in (-1, 0, 1):
+                        ny, nx = cy + dy, cx + dx
+                        if 0 <= ny < coarse_h and 0 <= nx < coarse_w and coarse[ny, nx] and not labels[ny, nx]:
+                            labels[ny, nx] = count
+                            queue.append((ny, nx))
+    fine = np.repeat(np.repeat(labels, pool, axis=0), pool, axis=1)[:height, :width]
+    return np.where(mask, fine, 0), count
+
+
+def find_gems(labels: np.ndarray, count: int, family: str, master_name: str) -> list[dict]:
+    """Map blobs to levels 1..10: row by which half of the sheet holds the blob
+    centre, level by left-to-right order, ROW_DROPS applied. Returns a list of
+    ten dicts {label, x0, y0, x1, y1} indexed by level-1."""
+    height = labels.shape[0]
+    blobs: list[dict] = []
+    for label in range(1, count + 1):
+        ys, xs = np.nonzero(labels == label)
+        blob = {
+            "label": label,
+            "x0": int(xs.min()), "x1": int(xs.max()) + 1,
+            "y0": int(ys.min()), "y1": int(ys.max()) + 1,
+            "area": int(xs.size),
+        }
+        blob["row"] = 0 if (blob["y0"] + blob["y1"]) / 2 < height / 2 else 1
+        blobs.append(blob)
+    largest = max(blob["area"] for blob in blobs)
+    specks = [blob for blob in blobs if blob["area"] < largest * 0.01]
+    if specks:
+        raise ValueError(
+            f"{master_name}: {len(specks)} stray speck blob(s) survived keying — "
+            "inspect the master; the builder refuses to guess which gem they belong to"
+        )
+    ordered: list[dict] = []
+    for row in range(SHEET_ROWS):
+        in_row = sorted((blob for blob in blobs if blob["row"] == row), key=lambda blob: blob["x0"] + blob["x1"])
+        for drop in sorted(ROW_DROPS.get(family, {}).get(row, ()), reverse=True):
+            if drop < len(in_row):
+                del in_row[drop]
+        if len(in_row) != SHEET_COLS:
+            raise ValueError(
+                f"{master_name}: row {row + 1} holds {len(in_row)} gems, expected {SHEET_COLS} "
+                f"(add a ROW_DROPS entry if the master drew extras)"
+            )
+        ordered.extend(in_row)
+    return ordered
+
+
+def cut_gem(keyed: np.ndarray, labels: np.ndarray, blob: dict, side: int) -> Image.Image:
+    """Cut one gem into a TARGET x TARGET icon, centred on its bounding box.
+
+    `side` is the nominal master-pixels-per-icon window (the sheet's cell
+    side), shared by every gem so the level ladder keeps its size growth. A gem
+    larger than the window is scaled down just enough to keep EDGE_MARGIN clear
+    pixels on every side rather than being clipped.
+    """
+    height, width = labels.shape
+    only = keyed.copy()
+    only[..., 3] = np.where(labels == blob["label"], only[..., 3], 0)
+    span = max(blob["x1"] - blob["x0"], blob["y1"] - blob["y0"])
+    usable = TARGET - 2 * EDGE_MARGIN
+    window = max(side, int(np.ceil(span * TARGET / usable)))
+    cx = (blob["x0"] + blob["x1"]) / 2
+    cy = (blob["y0"] + blob["y1"]) / 2
+    left = int(round(cx - window / 2))
+    top = int(round(cy - window / 2))
+    canvas = np.zeros((window, window, 4), dtype=np.uint8)
+    src_x0, src_y0 = max(left, 0), max(top, 0)
+    src_x1, src_y1 = min(left + window, width), min(top + window, height)
+    canvas[src_y0 - top:src_y1 - top, src_x0 - left:src_x1 - left] = only[src_y0:src_y1, src_x0:src_x1]
+    frame = Image.fromarray(canvas, "RGBA").resize((TARGET, TARGET), Image.Resampling.NEAREST)
+    data = np.asarray(frame).copy()
+    data[..., 3] = np.where(data[..., 3] >= 128, 255, 0).astype(np.uint8)
+    return Image.fromarray(data, "RGBA")
 
 
 def build_family(master_path: Path, stat: str, output_dir: Path) -> list[Path]:
@@ -157,25 +279,24 @@ def build_family(master_path: Path, stat: str, output_dir: Path) -> list[Path]:
     ratio = master.width / master.height
     if not 1.95 <= ratio <= 2.05:
         raise ValueError(f"{master_path.name}: expected a roughly 2:1 5x2 sheet, got {master.size}")
+    side = min(round(master.width / SHEET_COLS), round(master.height / SHEET_ROWS))
+
+    keyed = np.asarray(remove_connected_chroma(master))
+    labels, count = label_blobs(keyed[..., 3] > 0)
+    family = master_path.stem.removesuffix("_master")
+    gems = find_gems(labels, count, family, master_path.name)
 
     written: list[Path] = []
-    for level in range(1, 11):
-        row = 0 if level <= 5 else 1
-        column = (level - 1) % 5
-        frame = remove_connected_chroma(square_cell(master, row, column))
-        frame = frame.resize((TARGET, TARGET), Image.Resampling.NEAREST)
-        data = np.asarray(frame).copy()
-        data[..., 3] = np.where(data[..., 3] >= 128, 255, 0).astype(np.uint8)
-        frame = Image.fromarray(data, "RGBA")
-
+    for level, blob in enumerate(gems, start=1):
+        frame = cut_gem(keyed, labels, blob, side)
+        data = np.asarray(frame)
         visible = int(np.count_nonzero(data[..., 3]))
         if not 20 <= visible <= TARGET * TARGET * 0.9:
             raise ValueError(
                 f"{master_path.name} Lv{level}: implausible visible area {visible}/{TARGET * TARGET}"
             )
-
         out = output_dir / f"gem_{stat}_lv{level}.png"
-        frame.save(out, optimize=True)
+        save_atomic(frame, out)
         written.append(out)
     return written
 
@@ -220,7 +341,7 @@ def make_contact_sheet(output_dir: Path, destination: Path) -> None:
             draw.line((x, y, x, y + cell), fill=(212, 170, 70, 255), width=2)
 
     destination.parent.mkdir(parents=True, exist_ok=True)
-    sheet.convert("RGB").save(destination, optimize=True)
+    save_atomic(sheet.convert("RGB"), destination)
 
 
 def validate(output_dir: Path) -> None:
@@ -238,6 +359,18 @@ def validate(output_dir: Path) -> None:
             alpha = np.asarray(image)[..., 3]
             if np.any((alpha != 0) & (alpha != 255)):
                 errors.append(f"{path.name}: semi-transparent pixels")
+            # Centring gate: the visible bbox must sit within a pixel of the
+            # icon centre and never touch an edge (this is the "gems sit
+            # off-centre in their sockets" defect, 2026-08-15).
+            ys, xs = np.nonzero(alpha)
+            if xs.size:
+                off_x = (xs.min() + xs.max()) / 2 - (TARGET - 1) / 2
+                off_y = (ys.min() + ys.max()) / 2 - (TARGET - 1) / 2
+                if abs(off_x) > 1 or abs(off_y) > 1:
+                    errors.append(f"{path.name}: content off-centre by ({off_x:+.1f}, {off_y:+.1f}) px")
+                if xs.min() < EDGE_MARGIN or ys.min() < EDGE_MARGIN \
+                        or xs.max() >= TARGET - EDGE_MARGIN or ys.max() >= TARGET - EDGE_MARGIN:
+                    errors.append(f"{path.name}: content touches the icon edge")
             hashes.add(image.tobytes())
         if len(hashes) != 10:
             errors.append(f"{stat}: levels are not all visually distinct ({len(hashes)}/10)")
@@ -272,7 +405,9 @@ def main() -> int:
         mobile_dir = args.mobile_out.resolve()
         mobile_dir.mkdir(parents=True, exist_ok=True)
         for path in written:
-            shutil.copy2(path, mobile_dir / path.name)
+            tmp = mobile_dir / (path.name + ".tmp")
+            shutil.copy2(path, tmp)
+            os.replace(tmp, mobile_dir / path.name)
         validate(mobile_dir)
 
     print(f"Built {len(written)} lore-authored gem icons in {output_dir}")

@@ -2990,13 +2990,52 @@ func _spawn_patches(zi: int) -> void:
 				drift = Vector2(rng.randf_range(-20, 20), rng.randf_range(-14, 14))
 			_add_hazard(zi, spec["type"], pos, radius, -1.0, drift)
 
+## Generated ground-patch strips per hazard type (assets/sprites/fx/, 4-frame
+## loops built by build_fx_strip.py --valign bottom at 192px cells, the pool
+## ~80% of the cell wide). Poison reuses the assassin mist's venom pool. A type
+## with no strip (or a strip not shipped) falls back to the tinted glow blob.
+const HAZARD_STRIP := {
+	"lava": "hazard_lava", "ice": "hazard_ice", "poison": "poison_pool",
+	"heal": "hazard_heal", "slow": "hazard_slow", "churned": "hazard_churned",
+}
+const HAZARD_STRIP_CELL := 192.0
+const HAZARD_STRIP_FILL := 0.8
+const HAZARD_STRIP_FRAMES := 4
+# Texture-space y offset (pre-scale) that puts each strip's pool EQUATOR (the
+# hazard circle's centre — build_fx_strip.py --valign widest prints it) on the
+# sprite origin; a wisp/bubble crown above the pool would otherwise sit it low.
+const HAZARD_STRIP_OFFSET := {
+	"lava": 3.0, "ice": -3.0, "poison": -16.0, "heal": -23.0, "slow": 0.0, "churned": -10.0,
+}
+
+
 ## Add a floor hazard (until < 0 = permanent, else expires at that time).
 func _add_hazard(zi: int, type: String, pos: Vector2, radius: float, duration := -1.0, drift := Vector2.ZERO) -> void:
 	var spr := Sprite2D.new()
-	spr.texture = Art.tex("glow")
-	spr.modulate = Terrains.PATCH_COLOR.get(type, Color(1, 1, 1, 0.4))
+	var strip: String = HAZARD_STRIP.get(type, "")
+	if strip != "" and Art.has_sprite("fx/" + strip):
+		# The patch IS the art (2026-08-15 hazard pass): a bubbling lava pool,
+		# a glare-ice sheet, a holy spring, void sludge, churned grave-earth,
+		# the venom pool — looping, sized so the pool spans the real radius.
+		spr.texture = Art.tex("fx/" + strip)
+		spr.hframes = HAZARD_STRIP_FRAMES
+		spr.frame = randi() % HAZARD_STRIP_FRAMES  # neighbours don't bubble in lockstep
+		var s := (radius * 2.0) / (HAZARD_STRIP_CELL * HAZARD_STRIP_FILL)
+		spr.scale = Vector2(s, s)
+		spr.offset = Vector2(0, float(HAZARD_STRIP_OFFSET.get(type, 0.0)))
+		spr.modulate = Color(1, 1, 1, 0.9)
+		var step := spr.create_tween().set_loops()
+		var per := randf_range(0.16, 0.22)
+		for i in HAZARD_STRIP_FRAMES:
+			step.tween_interval(per)
+			step.tween_callback(func() -> void:
+				if is_instance_valid(spr):
+					spr.frame = (spr.frame + 1) % HAZARD_STRIP_FRAMES)
+	else:
+		spr.texture = Art.tex("glow")
+		spr.modulate = Terrains.PATCH_COLOR.get(type, Color(1, 1, 1, 0.4))
+		spr.scale = Vector2(radius / 22.0, radius / 26.0)
 	spr.global_position = pos
-	spr.scale = Vector2(radius / 22.0, radius / 26.0)
 	spr.z_index = -7
 	world.add_child(spr)
 	hazards.append({"zone": zi, "type": type, "pos": pos, "radius": radius,

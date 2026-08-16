@@ -1,0 +1,28 @@
+You are generating ONE game visual-effect animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/palette.png : the BINDING colour palette for this effect (five swatches on magenta: #FFFFFF core light, #FFF7D6 pale, #FFE9A0 pale gold, #F2C860 gold, #A8843A shadow gold — a PALE effect so the game can tint it per theme/skin). Ignore the magenta around the swatches — it is only there to show what the chroma key looks like.
+- Image 2 = refs/style_fx_strip.png : a shipped FX animation strip from this game (a violet thread eruption). Match its LEVEL OF FINISH — crisp high-resolution game FX, hard readable clusters, glowing rims over a darker body, no blur, no photo texture. Do NOT copy its subject, shape or colour.
+
+TASK: generate exactly ONE new 4x2 source sheet for a LOOPING HALLOWED-GROUND BLOOM (a paladin's Consecration circle) with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: game asset
+Output size: 1536x1024 landscape.
+Asset type: high-resolution 8-frame game visual-effect animation source, to be cropped into a horizontal sprite strip.
+Scene/backdrop: a perfectly flat uniform #ff00ff magenta chroma-key background filling every pixel, including the seams between cells. No scenery, floor plane, ground texture, platform, cast shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly EIGHT separate equal square effect cells laid out as a clean 4-column by 2-row contact sheet in reading order (top row left to right = frames 1-4, bottom row left to right = frames 5-8). All cells have identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat magenta between neighbouring cells and around the sheet edge.
+Subject: ONE flat circle of holy light lying on the ground, seen from directly above / a high game camera: a roughly CIRCULAR field with a soft irregular edge, a brighter thin outer ring of light, a faint inner ring, gentle radiating light-rays between the two rings (like a soft sunburst seen from above), and small motes of light rising off the field; the very centre is calm and slightly darker (empty — the paladin stands there, added by the game). Pale white and pale gold — NOT a rune circle with letters, NOT fire, NOT a portal, NOT a mandala with hard geometry.
+Style/medium: crisp high-resolution dark-fantasy game FX art with hard readable clusters and a controlled palette; not painterly, not 3D-rendered, not photographic, not anime, not blurred.
+Composition/framing and ANCHOR RULE: the circle is centred in each square cell (its calm centre is the exact centre) and fills about 82% of the cell width with clear magenta margin on every side. It stays in the SAME spot at the SAME size in every cell — only the rays, ring brightness and motes change.
+LOOP storyboard — eight VISIBLY DIFFERENT shimmer states of THIS SAME circle that read as one seamless loop (frame 8 flows back into frame 1): the light-rays between the rings slowly rotate CLOCKWISE by 6 degrees per frame (frame 8 = 42 degrees, so one more step lands near frame 1); the outer ring pulses brighter on frames 2, 4, 6, 8; the motes rise and refresh (frames 1-2 low, 3-4 mid, 5-6 high and dimming, 7-8 fresh low motes). The circle outline itself never moves or resizes.
+Constraints: output only the cells on magenta; no text, watermark, UI, characters, weapons, scenery, ground texture, shadow, or separators. Do NOT use #ff00ff, pink, purple or any magenta anywhere in the effect. Keep it PALE — white and pale gold only. Do not use pure #00ff00, red or orange. Every frame must be clearly different from every other frame.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./consecration_bloom_master_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./consecration_bloom_master_v1_keyed.png (auto-key sampling from the border, soft matte, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all cells were produced with visibly different frames (frame by frame), whether the effect kept the same centre and size in every cell, and any deviation from the brief (a cell missing, cells overlapping or touching, key colour inside the effect, drift, an extra cell, a ground plane drawn). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

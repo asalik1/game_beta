@@ -12,6 +12,7 @@ var root: Control = null          # the currently open panel (null = closed)
 var detail_popover: Control = null  # click-to-reveal item/gem/shop popover
 var detail_return := ""             # screen the popover overlays (restored on close)
 var _popover_box: PanelContainer = null  # the current popover's panel (for re-anchoring)
+var _shell_rect := Rect2()          # the open panel's frame — popovers stay inside it
 var current := ""
 var _closable_now := false        # does the open panel have a ✕ / click-outside exit?
 var listening_action := ""        # keybind screen: waiting for a key press
@@ -104,7 +105,8 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 
 	# UITheme owns the shell and all stock-widget styling.
 	UITheme.apply(root)
-	UITheme.panel(root, Vector2(640 - w / 2 - 3, 360 - h / 2 - 3), Vector2(w + 6, h + 6))
+	_shell_rect = Rect2(Vector2(640 - w / 2 - 3, 360 - h / 2 - 3), Vector2(w + 6, h + 6))
+	UITheme.panel(root, _shell_rect.position, _shell_rect.size)
 
 	var vbox := VBoxContainer.new()
 	vbox.position = Vector2(640 - w / 2, 360 - h / 2) + Vector2(28, 20)
@@ -594,14 +596,15 @@ func _open_layout_editor() -> void:
 
 # ------------------------------------------------------------ endgame trials ---
 
-## Confirm-and-enter a mode from a HUD trial icon: a backable prompt carrying the
-## mode's record + rules, so a stray click on the HUD never tears the world down.
+## Confirm-and-enter a mode from a Wayfinder Sanctum portal (Crownfall): a
+## backable prompt carrying the mode's record + rules, so a stray press never
+## tears the world down. (The HUD trial icons that also led here were removed
+## 2026-08-15 — owner ruling: hardcore modes do not belong on the HUD.)
 func confirm_endgame(mode: String) -> void:
 	# MP: the trials are SOLO. endgame.start() tears down THIS machine's world
 	# only (net_session has no endgame fan), so in-session entry desyncs every
-	# machine. This is the player-facing gate for the HUD icons;
-	# game_flow.enter_endgame carries the hard backstop. (Follow-up: hide the
-	# icons themselves online — hud.gd:1419 — once that file is free.)
+	# machine. This is the player-facing gate; game_flow.enter_endgame carries
+	# the hard backstop.
 	if game.net_online():
 		open_confirm("Endgame trials are SOLO for now — a shared arena needs its own netcode.\n\nLeave the co-op session first; the trials will be waiting.",
 			func() -> void: close(),
@@ -1107,57 +1110,202 @@ func _sanitize_char_name(raw: String) -> String:
 # ----------------------------------------------------------- potion loadout ---
 
 ## Per-room potion rotation editor.
+## The potion loadout is the inventory's Potions tab (2026-08-15: it was a
+## separate text screen — slot rows and "+ Slot / − Unslot" rows; now the room
+## slots are TILES you fill by clicking a bottle, and the plan reads at a glance).
 func open_potion_loadout() -> void:
-	var p = game.local_player
-	var vbox := _open("Potion Loadout", 760, 560, true)
-	current = "potion_loadout"
-	var cyc: String = "tap the ⟳ button" if game.touch_mode \
-		else "[%s]" % OS.get_keycode_string(game.binds.get("potion_next", KEY_R))
-	var intro := _lbl(vbox, "Your PER-ROOM potion budget. Every room refills these slots; each drink spends one, and any unassigned slot pours a Health potion. Slot an elixir or mana potion here to fold it into the rotation — %s cycles which one is active mid-fight." % cyc, 13, Color(0.72, 0.74, 0.82))
-	intro.custom_minimum_size = Vector2(700, 0)
+	open_inventory("potions")
 
+
+var _potion_msg := ""  # last refusal/notice, shown INSIDE the tab (never as world text behind the menu)
+
+
+## The Potions tab body: room slots as tiles · your bottles as tiles · notes.
+func _build_potion_tab(vbox: VBoxContainer, p: Player) -> void:
+	var cyc: String = "the ⟳ button" if game.touch_mode \
+		else "[%s]" % OS.get_keycode_string(game.binds.get("potion_next", KEY_R))
+	var drink: String = "the potion button" if game.touch_mode \
+		else "[%s]" % OS.get_keycode_string(game.binds.get("potion", KEY_Q))
 	var cap: int = p.potion_slot_cap()
 	var plan: Array = p.potion_loadout()
-	_lbl(vbox, "ROOM SLOTS  (%d):" % cap, 15, Color(0.95, 0.85, 0.5))
+	var slot_h := HBoxContainer.new()
+	slot_h.add_theme_constant_override("separation", 12)
+	vbox.add_child(slot_h)
+	var st := _lbl(slot_h, "ROOM SLOTS", 16, Color(0.95, 0.85, 0.5))
+	UITheme.header(st)
+	st.custom_minimum_size = Vector2(120, 0)
+	var sub := _lbl(slot_h, "%d drink%s per room, refilled at every door. %s drinks the active bottle · %s cycles which is active. An unassigned slot pours Health." % [
+		cap, "" if cap == 1 else "s", drink, cyc], 12, UITheme.TEXT_MUTED)
+	sub.custom_minimum_size = Vector2(700, 0)
+	sub.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+	# --- the slot tiles: click a filled one to send it back to Health ---
+	var slots := HBoxContainer.new()
+	slots.add_theme_constant_override("separation", 12)
+	vbox.add_child(slots)
 	for i in cap:
 		var pid: String = String(plan[i]) if i < plan.size() else "health"
-		var pname: String = "Health" if pid == "health" else String(p.potion_display_name(pid))
-		_lbl(vbox, "   Slot %d  ▸  %s" % [i + 1, pname], 14,
-			Color(0.78, 0.42, 0.42) if pid == "health" else Color(0.6, 0.85, 1.0))
+		var assigned: bool = pid != "health"
+		var active: bool = pid == p.active_potion
+		var tile := VBoxContainer.new()
+		tile.custom_minimum_size = Vector2(120, 0)
+		tile.add_theme_constant_override("separation", 3)
+		slots.add_child(tile)
+		var b := Button.new()
+		b.custom_minimum_size = Vector2(120, 72)
+		b.focus_mode = Control.FOCUS_NONE
+		var icon: Texture2D = _potion_icon(pid)
+		if icon != null:
+			b.icon = icon
+			b.expand_icon = true
+			b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			b.add_theme_constant_override("icon_max_width", 48)
+		var col: Color = Color(0.6, 0.85, 1.0) if assigned else Color(0.78, 0.42, 0.42)
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0.09, 0.09, 0.12, 0.92) if assigned else Color(0.06, 0.05, 0.06, 0.9)
+		sb.border_color = Color(col, 0.95 if assigned else 0.5)
+		sb.set_border_width_all(2)
+		sb.set_corner_radius_all(6)
+		if active and p.potion_swap_useful():
+			sb.border_color = Color(1.0, 0.85, 0.4)
+			sb.set_border_width_all(3)
+		b.add_theme_stylebox_override("normal", sb)
+		var sbh: StyleBoxFlat = sb.duplicate()
+		sbh.bg_color = Color(0.17, 0.17, 0.23, 0.95)
+		b.add_theme_stylebox_override("hover", sbh)
+		b.add_theme_stylebox_override("pressed", sbh)
+		if assigned:
+			b.tooltip_text = "Slot %d — %s\nSelect to send this slot back to Health." % [i + 1, p.potion_display_name(pid)]
+			var pid_c := pid
+			b.pressed.connect(func() -> void:
+				game.local_player.loadout_remove(pid_c)
+				_potion_msg = "Slot back to Health."
+				open_inventory("potions"))
+		else:
+			b.tooltip_text = "Slot %d — Health (default)\nSelect a bottle below to assign this slot." % (i + 1)
+			b.disabled = true
+			b.add_theme_stylebox_override("disabled", sb)
+		tile.add_child(b)
+		var nm := _lbl(tile, ("▶ " if active and p.potion_swap_useful() else "") + ("Health" if not assigned else String(p.potion_display_name(pid))), 12, col)
+		nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		nm.custom_minimum_size = Vector2(120, 0)
+		var sl := _lbl(tile, "slot %d" % (i + 1), 10, Color(0.5, 0.53, 0.62))
+		sl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		sl.custom_minimum_size = Vector2(120, 0)
+	if _potion_msg != "":
+		var ml := _lbl(vbox, _potion_msg, 12, Color(1.0, 0.85, 0.5))
+		ml.custom_minimum_size = Vector2(700, 0)
+		_potion_msg = ""
 
 	UITheme.rule(vbox)
-	_lbl(vbox, "YOUR POTIONS:", 15, Color(0.95, 0.85, 0.5))
-	var any_rot := false
-	for rid in p.owned_potion_ids():
-		var rid_c := String(rid)
-		var owned := p.consumable_count(rid_c)
-		if owned <= 0:
-			continue
-		any_rot = true
-		var in_rot: int = p.potion_rotation.count(rid_c)
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 10)
-		vbox.add_child(row)
-		var nl := _lbl(row, "%s  —  own x%d%s" % [String(p.potion_display_name(rid_c)), owned,
-			("  ·  slotted x%d" % in_rot) if in_rot > 0 else ""], 14, Color(0.82, 0.9, 1.0))
-		nl.custom_minimum_size = Vector2(300, 0)
-		_btn(row, "  ＋ Slot  ", func() -> void:
-			game.local_player.loadout_add(rid_c)
-			open_potion_loadout(), Color(0.7, 0.9, 1.0))
-		if in_rot > 0:
-			_btn(row, "  － Unslot  ", func() -> void:
-				game.local_player.loadout_remove(rid_c)
-				open_potion_loadout(), Color(0.7, 0.82, 0.95))
-	if not any_rot:
-		var warn := _lbl(vbox, "You carry no rotation potions right now — every unassigned slot pours your cheapest Health Potion. Buy a Mana Potion, an Elixir of Might/Warding, a Tonic or a Draught of Renewal from an alchemist's shelf (or the cheaper, laced bottles from the Sable Court fence or a road smuggler), then come back here to slot the exact bottle. That's how a rotation is built.", 13, Color(1.0, 0.82, 0.5))
+	# --- your bottles: click one to fill the next free slot ---
+	var bh := HBoxContainer.new()
+	bh.add_theme_constant_override("separation", 12)
+	vbox.add_child(bh)
+	var bt := _lbl(bh, "YOUR BOTTLES", 16, Color(0.95, 0.85, 0.5))
+	UITheme.header(bt)
+	bt.custom_minimum_size = Vector2(130, 0)
+	var free_slots: int = cap - p.potion_rotation.size()
+	var bsub := _lbl(bh, ("Select a bottle to put it in the next free slot (%d free). Health Potions in your bag: %d." % [free_slots, p.potion_count()]) if free_slots > 0
+		else "Every slot is assigned — select a slot above to free it. Health Potions in your bag: %d." % p.potion_count(), 12, UITheme.TEXT_MUTED)
+	bsub.custom_minimum_size = Vector2(640, 0)
+	bsub.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var owned_ids: Array = p.owned_potion_ids()
+	if owned_ids.is_empty():
+		var warn := _lbl(vbox, "You carry no rotation potions — every slot pours your cheapest Health Potion. Buy a Mana Potion, an Elixir of Might or Warding, a Tonic or a Draught of Renewal from an alchemist's shelf (or the laced bottles from the Sable Court fence or a road smuggler), then assign the exact bottle here.", 13, Color(1.0, 0.82, 0.5))
 		warn.custom_minimum_size = Vector2(700, 0)
+	else:
+		var grid := HFlowContainer.new()
+		grid.add_theme_constant_override("h_separation", 10)
+		grid.add_theme_constant_override("v_separation", 10)
+		vbox.add_child(grid)
+		for rid in owned_ids:
+			var rid_c := String(rid)
+			var owned := p.consumable_count(rid_c)
+			if owned <= 0:
+				continue
+			var in_rot: int = p.potion_rotation.count(rid_c)
+			var tile := VBoxContainer.new()
+			tile.custom_minimum_size = Vector2(112, 0)
+			tile.add_theme_constant_override("separation", 3)
+			grid.add_child(tile)
+			var b := Button.new()
+			b.custom_minimum_size = Vector2(112, 64)
+			b.focus_mode = Control.FOCUS_NONE
+			var icon: Texture2D = _potion_icon(rid_c)
+			if icon != null:
+				b.icon = icon
+				b.expand_icon = true
+				b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+				b.add_theme_constant_override("icon_max_width", 40)
+			var col := Color(0.6, 1.0, 0.8) if in_rot > 0 else Color(0.82, 0.9, 1.0)
+			var sb := StyleBoxFlat.new()
+			sb.bg_color = Color(0.09, 0.09, 0.12, 0.92)
+			sb.border_color = Color(col, 0.9)
+			sb.set_border_width_all(2)
+			sb.set_corner_radius_all(6)
+			b.add_theme_stylebox_override("normal", sb)
+			var sbh: StyleBoxFlat = sb.duplicate()
+			sbh.bg_color = Color(0.17, 0.17, 0.23, 0.95)
+			b.add_theme_stylebox_override("hover", sbh)
+			b.add_theme_stylebox_override("pressed", sbh)
+			b.tooltip_text = "%s\nown x%d%s\nSelect: assign to the next free slot" % [
+				p.potion_display_name(rid_c), owned, ("  ·  in %d slot%s" % [in_rot, "" if in_rot == 1 else "s"]) if in_rot > 0 else ""]
+			b.pressed.connect(func() -> void:
+				if game.local_player.potion_rotation.size() >= game.local_player.potion_slot_cap():
+					_potion_msg = "Every slot is assigned — select a slot above to send it back to Health first."
+				else:
+					game.local_player.loadout_add(rid_c)
+				open_inventory("potions"))
+			# Stack count badge.
+			var badge := Label.new()
+			badge.text = "x%d" % owned
+			badge.add_theme_font_size_override("font_size", 11)
+			badge.add_theme_color_override("font_color", Color(1, 1, 1))
+			badge.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+			badge.add_theme_constant_override("outline_size", 4)
+			badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			badge.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+			badge.offset_left = -50
+			badge.offset_top = -18
+			badge.offset_right = -4
+			badge.offset_bottom = -2
+			badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			b.add_child(badge)
+			tile.add_child(b)
+			var nm := _lbl(tile, String(p.potion_display_name(rid_c)), 11, col)
+			nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			nm.custom_minimum_size = Vector2(112, 0)
+			if in_rot > 0:
+				var rl := _lbl(tile, "in %d slot%s" % [in_rot, "" if in_rot == 1 else "s"], 10, Color(0.6, 1.0, 0.8))
+				rl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+				rl.custom_minimum_size = Vector2(112, 0)
+	var foot := HBoxContainer.new()
+	foot.add_theme_constant_override("separation", 12)
+	vbox.add_child(foot)
 	if not p.potion_rotation.is_empty():
-		_btn(vbox, "  ⟲  All slots back to Health  ", func() -> void:
+		_btn(foot, "  ⟲  All slots back to Health  ", func() -> void:
 			game.local_player.potion_rotation.clear()
 			game.local_player.active_potion = "health"
-			open_potion_loadout(), Color(0.6, 1.0, 0.8))
-	_btn(vbox, "  ← Back to inventory  ", func() -> void: open_inventory("gear", inv_cat), Color(0.8, 0.85, 0.9))
-	_hint(vbox, "ESC to go back")
+			open_inventory("potions"), Color(0.6, 1.0, 0.8))
+	var note := _lbl(vbox, "Slots hold TYPES: two slots of the same elixir mean two drinks of it per room. Assigned slots need a bottle in the bag when you drink — %s skips a slot you've run out of." % cyc, 12, Color(0.55, 0.57, 0.63))
+	note.custom_minimum_size = Vector2(700, 0)
+
+
+## The bottle art for a loadout id ("health" = the cheapest health potion you
+## carry, else the generic potion icon).
+func _potion_icon(pid: String) -> Texture2D:
+	var p: Player = game.local_player
+	if pid == "health":
+		var nh: Dictionary = p.next_health_potion()
+		if not nh.is_empty():
+			return Art.consumable_icon(nh)
+		return Art.consumable_icon(Items.make_potion("health", "instant", "E", "accord"))
+	for c in p.consumables:
+		if String(c.get("id", "")) == pid:
+			return Art.consumable_icon(c)
+	var t := Items.potion_by_id(pid)
+	return Art.consumable_icon(t) if not t.is_empty() else null
 
 
 # --------------------------------------------------------------- inventory ---
@@ -1173,10 +1321,14 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	vbox.add_child(tabs)
 	_tab(tabs, "Gear", func() -> void: open_inventory("gear"), tab == "gear")
 	_tab(tabs, "Stats", func() -> void: open_inventory("stats"), tab == "stats")
-	_tab(tabs, "Potion Loadout", func() -> void: open_potion_loadout(), false,
+	_tab(tabs, "Potions", func() -> void: open_inventory("potions"), tab == "potions",
 		Color(0.42, 0.84, 0.70))
 	if tab == "stats":
 		_build_stats_tab(vbox, game.local_player)
+		return
+	if tab == "potions":
+		_build_potion_tab(vbox, game.local_player)
+		_hint(vbox, "ESC, ✕, click outside, or I to close")
 		return
 	var hbox := HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 24)
@@ -1194,59 +1346,21 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_theme_constant_override("separation", 6)
 	left_scroll.add_child(left)
-	UITheme.header(_lbl(left, "EQUIPPED", 16, Color(0.95, 0.85, 0.5)))
-	_lbl(left, "(select an item for its detail card)", 12, Color(0.55, 0.55, 0.6))
+	var eq_head := HBoxContainer.new()
+	eq_head.add_theme_constant_override("separation", 10)
+	left.add_child(eq_head)
+	var eq_title := _lbl(eq_head, "EQUIPPED", 16, Color(0.95, 0.85, 0.5))
+	UITheme.header(eq_title)
+	eq_title.custom_minimum_size = Vector2(120, 0)
+	var eq_hint := _lbl(eq_head, "select a piece for its card · sockets on the right", 12, UITheme.TEXT_MUTED)
+	eq_hint.custom_minimum_size = Vector2(300, 0)
+	eq_hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# One card per slot, in the paper-doll order (2026-08-15 polish): icon
+	# well · name + a quiet stat line · the sockets on the same row. Empty
+	# slots keep their place as dimmed cards so the seven never shuffle.
 	for slot in Items.SLOTS:
-		if game.local_player.equipment.has(slot):
-			var item: Dictionary = game.local_player.equipment[slot]
-			var open_cb := func() -> void:
-				open_item_panel(item)
-			var b := _btn(left, Items.title(item), open_cb, Items.GRADE_COLOR[item["grade"]], true, Art.icon_for(item))
-			b.custom_minimum_size = Vector2(430, 0)
-			b.clip_text = true
-			var dl := _lbl(left, Items.describe(item, _awk(item), false), 12, Color(Items.GRADE_COLOR[item["grade"]], 0.8))
-			dl.custom_minimum_size = Vector2(430, 0)
-			# Gem sockets are direct drag targets.
-			var islots: int = item.get("gem_slots", 0)
-			if islots > 0:
-				var refresh := func() -> void: open_inventory("gear", cat)
-				var can_fn := func(_pos: Vector2, data: Variant) -> bool:
-					return data is Dictionary and String(data.get("kind", "")) == "bag_gem" \
-						and game.local_player.gem_socket_error(item, data["gem"]) == ""
-				var drop_fn := func(_pos: Vector2, data: Variant) -> void:
-					game.local_player.embed_gem_into(item, data["gem"])
-					open_inventory("gear", cat)
-				b.set_drag_forwarding(Callable(), can_fn, drop_fn)
-				var srow := HBoxContainer.new()
-				srow.add_theme_constant_override("separation", 4)
-				left.add_child(srow)
-				_socket_row(srow, item, refresh)
-		else:
-			# Empty slots remain visible as explicit targets.
-			var erow := HBoxContainer.new()
-			erow.add_theme_constant_override("separation", 10)
-			left.add_child(erow)
-			var esq := Panel.new()
-			esq.custom_minimum_size = Vector2(40, 40)
-			var esb := StyleBoxFlat.new()
-			esb.bg_color = Color(0.05, 0.05, 0.07, 0.92)
-			esb.border_color = Color(0.4, 0.34, 0.2, 0.85)
-			esb.set_border_width_all(2)
-			esb.set_corner_radius_all(4)
-			esq.add_theme_stylebox_override("panel", esb)
-			erow.add_child(esq)
-			var mono := Label.new()
-			mono.text = slot.substr(0, 1).to_upper()
-			mono.set_anchors_preset(Control.PRESET_FULL_RECT)
-			mono.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			mono.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			UITheme.title(mono, 20)
-			mono.add_theme_color_override("font_color", Color(0.42, 0.38, 0.28, 0.9))
-			esq.add_child(mono)
-			var el := _lbl(erow, "%s — empty" % slot.capitalize(), 14, Color(0.5, 0.5, 0.52))
-			el.custom_minimum_size = Vector2(280, 0)  # HBox label-collapse trap
-			el.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_lbl(left, "(full character sheet in the Stats tab)", 12, Color(0.55, 0.55, 0.6))
+		_equipped_row(left, String(slot), cat)
+	_lbl(left, "Full character sheet in the Stats tab.", 12, Color(0.55, 0.55, 0.6))
 
 	var right := VBoxContainer.new()
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1263,10 +1377,34 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		var bg: String = String(bb.get("grade", "F"))
 		if Items.GRADES.find(bg) > Items.GRADES.find(best_grade):
 			best_grade = bg
-	var bh := _lbl(head, "BAGS — %d/%d equipped  (%d/%d slots)" % [p.bags.size(), Balance.MAX_BAGS,
-		p.bag_used(), p.bag_capacity()], 16, Items.GRADE_COLOR[best_grade])
+	var bh := _lbl(head, "BAG", 16, Items.GRADE_COLOR[best_grade])
 	UITheme.header(bh)
-	bh.custom_minimum_size = Vector2(360, 0)
+	bh.custom_minimum_size = Vector2(44, 0)
+	# Capacity as a bar + fraction — the number that decides whether loot
+	# lands or mails (2026-08-15 polish); the bags themselves are the chips.
+	var used_n: int = p.bag_used()
+	var cap_n: int = p.bag_capacity()
+	var cap_bar := Control.new()
+	cap_bar.custom_minimum_size = Vector2(150, 10)
+	cap_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(cap_bar)
+	var cap_bg := ColorRect.new()
+	cap_bg.color = Color(0, 0, 0, 0.6)
+	cap_bg.size = Vector2(150, 10)
+	cap_bar.add_child(cap_bg)
+	var cap_frac: float = clampf(float(used_n) / float(maxi(1, cap_n)), 0.0, 1.0)
+	var cap_fill := ColorRect.new()
+	cap_fill.color = Color(1.0, 0.45, 0.35) if cap_frac >= 0.95 else (Color(0.95, 0.8, 0.4) if cap_frac >= 0.8 else Color(0.55, 0.85, 0.65))
+	cap_fill.position = Vector2(1, 1)
+	cap_fill.size = Vector2(148.0 * cap_frac, 8)
+	cap_bar.add_child(cap_fill)
+	var cap_lbl := _lbl(head, "%d / %d slots" % [used_n, cap_n], 13,
+		Color(1.0, 0.6, 0.5) if used_n >= cap_n else Color(0.85, 0.87, 0.92))
+	cap_lbl.custom_minimum_size = Vector2(90, 0)
+	cap_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var bags_lbl := _lbl(head, "%d/%d bags" % [p.bags.size(), Balance.MAX_BAGS], 12, UITheme.TEXT_MUTED)
+	bags_lbl.custom_minimum_size = Vector2(70, 0)
+	bags_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	# Bag chips wrap so a full loadout never widens the panel.
 	var chips := HFlowContainer.new()
 	chips.add_theme_constant_override("h_separation", 6)
@@ -1304,28 +1442,39 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		var clbl := _lbl(crow, "%s · %d slots" % [bg2, int(bb2.get("slots", 0))], 12, Items.GRADE_COLOR[bg2])
 		clbl.custom_minimum_size = Vector2(74, 0)  # HBox label-collapse trap
 		clbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	if not p.gem_bag.is_empty():
-		var auto_cb := func() -> void:
-			var n: int = game.local_player.auto_synthesize()
-			game.spawn_text(game.local_player.global_position + Vector2(0, -60),
-				"%d GEM UPGRADES" % n if n > 0 else "NOTHING TO MERGE", Color(0.6, 0.9, 1.0))
-			open_inventory()
-		var ab := _btn(right, "⚒ Auto-synthesize ALL", auto_cb, Color(0.6, 0.9, 1.0))
-		ab.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nIn Crownfall, gems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag); on the road only\nthe bag merges — socketed work waits for the Lapidary."
-	_lbl(right, "Select an item to inspect. Drag gems onto equipped gear at the Lapidary. Every carried unit uses one slot.", 12, UITheme.TEXT_MUTED)
-
-	# Category chips wrap instead of inflating the right column.
+	# Category chips wrap instead of inflating the right column; the gem
+	# bench action (Auto-synthesize) rides the same row, at its end.
 	var catrow := HFlowContainer.new()
 	catrow.add_theme_constant_override("h_separation", 6)
+	catrow.add_theme_constant_override("v_separation", 6)
 	right.add_child(catrow)
 	for spec in [["all", "All"], ["weapon", "Weapons"], ["helmet", "Helmets"], ["armor", "Armor"],
 			["gloves", "Gloves"], ["pants", "Pants"], ["boots", "Boots"], ["charm", "Charms"],
 			["gems", "Gems"], ["consumables", "Consumables"], ["materials", "Materials"]]:
 		var cid: String = spec[0]
 		var cb := _btn(catrow, spec[1], func() -> void: open_inventory("gear", cid),
-			Color(0.95, 0.85, 0.5) if cat == cid else Color(0.6, 0.6, 0.6))
-		cb.add_theme_font_size_override("font_size", 13)
+			Color(0.95, 0.85, 0.5) if cat == cid else Color(0.64, 0.66, 0.72))
+		UITheme.tab(cb, cat == cid)
+		cb.custom_minimum_size.y = 28.0 if not game.touch_mode else 34.0
+		cb.focus_mode = Control.FOCUS_NONE
+		cb.add_theme_font_size_override("font_size", 12)
+		for st in ["normal", "hover", "pressed"]:
+			var csb2 := cb.get_theme_stylebox(String(st)) as StyleBoxFlat
+			if csb2 != null:
+				csb2.content_margin_left = 9.0
+				csb2.content_margin_right = 9.0
+				csb2.content_margin_top = 3.0
+				csb2.content_margin_bottom = 3.0
+	if not p.gem_bag.is_empty():
+		var auto_cb := func() -> void:
+			var n: int = game.local_player.auto_synthesize()
+			game.spawn_text(game.local_player.global_position + Vector2(0, -60),
+				"%d GEM UPGRADES" % n if n > 0 else "NOTHING TO MERGE", Color(0.6, 0.9, 1.0))
+			open_inventory("gear", cat)
+		var ab := _btn(catrow, "⚒ Auto-synthesize", auto_cb, Color(0.6, 0.9, 1.0))
+		ab.add_theme_font_size_override("font_size", 12)
+		ab.custom_minimum_size.y = 28.0 if not game.touch_mode else 34.0
+		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nIn Crownfall, gems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag); on the road only\nthe bag merges — socketed work waits for the Lapidary."
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -1434,10 +1583,12 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			var can_synth: bool = count >= 3 and g["lvl"] < Items.GEM_MAX_LEVEL
 			var gem_cb := func() -> void:
 				var info := "%s  x%d\n\n" % [Items.gem_title(g), count]
+				var is_special: bool = String(g["stat"]) in Balance.SPECIAL_GEM_STATS
+				info += ("A SPECIAL gem — it takes the violet ★ socket of A/S gear.  " if is_special else "A regular gem — any ◇ socket on C+ gear.  ")
 				if can_synth:
 					info += "Synthesize combines three of these into one Lv%d gem." % (g["lvl"] + 1)
 				else:
-					info += "Socket it into an equipped item (select a piece of gear on the left), or gather three to synthesize a stronger one."
+					info += "Gather three to synthesize a stronger one."
 				var synth_cb := func() -> void:
 					game.local_player.synthesize(g["stat"], g["lvl"])
 					open_inventory("gear", cat)
@@ -1446,6 +1597,25 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 					game.discard_to_ground({"kind": "gem", "gem": g})
 					open_inventory("gear", cat)
 				var actions: Array = []
+				# The direct path (2026-08-15): every equipped piece with a free
+				# matching socket is one press away — no dragging to find out.
+				if game.chapter_id == "capital":
+					var targets := 0
+					for slot_key in Items.SLOTS:
+						if not game.local_player.equipment.has(slot_key):
+							continue
+						var target: Dictionary = game.local_player.equipment[slot_key]
+						if game.local_player.gem_socket_error(target, g) != "":
+							continue
+						targets += 1
+						var sock_cb := func() -> void:
+							game.local_player.embed_gem_into(target, g)
+							open_item_panel(target, Vector2(-1, -1), "gems")
+						actions.append(["  ◈  Socket into  %s  " % Items.title(target), Items.GRADE_COLOR[target["grade"]], sock_cb])
+					if targets == 0:
+						info += "\n\nNo equipped piece has a free %s socket for it right now." % ("★ special" if is_special else "◇")
+				else:
+					info += "\n\nSocketing is bench work at the Master Lapidary in Crownfall (pause menu → ⌂)."
 				if can_synth:
 					actions.append(["  ⚒  Synthesize  (3 → 1 Lv%d)  " % (g["lvl"] + 1), Color(0.6, 0.9, 1.0), synth_cb])
 				actions.append(["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb])
@@ -1490,7 +1660,111 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	_hint(vbox, "ESC, ✕, click outside, or I to close")
 
 
-## One clickable bag slot.
+## One equipped-slot card of the inventory's left column: [icon well][name +
+## quiet stat line][sockets]. The whole card opens the item's panel and takes a
+## bag gem dropped anywhere on it (Crownfall); the socket squares stay their
+## own precise targets. An empty slot is the same card, dimmed, so the seven
+## never shuffle.
+func _equipped_row(left: VBoxContainer, slot: String, cat: String) -> void:
+	var p: Player = game.local_player
+	var has: bool = p.equipment.has(slot)
+	var item: Dictionary = p.equipment[slot] if has else {}
+	var color: Color = Items.GRADE_COLOR[item["grade"]] if has else Color(0.4, 0.36, 0.26)
+	var card := UITheme.card(left, color if has else Color(0.32, 0.30, 0.26), 8.0)
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if has else Control.CURSOR_ARROW
+	if has:
+		card.tooltip_text = "Select for the item card"
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	row.mouse_filter = Control.MOUSE_FILTER_PASS  # clicks fall through to the card
+	card.add_child(row)
+	# Icon well.
+	var well := Panel.new()
+	well.custom_minimum_size = Vector2(46, 46)
+	var wsb := StyleBoxFlat.new()
+	wsb.bg_color = Color(0.05, 0.05, 0.07, 0.92)
+	wsb.border_color = Color(color, 0.85 if has else 0.6)
+	wsb.set_border_width_all(2)
+	wsb.set_corner_radius_all(4)
+	well.add_theme_stylebox_override("panel", wsb)
+	well.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	well.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(well)
+	if has:
+		var ic := TextureRect.new()
+		ic.texture = Art.icon_for(item)
+		ic.set_anchors_preset(Control.PRESET_FULL_RECT)
+		ic.offset_left = 4
+		ic.offset_top = 4
+		ic.offset_right = -4
+		ic.offset_bottom = -4
+		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		well.add_child(ic)
+	else:
+		var mono := Label.new()
+		mono.text = slot.substr(0, 1).to_upper()
+		mono.set_anchors_preset(Control.PRESET_FULL_RECT)
+		mono.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		mono.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		UITheme.title(mono, 20)
+		mono.add_theme_color_override("font_color", Color(0.42, 0.38, 0.28, 0.9))
+		mono.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		well.add_child(mono)
+	# Name + stat line.
+	var text := VBoxContainer.new()
+	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	text.add_theme_constant_override("separation", 1)
+	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(text)
+	var socket_n: int = int(item.get("gem_slots", 0)) if has else 0
+	var text_w: float = 260.0 - (socket_n * 38.0 if has else 0.0)
+	if has:
+		var nm := _lbl(text, Items.title(item), 14, color)
+		nm.autowrap_mode = TextServer.AUTOWRAP_OFF
+		nm.clip_text = true
+		nm.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		nm.custom_minimum_size = Vector2(text_w, 0)
+		nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var dl := _lbl(text, Items.describe(item, _awk(item), false), 11, Color(0.68, 0.7, 0.76))
+		dl.custom_minimum_size = Vector2(text_w, 0)
+		# (No overrun trim here: with autowrap it collapses the label's minimum
+		# height to 1px and the line vanishes — Godot 4.4.)
+		dl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	else:
+		var el := _lbl(text, "%s — empty" % slot.capitalize(), 13, Color(0.5, 0.5, 0.52))
+		el.custom_minimum_size = Vector2(text_w, 0)
+		el.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Sockets, on the row's right — the whole card is also a drop target.
+	if has:
+		var open_cb := func() -> void:
+			open_item_panel(item)
+		card.gui_input.connect(func(e: InputEvent) -> void:
+			if (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT) \
+					or (e is InputEventScreenTouch and e.pressed):
+				open_cb.call())
+		if socket_n > 0:
+			var refresh := func() -> void: open_inventory("gear", cat)
+			var can_fn := func(_pos: Vector2, data: Variant) -> bool:
+				return data is Dictionary and String(data.get("kind", "")) == "bag_gem" \
+					and game.local_player.gem_socket_error(item, data["gem"]) == ""
+			var drop_fn := func(_pos: Vector2, data: Variant) -> void:
+				game.local_player.embed_gem_into(item, data["gem"])
+				open_inventory("gear", cat)
+			card.set_drag_forwarding(Callable(), can_fn, drop_fn)
+			var srow := HBoxContainer.new()
+			srow.add_theme_constant_override("separation", 4)
+			srow.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			srow.mouse_filter = Control.MOUSE_FILTER_PASS
+			row.add_child(srow)
+			_socket_row(srow, item, refresh)
+
+
+## One clickable bag slot. A stack count (gems, potions, materials) rides as
+## a small badge in the corner instead of crowding the icon as button text.
 func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color,
 		cb: Callable) -> Button:
 	var b := Button.new()
@@ -1499,9 +1773,22 @@ func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color
 		b.icon = icon
 		b.expand_icon = true
 		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		if glyph != "":  # icon + text together (gem stacks: icon + count)
-			b.text = glyph
-			b.add_theme_font_size_override("font_size", 13)
+		if glyph != "":  # icon + count: the count is a corner badge
+			var badge := Label.new()
+			badge.text = glyph.strip_edges()
+			badge.add_theme_font_size_override("font_size", 11)
+			badge.add_theme_color_override("font_color", Color(1, 1, 1))
+			badge.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+			badge.add_theme_constant_override("outline_size", 4)
+			badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			badge.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+			badge.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+			badge.offset_left = -40
+			badge.offset_top = -18
+			badge.offset_right = -3
+			badge.offset_bottom = -1
+			badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			b.add_child(badge)
 	else:
 		b.text = glyph
 		b.add_theme_font_size_override("font_size", 17)
@@ -1516,7 +1803,11 @@ func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color
 	sbh.bg_color = Color(0.17, 0.17, 0.23, 0.95)
 	b.add_theme_stylebox_override("hover", sbh)
 	b.add_theme_stylebox_override("pressed", sbh)
-	b.pressed.connect(cb)
+	if cb.is_valid():
+		b.pressed.connect(cb)
+	else:
+		b.disabled = true
+		b.add_theme_stylebox_override("disabled", sb)
 	grid.add_child(b)
 	return b
 
@@ -1610,9 +1901,21 @@ func _popover_settle(pop: PanelContainer, at: Vector2, scroll: ScrollContainer =
 		scroll.custom_minimum_size.y = minf(body.get_combined_minimum_size().y, 500.0)
 	pop.reset_size()
 	var sz := pop.size
-	pop.position = Vector2(
-		clampf(pop.position.x, 8.0, 1280.0 - sz.x - 8.0),
-		clampf(pop.position.y, 8.0, 720.0 - sz.y - 8.0))
+	# Stay inside the open panel's frame (not just the screen) — a card that
+	# hangs out of its window reads as a glitch; fall back to the screen when
+	# the shell would be too small to hold it.
+	var lo := Vector2(8.0, 8.0)
+	var hi := Vector2(1280.0 - sz.x - 8.0, 720.0 - sz.y - 8.0)
+	if _shell_rect.size.x > 0.0:
+		var slo := _shell_rect.position + Vector2(10.0, 10.0)
+		var shi := _shell_rect.end - sz - Vector2(10.0, 10.0)
+		if shi.x >= slo.x:
+			lo.x = slo.x
+			hi.x = shi.x
+		if shi.y >= slo.y:
+			lo.y = slo.y
+			hi.y = shi.y
+	pop.position = Vector2(clampf(pop.position.x, lo.x, hi.x), clampf(pop.position.y, lo.y, hi.y))
 
 
 ## Cursor-anchored detail popover shared by bag, shop and equipment.
@@ -1918,38 +2221,40 @@ func _item_gems_tab(body: VBoxContainer, item: Dictionary) -> void:
 	srow.add_theme_constant_override("separation", 6)
 	body.add_child(srow)
 	_socket_row(srow, item, refresh)
-	_lbl(body, "Select a gem for its card · drag it off the box to unsocket it.", 12, Color(0.55, 0.58, 0.66))
+	var slg := _lbl(srow, "◇ regular · ★ special\nselect a gem for its card · drag it out to unsocket", 11, Color(0.55, 0.58, 0.66))
+	slg.custom_minimum_size = Vector2(200, 0)
+	slg.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 	if slots > gems.size():
 		if p.gem_bag.is_empty():
-			_lbl(body, "No gems in your bag to insert (they drop from chests).", 12, Color(0.5, 0.5, 0.55))
+			_lbl(body, "No gems in your bag to socket (they drop from chests and elites).", 12, Color(0.5, 0.5, 0.55))
 		else:
-			_lbl(body, "INSERT FROM BAG:", 15, Color(0.95, 0.85, 0.5))
-			# Avoid a nested scroll; it collapses inside this body.
+			_lbl(body, "FROM YOUR BAG — select a gem to socket it", 14, Color(0.95, 0.85, 0.5))
+			# The gems as they look in the bag (2026-08-15: tiles, not text
+			# rows). A gem this piece can't take stays visible but dimmed, its
+			# reason on hover — refusals never leave the panel.
 			var groups := _gem_groups()
 			var igrid := GridContainer.new()
-			igrid.columns = 1  # single column — the popover is narrower than the old panel
-			igrid.add_theme_constant_override("h_separation", 12)
-			igrid.add_theme_constant_override("v_separation", 4)
-			igrid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			igrid.columns = 8
+			igrid.add_theme_constant_override("h_separation", 5)
+			igrid.add_theme_constant_override("v_separation", 5)
 			body.add_child(igrid)
 			for key in _sorted_gem_keys(groups):
 				var group: Dictionary = groups[key]
 				var g2: Dictionary = group["gem"]
-				# Keep socket refusal feedback inside the panel.
+				var count2: int = int(group["count"])
 				var err := game.local_player.gem_socket_error(item, g2)
-				if err == "":
-					var ins_cb := func() -> void:
-						game.local_player.embed_gem_into(item, g2)
+				var ins_cb := func() -> void:
+					if game.local_player.embed_gem_into(item, g2):
 						open_item_panel(item, Vector2(-1, -1), "gems")
-					var ib := _btn(igrid, "%s  x%d — insert" % [Items.gem_title(g2), group["count"]], ins_cb, Items.gem_color(g2))
-					ib.clip_text = true
-					ib.custom_minimum_size = Vector2(414, 0)
+				var tile := _bag_slot(igrid, Art.gem_icon(Items.gem_color(g2), int(g2["lvl"])),
+					("x%d" % count2) if count2 > 1 else "", Items.gem_color(g2), ins_cb if err == "" else Callable())
+				if err == "":
+					tile.tooltip_text = "%s  x%d\nSocket into %s" % [Items.gem_title(g2), count2, Items.title(item)]
 				else:
-					var db := _btn(igrid, "%s  x%d — %s" % [Items.gem_title(g2), group["count"], err],
-						Callable(), Color(0.5, 0.5, 0.55), false)
-					db.clip_text = true
-					db.custom_minimum_size = Vector2(414, 0)
+					tile.tooltip_text = "%s  x%d\n%s" % [Items.gem_title(g2), count2, err]
+					tile.modulate = Color(0.45, 0.45, 0.5)
+					tile.mouse_default_cursor_shape = Control.CURSOR_FORBIDDEN
 
 
 ## Reforge tab: Crownfall smithing actions and visible favor discounts.
@@ -3889,7 +4194,9 @@ const BOSS_KINDS := ["fangmaw", "morwen", "vargoth",
 
 ## Codex screens live in ui/codex.gd. Passing a boss `kind` opens that
 ## boss's focused mechanics detail view instead of the tab list.
-func open_codex(tab := "monsters", boss := "") -> void:
+## `tab` "" reopens the codex where the reader left it (C key / HUD button);
+## an explicit tab id or boss kind routes there (UICodex._resolve).
+func open_codex(tab := "", boss := "") -> void:
 	UICodex.open(self, tab, boss)
 
 
@@ -4054,6 +4361,13 @@ func _input(event: InputEvent) -> void:
 			# so the focused name field keeps the typing (same as name_entry).
 			if event.keycode == KEY_ESCAPE:
 				open_slots()
+				get_viewport().set_input_as_handled()
+			return
+		if current == "codex" and UICodex.search_focused():
+			# Typing in the codex search box: only ESC leaves; every other key
+			# (including the C hotkey) falls through UNHANDLED to the field.
+			if event.keycode == KEY_ESCAPE:
+				close()
 				get_viewport().set_input_as_handled()
 			return
 		if current in ["title", "class_select", "class_splash"] \

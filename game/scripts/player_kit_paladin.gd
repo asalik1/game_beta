@@ -4,6 +4,13 @@ extends "res://scripts/player_kit_assassin.gd"
 ## Dawnbreaker S-passive call DOWN into them, which the chain allows.)
 ## See player_core.gd for the chain layout.
 
+## Aegis dome strip geometry (assets/sprites/fx/aegis_dome.png, 8 x 256px,
+## built by build_fx_strip.py --valign bottom): the dome's ground ring sits
+## AEGIS_DOME_OFFSET texture px below the cell centre, so that offset lifts the
+## ring onto the paladin's feet; the scale wraps the ~96px hero body.
+const AEGIS_DOME_SCALE := 0.75
+const AEGIS_DOME_OFFSET := Vector2(0, -60)  # bottom row 202 → −74, +14 to the ring's centre
+
 
 func _use_paladin(slot: String, f: float) -> void:
 	match slot:
@@ -145,21 +152,25 @@ func _eclipse_judgment(pos: Vector2) -> void:
 
 
 func _eclipse_conviction_scene(targets: Array) -> void:
-	var disc := Sprite2D.new()
-	disc.texture = Art.tex("fx_eclipse_corona")
-	disc.position = Vector2(0, -34)
-	disc.scale = Vector2(0.18, 1.28)
-	disc.modulate = Color(1, 1, 1, 0.0)
-	disc.z_index = 8
-	add_child(disc)
-	var tw := disc.create_tween()
-	tw.tween_property(disc, "modulate:a", 0.92, 0.07)
-	tw.parallel().tween_property(disc, "scale:x", 1.28, 0.2).set_trans(Tween.TRANS_BACK)
-	tw.tween_interval(0.26)
-	tw.tween_property(disc, "scale:y", 0.08, 0.13).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tw.tween_property(disc, "scale", Vector2(1.48, 1.48), 0.16).set_trans(Tween.TRANS_BACK)
-	tw.tween_property(disc, "modulate:a", 0.0, 0.28)
-	tw.tween_callback(disc.queue_free)
+	# The disc opens BEHIND the knight (z −1) with a thin ghost over him (FX
+	# layering rule 2026-08-15) — it used to sit at z 8 / 0.92 and hide him.
+	for layer in 2:
+		var disc := Sprite2D.new()
+		disc.texture = Art.tex("fx_eclipse_corona")
+		disc.position = Vector2(0, -34)
+		disc.scale = Vector2(0.18, 1.28)
+		disc.modulate = Color(1, 1, 1, 0.0)
+		disc.z_index = -1 if layer == 0 else 8
+		add_child(disc)
+		var peak := 0.92 if layer == 0 else 0.32
+		var tw := disc.create_tween()
+		tw.tween_property(disc, "modulate:a", peak, 0.07)
+		tw.parallel().tween_property(disc, "scale:x", 1.28, 0.2).set_trans(Tween.TRANS_BACK)
+		tw.tween_interval(0.26)
+		tw.tween_property(disc, "scale:y", 0.08, 0.13).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw.tween_property(disc, "scale", Vector2(1.48, 1.48), 0.16).set_trans(Tween.TRANS_BACK)
+		tw.tween_property(disc, "modulate:a", 0.0, 0.28)
+		tw.tween_callback(disc.queue_free)
 	for node in targets:
 		var e := node as Enemy
 		if e != null:
@@ -203,12 +214,13 @@ func _light_pillar(pos: Vector2, col := Color(1.0, 0.95, 0.6), width := 0.9) -> 
 	shaft.z_index = 8
 	game.add_child(shaft)
 	var tw := shaft.create_tween()
-	tw.tween_property(shaft, "modulate:a", 0.85, 0.06)
+	# Half-alpha: the shaft lands ON the victim (FX layering rule).
+	tw.tween_property(shaft, "modulate:a", 0.5, 0.06)
 	tw.parallel().tween_property(shaft, "global_position:y", pos.y - 95.0, 0.06)
 	tw.tween_property(shaft, "modulate:a", 0.0, 0.24)
 	tw.tween_callback(shaft.queue_free)
-	_ring_fx(pos, col, 46.0 * width)
-	game.burst(pos, col, 6)
+	# The bloom where it lands: round light motes, no ring / squares (2026-08-15).
+	_soft_burst(pos + Vector2(0, -8), col, 8, 0.14, 90.0, 0.8, 0.45, 60.0)
 
 
 ## A bright slash rips across a smitten enemy (Aegis retaliation).
@@ -259,8 +271,18 @@ func _consecration(f := 1.0) -> void:
 
 func _consecration_pulse(pos: Vector2, radius: float, mult: float, col: Color, fx: Dictionary) -> void:
 	game.sfx("nova", 0.75)
-	_ring_fx(pos, col, radius)
-	game.burst(pos, col, 12)
+	# The hallowed ground BLOOMS (skin-FX pass 2026-08-15): a generated circle of
+	# light — rings, soft rays, rising motes — spins under the actors for the
+	# pulse with a thin ghost over them, tinted by theme/skin light. Replaces
+	# the thin ring + square burst + eight glow shards; the floor seal below and
+	# the skins' staged rings stay as the identity accents.
+	var bloom := _fx_loop("consecration_bloom", pos, 8, 0.7, {
+		"color": col, "alpha": 0.9, "scale": (radius * 2.0) / (IMPACT_CELL * 0.82),
+		"z": -1, "ghost_over": 0.35, "over_z": 5, "frame_time": 0.06, "pingpong": true,
+		"fade": 0.35})  # (no spin: the ring is a foreshortened ellipse)
+	if bloom == null:
+		_ring_fx(pos, col, radius)
+		game.burst(pos, col, 12)
 	if skin == "eclipse_knight":
 		_staged_segment_ring(game, pos, Color(1.0, 0.7, 0.25, 0.88), radius * 0.82, 10, 0.045, 0.36, "slashline", true, false)
 	elif skin == "fallen_arbiter":
@@ -282,11 +304,12 @@ func _consecration_pulse(pos: Vector2, radius: float, mult: float, col: Color, f
 	var ft := floor_glow.create_tween()
 	ft.tween_property(floor_glow, "modulate:a", 0.0, 0.8)
 	ft.tween_callback(floor_glow.queue_free)
-	# Rising motes of light.
+	# Rising motes of light — round (the glow disc), not squares.
 	var motes := CPUParticles2D.new()
 	motes.amount = 18
 	motes.lifetime = 0.7
 	motes.one_shot = true
+	motes.texture = Art.tex("glow")
 	motes.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
 	motes.emission_sphere_radius = radius * 0.8
 	motes.direction = Vector2(0, -1)
@@ -294,31 +317,32 @@ func _consecration_pulse(pos: Vector2, radius: float, mult: float, col: Color, f
 	motes.gravity = Vector2(0, -60)
 	motes.initial_velocity_min = 20.0
 	motes.initial_velocity_max = 60.0
-	motes.scale_amount_min = 1.5
-	motes.scale_amount_max = 3.0
+	motes.scale_amount_min = 0.10
+	motes.scale_amount_max = 0.20
 	motes.color = Color(col, 0.9)
 	motes.global_position = pos
+	motes.z_index = 6
 	game.add_child(motes)
 	get_tree().create_timer(1.2).timeout.connect(motes.queue_free)
-
-	# A halo of light shards sweeps around the sanctified ring.
-	var halo := Node2D.new()
-	halo.global_position = pos
-	halo.z_index = 5
-	game.add_child(halo)
-	for i in 8:
-		var shard := Sprite2D.new()
-		shard.texture = Art.tex("glow")
-		shard.modulate = Art.hdr(Color(col, 0.75))
-		shard.position = Vector2.from_angle(TAU * i / 8.0) * radius * 0.85
-		shard.rotation = TAU * i / 8.0 + PI / 2.0
-		shard.scale = Vector2(0.9, 0.26)
-		halo.add_child(shard)
-	var ht := halo.create_tween()
-	ht.tween_property(halo, "rotation", TAU * 0.4, 0.55) \
-		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	ht.parallel().tween_property(halo, "modulate:a", 0.0, 0.6)
-	ht.tween_callback(halo.queue_free)
+	if bloom == null:
+		# Fallback halo (strip absent): eight glow shards sweeping the ring.
+		var halo := Node2D.new()
+		halo.global_position = pos
+		halo.z_index = 5
+		game.add_child(halo)
+		for i in 8:
+			var shard := Sprite2D.new()
+			shard.texture = Art.tex("glow")
+			shard.modulate = Art.hdr(Color(col, 0.75))
+			shard.position = Vector2.from_angle(TAU * i / 8.0) * radius * 0.85
+			shard.rotation = TAU * i / 8.0 + PI / 2.0
+			shard.scale = Vector2(0.9, 0.26)
+			halo.add_child(shard)
+		var ht := halo.create_tween()
+		ht.tween_property(halo, "rotation", TAU * 0.4, 0.55) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		ht.parallel().tween_property(halo, "modulate:a", 0.0, 0.6)
+		ht.tween_callback(halo.queue_free)
 
 	var eff := {"aoe": true}
 	eff["heal"] = maxf(0.025, float(fx.get("heal", 0.0)))
@@ -345,8 +369,16 @@ func _aegis() -> void:
 		col = Color(0.55, 0.38, 0.85)  # the ward is the dark of the disc
 	elif skin == "fallen_arbiter":
 		col = Color(0.88, 0.92, 1.00)
-	_ring_fx(global_position, col, 95.0)
-	game.burst(global_position, col, 10)
+	# The barrier itself (2026-08-15): a generated translucent shield DOME
+	# rides the paladin for the guard's whole duration — body under the
+	# actors, a see-through copy over them (FX layering rule) — in place of
+	# the old arrival ring + square burst. Tinted by theme/skin colour.
+	if _fx_loop("aegis_dome", Vector2.ZERO, 8, aegis_time,
+			{"parent": self, "color": col, "alpha": 0.9, "scale": AEGIS_DOME_SCALE,
+			"offset": AEGIS_DOME_OFFSET, "z": -1, "ghost_over": 0.45, "over_z": 6,
+			"frame_time": 0.07, "pingpong": true, "fade": 0.3}) == null:
+		_ring_fx(global_position, col, 95.0)
+		game.burst(global_position, col, 10)
 	game.spawn_text(global_position + Vector2(0, -60), "AEGIS", col)
 	# The ward is an actual shield crest, with four smaller plates orbiting it;
 	# Eclipse carries a dark seal and the Fallen Arbiter a cold rune instead.
@@ -355,20 +387,25 @@ func _aegis() -> void:
 		ward_tex = "fx_eclipse_corona"
 	elif skin == "fallen_arbiter":
 		ward_tex = "fx_fallen_verdict"
-	var ward := Sprite2D.new()
-	ward.texture = Art.tex(ward_tex)
-	# The ward is a translucent full-body barrier, lifted to the chest rather
-	# than a small crest at the feet.
-	ward.position = Vector2(0, -34)
-	ward.modulate = Color(col, 0.68 if skin == "eclipse_knight" else 0.42)
-	ward.scale = Vector2(2.15, 2.35) if ward_tex == "fx_aegis" else Vector2(1.7, 1.7)
-	ward.z_index = 6
-	add_child(ward)
-	var ward_tw := ward.create_tween()
-	ward_tw.tween_property(ward, "scale", ward.scale * 1.12, 0.22)
-	get_tree().create_timer(aegis_time).timeout.connect(func() -> void:
-		if is_instance_valid(ward):
-			ward.queue_free())
+	# The ward crest is a full-body barrier lifted to the chest. FX layering
+	# rule (2026-08-15): its BODY sits behind the knight (z −1) and only a thin
+	# ghost rides over him — the Eclipse disc at 0.68 / z 6 used to hide him
+	# for the whole guard.
+	var ward_scale := Vector2(2.15, 2.35) if ward_tex == "fx_aegis" else Vector2(1.7, 1.7)
+	var ward_alpha := 0.85 if skin == "eclipse_knight" else 0.55
+	for layer in 2:
+		var ward := Sprite2D.new()
+		ward.texture = Art.tex(ward_tex)
+		ward.position = Vector2(0, -34)
+		ward.modulate = Color(col, ward_alpha if layer == 0 else 0.28)
+		ward.scale = ward_scale
+		ward.z_index = -1 if layer == 0 else 6
+		add_child(ward)
+		var ward_tw := ward.create_tween()
+		ward_tw.tween_property(ward, "scale", ward.scale * 1.12, 0.22)
+		get_tree().create_timer(aegis_time).timeout.connect(func() -> void:
+			if is_instance_valid(ward):
+				ward.queue_free())
 	# Four physical ward plates orbit while the shield holds, then gutter out.
 	var orbit := Node2D.new()
 	# Center the orbit on the whole body, not the feet/torso origin.

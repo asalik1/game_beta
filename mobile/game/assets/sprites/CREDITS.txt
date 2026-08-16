@@ -183,4 +183,39 @@ OpenAI image generation — project-generated art (2026-07-18):
   mob_forge_brand, mob_hush_wave, mob_bloom_seed, mob_plague_spore
   (nine materially distinct 64px projectiles replacing the shared generic
   energy bullet for ordinary ranged enemies).
+  Ability-impact FX pass (2026-08-15, Codex image_gen headless):
+  fx/poison_cloud (8-frame looping toxic-gas mound, 256px cells),
+  fx/poison_splash (8-frame venom-splat impact, 192px), fx/poison_pool
+  (4-frame bubbling venom puddle, 192px) — the assassin's Toxic Wake /
+  Venom Bloom and the archer's venom Tumble cloud (player_combat._mist);
+  fx/meteor_impact (8-frame fire explosion + scorch, 256px — the mage's
+  Meteor landing, hue-shifted per theme); fx/earth_slam (8-frame ground
+  crack/rock/dust burst, 256px — the warrior's Earth end-slam and seismic
+  roar). Magenta/green chroma-keyed masters cut by tools/art/build_fx_strip.py
+  (per-row band cells, widest-row impact anchor, key despill, gamma 0.85);
+  masters + briefs in art_src/Custom/PoisonMistFX_2026-08-15/ and
+  art_src/Custom/ImpactFX_2026-08-15/.
+  Ring-replacement pass (2026-08-15, same lane): fx/aegis_dome (8-frame
+  looping translucent hex barrier dome — paladin Aegis), fx/dark_pact_burst
+  (8-frame blood-magic eruption — warlock Dark Pact, hue-shifted per theme),
+  fx/wind_vortex (8-frame ground wind spiral, code-spun — archer Arrow Storm's
+  eye), fx/arrow_impact (8-frame arrow-strike dust puff, 128px — each storm
+  arrow), fx/whirl_gust (8-frame gust ring, code-spun — warrior Whirlwind);
+  pale strips are tinted per theme/skin in code. Masters + briefs in
+  art_src/Custom/RingFX_2026-08-15/.
+  Hazard-pool + Berserk pass (2026-08-15, same lane): fx/hazard_lava,
+  fx/hazard_ice, fx/hazard_heal, fx/hazard_slow, fx/hazard_churned (4-frame
+  looping ground patches, 192px — every floor hazard type; poison reuses
+  fx/poison_pool, re-cut equator-anchored) and fx/rage_burst (8-frame ring of
+  fury-flame — the warrior's Berserk cast, hue-shifted per theme). Masters +
+  briefs in art_src/Custom/HazardFX_2026-08-15/.
+  Skin-FX pass (2026-08-15/16, same lane): fx/void_contact (8-frame void
+  tear-and-shards pop, 128px — Voidwraith tentacle bite), fx/storm_conduct
+  (8-frame forked lightning snap, 128px — Stormforged blade discharge / charge
+  break), fx/gilded_iai (8-frame gold cross-cut, 256px — Golden Ronin's
+  one-cut), fx/consecration_bloom (8-frame looping ring of holy light, 256px,
+  luminance-keyed from a black master — every paladin's Consecration, tinted),
+  fx/void_rift_burst (8-frame contract → burst → scar, 256px — the warlock
+  Void Rift collapse for base + Hellfire, hue-shifted). Masters + briefs in
+  art_src/Custom/SkinFX_2026-08-15/.
 Generated for this project; no third-party attribution required.

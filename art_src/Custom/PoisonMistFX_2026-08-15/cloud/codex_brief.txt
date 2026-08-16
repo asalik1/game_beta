@@ -1,0 +1,37 @@
+You are generating ONE game visual-effect animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/palette_poison.png : the BINDING colour palette for this effect (five swatches on magenta). Use ONLY greens in this family: #73F24D acid rim, #B9F55F hot highlight, #3E9A2E mid green, #245C1F dark body, #132E12 shadow. Ignore the magenta around the swatches — it is only there to show what the chroma key looks like.
+- Image 2 = refs/style_fx_strip.png : a shipped FX animation strip from this game (a violet thread eruption). Match its LEVEL OF FINISH — crisp high-resolution game FX, hard readable clusters, glowing rims over a dark body, no blur, no photo texture. Do NOT copy its subject, shape or colour.
+
+TASK: generate exactly ONE new 4x2 source sheet for a LOOPING TOXIC GAS CLOUD with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: game asset
+Output size: 1536x1024 landscape.
+Asset type: high-resolution 8-frame game visual-effect animation source, to be cropped into a horizontal sprite strip.
+Scene/backdrop: a perfectly flat uniform #ff00ff magenta chroma-key background filling every pixel, including the seams between cells. No scenery, floor plane, ground, platform, cast shadow, contact shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly EIGHT separate equal square effect cells laid out as a clean 4-column by 2-row contact sheet in reading order (top row left to right = frames 1-4, bottom row left to right = frames 5-8). All eight cells have identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat magenta between neighbouring cells and around the sheet edge.
+Subject: ONE lingering cloud of poisonous toxic gas resting on the ground, seen from a high three-quarter game camera: a roughly CIRCULAR footprint (as wide as it is deep, only slightly taller at the centre), a dense mound of billowing rounded smoke puffs. The body of the cloud is dark murky green (#245C1F / #132E12 shadows, #3E9A2E mid), and every puff has a bright acid-green rim light (#73F24D) with a few hot #B9F55F glints; thin acid-green wisps and tiny rising bubbles/motes peel off the top and sides. Sickly, venomous, heavy gas — NOT fire, NOT a fireball, NOT smoke from a chimney, NOT a mushroom cloud, NOT a face.
+Style/medium: crisp high-resolution dark-fantasy game FX art with hard readable clusters and a controlled palette; not painterly, not 3D-rendered, not photographic, not anime, not blurred.
+Composition/framing and ANCHOR RULE: the cloud is centred in each square cell and fills about 75% of the cell width, with clear magenta margin on every side (wisps must not touch the cell edge). It stays in the SAME spot and the SAME overall size in every cell — the footprint centre and the outer silhouette radius do not drift, the camera never moves. Only the puffs churn.
+LOOP storyboard - eight VISIBLY DIFFERENT churn states of THIS SAME cloud that read as one continuous seamless loop (frame 8 must flow back into frame 1):
+ frame 1: puffs settled, a large puff bulging on the LEFT, wisps drifting up-right
+ frame 2: the left puff rolls toward the centre-top, a new puff swelling at the front-right
+ frame 3: the front-right puff peaks, a wisp curls off the top, two bubbles rising on the left
+ frame 4: puffs rotate clockwise a step further; the top-left sinks, the right side lifts
+ frame 5: the right puff rolls over the top toward the left, bubbles pop at the rim
+ frame 6: a big puff bulging on the RIGHT (mirror of frame 1's mood), wisps drifting up-left
+ frame 7: that right puff sinks toward the front, a new puff swelling at the back-left
+ frame 8: the back-left puff rises to nearly frame 1's position so the loop closes into frame 1
+Rotate the churn slowly and consistently clockwise across the eight frames; every frame keeps the same footprint and silhouette size. Every frame is a full, complete cloud — never a partial or faded cloud.
+Constraints: output only the eight cells on magenta; no text, watermark, UI, characters, scenery, ground, shadow, or separators. Do NOT use #ff00ff, pink, purple or any magenta anywhere in the cloud. Do not use pure #00ff00 either — stay inside the five palette greens plus their in-between shades. Frames 1 through 8 must each be clearly different from every other frame while remaining the same cloud at the same size and place.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./cloud_master_4x2_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./cloud_master_4x2_v1_keyed.png (auto-key sampling from the border, soft matte, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all eight cells were produced with visibly different churn states (frame by frame), whether the cloud kept the same size and position in every cell, and any deviation from the brief you noticed (a cell missing, cells overlapping or touching, magenta or pink inside the cloud, the cloud drifting or resizing, an extra ninth cell, a ground plane drawn, the effect reading as fire or smoke instead of toxic gas). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

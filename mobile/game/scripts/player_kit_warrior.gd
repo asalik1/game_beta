@@ -2,6 +2,14 @@ extends "res://scripts/player_combat.gd"
 ## PLAYER, layer 3 of 9 — the WARRIOR kit: dispatch + abilities.
 ## See player_core.gd for the chain layout.
 
+## Berserk rage-burst strip (assets/sprites/fx/rage_burst.png, 8 x 256px,
+## build_fx_strip.py --valign widest): the flash ring's centre sits below the
+## cell middle so the flame tongues have headroom; this lifts it onto the feet.
+const RAGE_BURST_OFFSET := Vector2(0, -14)
+## Stormforged discharge strip (assets/sprites/fx/storm_conduct.png, 8 x 128px,
+## radial, 75% fill): a ~80px lightning snap at the blade / the bolt's ends.
+const STORM_CONDUCT_SCALE := 80.0 / (128.0 * 0.75)
+
 
 func _use_warrior(slot: String, f: float) -> void:
 	match slot:
@@ -124,15 +132,23 @@ func _use_warrior(slot: String, f: float) -> void:
 				# crackle of storm-light snapping back along the path.
 				charge_col = Color(0.45, 0.75, 1.00)
 				_storm_charge_break(charge_from, global_position)
-			_ring_fx(global_position, charge_col, 80.0)
 			if _tfx.get("end_slam", 0):
-				# Earth: the charge ends in a ground-shattering slam.
+				# Earth: the charge ends in a ground-shattering slam — the
+				# generated crack/rock/dust burst (2026-08-15) spans the hit
+				# radius; it replaces the arrival ring + square burst.
 				game.shake(5.0)
 				game.sfx("slam", 0.8)
-				game.burst(global_position, _tcolor, 14)
-				_ring_fx(global_position, _tcolor, 130.0)
+				_earth_slam_fx(global_position, 120.0, _tcolor)
 				for e in _enemies_within(global_position, 120.0):
 					hit_enemy(e, 0.7 * f, {"stun": 1.0, "aoe": true})
+			else:
+				# The ram's landing (2026-08-15): a generated dust puff at the feet
+				# (the archer strike's puff, scaled up and tinted), body under +
+				# thin ghost — in place of the arrival ring.
+				if _fx_flash("arrow_impact", global_position, 8, {"color": charge_col,
+						"scale": 130.0 / (128.0 * 0.7), "offset": Vector2(0, -32),
+						"z": -1, "ghost_over": 0.35, "over_z": 8, "frame_time": 0.035, "fade": 0.08}) == null:
+					_ring_fx(global_position, charge_col, 80.0)
 		"a3":
 			var wf := f
 			if s_passive() == "dirge":
@@ -159,7 +175,9 @@ func _use_warrior(slot: String, f: float) -> void:
 				theme_guard_time = berserk_time
 				theme_guard_amt = float(_tfx["berserk_guard"])
 			if _tfx.get("awaken_slam", 0):
-				# Earth: the roar itself is seismic.
+				# Earth: the roar itself is seismic — the ground shatters
+				# under the roar (the same slam strip as the charge's end).
+				_earth_slam_fx(global_position, 150.0, _tcolor)
 				for e in _enemies_within(global_position, 150.0):
 					hit_enemy(e, 0.8 * f, {"stun": 2.0, "aoe": true})
 			# Skin presentation of the rage (Ronin pattern — same roar, its
@@ -196,12 +214,31 @@ func _use_warrior(slot: String, f: float) -> void:
 				brand_tw.tween_property(brand, "scale", brand.scale * 1.28, 0.25)
 				brand_tw.parallel().tween_property(brand, "modulate:a", 0.0, 0.38)
 				brand_tw.tween_callback(brand.queue_free)
-			_ring_fx(global_position, rage_col,
-				(72.0 if skin in ["dreadknight", "stormforged"] else (150.0 if _tfx.get("awaken_slam", 0) else 110.0)))
+			# The rage ERUPTS (2026-08-15): a generated ring of fury-flame and a heat
+			# shockwave to the 110px call radius, hue-shifted to the theme's — or the
+			# skin's — rage colour, body under the actors + a see-through copy over
+			# (FX layering rule) — replaces the arrival ring + square burst. The two
+			# skins ride it under their staged overlays (dread-red / storm-blue) at
+			# a tighter radius so the banner / eye stay the headline (skin-FX pass).
+			var skinned := skin in ["dreadknight", "stormforged"]
+			var rage_mat: Material = null
+			if _themed or skinned:
+				var m := ShaderMaterial.new()
+				m.shader = ELEMENT_HUE_SHADER
+				m.set_shader_parameter("target_hue", rage_col.h)
+				rage_mat = m
+			var rage_opts := {"scale": (150.0 if skinned else 220.0) / (IMPACT_CELL * 0.85),
+				"offset": RAGE_BURST_OFFSET, "z": -1, "ghost_over": 0.45, "over_z": 8,
+				"frame_time": 0.05, "hold": 0.1, "fade": 0.35}
+			if rage_mat != null:
+				rage_opts["material"] = rage_mat
+			var rage_burst_drawn := _fx_flash("rage_burst", global_position, 8, rage_opts) != null
+			if not rage_burst_drawn and not _tfx.get("awaken_slam", 0):  # the seismic roar drew its own dust ring
+				_ring_fx(global_position, rage_col, 72.0 if skinned else 110.0)
 			_ult_sfx()
 			game.shake(6.0)
-			game.hud.flash_screen(rage_flash, 0.22 if skin in ["dreadknight", "stormforged"] else 0.4, 0.4)
-			if not skin in ["dreadknight", "stormforged"]:
+			game.hud.flash_screen(rage_flash, 0.22 if skinned else 0.4, 0.4)
+			if not skinned and not rage_burst_drawn:
 				game.burst(global_position, rage_col, 20)
 			game.spawn_text(global_position + Vector2(0, -60), "BERSERK!", rage_text)
 
@@ -246,6 +283,16 @@ func _whirlwind(f := 1.0) -> void:
 			enter.parallel().tween_property(blade, "position", Vector2.from_angle(ang) * radius * 0.55, 0.14).set_trans(Tween.TRANS_CUBIC)
 	var tw := pivot.create_tween()
 	var spin_dur := 0.58 if skin == "stormforged" else (0.46 if skin == "dreadknight" else 0.32)
+	# The torn AIR (2026-08-15): a generated gust ring — three wind crescents
+	# chasing round the warrior over one revolution, a dust ring under them —
+	# rides the spin under the actors with a see-through copy over (FX
+	# layering rule), tinted by theme/skin; Earth's inward pull spins it the
+	# other way. Replaces the thin arrival ring below (kept only as fallback).
+	var gust := _fx_loop("whirl_gust", Vector2(0, -6), 8, spin_dur, {
+		"parent": self, "color": col, "alpha": 0.85,
+		"scale": (radius * 2.0) / (IMPACT_CELL * 0.82), "z": -1, "ghost_over": 0.4,
+		"over_z": 5, "frame_time": spin_dur / 8.0, "flip_h": inward,
+		"spin": TAU / spin_dur * (-1.0 if inward else 1.0), "fade": 0.14})
 	tw.tween_property(pivot, "rotation", TAU * (-1.0 if inward else 1.0), spin_dur) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.parallel().tween_property(pivot, "modulate:a", 0.0, spin_dur + 0.05).set_delay(spin_dur * 0.55)
@@ -258,7 +305,8 @@ func _whirlwind(f := 1.0) -> void:
 			for i in 3:
 				var a := TAU * float(i) / 3.0
 				_beam_fx(global_position + Vector2.from_angle(a) * 24.0, global_position + Vector2.from_angle(a) * radius, Color(0.72, 0.92, 1.0), 0.12))
-	_ring_fx(global_position, col, radius, inward)
+	if gust == null:
+		_ring_fx(global_position, col, radius, inward)
 
 	var eff := {"stagger": 0.3, "aoe": true}
 	if not inward:  # Earth drags them in instead of flinging
@@ -287,7 +335,12 @@ func _storm_conduct(dir: Vector2) -> void:
 		tw.tween_callback(bead.queue_free)
 	get_tree().create_timer(0.11).timeout.connect(func() -> void:
 		var contact := global_position + dir * 62.0
-		_beam_fx(contact, contact + dir * 68.0, Color(0.72, 0.92, 1.0), 0.11))
+		_beam_fx(contact, contact + dir * 68.0, Color(0.72, 0.92, 1.0), 0.11)
+		# The discharge itself (skin-FX pass 2026-08-15): a generated forked
+		# lightning snap at the blade's contact point — over the lane, thin,
+		# short (a spark, not a body cover).
+		_fx_flash("storm_conduct", contact + dir * 20.0 + Vector2(0, -20), 8, {
+			"scale": STORM_CONDUCT_SCALE, "z": 8, "alpha": 0.9, "frame_time": 0.028, "fade": 0.05}))
 
 
 func _torn_banner_wake(start: Vector2, finish: Vector2) -> void:
@@ -307,18 +360,28 @@ func _torn_banner_wake(start: Vector2, finish: Vector2) -> void:
 
 
 func _storm_charge_break(start: Vector2, finish: Vector2) -> void:
-	sprite.modulate.a = 0.16
+	# The body becomes the bolt for the break: the phase-out goes through the
+	# ONE alpha seam (player.gd re-asserts sprite alpha every frame; the old
+	# `sprite.modulate.a = 0.16` here never rendered).
+	skin_vanish_alpha = 0.16
+	skin_vanish_t = 0.12
 	var span := finish - start
 	var prev := start
 	for i in 4:
 		var next := start.lerp(finish, float(i + 1) / 4.0) + span.normalized().orthogonal() * (7.0 if i % 2 == 0 else -7.0)
 		_beam_fx(prev, next, Color(0.66, 0.9, 1.0), 0.16)
 		prev = next
-	game.burst(finish, Color(0.75, 0.94, 1.0), 10)
+	# The break at both ends (skin-FX pass 2026-08-15): generated lightning
+	# snaps where the bolt left and where it lands, in place of the square
+	# bursts. Body-height, over the lane, thin.
+	var snap := {"scale": STORM_CONDUCT_SCALE * 1.25, "z": 8, "alpha": 0.9, "frame_time": 0.03, "fade": 0.06}
+	if _fx_flash("storm_conduct", start + Vector2(0, -28), 8, snap) == null:
+		game.burst(finish, Color(0.75, 0.94, 1.0), 10)
 	get_tree().create_timer(0.12).timeout.connect(func() -> void:
 		if not dead and sprite != null:
-			sprite.modulate.a = 1.0
-			game.burst(global_position, Color(0.55, 0.8, 1.0), 8))
+			skin_vanish_t = 0.0
+			if _fx_flash("storm_conduct", global_position + Vector2(0, -28), 8, snap) == null:
+				game.burst(global_position, Color(0.55, 0.8, 1.0), 8))
 
 
 func _dread_oath_sequence() -> void:
@@ -380,9 +443,11 @@ func _soul_wisps(pos: Vector2, col: Color) -> void:
 	wisps.gravity = Vector2(0, -80)
 	wisps.initial_velocity_min = 20.0
 	wisps.initial_velocity_max = 55.0
-	wisps.scale_amount_min = 1.5
-	wisps.scale_amount_max = 3.0
+	wisps.texture = Art.tex("glow")  # round wisps, not squares (skin-FX pass)
+	wisps.scale_amount_min = 0.10
+	wisps.scale_amount_max = 0.20
 	wisps.color = Color(col, 0.85)
 	wisps.global_position = pos
+	wisps.z_index = 6
 	game.add_child(wisps)
 	get_tree().create_timer(1.5).timeout.connect(wisps.queue_free)

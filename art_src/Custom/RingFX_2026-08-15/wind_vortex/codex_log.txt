@@ -1,0 +1,819 @@
+﻿codex.exe : Reading prompt from stdin...
+At line:6 char:14
++ ...    $brief | & $codex exec -C $d -s workspace-write --skip-git-repo-ch ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Reading prompt from stdin...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+OpenAI Codex v0.147.0-alpha.6.6
+--------
+workdir: C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\wind_vortex
+model: gpt-5.6-luna
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a007bd-614c-7023-8c0d-d789ceebb32c
+--------
+user
+You are generating ONE game visual-effect animation master with your built-in image_gen tool. Read 
+$CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current 
+directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/palette.png : the BINDING colour palette for this effect (five swatches on magenta: #FFFFFF white, 
+#EEF6F2 pale mist, #CFDFD8 light grey-mint, #9DB5AE mid grey-mint, #5F7770 shadow ??? a PALE near-white effect so the 
+game can tint it per theme). Ignore the magenta around the swatches ??? it is only there to show what the chroma key 
+looks like.
+- Image 2 = refs/style_fx_strip.png : a shipped FX animation strip from this game (a violet thread eruption). Match 
+its LEVEL OF FINISH ??? crisp high-resolution game FX, hard readable clusters, glowing rims over a darker body, no 
+blur, no photo texture. Do NOT copy its subject, shape or colour.
+
+TASK: generate exactly ONE new 4x2 source sheet for a LOOPING WIND VORTEX on the ground (the eye of an archer's Arrow 
+Storm) with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: game asset
+Output size: 1536x1024 landscape.
+Asset type: high-resolution 8-frame game visual-effect animation source, to be cropped into a horizontal sprite strip.
+Scene/backdrop: a perfectly flat uniform #ff00ff magenta chroma-key background filling every pixel, including the 
+seams between cells. No scenery, floor plane, ground texture, platform, cast shadow, gradient, vignette, border, grid, 
+line, or panel divider.
+Primary request: create exactly EIGHT separate equal square effect cells laid out as a clean 4-column by 2-row contact 
+sheet in reading order (top row left to right = frames 1-4, bottom row left to right = frames 5-8). All cells have 
+identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat magenta 
+between neighbouring cells and around the sheet edge.
+Subject: ONE flat swirling VORTEX of wind lying on the ground, seen from directly above / a high game camera: a 
+roughly CIRCULAR spiral of pale wind streaks and gust ribbons curling COUNTER-CLOCKWISE into the centre, with 
+FOUR-FOLD rotational symmetry (four matching spiral arms), a soft pale haze between the arms, and a few small dust 
+motes; the centre is an open calm eye (empty ??? the archer stands there, added by the game). Pale white and 
+grey-mint; the streaks have crisp bright edges. Air and wind only ??? NOT water, NOT a portal, NOT clouds from the 
+side, NOT a tornado funnel seen sideways.
+Style/medium: crisp high-resolution dark-fantasy game FX art with hard readable clusters and a controlled palette; not 
+painterly, not 3D-rendered, not photographic, not anime, not blurred.
+Composition/framing and ANCHOR RULE: the vortex is centred in each square cell (its eye is the exact centre) and fills 
+about 82% of the cell width with clear magenta margin on every side. It stays in the SAME spot at the SAME size in 
+every cell.
+LOOP storyboard ??? eight VISIBLY DIFFERENT rotation states of THIS SAME vortex that read as one seamless loop: the 
+whole four-armed spiral rotates COUNTER-CLOCKWISE by exactly 11.25 degrees per frame (frame 2 = frame 1 turned 11.25 
+degrees, frame 3 = 22.5, ... frame 8 = 78.75), so that one more step (90 degrees) lands exactly back on frame 1 
+because of the four-fold symmetry. Nothing else changes: same arm shapes, same haze, same size; only the rotation 
+angle. Frames 1 through 8 must each be clearly different rotations.
+Constraints: output only the cells on magenta; no text, watermark, UI, characters, weapons, scenery, ground texture, 
+shadow, or separators. Do NOT use #ff00ff, pink, purple or any magenta anywhere in the effect. Keep it PALE ??? white 
+and grey-mint only. Do not use pure #00ff00. Every frame must be clearly different from every other frame.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./wind_vortex_master_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to 
+./wind_vortex_master_v1_keyed.png (auto-key sampling from the border, soft matte, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all cells were produced with visibly different 
+frames (frame by frame), whether the effect kept the same centre and size in every cell, and any deviation from the 
+brief (a cell missing, cells overlapping or touching, key colour inside the effect, drift, an extra cell, a ground 
+plane drawn). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.
+
+
+codex
+IΓÇÖm using the image-generation skill because this is a bitmap FX asset request. IΓÇÖll read its required workflow, 
+generate the single source sheet, then create only the two requested PNGs in the staging directory.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\wind_vortex
+ succeeded in 34344ms:
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, 
+illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new 
+image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset 
+rather than repo-native code or vector. Do not use when the task is better handled by editing existing 
+SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in 
+HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product 
+mockups, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for normal image generation, editing, and 
+simple transparent-image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for the CLI/API/model path, or 
+after the user explicitly confirms a true model-native transparency fallback with `gpt-image-1.5`. Requires 
+`OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- If the user explicitly asks for a transparent image/background, stay on built-in `image_gen` first: prompt for a 
+flat removable chroma-key background, then remove it locally with the installed helper at 
+`$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`. Treat this as a 
+model/path downgrade and ask the user before doing it, unless the user has already explicitly requested 
+`gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback.
+- If a transparent request appears too complex for clean chroma-key removal, asks for true/native transparency, or 
+local removal fails validation, explain that true transparency requires CLI `gpt-image-1.5 --background transparent 
+--output-format png` because `gpt-image-2` does not support `background=transparent`, then ask whether to proceed. Run 
+the CLI fallback only after the user confirms.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate 
+assets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per 
+requested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires 
+`OPENAI_API_KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK 
+runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific 
+location is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before 
+finishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the 
+default `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling 
+versioned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+Local post-processing helper:
+- `$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`: removes a flat chroma-key background from a 
+generated image and writes a PNG/WebP with alpha. Prefer auto-key sampling, soft matte, and despill for antialiased 
+edges.
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, 
+compositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request 
+as **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images 
+generated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool 
+so the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit 
+CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or 
+variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and 
+needs many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; 
+distinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including simple transparent-output requests; fallback CLI only if 
+explicitly requested or after the user explicitly confirms a transparent-output fallback.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with 
+`view_image` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, 
+use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic 
+that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative 
+requirements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, follow the transparent image guidance below: generate with built-in `image_gen` 
+on a flat chroma-key background, copy the selected output into the workspace or `tmp/imagegen/`, run the installed 
+`$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py` helper, and validate the alpha result before using 
+it. If this path looks unsuitable or fails, ask before switching to CLI `gpt-image-1.5`.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default 
+`$CODEX_HOME/generated_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or 
+references. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user 
+explicitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, 
+size, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and 
+whether the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Transparent-image requests still use built-in `image_gen` first. Because the built-in tool does not expose a true 
+transparent-background control, create a removable chroma-key source image and then convert the key color to alpha 
+locally.
+
+Default sequence:
+1. Use built-in `image_gen` to generate the requested subject on a perfectly flat solid chroma-key background.
+2. Choose a key color that is unlikely to appear in the subject: default `#00ff00`, use `#ff00ff` for green subjects, 
+and avoid `#0000ff` for blue subjects.
+3. After generation, move or copy the selected source image from `$CODEX_HOME/generated_images/...` into the workspace 
+or `tmp/imagegen/`.
+4. Run the installed helper path, not a project-relative script path:
+   ```bash
+   python "${CODEX_HOME:-$HOME/.codex}/skills/.system/imagegen/scripts/remove_chroma_key.py" \
+     --input <source> \
+     --out <final.png> \
+     --auto-key border \
+     --soft-matte \
+     --transparent-threshold 12 \
+     --opaque-threshold 220 \
+     --despill
+   ```
+5. Validate that the output has an alpha channel, transparent corners, plausible subject coverage, and no obvious 
+key-color fringe. If a thin fringe remains, retry once with `--edge-contract 1`; use `--edge-feather 0.25` only when 
+the edge is visibly stair-stepped and the subject is not shiny or reflective.
+6. Save the final alpha PNG/WebP in the project if the asset is project-bound. Never leave a project-referenced 
+transparent asset only under `$CODEX_HOME/*`.
+
+Prompt transparent requests like this:
+
+```text
+Create the requested subject on a perfectly flat solid #00ff00 chroma-key background for background removal.
+The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting 
+variation.
+Keep the subject fully separated from the background with crisp edges and generous padding.
+Do not use #00ff00 anywhere in the subject.
+No cast shadow, no contact shadow, no reflection, no watermark, and no text unless explicitly requested.
+```
+
+Do not automatically use CLI `gpt-image-1.5 --background transparent --output-format png` instead of chroma keying. 
+Ask the user first when the user asks for true/native transparency, when local removal fails validation, or when the 
+requested image is complex: hair, fur, feathers, smoke, glass, liquids, translucent materials, reflective objects, 
+soft shadows, realistic product grounding, or subject colors that conflict with all practical key colors.
+
+Use a concise confirmation like:
+
+```text
+This likely needs true native transparency. The default built-in path uses a chroma-key background plus local removal, 
+but true transparency requires the CLI fallback with gpt-image-1.5 because gpt-image-2 does not support 
+background=transparent. It also requires OPENAI_API_KEY. Should I proceed with that CLI fallback?
+```
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, 
+but do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra 
+labeled line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural ├óΓé¼ΓÇ¥ candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup ├óΓé¼ΓÇ¥ product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup ├óΓé¼ΓÇ¥ app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram ├óΓé¼ΓÇ¥ diagrams/infographics with structured layout and text.
+- scientific-educational ├óΓé¼ΓÇ¥ classroom explainers, scientific diagrams, and learning visuals with required labels 
+and accuracy constraints.
+- ads-marketing ├óΓé¼ΓÇ¥ campaign concepts and ad creatives with audience, brand position, scene, and exact 
+tagline/copy.
+- productivity-visual ├óΓé¼ΓÇ¥ slide, chart, workflow, and data-heavy business visuals.
+- logo-brand ├óΓé¼ΓÇ¥ logo/mark exploration, vector-friendly.
+- illustration-story ├óΓé¼ΓÇ¥ comics, children├óΓé¼Γäós book art, narrative scenes.
+- stylized-concept ├óΓé¼ΓÇ¥ style-driven concept art, 3D/stylized renders.
+- historical-scene ├óΓé¼ΓÇ¥ period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization ├óΓé¼ΓÇ¥ translate/replace in-image text, preserve layout.
+- identity-preserve ├óΓé¼ΓÇ¥ try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit ├óΓé¼ΓÇ¥ remove/replace a specific element (including interior swaps).
+- lighting-weather ├óΓé¼ΓÇ¥ time-of-day/season/atmosphere changes only.
+- background-extraction ├óΓé¼ΓÇ¥ transparent background / clean cutout. Use built-in `image_gen` with chroma-key 
+removal first for simple opaque subjects; ask before using CLI true transparency for complex subjects.
+- style-transfer ├óΓé¼ΓÇ¥ apply reference style while changing subject/scene.
+- compositing ├óΓé¼ΓÇ¥ multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render ├óΓé¼ΓÇ¥ drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D/etc>
+Composition/framing: <wide/close/top-down; placement>
+Lighting/mood: <lighting + mood>
+Color palette: <palette notes>
+Materials/textures: <surface details>
+Text (verbatim): "<exact text>"
+Constraints: <must keep/must avoid>
+Avoid: <negative constraints>
+```
+
+Notes:
+- `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
+- `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which 
+controls output transparency behavior.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong 
+in the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+
+Augmentation rules:
+- Keep it short.
+- Add only the details needed to improve the prompt materially.
+- For edits, explicitly list invariants (`change only X; keep Y unchanged`).
+- If any critical detail is missing and blocks success, ask a question; otherwise proceed.
+
+## Examples
+
+### Generation example (hero image)
+```text
+Use case: product-mockup
+Asset type: landing page hero
+Primary request: a minimal hero image of a ceramic coffee mug
+Style/medium: clean product photography
+Composition/framing: wide composition with usable negative space for page copy if needed
+Lighting/mood: soft studio lighting
+Constraints: no logos, no text, no watermark
+```
+
+### Edit example (invariants)
+```text
+Use case: precise-object-edit
+Asset type: product photo background replacement
+Primary request: replace only the background with a warm sunset gradient
+Constraints: change only the background; keep the product and its edges unchanged; no text; no watermark
+```
+
+## Prompting best practices
+- Structure prompt as scene/backdrop -> subject -> details -> constraints.
+- Include intended use (ad, UI mock, infographic) to set the mode and polish level.
+- Use camera/composition language for photorealism.
+- Only use SVG/vector stand-ins when the user explicitly asked for vector output or a non-image placeholder.
+- Quote exact text and specify typography + placement.
+- For tricky words, spell them letter-by-letter and require verbatim rendering.
+- For multi-image inputs, reference images by index and describe how they should be used.
+- For edits, repeat invariants every iteration to reduce drift.
+- Iterate with single-change follow-ups.
+- If the prompt is generic, add only the extra detail that will materially help.
+- If the prompt is already detailed, normalize it instead of expanding it.
+- For CLI fallback only, see `references/cli.md` and `references/image-api.md` for model, `quality`, `input_fidelity`, 
+masks, output format, and output-path guidance.
+- For transparent images, use the built-in-first chroma-key workflow unless the request is complex enough to need true 
+CLI transparency; ask before switching to CLI `gpt-image-1.5`.
+
+More principles shared by both modes: `references/prompting.md`.
+Copy/paste specs shared by both modes: `references/sample-prompts.md`.
+
+## Guidance by asset type
+Asset-type templates (website assets, game assets, wireframes, logo) are consolidated in 
+`references/sample-prompts.md`.
+
+## gpt-image-2 guidance for CLI fallback
+
+The fallback CLI defaults to `gpt-image-2`.
+
+- Use `gpt-image-2` for new CLI/API workflows unless the request needs true model-native transparent output.
+- If a transparent request may need CLI fallback, ask before using `gpt-image-1.5` unless the user already explicitly 
+requested `gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback. Explain that the built-in chroma-key path is the 
+default, but true transparency requires `gpt-image-1.5` because `gpt-image-2` does not support 
+`background=transparent`.
+- `gpt-image-2` always uses high fidelity for image inputs; do not set `input_fidelity` with this model.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- Use `quality low` for fast drafts, thumbnails, and quick iterations. Use `medium`, `high`, or `auto` for final 
+assets, dense text, diagrams, identity-sensitive edits, or high-resolution outputs.
+- Square images are typically fastest to generate. Use `1024x1024` for fast square drafts.
+- If the user asks for 4K-style output, use `3840x2160` for landscape or `2160x3840` for portrait.
+- `gpt-image-2` size may be `auto` or `WIDTHxHEIGHT` if all constraints hold: max edge `<= 3840px`, both edges 
+multiples of `16px`, long-to-short ratio `<= 3:1`, total pixels between `655,360` and `8,294,400`.
+
+Popular `gpt-image-2` sizes:
+- `1024x1024` square
+- `1536x1024` landscape
+- `1024x1536` portrait
+- `2048x2048` 2K square
+- `2048x1152` 2K landscape
+- `3840x2160` 4K landscape
+- `2160x3840` 4K portrait
+- `auto`
+
+## Fallback CLI mode only
+
+### Temp and output conventions
+These conventions apply only to the CLI fallback. They do not describe built-in `image_gen` output behavior.
+- Use `tmp/imagegen/` for intermediate files (for example JSONL batches); delete them when done.
+- Write final artifacts under `output/imagegen/`.
+- Use `--out` or `--out-dir` to control output paths; keep filenames stable and descriptive.
+
+### Dependencies
+Prefer `uv` for dependency management in this repo.
+
+Required Python package:
+```bash
+uv pip install openai
+```
+
+Required for local chroma-key removal and optional downscaling:
+```bash
+uv pip install pillow
+```
+
+Portability note:
+- If you are using the installed skill outside this repo, install dependencies into that environment with its package 
+manager.
+- In uv-managed environments, `uv pip install ...` remains the preferred path.
+
+### Environment
+- `OPENAI_API_KEY` must be set for live API calls.
+- Do not ask the user for `OPENAI_API_KEY` when using the built-in `image_gen` tool.
+- Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
+
+If the key is missing, give the user these steps:
+1. Create an API key in the OpenAI platform UI: https://platform.openai.com/api-keys
+2. Set `OPENAI_API_KEY` as an environment variable in their system.
+3. Offer to guide them through setting the environment variable for their OS/shell if needed.
+
+If installation is not possible in this environment, tell the user which dependency is missing and how to install it 
+into their active environment.
+
+### Script-mode notes
+- CLI commands + examples: `references/cli.md`
+- API parameter quick reference: `references/image-api.md`
+- Network approvals / sandbox settings for CLI mode: `references/codex-network.md`
+
+## Reference map
+- `references/prompting.md`: shared prompting principles for both modes.
+- `references/sample-prompts.md`: shared copy/paste prompt recipes for both modes.
+- `references/cli.md`: fallback-only CLI usage via `scripts/image_gen.py`.
+- `references/image-api.md`: fallback-only API/CLI parameter reference.
+- `references/codex-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
+- `scripts/image_gen.py`: fallback-only CLI implementation. Do not load or use it unless the user explicitly chooses 
+CLI mode or explicitly confirms a transparent request's true CLI transparency fallback.
+- `$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`: local post-processing helper for built-in 
+transparent-image requests.
+
+
+codex
+The required skill confirms the built-in generator plus local chroma-key removal is the correct path. IΓÇÖm also 
+checking the repositoryΓÇÖs `CLAUDE.md` working rules before creating the asset, then IΓÇÖll validate the generated 
+sheet for the exact 4├ù2 layout and loop constraints.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw 'CLAUDE.md'" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\wind_vortex
+2026-08-15T23:25:12.309577Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 1.7 seconds
+Output:
+Get-Content : Cannot find path 'C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\wind_vortex\CLAUDE.md' 
+because it does not exist.
+At line:2 char:1
++ Get-Content -Raw 'CLAUDE.md'
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\asali\...ortex\CLAUDE.md:String) [Get-Content], ItemNotFoundEx 
+   ception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+
+ exited 1 in 1658ms:
+Get-Content : Cannot find path 'C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\wind_vortex\CLAUDE.md' 
+because it does not exist.
+At line:2 char:1
++ Get-Content -Raw 'CLAUDE.md'
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\asali\...ortex\CLAUDE.md:String) [Get-Content], ItemNotFoundEx 
+   ception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -Path (Get-Location).Path, 
+(Get-Item (Get-Location).Path).Parent.FullName, (Get-Item (Get-Item 
+(Get-Location).Path).Parent.FullName).Parent.FullName -Filter 'CLAUDE.md' -File -ErrorAction SilentlyContinue | 
+Select-Object -ExpandProperty FullName" in C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\wind_vortex
+ succeeded in 1501ms:
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg --files -g 'CLAUDE.md' -g 
+'"'!**/.git/**'"' .." in C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\wind_vortex
+2026-08-15T23:25:29.385188Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 8.6 seconds
+Output:
+rg : The term 'rg' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the 
+spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:2 char:1
++ rg --files -g 'CLAUDE.md' -g '!**/.git/**' ..
++ ~~
+    + CategoryInfo          : ObjectNotFound: (rg:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+
+ exited 1 in 8615ms:
+rg : The term 'rg' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the 
+spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:2 char:1
++ rg --files -g 'CLAUDE.md' -g '!**/.git/**' ..
++ ~~
+    + CategoryInfo          : ObjectNotFound: (rg:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -Path (Get-Item 
+(Get-Location).Path).Parent.Parent.FullName -Recurse -Filter 'CLAUDE.md' -File -ErrorAction SilentlyContinue | 
+Select-Object -ExpandProperty FullName" in C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\wind_vortex
+ succeeded in 1642ms:
+codex
+`CLAUDE.md` is not present in the staging directory or its nearby parent tree, so there are no additional 
+repo-specific rules available to apply. IΓÇÖm proceeding with the supplied brief and references; the palette image is 
+a colour reference and the FX strip is a finish/style reference only.
+codex
+The generator returned one PNG at 1536├ù1024. IΓÇÖm copying that untouched source into `wind_vortex_master_v1.png`, 
+then IΓÇÖll run the specified border-sampled soft-matte/despill key removal and inspect both outputs.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:\\Users\\asali\\.c
+odex\\generated_images\\01a007bd-614c-7023-8c0d-d789ceebb32c\\exec-447ab2f9-27dd-4dd2-9be0-fd8e4776cf65.png' 
+-Destination '.\\wind_vortex_master_v1.png' -Force" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\wind_vortex
+ succeeded in 1495ms:
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py' --input 
+'.\\wind_vortex_master_v1.png' --out '.\\wind_vortex_master_v1_keyed.png' --auto-key border --soft-matte 
+--transparent-threshold 12 --opaque-threshold 220 --despill" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\wind_vortex
+ succeeded in 16582ms:
+Wrote wind_vortex_master_v1_keyed.png
+Key color: #fa10f8
+Transparent pixels: 1138160/1572864
+Partially transparent pixels: 250778/1572864
+
+codex
+The keyed PNG was written successfully, with the helper auto-sampling `#FA10F8` and producing alpha. IΓÇÖm now 
+checking the raw sheet visually and programmatically for cell count, spacing, centre/size drift, magenta 
+contamination, and whether the eight frames actually read as distinct rotations.
+codex
+The first sheet is structurally clean, but it fails the most important animation requirement: the eight cells are 
+effectively the same pose, with no reliably visible 11.25┬░ step sequence. IΓÇÖm making one targeted replacement 
+attempt focused on explicit per-frame orientation landmarks; IΓÇÖll keep only the best single sheet in the staging 
+directory.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+import numpy as np
+from pathlib import Path
+
+paths = [Path('wind_vortex_master_v1.png'), Path(r'C:\\Users\\asali\\.codex\\generated_images\\01a007bd-614c-7023-8c0d-
+d789ceebb32c\\exec-ba5c38de-fead-4dc0-8855-32fedb494280.png')]
+for path in paths:
+    im = np.array(Image.open(path).convert('RGB'))
+    h,w,_ = im.shape
+    bg = im[0,0].astype(float)
+    print(f'{path.name}: {w}x{h}, bg={tuple(im[0,0])}')
+    cells=[]
+    for row in range(2):
+        for col in range(4):
+            y0,y1=row*h//2,(row+1)*h//2
+            x0,x1=col*w//4,(col+1)*w//4
+            c=im[y0:y1,x0:x1]
+            d=np.linalg.norm(c.astype(float)-bg,axis=2)
+            m=d>30
+            ys,xs=np.where(m)
+            if len(xs):
+                print(f'  f{row*4+col+1}: area={m.sum()} bbox=({xs.min()},{ys.min()})-({xs.max()},{ys.max()}) 
+centroid=({xs.mean():.1f},{ys.mean():.1f})')
+            else: print(f'  f{row*4+col+1}: empty')
+            cells.append(c.astype(float))
+    print('  normalized pair MAE to f1:', [round(np.abs(cells[0]-c).mean(),2) for c in cells])
+    print('  normalized pair corr to f1:', [round(np.corrcoef(cells[0].ravel(),c.ravel())[0,1],4) for c in cells])
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\wind_vortex
+ succeeded in 3129ms:
+wind_vortex_master_v1.png: 1536x1024, bg=(np.uint8(239), np.uint8(24), np.uint8(238))
+  f1: area=53038 bbox=(35,121)-(361,427) centroid=(198.5,276.6)
+  f2: area=53916 bbox=(35,121)-(361,424) centroid=(195.4,277.5)
+  f3: area=53827 bbox=(34,121)-(361,424) centroid=(196.4,276.5)
+  f4: area=52491 bbox=(37,127)-(360,424) centroid=(196.4,277.4)
+  f5: area=55471 bbox=(38,70)-(362,375) centroid=(195.9,225.4)
+  f6: area=55647 bbox=(36,70)-(361,377) centroid=(194.9,225.5)
+  f7: area=55232 bbox=(41,76)-(361,375) centroid=(194.8,226.5)
+  f8: area=54465 bbox=(41,76)-(360,377) centroid=(193.6,225.9)
+  normalized pair MAE to f1: [np.float64(0.0), np.float64(8.38), np.float64(8.61), np.float64(8.8), np.float64(22.7), 
+np.float64(22.74), np.float64(22.55), np.float64(22.4)]
+  normalized pair corr to f1: [np.float64(1.0), np.float64(0.972), np.float64(0.9701), np.float64(0.9693), 
+np.float64(0.8645), np.float64(0.866), np.float64(0.8691), np.float64(0.8695)]
+exec-ba5c38de-fead-4dc0-8855-32fedb494280.png: 1536x1024, bg=(np.uint8(219), np.uint8(49), np.uint8(228))
+  f1: area=57885 bbox=(35,120)-(368,430) centroid=(200.2,279.7)
+  f2: area=58214 bbox=(33,121)-(364,429) centroid=(195.3,281.1)
+  f3: area=57127 bbox=(30,120)-(359,428) centroid=(190.0,277.9)
+  f4: area=55404 bbox=(25,126)-(353,427) centroid=(182.7,278.1)
+  f5: area=58267 bbox=(2,70)-(365,509) centroid=(197.7,226.5)
+  f6: area=57811 bbox=(33,69)-(359,377) centroid=(191.2,225.8)
+  f7: area=56475 bbox=(29,77)-(356,378) centroid=(186.2,229.2)
+  f8: area=54648 bbox=(31,78)-(379,510) centroid=(181.2,229.6)
+  normalized pair MAE to f1: [np.float64(0.0), np.float64(10.32), np.float64(12.8), np.float64(14.57), 
+np.float64(22.31), np.float64(22.35), np.float64(21.67), np.float64(21.7)]
+  normalized pair corr to f1: [np.float64(1.0), np.float64(0.9543), np.float64(0.9336), np.float64(0.9185), 
+np.float64(0.843), np.float64(0.8411), np.float64(0.8486), np.float64(0.8487)]
+
+ERROR: Reconnecting... 2/5
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+import numpy as np
+
+raw=np.array(Image.open('wind_vortex_master_v1.png').convert('RGB'))
+key=np.array(Image.open('wind_vortex_master_v1_keyed.png').convert('RGBA'))
+print('raw_size', raw.shape[1], raw.shape[0], 'raw_mode', Image.open('wind_vortex_master_v1.png').mode)
+print('keyed_size', key.shape[1], key.shape[0], 'keyed_mode', Image.open('wind_vortex_master_v1_keyed.png').mode)
+print('raw_corner_rgb', tuple(map(int,raw[0,0])))
+border=np.concatenate([raw[0,:,:],raw[-1,:,:],raw[:,0,:],raw[:,-1,:]],axis=0)
+print('border_rgb_min', border.min(axis=0).tolist(), 'max', border.max(axis=0).tolist(), 'std', 
+np.round(border.std(axis=0),2).tolist())
+print('keyed_corner_alpha', key[0,0,3], 'keyed_alpha_minmax', int(key[:,:,3].min()), int(key[:,:,3].max()))
+
+# Per-cell non-background coverage and bounds based on distance from the corner background.
+bg=raw[0,0].astype(float)
+for i in range(8):
+    row,col=divmod(i,4)
+    y0,y1=row*512,(row+1)*512
+    x0,x1=col*384,(col+1)*384
+    c=raw[y0:y1,x0:x1]
+    d=np.linalg.norm(c.astype(float)-bg,axis=2)
+    m=d>30
+    ys,xs=np.where(m)
+    a=key[y0:y1,x0:x1,3]
+    ya,xa=np.where(a>12)
+    print(f'f{i+1}: raw_bbox=({xs.min()},{ys.min()})-({xs.max()},{ys.max()}) raw_area={int(m.sum())} 
+alpha_bbox=({xa.min()},{ya.min()})-({xa.max()},{ya.max()}) alpha_area={int((a>12).sum())}')
+    # Magenta-dominant pixels within raw subject mask
+    s=c.astype(int)
+    pink=(s[:,:,0]-s[:,:,1]>100)&(s[:,:,2]-s[:,:,1]>100)&m
+    print(f'  magenta_dominant_subject_pixels={int(pink.sum())}')
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\wind_vortex
+ succeeded in 2811ms:
+raw_size 1536 1024 raw_mode RGB
+keyed_size 1536 1024 keyed_mode RGBA
+raw_corner_rgb (239, 24, 238)
+border_rgb_min [236, 12, 235] max [250, 47, 250] std [1.71, 4.02, 2.41]
+keyed_corner_alpha 0 keyed_alpha_minmax 0 255
+f1: raw_bbox=(35,121)-(361,427) raw_area=53038 alpha_bbox=(35,121)-(361,427) alpha_area=51676
+  magenta_dominant_subject_pixels=18388
+f2: raw_bbox=(35,121)-(361,424) raw_area=53916 alpha_bbox=(35,121)-(361,424) alpha_area=52580
+  magenta_dominant_subject_pixels=18159
+f3: raw_bbox=(34,121)-(361,424) raw_area=53827 alpha_bbox=(35,121)-(361,424) alpha_area=52428
+  magenta_dominant_subject_pixels=18016
+f4: raw_bbox=(37,127)-(360,424) raw_area=52491 alpha_bbox=(37,127)-(360,424) alpha_area=51138
+  magenta_dominant_subject_pixels=17396
+f5: raw_bbox=(38,70)-(362,375) raw_area=55471 alpha_bbox=(38,70)-(361,375) alpha_area=54201
+  magenta_dominant_subject_pixels=17795
+f6: raw_bbox=(36,70)-(361,377) raw_area=55647 alpha_bbox=(36,70)-(361,376) alpha_area=54253
+  magenta_dominant_subject_pixels=18199
+f7: raw_bbox=(41,76)-(361,375) raw_area=55232 alpha_bbox=(43,76)-(361,375) alpha_area=53680
+  magenta_dominant_subject_pixels=17772
+f8: raw_bbox=(41,76)-(360,377) raw_area=54465 alpha_bbox=(42,76)-(360,377) alpha_area=53033
+  magenta_dominant_subject_pixels=17245
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+import numpy as np
+raw=np.array(Image.open('wind_vortex_master_v1.png').convert('RGB')).astype(int)
+for i in range(8):
+    row,col=divmod(i,4); y0,y1=row*512,(row+1)*512; x0,x1=col*384,(col+1)*384
+    c=raw[y0:y1,x0:x1]
+    # Restrict to central subject zone, classify pixels that are visibly magenta rather than pale mint/white.
+    pink=(c[:,:,0]-c[:,:,1]>100)&(c[:,:,2]-c[:,:,1]>100)&(c[:,:,1]>60)
+    print(f'f{i+1}: pink_like_with_green_gt60={int(pink.sum())}')
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\wind_vortex
+ succeeded in 2345ms:
+f1: pink_like_with_green_gt60=15567
+f2: pink_like_with_green_gt60=15535
+f3: pink_like_with_green_gt60=15531
+f4: pink_like_with_green_gt60=14882
+f5: pink_like_with_green_gt60=15302
+f6: pink_like_with_green_gt60=15738
+f7: pink_like_with_green_gt60=15157
+f8: pink_like_with_green_gt60=14699
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Get-ChildItem -File | Select-Object 
+Name,Length,LastWriteTime' in C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\wind_vortex
+ succeeded in 1384ms:
+
+Name                             Length LastWriteTime       
+----                             ------ -------------       
+codex_brief.txt                    4915 8/15/2026 7:23:52 PM
+codex_log.txt                      6187 8/15/2026 7:24:32 PM
+wind_vortex_master_v1.png       1789114 8/15/2026 7:26:47 PM
+wind_vortex_master_v1_keyed.png 1095707 8/15/2026 7:27:15 PM
+
+
+
+codex
+Created the requested files:
+
+- [wind_vortex_master_v1.png](C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\wind_vortex\wind_vortex_mast
+er_v1.png)
+- [wind_vortex_master_v1_keyed.png](C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\wind_vortex\wind_vorte
+x_master_v1_keyed.png)
+
+Validation:
+
+- Raw size: 1536├ù1024.
+- Eight cells present; no extra or missing cell.
+- No overlap or touching.
+- Ground plane: none.
+- Frames visibly different: no. They are effectively repeated poses, not the required 11.25┬░ sequence.
+- Centre/size consistency: no. Size is roughly consistent, but there is clear vertical drift between rows.
+- Key colour inside effect: yes. Significant pink/magenta contamination remains in the effect.
+- Background: not perfectly `#FF00FF`; it varies and samples as approximately `#EF18EE` at the corner.
+- Keyed output: RGBA with transparent corners.
+
+
+tokens used
+56,920
+Created the requested files:
+
+- [wind_vortex_master_v1.png](C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\wind_vortex\wind_vortex_master_v1.png)
+- [wind_vortex_master_v1_keyed.png](C:\Users\asali\Projects\MMO\art_src\Custom\RingFX_2026-08-15\wind_vortex\wind_vortex_master_v1_keyed.png)
+
+Validation:
+
+- Raw size: 1536├ù1024.
+- Eight cells present; no extra or missing cell.
+- No overlap or touching.
+- Ground plane: none.
+- Frames visibly different: no. They are effectively repeated poses, not the required 11.25┬░ sequence.
+- Centre/size consistency: no. Size is roughly consistent, but there is clear vertical drift between rows.
+- Key colour inside effect: yes. Significant pink/magenta contamination remains in the effect.
+- Background: not perfectly `#FF00FF`; it varies and samples as approximately `#EF18EE` at the corner.
+- Keyed output: RGBA with transparent corners.
+
+

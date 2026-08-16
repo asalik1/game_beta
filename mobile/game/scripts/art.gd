@@ -3163,7 +3163,8 @@ static var _anim_cache := {}
 
 ## Idle strip: assets/sprites/<name>_anim.png.
 static func anim_info(name: String) -> Dictionary:
-	return _strip_info("%s_anim" % name)
+	var base: String = String(BOSS_IDLE_STRIP_BASE.get(name, "%s_anim" % name))
+	return _strip_info(base)
 
 
 ## Walk strip: assets/sprites/<name>_walk.png — swapped in by enemies
@@ -3278,6 +3279,14 @@ const MOB_IDLE_ONLY_LOCOMOTION := {
 	"stormcult": true, "mummy": true, "skeleton_mage": true,
 	"skeleton_warrior": true, "vale_mourner": true, "mummy_mage": true,
 	"cold_pilgrim": true,
+	# Act 1 Codex regen (2026-08-15): walk deferred (Phase-2 bipedal-walk risk);
+	# these bosses idle-breathe while repositioning instead of a stale flat walk.
+	"choirmother": true, "forgemistress": true, "vess": true,
+	"ashpriest": true, "serane": true, "halla": true,
+	"rotmaw": true, "sexton": true,
+	"nullwarden": true, "saint_varo": true,
+	"auroch_minotaur": true, "kaethra": true, "veyx": true, "vargoth": true, "korrag": true,
+	"hrolgar": true, "echo": true, "stormmouth": true,
 }
 const MOB_FLAT_WALK_LOCOMOTION := {
 	"wolf": true, "cultist": true, "skeleton": true, "zombie": true,
@@ -3294,6 +3303,86 @@ const MOB_BODY_SCALE_WALK := {
 	"bog_lurker": true,
 }
 
+## Codex regeneration wave 1 uses one high-resolution flat strip per clip.
+## These bosses still have legacy 8-direction PixelLab sheets in the tree;
+## prefer the new Codex idle/walk strips so the replacement assets are live.
+const BOSS_FLAT_ANIMATION_LOCOMOTION := {
+	"fangmaw": true, "cinderhide": true, "morwen": true,
+	# Act 1 regeneration (2026-08-15): keyed by SPRITE name (not boss kind).
+	"choirmother": true, "forgemistress": true, "vess": true,
+	"ashpriest": true, "serane": true, "halla": true,
+	"rotmaw": true, "sexton": true,
+	"nullwarden": true, "saint_varo": true,
+	"auroch_minotaur": true, "kaethra": true, "veyx": true, "vargoth": true, "korrag": true,
+	"hrolgar": true, "echo": true, "stormmouth": true,
+}
+
+## Wave-1 bosses must not fall back into the legacy PixelLab ability family.
+## If a named move has no dedicated Codex strip yet, reuse the high-resolution
+## Codex attack strip instead so every visible action stays in the new style.
+const BOSS_ACTION_FALLBACK := {
+	"fangmaw": "attack",
+	"cinderhide": "attack",
+	"morwen": "attack",
+	# Act 1 regeneration: any unmatched action routes to this representative clip.
+	"choirmother": "bolt", "forgemistress": "attack", "vess": "ring",
+	"ashpriest": "bolt", "serane": "bolt", "halla": "bolt",
+	"rotmaw": "bolt", "sexton": "attack",
+	"nullwarden": "attack", "saint_varo": "attack",
+	"auroch_minotaur": "attack", "kaethra": "stab", "veyx": "ring",
+	"vargoth": "attack", "korrag": "attack",
+	"hrolgar": "attack", "echo": "attack", "stormmouth": "bolt",
+}
+
+## The wave-1 idles are explicit Codex strips. Keep the filenames here so the
+## old directional PixelLab sheets can remain in the tree as recoverable
+## comparisons while these regenerated idles are the live ones.
+const BOSS_IDLE_STRIP_BASE := {
+	"fangmaw": "fangmaw_anim_codex",
+	"cinderhide": "cinderhide_anim_codex",
+	"morwen": "morwen_anim_codex",
+	# Act 1 regeneration: <sprite>_anim_codex is the live Codex idle.
+	"choirmother": "choirmother_anim_codex",
+	"forgemistress": "forgemistress_anim_codex",
+	"vess": "vess_anim_codex",
+	"ashpriest": "ashpriest_anim_codex",
+	"serane": "serane_anim_codex",
+	"halla": "halla_anim_codex",
+	"rotmaw": "rotmaw_anim_codex",
+	"sexton": "sexton_anim_codex",
+	"nullwarden": "nullwarden_anim_codex",
+	"saint_varo": "saint_varo_anim_codex",
+	"auroch_minotaur": "auroch_minotaur_anim_codex",
+	"kaethra": "kaethra_anim_codex",
+	"veyx": "veyx_anim_codex",
+	"vargoth": "vargoth_anim_codex",
+	"korrag": "korrag_anim_codex",
+	"hrolgar": "hrolgar_anim_codex",
+	"echo": "echo_anim_codex",
+	"stormmouth": "stormmouth_anim_codex",
+}
+
+## Codex directional WALK (owner 2026-08-15, the deferred piece). These flat-idle
+## Act-1 bosses now ALSO ship a full 8-direction Codex walk set at
+## `<sprite>_walk_codex_<dir>` — a leg cycle for grounded bodies, a cloth-drift
+## glide for robed/floating ones. Keyed by SPRITE. The boss keeps its flat
+## breathing idle when stopped (BOSS_IDLE_STRIP_BASE) and plays the directional
+## walk while moving; enemy.gd restores the idle on the walk→stop transition.
+## saint_varo (throne-rooted) is intentionally absent.
+const BOSS_DIRECTIONAL_WALK := {
+	# leg-walkers
+	"vargoth": true, "korrag": true, "sexton": true, "hrolgar": true,
+	"auroch_minotaur": true, "rotmaw": true, "kaethra": true, "echo": true,
+	"stormmouth": true,
+	# gliders (robe/gown/float — cloth sway + bob, no leg cycle)
+	"choirmother": true, "vess": true, "serane": true, "forgemistress": true,
+	"ashpriest": true, "halla": true, "veyx": true, "nullwarden": true,
+}
+
+static func boss_directional_walk(name: String) -> bool:
+	return BOSS_DIRECTIONAL_WALK.has(name)
+
+
 static func mob_idle_only_locomotion(name: String) -> bool:
 	return MOB_IDLE_ONLY_LOCOMOTION.has(name)
 
@@ -3304,6 +3393,14 @@ static func mob_flat_walk_locomotion(name: String) -> bool:
 
 static func mob_body_scale_walk(name: String) -> bool:
 	return MOB_BODY_SCALE_WALK.has(name)
+
+
+static func boss_flat_animation_locomotion(name: String) -> bool:
+	return BOSS_FLAT_ANIMATION_LOCOMOTION.has(name)
+
+
+static func boss_action_fallback(name: String) -> String:
+	return String(BOSS_ACTION_FALLBACK.get(name, ""))
 
 ## A few generated rotation sets arrived with mislabeled source views. Keep the
 ## correction beside the direction seam instead of teaching individual NPC

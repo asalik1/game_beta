@@ -1,0 +1,34 @@
+You are generating ONE game sprite animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Three images are attached to this prompt:
+- Image 1 = refs/cinderhide_idle_strip.png : the BINDING identity, palette, pixel-art treatment AND body-scale reference. A horizontal 4-frame strip of square cells of Cinderhide the Unquenched standing at rest, facing LEFT. Match the beast, its proportions, markings and palette precisely; the standing frame of the new clip must be the same size as the beast in Image 1.
+- Image 2 = refs/cinderhide_attack_strip.png : the approved lunge-bite strip — a MOTION/STYLE reference for how this beast crouches and lunges. Do NOT copy its frames.
+- Image 3 = refs/cinderhide_static.png : secondary identity reference (small).
+
+TASK: generate exactly ONE new 2x2 source sheet for its EMBER RAIN (magma spatter erupting upward from its back plates) move with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: illustration-story
+Asset type: high-resolution 4-frame game sprite animation source, to be cropped into a horizontal sprite strip. Square output canvas.
+Input images: Image 1 (4-frame idle strip) is the binding identity, palette, pixel-art treatment and body-scale reference; Image 2 is the approved lunge strip, a motion/style reference only (do not repeat its frames); Image 3 is a secondary identity reference.
+Scene/backdrop: a perfectly flat uniform #00ff00 chroma-key background filling every pixel, including the seams between cells. No scenery, floor plane, ground, puddle, lava pool, platform, cast shadow, contact shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly four separate equal square sprite cells as a clean 2x2 contact sheet in reading order top-left, top-right, bottom-left, bottom-right. The source will be cropped into a horizontal strip. All four cells have identical scale and framing; no cell may overlap another; no drawn separators.
+Subject: Cinderhide the Unquenched, a hulking three-headed obsidian hell-hound boss (a Cerberus) in LEFT-facing three-quarter/side profile: massive muscular body plated in cracked black obsidian, glowing magma-orange veins running through every crack, three snarling heads on thick necks with pale bone horns and antlers on the central head, mouths lit from within by fire, heavy clawed paws, a spined tail. Same identity, proportions, palette and body scale as Image 1.
+Style/medium: crisp high-resolution dark-fantasy pixel art with hard readable pixel clusters and a controlled palette, not painterly, not 3D, not anime.
+Composition/framing and ANCHOR RULE: the beast is centered in each square cell, facing LEFT, its standing body spanning about 70% of the cell width so lunges and effects fit with generous green margin. One shared invisible ground line at the same height in all four cells: every paw that is on the ground stands on that line. The camera never moves; the beast never slides sideways in the cell between frames — its planted paws stay at identical coordinates in every frame that has them on the ground.
+EMBER RAIN (magma spatter erupting upward from its back plates) storyboard - four VISIBLY DIFFERENT silhouettes:
+ frame 1 (top-left) WIND-UP: the idle standing stance exactly as in Image 1, all paws planted, the back plates and spines beginning to glow, heads lowering.
+ frame 2 (top-right) HUNCH: body hunching, shoulders rising, back plates flaring open and glowing bright, jaws clenched; paws planted.
+ frame 3 (bottom-left) ERUPT: a compact burst of magma globules and embers shooting UPWARD from the back plates and spines, staying above the back and no wider than the body, never touching the top edge of the cell; the heads low and jaws snarling; paws planted.
+ frame 4 (bottom-right) SETTLE: the burst gone, a few last embers falling around the back, plates lowering, heads coming up; paws planted.
+Legs, paws, heads' base position and tail keep their exact position from frame 1; only the back plates, shoulders, jaws and the named embers change. Leave generous empty margin above the beast for the frame-3 burst.
+Constraints: output only the four cells on green; no text, watermark, UI, extra characters, scenery, floor artifact, shadow or separators. Do not use #00ff00 or any green anywhere. Fire and embers are magma orange, red and yellow only. No dust clouds, ground debris, cast shadow, floor lava, puddles or spell effects unless the storyboard names one, and named fire stays compact. no extra legs, no fourth head, no duplicated tails, no scenery, no floor, no shadow, no text. Frames 1, 2, 3 and 4 must each have a clearly different silhouette from every other frame.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./rain_master_2x2_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./rain_master_2x2_v1_keyed.png (auto-key sampling, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message, report: the raw output size in pixels, whether all four cells were produced with visibly different poses (frame by frame), and any deviation from the brief you noticed (paws sliding between frames, a body that changes size, an effect touching an edge, extra limbs/heads, wrong facing, etc.). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

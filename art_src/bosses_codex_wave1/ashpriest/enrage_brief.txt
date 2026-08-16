@@ -1,0 +1,33 @@
+You are generating ONE game sprite animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/ashpriest_idle.png : the BINDING identity, palette, pixel-art treatment AND body-scale reference — a robed molten high priest in a horned iron helm and dark layered robes edged with glowing fire, holding a heavy censer-mace, shown front-facing (facing the viewer). Reproduce this EXACT character, its proportions, gear, markings and palette. Do not redesign it.
+- Image 2 = refs/ashpriest_static.png : a secondary identity reference of the same character.
+
+TASK: generate exactly ONE new 2x2 source sheet for its ENRAGE animation with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: illustration-story
+Asset type: high-resolution 4-frame game sprite animation source, to be cropped into a horizontal sprite strip. Square output canvas.
+Input images: Image 1 is the binding identity, palette, pixel-art treatment and body-scale reference (front-facing); Image 2 is a secondary identity reference.
+Scene/backdrop: a perfectly flat uniform #00ff00 chroma-key background filling every pixel, including the seams between cells. No scenery, floor plane, ground, puddle, platform, cast shadow, contact shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly four separate equal square sprite cells as a clean 2x2 contact sheet in reading order top-left, top-right, bottom-left, bottom-right. The source will be cropped into a horizontal strip. All four cells have identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat green between the two columns and between the two rows.
+Subject: a robed molten high priest in a horned iron helm and dark layered robes edged with glowing fire, holding a heavy censer-mace, FRONT-FACING (facing the viewer), the exact same character as Image 1 in every cell — same body, gear, proportions and palette.
+Style/medium: crisp high-resolution dark-fantasy pixel art with hard readable pixel clusters and a controlled palette, matching Image 1; not painterly, not 3D, not anime.
+Composition/framing and ANCHOR RULE: the character is centred in each square cell, front-facing, its standing body about 74% of the cell height, with generous green margin on every side so raised arms/weapons and effects fit. It stays in the SAME spot in every cell — its head/crown and its feet (or lowest hem) sit at the same coordinates in every frame that has them; nothing slides sideways, the camera never moves. Only the parts named in the storyboard move.
+ENRAGE storyboard - four VISIBLY DIFFERENT poses of THIS character:
+ frame 1 (top-left) wind-up: the boss hunches slightly, head dipping, its glow/flame/aura beginning to brighten
+ frame 2 (top-right) swell: head rearing back, arms/shoulders flaring outward, the signature glow flaring much brighter
+ frame 3 (bottom-left) ROAR: head thrown back roaring, arms/weapon flung wide, every glowing element (flame, lightning, null-light, frost, eyes) blazing at its brightest, silhouette at its widest
+ frame 4 (bottom-right) settle: coming back down toward rest, the glow dimming to normal
+No projectile leaves the body — this is a self-buff transformation; only pose and brightness change.
+Constraints: output only the four cells on green; no text, watermark, UI, extra characters, scenery, floor artifact, shadow, or separators. Do not use #00ff00 or any bright/pure green anywhere on the character or its effects (use its own palette; a signature GREEN creature must use a darker desaturated green so chroma removal stays clean). Keep the character identical to Image 1 in all four frames — same silhouette, gear and palette. Frames 1, 2, 3 and 4 must each have a clearly different pose from every other frame.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./enrage_master_2x2_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./enrage_master_2x2_v1_keyed.png (auto-key sampling, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all four cells were produced with visibly different poses (frame by frame), and any deviation from the brief you noticed (the character redesigned or off-model, poses sliding/resizing between frames, an effect touching an edge, extra limbs, wrong facing, a fourth head, etc.). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

@@ -1866,17 +1866,25 @@ func _run_systems() -> void:
 	if codex_pike.get_width() != 128 or codex_pennon.get_width() != 128 \
 			or gameplay_pike.get_width() != 32:
 		return _fail("dual-resolution gear resolver lost its 128px codex / 32px gameplay contract")
-	# Gear split into shelves 2026-07-26 — smoke each so a broken subtab is caught,
-	# including the Shapes shelf's per-slot children.
+	# Gear split into shelves 2026-07-26 — smoke each legacy id so a broken
+	# route is caught (2026-08-15: they now land on the Armory ledger + detail;
+	# the per-slot ids must set the slot chip and list that slot's rows).
 	for gsub in ["gear_shapes", "gear_shapes_weapon", "gear_shapes_armor",
 			"gear_shapes_boots", "gear_shapes_charm", "gear_uniques", "gear_uniques_weapon", "gear_gems",
 			"gear_bags", "gear_rules"]:
 		game.menus.open_codex(gsub)
 		await _frames(2)
 		if gsub == "gear_uniques_weapon":
-			var unique_grid := game.menus.root.find_child("UniqueGrid_warrior", true, false) as GridContainer
-			if unique_grid == null or unique_grid.columns != 2:
-				return _fail("codex unique gear did not build its two-column card grid")
+			var ledger := game.menus.root.find_child("CodexLedger", true, false) as ScrollContainer
+			var detail := game.menus.root.find_child("CodexDetail", true, false) as ScrollContainer
+			if ledger == null or detail == null or ledger.get_child_count() == 0:
+				return _fail("codex uniques did not build its ledger + detail split")
+			var has_pennon := false
+			for row in ledger.get_child(0).get_children():
+				if row is Button and row.has_meta("key") and String(row.get_meta("key")) == "The Red Pennon":
+					has_pennon = true
+			if not has_pennon:
+				return _fail("codex uniques (weapon slot) did not list the warrior pikes")
 	game.menus.open_codex("terrains")
 	await _frames(2)
 	var terrain_catalog_copy: String = _tree_ui_text(game.menus.root)
@@ -2096,10 +2104,9 @@ func _test_endgame() -> void:
 	game.boss_records["vargoth"] = {"ttk": 30.0, "dps": 100.0, "kills": 1}
 	game.dev_mode = true  # unlocks the modes; no_saves already fences meta writes
 
-	# HUD trial icons: shown under the mailbox once unlocked (not buried in ESC).
-	await _frames(2)  # let update_stats toggle them
-	if not (game.hud.crucible_btn.visible and game.hud.depths_btn.visible):
-		return _fail("endgame: HUD trial icons not shown when unlocked")
+	# (2026-08-15 owner ruling: the trials have NO HUD icons — the Wayfinder
+	# Sanctum portals in Crownfall are the doors — so nothing to assert here.)
+	await _frames(2)
 
 	# ---------------------------------------------------------- The Crucible ---
 	game.enter_endgame("crucible")
@@ -2110,8 +2117,6 @@ func _test_endgame() -> void:
 	await _frames(2)
 	if eg.index != 1 or game._live_bosses().is_empty():
 		return _fail("crucible: first boss did not spawn")
-	if game.hud.crucible_btn.visible:
-		return _fail("endgame: HUD trial icons should hide during a live run")
 	var b: Boss = game._live_bosses()[0]
 	if not b.endgame_boss:
 		return _fail("crucible: boss not tagged endgame_boss")
@@ -2235,7 +2240,7 @@ func _test_endgame() -> void:
 	game.player.hp = game.player.max_hp
 	game.player.mp = game.player.max_mp
 	await _frames(3)
-	print("ok: endgame modes (HUD trial icons; Crucible affixed boss / HP-carry / reward / cash-out; Depths camp+merchant / retheme / wave / debuff-cycle / death-settle)")
+	print("ok: endgame modes (Crucible affixed boss / HP-carry / reward / cash-out; Depths camp+merchant / retheme / wave / debuff-cycle / death-settle)")
 
 
 ## Chapter 1 end to end: terrains, the darkwood walk, all three bosses.

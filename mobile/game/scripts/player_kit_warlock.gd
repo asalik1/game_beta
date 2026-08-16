@@ -3,6 +3,14 @@ extends "res://scripts/player_kit_paladin.gd"
 ## (The hex watch in player.gd's per-frame driver calls DOWN into
 ## _spread_curse/_hex_detonate.) See player_core.gd for the chain layout.
 
+## Dark Pact eruption strip (assets/sprites/fx/dark_pact_burst.png, 8 x 256px,
+## build_fx_strip.py --valign widest): the seal's centre sits below the cell
+## middle so the tendrils have headroom; this offset lifts it onto the caster.
+const DARK_PACT_OFFSET := Vector2(0, -39)
+## Void Rift collapse-burst strip (assets/sprites/fx/void_rift_burst.png, 8 x
+## 256px, --valign widest): a flat radial burst, equator ≈ cell centre.
+const VOID_RIFT_BURST_OFFSET := Vector2(0, 1)
+
 
 func _use_warlock(slot: String, f: float) -> void:
 	match slot:
@@ -522,11 +530,26 @@ func _dark_pact(f := 1.0) -> void:
 	blood.color = Color(0.9, 0.15, 0.25)
 	add_child(blood)
 	get_tree().create_timer(0.8).timeout.connect(blood.queue_free)
+	# ...then the BLAST (2026-08-15): a generated blood-magic eruption — a
+	# ring of tendrils and a dark shockwave to the real 170px radius, body
+	# under the actors + a see-through copy over them (FX layering rule),
+	# hue-shifted to the theme/skin colour. Replaces the collapse ring + square
+	# burst + glow rays. Eldritch keeps its own unravel scene.
+	var pact_burst_drawn := false
 	if skin != "eldritch_warlock":
-		_ring_fx(global_position, col, 170.0, true)
-		game.burst(global_position, col, 18)
-	# ...then the blast: dark rays lash outward from the pact's heart.
-	for i in (0 if skin == "eldritch_warlock" else 8):
+		var pact_mat := ShaderMaterial.new()
+		pact_mat.shader = MAGE_ELEMENT_HUE_SHADER
+		pact_mat.set_shader_parameter("target_hue", col.h)
+		pact_burst_drawn = _fx_flash("dark_pact_burst", global_position, 8, {
+			"scale": 340.0 / (IMPACT_CELL * 0.85), "material": pact_mat,
+			"offset": DARK_PACT_OFFSET, "z": -1, "ghost_over": 0.4, "over_z": 8,
+			"frame_time": 0.05, "hold": 0.15, "fade": 0.4}) != null
+		if not pact_burst_drawn:
+			_ring_fx(global_position, col, 170.0, true)
+			game.burst(global_position, col, 18)
+	# ...and dark rays lash outward from the pact's heart (only when the
+	# strip is absent — the eruption's tendrils are the rays now).
+	for i in (0 if (skin == "eldritch_warlock" or pact_burst_drawn) else 8):
 		var ang := TAU * i / 8.0 + randf_range(-0.1, 0.1)
 		var ray := Sprite2D.new()
 		ray.texture = Art.tex("glow")
@@ -722,25 +745,41 @@ func _void_rift(f := 1.0) -> void:
 	if skin == "eldritch_warlock":
 		_eldritch_thread_rift_scene(pos, radius)
 	game.hud.flash_screen(Color(col, 1.0), 0.28 if skin == "arcane_warlock" else 0.5, 0.35)
-	game.burst(pos, col, 26)
-	game.burst(pos, Color(1, 1, 1), 10)
+	# The collapse-BURST (skin-FX pass 2026-08-15): a generated contract → white
+	# core → violet shockwave + void shards → scar strip to the real radius,
+	# body under the actors + a see-through copy over (FX layering rule),
+	# re-hued to the theme/skin colour (Hellfire lands ember-orange). Replaces
+	# the two square bursts + rings + white core + ten glow rays for base and
+	# both elite skins; Eldritch keeps its thread-rift scene.
+	var rift_burst_drawn := false
 	if skin != "eldritch_warlock":
-		_ring_fx(pos, col, radius * (0.46 if skin == "arcane_warlock" else (0.78 if skin == "hellfire_inquisitor" else 1.0)))
-	if skin == "":
-		_ring_fx(pos, Color(1, 1, 1), radius * 0.6)
-	# The collapse blows back out: void rays and a popping white core.
-	var vcore := Sprite2D.new()
-	vcore.texture = Art.tex("glow")
-	vcore.modulate = Art.hdr(Color(0.95, 0.9, 1.0, 0.95))
-	vcore.global_position = pos
-	vcore.scale = Vector2(0.5, 0.5)
-	vcore.z_index = 8
-	game.add_child(vcore)
-	var vct := vcore.create_tween()
-	vct.tween_property(vcore, "scale", Vector2(3.4, 3.4), 0.18)
-	vct.parallel().tween_property(vcore, "modulate:a", 0.0, 0.22)
-	vct.tween_callback(vcore.queue_free)
-	for i in (0 if skin == "eldritch_warlock" else 10):
+		var rift_mat := ShaderMaterial.new()
+		rift_mat.shader = MAGE_ELEMENT_HUE_SHADER
+		rift_mat.set_shader_parameter("target_hue", col.h)
+		rift_burst_drawn = _fx_flash("void_rift_burst", pos, 8, {
+			"scale": (radius * 2.0) / (IMPACT_CELL * 0.85), "material": rift_mat,
+			"offset": VOID_RIFT_BURST_OFFSET, "z": -1, "ghost_over": 0.45, "over_z": 8,
+			"frame_time": 0.05, "hold": 0.25, "fade": 0.5}) != null
+	if not rift_burst_drawn:
+		game.burst(pos, col, 26)
+		game.burst(pos, Color(1, 1, 1), 10)
+		if skin != "eldritch_warlock":
+			_ring_fx(pos, col, radius * (0.46 if skin == "arcane_warlock" else (0.78 if skin == "hellfire_inquisitor" else 1.0)))
+		if skin == "":
+			_ring_fx(pos, Color(1, 1, 1), radius * 0.6)
+		# The collapse blows back out: void rays and a popping white core.
+		var vcore := Sprite2D.new()
+		vcore.texture = Art.tex("glow")
+		vcore.modulate = Art.hdr(Color(0.95, 0.9, 1.0, 0.95))
+		vcore.global_position = pos
+		vcore.scale = Vector2(0.5, 0.5)
+		vcore.z_index = 8
+		game.add_child(vcore)
+		var vct := vcore.create_tween()
+		vct.tween_property(vcore, "scale", Vector2(3.4, 3.4), 0.18)
+		vct.parallel().tween_property(vcore, "modulate:a", 0.0, 0.22)
+		vct.tween_callback(vcore.queue_free)
+	for i in (0 if (skin == "eldritch_warlock" or rift_burst_drawn) else 10):
 		var rang := TAU * i / 10.0 + randf_range(-0.12, 0.12)
 		var ray := Sprite2D.new()
 		ray.texture = Art.tex("glow")

@@ -1,0 +1,32 @@
+You are generating ONE game visual-effect animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/palette.png : the BINDING colour palette for this effect (five swatches on magenta: #FFFFFF frost white, #EAF6FF pale ice, #BFE3FF ice blue, #7FB4E8 mid blue, #3E6FA8 crack blue). Ignore the magenta around the swatches — it is only there to show what the chroma key looks like.
+- Image 2 = refs/style_fx_strip.png : a shipped FX animation strip from this game (a violet thread eruption). Match its LEVEL OF FINISH — crisp high-resolution game FX, hard readable clusters, glowing rims over a darker body, no blur, no photo texture. Do NOT copy its subject, shape or colour.
+
+TASK: generate exactly ONE new 2x2 source sheet for a LOOPING ICE PATCH (a slick floor hazard patch) with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: game asset
+Output size: 1024x1024 square.
+Asset type: high-resolution 4-frame game visual-effect animation source, to be cropped into a horizontal sprite strip.
+Scene/backdrop: a perfectly flat uniform #ff00ff magenta chroma-key background filling every pixel, including the seams between cells. No scenery, floor plane, ground texture, platform, cast shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly FOUR separate equal square effect cells laid out as a clean 2x2 contact sheet in reading order (top-left, top-right, bottom-left, bottom-right). All cells have identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat magenta between neighbouring cells and around the sheet edge.
+Subject: ONE patch of slick glare ice lying flat on the ground, seen from a high three-quarter game camera: a roughly circular sheet, slightly wider than it is deep, with an irregular frosted outline; a pale glassy blue-white surface (#EAF6FF / #BFE3FF) with a few fine dark-blue cracks (#3E6FA8), a frost-crystal rim (#FFFFFF), and small sparkling glints on the surface. Ice — NOT water, NOT snow piles, NOT a portal, NOT a mirror reflection of anything.
+Style/medium: crisp high-resolution dark-fantasy game FX art with hard readable clusters and a controlled palette; not painterly, not 3D-rendered, not photographic, not anime, not blurred.
+Composition/framing and ANCHOR RULE: the patch is centred in each square cell and fills about 80% of the cell width, with clear magenta margin on every side. It stays in the SAME spot with the SAME outline in every cell — the patch shape, size and position do not change at all between frames; the camera never moves. Only the surface details named in the storyboard change.
+LOOP storyboard — four VISIBLY DIFFERENT surface states of THIS SAME patch that loop seamlessly (frame 4 flows back into frame 1):
+ frame 1 (top-left): two glints near the left rim, cracks faint
+ frame 2 (top-right): the glints brighter and a third glint at the top, a crack catching light on the right
+ frame 3 (bottom-left): a bright twinkle at the centre, the left glints fading, a wisp of frost mist lifting off the top edge
+ frame 4 (bottom-right): the centre twinkle fading, the frost wisp thinning, a fresh faint glint near the left again so the loop closes into frame 1
+Constraints: output only the cells on magenta; no text, watermark, UI, characters, weapons, scenery, ground texture, shadow, or separators. Do NOT use #ff00ff, pink, purple or any magenta anywhere in the effect. Stay inside the five palette colours plus their in-between shades (whites and blues only). Do not use pure #00ff00. Every frame must be clearly different from every other frame.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./hazard_ice_master_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./hazard_ice_master_v1_keyed.png (auto-key sampling from the border, soft matte, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all cells were produced with visibly different frames (frame by frame), whether the effect kept the same centre and size in every cell, and any deviation from the brief (a cell missing, cells overlapping or touching, key colour inside the effect, drift, an extra cell, a ground plane drawn). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

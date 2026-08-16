@@ -473,6 +473,14 @@ var storm_tick := 0.0
 var storm_fx := {}
 var storm_center := Vector2.ZERO  # visual anchor for skin-specific storm fields
 var void_tentacles: Array = []    # Voidwraith ult: eight rooted actors around the portal rim
+var void_storm_serial := 0        # ...bumped per cast so a stale dismiss timer can't retract a fresh set
+# Skin "vanish" presentation window (2026-08-15): while > 0 the hero body draws
+# at skin_vanish_alpha instead of the hurt/normal alpha. player.gd re-asserts
+# sprite.modulate.a EVERY frame, so a skin tweening that alpha (Voidwraith's
+# tumble phase-out, Stormforged's charge break) never rendered — this is the
+# one seam that line honours. Presentation only; input/physics never wait on it.
+var skin_vanish_t := 0.0
+var skin_vanish_alpha := 0.0
 var void_tentacle_cursor := 0
 var theme_speed_time := 0.0
 var theme_speed_amt := 0.0

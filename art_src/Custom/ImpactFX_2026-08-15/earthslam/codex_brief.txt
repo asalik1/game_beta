@@ -1,0 +1,37 @@
+You are generating ONE game visual-effect animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/palette_earth.png : the BINDING colour palette for this effect (five swatches on green). Use ONLY this earthy family: #EBD7A8 pale dust highlight, #C9A56A sandy stone, #8A6238 earth brown, #5A3D22 dark soil, #2E1F12 crack shadow. Ignore the green around the swatches — it is only there to show what the chroma key looks like.
+- Image 2 = refs/style_fx_strip.png : a shipped FX animation strip from this game (a violet thread eruption). Match its LEVEL OF FINISH — crisp high-resolution game FX, hard readable clusters, clear highlights over a dark body, no blur, no photo texture. Do NOT copy its subject, shape or colour.
+
+TASK: generate exactly ONE new 4x2 source sheet for a ONE-SHOT GROUND-SHATTERING SLAM with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: game asset
+Output size: 1536x1024 landscape.
+Asset type: high-resolution 8-frame game visual-effect animation source, to be cropped into a horizontal sprite strip.
+Scene/backdrop: a perfectly flat uniform #00ff00 green chroma-key background filling every pixel, including the seams between cells. No scenery, floor plane, ground texture, platform, cast shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly EIGHT separate equal square effect cells laid out as a clean 4-column by 2-row contact sheet in reading order (top row left to right = frames 1-4, bottom row left to right = frames 5-8). All eight cells have identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat green between neighbouring cells and around the sheet edge.
+Subject: a warrior's SEISMIC SLAM shattering the ground, seen from a high three-quarter game camera: a roughly CIRCULAR burst centred on the impact point — jagged dark cracks (#2E1F12 / #5A3D22) splitting outward from the centre across the ground, slabs of broken earth and stone (#8A6238 / #C9A56A with #EBD7A8 highlights) heaving up and tilting, chunks of rock and clods flung up and outward, and a flat ring of pale dust (#EBD7A8 / #C9A56A) racing outward along the ground then settling. Rock, earth and dust — NOT fire, NOT lava, NOT lightning, NOT water, NOT a face.
+Style/medium: crisp high-resolution dark-fantasy game FX art with hard readable clusters and a controlled palette; not painterly, not 3D-rendered, not photographic, not anime, not blurred.
+Composition/framing and ANCHOR RULE: the impact point is the exact centre of every square cell; the effect grows out from that centre and never leaves the cell — at its widest (frames 3-4) the dust ring fills about 85% of the cell width with clear green margin on every side. The centre point never drifts, the camera never moves.
+ONE-SHOT storyboard - eight VISIBLY DIFFERENT stages of one slam, small to wide to settled:
+ frame 1: a tight starburst of short cracks at the centre with a puff of dust just lifting — about 25% of the cell wide
+ frame 2: the cracks shoot outward, slabs of earth begin to heave up around the centre, a dust ring pushing out — about 50% wide
+ frame 3: PEAK: long jagged cracks radiating to about 70% width, heaved slabs standing up in a broken ring, rocks and clods flying up and out in every direction, the dust ring at 80% width
+ frame 4: rocks at the top of their arc, slabs tilting, the dust ring at 85% width thinning outward
+ frame 5: rocks and clods falling back, slabs sinking, dust ring dispersing into thin puffs, cracks still dark and wide
+ frame 6: rubble landed and scattered around the cracks, last dust puffs settling, slabs nearly flat
+ frame 7: cracked ground with scattered rubble and a faint haze of dust, cracks starting to fade
+ frame 8: faint cracks and a few pebbles alone — nearly empty cell
+Every frame keeps the same centre. Frames 1 through 8 must each be clearly different from every other frame.
+Constraints: output only the eight cells on green; no text, watermark, UI, characters, weapon, scenery, ground texture beyond the effect itself, shadow, or separators. Do NOT use #00ff00 or any green anywhere in the effect. Stay inside the five palette colours plus their in-between shades (tans, browns, dark browns only).
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./earthslam_master_4x2_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./earthslam_master_4x2_v1_keyed.png (auto-key sampling from the border, soft matte, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all eight cells were produced with visibly different stages (frame by frame, small to wide to settled), whether the centre stayed fixed in every cell, and any deviation from the brief you noticed (a cell missing, cells overlapping or touching, green inside the effect, the burst drifting off-centre, an extra ninth cell, a ground plane drawn, fire or lava). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

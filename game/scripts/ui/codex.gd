@@ -1,162 +1,1718 @@
 class_name UICodex
-## The codex screens (monsters / gear / terrains), split out of
-## menus.gd. Static builders: `m` owns the panel scaffolding
-## (_open/_btn/_lbl/_hint) and the open/close state.
+## The codex screens, split out of menus.gd. Static builders: `m` owns the
+## panel scaffolding (_open/_btn/_lbl/_hint) and the open/close state.
+##
+## LAYOUT (2026-08-15 rework — PROPOSALS/CODEX_LAYOUT/CODEX_LAYOUT.md): the
+## three stacked tab rows are gone. A RAIL of grouped sections (always
+## visible, with counts) sits on the left; a FILTER BAR (search + chips)
+## replaces the sub-tabs; a COLLECTION shows a LEDGER of compact rows beside
+## the DETAIL of the selected entry, and a reference PAGE (Field notes,
+## Statuses, Co-op, Records, Gallery) is one reading column. Every legacy
+## open_codex("<tab>") id still routes — see _resolve() — so call sites,
+## BOSS_KINDS bucketing, the dev Transform buttons and the streamed builders
+## are unchanged. Filters, search and the selected row are remembered per
+## section for the session (reopening the book lands where you left it).
 
-static func open(m: Menus, tab := "monsters", boss := "") -> void:
+# ---------------------------------------------------------------- layout ---
+const RAIL_W := 172.0
+const LIST_W := 330.0
+const ROW_H := 44.0
+const DETAIL_W := 396.0   # wrap width for labels inside the detail column
+const PAGE_W := 700.0     # wrap width for labels on a reading page
+const MUTED := Color(0.64, 0.66, 0.72)
+const GOLD_TXT := Color(0.95, 0.85, 0.5)
+const ACC_MOB := Color(1.0, 0.82, 0.42)
+const ACC_BOSS := Color(1.0, 0.45, 0.48)
+const ACC_NPC := Color(0.45, 0.78, 1.0)
+const ACC_GEAR := Color(0.66, 0.86, 0.56)
+const ACC_INFO := Color(0.6, 0.9, 1.0)
+const ACC_GOLD := Color(0.88, 0.67, 0.28)
+
+## Rail order. kind: "list" = ledger + detail, "page" = one reading column.
+## `dev` sections only appear from the dev launcher.
+const SECTIONS := [
+	{"id": "monsters", "grp": "Bestiary", "name": "Monsters", "kind": "list", "accent": ACC_MOB},
+	{"id": "bosses", "grp": "Bestiary", "name": "Bosses", "kind": "list", "accent": ACC_BOSS},
+	{"id": "npcs", "grp": "Bestiary", "name": "Folk", "kind": "list", "accent": ACC_NPC},
+	{"id": "shapes", "grp": "Armory", "name": "Shapes", "kind": "list", "accent": ACC_GEAR},
+	{"id": "uniques", "grp": "Armory", "name": "Uniques", "kind": "list", "accent": ACC_GEAR},
+	{"id": "gems", "grp": "Armory", "name": "Gems", "kind": "page", "accent": ACC_INFO},
+	{"id": "terrains", "grp": "World", "name": "Terrains", "kind": "list", "accent": ACC_GOLD},
+	{"id": "curios", "grp": "World", "name": "Curios", "kind": "list", "accent": ACC_GOLD},
+	{"id": "records", "grp": "You", "name": "Records", "kind": "page", "accent": Color(1.0, 0.85, 0.4)},
+	{"id": "gallery", "grp": "You", "name": "Gallery", "kind": "page", "accent": ACC_GOLD},
+	{"id": "notes", "grp": "Reference", "name": "Field notes", "kind": "page", "accent": ACC_GOLD},
+	{"id": "story", "grp": "Reference", "name": "Story so far", "kind": "page", "accent": Color(0.75, 0.6, 1.0)},
+	{"id": "status", "grp": "Reference", "name": "Statuses", "kind": "page", "accent": ACC_INFO},
+	{"id": "coop", "grp": "Reference", "name": "Co-op", "kind": "page", "accent": ACC_INFO},
+	{"id": "future", "grp": "Future", "name": "Placeholders", "kind": "page", "dev": true, "accent": Color(0.7, 0.95, 0.85)},
+]
+
+## Field notes pages (chips) — the prose that used to head the monster and
+## gear shelves, plus the old Gems/Bags/Rules gear sub-tabs.
+const NOTE_PAGES := [["elites", "Elites & Temptations"], ["gear", "Gear rules"], ["gems", "Gem rules"], ["bags", "Bags & consumables"]]
+## Gallery shelves (chips) — Heroes / Bosses / Folk of the Vale.
+const GALLERY_SHELVES := [["heroes", "Heroes"], ["bosses", "Bosses"], ["npcs", "Folk"]]
+
+const SLOT_LABEL := {"weapon": "Weapons", "helmet": "Helmets", "armor": "Armor", "gloves": "Gloves",
+	"pants": "Pants", "boots": "Boots", "charm": "Charms"}
+
+## The dev-only Future shelf's categories (chips), in the old subtab order.
+const FUTURE_CATS := [["future_terrains", "Terrains"], ["future_mobs", "Mobs"], ["future_bosses", "Bosses"],
+	["future_npcs", "NPCs"], ["future_critters", "Critters"], ["future_items", "Items"],
+	["future_armory", "Armory"], ["future_supplies", "Supplies"], ["future_provisions", "Provisions"],
+	["future_alchemy", "Alchemy"], ["future_relics", "Relics"]]
+
+# ---------------------------------------------------- remembered UI state ---
+static var _sec := "monsters"       # open section id
+static var _filters := {}           # section id -> {chip key: value}
+static var _query := ""             # search text of the open section
+static var _selected := {}          # section id -> selected row key
+static var _fold_open := false      # boss detail: Mechanics & Tells expanded
+static var _ui := {}                # live nodes of the open panel (validated before use)
+
+
+## `tab` "" = reopen where the reader left off (the C key / HUD button);
+## any explicit tab id or boss kind routes as before.
+static func open(m: Menus, tab := "", boss := "") -> void:
 	# A new build cancels any still-streaming shelf from the previous tab.
 	_build_gen += 1
-	# A boss kind routes to its focused mechanics detail view (not a tab).
-	if boss != "" and Story.ALL_ENEMIES.has(boss):
-		_boss_detail(m, boss)
-		return
-
+	_resolve(m, tab, boss)
 	var vbox := m._open("Codex", 1000, 620, true)
 	m.current = "codex"
-
-	# Bestiary (Monsters / Bosses / NPCs) shares one top-level tab; the other
-	# codex screens stay top-level. `in_bestiary` keeps the parent lit.
-	var in_bestiary: bool = tab in ["monsters", "bosses", "npcs"]
-
-	var tabs := HFlowContainer.new()
-	tabs.add_theme_constant_override("h_separation", 7)
-	tabs.add_theme_constant_override("v_separation", 7)
-	vbox.add_child(tabs)
-	_nav(m, tabs, "Bestiary", func() -> void: m.open_codex("monsters"), in_bestiary)
-	# Gear shares one top-level tab across its Shapes / Uniques / Gems / Bags /
-	# Rules shelves (the bestiary/gallery pattern) — the 120-shape matrix made one
-	# flat scroll unnavigable. "gear" alone is an alias for the Shapes shelf so old
-	# open_codex("gear") call sites still land somewhere sane.
-	var in_gear: bool = tab == "gear" or tab.begins_with("gear_")
-	_nav(m, tabs, "Gear", func() -> void: m.open_codex("gear_shapes"), in_gear)
-	_nav(m, tabs, "Terrains", func() -> void: m.open_codex("terrains"), tab == "terrains")
-	_nav(m, tabs, "Curios", func() -> void: m.open_codex("curios"), tab == "curios")
-	_nav(m, tabs, "Status", func() -> void: m.open_codex("status"), tab == "status")
-	_nav(m, tabs, "Records", func() -> void: m.open_codex("records"), tab == "records")
-	# Portrait gallery (CQ Illustration-Tome pattern): shares one top-level
-	# tab across its Heroes / Bosses / Folk shelves, like the bestiary.
-	var in_gallery := tab.begins_with("gallery")
-	_nav(m, tabs, "Gallery", func() -> void: m.open_codex("gallery_heroes"), in_gallery)
-	_nav(m, tabs, "Co-op", func() -> void: m.open_codex("coop"), tab == "coop")
-	# The FUTURE shelf (dev launcher only): every placeholder in the project,
-	# by category — mined art awaiting a story/system home. Players never
-	# see the tab; the shipping codex stays clean.
-	var in_future := tab.begins_with("future")
-	if m.game.dev_mode:
-		m._btn(tabs, "  Future  ", func() -> void: m.open_codex("future_terrains"),
-			Color(0.7, 0.95, 0.85) if in_future else Color(0.45, 0.65, 0.58))
-
-	# Future subtabs — one per placeholder category (a flow container: eleven
-	# buttons wrap to a second row instead of overflowing the panel).
-	if in_future:
-		var fsubs := HFlowContainer.new()
-		fsubs.add_theme_constant_override("h_separation", 10)
-		vbox.add_child(fsubs)
-		for pair in [["future_terrains", "Terrains"], ["future_mobs", "Mobs"], ["future_bosses", "Bosses"],
-				["future_npcs", "NPCs"], ["future_critters", "Critters"],
-				["future_items", "Items"], ["future_armory", "Armory"], ["future_supplies", "Supplies"],
-				["future_provisions", "Provisions"], ["future_alchemy", "Alchemy"], ["future_relics", "Relics"]]:
-			var ft: String = pair[0]
-			m._btn(fsubs, "  %s  " % pair[1], func() -> void: m.open_codex(ft),
-				Color(0.75, 1.0, 0.9) if tab == ft else Color(0.5, 0.58, 0.55))
-
-	# Bestiary subtabs — Monsters / Bosses / NPCs under the one parent tab.
-	if in_bestiary:
-		var subs := HBoxContainer.new()
-		subs.add_theme_constant_override("separation", 10)
-		vbox.add_child(subs)
-		_nav(m, subs, "Monsters", func() -> void: m.open_codex("monsters"),
-			tab == "monsters", Color(1.0, 0.82, 0.42))
-		_nav(m, subs, "Bosses", func() -> void: m.open_codex("bosses"),
-			tab == "bosses", Color(1.0, 0.45, 0.48))
-		_nav(m, subs, "NPCs", func() -> void: m.open_codex("npcs"),
-			tab == "npcs", Color(0.45, 0.78, 1.0))
-
-	# Gear subtabs — Shapes / Uniques / Gems / Bags / Rules under the one parent.
-	if in_gear:
-		var gearsubs := HBoxContainer.new()
-		gearsubs.add_theme_constant_override("separation", 10)
-		vbox.add_child(gearsubs)
-		for pair in [["gear_shapes", "Shapes"], ["gear_uniques", "Uniques"],
-				["gear_gems", "Gems"], ["gear_bags", "Bags"], ["gear_rules", "Rules"]]:
-			var gt: String = pair[0]
-			# Shapes/Uniques stay lit across their per-slot children
-			# (gear_shapes_weapon... / gear_uniques_helmet...).
-			var active: bool = tab == gt or (tab == "gear" and gt == "gear_shapes") \
-				or (gt == "gear_shapes" and tab.begins_with("gear_shapes")) \
-				or (gt == "gear_uniques" and tab.begins_with("gear_uniques"))
-			_nav(m, gearsubs, String(pair[1]), func() -> void: m.open_codex(gt), active)
-
-	# Per-slot level for the Shapes AND Uniques shelves — all 7 slots (the
-	# uniques shelf runs 420 rows flat; a slot at a time is 60, 2026-07-27).
-	var in_shapes: bool = tab == "gear" or tab.begins_with("gear_shapes")
-	var in_uniques: bool = tab.begins_with("gear_uniques")
-	if in_shapes or in_uniques:
-		var shelf := "gear_uniques_" if in_uniques else "gear_shapes_"
-		var shelf_root: bool = tab in ["gear", "gear_shapes", "gear_uniques"]
-		var slotbar := HBoxContainer.new()
-		slotbar.add_theme_constant_override("separation", 10)
-		vbox.add_child(slotbar)
-		for pair in [["weapon", "Weapons"], ["helmet", "Helmets"], ["armor", "Armor"],
-				["gloves", "Gloves"], ["pants", "Pants"], ["boots", "Boots"], ["charm", "Charms"]]:
-			var st := shelf + String(pair[0])
-			var on_first: bool = pair[0] == "weapon" and shelf_root
-			_nav(m, slotbar, String(pair[1]), func() -> void: m.open_codex(st),
-				tab == st or on_first, Color(0.66, 0.86, 0.56))
-
-	# Gallery subtabs — Heroes / Bosses / Folk of the Vale.
-	if in_gallery:
-		var gsubs := HBoxContainer.new()
-		gsubs.add_theme_constant_override("separation", 10)
-		vbox.add_child(gsubs)
-		_nav(m, gsubs, "Heroes", func() -> void: m.open_codex("gallery_heroes"),
-			tab == "gallery_heroes")
-		_nav(m, gsubs, "Bosses", func() -> void: m.open_codex("gallery_bosses"),
-			tab == "gallery_bosses", Color(1.0, 0.45, 0.48))
-		_nav(m, gsubs, "Folk", func() -> void: m.open_codex("gallery_npcs"),
-			tab == "gallery_npcs", Color(0.45, 0.78, 1.0))
-
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	vbox.add_child(scroll)
-	var list := VBoxContainer.new()
-	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	list.add_theme_constant_override("separation", 8)
-	scroll.add_child(list)
-
-	if tab == "monsters":
-		_monsters(m, list)
-	elif tab == "bosses":
-		_bosses(m, list)
-	elif tab == "npcs":
-		_npcs(m, list)
-	elif tab == "terrains":
-		_terrains(m, list)
-	elif tab == "curios":
-		_curios(m, list)
-	elif tab.begins_with("future"):
-		_future(m, list, tab)
-	elif tab == "status":
-		_statuses(m, list)
-	elif tab == "records":
-		_records(m, list)
-	elif tab.begins_with("gallery"):
-		_gallery(m, list, tab)
-	elif tab == "coop":
-		_coop(m, list)
-	else:
-		_gear(m, list, tab)
+	var body := HBoxContainer.new()
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation", 10)
+	vbox.add_child(body)
+	_rail(m, body)
+	var content := VBoxContainer.new()
+	content.name = "CodexContent"
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_theme_constant_override("separation", 6)
+	body.add_child(content)
+	_ui = {"content": content}
+	_build_content(m)
 	m._hint(vbox, "ESC, ✕, click outside, or C to close")
 
 
-## Rounded, padded card panel — shared row container for codex galleries.
-static func _nav(m: Menus, parent: Node, text: String, cb: Callable,
-		active: bool, accent := UITheme.GOLD) -> Button:
-	var b := m._btn(parent, text, cb,
-		accent if active else Color(0.64, 0.66, 0.72))
-	UITheme.tab(b, active, accent)
+## True while the codex search field owns keyboard focus — menus._input then
+## lets every key but ESC fall through to it (the name_entry pattern) instead
+## of treating the codex hotkey as "close".
+static func search_focused() -> bool:
+	var s: LineEdit = _ui.get("search")
+	return s != null and is_instance_valid(s) and s.has_focus()
+
+
+static func _section(id: String) -> Dictionary:
+	for s in SECTIONS:
+		if String(s["id"]) == id:
+			return s
+	return {}
+
+
+## Map a legacy/new tab id (+ optional boss kind) onto the section, its
+## remembered filters and selection. Bare ids keep what the reader left;
+## suffixed ids ("gear_shapes_helmet", "future_mobs") set the filter.
+static func _resolve(m: Menus, tab: String, boss: String) -> void:
+	var was := _sec
+	if boss != "" and Story.ALL_ENEMIES.has(boss):
+		var bsec := "bosses" if boss in m.BOSS_KINDS else "monsters"
+		_filters[bsec] = {}  # the routed entry must be visible whatever chip was left on
+		_query = ""
+		_selected[bsec] = boss
+		_fold_open = true
+		_sec = bsec
+		return
+	var t := tab if tab != "" else _sec  # bare open = where the reader left off
+	if t == "gear":
+		t = "gear_shapes"
+	var sec := "monsters"
+	if t.begins_with("gear_shapes"):
+		sec = "shapes"
+		var slot := t.trim_prefix("gear_shapes").trim_prefix("_")
+		if slot in Items.SLOTS:
+			_filters[sec] = {"slot": slot}
+	elif t.begins_with("gear_uniques"):
+		sec = "uniques"
+		var uslot := t.trim_prefix("gear_uniques").trim_prefix("_")
+		if uslot in Items.SLOTS:
+			_filters[sec] = {"slot": uslot}
+	elif t == "gear_gems":
+		sec = "gems"
+	elif t == "gear_bags":
+		sec = "notes"
+		_filters[sec] = {"page": "bags"}
+	elif t == "gear_rules":
+		sec = "notes"
+		_filters[sec] = {"page": "gear"}
+	elif t.begins_with("notes_"):
+		sec = "notes"
+		_filters[sec] = {"page": t.trim_prefix("notes_")}
+	elif t.begins_with("gallery_"):
+		sec = "gallery"
+		_filters[sec] = {"shelf": t.trim_prefix("gallery_")}
+	elif t.begins_with("future"):
+		sec = "future"
+		if t != "future":
+			_filters[sec] = {"cat": t}
+	elif not _section(t).is_empty():
+		sec = t
+	if sec != was:
+		_query = ""
+		_fold_open = false
+	if not _filters.has(sec):
+		_filters[sec] = _default_filters(sec)
+	_sec = sec
+
+
+static func _default_filters(sec: String) -> Dictionary:
+	match sec:
+		"shapes", "uniques":
+			return {"slot": "weapon"}  # the Armory opens on weapons, as the old shelves did
+		"future":
+			return {"cat": "future_terrains"}
+		"notes":
+			return {"page": "elites"}
+		"gallery":
+			return {"shelf": "heroes"}
+	return {}
+
+
+# ------------------------------------------------------------------ rail ---
+static func _rail(m: Menus, parent: Control) -> void:
+	var sc := ScrollContainer.new()
+	sc.name = "CodexRail"
+	sc.custom_minimum_size = Vector2(RAIL_W, 0)
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	parent.add_child(sc)
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_theme_constant_override("separation", 2)
+	sc.add_child(col)
+	var grp := ""
+	for s in SECTIONS:
+		var sd: Dictionary = s
+		if sd.get("dev", false) and not m.game.dev_mode:
+			continue
+		if String(sd["grp"]) != grp:
+			grp = String(sd["grp"])
+			if col.get_child_count() > 0:
+				var gap := Control.new()
+				gap.custom_minimum_size = Vector2(0, 3)
+				col.add_child(gap)
+			var gl := m._lbl(col, grp.to_upper(), 10, UITheme.GOLD_DIM)
+			gl.autowrap_mode = TextServer.AUTOWRAP_OFF
+		_rail_button(m, col, sd)
+
+
+static func _rail_button(m: Menus, col: VBoxContainer, s: Dictionary) -> Button:
+	var id := String(s["id"])
+	var active := id == _sec
+	var accent: Color = s.get("accent", ACC_GOLD)
+	var b := Button.new()
+	b.name = "CodexRail_" + id
+	b.text = String(s["name"])
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size = Vector2(0, 28 if m.game.touch_mode else 25)
+	b.clip_text = true
+	b.add_theme_font_size_override("font_size", 13)
+	b.add_theme_color_override("font_color", UITheme.GOLD_BRIGHT if active else MUTED)
+	b.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.7))
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(accent, 0.11) if active else Color(0, 0, 0, 0)
+	normal.border_color = Color(accent, 0.9) if active else Color(0, 0, 0, 0)
+	normal.border_width_left = 3
+	normal.corner_radius_top_right = 6
+	normal.corner_radius_bottom_right = 6
+	normal.content_margin_left = 9.0
+	normal.content_margin_right = 34.0  # room for the count
+	normal.content_margin_top = 2.0
+	normal.content_margin_bottom = 2.0
+	var hover: StyleBoxFlat = normal.duplicate()
+	hover.bg_color = Color(accent, 0.16) if active else Color(1, 1, 1, 0.04)
+	b.add_theme_stylebox_override("normal", normal)
+	b.add_theme_stylebox_override("hover", hover)
+	b.add_theme_stylebox_override("pressed", hover)
+	col.add_child(b)
+	var n := _section_count(m, id)
+	if n > 0:
+		var cl := Label.new()
+		cl.text = str(n)
+		cl.add_theme_font_size_override("font_size", 11)
+		cl.add_theme_color_override("font_color", UITheme.GOLD_DIM if active else Color(0.45, 0.48, 0.56))
+		cl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		cl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		cl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		cl.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
+		cl.offset_left = -44.0
+		cl.offset_right = -6.0
+		cl.offset_top = -9.0
+		cl.offset_bottom = 9.0
+		b.add_child(cl)
+	b.pressed.connect(func() -> void:
+		m.game.sfx("ui_click")
+		m.open_codex(id))
 	return b
+
+
+## The rail badge: how many entries a collection holds (0 = no badge).
+static func _section_count(m: Menus, id: String) -> int:
+	match id:
+		"monsters":
+			return _bestiary_kinds(m, false).size()
+		"bosses":
+			return _bestiary_kinds(m, true).size()
+		"npcs":
+			return _npc_entries().size()
+		"shapes":
+			return _shape_entries().size()
+		"uniques":
+			return Items.UNIQUES.size()
+		"gems":
+			return Items.GEM_STATS.size()
+		"terrains":
+			return Terrains.catalog_ids(false).size()
+		"curios":
+			return _curio_entries().size()
+		"status":
+			return _status_effects().size()
+		"gallery":
+			return _gallery_entries(m).size()
+	return 0
+
+
+# --------------------------------------------------------------- content ---
+static func _build_content(m: Menus) -> void:
+	var content: VBoxContainer = _ui["content"]
+	var sec := _section(_sec)
+	var kind := String(sec["kind"])
+	var bar := HBoxContainer.new()
+	bar.name = "CodexBar"
+	bar.add_theme_constant_override("separation", 10)
+	content.add_child(bar)
+	var title := m._lbl(bar, _page_title(), 16, GOLD_TXT)
+	title.autowrap_mode = TextServer.AUTOWRAP_OFF
+	UITheme.header(title)
+	_ui["title"] = title
+	var count := m._lbl(bar, "", 12, MUTED)
+	count.name = "CodexCount"
+	count.autowrap_mode = TextServer.AUTOWRAP_OFF
+	count.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_ui["count"] = count
+	var sp := Control.new()
+	sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar.add_child(sp)
+	if kind == "list":
+		var search := LineEdit.new()
+		search.name = "CodexSearch"
+		search.placeholder_text = "Search"
+		search.text = _query
+		search.custom_minimum_size = Vector2(180, 30)
+		search.clear_button_enabled = true
+		search.add_theme_font_size_override("font_size", 13)
+		search.text_changed.connect(func(t: String) -> void:
+			_query = t
+			_rebuild_split(m))
+		bar.add_child(search)
+		_ui["search"] = search
+	var chips := HFlowContainer.new()
+	chips.name = "CodexChips"
+	chips.add_theme_constant_override("h_separation", 6)
+	chips.add_theme_constant_override("v_separation", 6)
+	content.add_child(chips)
+	_ui["chips"] = chips
+	_build_chips(m)
+	var split := HBoxContainer.new()
+	split.name = "CodexSplit"
+	split.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	split.add_theme_constant_override("separation", 10)
+	content.add_child(split)
+	_ui["split"] = split
+	_rebuild_split(m)
+
+
+static func _page_title() -> String:
+	var sec := _section(_sec)
+	var f: Dictionary = _filters.get(_sec, {})
+	match _sec:
+		"npcs":
+			return "Folk of the Vale"
+		"gallery":
+			return "Gallery · " + _pair_label(GALLERY_SHELVES, String(f.get("shelf", "heroes")))
+		"notes":
+			return "Field notes · " + _pair_label(NOTE_PAGES, String(f.get("page", "elites")))
+		"coop":
+			return "Playing together"
+		"future":
+			return "Future · placeholders"
+	return String(sec["name"])
+
+
+static func _pair_label(pairs: Array, key: String) -> String:
+	for p in pairs:
+		if String(p[0]) == key:
+			return String(p[1])
+	return key
+
+
+## Chip = the tab pill, shrunk to a filter row.
+static func _chip(m: Menus, parent: Control, text: String, active: bool, accent: Color, cb: Callable) -> Button:
+	var b := m._btn(parent, text, cb, accent if active else MUTED)
+	UITheme.tab(b, active, accent)
+	# A finger needs more than a pointer: taller chips on touch.
+	b.custom_minimum_size.y = 32.0 if m.game.touch_mode else 26.0
+	b.focus_mode = Control.FOCUS_NONE
+	b.add_theme_font_size_override("font_size", 12)
+	for st in ["normal", "hover", "pressed"]:
+		var sb := b.get_theme_stylebox(String(st)) as StyleBoxFlat
+		if sb != null:
+			sb.content_margin_left = 9.0
+			sb.content_margin_right = 9.0
+			sb.content_margin_top = 3.0
+			sb.content_margin_bottom = 3.0
+	return b
+
+
+static func _build_chips(m: Menus) -> void:
+	var chips: HFlowContainer = _ui.get("chips")
+	if chips == null or not is_instance_valid(chips):
+		return
+	for c in chips.get_children():
+		chips.remove_child(c)
+		c.queue_free()
+	var f: Dictionary = _filters.get(_sec, {})
+	var first := true
+	for g in _chip_groups(m):
+		var gd: Dictionary = g
+		if not first:
+			var gap := Control.new()
+			gap.custom_minimum_size = Vector2(6, 0)
+			chips.add_child(gap)
+		first = false
+		var key := String(gd["key"])
+		var accent: Color = gd.get("accent", ACC_GOLD)
+		var cur := String(f.get(key, ""))
+		if String(gd.get("all", "")) != "":
+			_chip(m, chips, String(gd["all"]), cur == "", accent, func() -> void: _set_filter(m, key, ""))
+		for opt in gd["opts"]:
+			var val := String(opt[0])
+			_chip(m, chips, String(opt[1]), cur == val, accent, func() -> void: _set_filter(m, key, val))
+	chips.visible = chips.get_child_count() > 0
+
+
+static func _set_filter(m: Menus, key: String, val: String) -> void:
+	var f: Dictionary = _filters.get(_sec, {})
+	if val == "":
+		f.erase(key)
+	else:
+		f[key] = val
+	_filters[_sec] = f
+	# Deferred: the pressed chip is being freed by the rebuild it asked for.
+	UICodex._refresh.call_deferred(m)
+
+
+static func _refresh(m: Menus) -> void:
+	# A chip can change the page (Gallery shelf, Field notes page, Future
+	# category) — the bar title follows it.
+	var title: Label = _ui.get("title")
+	if title != null and is_instance_valid(title):
+		title.text = _page_title()
+	_build_chips(m)
+	_rebuild_split(m)
+
+
+## Filter groups per section: {key, all (label of the "any" chip, "" = none),
+## opts [[value, label]...], accent}. Chapter chips list only chapters that
+## actually hold entries.
+static func _chip_groups(m: Menus) -> Array:
+	var sec := _section(_sec)
+	var accent: Color = sec.get("accent", ACC_GOLD)
+	match _sec:
+		"monsters":
+			return [_chapter_group(_bestiary_chapters(m, false), accent),
+				{"key": "type", "all": "", "opts": [["melee", "Melee"], ["ranged", "Ranged"]], "accent": accent}]
+		"bosses":
+			return [_chapter_group(_bestiary_chapters(m, true), accent)]
+		"npcs":
+			var chs: Array = []
+			for e in _npc_entries():
+				if not (String(e["chapter"]) in chs):
+					chs.append(String(e["chapter"]))
+			return [_chapter_group(chs, accent),
+				{"key": "q", "all": "", "opts": [["1", "Quest givers"]], "accent": accent}]
+		"terrains":
+			var found := _terrain_zones()
+			var tchs: Array = []
+			for id in Terrains.catalog_ids(false):
+				var ch := String(found.get(id, {}).get("chapter", ""))
+				if ch != "" and not (ch in tchs):
+					tchs.append(ch)
+			return [_chapter_group(tchs, accent),
+				{"key": "hz", "all": "", "opts": [["1", "Hazardous"], ["0", "Safe"]], "accent": accent}]
+		"curios":
+			return [{"key": "kind", "all": "All", "opts": [["quest", "Quest items"], ["draughts", "Draughts & tonics"],
+				["synthesis", "Synthesis"], ["relics", "Relics & landmarks"]], "accent": accent}]
+		"shapes", "uniques":
+			var slots: Array = []
+			for slot in Items.SLOTS:
+				slots.append([String(slot), String(SLOT_LABEL.get(slot, String(slot).capitalize()))])
+			var classes: Array = []
+			for cls in Classes.CLASSES:
+				classes.append([String(cls), String(Classes.CLASSES[cls]["name"])])
+			var groups := [{"key": "slot", "all": "All slots", "opts": slots, "accent": accent},
+				{"key": "cls", "all": "Any class", "opts": classes, "accent": accent}]
+			if _sec == "uniques":
+				groups.append({"key": "grade", "all": "", "opts": [["A", "A"], ["S", "S"]], "accent": accent})
+			return groups
+		"gems":
+			return [{"key": "kind", "all": "All", "opts": [["regular", "Regular"], ["special", "Special"]], "accent": accent}]
+		"gallery":
+			return [{"key": "shelf", "all": "", "opts": GALLERY_SHELVES.duplicate(), "accent": accent}]
+		"notes":
+			return [{"key": "page", "all": "", "opts": NOTE_PAGES.duplicate(), "accent": accent}]
+		"future":
+			return [{"key": "cat", "all": "", "opts": FUTURE_CATS.duplicate(), "accent": accent}]
+	return []
+
+
+static func _chapter_group(chapters: Array, accent: Color) -> Dictionary:
+	# Story order, not first-seen order.
+	var ordered: Array = []
+	for chid in Story.CHAPTER_LIST:
+		if String(chid) in chapters:
+			ordered.append([String(chid), _chapter_label(String(chid))])
+	return {"key": "ch", "all": "All", "opts": ordered, "accent": accent}
+
+
+static func _chapter_label(chid: String) -> String:
+	if chid == "":
+		return "—"
+	if chid.begins_with("ch") and chid.substr(2).is_valid_int():
+		return "Ch " + chid.substr(2)
+	var ch := Story.chapter(chid)
+	return String(ch.get("name", chid)) if not ch.is_empty() else chid
+
+
+static func _matches(text: String) -> bool:
+	var q := _query.strip_edges().to_lower()
+	return q == "" or text.to_lower().contains(q)
+
+
+# ------------------------------------------------------- ledger + detail ---
+static func _rebuild_split(m: Menus) -> void:
+	_build_gen += 1  # a still-streaming ledger stops at its next frame
+	var split: HBoxContainer = _ui.get("split")
+	if split == null or not is_instance_valid(split):
+		return
+	for c in split.get_children():
+		split.remove_child(c)
+		c.queue_free()
+	var sec := _section(_sec)
+	if String(sec["kind"]) == "list":
+		_build_list_and_detail(m, split)
+	else:
+		_build_page(m, split)
+
+
+static func _build_list_and_detail(m: Menus, split: HBoxContainer) -> void:
+	var rows := _rows(m)
+	var total := _section_count(m, _sec)
+	var count: Label = _ui.get("count")
+	if count != null and is_instance_valid(count):
+		count.text = ("%d of %d" % [rows.size(), total]) if rows.size() != total else ("%d entries" % total)
+	var sel := String(_selected.get(_sec, ""))
+	var found := false
+	for r in rows:
+		if String(r["key"]) == sel:
+			found = true
+			break
+	if not found:
+		sel = String(rows[0]["key"]) if not rows.is_empty() else ""
+		_selected[_sec] = sel
+	# The ledger.
+	var lsc := ScrollContainer.new()
+	lsc.name = "CodexLedger"
+	lsc.custom_minimum_size = Vector2(LIST_W, 0)
+	lsc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	lsc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	lsc.follow_focus = true  # ↑/↓ walk the rows and the list keeps up
+	split.add_child(lsc)
+	var lcol := VBoxContainer.new()
+	lcol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lcol.add_theme_constant_override("separation", 0)
+	lsc.add_child(lcol)
+	_ui["ledger"] = lcol
+	# The detail.
+	var dsc := ScrollContainer.new()
+	dsc.name = "CodexDetail"
+	dsc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	dsc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dsc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	split.add_child(dsc)
+	var dcol := VBoxContainer.new()
+	dcol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dcol.add_theme_constant_override("separation", 8)
+	dsc.add_child(dcol)
+	_ui["detail"] = dcol
+	if rows.is_empty():
+		var e := m._lbl(lcol, "Nothing matches — clear a chip or the search.", 13, MUTED)
+		e.custom_minimum_size = Vector2(LIST_W - 24, 0)
+		return
+	var jobs: Array = []
+	for r in rows:
+		var rd: Dictionary = r
+		jobs.append(func() -> void:
+			var b := _row_button(m, lcol, rd, String(rd["key"]) == sel)
+			if String(rd["key"]) == sel:
+				_scroll_to_card(m, b))
+	_build_chunked(m, lcol, jobs, 24)
+	_build_detail(m, dcol, sel)
+
+
+static func _select(m: Menus, key: String) -> void:
+	if String(_selected.get(_sec, "")) == key:
+		return
+	_selected[_sec] = key
+	_fold_open = false
+	var lcol: VBoxContainer = _ui.get("ledger")
+	if lcol != null and is_instance_valid(lcol):
+		for c in lcol.get_children():
+			if c is Button and c.has_meta("row"):
+				_style_row(c, String(c.get_meta("key")) == key, c.get_meta("row"))
+	var dcol: VBoxContainer = _ui.get("detail")
+	if dcol != null and is_instance_valid(dcol):
+		for c in dcol.get_children():
+			dcol.remove_child(c)
+			c.queue_free()
+		_build_detail(m, dcol, key)
+
+
+static func _row_button(m: Menus, col: VBoxContainer, r: Dictionary, selected: bool) -> Button:
+	var key := String(r["key"])
+	var b := Button.new()
+	b.name = ("CodexRow_" + key).validate_node_name()
+	b.custom_minimum_size = Vector2(0, ROW_H)
+	b.focus_mode = Control.FOCUS_ALL  # arrows walk the ledger
+	b.set_meta("key", key)
+	b.set_meta("row", r)
+	_style_row(b, selected, r)
+	col.add_child(b)
+	var h := HBoxContainer.new()
+	h.set_anchors_preset(Control.PRESET_FULL_RECT)
+	h.offset_left = 8.0
+	h.offset_right = -8.0
+	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	h.add_theme_constant_override("separation", 10)
+	b.add_child(h)
+	var ic := TextureRect.new()
+	ic.custom_minimum_size = Vector2(32, 32)
+	ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var tex: Texture2D = r.get("icon")
+	if tex != null:
+		ic.texture = tex
+		ic.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if maxi(tex.get_width(), tex.get_height()) >= 96 \
+			else CanvasItem.TEXTURE_FILTER_NEAREST
+	h.add_child(ic)
+	var tb := VBoxContainer.new()
+	tb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	tb.add_theme_constant_override("separation", 0)
+	tb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	h.add_child(tb)
+	var nm := Label.new()
+	nm.text = String(r["name"])
+	nm.clip_text = true
+	nm.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	nm.add_theme_font_size_override("font_size", 13)
+	nm.add_theme_color_override("font_color", r.get("name_color", Color(0.92, 0.93, 0.98)))
+	nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tb.add_child(nm)
+	var sub_txt := String(r.get("sub", ""))
+	if sub_txt != "":
+		var sub := Label.new()
+		sub.text = sub_txt
+		sub.clip_text = true
+		sub.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		sub.add_theme_font_size_override("font_size", 11)
+		sub.add_theme_color_override("font_color", r.get("sub_color", MUTED))
+		sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tb.add_child(sub)
+	var tag_txt := String(r.get("tag", ""))
+	if tag_txt != "":
+		var tag := Label.new()
+		tag.text = tag_txt
+		tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		tag.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		tag.custom_minimum_size = Vector2(44, 0)
+		tag.add_theme_font_size_override("font_size", 11)
+		tag.add_theme_color_override("font_color", r.get("tag_color", Color(0.45, 0.48, 0.56)))
+		tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		h.add_child(tag)
+	b.pressed.connect(func() -> void: _select(m, key))
+	b.focus_entered.connect(func() -> void: _select(m, key))
+	return b
+
+
+static func _style_row(b: Button, selected: bool, r: Dictionary) -> void:
+	var accent: Color = r.get("accent", ACC_GOLD)
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(accent, 0.09) if selected else Color(0, 0, 0, 0)
+	normal.border_color = Color(accent, 0.95) if selected else Color(0.28, 0.30, 0.38, 0.18)
+	normal.border_width_left = 3
+	normal.border_width_bottom = 0 if selected else 1
+	var hover: StyleBoxFlat = normal.duplicate()
+	hover.bg_color = Color(accent, 0.14) if selected else Color(1, 1, 1, 0.035)
+	var focus := StyleBoxFlat.new()
+	focus.bg_color = Color(0, 0, 0, 0)
+	focus.border_color = Color(accent, 0.55)
+	focus.border_width_left = 3
+	b.add_theme_stylebox_override("normal", normal)
+	b.add_theme_stylebox_override("hover", hover)
+	b.add_theme_stylebox_override("pressed", hover)
+	b.add_theme_stylebox_override("focus", focus)
+
+
+## Rows of the open collection: [{key, name, sub, tag, icon, accent, ...}].
+static func _rows(m: Menus) -> Array:
+	match _sec:
+		"monsters":
+			return _bestiary_rows(m, false)
+		"bosses":
+			return _bestiary_rows(m, true)
+		"npcs":
+			return _npc_rows(m)
+		"terrains":
+			return _terrain_rows(m)
+		"curios":
+			return _curio_rows(m)
+		"shapes":
+			return _shape_rows(m)
+		"uniques":
+			return _unique_rows(m)
+	return []
+
+
+static func _build_detail(m: Menus, dcol: VBoxContainer, key: String) -> void:
+	if key == "":
+		return
+	match _sec:
+		"monsters":
+			_enemy_card(m, dcol, key, false, false, false, DETAIL_W)
+		"bosses":
+			_enemy_card(m, dcol, key, true, false, false, DETAIL_W)
+		"npcs":
+			_npc_detail(m, dcol, key)
+		"terrains":
+			var found := _terrain_zones()
+			_terrain_card(m, dcol, key, String(found.get(key, {}).get("zone", "")), false, DETAIL_W)
+		"curios":
+			_curio_detail(m, dcol, key)
+		"shapes":
+			_shape_detail(m, dcol, key)
+		"uniques":
+			_unique_detail(m, dcol, key)
+
+
+# ------------------------------------------------------------- bestiary ---
+## Kinds the bestiary lists: placed in a zone (or a chapter's final boss),
+## not placeholder, and — for mobs — worth XP or gold (boss-summon props are
+## scenery). Table order.
+static func _bestiary_kinds(m: Menus, bosses: bool) -> Array:
+	var used := _used_enemy_kinds()
+	var out: Array = []
+	for kind in Story.ALL_ENEMIES:
+		if (kind in m.BOSS_KINDS) != bosses:
+			continue
+		var st: Dictionary = Story.ALL_ENEMIES[kind]
+		if not bosses and st.get("xp", 0) <= 0 and st.get("gold", 0) <= 0:
+			continue
+		if not used.has(kind) or st.get("placeholder", false):
+			continue
+		out.append(String(kind))
+	return out
+
+
+## kind -> the FIRST chapter that places it (zone spawn, zone boss or final boss).
+static func _kind_chapters() -> Dictionary:
+	var out := {}
+	for chid in Story.CHAPTER_LIST:
+		var ch: Dictionary = Story.CHAPTER_LIST[chid]
+		for zone in ch.get("zones", []):
+			for e in zone.get("enemies", []):
+				if e is Array and e.size() > 0 and not out.has(String(e[0])):
+					out[String(e[0])] = String(chid)
+			var b := String(zone.get("boss", ""))
+			if b != "" and not out.has(b):
+				out[b] = String(chid)
+		var fb := String(ch.get("final_boss", ""))
+		if fb != "" and not out.has(fb):
+			out[fb] = String(chid)
+	return out
+
+
+static func _bestiary_chapters(m: Menus, bosses: bool) -> Array:
+	var chap := _kind_chapters()
+	var out: Array = []
+	for kind in _bestiary_kinds(m, bosses):
+		var ch := String(chap.get(kind, ""))
+		if ch != "" and not (ch in out):
+			out.append(ch)
+	return out
+
+
+static func _bestiary_rows(m: Menus, bosses: bool) -> Array:
+	var f: Dictionary = _filters.get(_sec, {})
+	var chap := _kind_chapters()
+	var order: Array = Story.CHAPTER_LIST.keys()
+	var out: Array = []
+	for kind in _bestiary_kinds(m, bosses):
+		var st: Dictionary = Story.ALL_ENEMIES[kind]
+		var ch := String(chap.get(kind, ""))
+		if f.has("ch") and ch != String(f["ch"]):
+			continue
+		if f.has("type") and (String(f["type"]) == "ranged") != bool(st["ranged"]):
+			continue
+		var nm := String(st["name"])
+		if not _matches(nm):
+			continue
+		var sub := _chapter_label(ch) + " · " + ("Ranged caster" if st["ranged"] else "Melee")
+		if bosses:
+			var mechs: Array = st.get("mechanics", [])
+			if not mechs.is_empty():
+				sub += " · %d mechanics" % mechs.size()
+		else:
+			var kills: int = int(m.game.kill_counts.get(kind, 0))
+			if kills < Lore.threshold(kind):
+				sub += " · lore buried"
+		out.append({"key": kind, "name": nm, "sub": sub, "tag": "Lv %d" % int(st.get("level", 1)),
+			"tag_color": UITheme.GOLD_DIM, "icon": _enemy_icon(String(st["sprite"])),
+			"name_color": Color(1, 0.6, 0.6) if bosses else Color(0.92, 0.93, 0.98),
+			"accent": ACC_BOSS if bosses else ACC_MOB,
+			"_ord": [order.find(ch) if order.has(ch) else 99, int(st.get("level", 1)), nm]})
+	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var oa: Array = a["_ord"]
+		var ob: Array = b["_ord"]
+		if oa[0] != ob[0]:
+			return oa[0] < ob[0]
+		if oa[1] != ob[1]:
+			return oa[1] < ob[1]
+		return String(oa[2]) < String(ob[2]))
+	return out
+
+
+## One boxed card per monster/boss: icon, name, Lv, live stats, growth,
+## projections, traits and lore — the DETAIL of a bestiary row (w =
+## DETAIL_W) and the card the dev-only Future shelf lists (w = PAGE_W). A
+## boss with authored `mechanics` grows an inline "Mechanics & Tells" fold
+## (2026-08-15: no more separate detail screen + Back button).
+## The codex is an ARCHIVE, not a scale chart (owner 2026-07-25): every
+## portrait — wolf or god-king — is normalized to one box, so the shelf reads
+## as a catalogue instead of a size comparison. Cropping is what makes that
+## normalization honest: raw frames carry wildly different padding (a 224px
+## boss square vs a tight 32px mob), and a multi-frame STRIP would otherwise
+## squeeze all its frames into the box. Alpha threshold (not get_used_rect)
+## so a stray 1-alpha pixel in a padded export can't defeat the crop.
+## Cached per sprite for the session.
+static func _enemy_card(m: Menus, list: VBoxContainer, kind: String, is_boss: bool, detail := false, placeholder := false, w := PAGE_W) -> PanelContainer:
+	var st: Dictionary = Story.ALL_ENEMIES[kind]
+	# Codex honesty: display what the fight actually deals/has
+	# (TTK and damage multipliers included), not raw table rows.
+	var live: Dictionary = Story.enemy_stats_at(kind, int(st.get("level", 1)))
+	var chap := _kind_chapters()
+
+	var box := UITheme.card(list, ACC_BOSS if is_boss else UITheme.GOLD_DIM, 12.0)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 4)
+	box.add_child(col)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	col.add_child(row)
+	var icon := TextureRect.new()
+	icon.texture = _enemy_icon(String(st["sprite"]))
+	icon.custom_minimum_size = Vector2(ICON_BOX, ICON_BOX)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	row.add_child(icon)
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.add_theme_constant_override("separation", 2)
+	row.add_child(info)
+	var text_w := w - ICON_BOX - 12.0
+
+	var nm_txt: String = String(st["name"]) + ("   [placeholder]" if placeholder else "")
+	var name_col: Color = Color(0.72, 0.68, 0.55) if placeholder else (Color(1, 0.6, 0.6) if is_boss else Color(1, 1, 1))
+	var name_l := m._lbl(info, nm_txt, 16, name_col)
+	name_l.custom_minimum_size = Vector2(text_w, 0)
+	var meta := m._lbl(info, "Lv %d   ·   %s   ·   %s" % [int(st.get("level", 1)),
+		_chapter_label(String(chap.get(kind, ""))), "Ranged caster" if st["ranged"] else "Melee"], 12, Color(0.6, 0.7, 0.85))
+	meta.custom_minimum_size = Vector2(text_w, 0)
+
+	# Aligned stat tiles (label over value) — five across fits the detail column.
+	var stat_pairs: Array = [["HP", int(live["hp"])], ["DMG", int(live["dmg"])], ["SPD", int(st["speed"])],
+			["XP", live["xp"]], ["Gold", live.get("gold", 0)]]
+	# EVA rides along only when the kind HAS evasion (nearly all ship 0.0, and a
+	# column of zeroes is noise). A foe you must answer with DEX can never be an
+	# invisible wall — the codex never lies about the wall (Stats.resolve).
+	var kind_eva: float = float(live.get("eva", 0.0))
+	if kind_eva > 0.0:
+		stat_pairs.append(["EVA", "%d%%" % int(kind_eva * 100.0)])
+	var grid := GridContainer.new()
+	# Five tiles fit the detail column; a sixth (EVA) wraps into two rows of three.
+	grid.columns = 3 if stat_pairs.size() > 5 else 5
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 2)
+	info.add_child(grid)
+	for pair in stat_pairs:
+		var tile := VBoxContainer.new()
+		tile.add_theme_constant_override("separation", 0)
+		tile.custom_minimum_size = Vector2(56, 0)
+		grid.add_child(tile)
+		var sl := m._lbl(tile, String(pair[0]).to_upper(), 10, Color(0.5, 0.53, 0.62))
+		sl.autowrap_mode = TextServer.AUTOWRAP_OFF
+		var sv := m._lbl(tile, str(pair[1]), 14, Color(0.9, 0.92, 0.98))
+		sv.autowrap_mode = TextServer.AUTOWRAP_OFF
+
+	# Scaling: growth + projections, in two quiet sublines.
+	var at25 := Story.enemy_stats_at(kind, 25)
+	var at50 := Story.enemy_stats_at(kind, 50)
+	var g1 := m._lbl(col, "Growth per level:   HP +%d%%   ·   DMG +%d%%" %
+		[int(st.get("hp_g", 0.1) * 100), int(st.get("dmg_g", 0.1) * 100)], 12, Color(0.55, 0.65, 0.8))
+	g1.custom_minimum_size = Vector2(w, 0)
+	var g2 := m._lbl(col, "Projected:   Lv 25 → %d HP, %d DMG   ·   Lv 50 → %d HP, %d DMG" %
+		[int(at25["hp"]), int(at25["dmg"]), int(at50["hp"]), int(at50["dmg"])], 12, Color(0.5, 0.55, 0.66))
+	g2.custom_minimum_size = Vector2(w, 0)
+
+	# Identity traits (2026-07-07): each kind's gimmick, so the
+	# player learns the counter (kill the healer, dodge the pounce).
+	for tr in st.get("traits", []):
+		var td: String = Enemy.TRAIT_DESC.get(String(tr), "")
+		if td != "":
+			var tl := m._lbl(col, "◆ " + td, 12, Color(0.7, 0.85, 0.7))
+			tl.custom_minimum_size = Vector2(w, 0)
+
+	# Codex completion (retention roadmap #5): the kill tally, and
+	# the lore this character has (or hasn't) earned the right to read.
+	var kills: int = int(m.game.kill_counts.get(kind, 0))
+	var need := Lore.threshold(kind)
+	if kills >= need:
+		var ll := m._lbl(col, "❝ %s ❞" % Lore.entry(kind), 13, Color(0.85, 0.78, 0.6))
+		ll.custom_minimum_size = Vector2(w, 0)
+	else:
+		m._lbl(col, "Slain: %d / %d — its lore is still buried." % [kills, need],
+			12, Color(0.5, 0.55, 0.66))
+
+	# Bosses with authored mechanics: the Mechanics & Tells fold, right here.
+	var mechs: Array = st.get("mechanics", [])
+	if is_boss and not detail and not mechs.is_empty():
+		var fold := VBoxContainer.new()
+		fold.add_theme_constant_override("separation", 6)
+		fold.visible = _fold_open
+		var toggle := func() -> void:
+			fold.visible = not fold.visible
+			_fold_open = fold.visible
+		var fb := m._btn(col, "", toggle, Color(1, 0.7, 0.7))
+		fb.name = "CodexMechanicsFold"
+		fb.focus_mode = Control.FOCUS_NONE
+		var fold_lbl := func() -> void:
+			fb.text = "  %s Mechanics & Tells  ·  %d  " % ["▾" if fold.visible else "▸", mechs.size()]
+		fold_lbl.call()
+		fb.pressed.connect(fold_lbl)
+		col.add_child(fold)
+		for mech in mechs:
+			var mbox := VBoxContainer.new()
+			mbox.add_theme_constant_override("separation", 3)
+			UITheme.card(fold, ACC_BOSS, 10.0).add_child(mbox)
+			m._lbl(mbox, "◆ " + String(mech.get("name", "")), 14, Color(1, 0.7, 0.7))
+			var tl2 := m._lbl(mbox, "Tell — " + String(mech.get("tell", "")), 12, Color(0.85, 0.82, 0.7))
+			tl2.custom_minimum_size = Vector2(w - 24, 0)
+			var cl2 := m._lbl(mbox, "Counter — " + String(mech.get("counter", "")), 12, Color(0.7, 0.9, 0.7))
+			cl2.custom_minimum_size = Vector2(w - 24, 0)
+
+	# Dev launcher only: TRANSFORM — wear this creature over the hero to
+	# road-test its walk/attack clips in place (dev_morph.gd drives the puppet;
+	# the ability keys play the clips). The same card reverts.
+	if m.game.dev_mode and m.game.player != null:
+		var mk := String(kind)
+		var cur: DevMorph = m.game.player.dev_morph
+		if cur != null and cur.kind == mk:
+			m._btn(col, "  ⟲ Revert transform  ", func() -> void:
+				DevMorph.stop(m.game.player)
+				m.close(), Color(0.7, 0.95, 0.85))
+		else:
+			m._btn(col, "  ⇄ Transform  ", func() -> void:
+				DevMorph.start(m.game.player, mk)
+				m.close(), Color(0.7, 0.95, 0.85))
+	return box
+
+
+# ----------------------------------------------------------------- folk ---
+## The speaking cast, deduped by sprite: [{name, sprite, quest, chapter, zone}].
+## Same derivation the old NPC shelf used, plus where each was first met.
+static func _npc_entries() -> Array:
+	var seen := {}
+	var entries: Array = []
+	var any_merchant := false
+	for chid in Story.CHAPTER_LIST:
+		for zone in Story.CHAPTER_LIST[chid].get("zones", []):
+			if zone.has("merchant"):
+				any_merchant = true
+			for npc in zone.get("npcs", []):
+				# Placeholder NPCs (extracted art wired for review) live on the
+				# dev-only Future > NPCs shelf, never here.
+				if npc.get("placeholder", false):
+					continue
+				var spr: String = String(npc.get("sprite", ""))
+				if spr == "":
+					continue
+				var quest := _gives_quest(String(npc.get("convo", "")))
+				if seen.has(spr):
+					# Same face elsewhere can still upgrade its role line.
+					if quest:
+						seen[spr]["quest"] = true
+					continue
+				var nm := _npc_name(npc)
+				if nm == "" or nm == "Narrator":
+					continue  # narrator-voiced scenery: a lore read, not a person
+				var e := {"name": nm, "sprite": spr, "quest": quest, "chapter": String(chid), "zone": String(zone.get("name", ""))}
+				seen[spr] = e
+				entries.append(e)
+	# The merchant spawns from the zones' `merchant` spot, not an npcs list —
+	# but they're absolutely someone you speak to.
+	if any_merchant and not seen.has("merchant"):
+		entries.append({"name": "Merchant", "sprite": "merchant", "quest": false, "chapter": "", "zone": "the road"})
+	return entries
+
+
+static func _npc_rows(_m: Menus) -> Array:
+	var f: Dictionary = _filters.get(_sec, {})
+	var out: Array = []
+	for e in _npc_entries():
+		if f.has("ch") and String(e["chapter"]) != String(f["ch"]):
+			continue
+		var role := _npc_role(String(e["sprite"]), bool(e.get("quest", false)))
+		if f.has("q") and not bool(e.get("quest", false)):
+			continue
+		if not _matches(String(e["name"]) + " " + role + " " + String(e["zone"])):
+			continue
+		out.append({"key": String(e["sprite"]), "name": String(e["name"]),
+			"sub": role if role != "" else String(e["zone"]), "tag": _chapter_label(String(e["chapter"])),
+			"icon": _enemy_icon(String(e["sprite"])), "accent": ACC_NPC})
+	return out
+
+
+static func _npc_detail(m: Menus, list: VBoxContainer, sprite: String) -> void:
+	var e := {}
+	for x in _npc_entries():
+		if String(x["sprite"]) == sprite:
+			e = x
+			break
+	if e.is_empty():
+		return
+	var box := UITheme.card(list, ACC_NPC, 12.0)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	box.add_child(row)
+	# Framed pixel portrait, dialogue-box style: gold frame, dark well,
+	# nearest-neighbor upscale so the sprite reads chunky, not smeared.
+	var frame := Panel.new()
+	frame.custom_minimum_size = Vector2(72, 72)
+	var fsb := StyleBoxFlat.new()
+	fsb.bg_color = Color(0.1, 0.09, 0.15)
+	fsb.border_color = Color(UITheme.GOLD, 0.75)
+	fsb.set_border_width_all(2)
+	fsb.set_corner_radius_all(4)
+	frame.add_theme_stylebox_override("panel", fsb)
+	frame.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	row.add_child(frame)
+	var icon := TextureRect.new()
+	icon.texture = _enemy_icon(sprite)
+	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+	icon.offset_left = 6
+	icon.offset_top = 6
+	icon.offset_right = -6
+	icon.offset_bottom = -6
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	frame.add_child(icon)
+	var info := VBoxContainer.new()
+	info.add_theme_constant_override("separation", 3)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(info)
+	var text_w := DETAIL_W - 72.0 - 14.0
+	var nm2 := m._lbl(info, String(e["name"]), 16, Color(0.9, 0.92, 0.98))
+	nm2.custom_minimum_size = Vector2(text_w, 0)
+	var role := _npc_role(String(e["sprite"]), bool(e.get("quest", false)))
+	if role != "":
+		var rl := m._lbl(info, role, 13, Color(0.75, 0.7, 0.5))
+		rl.custom_minimum_size = Vector2(text_w, 0)
+	var where := String(e.get("zone", ""))
+	var chl := _chapter_label(String(e.get("chapter", "")))
+	if where != "":
+		var wl := m._lbl(info, "First met in %s%s." % [where, "" if chl == "—" else " · " + chl], 12, MUTED)
+		wl.custom_minimum_size = Vector2(text_w, 0)
+	var dl := m._lbl(info, "Everyone you can hold a conversation with on the road. Talk to them again after a chapter beat — the same face can carry a new errand.", 12, Color(0.55, 0.58, 0.66))
+	dl.custom_minimum_size = Vector2(text_w, 0)
+
+
+# ------------------------------------------------------------- terrains ---
+## terrain id -> {zone, chapter} of the FIRST zone that uses it.
+static func _terrain_zones() -> Dictionary:
+	var found_in := {}
+	for chid in Story.CHAPTER_LIST:
+		for zone in Story.CHAPTER_LIST[chid]["zones"]:
+			var tid := String(zone.get("terrain", ""))
+			if tid != "" and not found_in.has(tid):
+				found_in[tid] = {"zone": String(zone["name"]), "chapter": String(chid)}
+	return found_in
+
+
+static func _terrain_hazards(t: Dictionary) -> Array:
+	var quirks: Array = []
+	for p in t.get("patches", []):
+		var d: String = PATCH_DESC.get(p["type"], "")
+		if p.get("drift", false):
+			d += " — and the clouds DRIFT, so keep moving"
+		quirks.append(d)
+	if t.get("event", "") != "":
+		quirks.append(EVENT_DESC.get(t["event"], ""))
+	if t.get("mp_boost", false):
+		quirks.append("Latent magic — your mana recovers much faster here")
+	if t.has("river"):
+		quirks.append("Rivers cross these lands — wading leaves you DAMP (-%d%% move speed for %ds) and slows monsters; the bridge crosses dry" % [
+			int(round((1.0 - Balance.DAMP_SLOW_MULT) * 100.0)), int(Balance.DAMP_DURATION)])
+	return quirks
+
+
+## A swatch of the terrain's ground: the procedural room surface at 8×8
+## tiles (its top-left corner is pure ground; the middle carries the path
+## plaza), cached by Art.ground itself. `crop` = the pure-ground 32px corner.
+static func _terrain_swatch(id: String, crop: bool) -> Texture2D:
+	var t: Dictionary = Terrains.DATA[id]
+	var tex: Texture2D = Art.ground(String(t.get("ground", "grass")), String(t.get("path", "dirt")), 8, 8, 7, [])
+	if tex == null or not crop:
+		return tex
+	var at := AtlasTexture.new()
+	at.atlas = tex
+	at.region = Rect2(0, 0, 32, 32)
+	return at
+
+
+## The detail's PREVIEW: a whole room's worth of the terrain — 24×12 tiles of
+## ground with the road running west→east — the way Art.ground paints it under
+## the hero (owner 2026-08-15: a big picture, the text beneath). Cached by
+## Art.ground; the terrain tint rides on the TextureRect so it reads as it
+## does in the world.
+const PREVIEW_TILES_W := 24
+const PREVIEW_TILES_H := 12
+static func _terrain_preview(id: String) -> Texture2D:
+	var t: Dictionary = Terrains.DATA[id]
+	return Art.ground(String(t.get("ground", "grass")), String(t.get("path", "dirt")),
+		PREVIEW_TILES_W, PREVIEW_TILES_H, 11, ["W", "E"])
+
+
+static func _terrain_rows(_m: Menus) -> Array:
+	var f: Dictionary = _filters.get(_sec, {})
+	var found := _terrain_zones()
+	var out: Array = []
+	for id in Terrains.catalog_ids(false):
+		# Placeholder terrains (authored from the asset packs, unplaced) live
+		# on the dev-only Future > Terrains shelf, never on the player list.
+		var t: Dictionary = Terrains.DATA[id]
+		var fi: Dictionary = found.get(id, {})
+		var ch := String(fi.get("chapter", ""))
+		if f.has("ch") and ch != String(f["ch"]):
+			continue
+		var hz := _terrain_hazards(t)
+		if f.has("hz") and (String(f["hz"]) == "1") != (not hz.is_empty()):
+			continue
+		var nm := String(t["name"])
+		var zone := String(fi.get("zone", ""))
+		if not _matches(nm + " " + zone):
+			continue
+		out.append({"key": String(id), "name": nm,
+			"sub": (zone if zone != "" else "Unassigned terrain") + " · " + String(AMBIENT_DESC.get(t.get("ambient", ""), "still air")),
+			"tag": "hazard" if not hz.is_empty() else "safe",
+			"tag_color": Color(1.0, 0.7, 0.5) if not hz.is_empty() else Color(0.45, 0.48, 0.56),
+			"icon": _terrain_swatch(String(id), true), "accent": ACC_GOLD})
+	return out
+
+
+## One terrain card: name + where-it-appears, weather line, hazard/quirk
+## lines. The DETAIL of a Terrains row (w = DETAIL_W) and the card the
+## dev-only Future shelf lists (w = PAGE_W) — `ph` adds the [placeholder]
+## tag, a dev-panel hint and the prop roster.
+static func _terrain_card(m: Menus, list: VBoxContainer, id: String, where: String, ph: bool, w := PAGE_W) -> void:
+	var t: Dictionary = Terrains.DATA[id]
+	var box := UITheme.card(list, UITheme.GOLD_DIM, 12.0)
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.add_theme_constant_override("separation", 3)
+	box.add_child(info)
+	# The picture first — a room of this ground with its road, framed like a
+	# window onto the zone — then the words beneath it.
+	var pw := minf(w, float(PREVIEW_TILES_W * 16))
+	var frame := PanelContainer.new()
+	var fsb := StyleBoxFlat.new()
+	fsb.bg_color = Color(0.03, 0.03, 0.05)
+	fsb.border_color = Color(UITheme.GOLD_DIM, 0.8)
+	fsb.set_border_width_all(2)
+	fsb.set_corner_radius_all(6)
+	fsb.set_content_margin_all(2)
+	frame.add_theme_stylebox_override("panel", fsb)
+	frame.custom_minimum_size = Vector2(pw + 8, pw * PREVIEW_TILES_H / PREVIEW_TILES_W + 8)
+	frame.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	info.add_child(frame)
+	var sw := TextureRect.new()
+	sw.texture = _terrain_preview(id)
+	sw.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	sw.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	sw.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sw.modulate = t.get("tint", Color(1, 1, 1))  # the world's own light on it
+	frame.add_child(sw)
+	var text_w := w
+
+	var name_l := m._lbl(info, String(t["name"]) + ("   [placeholder]" if ph else ""), 16, Color(0.72, 0.68, 0.55) if ph else Color(1, 1, 1))
+	name_l.custom_minimum_size = Vector2(text_w, 0)
+	var where_txt: String = where
+	if where_txt == "":
+		where_txt = "Dev panel only" if ph else "Unassigned terrain"
+	var found := _terrain_zones()
+	var chl := _chapter_label(String(found.get(id, {}).get("chapter", "")))
+	var where_l := m._lbl(info, where_txt + ("" if chl == "—" or where == "" else "   ·   " + chl), 13,
+		Color(0.95, 0.85, 0.5) if where != "" else Color(0.55, 0.58, 0.66))
+	where_l.custom_minimum_size = Vector2(text_w, 0)
+
+	var amb: String = t.get("ambient", "")
+	var wl := m._lbl(info, "Weather:   " + String(AMBIENT_DESC.get(amb, "still air")),
+		13, Color(0.7, 0.72, 0.78))
+	wl.custom_minimum_size = Vector2(text_w, 0)
+
+	var quirks := _terrain_hazards(t)
+	if quirks.is_empty():
+		quirks.append("No hazards — safe ground")
+	for q in quirks:
+		var ql := m._lbl(info, "◆ " + String(q), 13, Color(0.55, 0.65, 0.8))
+		ql.custom_minimum_size = Vector2(text_w, 0)
+
+	# The Future shelf also lists the prop kit so the owner can judge the set.
+	if ph:
+		var parts: Array = []
+		for pool in [["fill", "obstacles"], ["decor", "decor"], ["accents", "accents"]]:
+			var names: Array = _uniq(t.get(pool[1], []))
+			if not names.is_empty():
+				parts.append("%s: %s" % [pool[0], ", ".join(names)])
+		var rl := m._lbl(info, "Props —  " + "   ·   ".join(parts), 12, Color(0.6, 0.66, 0.63))
+		rl.custom_minimum_size = Vector2(text_w, 0)
+
+
+# --------------------------------------------------------------- curios ---
+## Player-facing curio entries — SHIPPED content only (placeholders live on
+## the dev-only Future shelf): quest items, the representative draught shelf,
+## the synthesis capstone and shipped relics. [{key, kind, name, desc, sprite, tex}]
+static func _curio_entries() -> Array:
+	var out: Array = []
+	var ids: Array = Story.ALL_QUEST_ITEMS.keys()
+	ids.sort()
+	for id in ids:
+		var q: Dictionary = Story.ALL_QUEST_ITEMS[id]
+		if q.get("placeholder", false):
+			continue
+		out.append({"key": "q:" + String(id), "kind": "quest", "name": String(q.get("name", id)),
+			"desc": String(q.get("desc", "")), "sprite": String(q.get("icon", "")), "tex": null})
+	# Graded potions (CONSUMABLE_GRADES) run F→S in two lanes — the Accord (clean)
+	# and the Black Market (laced, cut with blightwater). A representative shelf:
+	# the seven Accord peaks (the S uniques), a laced example, and the Recall scroll.
+	var codex_pots := [
+		Items.make_potion("health", "instant", "S", "accord"),
+		Items.make_potion("health", "tonic", "S", "accord"),
+		Items.make_potion("mana", "instant", "S", "accord"),
+		Items.make_potion("mana", "tonic", "S", "accord"),
+		Items.make_potion("might", "buff", "S", "accord"),
+		Items.make_potion("ward", "buff", "S", "accord"),
+		Items.make_potion("renewal", "burst", "S", "accord"),
+		Items.make_potion("health", "instant", "F", "black"),
+		Items.make_potion("might", "buff", "A", "black"),
+		Items.make_recall_scroll(),
+	]
+	var pi := 0
+	for item in codex_pots:
+		# consumable_icon, NOT icon_for — potion/stone items carry no gear slot.
+		out.append({"key": "p:%d" % pi, "kind": "draughts", "name": String(item["name"]),
+			"desc": String(item.get("desc", "")), "sprite": "", "tex": Art.consumable_icon(item)})
+		pi += 1
+	# The synthesis capstone (CONSUMABLE_GRADES §9): the Alkahest Codex + the
+	# Grand potions Kesh mints from it (a clean S + a laced A → a modest step
+	# above S, no drawback). Synthesis-only — never sold. A representative shelf.
+	var codex_synth := [
+		Items.make_alkahest_codex(),
+		Items.make_grand_potion("health_instant"),
+		Items.make_grand_potion("mana_instant"),
+		Items.make_grand_potion("might"),
+		Items.make_grand_potion("ward"),
+		Items.make_grand_potion("renewal"),
+	]
+	var si := 0
+	for item in codex_synth:
+		out.append({"key": "s:%d" % si, "kind": "synthesis", "name": String(item["name"]),
+			"desc": String(item.get("desc", "")), "sprite": "", "tex": Art.consumable_icon(item)})
+		si += 1
+	# Relic entries carry an optional "group" (armory/supplies live in the
+	# Future tab until promoted); the player shelf shows SHIPPED relics only.
+	var rids: Array = Story.ALL_RELICS.keys()
+	rids.sort()
+	for id in rids:
+		var r: Dictionary = Story.ALL_RELICS[id]
+		if r.get("placeholder", false) or String(r.get("group", "")) != "":
+			continue
+		out.append({"key": "r:" + String(id), "kind": "relics", "name": String(r.get("name", id)),
+			"desc": String(r.get("lore", "")), "sprite": String(r.get("sprite", "")), "tex": null})
+	return out
+
+
+const CURIO_KIND_LABEL := {"quest": "Quest item", "draughts": "Draught", "synthesis": "Synthesis", "relics": "Relic"}
+
+
+static func _curio_icon(e: Dictionary) -> Texture2D:
+	var tex: Texture2D = e.get("tex")
+	if tex != null:
+		return tex
+	var spr := String(e.get("sprite", ""))
+	return Art.tex(spr) if spr != "" else null
+
+
+static func _curio_rows(_m: Menus) -> Array:
+	var f: Dictionary = _filters.get(_sec, {})
+	var out: Array = []
+	for e in _curio_entries():
+		if f.has("kind") and String(e["kind"]) != String(f["kind"]):
+			continue
+		if not _matches(String(e["name"]) + " " + String(e["desc"])):
+			continue
+		out.append({"key": String(e["key"]), "name": String(e["name"]), "sub": String(e["desc"]),
+			"tag": String(CURIO_KIND_LABEL.get(e["kind"], "")), "icon": _curio_icon(e), "accent": ACC_GOLD})
+	return out
+
+
+static func _curio_detail(m: Menus, list: VBoxContainer, key: String) -> void:
+	for e in _curio_entries():
+		if String(e["key"]) == key:
+			var tex: Texture2D = e.get("tex")
+			_curio_card(m, list, String(e["name"]), String(e["desc"]), String(e.get("sprite", "")), false, tex, DETAIL_W - 62.0)
+			var kl := m._lbl(list, {"quest": "Keepsakes and story tokens ride in your bag until their moment comes.",
+				"draughts": "Graded F→S in two lanes: the Accord (clean, chartered) and the Black Market (laced, cheaper, with a sting). Bags & consumables in Field notes has the rules.",
+				"synthesis": "Synthesis-only — never sold. Kesh mints the Grand potions from the Alkahest Codex: a clean S + a laced A → a step above S, no drawback.",
+				"relics": "A shipped relic or landmark of the world."}.get(String(e["kind"]), ""), 12, MUTED)
+			kl.custom_minimum_size = Vector2(DETAIL_W, 0)
+			return
+
+
+# --------------------------------------------------------------- armory ---
+## Every rollable shape: [{slot, noun, cls}] in class/table order. Weapons
+## and the class-migrated slots group by class; a shared slot lists flat.
+static func _shape_entries() -> Array:
+	var out: Array = []
+	for slot in Items.SLOTS:
+		var sl := String(slot)
+		if sl == "weapon":
+			for cls in Classes.CLASSES:
+				for noun in Items.CLASS_WEAPONS.get(cls, []):
+					out.append({"slot": sl, "noun": String(noun), "cls": String(cls)})
+		elif not Items.CLASS_GEAR.get("warrior", {}).get(sl, []).is_empty():
+			for cls in Classes.CLASSES:
+				for noun in Items.CLASS_GEAR.get(cls, {}).get(sl, []):
+					out.append({"slot": sl, "noun": String(noun), "cls": String(cls)})
+		else:
+			for noun in Items.SLOT_NAMES[sl]:
+				out.append({"slot": sl, "noun": String(noun), "cls": ""})
+	return out
+
+
+static func _class_name(cls: String) -> String:
+	return String(Classes.CLASSES[cls]["name"]) if Classes.CLASSES.has(cls) else "Shared"
+
+
+static func _shape_rows(_m: Menus) -> Array:
+	var f: Dictionary = _filters.get(_sec, {})
+	var out: Array = []
+	for e in _shape_entries():
+		if f.has("slot") and String(e["slot"]) != String(f["slot"]):
+			continue
+		if f.has("cls") and String(e["cls"]) != String(f["cls"]):
+			continue
+		var noun := String(e["noun"])
+		var tag: String = Items.SHAPE_STYLE.get(noun, {}).get("tag", "")
+		if not _matches(noun + " " + tag):
+			continue
+		out.append({"key": String(e["slot"]) + "|" + noun, "name": noun,
+			"sub": tag + " · " + String(e["slot"]).capitalize(),
+			"tag": _class_name(String(e["cls"])), "icon": Art.codex_item_icon(String(e["slot"]), "S", noun),
+			"accent": ACC_GEAR})
+	return out
+
+
+static func _shape_detail(m: Menus, list: VBoxContainer, key: String) -> void:
+	var parts := key.split("|", true, 1)
+	if parts.size() != 2:
+		return
+	var slot := String(parts[0])
+	var noun := String(parts[1])
+	var cls := ""
+	for e in _shape_entries():
+		if String(e["slot"]) == slot and String(e["noun"]) == noun:
+			cls = String(e["cls"])
+			break
+	var slot_desc := {
+		"weapon": "Main: your class attribute (largest budget). Upgradeable at merchants.",
+		"helmet": "Main: your class attribute (solid budget).",
+		"armor": "Main: your class attribute. Upgradeable at merchants.",
+		"gloves": "Main: your class attribute (smallest budget).",
+		"pants": "Main: your class attribute (solid budget).",
+		"boots": "Main: your class attribute (small budget).",
+		"charm": "Main: your class attribute.",
+	}
+	var box := UITheme.card(list, ACC_GEAR, 12.0)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 4)
+	box.add_child(col)
+	var tag: String = Items.SHAPE_STYLE.get(noun, {}).get("tag", "")
+	var nm := m._lbl(col, noun, 16, Color(0.92, 0.93, 0.98))
+	nm.custom_minimum_size = Vector2(DETAIL_W, 0)
+	var meta := m._lbl(col, "%s   ·   %s   ·   leans %s" % [slot.capitalize(), _class_name(cls), tag], 12, Color(0.6, 0.7, 0.85))
+	meta.custom_minimum_size = Vector2(DETAIL_W, 0)
+	# The F→S ladder: this shape at every grade.
+	var ladder := HBoxContainer.new()
+	ladder.add_theme_constant_override("separation", 6)
+	col.add_child(ladder)
+	for g in Items.GRADES:
+		var cell := VBoxContainer.new()
+		cell.custom_minimum_size = Vector2(50, 0)
+		cell.add_theme_constant_override("separation", 1)
+		ladder.add_child(cell)
+		var icon := TextureRect.new()
+		icon.texture = Art.codex_item_icon(slot, g, noun)
+		# A 32px icon shown at 1:1 in a small cell reads as a sliver — a thin
+		# weapon vanishes. Upscale to a legible box, NEAREST so the pixels
+		# stay crisp instead of blurring.
+		icon.custom_minimum_size = Vector2(48, 48)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if icon.texture.get_width() >= 64 \
+			else CanvasItem.TEXTURE_FILTER_NEAREST
+		cell.add_child(icon)
+		var gl := Label.new()
+		gl.text = g
+		gl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		gl.add_theme_font_size_override("font_size", 12)
+		gl.add_theme_color_override("font_color", Items.GRADE_COLOR[g])
+		cell.add_child(gl)
+	var sd := m._lbl(col, String(slot_desc.get(slot, "")), 12, Color(0.7, 0.72, 0.78))
+	sd.custom_minimum_size = Vector2(DETAIL_W, 0)
+	var lean := m._lbl(col, "A shape leans a roll; it never grants a stat. Its tag names the substats that are more LIKELY to roll and roll BIGGER when they land — one stat %.2f×, two %.2f× each, three %.2f× each. Field notes › Gear rules has the whole of it." % [Items.SHAPE_BIAS_ONE, Items.SHAPE_BIAS_TWO, Items.SHAPE_BIAS_THREE], 12, Color(0.6, 0.62, 0.7))
+	lean.custom_minimum_size = Vector2(DETAIL_W, 0)
+	# Flavor: a quoted, dim parchment line under the ladder (empty = none).
+	var flav := GearFlavor.of({"noun": noun})
+	if flav != "":
+		var fl := m._lbl(col, "❝ %s ❞" % flav, 12, Color(0.72, 0.68, 0.55))
+		fl.custom_minimum_size = Vector2(DETAIL_W, 0)
+
+
+static func _unique_rows(_m: Menus) -> Array:
+	var f: Dictionary = _filters.get(_sec, {})
+	var out: Array = []
+	for u in Items.UNIQUES:
+		if f.has("slot") and String(u["slot"]) != String(f["slot"]):
+			continue
+		if f.has("cls") and String(u["cls"]) != String(f["cls"]):
+			continue
+		if f.has("grade") and String(u["grade"]) != String(f["grade"]):
+			continue
+		var passive := String(Items.PASSIVES.get(String(u.get("passive", "")), ""))
+		if not _matches(String(u["name"]) + " " + String(u["noun"]) + " " + passive):
+			continue
+		var grade := String(u["grade"])
+		out.append({"key": String(u["name"]), "name": String(u["name"]),
+			"sub": "%s · %s · %s" % [String(u["noun"]), _class_name(String(u["cls"])), String(u["slot"]).capitalize()],
+			"tag": grade, "tag_color": Items.GRADE_COLOR[grade], "name_color": Items.GRADE_COLOR[grade],
+			"icon": Art.codex_item_icon(String(u["slot"]), grade, String(u["noun"]), String(u.get("art", ""))),
+			"accent": ACC_GEAR})
+	return out
+
+
+static func _unique_detail(m: Menus, list: VBoxContainer, name: String) -> void:
+	var u := {}
+	for x in Items.UNIQUES:
+		if String(x["name"]) == name:
+			u = x
+			break
+	if u.is_empty():
+		return
+	var grade := String(u["grade"])
+	var color: Color = Items.GRADE_COLOR[grade]
+	var card := UITheme.card(list, color, 12.0)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	card.add_child(row)
+	var uicon := TextureRect.new()
+	uicon.texture = Art.codex_item_icon(String(u["slot"]), grade,
+		String(u["noun"]), String(u["art"]))
+	uicon.custom_minimum_size = Vector2(ICON_BOX, ICON_BOX)
+	uicon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	uicon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	uicon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if uicon.texture.get_width() >= 64 \
+		else CanvasItem.TEXTURE_FILTER_NEAREST
+	uicon.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	row.add_child(uicon)
+	var info := VBoxContainer.new()
+	info.add_theme_constant_override("separation", 3)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(info)
+	var text_w := DETAIL_W - ICON_BOX - 12.0
+	var name_l := m._lbl(info, String(u["name"]), 15, color)
+	name_l.custom_minimum_size = Vector2(text_w, 0)
+	var meta := m._lbl(info, "%s GRADE  •  %s  •  %s %s" % [grade, String(u["noun"]).to_upper(),
+		_class_name(String(u["cls"])).to_upper(), String(u["slot"]).to_upper()], 10, Color(0.60, 0.63, 0.70))
+	meta.custom_minimum_size = Vector2(text_w, 0)
+	var passive := m._lbl(info, String(Items.PASSIVES.get(
+		String(u.get("passive", "")), "Signature passive — in design")),
+		12, Color(0.86, 0.88, 0.94))
+	passive.custom_minimum_size = Vector2(text_w, 0)
+	var flavor := GearFlavor.of(u)
+	if flavor != "":
+		var flavor_l := m._lbl(info, flavor, 11, Color(0.67, 0.65, 0.58))
+		flavor_l.custom_minimum_size = Vector2(text_w, 0)
+	var ul := m._lbl(list, "A unique is a generic-grade piece that also carries a signature PASSIVE — that passive is the whole difference, and uniques drop more rarely to match. Its own name, its own art, live the moment you equip it. Named A pieces surface in Act 2, named S in Act 3.", 12, MUTED)
+	ul.custom_minimum_size = Vector2(DETAIL_W, 0)
+
+
+# ---------------------------------------------------------------- pages ---
+static func _build_page(m: Menus, split: HBoxContainer) -> void:
+	var count: Label = _ui.get("count")
+	var sc := ScrollContainer.new()
+	sc.name = "CodexDetail"
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	sc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	split.add_child(sc)
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 8)
+	sc.add_child(list)
+	_ui["detail"] = list
+	var f: Dictionary = _filters.get(_sec, {})
+	var ctext := ""
+	match _sec:
+		"gems":
+			ctext = "%d families" % Items.GEM_STATS.size()
+			_gems_page(m, list)
+		"status":
+			ctext = "%d effects" % _status_effects().size()
+			_statuses(m, list)
+		"coop":
+			_coop(m, list)
+		"story":
+			# The story archive is the Journal's (one builder, one source of
+			# truth): every conversation, choice and roadside talk as it was
+			# actually played, chapter by chapter, with a transcript reader.
+			# Owner asked (2026-08-15) for "a story section in the codex" —
+			# re-PLAYING an opening scene would need a sandbox for its choices,
+			# flags and rewards; re-READING it needs nothing but this shelf.
+			ctext = "%d recorded" % m.game.convo_log_order.size()
+			UIJournal._archive(m, list)
+		"records":
+			_records(m, list)
+		"gallery":
+			_gallery(m, list, "gallery_" + String(f.get("shelf", "heroes")))
+		"notes":
+			match String(f.get("page", "elites")):
+				"gear":
+					_notes_gear(m, list)
+				"gems":
+					_notes_gems(m, list)
+				"bags":
+					_gear_bags(m, list)
+				_:
+					_notes_elites(m, list)
+		"future":
+			_future(m, list, String(f.get("cat", "future_terrains")))
+	if count != null and is_instance_valid(count):
+		count.text = ctext
+
+
+## GEMS — the fourteen families as their authored icons at Lv 1 / 4 / 7 / 10
+## (the rough / cut / fine / perfected bands) with the Lv1→Lv10 value each
+## family pays. Rules live under Field notes › Gem rules.
+static func _gems_page(m: Menus, list: VBoxContainer) -> void:
+	var f: Dictionary = _filters.get(_sec, {})
+	var intro := m._lbl(list, "Each gem grants ONE stat and deepens with its level, up to Lv %d — socket into C+ gear (C:%d · B:%d · A:%d · S:%d sockets). Bands: rough 1-3 · cut 4-6 · fine 7-9 · perfected 10." %
+		[Items.GEM_MAX_LEVEL, int(Items.GEM_SLOTS["C"]), int(Items.GEM_SLOTS["B"]), int(Items.GEM_SLOTS["A"]), int(Items.GEM_SLOTS["S"])], 13, Color(0.7, 0.72, 0.78))
+	intro.custom_minimum_size = Vector2(PAGE_W, 0)
+	var gems_box := VBoxContainer.new()
+	gems_box.add_theme_constant_override("separation", 3)
+	_card(list).add_child(gems_box)
+	for stat in Items.GEM_STATS:
+		var special: bool = stat in Balance.SPECIAL_GEM_STATS
+		if f.has("kind") and (String(f["kind"]) == "special") != special:
+			continue
+		var info: Dictionary = Items.GEM_STATS[stat]
+		var is_flat: bool = stat in Items.FLAT_STATS
+		var v1: float = Items.gem_value(Items.make_gem(stat, 1))
+		var vmax: float = Items.gem_value(Items.make_gem(stat, Items.GEM_MAX_LEVEL))
+		var v1_txt: String = "+%d" % int(v1) if is_flat else "+%d%%" % int(round(v1 * 100))
+		var vmax_txt: String = "+%d" % int(vmax) if is_flat else "+%d%%" % int(round(vmax * 100))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		gems_box.add_child(row)
+		var ladder := HBoxContainer.new()
+		ladder.add_theme_constant_override("separation", 2)
+		ladder.custom_minimum_size = Vector2(4 * 30, 0)
+		row.add_child(ladder)
+		for lv in [1, 4, 7, 10]:
+			var gi := TextureRect.new()
+			gi.texture = Art.gem_icon(info["color"], lv)
+			gi.custom_minimum_size = Vector2(28, 28)
+			gi.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			gi.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			gi.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			gi.tooltip_text = "%s Lv %d" % [String(info["name"]), lv]
+			ladder.add_child(gi)
+		var name_l := m._lbl(row, String(info["name"]), 13, info["color"])
+		name_l.custom_minimum_size = Vector2(120, 0)
+		var stat_l := m._lbl(row, Items.STAT_LABEL[stat], 13, Color(0.85, 0.85, 0.9))
+		stat_l.custom_minimum_size = Vector2(100, 0)
+		var val_l := m._lbl(row, "Lv1 %s   ·   Lv%d %s" % [v1_txt, Items.GEM_MAX_LEVEL, vmax_txt],
+			13, Color(0.7, 0.72, 0.78))
+		val_l.custom_minimum_size = Vector2(190, 0)
+		var kind_l := m._lbl(row, "special socket" if special else "regular", 12,
+			Color(0.78, 0.72, 0.98) if special else Color(0.5, 0.53, 0.62))
+		kind_l.custom_minimum_size = Vector2(100, 0)
+	var foot := m._lbl(list, "Synthesis, socket rules and the special-gem gate: Field notes › Gem rules.", 12, MUTED)
+	foot.custom_minimum_size = Vector2(PAGE_W, 0)
+
+
+## FIELD NOTES › Elites & Temptations — the copy that used to sit above the
+## monster shelf (round 6 elites + the elective risk events).
+static func _notes_elites(m: Menus, list: VBoxContainer) -> void:
+	list.add_theme_constant_override("separation", 8)
+	# Elites — the roaming miniboss variant (round 6).
+	UITheme.header(m._lbl(list, "— ELITES —", 16, Color(1.0, 0.8, 0.3)))
+	var ecard := VBoxContainer.new()
+	ecard.add_theme_constant_override("separation", 2)
+	_card(list).add_child(ecard)
+	for line in [
+		"Any monster can be promoted to an ELITE: ~4× health, 1.5× damage, extra resistances, a bigger sprite and a gold ring underfoot — a miniboss, not a mob.",
+		"Where: some quiet side rooms hold a lone elite instead of a wanderer (rolled per character), and combat rooms sometimes hide one in a pack. Later chapters may field several at once.",
+		"Why fight them: elites pay NO experience — they are pure loot. Triple gold, a guaranteed gem, a guaranteed silver/golden chest, and they are the only source of Stones of Unlearning and bigger BAGS (see Field notes › Bags)."]:
+		var el := m._lbl(ecard, String(line), 13, Color(0.78, 0.8, 0.86))
+		el.custom_minimum_size = Vector2(PAGE_W, 0)
+	# Temptations — the elective risk events (retention roadmap #4).
+	UITheme.header(m._lbl(list, "— TEMPTATIONS —", 16, Color(0.85, 0.6, 1.0)))
+	var tcard := VBoxContainer.new()
+	tcard.add_theme_constant_override("separation", 2)
+	_card(list).add_child(tcard)
+	for tline in [
+		"CURSED CHEST — a wrong-colored chest that materializes just inside some blighted rooms as you arrive, and withdraws after %d seconds if you leave it be. Open it and the whole pack grows crueler (+%d%% damage, faster) until the purge — then it pays: a golden chest and a guaranteed gem. Decline freely; it never ambushes." % [int(Balance.CURSE_OFFER_WINDOW), int((Balance.CURSE_DMG_MULT - 1.0) * 100)],
+		"GAMBLE SHRINE — a humming shrine in some quiet rooms. Feed it gold once and it blesses the offering (a gem, threefold gold, a chest, an elixir)... or drinks deeper (blood or more coin). The odds favor the bold — barely.",
+		"Both are rolled per character, like elites — a replay meets different temptations.",
+		"And keep your eyes open in dead ends: not everything glints until you're near it."]:
+		var tl := m._lbl(tcard, String(tline), 13, Color(0.78, 0.8, 0.86))
+		tl.custom_minimum_size = Vector2(PAGE_W, 0)
+
+
+## FIELD NOTES › Gear rules — the shape and unique explainers that used to
+## head their shelves, then the grades / chests / drop-band / cap rules.
+static func _notes_gear(m: Menus, list: VBoxContainer) -> void:
+	list.add_theme_constant_override("separation", 8)
+	# What a shape TAG means (2026-07-26). It used to mean "grants these stats"; a
+	# shape now only LEANS the roll, so the gallery needs saying out loud or
+	# the tags read as promises the item never makes.
+	m._lbl(list, "— SHAPES — a shape leans a roll; it never grants a stat —", 16, GOLD_TXT)
+	var shape_desc := VBoxContainer.new()
+	shape_desc.add_theme_constant_override("separation", 2)
+	_card(list).add_child(shape_desc)
+	for line in [
+		"The tag beside each shape names its signature stats. Those are more LIKELY to be rolled, and roll BIGGER when they land.",
+		"BREADTH COSTS DEPTH. A shape that leans on ONE stat leans hardest — %.2fx. Two stats get %.2fx each, three get %.2fx each. Every shape spends the same total; the specialist just spends it all in one place." % [Items.SHAPE_BIAS_ONE, Items.SHAPE_BIAS_TWO, Items.SHAPE_BIAS_THREE],
+		"That bigger roll raises the CEILING too — quenching a Fang's crit at the bench climbs toward a number a Claymore's crit can never reach. Chase a stat on the shape that leans into it.",
+		"Nothing is promised. A Fang that rolls three defensive substats is simply a poor Fang; the reforge bench is your way out of it. A shape's main-stat budget (a Claymore's heft, a Shuriken's lightness) is the part that never rolls.",
+	]:
+		var sl_l := m._lbl(shape_desc, String(line), 13, Color(0.8, 0.82, 0.88))
+		sl_l.custom_minimum_size = Vector2(PAGE_W, 0)
+	m._lbl(list, "— NAMED UNIQUES — one-off pieces, each its own forging —", 16, Color(1.0, 0.72, 0.45))
+	var ud := m._lbl(list, "A unique is a generic-grade piece that also carries a signature PASSIVE — that passive is the whole difference, and uniques drop more rarely to match. Its own name, its own art, live the moment you equip it. Named A pieces surface in Act 2, named S in Act 3.",
+		13, Color(0.8, 0.82, 0.88))
+	ud.custom_minimum_size = Vector2(PAGE_W, 0)
+	_gear_rules(m, list)
+
+
+## FIELD NOTES › Gem rules — sockets, synthesis, the special-gem gate.
+static func _notes_gems(m: Menus, list: VBoxContainer) -> void:
+	list.add_theme_constant_override("separation", 8)
+	m._lbl(list, "— GEMS — socket into C+ gear (C:%d · B:%d · A:%d · S:%d sockets) —" %
+		[int(Items.GEM_SLOTS["C"]), int(Items.GEM_SLOTS["B"]), int(Items.GEM_SLOTS["A"]), int(Items.GEM_SLOTS["S"])],
+		16, ACC_INFO)
+	var gem_intro := VBoxContainer.new()
+	gem_intro.add_theme_constant_override("separation", 2)
+	_card(list).add_child(gem_intro)
+	for line3 in [
+		"Each gem grants ONE stat and deepens with its level, up to Lv %d. Only C-grade gear and above has sockets — the same chapter gems begin to drop." % Items.GEM_MAX_LEVEL,
+		"Synthesis: fuse 3 gems of the SAME kind and level into one of the next level (select them in the bag) — duplicates are never wasted. Gems stack in the bag, one slot per kind+level.",
+		"SPECIAL gems — Haste, Lifesteal, Combo, Tenacity, Damage — begin dropping in Chapter 6 (alongside the A-grade gear that carries the only special slot). They are the ONLY way to build those stats: at most one special gem per item, and their totals soft-cap at %d%% Haste / %d%% Lifesteal / %d%% Combo (beyond, a point pays about a tenth)." %
+			[int(Balance.CAP_CDR * 100), int(Balance.CAP_LIFESTEAL * 100), int(Balance.CAP_COMBO * 100)],
+		"A vessel holds what it can bear: C gear sockets gems up to Lv%d, B up to Lv%d, A up to Lv%d, S up to Lv%d — deep gems need endgame gear." %
+			[int(Items.GEM_LEVEL_LIMIT["C"]), int(Items.GEM_LEVEL_LIMIT["B"]), int(Items.GEM_LEVEL_LIMIT["A"]), int(Items.GEM_LEVEL_LIMIT["S"])],
+		"Merchants sell loose gems (at the act's level) and buy your spares back — but the buy price is a pity option: farming gems is always cheaper."]:
+		var gil := m._lbl(gem_intro, String(line3), 13, Color(0.7, 0.72, 0.78))
+		gil.custom_minimum_size = Vector2(PAGE_W, 0)
+	var foot := m._lbl(list, "The families themselves — every icon, every value — are under Armory › Gems.", 12, MUTED)
+	foot.custom_minimum_size = Vector2(PAGE_W, 0)
+
+
+## Status effects: name, colour, description lines. Numbers pull live from
+## Balance so the codex can never drift from the actual combat tuning.
+static func _status_effects() -> Array:
+	return [
+		["Stun", Color(1.0, 0.85, 0.4), [
+			"The target can't move or act for a moment.",
+			"Bosses are CC-immune: a stun that would hit them lands as CONCUSSION instead — bonus damage of duration × ATK × %d%%, so stun-themed abilities keep their value in boss fights." % int(Balance.CONCUSSION_MULT * 100)]],
+		["Slow", Color(0.5, 0.65, 1.0), [
+			"Movement speed is cut for a duration (clinging murk −30%, void rifts drag). CC-immune bosses ignore it."]],
+		["Burn", Color(1.4, 0.7, 0.5), [
+			"Fire damage over time, an orange flicker. Burns do NOT stack — only the strongest active burn applies (lava pools, ignite effects)."]],
+		["Poison", Color(0.5, 0.9, 0.5), [
+			"The green damage-over-time — the ONE exception to the no-stack rule. Each application adds a stack (up to %d) that deepens the tick by %d%%; the stacks expire together when the DoT runs out." % [Balance.TOXIN_MAX_STACKS, int(Balance.TOXIN_PER_STACK * 100)]]],
+		["Expose (Vulnerable)", Color(0.85, 0.5, 0.95), [
+			"A marked target takes +50% damage while the mark holds (~3s). The assassin's Death Mark ult stretches it to 5s of true-damage setup."]],
+		["Silence", Color(0.75, 0.8, 1.0), [
+			"An INVERSE telegraph (debuts against Vess in Chapter 3): the whole arena screams lethal except one quiet safe circle — find it and stand INSIDE before the wail lands, the opposite of a normal red danger-zone."]],
+		["Evasion & DEX", Color(0.8, 0.85, 0.5), [
+			"An evasive foe rolls its EVASION against every hit you throw. Your DEX doesn't shave that roll — it decides what a successful dodge COSTS you, in three fixed steps. This is a build state, not luck: read it, then answer it.",
+			"Below %d%% of the DEX their evasion asks — the dodge is a clean MISS, for nothing. At %d%% or better — it only GRAZES, and still pays %d%% of the damage. At full parity or above — their evasion is CANCELLED and never rolls at all." % [int(Balance.DEX_GRAZE_RATIO * 100), int(Balance.DEX_GRAZE_RATIO * 100), int(Balance.GRAZE_DAMAGE * 100)],
+			"Parity is evasion × %d DEX: a %d%%-evasion foe asks %d. Amber gems and DEX substats buy it — and TRUE damage skips the question entirely, evasion and all. Little in the campaign evades; the endgame's SLIPPERY affix is what this is for, so carry Amber when you see it, not always." % [int(1.0 / Balance.DEX_PER_EVA), int(float(Balance.AFFIXES["slippery"]["eva_add"]) * 100.0), int(float(Balance.AFFIXES["slippery"]["eva_add"]) / Balance.DEX_PER_EVA)]]],
+	]
+
+
+static func _statuses(m: Menus, list: VBoxContainer) -> void:
+	list.add_theme_constant_override("separation", 8)
+	var intro := m._lbl(list,
+		"What you inflict on enemies (most ride your talent-themed abilities) — and, in hazard terrain, suffer yourself.",
+		13, Color(0.7, 0.72, 0.78))
+	intro.custom_minimum_size = Vector2(PAGE_W, 0)
+	for e in _status_effects():
+		var info := VBoxContainer.new()
+		info.add_theme_constant_override("separation", 2)
+		_card(list).add_child(info)
+		m._lbl(info, String(e[0]), 15, e[1])
+		for line in e[2]:
+			var dl := m._lbl(info, String(line), 13, Color(0.78, 0.8, 0.86))
+			dl.custom_minimum_size = Vector2(PAGE_W, 0)
 
 
 static func _card(parent: Container) -> PanelContainer:
@@ -211,82 +1767,6 @@ static func _scroll_to_card(m: Menus, card: Control) -> void:
 	var sc := c.get_parent() as ScrollContainer
 	if sc != null:
 		sc.scroll_vertical = maxi(0, int(y) - 10)
-
-
-static func _monsters(m: Menus, list: VBoxContainer) -> void:
-	list.add_theme_constant_override("separation", 8)
-	# Elites — the roaming miniboss variant (round 6).
-	UITheme.header(m._lbl(list, "— ELITES —", 16, Color(1.0, 0.8, 0.3)))
-	var ecard := VBoxContainer.new()
-	ecard.add_theme_constant_override("separation", 2)
-	_card(list).add_child(ecard)
-	for line in [
-		"Any monster can be promoted to an ELITE: ~4× health, 1.5× damage, extra resistances, a bigger sprite and a gold ring underfoot — a miniboss, not a mob.",
-		"Where: some quiet side rooms hold a lone elite instead of a wanderer (rolled per character), and combat rooms sometimes hide one in a pack. Later chapters may field several at once.",
-		"Why fight them: elites pay NO experience — they are pure loot. Triple gold, a guaranteed gem, a guaranteed silver/golden chest, and they are the only source of Stones of Unlearning and bigger BAGS (see the Gear tab)."]:
-		var el := m._lbl(ecard, String(line), 13, Color(0.78, 0.8, 0.86))
-		el.custom_minimum_size = Vector2(880, 0)
-		el.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	# Temptations — the elective risk events (retention roadmap #4).
-	UITheme.header(m._lbl(list, "— TEMPTATIONS —", 16, Color(0.85, 0.6, 1.0)))
-	var tcard := VBoxContainer.new()
-	tcard.add_theme_constant_override("separation", 2)
-	_card(list).add_child(tcard)
-	for tline in [
-		"CURSED CHEST — a wrong-colored chest that materializes just inside some blighted rooms as you arrive, and withdraws after %d seconds if you leave it be. Open it and the whole pack grows crueler (+%d%% damage, faster) until the purge — then it pays: a golden chest and a guaranteed gem. Decline freely; it never ambushes." % [int(Balance.CURSE_OFFER_WINDOW), int((Balance.CURSE_DMG_MULT - 1.0) * 100)],
-		"GAMBLE SHRINE — a humming shrine in some quiet rooms. Feed it gold once and it blesses the offering (a gem, threefold gold, a chest, an elixir)... or drinks deeper (blood or more coin). The odds favor the bold — barely.",
-		"Both are rolled per character, like elites — a replay meets different temptations.",
-		"And keep your eyes open in dead ends: not everything glints until you're near it."]:
-		var tl := m._lbl(tcard, String(tline), 13, Color(0.78, 0.8, 0.86))
-		tl.custom_minimum_size = Vector2(880, 0)
-		tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	# Bosses moved to their own subtab (2026-07-08); this subtab keeps the
-	# Elites/Temptations copy above plus the regular-mob bestiary.
-	# Only mobs actually placed in a room show here — extracted-but-unplaced
-	# ones live on the dev-only Future > Mobs shelf instead (2026-07-18).
-	var used := _used_enemy_kinds()
-	UITheme.header(m._lbl(list, "— MONSTERS —", 16, Color(0.95, 0.85, 0.5)))
-	var morph := _morph_kind(m)
-	var jobs: Array = []
-	for kind in Story.ALL_ENEMIES:
-		if kind in m.BOSS_KINDS:
-			continue
-		var st: Dictionary = Story.ALL_ENEMIES[kind]
-		# Boss-summon props (censers, roots, rods) are zero-reward
-		# scenery-with-hp, not catalogue monsters — skip them.
-		if st.get("xp", 0) <= 0 and st.get("gold", 0) <= 0:
-			continue
-		if not used.has(kind) or st.get("placeholder", false):
-			continue
-		var mk := String(kind)
-		jobs.append(func() -> void:
-			var card := _enemy_card(m, list, mk, false)
-			if mk == morph:
-				_scroll_to_card(m, card))
-	_build_chunked(m, list, jobs)
-
-
-## Bosses subtab: just the boss cards (each links to its mechanics detail).
-## Same placed-filter as monsters — unplaced/placeholder bosses live on the
-## dev-only Future > Bosses shelf instead.
-static func _bosses(m: Menus, list: VBoxContainer) -> void:
-	list.add_theme_constant_override("separation", 8)
-	var used := _used_enemy_kinds()
-	UITheme.header(m._lbl(list, "— BOSSES —", 16, Color(1, 0.5, 0.5)))
-	var morph := _morph_kind(m)
-	var jobs: Array = []
-	for kind in Story.ALL_ENEMIES:
-		if not (kind in m.BOSS_KINDS):
-			continue
-		if not used.has(kind) or Story.ALL_ENEMIES[kind].get("placeholder", false):
-			continue
-		var bk := String(kind)
-		jobs.append(func() -> void:
-			var card := _enemy_card(m, list, bk, true)
-			if bk == morph:
-				_scroll_to_card(m, card))
-	_build_chunked(m, list, jobs)
-
 
 ## Enemy kinds actually placed in the world: any zone's `enemies` spawns or
 ## `boss`, plus each chapter's `final_boss`. Everything else in ALL_ENEMIES is
@@ -354,104 +1834,6 @@ static func _npc_role(spr: String, gives_quest: bool) -> String:
 	return " · ".join(bits)
 
 
-## NPCs subtab (2026-07-08, dressed 2026-07-10): everyone you can hold a
-## conversation with, gathered from every chapter's zone npc lists (base
-## ZONES + content modules) plus the merchant. Narrator-voiced objects
-## (lore stones, shrines, ruins) are scenery, not cast — filtered out.
-## Deduped by sprite so each distinct face shows once: framed pixel
-## portrait (mirrors the dialogue box) + name + a data-derived role line.
-static func _npcs(m: Menus, list: VBoxContainer) -> void:
-	list.add_theme_constant_override("separation", 8)
-	UITheme.header(m._lbl(list, "— NPCS —", 16, Color(0.6, 0.9, 1.0)))
-	var intro := m._lbl(list, "The speaking cast — everyone you can hold a conversation with on the road.", 13, Color(0.7, 0.72, 0.78))
-	intro.custom_minimum_size = Vector2(880, 0)
-	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-
-	# Placeholder NPCs (extracted art wired for review, `placeholder: true` in
-	# their zone entry) live on the dev-only Future > NPCs shelf, never here.
-	var seen := {}
-	var entries: Array = []
-	var any_merchant := false
-	for chid in Story.CHAPTER_LIST:
-		for zone in Story.CHAPTER_LIST[chid].get("zones", []):
-			if zone.has("merchant"):
-				any_merchant = true
-			for npc in zone.get("npcs", []):
-				if npc.get("placeholder", false):
-					continue
-				var spr: String = String(npc.get("sprite", ""))
-				if spr == "":
-					continue
-				var quest := _gives_quest(String(npc.get("convo", "")))
-				if seen.has(spr):
-					# Same face elsewhere can still upgrade its role line.
-					if quest:
-						seen[spr]["quest"] = true
-					continue
-				var nm := _npc_name(npc)
-				if nm == "" or nm == "Narrator":
-					continue  # narrator-voiced scenery: a lore read, not a person
-				var e := {"name": nm, "sprite": spr, "quest": quest}
-				seen[spr] = e
-				entries.append(e)
-	# The merchant spawns from the zones' `merchant` spot, not an npcs list —
-	# but they're absolutely someone you speak to.
-	if any_merchant and not seen.has("merchant"):
-		entries.append({"name": "Merchant", "sprite": "merchant", "quest": false})
-	if entries.is_empty():
-		m._lbl(list, "No NPCs catalogued.", 13, Color(0.6, 0.62, 0.68))
-		return
-	var card := VBoxContainer.new()
-	card.add_theme_constant_override("separation", 6)
-	_card(list).add_child(card)
-	var jobs: Array = []
-	for e in entries:
-		var ee: Dictionary = e
-		jobs.append(func() -> void: _npc_row(m, card, ee))
-	_build_chunked(m, list, jobs)
-
-
-## One NPC row of the cast card (streamed via _build_chunked).
-static func _npc_row(m: Menus, box: VBoxContainer, e: Dictionary) -> void:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 14)
-	box.add_child(row)
-	# Framed pixel portrait, dialogue-box style: gold frame, dark well,
-	# nearest-neighbor upscale so the sprite reads chunky, not smeared.
-	var frame := Panel.new()
-	frame.custom_minimum_size = Vector2(64, 64)
-	var fsb := StyleBoxFlat.new()
-	fsb.bg_color = Color(0.1, 0.09, 0.15)
-	fsb.border_color = Color(UITheme.GOLD, 0.75)
-	fsb.set_border_width_all(2)
-	fsb.set_corner_radius_all(4)
-	frame.add_theme_stylebox_override("panel", fsb)
-	frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(frame)
-	var icon := TextureRect.new()
-	icon.texture = Art.tex(String(e["sprite"]))
-	# Anchored inset, not manual size — anchors re-fit on any layout pass.
-	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
-	icon.offset_left = 6
-	icon.offset_top = 6
-	icon.offset_right = -6
-	icon.offset_bottom = -6
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	frame.add_child(icon)
-	var info := VBoxContainer.new()
-	info.add_theme_constant_override("separation", 2)
-	info.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(info)
-	var nm2 := m._lbl(info, String(e["name"]), 16, Color(0.9, 0.92, 0.98))
-	nm2.custom_minimum_size = Vector2(760, 0)
-	var role := _npc_role(String(e["sprite"]), bool(e.get("quest", false)))
-	if role != "":
-		var rl := m._lbl(info, role, 13, Color(0.75, 0.7, 0.5))
-		rl.custom_minimum_size = Vector2(760, 0)
-
-
 ## Best display name for an npc entry: the speaker of its convo, else the
 ## talk prompt without its "E — " lead, else the sprite id.
 static func _npc_name(npc: Dictionary) -> String:
@@ -471,18 +1853,6 @@ static func _npc_name(npc: Dictionary) -> String:
 	return prompt if prompt != "" else String(npc.get("sprite", ""))
 
 
-## One boxed card per monster/boss: icon, name, Lv, live stats, growth,
-## projections, traits and lore. Shared by the bestiary list and the boss
-## detail view. In the LIST, a boss with authored `mechanics` also grows a
-## Bestiary icon: frame 0 of a strip, cropped to the FIGURE's opaque bounds.
-## The codex is an ARCHIVE, not a scale chart (owner 2026-07-25): every
-## portrait — wolf or god-king — is normalized to one box, so the shelf reads
-## as a catalogue instead of a size comparison. Cropping is what makes that
-## normalization honest: raw frames carry wildly different padding (a 224px
-## boss square vs a tight 32px mob), and a multi-frame STRIP would otherwise
-## squeeze all its frames into the box. Alpha threshold (not get_used_rect)
-## so a stray 1-alpha pixel in a padded export can't defeat the crop.
-## Cached per sprite for the session.
 static var _enemy_icons := {}
 const ICON_ALPHA := 0.08
 const ICON_BOX := 64.0   # the one bestiary portrait size, every entry
@@ -546,160 +1916,6 @@ static func _enemy_icon(sprite: String) -> Texture2D:
 	return out
 
 
-## "▸ Mechanics & Tells" button that opens its focused detail; in the
-## DETAIL view (`detail = true`) that button is suppressed (already there).
-## Returns the card panel so a shelf can auto-scroll to the active morph.
-static func _enemy_card(m: Menus, list: VBoxContainer, kind: String, is_boss: bool, detail := false, placeholder := false) -> PanelContainer:
-	var st: Dictionary = Story.ALL_ENEMIES[kind]
-	# Codex honesty: display what the fight actually deals/has
-	# (TTK and damage multipliers included), not raw table rows.
-	var live: Dictionary = Story.enemy_stats_at(kind, int(st.get("level", 1)))
-
-	var box := _card(list)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 14)
-	box.add_child(row)
-	var icon := TextureRect.new()
-	# ONE box for every entry (owner 2026-07-25): the codex archives what a
-	# foe LOOKS like — it is not a scale chart, so a wolf and a god-king
-	# hang at the same size. _enemy_icon crops to the figure so that
-	# normalization is real rather than padding-dependent.
-	icon.texture = _enemy_icon(String(st["sprite"]))
-	icon.custom_minimum_size = Vector2(ICON_BOX, ICON_BOX)
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	row.add_child(icon)
-	var info := VBoxContainer.new()
-	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info.add_theme_constant_override("separation", 2)
-	row.add_child(info)
-
-	# Name .......................................... Lv badge
-	var head := HBoxContainer.new()
-	info.add_child(head)
-	var nm_txt: String = String(st["name"]) + ("   [placeholder]" if placeholder else "")
-	var name_col: Color = Color(0.72, 0.68, 0.55) if placeholder else (Color(1, 0.6, 0.6) if is_boss else Color(1, 1, 1))
-	var name_l := m._lbl(head, nm_txt, 16, name_col)
-	name_l.custom_minimum_size = Vector2(560, 0)
-	name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var lv_l := m._lbl(head, "Lv %d" % st.get("level", 1), 15, Color(0.95, 0.85, 0.5))
-	lv_l.custom_minimum_size = Vector2(120, 0)
-	lv_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-
-	# Aligned stat columns.
-	var cols := HBoxContainer.new()
-	info.add_child(cols)
-	var stat_pairs: Array = [["HP", int(live["hp"])], ["DMG", int(live["dmg"])], ["SPD", int(st["speed"])],
-			["XP", live["xp"]], ["Gold", live.get("gold", 0)]]
-	# EVA rides along only when the kind HAS evasion (nearly all ship 0.0, and a
-	# column of zeroes is noise). A foe you must answer with DEX can never be an
-	# invisible wall — the codex never lies about the wall (Stats.resolve).
-	var kind_eva: float = float(live.get("eva", 0.0))
-	if kind_eva > 0.0:
-		stat_pairs.append(["EVA", "%d%%" % int(kind_eva * 100.0)])
-	for pair in stat_pairs:
-		var c := m._lbl(cols, "%s %s" % [pair[0], str(pair[1])], 13, Color(0.78, 0.8, 0.86))
-		c.custom_minimum_size = Vector2(105, 0)
-	var type_l := m._lbl(cols, "Ranged caster" if st["ranged"] else "Melee", 13, Color(0.6, 0.7, 0.85))
-	type_l.custom_minimum_size = Vector2(130, 0)
-
-	# Scaling: growth + projections, in two quiet sublines.
-	var at25 := Story.enemy_stats_at(kind, 25)
-	var at50 := Story.enemy_stats_at(kind, 50)
-	var g1 := m._lbl(info, "Growth per level:   HP +%d%%   ·   DMG +%d%%" %
-		[int(st.get("hp_g", 0.1) * 100), int(st.get("dmg_g", 0.1) * 100)], 12, Color(0.55, 0.65, 0.8))
-	g1.custom_minimum_size = Vector2(700, 0)
-	var g2 := m._lbl(info, "Projected:   Lv 25 → %d HP, %d DMG        Lv 50 → %d HP, %d DMG" %
-		[int(at25["hp"]), int(at25["dmg"]), int(at50["hp"]), int(at50["dmg"])], 12, Color(0.5, 0.55, 0.66))
-	g2.custom_minimum_size = Vector2(700, 0)
-
-	# Identity traits (2026-07-07): each kind's gimmick, so the
-	# player learns the counter (kill the healer, dodge the pounce).
-	for tr in st.get("traits", []):
-		var td: String = Enemy.TRAIT_DESC.get(String(tr), "")
-		if td != "":
-			var tl := m._lbl(info, "◆ " + td, 12, Color(0.7, 0.85, 0.7))
-			tl.custom_minimum_size = Vector2(700, 0)
-			tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-
-	# Codex completion (retention roadmap #5): the kill tally, and
-	# the lore this character has (or hasn't) earned the right to read.
-	var kills: int = int(m.game.kill_counts.get(kind, 0))
-	var need := Lore.threshold(kind)
-	if kills >= need:
-		var ll := m._lbl(info, "❝ %s ❞" % Lore.entry(kind), 13, Color(0.85, 0.78, 0.6))
-		ll.custom_minimum_size = Vector2(700, 0)
-		ll.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	else:
-		m._lbl(info, "Slain: %d / %d — its lore is still buried." % [kills, need],
-			12, Color(0.5, 0.55, 0.66))
-
-	# Bosses with authored mechanics get a jump-off to their detail view.
-	var mechs: Array = st.get("mechanics", [])
-	if is_boss and not detail and not mechs.is_empty():
-		var bk := String(kind)
-		m._btn(info, "  ▸ Mechanics & Tells  ",
-			func() -> void: m.open_codex("bosses", bk), Color(1, 0.7, 0.7))
-
-	# Dev launcher only: TRANSFORM — wear this creature over the hero to
-	# road-test its walk/attack clips in place (dev_morph.gd drives the puppet;
-	# the ability keys play the clips). The same card reverts.
-	if m.game.dev_mode and m.game.player != null:
-		var mk := String(kind)
-		var cur: DevMorph = m.game.player.dev_morph
-		if cur != null and cur.kind == mk:
-			m._btn(info, "  ⟲ Revert transform  ", func() -> void:
-				DevMorph.stop(m.game.player)
-				m.close(), Color(0.7, 0.95, 0.85))
-		else:
-			m._btn(info, "  ⇄ Transform  ", func() -> void:
-				DevMorph.start(m.game.player, mk)
-				m.close(), Color(0.7, 0.95, 0.85))
-	return box
-
-
-## Focused boss detail: the summary card, then each authored mechanic as
-## its own mini-card (name heading, the TELL you'll see, the green COUNTER).
-## Reached from the bestiary's boss cards; BACK returns to that list.
-static func _boss_detail(m: Menus, kind: String) -> void:
-	var st: Dictionary = Story.ALL_ENEMIES[kind]
-	var vbox := m._open(String(st.get("name", kind)), 1000, 620, true)
-	m.current = "codex"
-
-	m._btn(vbox, "  ‹ Back to Bosses  ",
-		func() -> void: m.open_codex("bosses"), Color(0.95, 0.85, 0.5))
-
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	vbox.add_child(scroll)
-	var list := VBoxContainer.new()
-	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	list.add_theme_constant_override("separation", 8)
-	scroll.add_child(list)
-
-	_enemy_card(m, list, kind, true, true)
-
-	var mechs: Array = st.get("mechanics", [])
-	if mechs.is_empty():
-		m._lbl(list, "No mechanics catalogued for this foe yet.", 13, Color(0.6, 0.62, 0.68))
-	else:
-		UITheme.header(m._lbl(list, "— MECHANICS & TELLS —", 16, Color(1, 0.5, 0.5)))
-		for mech in mechs:
-			var box := VBoxContainer.new()
-			box.add_theme_constant_override("separation", 3)
-			_card(list).add_child(box)
-			m._lbl(box, "◆ " + String(mech.get("name", "")), 15, Color(1, 0.7, 0.7))
-			var tl := m._lbl(box, "Tell — " + String(mech.get("tell", "")), 13, Color(0.85, 0.82, 0.7))
-			tl.custom_minimum_size = Vector2(880, 0)
-			tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			var cl := m._lbl(box, "Counter — " + String(mech.get("counter", "")), 13, Color(0.7, 0.9, 0.7))
-			cl.custom_minimum_size = Vector2(880, 0)
-			cl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-
-	m._hint(vbox, "ESC, ✕, click outside, or C to close")
-
-
 const PATCH_DESC := {
 	"lava": "Lava pools — the floor burns anyone standing in them, you AND monsters",
 	"ice": "Sheet ice — slippery patches speed everyone up by 35%",
@@ -721,122 +1937,6 @@ const AMBIENT_DESC := {
 	"twinkle": "twinkling lights", "motes": "drifting void motes",
 	"sparkle": "golden sparkles", "spores": "floating spores",
 }
-
-
-static func _terrains(m: Menus, list: VBoxContainer) -> void:
-	list.add_theme_constant_override("separation", 8)
-	# Which Chapter 1 zone (if any) uses each terrain.
-	var found_in := {}
-	for chid in Story.CHAPTER_LIST:
-		for zone in Story.CHAPTER_LIST[chid]["zones"]:
-			if not found_in.has(zone.get("terrain", "")):
-				found_in[zone.get("terrain", "")] = zone["name"]
-
-	for id in Terrains.catalog_ids(false):
-		# Placeholder terrains (authored from the asset packs, unplaced) live
-		# on the dev-only Future > Terrains shelf, never on the player list.
-		# The dev panel can still paint any room with them regardless.
-		_terrain_card(m, list, String(id), String(found_in.get(id, "")), false)
-
-
-## One terrain card: name + where-it-appears, weather line, hazard/quirk
-## lines. Shared by the player Terrains tab and the dev-only Future shelf —
-## `ph` adds the [placeholder] tag, a dev-panel hint and the prop roster.
-static func _terrain_card(m: Menus, list: VBoxContainer, id: String, where: String, ph: bool) -> void:
-	var t: Dictionary = Terrains.DATA[id]
-	var info := VBoxContainer.new()
-	info.add_theme_constant_override("separation", 2)
-	_card(list).add_child(info)
-
-	# Name ................................... where it appears
-	var head := HBoxContainer.new()
-	info.add_child(head)
-	var name_l := m._lbl(head, String(t["name"]) + ("   [placeholder]" if ph else ""), 16, Color(0.72, 0.68, 0.55) if ph else Color(1, 1, 1))
-	name_l.custom_minimum_size = Vector2(560, 0)
-	name_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var where_txt: String = where
-	if where_txt == "":
-		where_txt = "Dev panel only" if ph else "Unassigned terrain"
-	var where_l := m._lbl(head, where_txt, 13,
-		Color(0.95, 0.85, 0.5) if where != "" else Color(0.55, 0.58, 0.66))
-	where_l.custom_minimum_size = Vector2(220, 0)
-	where_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-
-	var amb: String = t.get("ambient", "")
-	var w := m._lbl(info, "Weather:   " + String(AMBIENT_DESC.get(amb, "still air")),
-		13, Color(0.7, 0.72, 0.78))
-	w.custom_minimum_size = Vector2(700, 0)
-
-	var quirks: Array = []
-	for p in t.get("patches", []):
-		var d: String = PATCH_DESC.get(p["type"], "")
-		if p.get("drift", false):
-			d += " — and the clouds DRIFT, so keep moving"
-		quirks.append(d)
-	if t.get("event", "") != "":
-		quirks.append(EVENT_DESC.get(t["event"], ""))
-	if t.get("mp_boost", false):
-		quirks.append("Latent magic — your mana recovers much faster here")
-	if t.has("river"):
-		quirks.append("Rivers cross these lands — wading leaves you DAMP (-%d%% move speed for %ds) and slows monsters; the bridge crosses dry" % [
-			int(round((1.0 - Balance.DAMP_SLOW_MULT) * 100.0)), int(Balance.DAMP_DURATION)])
-	if quirks.is_empty():
-		quirks.append("No hazards — safe ground")
-	for q in quirks:
-		var ql := m._lbl(info, "◆ " + String(q), 13, Color(0.55, 0.65, 0.8))
-		ql.custom_minimum_size = Vector2(700, 0)
-
-	# The Future shelf also lists the prop kit so the owner can judge the set.
-	if ph:
-		var parts: Array = []
-		for pool in [["fill", "obstacles"], ["decor", "decor"], ["accents", "accents"]]:
-			var names: Array = _uniq(t.get(pool[1], []))
-			if not names.is_empty():
-				parts.append("%s: %s" % [pool[0], ", ".join(names)])
-		var rl := m._lbl(info, "Props —  " + "   ·   ".join(parts), 12, Color(0.6, 0.66, 0.63))
-		rl.custom_minimum_size = Vector2(700, 0)
-		rl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-
-
-static func _statuses(m: Menus, list: VBoxContainer) -> void:
-	list.add_theme_constant_override("separation", 8)
-	m._lbl(list, "— STATUS EFFECTS —", 16, Color(0.6, 0.9, 1.0))
-	var intro := m._lbl(list,
-		"What you inflict on enemies (most ride your talent-themed abilities) — and, in hazard terrain, suffer yourself.",
-		13, Color(0.7, 0.72, 0.78))
-	intro.custom_minimum_size = Vector2(880, 0)
-	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-
-	# name, colour, description lines. Numbers pull live from Balance so
-	# the codex can never drift from the actual combat tuning.
-	var effects := [
-		["Stun", Color(1.0, 0.85, 0.4), [
-			"The target can't move or act for a moment.",
-			"Bosses are CC-immune: a stun that would hit them lands as CONCUSSION instead — bonus damage of duration × ATK × %d%%, so stun-themed abilities keep their value in boss fights." % int(Balance.CONCUSSION_MULT * 100)]],
-		["Slow", Color(0.5, 0.65, 1.0), [
-			"Movement speed is cut for a duration (clinging murk −30%, void rifts drag). CC-immune bosses ignore it."]],
-		["Burn", Color(1.4, 0.7, 0.5), [
-			"Fire damage over time, an orange flicker. Burns do NOT stack — only the strongest active burn applies (lava pools, ignite effects)."]],
-		["Poison", Color(0.5, 0.9, 0.5), [
-			"The green damage-over-time — the ONE exception to the no-stack rule. Each application adds a stack (up to %d) that deepens the tick by %d%%; the stacks expire together when the DoT runs out." % [Balance.TOXIN_MAX_STACKS, int(Balance.TOXIN_PER_STACK * 100)]]],
-		["Expose (Vulnerable)", Color(0.85, 0.5, 0.95), [
-			"A marked target takes +50% damage while the mark holds (~3s). The assassin's Death Mark ult stretches it to 5s of true-damage setup."]],
-		["Silence", Color(0.75, 0.8, 1.0), [
-			"An INVERSE telegraph (debuts against Vess in Chapter 3): the whole arena screams lethal except one quiet safe circle — find it and stand INSIDE before the wail lands, the opposite of a normal red danger-zone."]],
-		["Evasion & DEX", Color(0.8, 0.85, 0.5), [
-			"An evasive foe rolls its EVASION against every hit you throw. Your DEX doesn't shave that roll — it decides what a successful dodge COSTS you, in three fixed steps. This is a build state, not luck: read it, then answer it.",
-			"Below %d%% of the DEX their evasion asks — the dodge is a clean MISS, for nothing. At %d%% or better — it only GRAZES, and still pays %d%% of the damage. At full parity or above — their evasion is CANCELLED and never rolls at all." % [int(Balance.DEX_GRAZE_RATIO * 100), int(Balance.DEX_GRAZE_RATIO * 100), int(Balance.GRAZE_DAMAGE * 100)],
-			"Parity is evasion × %d DEX: a %d%%-evasion foe asks %d. Amber gems and DEX substats buy it — and TRUE damage skips the question entirely, evasion and all. Little in the campaign evades; the endgame's SLIPPERY affix is what this is for, so carry Amber when you see it, not always." % [int(1.0 / Balance.DEX_PER_EVA), int(float(Balance.AFFIXES["slippery"]["eva_add"]) * 100.0), int(float(Balance.AFFIXES["slippery"]["eva_add"]) / Balance.DEX_PER_EVA)]]],
-	]
-	for e in effects:
-		var info := VBoxContainer.new()
-		info.add_theme_constant_override("separation", 2)
-		_card(list).add_child(info)
-		m._lbl(info, String(e[0]), 15, e[1])
-		for line in e[2]:
-			var dl := m._lbl(info, String(line), 13, Color(0.78, 0.8, 0.86))
-			dl.custom_minimum_size = Vector2(880, 0)
-			dl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 
 ## Co-op page (MP-08 stub, expanded MP-15: the boss fight contract +
@@ -875,11 +1975,10 @@ static func _coop(m: Menus, list: VBoxContainer) -> void:
 		_card(list).add_child(card)
 		m._lbl(card, String(e[0]), 15, e[1])
 		var dl := m._lbl(card, String(e[2]), 13, Color(0.78, 0.8, 0.86))
-		dl.custom_minimum_size = Vector2(880, 0)
+		dl.custom_minimum_size = Vector2(PAGE_W, 0)
 		dl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 
-## Records tab: achievements (unlocked/locked) + boss personal bests.
 static func _records(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
 
@@ -909,13 +2008,13 @@ static func _records(m: Menus, list: VBoxContainer) -> void:
 		var mark := m._lbl(row, "★", 15, Color(1.0, 0.85, 0.4) if got else Color(0.38, 0.38, 0.46))
 		mark.custom_minimum_size = Vector2(28, 0)
 		var nm := m._lbl(row, String(a["name"]), 14, Color(1.0, 0.88, 0.45) if got else Color(0.6, 0.62, 0.68))
-		nm.custom_minimum_size = Vector2(220, 0)
+		nm.custom_minimum_size = Vector2(200, 0)
 		var ds := m._lbl(row, String(a["desc"]), 13, Color(0.8, 0.82, 0.88) if got else Color(0.5, 0.52, 0.58))
-		ds.custom_minimum_size = Vector2(470, 0)
+		ds.custom_minimum_size = Vector2(350, 0)
 		var prog := "" if got else _ach_progress(m, String(id))
 		if prog != "":
 			var pl := m._lbl(row, prog, 13, Color(0.75, 0.7, 0.5))
-			pl.custom_minimum_size = Vector2(140, 0)
+			pl.custom_minimum_size = Vector2(120, 0)
 			pl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 
 	# --- record tracks: tiered lifetime tallies, a medal per crossed tier ---
@@ -950,24 +2049,24 @@ static func _records(m: Menus, list: VBoxContainer) -> void:
 		if not mastered:
 			frac = clampf(float(v - prev_th) / float(maxi(1, next_th - prev_th)), 0.0, 1.0)
 		var bar := Control.new()
-		bar.custom_minimum_size = Vector2(200, 12)
+		bar.custom_minimum_size = Vector2(160, 12)
 		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(bar)
 		var bbg := ColorRect.new()
 		bbg.color = Color(0, 0, 0, 0.55)
-		bbg.size = Vector2(200, 12)
+		bbg.size = Vector2(160, 12)
 		bar.add_child(bbg)
 		var fill := ColorRect.new()
 		fill.color = Color(1.0, 0.85, 0.4) if mastered else Color(0.55, 0.9, 0.7)
 		fill.position = Vector2(1, 1)
-		fill.size = Vector2(198.0 * frac, 10)
+		fill.size = Vector2(158.0 * frac, 10)
 		bar.add_child(fill)
 		var cnt_text := "%d — MASTERED" % v if mastered else "%d / %d" % [v, next_th]
 		var cnt := m._lbl(row, cnt_text, 13,
 			Color(1.0, 0.88, 0.45) if mastered else Color(0.8, 0.82, 0.88))
 		cnt.custom_minimum_size = Vector2(130, 0)
 		var how := m._lbl(row, String(t["how"]), 12, Color(0.6, 0.62, 0.7))
-		how.custom_minimum_size = Vector2(280, 0)
+		how.custom_minimum_size = Vector2(190, 0)
 
 	# --- NG+ difficulty tiers (DESIGN "Difficulty tiers / NG+") — numbers
 	# pull live from Balance so the card can never drift from the tuning.
@@ -990,12 +2089,12 @@ static func _records(m: Menus, list: VBoxContainer) -> void:
 			tdesc = "Every spawn +%d levels · loot bands +%d chapters · no XP" % [
 				Balance.tier_level_offset(tier), int(Balance.TIER_BAND_SHIFT[tier])]
 		var tds := m._lbl(trow, tdesc, 13, Color(0.78, 0.8, 0.86) if open_t else Color(0.55, 0.57, 0.63))
-		tds.custom_minimum_size = Vector2(430, 0)
+		tds.custom_minimum_size = Vector2(340, 0)
 		if not open_t:
 			var thw := m._lbl(trow, "Clear Chapter 7 at %s." % Balance.tier_name(tier - 1), 12, Color(0.6, 0.62, 0.7))
 			thw.custom_minimum_size = Vector2(240, 0)
 	var tfoot := m._lbl(tcard, "Pick the tier in the replay chapter select (pause → Chapter select). Each tier keeps its own chapter bests below.", 12, Color(0.6, 0.62, 0.7))
-	tfoot.custom_minimum_size = Vector2(860, 0)
+	tfoot.custom_minimum_size = Vector2(PAGE_W, 0)
 	tfoot.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	# --- boss personal bests ---
@@ -1154,7 +2253,7 @@ static func _records_bosses_and_rest(m: Menus, list: VBoxContainer) -> void:
 		nm2.custom_minimum_size = Vector2(280, 0)
 		var how := m._lbl(row2, String(t2["how"]), 13,
 			Color(0.8, 0.82, 0.88) if can else Color(0.5, 0.52, 0.58))
-		how.custom_minimum_size = Vector2(480, 0)
+		how.custom_minimum_size = Vector2(380, 0)
 
 	# --- Renown (the identity ledger's spendable cousin lives one door over) ---
 	m._lbl(list, "— RENOWN — the event currency, spent in the Wardrobe —", 16, Balance.RENOWN_COLOR)
@@ -1170,227 +2269,7 @@ static func _records_bosses_and_rest(m: Menus, list: VBoxContainer) -> void:
 	var rdesc := m._lbl(rbox, "Earned once each from weeklies, the vault, bounties, dailies, Waking breaches, new personal records and first NG+ tier clears — never farmable. Buys chromas, elite and mythic skins, and a weekly supply cache. Cosmetic only: Renown never touches gold, gear or power.",
 		13, Color(0.8, 0.82, 0.88))
 	rdesc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	rdesc.custom_minimum_size = Vector2(880, 0)
-
-
-## Gear tab dispatcher. Split into shelves 2026-07-26 (the shape matrix made one
-## flat scroll unnavigable); `tab` is "gear" (alias for shapes) or "gear_<shelf>".
-static func _gear(m: Menus, list: VBoxContainer, tab := "gear") -> void:
-	list.add_theme_constant_override("separation", 8)
-	var sub := "shapes" if tab == "gear" else tab.trim_prefix("gear_")
-	if sub.begins_with("shapes"):
-		# "shapes" | "shapes_<slot>" — the Shapes shelf carries its own per-slot
-		# level (a slot's gallery alone can run 20+ rows once the matrix lands).
-		_gear_shapes(m, list, sub.trim_prefix("shapes").trim_prefix("_"))
-		return
-	if sub.begins_with("uniques"):
-		# "uniques" | "uniques_<slot>" — same per-slot split (420 named rows
-		# flat was unnavigable; one slot at a time is 60, 2026-07-27).
-		_gear_uniques(m, list, sub.trim_prefix("uniques").trim_prefix("_"))
-		return
-	match sub:
-		"gems": _gear_gems(m, list)
-		"bags": _gear_bags(m, list)
-		"rules": _gear_rules(m, list)
-		_: _gear_shapes(m, list)
-
-
-## SHAPES shelf, one SLOT at a time (weapon/armor/boots/charm) — the explainer
-## plus that slot's every-shape-every-grade gallery. `slot` empty = the first.
-static func _gear_shapes(m: Menus, list: VBoxContainer, slot := "") -> void:
-	var show_slot := slot if slot in Items.SLOTS else String(Items.SLOTS[0])
-	var slot_desc := {
-		"weapon": "Main: your class attribute (largest budget). Upgradeable at merchants.",
-		"helmet": "Main: your class attribute (solid budget).",
-		"armor": "Main: your class attribute. Upgradeable at merchants.",
-		"gloves": "Main: your class attribute (smallest budget).",
-		"pants": "Main: your class attribute (solid budget).",
-		"boots": "Main: your class attribute (small budget).",
-		"charm": "Main: your class attribute.",
-	}
-
-	# What a shape TAG means (2026-07-26). It used to mean "grants these stats"; a
-	# shape now only LEANS the roll, so the gallery below needs saying out loud or
-	# the tags read as promises the item never makes.
-	m._lbl(list, "— SHAPES — a shape leans a roll; it never grants a stat —", 16, Color(0.95, 0.85, 0.5))
-	var shape_desc := VBoxContainer.new()
-	shape_desc.add_theme_constant_override("separation", 2)
-	_card(list).add_child(shape_desc)
-	for line in [
-		"The tag beside each shape names its signature stats. Those are more LIKELY to be rolled, and roll BIGGER when they land.",
-		"BREADTH COSTS DEPTH. A shape that leans on ONE stat leans hardest — %.2fx. Two stats get %.2fx each, three get %.2fx each. Every shape spends the same total; the specialist just spends it all in one place." % [Items.SHAPE_BIAS_ONE, Items.SHAPE_BIAS_TWO, Items.SHAPE_BIAS_THREE],
-		"That bigger roll raises the CEILING too — quenching a Fang's crit at the bench climbs toward a number a Claymore's crit can never reach. Chase a stat on the shape that leans into it.",
-		"Nothing is promised. A Fang that rolls three defensive substats is simply a poor Fang; the reforge bench is your way out of it. A shape's main-stat budget (a Claymore's heft, a Shuriken's lightness) is the part that never rolls.",
-	]:
-		var sl_l := m._lbl(shape_desc, String(line), 13, Color(0.8, 0.82, 0.88))
-		sl_l.custom_minimum_size = Vector2(880, 0)
-		sl_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-
-	# ------------------ visual gallery: this slot, every shape at every grade ------
-	# Draws only ROLLABLE shapes — legacy nouns (retired from SLOT_NAMES /
-	# CLASS_WEAPONS 2026-07-26) stay out of the codex even though their sprites live
-	# on for old saves. Weapons are class-locked, so they group under a class header;
-	# armor/boots/charm are shared, so they list flat.
-	m._lbl(list, "— %sS — %s" % [show_slot.to_upper(), slot_desc[show_slot]], 16, Color(0.95, 0.85, 0.5))
-	# One shelf decodes up to ~210 grade icons — stream the rows (a row is six
-	# icons, so a small chunk) instead of stalling the open on the whole matrix.
-	# Headers ride the job queue too so they land in shelf order.
-	var jobs: Array = []
-	if show_slot == "weapon":
-		for cls in Classes.CLASSES:
-			var cn := String(Classes.CLASSES[cls]["name"]).to_upper()
-			jobs.append(func() -> void: m._lbl(list, "  %s" % cn, 14, Color(0.7, 0.78, 0.95)))
-			for noun in Items.CLASS_WEAPONS.get(cls, []):
-				var nn := String(noun)
-				jobs.append(func() -> void: _shape_row(m, list, show_slot, nn))
-	elif not Items.CLASS_GEAR.get("warrior", {}).get(show_slot, []).is_empty():
-		# Per-class slot (every gear slot since the 2026-07-27 matrix
-		# migration): group under class headers like weapons.
-		for cls in Classes.CLASSES:
-			var cn := String(Classes.CLASSES[cls]["name"]).to_upper()
-			jobs.append(func() -> void: m._lbl(list, "  %s" % cn, 14, Color(0.7, 0.78, 0.95)))
-			for noun in Items.CLASS_GEAR.get(cls, {}).get(show_slot, []):
-				var nn := String(noun)
-				jobs.append(func() -> void: _shape_row(m, list, show_slot, nn))
-	else:
-		for noun in Items.SLOT_NAMES[show_slot]:
-			var nn := String(noun)
-			jobs.append(func() -> void: _shape_row(m, list, show_slot, nn))
-	_build_chunked(m, list, jobs, 3)
-
-
-## One gallery row: shape name + tag, then its icon at every grade — and a
-## dim flavor line beneath when the shape carries one.
-static func _shape_row(m: Menus, list: VBoxContainer, slot: String, noun: String) -> void:
-	var card_box := VBoxContainer.new()
-	card_box.add_theme_constant_override("separation", 4)
-	_card(list).add_child(card_box)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
-	card_box.add_child(row)
-	var tag: String = Items.SHAPE_STYLE.get(noun, {}).get("tag", "")
-	var name_l := m._lbl(row, "%s\n%s" % [noun, tag], 13, Color(0.85, 0.85, 0.9))
-	name_l.custom_minimum_size = Vector2(120, 34)
-	for g in Items.GRADES:
-		var cell := VBoxContainer.new()
-		cell.custom_minimum_size = Vector2(64, 0)
-		row.add_child(cell)
-		var icon := TextureRect.new()
-		icon.texture = Art.codex_item_icon(slot, g, noun)
-		# A 32px icon shown at 1:1 in a small cell reads as a sliver — a thin
-		# weapon vanishes. Upscale to a legible box, NEAREST so the pixels
-		# stay crisp instead of blurring.
-		icon.custom_minimum_size = Vector2(56, 56)
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if icon.texture.get_width() >= 64 \
-			else CanvasItem.TEXTURE_FILTER_NEAREST
-		cell.add_child(icon)
-		var gl := Label.new()
-		gl.text = g
-		gl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		gl.add_theme_font_size_override("font_size", 12)
-		gl.add_theme_color_override("font_color", Items.GRADE_COLOR[g])
-		cell.add_child(gl)
-	# Flavor: a quoted, dim parchment line under the gallery row (empty = none).
-	var flav := GearFlavor.of({"noun": noun})
-	if flav != "":
-		var fl := m._lbl(card_box, "❝ %s ❞" % flav, 12, Color(0.72, 0.68, 0.55))
-		fl.custom_minimum_size = Vector2(760, 0)
-		fl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-
-
-## UNIQUES shelf, one SLOT at a time (the shapes-shelf pattern — 420 named
-## rows flat was unnavigable; a slot is 60, grouped by class).
-static func _gear_uniques(m: Menus, list: VBoxContainer, slot := "") -> void:
-	var show_slot := slot if slot in Items.SLOTS else String(Items.SLOTS[0])
-	if not Items.UNIQUES.is_empty():
-		m._lbl(list, "— NAMED UNIQUES — one-off pieces, each its own forging —", 16, Color(1.0, 0.72, 0.45))
-		var ud := m._lbl(list, "A unique is a generic-grade piece that also carries a signature PASSIVE — that passive is the whole difference, and uniques drop more rarely to match. Its own name, its own art, live the moment you equip it. Named A pieces surface in Act 2, named S in Act 3.",
-			13, Color(0.8, 0.82, 0.88))
-		ud.custom_minimum_size = Vector2(880, 0)
-		ud.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		m._lbl(list, "— %s UNIQUES —" % show_slot.to_upper(), 16, Color(0.95, 0.85, 0.5))
-		# Headers and the (test-asserted) grids build synchronously — they're
-		# cheap and hold the shelf's shape; the ~60 icon-bearing cards stream.
-		var jobs: Array = []
-		for cls in Classes.CLASSES:
-			# Table order keeps each shape's A/S pair adjacent (the weaker/
-			# stronger read the design doc promises).
-			var mine: Array = []
-			for u in Items.uniques_for(String(cls)):
-				if String(u["slot"]) == show_slot:
-					mine.append(u)
-			if mine.is_empty():
-				continue
-			var class_row := HBoxContainer.new()
-			class_row.add_theme_constant_override("separation", 10)
-			list.add_child(class_row)
-			var class_label := m._lbl(class_row,
-				String(Classes.CLASSES[cls]["name"]).to_upper(), 13, UITheme.GOLD_BRIGHT)
-			class_label.custom_minimum_size = Vector2(150, 0)
-			var class_rule := HSeparator.new()
-			class_rule.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			class_rule.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			class_row.add_child(class_rule)
-			var ugrid := GridContainer.new()
-			ugrid.name = "UniqueGrid_" + String(cls)
-			ugrid.columns = 2
-			ugrid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			ugrid.add_theme_constant_override("h_separation", 8)
-			ugrid.add_theme_constant_override("v_separation", 8)
-			list.add_child(ugrid)
-			for u in mine:
-				var uu: Dictionary = u
-				jobs.append(func() -> void: _unique_card(m, ugrid, uu))
-		_build_chunked(m, list, jobs)
-
-	# (The LEGENDARY (S) shelf was removed 2026-07-27 with the legendary tier:
-	# no separate legendary gear and no awakening questline — the six flagship
-	# weapon passives live on their fitting named-S uniques above, live on
-	# pickup. Old saves' legendaries keep working; they're just uniques now.)
-
-
-## One unique per compact card, two cards across. Separating title, grade and
-## passive removes the old icon/text ladder and makes A/S pairs easy to scan.
-static func _unique_card(m: Menus, grid: GridContainer, u: Dictionary) -> void:
-	var grade := String(u["grade"])
-	var color: Color = Items.GRADE_COLOR[grade]
-	var card := UITheme.card(grid, color, 10.0)
-	card.custom_minimum_size = Vector2(430, 118)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	card.add_child(row)
-	var uicon := TextureRect.new()
-	uicon.texture = Art.codex_item_icon(String(u["slot"]), grade,
-		String(u["noun"]), String(u["art"]))
-	uicon.custom_minimum_size = Vector2(64, 64)
-	uicon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	uicon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	uicon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if uicon.texture.get_width() >= 64 \
-		else CanvasItem.TEXTURE_FILTER_NEAREST
-	uicon.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	row.add_child(uicon)
-	var info := VBoxContainer.new()
-	info.add_theme_constant_override("separation", 3)
-	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(info)
-	var name_l := m._lbl(info, String(u["name"]), 14, color)
-	name_l.custom_minimum_size = Vector2(330, 0)
-	name_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var meta := m._lbl(info, "%s GRADE  •  %s" % [grade, String(u["noun"]).to_upper()],
-		10, Color(0.60, 0.63, 0.70))
-	meta.custom_minimum_size = Vector2(330, 0)
-	var passive := m._lbl(info, String(Items.PASSIVES.get(
-		String(u.get("passive", "")), "Signature passive — in design")),
-		12, Color(0.86, 0.88, 0.94))
-	passive.custom_minimum_size = Vector2(330, 0)
-	passive.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var flavor := GearFlavor.of(u)
-	if flavor != "":
-		var flavor_l := m._lbl(info, flavor, 11, Color(0.67, 0.65, 0.58))
-		flavor_l.custom_minimum_size = Vector2(330, 0)
-		flavor_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	rdesc.custom_minimum_size = Vector2(PAGE_W, 0)
 
 
 ## RULES shelf — grades, chests, drop bands, the stat-source rules and soft caps.
@@ -1412,69 +2291,21 @@ static func _gear_rules(m: Menus, list: VBoxContainer) -> void:
 	m._lbl(chests, "Silver chest — drops from monsters (rare) and elites. Better odds of a gem.", 14, Color(0.8, 0.82, 0.9))
 	m._lbl(chests, "Golden chest — every boss drops one, and it always holds a gem (from Chapter 4 on, once gems drop).", 14, Color(1.0, 0.85, 0.35))
 	var bossdrop := m._lbl(chests, "GEAR grade tracks the CHAPTER, not the chest color: each chapter drops a sliding BAND of tiers — Ch1 is F only, climbing to B by Ch5, A by Ch6, S by Ch12. Chests, shops and spoils roll the low-to-mid of that band; every boss additionally has about a 1-in-3 chance to drop a gear piece — and a bag — at the chapter's TOP tier. Top-tier gear is farmed, not bought.", 13, Color(0.85, 0.75, 0.55))
-	bossdrop.custom_minimum_size = Vector2(880, 0)
+	bossdrop.custom_minimum_size = Vector2(PAGE_W, 0)
 	bossdrop.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var shoprule := m._lbl(chests, "SHOPPING: the Crown Bazaar in Crownfall is the fair-priced shop, restocked fresh at dawn for the road ahead. Chapters no longer open with a merchant — camps and wanderers found MID-run sell at ROAD PRICES (+10-20%, posted on the sign). Reforging and gem work are bench trades in the capital: Smith Petra and the Master Lapidary, whose rates soften as your favor with them grows.", 13, Color(0.7, 0.9, 1.0))
-	shoprule.custom_minimum_size = Vector2(880, 0)
+	shoprule.custom_minimum_size = Vector2(PAGE_W, 0)
 	shoprule.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	m._lbl(chests, "Every piece is CLASS-LOCKED and guarantees your class attribute as its main (STR/AGI/INT). Bonus stats: ATK%, HP%, Crit, CritDmg, VIT, EVA, DEX, Pen, Resists, MP.", 13, Color(0.7, 0.72, 0.78))
 	var resv := m._lbl(chests, "Haste, Lifesteal, Combo, Tenacity and Damage NEVER roll on gear — they are GEM-only (see below), and each item holds at most ONE such gem. Greed comes from neither gear nor gems. MOVEMENT SPEED is on no item and no gem: only terrain and abilities touch it." , 13, Color(0.85, 0.75, 0.55))
-	resv.custom_minimum_size = Vector2(880, 0)
+	resv.custom_minimum_size = Vector2(PAGE_W, 0)
 	resv.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var caps := m._lbl(chests, "STAT CAPS (soft — beyond each cap a point pays about a tenth, never nothing; Crit alone diminishes gentler, about a fifth): Crit %d%% · Evasion %d%% · Haste %d%% · Lifesteal %d%% · Combo %d%% · Greed %d%% · damage reduction from resistances %d%%. Ults ignore Haste entirely." %
 		[int(Balance.CAP_CRIT * 100), int(Balance.CAP_EVA * 100), int(Balance.CAP_CDR * 100),
 		int(Balance.CAP_LIFESTEAL * 100), int(Balance.CAP_COMBO * 100), int(Balance.CAP_GREED * 100),
 		int(Balance.CAP_RES_FRAC * 100)], 13, Color(0.85, 0.75, 0.55))
-	caps.custom_minimum_size = Vector2(880, 0)
+	caps.custom_minimum_size = Vector2(PAGE_W, 0)
 	caps.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-
-
-## GEMS shelf — sockets, synthesis, the special-gem gate and the per-gem table.
-static func _gear_gems(m: Menus, list: VBoxContainer) -> void:
-	# ------------------------------------------------------------ gems ---
-	m._lbl(list, "— GEMS — socket into C+ gear (C:%d · B:%d · A:%d · S:%d sockets) —" %
-		[int(Items.GEM_SLOTS["C"]), int(Items.GEM_SLOTS["B"]), int(Items.GEM_SLOTS["A"]), int(Items.GEM_SLOTS["S"])],
-		16, Color(0.6, 0.9, 1.0))
-	var gem_intro := VBoxContainer.new()
-	gem_intro.add_theme_constant_override("separation", 2)
-	_card(list).add_child(gem_intro)
-	for line3 in [
-		"Each gem grants ONE stat and deepens with its level, up to Lv %d. Only C-grade gear and above has sockets — the same chapter gems begin to drop." % Items.GEM_MAX_LEVEL,
-		"Synthesis: fuse 3 gems of the SAME kind and level into one of the next level (select them in the bag) — duplicates are never wasted. Gems stack in the bag, one slot per kind+level.",
-		"SPECIAL gems — Haste, Lifesteal, Combo, Tenacity, Damage — begin dropping in Chapter 6 (alongside the A-grade gear that carries the only special slot). They are the ONLY way to build those stats: at most one special gem per item, and their totals soft-cap at %d%% Haste / %d%% Lifesteal / %d%% Combo (beyond, a point pays about a tenth)." %
-			[int(Balance.CAP_CDR * 100), int(Balance.CAP_LIFESTEAL * 100), int(Balance.CAP_COMBO * 100)],
-		"A vessel holds what it can bear: C gear sockets gems up to Lv%d, B up to Lv%d, A up to Lv%d, S up to Lv%d — deep gems need endgame gear." %
-			[int(Items.GEM_LEVEL_LIMIT["C"]), int(Items.GEM_LEVEL_LIMIT["B"]), int(Items.GEM_LEVEL_LIMIT["A"]), int(Items.GEM_LEVEL_LIMIT["S"])],
-		"Merchants sell loose gems (at the act's level) and buy your spares back — but the buy price is a pity option: farming gems is always cheaper."]:
-		var gil := m._lbl(gem_intro, String(line3), 13, Color(0.7, 0.72, 0.78))
-		gil.custom_minimum_size = Vector2(880, 0)
-		gil.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-
-	var gems_box := VBoxContainer.new()
-	gems_box.add_theme_constant_override("separation", 3)
-	_card(list).add_child(gems_box)
-	for stat in Items.GEM_STATS:
-		var info: Dictionary = Items.GEM_STATS[stat]
-		var is_flat: bool = stat in Items.FLAT_STATS
-		var v1: float = Items.gem_value(Items.make_gem(stat, 1))
-		var vmax: float = Items.gem_value(Items.make_gem(stat, Items.GEM_MAX_LEVEL))
-		var v1_txt: String = "+%d" % int(v1) if is_flat else "+%d%%" % int(round(v1 * 100))
-		var vmax_txt: String = "+%d" % int(vmax) if is_flat else "+%d%%" % int(round(vmax * 100))
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 10)
-		gems_box.add_child(row)
-		var sw := ColorRect.new()
-		sw.color = info["color"]
-		sw.custom_minimum_size = Vector2(16, 16)
-		sw.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(sw)
-		var name_l := m._lbl(row, String(info["name"]), 13, info["color"])
-		name_l.custom_minimum_size = Vector2(150, 0)
-		var stat_l := m._lbl(row, Items.STAT_LABEL[stat], 13, Color(0.85, 0.85, 0.9))
-		stat_l.custom_minimum_size = Vector2(120, 0)
-		var val_l := m._lbl(row, "Lv1 %s   ·   Lv%d %s" % [v1_txt, Items.GEM_MAX_LEVEL, vmax_txt],
-			13, Color(0.7, 0.72, 0.78))
-		val_l.custom_minimum_size = Vector2(300, 0)
 
 
 ## BAGS shelf — bag capacity/stacking and the consumable list.
@@ -1491,7 +2322,7 @@ static func _gear_bags(m: Menus, list: VBoxContainer) -> void:
 		"Bags drop from BOSSES and elites (tier tracks the CHAPTER, matching its boss gear) and merchants stock them too — but a good bag costs real gold. Pick up one past your %d and your SMALLEST is cashed for %dg — the best %d are always kept." % [Balance.MAX_BAGS, Balance.BAG_SELL_GOLD, Balance.MAX_BAGS],
 		"Full bag? Select any loose gear, gem, or consumable to open its detail card and DROP it — fling it out to free a slot. New loot drops at your feet instead of vanishing — anything left on the ground arrives in your MAILBOX (pause menu) when the chapter ends. Unclaimed letters expire after %d days." % Balance.MAIL_EXPIRY_DAYS]:
 		var bl := m._lbl(bags, String(line2), 13, Color(0.7, 0.72, 0.78))
-		bl.custom_minimum_size = Vector2(880, 0)
+		bl.custom_minimum_size = Vector2(PAGE_W, 0)
 		bl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	m._lbl(list, "— CONSUMABLES —", 16, Color(0.6, 0.9, 1.0))
@@ -1499,10 +2330,10 @@ static func _gear_bags(m: Menus, list: VBoxContainer) -> void:
 	cons.add_theme_constant_override("separation", 2)
 	_card(list).add_child(cons)
 	var cl := m._lbl(cons, "⟲ Stone of Unlearning — crush it (select it in the bag) to refund EVERY allocated talent point, attributes and substats alike, for reallocation. Elite drop (~1 in 3).", 13, Color(0.7, 0.72, 0.78))
-	cl.custom_minimum_size = Vector2(880, 0)
+	cl.custom_minimum_size = Vector2(PAGE_W, 0)
 	cl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var tl := m._lbl(cons, "⟲ Palimpsest of the Path — crush it to refund EVERY spent skill point and pick a new path down the tree. Elite drop, rarer than the Stone.", 13, Color(0.7, 0.72, 0.78))
-	tl.custom_minimum_size = Vector2(880, 0)
+	tl.custom_minimum_size = Vector2(PAGE_W, 0)
 	tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	# No alchemical bullets (U+1F70x): that block is rarer than the U+2697
 	# alembic dc673ab already proved renders as tofu on mobile, so these six
@@ -1516,79 +2347,8 @@ static func _gear_bags(m: Menus, list: VBoxContainer) -> void:
 		"Draught of Renewal — instantly restore a % of your MAXIMUM health, the premium life-spike (C→S).",
 		"Scroll of Recall — whisk yourself back to the last safe room (not in combat). Bought from merchants."]:
 		var ul := m._lbl(cons, String(util), 13, Color(0.7, 0.72, 0.78))
-		ul.custom_minimum_size = Vector2(880, 0)
+		ul.custom_minimum_size = Vector2(PAGE_W, 0)
 		ul.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-
-
-## ------------------------------------------------------------- curios ---
-## Quest items, draughts and notable world relics (mining sweep 2026-07-18).
-## Placeholder-flagged entries (mined art awaiting a story home) never show
-## here — they live on the dev-only Future shelf, one subtab per category.
-static func _curios(m: Menus, list: VBoxContainer) -> void:
-	# Player-facing shelf: SHIPPED content only. Every placeholder lives in
-	# the dev-only Future tab instead (one home per category, never here).
-	UITheme.header(m._lbl(list, "— QUEST ITEMS —", 16, Color(0.95, 0.85, 0.5)))
-	m._lbl(list, "Keepsakes and story tokens. They ride in your bag until their moment comes.", 13, Color(0.62, 0.62, 0.68))
-	var ids: Array = Story.ALL_QUEST_ITEMS.keys()
-	ids.sort()
-	var shown := 0
-	for id in ids:
-		var q: Dictionary = Story.ALL_QUEST_ITEMS[id]
-		if q.get("placeholder", false):
-			continue
-		_curio_card(m, list, String(q.get("name", id)), String(q.get("desc", "")), String(q.get("icon", "")), false)
-		shown += 1
-	if shown == 0:
-		m._lbl(list, "None catalogued yet — the road will provide.", 13, Color(0.55, 0.55, 0.6))
-
-	UITheme.header(m._lbl(list, "— DRAUGHTS & TONICS —", 16, Color(0.6, 0.95, 0.7)))
-	# Graded potions (CONSUMABLE_GRADES) run F→S in two lanes — the Accord (clean)
-	# and the Black Market (laced, cut with blightwater). A representative shelf:
-	# the seven Accord peaks (the S uniques), a laced example, and the Recall scroll.
-	var codex_pots := [
-		Items.make_potion("health", "instant", "S", "accord"),
-		Items.make_potion("health", "tonic", "S", "accord"),
-		Items.make_potion("mana", "instant", "S", "accord"),
-		Items.make_potion("mana", "tonic", "S", "accord"),
-		Items.make_potion("might", "buff", "S", "accord"),
-		Items.make_potion("ward", "buff", "S", "accord"),
-		Items.make_potion("renewal", "burst", "S", "accord"),
-		Items.make_potion("health", "instant", "F", "black"),
-		Items.make_potion("might", "buff", "A", "black"),
-		Items.make_recall_scroll(),
-	]
-	for item in codex_pots:
-		# consumable_icon, NOT icon_for — potion/stone items carry no gear slot.
-		_curio_card(m, list, String(item["name"]), String(item.get("desc", "")), "", false, Art.consumable_icon(item))
-
-	# The synthesis capstone (CONSUMABLE_GRADES §9): the Alkahest Codex + the
-	# Grand potions Kesh mints from it (a clean S + a laced A → a modest step
-	# above S, no drawback). Synthesis-only — never sold. A representative shelf.
-	UITheme.header(m._lbl(list, "— SYNTHESIS — the Alkahest Codex —", 16, Color(1.0, 0.94, 0.66)))
-	var codex_synth := [
-		Items.make_alkahest_codex(),
-		Items.make_grand_potion("health_instant"),
-		Items.make_grand_potion("mana_instant"),
-		Items.make_grand_potion("might"),
-		Items.make_grand_potion("ward"),
-		Items.make_grand_potion("renewal"),
-	]
-	for item in codex_synth:
-		_curio_card(m, list, String(item["name"]), String(item.get("desc", "")), "", false, Art.consumable_icon(item))
-
-	# Relic entries carry an optional "group" (armory/supplies live in the
-	# Future tab until promoted); the player shelf shows SHIPPED relics only.
-	var sect_shown := 0
-	var rids: Array = Story.ALL_RELICS.keys()
-	rids.sort()
-	for id in rids:
-		var r: Dictionary = Story.ALL_RELICS[id]
-		if r.get("placeholder", false) or String(r.get("group", "")) != "":
-			continue
-		if sect_shown == 0:
-			UITheme.header(m._lbl(list, "— RELICS & LANDMARKS —", 16, Color(0.8, 0.75, 0.95)))
-		_curio_card(m, list, String(r.get("name", id)), String(r.get("lore", "")), String(r.get("sprite", "")), false)
-		sect_shown += 1
 
 
 ## The FUTURE shelf (dev launcher only): every placeholder in the project,
@@ -1752,7 +2512,7 @@ static func _uniq(pool: Array) -> Array:
 
 ## One curio row: pixel icon (sprite key, or a prebuilt item texture) +
 ## name + flavor line. Small art renders NEAREST so it stays crisp.
-static func _curio_card(m: Menus, list: VBoxContainer, name: String, desc: String, sprite: String, placeholder := false, tex: ImageTexture = null) -> void:
+static func _curio_card(m: Menus, list: VBoxContainer, name: String, desc: String, sprite: String, placeholder := false, tex: ImageTexture = null, w := 620.0) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 14)
 	_card(list).add_child(row)
@@ -1780,7 +2540,7 @@ static func _curio_card(m: Menus, list: VBoxContainer, name: String, desc: Strin
 	if desc != "":
 		var d := m._lbl(info, desc, 13, Color(0.66, 0.66, 0.72))
 		d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		d.custom_minimum_size = Vector2(620, 0)
+		d.custom_minimum_size = Vector2(w, 0)
 
 
 # ------------------------------------------------------------------ gallery ---
@@ -1842,7 +2602,7 @@ static func _gallery_cell(m: Menus, grid: GridContainer, e: Dictionary, back_tab
 	cell.add_theme_constant_override("separation", 4)
 	grid.add_child(cell)
 	var tr := TextureRect.new()
-	tr.custom_minimum_size = Vector2(168, 126)
+	tr.custom_minimum_size = Vector2(140, 105)
 	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	tr.texture = _gallery_thumb(sprite)
@@ -1858,7 +2618,7 @@ static func _gallery_cell(m: Menus, grid: GridContainer, e: Dictionary, back_tab
 	cell.add_child(tr)
 	var nm := m._lbl(cell, disp if unlocked else "???", 13,
 		Color(0.92, 0.92, 0.98) if unlocked else Color(0.5, 0.52, 0.58))
-	nm.custom_minimum_size = Vector2(168, 0)
+	nm.custom_minimum_size = Vector2(140, 0)
 	nm.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 

@@ -1,0 +1,37 @@
+You are generating ONE game visual-effect animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/palette_poison.png : the BINDING colour palette for this effect (five swatches on magenta). Use ONLY greens in this family: #73F24D acid rim, #B9F55F hot highlight, #3E9A2E mid green, #245C1F dark body, #132E12 shadow. Ignore the magenta around the swatches — it is only there to show what the chroma key looks like.
+- Image 2 = refs/style_fx_strip.png : a shipped FX animation strip from this game (a violet thread eruption). Match its LEVEL OF FINISH — crisp high-resolution game FX, hard readable clusters, glowing rims over a dark body, no blur, no photo texture. Do NOT copy its subject, shape or colour.
+
+TASK: generate exactly ONE new 4x2 source sheet for a ONE-SHOT VENOM SPLASH impact with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: game asset
+Output size: 1536x1024 landscape.
+Asset type: high-resolution 8-frame game visual-effect animation source, to be cropped into a horizontal sprite strip.
+Scene/backdrop: a perfectly flat uniform #ff00ff magenta chroma-key background filling every pixel, including the seams between cells. No scenery, floor plane, ground, platform, cast shadow, contact shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly EIGHT separate equal square effect cells laid out as a clean 4-column by 2-row contact sheet in reading order (top row left to right = frames 1-4, bottom row left to right = frames 5-8). All eight cells have identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat magenta between neighbouring cells and around the sheet edge.
+Subject: the IMPACT of a venom-coated throwing knife bursting into poison: a thick glob of glowing acid-green venom (#73F24D with #B9F55F hot core, dark #245C1F undersides) SPLATTERS outward in a radial burst — a bright central splat, thick curved venom tendrils and fat droplets flying out in every direction, and a ring-shaped puff of dark-green gas (#3E9A2E / #245C1F with acid rims) expanding behind the droplets. Seen from a high three-quarter game camera, so the burst reads as a roughly CIRCULAR radial splash centred on the impact point. Liquid venom + gas — NOT fire, NOT sparks, NOT electricity, NOT a flower, NOT a face.
+Style/medium: crisp high-resolution dark-fantasy game FX art with hard readable clusters and a controlled palette; not painterly, not 3D-rendered, not photographic, not anime, not blurred.
+Composition/framing and ANCHOR RULE: the impact point is the exact centre of every square cell; the effect grows out from that centre and never leaves the cell — at its widest (frames 3-4) it fills about 80% of the cell width with clear magenta margin on every side. The centre point never drifts, the camera never moves.
+ONE-SHOT storyboard - eight VISIBLY DIFFERENT stages of one burst, small to large to gone:
+ frame 1: a small tight bright venom glob at the centre with a thin flash rim, just hit — about 20% of the cell wide
+ frame 2: the glob bursts: a bright splat star with 6-8 short thick tendrils starting outward, a small gas ring forming — about 45% wide
+ frame 3: PEAK: long curved venom tendrils and fat droplets flung outward in every direction, the gas ring expanding behind them, hot core still bright — about 75% wide
+ frame 4: droplets separate from the tendrils and fly further, the tendrils thin, the gas ring at full size and rims glowing — about 80% wide
+ frame 5: the core dims to a dark venom stain, droplets arcing down and shrinking, gas ring breaking into puffs
+ frame 6: only scattered small droplets and dark-green gas puffs remain, dimmer
+ frame 7: a few last droplet specks and thin fading wisps
+ frame 8: almost nothing — a faint dark stain and two or three tiny motes, nearly empty cell
+Every frame keeps the same centre. Frames 1 through 8 must each be clearly different from every other frame.
+Constraints: output only the eight cells on magenta; no text, watermark, UI, characters, knife, scenery, ground, shadow, or separators. Do NOT use #ff00ff, pink, purple or any magenta anywhere in the effect. Do not use pure #00ff00 either — stay inside the five palette greens plus their in-between shades.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./splash_master_4x2_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./splash_master_4x2_v1_keyed.png (auto-key sampling from the border, soft matte, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all eight cells were produced with visibly different burst stages (frame by frame, small to large to gone), whether the centre stayed fixed in every cell, and any deviation from the brief you noticed (a cell missing, cells overlapping or touching, magenta or pink inside the effect, the burst drifting off-centre, an extra ninth cell, a ground plane drawn, the effect reading as fire or sparks instead of venom). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

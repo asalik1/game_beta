@@ -1051,6 +1051,37 @@ const PHANTOM_ULT_SPLASH_OPACITY_BRIGHT := 0.15 # +5% on "bright" maps (light ba
 # already carry their own windup — they stay instant, the telegraph IS the wind-up.
 const BOSS_ABILITY_FPS := 14.0
 const BOSS_STRIKE_DELAY := 0.16
+# Per-clip playback override ("<sprite>_<action>" -> fps) for one-shots whose
+# gameplay window is longer than the snappy 0.29s default. Wave-1 Codex clips
+# are 4 frames: Fangmaw's pounce is a 0.8s tween (4 @ 5fps = 0.8s, the LAND
+# frame meets the impact telegraph at 0.76s); the charge telegraph flashes for
+# 0.58s before the dash (4 @ 7fps = 0.57s, so the coiled crouch holds until it
+# launches); a howl / three-headed roar needs room to breathe (6fps = 0.67s);
+# Vent Breath's cone telegraph blooms 0.5s out (8fps). Absent = BOSS_ABILITY_FPS.
+const BOSS_ACTION_FPS := {
+	"fangmaw_leap": 5.0, "fangmaw_charge": 7.0, "fangmaw_pack": 6.0,
+	"cinderhide_charge": 7.0, "cinderhide_enrage": 6.0, "cinderhide_breath": 8.0,
+	# Act 1 regen (2026-08-15): slower one-shots (roar/summon/blink/plunge/scream
+	# read better than the snappy 14fps default). Keyed "<sprite>_<action>".
+	"choirmother_enrage": 6.0, "choirmother_summon": 8.0, "choirmother_blink": 10.0,
+	"forgemistress_quench": 8.0,
+	"vess_enrage": 6.0, "vess_blink": 10.0, "vess_wail": 8.0,
+	"ashpriest_enrage": 6.0, "ashpriest_summon": 8.0, "ashpriest_verdict": 8.0,
+	"serane_enrage": 6.0, "serane_blink": 10.0, "serane_beam": 10.0,
+	"halla_enrage": 6.0, "halla_hymn": 7.0, "halla_summon": 8.0,
+	"rotmaw_enrage": 6.0, "rotmaw_summon": 8.0, "rotmaw_lash": 12.0,
+	"sexton_summon": 8.0, "sexton_surface": 6.0,
+	"nullwarden_enrage": 6.0, "nullwarden_piston": 12.0, "nullwarden_beam": 10.0,
+	"saint_varo_enrage": 6.0, "saint_varo_summon": 8.0, "saint_varo_toll": 8.0,
+	"auroch_minotaur_charge": 7.0,
+	"kaethra_shift": 8.0,
+	"veyx_enrage": 6.0, "veyx_summon": 8.0,
+	"vargoth_enrage": 6.0,
+	"korrag_pack": 6.0, "korrag_lash": 12.0,
+	"hrolgar_pack": 6.0, "hrolgar_charge": 7.0,
+	"echo_enrage": 6.0, "echo_blink": 10.0, "echo_split": 12.0,
+	"stormmouth_enrage": 6.0, "stormmouth_cast": 10.0,
+}
 # Falling-object presentation (telegraphed sky attacks). Boss signature
 # weapons use a detailed 96px sprite at near-native scale; the larger legacy
 # scales remain only for old 16px procedural callers.

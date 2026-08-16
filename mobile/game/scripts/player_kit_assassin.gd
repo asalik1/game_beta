@@ -235,7 +235,7 @@ func _death_mark() -> void:
 		# Golden Ronin: the world holds its breath — a soft gold wash as the mark
 		# sets. No strike yet; the cut (Gilded Iai) lands on the killing stab.
 		game.hud.flash_screen(Color(0.5, 0.4, 0.12), 0.32, 0.7)
-		game.burst(global_position, Color(1.0, 0.85, 0.4), 12)
+		_soft_burst(global_position + Vector2(0, -30), Color(1.0, 0.85, 0.4), 12, 0.13, 110.0, 0.7, 0.6, 40.0)
 	else:
 		game.hud.flash_screen(Color(0.35, 0.0, 0.1), 0.5, 0.8)
 		game.burst(global_position, Color(0.5, 0.2, 0.5), 12)
@@ -349,29 +349,35 @@ func _execution_slash(pos: Vector2, ang: float) -> void:
 func _gilded_iai_strike(target) -> void:
 	if not is_instance_valid(target):
 		return
-	var tpos: Vector2 = target.global_position
+	var tpos: Vector2 = target.global_position + Vector2(0, -22)  # the cut crosses the body, not the feet
 	game.sfx("slash")  # the crisp cut lands
 	game.hud.flash_screen(Color(1.0, 0.82, 0.32), 0.55, 0.5)
 	game.shake(8.0)
-	game.burst(tpos, Color(1.0, 0.86, 0.42), 18)
-	# Two big gold strokes cross in an X through the prey — the drawn cut, popping
-	# from small to full so it reads as one decisive slash landing.
-	for ang in [0.72, -0.72]:
-		for layer in 2:
-			var rip := Sprite2D.new()
-			rip.texture = Art.tex("slashline")
-			rip.modulate = Art.hdr(Color(1.0, 0.84, 0.38, 1.0)) if layer == 0 else Color(1.0, 1.0, 0.92, 1.0)
-			rip.global_position = tpos
-			rip.rotation = ang
-			rip.scale = Vector2(1.4, 0.5) if layer == 0 else Vector2(1.2, 0.28)
-			rip.z_index = 20 + layer
-			game.add_child(rip)
-			var rt := rip.create_tween()
-			rt.tween_property(rip, "scale",
-				Vector2(3.6, 1.0) if layer == 0 else Vector2(3.2, 0.62), 0.13) \
-				.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-			rt.parallel().tween_property(rip, "modulate:a", 0.0, 0.32)
-			rt.tween_callback(rip.queue_free)
+	# The one cut (skin-FX pass 2026-08-15): a generated gold cross-cut strip —
+	# first streak, second streak, the white-hot flare at the crossing, gold
+	# petals — body under the prey with a bright ghost over it (FX layering
+	# rule), plus round gold glints. Replaces the four slashline strokes + the
+	# square burst.
+	if _fx_flash("gilded_iai", tpos, 8, {"scale": (280.0) / (IMPACT_CELL * 0.85),
+			"z": -1, "ghost_over": 0.55, "over_z": 20, "frame_time": 0.045, "fade": 0.2}) == null:
+		# Fallback (strip absent): the drawn strokes.
+		for ang in [0.72, -0.72]:
+			for layer in 2:
+				var rip := Sprite2D.new()
+				rip.texture = Art.tex("slashline")
+				rip.modulate = Art.hdr(Color(1.0, 0.84, 0.38, 1.0)) if layer == 0 else Color(1.0, 1.0, 0.92, 1.0)
+				rip.global_position = tpos
+				rip.rotation = ang
+				rip.scale = Vector2(1.4, 0.5) if layer == 0 else Vector2(1.2, 0.28)
+				rip.z_index = 20 + layer
+				game.add_child(rip)
+				var rt := rip.create_tween()
+				rt.tween_property(rip, "scale",
+					Vector2(3.6, 1.0) if layer == 0 else Vector2(3.2, 0.62), 0.13) \
+					.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+				rt.parallel().tween_property(rip, "modulate:a", 0.0, 0.32)
+				rt.tween_callback(rip.queue_free)
+	_soft_burst(tpos, Color(1.0, 0.86, 0.42), 14, 0.14, 150.0, 0.5, 0.55, 260.0, 19)
 	# Falling gold glints — petals of light drifting down around the prey.
 	for i in 10:
 		var gl := Sprite2D.new()
@@ -404,7 +410,7 @@ func _death_mark_execution(target: CharacterBody2D, execute := 0.0) -> void:
 		elif skin == "blade_dancer":
 			# Golden Ronin: the stillness — a faint gold glint gathers on the prey;
 			# no strike yet (the Gilded Iai one-cut lands on the killing stab below).
-			game.burst(tpos, Color(1.0, 0.85, 0.4), 5)
+			_soft_burst(tpos + Vector2(0, -20), Color(1.0, 0.85, 0.4), 5, 0.12, 60.0, 0.9, 0.5, 20.0)
 			game.shake(1.2)
 		else:
 			# Zed shadows converge in an X.

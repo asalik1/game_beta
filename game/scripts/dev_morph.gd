@@ -47,6 +47,18 @@ var _last_face := Vector2.ZERO  # idle facing memory (see header)
 var _actions: Array = []
 var _cursor := -1
 var _held := {}          # slot -> held-last-frame (intents are held-state; edge here)
+# A hidden, inert REAL boss/mob co-located with the morph: it fires the actual
+# projectiles + audio on an attack (dev_fire), so Transform reviews the whole
+# effect and not just the clip. No AI, no collision, no HP bar, freed with us.
+var _driver: Enemy = null
+# Multi-form bosses (owner 2026-08-15): F cycles the visual sprite through a
+# boss's known forms (same kind + abilities, different body). Extensible.
+const FORMS := {
+	"saint_varo": ["saint_varo", "saint_varo_standing"],
+}
+var _forms: Array = []
+var _form_i := 0
+var _form_held := false
 
 
 ## Become `enemy_kind`. Replaces any active morph; the codex builds the button.
@@ -97,19 +109,103 @@ func _ready() -> void:
 		_strip_idle = anim
 		_strip_walk = {} if Art.mob_idle_only_locomotion(_sprite_key) \
 			else Art.walk_info(_sprite_key)
-		_dir_idle = Art.dir_set(_sprite_key + "_anim")
-		_dir_walk = {} if Art.mob_flat_walk_locomotion(_sprite_key) \
-			else Art.dir_set(_sprite_key + "_walk")
+		# Codex wave-1 bosses must review exactly as they spawn: flat high-res
+		# strips with the L/R flip, never the legacy directional sheets still
+		# in the tree (enemy.gd's gate — the preview may not drift from it).
+		var flat_wave := Art.boss_flat_animation_locomotion(_sprite_key)
+		_dir_idle = {} if flat_wave else Art.dir_set(_sprite_key + "_anim")
+		# Mirror enemy.gd: a BOSS_DIRECTIONAL_WALK boss previews its Codex
+		# 8-direction walk (walk_codex) even though it is flat-idle.
+		if Art.boss_directional_walk(_sprite_key):
+			_dir_walk = Art.dir_set(_sprite_key + "_walk_codex")
+		else:
+			_dir_walk = {} if flat_wave or Art.mob_flat_walk_locomotion(_sprite_key) \
+				else Art.dir_set(_sprite_key + "_walk")
 		_apply_strip(anim)
 	sprite.modulate = _base_mod
 	add_child(sprite)
 	_actions = _discover_actions(_sprite_key)
+	_forms = FORMS.get(kind, [])
+	_make_driver()
 	_anim_t = randf() * 10.0
 	if plr.game != null:
 		plr.game.spawn_text(plr.global_position + Vector2(0, -84),
 			"MORPH: " + String(st.get("name", kind)), Color(0.7, 0.95, 0.85))
-		plr.game.spawn_text(plr.global_position + Vector2(0, -60),
-			"A1 attack · A2 next clip · A3 replay · ULT death", Color(0.6, 0.75, 0.7))
+		var tip := "A1 attack · A2 next clip · A3 replay · ULT death"
+		if _forms.size() > 1:
+			tip += " · F form"
+		plr.game.spawn_text(plr.global_position + Vector2(0, -60), tip, Color(0.6, 0.75, 0.7))
+
+
+## The hidden real boss/mob that fires the actual projectiles + audio. Inert:
+## no AI tick, no collision, no HP bar, hidden sprite; freed with the morph.
+func _make_driver() -> void:
+	if plr == null or plr.game == null:
+		return
+	if _driver != null and is_instance_valid(_driver):
+		_driver.queue_free()
+		_driver = null
+	var g: Node2D = plr.game
+	if g.menus != null and g.menus.BOSS_KINDS.has(kind):
+		_driver = Boss.make_boss(g, kind, plr.global_position)
+	else:
+		_driver = Enemy.make(g, kind, plr.global_position)
+	_driver.visible = false                 # the morph body is the visual
+	_driver.set_physics_process(false)      # no AI, no movement
+	_driver.set_process(false)
+	_driver.collision_layer = 0             # untargetable, unhittable
+	_driver.collision_mask = 0
+	add_child(_driver)                       # in-tree (timers) + auto-freed with us
+	# _setup joined the "enemies" group — the player's own attacks scan that
+	# group (player_combat), so leave it or the morph would kill its own driver.
+	_driver.remove_from_group("enemies")
+
+
+## Fire the pressed action's REAL projectiles + audio through the driver, on the
+## contact frame (BOSS_STRIKE_DELAY) so it syncs with the swing — exactly the
+## delay a real boss uses. No-op for pure locomotion/idle.
+func _driver_fire(action: String) -> void:
+	if _driver == null or not is_instance_valid(_driver) or plr == null:
+		return
+	var aim := _facing_vec()
+	var origin := plr.global_position
+	get_tree().create_timer(Balance.BOSS_STRIKE_DELAY).timeout.connect(func() -> void:
+		if is_instance_valid(_driver) and plr != null and is_instance_valid(plr) \
+				and plr.dev_morph == self and not plr.dead:
+			_driver.global_position = plr.global_position
+			_driver.dev_fire(action, aim))
+	_driver.global_position = origin
+
+
+## F-key: cycle a multi-form boss to its next body (same kind + abilities).
+func _cycle_form() -> void:
+	if _forms.size() < 2:
+		return
+	_form_i = (_form_i + 1) % _forms.size()
+	_sprite_key = String(_forms[_form_i])
+	_face_left = Art.faces_left(_sprite_key)
+	_body_cell = 0.0
+	_strip_action = {}
+	_action_dir = {}
+	_cur_dir = ""
+	var anim := Art.anim_info(_sprite_key)
+	if not anim.is_empty():
+		_strip_idle = anim
+		_strip_walk = {} if Art.mob_idle_only_locomotion(_sprite_key) \
+			else Art.walk_info(_sprite_key)
+		var flat_wave := Art.boss_flat_animation_locomotion(_sprite_key)
+		_dir_idle = {} if flat_wave else Art.dir_set(_sprite_key + "_anim")
+		if Art.boss_directional_walk(_sprite_key):
+			_dir_walk = Art.dir_set(_sprite_key + "_walk_codex")
+		else:
+			_dir_walk = {} if flat_wave or Art.mob_flat_walk_locomotion(_sprite_key) \
+				else Art.dir_set(_sprite_key + "_walk")
+		_apply_strip(anim)
+	_actions = _discover_actions(_sprite_key)
+	_cursor = -1
+	if plr != null and plr.game != null:
+		plr.game.spawn_text(plr.global_position + Vector2(0, -70),
+			"FORM: " + _sprite_key, Color(0.7, 0.95, 0.85))
 
 
 func _restore() -> void:
@@ -153,9 +249,15 @@ func _physics_process(delta: float) -> void:
 		var directional_loco := (_moving and not _dir_walk.is_empty()) \
 			or (not _moving and not _dir_idle.is_empty())
 		if not directional_loco:
-			if not _strip_walk.is_empty() and _moving != _strip_walking:
-				_strip_walking = _moving
-				_apply_strip(_strip_walk if _moving else _strip_idle)
+			# enemy.gd's stop-transition fix: a flat-idle boss with a directional
+			# walk lands here the instant it stops (_dir_idle is {} so
+			# directional_loco is false) with _cur_dir still holding the last walk
+			# facing — restore the flat idle instead of freezing on the last frame.
+			var want_walk := _moving and not _strip_walk.is_empty()
+			if want_walk != _strip_walking or _cur_dir != "":
+				_strip_walking = want_walk
+				_cur_dir = ""
+				_apply_strip(_strip_walk if want_walk else _strip_idle)
 			if _moving:
 				_anim_t += delta
 			sprite.frame = int(_anim_t * _anim_fps) % _anim_frames
@@ -209,6 +311,11 @@ func _poll_slots() -> void:
 		_held[slot] = held_now
 		if held_now and not was:
 			_on_slot(String(slot))
+	# F cycles a multi-form boss's body (raw key: no ability intent to spare).
+	var f_now := Input.is_key_pressed(KEY_F)
+	if f_now and not _form_held and _strip_action.is_empty():
+		_cycle_form()
+	_form_held = f_now
 
 
 func _on_slot(slot: String) -> void:
@@ -246,14 +353,21 @@ static func basic_of(actions: Array) -> String:
 func _play_named(action: String) -> void:
 	if action == "" or _strip_idle.is_empty():
 		return
+	# enemy.gd's wave-1 gate: the legacy PixelLab ability family never plays
+	# on a Codex flat-strip boss (a real spawn falls back to "attack").
+	if action == "ability" and Art.boss_flat_animation_locomotion(_sprite_key):
+		return
 	var dset := Art.dir_set("%s_%s" % [_sprite_key, action])
+	# enemy.gd's rate: the per-action override (pounce/charge/roar) else snappy.
+	var fps: float = float(Balance.BOSS_ACTION_FPS.get(
+		"%s_%s" % [_sprite_key, action], Balance.BOSS_ABILITY_FPS))
 	if not dset.is_empty():
 		_action_dir = dset
 		var suf := Art.dir8_suffix(_facing_vec())
 		_strip_action = dset[suf]
 		_action_t = 0.0
 		_apply_strip(_strip_action, true)
-		_anim_fps = Balance.BOSS_ABILITY_FPS
+		_anim_fps = fps
 		sprite.flip_h = false
 	else:
 		var info := Art.action_info(_sprite_key, action)
@@ -263,7 +377,10 @@ func _play_named(action: String) -> void:
 		_action_dir = {}
 		_action_t = 0.0
 		_apply_strip(info, true)
-		_anim_fps = Balance.BOSS_ABILITY_FPS
+		_anim_fps = fps
+	# Fire the REAL projectiles + audio through the driver (owner: "work like the
+	# classes"), synced to the contact frame — so Transform previews the effect.
+	_driver_fire(action)
 	if plr.game != null:
 		plr.game.spawn_text(plr.global_position + Vector2(0, -70),
 			action.to_upper(), Color(0.7, 0.95, 0.85))
@@ -347,12 +464,18 @@ static func _discover_actions(key: String) -> Array:
 		var s2 := String(Story.ALL_ENEMIES[k2].get("sprite", ""))
 		if s2 != key and s2.begins_with(prefix):
 			subchars[s2] = true
+	# A wave-1 Codex boss keeps its idle under an explicit strip name
+	# (Art.BOSS_IDLE_STRIP_BASE, e.g. morwen_anim_codex); that is locomotion,
+	# not a clip, so it must not show up in the cycle as "ANIM_CODEX".
+	var idle_base := String(Art.BOSS_IDLE_STRIP_BASE.get(key, ""))
 	var found := {}
 	for f in files:
 		var stem := String(f)
 		if not stem.ends_with(".png") or not stem.begins_with(prefix):
 			continue
 		stem = stem.trim_suffix(".png")
+		if stem == idle_base:
+			continue
 		var shadowed := false
 		for sc in subchars:
 			if stem == sc or stem.begins_with(String(sc) + "_"):
@@ -368,6 +491,11 @@ static func _discover_actions(key: String) -> Array:
 		if act in ["", "anim", "walk", "portrait", "splash"]:
 			continue
 		found[act] = true
+	# Wave-1 Codex bosses: the legacy "<key>_ability[_<dir>]" family is dead at
+	# runtime (enemy.gd routes the fallback to the Codex attack strip), so the
+	# clip cycle must not offer a clip a real spawn can never play.
+	if Art.boss_flat_animation_locomotion(key):
+		found.erase("ability")
 	var out: Array = found.keys()
 	out.sort()
 	# The basic swing family leads, in cast order; the rest stay alphabetical.

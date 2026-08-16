@@ -1,0 +1,799 @@
+﻿codex.exe : Reading prompt from stdin...
+At line:6 char:14
++ ...    $brief | & $codex exec -C $d -s workspace-write --skip-git-repo-ch ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Reading prompt from stdin...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+OpenAI Codex v0.147.0-alpha.6.6
+--------
+workdir: C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\splash
+model: gpt-5.6-luna
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0075b-631f-71c0-a8a5-25e151bdbb85
+--------
+user
+You are generating ONE game visual-effect animation master with your built-in image_gen tool. Read 
+$CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current 
+directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/palette_poison.png : the BINDING colour palette for this effect (five swatches on magenta). Use ONLY 
+greens in this family: #73F24D acid rim, #B9F55F hot highlight, #3E9A2E mid green, #245C1F dark body, #132E12 shadow. 
+Ignore the magenta around the swatches ??? it is only there to show what the chroma key looks like.
+- Image 2 = refs/style_fx_strip.png : a shipped FX animation strip from this game (a violet thread eruption). Match 
+its LEVEL OF FINISH ??? crisp high-resolution game FX, hard readable clusters, glowing rims over a dark body, no blur, 
+no photo texture. Do NOT copy its subject, shape or colour.
+
+TASK: generate exactly ONE new 4x2 source sheet for a ONE-SHOT VENOM SPLASH impact with this image_gen prompt (adapt 
+only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: game asset
+Output size: 1536x1024 landscape.
+Asset type: high-resolution 8-frame game visual-effect animation source, to be cropped into a horizontal sprite strip.
+Scene/backdrop: a perfectly flat uniform #ff00ff magenta chroma-key background filling every pixel, including the 
+seams between cells. No scenery, floor plane, ground, platform, cast shadow, contact shadow, gradient, vignette, 
+border, grid, line, or panel divider.
+Primary request: create exactly EIGHT separate equal square effect cells laid out as a clean 4-column by 2-row contact 
+sheet in reading order (top row left to right = frames 1-4, bottom row left to right = frames 5-8). All eight cells 
+have identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat magenta 
+between neighbouring cells and around the sheet edge.
+Subject: the IMPACT of a venom-coated throwing knife bursting into poison: a thick glob of glowing acid-green venom 
+(#73F24D with #B9F55F hot core, dark #245C1F undersides) SPLATTERS outward in a radial burst ??? a bright central 
+splat, thick curved venom tendrils and fat droplets flying out in every direction, and a ring-shaped puff of 
+dark-green gas (#3E9A2E / #245C1F with acid rims) expanding behind the droplets. Seen from a high three-quarter game 
+camera, so the burst reads as a roughly CIRCULAR radial splash centred on the impact point. Liquid venom + gas ??? NOT 
+fire, NOT sparks, NOT electricity, NOT a flower, NOT a face.
+Style/medium: crisp high-resolution dark-fantasy game FX art with hard readable clusters and a controlled palette; not 
+painterly, not 3D-rendered, not photographic, not anime, not blurred.
+Composition/framing and ANCHOR RULE: the impact point is the exact centre of every square cell; the effect grows out 
+from that centre and never leaves the cell ??? at its widest (frames 3-4) it fills about 80% of the cell width with 
+clear magenta margin on every side. The centre point never drifts, the camera never moves.
+ONE-SHOT storyboard - eight VISIBLY DIFFERENT stages of one burst, small to large to gone:
+ frame 1: a small tight bright venom glob at the centre with a thin flash rim, just hit ??? about 20% of the cell wide
+ frame 2: the glob bursts: a bright splat star with 6-8 short thick tendrils starting outward, a small gas ring 
+forming ??? about 45% wide
+ frame 3: PEAK: long curved venom tendrils and fat droplets flung outward in every direction, the gas ring expanding 
+behind them, hot core still bright ??? about 75% wide
+ frame 4: droplets separate from the tendrils and fly further, the tendrils thin, the gas ring at full size and rims 
+glowing ??? about 80% wide
+ frame 5: the core dims to a dark venom stain, droplets arcing down and shrinking, gas ring breaking into puffs
+ frame 6: only scattered small droplets and dark-green gas puffs remain, dimmer
+ frame 7: a few last droplet specks and thin fading wisps
+ frame 8: almost nothing ??? a faint dark stain and two or three tiny motes, nearly empty cell
+Every frame keeps the same centre. Frames 1 through 8 must each be clearly different from every other frame.
+Constraints: output only the eight cells on magenta; no text, watermark, UI, characters, knife, scenery, ground, 
+shadow, or separators. Do NOT use #ff00ff, pink, purple or any magenta anywhere in the effect. Do not use pure #00ff00 
+either ??? stay inside the five palette greens plus their in-between shades.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./splash_master_4x2_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to 
+./splash_master_4x2_v1_keyed.png (auto-key sampling from the border, soft matte, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all eight cells were produced with visibly 
+different burst stages (frame by frame, small to large to gone), whether the centre stayed fixed in every cell, and 
+any deviation from the brief you noticed (a cell missing, cells overlapping or touching, magenta or pink inside the 
+effect, the burst drifting off-centre, an extra ninth cell, a ground plane drawn, the effect reading as fire or sparks 
+instead of venom). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.
+
+
+codex
+IΓÇÖm using the imagegen skill because this is a raster FX-sheet generation task. IΓÇÖll read its instructions first, 
+then generate one sheet, save the raw PNG and keyed PNG only in this staging directory, and verify the result against 
+your checklist.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'" in 
+C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\splash
+ succeeded in 3860ms:
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, 
+illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new 
+image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset 
+rather than repo-native code or vector. Do not use when the task is better handled by editing existing 
+SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in 
+HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product 
+mockups, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for normal image generation, editing, and 
+simple transparent-image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for the CLI/API/model path, or 
+after the user explicitly confirms a true model-native transparency fallback with `gpt-image-1.5`. Requires 
+`OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- If the user explicitly asks for a transparent image/background, stay on built-in `image_gen` first: prompt for a 
+flat removable chroma-key background, then remove it locally with the installed helper at 
+`$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`. Treat this as a 
+model/path downgrade and ask the user before doing it, unless the user has already explicitly requested 
+`gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback.
+- If a transparent request appears too complex for clean chroma-key removal, asks for true/native transparency, or 
+local removal fails validation, explain that true transparency requires CLI `gpt-image-1.5 --background transparent 
+--output-format png` because `gpt-image-2` does not support `background=transparent`, then ask whether to proceed. Run 
+the CLI fallback only after the user confirms.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate 
+assets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per 
+requested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires 
+`OPENAI_API_KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK 
+runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific 
+location is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before 
+finishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the 
+default `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling 
+versioned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+Local post-processing helper:
+- `$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`: removes a flat chroma-key background from a 
+generated image and writes a PNG/WebP with alpha. Prefer auto-key sampling, soft matte, and despill for antialiased 
+edges.
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, 
+compositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request 
+as **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images 
+generated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool 
+so the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit 
+CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or 
+variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and 
+needs many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; 
+distinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including simple transparent-output requests; fallback CLI only if 
+explicitly requested or after the user explicitly confirms a transparent-output fallback.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with 
+`view_image` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, 
+use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic 
+that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative 
+requirements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, follow the transparent image guidance below: generate with built-in `image_gen` 
+on a flat chroma-key background, copy the selected output into the workspace or `tmp/imagegen/`, run the installed 
+`$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py` helper, and validate the alpha result before using 
+it. If this path looks unsuitable or fails, ask before switching to CLI `gpt-image-1.5`.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default 
+`$CODEX_HOME/generated_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or 
+references. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user 
+explicitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, 
+size, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and 
+whether the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Transparent-image requests still use built-in `image_gen` first. Because the built-in tool does not expose a true 
+transparent-background control, create a removable chroma-key source image and then convert the key color to alpha 
+locally.
+
+Default sequence:
+1. Use built-in `image_gen` to generate the requested subject on a perfectly flat solid chroma-key background.
+2. Choose a key color that is unlikely to appear in the subject: default `#00ff00`, use `#ff00ff` for green subjects, 
+and avoid `#0000ff` for blue subjects.
+3. After generation, move or copy the selected source image from `$CODEX_HOME/generated_images/...` into the workspace 
+or `tmp/imagegen/`.
+4. Run the installed helper path, not a project-relative script path:
+   ```bash
+   python "${CODEX_HOME:-$HOME/.codex}/skills/.system/imagegen/scripts/remove_chroma_key.py" \
+     --input <source> \
+     --out <final.png> \
+     --auto-key border \
+     --soft-matte \
+     --transparent-threshold 12 \
+     --opaque-threshold 220 \
+     --despill
+   ```
+5. Validate that the output has an alpha channel, transparent corners, plausible subject coverage, and no obvious 
+key-color fringe. If a thin fringe remains, retry once with `--edge-contract 1`; use `--edge-feather 0.25` only when 
+the edge is visibly stair-stepped and the subject is not shiny or reflective.
+6. Save the final alpha PNG/WebP in the project if the asset is project-bound. Never leave a project-referenced 
+transparent asset only under `$CODEX_HOME/*`.
+
+Prompt transparent requests like this:
+
+```text
+Create the requested subject on a perfectly flat solid #00ff00 chroma-key background for background removal.
+The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting 
+variation.
+Keep the subject fully separated from the background with crisp edges and generous padding.
+Do not use #00ff00 anywhere in the subject.
+No cast shadow, no contact shadow, no reflection, no watermark, and no text unless explicitly requested.
+```
+
+Do not automatically use CLI `gpt-image-1.5 --background transparent --output-format png` instead of chroma keying. 
+Ask the user first when the user asks for true/native transparency, when local removal fails validation, or when the 
+requested image is complex: hair, fur, feathers, smoke, glass, liquids, translucent materials, reflective objects, 
+soft shadows, realistic product grounding, or subject colors that conflict with all practical key colors.
+
+Use a concise confirmation like:
+
+```text
+This likely needs true native transparency. The default built-in path uses a chroma-key background plus local removal, 
+but true transparency requires the CLI fallback with gpt-image-1.5 because gpt-image-2 does not support 
+background=transparent. It also requires OPENAI_API_KEY. Should I proceed with that CLI fallback?
+```
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, 
+but do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra 
+labeled line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural ├óΓé¼ΓÇ¥ candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup ├óΓé¼ΓÇ¥ product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup ├óΓé¼ΓÇ¥ app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram ├óΓé¼ΓÇ¥ diagrams/infographics with structured layout and text.
+- scientific-educational ├óΓé¼ΓÇ¥ classroom explainers, scientific diagrams, and learning visuals with required labels 
+and accuracy constraints.
+- ads-marketing ├óΓé¼ΓÇ¥ campaign concepts and ad creatives with audience, brand position, scene, and exact 
+tagline/copy.
+- productivity-visual ├óΓé¼ΓÇ¥ slide, chart, workflow, and data-heavy business visuals.
+- logo-brand ├óΓé¼ΓÇ¥ logo/mark exploration, vector-friendly.
+- illustration-story ├óΓé¼ΓÇ¥ comics, children├óΓé¼Γäós book art, narrative scenes.
+- stylized-concept ├óΓé¼ΓÇ¥ style-driven concept art, 3D/stylized renders.
+- historical-scene ├óΓé¼ΓÇ¥ period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization ├óΓé¼ΓÇ¥ translate/replace in-image text, preserve layout.
+- identity-preserve ├óΓé¼ΓÇ¥ try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit ├óΓé¼ΓÇ¥ remove/replace a specific element (including interior swaps).
+- lighting-weather ├óΓé¼ΓÇ¥ time-of-day/season/atmosphere changes only.
+- background-extraction ├óΓé¼ΓÇ¥ transparent background / clean cutout. Use built-in `image_gen` with chroma-key 
+removal first for simple opaque subjects; ask before using CLI true transparency for complex subjects.
+- style-transfer ├óΓé¼ΓÇ¥ apply reference style while changing subject/scene.
+- compositing ├óΓé¼ΓÇ¥ multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render ├óΓé¼ΓÇ¥ drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D/etc>
+Composition/framing: <wide/close/top-down; placement>
+Lighting/mood: <lighting + mood>
+Color palette: <palette notes>
+Materials/textures: <surface details>
+Text (verbatim): "<exact text>"
+Constraints: <must keep/must avoid>
+Avoid: <negative constraints>
+```
+
+Notes:
+- `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
+- `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which 
+controls output transparency behavior.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong 
+in the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+
+Augmentation rules:
+- Keep it short.
+- Add only the details needed to improve the prompt materially.
+- For edits, explicitly list invariants (`change only X; keep Y unchanged`).
+- If any critical detail is missing and blocks success, ask a question; otherwise proceed.
+
+## Examples
+
+### Generation example (hero image)
+```text
+Use case: product-mockup
+Asset type: landing page hero
+Primary request: a minimal hero image of a ceramic coffee mug
+Style/medium: clean product photography
+Composition/framing: wide composition with usable negative space for page copy if needed
+Lighting/mood: soft studio lighting
+Constraints: no logos, no text, no watermark
+```
+
+### Edit example (invariants)
+```text
+Use case: precise-object-edit
+Asset type: product photo background replacement
+Primary request: replace only the background with a warm sunset gradient
+Constraints: change only the background; keep the product and its edges unchanged; no text; no watermark
+```
+
+## Prompting best practices
+- Structure prompt as scene/backdrop -> subject -> details -> constraints.
+- Include intended use (ad, UI mock, infographic) to set the mode and polish level.
+- Use camera/composition language for photorealism.
+- Only use SVG/vector stand-ins when the user explicitly asked for vector output or a non-image placeholder.
+- Quote exact text and specify typography + placement.
+- For tricky words, spell them letter-by-letter and require verbatim rendering.
+- For multi-image inputs, reference images by index and describe how they should be used.
+- For edits, repeat invariants every iteration to reduce drift.
+- Iterate with single-change follow-ups.
+- If the prompt is generic, add only the extra detail that will materially help.
+- If the prompt is already detailed, normalize it instead of expanding it.
+- For CLI fallback only, see `references/cli.md` and `references/image-api.md` for model, `quality`, `input_fidelity`, 
+masks, output format, and output-path guidance.
+- For transparent images, use the built-in-first chroma-key workflow unless the request is complex enough to need true 
+CLI transparency; ask before switching to CLI `gpt-image-1.5`.
+
+More principles shared by both modes: `references/prompting.md`.
+Copy/paste specs shared by both modes: `references/sample-prompts.md`.
+
+## Guidance by asset type
+Asset-type templates (website assets, game assets, wireframes, logo) are consolidated in 
+`references/sample-prompts.md`.
+
+## gpt-image-2 guidance for CLI fallback
+
+The fallback CLI defaults to `gpt-image-2`.
+
+- Use `gpt-image-2` for new CLI/API workflows unless the request needs true model-native transparent output.
+- If a transparent request may need CLI fallback, ask before using `gpt-image-1.5` unless the user already explicitly 
+requested `gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback. Explain that the built-in chroma-key path is the 
+default, but true transparency requires `gpt-image-1.5` because `gpt-image-2` does not support 
+`background=transparent`.
+- `gpt-image-2` always uses high fidelity for image inputs; do not set `input_fidelity` with this model.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- Use `quality low` for fast drafts, thumbnails, and quick iterations. Use `medium`, `high`, or `auto` for final 
+assets, dense text, diagrams, identity-sensitive edits, or high-resolution outputs.
+- Square images are typically fastest to generate. Use `1024x1024` for fast square drafts.
+- If the user asks for 4K-style output, use `3840x2160` for landscape or `2160x3840` for portrait.
+- `gpt-image-2` size may be `auto` or `WIDTHxHEIGHT` if all constraints hold: max edge `<= 3840px`, both edges 
+multiples of `16px`, long-to-short ratio `<= 3:1`, total pixels between `655,360` and `8,294,400`.
+
+Popular `gpt-image-2` sizes:
+- `1024x1024` square
+- `1536x1024` landscape
+- `1024x1536` portrait
+- `2048x2048` 2K square
+- `2048x1152` 2K landscape
+- `3840x2160` 4K landscape
+- `2160x3840` 4K portrait
+- `auto`
+
+## Fallback CLI mode only
+
+### Temp and output conventions
+These conventions apply only to the CLI fallback. They do not describe built-in `image_gen` output behavior.
+- Use `tmp/imagegen/` for intermediate files (for example JSONL batches); delete them when done.
+- Write final artifacts under `output/imagegen/`.
+- Use `--out` or `--out-dir` to control output paths; keep filenames stable and descriptive.
+
+### Dependencies
+Prefer `uv` for dependency management in this repo.
+
+Required Python package:
+```bash
+uv pip install openai
+```
+
+Required for local chroma-key removal and optional downscaling:
+```bash
+uv pip install pillow
+```
+
+Portability note:
+- If you are using the installed skill outside this repo, install dependencies into that environment with its package 
+manager.
+- In uv-managed environments, `uv pip install ...` remains the preferred path.
+
+### Environment
+- `OPENAI_API_KEY` must be set for live API calls.
+- Do not ask the user for `OPENAI_API_KEY` when using the built-in `image_gen` tool.
+- Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
+
+If the key is missing, give the user these steps:
+1. Create an API key in the OpenAI platform UI: https://platform.openai.com/api-keys
+2. Set `OPENAI_API_KEY` as an environment variable in their system.
+3. Offer to guide them through setting the environment variable for their OS/shell if needed.
+
+If installation is not possible in this environment, tell the user which dependency is missing and how to install it 
+into their active environment.
+
+### Script-mode notes
+- CLI commands + examples: `references/cli.md`
+- API parameter quick reference: `references/image-api.md`
+- Network approvals / sandbox settings for CLI mode: `references/codex-network.md`
+
+## Reference map
+- `references/prompting.md`: shared prompting principles for both modes.
+- `references/sample-prompts.md`: shared copy/paste prompt recipes for both modes.
+- `references/cli.md`: fallback-only CLI usage via `scripts/image_gen.py`.
+- `references/image-api.md`: fallback-only API/CLI parameter reference.
+- `references/codex-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
+- `scripts/image_gen.py`: fallback-only CLI implementation. Do not load or use it unless the user explicitly chooses 
+CLI mode or explicitly confirms a transparent request's true CLI transparency fallback.
+- `$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`: local post-processing helper for built-in 
+transparent-image requests.
+
+
+codex
+The skill requires built-in image generation with a flat chroma-key source, then local matte removal; it also requires 
+validation of the generated output. IΓÇÖm checking the repoΓÇÖs authoritative working practices now and will keep the 
+two supplied images as explicit palette/style references only.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$claude = Get-ChildItem -Path . -Filter 
+'"'CLAUDE.md' -File -Recurse | Select-Object -First 1; if ("'$null -eq $claude) { '"'CLAUDE.md not found under current 
+staging directory' } else { Get-Content -Raw -LiteralPath "'$claude.FullName }' in 
+C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\splash
+ succeeded in 3103ms:
+CLAUDE.md not found under current staging directory
+
+codex
+IΓÇÖll make a single built-in generation call at 1536├ù1024 using the two attached files as references: palette-only 
+guidance from Image 1 and finish-level guidance from Image 2. After it returns, IΓÇÖll copy the raw result into the 
+requested filename and run the installed chroma-key helper.
+codex
+Generation completed as a single 1536├ù1024 PNG. The preview shows eight separated green venom stages in a 4├ù2 
+layout; IΓÇÖm now preserving that raw file unchanged and running the required border-sampled soft-matte/despill keying 
+pass.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$source = '"'C:\\Users\\asali\\.codex\\gener
+ated_images\\01a0075b-631f-71c0-a8a5-25e151bdbb85\\exec-4f9e7335-bb7f-40a6-bda2-38b41168a6ab.png'
+"'$raw = Join-Path (Get-Location) '"'splash_master_4x2_v1.png'
+"'$keyed = Join-Path (Get-Location) '"'splash_master_4x2_v1_keyed.png'
+Copy-Item -LiteralPath "'$source -Destination $raw -Force
+python '"'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py' --input "'$raw --out 
+$keyed --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill' in 
+C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\splash
+ succeeded in 16834ms:
+Wrote C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\splash\splash_master_4x2_v1_keyed.png
+Key color: #fb03fa
+Transparent pixels: 1363035/1572864
+Partially transparent pixels: 59579/1572864
+
+codex
+The keyed PNG was written successfully at the same 1536├ù1024 dimensions. The helper sampled the magenta border and 
+produced an RGBA result with transparent corners; IΓÇÖm doing the final visual and pixel-level checks now, including 
+the eight-cell layout and edge/key cleanup.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+from collections import Counter
+import colorsys
+raw_path = r'splash_master_4x2_v1.png'
+keyed_path = r'splash_master_4x2_v1_keyed.png'
+raw = Image.open(raw_path).convert('RGBA')
+keyed = Image.open(keyed_path).convert('RGBA')
+print('raw', raw.size, raw.mode)
+print('keyed', keyed.size, keyed.mode)
+print('raw corners', [raw.getpixel(p) for p in [(0,0),(1535,0),(0,1023),(1535,1023)]])
+# Border color consistency, excluding obvious foreground-looking pixels by just report unique count and ranges.
+border=[]
+w,h=raw.size
+for x in range(w):
+    border += [raw.getpixel((x,0)), raw.getpixel((x,h-1))]
+for y in range(h):
+    border += [raw.getpixel((0,y)), raw.getpixel((w-1,y))]
+print('border unique RGB', len(set(c[:3] for c in border)))
+print('border RGB ranges', [(min(c[i] for c in border), max(c[i] for c in border)) for i in range(3)])
+# cell occupancy and bboxes using alpha > 20, split into 4x2 equal quadrants.
+for row in range(2):
+    row_out=[]
+    for col in range(4):
+        x0=col*w//4; x1=(col+1)*w//4
+        y0=row*h//2; y1=(row+1)*h//2
+        pts=[]
+        for y in range(y0,y1):
+            for x in range(x0,x1):
+                if keyed.getpixel((x,y))[3] > 20:
+                    pts.append((x,y))
+        if pts:
+            xs=[p[0] for p in pts]; ys=[p[1] for p in pts]
+            bbox=(min(xs)-x0,min(ys)-y0,max(xs)-x0,max(ys)-y0)
+            cx=sum(xs)/len(xs)-x0; cy=sum(ys)/len(ys)-y0
+            row_out.append({'n':len(pts),'bbox':bbox,'centroid':(round(cx,1),round(cy,1))})
+        else: row_out.append({'n':0})
+    print('cells row',row+1,row_out)
+# Count suspicious colored pixels within keyed foreground alpha >20.
+counts=Counter()
+for y in range(h):
+    for x in range(w):
+        r,g,b,a=keyed.getpixel((x,y))
+        if a>20:
+            # rough categories
+            if r>g*1.15 and b>g*1.05:
+                counts['pink-purple-ish'] += 1
+            elif abs(r-g)<18 and abs(g-b)<18:
+                counts['neutral-gray-ish'] += 1
+            elif g>r*1.08 and g>b*1.08:
+                counts['green-dominant'] += 1
+            else:
+                counts['other'] += 1
+print('foreground color categories alpha>20', counts)
+# Alpha coverage per cell.
+for row in range(2):
+    print('alpha coverage row',row+1,[sum(1 for y in range(row*h//2,(row+1)*h//2) for x in 
+range(col*w//4,(col+1)*w//4) if keyed.getpixel((x,y))[3]>20) for col in range(4)])
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\splash
+ succeeded in 13200ms:
+raw (1536, 1024) RGBA
+keyed (1536, 1024) RGBA
+raw corners [(241, 11, 240, 255), (245, 14, 241, 255), (236, 35, 236, 255), (242, 30, 240, 255)]
+border unique RGB 134
+border RGB ranges [(236, 251), (3, 35), (236, 251)]
+cells row 1 [{'n': 2320, 'bbox': (153, 267, 229, 341), 'centroid': (191.6, 303.6)}, {'n': 29689, 'bbox': (43, 206, 
+383, 413), 'centroid': (161.6, 310.3)}, {'n': 64479, 'bbox': (0, 129, 383, 479), 'centroid': (158.0, 309.6)}, {'n': 
+49636, 'bbox': (0, 116, 338, 480), 'centroid': (160.6, 305.5)}]
+cells row 2 [{'n': 31912, 'bbox': (26, 84, 359, 412), 'centroid': (187.7, 253.1)}, {'n': 16228, 'bbox': (34, 117, 325, 
+401), 'centroid': (166.4, 251.2)}, {'n': 6050, 'bbox': (37, 139, 285, 391), 'centroid': (147.7, 242.5)}, {'n': 1293, 
+'bbox': (99, 216, 197, 340), 'centroid': (154.3, 266.0)}]
+foreground color categories alpha>20 Counter({'green-dominant': 119412, 'neutral-gray-ish': 56100, 'other': 21366, 
+'pink-purple-ish': 4729})
+alpha coverage row 1 [2320, 29689, 64479, 49636]
+alpha coverage row 2 [31912, 16228, 6050, 1293]
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+from collections import Counter
+im=Image.open('splash_master_4x2_v1_keyed.png').convert('RGBA')
+colors=Counter()
+locs=[]
+for y in range(im.height):
+    for x in range(im.width):
+        r,g,b,a=im.getpixel((x,y))
+        if a>20 and r>g*1.15 and b>g*1.05:
+            colors[(r,g,b,a)] += 1
+            if len(locs)<12: locs.append((x,y,(r,g,b,a)))
+print('pink-purple-ish pixel count',sum(colors.values()))
+print('top suspicious RGBA',colors.most_common(15))
+print('sample suspicious locations',locs)
+# Highest alpha suspicious pixels, if any.
+maxa=max((a for (r,g,b,a) in colors),default=0)
+print('max suspicious alpha',maxa)
+print('suspicious colors at alpha>=200',sum(n for (r,g,b,a),n in colors.items() if a>=200))
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\splash
+ succeeded in 5542ms:
+pink-purple-ish pixel count 4729
+top suspicious RGBA [((101, 71, 76, 255), 6), ((105, 77, 84, 255), 5), ((113, 74, 84, 255), 4), ((101, 76, 80, 255), 
+4), ((127, 84, 94, 255), 4), ((107, 79, 83, 255), 4), ((118, 78, 85, 255), 3), ((98, 66, 80, 255), 3), ((111, 71, 84, 
+255), 3), ((113, 74, 89, 255), 3), ((123, 79, 91, 255), 3), ((99, 64, 79, 255), 3), ((87, 65, 69, 255), 3), ((95, 68, 
+72, 255), 3), ((109, 77, 83, 255), 3)]
+sample suspicious locations [(1367, 120, (194, 121, 131, 255)), (1380, 122, (170, 114, 129, 255)), (1276, 136, (114, 
+97, 105, 255)), (938, 137, (202, 129, 137, 255)), (1357, 138, (128, 107, 116, 255)), (1373, 138, (85, 62, 66, 255)), 
+(1270, 139, (107, 77, 86, 255)), (1371, 139, (108, 60, 71, 255)), (899, 140, (180, 124, 132, 255)), (1271, 141, (96, 
+71, 83, 255)), (1274, 145, (113, 74, 84, 255)), (1275, 146, (111, 88, 93, 255))]
+max suspicious alpha 255
+suspicious colors at alpha>=200 4729
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+im=Image.open('splash_master_4x2_v1_keyed.png').convert('RGBA')
+for threshold in (20,128,220):
+    print('threshold',threshold)
+    for row in range(2):
+        row_data=[]
+        for col in range(4):
+            x0=col*im.width//4; x1=(col+1)*im.width//4
+            y0=row*im.height//2; y1=(row+1)*im.height//2
+            pts=[(x,y) for y in range(y0,y1) for x in range(x0,x1) if im.getpixel((x,y))[3]>=threshold]
+            if not pts:
+                row_data.append(None); continue
+            xs=[p[0] for p in pts]; ys=[p[1] for p in pts]
+            row_data.append((len(pts),(min(xs),max(xs),min(ys),max(ys))))
+        print(row+1,row_data)
+# Per row occupied x columns at alpha>=220, grouped with gaps.
+for row in range(2):
+    y0=row*im.height//2; y1=(row+1)*im.height//2
+    occupied=[]
+    for x in range(im.width):
+        n=sum(1 for y in range(y0,y1) if im.getpixel((x,y))[3]>=220)
+        if n>=2: occupied.append(x)
+    groups=[]
+    if occupied:
+        s=p=occupied[0]
+        for x in occupied[1:]:
+            if x>p+1: groups.append((s,p)); s=x
+            p=x
+        groups.append((s,p))
+    print('row',row+1,'occupied x groups alpha>=220, >=2 px high:',groups)
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\splash
+ succeeded in 12083ms:
+threshold 20
+1 [(2326, (153, 229, 267, 341)), (29726, (427, 767, 206, 413)), (64540, (768, 1151, 129, 479)), (49769, (1152, 1490, 
+116, 480))]
+2 [(32031, (26, 359, 596, 924)), (16313, (418, 709, 629, 913)), (6125, (805, 1053, 651, 903)), (1306, (1251, 1349, 
+728, 852))]
+threshold 128
+1 [(1964, (154, 229, 267, 341)), (28037, (428, 767, 207, 412)), (61142, (768, 1151, 130, 478)), (41358, (1152, 1490, 
+116, 479))]
+2 [(25290, (27, 358, 596, 923)), (10828, (419, 708, 630, 913)), (2092, (811, 1036, 653, 896)), (556, (1252, 1341, 728, 
+851))]
+threshold 220
+1 [(1913, (154, 229, 267, 340)), (27145, (428, 767, 207, 412)), (59687, (768, 1151, 130, 478)), (34321, (1152, 1490, 
+117, 479))]
+2 [(19751, (28, 358, 596, 923)), (7035, (419, 708, 630, 912)), (617, (826, 989, 662, 887)), (251, (1252, 1339, 728, 
+851))]
+row 1 occupied x groups alpha>=220, >=2 px high: [(154, 228), (428, 651), (740, 1109), (1138, 1483), (1486, 1490)]
+row 2 occupied x groups alpha>=220, >=2 px high: [(28, 358), (419, 599), (610, 614), (617, 622), (624, 624), (626, 
+684), (691, 694), (696, 708), (831, 839), (856, 865), (867, 870), (876, 880), (889, 897), (935, 940), (952, 955), 
+(970, 989), (1252, 1261), (1273, 1273), (1300, 1315), (1331, 1331), (1335, 1339)]
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+im=Image.open('splash_master_4x2_v1_keyed.png').convert('RGBA')
+for row in range(2):
+    vals=[]
+    for col in range(4):
+        x0=col*im.width//4; x1=(col+1)*im.width//4
+        y0=row*im.height//2; y1=(row+1)*im.height//2
+        pts=[]
+        for y in range(y0,y1):
+            for x in range(x0,x1):
+                r,g,b,a=im.getpixel((x,y))
+                if a>=220 and g>=140 and g>r*1.12 and g>b*1.12:
+                    pts.append((x,y,g))
+        if pts:
+            sw=sum(p[2] for p in pts)
+            cx=sum(p[0]*p[2] for p in pts)/sw-x0
+            cy=sum(p[1]*p[2] for p in pts)/sw-y0
+            vals.append((round(cx,1),round(cy,1),len(pts)))
+        else: vals.append(None)
+    print('bright green centers row',row+1,'expected x',192,576,960,1344,vals)
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\Custom\PoisonMistFX_2026-08-15\splash
+ succeeded in 5762ms:
+bright green centers row 1 expected x 192 576 960 1344 [(192.0, 304.0, 1368), (165.1, 308.1, 11332), (161.4, 305.1, 
+28353), (167.9, 300.0, 8796)]
+bright green centers row 2 expected x 192 576 960 1344 [(181.1, 245.9, 1736), (145.3, 260.7, 601), (177.7, 309.0, 
+262), (132.2, 243.8, 36)]
+
+codex
+Done with one built-in `image_gen` call. No slicing or project files were touched.
+
+- [Raw PNG](C:/Users/asali/Projects/MMO/art_src/Custom/PoisonMistFX_2026-08-15/splash/splash_master_4x2_v1.png)
+- [Keyed RGBA 
+PNG](C:/Users/asali/Projects/MMO/art_src/Custom/PoisonMistFX_2026-08-15/splash/splash_master_4x2_v1_keyed.png)
+
+Validation:
+
+- Size: 1536├ù1024 for both files.
+- All 8 stages are present and visibly progress from small glob ΓåÆ peak splash ΓåÆ fading residue.
+- No extra ninth cell, ground plane, fire, or sparks.
+- The effect does not stay perfectly centered: frames in columns 2ΓÇô4 drift left, and peak frames breach their 
+nominal cell boundaries.
+- Broad magenta separation is reduced between some cells, though silhouettes do not visibly collide.
+- Defects: raw magenta is not pixel-perfect uniform, and the effect contains gray/lilac and pinkish pixels in the 
+gas/rim areas, violating the green-only palette constraint.
+tokens used
+52,838
+Done with one built-in `image_gen` call. No slicing or project files were touched.
+
+- [Raw PNG](C:/Users/asali/Projects/MMO/art_src/Custom/PoisonMistFX_2026-08-15/splash/splash_master_4x2_v1.png)
+- [Keyed RGBA PNG](C:/Users/asali/Projects/MMO/art_src/Custom/PoisonMistFX_2026-08-15/splash/splash_master_4x2_v1_keyed.png)
+
+Validation:
+
+- Size: 1536├ù1024 for both files.
+- All 8 stages are present and visibly progress from small glob ΓåÆ peak splash ΓåÆ fading residue.
+- No extra ninth cell, ground plane, fire, or sparks.
+- The effect does not stay perfectly centered: frames in columns 2ΓÇô4 drift left, and peak frames breach their nominal cell boundaries.
+- Broad magenta separation is reduced between some cells, though silhouettes do not visibly collide.
+- Defects: raw magenta is not pixel-perfect uniform, and the effect contains gray/lilac and pinkish pixels in the gas/rim areas, violating the green-only palette constraint.

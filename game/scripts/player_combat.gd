@@ -221,7 +221,14 @@ class VoidTentacle extends Node2D:
 	const ATTACK_FRAME_TIME := 0.0275
 	const SPR_SCALE := 0.82
 	const ROOT_FROM_CELL_CENTER := 59.0
+	# FX layering rule (2026-08-15): the limb's BODY draws under the actors and a
+	# translucent GHOST copy over them — a tentacle striking a boss reads as
+	# wrapping it, never hiding it. The root sits at a negative z (archer kit);
+	# these are the relative offsets of the two layers.
+	const GHOST_Z := 12
+	const GHOST_ALPHA := 0.4
 	var spr := Sprite2D.new()
+	var ghost := Sprite2D.new()
 	var idle_tex: Texture2D = null
 	var attack_tex: Texture2D = null
 	var rest_rotation := 0.0
@@ -249,6 +256,18 @@ class VoidTentacle extends Node2D:
 		spr.position = Vector2(0, -ROOT_FROM_CELL_CENTER * SPR_SCALE)
 		spr.scale = Vector2(SPR_SCALE, SPR_SCALE)
 		add_child(spr)
+		ghost.texture = idle_tex
+		ghost.hframes = 8
+		ghost.frame = spr.frame
+		ghost.position = spr.position
+		ghost.scale = spr.scale
+		ghost.z_index = GHOST_Z
+		ghost.modulate = Color(1, 1, 1, GHOST_ALPHA)
+		add_child(ghost)
+
+	func _sync_ghost() -> void:
+		ghost.texture = spr.texture
+		ghost.frame = spr.frame
 
 	func strike(enemy, callback: Callable) -> void:
 		victim = enemy
@@ -277,9 +296,11 @@ class VoidTentacle extends Node2D:
 				attacking = false
 				spr.texture = idle_tex
 				idle_clock = 0.0
+			_sync_ghost()
 			return
 		idle_clock = fmod(idle_clock + delta, IDLE_FRAME_TIME * 8.0)
 		spr.frame = int(idle_clock / IDLE_FRAME_TIME) % 8
+		_sync_ghost()
 		rotation = lerp_angle(rotation, rest_rotation, minf(1.0, delta * 7.0))
 
 
@@ -737,12 +758,14 @@ func _living_tether(a, b, col: Color, life := 0.8, jagged := false) -> void:
 
 ## Ordered assembly helper used by seals, moons, brands and shield plates.
 ## Segments enter one at a time, hold as a completed shape, then break out.
+## `z` = the ring's layer (default 7: thin segments over the actors, allowed by
+## the FX layering rule; pass a negative z for a ground ring under them).
 func _staged_segment_ring(parent: Node, pos: Vector2, col: Color, radius: float,
 		count := 8, step := 0.055, hold := 0.28, texture := "slashline",
-		clockwise := true, inward := true) -> Node2D:
+		clockwise := true, inward := true, z := 7) -> Node2D:
 	var pivot := Node2D.new()
 	pivot.position = pos
-	pivot.z_index = 7
+	pivot.z_index = z
 	parent.add_child(pivot)
 	for i in count:
 		var ang := TAU * float(i) / float(count) * (1.0 if clockwise else -1.0)
@@ -1461,8 +1484,10 @@ func hit_enemy(target: CharacterBody2D, mult: float, effects := {}) -> void:
 	# sub-hits stay quiet so a crowd hit doesn't turn to confetti.
 	if is_crit and not effects.get("aoe", false) and not effects.get("_echoed", false):
 		var icol := Color(1, 1, 1).lerp(_tcolor, 0.55) if _themed else Color(1.0, 0.72, 0.42)
+		# Translucent: it pops ON the victim's body and must not hide it
+		# (FX layering rule, DESIGN.md).
 		_fx_flash("fx_impact", e.global_position, 9, {
-			"color": icol, "scale": 1.45, "z": 9, "frame_time": 0.03, "alpha": 0.95,
+			"color": icol, "scale": 1.45, "z": 9, "frame_time": 0.03, "alpha": 0.6,
 		})
 	if effects.has("knock") and not e.dying \
 			and not (effects.get("knock_no_boss", 0) and e is Boss):
@@ -2060,44 +2085,246 @@ func _wind_wisp(back: Vector2) -> void:
 ## cells, then frees itself. World-space by default (parented to `game`);
 ## pass {"parent": self} for a flash that rides the hero, in which case
 ## `pos` is treated as a LOCAL offset. `opts` keys: color, alpha, scale,
-## rot, flip_h, flip_v, z, frame_time, fade, parent.
-func _fx_flash(name: String, pos: Vector2, frames: int, opts := {}) -> void:
+## rot, flip_h, flip_v, z, frame_time, fade, parent, offset (texture-space
+## px, pre-scale — puts an off-centre anchor row such as a ground burst's
+## impact centre ON `pos`), hold (seconds the last frame lingers before the
+## fade — a scorch/crack aftermath), material (a ShaderMaterial, e.g. the
+## mage's element hue shift), ghost_over (0-1: ALSO draw a translucent copy
+## of the strip ABOVE the actors at that alpha, at `over_z` (default 9) —
+## the body itself then goes UNDER them via a negative `z`. This is the FX
+## layering rule (DESIGN.md standing rules, owner 2026-08-15): actors are
+## never covered by an effect; what engulfs them is see-through.)
+## Returns the body sprite (null if the strip is absent).
+func _fx_flash(name: String, pos: Vector2, frames: int, opts := {}) -> Sprite2D:
 	# Degrade gracefully if the pack asset isn't imported/present: Art.tex
 	# would otherwise fall through to the procedural SPRITES table and
 	# hard-error on an unknown "fx/..." key. No file ⇒ simply no flash.
 	if not ResourceLoader.exists("res://assets/sprites/fx/%s.png" % name):
-		return
-	var spr := Sprite2D.new()
-	spr.texture = Art.tex("fx/" + name)
-	spr.hframes = frames
-	spr.frame = 0
-	var scl: float = opts.get("scale", 1.0)
-	spr.scale = Vector2(scl, scl)
-	spr.rotation = opts.get("rot", 0.0)
-	spr.flip_h = opts.get("flip_h", false)
-	spr.flip_v = opts.get("flip_v", false)
-	spr.z_index = opts.get("z", 7)
-	var col: Color = opts.get("color", Color(1, 1, 1))
-	var alpha: float = opts.get("alpha", 1.0)
-	spr.modulate = Color(col.r, col.g, col.b, alpha)
-	var parent: Node = opts.get("parent", game)
-	if parent == self:
-		spr.position = pos
-	else:
-		spr.global_position = pos
-	parent.add_child(spr)
+		return null
 	var per: float = opts.get("frame_time", 0.045)
 	var fade: float = opts.get("fade", 0.09)
-	# Step the strip frame-by-frame (bind snapshots each frame index), then
-	# fade the last frame out. The tween lives on the sprite, so a freed
-	# sprite (room rebuild, death) kills it cleanly.
-	var tw := spr.create_tween()
-	for f in range(1, frames):
-		tw.tween_interval(per)
-		tw.tween_callback(spr.set_frame.bind(f))
-	tw.tween_interval(per)
-	tw.tween_property(spr, "modulate:a", 0.0, fade)
-	tw.tween_callback(spr.queue_free)
+	var hold: float = opts.get("hold", 0.0)
+	var col: Color = opts.get("color", Color(1, 1, 1))
+	var alpha: float = opts.get("alpha", 1.0)
+	var parent: Node = opts.get("parent", game)
+	var layers: Array = [[opts.get("z", 7), alpha]]
+	var ghost: float = float(opts.get("ghost_over", 0.0))
+	if ghost > 0.0:
+		layers.append([opts.get("over_z", 9), alpha * ghost])
+	var body: Sprite2D = null
+	for layer in layers:
+		var spr := Sprite2D.new()
+		spr.texture = Art.tex("fx/" + name)
+		# "hframes" = the strip's real column count when only the first
+		# `frames` of it should play (a burst whose near-empty tail is skipped).
+		spr.hframes = opts.get("hframes", frames)
+		spr.frame = 0
+		var scl: float = opts.get("scale", 1.0)
+		spr.scale = Vector2(scl, scl)
+		spr.rotation = opts.get("rot", 0.0)
+		spr.flip_h = opts.get("flip_h", false)
+		spr.flip_v = opts.get("flip_v", false)
+		spr.z_index = layer[0]
+		spr.offset = opts.get("offset", Vector2.ZERO)
+		if opts.has("material"):
+			spr.material = opts["material"]
+		spr.modulate = Color(col.r, col.g, col.b, layer[1])
+		if parent == self:
+			spr.position = pos
+		else:
+			spr.global_position = pos
+		parent.add_child(spr)
+		# Step the strip frame-by-frame (bind snapshots each frame index), then
+		# fade the last frame out. The tween lives on the sprite, so a freed
+		# sprite (room rebuild, death) kills it cleanly.
+		var tw := spr.create_tween()
+		for f in range(1, frames):
+			tw.tween_interval(per)
+			tw.tween_callback(spr.set_frame.bind(f))
+		tw.tween_interval(per + hold)
+		tw.tween_property(spr, "modulate:a", 0.0, fade)
+		tw.tween_callback(spr.queue_free)
+		if body == null:
+			body = spr
+	return body
+
+
+## A LOOPING strip that persists — the standing counterpart of _fx_flash for
+## a shield dome, a storm's vortex, a whirlwind's gust: body under the actors
+## (+ optional ghost copy over them, FX layering rule), frames stepped forever
+## (`pingpong` for a generated loop with an imperfect seam), faded out and
+## freed after `dur` seconds (dur <= 0: the caller frees the returned root).
+## `pos` is world space, or a LOCAL offset when {"parent": self} (the effect
+## rides the hero). opts: scale, color, alpha, z, ghost_over, over_z,
+## frame_time, pingpong, parent, fade, hframes, flip_h, offset (texture px),
+## spin (radians/second of continuous root rotation — a vortex or gust ring
+## whose generated frames shimmer but do not turn; negative = the other way).
+## Returns the root Node2D (null if the strip is absent).
+func _fx_loop(name: String, pos: Vector2, frames: int, dur: float, opts := {}) -> Node2D:
+	if not ResourceLoader.exists("res://assets/sprites/fx/%s.png" % name):
+		return null
+	var parent: Node = opts.get("parent", game)
+	var root := Node2D.new()
+	if parent == self:
+		root.position = pos
+	else:
+		root.global_position = pos
+	parent.add_child(root)
+	var col: Color = opts.get("color", Color(1, 1, 1))
+	var alpha: float = opts.get("alpha", 1.0)
+	var layers: Array = [[opts.get("z", -1), alpha]]
+	var ghost: float = float(opts.get("ghost_over", 0.0))
+	if ghost > 0.0:
+		layers.append([opts.get("over_z", 6), alpha * ghost])
+	var scl: float = opts.get("scale", 1.0)
+	var per: float = opts.get("frame_time", 0.06)
+	for layer in layers:
+		var spr := Sprite2D.new()
+		spr.texture = Art.tex("fx/" + name)
+		spr.hframes = opts.get("hframes", frames)
+		spr.frame = 0
+		spr.scale = Vector2(scl, scl)
+		spr.flip_h = opts.get("flip_h", false)
+		spr.z_index = layer[0]
+		spr.offset = opts.get("offset", Vector2.ZERO)
+		spr.modulate = Color(col.r, col.g, col.b, 0.0)
+		root.add_child(spr)
+		# Fade in over the first two frames, then step forever.
+		var fin := spr.create_tween()
+		fin.tween_property(spr, "modulate:a", layer[1], per * 2.0)
+		_mist_loop(spr, frames, per, opts.get("pingpong", false), 0)
+	var spin: float = float(opts.get("spin", 0.0))
+	if spin != 0.0:
+		# Rotation rides the sprites (not the root) so a texture `offset`
+		# anchor stays put; one full turn per TAU/|spin| seconds, forever.
+		for spr in root.get_children():
+			var rt := spr.create_tween().set_loops()
+			rt.tween_property(spr, "rotation", TAU * signf(spin), TAU / absf(spin)).as_relative()
+	if dur > 0.0:
+		var out := root.create_tween()
+		out.tween_interval(dur)
+		out.tween_property(root, "modulate:a", 0.0, opts.get("fade", 0.25))
+		out.tween_callback(root.queue_free)
+	return root
+
+
+## A round-particle burst — `game.burst`'s square CPUParticles with the glow
+## disc as texture, for the places where the squares read cheap next to the
+## generated strips (glints, motes, embers, sparks). `size` is the disc scale
+## (0.10 ≈ 5px … 0.30 ≈ 14px); `up` biases the spray upward (0 = radial).
+func _soft_burst(pos: Vector2, color: Color, count := 10, size := 0.16, speed := 120.0,
+		up := 0.5, life := 0.5, gravity := 220.0, z := 9) -> void:
+	var p := CPUParticles2D.new()
+	p.global_position = pos
+	p.amount = count
+	p.one_shot = true
+	p.explosiveness = 1.0
+	p.lifetime = life
+	p.texture = Art.tex("glow")
+	p.direction = Vector2(0, -1)
+	p.spread = lerpf(180.0, 40.0, clampf(up, 0.0, 1.0))
+	p.gravity = Vector2(0, gravity)
+	p.initial_velocity_min = speed * 0.45
+	p.initial_velocity_max = speed
+	p.scale_amount_min = size * 0.6
+	p.scale_amount_max = size
+	p.color = Color(color, 1.0)
+	p.z_index = z
+	game.add_child(p)
+	p.emitting = true
+	p.finished.connect(p.queue_free)
+
+
+## The element hue-shift shader (shaders/mage_element_hue.gdshader — the mage's
+## themed-ability recolour), reachable from EVERY kit: a generated strip painted
+## in one colour re-hues to a theme's colour without a per-theme master.
+## (player_kit_mage keeps its own MAGE_ELEMENT_HUE_SHADER const for its callers.)
+const ELEMENT_HUE_SHADER := preload("res://shaders/mage_element_hue.gdshader")
+
+## Cell geometry of the generated ground-burst strips (build_fx_strip.py
+## --valign widest): the impact centre sits on an anchor row below the cell's
+## middle so the flame/rock plume has headroom; `offset` lifts it onto `pos`.
+const IMPACT_CELL := 256.0
+const METEOR_IMPACT_FILL := 0.85   # biggest frame's width as a fraction of the cell
+const METEOR_IMPACT_OFFSET := Vector2(0, -33)
+const EARTH_SLAM_FILL := 0.85
+const EARTH_SLAM_OFFSET := Vector2(0, -9)
+
+
+## The mage's Meteor landing: a generated 8-frame fire explosion whose peak
+## shockwave ring spans the real `radius`, holding its cracked scorch for a
+## beat. `mat` (optional) is the theme hue-shift so an ice/wind comet's blast
+## reads in its element. Replaces the old ring + square-particle burst.
+func _meteor_impact_fx(pos: Vector2, radius: float, col: Color, mat: Material = null) -> void:
+	# Body UNDER the actors, a 45% ghost of the blast over them: the target is
+	# engulfed but never hidden (FX layering rule).
+	var opts := {"scale": (radius * 2.0) / (IMPACT_CELL * METEOR_IMPACT_FILL),
+		"offset": METEOR_IMPACT_OFFSET, "z": -1, "ghost_over": 0.45, "over_z": 9,
+		"frame_time": 0.055, "hold": 0.55, "fade": 0.6}
+	if mat != null:
+		opts["material"] = mat
+	if _fx_flash("meteor_impact", pos, 8, opts) == null:
+		# strip absent (fallback): the old read
+		game.burst(pos, col, 30)
+		_ring_fx(pos, col, radius)
+		return
+	# Round embers thrown up and out of the blast (the strip's own are baked;
+	# these ride the world so they scatter past the sprite's cell).
+	var embers := CPUParticles2D.new()
+	embers.amount = 18
+	embers.one_shot = true
+	embers.explosiveness = 1.0
+	embers.lifetime = 0.7
+	embers.texture = Art.tex("glow")
+	embers.direction = Vector2(0, -1)
+	embers.spread = 70.0
+	embers.gravity = Vector2(0, 420)
+	embers.initial_velocity_min = radius * 1.6
+	embers.initial_velocity_max = radius * 3.2
+	embers.scale_amount_min = 0.10
+	embers.scale_amount_max = 0.22
+	embers.color = Color(col, 1.0)
+	embers.global_position = pos
+	embers.z_index = 10
+	game.add_child(embers)
+	embers.emitting = true
+	embers.finished.connect(embers.queue_free)
+
+
+## A ground-shattering slam at `pos` (the warrior's Earth theme): cracks
+## race out, slabs heave, rock and dust fly, the cracked ground lingers.
+## `radius` = the real hit radius (the dust ring spans it).
+func _earth_slam_fx(pos: Vector2, radius: float, col: Color) -> void:
+	# Frames 1-7 of the strip; the 8th (bare faint cracks) is skipped so the
+	# hold lands on the rubble-and-cracks frame and the modulate fade ends it.
+	# Cracks/slabs under the actors; a light dust ghost over them.
+	var opts := {"scale": (radius * 2.0) / (IMPACT_CELL * EARTH_SLAM_FILL), "hframes": 8,
+		"offset": EARTH_SLAM_OFFSET, "z": -1, "ghost_over": 0.32, "over_z": 9,
+		"frame_time": 0.05, "hold": 0.5, "fade": 0.6}
+	if _fx_flash("earth_slam", pos, 7, opts) == null:
+		game.burst(pos, col, 14)
+		_ring_fx(pos, col, radius)
+		return
+	# Rock chunks — round, dark, heavy — hopping out and thudding down.
+	var rocks := CPUParticles2D.new()
+	rocks.amount = 12
+	rocks.one_shot = true
+	rocks.explosiveness = 1.0
+	rocks.lifetime = 0.55
+	rocks.texture = Art.tex("glow")
+	rocks.direction = Vector2(0, -1)
+	rocks.spread = 60.0
+	rocks.gravity = Vector2(0, 520)
+	rocks.initial_velocity_min = radius * 1.4
+	rocks.initial_velocity_max = radius * 2.8
+	rocks.scale_amount_min = 0.12
+	rocks.scale_amount_max = 0.24
+	rocks.color = Color(0.55, 0.42, 0.26, 1.0)
+	rocks.global_position = pos
+	rocks.z_index = 9
+	game.add_child(rocks)
+	rocks.emitting = true
+	rocks.finished.connect(rocks.queue_free)
 
 
 ## Release flash at the weapon: shots visibly leave YOU, not thin air.
@@ -2346,7 +2573,11 @@ func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, if
 	global_position = game.clamp_to_zone(start + dvec * dist, start)
 	_aim_dash_pose(dvec)  # before the ghost trail below, so the afterimages copy the pose
 	var end := global_position
-	var skin_owned_dash := skin == "crystal_archmage"
+	# Skins with their own dash read (crystal facets, the Phantom's spectral
+	# ribbon, the Ronin's solid gold after-images) skip the generic burst +
+	# glow-bar + tinted ghosts underneath — two reads on one beat looked like
+	# a bug (skin-FX pass 2026-08-15).
+	var skin_owned_dash := skin in ["crystal_archmage", "phantom", "blade_dancer"]
 	if skin == "phantom":
 		# A thin spectral streak along the dash path — fades out and self-frees.
 		var trail := PhantomTrail.new()
@@ -2358,8 +2589,9 @@ func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, if
 		hurt_cd = maxf(hurt_cd, iframe)  # brief immunity while dashing
 		hurt_was_heavy = true  # a deliberate i-frame blocks heavy telegraph hits too
 	if not skin_owned_dash:
-		game.burst(start, color, 8)
-		game.burst(end, color, 8)
+		# Round motes at both ends (were square bursts).
+		_soft_burst(start + Vector2(0, -20), color, 8, 0.13, 100.0, 0.3, 0.45, 160.0)
+		_soft_burst(end + Vector2(0, -20), color, 8, 0.13, 100.0, 0.3, 0.45, 160.0)
 		game.dust(start + Vector2(0, 14), 4)  # kicked-up dust where you left
 		if heavy:
 			_afterimages(start, end, color, 7, 0.085, 0.40)
@@ -2460,53 +2692,137 @@ func _cut_flash(pos: Vector2, ang: float, color := Color(1, 1, 1)) -> void:
 
 ## An expanding cloud that ticks poison on everything inside — the mist
 ## primitive behind Venom Bloom, Toxic Wake and the archer's toxin cloud.
-## Not a flat glow: a ROILING mass of drifting blobs, rising toxic motes,
-## a burst ring on arrival, and venom bubbles on everything it eats.
+## Presentation (2026-08-15 rework — the owner called the old glow-blob +
+## square-mote "leftover circle" simplistic): three generated ImageGen strips
+## in assets/sprites/fx/ — a VENOM SPLASH one-shot on arrival (the impact),
+## a looping toxic-gas CLOUD (two phase-offset layers so it visibly churns),
+## and a bubbling venom POOL on the ground that outlives the gas as the
+## stain. Soft round motes rise through it. Gameplay is untouched: the same
+## 0.4s toxin ticks over the same radius for the same duration.
+## Cell geometry of the strips (poison_fx builder): the cloud fills ~75% of
+## its cell, splash peak / pool ~80% — the scale maths below turn `radius`
+## into those footprints, so the art always spans the real tick radius.
+const MIST_CLOUD_FRAMES := 8
+const MIST_SPLASH_FRAMES := 8
+const MIST_POOL_FRAMES := 4
+const MIST_CLOUD_CELL := 256.0
+const MIST_SPLASH_CELL := 192.0
+const MIST_POOL_CELL := 192.0
+# poison_pool.png is cut --valign widest (its equator = the puddle's centre sits
+# on row 112 of 192, so this lifts it onto the origin; the hazard patches share
+# the strip and the same offset — game_world.HAZARD_STRIP_OFFSET["poison"]).
+const MIST_POOL_OFFSET := Vector2(0, -16)
+
 func _mist(pos: Vector2, radius: float, dps_mult: float, color: Color, dur := 2.5) -> void:
 	var root := Node2D.new()
 	root.global_position = pos
-	root.z_index = 4
+	# The gas body sits UNDER the actors (z −3): enemies stand IN the cloud
+	# and stay readable, instead of vanishing behind an opaque mound. A thin
+	# veil layer above them (+2) sells the depth; the splash bursts over
+	# everything for its 0.4s. Children z below are RELATIVE to this −3.
+	root.z_index = -3
 	game.add_child(root)
-	_ring_fx(pos, color, radius)
-	game.burst(pos, color, 10)
+	var have_art := Art.has_sprite("fx/poison_cloud") and Art.has_sprite("fx/poison_splash") \
+		and Art.has_sprite("fx/poison_pool")
+	# The strips are painted acid-green; a caller's tint only rides them when it
+	# is NOT the poison family (a white/neutral request keeps the art as-is).
+	var tint := Color(1, 1, 1) if (color.g > color.r and color.g > color.b) else color
 
-	# Overlapping blobs, each swelling to its own size and slowly churning
-	# around the center — the cloud visibly boils instead of sitting still.
-	for i in 6:
-		var blob := Sprite2D.new()
-		blob.texture = Art.tex("glow")
-		var shade := randf_range(0.55, 1.0)
-		blob.modulate = Color(color.r * shade, color.g * shade, color.b * shade, 0.0)
-		var off := Vector2.from_angle(TAU * i / 6.0 + randf_range(-0.4, 0.4)) \
-			* randf_range(radius * 0.15, radius * 0.45)
-		blob.position = off
-		blob.scale = Vector2(0.6, 0.6)
-		root.add_child(blob)
-		var grow := blob.create_tween()
-		grow.tween_property(blob, "modulate:a", randf_range(0.4, 0.6), 0.35)
-		var target := randf_range(radius / 30.0, radius / 20.0)
-		grow.parallel().tween_property(blob, "scale", Vector2(target, target), 0.5)
-		var churn := blob.create_tween()
-		churn.set_loops()
-		churn.tween_property(blob, "position", off.rotated(0.9), randf_range(0.8, 1.3)) \
-			.set_trans(Tween.TRANS_SINE)
-		churn.tween_property(blob, "position", off, randf_range(0.8, 1.3)) \
-			.set_trans(Tween.TRANS_SINE)
+	# --- arrival: the venom SPLASH (impact) -------------------------------
+	# Body under the actors (z −1 abs), a half-alpha ghost of it over them:
+	# the splat engulfs the victim without hiding it (FX layering rule).
+	if have_art:
+		var ss := (radius * 1.8) / (MIST_SPLASH_CELL * 0.8)
+		_fx_flash("poison_splash", pos, MIST_SPLASH_FRAMES, {"scale": ss, "color": tint,
+			"z": -1, "ghost_over": 0.5, "over_z": 8, "frame_time": 0.045, "fade": 0.10})
+		# Fat venom droplets thrown by the splat (round, not square).
+		_mist_droplets(root, color, radius)
+	else:
+		_ring_fx(pos, color, radius)
+		game.burst(pos, color, 10)
 
-	# Toxic motes bubbling up out of the whole area for the cloud's life.
+	# --- the ground POOL: a bubbling venom stain that outlives the gas -----
+	var pool: Sprite2D = null
+	if have_art:
+		pool = Sprite2D.new()
+		pool.texture = Art.tex("fx/poison_pool")
+		pool.hframes = MIST_POOL_FRAMES
+		pool.frame = 0
+		pool.modulate = Color(tint, 0.0)
+		pool.offset = MIST_POOL_OFFSET
+		pool.z_index = -3  # → −6 absolute: on the ground, under the gas and every actor
+		var ps := (radius * 1.5) / (MIST_POOL_CELL * 0.8)
+		pool.scale = Vector2(ps * 0.4, ps * 0.4)
+		root.add_child(pool)
+		var pg := pool.create_tween()
+		pg.tween_property(pool, "modulate:a", 0.9, 0.3)
+		pg.parallel().tween_property(pool, "scale", Vector2(ps, ps), 0.4) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		_mist_loop(pool, MIST_POOL_FRAMES, 0.16, false, 0)
+
+	# --- the CLOUD: churning gas, three phase-offset layers ----------------
+	# body (under actors, opaque-ish) + a mirrored second body puff (under,
+	# smaller, softer) + a thin VEIL over the actors. The mound is a tall
+	# volume, so its footprint is 1.5R wide, not the full 2R tick circle —
+	# the pool below marks the true reach; the gas reads as the volume above.
+	if have_art:
+		var cs := (radius * 1.5) / (MIST_CLOUD_CELL * 0.75)
+		for layer in 3:
+			var cloud := Sprite2D.new()
+			cloud.texture = Art.tex("fx/poison_cloud")
+			cloud.hframes = MIST_CLOUD_FRAMES
+			cloud.frame = (layer * 3) % MIST_CLOUD_FRAMES
+			cloud.flip_h = layer == 1
+			cloud.modulate = Color(tint, 0.0)
+			# 0 → −3 abs (under actors), 1 → −2, 2 → +2 (the veil, over actors)
+			cloud.z_index = [0, 1, 5][layer]
+			var target_scale: float = [cs, cs * 0.78, cs * 0.70][layer]
+			var target_alpha: float = [0.76, 0.52, 0.30][layer]
+			cloud.scale = Vector2(target_scale * 0.25, target_scale * 0.25)
+			# Lift so the mound's base sits on the impact point (top-down read).
+			cloud.position = Vector2([0.0, 10.0, -8.0][layer], -MIST_CLOUD_CELL * target_scale * 0.12)
+			root.add_child(cloud)
+			var grow := cloud.create_tween()
+			grow.tween_property(cloud, "modulate:a", target_alpha, 0.32)
+			grow.parallel().tween_property(cloud, "scale", Vector2(target_scale, target_scale * 0.88), 0.42) \
+				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			# A slow breathe so even a still frame drifts — gas, not a decal.
+			grow.tween_callback(_mist_breathe.bind(cloud, [1.04, 0.96, 1.06][layer]))
+			_mist_loop(cloud, MIST_CLOUD_FRAMES, [0.085, 0.10, 0.075][layer], true, cloud.frame)
+	else:
+		# Fallback (strips absent): the old glow-blob cloud.
+		for i in 6:
+			var blob := Sprite2D.new()
+			blob.texture = Art.tex("glow")
+			var shade := randf_range(0.55, 1.0)
+			blob.modulate = Color(color.r * shade, color.g * shade, color.b * shade, 0.0)
+			var off := Vector2.from_angle(TAU * i / 6.0 + randf_range(-0.4, 0.4)) \
+				* randf_range(radius * 0.15, radius * 0.45)
+			blob.position = off
+			blob.scale = Vector2(0.6, 0.6)
+			root.add_child(blob)
+			var grow := blob.create_tween()
+			grow.tween_property(blob, "modulate:a", randf_range(0.4, 0.6), 0.35)
+			var target := randf_range(radius / 30.0, radius / 20.0)
+			grow.parallel().tween_property(blob, "scale", Vector2(target, target), 0.5)
+
+	# Toxic motes bubbling up out of the whole area for the cloud's life —
+	# soft round bubbles (the glow disc), not bare squares.
 	var motes := CPUParticles2D.new()
-	motes.amount = 30
-	motes.lifetime = 1.1
+	motes.amount = 26
+	motes.lifetime = 1.2
+	motes.texture = Art.tex("glow")
 	motes.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
-	motes.emission_sphere_radius = radius * 0.8
+	motes.emission_sphere_radius = radius * 0.75
 	motes.direction = Vector2(0, -1)
 	motes.spread = 25.0
-	motes.gravity = Vector2(0, -26)
+	motes.gravity = Vector2(0, -30)
 	motes.initial_velocity_min = 8.0
-	motes.initial_velocity_max = 28.0
-	motes.scale_amount_min = 1.6
-	motes.scale_amount_max = 3.4
-	motes.color = Color(color, 0.85)
+	motes.initial_velocity_max = 30.0
+	motes.scale_amount_min = 0.10
+	motes.scale_amount_max = 0.24
+	motes.color = Color(color, 0.9)
+	motes.z_index = 3
 	root.add_child(motes)
 
 	var ticks := int(dur / 0.4)
@@ -2522,6 +2838,70 @@ func _mist(pos: Vector2, radius: float, dps_mult: float, color: Color, dur := 2.
 			e.apply_toxin(_dot_dps(e, current_atk() * dps_mult), 1.2, Color(color, 1.0), self)
 			game.burst(e.global_position + Vector2(0, -10), color, 4)  # venom bubbles
 	motes.emitting = false
+	# The gas thins out first; the pool lingers a beat as the stain, then dries.
+	if pool != null and is_instance_valid(pool):
+		pool.reparent(game, true)
+		var dry := pool.create_tween()
+		dry.tween_interval(0.5)
+		dry.tween_property(pool, "modulate:a", 0.0, 0.9)
+		dry.tween_callback(pool.queue_free)
 	var fade := root.create_tween()
 	fade.tween_property(root, "modulate:a", 0.0, 0.6)
 	fade.tween_callback(root.queue_free)
+
+
+## Step a strip sprite through its frames forever (until the sprite is freed):
+## `pingpong` walks 0..n-1..0 so a generated loop with an imperfect seam still
+## reads continuous. `start` is the frame the sprite is already showing.
+func _mist_loop(spr: Sprite2D, frames: int, per: float, pingpong: bool, start: int) -> void:
+	var seq: Array = []
+	if pingpong:
+		for f in range(frames):
+			seq.append(f)
+		for f in range(frames - 2, 0, -1):
+			seq.append(f)
+	else:
+		for f in range(frames):
+			seq.append(f)
+	# Rotate the sequence so it begins right after `start`.
+	var at := seq.find(start)
+	if at >= 0:
+		seq = seq.slice(at + 1) + seq.slice(0, at + 1)
+	var tw := spr.create_tween().set_loops()
+	for f in seq:
+		tw.tween_interval(per)
+		tw.tween_callback(spr.set_frame.bind(f))
+
+
+## The cloud layer's slow scale breathe (looped until the sprite is freed).
+func _mist_breathe(spr: Sprite2D, amp: float) -> void:
+	if not is_instance_valid(spr):
+		return
+	var tw := spr.create_tween().set_loops()
+	var rest := spr.scale  # keeps the layer's y-squash
+	tw.tween_property(spr, "scale", rest * amp, randf_range(0.7, 1.0)) \
+		.set_trans(Tween.TRANS_SINE)
+	tw.tween_property(spr, "scale", rest, randf_range(0.7, 1.0)) \
+		.set_trans(Tween.TRANS_SINE)
+
+
+## Fat round venom droplets flung out by the splash — an arc up and out,
+## then down, shrinking as they fly. Round (glow disc), never square.
+func _mist_droplets(root: Node2D, color: Color, radius: float) -> void:
+	var drops := CPUParticles2D.new()
+	drops.amount = 14
+	drops.one_shot = true
+	drops.explosiveness = 1.0
+	drops.lifetime = 0.5
+	drops.texture = Art.tex("glow")
+	drops.direction = Vector2(0, -1)
+	drops.spread = 180.0
+	drops.gravity = Vector2(0, 340)
+	drops.initial_velocity_min = radius * 1.4
+	drops.initial_velocity_max = radius * 2.6
+	drops.scale_amount_min = 0.14
+	drops.scale_amount_max = 0.30
+	drops.color = Color(color, 1.0)
+	drops.z_index = 5
+	root.add_child(drops)
+	drops.emitting = true

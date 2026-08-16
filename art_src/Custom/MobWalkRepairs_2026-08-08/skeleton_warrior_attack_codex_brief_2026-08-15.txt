@@ -1,0 +1,34 @@
+You are generating ONE game sprite animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Three images are attached to this prompt:
+- Image 1 = refs/frostbound_idle_strip.png : the BINDING identity, palette, pixel-art treatment AND body-scale reference. A horizontal 4-frame strip of square cells of the Frost-Bound Soldier standing at rest, facing LEFT. Match the figure, its armor, weapon and palette precisely; the ready frame of the new clip must be the same size as the soldier in Image 1.
+- Image 2 = refs/frostbound_static.png : secondary identity reference (single frame).
+- Image 3 = refs/frostbound_attack_defective.png : the CURRENT attack strip, attached ONLY as a negative reference. Its defect: it is a flat horizontal poke — the weapon shaft sticks out BEHIND the soldier (to the screen-right) and the blade never sweeps forward, so in the game it does not read as a slash toward the enemy he is facing. Do NOT copy its poses.
+
+TASK: generate exactly ONE new 2x2 source sheet for his SWORD SLASH (a heavy overhead-to-forward diagonal cut toward the LEFT) with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: illustration-story
+Asset type: high-resolution 4-frame game sprite animation source, to be cropped into a horizontal sprite strip. Square output canvas.
+Input images: Image 1 (4-frame idle strip) is the binding identity, palette, pixel-art treatment and body-scale reference; Image 2 is a secondary identity reference; Image 3 is a defective attack strip attached as a negative reference only (do not repeat its poses).
+Scene/backdrop: a perfectly flat uniform #00ff00 chroma-key background filling every pixel, including the seams between cells. No scenery, floor plane, ground, platform, cast shadow, contact shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly four separate equal square sprite cells as a clean 2x2 contact sheet in reading order top-left, top-right, bottom-left, bottom-right. The source will be cropped into a horizontal strip. All four cells have identical scale and framing; no cell may overlap another; no drawn separators.
+Subject: the Frost-Bound Soldier, an undead armored knight in LEFT-facing side profile: dark tarnished steel plate armor with a closed full helm and a cold pale-blue glow in the visor slit, pale-blue ice crystals and frost growing over the pauldrons and chest, frosted iron chains wrapped across the torso, a floor-length tattered dark-grey robe/tabard that hides the legs and feet completely, and a long single-edged sword with icicles frozen along the blade, gripped in both gauntleted hands. Same identity, proportions, palette and body scale as Image 1.
+Style/medium: crisp high-resolution dark-fantasy pixel art with hard readable pixel clusters and a controlled palette, not painterly, not 3D, not anime.
+Composition/framing and ANCHOR RULE: the soldier is centered in each square cell, facing LEFT, his standing body spanning about 55% of the cell height so the raised and extended sword and its trail fit with generous green margin. One shared invisible ground line at the same height in all four cells: the robe hem rests on that line in every cell. The camera never moves; the soldier's torso and hem stay at the same x position in every cell — only the arms, sword and lean change.
+SWORD SLASH storyboard — four VISIBLY DIFFERENT silhouettes:
+ frame 1 (top-left) READY: the idle stance exactly as in Image 1, sword held low with the blade pointing down and forward (screen-left).
+ frame 2 (top-right) WIND-UP: both hands raise the sword up and back so the blade is high above and BEHIND the helmet (over the rear shoulder, toward the screen-right), hilt beside the helm, torso coiling back, weight on the rear side.
+ frame 3 (bottom-left) SLASH: the sword sweeps down and FORWARD in a diagonal arc toward the screen-LEFT: arms fully extended in front of the body, the blade out to the LEFT of the soldier at chest height with the tip the farthest-left point of the figure, torso leaning hard into the strike, and a pale-blue frost arc trailing behind the blade tracing the swing.
+ frame 4 (bottom-right) FOLLOW-THROUGH: the cut finishes low to the lower-left, blade near the ground line in front of him, torso still leaning forward, arms extended down-left, frost trail fading; a pose that flows back toward frame 1.
+The blade is on the LEFT (front) side of the body in frames 3 and 4 and never behind him. The robe stays floor-length in every frame; no legs or feet appear.
+Constraints: output only the four cells on green; no text, watermark, UI, extra characters, scenery, floor artifact, shadow or separators. Do not use #00ff00 or any green in the figure or trail. No shield, no second weapon, no extra arms, no duplicated frames, no change of facing. Frames 1, 2, 3 and 4 must each have a clearly different silhouette from every other frame.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./frostbound_attack_master_2x2_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./frostbound_attack_master_2x2_v1_keyed.png (auto-key sampling, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message, report: the raw output size in pixels, and frame by frame where the blade is (behind/above/left-forward/low-left), whether frame 3 clearly extends the blade to the LEFT of the body, whether the body height matches Image 1, and any deviation from the brief (a body that changes size, the hem leaving the ground line, legs appearing, extra limbs, wrong facing, an identical pair of frames, a blade or trail touching a cell edge). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

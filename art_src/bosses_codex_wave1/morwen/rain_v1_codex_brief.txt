@@ -1,0 +1,32 @@
+You are generating ONE game sprite animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Three images are attached to this prompt:
+- Image 1 = refs/morwen_idle_strip.png : the BINDING identity, palette, pixel-art treatment reference. A horizontal 4-frame strip of 627x627 cells of Morwen at rest. Match her face, hood, halo, robes, hand anatomy and palette precisely.
+- Image 2 = refs/morwen_attack_strip.png : her approved basic-cast strip — a STYLE reference for the blight spell energy only (muted olive/moss/blue-green motes and streams, controlled size). Do NOT copy its poses.
+- Image 3 = refs/morwen_static.png : secondary identity reference (small).
+
+TASK: generate exactly ONE new 2x2 source sheet for her BLIGHT RAIN move (she calls poison rain down onto the ground around her enemy) with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: illustration-story
+Asset type: high-resolution 4-frame game sprite animation source, to be cropped into a horizontal sprite strip. Square output canvas.
+Input images: Image 1 (4-frame idle strip) is the binding identity, palette and pixel-art treatment reference; Image 2 is her basic-cast strip, a style reference for the muted blight-energy effect only (do not repeat its poses); Image 3 is a secondary identity reference.
+Scene/backdrop: a perfectly flat uniform #00ff00 chroma-key background filling every pixel, including the seams between cells. No scenery, floor plane, ground, puddle, water surface, platform, cast shadow, contact shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly four separate equal square sprite cells as a clean 2x2 contact sheet in reading order top-left, top-right, bottom-left, bottom-right. The source will be cropped into a horizontal strip. All four cells have identical scale and framing; no cell may overlap another; no drawn separators.
+Subject: Morwen, a drowned-in-grief widow witch boss hovering with no exposed legs: soaked black layered robes fully covering the lower body, pale grey lowered face beneath a deep hood, suspended white rain-streak halo above the hood, pale hands, robe hem dissolving into a narrow wet mist fringe. Same identity, proportions and palette as Image 1.
+Composition/framing and ANCHOR RULE: Morwen is centered in each square cell with her hood-top-to-hem-bottom body about 68% of the cell height, placed in the LOWER part of the cell so that arms raised overhead and the rising spell motes still fit with generous green margin above the halo. The halo, hood, face, torso and robe hem occupy EXACTLY the same pixel position in all four cells: the halo center and the lowest hem pixel are at identical coordinates in every cell. Only her arms, sleeves, hands and the spell effect change between frames. She never leans, slides, steps or turns; the camera never moves.
+Blight-rain storyboard - four VISIBLY DIFFERENT arm/sleeve silhouettes; this is an upward summoning gesture, the rain itself falls elsewhere and is NOT drawn:
+ frame 1 (top-left) WIND-UP: head bowed, both hands low and together in front of her waist, palms up, sleeves hanging; a tiny dim muted moss-green glow pooled in the cupped palms.
+ frame 2 (top-right) GATHER: both arms rising to shoulder height in front of her, elbows bent, palms turning up toward the sky, wide sleeves sliding back toward the elbows; small muted olive/moss and blue-green blight motes lifting off the palms; head lifting to look up.
+ frame 3 (bottom-left) RELEASE: both arms raised fully overhead in a wide open V above the halo, palms open to the sky, sleeves fallen back to the elbows exposing the pale forearms; a compact spray of muted moss-green blight droplets and motes shooting UPWARD from both hands, staying close above the hands and never touching the top edge of the cell; the halo flares brighter; face tilted upward.
+ frame 4 (bottom-right) RECOVERY: arms lowering back down to a low relaxed diagonal, palms turning down, sleeves settling over the hands; only a few small motes drifting down around her shoulders; head lowering; hem mist settling.
+Constraints: output only the four Morwen cells on green; no text, watermark, UI, extra characters, weapons, scenery, floor artifact, shadow, puddle, water base, platform, rain streaks on the ground, or separators. Do not use #00ff00 or any bright/pure green in Morwen or in the spell: the spell is dark desaturated olive/moss/blue-green so chroma removal stays clean. No exposed legs or feet, no extra hands, no duplicated limbs, no giant explosion. Frames 1, 2, 3 and 4 must each have a clearly different arm/sleeve silhouette from every other frame.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./rain_master_2x2_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./rain_master_2x2_v1_keyed.png (auto-key sampling, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message, report: the raw output size in pixels, whether all four cells were produced with visibly different arm poses (frame by frame), and any deviation from the brief you noticed (a leaning body, raised hands or motes touching the top edge, an extra limb, a shifted hem, etc.). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

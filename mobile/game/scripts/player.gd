@@ -321,7 +321,17 @@ func _physics_process(delta: float) -> void:
 		cycle_potion()
 	_revive_channel_tick(delta)  # MP-12: hold INTERACT beside a downed ally
 
-	sprite.modulate.a = 0.55 if hurt_cd > 0.0 else 1.0
+	# The one place the body's alpha is decided (skins: set skin_vanish_t /
+	# skin_vanish_alpha for a phase-out, never tween sprite.modulate.a).
+	# NOTE the old `0.55 if hurt_cd > 0.0` hurt-fade here was DEAD — the rage
+	# tint below re-assigned the whole modulate (alpha 1) every frame — so the
+	# hero has always drawn opaque while hurt; kept that way on purpose (a
+	# fade through every ult i-frame would be a new, unreviewed look).
+	if skin_vanish_t > 0.0:
+		skin_vanish_t -= delta
+		sprite.modulate.a = skin_vanish_alpha
+	else:
+		sprite.modulate.a = 1.0
 
 	# Buff aura pulse — the persistent "this is active" tell for every held
 	# buff (berserk = red, Aegis = gold, Ward = arcane cyan, blood surge =
@@ -333,7 +343,15 @@ func _physics_process(delta: float) -> void:
 		aura.visible = true
 		var shimmer := 9.0
 		if berserk_time > 0.0:
-			aura.modulate = Color(1.0, 0.25, 0.15, 0.7)
+			# The rage wears the skin's colour of fury (skin-FX pass 2026-08-15):
+			# Dreadknight's dread-red, Stormforged's storm-blue, base red.
+			match skin:
+				"dreadknight":
+					aura.modulate = Color(0.75, 0.10, 0.16, 0.7)
+				"stormforged":
+					aura.modulate = Color(0.45, 0.72, 1.0, 0.7)
+				_:
+					aura.modulate = Color(1.0, 0.25, 0.15, 0.7)
 		elif aegis_time > 0.0:
 			aura.modulate = Color(1.0, 0.85, 0.4, 0.65)
 		elif dr_time > 0.0:
@@ -362,9 +380,20 @@ func _physics_process(delta: float) -> void:
 		aura.scale = Vector2(pulse, pulse)
 	else:
 		aura.visible = false
-	# The rage is visible ON the hero, not just around them.
+	# The rage is visible ON the hero, not just around them — in the skin's hue.
+	# (RGB only: the alpha decided above — hurt flash / skin vanish — survives.)
 	if sprite:
-		sprite.modulate = Color(1.45, 0.55, 0.5) if berserk_time > 0.0 else Color(1, 1, 1)
+		var body_a := sprite.modulate.a
+		if berserk_time > 0.0:
+			match skin:
+				"dreadknight":
+					sprite.modulate = Color(1.35, 0.55, 0.6, body_a)
+				"stormforged":
+					sprite.modulate = Color(0.75, 1.05, 1.45, body_a)
+				_:
+					sprite.modulate = Color(1.45, 0.55, 0.5, body_a)
+		else:
+			sprite.modulate = Color(1, 1, 1, body_a)
 
 
 # ================================================== remote presentation (MP)

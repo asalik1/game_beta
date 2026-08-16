@@ -139,6 +139,11 @@ def _clip_of(stem: str) -> str | None:
     parts = stem.split("_")
     if parts[-1] in DIR8:
         parts = parts[:-1]
+    # Codex-regen idle strips are "<base>_anim_codex" — treat as an idle ("anim")
+    # so they're stat'd and can serve as the CLIPSCALE reference (the engine runs
+    # the boss off this strip via art.gd BOSS_IDLE_STRIP_BASE).
+    if len(parts) >= 2 and parts[-1] == "codex" and parts[-2] == "anim":
+        return "anim"
     if len(parts) >= 2 and (parts[-1] in BODY_GATE_CLIPS
                             or parts[-1] in ability_tokens()):
         return parts[-1]
@@ -350,7 +355,11 @@ def check_clip_scale(files: list[Path]) -> None:
         core = parts[:-1] if d else parts
         base = "_".join(core[:-1])
         ref = None
-        candidates = ([f"{base}_anim_{d}"] if d else []) + [f"{base}_anim", f"{base}_anim_s"]
+        # Codex-regen bosses run off <base>_anim_codex (art.gd BOSS_IDLE_STRIP_BASE),
+        # and their clips were built against it — compare to it, not the legacy
+        # low-res <base>_anim, or every clip reads as a spurious ~4x CLIPSCALE.
+        candidates = ([f"{base}_anim_codex_{d}"] if d else []) + [f"{base}_anim_codex"] \
+            + ([f"{base}_anim_{d}"] if d else []) + [f"{base}_anim", f"{base}_anim_s"]
         for cand in candidates:
             ref = _strip_stats.get(str(png.parent / cand))
             if ref:

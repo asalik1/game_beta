@@ -3,6 +3,15 @@ extends "res://scripts/player_kit_warrior.gd"
 ## (_storm_strike is driven per-frame by player.gd while storm_time runs.)
 ## See player_core.gd for the chain layout.
 
+## Arrow-strike puff strip (assets/sprites/fx/arrow_impact.png, 8 x 128px,
+## build_fx_strip.py --valign bottom, puff = 70% of the cell at peak): a
+## ~84px puff whose base sits on the strike point (bottom row 100 → −36, +4).
+const ARROW_IMPACT_SCALE := 84.0 / (128.0 * 0.7)
+const ARROW_IMPACT_OFFSET := Vector2(0, -32)
+## Voidwraith tentacle bite (assets/sprites/fx/void_contact.png, 8 x 128px,
+## radial, 70% fill): a ~72px pop on the victim's torso.
+const VOID_CONTACT_SCALE := 72.0 / (128.0 * 0.7)
+
 
 func _use_archer(slot: String, f: float) -> void:
 	match slot:
@@ -67,7 +76,16 @@ func _use_archer(slot: String, f: float) -> void:
 			elif skin == "voidwraith":
 				_voidwraith_storm_scene()
 			if skin == "":
-				_ring_fx(global_position, storm_call, 190.0)
+				# The storm's EYE (2026-08-15): a generated wind vortex spins on
+				# the ground under the archer for the rain's duration, tinted by
+				# theme — replaces the old cast ring. Under the actors (ground FX).
+				# (~220px across, under half alpha: the storm's eye, not a floor of green)
+				if _fx_loop("wind_vortex", Vector2.ZERO, 8, storm_time, {
+						"parent": self, "color": storm_call, "alpha": 0.45,
+						"scale": 220.0 / (IMPACT_CELL * 0.82), "z": -2,
+						"frame_time": 0.07, "pingpong": true, "spin": -1.7,
+						"fade": 0.35}) == null:
+					_ring_fx(global_position, storm_call, 190.0)
 			game.hud.flash_screen(storm_call, 0.3, 0.35)
 			game.spawn_text(global_position + Vector2(0, -60), storm_name, storm_call)
 
@@ -325,8 +343,11 @@ func _voidwraith_phase_tumble(origin: Vector2, destination: Vector2, dvec: Vecto
 	_fx_flash("void_eye_portal", origin + Vector2(0, -24), 8, {
 		"scale": 1.12, "z": 9, "frame_time": 0.035, "fade": 0.08,
 	})
-	var vanish := sprite.create_tween()
-	vanish.tween_property(sprite, "modulate:a", 0.0, 0.065)
+	# Body phase-out through the ONE alpha seam (player.gd re-asserts the
+	# sprite alpha every frame; a tween here never rendered): hidden until the
+	# arrival portal has opened, then the fade-in below takes over.
+	skin_vanish_alpha = 0.0
+	skin_vanish_t = 0.085 + 0.09
 	if weapon_spr != null:
 		var weapon_out := weapon_spr.create_tween()
 		weapon_out.tween_property(weapon_spr, "modulate:a", 0.0, 0.055)
@@ -343,8 +364,7 @@ func _voidwraith_phase_tumble(origin: Vector2, destination: Vector2, dvec: Vecto
 			"scale": 1.12, "z": 9, "frame_time": 0.035, "fade": 0.08,
 		})
 		get_tree().create_timer(0.09).timeout.connect(func() -> void:
-			var appear := sprite.create_tween()
-			appear.tween_property(sprite, "modulate:a", 1.0, 0.055)
+			skin_vanish_t = 0.0  # the body is back (player.gd restores the alpha)
 			if weapon_spr != null:
 				var weapon_in := weapon_spr.create_tween()
 				weapon_in.tween_property(weapon_spr, "modulate:a", 1.0, 0.055)
@@ -472,8 +492,10 @@ func _voidwraith_storm_scene() -> void:
 	# at this scale all eight roots land on the portal's own dark aperture.
 	portal_eye.scale = Vector2(1.20, 1.20)
 	portal_eye.modulate = Color(0.96, 0.82, 1.0, 0.0)
-	# The eye is part of that ground aperture too. Only the independent
-	# tentacles rise above mobs/bosses and strike through their silhouettes.
+	# The eye is part of that ground aperture too. The tentacles' BODIES also
+	# stay under the actors (FX layering rule, 2026-08-15) — each limb draws
+	# a translucent ghost of itself over them, so a strike reads as wrapping
+	# a boss, never hiding it (VoidTentacle.GHOST_*).
 	portal_eye.z_index = -1
 	game.add_child(portal_eye)
 
@@ -492,7 +514,9 @@ func _voidwraith_storm_scene() -> void:
 		var angle := -PI / 2.0 + TAU * float(index) / 8.0
 		var tentacle := VoidTentacle.new()
 		tentacle.global_position = storm_center + Vector2.from_angle(angle) * root_radius
-		tentacle.z_index = 11 + int(roundf(sin(angle) * 2.0))
+		# Root under the actors; the front limbs (sin > 0) still layer over the
+		# back ones. The ghost copy rides GHOST_Z above this root (→ +7…+11).
+		tentacle.z_index = -3 + int(roundf(sin(angle) * 2.0))
 		game.add_child(tentacle)
 		tentacle.setup(idle_tex, attack_tex, float(index) * 0.087, angle)
 		tentacle.modulate.a = 0.0
@@ -530,10 +554,15 @@ func _voidwraith_storm_scene() -> void:
 		eye_anim.tween_callback(portal_eye.set_frame.bind((gaze_frame + 1) % 8))
 	eye_anim.tween_property(portal_eye, "modulate:a", 0.0, 0.12)
 	eye_anim.tween_callback(portal_eye.queue_free)
-	get_tree().create_timer(3.14).timeout.connect(_dismiss_void_tentacles)
+	# The retract timer is bound to THIS cast's serial: a re-cast inside the
+	# 3.14 s window used to have its fresh limbs retracted by the old timer.
+	void_storm_serial += 1
+	get_tree().create_timer(3.14).timeout.connect(_dismiss_void_tentacles.bind(void_storm_serial))
 
 
-func _dismiss_void_tentacles() -> void:
+func _dismiss_void_tentacles(serial: int = -1) -> void:
+	if serial >= 0 and serial != void_storm_serial:
+		return  # a newer storm owns the array now
 	for tentacle in void_tentacles:
 		if not is_instance_valid(tentacle):
 			continue
@@ -612,8 +641,17 @@ func _storm_strike() -> void:
 	var tween := arrow.create_tween()
 	tween.tween_property(arrow, "global_position:y", e.global_position.y, 0.11)
 	tween.tween_callback(arrow.queue_free)
-	game.burst(e.global_position, storm_col)
-	_ring_fx(e.global_position, storm_col, 42.0)
+	# The strike (2026-08-15): a small generated dust puff where the arrow
+	# lands, timed to the shaft's arrival, tinted by theme — replaces the
+	# per-arrow square burst + ring. Under the victim, thin ghost over it.
+	var strike_at := e.global_position
+	get_tree().create_timer(0.10).timeout.connect(func() -> void:
+		if _fx_flash("arrow_impact", strike_at, 8, {"color": storm_col,
+				"scale": ARROW_IMPACT_SCALE, "offset": ARROW_IMPACT_OFFSET,
+				"z": -1, "ghost_over": 0.4, "over_z": 8, "frame_time": 0.03,
+				"fade": 0.06}) == null:
+			game.burst(strike_at, storm_col)
+			_ring_fx(strike_at, storm_col, 42.0))
 	var eff := storm_fx.duplicate()
 	eff["aoe"] = true
 	# The storm rains for 3s while the archer keeps casting — resolve each
@@ -638,5 +676,11 @@ func _apply_archer_storm_hit(enemy: CharacterBody2D) -> void:
 func _void_tentacle_contact_fx(enemy: CharacterBody2D) -> void:
 	if not is_instance_valid(enemy):
 		return
-	game.burst(enemy.global_position, Color(0.66, 0.36, 1.0), 7)
-	_ring_fx(enemy.global_position, Color(0.48, 0.18, 0.78), 34.0)
+	# The bite (2026-08-15): a small generated void tear-and-shards pop on the
+	# victim's body — under it, thin ghost over (FX layering rule) — in place
+	# of the square burst + ring.
+	if _fx_flash("void_contact", enemy.global_position + Vector2(0, -14), 8, {
+			"scale": VOID_CONTACT_SCALE, "z": -1, "ghost_over": 0.5, "over_z": 8,
+			"frame_time": 0.03, "fade": 0.06}) == null:
+		game.burst(enemy.global_position, Color(0.66, 0.36, 1.0), 7)
+		_ring_fx(enemy.global_position, Color(0.48, 0.18, 0.78), 34.0)

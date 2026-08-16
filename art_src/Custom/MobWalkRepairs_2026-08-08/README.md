@@ -96,6 +96,60 @@ including the unchanged Null Acolyte reference.
 `qa_barrow_walk.png` is a nearest-neighbor enlargement of the installed
 Barrow Wight strip for explicit contact-pose review.
 
+## 2026-08-15 owner pass (Wildfang Raider / Frost-Bound Soldier / Bog Lurker / Vow Sentinel)
+
+Owner report: "Wildfang Raider walk is bad, attack shifts up and shows a piece
+of another frame under his feet; Frost-Bound Soldier's attack doesn't slash in
+the direction he faces; Bog Lurker's attack is not vicious enough; Vow Sentinel
+disappears when walking." Headless Codex `image_gen` (`codex exec`, briefs
+archived beside the masters as `*_codex_brief_2026-08-15.txt`), one master per
+clip, deterministic build via this directory's builder:
+
+- **Vow Sentinel** — no regeneration. `vow_sentinel_walk.png` had shipped 100%
+  transparent on 2026-08-13: `normalize_locked_motion` measured the upper-body
+  anchor on the WHOLE 4-frame `_anim` reference (median x ≈ 355 on a 192 cell),
+  the extents clamp went negative and every frame scaled to nothing. The builder
+  now crops the reference to its first cell, splits this master at its real
+  gutters (poses 2-4 crossed the quarter-width cuts), and `save_strip` refuses
+  any fully transparent frame. Rebuilt from the existing 2026-08-13 master.
+- **Wildfang Raider (`orc`) walk** — `orc_walk_master.png` is now ONE ROW of
+  EIGHT phase-labelled figures (contact / load / pass / reach for each leg).
+  Two 2x2 four-frame re-rolls (the storyboard wording that had "solved" it on
+  08-14, and a wide/tight/open/opposite variant) both came back with the same
+  leg leading in both stride cells and the body ~11% short; neither is
+  retained. The previous installed master is kept as
+  `orc_walk_master_rejected_2026-08-14.png`. Installed as an 8-frame 192px strip
+  through `normalize_locked_motion` (torso locked, idle body height, 1.5x width
+  allowance) — the engine's strip reader is frame-count agnostic; at the 2x
+  walk clock the loop runs 0.67 s. The attack was NOT touched: the current
+  `orc_attack.png` (2026-08-14 19:05 regen) is clean; the ghost chunk under the
+  feet + 30 px lift the owner described are the pre-08-14 strip (frame 1 had a
+  detached band at rows 158-188 and frames 2-4 sat 30 px higher than frame 1).
+- **Frost-Bound Soldier (`skeleton_warrior`) attack** — new 2x2 master: ready →
+  wind-up (blade high behind the helm) → forward diagonal slash toward the
+  facing with a frost arc → low follow-through. The old strip (kept as
+  `skeleton_warrior_attack_master_rejected_2026-08-09.png`) was a horizontal
+  poke whose shaft stuck out BEHIND the soldier. Same `install_robe_attack` path.
+- **Bog Lurker attack** — new 2x2 master: coil → rear (front legs raised, fangs
+  spread) → strike (low lunge left, fangs to the ground, venom flecks) → recoil.
+  Old master kept as `bog_lurker_attack_master_rejected_2026-08-13.png`. The
+  strike runs a few px past the nominal quadrant edge, so the builder cuts at
+  the REAL per-row gutters (`four_grid_subjects_gutters`), and because a spider
+  that coils/rears/lunges has no stable bbox height it is normalized by its
+  body core (`normalize_core_anchored`: one clip scale from the median eroded-
+  body area, abdomen-rear x anchor, hem on the idle ground line; cell 386→546,
+  rendered by enemy.gd at the idle body scale). `verify_art` reports a
+  CLIPSCALE 0.74 WARN on it — three of the four poses are legitimately low.
+- **Edge despill** added to `remove_green` (2 px rim only): every ImageGen-keyed
+  strip carried a dark-green antialias rim (~1-3k px per strip; the PixelLab-
+  era idles ~200). Only the four strips above were rebuilt with it; other
+  installed strips keep their bytes until they are next rebuilt.
+
+`qa_mobqa_<sprite>_2026-08-15.png` are in-engine filmstrips from the new
+`game/shot_mobqa.gd` rig (idle / walk / attack, 4 frames each, real
+`_apply_strip` path): the feet line is identical across the three states for
+all four mobs and every frame is visible.
+
 The 2026-08-10 follow-up adds strict padded 2x2 complete-pose attack masters
 for Waking Wolf, Wildkin Ranger, Dune Prowler, Null Acolyte, Barrow Wight,
 Slagbound Brute, Storm Harrier, and Plague Chanter. The prompts explicitly

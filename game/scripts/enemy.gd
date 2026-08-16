@@ -345,11 +345,18 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1,
 		_strip_walk = {} if Art.mob_idle_only_locomotion(_sprite_key) \
 			else Art.walk_info(_sprite_key)
 		# 8-direction sets, if the art exists (else {} -> flip path stays).
-		# A directional asset also ships flat _anim/_walk strips (a south
-		# copy), so setup + the net mirror keep working on the flat strip.
-		_dir_idle = Art.dir_set(String(stats["sprite"]) + "_anim")
-		_dir_walk = {} if Art.mob_flat_walk_locomotion(_sprite_key) \
-			else Art.dir_set(_sprite_key + "_walk")
+		# Codex wave-1 bosses deliberately prefer their new flat high-res strips
+		# over the legacy directional sheets still present in the tree.
+		var flat_wave := Art.boss_flat_animation_locomotion(_sprite_key)
+		_dir_idle = {} if flat_wave else Art.dir_set(String(stats["sprite"]) + "_anim")
+		# Codex directional WALK overrides the flat/idle-only suppression: a
+		# flat-idle boss still glides/strides directionally while moving, and
+		# reverts to its flat breathing idle when it stops (render loop below).
+		if Art.boss_directional_walk(_sprite_key):
+			_dir_walk = Art.dir_set(_sprite_key + "_walk_codex")
+		else:
+			_dir_walk = {} if flat_wave or Art.mob_flat_walk_locomotion(_sprite_key) \
+				else Art.dir_set(_sprite_key + "_walk")
 		_apply_strip(anim)
 	face_left = Art.faces_left(stats["sprite"])
 	# Identity tint from the def ("tint" key): the resting body color all
@@ -454,7 +461,14 @@ func _apply_strip(info: Dictionary, is_action := false) -> void:
 	if _body_cell <= 0.0:
 		_body_cell = cell
 	var body_scaled := is_action or Art.mob_body_scale_walk(_sprite_key)
-	var ref := _body_cell if body_scaled else cell
+	# Action strips can come from two generations of art.  High-resolution
+	# actions (larger than the idle cell) must render off the idle reference so
+	# an oversized swing cannot shrink the boss.  Legacy low-resolution action
+	# strips need the inverse treatment: scaling them from the idle cell makes
+	# their whole cell render tiny.  Normalize those strips from their own cell
+	# instead, which preserves the authored body size while the feet alignment
+	# below keeps the ground point fixed.
+	var ref := _body_cell if body_scaled and cell >= _body_cell else cell
 	var s := art_scale * render_mult * 16.0 / ref
 	sprite.scale = Vector2(s, s)
 	# Re-anchor an oversized ability cell onto the idle body. The naive
@@ -523,7 +537,11 @@ func play_action(action: String, fallback := true) -> void:
 	# dedicated <key>_melee lands, and until then does nothing (no anim, no RPC).
 	var played := _try_action_strip(action)
 	if not played and fallback:
-		played = _try_action_strip("ability")
+		var safe_fallback := Art.boss_action_fallback(_sprite_key)
+		if safe_fallback != "":
+			played = _try_action_strip(safe_fallback)
+		else:
+			played = _try_action_strip("ability")
 	# MP-09: the one-shot rides to every guest mirror as an event RPC — but only
 	# when something actually played, so a no-op wire costs zero network traffic.
 	# Both sides ship the same assets, so each machine resolves the strip locally.
@@ -535,14 +553,26 @@ func play_action(action: String, fallback := true) -> void:
 ## the 8-direction set (facing locked at trigger); falls back to a flat
 ## strip (L/R flip). Returns true if a strip was found and started.
 func _try_action_strip(action: String) -> bool:
+	# Wave-1 Codex bosses retire their whole legacy "<key>_ability[_<dir>]"
+	# PixelLab family (inconsistent views — Morwen's north/west cells visibly
+	# turn away). An "ability" request reports not-found so play_action's
+	# fallback lands on the flat Codex attack strip instead; named actions
+	# keep consulting the directional seam for future authored clips.
+	if action == "ability" and Art.boss_flat_animation_locomotion(_sprite_key):
+		return false
 	var dset := Art.dir_set("%s_%s" % [_sprite_key, action])
+	# One-shot swing/cast plays snappy (BOSS_ABILITY_FPS), not the 6fps idle
+	# default — unless the clip has a per-action rate (a pounce that must span
+	# its 0.8s tween, a charge crouch that holds through its telegraph).
+	var fps: float = float(Balance.BOSS_ACTION_FPS.get(
+		"%s_%s" % [_sprite_key, action], Balance.BOSS_ABILITY_FPS))
 	if not dset.is_empty():
 		_action_dir = dset
-		var suf := Art.dir8_suffix(_facing_vec())
+		var suf := Art.dir8_suffix_for(_sprite_key, _facing_vec())
 		_strip_action = dset[suf]
 		_action_t = 0.0
 		_apply_strip(_strip_action, true)
-		anim_fps = Balance.BOSS_ABILITY_FPS  # one-shot swing/cast plays snappy, not the 6fps default
+		anim_fps = fps
 		sprite.flip_h = false
 		return true
 	var info := Art.action_info(_sprite_key, action)
@@ -552,7 +582,7 @@ func _try_action_strip(action: String) -> bool:
 	_action_dir = {}
 	_action_t = 0.0
 	_apply_strip(info, true)
-	anim_fps = Balance.BOSS_ABILITY_FPS
+	anim_fps = fps
 	return true
 
 
@@ -581,9 +611,13 @@ func swap_sprite(new_key: String) -> void:
 		_strip_idle = anim
 		_strip_walk = {} if Art.mob_idle_only_locomotion(new_key) \
 			else Art.walk_info(new_key)
-		_dir_idle = Art.dir_set(new_key + "_anim")
-		_dir_walk = {} if Art.mob_flat_walk_locomotion(new_key) \
-			else Art.dir_set(new_key + "_walk")
+		var flat_wave := Art.boss_flat_animation_locomotion(new_key)
+		_dir_idle = {} if flat_wave else Art.dir_set(new_key + "_anim")
+		if Art.boss_directional_walk(new_key):
+			_dir_walk = Art.dir_set(new_key + "_walk_codex")
+		else:
+			_dir_walk = {} if flat_wave or Art.mob_flat_walk_locomotion(new_key) \
+				else Art.dir_set(new_key + "_walk")
 		_apply_strip(anim)
 	face_left = Art.faces_left(new_key)
 
@@ -610,6 +644,19 @@ func _varo_phase_sprite() -> void:
 func _net_tell(color: Color, dur: float) -> void:
 	if net_id > 0 and not net_mirror and game != null and game.net_host():
 		game.net_session().host_enemy_tell(net_id, color, dur)
+
+
+## DEV-MORPH preview fire (dev_morph.gd only): spawn this mob's REAL projectile
+## + play a hit sound so the codex Transform rig reviews the effect, not just the
+## clip. Bosses override this with their family audio + ability patterns. Never
+## called in a real fight; guarded so a melee-only mob just no-ops the projectile.
+func dev_fire(action: String, aim: Vector2) -> void:
+	if game == null or dying or action in ["idle", "walk", "death"]:
+		return
+	var d := aim.normalized() if aim != Vector2.ZERO else Vector2.RIGHT
+	game.sfx("bolt", 0.8)
+	var p := Projectile.spawn(game, global_position, d * 420.0, _hit_dmg(), false, projectile_kind)
+	p.rise = _muzzle_rise()
 
 
 ## Return from a one-shot ability strip to idle (the walk swap re-evaluates
@@ -777,9 +824,17 @@ func _physics_process(delta: float) -> void:
 		var directional_loco := (_moving_anim and not _dir_walk.is_empty()) \
 			or (not _moving_anim and not _dir_idle.is_empty())
 		if not directional_loco:
-			if not _strip_walk.is_empty() and _moving_anim != _strip_walking:
-				_strip_walking = _moving_anim
-				_apply_strip(_strip_walk if _moving_anim else _strip_idle)
+			# A boss with a directional walk but a FLAT idle (BOSS_DIRECTIONAL_WALK
+			# + idle-only) lands here the instant it stops: _cur_dir still holds
+			# its last walk facing and _strip_walk is empty, so the old
+			# `not _strip_walk.is_empty()` guard would never restore the idle and
+			# it would freeze on the last walk frame. Restore the flat strip on the
+			# walk-state flip OR whenever we're arriving from the directional path.
+			var want_walk := _moving_anim and not _strip_walk.is_empty()
+			if want_walk != _strip_walking or _cur_dir != "":
+				_strip_walking = want_walk
+				_cur_dir = ""  # clear the directional latch; a later walk re-picks
+				_apply_strip(_strip_walk if want_walk else _strip_idle)
 			if _moving_anim:
 				anim_t += delta
 			sprite.frame = int(anim_t * anim_fps) % anim_frames

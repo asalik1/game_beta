@@ -1,0 +1,36 @@
+You are generating ONE game visual-effect animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/palette.png : the BINDING colour palette for this effect (five swatches on green: #FFF1B0 white-hot core, #FF9A3A rage orange, #F0381E blood-fire red, #8A1010 deep red, #2A0808 near-black). Ignore the green around the swatches — it is only there to show what the chroma key looks like.
+- Image 2 = refs/style_fx_strip.png : a shipped FX animation strip from this game (a violet thread eruption). Match its LEVEL OF FINISH — crisp high-resolution game FX, hard readable clusters, glowing rims over a darker body, no blur, no photo texture. Do NOT copy its subject, shape or colour.
+
+TASK: generate exactly ONE new 4x2 source sheet for a ONE-SHOT RAGE ERUPTION (a warrior's Berserk — fury bursting out of a fighter) with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: game asset
+Output size: 1536x1024 landscape.
+Asset type: high-resolution 8-frame game visual-effect animation source, to be cropped into a horizontal sprite strip.
+Scene/backdrop: a perfectly flat uniform #00ff00 green chroma-key background filling every pixel, including the seams between cells. No scenery, floor plane, ground texture, platform, cast shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly EIGHT separate equal square effect cells laid out as a clean 4-column by 2-row contact sheet in reading order (top row left to right = frames 1-4, bottom row left to right = frames 5-8). All cells have identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat green between neighbouring cells and around the sheet edge.
+Subject: the ERUPTION of raw fury from a fighter's body, seen from a high three-quarter game camera: a roughly CIRCULAR burst centred on the fighter's spot — tongues of red-orange rage-flame lick upward and outward in a ring around the (EMPTY) centre, a flat shockwave of red heat races outward along the ground, and embers/sparks fly up; it dies down into a few rising embers. Fury as flame and heat — NOT a fireball, NOT lava, NOT smoke only, NOT lightning, NOT a face, and NO character (the centre stays open; the fighter is added by the game).
+Style/medium: crisp high-resolution dark-fantasy game FX art with hard readable clusters and a controlled palette; not painterly, not 3D-rendered, not photographic, not anime, not blurred.
+Composition/framing and ANCHOR RULE: the burst centre is the exact centre of every square cell; the effect grows out from that centre and never leaves the cell — at its widest (frames 3-4) the shockwave fills about 85% of the cell width with clear green margin on every side. The centre never drifts, the camera never moves. The centre of every frame stays OPEN (a flat glow at most), never a solid mass, so a character standing there is not hidden.
+ONE-SHOT storyboard — eight VISIBLY DIFFERENT stages of one eruption, small to wide to embers:
+ frame 1: a bright red-hot flash ring on the ground at the centre with a few sparks — about 30% of the cell wide
+ frame 2: rage-flames lick up in a ring around the empty centre, a red shockwave pushing out — about 55% wide
+ frame 3: PEAK: tall flame tongues in a full ring, the shockwave at about 80% width with a bright rim, sparks and embers flung outward and up
+ frame 4: flames leaning outward and thinning, the shockwave at 85% dissolving into heat haze, embers arcing
+ frame 5: flames breaking into separate tongues and dying down, embers rising
+ frame 6: only low flickers and rising embers, a dim glow ring on the ground
+ frame 7: a few last embers drifting up, the glow ring almost out
+ frame 8: two or three embers alone — nearly empty cell
+Constraints: output only the cells on green; no text, watermark, UI, characters, weapons, scenery, ground texture, shadow, or separators. Do NOT use #00ff00 or any green anywhere in the effect. Stay inside the five palette colours plus their in-between shades (yellows, oranges, reds, dark reds only). Every frame must be clearly different from every other frame.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./rage_burst_master_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./rage_burst_master_v1_keyed.png (auto-key sampling from the border, soft matte, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all cells were produced with visibly different frames (frame by frame), whether the effect kept the same centre and size in every cell, and any deviation from the brief (a cell missing, cells overlapping or touching, key colour inside the effect, drift, an extra cell, a ground plane drawn). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.
