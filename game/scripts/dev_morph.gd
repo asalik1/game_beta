@@ -65,10 +65,15 @@ static func start(p: Player, enemy_kind: String) -> void:
 static func stop(p: Player) -> void:
 	if p == null or p.dev_morph == null:
 		return
-	if is_instance_valid(p.dev_morph):
-		p.dev_morph._restore()
-		p.dev_morph.queue_free()
+	# Detach FIRST. queue_free() is deferred, and the revert button unpauses the
+	# world on the same line (m.close()); a still-alive puppet would otherwise get
+	# one more _physics_process tick and re-hide the hero AFTER _restore() showed
+	# it — a permanently invisible hero. The `!= self` guard below reads this null.
+	var mm := p.dev_morph
 	p.dev_morph = null
+	if is_instance_valid(mm):
+		mm._restore()
+		mm.queue_free()
 
 
 func _ready() -> void:
@@ -117,8 +122,8 @@ func _restore() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if plr == null or not is_instance_valid(plr):
-		return
+	if plr == null or not is_instance_valid(plr) or plr.dev_morph != self:
+		return  # detached by stop() (or replaced): never re-hide the hero sprite
 	if plr.dead or plr.downed or plr.ghost:
 		DevMorph.stop(plr)  # the hero's own death/downed presentation takes over
 		return
