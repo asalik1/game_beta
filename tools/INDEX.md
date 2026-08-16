@@ -89,6 +89,13 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 
 ## In-engine shot rigs (windowed, boot the real game, screenshot to disk)
 
+**Runner + base class (2026-08-15) — use these for any new rig or run:**
+
+| tool | what it does |
+|---|---|
+| `shot.bat <rig> [--timeout=N] [--no-gate] [--no-import] [rig args]` (`tools/shot_rig.ps1`) | THE way to run a rig: resolves `fx_series` → `game/shot_fx_series.tscn`, ensures `ShotRig` is in the class cache (`--import` once if not), runs the compile gate over `scripts/` PLUS the rig script (check_compile's default walk misses `game/` root — a rig with a parse error opens a window that idles forever), launches windowed + MUTED (`--audio-driver Dummy` injected), tails the log, kills the engine at N+15 s if its own watchdog couldn't, then prints a verdict line + the shots dir + PNG count for this run. Exit: rig's own (0/1/2=in-engine timeout) · 3 killed · 4 gate · 5 no such rig · 6 import. Rig args pass straight through after `--`. |
+| `game/scripts/dev/shot_rig.gd` (`class_name ShotRig`) | base for rigs — `extends ShotRig`, then `_ready()` = `await boot(cls, chapter)` + steps + `finish()`. Free with it: Master-bus mute in `_init` (belt to the runner's flag), `--timeout=N` watchdog (pause- and time_scale-immune Timer → `RIG TIMEOUT` + last `step()` label + `_timeout.png` + `quit(2)`), `shot(name[, extra])` → `user://shots/<rig>/<name>.png` with the paused/state/frame line, `boot()`/`boot_game()`/`skip_dialogue()`/`god_mode()`, `sim_wait()`/`sim_wait_until()`/`sim_reset()` (process-delta clock), `arg()`/`flag()`, `apply_terrain()` (+tint), `spawn_enemy()`, `hide_hud()`/`zoom()`. Worked example: `shot_fx_series.gd` (converted); the other rigs are still standalone copies of the same boilerplate — convert one when you next touch it, don't fork the base. |
+
 `shot_kit` (class FX/abilities) · `shot_loot` (loot fanfare grades) · `shot_mobs`
 (mob mechanics/tells) · `shot_ui` (HUD + every menu) · `shot_audit`/`2`/`3`
 (full visual surface passes) · `shot_chests` (chest grades in-world) ·
@@ -96,7 +103,12 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 `shot_dirtest`/`shot_dirinstall`/`shot_actiontest` (8-direction render/install
 proofs) · `shot_silence`/`shot_verdict`/`shot_readability`/`shot_wall`/
 `shot_assassin_fx` (one-off readability rigs — reusable patterns). All live in
-`game/`, run via `--path game res://<name>.tscn` or their `.gd` docs.
+`game/`; run via `shot.bat <name>` (legacy ones too — they just print no verdict
+line) or by hand per their `.gd` docs, always MUTED (`--audio-driver Dummy`; the
+runner injects it). Rigs cannot be `--headless` — the viewport readback needs a real
+renderer — so "unattended windowed" is the mode, and a rig with a never-resolving
+`await` sits open forever unless it has a watchdog (`ShotRig` has one; the 23 legacy
+rigs do not).
 
 Owner reviews visuals in-game himself — rigs are for YOUR verification, not a
 substitute for his pass.

@@ -21,10 +21,11 @@
 3. `test.bat` (full suite, minutes; plays both chapters end to end) must be green before staging.
 
 ## Agent toolkit (the map: `tools/INDEX.md` — check it before writing a helper script)
-- `preflight.bat` — the traps below, mechanized: stale/forgotten `--import`, codex/BOSS_KINDS staleness, unregistered content modules, diff-scoped balance-number + CONNECT_DEFERRED lints. Run it before staging; every finding prints its one-line fix.
+- `preflight.bat` — the traps below, mechanized: stale/forgotten `--import`, codex/BOSS_KINDS staleness, unregistered content modules, diff-scoped balance-number + CONNECT_DEFERRED lints, new shot rig not `extends ShotRig`. Run it before staging; every finding prints its one-line fix.
 - `python tools/safe_commit.py -m "msg" <your paths>` — the serialized-commit etiquette as a guardrail: path-scoped commit that lists sibling-staged work instead of swallowing it.
 - `python tools/sync_mobile.py` — mobile drift report; `--apply [--gate]` performs the re-sync ritual from `mobile/README.md`.
 - `python tools/art/verify_art.py <base>` — post-install sprite checks (strip geometry, 8-dir completeness, green-bleed, stale import, and in-cell content gates: anchor drift/ghost chunks/edge cuts/clip-vs-idle body scale).
+- **Screenshot rigs: never write a standalone one (2026-08-15).** Twenty-three `game/shot_*.gd` files are copies of the same 25-line boot/`_shot`/quit boilerplate, none with a watchdog, muted only by convention. New rig = `extends ShotRig` (`scripts/dev/shot_rig.gd`: `boot()`, `shot()`, sim-clock waits, `arg()`/`flag()`, Master-bus mute, `--timeout=N` watchdog) + `_ready()` of steps + `finish()`; run it — and every legacy rig — through `shot.bat <rig> [--timeout=N] [rig args]`, which injects `--audio-driver Dummy`, compile-gates the rig script (check_compile's default walk skips `game/` root: a parse error there = a window that idles forever), and hard-kills a hung engine. `preflight` FAILs a new rig that doesn't extend it and WARNs on an edited legacy one (convert on touch). Worked example: `shot_fx_series.gd`; the map: `tools/INDEX.md` "In-engine shot rigs".
 
 ## GDScript traps (each has bitten us) — review-time deep list: `CODING_GUIDELINES.md` §38
 - `var x := obj.method()` on a loosely-typed obj (or any Variant expression, e.g. `Dictionary.get`) = PARSE ERROR "cannot infer type". Annotate: `var x: float = ...`.

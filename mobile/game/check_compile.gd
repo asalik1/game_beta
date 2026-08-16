@@ -5,11 +5,20 @@ extends SceneTree
 ## suite's own script fails to compile and the engine idles forever —
 ## the "suite hung for 16 minutes" failure mode. This catches it in
 ## seconds, printing Godot's actual parse error.
+##
+## Extra scripts OUTSIDE res://scripts (a shot rig in the project root) can be
+## appended as user args: `--script res://check_compile.gd -- res://shot_x.gd`
+## (shot.bat does this — a rig with a parse error opens a window that idles
+## forever, the same trap).
 
 func _init() -> void:
 	var bad := 0
 	var total := 0
-	for path in _gather("res://scripts"):
+	var paths := _gather("res://scripts")
+	for a in OS.get_cmdline_user_args():
+		if a.ends_with(".gd"):
+			paths.append(a)
+	for path in paths:
 		total += 1
 		var sc = load(path)
 		if sc == null or not (sc as GDScript).can_instantiate():

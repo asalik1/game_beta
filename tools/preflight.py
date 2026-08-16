@@ -25,6 +25,11 @@ Checks:
   PHYSICS   diff-scoped WARN: body/area_entered connected without
             CONNECT_DEFERRED. Spawning an Area2D inside such a handler hits
             the physics-flush guard (chest open + ricochet were bitten).
+  RIGS      diff-scoped: a NEW game/shot_*.gd or qa_*.gd that does not
+            `extends ShotRig` FAILs (23 one-off copies of the same boot
+            boilerplate already exist, none with a watchdog -- the base
+            has boot/shot/sim-clock/mute/watchdog and shot.bat runs it);
+            an EDITED legacy standalone rig WARNs: convert on touch.
 
 Exit code 1 on any FAIL. WARNs exit 0 unless --strict.
 """
@@ -209,6 +214,41 @@ def check_diff_lints() -> None:
                  "tunes gameplay it belongs in balance.gd (#38f); ignore if it's structural")
 
 
+# ------------------------------------------------------------------ RIGS
+RIG_SCRIPT = re.compile(r"^game/(shot_|qa_)\w+\.gd$")
+
+
+def check_rigs() -> None:
+    """New rigs must extend ShotRig; edited legacy ones get the convert nudge."""
+    status = subprocess.run(["git", "status", "--porcelain", "--", "game"],
+                            capture_output=True, text=True, cwd=ROOT,
+                            encoding="utf-8", errors="replace").stdout or ""
+    for line in status.splitlines():
+        code, p = line[:2], line[3:].strip().replace("\\", "/")
+        if not RIG_SCRIPT.match(p):
+            continue
+        try:
+            src = (ROOT / p).read_text(errors="replace")
+        except OSError:
+            continue
+        m = re.search(r"^extends\s+(\w+)", src, re.M)
+        base = m.group(1) if m else "?"
+        if base == "ShotRig":
+            continue
+        is_new = code.startswith("??") or "A" in code
+        name = Path(p).stem.removeprefix("shot_")
+        if is_new:
+            fail("RIGS", f"{p}: new rig extends {base}, not ShotRig -- another standalone copy "
+                 "of the boot/shot/quit boilerplate with no mute and no watchdog",
+                 f"`extends ShotRig` (game/scripts/dev/shot_rig.gd: boot/shot/sim-clock/mute/"
+                 f"watchdog are in the base), then run it with `shot.bat {name}` -- see "
+                 "tools/INDEX.md 'In-engine shot rigs' and shot_fx_series.gd for the shape")
+        else:
+            warn("RIGS", f"{p}: legacy standalone rig edited (extends {base}) -- convert on touch: "
+                 f"`extends ShotRig` and drop the copied boot/_shot/quit code (shot_fx_series.gd "
+                 f"is the worked example); run via `shot.bat {name}` either way")
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     ap = argparse.ArgumentParser(description="Crownless preflight trap checks")
@@ -219,6 +259,7 @@ def main() -> int:
     check_imports()
     check_modules()
     check_diff_lints()
+    check_rigs()
     if not args.fast:
         check_codex_data()
 
@@ -226,7 +267,7 @@ def main() -> int:
         print("FAIL " + f)
     for w in WARN:
         print("WARN " + w)
-    n_checks = "IMPORT MODULES BALANCE PHYSICS" + ("" if args.fast else " CODEX")
+    n_checks = "IMPORT MODULES BALANCE PHYSICS RIGS" + ("" if args.fast else " CODEX")
     if not FAIL and not WARN:
         print(f"PREFLIGHT OK ({n_checks})")
     else:
