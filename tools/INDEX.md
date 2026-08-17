@@ -125,7 +125,17 @@ impact lands ON it (layering proof), `--hazards` repaints the room through every
 patch terrain and shoots the pools wide + close; prints paused/state/strip-frame
 diagnostics per shot. Time by accumulated process
 delta, never wall clock: the viewport readback in `shot()` costs ~0.1s, so
-wall-clock offsets came due together and were shot in ONE frame). All live in
+wall-clock offsets came due together and were shot in ONE frame) ·
+`shot_capgap` (2026-08-17, a `ShotRig`: capital PASSABILITY probe — for every
+Crownfall room with a north door, teleports the hero onto the door lane and
+WALKS the real route through the real input path (`Input.parse_input_event` →
+`_poll_local_intents` → `move_and_slide`): south down the lane, around a hall
+that stands on the road, to the centre line, then back; ray-casts name the
+first blocker on the lane; a `BODIES` inventory per room lists every non-wall
+collider with its rects in cell-local px (how the stray accent stand beside the
+Sable Hall was found); replays the owner's exact report (hero in the spire-gate
+arch walking back south); `shot.bat capgap` — exit 1 = a route is walled; the
+autotest's `_capital_doors_connected` is the headless flood-fill twin). All live in
 `game/`; run via `shot.bat <name>` (legacy ones too — they just print no verdict
 line) or by hand per their `.gd` docs.
 

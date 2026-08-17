@@ -176,6 +176,51 @@ Three reports from the owner's first in-game look, all fixed same morning:
   can't socket, and the random gem could roll a special). She now hands a
   training KIT — a socketed C-grade keepsake + a guaranteed-regular stone.
 
+## 6c. Passability audit (2026-08-17, "went behind the large walls in Crown
+## Plaza and can't walk back through the gap")
+One report, three defects underneath it, all in the same family — collision
+that disagrees with the road the art draws. Fixed the same day; the whole city
+now carries a passability contract in the suite (every door reaches every
+door on foot; every north road reaches the centre line THROUGH ITS ARCH; the
+probe proves it can see a wall by re-laying the old strip for one check).
+- **The arcade strip ran across its own arch** (the report itself). §6b's
+  "walkable interiors" fix gave the city-edge arcade ONE full-width base
+  strip — but the generator's note says why the arcade exists at all: its
+  painted arch frames the room's north road. The strip crossed the arch in
+  all six arcade rooms, so a hero north of it (in the Plaza's spire-gate arch,
+  or arriving from the Wayfinder Sanctum / a ward) had no way south except a
+  108–168 px slot along the side walls, and the north door of every arcade
+  room was sealed from the room. The strip now leaves an UNSCALED lane
+  (`lane_gap` 180 = door lane 144 + hero 26 + slack; unscaled because the
+  lane and the hero are fixed-size while the arcade shrinks with room_scale).
+- **The spire gate's piers stopped 113 px short of the arch on each side**:
+  the visible opening measures ±72 px; the piers left ±185. A hero could
+  walk into the torch wall beside the arch and vanish behind the gate. Piers
+  now hug the arch (inner edges ±80); the door lane still passes with room.
+- **Four halls stood dead-centre on the north road** (Archive, Tankard,
+  Accord, Sable): the hall body (285–350 wide at x=1056) sat between the
+  arcade's foot and the room, and its collider top lay ABOVE the strip — no
+  corridor existed behind it. The arcade in those four rooms moved north
+  (authored y 405 → 225: ~50 px of walkable corridor between the wall's foot
+  and the hall's back; the hero passes through the arch and around the hall
+  as an outline, the same read as behind any building). The plaza + gate
+  rooms keep 405 — their open gates sit ON the road with the arch aligned.
+- **Accents leaked into the city** (found by the probe, not by eye): the
+  2026-07-27 accent FAMILY POOL appended keep braziers/arches, coffins,
+  bones, gnarled trees, mushrooms and tombstones to every capital room even
+  though the generator authors `accents: []` ("capital rooms never inherit
+  terrain scatter") — a brazier stand landed inside the Sable Hall's
+  clearance and sealed the corridor behind it. The pool now rides the same
+  `uses_procedural_taxonomy` gate as the landmark draw (capital_* = authored
+  compositions, no pool), and accent groups honour landmark `reserved`
+  clearance like the obstacle loop always did.
+- Left as-is on purpose: the Emberward Gate's piers already match its towers
+  to within ~10 px; the Great Hearth and Alembic keep base-strip colliders
+  (props you can stand behind, like the fountain) — flag if that reads wrong.
+- Owner review pending in-game (the hall-room arcade line is a composition
+  change: the arcade's spire tops now sit above the camera clamp, the halls
+  stand in front of the wall's foot instead of merged into it).
+
 ## 7. Open questions for the owner
 - Flow nit: after the first-clear route to Crownfall, the Wayfinder story
   gate returns to the COMPLETED ch1 world (its way-gates still stand at the

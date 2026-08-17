@@ -1996,6 +1996,15 @@ func _spawn_scenery(zi: int) -> void:
 			if absf(acenter.x - pw / 2.0) < 130.0:
 				continue
 			var aok := true
+			# Same reservation the obstacle loop honours: an authored landmark's
+			# clearance keeps accent groups off its facade too (2026-08-17: a
+			# brazier stand landed inside the Sable Hall's clearance and sealed
+			# the corridor behind it). Empty in procedural rooms — no-op there.
+			for reservation in reserved:
+				var reserve: Dictionary = reservation
+				if acenter.distance_to(reserve["pos"]) < float(reserve["radius"]):
+					aok = false
+					break
 			for other in placed:
 				if acenter.distance_to(other) < Balance.SCENERY_MIN_SPACING:
 					aok = false
@@ -2324,24 +2333,51 @@ func _add_backdrop(name: String, pos: Vector2, target_w: float) -> Node2D:
 	# room walls were supposed to own this edge but don't reach it — without
 	# a body the hero strolls INTO the city-edge art. Scaled to the render
 	# width like the sprite itself.
+	# LANE GAP (owner report 2026-08-17, Crown Plaza: "went behind the walls,
+	# can't walk back through the gap"): the arcade's painted arch frames the
+	# room's NORTH ROAD — the strip must not run across it. A def "lane_gap"
+	# (UNSCALED world px, centred on the layer, which authoring places on the
+	# door x) is cut out of every rect it crosses. Unscaled on purpose: the
+	# door lane and the hero are fixed-size while the arcade shrinks with
+	# room_scale, so a scaled gap closes below the lane in a 0.72 room.
 	var bscale: float = float(visual.get_meta("wpx")) / maxf(1.0, float(def.get("w", target_w)))
+	var lane_gap: float = float(def.get("lane_gap", 0.0))
 	var bdef: Array = def.get("colliders", [])
 	if not bdef.is_empty():
 		var body := StaticBody2D.new()
 		body.collision_layer = 1
 		body.collision_mask = 0
 		for c in bdef:
-			var cshape := CollisionShape2D.new()
-			cshape.position = (c.get("off", Vector2.ZERO) as Vector2) * bscale
+			var coff: Vector2 = (c.get("off", Vector2.ZERO) as Vector2) * bscale
 			if String(c.get("shape", "rect")) == "circle":
+				var cshape := CollisionShape2D.new()
+				cshape.position = coff
 				var circ := CircleShape2D.new()
 				circ.radius = float(c.get("radius", 12.0)) * bscale
 				cshape.shape = circ
+				body.add_child(cshape)
+				continue
+			var csize: Vector2 = (c.get("size", Vector2(60, 26)) as Vector2) * bscale
+			var left := coff.x - csize.x * 0.5
+			var right := coff.x + csize.x * 0.5
+			# Pieces of this rect that survive the lane cut: [left, right] minus
+			# the open interval (-gap/2, +gap/2). Zero, one or two rects.
+			var pieces: Array = []
+			if lane_gap > 0.0 and left < lane_gap * 0.5 and right > -lane_gap * 0.5:
+				if left < -lane_gap * 0.5:
+					pieces.append(Vector2(left, -lane_gap * 0.5))
+				if right > lane_gap * 0.5:
+					pieces.append(Vector2(lane_gap * 0.5, right))
 			else:
+				pieces.append(Vector2(left, right))
+			for span in pieces:
+				var seg: Vector2 = span
+				var cshape := CollisionShape2D.new()
+				cshape.position = Vector2((seg.x + seg.y) * 0.5, coff.y)
 				var rect := RectangleShape2D.new()
-				rect.size = (c.get("size", Vector2(60, 26)) as Vector2) * bscale
+				rect.size = Vector2(seg.y - seg.x, csize.y)
 				cshape.shape = rect
-			body.add_child(cshape)
+				body.add_child(cshape)
 		layer.add_child(body)
 	world.add_child(layer)
 	return layer

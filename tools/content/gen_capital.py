@@ -115,17 +115,30 @@ LANDMARKS = {
     "cin_court": [("capital_sable_hall", 1056, 590, 315)],
 }
 
-# Wide connected architecture behind the landmarks (no collider; the open
-# central arch frames the actual north road, so only rooms WITH a north road
-# carry one).
+# Wide connected architecture behind the landmarks (a shallow base strip with
+# the arch left open — Terrains "lane_gap"; the open central arch frames the
+# actual north road, so only rooms WITH a north road carry one).
 # tuple: (sprite id, x, y, authored width)
+#
+# Y RULE (2026-08-17 passability audit): the plaza and the gate room put an
+# OPEN gate landmark on the road (piers only), so the arcade may sit right
+# behind it at y=405 and its arch lines up with the gate's. The four HALL rooms
+# put a SOLID hall dead-centre on the same road (body colliders 285-350 wide at
+# x=1056) — with the arcade at 405 its base strip sat level with the hall's
+# body and the north door was walled off from the room. At 225 the arcade's
+# foot + strip land ~50 px above the hall's collider top, so the north road
+# runs through the arch and around the hall behind its back (the hero reads
+# as an outline behind the hall, the same as behind any building). Checked in
+# engine by autotest's capital lane-reachability guard.
+ARCADE_Y_OPEN_GATE = 405   # arcade directly behind an open gate landmark
+ARCADE_Y_HALL_ROOM = 225   # arcade behind a solid hall: corridor at its back
 BACKDROPS = {
-    "plaza": [("capital_city_arcade", 1056, 405, 1653.75)],
-    "tankard": [("capital_city_arcade", 1056, 405, 1653.75)],
-    "archive": [("capital_city_arcade", 1056, 405, 1653.75)],
-    "gate": [("capital_city_arcade", 1056, 405, 1653.75)],
-    "acc_commons": [("capital_city_arcade", 1056, 405, 1653.75)],
-    "cin_court": [("capital_city_arcade", 1056, 405, 1653.75)],
+    "plaza": [("capital_city_arcade", 1056, ARCADE_Y_OPEN_GATE, 1653.75)],
+    "tankard": [("capital_city_arcade", 1056, ARCADE_Y_HALL_ROOM, 1653.75)],
+    "archive": [("capital_city_arcade", 1056, ARCADE_Y_HALL_ROOM, 1653.75)],
+    "gate": [("capital_city_arcade", 1056, ARCADE_Y_OPEN_GATE, 1653.75)],
+    "acc_commons": [("capital_city_arcade", 1056, ARCADE_Y_HALL_ROOM, 1653.75)],
+    "cin_court": [("capital_city_arcade", 1056, ARCADE_Y_HALL_ROOM, 1653.75)],
 }
 
 # Exact supporting furniture: deliberate social placements only.

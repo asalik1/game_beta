@@ -83,6 +83,28 @@ static func prop_variant(name: String, placement_seed: int) -> String:
 	return String(family[absi(placement_seed) % family.size()])
 
 
+# Codex atmosphere: one authored lore line per shipped story terrain, shown
+# under the preview in the Terrains shelf (2026-08-16). Voice matches the relic
+# gallery: concrete image + a turn that hooks real canon (the blight and Mórwyn,
+# the Choir, the Concord wars, the Stormwarden line, the Waking, the first fall).
+const TERRAIN_LORE := {
+	"village": "The last green valley the blight hasn't reached, and the road's first kind face. Emberfall feeds the Vale and pretends not to hear what moves in the Darkwood past its fences.",
+	"darkwood": "Old trees that closed over the Vale's oldest road. The canopy keeps the light out and the wrong things in; woodsmen mark the trunks they trust and stop coming back for the rest.",
+	"marsh": "Where Mórwyn's rot met standing water and learned to spread. The reeds still grow, teal and wrong, and the ground remembers whoever it swallowed.",
+	"keep": "A fortress that held the Concord's eastern line until it didn't. The walls stand; the garrison keeps a watch that outlived its orders and its flesh.",
+	"magma": "Ash over a battle bigger than men, buried and never cooled. The Cinderborn call it honest ground: it hides nothing, and it forgives less.",
+	"ice": "A white silence past the last waystone, where the cold keeps its dead standing. The Stormwarden line walked out here once, and the maps stop where they did.",
+	"graveyard": "The Vale buries more than it can lay to rest. The Choir tends the yard and the sextons keep the count, and the two have stopped agreeing on the number.",
+	"desert": "Gold sand over a dynasty the horizon swallowed. The wind uncovers a doorway some mornings and buries it again by noon, as if reconsidering.",
+	"bog": "Deep blightwater under a skin of spores, where the marsh went from sick to certain. Everything here breathes, and none of it should.",
+	"crystal": "Shards that grew in the dark and kept growing, humming a half-tone under hearing. Miners chart their tunnels around the song, never toward it.",
+	"storm": "Open grass under a sky that never fully clears, where the Stormwarden weather still argues with itself. The standing stones were raised to catch the lightning, and they still do.",
+	"void": "Where the Waking tore the sky and forgot to close it. Distance means less here, and the ground reads warm to the touch, which is the wrong answer.",
+	"holy": "A sanctum the Choir kept after its keepers were gone. The water in its font still runs; ask why, and the Choir finds somewhere else to be.",
+	"spore": "A forest the blight rebuilt in its own image, cathedral-quiet and breathing. The shrines here were not carved. They were grown.",
+}
+
+
 const DATA := {
 	# ------------------------------------------------ story terrains ---
 	"village": {"name": "Emberfall Village", "ground": "grass", "path": "dirt",
@@ -650,7 +672,15 @@ static func accent_specs(id: String, raw_accents: Array = []) -> Array:
 	var source: Array = raw_accents if not raw_accents.is_empty() else terrain.get("accents", [])
 	var family := terrain_family(id)
 	var combined: Array = source.duplicate()
-	combined.append_array(ACCENT_FAMILY_POOLS.get(family, ACCENT_FAMILY_POOLS["village"]))
+	# The family pool is the PROCEDURAL biome tier. Crownfall's capital_*
+	# profiles are authored civic compositions ("capital rooms never inherit
+	# terrain scatter" — gen_capital.py) and author accents: [] on every zone,
+	# yet the pool leaked keep braziers/arches, coffins, gnarled trees and
+	# mushrooms into the city — one brazier stand piled against the Sable
+	# Hall's flank and sealed the north road's corridor (2026-08-17 audit).
+	# Same gate the landmark draw already uses.
+	if uses_procedural_taxonomy(id):
+		combined.append_array(ACCENT_FAMILY_POOLS.get(family, ACCENT_FAMILY_POOLS["village"]))
 	var out: Array = []
 	var seen := {}
 	for raw_accent in combined:
@@ -1142,17 +1172,29 @@ const STRUCTURES := {
 	# resolution never dictates world scale. Civic facades use a shallow base
 	# footprint; open gates reserve only their side piers so the arch remains a
 	# readable passage instead of an invisible wall.
+	# Pier rects HUG THE PAINTED ARCH (2026-08-17 capital passability audit):
+	# the visible opening measures ±72 px at the render width, and the old
+	# 250-wide piers at ±310 left 113 px of walkable masonry on each side of
+	# it — a hero could stroll into the torch wall beside the arch and vanish
+	# behind the gate. Inner edges now sit at ±80 (arch + 8 px of wall-foot
+	# tolerance); the outer edges are unchanged. The room's 144-px door lane
+	# (±72) still passes with the hero's 13-px radius to spare.
 	"capital_crown_spire_gate": {"sprite": "capital_crown_spire_gate", "w": 878.9062,
 		"colliders": [
-			{"shape": "rect", "size": Vector2(250, 50), "off": Vector2(-310, -24)},
-			{"shape": "rect", "size": Vector2(250, 50), "off": Vector2(310, -24)}],
+			{"shape": "rect", "size": Vector2(355, 50), "off": Vector2(-257.5, -24)},
+			{"shape": "rect", "size": Vector2(355, 50), "off": Vector2(257.5, -24)}],
 		"fire": true},
 	# A single connected city-edge silhouette, spawned only through
 	# _add_backdrop. Its base carries ONE thin full-width strip (owner report
 	# 2026-07-25: the hero could stroll INTO the silhouette — the room walls
 	# don't actually own this edge), so the city stays scenery you stand in
-	# front of, never inside.
+	# front of, never inside — EXCEPT through its painted arch, which frames
+	# the room's north road: "lane_gap" (UNSCALED px, cut out of the strip by
+	# _add_backdrop) = the 144-px door lane + the hero's 26-px body + 10 slack.
+	# Without it the strip ran straight across the arch and every arcade
+	# room's north door was sealed off from the room (owner report 2026-08-17).
 	"capital_city_arcade": {"sprite": "capital_city_arcade", "w": 1653.75,
+		"lane_gap": 180.0,
 		"colliders": [{"shape": "rect", "size": Vector2(1680, 26), "off": Vector2(0, -8)}]},
 	# Collider-vs-art rule (owner 2026-07-25, the fangmoot "invisible wall"):
 	# a capital collider's SOUTH edge must sit at the art's lowest opaque row

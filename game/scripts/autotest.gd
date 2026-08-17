@@ -4587,11 +4587,20 @@ func _test_asset_seams() -> void:
 	# (owner report 2026-07-25: with no body at all, the hero strolled INTO
 	# the silhouette — the room walls never actually owned that edge). The
 	# strip must stay a base LINE, never a building footprint, and no
-	# service hotspot may ride along.
+	# service hotspot may ride along. And it must leave the ARCH OPEN (owner
+	# report 2026-08-17: the strip ran straight across the painted arch, so
+	# a hero north of it in Crown Plaza could not walk back through the gap
+	# and every arcade room's north door was sealed off): the strip is two
+	# pieces around a centred lane at least a door lane + a hero wide, and
+	# that lane does NOT shrink with the room — the 900-px render here is a
+	# 0.54 room, where a scaled gap would already be narrower than the lane.
 	var arcade := game._add_backdrop(
 		"capital_city_arcade", Vector2(-4900, -4900), 900.0)
 	var arcade_bodies := 0
 	var arcade_visuals := 0
+	var strip_left_edge := -INF     # rightmost extent of the piece left of centre
+	var strip_right_edge := INF     # leftmost extent of the piece right of centre
+	var strip_pieces := 0
 	for child in arcade.get_children():
 		if child is StaticBody2D:
 			arcade_bodies += 1
@@ -4600,12 +4609,23 @@ func _test_asset_seams() -> void:
 				if rs == null or rs.size.y > 40.0:
 					arcade.queue_free()
 					return _fail("capital city arcade base strip must be a shallow rect")
+				strip_pieces += 1
+				var cx: float = (cs as CollisionShape2D).position.x
+				if cx < 0.0:
+					strip_left_edge = maxf(strip_left_edge, cx + rs.size.x * 0.5)
+				else:
+					strip_right_edge = minf(strip_right_edge, cx - rs.size.x * 0.5)
 		else:
 			arcade_visuals += 1
 	if arcade_bodies != 1 or arcade_visuals != 1:
 		arcade.queue_free()
 		return _fail("capital city arcade should be one visual layer + one base strip (%d/%d)" %
 			[arcade_visuals, arcade_bodies])
+	var lane_min: float = float(Game.DOOR_TILES * Game.TILE) + 26.0   # door lane + the hero's body
+	if strip_pieces != 2 or strip_left_edge > -lane_min * 0.5 or strip_right_edge < lane_min * 0.5:
+		arcade.queue_free()
+		return _fail("capital city arcade strip must leave the arch lane open (>= %.0f px centred): pieces=%d gap=[%.0f..%.0f]" %
+			[lane_min, strip_pieces, strip_left_edge, strip_right_edge])
 	arcade.queue_free()
 	# The capital fountain and wellspring ship full-structure animation strips:
 	# water moves within the authored basins/jets without a rectangular overlay.
@@ -6204,6 +6224,170 @@ func _test_capital() -> void:
 	print("ok: capital hub (9-room 3x3, NPC-owned services + dawn shelf + favor + lapidary quest end-to-end, bench gate holds on the road, leaves clean)")
 
 
+## Capital PASSABILITY contract (2026-08-17): rooms are built (walls +
+## authored landmarks + backdrops + strip colliders), then flood-filled on a
+## 24-px grid with the hero's own 13-px circle against the world layer.
+##  1. Every door lane reaches every other door lane on foot. Landmarks may
+##     stand ON a road (the halls do) — the route just has to exist around
+##     them, exactly what a hero with WASD finds.
+##  2. The NORTH ROAD is walkable AS A ROAD: from the north door lane, staying
+##     within CAP_PROBE_ROAD_HALF of the door's x, the hero reaches the room's
+##     centre line. Check 1 alone is not enough — before the fix the arcade's
+##     strip still left a 108-168 px slot along each side wall, so "reachable"
+##     held while the painted arch the owner walked up to was sealed. The
+##     corridor is wider than any hall's half-body + the hero (a route around
+##     a hall counts) and narrower than every room's wall-side margin (a
+##     route hugging the walls does not).
+##  3. NEGATIVE CONTROL: the pre-fix strip (full width, no arch gap) is laid
+##     across the plaza's arch for one probe and check 2 must FAIL on it —
+##     a placement probe that cannot see a wall proves nothing.
+## Names the room + lane that is cut off, so the fix is a placement change,
+## not a hunt.
+const CAP_PROBE_CELL := 24.0
+const CAP_PROBE_HERO_R := 13.0
+const CAP_PROBE_ROAD_HALF := 260.0
+
+
+func _capital_doors_connected() -> void:
+	for zi in game.zone_count:
+		game._build_room(zi)   # no-op when already built
+	# New bodies join the broadphase on a PHYSICS step — and headless, process
+	# frames race ahead of physics, so wait on the physics clock, not frames.
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var checked_lanes := 0
+	var checked_roads := 0
+	var plaza := -1
+	for zi in game.zone_count:
+		if String(game.zones[zi].get("name", "")) == "Crown Plaza":
+			plaza = zi
+		var r: Dictionary = _capital_room_probe(zi)
+		if not bool(r["lanes_ok"]):
+			return _fail(String(r["lane_msg"]))
+		if not bool(r["road_ok"]):
+			return _fail(String(r["road_msg"]))
+		checked_lanes += int(r["lanes"])
+		checked_roads += int(r["roads"])
+	# ---- 3. negative control: the pre-fix strip must be SEEN ---------------
+	if plaza < 0:
+		return _fail("capital: no Crown Plaza to run the passability negative control on")
+	var arcade_y := 405.0   # gen_capital.py ARCADE_Y_OPEN_GATE — the plaza's authored arcade line
+	var strip := StaticBody2D.new()
+	strip.collision_layer = 1
+	strip.collision_mask = 0
+	var strip_shape := CollisionShape2D.new()
+	var strip_rect := RectangleShape2D.new()
+	strip_rect.size = Vector2(1680.0, 26.0)      # the 2026-07-25 full-width strip
+	strip_shape.shape = strip_rect
+	strip_shape.position = Vector2(0.0, -8.0)
+	strip.add_child(strip_shape)
+	strip.position = game.room_pos(plaza, 1056.0, arcade_y)
+	game.world.add_child(strip)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var control: Dictionary = _capital_room_probe(plaza)
+	strip.queue_free()
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	if bool(control["road_ok"]):
+		return _fail("capital passability probe is blind: a full-width strip across the plaza arch (the pre-fix arcade collider) still reads as an open north road")
+	print("ok: capital passability (every door lane reaches every other — %d lanes; %d north roads open through their arch; negative control sees the pre-fix strip; %d rooms, hero-radius flood fill)" %
+		[checked_lanes, checked_roads, game.zone_count])
+
+
+## One room of the passability contract (see _capital_doors_connected).
+## Returns {lanes_ok, lane_msg, road_ok, road_msg, lanes, roads}.
+func _capital_room_probe(zi: int) -> Dictionary:
+	var out := {"lanes_ok": true, "lane_msg": "", "road_ok": true, "road_msg": "",
+		"lanes": 0, "roads": 0}
+	var space := game.player.get_world_2d().direct_space_state
+	var probe := CircleShape2D.new()
+	probe.radius = CAP_PROBE_HERO_R
+	var q := PhysicsShapeQueryParameters2D.new()
+	q.shape = probe
+	q.collision_mask = 1
+	q.exclude = [game.player.get_rid()]
+	var pr: Rect2 = game.play_rect(zi)
+	var exits: Array = (game.zones[zi].get("exits", []) as Array)
+	if exits.size() < 2:
+		return out
+	# One lane point per exit: centred on the door, one hero-step inside the
+	# room's wall band.
+	var lanes := {}
+	var inset := float(Game.TILE) + 40.0
+	for d in exits:
+		var dp: Vector2 = game.door_pos(zi, String(d))
+		match String(d):
+			"N": lanes[d] = Vector2(dp.x, pr.position.y + inset)
+			"S": lanes[d] = Vector2(dp.x, pr.end.y - inset)
+			"W": lanes[d] = Vector2(pr.position.x + inset, dp.y)
+			_: lanes[d] = Vector2(pr.end.x - inset, dp.y)
+	var cols := int(pr.size.x / CAP_PROBE_CELL)
+	var rows := int(pr.size.y / CAP_PROBE_CELL)
+	var cell_of := func(p: Vector2) -> Vector2i:
+		return Vector2i(clampi(int((p.x - pr.position.x) / CAP_PROBE_CELL), 0, cols - 1),
+			clampi(int((p.y - pr.position.y) / CAP_PROBE_CELL), 0, rows - 1))
+	var centre_of := func(c: Vector2i) -> Vector2:
+		return pr.position + Vector2((c.x + 0.5) * CAP_PROBE_CELL, (c.y + 0.5) * CAP_PROBE_CELL)
+	# Flood fill from `seed`; `x_min..x_max` bounds the walk (the whole rect
+	# for check 1, the road corridor for check 2). Returns the seen set.
+	var flood := func(seed: Vector2i, x_min: float, x_max: float) -> Dictionary:
+		var seen := {}
+		var frontier: Array = [seed]
+		seen[seed] = true
+		while not frontier.is_empty():
+			var cur: Vector2i = frontier.pop_back()
+			for step in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				var nxt: Vector2i = cur + step
+				if nxt.x < 0 or nxt.y < 0 or nxt.x >= cols or nxt.y >= rows or seen.has(nxt):
+					continue
+				var wp: Vector2 = centre_of.call(nxt)
+				# Stay inside the walled play rect (the door lanes lead out of
+				# it) and inside the caller's x band.
+				if wp.x < maxf(pr.position.x + CAP_PROBE_HERO_R, x_min) \
+						or wp.x > minf(pr.end.x - CAP_PROBE_HERO_R, x_max) \
+						or wp.y < pr.position.y + CAP_PROBE_HERO_R or wp.y > pr.end.y - CAP_PROBE_HERO_R:
+					continue
+				q.transform = Transform2D(0.0, wp)
+				if not space.intersect_shape(q, 1).is_empty():
+					continue
+				seen[nxt] = true
+				frontier.append(nxt)
+		return seen
+	# ---- 1. every door reaches every other door ---------------------------
+	var first: String = String(exits[0])
+	var seen_all: Dictionary = flood.call(cell_of.call(lanes[first]), -INF, INF)
+	for d in lanes:
+		if String(d) == first:
+			continue
+		out["lanes"] = int(out["lanes"]) + 1
+		if not seen_all.has(cell_of.call(lanes[d])):
+			out["lanes_ok"] = false
+			out["lane_msg"] = "capital: %s — the %s door lane cannot be reached on foot from the %s door (a collider walls the road; %d cells reachable)" % [
+				game.zones[zi].get("name", "?"), d, first, seen_all.size()]
+			return out
+	# ---- 2. the north road reaches the centre line as a road --------------
+	if lanes.has("N"):
+		out["roads"] = 1
+		var road_x: float = (lanes["N"] as Vector2).x
+		var seen_road: Dictionary = flood.call(cell_of.call(lanes["N"]),
+			road_x - CAP_PROBE_ROAD_HALF, road_x + CAP_PROBE_ROAD_HALF)
+		var centre_row: int = (cell_of.call(Vector2(road_x, pr.position.y + pr.size.y * 0.5)) as Vector2i).y
+		var reached_centre := false
+		var deepest := 0
+		for c in seen_road:
+			var cell: Vector2i = c
+			deepest = maxi(deepest, cell.y)
+			if cell.y >= centre_row:
+				reached_centre = true
+				break
+		if not reached_centre:
+			out["road_ok"] = false
+			out["road_msg"] = "capital: %s — the north road is walled: from the N door a hero staying within %.0f px of the road only gets %.0f px into the room (centre line at %.0f)" % [
+				game.zones[zi].get("name", "?"), CAP_PROBE_ROAD_HALF, (deepest + 1) * CAP_PROBE_CELL, pr.size.y * 0.5]
+	return out
+
+
 ## Everything asserted while STANDING in Crownfall — split out (2026-07-26) so
 ## that every one of its ~40 failure exits still runs the caller's "leave the
 ## city" restore instead of stranding the suite in the capital.
@@ -6306,6 +6490,16 @@ func _capital_in_city() -> void:
 		return _fail("capital: authored social furniture is missing (%d/8)" % furnishing_count)
 	if backdrop_count < 6:
 		return _fail("capital: connected city-edge architecture is missing (%d/6)" % backdrop_count)
+	# Every door of every room must reach every other door of that room ON
+	# FOOT (owner report 2026-08-17: the arcade's base strip ran across its
+	# own arch, so a hero north of the Crown Plaza gate could not walk back
+	# through the gap, and every arcade room's north door was sealed off from
+	# the room; four ward halls also stood dead-centre on the north road).
+	# The data contracts above cannot see this — it is a PLACEMENT property —
+	# so probe the built rooms with the hero's own body.
+	await _capital_doors_connected()
+	if _failed:
+		return
 	if not premium_vault:
 		return _fail("capital: the plaza did not install the premium vault coffer")
 	# Rework contract: forge/lapidary/drill are NPC-owned services; gear/shop/

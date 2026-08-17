@@ -61,7 +61,7 @@ const CHAPTER := {
 		"decor": [], "decor_count": 0, "accents": [], "structures": [],
 		"landmarks": [{"name": "capital_grand_archive", "x": 1056, "y": 585, "clearance": 285, "uses": [{"type": "action", "prompt": "E — Browse the Codex", "x": -170, "y": 100, "ref": "codex"}, {"type": "action", "prompt": "E — Read your journal", "x": 0, "y": 100, "ref": "journal"}, {"type": "action", "prompt": "E — Review your records", "x": 170, "y": 100, "ref": "records"}]}],
 		"furnishings": [],
-		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 405, "w": 1653.75}],
+		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 225, "w": 1653.75}],
 		"npcs": [],
 	},
 	{"name": "The Ashen Tankard", "terrain": "capital_civic", "type": "safe",
@@ -71,7 +71,7 @@ const CHAPTER := {
 		"decor": [], "decor_count": 0, "accents": [], "structures": [],
 		"landmarks": [{"name": "capital_ashen_tankard", "x": 1056, "y": 590, "clearance": 285, "uses": []}, {"name": "great_hearth", "x": 620, "y": 560, "clearance": 175, "uses": []}, {"name": "capital_alembic_station", "x": 1492, "y": 560, "clearance": 205, "uses": [{"type": "action", "prompt": "E — Prepare your potion loadout", "x": 0, "y": 80, "ref": "potions"}]}],
 		"furnishings": [{"name": "capital_city_bench", "x": 760, "y": 810, "clearance": 110}, {"name": "capital_city_bench", "x": 1352, "y": 810, "clearance": 110}],
-		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 405, "w": 1653.75}],
+		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 225, "w": 1653.75}],
 		"npcs": [
 			{"sprite": "peddler_nix", "x": 1056, "y": 814, "prompt": "E — Tavern Keeper Nix", "convo": "cap_tankard"},
 			{"sprite": "old_fenna", "x": 650, "y": 650, "prompt": "E — Old Fenna", "convo": "cap_fenna"}],
@@ -118,7 +118,7 @@ const CHAPTER := {
 		"decor": [], "decor_count": 0, "accents": [], "structures": [],
 		"landmarks": [{"name": "capital_accord_longhouse", "x": 1056, "y": 590, "clearance": 315, "uses": [{"type": "action", "prompt": "E — Review Accord contracts", "x": 0, "y": 95, "ref": "journal"}]}],
 		"furnishings": [{"name": "capital_city_bench", "x": 760, "y": 815, "clearance": 110}, {"name": "capital_city_bench", "x": 1352, "y": 815, "clearance": 110}],
-		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 405, "w": 1653.75}],
+		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 225, "w": 1653.75}],
 		"npcs": [
 			{"sprite": "elder", "x": 720, "y": 650, "prompt": "E — Elder Maren", "convo": "cap_maren"},
 			{"sprite": "herbalist_kesh", "x": 1390, "y": 650, "prompt": "E — Herbalist Kesh", "convo": "cap_kesh"},
@@ -131,7 +131,7 @@ const CHAPTER := {
 		"decor": [], "decor_count": 0, "accents": [], "structures": [],
 		"landmarks": [{"name": "capital_sable_hall", "x": 1056, "y": 590, "clearance": 315, "uses": [{"type": "action", "prompt": "E — Review Cinderborn contracts", "x": 0, "y": 95, "ref": "journal"}]}],
 		"furnishings": [],
-		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 405, "w": 1653.75}],
+		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 225, "w": 1653.75}],
 		"npcs": [
 			{"sprite": "aldric", "x": 720, "y": 650, "prompt": "E — Ser Aldric", "convo": "cap_aldric"},
 			{"sprite": "vessa", "x": 1390, "y": 650, "prompt": "E — Envoy Vessa", "convo": "cap_vessa"},
