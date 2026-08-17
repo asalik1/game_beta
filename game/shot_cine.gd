@@ -13,10 +13,11 @@ extends ShotRig
 ##   --play    — YOU drive; the rig only records. Real keyboard controls the
 ##               hero (no injection). Run REAL-TIME (NO --fixed-fps). Sets up the
 ##               scene, holds enemies frozen through a 3-2-1-GO countdown, then
-##               records `--secs` seconds at ~30 fps wall-clock. God-HP + infinite
-##               mana so a showcase never dies. Human play = authentic footage.
+##               records `--secs` seconds at ~30 fps wall-clock. God-HP, infinite
+##               mana, ZERO cooldowns by default so a showcase never dies or
+##               waits. Human play = authentic footage. MUTED by default.
 ##                 godot --path game res://shot_cine.tscn -- \
-##                   --scene=hero --class=mage --play --secs=16
+##                   --scene=hero --class=mage --play --secs=10
 ##
 ## SCENES (--scene=): cycle | hero | bossfight | biomes | bosses | capital | horde
 ##   hero      --class=<c>              mob-kite: a semicircle swarm presses from
@@ -27,8 +28,9 @@ extends ShotRig
 ##                                       default list = the six classes
 ##   biomes | bosses | capital | horde  world/reveal reels (scripted)
 ##
-## FLAGS: --secs=N (play length) · --nocd (zero cooldowns) · --hud (keep HUD) ·
-##        --watch (no capture, just watch it) · --boss=<kind> · --list=<csv>
+## FLAGS: --secs=N (default ~10 mob / 12 boss) · --realcd (keep real cooldowns;
+##        default is ZERO) · --hud (show HUD; default hidden) · --sound (unmute;
+##        default MUTED) · --watch (no capture) · --boss=<kind> · --list=<csv>
 
 const FPS := 30
 
@@ -376,7 +378,7 @@ var _play := false           # --play: YOU drive the hero; the rig only records
 ## Infinite mana (and --nocd zeroes cooldowns) for a clean showcase; captures at
 ## ~30 fps of WALL-CLOCK time so playback is real-speed regardless of render fps.
 func _play_record(secs: float) -> void:
-	var nocd := flag("nocd")
+	var nocd := not flag("realcd")                  # zero cooldowns by default
 	DisplayServer.window_move_to_foreground()       # focused window renders full-speed
 	_freeze_enemies(true)                           # HOLD the fight until GO
 	print("========================================")
@@ -423,8 +425,8 @@ func _play_record(secs: float) -> void:
 func _ready() -> void:
 	_watch = flag("watch")
 	_play = flag("play")
-	if _watch or _play:
-		AudioServer.set_bus_mute(0, false)   # you're driving it — let it sing
+	if flag("sound"):
+		AudioServer.set_bus_mute(0, false)   # --sound to hear it; default = muted
 	var scene := arg("scene", "hero")
 	var cls := arg("class", "mage")
 	match scene:
@@ -446,7 +448,6 @@ func _ready() -> void:
 ## scene, or "boss:<class>:<kind>" for a boss fight. Default = the six classes.
 func _scene_cycle() -> void:
 	_play = true
-	AudioServer.set_bus_mute(0, false)   # you're playing it — sound on (unless Dummy)
 	var entries := arg("list",
 		"mage,warrior,archer,assassin,paladin,warlock").split(",", false)
 	for idx in entries.size():
@@ -491,7 +492,7 @@ func _scene_hero(cls: String) -> void:
 	await _arc_surround(horde, p.global_position, 200.0, 0.0, 200.0)   # right-facing arc
 
 	if _play:
-		await _play_record(float(arg("secs", "14")))
+		await _play_record(float(arg("secs", "10")))   # mob beats are brief
 		_clear_mobs(); return
 
 	var swarm_at := func() -> Vector2: return _swarm_centroid()
@@ -616,7 +617,7 @@ func _scene_bossfight(cls: String, boss_kind: String) -> void:
 	_begin("bossfight_%s_%s" % [cls, boss_kind])
 
 	if _play:
-		await _play_record(float(arg("secs", "16")))
+		await _play_record(float(arg("secs", "12")))   # a boss takes a little longer
 		_clear_field(); return
 
 	var melee := cls in ["warrior", "paladin", "assassin"]
