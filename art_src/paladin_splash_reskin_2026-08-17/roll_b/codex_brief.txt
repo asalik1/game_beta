@@ -1,0 +1,13 @@
+You have TWO images attached.
+- IMAGE 1 (a tall square painterly full-body portrait of a HOODED knight on cathedral steps under a moon, "01_target_splash") is the ILLUSTRATION TO EDIT.
+- IMAGE 2 (a small game character sprite of a bearded knight on a grey card, "02_paladin_sprite") is the canonical NEW paladin, straight from the game. Match HIM (his idea; exact pixel fidelity not required).
+
+TASK: EDIT image 1 with the built-in image_gen edit flow. Repaint the paladin so he matches the knight in image 2, while KEEPING the painterly dark-fantasy style, the full-body hero framing, the standing pose, the gothic-cathedral-and-moon background, the moody low-key lighting, and the square 1:1 composition. This is a character redesign on the SAME portrait, not a new scene.
+
+CRITICAL, the single most important change: the paladin must be BARE-HEADED with his bearded face clearly visible. The current art has his head inside a raised HOOD — you MUST REMOVE that hood/cowl entirely and paint his open, stern, weathered face: a middle-aged man with short greying brown hair and a full short dark beard. NO hood, NO cowl, NO helm.
+
+The paladins design (match image 2): battle-worn PALE brushed-STEEL plate armour with antique-gold trim (not blackened steel). A JUDICIAL-BLUE tabard/surcoat hanging at the front (not oxblood/maroon). A gold chain across the chest meeting a round GOLD SUN medallion at the sternum. A steel shield bearing a gold SUN mark. His weapon is a square RELIQUARY-BOX warhammer, its blocky head marked with a gold sun, hung on a GOLD chain. Small gold sun motifs on the belt buckle and shoulder pauldron. A dark, tattered cloak behind (no bright red cape).
+
+HARD NEGATIVES: no hood, no cowl, no helm covering the face, no halo, no wings, no crown, no cross, no angelic light, no black-and-gold eclipse or red corruption (those are reserved for premium skins), no text, no border, no second figure.
+
+Keep the output SQUARE. Save it into THIS working directory as class_splash_paladin_reskin.png at the largest size you can. In your final message, confirm the save path and state explicitly whether the paladin is bare-headed with a visible bearded face.
