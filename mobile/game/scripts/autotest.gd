@@ -1002,6 +1002,9 @@ func _run_systems() -> void:
 	await _test_mob_traits()
 	await _test_single_idle_walk_strip()
 	await _test_mob_strip_anchor_consistency()
+	# 3d17b. Melee swing alternation (owner ruling 2026-08-16): a1 flips
+	# attack <-> attackb when the alt strip is installed; falls back otherwise.
+	await _test_swing_alternation()
 
 	# 3d18. Environment asset seams (2026-07-18): ground PNG tilesets,
 	# composite structures + wall decals, animated scenery props.
@@ -4103,6 +4106,73 @@ func _test_single_idle_walk_strip() -> void:
 	if not saw_advanced_walk:
 		return _fail("one-frame-idle wolf never advanced its walk strip")
 	print("ok: one-frame idle enters + advances quadruped walk strip")
+
+
+## Melee swing alternation (2026-08-16): every melee class ships a second basic
+## swing (<class>_attackb, 8-dir), and a1 alternates it with `attack` cast by
+## cast. Checks the strips are installed + directional, the parity flips on the
+## live use_ability path (the clip that actually plays), a fresh body resets to
+## the primary swing, a skin with no alt art keeps the single swing, and the
+## assassin's alt swing reads its own measured contact time.
+func _test_swing_alternation() -> void:
+	var saved_skin: String = game.player.skin
+	for cls in ["warrior", "paladin", "assassin"]:
+		game.player.set_class(cls)
+		game.player.set_skin("")
+		game.player.pending_theme_note = ""
+		if not game.player._clips.has("attackb") or not game.player._dir_loco.has("attackb"):
+			return _fail("%s: attackb strip family missing from the runtime (flat + 8-dir)" % cls)
+		if int(game.player._dir_loco["attackb"].size()) != 8:
+			return _fail("%s: attackb has %d directions, need 8" % [cls, game.player._dir_loco["attackb"].size()])
+		# Live path: two a1 casts play attack, then attackb (_strike_clip is
+		# what swing_delay keys on — the same value use_ability handed play_action).
+		var seen: Array[String] = []
+		for _i in 3:
+			game.player.cds["a1"] = 0.0
+			game.player.mp = game.player.max_mp
+			game.player.berserk_time = 0.0
+			game.player.use_ability("a1")
+			seen.append(game.player._strike_clip)
+			await _frames(1)
+		if seen != ["attack", "attackb", "attack"]:
+			return _fail("%s: a1 should alternate attack/attackb/attack, saw %s" % [cls, seen])
+		# A fresh body opens on the primary swing again.
+		game.player.set_class(cls)
+		game.player.pending_theme_note = ""
+		if game.player._alt_basic_clip() != "attack":
+			return _fail("%s: a re-applied body must open on the primary swing" % cls)
+	# Skins ship no alt art (yet): the fallback keeps the single swing every cast.
+	game.player.set_class("warrior")
+	game.player.set_skin("dreadknight")
+	game.player.pending_theme_note = ""
+	if game.player._clips.has("attackb"):
+		print("  (note: dreadknight now ships an attackb strip — fallback branch not exercised)")
+	else:
+		var a: String = game.player._alt_basic_clip()
+		var b: String = game.player._alt_basic_clip()
+		if a != "attack" or b != "attack":
+			return _fail("skin without attackb art must keep the single swing (saw %s, %s)" % [a, b])
+	game.player.set_skin(saved_skin)
+	# Contact sync: the assassin's cross-slash lands later than the lunge.
+	game.player.set_class("assassin")
+	game.player.set_skin("")
+	game.player.pending_theme_note = ""
+	game.player._strike_clip = "attackb"
+	game.player._clip_haste = 1.0
+	var t_alt: float = game.player.swing_delay(Balance.STAB_STRIKE_DELAY)
+	game.player._strike_clip = "attack"
+	var t_base: float = game.player.swing_delay(Balance.STAB_STRIKE_DELAY)
+	game.player._strike_clip = ""
+	if not is_equal_approx(t_alt, float(Balance.ALT_SWING_DELAY["assassin"])) or not is_equal_approx(t_base, Balance.STAB_STRIKE_DELAY):
+		return _fail("assassin swing_delay: alt %.3f (want %.3f), base %.3f (want %.3f)"
+			% [t_alt, float(Balance.ALT_SWING_DELAY["assassin"]), t_base, Balance.STAB_STRIKE_DELAY])
+	game.player.set_class("warrior")
+	game.player.set_skin(saved_skin)
+	game.player.pending_theme_note = ""
+	game.player.cds["a1"] = 0.0
+	game.player.mp = game.player.max_mp
+	await _frames(2)
+	print("ok: melee swing alternation (attack/attackb 8-dir for warrior/paladin/assassin, parity flips on a1, skin fallback, assassin alt contact 0.18s)")
 
 
 ## Idle is the persistent body reference: changing canvas size or entering a

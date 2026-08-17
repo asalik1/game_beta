@@ -1,0 +1,17 @@
+You have TWO images attached.
+- IMAGE 1 (wide horizontal cinematic dark-fantasy scene, "01_target_scene") is the ILLUSTRATION TO EDIT.
+- IMAGE 2 (a single game character sprite of a bearded knight on a grey card, "02_paladin_sprite") is the canonical NEW paladin, taken straight from the game. Match HIM (his idea; exact pixel fidelity is not required, but do not break the scene).
+
+TASK: EDIT image 1 with the built-in image_gen edit flow. Repaint ONLY the armored paladin figure so he matches the knight in image 2, and keep EVERYTHING ELSE identical — same composition, camera, wide 1672x941 framing, other characters, background, lighting, mood, colour grade.
+
+CRITICAL: the paladin must be BARE-HEADED with his bearded face clearly visible. The old art had his head inside a raised HOOD — you MUST REMOVE that hood/cowl entirely and paint his open bearded face and greying hair. Do NOT leave any hood, cowl, or helm up. This is the single most important change.
+
+SCENE (keep this story beat): a glowing chain split down its length into grey-gold and flame-red strands pulling evenly, the paladins fist closed around the fork point. KEEP the split grey-gold vs flame-red strands and the tension; bare bearded face.
+
+The paladins CANONICAL design (match the attached in-game sprite, IMAGE 2 — this is the definitive look): a middle-aged man, BARE-HEADED with NO HOOD and NO HELM, his face FULLY VISIBLE — short greying brown hair and a full short dark beard, stern and weathered. Battle-worn PALE brushed-STEEL plate armour with antique-gold trim. A JUDICIAL-BLUE tabard/surcoat hanging at the front. A gold chain across the chest meeting a round GOLD SUN medallion at the sternum. His weapon is a square RELIQUARY-BOX warhammer, its blocky head marked with a gold sun, hung on a GOLD chain. A steel shield bearing a gold sun mark. Small gold sun motifs on the belt buckle and shoulder pauldron.
+
+Also REMOVE any bright RED cape (replace with a dark tattered cloak). Preserve his pose, position, scale, gesture, and silhouette (aside from the head no longer being hooded) so the scene still composes.
+
+HARD NEGATIVES: no hood, no cowl, no helm, no halo, no wings, no crown, no cross, no angelic light, no black-and-gold eclipse or red corruption, no change to any other figure or the environment, no text, no border.
+
+Output a WIDE LANDSCAPE image at 1672x941. Save it into THIS working directory as opening_ch11_paladin_reskin.png. In your final message confirm the save path and state explicitly whether the paladin is bare-headed with a visible bearded face.

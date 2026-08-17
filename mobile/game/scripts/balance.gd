@@ -92,6 +92,7 @@ const NPC_HEIGHT_BY_SPRITE := {
 	"commander_ashe": 1.00, "consul_verane": 0.97, "apprentice_sorrel": 0.90,
 	"keeper_vasse": 0.94, "storm_chaser_ilya": 0.98, "quartermaster_bel": 0.99,
 	"bellringer_tam": 0.93, "undertaker_prue": 0.96,
+	"scholar_ivo": 1.00,  # tall, stooped old chronicler — adult-man baseline
 }
 const NPC_HEIGHT_BY_CONVO := {
 	# Chapter 1 road people.
@@ -162,6 +163,7 @@ const NPC_BODY_TARGETS := {
 	"commander_ashe": 52.0, "consul_verane": 52.0, "apprentice_sorrel": 52.0,
 	"keeper_vasse": 52.0, "storm_chaser_ilya": 52.0, "quartermaster_bel": 52.0,
 	"bellringer_tam": 52.0, "undertaker_prue": 52.0,
+	"scholar_ivo": 52.0,
 }
 
 # Hero name (chosen at creation, shown in the co-op lobby/party). Capped so a
@@ -1044,6 +1046,17 @@ const KNIFE_THROW_RELEASE := 0.15 # delay the knives to the THROW anim's release
 const STAB_STRIKE_DELAY := 0.10   # delay the stab's cut/slash to the lunge frame, so the hit lands WITH the thrust, not on the input frame
 const PALADIN_SMITE_DELAY := 0.16 # delay Judgment/Consecration impact FX+damage to the warhammer's slam frame (the heavy overhead swing has a real windup — FX on the input frame reads ahead of the animation)
 const WARRIOR_SWING_DELAY := 0.13 # delay Cleave's cut/quake to the sword swing's contact frame (same windup-vs-FX sync)
+# Melee swing alternation (2026-08-16): a1 alternates the base "attack" strip with
+# an ALTERNATE swing ("<class>_attackb"). Its contact can land on a different
+# frame than the base const above was tuned to — class -> measured contact time
+# (s) of the attackb strip at its 22fps clock (player.swing_delay reads it, like
+# Skins.SWING does for skins). A class with no entry lands its alt on the base
+# delay. Filled per class as each alt strip is authored and measured.
+#   warrior: level sweep contacts on f4 = 0.136s ≈ WARRIOR_SWING_DELAY -> no entry.
+#   paladin: sideways hammer contacts on f4 (S: f5) = 0.14–0.18s ≈ PALADIN_SMITE_DELAY -> no entry.
+#   assassin: the double-dagger cross-slash X lands on f5 (index 4) = 0.18s, later
+#   than the 0.10s lunge — the alt swing has a real windup the stab doesn't.
+const ALT_SWING_DELAY := {"assassin": 0.18}
 const MAGE_BOLT_DELAY := 0.12     # delay Firebolt to the staff-thrust release frame (same windup-vs-FX sync)
 const ARCHER_LOOSE_DELAY := 0.25  # delay Quick Shot / Multishot / Arrow Storm to the bow's draw-release frame (~frame 7 of the re-rolled 9-frame draw@22fps — the string snaps forward at t≈0.25; 0.12 loosed mid-draw)
 # Frostfall Ranger ult weather density. These are visual actors only: the
@@ -2535,6 +2548,33 @@ const DAILY_REWARDS := [
 ## 120g is nothing at L40). ~+12% per level over the base.
 static func daily_gold_mult(level: int) -> float:
 	return 1.0 + 0.12 * float(maxi(level - 1, 0))
+
+## The daily track is FOUR WEEKS deep (owner 2026-08-16): the 7-day pattern
+## above repeats each week, and every later week pays a little more — gold and
+## Renown scale by the week's multiplier, the week's gems come a level higher
+## where the bonus says so. Streak day 29 wraps back to week 1. Numbers are
+## placeholders the owner will tune; the shape is what's wired.
+const DAILY_WEEKS := 4
+const DAILY_WEEK_MULT := [1.0, 1.2, 1.4, 1.6]        # gold + renown per week (index = week - 1)
+const DAILY_WEEK_GEM_LVL_BONUS := [0, 0, 1, 1]       # gem level bonus per week
+const DAILY_CYCLE_DAYS := 28                         # DAILY_WEEKS × the 7-day pattern
+
+
+## The reward for streak day `streak` (1-based) across the 28-day cycle:
+## the week's pattern entry, scaled by that week's multiplier.
+static func daily_reward_at(streak: int) -> Dictionary:
+	var day := (maxi(streak, 1) - 1) % DAILY_CYCLE_DAYS
+	var week := day / DAILY_REWARDS.size()
+	var base: Dictionary = DAILY_REWARDS[day % DAILY_REWARDS.size()]
+	var mult: float = float(DAILY_WEEK_MULT[mini(week, DAILY_WEEK_MULT.size() - 1)])
+	var out := base.duplicate()
+	if out.has("gold"):
+		out["gold"] = int(round(float(out["gold"]) * mult))
+	if out.has("renown"):
+		out["renown"] = int(round(float(out["renown"]) * mult))
+	if out.has("gems"):
+		out["gem_lvl"] = int(out.get("gem_lvl", 1)) + int(DAILY_WEEK_GEM_LVL_BONUS[mini(week, DAILY_WEEK_GEM_LVL_BONUS.size() - 1)])
+	return out
 
 # --------------------------------------------------------------- bounties ---
 # Rotating objectives: 2 daily + 1 weekly, rolled DETERMINISTICALLY from

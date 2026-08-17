@@ -1,0 +1,25 @@
+Asset type: production high-resolution pixel-art animation source row for Crownless (Godot action-RPG).
+
+Image 1 is the BINDING identity reference (five rotations of the Oathbound Arbiter). Image 2 is the same Paladin's EXISTING primary Judgment — an overhead hammer slam — seen from the S facing; use Image 2 ONLY for scale, camera and facing, and do NOT reproduce its motion: that overhead slam is the primary swing; you are authoring the ALTERNATE swing that alternates with it. Reproduce exactly that same character — the exact Oathbound Arbiter Paladin of Image 1: visible weathered middle-aged face, short dark hair and beard, pale steel and warm ivory plate, deep judicial-blue tabard and one-shoulder mantle, brass oath-chain crossing a large round seal over the heart, square-headed war hammer in the RIGHT hand, tall battered pale shield on the LEFT arm — at exactly Image 2's body size, camera and S facing. Do not redesign, simplify away, add, remove or swap equipment; the hammer stays in the right hand and the shield on the left arm in every frame.
+
+Create one 7-frame ALTERNATE JUDGMENT timeline: a LEVEL SIDEWAYS HAMMER SWING at waist-to-chest height, the square hammer head leading. The hammer never rises above the shoulders and never slams downward. Facing: FRONT view (south): the figure faces the camera in EVERY frame, f1 through f7, including the recovery. The shield stays on the left forearm the whole time and does not swing.
+
+f1  guard: standing full height, hammer hanging at the right side, shield forward, weight centred (this frame sets the body scale).
+f2  windup: shoulders and hips coil, the hammer drawn back behind the right hip, shaft level, head pointing backward.
+f3  swing: the hammer sweeps forward at waist height, mid-arc, right arm extending.
+f4  CONTACT — the peak: right arm fully extended, the hammer head straight ahead of the character at chest height, shaft level, a compact golden impact spark at the square head; the widest, most readable frame.
+f5  follow-through: the hammer continues across the front toward the shield side, torso twisted with the swing, spark fading.
+f6  recovery: the hammer swings back toward the right hip, torso unwinding.
+f7  settle: back to a guard nearly identical to f1, so the loop closes.
+
+The golden spark is a compact effect attached to the hammer head only — no detached rings, ground seals, beams or auras, nothing that leaves the figure's own space.
+
+Camera and medium: low top-down orthographic/isometric action-RPG camera; authentic premium hand-pixeled rendering; deliberate square pixel clusters; selective dark outlines; bold readable colour masses; simplified material seams; controlled texture; legible after reduction to about 88 pixels tall. Do not render smooth digital painting, vector art, 3D or splash illustration.
+
+Layout: ONE horizontal row of exactly 7 isolated full-body figures, left to right = frames f1..f7, in a wide 3:1 landscape image (about 2172 x 724 px). Every figure is the SAME character at the SAME scale, proportions, equipment dimensions, palette, camera and facing, feet on ONE shared ground line. Generous flat pure #00ff00 gutters between figures (at least a torso width): no figure or effect may touch, overlap or cross into a neighbour's space or be cropped by the image edge — keep the whole weapon, effect, head and feet inside each figure's own space. Frame f1 must be a full-height standing pose.
+
+Backdrop: perfectly flat solid #00ff00 only; no floor, cast/contact shadow, gradient, reflection, scenery, text, labels, frame numbers, arrows, grid lines, panels, border or watermark. No green (#00ff00 or near it) inside the character or the effect.
+
+Negative constraints: no overhead raise, no downward slam, no thrust, no spin; no shield swing or shield loss; the complete square metal hammer head and shaft stay visible in every frame; no change of face, hair, armour, tabard or hammer between frames; no duplicated frames, no size drift, no frame that turns toward a different direction.
+
+Deliverable: generate with the built-in image_gen tool, then COPY the raw generated PNG (do NOT key, crop, resize or edit it) into the current working directory as `paladin_attackb_s_v01_source.png`. Inspect it at full resolution: if the row does not hold exactly 7 clearly separated figures on green, if any figure or effect crosses into a neighbour, if the facing drifts from the assigned direction in ANY frame, or if the motion reproduces the primary swing instead of the alternate one described, generate again (save as `_v02_source.png`, `_v03_source.png`, ...; keep every attempt) — at most 3 attempts. Do not write anywhere except the current working directory. Finish with a short report: which version you consider best, and per frame f1..f7 one line describing weapon position/height and the figure's facing.

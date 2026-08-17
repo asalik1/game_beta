@@ -1096,7 +1096,7 @@ static func _terrain_hazards(t: Dictionary) -> Array:
 ## plaza), cached by Art.ground itself. `crop` = the pure-ground 32px corner.
 static func _terrain_swatch(id: String, crop: bool) -> Texture2D:
 	var t: Dictionary = Terrains.DATA[id]
-	var tex: Texture2D = Art.ground(String(t.get("ground", "grass")), String(t.get("path", "dirt")), 8, 8, 7, [])
+	var tex: Texture2D = Art.ground_preview(String(t.get("ground", "grass")), String(t.get("path", "dirt")), 8, 8, 7, [])
 	if tex == null or not crop:
 		return tex
 	var at := AtlasTexture.new()
@@ -1114,7 +1114,7 @@ const PREVIEW_TILES_W := 24
 const PREVIEW_TILES_H := 12
 static func _terrain_preview(id: String) -> Texture2D:
 	var t: Dictionary = Terrains.DATA[id]
-	return Art.ground(String(t.get("ground", "grass")), String(t.get("path", "dirt")),
+	return Art.ground_preview(String(t.get("ground", "grass")), String(t.get("path", "dirt")),
 		PREVIEW_TILES_W, PREVIEW_TILES_H, 11, ["W", "E"])
 
 
@@ -1803,6 +1803,7 @@ const NPC_ROLES := {
 	"beastkin": "Beastkin",
 	"beastkin_caged": "Beastkin captive",
 	"aldric": "Knight",
+	"scholar_ivo": "Chronicler of the Deeps",
 }
 
 

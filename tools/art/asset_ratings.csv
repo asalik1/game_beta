@@ -191,6 +191,7 @@ npcs/ridge_deserter,7.5,"current-generation roster: muted, painterly, consistent
 npcs/roadside_peddler,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Roadside Peddler,2,shipped
 npcs/rock,7,,claude 2026-07-26,npcs,Rock,3,shipped
 npcs/sapper_ruel,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Sapper Ruel,2,shipped
+npcs/scholar_ivo,8,"Codex ImageGen 2026-08-17: 256px painterly chronicler (white hair, slate coat, fur collar, ledger + tuning fork, violet vials); replaces the shared 32px villager on Ivo",claude 2026-08-17,npcs,Scholar Ivo,1,shipped
 npcs/scout_renn,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Scout Renn,2,shipped
 npcs/seamster_suli,7.5,"cloth bolt, shears, thread bandolier — real trade hook, clean roster style",claude 2026-08-08,npcs,Seamster Suli,1,shipped
 npcs/sentry,4,arcade cyan armor + orange boots,claude 2026-07-26,npcs,Sentry,1,placeholder
@@ -206,7 +207,7 @@ npcs/tombstone,7.5,"weathered carved headstone, mossy base; quietly good graveya
 npcs/tracker_yri,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Tracker Yri,1,shipped
 npcs/undertaker_prue,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Undertaker Prue,2,shipped
 npcs/vessa,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Vessa,2,shipped
-npcs/villager,4.5,"old generation: blocky, baked shadow, reused as ~25 named characters",claude 2026-07-26,npcs,Villager,5,placeholder
+npcs/villager,4.5,"old generation: blocky, baked shadow, reused as ~25 named characters; Ivo moved to his own body 2026-08-17",claude 2026-07-26,npcs,Villager,5,placeholder
 npcs/warden,5,"distinctive eldritch octopus, but old-batch outlines + baked shadow",claude 2026-07-26,npcs,Warden,1,placeholder
 npcs/warden_corin,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Warden Corin,2,shipped
 npcs/warden_edda,7.5,"current-generation roster: muted, painterly, consistent",claude 2026-07-26 (group),npcs,Warden Edda,1,shipped
@@ -290,6 +291,7 @@ splash/splash_rotmaw_the_gardener,8.5,"painterly dark-fantasy set, highly consis
 splash/splash_saint_varo,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Saint Varo the Unrotting — splash,3,shipped
 splash/splash_saint_varo_the_unrotting,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,Saint Varo the Unrotting — splash,3,shipped
 splash/splash_sapper_ruel,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,sapper_ruel — splash,2,shipped
+splash/splash_scholar_ivo,8.5,"painterly dark-fantasy set; matches the sprite design (candle desk + crystal cave); a shade darker than roster median, in family with Voss/Petra",claude 2026-08-17,splash,scholar_ivo — splash,1,shipped
 splash/splash_scout_renn,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,scout_renn — splash,2,shipped
 splash/splash_sentry_piet,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,sentry piet,0,unreferenced
 splash/splash_ser_aldric,8.5,"painterly dark-fantasy set, highly consistent",claude 2026-07-26 (group),splash,ser aldric,0,unreferenced

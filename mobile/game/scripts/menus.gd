@@ -1148,19 +1148,22 @@ func _build_potion_tab(vbox: VBoxContainer, p: Player) -> void:
 	var st := _lbl(slot_h, "ROOM SLOTS", 16, Color(0.95, 0.85, 0.5))
 	UITheme.header(st)
 	st.custom_minimum_size = Vector2(120, 0)
-	var sub := _lbl(slot_h, "%d drink%s per room, refilled at every door. %s drinks the active bottle · %s cycles which is active. An unassigned slot pours Health." % [
+	var sub := _lbl(slot_h, "%d drink%s per room, refilled at every door. %s drinks the active bottle · %s cycles which is active. A slot you don't assign pours your cheapest Health Potion — or leave it empty." % [
 		cap, "" if cap == 1 else "s", drink, cyc], 12, UITheme.TEXT_MUTED)
 	sub.custom_minimum_size = Vector2(700, 0)
 	sub.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
-	# --- the slot tiles: click a filled one to send it back to Health ---
+	# --- the slot tiles. Three states, one click cycles them:
+	#     bottle → default · default → empty · empty → default.
 	var slots := HBoxContainer.new()
 	slots.add_theme_constant_override("separation", 12)
 	vbox.add_child(slots)
+	var health_carried: int = p.potion_count()
 	for i in cap:
 		var pid: String = String(plan[i]) if i < plan.size() else "health"
-		var assigned: bool = pid != "health"
-		var active: bool = pid == p.active_potion
+		var empty: bool = pid == Player.LOADOUT_EMPTY
+		var assigned: bool = not empty and pid != "health"
+		var active: bool = pid == p.active_potion and p.potion_swap_useful()
 		var tile := VBoxContainer.new()
 		tile.custom_minimum_size = Vector2(120, 0)
 		tile.add_theme_constant_override("separation", 3)
@@ -1168,19 +1171,24 @@ func _build_potion_tab(vbox: VBoxContainer, p: Player) -> void:
 		var b := Button.new()
 		b.custom_minimum_size = Vector2(120, 72)
 		b.focus_mode = Control.FOCUS_NONE
-		var icon: Texture2D = _potion_icon(pid)
+		var icon: Texture2D = null if empty or (pid == "health" and health_carried <= 0) else _potion_icon(pid)
 		if icon != null:
 			b.icon = icon
 			b.expand_icon = true
 			b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			b.add_theme_constant_override("icon_max_width", 48)
-		var col: Color = Color(0.6, 0.85, 1.0) if assigned else Color(0.78, 0.42, 0.42)
+		else:
+			b.text = "—"
+			b.alignment = HORIZONTAL_ALIGNMENT_CENTER
+			b.add_theme_font_size_override("font_size", 22)
+			b.add_theme_color_override("font_color", Color(0.4, 0.42, 0.5))
+		var col: Color = Color(0.6, 0.85, 1.0) if assigned else (Color(0.5, 0.53, 0.62) if empty or health_carried <= 0 else Color(0.78, 0.42, 0.42))
 		var sb := StyleBoxFlat.new()
 		sb.bg_color = Color(0.09, 0.09, 0.12, 0.92) if assigned else Color(0.06, 0.05, 0.06, 0.9)
 		sb.border_color = Color(col, 0.95 if assigned else 0.5)
 		sb.set_border_width_all(2)
 		sb.set_corner_radius_all(6)
-		if active and p.potion_swap_useful():
+		if active:
 			sb.border_color = Color(1.0, 0.85, 0.4)
 			sb.set_border_width_all(3)
 		b.add_theme_stylebox_override("normal", sb)
@@ -1188,19 +1196,30 @@ func _build_potion_tab(vbox: VBoxContainer, p: Player) -> void:
 		sbh.bg_color = Color(0.17, 0.17, 0.23, 0.95)
 		b.add_theme_stylebox_override("hover", sbh)
 		b.add_theme_stylebox_override("pressed", sbh)
+		var slot_i := i
+		var pid_c := pid
+		var title := ""
 		if assigned:
-			b.tooltip_text = "Slot %d — %s\nSelect to send this slot back to Health." % [i + 1, p.potion_display_name(pid)]
-			var pid_c := pid
+			title = String(p.potion_display_name(pid))
+			b.tooltip_text = "Slot %d — %s\nSelect to send this slot back to the default (Health)." % [i + 1, title]
 			b.pressed.connect(func() -> void:
 				game.local_player.loadout_remove(pid_c)
-				_potion_msg = "Slot back to Health."
+				open_inventory("potions"))
+		elif empty:
+			title = "Empty"
+			b.tooltip_text = "Slot %d — left empty on purpose: pours nothing.\nSelect to restore the default (Health)." % (i + 1)
+			b.pressed.connect(func() -> void:
+				game.local_player.loadout_set_empty(slot_i, false)
 				open_inventory("potions"))
 		else:
-			b.tooltip_text = "Slot %d — Health (default)\nSelect a bottle below to assign this slot." % (i + 1)
-			b.disabled = true
-			b.add_theme_stylebox_override("disabled", sb)
+			title = "Health" if health_carried > 0 else "Health (none carried)"
+			b.tooltip_text = ("Slot %d — default: pours your cheapest Health Potion (%d carried).\nSelect to leave this slot EMPTY instead; select a bottle below to assign it." % [i + 1, health_carried]) if health_carried > 0 \
+				else "Slot %d — default would pour a Health Potion, but you carry none: it pours nothing.\nSelect to mark it empty on purpose; select a bottle below to assign it." % (i + 1)
+			b.pressed.connect(func() -> void:
+				game.local_player.loadout_set_empty(slot_i, true)
+				open_inventory("potions"))
 		tile.add_child(b)
-		var nm := _lbl(tile, ("▶ " if active and p.potion_swap_useful() else "") + ("Health" if not assigned else String(p.potion_display_name(pid))), 12, col)
+		var nm := _lbl(tile, ("▶ " if active else "") + title, 12, col)
 		nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		nm.custom_minimum_size = Vector2(120, 0)
 		var sl := _lbl(tile, "slot %d" % (i + 1), 10, Color(0.5, 0.53, 0.62))
@@ -1219,14 +1238,14 @@ func _build_potion_tab(vbox: VBoxContainer, p: Player) -> void:
 	var bt := _lbl(bh, "YOUR BOTTLES", 16, Color(0.95, 0.85, 0.5))
 	UITheme.header(bt)
 	bt.custom_minimum_size = Vector2(130, 0)
-	var free_slots: int = cap - p.potion_rotation.size()
+	var free_slots: int = p.loadout_free_slots()
 	var bsub := _lbl(bh, ("Select a bottle to put it in the next free slot (%d free). Health Potions in your bag: %d." % [free_slots, p.potion_count()]) if free_slots > 0
-		else "Every slot is assigned — select a slot above to free it. Health Potions in your bag: %d." % p.potion_count(), 12, UITheme.TEXT_MUTED)
+		else "Every slot holds a bottle — select a slot above to free it. Health Potions in your bag: %d." % p.potion_count(), 12, UITheme.TEXT_MUTED)
 	bsub.custom_minimum_size = Vector2(640, 0)
 	bsub.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var owned_ids: Array = p.owned_potion_ids()
 	if owned_ids.is_empty():
-		var warn := _lbl(vbox, "You carry no rotation potions — every slot pours your cheapest Health Potion. Buy a Mana Potion, an Elixir of Might or Warding, a Tonic or a Draught of Renewal from an alchemist's shelf (or the laced bottles from the Sable Court fence or a road smuggler), then assign the exact bottle here.", 13, Color(1.0, 0.82, 0.5))
+		var warn := _lbl(vbox, "No rotation bottles in your bag yet. Merchants sell Mana Potions, Elixirs of Might and Warding, Tonics and Draughts of Renewal (the Sable Court fence and road smugglers sell laced ones cheaper); assign the exact bottle here once you carry it.", 13, Color(0.7, 0.72, 0.8))
 		warn.custom_minimum_size = Vector2(700, 0)
 	else:
 		var grid := HFlowContainer.new()
@@ -1266,8 +1285,8 @@ func _build_potion_tab(vbox: VBoxContainer, p: Player) -> void:
 			b.tooltip_text = "%s\nown x%d%s\nSelect: assign to the next free slot" % [
 				p.potion_display_name(rid_c), owned, ("  ·  in %d slot%s" % [in_rot, "" if in_rot == 1 else "s"]) if in_rot > 0 else ""]
 			b.pressed.connect(func() -> void:
-				if game.local_player.potion_rotation.size() >= game.local_player.potion_slot_cap():
-					_potion_msg = "Every slot is assigned — select a slot above to send it back to Health first."
+				if game.local_player.loadout_free_slots() <= 0:
+					_potion_msg = "Every slot holds a bottle — select a slot above to free it first."
 				else:
 					game.local_player.loadout_add(rid_c)
 				open_inventory("potions"))
@@ -1298,7 +1317,7 @@ func _build_potion_tab(vbox: VBoxContainer, p: Player) -> void:
 	foot.add_theme_constant_override("separation", 12)
 	vbox.add_child(foot)
 	if not p.potion_rotation.is_empty():
-		_btn(foot, "  ⟲  All slots back to Health  ", func() -> void:
+		_btn(foot, "  ⟲  Reset every slot to the default (Health)  ", func() -> void:
 			game.local_player.potion_rotation.clear()
 			game.local_player.active_potion = "health"
 			open_inventory("potions"), Color(0.6, 1.0, 0.8))
@@ -1571,8 +1590,8 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 						open_inventory("gear", cat)
 					var actions: Array = [["  Use  ", Color(0.6, 1.0, 0.8), use_cb]]
 					if Items.is_rotation_potion(cid):
-						info += "\n\nLoadout: %d/%d slots assigned%s — unassigned slots drink as HEALTH. %s cycles potions in the field." % [
-							p.potion_rotation.size(), p.potion_slot_cap(),
+						info += "\n\nLoadout: %d of %d slots hold a bottle%s — the rest pour Health (or sit empty by choice). %s cycles potions in the field; the Potions tab shows the whole plan." % [
+							p.potion_slot_cap() - p.loadout_free_slots(), p.potion_slot_cap(),
 							("  (this: x%d)" % slotted) if slotted > 0 else "",
 							game.control_hint("potion_next", "The ↻ button")]
 						var slot_cb := func() -> void:
@@ -1974,6 +1993,9 @@ func _sorted_gem_keys(groups: Dictionary) -> Array:
 
 
 ## Full character sheet with per-stat explanations.
+## The inventory's Stats tab = THE character sheet (one component, shared with
+## the Skills › Attributes tab so the two never drift — 2026-08-16: they were
+## two hand-built lists, one of them a raw text blob).
 func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -1982,19 +2004,92 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 	vbox.add_child(scroll)
 	var list := VBoxContainer.new()
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	list.add_theme_constant_override("separation", 4)
+	list.add_theme_constant_override("separation", 6)
 	scroll.add_child(list)
+	var tip := _lbl(list, "Select any stat to learn what it does. Points are spent in Skills › Attributes.", 12, UITheme.TEXT_MUTED)
+	tip.custom_minimum_size = Vector2(700, 0)
+	# Three columns of ledger lines (name left, value flush right) so the
+	# sheet fills the panel with numbers instead of empty card, and reads
+	# without a scroll: what you build · how you hit · how you last.
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_right", 14)  # clear of the scrollbar
+	list.add_child(margin)
+	var cols := HBoxContainer.new()
+	cols.add_theme_constant_override("separation", 14)
+	margin.add_child(cols)
+	var by_title := {}
+	for sec in _stat_sheet_data(p):
+		by_title[String(sec["title"])] = sec
+	var flash_keep := _stat_flash.duplicate()
+	# Grouped so the three columns carry near-equal row counts, and each
+	# column's LAST card stretches to the shared bottom line — three even
+	# pillars, not three ragged stacks (owner 2026-08-16).
+	for group in [["COMBAT", "UTILITY"], ["ATTRIBUTES", "FACTIONS"], ["DEFENSE", "SHARD"]]:
+		var col := VBoxContainer.new()
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		col.add_theme_constant_override("separation", 6)
+		cols.add_child(col)
+		var picked: Array = []
+		for t in group:
+			if by_title.has(t):
+				picked.append(by_title[t])
+		_stat_flash = flash_keep.duplicate()
+		_stat_sheet_build(col, picked, false)
+		var last := col.get_child(col.get_child_count() - 1) as Control
+		if last != null:
+			last.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_stat_flash = {}
+	_hint(vbox, "ESC, ✕, click outside, or I to close")
 
-	_lbl(list, "ATTRIBUTES  (select any stat to learn what it does)", 16, Color(0.95, 0.85, 0.5))
+
+## Snapshot of a sheet's values by row name — taken BEFORE a point is spent so
+## the rebuilt sheet can flash exactly the numbers that moved.
+var _stat_flash := {}
+var _stat_pop_frame := -1  # frame a stat explainer last opened (touch + emulated click dedupe)
+
+
+## Character sheet, one grouped card per section. `compact` = the narrower
+## column beside the attribute allocator. Rows whose value differs from
+## `_stat_flash` (a pre-spend snapshot) pulse green so a spent point is SEEN.
+func _stat_sheet_build(list: VBoxContainer, sections: Array, compact: bool) -> void:
+	for sec in sections:
+		var sd: Dictionary = sec
+		var head := _lbl(list, String(sd["title"]), 13 if compact else 15, Color(0.95, 0.85, 0.5))
+		UITheme.header(head)
+		var card := UITheme.card(list, Color(0.42, 0.45, 0.55), 8.0 if compact else 10.0)
+		var col := VBoxContainer.new()
+		col.add_theme_constant_override("separation", 1 if compact else 2)
+		card.add_child(col)
+		for r in sd["rows"]:
+			var rd: Array = r
+			var nm := String(rd[0])
+			var val := String(rd[1])
+			var lbl := _stat_row(col, nm, val, String(rd[2]), rd[3] if rd.size() > 3 else Color(0.85, 0.85, 0.9), compact)
+			if _stat_flash.has(nm) and String(_stat_flash[nm]) != val:
+				# The number just moved: pulse it green, then settle.
+				lbl.modulate = Color(0.55, 1.0, 0.6)
+				var tw := create_tween()
+				tw.tween_property(lbl, "modulate", Color(1, 1, 1), 0.9).set_ease(Tween.EASE_OUT)
+		var note := String(sd.get("note", ""))
+		if note != "":
+			var nl := _lbl(col, note, 11 if compact else 12, Color(0.5, 1.0, 0.5))
+			nl.custom_minimum_size = Vector2(300 if compact else 380, 0)
+	_stat_flash = {}
+
+
+## The sheet's data: [{title, rows: [[name, value, tip, color?]...], note?}]
+## — everything the sheet shows, in display order, numbers pulled live.
+func _stat_sheet_data(p: Player) -> Array:
+	var out: Array = []
+	var attr_rows: Array = []
 	for attr in Classes.ATTR_NAMES:
 		var is_primary: bool = Classes.CLASSES[p.cls]["primary"] == attr
-		_stat_row(list, "%s%s" % [attr, "  ★" if is_primary else ""], str(p.attr_total(attr)),
+		attr_rows.append(["%s%s" % [attr, "  ★" if is_primary else ""], str(p.attr_total(attr)),
 			Classes.attr_help(p.cls, attr),
-			Color(0.95, 0.85, 0.5) if is_primary else Color(0.85, 0.85, 0.9))
-	if p.unspent_attr > 0:
-		_lbl(list, "     %d unspent points — allocate in Skills" % p.unspent_attr, 13, Color(0.5, 1.0, 0.5))
-
-	_lbl(list, "COMBAT", 16, Color(0.95, 0.85, 0.5))
+			Color(0.95, 0.85, 0.5) if is_primary else Color(0.85, 0.85, 0.9)])
+	out.append({"title": "ATTRIBUTES", "rows": attr_rows,
+		"note": ("%d unspent point%s — allocate in Skills › Attributes" % [p.unspent_attr, "" if p.unspent_attr == 1 else "s"]) if p.unspent_attr > 0 else ""})
 	var rows := [
 		["Combat Rating", str(p.combat_rating()), "Your whole build boiled down to one power number: attack, crits, penetration, defenses, mobility — everything counts."],
 		["ATK (%s)" % Classes.CLASSES[p.cls]["dmg_type"], str(int(p.atk)), "Base damage of all your abilities. Your class deals %s damage." % Classes.CLASSES[p.cls]["dmg_type"]],
@@ -2006,10 +2101,7 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 		["DEX", str(int(p.dex)), "Hit rate: reduces the enemy's chance to EVADE your attacks. Only matters against evasive enemies (spiders, witches)."],
 		["Haste", "%d%%" % int(p.cdr * 100), "Reduces all ability cooldowns."],
 	]
-	for r in rows:
-		_stat_row(list, r[0], r[1], r[2])
-
-	_lbl(list, "DEFENSE", 16, Color(0.95, 0.85, 0.5))
+	out.append({"title": "COMBAT", "rows": rows})
 	var rows2 := [
 		["HP", "%d / %d" % [int(p.hp), int(p.max_hp)], "Your health. Dying returns you to the last safe room you visited — and the room you fell in resets."],
 		["Mana", "%d / %d" % [int(p.mp), int(p.max_mp)], "Fuel for abilities. Regenerates over time (mages regenerate 50% faster)."],
@@ -2018,77 +2110,102 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 		["Crit Res", str(int(p.critres)), "Shaves the enemy's chance to critically hit you."],
 		["Evasion", "%d%%" % int(Stats.eva_curve(p.eva) * 100), "Chance to fully dodge a hit. Countered by the attacker's DEX. Capped at %d%%." % int(Balance.CAP_EVA * 100)],
 	]
-	for r in rows2:
-		_stat_row(list, r[0], r[1], r[2])
-
-	_lbl(list, "UTILITY", 16, Color(0.95, 0.85, 0.5))
+	out.append({"title": "DEFENSE", "rows": rows2})
 	var rows3 := [
 		["Speed", str(int(p.speed)), "How fast you move. Ice patches boost it; void rifts slow it."],
 		["Lifesteal", "%d%%" % int(p.lifesteal * 100), "Heals you for a share of damage dealt. AoE hits only steal a third."],
 		["Greed", "%d%%" % int(Stats.greed_gold(p.current_greed()) * 100), "Bonus gold from every source. Every point also nudges chest drop rates. Strong diminishing returns past %d%%. Sourced only by GOLD RUSH coins — rare charged coins spilled by farm kills that surge it for a window." % int(Balance.CAP_GREED * 100)],
 	]
-	for r in rows3:
-		_stat_row(list, r[0], r[1], r[2])
+	out.append({"title": "UTILITY", "rows": rows3})
 
 	# Resonance number, band and sources.
-	_lbl(list, "SHARD", 16, Color(0.95, 0.85, 0.5))
 	var res_band := String(Story.res_band(p.resonance))
 	var res_word: String = {"steady": "Steady — the shard hums warm",
 		"tempted": "Tempted — the shard whispers"}.get(res_band, "Quiet — the shard is undecided")
 	var res_col: Color = {"steady": Color(0.6, 1.0, 0.6),
 		"tempted": Color(1.0, 0.6, 0.6)}.get(res_band, Color(0.85, 0.85, 0.9))
-	_stat_row(list, "Resonance", "%+d   (%s)" % [int(p.resonance), res_word],
-		"How the shard resonates with your CHOICES, from -100 (Temptation) to +100 (Virtue). Kindness, mercy and honest work raise it; cruelty, theft and grave-robbing lower it. The world reads it before you do: merchants price you 10% kinder when it's high and 10% warier when it's low, some dialogue options only open at certain bands, and NPCs react to what the shard says about you.", res_col)
+	# Ledger values stay SHORT (the row is one line); the words live in the tip.
+	var res_tip := "How the shard resonates with your CHOICES, from -100 (Temptation) to +100 (Virtue). Kindness, mercy and honest work raise it; cruelty, theft and grave-robbing lower it. The world reads it before you do: merchants price you 10% kinder when it's high and 10% warier when it's low, some dialogue options only open at certain bands, and NPCs react to what the shard says about you."
+	var shard_rows: Array = [["Resonance", "%+d" % int(p.resonance), res_tip, res_col],
+		["Shard mood", res_word.split(" — ")[0], res_tip + "\n\n" + res_word, res_col]]
 	if p.res_lean() <= 0.0:
-		_stat_row(list, "Shard lean", "none — the shard is undecided",
-			"Commit past the band line (±25) and a lean wakes, growing to full strength at ±100. Virtue leans into CONSTANCY: health potions mend up to %d%% deeper. Temptation leans into HUNGER: up to +%d%% damage to wounded mobs (below %d%% HP — never bosses) and up to +%d%% gold from kills. Neither is the correct answer; staying undecided is the only way to get nothing." % [
+		shard_rows.append(["Shard lean", "none",
+			"The shard is undecided. Commit past the band line (±25) and a lean wakes, growing to full strength at ±100. Virtue leans into CONSTANCY: health potions mend up to %d%% deeper. Temptation leans into HUNGER: up to +%d%% damage to wounded mobs (below %d%% HP — never bosses) and up to +%d%% gold from kills. Neither is the correct answer; staying undecided is the only way to get nothing." % [
 				int(Balance.RES_CONSTANCY_HEAL_MAX * 100), int(Balance.RES_HUNGER_EXEC_MAX * 100),
-				int(Balance.RES_HUNGER_EXEC_AT * 100), int(Balance.RES_HUNGER_GOLD_MAX * 100)])
+				int(Balance.RES_HUNGER_EXEC_AT * 100), int(Balance.RES_HUNGER_GOLD_MAX * 100)]])
 	elif p.resonance > 0.0:
-		_stat_row(list, "Shard lean", "Constancy — potions mend +%d%%" % int((p.constancy_heal_mult() - 1.0) * 100.0),
+		shard_rows.append(["Shard lean", "Constancy  +%d%% mend" % int((p.constancy_heal_mult() - 1.0) * 100.0),
 			"The steady shard rewards the measured hand: health potions restore +%d%% more (grows with conviction — +%d%% at Virtue 100). Merchants already price the steady 10%% kinder." % [
-				int((p.constancy_heal_mult() - 1.0) * 100.0), int(Balance.RES_CONSTANCY_HEAL_MAX * 100)], res_col)
+				int((p.constancy_heal_mult() - 1.0) * 100.0), int(Balance.RES_CONSTANCY_HEAL_MAX * 100)], res_col])
 	else:
-		_stat_row(list, "Shard lean", "Hunger — +%d%% vs wounded mobs, +%d%% kill gold" % [
+		shard_rows.append(["Shard lean", "Hunger  +%d%% exec · +%d%% gold" % [
 				int(p.hunger_exec_bonus() * 100.0), int((p.hunger_gold_mult() - 1.0) * 100.0)],
 			"The tempted shard savors the finish: +%d%% damage to mobs below %d%% health (bosses are immune — earn those the honest way) and +%d%% gold from every kill (grows with conviction — full at Temptation -100)." % [
 				int(p.hunger_exec_bonus() * 100.0), int(Balance.RES_HUNGER_EXEC_AT * 100),
-				int((p.hunger_gold_mult() - 1.0) * 100.0)], res_col)
+				int((p.hunger_gold_mult() - 1.0) * 100.0)], res_col])
+	out.append({"title": "SHARD", "rows": shard_rows})
 
 	# (T5) Faction standing — who in Vaelscar trusts you, and how much.
-	_lbl(list, "FACTIONS", 16, Color(0.95, 0.85, 0.5))
 	var factions := [
 		["accord", "Ember Accord", "joined_accord", "Maren's loyalists: gather the shards, break the hollow throne for good."],
 		["cinderborn", "Cinderborn", "joined_cinderborn", "Old-regime nobles: order needs a crown — find a worthy head for it."],
 		["wildfang", "Wildfang Tribes", "", "Fangmaw's beastkin descendants. They remember who opens doors. (Not joinable.)"],
 		["choir", "Hollow Choir", "", "Blight-plague survivors turned faithful. They do not recruit; they wait. (Not joinable.)"],
 	]
+	var fac_rows: Array = []
 	for f in factions:
 		var standing: int = int(p.faction_standing.get(f[0], 0))
 		var joined: bool = f[2] != "" and game.get_flag(f[2], false)
 		var val := "%s%d%s" % ["+" if standing > 0 else "", standing, "   ⚑ JOINED" if joined else ""]
 		var col := Color(0.6, 1.0, 0.6) if standing > 0 else (Color(1.0, 0.6, 0.6) if standing < 0 else Color(0.85, 0.85, 0.9))
-		_stat_row(list, f[1], val, f[3], col)
-	_hint(vbox, "ESC, ✕, click outside, or I to close")
+		fac_rows.append([f[1], val, f[3], col])
+	out.append({"title": "FACTIONS", "rows": fac_rows})
+	return out
 
 
-## One clickable stat row with an explanation popover.
-func _stat_row(parent: Node, stat_name: String, value: String, tip: String, color := Color(0.85, 0.85, 0.9)) -> void:
+## Row name -> value for every row of the sheet (the pre-spend snapshot).
+func _stat_values(p: Player) -> Dictionary:
+	var out := {}
+	for sec in _stat_sheet_data(p):
+		for r in sec["rows"]:
+			out[String(r[0])] = String(r[1])
+	return out
+
+
+## One clickable stat row with an explanation popover: name · value. The
+## whole row is the target (it brightens under the pointer); no glyph.
+## Returns the VALUE label (the sheet pulses it when a number moves).
+func _stat_row(parent: Node, stat_name: String, value: String, tip: String, color := Color(0.85, 0.85, 0.9), compact := false) -> Label:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	row.mouse_filter = Control.MOUSE_FILTER_STOP
+	row.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	# Mouse click OR a finger tap (touch events are handled explicitly, not
+	# only via mouse emulation) opens the explainer.
 	row.gui_input.connect(func(e: InputEvent) -> void:
-		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+		var hit: bool = (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT) \
+			or (e is InputEventScreenTouch and e.pressed)
+		# A touch arrives twice (the touch + its emulated mouse click): one per frame.
+		if hit and Engine.get_process_frames() != _stat_pop_frame:
+			_stat_pop_frame = Engine.get_process_frames()
+			row.accept_event()
 			_open_detail_popover(null, stat_name, color, tip, []))
 	parent.add_child(row)
-	var n := _lbl(row, stat_name, 14, color)
-	n.custom_minimum_size = Vector2(220, 0)
+	# Name takes the slack, value sits flush right — a ledger line, not a
+	# left-heavy row trailing empty card.
+	var n := _lbl(row, stat_name, 13 if compact else 14, color)
+	n.custom_minimum_size = Vector2(120 if compact else 140, 0)
+	n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	n.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var v := _lbl(row, value, 14, Color(1, 1, 1))
-	v.custom_minimum_size = Vector2(160, 0)
+	var v := _lbl(row, value, 13 if compact else 14, Color(1, 1, 1))
+	v.custom_minimum_size = Vector2(60, 0)
+	v.autowrap_mode = TextServer.AUTOWRAP_OFF  # a value is one line; it takes the width it needs
+	v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var hint := _lbl(row, "🛈", 12, Color(0.5, 0.55, 0.65))
-	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Hover = the row lifts a touch, so "select a stat" has a visible target.
+	row.mouse_entered.connect(func() -> void: n.modulate = Color(1.25, 1.25, 1.2))
+	row.mouse_exited.connect(func() -> void: n.modulate = Color(1, 1, 1))
+	return v
 
 
 ## Bag gems grouped by stat+level: key -> {gem, count}.
@@ -2658,6 +2775,9 @@ func _build_talent_loadouts_tab(vbox: VBoxContainer, p: Player) -> void:
 	_hint(vbox, "ESC / T to close — a row opens at its level, or as soon as the row above it is full")
 
 
+const ABILITY_CARD := 72.0  # a square the variant icon FILLS (icons are 64px art)
+
+
 func _build_ability_assignments_tab(vbox: VBoxContainer, p: Player) -> void:
 	var next_note := "" if p.themes_known >= 3 else " — next unlocks at Lv %d" % Classes.THEME_LEVELS[mini(p.themes_known, 2)]
 	UITheme.header(_lbl(vbox, "ABILITY ASSIGNMENTS", 17, UITheme.GOLD_BRIGHT))
@@ -2675,30 +2795,34 @@ func _build_ability_assignments_tab(vbox: VBoxContainer, p: Player) -> void:
 			break
 	if not preview_theme_valid:
 		_ability_preview_theme = String(p.ability_theme.get(_ability_preview_slot, ""))
-	_build_ability_detail(vbox, p)
-
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	vbox.add_child(scroll)
-	var list := VBoxContainer.new()
-	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	list.add_theme_constant_override("separation", 8)
-	scroll.add_child(list)
+	# 2026-08-16: matrix LEFT (compact option cards, one row per ability),
+	# the inspected variant's full readout RIGHT (icon, text, numbers, ASSIGN)
+	# — the old layout stacked a wide detail strip over a grid of near-empty
+	# 220x78 cards and left a third of the panel blank.
+	var body := HBoxContainer.new()
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation", 20)
+	vbox.add_child(body)
+	var left := VBoxContainer.new()
+	left.custom_minimum_size = Vector2(160 + 4 * (ABILITY_CARD + 6), 0)
+	left.add_theme_constant_override("separation", 6)
+	body.add_child(left)
 
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 6)
-	list.add_child(header)
-	var ability_head := UITheme.header(_lbl(header, "HOTBAR ABILITY", 12, Color(0.52, 0.52, 0.58)))
-	ability_head.custom_minimum_size = Vector2(196, 0)
-	var base_head := UITheme.header(_lbl(header, "BASE", 13, Color(0.78, 0.78, 0.84)))
+	left.add_child(header)
+	var ability_head := UITheme.header(_lbl(header, "HOTBAR ABILITY", 11, Color(0.52, 0.52, 0.58)))
+	ability_head.custom_minimum_size = Vector2(160, 0)
+	var base_head := UITheme.header(_lbl(header, "BASE", 11, Color(0.78, 0.78, 0.84)))
 	base_head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	base_head.custom_minimum_size = Vector2(220, 0)
+	base_head.custom_minimum_size = Vector2(ABILITY_CARD, 0)
+	base_head.autowrap_mode = TextServer.AUTOWRAP_OFF
 	for theme in Classes.THEMES[p.cls]:
-		var theme_head := UITheme.header(_lbl(header, theme["name"].to_upper(), 13, theme["color"]))
+		var theme_head := UITheme.header(_lbl(header, theme["name"].to_upper(), 11, theme["color"]))
 		theme_head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		theme_head.custom_minimum_size = Vector2(220, 0)
+		theme_head.custom_minimum_size = Vector2(ABILITY_CARD, 0)
+		theme_head.autowrap_mode = TextServer.AUTOWRAP_OFF
+		theme_head.clip_text = true
 
 	var slot_labels := {"a1": "ABILITY 1", "a2": "ABILITY 2", "a3": "ABILITY 3", "ult": "ULTIMATE"}
 	for slot in slots:
@@ -2706,10 +2830,16 @@ func _build_ability_assignments_tab(vbox: VBoxContainer, p: Player) -> void:
 		var ab: Dictionary = Classes.ability(p.cls, s)
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 6)
-		list.add_child(row)
-		var ability_label := _lbl(row, "%s\n%s" % [slot_labels[s], ab["name"]], 13, Color(0.88, 0.86, 0.78))
-		ability_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		ability_label.custom_minimum_size = Vector2(196, 78)
+		left.add_child(row)
+		var name_col := VBoxContainer.new()
+		name_col.custom_minimum_size = Vector2(160, 0)
+		name_col.add_theme_constant_override("separation", 0)
+		name_col.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(name_col)
+		var sl := _lbl(name_col, String(slot_labels[s]), 10, Color(0.52, 0.52, 0.58))
+		sl.autowrap_mode = TextServer.AUTOWRAP_OFF
+		var an := _lbl(name_col, String(ab["name"]), 14, Color(0.88, 0.86, 0.78))
+		an.autowrap_mode = TextServer.AUTOWRAP_OFF
 
 		var options: Array = [{"id": "", "name": "Base", "color": Color(0.78, 0.78, 0.84)}]
 		options.append_array(Classes.THEMES[p.cls])
@@ -2721,48 +2851,67 @@ func _build_ability_assignments_tab(vbox: VBoxContainer, p: Player) -> void:
 				and _ability_preview_theme == theme_id
 			var unlocked: bool = option_idx == 0 or option_idx - 1 < p.themes_known
 			var option_color: Color = option["color"] if unlocked else Color(0.38, 0.38, 0.43)
-			var assign_cb := func() -> void:
+			var inspect_cb := func() -> void:
 				_ability_preview_slot = s
 				_ability_preview_theme = theme_id
 				open_skills("abilities")
-			# The column header names the spec — cards carry only their state.
-			var state_text := "✓  ASSIGNED" if selected else ("◈  INSPECTING" if previewed else "")
-			var option_button := _btn(row, state_text,
-				assign_cb, option_color, true,
+			# The column header names the spec — the card is the icon, CENTRED,
+			# with its state as a corner badge: ✓ assigned · ◈ inspecting · 🔒
+			# unopened. (An icon beside an empty text run sat flush left and
+			# left the card's right half blank — owner 2026-08-16.)
+			# A square card the icon FILLS — the border is the whole state
+			# (thick + tinted = assigned, pale = inspecting, dim = locked); no
+			# glyphs, nothing beside the icon (owner 2026-08-16).
+			var option_button := _btn(row, "", inspect_cb, option_color, true,
 				Art.ability_icon(p.cls, s, option_color, theme_id))
-			option_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
-			option_button.custom_minimum_size = Vector2(220, 78)
-			option_button.add_theme_constant_override("icon_max_width", 64)
+			option_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			option_button.expand_icon = true
+			option_button.custom_minimum_size = Vector2(ABILITY_CARD, ABILITY_CARD)
+			option_button.tooltip_text = "%s · %s%s" % [String(ab["name"]), String(option["name"]),
+				"" if unlocked else "  (unlocks at Lv %d)" % Classes.THEME_LEVELS[option_idx - 1]]
 			_assignment_card_style(option_button, option_color, selected, previewed)
 
 	var arow := HBoxContainer.new()
-	arow.add_theme_constant_override("separation", 10)
-	vbox.add_child(arow)
-	var al := UITheme.header(_lbl(arow, "ASSIGN ALL", 13, Color(0.7, 0.72, 0.78)))
-	al.custom_minimum_size = Vector2(112, 0)
-	_btn(arow, " BASE ", func() -> void:
+	arow.add_theme_constant_override("separation", 6)
+	left.add_child(arow)
+	var al := UITheme.header(_lbl(arow, "ASSIGN ALL", 11, Color(0.7, 0.72, 0.78)))
+	al.custom_minimum_size = Vector2(160, 0)
+	var base_all := _btn(arow, "BASE", func() -> void:
 		game.local_player.set_all_themes("")
 		open_skills("abilities"), Color(0.85, 0.85, 0.9))
+	base_all.custom_minimum_size = Vector2(ABILITY_CARD, 0)
+	base_all.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	base_all.add_theme_font_size_override("font_size", 12)
 	for i2 in Classes.THEMES[p.cls].size():
 		var th: Dictionary = Classes.THEMES[p.cls][i2]
 		var tid: String = th["id"]
 		var t_unlocked: bool = i2 < p.themes_known
-		_btn(arow, " %s " % th["name"], func() -> void:
+		var tb := _btn(arow, String(th["name"]), func() -> void:
 			game.local_player.set_all_themes(tid)
 			open_skills("abilities"),
 			th["color"] if t_unlocked else Color(0.4, 0.4, 0.45), t_unlocked)
-	_hint(vbox, "Select a card to inspect it above, then choose ASSIGN")
+		tb.custom_minimum_size = Vector2(ABILITY_CARD, 0)
+		tb.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		tb.add_theme_font_size_override("font_size", 12)
+		tb.clip_text = true
+	var legend := _lbl(left, "Bright frame = assigned · pale frame = inspecting · dim = locked. Specializations open at Lv %d / %d / %d; every variant keeps the base ability and changes one facet of it." % [
+		Classes.THEME_LEVELS[0], Classes.THEME_LEVELS[1], Classes.THEME_LEVELS[2]], 11, Color(0.52, 0.55, 0.65))
+	legend.custom_minimum_size = Vector2(160 + 4 * (ABILITY_CARD + 6), 0)
+	var sp := Control.new()
+	sp.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	left.add_child(sp)
+
+	_build_ability_detail(body, p)
+	_hint(vbox, "Select a card to inspect it, then ASSIGN")
 
 
-func _build_ability_detail(vbox: VBoxContainer, p: Player) -> void:
+## The inspected variant, in full: icon · ABILITY · SPEC · what it changes ·
+## the numbers · what the base does · ASSIGN (or ASSIGNED / unlock level).
+func _build_ability_detail(parent: Control, p: Player) -> void:
 	var ab: Dictionary = Classes.ability(p.cls, _ability_preview_slot)
 	var theme := Classes.theme_by_id(p.cls, _ability_preview_theme)
 	var theme_name := String(theme.get("name", "Base"))
 	var theme_color: Color = theme.get("color", Color(0.78, 0.78, 0.84))
-	var detail := String(ab["desc"]) if _ability_preview_theme == "" else (
-		Classes.variant_desc(p.cls, _ability_preview_slot, _ability_preview_theme) + "\n" +
-		Classes.fx_text(Classes.ability_fx(
-			p.cls, _ability_preview_slot, _ability_preview_theme), p.cls))
 	var theme_index := -1
 	for i in Classes.THEMES[p.cls].size():
 		if String(Classes.THEMES[p.cls][i]["id"]) == _ability_preview_theme:
@@ -2773,36 +2922,76 @@ func _build_ability_detail(vbox: VBoxContainer, p: Player) -> void:
 		p.ability_theme.get(_ability_preview_slot, "")) == _ability_preview_theme
 
 	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var panel_style := StyleBoxFlat.new()
 	panel_style.bg_color = Color(
 		theme_color.r * 0.1, theme_color.g * 0.1, theme_color.b * 0.1, 0.94)
 	panel_style.border_color = Color(theme_color, 0.72)
 	panel_style.set_border_width_all(2)
 	panel_style.set_corner_radius_all(8)
-	panel_style.content_margin_left = 12.0
-	panel_style.content_margin_right = 12.0
-	panel_style.content_margin_top = 8.0
-	panel_style.content_margin_bottom = 8.0
+	panel_style.content_margin_left = 14.0
+	panel_style.content_margin_right = 14.0
+	panel_style.content_margin_top = 12.0
+	panel_style.content_margin_bottom = 12.0
 	panel.add_theme_stylebox_override("panel", panel_style)
-	vbox.add_child(panel)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	panel.add_child(row)
-	var copy := VBoxContainer.new()
-	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(copy)
-	_lbl(copy, "%s  ·  %s" % [String(ab["name"]).to_upper(), theme_name.to_upper()],
-		14, theme_color)
-	var description := _lbl(copy, detail, 12, Color(0.86, 0.86, 0.9))
-	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	description.custom_minimum_size = Vector2(760, 42)
-	var assign := _btn(row, "ASSIGNED" if already_assigned else (
-		"ASSIGN" if unlocked else "LOCKED"), func() -> void:
+	parent.add_child(panel)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 8)
+	panel.add_child(col)
+	var text_w := 1124.0 - (160.0 + 4.0 * (ABILITY_CARD + 6.0)) - 20.0 - 32.0  # the column the matrix leaves
+
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 12)
+	col.add_child(head)
+	var icon := TextureRect.new()
+	icon.texture = Art.ability_icon(p.cls, _ability_preview_slot, theme_color, _ability_preview_theme)
+	icon.custom_minimum_size = Vector2(64, 64)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	head.add_child(icon)
+	var titles := VBoxContainer.new()
+	titles.add_theme_constant_override("separation", 2)
+	titles.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(titles)
+	var t1 := _lbl(titles, String(ab["name"]).to_upper(), 16, theme_color)
+	t1.autowrap_mode = TextServer.AUTOWRAP_OFF
+	UITheme.header(t1)
+	var t2 := _lbl(titles, (theme_name.to_upper() + " variant") if _ability_preview_theme != "" else "BASE — as trained", 12,
+		Color(0.72, 0.74, 0.82))
+	t2.autowrap_mode = TextServer.AUTOWRAP_OFF
+	if not unlocked:
+		var lk := _lbl(titles, "Unlocks at Lv %d" % Classes.THEME_LEVELS[theme_index], 11, Color(1.0, 0.7, 0.4))
+		lk.autowrap_mode = TextServer.AUTOWRAP_OFF
+
+	if _ability_preview_theme != "":
+		var what := _lbl(col, Classes.variant_desc(p.cls, _ability_preview_slot, _ability_preview_theme), 13, Color(0.9, 0.9, 0.95))
+		what.custom_minimum_size = Vector2(text_w, 0)
+		var nums := _lbl(col, Classes.fx_text(Classes.ability_fx(p.cls, _ability_preview_slot, _ability_preview_theme), p.cls), 12, theme_color)
+		nums.custom_minimum_size = Vector2(text_w, 0)
+	var base_head := _lbl(col, "THE BASE ABILITY", 11, Color(0.52, 0.55, 0.65))
+	base_head.autowrap_mode = TextServer.AUTOWRAP_OFF
+	var base_txt := String(ab["desc"])
+	var scaling: String = Classes.ability_scaling(p.cls, _ability_preview_slot)
+	if scaling != "":
+		base_txt += "\n[ %s ]" % scaling
+	var riders: String = Classes.ability_riders(p.cls, _ability_preview_slot)
+	if riders != "":
+		base_txt += "\n[ %s ]" % riders
+	var base_l := _lbl(col, base_txt, 12, Color(0.72, 0.74, 0.82))
+	base_l.custom_minimum_size = Vector2(text_w, 0)
+	var sp := Control.new()
+	sp.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	col.add_child(sp)
+	var assign := _btn(col, "  ✓  ASSIGNED  " if already_assigned else (
+		"  ASSIGN to %s  " % String(ab["name"]) if unlocked else "  LOCKED — Lv %d  " % Classes.THEME_LEVELS[maxi(theme_index, 0)]), func() -> void:
 			game.local_player.set_ability_theme(_ability_preview_slot, _ability_preview_theme)
 			open_skills("abilities"),
 		theme_color if unlocked else Color(0.4, 0.4, 0.45),
 		unlocked and not already_assigned)
-	assign.custom_minimum_size = Vector2(150, 64)
+	assign.custom_minimum_size = Vector2(0, 46)
+	assign.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	assign.add_theme_font_size_override("font_size", 16)
 
 
 func _profile_tab_style(button: Button, selected: bool) -> void:
@@ -2851,11 +3040,15 @@ func _talent_card_style(button: Button, color: Color, invested: bool, unlocked: 
 func _assignment_card_style(button: Button, color: Color, selected: bool,
 		previewed := false) -> void:
 	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color(color.r * 0.12, color.g * 0.12, color.b * 0.12, 0.9)
+	# The frame IS the state: assigned = thick frame + tinted fill; inspecting
+	# = pale frame; otherwise a faint outline. Icon fills the rest (2px inset).
+	normal.bg_color = Color(color.r * 0.22, color.g * 0.22, color.b * 0.22, 0.95) if selected \
+		else Color(color.r * 0.10, color.g * 0.10, color.b * 0.10, 0.9)
 	normal.border_color = color if selected else (
 		Color(0.95, 0.92, 0.75) if previewed else Color(color, 0.32))
 	normal.set_border_width_all(3 if selected else (2 if previewed else 1))
 	normal.set_corner_radius_all(8)
+	normal.set_content_margin_all(2)
 	button.add_theme_stylebox_override("normal", normal)
 	var hover: StyleBoxFlat = normal.duplicate()
 	hover.bg_color = Color(color.r * 0.2, color.g * 0.2, color.b * 0.2, 0.96)
@@ -2870,53 +3063,100 @@ func _assignment_card_style(button: Button, color: Color, selected: bool,
 ## Attribute allocation: +1 point per level. The four attributes
 ## convert at CLASS scaling ratios; the substat rows convert 1:1 for
 ## every class (combo is deliberately not purchasable).
+## Attributes = the ALLOCATOR (left: one card per attribute / substat with
+## +1 · +5) beside THE character sheet (right: the same component the
+## inventory Stats tab shows). Spend a point and the numbers it moved pulse
+## green on the sheet — 2026-08-16, replacing the +1/+5 rows over a text blob.
 func _build_attributes_tab(vbox: VBoxContainer, p: Player) -> void:
-	_lbl(vbox, "Every level grants 1 attribute point. Attributes convert by class — %s scales best with %s — or pour points straight into a substat." % [Classes.CLASSES[p.cls]["name"], Classes.CLASSES[p.cls]["primary"]], 13, Color(0.6, 0.62, 0.68))
-	_lbl(vbox, "Unspent: %d points" % p.unspent_attr, 18, Color(0.5, 1.0, 0.5) if p.unspent_attr > 0 else Color(0.6, 0.6, 0.65))
-	# Rows + stat sheet scroll inside the panel (like the talents tab) — the
-	# full list is taller than the panel, so without this the "YOUR STATS"
-	# block spilled off the bottom edge onto the HUD.
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	vbox.add_child(scroll)
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 16)
+	vbox.add_child(head)
+	var unspent := _lbl(head, ("%d unspent" % p.unspent_attr) if p.unspent_attr > 0 else "All points spent", 22,
+		Color(0.5, 1.0, 0.5) if p.unspent_attr > 0 else Color(0.6, 0.6, 0.65))
+	UITheme.title(unspent, 22)
+	unspent.custom_minimum_size = Vector2(190, 0)
+	var intro := _lbl(head, "Every level grants 1 attribute point. Attributes convert by class — ★ marks the one %s scales best with — or pour points straight into a substat. Select any stat on the sheet to learn what it does." % [
+		Classes.CLASSES[p.cls]["name"]], 12, Color(0.6, 0.62, 0.68))
+	intro.custom_minimum_size = Vector2(880, 0)
+	intro.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+	var body := HBoxContainer.new()
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation", 16)
+	vbox.add_child(body)
+	# --- left: the allocator ---
+	var lscroll := ScrollContainer.new()
+	lscroll.custom_minimum_size = Vector2(620, 0)
+	lscroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	lscroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	body.add_child(lscroll)
 	var list := VBoxContainer.new()
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	list.add_theme_constant_override("separation", 8)
-	scroll.add_child(list)
+	list.add_theme_constant_override("separation", 6)
+	lscroll.add_child(list)
+	UITheme.header(_lbl(list, "ATTRIBUTES", 14, Color(0.95, 0.85, 0.5)))
 	for attr in Classes.ATTR_NAMES:
 		var a: String = attr
 		var is_primary: bool = Classes.CLASSES[p.cls]["primary"] == a
-		_attr_row(list, p, a, "%s  %d%s" % [a, p.attr_points[a], "  ★" if is_primary else ""],
+		_attr_card(list, p, a, is_primary,
 			Color(0.95, 0.85, 0.5) if is_primary else Color(0.85, 0.85, 0.9),
-			Classes.attr_text(p.cls, a))
-	_lbl(list, "SUBSTATS", 15, Color(0.95, 0.85, 0.5))
+			Classes.attr_text(p.cls, a), p.attr_total(a))
+	UITheme.header(_lbl(list, "SUBSTATS", 14, Color(0.95, 0.85, 0.5)))
 	for attr in Classes.SUBSTAT_NAMES:
 		var a: String = attr
-		_attr_row(list, p, a, "%s  %d" % [a, p.attr_points[a]],
-			Color(0.75, 0.8, 0.92), Classes.substat_text(a))
-	_lbl(list, "YOUR STATS", 16, Color(0.95, 0.85, 0.5))
-	_lbl(list, p.stat_sheet(), 13, Color(0.75, 0.78, 0.85))
+		_attr_card(list, p, a, false, Color(0.75, 0.8, 0.92), Classes.substat_text(a), -1)
+	# --- right: the sheet ---
+	var rscroll := ScrollContainer.new()
+	rscroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rscroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rscroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	body.add_child(rscroll)
+	var smargin := MarginContainer.new()
+	smargin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	smargin.add_theme_constant_override("margin_right", 12)  # clear of the scrollbar
+	rscroll.add_child(smargin)
+	var sheet := VBoxContainer.new()
+	sheet.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sheet.add_theme_constant_override("separation", 5)
+	smargin.add_child(sheet)
+	_stat_sheet_build(sheet, _stat_sheet_data(p), true)
 	_hint(vbox, "ESC / T to close")
 
 
-## One allocation row: name + points, +1/+5 spend buttons, description.
-func _attr_row(vbox: VBoxContainer, p: Player, a: String, label: String,
-		color: Color, desc_text: String) -> void:
+## One allocation card: name · points spent (· total for the four
+## attributes) · what a point buys · +1 / +5. `total` < 0 = no total shown.
+func _attr_card(list: VBoxContainer, p: Player, a: String, primary: bool, color: Color,
+		desc_text: String, total: int) -> void:
+	var card := UITheme.card(list, color if primary else Color(0.42, 0.45, 0.55), 8.0)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
-	vbox.add_child(row)
-	var name_l := _lbl(row, label, 17, color)
-	name_l.custom_minimum_size = Vector2(140, 0)
-	_btn(row, " +1 ", func() -> void:
-		game.local_player.add_attr_points(a, 1)
-		open_skills("attributes"), Color(0.5, 1.0, 0.5), p.unspent_attr > 0)
-	_btn(row, " +5 ", func() -> void:
-		game.local_player.add_attr_points(a, 5)
-		open_skills("attributes"), Color(0.5, 1.0, 0.5), p.unspent_attr > 0)
-	var desc := _lbl(row, desc_text, 13, Color(0.68, 0.7, 0.78))
-	desc.custom_minimum_size = Vector2(620, 0)
+	card.add_child(row)
+	var name_col := VBoxContainer.new()
+	name_col.custom_minimum_size = Vector2(150, 0)
+	name_col.add_theme_constant_override("separation", 0)
+	name_col.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(name_col)
+	var nm := _lbl(name_col, "%s%s" % [a, "  ★" if primary else ""], 17, color)
+	nm.autowrap_mode = TextServer.AUTOWRAP_OFF
+	var pts_txt := "%d point%s" % [int(p.attr_points[a]), "" if int(p.attr_points[a]) == 1 else "s"]
+	if total >= 0:
+		pts_txt += "  ·  %d total" % total
+	var pts := _lbl(name_col, pts_txt, 11, Color(0.6, 0.63, 0.72))
+	pts.autowrap_mode = TextServer.AUTOWRAP_OFF
+	var desc := _lbl(row, desc_text, 12, Color(0.72, 0.74, 0.82))
+	desc.custom_minimum_size = Vector2(300, 0)
+	desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	desc.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var can: bool = p.unspent_attr > 0
+	var spend := func(n: int) -> void:
+		_stat_flash = _stat_values(game.local_player)  # remember the sheet, then move it
+		game.local_player.add_attr_points(a, n)
+		open_skills("attributes")
+	var b1 := _btn(row, " +1 ", func() -> void: spend.call(1), Color(0.5, 1.0, 0.5), can)
+	b1.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var b5 := _btn(row, " +5 ", func() -> void: spend.call(5), Color(0.5, 1.0, 0.5), can)  # add_attr_points clamps to what's unspent
+	b5.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# (The ★ beside the name is the whole "your class scales best here" — no caption.)
 
 
 ## Dedicated variant chooser: shows the base ability and every theme

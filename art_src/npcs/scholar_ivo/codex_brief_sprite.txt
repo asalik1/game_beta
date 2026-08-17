@@ -1,0 +1,18 @@
+Generate ONE production pixel-art NPC sprite for the existing dark-fantasy game Crownless, using the built-in image_gen tool. Save the raw generation into THIS working directory as `built_in_source.png`, then remove the chroma key with the imagegen skill's `remove_chroma_key.py` helper (border auto-key, soft matte, despill) and save `scholar_ivo_transparent.png` (RGBA). Do not write anywhere else. In your final message, report the two file paths and describe the figure you actually drew (hair, coat colour, held items) so a reviewer can verify it against this brief.
+
+STYLE BENCHMARK (the three attached reference images: Archivist Lene, Clerk Voss, Ser Aldric are the quality/style/perspective standard, NOT the design):
+- same low top-down, south-facing, full-body pixel-art perspective, feet at the bottom;
+- same grounded adult proportions (roughly 7 heads tall, no chibi, no heroic bulk);
+- same restrained dark-fantasy palette, painterly pixel shading, crisp readable silhouette, clear material definition (wool vs leather vs brass vs glass);
+- same framing: ONE centered standing character filling most of the canvas height, on a FLAT BRIGHT GREEN chroma-key background (pure #00FF00 or close), nothing else in frame.
+
+CHARACTER (design contract; do not improvise beyond it): SCHOLAR IVO, a chronicler who has kept a lone survey post in the Crystal Deeps for thirty years.
+- Old lean man, late sixties, tall and slightly stooped at the shoulders; long narrow face, deep-set tired eyes, thin white-grey hair swept back off a high forehead, short close-cropped white-grey beard. Pale weathered skin.
+- Outfit: a long heavy layered scholar's coat reaching mid-shin, faded SLATE-BLUE / grey-teal wool with a high turned-up collar lined with dull grey fur (the Deeps are cold); over it a plain darker charcoal-grey mantle at the shoulders; dark grey trousers tucked into worn brown leather boots; dark fingerless gloves.
+- Kit that reads at a glance: a thick brown leather ledger held closed under his LEFT arm; his RIGHT hand raised chest-high holding a small brass tuning fork (his resonance instrument); a narrow leather belt across the chest carrying four or five small corked glass vials, two of them holding faintly glowing pale-violet crystal shards (the only luminous accent, kept subtle); a brass loupe hanging on a cord at his chest.
+- Mood: dry, precise, patient; standing straight-ish, weight even, calm neutral expression, looking toward the viewer. NOT a wizard, NOT a priest, NOT a merchant.
+- Palette anchor: cold slate-blue, charcoal, dull grey fur, warm brown leather, small brass accents, one soft pale-violet glow in the vials. Everything else muted.
+
+NEGATIVES (hard): no spectacles or glasses (that is Clerk Voss), no hat or hood, no staff, no lantern, no satchel bag, no weapon, no robes with runes, no bright saturated colours, no gold trim, no glowing eyes, no magic effects or particles, no scenery, no ground plane, no cast shadow, no drop shadow under the feet, no text, no border, no second figure, no cropping of the head or boots.
+
+Output size: 1024x1024. Then post-process exactly as described above.

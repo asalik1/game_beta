@@ -144,9 +144,18 @@ static func selftest(game: Node2D) -> String:
 		if kind == "auroch":
 			if b._sprite_key != "auroch_minotaur":
 				return "ch6 boss auroch: did not load the minotaur identity"
-			if b._dir_walk.size() != 8 or int(b._strip_walk.get("frames", 0)) < 4:
+			# (2026-08-16) The auroch is MOB_IDLE_ONLY_LOCOMOTION + BOSS_DIRECTIONAL_WALK
+			# since 547a43b: its flat _strip_walk is intentionally EMPTY and the Codex
+			# 8-dir walk set (auroch_minotaur_walk_codex_<dir>) drives movement — so
+			# the completeness check reads the directional set, not the flat strip.
+			if b._dir_walk.size() != 8:
 				return "ch6 boss auroch: directional walk set is incomplete"
-			var attack_frames := {"melee": 3, "slam": 4, "charge": 8}
+			for facing in Art.DIR8:
+				if int(b._dir_walk[facing].get("frames", 0)) < 4:
+					return "ch6 boss auroch: %s walk strip has too few frames" % facing
+			# (2026-08-16) 547a43b's mob/boss art sweep re-authored the minotaur's
+			# action strips at 4 frames each (was melee 3 / slam 4 / charge 8).
+			var attack_frames := {"melee": 4, "slam": 4, "charge": 4}
 			for action in attack_frames:
 				var action_set := Art.dir_set("auroch_minotaur_" + action)
 				if action_set.size() != 8:

@@ -2,6 +2,13 @@
 
 **Status:** regenerated and wired on 2026-07-31 from the owner-approved
 `art_src/warrior_base_redesign/03_emberbound_heir_restrained_helm.png`.
+**Unwired:** the owner reverted the Warrior to the pre-redesign plate identity
+on 2026-08-01 (idle/walk/attack/attack2, see
+`art_src/class_preservation_upscale_2026-08-01/README.md`); the remaining Heir
+clips (run/dash/ult/ultidle/death) were restored from the archive on
+2026-08-16 (`tools/art/install_preservation_warrior_states.py`). Nothing from
+this set is in runtime; the superseded runtime PNGs are archived under that
+pass's `warrior/runtime_pre_*` folders.
 
 ## Runtime contract
 

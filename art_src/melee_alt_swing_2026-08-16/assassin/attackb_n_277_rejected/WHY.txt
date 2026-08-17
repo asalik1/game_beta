@@ -1,0 +1,1 @@
+north 277-cell attempt: frames 7/8 (arms spread + cloak) were 307-309px wide at the 180px body scale and could not fit the 277 cell; re-run at --runtime-cell 336

@@ -139,6 +139,7 @@ func switch_chapter(id: String, force := false) -> void:
 	merchant_zones.clear()
 	hazards.clear()
 	zone_grounds.clear()
+	zone_fields.clear()
 	zone_road_marks.clear()
 	zone_scenery.clear()
 	shop_stock.clear()
@@ -900,7 +901,9 @@ func _build_room(i: int) -> void:
 	ground.z_index = -10
 	world.add_child(ground)
 	zone_grounds[i] = ground
+	_apply_ground_field(i, terrain)  # crisp native-res floor under the -10 detail
 	_mark_roads(i)
+	_decide_river(i)   # river FIRST so hazards + scenery avoid the water
 	_spawn_patches(i)
 	zone_scenery[i] = []
 	_spawn_scenery(i)
@@ -1684,6 +1687,27 @@ func _spawn_scenery(zi: int) -> void:
 	var reserved: Array = []
 	var unique_props_seen := {}
 
+	# ---- EXCLUSION ZONES first (owner 2026-08-17: nothing spawns on a surface
+	# it can't belong on — no tree/house/accent on the river, none in a hazard
+	# pool). The river was decided in _decide_river and the hazards in
+	# _spawn_patches, both BEFORE this function (see _build_room order); here we
+	# add each to `reserved`, which every placement loop below already honours.
+	var river_cfg: Dictionary = terrain.get("river", {})
+	var river_local := Rect2()
+	if rivers.has(zi):
+		var rrect: Rect2 = rivers[zi]["rect"]
+		river_local = Rect2(rrect.position - origin, rrect.size)
+		var rcx := river_local.position.x + river_local.size.x / 2.0
+		var rad := river_local.size.x / 2.0 + 70.0   # channel half-width + a bank margin
+		var yy := 0.0
+		while yy <= ph:
+			reserved.append({"pos": Vector2(rcx, yy), "radius": rad})
+			yy += rad * 0.85
+	for hz in hazards:
+		if hz["zone"] == zi:
+			reserved.append({"pos": (hz["pos"] as Vector2) - origin,
+				"radius": float(hz["radius"]) + 26.0})
+
 	# Connected city-edge architecture gives the capital a skyline without
 	# pretending that every background window is another shop. Backdrops sit
 	# behind the existing perimeter walls, carry no collider, and leave their
@@ -1865,6 +1889,10 @@ func _spawn_scenery(zi: int) -> void:
 				if bpos.distance_to(other) < 260.0:
 					bok = false
 					break
+			for reservation in reserved:      # never build on the river or a hazard
+				if bpos.distance_to(reservation["pos"]) < float(reservation["radius"]):
+					bok = false
+					break
 			if bok:
 				placed.append(bpos)
 				zone_scenery[zi].append(_add_building(String(bname), origin + bpos))
@@ -1892,6 +1920,10 @@ func _spawn_scenery(zi: int) -> void:
 			var sok := true
 			for other in placed:
 				if spos.distance_to(other) < 240.0:
+					sok = false
+					break
+			for reservation in reserved:      # never place the landmark on water or a hazard
+				if spos.distance_to(reservation["pos"]) < float(reservation["radius"]):
 					sok = false
 					break
 			if sok:
@@ -2052,40 +2084,33 @@ func _spawn_scenery(zi: int) -> void:
 	for critter in Ambience.populate(self, zi):
 		zone_scenery[zi].append(critter)
 
-	# ---- the river (the Greyrun and its cousins) ------------------
-	# Terrain-configured, seeded per room; skips boss arenas. Wading
-	# slows everyone; the bridge carries the road across dry.
-	rivers.erase(zi)
-	var river_cfg: Dictionary = terrain.get("river", {})
-	if not river_cfg.is_empty() and String(zones[zi].get("boss", "")) == "":
-		var rrng := RandomNumberGenerator.new()
-		rrng.seed = zi * 131 + terrain_by_zone[zi].hash() % 100000
-		if rrng.randf() < float(river_cfg.get("chance", 0.5)):
-			# Keep the channel clear of the N/S door lane at room center.
-			var fx_pos := rrng.randf_range(0.18, 0.40) if rrng.randf() < 0.5 \
-				else rrng.randf_range(0.60, 0.82)
-			var wpx := rrng.randf_range(120.0, 170.0)
-			var rect := Rect2(origin.x + pw * fx_pos - wpx / 2.0, origin.y, wpx, ph)
-			var bridge := Rect2(rect.position.x - 14.0, origin.y + ph / 2.0 - 84.0,
-				wpx + 28.0, 168.0)
-			var water := Sprite2D.new()
-			water.texture = Art.tex("white")
-			water.centered = false
-			water.position = rect.position
-			water.scale = rect.size / 8.0  # white tex is 8x8
-			water.z_index = -9             # over the ground, under decor
-			water.material = Art.water_material(river_cfg.get("color", Color(0.1, 0.2, 0.2, 0.8)))
-			world.add_child(water)
-			zone_scenery[zi].append(water)
-			var plank := Sprite2D.new()
-			plank.texture = Art.tex("bridge")
-			plank.centered = false
-			plank.position = bridge.position
-			plank.scale = bridge.size / plank.texture.get_size()  # fit any-res bridge art to the span
-			plank.z_index = -8
-			world.add_child(plank)
-			zone_scenery[zi].append(plank)
-			rivers[zi] = {"rect": rect, "bridge": bridge}
+	# ---- the river VISUAL (the Greyrun and its cousins) -----------
+	# The rect was decided + reserved at the top of this function; here we just
+	# build the water sprite + bridge on it. Wading slows everyone; the bridge
+	# carries the road across dry.
+	if river_local.size.x > 0.0:
+		var rect := Rect2(origin + river_local.position, river_local.size)
+		var wpx := river_local.size.x
+		var bridge := Rect2(rect.position.x - 14.0, origin.y + ph / 2.0 - 84.0,
+			wpx + 28.0, 168.0)
+		var water := Sprite2D.new()
+		water.texture = Art.tex("white")
+		water.centered = false
+		water.position = rect.position
+		water.scale = rect.size / 8.0  # white tex is 8x8
+		water.z_index = -9             # over the ground, under decor
+		water.material = Art.water_material(river_cfg.get("color", Color(0.1, 0.2, 0.2, 0.8)))
+		world.add_child(water)
+		zone_scenery[zi].append(water)
+		var plank := Sprite2D.new()
+		plank.texture = Art.tex("bridge")
+		plank.centered = false
+		plank.position = bridge.position
+		plank.scale = bridge.size / plank.texture.get_size()  # fit any-res bridge art to the span
+		plank.z_index = -8
+		world.add_child(plank)
+		zone_scenery[zi].append(plank)
+		rivers[zi] = {"rect": rect, "bridge": bridge}
 
 ## A building: base-anchored (y-sort lets the player walk behind the
 ## roof), footprint collider, chimney smoke on the cottages.
@@ -2924,6 +2949,41 @@ func _setup_ambient_fx(terrain_id: String) -> void:
 
 # ================================================================= terrain
 
+## Attach (or refresh) the room's crisp native-resolution floor: a Polygon2D
+## that GPU-tiles the authored seamless field tile (ground_field_<kind>.png)
+## across the whole room at scale 1, UNDER the -10 procedural detail sprite —
+## which, for a field kind, carries only the boundary walls, wall shadow and the
+## _mark_roads band. Kinds with no field tile keep the pure procedural floor (the
+## poly is removed). Reads the CanvasModulate tint like every world child, so no
+## manual tint. Cheap: one small shared texture, no per-room native bake.
+func _apply_ground_field(zi: int, terrain: Dictionary) -> void:
+	var gk := String(terrain.get("ground", ""))
+	var tex: Texture2D = Art.ground_field(gk)
+	var existing = zone_fields.get(zi)
+	if tex == null:
+		if is_instance_valid(existing):
+			existing.queue_free()
+		zone_fields.erase(zi)
+		return
+	var poly: Polygon2D = existing if is_instance_valid(existing) else null
+	if poly == null:
+		poly = Polygon2D.new()
+		poly.z_index = -11  # under the -10 detail ground
+		poly.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		poly.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		poly.polygon = PackedVector2Array([
+			Vector2(0, 0), Vector2(ROOM_W, 0),
+			Vector2(ROOM_W, ROOM_H), Vector2(0, ROOM_H)])
+		# Polygon2D UVs are in TEXTURE PIXELS: mapping the room rect to the same
+		# span makes 1 world px = 1 texel (native), tiling the seamless field
+		# ROOM/tile times via the repeat wrap.
+		poly.uv = poly.polygon
+		world.add_child(poly)
+		zone_fields[zi] = poly
+	poly.texture = tex
+	poly.position = rooms[zi]["origin"]
+
+
 ## Repaint a room with a different terrain (look + mechanics). Live —
 ## this is how dev mode lets you audition every terrain instantly.
 func apply_terrain(zi: int, terrain_id: String) -> void:
@@ -2934,9 +2994,11 @@ func apply_terrain(zi: int, terrain_id: String) -> void:
 	if is_instance_valid(zone_grounds.get(zi)):
 		zone_grounds[zi].texture = Art.ground(terrain["ground"], terrain["path"], TILES_W, TILES_H,
 			zi * 1000 + 7, rooms[zi]["exits"].keys())
+	_apply_ground_field(zi, terrain)
 	_mark_roads(zi)
+	_decide_river(zi)   # river FIRST so hazards + scenery avoid the water
+	_spawn_patches(zi)  # hazards BEFORE scenery so props/critters reserve off them
 	_spawn_scenery(zi)  # tombstones, snowy pines, crystals...
-	_spawn_patches(zi)
 	# Retexture the room's walls to this terrain's tile (colliders unchanged,
 	# so no rebuild — just swap the visual). Lets the dev terrain-paint preview
 	# walls too, not just ground/props.
@@ -2962,6 +3024,10 @@ func apply_terrain(zi: int, terrain_id: String) -> void:
 ## The road is a real navigation marker — door-honest since playtest
 ## round 3 — so it stays; this lays a faint worn-traffic band over the
 ## same geometry so the rim reads as the edge of an intentional walkway.
+## For an authored-FIELD kind the crisp floor is GPU-tiled and ground()
+## leaves the road transparent, so this band is the ONLY road it gets: a
+## faint worn tone for same-kind paths, a path-colored track for a
+## contrasting one (e.g. a dirt walk over a grass field).
 ## Geometry mirrors Art.ground's arm rects (16px ground space at 3x).
 func _mark_roads(zi: int) -> void:
 	for s in zone_road_marks.get(zi, []):
@@ -2970,13 +3036,24 @@ func _mark_roads(zi: int) -> void:
 	zone_road_marks[zi] = []
 	var terrain := Terrains.get_terrain(terrain_by_zone[zi])
 	var gk := String(terrain["ground"])
-	if String(terrain["path"]) != gk or not Art.GROUND.has(gk):
-		return  # contrasting path kinds already read as a road
-	# Worn tone: dark floors polish LIGHTER underfoot, light floors tread
-	# DARKER — both at a whisper (presentation constants, not tuning).
-	var base_c: Color = Art.GROUND[gk][0]
-	var lum: float = 0.2126 * base_c.r + 0.7152 * base_c.g + 0.0722 * base_c.b
-	var worn := Color(1, 1, 1, 0.075) if lum < 0.45 else Color(0, 0, 0, 0.10)
+	var pk := String(terrain["path"])
+	if not Art.GROUND.has(gk):
+		return
+	var has_field: bool = Art.has_ground_field(gk)
+	var worn: Color
+	if pk == gk:
+		# Worn tone: dark floors polish LIGHTER underfoot, light floors tread
+		# DARKER — both at a whisper (presentation constants, not tuning).
+		var base_c: Color = Art.GROUND[gk][0]
+		var lum: float = 0.2126 * base_c.r + 0.7152 * base_c.g + 0.0722 * base_c.b
+		worn = Color(1, 1, 1, 0.075) if lum < 0.45 else Color(0, 0, 0, 0.10)
+	elif has_field:
+		# Contrasting path over a crisp field: ground() baked no dirt road, so
+		# lay the path color as a worn track so the walkway still reads.
+		var pc: Color = Art.GROUND.get(pk, Art.GROUND[gk])[0]
+		worn = Color(pc.r, pc.g, pc.b, 0.6)
+	else:
+		return  # procedural kind, contrasting path: the baked road already reads
 	# Art.ground's arm rects, scaled to world px (16px ground tile * 3 = TILE).
 	var path_top := float((TILES_H / 2 - 1) * TILE - 24)
 	var band := 3.0 * TILE
@@ -3005,6 +3082,28 @@ func _mark_roads(zi: int) -> void:
 		zone_road_marks[zi].append(s)
 
 
+## Decide the room's river FIRST — before hazards and scenery — so nothing ends
+## up on the water. Stores rivers[zi] = {rect} (world); the water sprite + bridge
+## are built later in _spawn_scenery. Skips boss arenas and terrains with no
+## river config. (owner 2026-08-17: no hazard/house/tree/bird on the Greyrun.)
+func _decide_river(zi: int) -> void:
+	rivers.erase(zi)
+	var terrain := Terrains.get_terrain(terrain_by_zone[zi])
+	var river_cfg: Dictionary = terrain.get("river", {})
+	if river_cfg.is_empty() or String(zones[zi].get("boss", "")) != "":
+		return
+	var rrng := RandomNumberGenerator.new()
+	rrng.seed = zi * 131 + terrain_by_zone[zi].hash() % 100000
+	if rrng.randf() >= float(river_cfg.get("chance", 0.5)):
+		return
+	var pr := play_rect(zi)
+	var fx_pos := rrng.randf_range(0.18, 0.40) if rrng.randf() < 0.5 \
+		else rrng.randf_range(0.60, 0.82)
+	var wpx := rrng.randf_range(120.0, 170.0)
+	rivers[zi] = {"rect": Rect2(
+		pr.position.x + pr.size.x * fx_pos - wpx / 2.0, pr.position.y, wpx, pr.size.y)}
+
+
 ## (Re)roll a room's static hazard patches from its terrain spec.
 func _spawn_patches(zi: int) -> void:
 	for i in range(hazards.size() - 1, -1, -1):
@@ -3020,6 +3119,13 @@ func _spawn_patches(zi: int) -> void:
 		# Patch counts were tuned for the old strip; rooms are ~2.2x the area.
 		for i in int(ceil(float(spec["count"]) * 2.0)):
 			var pos := origin + Vector2(rng.randf_range(120.0, ROOM_W - 120.0), rng.randf_range(120.0, ROOM_H - 120.0))
+			# A hazard pool on the water makes no sense — keep it on dry ground.
+			var htries := 0
+			while rivers.has(zi) and (rivers[zi]["rect"] as Rect2).grow(20.0).has_point(pos) and htries < 8:
+				pos = origin + Vector2(rng.randf_range(120.0, ROOM_W - 120.0), rng.randf_range(120.0, ROOM_H - 120.0))
+				htries += 1
+			if rivers.has(zi) and (rivers[zi]["rect"] as Rect2).grow(20.0).has_point(pos):
+				continue  # no dry spot found — skip this pool rather than flood it
 			var radius := rng.randf_range(spec["radius"][0], spec["radius"][1])
 			var drift := Vector2.ZERO
 			if spec.get("drift", false):

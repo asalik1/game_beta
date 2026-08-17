@@ -1,0 +1,1 @@
+alt_cross_slash_v01 group f7f93de7 east: kept raw frames [0, 2, 3, 4, 5, 6, 7, 8] (dropped raw_001); first visible X/contact = frame index 4 (0.18s @22fps)

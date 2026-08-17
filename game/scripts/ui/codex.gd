@@ -1803,6 +1803,7 @@ const NPC_ROLES := {
 	"beastkin": "Beastkin",
 	"beastkin_caged": "Beastkin captive",
 	"aldric": "Knight",
+	"scholar_ivo": "Chronicler of the Deeps",
 }
 
 

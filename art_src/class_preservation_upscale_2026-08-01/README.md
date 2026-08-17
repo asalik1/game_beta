@@ -668,3 +668,43 @@ and an unchanged North strip. Godot imported exactly those seven directions
 plus the South alias, `verify_art.py assassin` passed for all 74 PNGs, the
 97-script compile gate passed, and `test_quick.bat` passed. The full suite and
 mobile sync remain deferred until owner visual approval.
+
+## Warrior archived state-clip restoration (2026-08-16)
+
+The 2026-08-01 Warrior rollback restored idle, walk, attack and attack2 but
+never reached the remaining Emberbound Heir clips: `run`, `dash`, `ult`,
+`ultidle` (eight facings + South alias each) and the flat `death` -- 37 of the
+74 runtime PNGs still carried the redesign's asymmetric half-plate and bare
+scarred arm. Because Berserk plays `ult`, then `ultidle` while standing and
+`run` while moving, the whole rage state swapped the plate-and-ember hero for
+the Heir body (owner report 2026-08-16: "warrior ult uses the prototype base
+with one arm exposed"); Shield Bash (`dash`) and the death collapse did too.
+
+`tools/art/install_preservation_warrior_states.py` mirrors the archived attack
+restoration: no AI generation, the exact archived poses and timing from
+`backup/warrior_base_pre_emberbound_heir_2026-07-31/` (SHA-256 verified
+against the archive manifest), one frame-1-derived scale per strip to the
+180-pixel opening body, hard alpha, and the 2px green-rim despill the
+2026-08-15 sweep applied to the rest of the family. Two deliberate differences
+from the attack installer:
+
+- ONE placement transform per strip (frame 1 centred and grounded, every other
+  frame keeps its archived offset relative to frame 1) instead of per-frame
+  bbox re-anchoring. The ult's burst frames reach 20-34 source px below the
+  feet and the run carries an authored bob; per-frame anchoring would have
+  hoisted the body on the burst and flattened the stride.
+- A square cell per family, sized from the archive's worst-case extents under
+  that transform: run 256 (baseline 243), dash 288 (275), ult 352 (288, room
+  for the under-feet burst), ultidle 244 (239, the idle cell), death 288 (275).
+  `player_core._with_render_meta` grounds every strip from its own frame 1, so
+  the mixed cells render at one body size and feet line.
+
+`warrior/states_old_normalized/{run,dash,ult,ultidle,death}/` holds the labeled
+contact sheets and source-size / gameplay-size QA GIFs. The superseded Heir
+runtime files are archived under `warrior/runtime_pre_state_restore_2026-08-16/`
+with `SHA256SUMS.txt`. Godot reimported the 37 PNGs, `verify_art.py warrior`
+passed for all 74 files, `scan_key_rim.py` reported no rim hits, and the
+compile gate + `test_quick.bat` passed. `shot.bat fx_series --class=warrior
+--ability=ult` confirmed the plate body through activation and the enraged
+idle. With this the Emberbound Heir is fully unwired from runtime; its
+production sources stay under `art_src/warrior_emberbound_heir_production/`.

@@ -1,0 +1,16 @@
+opening_paladin_0
+opening_paladin_1
+opening_paladin_2
+chapters/opening_ch2_paladin
+chapters/opening_ch3_paladin
+chapters/opening_ch4_paladin
+chapters/opening_ch5_paladin
+chapters/opening_ch6_paladin
+chapters/opening_ch7_paladin
+chapters/opening_ch8_paladin
+chapters/opening_ch9_paladin
+chapters/opening_ch10_paladin
+chapters/opening_ch11_paladin
+chapters/opening_ch12_paladin
+chapters/opening_ch13_paladin
+chapters/opening_ch14_paladin

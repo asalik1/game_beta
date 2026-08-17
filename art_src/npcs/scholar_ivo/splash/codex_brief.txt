@@ -1,0 +1,17 @@
+Generate ONE painterly dialogue splash portrait for the existing dark-fantasy game Crownless, using the built-in image_gen tool. Save the raw generation into THIS working directory as `portrait_scholar_ivo_source.png`, then also save a square 1254x1254 copy (crop to the central square if needed, LANCZOS resize) as `portrait_scholar_ivo.png`. Do not write anywhere else. In your final message report both paths and describe the figure you actually drew (hair, coat colour, held items, background) so a reviewer can verify it against this brief.
+
+STYLE BENCHMARK (the two attached large square images, Archivist Lene and Clerk Voss, are the style/quality/composition standard, NOT the design):
+- same painterly dark-fantasy illustration style, moody low-key lighting, muted palette with one warm candle/lantern-scale light source and cool ambient shadow;
+- same composition: ONE full-length standing figure, head to boots visible, occupying the central ~60% of the frame, calm neutral pose, looking toward the viewer; a subdued environment behind at low contrast that never competes with the figure;
+- same square framing (1:1), no text, no border, no vignette frame lines.
+
+DESIGN (the third attached image is the in-game pixel sprite of THIS character — treat it as the exact design contract for face, hair, coat, colours and held items; render the same man in the painterly style): SCHOLAR IVO, a chronicler who has kept a lone survey post in the Crystal Deeps for thirty years.
+- Old lean man, late sixties, tall and slightly stooped; long narrow face, deep-set tired eyes, thin white-grey hair swept back off a high forehead, short close-cropped white-grey beard; pale weathered skin; ink-stained fingers.
+- Outfit: long heavy layered scholar's coat to mid-shin in faded slate-blue / grey-teal wool with a high turned-up collar lined with dull grey fur; a darker charcoal-grey mantle across the shoulders; dark grey trousers into worn brown leather boots; dark fingerless gloves.
+- Kit: a thick brown leather ledger under his LEFT arm; his RIGHT hand raised chest-high holding a small brass tuning fork; a narrow leather strap across the chest carrying four or five small corked glass vials, two holding faintly glowing pale-violet crystal shards (subtle glow); a brass loupe on a cord at his chest.
+- Environment: a cramped survey post inside a crystal cavern — a plank sample desk with stacked ledgers, small labelled jars and brass instruments, one candle; behind him the cave wall with a few tall pale-violet crystal formations giving a faint cold secondary light. Keep the background dim and soft; the figure is lit mainly by the warm candle from the left-front and rimmed faintly by the cool crystal light from behind.
+- Mood: dry, precise, patient, a little weary; not menacing, not saintly.
+
+NEGATIVES (hard): no spectacles or glasses, no hat or hood, no staff, no lantern in hand, no shoulder satchel, no weapon, no runes or glowing symbols on the clothing, no bright saturated colours, no gold trim, no glowing eyes, no magic swirls or particles, no text or lettering anywhere, no second figure, no cropping of the head or boots.
+
+Output size: 1024x1024 (then upscale/crop to the 1254x1254 copy as described).

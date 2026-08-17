@@ -47,7 +47,9 @@ const CHAPTER_ZONES := {
 			"boss": "",
 			"clear_flag": "deeps_mapped", "lock_next": "flag:deeps_mapped",
 			"npcs": [
-				{"sprite": "villager", "x": 1030, "y": 250, "prompt": "E — A Scholar", "convo": "ch2_scholar"},
+				# Ivo wears his own authored body (2026-08-17): he was the last named
+				# quest NPC still on the shared 32px "villager" placeholder.
+				{"sprite": "scholar_ivo", "x": 1030, "y": 250, "prompt": "E — A Scholar", "convo": "ch2_scholar"},
 			],
 		},
 		{

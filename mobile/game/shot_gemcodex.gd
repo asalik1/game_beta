@@ -128,6 +128,25 @@ func _ready() -> void:
 	game.player.loadout_add(String(mana["id"]))
 	game.menus.open_inventory("potions")
 	await _menu_shot("inventory_potions")
+	# Character sheet + skills tabs (fully unlocked, points to spend).
+	game.player.level = 40
+	game.player.skill_points = 40
+	game.player.themes_known = 3
+	game.player.unspent_attr = 12
+	game.player.recalc()
+	game.menus.open_inventory("stats")
+	await _menu_shot("inventory_stats")
+	game.menus.open_skills("abilities")
+	await _menu_shot("skills_abilities")
+	game.menus.open_skills("attributes")
+	await _menu_shot("skills_attributes")
+	var plus := _find_button_anywhere(" +5 ")
+	if plus != null:
+		plus.pressed.emit()
+		await _frames(3)
+		_shot("skills_attributes_after_spend")
+	game.menus.close()
+	await _frames(2)
 	game.menus.open_inventory("gear", "gems")
 	await _menu_shot("inventory_gems_bag")
 	game.menus.open_item_panel(itm, Vector2(-1, -1), "gems")
@@ -246,10 +265,26 @@ func _ready() -> void:
 	game.daily_last_day = game.daily_day_index() - 1  # yesterday claimed → today lands on Day 5
 	game.menus.open_daily()
 	await _menu_shot("daily_day5_unclaimed")
-	var lines: Array = game.claim_daily()
-	UIDaily.open(game.menus, lines)
-	await _menu_shot("daily_claimed")
+	# Claim by selecting TODAY's tile (the transparent button over it).
+	var streak_before: int = game.daily_streak
+	var tile_hit: Button = null
+	for c in game.menus.root.find_children("*", "Button", true, false):
+		if (c as Button).tooltip_text == "Claim today's reward":
+			tile_hit = c
+	print("DAILY tile-claim button found=", tile_hit != null)
+	if tile_hit != null:
+		tile_hit.pressed.emit()
+		await _frames(6)
+		print("DAILY streak after tile claim: ", game.daily_streak, " (was ", streak_before, ", expect +1)")
+	_shot("daily_claimed")
 	game.menus.close()
+
+
+func _find_button_anywhere(text: String) -> Button:
+	for c in game.menus.root.find_children("*", "Button", true, false):
+		if (c as Button).text == text and not (c as Button).disabled:
+			return c
+	return null
 
 
 func _find_button(container_name: String, text: String) -> Button:

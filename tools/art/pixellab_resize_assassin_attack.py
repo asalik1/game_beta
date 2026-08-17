@@ -125,6 +125,7 @@ def _load_frames(source_dir: Path) -> list[Image.Image]:
 
 
 def main() -> None:
+    global RUNTIME_CELL, RUNTIME_BASELINE
     parser = argparse.ArgumentParser()
     parser.add_argument("source_dir", type=Path)
     parser.add_argument("output_dir", type=Path)
@@ -175,7 +176,20 @@ def main() -> None:
         help="parallel PixelLab frame requests within this one direction",
     )
     parser.add_argument("--assemble-only", action="store_true")
+    parser.add_argument(
+        "--runtime-cell",
+        type=int,
+        default=RUNTIME_CELL,
+        help=(
+            "square runtime cell (default 277). A wide follow-through (arms spread "
+            "with the cloak, melee_alt_swing 2026-08-16 north) can exceed 277 at the "
+            "180px body scale; the engine grounds every strip on its own cell, so a "
+            "larger square is safe. Feet keep the same 22px bottom margin."
+        ),
+    )
     args = parser.parse_args()
+    RUNTIME_CELL = args.runtime_cell
+    RUNTIME_BASELINE = args.runtime_cell - 22
 
     token = os.environ.get("PIXELLAB_SECRET") or os.environ.get("PIXELLAB_API_TOKEN") or ""
     if not token and not args.assemble_only:

@@ -1,0 +1,251 @@
+{
+  "source_dir": "art_src\\melee_alt_swing_2026-08-16\\assassin\\pixellab_raw\\south_sel",
+  "direction": "south",
+  "source_cell": 212,
+  "source_baseline": 158,
+  "target_body": 180,
+  "request_body": 183,
+  "seed": 20260802,
+  "frames": {
+    "2": {
+      "source_box": [
+        57,
+        52,
+        153,
+        158
+      ],
+      "crop_box": [
+        55,
+        50,
+        155,
+        160
+      ],
+      "target_size": [
+        174,
+        192
+      ],
+      "api_size": [
+        174,
+        192
+      ],
+      "input": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f02_input.png",
+      "api_output": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f02_pixellab_api.png",
+      "resized": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f02_pixellab_resize.png",
+      "normalized": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f02_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "1": {
+      "source_box": [
+        54,
+        53,
+        156,
+        158
+      ],
+      "crop_box": [
+        52,
+        51,
+        158,
+        160
+      ],
+      "target_size": [
+        185,
+        190
+      ],
+      "api_size": [
+        185,
+        190
+      ],
+      "input": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f01_input.png",
+      "api_output": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f01_pixellab_api.png",
+      "resized": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f01_pixellab_resize.png",
+      "normalized": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f01_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "4": {
+      "source_box": [
+        74,
+        55,
+        138,
+        158
+      ],
+      "crop_box": [
+        72,
+        53,
+        140,
+        160
+      ],
+      "target_size": [
+        119,
+        186
+      ],
+      "api_size": [
+        119,
+        186
+      ],
+      "input": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f04_input.png",
+      "api_output": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f04_pixellab_api.png",
+      "resized": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f04_pixellab_resize.png",
+      "normalized": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f04_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "5": {
+      "source_box": [
+        76,
+        57,
+        136,
+        158
+      ],
+      "crop_box": [
+        74,
+        55,
+        138,
+        160
+      ],
+      "target_size": [
+        112,
+        183
+      ],
+      "api_size": [
+        112,
+        183
+      ],
+      "input": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f05_input.png",
+      "api_output": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f05_pixellab_api.png",
+      "resized": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f05_pixellab_resize.png",
+      "normalized": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f05_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "6": {
+      "source_box": [
+        77,
+        57,
+        134,
+        158
+      ],
+      "crop_box": [
+        75,
+        55,
+        136,
+        160
+      ],
+      "target_size": [
+        106,
+        183
+      ],
+      "api_size": [
+        106,
+        183
+      ],
+      "input": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f06_input.png",
+      "api_output": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f06_pixellab_api.png",
+      "resized": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f06_pixellab_resize.png",
+      "normalized": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f06_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "8": {
+      "source_box": [
+        37,
+        56,
+        173,
+        158
+      ],
+      "crop_box": [
+        35,
+        54,
+        175,
+        160
+      ],
+      "target_size": [
+        244,
+        185
+      ],
+      "api_size": [
+        200,
+        185
+      ],
+      "input": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f08_input.png",
+      "api_output": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f08_pixellab_api.png",
+      "resized": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f08_pixellab_resize.png",
+      "normalized": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f08_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "7": {
+      "source_box": [
+        31,
+        55,
+        180,
+        158
+      ],
+      "crop_box": [
+        29,
+        53,
+        182,
+        160
+      ],
+      "target_size": [
+        267,
+        186
+      ],
+      "api_size": [
+        200,
+        186
+      ],
+      "input": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f07_input.png",
+      "api_output": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f07_pixellab_api.png",
+      "resized": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f07_pixellab_resize.png",
+      "normalized": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f07_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    },
+    "3": {
+      "source_box": [
+        50,
+        52,
+        160,
+        158
+      ],
+      "crop_box": [
+        48,
+        50,
+        162,
+        160
+      ],
+      "target_size": [
+        199,
+        192
+      ],
+      "api_size": [
+        199,
+        192
+      ],
+      "input": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f03_input.png",
+      "api_output": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f03_pixellab_api.png",
+      "resized": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f03_pixellab_resize.png",
+      "normalized": "art_src\\melee_alt_swing_2026-08-16\\assassin\\attackb_s\\assassin_alt_slash_south_f03_normalized.png",
+      "usage": {
+        "type": "generations",
+        "generations": 1.0
+      }
+    }
+  }
+}

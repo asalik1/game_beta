@@ -3190,6 +3190,8 @@ const PORTRAIT_CAST := [
 	# portraits). The Tome stays faceless on purpose — it's a book.
 	["carter", "villager"], ["the mother", "villager"], ["ren", "villager"],
 	["osric", "villager"],
+	# Full name on purpose: a bare "ivo" is a substring of "Survivor".
+	["scholar ivo", "scholar_ivo"],
 ]
 
 

@@ -676,6 +676,8 @@ const ABILITY_CLIP := {
 	# Mapped to each kit's ACTUAL abilities: movement dashes -> dash clip,
 	# swings -> attack/attack2, casters' AoE/summons -> cast/ult. "" = no
 	# one-shot (defensive/buff ability keeps the locomotion pose).
+	# a1 "attack" ALTERNATES with "attackb" every cast when that strip is
+	# installed (_alt_basic_clip; melee swing alternation 2026-08-16).
 	"warrior":  {"a1": "attack", "a2": "dash",    "a3": "attack2", "ult": "ult"},     # Cleave / Shield Bash / Whirlwind / Berserk
 	"archer":   {"a1": "attack", "a2": "attack2", "a3": "dash",    "ult": "cast"},    # Quick Shot / Multishot / Tumble / Arrow Storm
 	"mage":     {"a1": "attack", "a2": "cast",    "a3": "dash",    "ult": "cast"},    # Firebolt / Frost Nova / Blink / Meteor
@@ -711,6 +713,12 @@ var _dir_k := 1              # sub-frames per direction (windup, action, ...)
 ## kit dispatch). Lets swing_delay() sync a skin's FX to that clip's real
 ## contact frame instead of the base-tuned Balance const. "" = none/reset.
 var _strike_clip := ""
+## Basic-attack swing parity (melee swing alternation, 2026-08-16): counts a1
+## casts so a hero whose art ships a second basic swing ("attackb") alternates
+## it with "attack" — Cleave/Judgment/Stab stop replaying one identical motion.
+## Purely cosmetic and per-node, so co-op needs no sync (a shell alternates on
+## its own casts). Reset with the class sprite.
+var _a1_swing := 0
 ## Playback speedup applied to the current one-shot clip by fit_action_clip so
 ## it finishes inside a fast recast window (1.0 = authored pace). swing_delay
 ## divides by it to keep the hit FX on the now-earlier contact frame.
@@ -741,6 +749,7 @@ func _apply_class_sprite() -> void:
 	sprite.hframes = 1
 	sprite.frame = 0
 	_dir_clips = Art.hero_dir_clips(art_name)
+	_a1_swing = 0  # a fresh body opens on its primary swing
 	# 8-direction locomotion sets (idle/walk/run/... = <class>_<file>_<dir>).
 	# Empty for every current class; lights up when directional art lands.
 	_dir_loco = {}
@@ -942,6 +951,18 @@ func _play_clip(name: String, loop: bool) -> void:
 	var render_offset := float(render_info.get("render_offset", _hero_offset_y))
 	sprite.scale = Vector2(render_scale, render_scale)
 	sprite.offset = Vector2(0, render_offset)
+
+
+## The basic swing this a1 cast plays: "attack", or — every OTHER cast, when
+## the active art ships one — the alternate "attackb" (a vertical cut after a
+## horizontal one, and back). Art-driven: no <art>_attackb strip (every skin
+## today) = "attack" every time, exactly the pre-2026-08-16 behaviour, so
+## skins need no art to keep working. Advances the parity on every call.
+func _alt_basic_clip() -> String:
+	_a1_swing += 1
+	if _a1_swing % 2 == 0 and _clips.has("attackb"):
+		return "attackb"
+	return "attack"
 
 
 ## Fire a one-shot action clip that returns to locomotion when it finishes.
@@ -2089,11 +2110,16 @@ func find_potion_by(fs: String, grade: String, lane: String) -> Dictionary:
 # Playtest 2026-07-07 v2: potions are budgeted PER ROOM. The loadout is
 # an ordered plan of chapter-band-capped slots (Balance.potion_slots);
 # each slot holds a potion TYPE, duplicates welcome (3x health IS a plan).
-# potion_rotation stores only the ASSIGNED slots — every unassigned slot
-# defaults to health, so an untouched loadout is pure health potions.
-# Entering a room refills the budget (room_potions, unsaved); each drink
-# spends a slot; spent loadout = Q locked until the next room. Planning
-# is the skill.
+# potion_rotation is POSITIONAL (2026-08-16, owner: "maximum flexibility"):
+# entry i is slot i — a rotation-potion id, "" (or missing) = the DEFAULT
+# (pours your cheapest carried Health Potion, or nothing if you carry none),
+# or LOADOUT_EMPTY = a slot you deliberately left empty. An untouched
+# loadout is therefore all-default. Old saves' id lists still read as
+# slots 0..n-1. Entering a room refills the budget (room_potions, unsaved);
+# each drink spends a slot; spent loadout = Q locked until the next room.
+# Planning is the skill.
+
+const LOADOUT_EMPTY := "none"
 
 var room_potions := {}   # potion type -> uses left THIS room (unsaved)
 
@@ -2178,38 +2204,54 @@ func owned_potion_ids() -> Array:
 	return out
 
 
-## The full plan: assigned slots (clamped to cap) + health-fill.
+## The full plan, one entry per slot (clamped to cap): a rotation-potion id,
+## "health" (the default fill — pours the cheapest carried Health Potion), or
+## LOADOUT_EMPTY (a slot the player left empty on purpose: pours nothing).
 func potion_loadout() -> Array:
 	var cap := potion_slot_cap()
 	var out: Array = []
-	for id in potion_rotation:
-		if out.size() >= cap:
-			break
-		out.append(String(id))
-	while out.size() < cap:
-		out.append("health")
+	for i in cap:
+		var id := String(potion_rotation[i]) if i < potion_rotation.size() else ""
+		out.append("health" if id == "" else id)
 	return out
 
 
+## Slots a bottle can still be assigned to: default or deliberately-empty ones.
+func loadout_free_slots() -> int:
+	var n := 0
+	for id in potion_loadout():
+		if id == "health" or id == LOADOUT_EMPTY:
+			n += 1
+	return n
+
+
 ## Is cycling the active potion meaningful this room? Only when the loadout
-## holds 2+ DISTINCT types (a single slot, or an all-Health plan, has nothing
-## to swap to). The touch HUD hides its ⟳ swap button when this is false —
-## like the Act button vanishing with no interactable nearby.
+## holds 2+ DISTINCT drinkable types (a single slot, an all-Health plan, or
+## empties have nothing to swap to). The touch HUD hides its ⟳ swap button
+## when this is false — like the Act button vanishing with no interactable.
 func potion_swap_useful() -> bool:
 	var seen := {}
 	for id in potion_loadout():
-		seen[id] = true
+		if id != LOADOUT_EMPTY:
+			seen[id] = true
 	return seen.size() >= 2
 
 
 ## Room entry: the budget refills from the plan (game_world calls this
 ## on every room transition; death respawns cross a room, so they too).
+## Empty slots budget nothing; the active type falls to the first budgeted one.
 func reset_room_potions() -> void:
 	room_potions = {}
 	for id in potion_loadout():
+		if id == LOADOUT_EMPTY:
+			continue
 		room_potions[id] = int(room_potions.get(id, 0)) + 1
 	if int(room_potions.get(active_potion, 0)) <= 0:
-		active_potion = String(potion_loadout()[0])
+		active_potion = "health"
+		for id in potion_loadout():
+			if int(room_potions.get(id, 0)) > 0:
+				active_potion = String(id)
+				break
 
 
 func room_potions_left() -> int:
@@ -2223,7 +2265,7 @@ func room_potions_left() -> int:
 func cycle_potion() -> void:
 	var types: Array = []
 	for id in potion_loadout():
-		if not types.has(id):
+		if id != LOADOUT_EMPTY and not types.has(id):
 			types.append(id)
 	if types.is_empty():
 		return
@@ -2245,39 +2287,79 @@ func cycle_potion() -> void:
 		return
 
 
-## Inventory loadout editing: SHIFT-click adds one slot of this type,
-## CTRL-click removes one. Health fills whatever is left unassigned —
-## so "planning health" (the bag's Health Potion entry, 2026-07-09 v2)
-## frees the NEWEST assigned slot back to the health fill.
+## Loadout editing (the inventory's Potions tab; also the bag's potion card).
+## Assigning a bottle takes the FIRST free slot (default or emptied). "health"
+## = "planning health" (the bag's Health Potion entry, 2026-07-09 v2): it
+## frees the NEWEST assigned slot back to the default fill.
 func loadout_add(id: String) -> void:
 	if id == "health":
-		if potion_rotation.is_empty():
+		var newest := -1
+		for i in potion_rotation.size():
+			if _is_slotted_bottle(String(potion_rotation[i])):
+				newest = i
+		if newest < 0:
 			game.spawn_text(global_position + Vector2(0, -52),
 				"Loadout is already pure health", Color(0.7, 0.9, 1.0))
 			return
-		var freed: String = String(potion_rotation.pop_back())
+		var freed := String(potion_rotation[newest])
+		potion_rotation[newest] = ""
+		_trim_loadout()
 		if active_potion == freed and not potion_rotation.has(freed):
 			active_potion = "health"
 		game.sfx("ui_click")
 		return
 	if not Items.is_rotation_potion(id):
 		return
-	if potion_rotation.size() >= potion_slot_cap():
-		game.spawn_text(global_position + Vector2(0, -52),
-			"Loadout full — %d slot%s this chapter; remove one before adding another" % [
-				potion_slot_cap(), "" if potion_slot_cap() == 1 else "s"],
-			Color(1.0, 0.7, 0.4))
+	var cap := potion_slot_cap()
+	for i in cap:
+		var cur := String(potion_rotation[i]) if i < potion_rotation.size() else ""
+		if cur == "" or cur == LOADOUT_EMPTY:
+			while potion_rotation.size() <= i:
+				potion_rotation.append("")
+			potion_rotation[i] = id
+			game.sfx("ui_click")
+			return
+	game.spawn_text(global_position + Vector2(0, -52),
+		"Loadout full — %d slot%s this chapter; free one before adding another" % [
+			cap, "" if cap == 1 else "s"],
+		Color(1.0, 0.7, 0.4))
+
+
+## Send the first slot holding this bottle back to the default fill.
+func loadout_remove(id: String) -> void:
+	var at := potion_rotation.find(id)
+	if at < 0:
 		return
-	potion_rotation.append(id)
+	potion_rotation[at] = ""
+	_trim_loadout()
+	if active_potion == id and not potion_rotation.has(id):
+		active_potion = "health"
 	game.sfx("ui_click")
 
 
-func loadout_remove(id: String) -> void:
-	if potion_rotation.has(id):
-		potion_rotation.erase(id)
-		if active_potion == id and not potion_rotation.has(id):
-			active_potion = "health"
-		game.sfx("ui_click")
+## Mark slot `index` deliberately EMPTY (pours nothing) or back to the default.
+func loadout_set_empty(index: int, empty: bool) -> void:
+	if index < 0 or index >= potion_slot_cap():
+		return
+	while potion_rotation.size() <= index:
+		potion_rotation.append("")
+	var was := String(potion_rotation[index])
+	potion_rotation[index] = LOADOUT_EMPTY if empty else ""
+	_trim_loadout()
+	if _is_slotted_bottle(was) and active_potion == was and not potion_rotation.has(was):
+		active_potion = "health"
+	game.sfx("ui_click")
+
+
+func _is_slotted_bottle(entry: String) -> bool:
+	return entry != "" and entry != LOADOUT_EMPTY
+
+
+## Trailing default entries carry no information — drop them so an untouched
+## loadout is the empty list it always was.
+func _trim_loadout() -> void:
+	while not potion_rotation.is_empty() and String(potion_rotation[potion_rotation.size() - 1]) == "":
+		potion_rotation.pop_back()
 
 
 func potion_display_name(id: String) -> String:

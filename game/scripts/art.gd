@@ -2480,6 +2480,19 @@ const CONSUMABLE_ICONS := {
 ## Graded potions carry a `sprite` ("consumables/<stem>"); a bare {"id": ...}
 ## (the HUD/touch-HUD pass just the active id) resolves its stem through
 ## Items.potion_by_id. Stones/scrolls fall back to the CONSUMABLE_ICONS map.
+## Cap oversized consumable masters so the potion/Alkahest hi-res art (128px
+## hand-painted, 2026-08-16) downsamples ONCE with LANCZOS here and then the
+## HUD's ~58px slot + the codex's 32px row read crisp — instead of the old
+## force-to-32 NEAREST that shipped a blurry 32px upscaled into a big slot.
+## Legacy ≤128px icons (stones, scrolls) pass through at native size, unchanged.
+const CONSUMABLE_ICON_MAX := 128
+static func _fit_consumable_icon(im: Image) -> void:
+	var m: int = maxi(im.get_width(), im.get_height())
+	if m > CONSUMABLE_ICON_MAX:
+		var s := float(CONSUMABLE_ICON_MAX) / float(m)
+		im.resize(int(round(im.get_width() * s)), int(round(im.get_height() * s)), Image.INTERPOLATE_LANCZOS)
+
+
 static func consumable_icon(c: Dictionary) -> ImageTexture:
 	var id := String(c.get("id", ""))
 	var sprite := String(c.get("sprite", ""))
@@ -2492,8 +2505,7 @@ static func consumable_icon(c: Dictionary) -> ImageTexture:
 		var pim := _icon_override(sprite)
 		if pim == null:
 			return null
-		if pim.get_width() != 32 or pim.get_height() != 32:
-			pim.resize(32, 32, Image.INTERPOLATE_NEAREST)
+		_fit_consumable_icon(pim)
 		var pt := ImageTexture.create_from_image(pim)
 		_cache[pkey] = pt
 		return pt
@@ -2506,8 +2518,7 @@ static func consumable_icon(c: Dictionary) -> ImageTexture:
 	var over := _icon_override(icon_name)
 	if over == null:
 		return null
-	if over.get_width() != 32 or over.get_height() != 32:
-		over.resize(32, 32, Image.INTERPOLATE_NEAREST)
+	_fit_consumable_icon(over)
 	var t := ImageTexture.create_from_image(over)
 	_cache[key] = t
 	return t
@@ -2982,18 +2993,28 @@ static func water_material(col: Color) -> ShaderMaterial:
 	sh.code = """
 shader_type canvas_item;
 uniform vec4 water_col : source_color = vec4(0.1, 0.2, 0.2, 0.8);
+// FLOWING water: layered ripples scrolling downstream (+y), sparkle glints on
+// the crests, soft mid highlights for body, foam at both banks + a little
+// depth. Chunky-quantized so it still sits with the pixel-art (finer than the
+// old 2-sine version so the surface reads as moving water, not a flat wash).
 void fragment() {
-	// Chunky water pixels so the shader sits with the 16px art.
-	vec2 uv = floor(UV * vec2(20.0, 220.0)) / vec2(20.0, 220.0);
-	float x = uv.x;
-	float edge = smoothstep(0.0, 0.12, x) * smoothstep(1.0, 0.88, x);
-	float y = uv.y * 46.0;
-	float r1 = sin((y - TIME * 1.7) * 3.14159 + x * 4.0) * 0.5 + 0.5;
-	float r2 = sin((y * 0.53 + TIME * 0.8) * 3.14159 + x * 9.0) * 0.5 + 0.5;
-	float glint = smoothstep(0.82, 0.96, r1 * 0.55 + r2 * 0.55);
-	float foam = smoothstep(0.10, 0.02, x) + smoothstep(0.90, 0.98, x);
-	vec3 rgb = water_col.rgb + glint * 0.16 + foam * 0.08;
-	COLOR = vec4(rgb, clamp(water_col.a * edge + foam * 0.20, 0.0, 0.9));
+	vec2 q = floor(UV * vec2(26.0, 320.0)) / vec2(26.0, 320.0);
+	float x = q.x;
+	float y = q.y;
+	float t = TIME;
+	float edge = smoothstep(0.0, 0.10, x) * smoothstep(1.0, 0.90, x);
+	// three ripple layers at different speeds/frequencies = organic flow
+	float a1 = sin((y * 30.0 - t * 3.2) * 3.14159 + x * 5.0);
+	float a2 = sin((y * 54.0 - t * 5.0) * 3.14159 - x * 9.0);
+	float a3 = sin((y * 14.0 + t * 1.4) * 3.14159 + x * 13.0);
+	float surf = (a1 * 0.45 + a2 * 0.30 + a3 * 0.25) * 0.5 + 0.5;
+	float glint = smoothstep(0.86, 1.0, surf);            // sharp sparkle on crests
+	float crest = smoothstep(0.55, 0.85, surf) * 0.10;    // soft body highlight
+	float foam = smoothstep(0.11, 0.02, x) + smoothstep(0.89, 0.98, x);
+	float depth = 1.0 - 0.16 * smoothstep(0.5, 0.05, abs(x - 0.5));  // darker mid-channel
+	vec3 rgb = water_col.rgb * depth + glint * 0.24 + crest + foam * 0.28;
+	float alpha = clamp(water_col.a * edge + foam * 0.22 + glint * 0.05, 0.0, 0.93);
+	COLOR = vec4(rgb, alpha);
 }
 """
 	var mat := ShaderMaterial.new()
@@ -3287,6 +3308,7 @@ const MOB_IDLE_ONLY_LOCOMOTION := {
 	"nullwarden": true, "saint_varo": true,
 	"auroch_minotaur": true, "kaethra": true, "veyx": true, "vargoth": true, "korrag": true,
 	"hrolgar": true, "echo": true, "stormmouth": true,
+	"saint_varo_standing": true,
 }
 const MOB_FLAT_WALK_LOCOMOTION := {
 	"wolf": true, "cultist": true, "skeleton": true, "zombie": true,
@@ -3315,6 +3337,7 @@ const BOSS_FLAT_ANIMATION_LOCOMOTION := {
 	"nullwarden": true, "saint_varo": true,
 	"auroch_minotaur": true, "kaethra": true, "veyx": true, "vargoth": true, "korrag": true,
 	"hrolgar": true, "echo": true, "stormmouth": true,
+	"saint_varo_standing": true,
 }
 
 ## Wave-1 bosses must not fall back into the legacy PixelLab ability family.
@@ -3332,6 +3355,7 @@ const BOSS_ACTION_FALLBACK := {
 	"auroch_minotaur": "attack", "kaethra": "stab", "veyx": "ring",
 	"vargoth": "attack", "korrag": "attack",
 	"hrolgar": "attack", "echo": "attack", "stormmouth": "bolt",
+	"saint_varo_standing": "attack",
 }
 
 ## The wave-1 idles are explicit Codex strips. Keep the filenames here so the
@@ -3360,6 +3384,7 @@ const BOSS_IDLE_STRIP_BASE := {
 	"hrolgar": "hrolgar_anim_codex",
 	"echo": "echo_anim_codex",
 	"stormmouth": "stormmouth_anim_codex",
+	"saint_varo_standing": "saint_varo_standing_anim_codex",
 }
 
 ## Codex directional WALK (owner 2026-08-15, the deferred piece). These flat-idle
@@ -3373,10 +3398,11 @@ const BOSS_DIRECTIONAL_WALK := {
 	# leg-walkers
 	"vargoth": true, "korrag": true, "sexton": true, "hrolgar": true,
 	"auroch_minotaur": true, "rotmaw": true, "kaethra": true, "echo": true,
-	"stormmouth": true,
+	"stormmouth": true, "nullwarden": true,
 	# gliders (robe/gown/float — cloth sway + bob, no leg cycle)
 	"choirmother": true, "vess": true, "serane": true, "forgemistress": true,
-	"ashpriest": true, "halla": true, "veyx": true, "nullwarden": true,
+	"ashpriest": true, "halla": true, "veyx": true,
+	"saint_varo_standing": true,
 }
 
 static func boss_directional_walk(name: String) -> bool:
@@ -3461,6 +3487,10 @@ const HERO_CLIP_FILES := {
 	"idle": "anim", "walk": "walk", "run": "run", "attack": "attack",
 	"attack2": "attack2", "cast": "cast", "dash": "dash", "ult": "ult",
 	"ultidle": "ultidle", "death": "death",
+	# "attackb" = the ALTERNATE basic swing (2026-08-16 melee swing
+	# alternation): a1 flips attack <-> attackb every cast when the strip is
+	# installed (<art>_attackb[_<dir>].png). Absent = the single swing, as before.
+	"attackb": "attackb",
 }
 const HERO_CLIP_FPS := {
 	# Action clips run FAST so a ~7-frame swing/throw/dash lands in ~0.3s and
@@ -3468,6 +3498,7 @@ const HERO_CLIP_FPS := {
 	# these up via the _dir_loco fps stamp in player_core — dir_set defaults 6.)
 	"idle": 6.0, "walk": 9.0, "run": 11.0, "attack": 22.0, "attack2": 22.0,
 	"cast": 10.0, "dash": 26.0, "ult": 11.0, "ultidle": 6.0, "death": 9.0,
+	"attackb": 22.0,
 }
 
 ## Every installed animation clip for a hero class, keyed by clip name.
@@ -3606,6 +3637,30 @@ static func _ground_tileset(kind: String) -> Dictionary:
 		info = {"img": im, "cell": cell, "cols": maxi(1, w / cell), "rows": maxi(1, h / cell)}
 	_ground_ts_cache[kind] = info
 	return info
+
+
+## Native-resolution AUTHORED floor field. A seamless, tileable pixel-art tile
+## (assets/sprites/ground_field_<kind>.png) that game_world tiles across the
+## whole room ON THE GPU at scale 1 — so the floor reads at PROP pixel density
+## instead of the 16px/tile procedural base upscaled 3x (owner: "terrain looks
+## low-res"). When a kind ships one, ground() leaves the base — and its chunky
+## procedural noise/speckle/macro — TRANSPARENT so the crisp field shows
+## through; only the boundary walls, wall shadow and the _mark_roads band still
+## composite over it. Loaded through the resource system so exports work.
+static var _ground_field_cache := {}
+static func ground_field(kind: String) -> Texture2D:
+	if _ground_field_cache.has(kind):
+		return _ground_field_cache[kind]
+	var tex: Texture2D = null
+	var path := "res://assets/sprites/ground_field_%s.png" % kind
+	if ResourceLoader.exists(path):
+		tex = load(path)
+	_ground_field_cache[kind] = tex
+	return tex
+
+
+static func has_ground_field(kind: String) -> bool:
+	return ground_field(kind) != null
 
 
 ## A complete authored room surface. Unlike ground_<kind>.png tile sheets,
@@ -3804,7 +3859,11 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 	var path_ts := _ground_tileset(path_kind)
 	var tiled_base := not base_ts.is_empty()
 	var tiled_path := not path_ts.is_empty()
-	var authored_base := authored_room or tiled_base
+	# A native-resolution authored FIELD tile owns the base surface: leave the
+	# base image transparent here so the GPU-tiled crisp floor shows through.
+	var field_base := has_ground_field(base_kind)
+	var field_path := has_ground_field(path_kind)
+	var authored_base := authored_room or tiled_base or field_base
 	var authored_path := authored_room and GROUND_ROOM_PATH.has(base_kind)
 
 	var g_cols: Array = GROUND[base_kind]
@@ -3813,14 +3872,14 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 		image.blit_rect(room_surface, Rect2i(0, 0, pw, ph), Vector2i.ZERO)
 	elif tiled_base:
 		_tile_fill(image, Rect2i(0, 0, pw, ph), base_ts, rng)
-	else:
+	elif not field_base:
 		image.fill_rect(Rect2i(0, 0, pw, ph), g_cols[0])
 	var mask := PackedByteArray()
 	mask.resize(pw * ph)
 	for arm in arms:
 		var ar: Rect2i = arm
-		if authored_path:
-			pass  # keep the room-scale composition under its bespoke route
+		if authored_path or field_base:
+			pass  # crisp field shows through; road reads via the _mark_roads band
 		elif tiled_path:
 			_tile_fill(image, ar, path_ts, rng)
 		else:
@@ -3864,7 +3923,7 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 	# path ships its own edges, so this painted rim + stones skip it.
 	var edge: Color = p_cols[2].lightened(0.12)
 	var dark: Color = p_cols[1].darkened(0.15)
-	for y in (0 if tiled_path or authored_path else ph):
+	for y in (0 if tiled_path or authored_path or field_base else ph):
 		var row := y * pw
 		for x in pw:
 			if mask[row + x] == 0:
@@ -3875,7 +3934,7 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 				image.set_pixel(x, y, edge)
 			elif shad and rng.randf() < 0.85:
 				image.set_pixel(x, y, dark)
-	for i in (0 if tiled_path or authored_path else 26):
+	for i in (0 if tiled_path or authored_path or field_base else 26):
 		for attempt in 14:
 			var sx := rng.randi_range(2, pw - 3)
 			var sy := rng.randi_range(2, ph - 3)
@@ -3895,12 +3954,17 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 	if not authored_base:
 		_ground_macro(image, mask, base_kind, pw, ph, rng)
 
-	# Depth: the ground darkens in the wall's shadow at the top.
+	# Depth: the ground darkens in the wall's shadow at the top. Over an
+	# authored FIELD (transparent base) this rides as a translucent black band
+	# so the crisp GPU-tiled floor below still darkens under the wall.
 	for y in range(16, 24):
 		var f := 0.72 + (y - 16) / 8.0 * 0.28
 		for x in pw:
-			var c := image.get_pixel(x, y)
-			image.set_pixel(x, y, Color(c.r * f, c.g * f, c.b * f, 1.0))
+			if field_base:
+				image.set_pixel(x, y, Color(0, 0, 0, 1.0 - f))
+			else:
+				var c := image.get_pixel(x, y)
+				image.set_pixel(x, y, Color(c.r * f, c.g * f, c.b * f, 1.0))
 
 	# Stone border wall along the top and bottom edge — EXCEPT across a
 	# real doorway: painting the whole row walled the N/S doors shut
@@ -3915,6 +3979,51 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 	var t := ImageTexture.create_from_image(image)
 	_cache[key] = t
 	return t
+
+
+## Codex/UI PREVIEW of a ground, baked into ONE texture. In the world a field
+## kind layers a GPU-tiled crisp floor UNDER the (transparent-base) ground()
+## detail; a UI thumbnail can't GPU-tile per-thumb, so bake the field into the
+## base here and alpha-blend the detail (walls + wall shadow) on top. Non-field
+## kinds are ground() unchanged. Cached — thumbnails are static.
+static var _ground_preview_cache := {}
+static func ground_preview(base_kind: String, path_kind: String, tiles_w: int, tiles_h: int, seed_val: int, exits: Array = ["W", "E"]) -> Texture2D:
+	var detail := ground(base_kind, path_kind, tiles_w, tiles_h, seed_val, exits)
+	if not has_ground_field(base_kind):
+		return detail
+	var dstr := ""
+	var dirs: Array = exits.duplicate()
+	dirs.sort()
+	for d in dirs:
+		dstr += String(d)
+	var key := "prev_%s_%s_%d_%d_%d_%s" % [base_kind, path_kind, tiles_w, tiles_h, seed_val, dstr]
+	if _ground_preview_cache.has(key):
+		return _ground_preview_cache[key]
+	var di := detail.get_image()
+	var pw := di.get_width()
+	var ph := di.get_height()
+	var out := Image.create_empty(pw, ph, false, Image.FORMAT_RGBA8)
+	var field := ground_field(base_kind).get_image()
+	if field.get_format() != Image.FORMAT_RGBA8:
+		field.convert(Image.FORMAT_RGBA8)
+	# The world shows the field at native (3x this 16px/tile base), so a 1/3
+	# downscale of the tile lands the thumbnail at roughly the in-world scale.
+	var cell := maxi(24, int(round(field.get_width() / 3.0)))
+	var fs := field.duplicate()
+	fs.resize(cell, cell, Image.INTERPOLATE_LANCZOS)
+	var y := 0
+	while y < ph:
+		var x := 0
+		while x < pw:
+			var w := mini(cell, pw - x)
+			var h := mini(cell, ph - y)
+			out.blit_rect(fs, Rect2i(0, 0, w, h), Vector2i(x, y))
+			x += cell
+		y += cell
+	out.blend_rect(di, Rect2i(0, 0, pw, ph), Vector2i.ZERO)
+	var tex := ImageTexture.create_from_image(out)
+	_ground_preview_cache[key] = tex
+	return tex
 
 
 ## ---------------------------------------------------------------------

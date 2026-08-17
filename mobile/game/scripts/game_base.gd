@@ -259,6 +259,7 @@ var barrier_active := false
 # ------------------------------------------------------ terrain system ---
 var terrain_by_zone: Array = []       # terrain id per room
 var zone_grounds := {}                # room idx -> ground Sprite2D (repaintable)
+var zone_fields := {}                 # room idx -> GPU-tiled authored floor Polygon2D (native-res crisp base, see _apply_ground_field)
 var zone_road_marks := {}             # room idx -> worn-road overlay Sprite2Ds (see _mark_roads)
 var zone_scenery := {}                # room idx -> decor + obstacle nodes
 var zone_wall_sprites := {}           # room idx -> wall visual Sprite2Ds (retextured on terrain repaint)
@@ -890,9 +891,10 @@ func daily_next_streak() -> int:
 	return daily_streak + 1 if daily_day_index() == daily_last_day + 1 else 1
 
 
-## The reward dict for a given streak position (cycles every 7 days).
+## The reward dict for a given streak position (the 7-day pattern repeats
+## across a 28-day cycle, each week paying a little more — Balance.daily_reward_at).
 func daily_reward_for(streak: int) -> Dictionary:
-	return Balance.DAILY_REWARDS[(maxi(streak, 1) - 1) % Balance.DAILY_REWARDS.size()]
+	return Balance.daily_reward_at(streak)
 
 
 ## Claim today's reward: advance the streak, grant the loot, persist.

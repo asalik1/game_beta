@@ -942,11 +942,17 @@ func _refresh_down_visual() -> void:
 ## measured contact time instead — keeps the hit ON the swing. Falls back to
 ## base_delay with no skin, or when the skin has no entry for the clip the
 ## current ability is swinging (_strike_clip, set by use_ability). See
-## Skins.SWING.
+## Skins.SWING. The base class's ALTERNATE swing ("attackb", melee swing
+## alternation) reads its own measured contact from Balance.ALT_SWING_DELAY
+## the same way — a class with no entry lands its alt on the base frame.
 func swing_delay(base_delay: float) -> float:
 	var base := base_delay
-	if skin != "" and _strike_clip != "":
-		var t: float = Skins.swing_time(cls, skin, _strike_clip)
+	if _strike_clip != "":
+		var t := -1.0
+		if skin != "":
+			t = Skins.swing_time(cls, skin, _strike_clip)
+		if t < 0.0 and _strike_clip == "attackb":
+			t = float(Balance.ALT_SWING_DELAY.get(cls, -1.0))
 		if t >= 0.0:
 			base = t
 	# A refitted clip (fit_action_clip) runs faster, so its contact frame
@@ -2297,9 +2303,11 @@ func _meteor_impact_fx(pos: Vector2, radius: float, col: Color, mat: Material = 
 func _earth_slam_fx(pos: Vector2, radius: float, col: Color) -> void:
 	# Frames 1-7 of the strip; the 8th (bare faint cracks) is skipped so the
 	# hold lands on the rubble-and-cracks frame and the modulate fade ends it.
-	# Cracks/slabs under the actors; a light dust ghost over them.
+	# Cracks/slabs/dust strictly UNDER the actors — a ground burst is floor, no
+	# ghost over them (owner 2026-08-16, same ruling as the consecration ring;
+	# the volumetric bursts — flame, blood, void — keep their see-through copy).
 	var opts := {"scale": (radius * 2.0) / (IMPACT_CELL * EARTH_SLAM_FILL), "hframes": 8,
-		"offset": EARTH_SLAM_OFFSET, "z": -1, "ghost_over": 0.32, "over_z": 9,
+		"offset": EARTH_SLAM_OFFSET, "z": -1,
 		"frame_time": 0.05, "hold": 0.5, "fade": 0.6}
 	if _fx_flash("earth_slam", pos, 7, opts) == null:
 		game.burst(pos, col, 14)

@@ -614,6 +614,13 @@ func use_ability(slot: String) -> void:
 		var action_clip: String = ABILITY_CLIP.get(cls, {}).get(slot, "")
 		if cls == "warrior" and berserk_time > 0.0 and action_clip in ["attack", "attack2"]:
 			action_clip = "ult"  # berserk swings the RED blade, not the gold one
+		# Melee swing ALTERNATION (owner ruling 2026-08-16): a basic attack flips
+		# between the two authored swings every cast (attack <-> attackb) so
+		# Cleave / Judgment / Stab don't replay one identical motion. Art-driven
+		# — no attackb strip = the single swing, unchanged. Berserk's red-blade
+		# "ult" swing above is left alone (it has no alt clip).
+		elif slot == "a1" and action_clip == "attack":
+			action_clip = _alt_basic_clip()
 		# A dash's clip faces the TRAVEL direction, not the aimed target — a
 		# north/south dash was rendering sideways toward a side target.
 		if action_clip == "dash":
@@ -622,7 +629,7 @@ func use_ability(slot: String) -> void:
 		# her body, so a due-south shot reads as aiming sideways, not down at the
 		# target. Bias a near-straight-south aim onto the SE/SW sprite (bow angles
 		# down toward the target); the arrow itself still flies at aim_dir().
-		elif cls == "archer" and action_clip in ["attack", "attack2"]:
+		elif cls == "archer" and action_clip in ["attack", "attack2", "attackb"]:
 			var av := aim_dir()
 			if Art.dir8_suffix(av) == "s":
 				action_face_hint = Vector2(1.0 if av.x >= 0.0 else -1.0, 1.0)

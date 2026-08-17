@@ -1,0 +1,25 @@
+Asset type: production high-resolution pixel-art animation source row for Crownless (Godot action-RPG).
+
+Image 1 is the BINDING identity, scale, camera and facing reference: it is this Warrior's EXISTING primary Cleave (an overhead raise into a downward diagonal chop) seen from the SE facing. Reproduce exactly that same character — the exact Crownless Warrior of Image 1: broad, stocky fully-armoured knight in black/dark-steel plate with ember-orange accent lines, compact crowned black helmet with a narrow orange visor and fully enclosed face, chest harness, hip armour, heavy gauntlets and boots, one two-handed flaming greatsword (dark blade with orange ember wisps) — no shield, no cape, no other weapon — at exactly the same body size, camera and SE facing. Do NOT reproduce its motion: that overhead chop is the primary swing; you are authoring the ALTERNATE swing that alternates with it.
+
+Create one 7-frame ALTERNATE CLEAVE timeline: a LEVEL HORIZONTAL SWEEP of the greatsword at waist-to-chest height. The blade stays roughly parallel to the ground for the whole swing — it is never raised above the shoulders and never chops downward. Facing: FRONT-RIGHT three-quarter view (southeast): the figure faces toward the camera and toward the viewer's right in EVERY frame, f1 through f7, including the recovery. Both hands stay on the hilt.
+
+f1  guard: standing full height, greatsword held low and level in front of the hips, weight centred (this frame sets the body scale).
+f2  windup: hips and shoulders coil AWAY from the target, the sword drawn back to the character's weapon side, blade level, pointing backward, ember wisps gathering along the edge.
+f3  swing: the blade whips forward at waist height, mid-arc beside the body, a short ember trail following the edge.
+f4  CONTACT — the peak: arms fully extended, the sword pointing straight ahead of the character at chest height, blade level, the strongest ember trail sweeping behind the edge; the widest, most readable frame.
+f5  follow-through: the blade continues past the front to the character's OFF side, torso twisted with the swing, trail thinning.
+f6  recovery: the sword swings back toward centre, level, torso unwinding, wisps fading.
+f7  settle: back to a guard nearly identical to f1 (sword low and level), so the loop closes.
+
+The ember effect is a compact trail attached to the blade edge only — no detached rings, waves, projectiles, ground cracks or fire pools, nothing that leaves the figure's own space.
+
+Camera and medium: low top-down orthographic/isometric action-RPG camera; authentic premium hand-pixeled rendering; deliberate square pixel clusters; selective dark outlines; bold readable colour masses; simplified material seams; controlled texture; legible after reduction to about 88 pixels tall. Do not render smooth digital painting, vector art, 3D or splash illustration.
+
+Layout: ONE horizontal row of exactly 7 isolated full-body figures, left to right = frames f1..f7, in a wide 3:1 landscape image (about 2172 x 724 px). Every figure is the SAME character at the SAME scale, proportions, equipment dimensions, palette, camera and facing, feet on ONE shared ground line. Generous flat pure #00ff00 gutters between figures (at least a torso width): no figure or effect may touch, overlap or cross into a neighbour's space or be cropped by the image edge — keep the whole weapon, effect, head and feet inside each figure's own space. Frame f1 must be a full-height standing pose.
+
+Backdrop: perfectly flat solid #00ff00 only; no floor, cast/contact shadow, gradient, reflection, scenery, text, labels, frame numbers, arrows, grid lines, panels, border or watermark. No green (#00ff00 or near it) inside the character or the effect.
+
+Negative constraints: no overhead raise, no downward chop, no thrust/stab, no spin; no shield, cape, second weapon or extra limbs; no change of helmet, armour or blade design between frames; no leg recolouring, no duplicated frames, no size drift between frames, no frame that turns toward a different direction.
+
+Deliverable: generate with the built-in image_gen tool, then COPY the raw generated PNG (do NOT key, crop, resize or edit it) into the current working directory as `warrior_attackb_se_v01_source.png`. Inspect it at full resolution: if the row does not hold exactly 7 clearly separated figures on green, if any figure or effect crosses into a neighbour, if the facing drifts from the assigned direction in ANY frame, or if the motion reproduces the primary swing instead of the alternate one described, generate again (save as `_v02_source.png`, `_v03_source.png`, ...; keep every attempt) — at most 3 attempts. Do not write anywhere except the current working directory. Finish with a short report: which version you consider best, and per frame f1..f7 one line describing weapon position/height and the figure's facing.

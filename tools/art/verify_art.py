@@ -80,12 +80,14 @@ SPRITES = ROOT / "game" / "assets" / "sprites"
 GAME = ROOT / "game"
 
 DIR8 = ("s", "se", "e", "ne", "n", "nw", "w", "sw")
-CLIPS = ("anim", "walk", "run", "attack", "attack2", "cast", "dash", "ult",
-         "ultidle", "death", "stab", "throw", "dir")
+CLIPS = ("anim", "walk", "run", "attack", "attack2", "attackb", "cast", "dash",
+         "ult", "ultidle", "death", "stab", "throw", "dir")
 
 # Content-geometry gates (see module docstring). Thresholds calibrated
 # 2026-08-13 against the owner's mob QA pass over the full sprites corpus.
-BODY_GATE_CLIPS = ("anim", "walk", "run", "attack", "attack2")
+# ("attackb" = the hero's alternate basic swing, Art.HERO_CLIP_FILES; gated
+# exactly like "attack".)
+BODY_GATE_CLIPS = ("anim", "walk", "run", "attack", "attack2", "attackb")
 LOCO_CLIPS = ("anim", "walk", "run")
 
 # Boss ability strips (<base>_<action>[_<dir>].png, engine seam
@@ -257,7 +259,7 @@ def check_file(png: Path) -> None:
     # normalizer shrinks the body to a miniature.  Catch catastrophic body-box
     # collapse on ordinary full-body clips; effects/death/dash are excluded
     # because deliberate vanish/transform frames are valid there.
-    body_clips = ("anim", "walk", "run", "attack", "attack2")
+    body_clips = ("anim", "walk", "run", "attack", "attack2", "attackb")
     is_body_clip = any(
         re.search(rf"_{clip}(?:_|$)", stem) for clip in body_clips
     )
@@ -366,7 +368,7 @@ def check_clip_scale(files: list[Path]) -> None:
                 break
         if not ref or ref["med_h"] <= 0 or ref["cell"] <= 0:
             continue
-        is_action = stat["clip"] in ("attack", "attack2") \
+        is_action = stat["clip"] in ("attack", "attack2", "attackb") \
             or stat["clip"] in ability_tokens()
         action_like = is_action or (stat["clip"] == "walk" and base in scale_walk)
         denom = ref["cell"] if action_like else stat["cell"]
