@@ -13,9 +13,9 @@ extends ShotRig
 ##   --play    — YOU drive; the rig only records. Real keyboard controls the
 ##               hero (no injection). Run REAL-TIME (NO --fixed-fps). Sets up the
 ##               scene, holds enemies frozen through a 3-2-1-GO countdown, then
-##               records `--secs` seconds at ~30 fps wall-clock. God-HP, infinite
-##               mana, ZERO cooldowns by default so a showcase never dies or
-##               waits. Human play = authentic footage. MUTED by default.
+##               records `--secs` seconds at ~30 fps wall-clock. God-HP + infinite
+##               mana; cooldowns RESET once on GO then tick normally (authentic,
+##               not spam). Human play = authentic footage. MUTED by default.
 ##                 godot --path game res://shot_cine.tscn -- \
 ##                   --scene=hero --class=mage --play --secs=10
 ##
@@ -28,9 +28,9 @@ extends ShotRig
 ##                                       default list = the six classes
 ##   biomes | bosses | capital | horde  world/reveal reels (scripted)
 ##
-## FLAGS: --secs=N (default ~10 mob / 12 boss) · --realcd (keep real cooldowns;
-##        default is ZERO) · --hud (show HUD; default hidden) · --sound (unmute;
-##        default MUTED) · --watch (no capture) · --boss=<kind> · --list=<csv>
+## FLAGS: --secs=N (default ~10 mob / 12 boss) · --nocd (zero cds EVERY frame;
+##        default = reset once on GO then tick) · --hud (show HUD; default hidden)
+##        · --sound (unmute; default MUTED) · --watch · --boss=<kind> · --list=<csv>
 
 const FPS := 30
 
@@ -387,10 +387,12 @@ var _play := false           # --play: YOU drive the hero; the rig only records
 
 ## Human-play recording: set up done, now hand control to the player and capture
 ## real-time for `secs`. No input injection — real keyboard drives the hero.
-## Infinite mana (and --nocd zeroes cooldowns) for a clean showcase; captures at
+## Cooldowns RESET once on GO (every ability ready to open with), then tick
+## normally — authentic play, not infinite spam (--nocd forces old zero-every-
+## frame). Infinite mana + god-HP so a showcase never stalls or dies. Captures at
 ## ~30 fps of WALL-CLOCK time so playback is real-speed regardless of render fps.
 func _play_record(secs: float) -> void:
-	var nocd := not flag("realcd")                  # zero cooldowns by default
+	var spam := flag("nocd")                        # opt-in: zero cds every frame
 	DisplayServer.window_move_to_foreground()       # focused window renders full-speed
 	_freeze_enemies(true)                           # HOLD the fight until GO
 	print("========================================")
@@ -414,6 +416,10 @@ func _play_record(secs: float) -> void:
 		await get_tree().create_timer(0.6).timeout
 	layer.queue_free()
 	_freeze_enemies(false)                          # RELEASE the swarm on GO
+	var p0 := game.player
+	if p0 != null:                                  # open with every ability ready
+		for s in ["a1", "a2", "a3", "ult"]:
+			p0.cds[s] = 0.0
 	var start := Time.get_ticks_msec()
 	var last := -100
 	while Time.get_ticks_msec() - start < int(secs * 1000.0):
@@ -421,7 +427,7 @@ func _play_record(secs: float) -> void:
 		if p != null:
 			p.mp = p.max_mp
 			p.hp = p.max_hp
-			if nocd:
+			if spam:
 				for s in ["a1", "a2", "a3", "ult"]:
 					p.cds[s] = 0.0
 		_quiet()
