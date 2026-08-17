@@ -38,6 +38,7 @@ var _clip := ""
 var _fn := 0
 var _mobs: Array = []
 var _watch := false          # --watch: skip capture, run real-time + audio to WATCH it
+var _save_tasks: Array = []  # threaded JPEG encodes in flight (keep play smooth)
 
 
 # ---------------------------------------------------------------- capture ----
@@ -51,7 +52,7 @@ func _begin(clip: String) -> void:
 	var d := DirAccess.open(dir)
 	if d != null:
 		for f in d.get_files():
-			if f.begins_with("f_") and f.ends_with(".png"):
+			if f.begins_with("f_") and (f.ends_with(".jpg") or f.ends_with(".png")):
 				d.remove(f)
 	step("clip " + clip)
 
@@ -59,10 +60,21 @@ func _begin(clip: String) -> void:
 func _cap() -> void:
 	if _watch:
 		return                   # watch mode: no disk I/O, just play it smooth
+	# Only the GPU readback (~17ms) is on the main thread; the JPEG encode
+	# (~70ms) is handed to a worker thread so live play stays smooth. PNG's
+	# ~470ms encode was what dragged human-play recording to ~2 fps.
 	var img := get_viewport().get_texture().get_image()
-	img.save_png("%s/%s/f_%05d.png" % [
-		ProjectSettings.globalize_path(shot_dir), _clip, _fn])
+	var path := "%s/%s/f_%05d.jpg" % [ProjectSettings.globalize_path(shot_dir), _clip, _fn]
+	_save_tasks.append(WorkerThreadPool.add_task(
+		func() -> void: img.save_jpg(path, 0.92)))
 	_fn += 1
+
+
+## Block until every queued JPEG encode has finished (frames all on disk).
+func _flush_saves() -> void:
+	for id in _save_tasks:
+		WorkerThreadPool.wait_for_task_completion(int(id))
+	_save_tasks.clear()
 
 
 ## Record `seconds` of frames at FPS (chatter frozen every frame).
@@ -418,6 +430,7 @@ func _play_record(secs: float) -> void:
 		if now - last >= 33:            # ~30 fps wall-clock cadence
 			last = now
 			_cap()
+	_flush_saves()                                  # make sure every frame is written
 	print("=== RECORDING DONE: %d frames (%s) ===" % [
 		_fn, ProjectSettings.globalize_path("%s/%s" % [shot_dir, _clip])])
 
@@ -438,6 +451,7 @@ func _ready() -> void:
 		"bossfight": await _scene_bossfight(cls, arg("boss", "vargoth"))
 		"capital":   await _scene_capital()
 		_:           await _scene_hero(cls)
+	_flush_saves()
 	print("CINE DONE scene=%s frames_last_clip=%d" % [scene, _fn])
 	finish()
 
