@@ -320,13 +320,28 @@ const CONVOS := {
 			"choices": [
 				{"text": "Hold it out. \"Brown, wide-brim, heron feather — blue at the tip. I watched for it, like I said.\"",
 					"req_flag": "boy_answered", "resonance": 3.0,
-					"flags": {"hat_given": true}, "lose_item": "millers_hat", "next": "o_hat2"},
+					"flags": {"hat_given": true}, "lose_item": "millers_hat", "scene": "hat_returned_scene", "next": "o_hat2"},
 				{"text": "Hold it out. \"Found it by the ravine, in the thorns. I think... I think it's his.\"",
 					"req_not_flag": "boy_answered", "resonance": 3.0,
-					"flags": {"hat_given": true, "boy_answered": true}, "lose_item": "millers_hat", "next": "o_hat2"},
+					"flags": {"hat_given": true, "boy_answered": true}, "lose_item": "millers_hat", "scene": "hat_returned_scene", "next": "o_hat2"},
 				{"text": "\"...Another time.\" Keep the pack shut.", "next": ""},
 			]},
 		"o_hat2": {"who": "Narrator", "text": "He doesn't cry this time either. He puts it on — it swallows him to the eyebrows — and stands straighter under it than the size should allow. \"He got far?\" \"The ravine. He saw the whole wood.\" The boy nods, slow, like a man watching a debt settle. \"That's a good place to stop walking,\" he decides. So do you.", "next": ""},
+	}},
+
+	# The Heron Feather's illustrated coda (2026-08-17 quest-illustration pass):
+	# giving the boy the hat chains here via the turn-in choice's "scene" key, so
+	# a beloved side quest closes on an opener-style plate instead of only a
+	# toast. `cinematic: true` routes it through the storybook layer; the cued
+	# node plays quests/quest_hat.png (Cutscene._quest_frames — a per-class
+	# quest_hat_<cls> plate would take over automatically if authored, but the
+	# boy's moment is class-agnostic, so one shared plate serves every bearer).
+	"hat_returned_scene": {"cinematic": true, "start": "hs1", "nodes": {
+		"hs1": {"who": "Narrator", "cue": "q_hat",
+			"text": "The mill road, gone gold with evening. The boy stands where his father used to, the wide brim swallowing him to the eyebrows, and the heron feather catches the last of the light, blue at the tip, exactly as promised. He faces the howling the way you face weather you have decided to outlast.",
+			"next": "hs_fade"},
+		"hs_fade": {"who": "Narrator", "cue": "fade",
+			"text": "You leave him to his watch. The wood is a little less empty for it.", "next": ""},
 	}},
 
 	# Resonance shrines: a genuine band-shifting choice between story beats.

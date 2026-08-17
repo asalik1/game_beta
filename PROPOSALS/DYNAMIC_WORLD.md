@@ -104,6 +104,38 @@ Adopt as a standing rule for everything below (and for new quests):
 
 ---
 
+## 1b. Status (2026-08-17)
+
+**Slice 1 of Layer A is BUILT + the quest-illustration hook (owner ask,
+this pass).** Shipped: the `kill` step kind, the `item`/`gem`/`kept` reward
+keys, `sq_kept_` as a persistent per-character prefix, and — reusing the
+chapter-opener storybook — a `"cinematic": true` convo opt-in, a `q_<base>`
+cue family (per-class `q_<base>_<class>` resolves automatically when the
+plate exists), and a `"scene"` convo-choice key that chains an illustrated
+beat after a choice. Worked example: the Heron Feather (the hat) turn-in
+now closes on an opener-style plate (`quests/quest_hat.png`), and
+`hunters_rounds` pays a gem + a `sq_kept_hunter_warden` mark. Suite-covered
+(`_test_quest_verbs`). Not yet built: `hunt`/`escort`/`defend`/`timed`/
+`deliver` step kinds, `keepsake`/`beat` rewards, Layers B–F. Details in
+§3.5.
+
+**Roster retrofits (first batch — real combat objectives on existing
+couriers):** three quests that were "carry A to B" now demand action and
+leave a mark, using the `kill` step:
+- **The Hunter's Rounds (ch1)** — mark the 3 landmarks AND thin the wolf
+  pack the hunter warns of (`kill wolf ×3`, `hunter_pack_thinned`);
+  already pays gem + `sq_kept_hunter_warden`.
+- **Forty Mouths (ch5)** — drive the winterfang off the toll-cache before
+  recovering the grain (`kill winterfang ×3`, `ch5_grain_guarded`); now
+  pays a gem too.
+- **Korrag's Due (ch7)** — put down the void-shades circling the cairn
+  before leaving the token (`kill void_shade ×2`, `sq7_cairn_cleared`);
+  leaves `sq_kept_korrag_honored`.
+Each shows live `(0/3)` progress in the journal; tests updated + bag-leak
+guarded; full suite green. Remaining couriers/pilgrimages are the next
+pass (verbs where the fiction supports them; illustrated turn-ins on the
+emotionally-resonant ones).
+
 ## 2. The six layers (each shippable alone; §9 orders them)
 
 | Layer | What it answers | New engine | Content |
@@ -167,6 +199,38 @@ becomes the best farm in its chapter.
 - `ch7_korrags_due` — slapping the Vow-Stone wakes a revenant (`hunt`).
 - `heron_feather` — untouched, but write `sq_kept_hat` and the boy grows
   up (§8 egg 1).
+
+### 3.5 Quest illustrations — BUILT (owner ask 2026-08-17: "copy how we generated art for opening scenes")
+
+A quest EVENT can now show an opener-style illustrated plate, reusing the
+chapter-opener storybook wholesale (`cutscene.gd`, `run_cinematic_convo`).
+The engine additions:
+- **`"cinematic": true` on a convo** → `run_convo_id` mounts the storybook
+  `Cutscene` and each node's `"cue"` stages its plate. Any quest convo
+  opts in with one flag; existing quests included.
+- **`q_<base>` cue family** (`Cutscene._quest_frames`) → plate
+  `assets/sprites/opening/quests/quest_<base>.png`. **Per-class art is
+  automatic**: if `quests/quest_<base>_<class>.png` exists it takes over
+  for that class, else the shared plate serves everyone — so an "important
+  enough" quest gets class-flavored art just by dropping the files, no code.
+  `is_known_cue` accepts the whole `q_*` family (autotest-validated).
+- **`"scene": "<convo_id>"` convo-choice key** → after a choice's path
+  closes, play that cinematic convo as an illustrated beat, then continue
+  (chains with `hub_action`). The clean trigger for "at this quest moment,
+  show a plate."
+
+Worked example: the Heron Feather turn-in (`wander_orphan` → the
+`hat_returned_scene` cinematic, cue `q_hat`) closes the beloved quest on a
+plate instead of only a toast. Art is generated via the Codex `image_gen`
+lane exactly like openers (`tools/art/run_codex_batch.ps1`, brief + opener
+style-refs, 1672×941, authored bright, installed under `opening/quests/`).
+The wiring is art-independent (a missing plate warns and shows the backdrop
++ narration), so quests can be wired first and illustrated later.
+
+**Next for illustrations:** decide which quests earn a cinematic beat
+(taste call — not every courier should), and which earn per-class plates
+(the class-refracted ones: a paladin's oath-quest, a warlock's pact debt).
+The mechanism is done; the rest is authoring + art.
 
 ---
 

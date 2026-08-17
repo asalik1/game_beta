@@ -306,6 +306,7 @@ var settings := {"music": 1.0, "sfx": 1.0, "fullscreen": false, "lang": "en", "t
 	# user://settings.json ("touch_layout": id -> [x,y] custom offset; "joystick_pos": [x,y] custom home)
 var music_gain_db := -16.0            # base+tune of the current track
 var flags := {}                       # persistent story flags (saved)
+var quest_kills := {}                 # KILL-step progress: step flag -> kills so far (saved, chapter-wiped)
 var _quest_avail_cache := -1          # any_quest_available memo: -1 dirty, 0 no, 1 yes (not saved)
 var quest_marks: Array = []           # live ❢ giver markers: [{node, quests}] (rebuilt with the world)
 var merchant_zones: Array = []        # rooms with a merchant present (saved)
@@ -1441,6 +1442,10 @@ func _try_receive(payload: Dictionary) -> bool:
 		"material":
 			return player.add_material(String(payload.get("family", "")),
 				String(payload.get("grade", "")), int(payload.get("count", 1)))
+		"bag":
+			# A dropped/awarded bag lands LOOSE in the pack (never auto-equips);
+			# a full pack refuses so give_loot drops it on the ground / mails it.
+			return player.add_loose_bag(Items.make_bag(String(payload.get("grade", "F"))))
 	return false
 
 
@@ -1558,11 +1563,66 @@ func _check_side_quests() -> void:
 		var standing: Dictionary = reward.get("standing", {})
 		for fac in standing:
 			player.faction_standing[fac] = int(player.faction_standing.get(fac, 0)) + int(standing[fac])
+		# Beyond coins + standing (2026-08-17 quest-verb pass, PROPOSALS/
+		# DYNAMIC_WORLD.md §3.2): a quest may also pay an ITEM (a chapter-band
+		# gear roll for the wearer's class, like a chest), a GEM (chapter drop
+		# level), and/or leave a persistent KEPT mark a later beat reads
+		# (sq_kept_/chose_-prefixed, so it survives the chapter wipe and stays
+		# per-character in co-op). Item/gem land on THIS machine's local player,
+		# exactly like the gold above; the mark routes like any world/kept flag.
+		var got_extra := ""
+		if has_local_player():
+			if reward.has("item"):
+				var it: Dictionary = Items.roll_item(loot_chapter(), loot_rng, player.cls)
+				if not it.is_empty():
+					give_loot({"kind": "item", "item": it}, player.global_position)
+					got_extra = "  + " + String(it.get("name", "gear"))
+			if reward.has("gem"):
+				var glvl := int(reward["gem"]) if not (reward["gem"] is bool) \
+					else Balance.gem_drop_level(loot_chapter())
+				var gem := drop_gem(glvl)
+				give_loot({"kind": "gem", "gem": gem}, player.global_position)
+				got_extra += "  + " + Items.gem_title(gem)
+		if reward.has("kept"):
+			set_flag(String(reward["kept"]))  # persistent per-character mark
 		sfx("levelup")
 		spawn_text(player.global_position + Vector2(0, -70),
-			"SIDE QUEST COMPLETE — %s%s" % [String(q["name"]),
-				"  (+%d gold)" % gold if gold > 0 else ""],
+			"SIDE QUEST COMPLETE — %s%s%s" % [String(q["name"]),
+				"  (+%d gold)" % gold if gold > 0 else "", got_extra],
 			Color(1.0, 0.85, 0.35), 4.0)
+
+## A kill toward any accepted, unfinished KILL-step quest (2026-08-17
+## quest-verb pass): a step with `kind:"kill"` names a `target` enemy kind and
+## a `count`; each matching kill bumps a run-scoped counter and, at the target,
+## SETS the step flag — so the step stays an ordinary flag to _check_side_quests
+## and the journal, the co-op flag-routing carries the completion, and the
+## save/wipe treat it like any quest progress. Host-authoritative (like every
+## spawn/kill credit) so a shared kill is counted once; the flag it sets routes
+## to the party. Called from game_flow.on_enemy_died beside note_kill.
+func quest_kill_note(kind: String) -> void:
+	if net_guest():
+		return  # the host owns the sim; the completion flag routes to guests
+	for id in Story.ALL_SIDE_QUESTS:
+		var sid := String(id)
+		if not get_flag("sq_on_" + sid, false) or get_flag("sq_paid_" + sid, false):
+			continue
+		var q: Dictionary = Story.ALL_SIDE_QUESTS[id]
+		for step in q.get("steps", []):
+			if String(step.get("kind", "flag")) != "kill" or String(step.get("target", "")) != kind:
+				continue
+			var f := String(step["flag"])
+			if get_flag(f, false):
+				continue
+			var need: int = maxi(1, int(step.get("count", 1)))
+			var have := int(quest_kills.get(f, 0)) + 1
+			quest_kills[f] = have
+			if have >= need:
+				set_flag(f)  # completes the step: routes, re-checks, clears the ❢
+			elif is_instance_valid(player):
+				spawn_text(player.global_position + Vector2(0, -84),
+					"%s  (%d/%d)" % [String(step.get("text", "quarry")), have, need],
+					Color(0.9, 0.85, 0.7), 1.6)
+
 
 ## Settle every side quest ACCEPTED in this chapter and never finished.
 ## Called from the victory beat (game_flow): victory is the chapter's point of
@@ -1668,6 +1728,15 @@ func get_flag(flag_name: String, def = false):
 
 func run_convo_id(id: String, on_done := Callable()) -> void:
 	var convo: Dictionary = Story.ALL_CONVOS[id]
+	# Illustrated opt-in (2026-08-17 quest-illustration pass): a convo flagged
+	# `"cinematic": true` plays through the storybook layer (Cutscene) exactly
+	# like a chapter opener — each node's `"cue"` stages an authored plate.
+	# This is the seam that lets a QUEST EVENT show opener-style art. Guard on
+	# `cutscene == null` so run_cinematic_convo (which sets it, then re-enters
+	# here) doesn't recurse; openers already own the layer when they call in.
+	if cutscene == null and bool(convo.get("cinematic", false)):
+		run_cinematic_convo(id, on_done)
+		return
 	# MP-13 (§5.4): in a co-op session, dialogue is a local overlay routed
 	# through the etiquette layer — a per-NPC busy-lock, world-flag sync,
 	# consequence toasts, and beat mirroring for the story-critical convos
@@ -1836,6 +1905,17 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 					call("_hub_action", act)
 					if on_done.is_valid():
 						on_done.call()
+			# Illustrated beat ("scene": 2026-08-17 quest-illustration pass): after
+			# this choice's whole path closes, play a cinematic convo — the quest's
+			# moment reuses the opener storybook (run_cinematic_convo). The plate(s)
+			# come from that convo's node cues; per-class art resolves automatically
+			# (Cutscene._quest_frames). Local-only, like hub_action; chains any prior
+			# done_after so hub_action + scene can coexist.
+			if c.has("scene"):
+				var scene_id := String(c["scene"])
+				var chain := done_after
+				done_after = func() -> void:
+					run_cinematic_convo(scene_id, chain)
 			# MP-13 (§5.4): resonance, standings, keepsakes and coins above all
 			# hit `player` = local_player, so a GUEST's choice moves only the
 			# guest — owner-side by construction (§5.4). The one SHARED

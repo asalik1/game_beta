@@ -2492,6 +2492,7 @@ func _run_campaign_ch2() -> void:
 	await _test_ch6_chapter()
 	await _test_ch7_chapter()
 	await _test_side_quests()
+	await _test_quest_verbs()
 	await _test_quest_abandonment()
 	await _test_ch1_quests()
 	await _test_pc_curios()
@@ -5086,6 +5087,91 @@ func _test_side_quests() -> void:
 	print("ok: side quests (accept, step tracking, single payout)")
 
 
+## Quest-verb pass (2026-08-17, PROPOSALS/DYNAMIC_WORLD.md): the new step KIND
+## `kill` (a counter that sets its flag at the target), the reward KEYS
+## item/gem/kept, and the illustration cue family + `scene` primitive. Injects a
+## throwaway quest into the merged table, drives it, then removes it —
+## SNAPSHOT + RESTORE shared state per the rule.
+func _test_quest_verbs() -> void:
+	var snap_flags: Dictionary = game.flags.duplicate(true)
+	var gold0: int = game.player.gold
+	# Full SNAPSHOT + RESTORE (the autotest rule): the reward pays a real gem
+	# (and could drop loot), so snapshot every collection it can touch — a
+	# leaked gem would bloat a later bag-slot assertion.
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)
+	var snap_back: Array = game.player.backpack.duplicate(true)
+	var snap_cons: Array = game.player.consumables.duplicate(true)
+	var snap_drops: Array = game.dropped_loot.duplicate(true)
+	var gems0: int = game.player.gem_bag.size()
+	var drops0: int = game.dropped_loot.size()
+	var ch0: String = game.chapter_id
+	game.chapter_id = "ch1"
+	game.quest_kills.clear()
+	Story.ALL_SIDE_QUESTS["__qv_test"] = {
+		"name": "Cull the Test Pack", "chapter": "ch1",
+		"steps": [{"kind": "kill", "target": "wolf", "count": 2, "flag": "__qv_done", "text": "cull the pack"}],
+		"reward": {"gold": 10, "gem": true, "kept": "sq_kept___qv"},
+	}
+	game.set_flag("sq_on___qv_test")
+	game.quest_kill_note("bog_lurker")   # wrong target: ignored
+	game.quest_kill_note("wolf")         # 1 of 2
+	if int(game.quest_kills.get("__qv_done", 0)) != 1 or game.get_flag("__qv_done", false):
+		_fail("kill step miscounted (expected 1/2, not yet done)")
+		await get_tree().create_timer(60.0).timeout
+		return
+	game.quest_kill_note("wolf")         # 2 of 2: sets the step flag -> completes
+	if not game.get_flag("__qv_done", false):
+		_fail("kill step did not complete at its count")
+		await get_tree().create_timer(60.0).timeout
+		return
+	if not game.get_flag("sq_paid___qv_test", false):
+		_fail("kill-step quest did not pay out on completion")
+		await get_tree().create_timer(60.0).timeout
+		return
+	if not game.get_flag("sq_kept___qv", false):
+		_fail("quest 'kept' reward did not set its persistent mark")
+		await get_tree().create_timer(60.0).timeout
+		return
+	if game.player.gem_bag.size() <= gems0 and game.dropped_loot.size() <= drops0:
+		_fail("quest 'gem' reward paid nothing (neither banked nor dropped)")
+		await get_tree().create_timer(60.0).timeout
+		return
+	if not ("sq_kept_" in game.KEPT_FLAG_PREFIXES):
+		_fail("sq_kept_ must be a persistent (kept) prefix so a quest mark outlives the chapter")
+		await get_tree().create_timer(60.0).timeout
+		return
+	# Illustration hook: the quest cue family is recognized (shared + per-class),
+	# and the hat quest's scene is a real cinematic convo chained by a `scene`.
+	if not Cutscene.is_known_cue("q_hat") or not Cutscene.is_known_cue("q_hat_warrior"):
+		_fail("quest cue family q_* not recognized by Cutscene.is_known_cue")
+		await get_tree().create_timer(60.0).timeout
+		return
+	var scene: Dictionary = Story.ALL_CONVOS.get("hat_returned_scene", {})
+	if scene.is_empty() or not bool(scene.get("cinematic", false)):
+		_fail("hat_returned_scene missing or not flagged cinematic")
+		await get_tree().create_timer(60.0).timeout
+		return
+	var give: Dictionary = Story.ALL_CONVOS["wander_orphan"]["nodes"]["o_hat"]
+	var has_scene := false
+	for c in give.get("choices", []):
+		if String(c.get("scene", "")) == "hat_returned_scene":
+			has_scene = true
+	if not has_scene:
+		_fail("the hat turn-in choice does not chain the illustrated scene")
+		await get_tree().create_timer(60.0).timeout
+		return
+	Story.ALL_SIDE_QUESTS.erase("__qv_test")
+	game.chapter_id = ch0
+	game.player.gold = gold0
+	game.player.gem_bag = snap_gems
+	game.player.backpack = snap_back
+	game.player.consumables = snap_cons
+	game.dropped_loot = snap_drops
+	game.quest_kills.clear()
+	game.flags = snap_flags
+	print("ok: quest verbs (kill step, item/gem/kept rewards, sq_kept_ persists, q_ cue family + scene)")
+
+
 ## Quest ABANDONMENT + DISCOVERY (2026-07-17). Two halves of one feature:
 ## a quest you accept and never finish is settled at the chapter's victory
 ## (the pledge you were PAID for is revoked, plus the lean for keeping it),
@@ -5201,9 +5287,13 @@ func _test_ch1_quests() -> void:
 			return
 	var snap_flags: Dictionary = game.flags.duplicate(true)
 	var gold0: int = game.player.gold
+	# hunters_rounds now pays a gem — snapshot the bag so completing it here
+	# doesn't leak a gem into a later bag-slot assertion (the autotest rule).
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)
+	var snap_drops: Array = game.dropped_loot.duplicate(true)
 	var chains := {
 		"oslas_debt": ["osla_pouch_taken", "osla_debt_paid"],
-		"hunters_rounds": ["hunter_mark_ravine", "hunter_mark_chapel", "hunter_mark_tower"],
+		"hunters_rounds": ["hunter_mark_ravine", "hunter_mark_chapel", "hunter_mark_tower", "hunter_pack_thinned"],
 		"flame_at_window": ["pine_taken", "pine_lit"],
 	}
 	for qid in chains:
@@ -5233,6 +5323,8 @@ func _test_ch1_quests() -> void:
 			await get_tree().create_timer(60.0).timeout
 			return
 	game.player.gold = gold0
+	game.player.gem_bag = snap_gems
+	game.dropped_loot = snap_drops
 	game.flags = snap_flags
 	print("ok: ch1 side quests (oslas_debt, hunters_rounds, flame_at_window — single payouts)")
 
@@ -5299,6 +5391,10 @@ func _test_ch5_quests() -> void:
 	var snap_flags: Dictionary = game.flags.duplicate(true)
 	var snap_standing: Dictionary = game.player.faction_standing.duplicate(true)
 	var gold0: int = game.player.gold
+	# forty_mouths now pays a gem — snapshot the bag so completing it here
+	# doesn't leak a gem into a later bag-slot assertion (the autotest rule).
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)
+	var snap_drops: Array = game.dropped_loot.duplicate(true)
 	for sqid in ["ch5_forty_mouths", "ch5_spring_song", "ch5_count_sleepers"]:
 		if not Story.ALL_SIDE_QUESTS.has(sqid):
 			_fail("ch5 side quest '%s' not registered" % sqid)
@@ -5322,7 +5418,7 @@ func _test_ch5_quests() -> void:
 			return
 	# Drive each chain: no early payout, pays once on the last step.
 	var chains := {
-		"ch5_forty_mouths": ["ch5_grain_taken", "ch5_grain_given"],
+		"ch5_forty_mouths": ["ch5_grain_guarded", "ch5_grain_taken", "ch5_grain_given"],
 		"ch5_spring_song": ["ch5_verse_taken", "ch5_verse_given"],
 		"ch5_count_sleepers": ["ch5_census_chapel", "ch5_census_vein", "ch5_census_told"],
 	}
@@ -5358,6 +5454,8 @@ func _test_ch5_quests() -> void:
 		return
 	game.player.gold = gold0
 	game.player.faction_standing = snap_standing
+	game.player.gem_bag = snap_gems
+	game.dropped_loot = snap_drops
 	game.flags = snap_flags
 	print("ok: ch5 side quests (forty_mouths, spring_song, count_sleepers - single payouts)")
 
@@ -5580,7 +5678,7 @@ func _test_ch7_quests() -> void:
 	var chains := {
 		"ch7_relay_stands": ["sq7_relay_cairn", "sq7_relay_shelf", "sq7_relay_vowstone"],
 		"ch7_void_letter": ["sq7_letter_taken", "sq7_letter_given"],
-		"ch7_korrags_due": ["sq7_token_taken", "sq7_token_left"],
+		"ch7_korrags_due": ["sq7_token_taken", "sq7_cairn_cleared", "sq7_token_left"],
 	}
 	for sqid in chains:
 		var sid := String(sqid)

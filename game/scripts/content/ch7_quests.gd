@@ -44,12 +44,14 @@ const SIDE_QUESTS := {
 	"ch7_korrags_due": {
 		"name": "Korrag's Due",
 		"chapter": "ch7",
-		"desc": "The beast-clans buried the Stormwarden under plains stone and six hundred offerings. His own order never left one. Apprentice Sorrel means to fix that — carry the relay's shift-token up the downs and leave it with the wolf teeth.",
+		"desc": "The beast-clans buried the Stormwarden under plains stone and six hundred offerings. His own order never left one. Apprentice Sorrel means to fix that — carry the relay's shift-token up the downs and leave it with the wolf teeth. But the downs are not quiet: void-shades circle the cairn, and the dead do not take visitors kindly.",
 		"steps": [
 			{"flag": "sq7_token_taken", "text": "Take the order's shift-token from Apprentice Sorrel"},
+			{"kind": "kill", "target": "void_shade", "count": 2, "flag": "sq7_cairn_cleared",
+				"text": "Put down the void-shades circling Korrag's Cairn"},
 			{"flag": "sq7_token_left", "text": "Leave it among the offerings on Korrag's Cairn"},
 		],
-		"reward": {"gold": 150, "standing": {"wildfang": 4}},
+		"reward": {"gold": 150, "standing": {"wildfang": 4}, "kept": "sq_kept_korrag_honored"},
 	},
 }
 

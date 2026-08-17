@@ -167,14 +167,38 @@ func cue(id: String) -> void:
 		return
 	var frame_names: Array = _frames_for_cue(id)
 	if frame_names.is_empty():
+		frame_names = _quest_frames(id)  # quest-event plates (per-class aware)
+	if frame_names.is_empty():
 		return
 	_play_sequence(frame_names)
 	_tint_motes(id)
 
 
+## Quest-event illustration plates (2026-08-17): a cue `"q_<base>"` in a
+## `cinematic` quest convo resolves to res://.../opening/quests/quest_<base>.png,
+## and — when the quest earns per-class flavor — automatically prefers
+## quests/quest_<base>_<class>.png if that file exists (the same "if the art
+## exists" rule Art.has_sprite uses for optional painted overrides). Authoring a
+## per-class plate is opt-in per class: drop the file and it takes over.
+func _quest_frames(id: String) -> Array:
+	if not id.begins_with("q_"):
+		return []
+	var base := id.substr(2)
+	var cls := ""
+	if is_instance_valid(game) and is_instance_valid(game.player):
+		cls = String(game.player.cls)
+	if cls != "":
+		var per := "quests/quest_%s_%s" % [base, cls]
+		if ResourceLoader.exists(FRAME_ROOT + per + ".png"):
+			return [per]
+	return ["quests/quest_" + base]
+
+
 static func is_known_cue(id: String) -> bool:
 	if id in KNOWN_CUES or id == "crown_hollow":
 		return true
+	if id.begins_with("q_") and id.length() > 2:
+		return true  # quest-event plate family (quests/quest_<base>[_<class>])
 	if CHAPTER_SHARED_CUES.has(id):
 		return true
 	for shared_cue in CHAPTER_SHARED_CUES:

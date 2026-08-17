@@ -16,12 +16,14 @@ const SIDE_QUESTS := {
 	"ch5_forty_mouths": {
 		"name": "Forty Mouths",
 		"chapter": "ch5",
-		"desc": "Hrolgar's toll died with him, but the toll-grain still sits cached on the white road. Yri will see it dealt by need, not by watch-rota — if someone carries it back honest.",
+		"desc": "Hrolgar's toll died with him, but the toll-grain still sits cached on the white road — and the winterfang have found it. Yri will see it dealt by need, not by watch-rota, if someone drives the beasts off and carries it back honest.",
 		"steps": [
+			{"kind": "kill", "target": "winterfang", "count": 3, "flag": "ch5_grain_guarded",
+				"text": "Drive the winterfang off the toll-cache"},
 			{"flag": "ch5_grain_taken", "text": "Recover the ridge-toll grain cached at the Sleeper's Wagon"},
 			{"flag": "ch5_grain_given", "text": "Set the grain down at Tracker Yri's fire"},
 		],
-		"reward": {"gold": 200, "standing": {"wildfang": 4}},
+		"reward": {"gold": 200, "gem": true, "standing": {"wildfang": 4}},
 	},
 	"ch5_spring_song": {
 		"name": "The Spring Song",

@@ -643,7 +643,7 @@ func chapter_available(chid: String, replay := false) -> bool:
 # the same list §5.4's set_flag routing reads.
 const KEPT_FLAG_PREFIXES := [
 	"opened_", "chose_", "completed_", "s_awakened_", "cap_",
-	"saw_chapter_opening_",
+	"saw_chapter_opening_", "sq_kept_",
 ]
 const KEPT_FLAGS := ["owned_the_harm", "excused_the_harm", "walked_away",
 	"gave_back", "kept_taking", "fled_theft", "told_truth", "hid_truth",
@@ -675,6 +675,7 @@ func _wipe_chapter_flags() -> void:
 		if keep:
 			kept[fname] = flags[fname]
 	flags = kept
+	quest_kills.clear()  # kill-step counters die with the quests that held them
 	# Quest keepsakes are run-scoped like the flags that earned them:
 	# an undelivered hat does not outlive its world.
 	if has_local_player():
@@ -1138,6 +1139,7 @@ func on_enemy_died(e: Enemy) -> void:
 		Pickup.drop_gold(self, _kill_gold(e.gold_value), e.global_position)
 	if e.xp_value > 0 or e.gold_value > 0 or e.elite:
 		note_kill(e.kind)  # codex completion (scenery props and event mood spawns don't count)
+		quest_kill_note(e.kind)  # KILL-step quest progress (host-authoritative, same gate as a real kill)
 	if e.elite:
 		run_elites += 1
 		bounty_progress("elite_kills")

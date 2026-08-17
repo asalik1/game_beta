@@ -39,6 +39,7 @@ static func write(game: Game, slot: int) -> void:
 		"quest_key": game.quest_key,
 		"talked_to_elder": game.talked_to_elder,
 		"flags": game.flags,
+		"quest_kills": game.quest_kills,   # KILL-step counters (world/run state, chapter-wiped)
 		"merchant_zones": game.merchant_zones,
 		# Run stats describe THE RUN (this world's playthrough), not the
 		# traveling character — §5.7's take-home list is XP/gold/gems/gear/
@@ -202,6 +203,7 @@ static func write_server_world(game: Game) -> void:
 		"quest_key": game.quest_key,
 		"talked_to_elder": game.talked_to_elder,
 		"flags": game.flags,
+		"quest_kills": game.quest_kills,
 		"merchant_zones": game.merchant_zones,
 		"run_time": game.run_time, "run_deaths": game.run_deaths,
 		"run_elites": game.run_elites, "run_secrets": game.run_secrets,
@@ -258,6 +260,7 @@ static func apply_server_world(game: Game, data: Dictionary) -> void:
 	game.quest_key = String(w.get("quest_key", "talk"))
 	game.talked_to_elder = bool(w.get("talked_to_elder", false))
 	game.flags = w.get("flags", {})
+	game.quest_kills = w.get("quest_kills", {})
 	game.run_time = float(w.get("run_time", 0.0))
 	game.run_deaths = int(w.get("run_deaths", 0))
 	game.run_elites = int(w.get("run_elites", 0))
@@ -318,7 +321,7 @@ const _V2_CHARACTER_FIELDS := ["name", "cls", "level", "xp", "skill_points", "tr
 	"bounties", "bounty_day", "bounty_week",
 	"vault_week", "vault_progress", "vault_claimed_week", "weekly_claimed_week",
 	"renown_cache_week", "waking_kills_week", "waking_kills"]
-const _V2_WORLD_FIELDS := ["quest_key", "talked_to_elder", "flags", "merchant_zones",
+const _V2_WORLD_FIELDS := ["quest_key", "talked_to_elder", "flags", "quest_kills", "merchant_zones",
 	"run_time", "run_deaths", "run_elites", "run_secrets",
 	"weekly_active", "weekly_week", "waking_week", "bosses_slain", "pos",
 	"cur_room", "last_safe_room", "visited_rooms", "cleared_rooms", "door_seen",
@@ -434,6 +437,7 @@ static func apply(game: Game, data: Dictionary) -> void:
 	game.quest_key = String(w.get("quest_key", "talk"))
 	game.talked_to_elder = bool(w.get("talked_to_elder", false))
 	game.flags = w.get("flags", {})
+	game.quest_kills = w.get("quest_kills", {})
 	# Run stats ride the save so the results card spans sessions. They are
 	# WORLD state (this run's card); only the weekly CLAIM ledger is the
 	# character's (see write()).

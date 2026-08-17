@@ -207,8 +207,14 @@ static func _side_quests(m: Menus, list: VBoxContainer) -> void:
 		_meter(m, card, done_steps, steps.size(), GREEN,
 			"OBJECTIVES", "%d / %d" % [done_steps, steps.size()])
 		for step in steps:
-			var done: bool = g.get_flag(String(step["flag"]), false)
-			m._lbl(card, "%s  %s" % ["✓" if done else "◇", String(step["text"])],
+			var sflag := String(step["flag"])
+			var done: bool = g.get_flag(sflag, false)
+			var label := String(step["text"])
+			# KILL steps show live progress (game_base.quest_kills) until done.
+			if not done and String(step.get("kind", "flag")) == "kill":
+				label += "  (%d / %d)" % [int(g.quest_kills.get(sflag, 0)),
+					maxi(1, int(step.get("count", 1)))]
+			m._lbl(card, "%s  %s" % ["✓" if done else "◇", label],
 				13, GREEN if done else Color(0.9, 0.85, 0.7))
 		m._lbl(card, "⌛  Chapter deadline  ·  finish before the final boss",
 			12, Color(0.98, 0.7, 0.42))

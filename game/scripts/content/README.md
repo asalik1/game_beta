@@ -32,6 +32,34 @@ in the old coordinate space and it Just Works. Optional keys:
   from a convo choice with `"side_quest": "id"`; steps complete as their
   flags land; the reward pays automatically on the last step. Shown in
   the journal's SIDE QUESTS section.
+  - **Step KINDS** (2026-08-17): a step is `{"flag": "x", "text": "..."}`
+    by default (set by a dialogue choice). Add `"kind": "kill",
+    "target": "<enemy_kind>", "count": N` for a combat step — a run-scoped
+    counter (`game_base.quest_kills`, host-authoritative) sets the flag at
+    the target; the journal shows live `(have / need)`.
+  - **Reward KEYS** beyond `{"gold", "standing"}`: `"item": true`
+    (a chapter-band gear roll for the class, like a chest), `"gem": true`
+    (or an int level), `"kept": "sq_kept_<x>"` (a PERSISTENT per-character
+    mark that survives the chapter wipe — a later beat variant can read it).
+  - **The hat template** (why `heron_feather` reads "solid" — the pattern
+    to copy for a memorable quest): the OBJECT exists in the world before
+    the ASK (accept from either end); two discovery paths with different
+    item text; a real verb, not "hand it over"; a turn-in that is a
+    recognition SCENE (≥3 beats); one MARK the world reads later.
+  - **Illustrated beat** (opener-style plate at a quest moment): give the
+    turn-in choice `"scene": "<convo_id>"`, and author that convo with
+    `"cinematic": true` + a `"cue": "q_<base>"` per node. The plate lives
+    at `assets/sprites/opening/quests/quest_<base>.png`; a per-class
+    `quest_<base>_<class>.png` overrides automatically when present.
+    Worked example: `hat_returned_scene` (cue `q_hat`).
+    - **Art refs**: when the plate shows a KNOWN character (an NPC, the
+      hero's class, a boss), pass that character's INSTALLED sprite AND
+      splash to image_gen as the DESIGN reference (opener plates stay the
+      STYLE reference) so the illustration matches canon instead of
+      improvising. Sprites: `assets/sprites/<name>.png`
+      (e.g. `millers_boy`, a mob/boss kind, `class_splash_<cls>`);
+      splashes: `assets/sprites/splash_<slug>.png` and
+      `class_splash_<cls>.png` (masters under `art_src/character_splashes/`).
 - `const QUEST_ITEMS := {"my_token": {"name": "...", "desc": "...",
   "grade": "C"}}` — module-authored quest keepsakes for
   `gain_item`/`lose_item` (merged into `Story.ALL_QUEST_ITEMS`;
