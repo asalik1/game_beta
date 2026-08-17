@@ -2888,6 +2888,19 @@ const SCENERY_RENDER_WIDTH := {
 	"station_alchemy_t3": 160.0, "station_anvil_t3": 170.0,
 	"crystal_cluster": 118.0, "crystal_spire": 110.0, "geode": 104.0,
 	"void_monolith": 108.0, "void_rift": 94.0, "void_obelisk": 108.0,
+	# Hi-res regen of the small scatter props (2026-08-17). These shipped as
+	# tiny 8-48px sources the game upscaled 3x -> blocky beside native floors.
+	# Each was regenerated at high resolution (silhouette/palette kept); pinning
+	# the width to the OLD native*3 render size keeps on-screen size identical
+	# while the hi-res source now DOWNSCALES = crisp. (rock stays at 64 above.)
+	"ice_sled": 144.0, "sand_drift": 96.0, "sand_drift2": 129.0,
+	"cactus2": 96.0, "coffin": 96.0, "grave_bones": 96.0,
+	"grave_mound": 93.0, "grave_crack": 93.0, "dead_shrub": 75.0,
+	"grave_cross": 60.0, "grave_cross2": 48.0, "stump_snow": 42.0,
+	"rock_ice": 42.0, "rubble": 42.0, "rock_pale": 42.0,
+	"tree_stump": 42.0, "bush_autumn": 42.0, "toadstool": 39.0,
+	"stalagmite": 36.0, "log2": 36.0, "crack": 24.0,
+	"bones": 24.0, "pebble": 24.0,
 }
 
 # Ground-footprint radii for authored high-resolution scenery. The old fixed
