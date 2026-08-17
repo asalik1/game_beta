@@ -1,5 +1,14 @@
 # Paladin chapter-opener reskin — 2026-08-17
 
+> **Where this landed in git:** the 16 reskinned plates (game + mobile) were
+> swept into commit **`43523e8`** ("Multi-agent sweep … Ivo, art tooling") by a
+> concurrent agent's index commit before this slice got its own message — the
+> serialized-commit race in CLAUDE.md. Nothing is lost; the plates + this source
+> folder + the `shot_palopener` rig are all in `43523e8`. The matching **paladin
+> class-splash** reskin is a separate, path-scoped commit **`bcc5cae`** (source:
+> `../paladin_splash_reskin_2026-08-17/`). Together those two commits are the
+> whole paladin-art-consistency pass (sprite → openers → class splash).
+
 The 16 paladin opener plates were painted with the OLD paladin design (a
 **red-caped, hooded** silver knight). This pass repaints the paladin in every
 plate to the current in-game design while keeping each scene otherwise
