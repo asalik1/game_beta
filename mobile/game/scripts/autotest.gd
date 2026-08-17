@@ -200,12 +200,37 @@ func _run_systems() -> void:
 	# the DESIGN.md structure rules for Chapter 1.
 	await _test_room_graph()
 
-	# Completed chapters pay no XP on replay (anti max-level farming).
+	# Completed chapters pay XP under a PARITY CEILING (REPLAY_XP.md, replaces
+	# round 3's flat shutoff): full below the chapter's finale level, zero at
+	# parity + REPLAY_XP_OVER, zero at/after ACT_XP_CAP. Snapshot + restore
+	# the level: the ch1 walk below is authored against a fresh L1 hero.
 	game.set_flag("completed_ch1", true)
-	var xp_gate_before: int = game.player.xp
+	var parity_ch1: int = Story.chapter_parity_level("ch1")
+	if parity_ch1 != 10:
+		return _fail("ch1 parity level should be its finale (10), got %d" % parity_ch1)
+	var lvl_snapshot: int = game.player.level
+	var xp_snapshot: int = game.player.xp
+	var run_xp_snapshot: int = game.run_xp
+	game.player.level = parity_ch1 - 1          # under parity: pays in full
+	game.player.xp = 0
+	game.player.gain_xp(5)
+	if game.player.xp != 5:
+		return _fail("replay under parity should pay full XP (got %d of 5)" % game.player.xp)
+	game.player.level = parity_ch1 + Balance.REPLAY_XP_OVER   # at the reach: grey
+	game.player.xp = 0
 	game.player.gain_xp(50)
-	if game.player.xp != xp_gate_before:
-		return _fail("completed-chapter replay still paid XP")
+	if game.player.xp != 0:
+		return _fail("replay at parity+OVER still paid XP (%d)" % game.player.xp)
+	game.player.level = Balance.ACT_XP_CAP      # act cap: grey whatever the parity
+	game.player.gain_xp(50)
+	if game.player.xp != 0:
+		return _fail("replay at ACT_XP_CAP still paid XP (%d)" % game.player.xp)
+	if Balance.replay_xp_reach(parity_ch1) != parity_ch1 + Balance.REPLAY_XP_OVER:
+		return _fail("replay_xp_reach(ch1) should be parity+OVER")
+	game.player.level = lvl_snapshot
+	game.player.xp = xp_snapshot
+	game.run_xp = run_xp_snapshot
+	game.player.recalc()
 	game.flags.erase("completed_ch1")
 
 	# 2. Talk to the elder (simulated E keypress) -> the village gate.

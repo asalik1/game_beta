@@ -794,8 +794,22 @@ func open_chapter_select(replay := false) -> void:
 		b.add_theme_font_size_override("font_size", 18)
 		var sub_text: String = String(chapter.get("sub", "")) if unlocked \
 			else "Locked — finish the previous chapter to open this road."
-		var sub := _lbl(chlist, "        " + sub_text, 13,
-			Color(0.65, 0.68, 0.78) if unlocked else Color(0.5, 0.5, 0.55))
+		var sub_col := Color(0.65, 0.68, 0.78) if unlocked else Color(0.5, 0.5, 0.55)
+		# Replay picker: print the XP ceiling on the door (REPLAY_XP.md §3) —
+		# a cleared chapter pays XP until its reach level, then goes grey.
+		if replay and unlocked and game.has_local_player():
+			if game.get_flag("completed_" + pick_id, false):
+				var reach := Balance.replay_xp_reach(Story.chapter_parity_level(pick_id))
+				if game.player.run_tier > 0:
+					sub_text += "   ·   no XP at this tier"
+				elif game.player.level < reach:
+					sub_text += "   ·   XP pays until Lv %d" % reach
+				else:
+					sub_text += "   ·   outgrown — no XP (Lv %d+)" % reach
+					sub_col = Color(0.55, 0.57, 0.64)
+			else:
+				sub_text += "   ·   unfinished — full XP"
+		var sub := _lbl(chlist, "        " + sub_text, 13, sub_col)
 		sub.custom_minimum_size = Vector2(800, 0)
 		idx += 1
 	var fade := TextureRect.new()

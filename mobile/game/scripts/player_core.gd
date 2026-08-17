@@ -2728,22 +2728,38 @@ func synthesize(stat: String, lvl: int, quiet := false) -> bool:
 # =============================================================== progression
 
 func gain_xp(amount: int) -> void:
-	# A finished chapter pays NO XP on replays — farm gold and gear,
-	# never levels (playtest round 3: "clear ch1 2000 times, come out
-	# max level"). Dev mode keeps its level buttons for testing.
-	if game.get_flag("completed_" + game.chapter_id, false) and not game.dev_mode:
-		return
 	# NG+ tiers farm gold, gear and gems — never levels. XP is story
 	# currency, paid once at parity (DESIGN "XP = story currency"); an
 	# UNCOMPLETED chapter entered at +20/+40 would otherwise pay 3-6x
-	# (REWARD_PER_LEVEL rides the lifted spawn levels).
+	# (REWARD_PER_LEVEL rides the lifted spawn levels). Dev mode keeps its
+	# level buttons for testing.
 	if game.run_tier() > 0 and not game.dev_mode:
 		return
+	# A finished chapter pays XP under a PARITY CEILING (2026-08-17,
+	# PROPOSALS/REPLAY_XP.md — the grey-mob rule): full while you're below
+	# its finale level, tapering to nothing a few levels over, never past
+	# the act cap. Round 3's flat shutoff ("clear ch1 2000 times, come out
+	# max level") over-corrected — it removed the reason to revisit a
+	# chapter instead of bounding it; the ceiling keeps that exploit
+	# bounded (ch1 → Lv13, forever) while a stuck hero can grind the road
+	# behind them until it goes grey.
+	if game.get_flag("completed_" + game.chapter_id, false) and not game.dev_mode:
+		var mult := Balance.replay_xp_mult(level, Story.chapter_parity_level(game.chapter_id))
+		amount = int(round(float(amount) * mult))
+		if amount <= 0:
+			# Once per run: say WHY the bar stopped, then stay quiet.
+			if not game.xp_capped_noted:
+				game.xp_capped_noted = true
+				game.spawn_text(global_position + Vector2(0, -56),
+					"+0 XP — you've outgrown this road", Color(0.7, 0.72, 0.8), 2.4)
+			return
 	xp += amount
+	game.run_xp += amount   # results card: XP earned this run
 	game.spawn_text(global_position + Vector2(0, -56), "+%d XP" % amount, Color(1.0, 0.9, 0.4))
 	while xp >= xp_needed():
 		xp -= xp_needed()
 		level += 1
+		game.run_levels += 1
 		skill_points += Balance.SKILL_POINTS_PER_LEVEL
 		unspent_attr += Balance.ATTR_POINTS_PER_LEVEL
 		recalc()

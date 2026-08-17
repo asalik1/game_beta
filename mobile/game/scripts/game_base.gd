@@ -378,6 +378,9 @@ var run_time := 0.0            # seconds in ST_PLAYING this chapter run
 var run_deaths := 0
 var run_elites := 0            # elite kills this run
 var run_secrets := 0           # caches unearthed this run
+var run_xp := 0                # XP banked this run (after the replay ceiling)
+var run_levels := 0            # levels gained this run
+var xp_capped_noted := false   # the once-per-run "outgrown this road" note (not saved)
 
 # --- weekly challenge (persisted) ---
 var weekly_active := false     # the CURRENT run is this week's challenge
@@ -1062,6 +1065,9 @@ func reset_run_stats() -> void:
 	run_deaths = 0
 	run_elites = 0
 	run_secrets = 0
+	run_xp = 0
+	run_levels = 0
+	xp_capped_noted = false
 	party_stats.clear()   # battle-stats meters restart with the run
 	fight_stats.clear()
 	party_stats_net.clear()
@@ -1081,9 +1087,17 @@ func run_results() -> Dictionary:
 	var grade := Balance.chapter_grade(run_deaths,
 		float(explored) / maxf(1.0, float(zone_count)),
 		float(run_elites + run_secrets) / float(expect))
+	# XP line (REPLAY_XP.md §3): what the run paid, and — on a replay past
+	# its ceiling — the level the road stops paying at, so a zero reads as
+	# "outgrown", never as "broken".
+	var lv_now: int = player.level if is_instance_valid(player) else 0
+	var xp_reach := -1
+	if get_flag("completed_" + chapter_id, false):
+		xp_reach = Balance.replay_xp_reach(Story.chapter_parity_level(chapter_id))
 	return {"time": run_time, "deaths": run_deaths, "elites": run_elites,
 		"secrets": run_secrets, "explored": explored, "rooms": zone_count,
-		"grade": grade}
+		"grade": grade, "xp": run_xp, "lv_from": lv_now - run_levels, "lv_to": lv_now,
+		"xp_reach": xp_reach}
 
 
 # --------------------------------------------------------- weekly challenge ---

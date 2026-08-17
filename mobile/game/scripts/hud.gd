@@ -2998,6 +2998,23 @@ func show_results(res: Dictionary, pb: Dictionary) -> void:
 		["Rooms charted", "%d / %d" % [int(res.get("explored", 0)), int(res.get("rooms", 1))],
 			Color(0.9, 0.92, 0.98)],
 	]
+	# XP line (REPLAY_XP.md §3): what the run paid — and when a replay past
+	# its ceiling paid nothing, the level the road stops paying at, so the
+	# zero reads as "outgrown", not "broken". Absent key (older callers) = no row.
+	if res.has("xp"):
+		var rxp := int(res.get("xp", 0))
+		var xp_text: String
+		var xp_col: Color
+		if rxp > 0:
+			var lv_from := int(res.get("lv_from", 0))
+			var lv_to := int(res.get("lv_to", 0))
+			xp_text = "+%d" % rxp + ("   (Lv %d → %d)" % [lv_from, lv_to] if lv_to > lv_from else "")
+			xp_col = Color(1.0, 0.9, 0.4)
+		else:
+			var reach := int(res.get("xp_reach", -1))
+			xp_text = "outgrown (to Lv %d)" % reach if reach >= 0 else "—"
+			xp_col = Color(0.7, 0.72, 0.8)
+		rows.append(["XP earned", xp_text, xp_col])
 	var y := 26.0
 	for row in rows:
 		var k := Label.new()

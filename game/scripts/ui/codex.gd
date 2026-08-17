@@ -2187,6 +2187,14 @@ static func _records_bosses_and_rest(m: Menus, list: VBoxContainer) -> void:
 			g.custom_minimum_size = Vector2(120, 0)
 			var runs := m._lbl(row, "×%d runs" % int(pb.get("runs", 1)), 14, Color(0.8, 0.82, 0.88))
 			runs.custom_minimum_size = Vector2(100, 0)
+			# Normal replays pay XP up to the chapter's reach level (REPLAY_XP.md);
+			# tiers never do — so the cell only exists on the Normal row.
+			if tier == 0:
+				var reach := Balance.replay_xp_reach(Story.chapter_parity_level(String(chid)))
+				var grey: bool = m.game.player.level >= reach
+				var xl := m._lbl(row, "outgrown (Lv %d)" % reach if grey else "XP to Lv %d" % reach, 14,
+					Color(0.55, 0.57, 0.64) if grey else Color(1.0, 0.9, 0.5))
+				xl.custom_minimum_size = Vector2(130, 0)
 	if not any_pb:
 		m._lbl(pbs, "Clear a chapter to set its first mark — time and grade are kept per class.",
 			13, Color(0.6, 0.62, 0.68))

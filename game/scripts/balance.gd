@@ -186,6 +186,18 @@ const SOFT_TARGET_KEEP := 680.0
 # totals are authored against it — retune both together.
 const XP_BASE := 30
 const XP_PER_LEVEL := 22
+# Replay XP ceiling (2026-08-17, PROPOSALS/REPLAY_XP.md — the "grey mob"
+# rule, replacing round 3's flat "completed chapters pay no XP"): a COMPLETED
+# chapter pays FULL XP while the hero is below its parity level (its finale
+# boss's level, Story.chapter_parity_level), tapers to zero across
+# parity..parity+REPLAY_XP_OVER, and never pays at/after ACT_XP_CAP (the
+# talent tree fills exactly at 40; Mastery owns 41+ when Act 2 lands). So a
+# stuck hero can go back and grind the chapter behind them until it goes
+# grey — and the frontier out-pays it in XP as well as gold. OVER 0
+# reproduces the old shutoff; ~6 lets the previous chapter carry you to the
+# next finale. Uncompleted chapters pay as authored; NG+ tiers stay zero-XP.
+const REPLAY_XP_OVER := 3
+const ACT_XP_CAP := 40
 const SKILL_POINTS_PER_LEVEL := 1
 const ATTR_POINTS_PER_LEVEL := 1   # attributes AND substats spend from this pool
 const STARTER_BAG_GRADE := "F"     # legacy single-bag default (save migration fallback)
@@ -1587,6 +1599,25 @@ const CRIT_SOFT_RATE := 0.2
 
 static func soft_cap(v: float, cap: float, rate := SOFT_CAP_RATE) -> float:
 	return v if v <= cap else cap + (v - cap) * rate
+
+
+## Replay XP multiplier for a COMPLETED chapter (REPLAY_XP_OVER above):
+## 1.0 below the chapter's parity level, a linear taper that reaches 0 at
+## parity + OVER, and 0 at/after ACT_XP_CAP whatever the parity.
+static func replay_xp_mult(level: int, parity: int) -> float:
+	if level >= ACT_XP_CAP:
+		return 0.0
+	if level < parity:
+		return 1.0
+	if REPLAY_XP_OVER <= 0:
+		return 0.0
+	return clampf(1.0 - float(level - parity + 1) / float(REPLAY_XP_OVER + 1), 0.0, 1.0)
+
+
+## The highest level a completed chapter's replays still pay XP toward
+## (the "XP pays until Lv N" the replay picker prints).
+static func replay_xp_reach(parity: int) -> int:
+	return mini(parity + REPLAY_XP_OVER, ACT_XP_CAP)
 
 const CAP_CDR := 0.40        # ults ignore haste ENTIRELY (they're ults)
 # INT casters (mage/warlock) get MORE out of haste as they level — the endgame

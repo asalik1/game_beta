@@ -1240,6 +1240,20 @@ static func chapter(id: String) -> Dictionary:
 	return CHAPTER_LIST.get(id, CHAPTER_LIST.get("ch1", {}))
 
 
+## A chapter's PARITY level — its finale boss's authored level, the level the
+## campaign lands you at when you clear it (ch1 10 · ch2 16 · ch3 22 · ch4 28 ·
+## ch5 33 · ch6 37 · ch7 41). The replay-XP ceiling reads it (Balance
+## .replay_xp_mult, PROPOSALS/REPLAY_XP.md); the incursion roster derives the
+## same number for its target. Worlds without a finale (capital, arenas)
+## answer LEVEL_CAP — never capped, never completed_ either.
+static func chapter_parity_level(id: String) -> int:
+	load_content()
+	var fb := String(chapter(id).get("final_boss", ""))
+	if fb == "" or not ALL_ENEMIES.has(fb):
+		return Balance.LEVEL_CAP
+	return int(ALL_ENEMIES[fb].get("level", Balance.LEVEL_CAP))
+
+
 ## Is this chapter id one of the endgame arenas (The Crucible / Waking Depths)?
 static func is_endgame(id: String) -> bool:
 	return ENDGAME_ARENAS.has(id)

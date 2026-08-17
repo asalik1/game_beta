@@ -47,6 +47,7 @@ static func write(game: Game, slot: int) -> void:
 		# challenge (the per-character claim ledger lives above).
 		"run_time": game.run_time, "run_deaths": game.run_deaths,
 		"run_elites": game.run_elites, "run_secrets": game.run_secrets,
+		"run_xp": game.run_xp, "run_levels": game.run_levels,
 		"weekly_active": game.weekly_active, "weekly_week": game.weekly_week,
 		# The NG+ tier THIS run launched at (snapshot; the standing choice
 		# rides the character as run_tier above).
@@ -204,6 +205,7 @@ static func write_server_world(game: Game) -> void:
 		"merchant_zones": game.merchant_zones,
 		"run_time": game.run_time, "run_deaths": game.run_deaths,
 		"run_elites": game.run_elites, "run_secrets": game.run_secrets,
+		"run_xp": game.run_xp, "run_levels": game.run_levels,
 		# A server world is never the weekly-challenge run (that is a
 		# per-player replay mode) — persisted false by construction. The
 		# NG+ tier: a DEDICATED server world runs Normal (no host character
@@ -260,6 +262,8 @@ static func apply_server_world(game: Game, data: Dictionary) -> void:
 	game.run_deaths = int(w.get("run_deaths", 0))
 	game.run_elites = int(w.get("run_elites", 0))
 	game.run_secrets = int(w.get("run_secrets", 0))
+	game.run_xp = int(w.get("run_xp", 0))
+	game.run_levels = int(w.get("run_levels", 0))
 	game.boss_done = {}
 	for kind in w.get("bosses_slain", []):
 		game.boss_done[String(kind)] = true
@@ -437,6 +441,8 @@ static func apply(game: Game, data: Dictionary) -> void:
 	game.run_deaths = int(w.get("run_deaths", 0))
 	game.run_elites = int(w.get("run_elites", 0))
 	game.run_secrets = int(w.get("run_secrets", 0))
+	game.run_xp = int(w.get("run_xp", 0))
+	game.run_levels = int(w.get("run_levels", 0))
 	game.weekly_active = bool(w.get("weekly_active", false))
 	game.weekly_week = int(w.get("weekly_week", -1))
 	game.waking_week = int(w.get("waking_week", -1))

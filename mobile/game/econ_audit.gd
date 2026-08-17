@@ -254,8 +254,14 @@ func _audit_chapter(chid: String) -> void:
 		float(dens_xp) * Balance.MOB_DENSITY_EXTRA])
 	print("  FIRST RUN:  %4.0f gold  %4.1f gems  (+%d XP)   -> %4.1f g/min  %4.2f gems/min  @%d min" %
 		[first_gold, first_gems_total, xp, first_gold / FIRST_RUN_MIN, first_gems_total / FIRST_RUN_MIN, int(FIRST_RUN_MIN)])
-	print("  REPLAY:     %4.0f gold  %4.1f gems  (no XP)    -> %4.1f g/min  %4.2f gems/min  @%d min" %
-		[replay_gold, replay_gems_total, replay_gold / REPLAY_MIN, replay_gems_total / REPLAY_MIN, int(REPLAY_MIN)])
+	# Replay XP rides the parity ceiling (REPLAY_XP.md): the same authored
+	# pack XP pays in full while the hero is UNDER the chapter's finale level,
+	# tapers to zero at parity + REPLAY_XP_OVER (the "reach"), grey after.
+	var parity := Story.chapter_parity_level(chid)
+	var reach := Balance.replay_xp_reach(parity)
+	print("  REPLAY:     %4.0f gold  %4.1f gems  (+%d XP under Lv %d, grey ≥ Lv %d)  -> %4.1f g/min  %4.2f gems/min  %4.0f xp/min<parity  @%d min" %
+		[replay_gold, replay_gems_total, xp, parity, reach, replay_gold / REPLAY_MIN, replay_gems_total / REPLAY_MIN,
+		float(xp) / REPLAY_MIN, int(REPLAY_MIN)])
 
 
 ## The level a player is expected to hold in a chapter (its final boss's
