@@ -446,6 +446,7 @@ func _ready() -> void:
 ## scene, or "boss:<class>:<kind>" for a boss fight. Default = the six classes.
 func _scene_cycle() -> void:
 	_play = true
+	AudioServer.set_bus_mute(0, false)   # you're playing it — sound on (unless Dummy)
 	var entries := arg("list",
 		"mage,warrior,archer,assassin,paladin,warlock").split(",", false)
 	for idx in entries.size():
