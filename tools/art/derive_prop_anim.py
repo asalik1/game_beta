@@ -1,0 +1,129 @@
+#!/usr/bin/env python3
+"""Derive a self-animating <name>_anim.png strip FROM a prop's existing static
+PNG — so the animation MATCHES the current art exactly (zero drift), unlike a
+fresh generation. Frame 0 is the untouched static; the rest apply a subtle
+motion. Used for the props that only need pulse/flicker/wave/shimmer (crystals,
+banners, wells, firepits) — real material motion (a procedural brazier with no
+PNG) still goes through Codex.
+
+Frame layout matches anim_info(): N frames each the static's WxH, concatenated
+horizontally (so the engine reads frames = anim_width / static_width).
+
+Motions:
+  pulse    brightness breathes, weighted by luminance (glows/facets shimmer,
+           dark stone stays put) — crystals, geodes, void/storm/spore/magma glow
+  flicker  warm (fire) pixels flicker brighter/dimmer + the flame top wobbles
+  wave     horizontal sine shear per row — a banner rippling in the wind
+  shimmer  cool (water) pixels breathe + a 1px horizontal jitter — well water
+
+Usage:
+  python tools/art/derive_prop_anim.py <name> --motion pulse [--frames 4]
+        [--amp 0.35] [--no-mobile]
+"""
+import argparse
+import sys
+from pathlib import Path
+
+import numpy as np
+from PIL import Image
+
+REPO = Path(__file__).resolve().parents[2]
+DESK = REPO / "game" / "assets" / "sprites"
+MOBILE = REPO / "mobile" / "game" / "assets" / "sprites"
+
+
+def _lum(rgb):  # 0..1 per-pixel luminance
+    return (0.2126 * rgb[..., 0] + 0.7152 * rgb[..., 1] + 0.0722 * rgb[..., 2]) / 255.0
+
+
+def _warm_mask(rgb):  # fire pixels: red-dominant, warm
+    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    return ((r > 110) & (r >= g) & (g >= b) & (r - b > 40)).astype(np.float32)
+
+
+def _cool_mask(rgb):  # water pixels: blue/teal-dominant
+    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    return ((b > 90) & (b >= r) & (g + b - 2 * r > 20)).astype(np.float32)
+
+
+def _scale_rgb(a, factor):
+    out = a.astype(np.float32)
+    out[..., :3] = np.clip(out[..., :3] * factor[..., None], 0, 255)
+    return out.astype(np.uint8)
+
+
+def frame(base: np.ndarray, motion: str, phase: float, amp: float) -> Image.Image:
+    a = base.copy()
+    lum = _lum(a[..., :3])
+    s = np.sin(phase)
+    if motion == "pulse":
+        factor = 1.0 + amp * s * (0.35 + 0.65 * lum)   # bright pixels breathe most
+        a = _scale_rgb(a, factor)
+    elif motion == "flicker":
+        warm = _warm_mask(a[..., :3])
+        factor = 1.0 + amp * (0.6 * s + 0.4 * np.sin(phase * 2.3 + 1.1)) * warm
+        a = _scale_rgb(a, factor)
+        # nudge the warm flame body up/down a hair for a live flame
+        shift = int(round(amp * 3.0 * s))
+        if shift != 0:
+            warm_layer = a.copy()
+            warm_layer[..., 3] = (warm_layer[..., 3] * warm).astype(np.uint8)
+            warm_layer = np.roll(warm_layer, -shift, axis=0)
+            m = warm_layer[..., 3:4] > 30
+            a = np.where(m, warm_layer, a)
+    elif motion == "shimmer":
+        cool = _cool_mask(a[..., :3])
+        factor = 1.0 + amp * s * cool
+        a = _scale_rgb(a, factor)
+        jit = int(round(amp * 2.0 * np.sin(phase + 0.7)))
+        if jit != 0:
+            water = a.copy()
+            water[..., 3] = (water[..., 3] * cool).astype(np.uint8)
+            water = np.roll(water, jit, axis=1)
+            m = water[..., 3:4] > 30
+            a = np.where(m, water, a)
+    elif motion == "wave":
+        h, w = a.shape[:2]
+        rows = np.arange(h)
+        shifts = np.round(amp * 6.0 * np.sin(phase + rows * 0.05)).astype(int)
+        out = np.zeros_like(a)
+        for y in range(h):
+            out[y] = np.roll(a[y], shifts[y], axis=0)
+        a = out
+    return Image.fromarray(a, "RGBA")
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("name")
+    ap.add_argument("--motion", required=True,
+                    choices=["pulse", "flicker", "wave", "shimmer"])
+    ap.add_argument("--frames", type=int, default=4)
+    ap.add_argument("--amp", type=float, default=0.35)
+    ap.add_argument("--no-mobile", action="store_true")
+    args = ap.parse_args()
+
+    src = DESK / f"{args.name}.png"
+    if not src.exists():
+        print(f"ERR: no static PNG {src} (procedural prop → use Codex instead)",
+              file=sys.stderr)
+        return 2
+    im = Image.open(src).convert("RGBA")
+    base = np.asarray(im)
+    w, h = im.width, im.height
+    strip = Image.new("RGBA", (w * args.frames, h), (0, 0, 0, 0))
+    for i in range(args.frames):
+        phase = 2.0 * np.pi * i / args.frames    # frame 0 = static (sin 0 = 0)
+        strip.paste(frame(base, args.motion, phase, args.amp), (i * w, 0))
+    print(f"{args.name}: {args.frames}x{w}x{h} ({args.motion})")
+    for root, on in ((DESK, True), (MOBILE, not args.no_mobile)):
+        if not on:
+            continue
+        out = root / f"{args.name}_anim.png"
+        strip.save(out)
+        print(f"  wrote {out.relative_to(REPO)}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
