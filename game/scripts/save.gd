@@ -124,7 +124,7 @@ static func _character_section(game: Game) -> Dictionary:
 		"capital_shop_day": game.capital_shop_day,
 		# --- gear ---
 		"equipment": p.equipment, "backpack": p.backpack, "gem_bag": p.gem_bag,
-		"bags": p.bags, "consumables": p.consumables, "materials": p.materials,
+		"bags": p.bags, "loose_bags": p.loose_bags, "consumables": p.consumables, "materials": p.materials,
 		"potion_rotation": p.potion_rotation, "active_potion": p.active_potion,
 		# Waking Depths: highest cleared checkpoint depth (re-entry point).
 		"depths_checkpoint": p.depths_checkpoint,
@@ -313,7 +313,7 @@ static func world_of(data: Dictionary) -> Dictionary:
 # single-bag key (pre-`bags` saves) — routed so load_bags still sees it.
 const _V2_CHARACTER_FIELDS := ["name", "cls", "level", "xp", "skill_points", "tree_points",
 	"attr_points", "unspent_attr", "gold", "ability_theme", "chroma", "skin",
-	"resonance", "faction_standing", "equipment", "backpack", "gem_bag", "bags", "bag",
+	"resonance", "faction_standing", "equipment", "backpack", "gem_bag", "bags", "loose_bags", "bag",
 	"consumables", "materials", "potion_rotation", "active_potion", "depths_checkpoint", "hp", "mp",
 	"profession", "mastery", "blueprints", "swap_cost_step", "swap_week", "knows_alkahest",
 	"mailbox", "dropped_loot", "clock_anchor", "daily_last_day", "daily_streak",
@@ -536,6 +536,13 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	for g in c.get("gem_bag", []):
 		p.gem_bag.append(_fix_gem(g))
 	p.bags = load_bags(c)
+	# Loose (unequipped) bags round-trip through make_bag so name/slots stay
+	# current; an entry with no grade simply drops (no-save-migration rule).
+	p.loose_bags = []
+	for lb in c.get("loose_bags", []):
+		var lg := String((lb as Dictionary).get("grade", "")) if lb is Dictionary else ""
+		if lg != "" and Items.BAG_NAMES.has(lg):
+			p.loose_bags.append(Items.make_bag(lg))
 	# Graded potions round-trip through make_potion so their effect params /
 	# sprite / price stay current; a family/grade/lane that no longer exists
 	# simply drops (no-save-migration rule). Stones/scrolls/quest items pass

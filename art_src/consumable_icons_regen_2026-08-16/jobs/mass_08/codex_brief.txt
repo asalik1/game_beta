@@ -1,0 +1,41 @@
+ORIGINAL premium hand-painted fantasy action-RPG inventory icons - glass POTION BOTTLES.
+
+Match the finish of the two reference images: rich hand-painted rendering, dramatic
+high-contrast jewel-colored magical lighting, deep shadows, glossy blown glass with
+bright specular highlights, painterly (NOT pixel-art, NOT photographic), readable when
+shrunk small. Reference 1 (the contact sheet of round medallions) shows the target PAINT
+QUALITY and lighting only. Reference 2 (the bright-green sheet) shows the target OUTPUT
+FORMAT: subjects centered on a flat pure-green background with crisp clean edges.
+
+CRITICAL - the subject is a free-standing GLASS BOTTLE / FLASK, upright and centered.
+Do NOT draw any circular medallion frame, gold ring, coin, or border around it. No
+medallion. Just the bottle itself, standing on nothing.
+
+Universal rules:
+- Solid PURE GREEN #00FF00 background, perfectly flat: no gradient, no vignette, no
+  shadow cast on the background, no props.
+- One subject per grid cell, upright, centered in its own cell, filling most of the
+  cell height, with clear green margin on all sides. Subjects must NOT touch each
+  other or the cell dividers.
+- Glossy glass with visible glowing liquid inside, a cork or stopper, strong rim-light
+  and specular highlights.
+- Any glow/mist/sparkle stays tight around the bottle, contained within crisp edges -
+  never bleeding to the cell border.
+- NO text, letters, numbers, logos, trademarks, labels-with-writing, or watermark
+  anywhere in the image.
+
+Save the finished picture as a PNG file in this folder.
+
+Layout: a 2x3 grid (6 subject(s)), reading order:
+
+[Top-left] a robust, bulging heavy vial of molten amber-orange liquid - pristine Accord-chartered glass, clean and clear. GRADE C good: clean chartered glass, a neat stamped wax seal and a polished metal band, respectable, a soft steady inner glow.
+
+[Top-center] a robust, bulging heavy vial of molten amber-orange liquid - pristine Accord-chartered glass, clean and clear. GRADE B fine: elegant glass, a decorated stopper, an engraved silver collar, a clear bright inner glow.
+
+[Top-right] a robust, bulging heavy vial of molten amber-orange liquid - pristine Accord-chartered glass, clean and clear. GRADE A exquisite masterwork: flawless crystal, ornate gold filigree, a jeweled stopper, a bright radiant inner glow.
+
+[Bottom-left] a robust, bulging heavy vial of molten amber-orange liquid - grimy, chipped, back-alley glass; the liquid is cut with a sickly swirl of blightwater-green rot. GRADE E cheap: a rough mismatched bottle, a dirty cork, grimy.
+
+[Bottom-center] a robust, bulging heavy vial of molten amber-orange liquid - grimy, chipped, back-alley glass; the liquid is cut with a sickly swirl of blightwater-green rot. GRADE D: smuggler's glass under a crude forged wax seal, murky.
+
+[Bottom-right] a robust, bulging heavy vial of molten amber-orange liquid - grimy, chipped, back-alley glass; the liquid is cut with a sickly swirl of blightwater-green rot. GRADE C: a cellar brew, cloudy glass, a sloppy dripping wax-blob stopper.

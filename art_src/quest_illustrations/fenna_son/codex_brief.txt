@@ -1,0 +1,15 @@
+Generate ONE painterly wide cinematic story plate for the dark-fantasy game Crownless, using the built-in image_gen tool. Save the raw generation into THIS working directory as `quest_fenna_son_source.png`, then also save a WIDE 1672x941 (16:9) LANCZOS copy (crop to the central 16:9 if needed) as `quest_fenna_son.png`. Do not write anywhere else. In your final message report both paths and describe what you drew so a reviewer can verify it against this brief.
+
+You have TWO attached images:
+- IMAGE 1 ("01_style_graveyard") is a chapter-opening plate from this same game — match its painterly STYLE, muted palette, moody low-key lighting, wide 16:9 cinematic framing and brush texture (NOT its exact content).
+- IMAGE 2 ("02_fenna_design") is the CANON splash of the character OLD FENNA — treat it as the DESIGN CONTRACT for who she is (face, age, hair, clothing, colours). Render the same woman.
+
+SCENE — the quiet closing beat of a grief side quest ("Facing Home"): OLD FENNA has just learned her soldier son was found and laid to rest facing home.
+- OLD FENNA (adhere to IMAGE 2): a stooped elderly peasant woman, deeply lined face, grey hair, plain worn shawl/dress in muted earth tones, exactly as the reference. She stands or kneels at a single weathered GRAVE in a misted graveyard, one hand resting on the grey headstone, her back mostly to us, head bowed — grief held quietly, sixty years past the easy kind of weeping.
+- The grave is turned to face a faint DISTANT MILL ROAD on the horizon (a low mill silhouette, a lane leading away). A grey soldier's coat is folded on the stone.
+- Setting: a sunken misted graveyard at dusk (echo IMAGE 1's mood) — leaning markers, pale fog low to the ground, bare alders, a cathedral spire far off. Cold blue ambient with one weak warm break of last light on the horizon where the mill road runs.
+- Mood: tender, still, resigned peace. Not gory, not melodramatic.
+
+NEGATIVES (hard): no monsters, no weapons, no blood, no glowing eyes or magic, no bright saturated colours, no lettering or numbers, no watermark, no second living figure, no frame or border; do not crop Fenna or the grave out of frame; keep Fenna's design faithful to IMAGE 2 (do not make her young).
+
+Author it already-bright (shown in-engine with no tonemap). Output the raw at the tool's native landscape size, then the 1672x941 copy.

@@ -10,6 +10,7 @@ const TABS := [
 	["econ", "Progression"],
 	["world", "World"],
 	["openers", "Openers"],
+	["closers", "Closers"],
 	["audio", "Audio"],
 ]
 
@@ -50,6 +51,7 @@ static func open(m: Menus, tab := "") -> void:
 		"econ": _tab_econ(m, list)
 		"world": _tab_world(m, list)
 		"openers": _tab_openers(m, list)
+		"closers": _tab_closers(m, list)
 		"audio": _tab_audio(m, list)
 		_: _tab_character(m, list)
 	m._hint(vbox, "ESC / F1 to close")
@@ -236,6 +238,60 @@ static func _play_chapter_opener(m: Menus, chapter_key: String, class_id: String
 			g.hud.dialogue_hero_class_override = "")
 
 
+## Replay every illustrated chapter CLOSER (boss death + class reflection)
+## without beating the chapter. Same class-lens contract as the openers tab:
+## the picker previews the authored per-class variant, never swapping the
+## debug character. Chapters without an authored closer render greyed.
+static func _tab_closers(m: Menus, list: VBoxContainer) -> void:
+	_section(m, list, "CHAPTER CLOSERS")
+	m._lbl(list, "Choose a class lens, then play any illustrated chapter closer: the final boss's dying lines, then that class's reflection. Previewing does not change progression.", 14, Color(0.78, 0.78, 0.82))
+
+	var live_class := String(m.game.player.cls) if m.game.player != null else "warrior"
+	if not OPENER_CLASSES.has(m.dev_opener_class):
+		m.dev_opener_class = live_class if OPENER_CLASSES.has(live_class) else "warrior"
+
+	var class_row := _flow(list)
+	for raw_class in OPENER_CLASSES:
+		var class_id: String = raw_class
+		var selected: bool = m.dev_opener_class == class_id
+		var display_name: String = String(Classes.CLASSES[class_id]["name"])
+		m._btn(class_row, ("● " if selected else "") + display_name, func() -> void:
+			m.dev_opener_class = class_id
+			m.open_dev("closers"),
+			Color(0.95, 0.85, 0.5) if selected else Color(0.72, 0.82, 1.0))
+
+	for chapter_number in range(1, 15):
+		if chapter_number == 1 or chapter_number == 8:
+			_section(m, list, "ACT %d" % (1 if chapter_number == 1 else 2))
+		var chapter_key := "ch%d" % chapter_number
+		var chapter: Dictionary = Story.chapter(chapter_key)
+		var convo_id := chapter_closer_id(chapter_key, m.dev_opener_class)
+		var available: bool = Story.ALL_CONVOS.has(convo_id)
+		var chapter_row := _flow(list)
+		var chapter_name: String = String(chapter.get("name", "Chapter %d" % chapter_number))
+		m._btn(chapter_row, "▶  " + chapter_name, func() -> void:
+			_play_chapter_closer(m, chapter_key, m.dev_opener_class),
+			Color(0.92, 0.82, 0.48) if available else Color(0.45, 0.45, 0.45))
+
+
+static func chapter_closer_id(chapter_key: String, class_id: String) -> String:
+	return chapter_key + "_closing_" + class_id
+
+
+static func _play_chapter_closer(m: Menus, chapter_key: String, class_id: String) -> void:
+	var g := m.game
+	var convo_id := chapter_closer_id(chapter_key, class_id)
+	if g.player == null or g.state != g.ST_PLAYING or not Story.ALL_CONVOS.has(convo_id):
+		return
+	m.close()
+	# "You" must show the selected class, even though this preview deliberately
+	# does not mutate the live player's class, skin, gear, or progression.
+	g.hud.dialogue_hero_class_override = class_id
+	g.run_cinematic_convo(convo_id, func() -> void:
+		if is_instance_valid(g) and g.hud != null:
+			g.hud.dialogue_hero_class_override = "")
+
+
 ## Dailies, bounties, vault, achievements, records, economy levers.
 static func _tab_econ(m: Menus, list: VBoxContainer) -> void:
 	# --------------------------------------------- progression & economy ---
@@ -349,15 +405,16 @@ static func _tab_items(m: Menus, list: VBoxContainer) -> void:
 		m.game.prune_mail()
 		m.open_dev(), Color(0.8, 0.9, 1.0))
 	m._btn(row3, "Add bag (chapter tier)", func() -> void:
-		m.game.player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(m.game.chapter_id, m.game.loot_rng)))
+		m.game.player.buy_install_bag(Items.make_bag(Balance.roll_bag_grade(m.game.chapter_id, m.game.loot_rng)))
 		m.open_dev(), Color(0.95, 0.85, 0.5))
 	m._btn(row3, "Reset bags (1×F)", func() -> void:
 		m.game.player.bags = [Items.make_bag("F")]  # direct set for capacity testing
+		m.game.player.loose_bags = []
 		m.open_dev(), Color(0.95, 0.85, 0.5))
 	for grade2 in Items.GRADES:
 		var bg: String = grade2
-		m._btn(row3, "+Bag %s" % bg, func() -> void:
-			m.game.player.acquire_bag(Items.make_bag(bg))  # append (keeps best MAX_BAGS)
+		m._btn(row3, "+Loose %s" % bg, func() -> void:
+			m.game.player.loose_bags.append(Items.make_bag(bg))  # loose for equip/swap/sell testing
 			m.open_dev(), Items.GRADE_COLOR[bg])
 
 

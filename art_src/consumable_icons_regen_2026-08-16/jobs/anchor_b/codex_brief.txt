@@ -1,0 +1,37 @@
+ORIGINAL premium hand-painted fantasy action-RPG inventory icons - glass POTION BOTTLES.
+
+Match the finish of the two reference images: rich hand-painted rendering, dramatic
+high-contrast jewel-colored magical lighting, deep shadows, glossy blown glass with
+bright specular highlights, painterly (NOT pixel-art, NOT photographic), readable when
+shrunk small. Reference 1 (the contact sheet of round medallions) shows the target PAINT
+QUALITY and lighting only. Reference 2 (the bright-green sheet) shows the target OUTPUT
+FORMAT: subjects centered on a flat pure-green background with crisp clean edges.
+
+CRITICAL - the subject is a free-standing GLASS BOTTLE / FLASK, upright and centered.
+Do NOT draw any circular medallion frame, gold ring, coin, or border around it. No
+medallion. Just the bottle itself, standing on nothing.
+
+Universal rules:
+- Solid PURE GREEN #00FF00 background, perfectly flat: no gradient, no vignette, no
+  shadow cast on the background, no props.
+- One subject per grid cell, upright, centered in its own cell, filling most of the
+  cell height, with clear green margin on all sides. Subjects must NOT touch each
+  other or the cell dividers.
+- Glossy glass with visible glowing liquid inside, a cork or stopper, strong rim-light
+  and specular highlights.
+- Any glow/mist/sparkle stays tight around the bottle, contained within crisp edges -
+  never bleeding to the cell border.
+- NO text, letters, numbers, logos, trademarks, labels-with-writing, or watermark
+  anywhere in the image.
+
+Save the finished picture as a PNG file in this folder.
+
+Layout: a 2x2 grid (4 subject(s)), reading order:
+
+[Top-left] a robust, bulging heavy vial of molten amber-orange liquid - pristine Accord-chartered glass, clean and clear. GRADE S legendary and unique: perfect flawless crystal, brilliant radiant inner light, an elaborate gold filigree cradle and a jeweled stopper, and a faint magical aura hugging the glass. molten amber elixir churns with fiery inner light behind bronze banded straps; a horned bronze stopper.
+
+[Top-right] a squat, armoured bottle of cold steel grey-blue liquid - pristine Accord-chartered glass, clean and clear. GRADE S legendary and unique: perfect flawless crystal, brilliant radiant inner light, an elaborate gold filigree cradle and a jeweled stopper, and a faint magical aura hugging the glass. liquid like molten steel behind riveted steel plating and a gilded guard band; a fortress-like stopper.
+
+[Bottom-left] an ornate rounded ceremonial flask of radiant golden liquid - pristine Accord-chartered glass, clean and clear. GRADE S legendary and unique: perfect flawless crystal, brilliant radiant inner light, an elaborate gold filigree cradle and a jeweled stopper, and a faint magical aura hugging the glass. radiant gold liquid pure as sunrise pours brilliant white-gold light; a rayed sun stopper and a holy glow.
+
+[Bottom-right] an ancient gilded alchemical formulary BOOK - a thick closed leather tome, NOT a bottle. Bound in deep oxblood leather with elaborate antique-gold corners, clasps and a central alembic-and-flask emblem embossed in gold on the cover; faint radiant golden light leaks from between the closed page edges and tiny alchemical glyphs glint in the gold. A legendary, sacred, radiant S-tier relic. Rich, arcane, masterfully hand-painted.

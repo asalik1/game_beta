@@ -71,6 +71,14 @@ const KNOWN_CUES := [
 	"tome", "tome_open", "fade",
 ]
 
+# Chapter closers (CHAPTER_CLOSERS.md) — per-class illustrated end cutscenes.
+# Each authored chapter derives three cue families the same way the openers
+# derive <shared>_<class>: <ch>_finish_<class> and <ch>_reflect_<class> map to
+# one class plate each, <ch>_fall to the shared fall plate. Plates live under
+# closing/. Extend this list as closers are authored for later chapters.
+const CLOSER_CHAPTERS := ["ch1", "ch2", "ch3", "ch4", "ch5", "ch6", "ch7"]
+const CLOSER_ROOT := "closing/"
+
 const FRAME_DISSOLVE := 0.82
 const FRAME_HOLD := 1.55
 const CAMERA_START_SCALE := Vector2(1.012, 1.012)
@@ -205,6 +213,14 @@ static func is_known_cue(id: String) -> bool:
 		if id.begins_with(String(shared_cue) + "_") \
 				and id.trim_prefix(String(shared_cue) + "_") in CHAPTER_CLASSES:
 			return true
+	for chapter_id in CLOSER_CHAPTERS:
+		var ch := String(chapter_id)
+		if id == ch + "_fall":
+			return true
+		for kind in ["finish", "reflect"]:
+			var pfx := "%s_%s_" % [ch, kind]
+			if id.begins_with(pfx) and id.trim_prefix(pfx) in CHAPTER_CLASSES:
+				return true
 	return false
 
 
@@ -226,6 +242,16 @@ static func _frames_for_cue(id: String) -> Array:
 			if class_id in CHAPTER_CLASSES:
 				var chapter_id: String = String(CHAPTER_SHARED_CUES[shared_cue])
 				return ["chapters/opening_%s_%s" % [chapter_id, class_id]]
+	for closer_chapter in CLOSER_CHAPTERS:
+		var ch := String(closer_chapter)
+		if id == ch + "_fall":
+			return [CLOSER_ROOT + "closing_%s_fall" % ch]
+		for kind in ["finish", "reflect"]:
+			var pfx := "%s_%s_" % [ch, kind]
+			if id.begins_with(pfx):
+				var cls := id.trim_prefix(pfx)
+				if cls in CHAPTER_CLASSES:
+					return [CLOSER_ROOT + "closing_%s_%s_%s" % [ch, cls, kind]]
 	return []
 
 

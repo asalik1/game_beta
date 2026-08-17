@@ -323,7 +323,7 @@ static func potion_price(level: int) -> int:
 # you leave the chapter (absolute set in switch_chapter), so revisiting early
 # chapters can never farm freebies, and it is never sellable.
 const FREE_POTION_CHAPTERS := ["ch1", "ch2", "ch3"]
-const BAG_SELL_GOLD := 1             # bags ALWAYS cash out for exactly 1g (never the 0.45 formula — anti-exploit)
+const BAG_SELL_GOLD := 1             # bag resale, pinned at 1g. TODO(owner 2026-08-17): keep trivial FOR NOW so bags can't be farmed for gold; raise it once the anti-farm economy is designed. Bags are now loose sellable items (player_core.sell_loose_bag) — this is the single payout seam.
 const SHOP_STOCK_BY_TIER := {"wood": 3, "silver": 4, "gold": 5}  # rolled-gear count
 
 # --------------------------------------------------------- capital rework ---

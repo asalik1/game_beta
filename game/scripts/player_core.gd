@@ -107,6 +107,11 @@ var gem_bag: Array = []  # loose gems
 # their slots (round 52). Bags drop act-tiered from bosses/elites and
 # stock at merchants. Start with two F pouches (Balance.STARTER_BAGS).
 var bags: Array = Items.starter_bags()
+# Unequipped bags carried in the pack (2026-08-17): a picked-up or bought-but-
+# not-installed bag rides here as a normal item — one pooled slot each, sellable,
+# equippable. Replaces the old auto-cash-the-spare behaviour (owner ruling: bags
+# are items; nothing is ever auto-sold). Save/load round-trips it (save.gd).
+var loose_bags: Array = []
 var consumables: Array = []   # reset stones etc. ({"kind": "stone", ...})
 # Crafting materials (Slice A): STACKING bag items ({"kind": "material", ...}),
 # one slot per (family, grade) stack up to Items.MATERIAL_STACK_MAX. Save/load
@@ -1985,7 +1990,8 @@ func consumable_count(id: String) -> int:
 # items now (CONSUMABLE_GRADES), so they count via `consumables` like any unit
 # — no separate potion_count() term (the bag tiers stay their +5 curve).
 func bag_used() -> int:
-	return backpack.size() + gem_bag.size() + consumables.size() + materials.size()
+	# Loose (unequipped) bags are carried items too — each eats a pooled slot.
+	return backpack.size() + gem_bag.size() + consumables.size() + materials.size() + loose_bags.size()
 
 
 # Bag-full adds return false with NO side effects — the caller decides
@@ -2538,42 +2544,79 @@ func _apply_potion_sting(sting: Dictionary) -> void:
 			game.spawn_text(global_position + Vector2(0, -40), "THE LOAN", Color(0.9, 0.4, 0.45))
 
 
-## A looted/bought bag joins the equipped set (capacity grows). A SIXTH
-## bag auto-keeps the best Balance.MAX_BAGS by slot count; the worst is
-## removed and cashes for a flat 1g (round 52; preserves the round-51
-## anti-exploit — spare bags are never worth more than 1g). Returns true
-## when the incoming bag was KEPT, false when it was the spare cashed out.
-func acquire_bag(b: Dictionary) -> bool:
-	bags.append(b)
-	if bags.size() <= Balance.MAX_BAGS:
-		game.sfx("levelup")
-		game.spawn_text(global_position + Vector2(0, -56),
-			"BAG ADDED: %s (+%d slots) — %d/%d bags, %d total" % [b["name"], int(b["slots"]),
-				bags.size(), Balance.MAX_BAGS, bag_capacity()], Color(0.95, 0.85, 0.5))
-		return true
-	# Over the cap: keep the best MAX_BAGS by slots, cash the smallest at 1g.
+## A picked-up or awarded bag joins the pack as a LOOSE item (one pooled slot),
+## never auto-equipping and never auto-selling (owner ruling 2026-08-17). A full
+## pack refuses with no side effects — the caller drops/mails it like any loot.
+func add_loose_bag(b: Dictionary) -> bool:
+	if bag_used() >= bag_capacity():
+		return false
+	loose_bags.append(b)
+	return true
+
+
+## Room to install another bag without swapping? (fewer than MAX_BAGS equipped.)
+func has_free_bag_slot() -> bool:
+	return bags.size() < Balance.MAX_BAGS
+
+
+## Install loose_bags[idx] into the equipped set. With a free slot it simply
+## adds (capacity grows); a full set FAILS here (the UI then drag/click-swaps
+## it onto a specific equipped bag via swap_loose_bag). Returns true when kept.
+func equip_loose_bag(idx: int) -> bool:
+	if idx < 0 or idx >= loose_bags.size() or bags.size() >= Balance.MAX_BAGS:
+		return false
+	bags.append(loose_bags[idx])
+	loose_bags.remove_at(idx)
+	return true
+
+
+## Swap loose_bags[loose_idx] into equipped slot equipped_idx; the displaced
+## equipped bag drops back into the pack (never sold). The drag-onto-a-bag and
+## click-to-replace gestures both land here.
+func swap_loose_bag(loose_idx: int, equipped_idx: int) -> void:
+	if loose_idx < 0 or loose_idx >= loose_bags.size():
+		return
+	if equipped_idx < 0 or equipped_idx >= bags.size():
+		return
+	var incoming: Dictionary = loose_bags[loose_idx]
+	var displaced: Dictionary = bags[equipped_idx]
+	bags[equipped_idx] = incoming
+	loose_bags.remove_at(loose_idx)
+	loose_bags.append(displaced)
+
+
+## Shop-buy install (the buy is gated on bag_would_improve): a free slot appends;
+## a full set swaps out the smallest bag this one beats, and the displaced bag
+## returns to the pack (never sold — capacity-bypass so a full pack can't strand it).
+func buy_install_bag(b: Dictionary) -> void:
+	if bags.size() < Balance.MAX_BAGS:
+		bags.append(b)
+		return
 	var worst := 0
 	for i in range(1, bags.size()):
 		if int(bags[i].get("slots", 0)) < int(bags[worst].get("slots", 0)):
 			worst = i
-	var dropped: Dictionary = bags[worst]
-	bags.remove_at(worst)
+	if int(b.get("slots", 0)) > int(bags[worst].get("slots", 0)):
+		loose_bags.append(bags[worst])   # displaced returns to the pack, never sold
+		bags[worst] = b
+	else:
+		loose_bags.append(b)             # gate should prevent this; keep it loose
+
+
+## Sell/scrap a loose bag for its (currently trivial) resale.
+## TODO(owner 2026-08-17): BAG_SELL_GOLD is pinned at 1g FOR NOW to preclude bag
+## farming; we intend to raise it once the anti-farm economy is designed (see the
+## knob comment in balance.gd). When it changes, this is the one seam that pays out.
+func sell_loose_bag(idx: int) -> void:
+	if idx < 0 or idx >= loose_bags.size():
+		return
+	loose_bags.remove_at(idx)
 	gold += Balance.BAG_SELL_GOLD
-	if dropped == b:
-		# The incoming bag was the worst — nothing gained.
-		game.spawn_text(global_position + Vector2(0, -50), "Spare bag — %dg" % Balance.BAG_SELL_GOLD, Color(1, 0.9, 0.4))
-		return false
-	game.sfx("levelup")
-	game.spawn_text(global_position + Vector2(0, -56),
-		"BAG UPGRADED: %s — best %d kept, spare +%dg (%d total)" % [b["name"],
-			Balance.MAX_BAGS, Balance.BAG_SELL_GOLD, bag_capacity()], Color(0.95, 0.85, 0.5))
-	return true
 
 
-## Would acquiring a bag of this slot size actually raise capacity? False
-## only when the set is already full (MAX_BAGS) AND every equipped bag is
-## >= this one — acquire_bag would then just cash it for 1g. The shop uses
-## this to GREY the buy so gold isn't wasted (round 52b).
+## Would installing a bag of this slot size actually raise capacity? False only
+## when the set is already full (MAX_BAGS) AND every equipped bag is >= this one.
+## The shop uses this to GREY the buy so gold isn't wasted (round 52b).
 func bag_would_improve(slots: int) -> bool:
 	if bags.size() < Balance.MAX_BAGS:
 		return true

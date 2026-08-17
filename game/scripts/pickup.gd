@@ -122,6 +122,17 @@ static func drop_loot(game_node: Node2D, payload: Dictionary, pos: Vector2) -> P
 				spr.scale = Vector2(1.1, 1.1)
 			else:
 				c._glyph("⚗", tint)
+		"bag":
+			# A dropped bag (pack was full on award): its grade-tinted bag art,
+			# collected off the ground like any other item.
+			tint = Items.GRADE_COLOR.get(String(payload.get("grade", "F")), Color(1, 1, 1))
+			var btex: ImageTexture = Art.bag_icon(String(payload.get("grade", "F")))
+			if btex != null:
+				spr = Sprite2D.new()
+				spr.texture = btex
+				spr.scale = Vector2(1.3, 1.3)
+			else:
+				c._glyph("▣", tint)
 		_:
 			# Consumable on the ground: real icon when one exists (mana
 			# draught, elixir, scroll, stones), else the old ⟲ glyph.

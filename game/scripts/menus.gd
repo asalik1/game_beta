@@ -1444,7 +1444,9 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	chips.add_theme_constant_override("v_separation", 4)
 	chips.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right.add_child(chips)
-	for bb2 in p.bags:
+	for bi in p.bags.size():
+		var bb2: Dictionary = p.bags[bi]
+		var bidx := bi   # per-iteration copy for the drop closure
 		var bg2: String = String(bb2.get("grade", "F"))
 		var chip := PanelContainer.new()
 		var csb := StyleBoxFlat.new()
@@ -1457,9 +1459,18 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		csb.content_margin_top = 2.0
 		csb.content_margin_bottom = 2.0
 		chip.add_theme_stylebox_override("panel", csb)
-		chip.tooltip_text = "%s — %s-grade bag, %d slots" % [String(bb2.get("name",
+		chip.tooltip_text = "%s — %s-grade bag, %d slots. Drag a loose bag here to swap it in." % [String(bb2.get("name",
 			Items.BAG_NAMES.get(bg2, "Bag"))), bg2, int(bb2.get("slots", 0))]
 		chip.mouse_filter = Control.MOUSE_FILTER_STOP  # the tooltip needs the hover
+		# Each equipped chip is a drop target: drag a loose bag onto it to swap
+		# it in (the displaced bag drops back into the pack — never sold).
+		chip.set_drag_forwarding(Callable(),
+			func(_pos: Vector2, data: Variant) -> bool:
+				return data is Dictionary and String(data.get("kind", "")) == "loose_bag",
+			func(_pos: Vector2, data: Variant) -> void:
+				p.swap_loose_bag(int(data.get("idx", -1)), bidx)
+				game.sfx("levelup")
+				open_inventory("gear", cat))
 		chips.add_child(chip)
 		var crow := HBoxContainer.new()
 		crow.add_theme_constant_override("separation", 5)
@@ -1471,6 +1482,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		bic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		bic.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		bic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		bic.mouse_filter = Control.MOUSE_FILTER_IGNORE  # let the chip own the drop hover
 		crow.add_child(bic)
 		var clbl := _lbl(crow, "%s · %d slots" % [bg2, int(bb2.get("slots", 0))], 12, Items.GRADE_COLOR[bg2])
 		clbl.custom_minimum_size = Vector2(74, 0)  # HBox label-collapse trap
@@ -1483,7 +1495,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	right.add_child(catrow)
 	for spec in [["all", "All"], ["weapon", "Weapons"], ["helmet", "Helmets"], ["armor", "Armor"],
 			["gloves", "Gloves"], ["pants", "Pants"], ["boots", "Boots"], ["charm", "Charms"],
-			["gems", "Gems"], ["consumables", "Consumables"], ["materials", "Materials"]]:
+			["gems", "Gems"], ["consumables", "Consumables"], ["materials", "Materials"], ["bags", "Bags"]]:
 		var cid: String = spec[0]
 		var cb := _btn(catrow, spec[1], func() -> void: open_inventory("gear", cid),
 			Color(0.95, 0.85, 0.5) if cat == cid else Color(0.64, 0.66, 0.72))
@@ -1532,6 +1544,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	var show_gems: bool = cat == "all" or cat == "gems"
 	var show_cons: bool = cat == "all" or cat == "consumables"
 	var show_mats: bool = cat == "all" or cat == "materials"
+	var show_bags: bool = cat == "all" or cat == "bags"
 	if show_gear:
 		for item in p.backpack:
 			var it: Dictionary = item
@@ -1686,6 +1699,22 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 						open_inventory("gear", cat)
 					var actions: Array = [["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb]]
 					_open_detail_popover(micon, "%s  x%d" % [mname, mcount], mcol, info, actions, GearFlavor.of(mm))).set_drag_forwarding(Callable(), sock_can, sock_drop)
+	if show_bags:
+		# Loose (unequipped) bags: a cell you click to equip / swap / sell / drop,
+		# and a drag SOURCE you can pull onto an equipped chip above to swap it in.
+		for li in p.loose_bags.size():
+			var lb: Dictionary = p.loose_bags[li]
+			var lg := String(lb.get("grade", "F"))
+			var lidx := li
+			var lbtn: Button = _bag_slot(grid, Art.bag_icon(lg), "", Items.GRADE_COLOR.get(lg, Color(1, 1, 1)),
+				func() -> void: _open_bag_popover(p, lidx, cat))
+			lbtn.tooltip_text = "%s — %s-grade bag, %d slots (loose). Click to equip / sell; drag onto an equipped bag to swap." % [
+				String(lb.get("name", Items.BAG_NAMES.get(lg, "Bag"))), lg, int(lb.get("slots", 0))]
+			lbtn.set_drag_forwarding(
+				func(_pos: Vector2) -> Variant:
+					lbtn.set_drag_preview(_drag_preview(Art.bag_icon(lg)))
+					return {"kind": "loose_bag", "idx": lidx},
+				Callable(), Callable())
 	# Only the All view represents free capacity.
 	if cat == "all":
 		for i in maxi(0, p.bag_capacity() - p.bag_used()):
@@ -1952,6 +1981,46 @@ func _popover_settle(pop: PanelContainer, at: Vector2, scroll: ScrollContainer =
 
 
 ## Cursor-anchored detail popover shared by bag, shop and equipment.
+## Loose-bag detail popover (2026-08-17): equip into a free slot, or one-click
+## replace the smallest equipped bag it beats when full, plus sell and drop.
+## Dragging the cell onto a specific equipped chip handles replacing a chosen bag.
+func _open_bag_popover(p: Player, idx: int, cat: String) -> void:
+	if idx < 0 or idx >= p.loose_bags.size():
+		return
+	var lb: Dictionary = p.loose_bags[idx]
+	var lg := String(lb.get("grade", "F"))
+	var slots := int(lb.get("slots", 0))
+	var col: Color = Items.GRADE_COLOR.get(lg, Color(1, 1, 1))
+	var info := "%s-grade bag — %d carry slots.\n\nEquip it to add its slots to your capacity. When all %d bag slots are full, DRAG it onto an equipped bag to take that bag's place (the old bag drops back into your pack, never sold). Spare bags sell for %dg." % [
+		lg, slots, Balance.MAX_BAGS, Balance.BAG_SELL_GOLD]
+	var actions: Array = []
+	if p.has_free_bag_slot():
+		actions.append(["  ◈  Equip  (+%d slots)  " % slots, col, func() -> void:
+			p.equip_loose_bag(idx)
+			game.sfx("levelup")
+			open_inventory("gear", cat)])
+	else:
+		var worst := 0
+		for i in range(1, p.bags.size()):
+			if int(p.bags[i].get("slots", 0)) < int(p.bags[worst].get("slots", 0)):
+				worst = i
+		if slots > int(p.bags[worst].get("slots", 0)):
+			actions.append(["  ◈  Replace smallest (%s)  " % String(p.bags[worst].get("name", "bag")), col, func() -> void:
+				p.swap_loose_bag(idx, worst)
+				game.sfx("levelup")
+				open_inventory("gear", cat)])
+	actions.append(["  ⛃  Sell  (%d gold)  " % Balance.BAG_SELL_GOLD, Color(1.0, 0.9, 0.4), func() -> void:
+		p.sell_loose_bag(idx)
+		game.sfx("potion")
+		open_inventory("gear", cat)])
+	actions.append(["  ✖  Drop  (throw out)  ", Color(1.0, 0.55, 0.45), func() -> void:
+		if idx >= 0 and idx < p.loose_bags.size():
+			p.loose_bags.remove_at(idx)
+			game.discard_to_ground({"kind": "bag", "grade": lg})
+		open_inventory("gear", cat)])
+	_open_detail_popover(Art.bag_icon(lg), String(lb.get("name", Items.BAG_NAMES.get(lg, "Bag"))), col, info, actions, GearFlavor.of(lb))
+
+
 func _open_detail_popover(icon: Texture2D, title: String, title_color: Color,
 		info: String, actions: Array, flavor := "") -> void:
 	if not root:
@@ -3542,7 +3611,8 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			_shop_card(misc_grid, null, "💎 Gem — Lv%d" % gl, "random stat — %d gold" % gprice,
 				Color(0.6, 0.9, 1.0), p.gold >= gprice, buy_gem)
 
-	# Bags are low-cost capacity upgrades; acquire_bag keeps the best set.
+	# Bags are low-cost capacity upgrades; buy_install_bag equips it (swapping out
+	# the smallest it beats when full — the displaced bag drops into your pack).
 	for bag_item in game.shop_bags[zone]:
 		var bit: Dictionary = bag_item
 		var bcost := int(ceil(float(Items.bag_buy_price(String(bit["grade"]))) * haggle))
@@ -3552,7 +3622,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			if p.gold >= bcost and bimproves:
 				p.gold -= bcost
 				game.shop_bags[zone].erase(bit)
-				p.acquire_bag(bit)
+				p.buy_install_bag(bit)
 			open_shop(zone)
 		var bdetail := "+%d slots — %d gold" % [int(bit["slots"]), bcost]
 		if not bimproves:
@@ -3750,6 +3820,24 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			_shop_card(mat_grid, Art.material_icon(String(mm.get("family", "")), mgr),
 				"%s%s" % [String(mm.get("name", "")), xn3], "sell one for %d gold" % mval,
 				Items.GRADE_COLOR.get(mgr, Color(1, 1, 1)), true, sell_mat)
+
+	# --- loose bags: sell spare capacity for its (currently trivial) resale ---
+	# BAG_SELL_GOLD is pinned at 1g for now (anti-farm); see the knob's TODO.
+	if not p.loose_bags.is_empty():
+		sold_any = true
+		_lbl(list, "— Bags —", 13, Color(0.62, 0.64, 0.7))
+		var bag_grid := _shop_grid(list)
+		for bli in p.loose_bags.size():
+			var lb: Dictionary = p.loose_bags[bli]
+			var lgr := String(lb.get("grade", "F"))
+			var blidx := bli
+			var sell_bag := func() -> void:
+				p.sell_loose_bag(blidx)
+				game.sfx("potion")
+				open_shop(zone)
+			_shop_card(bag_grid, Art.bag_icon(lgr),
+				"%s (%d slots)" % [String(lb.get("name", Items.BAG_NAMES.get(lgr, "Bag"))), int(lb.get("slots", 0))],
+				"sell for %d gold" % Balance.BAG_SELL_GOLD, Items.GRADE_COLOR.get(lgr, Color(1, 1, 1)), true, sell_bag)
 
 	if not sold_any:
 		_lbl(list, "Nothing to sell.", 13, Color(0.5, 0.5, 0.5))

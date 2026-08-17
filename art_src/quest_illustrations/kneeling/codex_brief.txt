@@ -1,0 +1,13 @@
+Generate ONE painterly wide cinematic story plate for the dark-fantasy game Crownless, using the built-in image_gen tool. Save the raw generation into THIS working directory as `quest_kneeling_source.png`, then also save a WIDE 1672x941 (16:9) LANCZOS copy (crop to the central 16:9 if needed) as `quest_kneeling.png`. Do not write anywhere else. In your final message report both paths and describe what you drew.
+
+You have ONE attached image ("01_style_graveyard"): a chapter-opening plate from this same game — match its painterly STYLE, muted palette, moody low-key lighting, wide 16:9 cinematic framing and brush texture (NOT its exact content).
+
+SCENE — the closing beat of a grief side quest ("Bread for the Kneeling"): a field of blight-stricken worshippers kneel in the mist below a cathedral while a choir sings over them, and the hero sets down a single loaf of bread among them.
+- A FIELD OF KNEELING FIGURES seen from behind and above at a slight distance: a dozen or more ragged, hollow peasant-pilgrims kneeling in rows in a misted field, heads bowed toward a looming dark CATHEDRAL silhouette on the horizon. They are grey, gaunt, faceless-in-the-mist — a congregation, not individuals.
+- Near the foreground, a single humble round LOAF OF BREAD rests on a flat stone or in an open hand at the edge of the kneeling rows — the one warm, homely object in the whole cold scene, catching a little light.
+- Setting: a sunken misted field at dusk below a gothic cathedral (echo IMAGE 1's mood) — pale ground fog, bare trees, cold blue-grey light with one faint warm glow on the bread.
+- Mood: bleak, hushed, quietly compassionate. The bread is the point of warmth.
+
+NEGATIVES (hard): no monsters, no weapons, no blood, no glowing eyes or magic, no bright saturated colours, no readable faces on the crowd, no lettering or numbers, no watermark, no frame or border; do not crop the loaf out of frame; keep the crowd anonymous and the cathedral distant.
+
+Author it already-bright (shown in-engine with no tonemap). Output the raw at the tool's native landscape size, then the 1672x941 copy.

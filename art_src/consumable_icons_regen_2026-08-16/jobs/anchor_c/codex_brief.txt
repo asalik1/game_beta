@@ -1,0 +1,37 @@
+ORIGINAL premium hand-painted fantasy action-RPG inventory icons - glass POTION BOTTLES.
+
+Match the finish of the two reference images: rich hand-painted rendering, dramatic
+high-contrast jewel-colored magical lighting, deep shadows, glossy blown glass with
+bright specular highlights, painterly (NOT pixel-art, NOT photographic), readable when
+shrunk small. Reference 1 (the contact sheet of round medallions) shows the target PAINT
+QUALITY and lighting only. Reference 2 (the bright-green sheet) shows the target OUTPUT
+FORMAT: subjects centered on a flat pure-green background with crisp clean edges.
+
+CRITICAL - the subject is a free-standing GLASS BOTTLE / FLASK, upright and centered.
+Do NOT draw any circular medallion frame, gold ring, coin, or border around it. No
+medallion. Just the bottle itself, standing on nothing.
+
+Universal rules:
+- Solid PURE GREEN #00FF00 background, perfectly flat: no gradient, no vignette, no
+  shadow cast on the background, no props.
+- One subject per grid cell, upright, centered in its own cell, filling most of the
+  cell height, with clear green margin on all sides. Subjects must NOT touch each
+  other or the cell dividers.
+- Glossy glass with visible glowing liquid inside, a cork or stopper, strong rim-light
+  and specular highlights.
+- Any glow/mist/sparkle stays tight around the bottle, contained within crisp edges -
+  never bleeding to the cell border.
+- NO text, letters, numbers, logos, trademarks, labels-with-writing, or watermark
+  anywhere in the image.
+
+Save the finished picture as a PNG file in this folder.
+
+Layout: a 2x2 grid (4 subject(s)), reading order:
+
+[Top-left] a round, full-bodied blown-glass flask of deep glowing crimson-red liquid - pristine Accord-chartered glass, clean and clear. GRADE F crudest quality: cloudy cheap glass, the liquid visibly separated into murky layers, a plain jammed cork, no ornament, humble and a little grimy, no glow.
+
+[Top-right] a round, full-bodied blown-glass flask of deep glowing crimson-red liquid - grimy, chipped, back-alley glass; the liquid is cut with a sickly swirl of blightwater-green rot. GRADE F gutter-cheap: the filthiest chipped vial, a rag-stuffed neck, heavy grime, the rot-green taint obvious.
+
+[Bottom-left] a faceted, angular crystal flask of brilliant luminous azure-blue liquid - pristine Accord-chartered glass, clean and clear. GRADE F crudest quality: cloudy cheap glass, the liquid visibly separated into murky layers, a plain jammed cork, no ornament, humble and a little grimy, no glow.
+
+[Bottom-right] a robust, bulging heavy vial of molten amber-orange liquid - grimy, chipped, back-alley glass; the liquid is cut with a sickly swirl of blightwater-green rot. GRADE F gutter-cheap: the filthiest chipped vial, a rag-stuffed neck, heavy grime, the rot-green taint obvious.

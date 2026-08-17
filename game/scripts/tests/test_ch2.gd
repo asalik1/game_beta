@@ -546,27 +546,31 @@ func _test_elites_bags_smallrooms() -> void:
 	if game.player.consumables.size() != stones_before:
 		return _fail("reset stone was not consumed")
 
-	# Bags (round 52): stacking up to MAX_BAGS; capacity is the SUM. A 6th
-	# bag keeps the best MAX_BAGS by slots and cashes the worst at 1g.
+	# Bags are items now (owner 2026-08-17): under the cap a loose bag EQUIPS to
+	# grow capacity; at the cap it stays loose until swapped in; nothing auto-sells.
 	game.player.bags = [Items.make_bag("F")]
-	if not game.player.acquire_bag(Items.make_bag("C")):
-		return _fail("a new bag should be added while under the cap")
-	if game.player.bags.size() != 2:
-		return _fail("second bag was not equipped")
+	game.player.loose_bags = [Items.make_bag("C")]
+	if not game.player.equip_loose_bag(0):
+		return _fail("a loose bag should equip while under the cap")
+	if game.player.bags.size() != 2 or not game.player.loose_bags.is_empty():
+		return _fail("equipping a loose bag did not move it into the equipped set")
 	if game.player.bag_capacity() != int(Items.BAG_SLOTS["F"]) + int(Items.BAG_SLOTS["C"]):
 		return _fail("capacity is not the sum of equipped bags")
 	while game.player.bags.size() < Balance.MAX_BAGS:
-		game.player.acquire_bag(Items.make_bag("C"))
+		game.player.bags.append(Items.make_bag("C"))
 	var cap_before: int = game.player.bag_capacity()
 	var gold_before: int = game.player.gold
-	if game.player.acquire_bag(Items.make_bag("F")):
-		return _fail("a worse 6th bag must not be kept")
+	# A worse loose bag on a full set: equip refuses, it stays loose, no gold moves.
+	game.player.loose_bags = [Items.make_bag("F")]
+	if game.player.equip_loose_bag(0):
+		return _fail("equip must refuse on a full bag set")
 	if game.player.bags.size() != Balance.MAX_BAGS:
 		return _fail("bag count exceeded MAX_BAGS")
-	if game.player.gold != gold_before + Balance.BAG_SELL_GOLD:
-		return _fail("spare bag did not cash for exactly 1g")
+	if game.player.gold != gold_before:
+		return _fail("a full set must never auto-cash a spare bag (no auto-sell)")
 	if game.player.bag_capacity() != cap_before:
-		return _fail("capacity changed when a worse bag was rejected")
+		return _fail("capacity changed when a worse bag stayed loose")
+	game.player.loose_bags = []
 
 	# Capacity counts UNITS, not kinds (round 52b): every gem UNIT eats a
 	# slot even when it stacks by kind for display.

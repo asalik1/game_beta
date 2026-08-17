@@ -29,7 +29,13 @@ TARGET_SIZES: dict[str, tuple[int, int]] = {
     "spore_vent": (256, 197),
     "void_rift": (165, 320),
     "storm_conductor": (175, 320),
-    "capital_portal_depths": (343, 482),
+    # capital_portal_depths was RETIRED from this builder (2026-08-17). Its four
+    # source panels were independently generated, so the rigid stone gate drifted
+    # ~10px between frames; the frame-0 tight-crop below then pinned the canvas to
+    # one frame and clipped the rest. It now animates via a geometry-locked
+    # derive (tools/art/derive_prop_anim.py capital_portal_depths --motion swirl):
+    # frame 0 IS the static, only the void energy is modulated, so the stone
+    # cannot wander. Do not re-add it here or the drifting build returns.
     "magma_furnace": (317, 320),
     "keep_brazier": (254, 320),
     "forge_cauldron": (56, 88),
@@ -219,12 +225,11 @@ def build(name: str, target: tuple[int, int]) -> None:
         production = [
             _remove_tiny_detached_components(frame) for frame in production
         ]
-    if name == "capital_portal_depths":
-        # Capital structure sources obey the repo-wide tight-static contract:
-        # frame zero touches every canvas edge, and the matching strip uses
-        # that exact rectangle.
-        tight = _visible_bbox(production[0])
-        production = [frame.crop(tight) for frame in production]
+    # NOTE: a per-name "crop every frame to frame 0's bbox" branch used to live
+    # here for capital_portal_depths. It BAKED IN drift -- pinning the canvas to a
+    # single frame clips every other frame whose content moved. Cropping to one
+    # frame is never safe for a strip whose body shifts; _shared_crop (the union
+    # bbox + pad, applied above) is the only correct crop. Retired 2026-08-17.
     _write_strip(name, production)
     boxes = [_visible_bbox(frame) for frame in production]
     baselines = [box[3] for box in boxes]

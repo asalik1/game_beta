@@ -34,6 +34,14 @@ all defects INSIDE the cells, invisible to the tiling check):
   EDGECUT    content within 1px of a cell's left/right boundary -- limbs
              clipped at the frame cut, or bleed from the neighbour cell
              ("part of hands get cut off").                     -> WARN
+  RIGIDDRIFT a rectangular prop cell (tight-cropped from its static) that
+             touches a cell edge AND whose L/R silhouette edge translates
+             across frames: the rigid body wanders into the cut and shifts on
+             screen (capital_portal_depths drifted 10px). A prop whose edge
+             touch is STABLE (<=RIGID_DRIFT_PX) is inherited from the static's
+             framing, clips nothing new, and no longer trips EDGECUT. Fix:
+             derive the anim from the static so the shell is geometry-locked.
+                                                                -> WARN
   CLIPSCALE  clip's median body height, normalized the way the engine
              scales it (actions + MOB_BODY_SCALE_WALK walks ride the idle
              cell, plain locomotion its own cell), vs the idle strip's.
@@ -121,6 +129,9 @@ ANCHOR_CY = 0.08       # centroid-y drift, fraction of cell height
 ANCHOR_FEET = 0.07     # lowest-opaque-row drift (the engine's anchor line)
 ANCHOR_H = 0.12        # bbox-height drift within a locomotion strip
 GHOST_GAP = 0.06       # vertical content gap, fraction of cell height
+RIGID_DRIFT_PX = 3     # a full-bleed prop whose L/R bbox edge moves more than
+                       # this is a rigid body wandering (capital_portal_depths
+                       # drifted 10px); benign edge-filling statics measure 0
 # Clip body height vs idle reference. Actions tolerate more: crouch/lunge
 # frames legitimately pull an attack's median (reviewed paladin 0.84, wolf
 # pounce 0.85); the defect band below 0.82 (cultist 0.80) stays caught, and
@@ -184,6 +195,7 @@ def _frame_metrics(a: np.ndarray, frame_width: int) -> list[dict | None]:
             "bh": int(ys.max() - ys.min() + 1),
             "cx": float(xs.mean()), "cy": float(ys.mean()),
             "feet": int(ys.max()),
+            "xmin": int(xs.min()), "xmax": int(xs.max()),
             "left": bool((xs <= 0).any()),
             "right": bool((xs >= frame_width - 1).any()),
             "vgap": int(gaps.max()) - 1 if len(gaps) else 0,
@@ -328,9 +340,32 @@ def check_file(png: Path) -> None:
                             "(legit only for fliers/flames/detached fx)")
             cut = [i + 1 for i, m in enumerate(metrics) if m and (m["left"] or m["right"])]
             if cut:
-                WARN.append(f"[EDGECUT] {rel}: f{cut} content touches a left/right cell "
-                            "edge -- limb clipped at the frame cut, or bleed from the "
-                            "neighbour cell")
+                # For rectangular prop cells (frame_width != cell height -- the
+                # tight-cropped-from-static path), an edge-touch that is STABLE
+                # across frames is inherited from the static's own framing: the
+                # animation clips nothing new, so it is benign (void_monolith and
+                # the capital gates fill the cell; the standing stone sits flush
+                # to one edge -- both trip every frame identically). Only when the
+                # silhouette's L/R edge TRANSLATES is the animation pushing a
+                # rigid body into the cut -- capital_portal_depths drifted 10px
+                # and visibly shifted on screen. Mob strips use square cells
+                # (frame_width == h) and keep the original EDGECUT behaviour.
+                edge_drift = max(
+                    max(m["xmin"] for m in live) - min(m["xmin"] for m in live),
+                    max(m["xmax"] for m in live) - min(m["xmax"] for m in live))
+                if frame_width != h and edge_drift <= RIGID_DRIFT_PX:
+                    pass  # stable edge-touch inherited from the static; benign
+                elif frame_width != h:
+                    WARN.append(f"[RIGIDDRIFT] {rel}: silhouette L/R edge translates "
+                                f"{edge_drift}px across frames -- a rigid prop wandering "
+                                "into the cell edge shifts on screen and clips; derive the "
+                                "anim from its static (geometry-locked): derive_prop_anim.py "
+                                "<name> --motion swirl|pulse (ignore if the whole body is "
+                                "meant to move, e.g. cloth/energy)")
+                else:
+                    WARN.append(f"[EDGECUT] {rel}: f{cut} content touches a left/right cell "
+                                "edge -- limb clipped at the frame cut, or bleed from the "
+                                "neighbour cell")
 
     semi = int(((a > 0) & (a < 255)).sum())
     if semi:

@@ -454,8 +454,14 @@ static func _chip_groups(m: Menus) -> Array:
 			return [_chapter_group(tchs, accent),
 				{"key": "hz", "all": "", "opts": [["1", "Hazardous"], ["0", "Safe"]], "accent": accent}]
 		"curios":
-			return [{"key": "kind", "all": "All", "opts": [["quest", "Quest items"], ["draughts", "Draughts & tonics"],
-				["synthesis", "Synthesis"], ["relics", "Relics & landmarks"]], "accent": accent}]
+			var cgroups: Array = [{"key": "kind", "all": "All", "opts": [["quest", "Quest items"],
+				["draughts", "Draughts & tonics"], ["synthesis", "Synthesis"], ["relics", "Relics & landmarks"]], "accent": accent}]
+			# Under Draughts the full 85-bottle ladder shows; family + lane chips narrow it.
+			if String(_filters.get("curios", {}).get("kind", "")) == "draughts":
+				cgroups.append({"key": "fam", "all": "All families", "opts": [["health", "Health"], ["mana", "Mana"],
+					["might", "Might"], ["ward", "Warding"], ["renewal", "Renewal"]], "accent": accent})
+				cgroups.append({"key": "lane", "all": "Both lanes", "opts": [["accord", "Accord"], ["black", "Black market"]], "accent": accent})
+			return cgroups
 		"shapes", "uniques":
 			var slots: Array = []
 			for slot in Items.SLOTS:
@@ -1059,7 +1065,8 @@ static func _npc_detail(m: Menus, list: VBoxContainer, sprite: String) -> void:
 	if where != "":
 		var wl := m._lbl(info, "First met in %s%s." % [where, "" if chl == "—" else " · " + chl], 12, MUTED)
 		wl.custom_minimum_size = Vector2(text_w, 0)
-	var dl := m._lbl(info, "Everyone you can hold a conversation with on the road. Talk to them again after a chapter beat — the same face can carry a new errand.", 12, Color(0.55, 0.58, 0.66))
+	var bio: String = String(Story.NPC_LORE.get(sprite, "Someone you can hold a conversation with on the road. Talk to them again after a chapter beat, and the same face can carry a new errand."))
+	var dl := m._lbl(info, bio, 12, Color(0.55, 0.58, 0.66))
 	dl.custom_minimum_size = Vector2(text_w, 0)
 
 
@@ -1097,7 +1104,7 @@ static func _terrain_hazards(t: Dictionary) -> Array:
 ## plaza), cached by Art.ground itself. `crop` = the pure-ground 32px corner.
 static func _terrain_swatch(id: String, crop: bool) -> Texture2D:
 	var t: Dictionary = Terrains.DATA[id]
-	var tex: Texture2D = Art.ground(String(t.get("ground", "grass")), String(t.get("path", "dirt")), 8, 8, 7, [])
+	var tex: Texture2D = Art.ground_preview(String(t.get("ground", "grass")), String(t.get("path", "dirt")), 8, 8, 7, [])
 	if tex == null or not crop:
 		return tex
 	var at := AtlasTexture.new()
@@ -1115,7 +1122,7 @@ const PREVIEW_TILES_W := 24
 const PREVIEW_TILES_H := 12
 static func _terrain_preview(id: String) -> Texture2D:
 	var t: Dictionary = Terrains.DATA[id]
-	return Art.ground(String(t.get("ground", "grass")), String(t.get("path", "dirt")),
+	return Art.ground_preview(String(t.get("ground", "grass")), String(t.get("path", "dirt")),
 		PREVIEW_TILES_W, PREVIEW_TILES_H, 11, ["W", "E"])
 
 
@@ -1191,6 +1198,14 @@ static func _terrain_card(m: Menus, list: VBoxContainer, id: String, where: Stri
 		Color(0.95, 0.85, 0.5) if where != "" else Color(0.55, 0.58, 0.66))
 	where_l.custom_minimum_size = Vector2(text_w, 0)
 
+	# Authored atmosphere line (Terrains.TERRAIN_LORE) — the world's own voice on
+	# the place, above the mechanical weather/hazard read.
+	var lore: String = Terrains.TERRAIN_LORE.get(id, "")
+	if lore != "":
+		var ll := m._lbl(info, lore, 12, Color(0.66, 0.62, 0.72))
+		ll.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		ll.custom_minimum_size = Vector2(text_w, 0)
+
 	var amb: String = t.get("ambient", "")
 	var wl := m._lbl(info, "Weather:   " + String(AMBIENT_DESC.get(amb, "still air")),
 		13, Color(0.7, 0.72, 0.78))
@@ -1229,26 +1244,26 @@ static func _curio_entries() -> Array:
 		out.append({"key": "q:" + String(id), "kind": "quest", "name": String(q.get("name", id)),
 			"desc": String(q.get("desc", "")), "sprite": String(q.get("icon", "")), "tex": null})
 	# Graded potions (CONSUMABLE_GRADES) run F→S in two lanes — the Accord (clean)
-	# and the Black Market (laced, cut with blightwater). A representative shelf:
-	# the seven Accord peaks (the S uniques), a laced example, and the Recall scroll.
-	var codex_pots := [
-		Items.make_potion("health", "instant", "S", "accord"),
-		Items.make_potion("health", "tonic", "S", "accord"),
-		Items.make_potion("mana", "instant", "S", "accord"),
-		Items.make_potion("mana", "tonic", "S", "accord"),
-		Items.make_potion("might", "buff", "S", "accord"),
-		Items.make_potion("ward", "buff", "S", "accord"),
-		Items.make_potion("renewal", "burst", "S", "accord"),
-		Items.make_potion("health", "instant", "F", "black"),
-		Items.make_potion("might", "buff", "A", "black"),
-		Items.make_recall_scroll(),
-	]
-	var pi := 0
-	for item in codex_pots:
+	# and the Black Market (laced, cut with blightwater). The FULL ladder: all 85
+	# bottles in Items.potion_specs order (family → shape → lane → grade), so the
+	# shelf reads as the grouped matrix; the fam/lane chips narrow it further.
+	for spec in Items.potion_specs():
+		var pot := Items.make_potion(String(spec["family"]), String(spec["shape"]),
+			String(spec["grade"]), String(spec["lane"]))
+		if pot.is_empty():
+			continue
 		# consumable_icon, NOT icon_for — potion/stone items carry no gear slot.
-		out.append({"key": "p:%d" % pi, "kind": "draughts", "name": String(item["name"]),
-			"desc": String(item.get("desc", "")), "sprite": "", "tex": Art.consumable_icon(item)})
-		pi += 1
+		# "lore" = the authored GearFlavor line (effect stays in "desc").
+		out.append({"key": "p:" + String(pot["id"]), "kind": "draughts", "name": String(pot["name"]),
+			"desc": String(pot.get("desc", "")), "sprite": "", "tex": Art.consumable_icon(pot),
+			"lore": GearFlavor.of(pot),
+			"family": String(spec["family"]), "shape": String(spec["shape"]),
+			"lane": String(spec["lane"]), "grade": String(spec["grade"])})
+	# The Recall scroll rides the draught shelf as the lone utility bottle.
+	var recall := Items.make_recall_scroll()
+	out.append({"key": "p:recall", "kind": "draughts", "name": String(recall["name"]),
+		"desc": String(recall.get("desc", "")), "sprite": "", "tex": Art.consumable_icon(recall),
+		"lore": GearFlavor.of(recall)})
 	# The synthesis capstone (CONSUMABLE_GRADES §9): the Alkahest Codex + the
 	# Grand potions Kesh mints from it (a clean S + a laced A → a modest step
 	# above S, no drawback). Synthesis-only — never sold. A representative shelf.
@@ -1263,7 +1278,8 @@ static func _curio_entries() -> Array:
 	var si := 0
 	for item in codex_synth:
 		out.append({"key": "s:%d" % si, "kind": "synthesis", "name": String(item["name"]),
-			"desc": String(item.get("desc", "")), "sprite": "", "tex": Art.consumable_icon(item)})
+			"desc": String(item.get("desc", "")), "sprite": "", "tex": Art.consumable_icon(item),
+			"lore": GearFlavor.of(item)})
 		si += 1
 	# Relic entries carry an optional "group" (armory/supplies live in the
 	# Future tab until promoted); the player shelf shows SHIPPED relics only.
@@ -1291,15 +1307,46 @@ static func _curio_icon(e: Dictionary) -> Texture2D:
 
 static func _curio_rows(_m: Menus) -> Array:
 	var f: Dictionary = _filters.get(_sec, {})
+	var kind_f := String(f.get("kind", ""))
 	var out: Array = []
 	for e in _curio_entries():
-		if f.has("kind") and String(e["kind"]) != String(f["kind"]):
+		var ek := String(e["kind"])
+		if kind_f != "" and ek != kind_f:
 			continue
-		if not _matches(String(e["name"]) + " " + String(e["desc"])):
+		# Family / lane chips narrow the draught ladder (shown only under Draughts).
+		if kind_f == "draughts":
+			if f.has("fam") and String(e.get("family", "")) != String(f["fam"]):
+				continue
+			if f.has("lane") and String(e.get("lane", "")) != String(f["lane"]):
+				continue
+		if not _matches(String(e["name"]) + " " + String(e["desc"]) + " " + String(e.get("lore", ""))):
 			continue
-		out.append({"key": String(e["key"]), "name": String(e["name"]), "sub": String(e["desc"]),
-			"tag": String(CURIO_KIND_LABEL.get(e["kind"], "")), "icon": _curio_icon(e), "accent": ACC_GOLD})
+		var row := {"key": String(e["key"]), "name": String(e["name"]), "sub": _curio_sub(e),
+			"tag": String(CURIO_KIND_LABEL.get(ek, "")), "icon": _curio_icon(e), "accent": ACC_GOLD}
+		# Draughts scan by tier: a grade-colored letter replaces the generic tag.
+		var g := String(e.get("grade", ""))
+		if ek == "draughts" and g != "" and Items.GRADE_COLOR.has(g):
+			row["tag"] = g
+			row["tag_color"] = Items.GRADE_COLOR[g]
+			row["name_color"] = Items.GRADE_COLOR[g]
+		out.append(row)
 	return out
+
+
+## Row subtitle: draughts show their group coordinate (family · shape · lane) so
+## the ladder reads as the grouped matrix; everything else shows its blurb.
+static func _curio_sub(e: Dictionary) -> String:
+	if String(e.get("kind", "")) != "draughts":
+		return String(e.get("desc", ""))
+	var fam := String(e.get("family", ""))
+	if fam == "":
+		return String(e.get("desc", ""))   # the Recall scroll — no family coordinate
+	var lane_l := "Black market" if String(e.get("lane", "")) == "black" else "Accord"
+	var fam_l: String = {"health": "Health", "mana": "Mana", "might": "Might",
+		"ward": "Warding", "renewal": "Renewal"}.get(fam, fam.capitalize())
+	if fam == "health" or fam == "mana":
+		return "%s · %s · %s" % [fam_l, String(e.get("shape", "")).capitalize(), lane_l]
+	return "%s · %s" % [fam_l, lane_l]
 
 
 static func _curio_detail(m: Menus, list: VBoxContainer, key: String) -> void:
@@ -1307,6 +1354,13 @@ static func _curio_detail(m: Menus, list: VBoxContainer, key: String) -> void:
 		if String(e["key"]) == key:
 			var tex: Texture2D = e.get("tex")
 			_curio_card(m, list, String(e["name"]), String(e["desc"]), String(e.get("sprite", "")), false, tex, DETAIL_W - 62.0)
+			# The authored flavor line (draughts/synthesis carry it separately from
+			# their mechanical effect; relics fold lore into desc, so skip there).
+			var flav := String(e.get("lore", ""))
+			if flav != "":
+				var fl := m._lbl(list, flav, 12, Color(0.66, 0.62, 0.72))
+				fl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				fl.custom_minimum_size = Vector2(DETAIL_W, 0)
 			var kl := m._lbl(list, {"quest": "Keepsakes and story tokens ride in your bag until their moment comes.",
 				"draughts": "Graded F→S in two lanes: the Accord (clean, chartered) and the Black Market (laced, cheaper, with a sting). Bags & consumables in Field notes has the rules.",
 				"synthesis": "Synthesis-only — never sold. Kesh mints the Grand potions from the Alkahest Codex: a clean S + a laced A → a step above S, no drawback.",
@@ -1594,6 +1648,13 @@ static func _gems_page(m: Menus, list: VBoxContainer) -> void:
 		var kind_l := m._lbl(row, "special socket" if special else "regular", 12,
 			Color(0.78, 0.72, 0.98) if special else Color(0.5, 0.53, 0.62))
 		kind_l.custom_minimum_size = Vector2(100, 0)
+		# Authored flavor beneath the row (the perfected-band line reads as the
+		# family's realized identity; GearFlavor keys every gem × band).
+		var gflav := GearFlavor.of(Items.make_gem(stat, Items.GEM_MAX_LEVEL))
+		if gflav != "":
+			var gfl := m._lbl(gems_box, gflav, 11, Color(0.58, 0.56, 0.64))
+			gfl.custom_minimum_size = Vector2(PAGE_W - 24, 0)
+			gfl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var foot := m._lbl(list, "Synthesis, socket rules and the special-gem gate: Field notes › Gem rules.", 12, MUTED)
 	foot.custom_minimum_size = Vector2(PAGE_W, 0)
 
@@ -2327,6 +2388,12 @@ static func _gear_bags(m: Menus, list: VBoxContainer) -> void:
 	_card(list).add_child(bags)
 	for g2 in Items.GRADES:
 		m._lbl(bags, "%s   %s — %d slots" % [g2, Items.BAG_NAMES[g2], int(Items.BAG_SLOTS[g2])], 14, Items.GRADE_COLOR[g2])
+		# The authored flavor line under each tier (bags resolve by name in GearFlavor).
+		var bflav := GearFlavor.of(Items.make_bag(g2))
+		if bflav != "":
+			var bfl := m._lbl(bags, bflav, 12, Color(0.62, 0.6, 0.7))
+			bfl.custom_minimum_size = Vector2(PAGE_W - 24, 0)
+			bfl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	for line2 in [
 		"Gear, gems, consumables — and your HEALTH POTIONS — all share your bags' slots, and EVERY unit counts: 20 potions take 20 slots (they only STACK for display). Equip up to %d bags at once — total capacity is the SUM of their slots (F pouch 15 … S hold 45). You start with two Frayed Pouches." % Balance.MAX_BAGS,
 		"Bags drop from BOSSES and elites (tier tracks the CHAPTER, matching its boss gear) and merchants stock them too — but a good bag costs real gold. Pick up one past your %d and your SMALLEST is cashed for %dg — the best %d are always kept." % [Balance.MAX_BAGS, Balance.BAG_SELL_GOLD, Balance.MAX_BAGS],

@@ -802,3 +802,20 @@ Still open after Wave 9: joiner-side pre-join content badge (lobby-payload
 field); guests joining DURING a chapter run (deliberately out — the hub is
 the join window, per the owner's own model); MP-23 host transfer (parked —
 server phase).
+
+
+## Wave 10 — cinematics parity
+
+### MP-24: Per-class chapter CLOSERS in co-op — status: OPEN — **PRIORITY: HIGH** (owner 2026-08-17)
+Files: `game_flow.gd` (`on_boss_died` victory branch), `game_base.gd` / net session, `cutscene.gd`, `content/chapter_closers.gd`
+The illustrated per-class chapter CLOSER (CHAPTER_CLOSERS.md — boss dying lines
+→ class-refracted reflection, on the `Cutscene` layer) currently plays in SOLO
+ONLY. In co-op the final-boss victory branch falls back to the flat text
+epilogue beat, because the closer is per-class + local and this victory branch
+is host-authoritative (`net_session().host_chapter_end` / `host_victory` fan the
+card to guests; `request_pause` no-ops online). Task: make EACH client play ITS
+OWN class's closer locally around the synced victory, mirroring how `net_advance`
+replays the chapter OPENER per client on the guest side (`run_chapter_opener_if_needed`
+keyed on local `player.cls`). Watch the ordering vs `host_victory`'s card and the
+guest `net_victory` path so nobody soft-locks (the tree pause is not an input gate
+online — CLAUDE.md §co-op). Solo path is done and must stay bit-identical.

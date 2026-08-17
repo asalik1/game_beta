@@ -3465,6 +3465,7 @@ func _test_bags_discard() -> void:
 	var p := game.player
 	# Snapshot everything this section touches (restore, never clear).
 	var keep_bags: Array = p.bags
+	var keep_loose: Array = p.loose_bags
 	var keep_bp: Array = p.backpack
 	var keep_gold: int = p.gold
 	var keep_dropped: Array = game.dropped_loot
@@ -3477,15 +3478,40 @@ func _test_bags_discard() -> void:
 		return _fail("bag capacity is not the sum of equipped bags")
 	var cap0: int = p.bag_capacity()
 	var gold0: int = p.gold
-	# A bigger 6th bag displaces the smallest: kept, capacity grows, spare 1g.
-	if not p.acquire_bag(Items.make_bag("D")):
-		return _fail("a bigger 6th bag should be kept")
+	# Bags are ITEMS now (owner 2026-08-17): a picked-up bag lands LOOSE, never
+	# auto-equips, and NOTHING is ever auto-cashed.
+	p.loose_bags = []
+	if not p.add_loose_bag(Items.make_bag("D")):
+		return _fail("a picked-up bag should land loose in the pack")
+	if p.loose_bags.size() != 1 or p.bags.size() != Balance.MAX_BAGS:
+		return _fail("picking up a bag must not touch the equipped set")
+	if p.gold != gold0:
+		return _fail("picking up a bag must never pay gold (no auto-sell)")
+	# Full set: a direct equip refuses; a swap installs it and the displaced bag
+	# returns to the pack (still no gold moved).
+	if p.equip_loose_bag(0):
+		return _fail("equip must refuse when all bag slots are full")
+	p.swap_loose_bag(0, 0)   # replace an equipped F with the loose D
 	if p.bags.size() != Balance.MAX_BAGS:
-		return _fail("bag count exceeded MAX_BAGS after a 6th")
+		return _fail("swap must not change the equipped bag count")
 	if p.bag_capacity() <= cap0:
-		return _fail("capacity did not grow when a bigger bag displaced a smaller")
-	if p.gold != gold0 + Balance.BAG_SELL_GOLD:
-		return _fail("displaced bag did not cash for exactly 1g")
+		return _fail("swapping a bigger bag in did not grow capacity")
+	if p.loose_bags.size() != 1 or int(p.loose_bags[0].get("slots", 0)) != int(Items.BAG_SLOTS["F"]):
+		return _fail("the displaced F bag must return to the pack, not vanish or sell")
+	if p.gold != gold0:
+		return _fail("a swap must never pay gold (no auto-sell)")
+	# Selling a loose bag pays exactly BAG_SELL_GOLD once and removes it.
+	p.sell_loose_bag(0)
+	if not p.loose_bags.is_empty() or p.gold != gold0 + Balance.BAG_SELL_GOLD:
+		return _fail("selling a loose bag must pay exactly BAG_SELL_GOLD once")
+	# buy_install on a full set swaps the smallest; the displaced bag packs, no gold.
+	var gold1: int = p.gold
+	p.buy_install_bag(Items.make_bag("S"))
+	if p.bags.size() != Balance.MAX_BAGS or p.loose_bags.size() != 1:
+		return _fail("buy_install on a full set must swap and pack the displaced bag")
+	if p.gold != gold1:
+		return _fail("buy_install must not itself move gold (the shop charges separately)")
+	p.loose_bags = []
 
 	# --- slot curve (2026-07-09 v2): F=15 base, +5 per tier, S=45 ---------
 	# (every tier +5 over round 52b to compensate health potions taking slots)
@@ -3643,12 +3669,13 @@ func _test_bags_discard() -> void:
 	for node in get_tree().get_nodes_in_group("loot_pickups"):
 		node.queue_free()
 	p.bags = keep_bags
+	p.loose_bags = keep_loose
 	p.backpack = keep_bp
 	p.gold = keep_gold
 	game.dropped_loot = keep_dropped
 	p.recalc()
 	await _frames(2)
-	print("ok: stacking bags (sum-capacity, keep-best-N, +5/tier curve, UNIT-counting incl. health potions, grey-out, act drops, shop price, migration) + discard-throw")
+	print("ok: stacking bags (sum-capacity, loose-item pickup/equip/swap/sell — no auto-cash, +5/tier curve, UNIT-counting incl. health potions, grey-out, act drops, shop price, migration) + discard-throw")
 
 
 func _test_retention() -> void:

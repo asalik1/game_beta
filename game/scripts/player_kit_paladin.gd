@@ -8,8 +8,16 @@ extends "res://scripts/player_kit_assassin.gd"
 ## built by build_fx_strip.py --valign bottom): the dome's ground ring sits
 ## AEGIS_DOME_OFFSET texture px below the cell centre, so that offset lifts the
 ## ring onto the paladin's feet; the scale wraps the ~96px hero body.
-const AEGIS_DOME_SCALE := 0.75
-const AEGIS_DOME_OFFSET := Vector2(0, -60)  # bottom row 202 → −74, +14 to the ring's centre
+## Scale 1.0 = a 205 x 149px dome (the strip's dome, cut with --normalize-size
+## so every frame is the same size — the generated cells drifted a few percent
+## and the top visibly dipped below his hair as it looped; owner 2026-08-16).
+## The base hero renders ~105px tall over a 22px feet anchor, so 149px of dome
+## clears his head by ~30px; 0.75 was 112px — head-height, hence the dips.
+const AEGIS_DOME_SCALE := 1.0
+## bottom row 202 → −74, +14 to the ring's centre = −60 puts the ring on the
+## node ORIGIN; the hero's feet sit HERO_FEET_ANCHOR below that (owner 2026-08-16:
+## the dome stopped at his thighs), so drop it by that much in texture px.
+const AEGIS_DOME_OFFSET := Vector2(0, -60.0 + HERO_FEET_ANCHOR / AEGIS_DOME_SCALE)
 
 
 func _use_paladin(slot: String, f: float) -> void:
@@ -272,13 +280,14 @@ func _consecration(f := 1.0) -> void:
 func _consecration_pulse(pos: Vector2, radius: float, mult: float, col: Color, fx: Dictionary) -> void:
 	game.sfx("nova", 0.75)
 	# The hallowed ground BLOOMS (skin-FX pass 2026-08-15): a generated circle of
-	# light — rings, soft rays, rising motes — spins under the actors for the
-	# pulse with a thin ghost over them, tinted by theme/skin light. Replaces
-	# the thin ring + square burst + eight glow shards; the floor seal below and
-	# the skins' staged rings stay as the identity accents.
+	# light — rings, soft rays, rising motes — under the actors for the pulse,
+	# tinted by theme/skin light. Replaces the thin ring + square burst + eight
+	# glow shards; the skins' staged rings stay as their identity accents.
+	# NO ghost layer over the actors here (owner 2026-08-16): a ground ring is
+	# floor, characters stand strictly ON it — nothing translucent over them.
 	var bloom := _fx_loop("consecration_bloom", pos, 8, 0.7, {
 		"color": col, "alpha": 0.9, "scale": (radius * 2.0) / (IMPACT_CELL * 0.82),
-		"z": -1, "ghost_over": 0.35, "over_z": 5, "frame_time": 0.06, "pingpong": true,
+		"z": -1, "frame_time": 0.06, "pingpong": true,
 		"fade": 0.35})  # (no spin: the ring is a foreshortened ellipse)
 	if bloom == null:
 		_ring_fx(pos, col, radius)
@@ -287,23 +296,29 @@ func _consecration_pulse(pos: Vector2, radius: float, mult: float, col: Color, f
 		_staged_segment_ring(game, pos, Color(1.0, 0.7, 0.25, 0.88), radius * 0.82, 10, 0.045, 0.36, "slashline", true, false)
 	elif skin == "fallen_arbiter":
 		_staged_segment_ring(game, pos, Color(0.92, 0.94, 1.0, 0.9), radius * 0.72, 8, 0.04, 0.42, "slashline", true, true)
-	# Hallowed floor seal lingers a moment: sunfire for base, a bleeding corona
-	# for Eclipse, and a frozen verdict sigil for the Fallen Arbiter.
-	var floor_glow := Sprite2D.new()
-	var ground_tex := "fx_consecration"
+	# Skin floor seals linger a moment: a bleeding corona for Eclipse, a frozen
+	# verdict sigil for the Fallen Arbiter. The base kit's old sunfire seal
+	# (`fx_consecration`) is GONE (owner 2026-08-16: it drew a second, outer
+	# ring around the bloom — "the new ring animation is cleaner"); it only
+	# returns as the fallback when the bloom strip is absent.
+	var ground_tex := ""
 	if skin == "eclipse_knight":
 		ground_tex = "fx_eclipse_corona"
 	elif skin == "fallen_arbiter":
 		ground_tex = "fx_fallen_verdict"
-	floor_glow.texture = Art.tex(ground_tex)
-	floor_glow.modulate = Color(col, 0.45)
-	floor_glow.scale = Vector2.ONE * (radius / 32.0)
-	floor_glow.global_position = pos
-	floor_glow.z_index = -5
-	game.add_child(floor_glow)
-	var ft := floor_glow.create_tween()
-	ft.tween_property(floor_glow, "modulate:a", 0.0, 0.8)
-	ft.tween_callback(floor_glow.queue_free)
+	elif bloom == null:
+		ground_tex = "fx_consecration"
+	if ground_tex != "":
+		var floor_glow := Sprite2D.new()
+		floor_glow.texture = Art.tex(ground_tex)
+		floor_glow.modulate = Color(col, 0.45)
+		floor_glow.scale = Vector2.ONE * (radius / 32.0)
+		floor_glow.global_position = pos
+		floor_glow.z_index = -5
+		game.add_child(floor_glow)
+		var ft := floor_glow.create_tween()
+		ft.tween_property(floor_glow, "modulate:a", 0.0, 0.8)
+		ft.tween_callback(floor_glow.queue_free)
 	# Rising motes of light — round (the glow disc), not squares.
 	var motes := CPUParticles2D.new()
 	motes.amount = 18
@@ -406,7 +421,14 @@ func _aegis() -> void:
 		get_tree().create_timer(aegis_time).timeout.connect(func() -> void:
 			if is_instance_valid(ward):
 				ward.queue_free())
-	# Four physical ward plates orbit while the shield holds, then gutter out.
+	# The two skins' seals orbit while the shield holds, then gutter out. The
+	# base kit's four small ward plates are GONE (owner 2026-08-16: with the
+	# dome up they were clutter — "the orbiting small circles are no longer
+	# needed"); they only return as the fallback when the dome strip is absent.
+	var dome_up := Art.has_sprite("fx/aegis_dome")
+	if skin == "" and dome_up:
+		_aegis_after(aegis_time)
+		return
 	var orbit := Node2D.new()
 	# Center the orbit on the whole body, not the feet/torso origin.
 	orbit.position = Vector2(0, -34)
@@ -443,14 +465,20 @@ func _aegis() -> void:
 			var fade := orbit.create_tween()
 			fade.tween_property(orbit, "modulate:a", 0.0, 0.25)
 			fade.tween_callback(orbit.queue_free))
+	_aegis_after(aegis_time)
+
+
+## What lowering the shield releases: the Holy theme's blessing (mend on the
+## way down). Split out so the plate-less base path above shares it.
+func _aegis_after(dur: float) -> void:
 	if _tfx.has("aegis_heal"):
 		# Holy: lowering the shield releases the blessing.
 		var frac: float = _tfx["aegis_heal"]
-		get_tree().create_timer(aegis_time).timeout.connect(func() -> void:
+		get_tree().create_timer(dur).timeout.connect(func() -> void:
 			if not dead:
 				hp = minf(max_hp, hp + max_hp * frac)
 				game.sfx("potion")
-				game.burst(global_position, Color(1.0, 0.95, 0.6), 12)
+				_soft_burst(global_position + Vector2(0, -30), Color(1.0, 0.95, 0.6), 12, 0.14, 100.0, 0.7, 0.55, 40.0)
 				game.spawn_text(global_position + Vector2(0, -50), "+%d" % int(max_hp * frac), Color(0.5, 1.0, 0.5)))
 
 

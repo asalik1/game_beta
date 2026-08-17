@@ -66,7 +66,7 @@ var rival_name: Label
 var slot_boxes: Array = []      # [{bg, cd, key, name}] for a1,a2,a3,ult,potion
 
 # buff timer bar (active-effect row above the ability bar)
-var buff_slots: Array = []      # pooled [{border,box,name,time,fill}] widgets
+var buff_slots: Array = []      # pooled [{border,chip_style,icon,time_bg,time,fill,glyph}] widgets
 var _buff_peak := {}            # buff id -> peak seconds seen (for the drain fill)
 
 # click-to-reveal popover over the live HUD (the old hover tooltips, now
@@ -902,24 +902,29 @@ const BUFF_ICONS := {
 ## left-to-right each frame.
 func _build_buff_bar() -> void:
 	var x0 := 470.0   # left edge of the ability bar
-	var y := 580.0    # taller chips still clear the ability bar at y=634
+	var y := 578.0    # rounded chips still clear the ability bar at y=634
 	for i in BUFF_SLOTS:
-		var x := x0 + i * (BUFF_W + 6.0)
-		var border := ColorRect.new()
-		border.position = Vector2(x - 2, y - 2)
-		border.size = Vector2(BUFF_W + 4, BUFF_H + 4)
+		var x := x0 + i * (BUFF_W + 8.0)
+		# A rounded medallion-chip that echoes the ability ring's language (soft
+		# corners, accent border, drop shadow) instead of a hard flat square. The
+		# stylebox is recolored per active buff in _update_buffs.
+		var frame := Panel.new()
+		frame.position = Vector2(x, y)
+		frame.size = Vector2(BUFF_W, BUFF_H)
+		var chip_style := StyleBoxFlat.new()
+		chip_style.bg_color = Color(0.05, 0.05, 0.09, 0.92)
+		chip_style.border_color = Color(0.4, 0.4, 0.46)
+		chip_style.set_border_width_all(2)
+		chip_style.set_corner_radius_all(11)
+		chip_style.shadow_color = Color(0, 0, 0, 0.55)
+		chip_style.shadow_size = 4
+		frame.add_theme_stylebox_override("panel", chip_style)
 		# PASS: the chip's hover target for its tooltip (see ability bar note).
-		border.mouse_filter = Control.MOUSE_FILTER_PASS
-		_click_to_popover(border, "")
-		add_child(border)
-		var box := ColorRect.new()
-		box.color = Color(0.06, 0.06, 0.10, 0.9)
-		box.position = Vector2(x, y)
-		box.size = Vector2(BUFF_W, BUFF_H)
-		box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(box)
+		frame.mouse_filter = Control.MOUSE_FILTER_PASS
+		_click_to_popover(frame, "")
+		add_child(frame)
 		var icon := TextureRect.new()
-		icon.position = Vector2(x + (BUFF_W - BUFF_ICON) * 0.5, y + 1)
+		icon.position = Vector2(x + (BUFF_W - BUFF_ICON) * 0.5, y + 2)
 		icon.custom_minimum_size = Vector2(BUFF_ICON, BUFF_ICON)
 		icon.size = icon.custom_minimum_size
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -927,22 +932,26 @@ func _build_buff_bar() -> void:
 		icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(icon)
-		# Countdown text overlays a compact dark footer instead of stealing a
-		# permanent half of the chip. Persistent effects with no stack text hide
-		# the footer entirely and let the medallion own the full tile.
-		var time_bg := ColorRect.new()
-		time_bg.color = Color(0.02, 0.02, 0.04, 0.78)
-		time_bg.position = Vector2(x + 2, y + 30)
-		time_bg.size = Vector2(BUFF_W - 4, 15)
+		# Countdown rides a slim rounded pill near the base instead of a hard black
+		# footer band. Persistent effects with no stack text hide it and let the
+		# medallion own the full tile.
+		var time_bg := Panel.new()
+		var time_sb := StyleBoxFlat.new()
+		time_sb.bg_color = Color(0.02, 0.02, 0.04, 0.74)
+		time_sb.set_corner_radius_all(6)
+		time_bg.add_theme_stylebox_override("panel", time_sb)
+		time_bg.position = Vector2(x + 5, y + BUFF_H - 18)
+		time_bg.size = Vector2(BUFF_W - 10, 15)
 		time_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(time_bg)
-		var time_l := _label(Vector2(x, y + 28), 14, Color(1, 1, 1), BUFF_W, HORIZONTAL_ALIGNMENT_CENTER)
+		var time_l := _label(Vector2(x, y + BUFF_H - 19), 13, Color(1, 1, 1), BUFF_W, HORIZONTAL_ALIGNMENT_CENTER)
+		# Thin drain bar hugging the rounded base, inset so it stays inside the frame.
 		var fill := ColorRect.new()
-		fill.position = Vector2(x, y + BUFF_H - 3)
-		fill.size = Vector2(BUFF_W, 3)
+		fill.position = Vector2(x + 4, y + BUFF_H - 3)
+		fill.size = Vector2(BUFF_W - 8, 2)
 		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(fill)
-		var slot := {"border": border, "box": box, "icon": icon, "time_bg": time_bg,
+		var slot := {"border": frame, "chip_style": chip_style, "icon": icon, "time_bg": time_bg,
 			"time": time_l, "fill": fill, "glyph": ""}
 		_set_buff_slot_visible(slot, false)
 		buff_slots.append(slot)
@@ -950,7 +959,6 @@ func _build_buff_bar() -> void:
 
 func _set_buff_slot_visible(slot: Dictionary, vis: bool) -> void:
 	slot["border"].visible = vis
-	slot["box"].visible = vis
 	slot["icon"].visible = vis
 	slot["time_bg"].visible = vis
 	slot["time"].visible = vis
@@ -1136,7 +1144,10 @@ func _update_buffs() -> void:
 		var col: Color = b["color"]
 		var t: float = b["t"]
 		_set_buff_slot_visible(slot, true)
-		slot["border"].color = col
+		# Recolor the rounded chip's border + a faint accent glow to the buff's hue.
+		var chip: StyleBoxFlat = slot["chip_style"]
+		chip.border_color = col
+		chip.shadow_color = Color(col, 0.3)
 		slot["border"].set_meta("tip", _wrap_tip(String(b.get("tip", ""))))
 		var glyph: String = String(b["glyph"])
 		# Prefer an authored status icon (assets/icons/buff_*.png) when this buff
@@ -1157,12 +1168,12 @@ func _update_buffs() -> void:
 			# Persistent state: no countdown, full bar; Grit-style chips show
 			# their stack text instead.
 			slot["time"].text = String(b.get("text", ""))
-			slot["fill"].size.x = BUFF_W
+			slot["fill"].size.x = BUFF_W - 8
 		else:
 			slot["time"].text = String(b["text"]) if b.has("text") \
 				else ("%.0f" % ceil(t) if t >= 1.0 else "%.1f" % t)
 			var peak: float = maxf(float(_buff_peak.get(b["id"], t)), 0.01)
-			slot["fill"].size.x = BUFF_W * clampf(t / peak, 0.0, 1.0)
+			slot["fill"].size.x = (BUFF_W - 8) * clampf(t / peak, 0.0, 1.0)
 		slot["time_bg"].visible = not slot["time"].text.is_empty()
 
 

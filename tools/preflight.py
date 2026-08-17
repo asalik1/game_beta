@@ -30,6 +30,12 @@ Checks:
             boilerplate already exist, none with a watchdog -- the base
             has boot/shot/sim-clock/mute/watchdog and shot.bat runs it);
             an EDITED legacy standalone rig WARNs: convert on touch.
+  ARTQA     diff-scoped: runs tools/art/verify_art.py on every CHANGED sprite
+            strip. Its content gates (GEOMETRY/BODYSCALE -> FAIL; ANCHOR/
+            GHOST/EDGECUT/RIGIDDRIFT -> WARN) catch a prop that shifts or
+            clips when it animates -- they existed but nothing ran them on a
+            diff, so capital_portal_depths shipped drifting. IMPORT findings
+            are left to the IMPORT check above.
 
 Exit code 1 on any FAIL. WARNs exit 0 unless --strict.
 """
@@ -249,6 +255,69 @@ def check_rigs() -> None:
                  f"is the worked example); run via `shot.bat {name}` either way")
 
 
+# ----------------------------------------------------------------- ARTQA
+_DIR8 = ("s", "se", "e", "ne", "n", "nw", "w", "sw")
+# Clip/direction tokens that trail a strip's base name (art.gd _strip_info +
+# verify_art CLIPS). Stripping them off a changed file's stem recovers the base
+# name verify_art globs its whole family on.
+_STRIP_TOKENS = frozenset(
+    ("anim", "walk", "run", "attack", "attack2", "attackb", "cast", "dash",
+     "hurt", "death", "spawn", "dir") + _DIR8)
+VERIFY_ART = ROOT / "tools" / "art" / "verify_art.py"
+
+
+def _strip_base(stem: str) -> str:
+    parts = stem.split("_")
+    while len(parts) > 1 and parts[-1] in _STRIP_TOKENS:
+        parts.pop()
+    return "_".join(parts)
+
+
+def check_anim_art() -> None:
+    """Run verify_art on every CHANGED sprite strip -- the geometry / anchor /
+    edge / rigid-drift gates that catch a prop which shifts or clips when it
+    animates (capital_portal_depths did both). Those gates already existed but
+    nothing ran them on a diff, so a broken strip sailed through staging. This
+    closes the loop: diff-scoped, one verify_art call, its WARN/FAIL folded in.
+    Only the strip-geometry / motion gates are surfaced (see SURFACE below).
+    IMPORT is left to check_imports() -- reporting it twice is noise. BLEED is
+    dropped too: it fires in the tens of thousands on generated FX AA and would
+    bury the shift/clip signal this check exists to raise."""
+    if not VERIFY_ART.exists():
+        return
+    status = subprocess.run(
+        ["git", "status", "--porcelain", "--", "game/assets/sprites"],
+        capture_output=True, text=True, cwd=ROOT,
+        encoding="utf-8", errors="replace").stdout or ""
+    bases: set[str] = set()
+    for line in status.splitlines():
+        p = line[3:].strip().replace("\\", "/")
+        if " -> " in p:            # rename: take the destination path
+            p = p.split(" -> ", 1)[1]
+        if not p.endswith(".png"):
+            continue
+        stem = Path(p).stem
+        if any(stem.endswith(f"_{t}") for t in _STRIP_TOKENS):
+            bases.add(_strip_base(stem))
+    if not bases:
+        return
+    r = subprocess.run(
+        [sys.executable, str(VERIFY_ART), *sorted(bases)],
+        capture_output=True, text=True, cwd=ROOT,
+        encoding="utf-8", errors="replace")
+    # Strip-geometry and motion gates only -- the ones that mean "this animates
+    # wrong". BLEED/IMPORT are handled elsewhere or too noisy (see docstring).
+    surface = ("[GEOMETRY]", "[BODYSCALE]", "[DIRSTRIP]", "[DIR8]", "[ANCHOR]",
+               "[GHOST]", "[EDGECUT]", "[RIGIDDRIFT]", "[CLIPSCALE]")
+    for raw in (r.stdout or "").splitlines():
+        if not any(tag in raw for tag in surface):
+            continue
+        if raw.startswith("FAIL "):
+            FAIL.append(raw[5:] + "\n         (changed sprite; via tools/art/verify_art.py)")
+        elif raw.startswith("WARN "):
+            WARN.append(raw[5:] + "  (changed sprite; verify_art.py)")
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     ap = argparse.ArgumentParser(description="Crownless preflight trap checks")
@@ -260,6 +329,7 @@ def main() -> int:
     check_modules()
     check_diff_lints()
     check_rigs()
+    check_anim_art()
     if not args.fast:
         check_codex_data()
 
@@ -267,7 +337,7 @@ def main() -> int:
         print("FAIL " + f)
     for w in WARN:
         print("WARN " + w)
-    n_checks = "IMPORT MODULES BALANCE PHYSICS RIGS" + ("" if args.fast else " CODEX")
+    n_checks = "IMPORT MODULES BALANCE PHYSICS RIGS ARTQA" + ("" if args.fast else " CODEX")
     if not FAIL and not WARN:
         print(f"PREFLIGHT OK ({n_checks})")
     else:

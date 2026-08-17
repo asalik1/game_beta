@@ -1,0 +1,19 @@
+Generate ONE painterly wide cinematic story plate for the existing dark-fantasy game Crownless, using the built-in image_gen tool. Save the raw generation into THIS working directory as `quest_hat_source.png`, then also save a WIDE 1672x941 (16:9) copy (crop to the central 16:9 region if needed, LANCZOS resize) as `quest_hat.png`. Do not write anywhere else. In your final message report both paths and describe what you actually drew so a reviewer can verify it adheres to the character reference.
+
+You have THREE attached images:
+- IMAGE 1 ("01_boy_design") is the CANONICAL character splash of THIS exact character (the "Miller's Boy") — treat it as the DESIGN CONTRACT for who he is: his build, age, hair, face, and outfit MUST match this. He is NOT a small child.
+- IMAGE 2 ("02_boy_sprite_back") is his in-game sprite seen from BEHIND — use it to keep the back view on-model.
+- IMAGE 3 ("03_style_wide_plate") is a chapter-opening plate from the same game — match its painterly STYLE, palette, moody low-key lighting, wide 16:9 cinematic framing and brush texture (NOT its content).
+
+CHARACTER (adhere to IMAGE 1): a LEAN YOUNG MAN, maybe late teens, NOT a nine-year-old — tousled dark-brown hair, weathered tanned skin. Outfit exactly as the reference: a loose cream / off-white linen shirt with rolled-up sleeves, over it a dark grey-brown quilted/patched sleeveless VEST with a V-neck, dark charcoal trousers cuffed at the ankle, worn brown leather boots, a couple of leather wrap bands on one wrist. Keep his colours and proportions faithful to the reference.
+
+SCENE — the quiet closing beat of a beloved side quest ("The Heron Feather"): he has just been given back his missing father's hat and stands watch on the mill road at dusk.
+- The young man stands near-center on a dirt mill road, seen from BEHIND and very slightly to one side so we read both him and the road ahead; his back, shoulders and the outfit above read clearly (match IMAGE 1's clothing).
+- He wears his FATHER'S hat: an oversized brown WIDE-BRIM hat, a size too big for him, brim pinned up on one side, a single HERON FEATHER in the band with a soft BLUE tip. The hat and the blue feather are the focal point — catch the last warm sunlight on the feather's blue tip.
+- He faces AWAY down the road toward a dark treeline (the "howling" — an ominous wood on the horizon), chin up, patient and resolute — keeping a watch too big for him.
+- Setting: a rural mill road gone gold with late evening; a timber MILL with a waterwheel and a humble cottage softly out of focus to one side (echo IMAGE 1's ruined-mill/waterwheel setting but intact and peaceful), split-rail fences, tall grass; the ominous dark forest line far ahead under a bruised dusk sky. Low warm sun from the left-front rimming him and the feather; a long soft shadow down the road.
+- Mood: quiet, tender, a little melancholy but hopeful.
+
+NEGATIVES (hard): do NOT make him a small child — he is a lean young man per IMAGE 1; no second figure, no adults besides him, no monsters or creatures, no weapons, no blood, no glowing eyes or magic particles, no crown or armor, no modern objects, no bright saturated colours, no lettering or numbers, no watermark, no frame or border; do not crop the hat or his boots out of frame; do not change his outfit design away from IMAGE 1.
+
+Output the raw at the tool's native landscape size, then the 1672x941 copy as described. Author it already-bright (shown in-engine with no tonemap).

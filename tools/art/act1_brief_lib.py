@@ -41,6 +41,9 @@ BOSSES = {
     "veyx": ("veyx", "a small floating storm elemental — a compact humanoid figure formed of crackling blue lightning and dark storm-cloud, trailing off into vapour with no solid legs", "floating"),
     "echo": ("echo", "a winged dark assassin with a burning skull head wreathed in orange flame, large black feathered wings, dark leathers, a knife in hand", "humanoid"),
     "stormmouth": ("stormmouth", "a colossal armored storm-titan with a bright blue glowing core set in its chest, huge horned helm and heavy plated shoulders, arcs of lightning", "humanoid"),
+    # Saint Varo's AWAKENED standing form (owner 2026-08-16: its legacy PixelLab
+    # art had no weapon in idle/walk and a staff-vs-cleaver split across facings).
+    "saint_varo_standing": ("saint_varo_standing", "a tall RISEN skeletal saint standing upright, a golden crowned skull face, ornate gold-and-purple holy vestments over a long dark robe that reaches the floor, gripping ONE large RELIC GREATSWORD (a broad holy blade) in BOTH hands, the blade wreathed in pale gold-and-purple holy light", "humanoid"),
 }
 
 # --- Directional attacks (owner 2026-08-15): aimed clips need a facing. We
@@ -291,8 +294,10 @@ def _neutralize_direction(text: str) -> str:
     return text
 
 # Robed / floating / legless bodies GLIDE instead of a leg walk cycle.
+# nullwarden REMOVED (owner 2026-08-16): he has armored legs and must LEG-walk,
+# not glide. Kept: robe/gown-covered and pure-floating bodies.
 GLIDE_WALK = {"choirmother", "vess", "serane", "forgemistress", "ashpriest",
-              "halla", "veyx", "nullwarden"}
+              "halla", "veyx", "saint_varo_standing"}
 
 def brief(kind: str, clip: str, facing: str = "s", directional: bool = False) -> str:
     sprite, ident, body = BOSSES[kind]
@@ -342,7 +347,12 @@ def main():
     directional = len(sys.argv) > 4
     sprite = BOSSES[kind][0]
     os.makedirs(os.path.join(stage, "refs"), exist_ok=True)
-    shutil.copy(os.path.join(SPR, f"{sprite}_anim.png"), os.path.join(stage, "refs", f"{sprite}_idle.png"))
+    # Reference the CURRENT installed idle (the Codex regen) so a re-roll keeps
+    # the live design, not the retired PixelLab _anim it was built from.
+    idle_ref = os.path.join(SPR, f"{sprite}_anim_codex.png")
+    if not os.path.exists(idle_ref):
+        idle_ref = os.path.join(SPR, f"{sprite}_anim.png")
+    shutil.copy(idle_ref, os.path.join(stage, "refs", f"{sprite}_idle.png"))
     stat = os.path.join(SPR, f"{sprite}.png")
     if os.path.exists(stat):
         shutil.copy(stat, os.path.join(stage, "refs", f"{sprite}_static.png"))

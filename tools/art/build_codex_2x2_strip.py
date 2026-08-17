@@ -281,6 +281,38 @@ def bbox_anchor_x(cell: Image.Image) -> float | None:
     return None if bb is None else (bb[0] + bb[2]) / 2.0
 
 
+def torso_anchor_x(cell: Image.Image) -> float | None:
+    """Centre x of the DENSEST vertical band (the torso column). Robust when a
+    long, THIN weapon extends far and even swings ABOVE the head (Korrag's
+    chain-whip) — the head/bbox anchors latch onto the weapon there and slide
+    the body, but a thin whip contributes few pixels to any column, so the
+    densest band stays on the body mass. Pins the torso, weapon extends freely."""
+    a = figure_mask(cell, BODY_THR)
+    bb = a.getbbox()
+    if bb is None:
+        return None
+    w, h = cell.size
+    data = a.load()
+    cols = [0] * w
+    for x in range(bb[0], bb[2]):
+        c = 0
+        for y in range(bb[1], bb[3]):
+            if data[x, y]:
+                c += 1
+        cols[x] = c
+    band = max(8, int(h * 0.13))
+    best = -1
+    bx = bb[0]
+    run = sum(cols[bb[0]:bb[0] + band])
+    for x in range(bb[0], bb[2] - band + 1):
+        if x > bb[0]:
+            run += cols[x + band - 1] - cols[x - 1]
+        if run > best:
+            best = run
+            bx = x
+    return bx + band / 2.0
+
+
 def body_box(cell: Image.Image) -> tuple[int, int, int, int] | None:
     return alpha_mask(cell, BODY_THR).getbbox()
 
@@ -347,7 +379,7 @@ def main() -> int:
                     help="no external reference: the master's own --scale-frame is the "
                          "reference (scale 1.0). Use to build the very first idle strip "
                          "of a new boss; every later clip then uses --ref-idle <that idle>.")
-    ap.add_argument("--anchor", choices=("head", "feet", "hindfeet", "bbox", "halo"),
+    ap.add_argument("--anchor", choices=("head", "feet", "hindfeet", "bbox", "halo", "torso"),
                     default="head",
                     help="head: crown-band bbox mid (default); feet: feet-band "
                          "centroid; hindfeet: rear-40%% of the feet band (a "
@@ -487,7 +519,7 @@ def main() -> int:
     # 4. anchors + cell size. The cell grows (still square) when a frame reaches
     # wider than the reference cell OR taller above its hem than the reference
     # cell allows (arms raised overhead: Morwen's rain call-down).
-    anchor_fn = {"head": head_anchor_x, "feet": feet_anchor_x,
+    anchor_fn = {"head": head_anchor_x, "feet": feet_anchor_x, "torso": torso_anchor_x,
                  "hindfeet": hindfeet_anchor_x, "bbox": bbox_anchor_x,
                  "halo": halo_anchor_x}[args.anchor]
     anchors = [anchor_fn(q) for q in quads]

@@ -31,13 +31,18 @@ from act1_brief_lib import BOSSES  # noqa: E402
 DIRS = ["s", "n", "e", "w", "ne", "nw", "se", "sw"]
 
 
-def build_facing(master: str, out: str, ref_idle: str, anchor: str = "bbox") -> bool:
+def build_facing(master: str, out: str, ref_idle: str, anchor: str = "bbox",
+                 scale_ref: str = "body") -> bool:
     # WALK uses the head-band anchor: a walk's bbox shifts as the legs extend, so
     # centering the bbox would slide the body sideways each frame — the head/torso
     # is the stable landmark to pin instead. Aimed clips keep the body-mass bbox.
+    # scale_ref: "body" (frame-1 silhouette height) is fine when frame 1 rests,
+    # but a frame 1 with a RAISED weapon (vargoth's blade) inflates that height
+    # and shrinks the body — pass "area" (weapon is a small share of total ink)
+    # for those clips so the body stays idle-sized across facings.
     r = subprocess.run([sys.executable, BUILD, master, "--out", out,
                         "--ref-idle", ref_idle, "--anchor", anchor,
-                        "--scale-ref", "body", "--scale-frame", "1", "--valign", "hem"],
+                        "--scale-ref", scale_ref, "--scale-frame", "1", "--valign", "hem"],
                        capture_output=True, text=True)
     if r.returncode != 0 or not os.path.exists(out):
         print(f"  build FAIL {os.path.basename(out)}: {r.stdout.strip()[-200:]} {r.stderr.strip()[-200:]}")
@@ -70,6 +75,9 @@ def main() -> int:
     anchor = "head" if clip == "walk" else "bbox"
     if "--anchor" in rest:
         anchor = rest[rest.index("--anchor") + 1]
+    scale_ref = "area" if clip == "blade" else "body"  # raised-weapon frame-1 -> area
+    if "--scale-ref" in rest:
+        scale_ref = rest[rest.index("--scale-ref") + 1]
     sprite = BOSSES[kind][0]
     ref_idle = os.path.join(SPR, f"{sprite}_anim_codex.png")
     if not os.path.exists(ref_idle):
@@ -84,7 +92,7 @@ def main() -> int:
         master = os.path.join(base, f, f"{clip}_master_2x2_v1_keyed.png")
         dst = os.path.join(out_dir, f"{sprite}_{outclip}_{f}.png")
         if os.path.exists(master):
-            if build_facing(master, dst, ref_idle, anchor):
+            if build_facing(master, dst, ref_idle, anchor, scale_ref):
                 built[f] = dst
         elif f == "s":
             flat = os.path.join(SPR, f"{sprite}_{clip}.png")

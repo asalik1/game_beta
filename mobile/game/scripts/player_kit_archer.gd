@@ -8,6 +8,13 @@ extends "res://scripts/player_kit_warrior.gd"
 ## ~84px puff whose base sits on the strike point (bottom row 100 → −36, +4).
 const ARROW_IMPACT_SCALE := 84.0 / (128.0 * 0.7)
 const ARROW_IMPACT_OFFSET := Vector2(0, -32)
+## The unthemed Arrow Storm's colour: a lighter cut of the base archer's cape
+## green (cape samples ~#3A5A38 → this is that hue lit up). Tints the wind
+## vortex, each strike puff and the call text.
+## Hue held at the cape's ~120° (the earlier 0.64/0.88/0.56 sat at 105° and read
+## lime-yellow on the warm village ground — owner 2026-08-16); R kept well
+## under G/B so the warm terrain tint can't pull it yellow.
+const ARCHER_STORM_GREEN := Color(0.46, 0.80, 0.52)
 ## Voidwraith tentacle bite (assets/sprites/fx/void_contact.png, 8 x 128px,
 ## radial, 70% fill): a ~72px pop on the victim's torso.
 const VOID_CONTACT_SCALE := 72.0 / (128.0 * 0.7)
@@ -61,7 +68,10 @@ func _use_archer(slot: String, f: float) -> void:
 			_ult_sfx()
 			# Skin storms announce in their element: Frostfall's sky goes pale
 			# ice, Voidwraith's goes dark violet (Ronin pattern — colour only).
-			var storm_call := _tcolor if _themed else Color(0.6, 1.0, 0.6)
+			# Base storm colour = a lighter cut of the archer's cape green (owner
+			# 2026-08-16; the cape samples ~#3A5A38, this is its sunlit version)
+			# — it tints the vortex, the strike puffs and the call text.
+			var storm_call := _tcolor if _themed else ARCHER_STORM_GREEN
 			var storm_name := "ARROW STORM!"
 			if skin == "frostfall_ranger":
 				storm_call = Color(0.66, 0.90, 1.00)
@@ -80,8 +90,11 @@ func _use_archer(slot: String, f: float) -> void:
 				# the ground under the archer for the rain's duration, tinted by
 				# theme — replaces the old cast ring. Under the actors (ground FX).
 				# (~220px across, under half alpha: the storm's eye, not a floor of green)
+				# The wind itself is always the archer's cape green (owner 2026-08-16
+				# — a theme-yellow/orange swirl "doesn't look right"); the theme
+				# colours ride the arrows, strike puffs and the call text instead.
 				if _fx_loop("wind_vortex", Vector2.ZERO, 8, storm_time, {
-						"parent": self, "color": storm_call, "alpha": 0.45,
+						"parent": self, "color": ARCHER_STORM_GREEN, "alpha": 0.5,
 						"scale": 220.0 / (IMPACT_CELL * 0.82), "z": -2,
 						"frame_time": 0.07, "pingpong": true, "spin": -1.7,
 						"fade": 0.35}) == null:
@@ -613,7 +626,7 @@ func _storm_strike() -> void:
 		return
 	# Falling-arrow whoosh (deep-pitched), NOT the synth laser zap.
 	game.sfx("knife", 0.75)
-	var storm_col := _theme_color("ult") if ability_theme.get("ult", "") != "" else Color(0.7, 1.0, 0.7)
+	var storm_col := _theme_color("ult") if ability_theme.get("ult", "") != "" else ARCHER_STORM_GREEN
 	# Skin rain: ice-shafted hail / dark void bolts (skin wins over theme).
 	if skin == "frostfall_ranger":
 		storm_col = Color(0.70, 0.90, 1.00)

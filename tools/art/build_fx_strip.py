@@ -179,6 +179,11 @@ def main():
                          "equator = impact centre) on one shared row — for ground "
                          "bursts with a rising plume (meteor, earth slam). Prints the "
                          "anchor row so the caller can offset the sprite onto it.")
+    ap.add_argument("--normalize-size", action="store_true",
+                    help="LOOPS whose subject must not change size (a shield dome, a pool): "
+                         "resample every frame's bbox to the largest frame's bbox so the "
+                         "silhouette's top and bottom stay put — the generator drifts each "
+                         "cell a few percent, which reads as the dome breathing / dipping")
     ap.add_argument("--luma-key", action="store_true",
                     help="the master is an effect made of LIGHT on pure black (no chroma key): "
                          "alpha = max(R,G,B), colour un-premultiplied — the right key for a "
@@ -228,9 +233,15 @@ def main():
         print("anchor row (impact centre) = %d of %d  -> sprite offset.y = %d" % (
             anchor_row, args.cell, args.cell // 2 - anchor_row))
     strip = Image.new("RGBA", (args.cell * len(cells), args.cell), (0, 0, 0, 0))
+    max_w = max(x1 - x0 + 1 for (x0, _, x1, _) in cells)
+    max_h = max(y1 - y0 + 1 for (_, y0, _, y1) in cells)
+    if args.normalize_size:
+        print("normalize-size: every frame resampled to the largest bbox %dx%d" % (max_w, max_h))
     for k, (x0, y0, x1, y1) in enumerate(cells):
         crop = Image.fromarray(rgba[y0:y1 + 1, x0:x1 + 1])
         w, h = crop.size
+        if args.normalize_size:
+            w, h = max_w, max_h
         nw, nh = max(1, int(round(w * scale))), max(1, int(round(h * scale)))
         small = crop.resize((nw, nh), Image.LANCZOS)
         if np.array(small)[:, :, 3].max() == 0:

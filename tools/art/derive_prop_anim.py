@@ -15,6 +15,10 @@ Motions:
   flicker  warm (fire) pixels flicker brighter/dimmer + the flame top wobbles
   wave     horizontal sine shear per row — a banner rippling in the wind
   shimmer  cool (water) pixels breathe + a 1px horizontal jitter — well water
+  swirl    void/energy pixels churn: the whole glow breathes while rotating
+           lobes + outward-traveling bright rings sweep through it. The rigid
+           shell is NEVER touched (mask-gated), so it stays pixel-locked —
+           for portals/rifts/arcane nodes whose stone must not wander.
 
 Usage:
   python tools/art/derive_prop_anim.py <name> --motion pulse [--frames 4]
@@ -90,6 +94,28 @@ def frame(base: np.ndarray, motion: str, phase: float, amp: float) -> Image.Imag
         for y in range(h):
             out[y] = np.roll(a[y], shifts[y], axis=0)
         a = out
+    elif motion == "swirl":
+        # Energy = void/arcane pixels (blue+red dominant over green). Only these
+        # brighten/dim; the rigid shell is left byte-for-byte identical, so the
+        # silhouette never drifts (bbox stable across every frame — the property
+        # verify_art's rigid-drift gate checks). The motion is a rotating pair
+        # of lobes plus rings traveling outward, so the plasma reads as churning
+        # rather than merely fading.
+        rgb = a[..., :3].astype(np.float32)
+        energy = ((rgb[..., 0] + rgb[..., 2]) > 2.0 * rgb[..., 1] + 30.0) \
+            & (a[..., 3] > 40)
+        if energy.any():
+            h, w = a.shape[:2]
+            ys, xs = np.where(energy)
+            cx, cy = float(xs.mean()), float(ys.mean())
+            yy, xx = np.mgrid[0:h, 0:w]
+            ang = np.arctan2(yy - cy, xx - cx)
+            rad = np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2)
+            rad_n = rad / (float(rad[energy].max()) + 1e-3)
+            sweep = np.cos(ang * 2.0 - phase * 2.0)
+            trav = np.sin(rad_n * 3.0 - phase * 2.0)
+            factor = 1.0 + 0.6 * amp * s + 0.9 * amp * (0.5 * sweep + 0.5 * trav)
+            a = _scale_rgb(a, np.where(energy, factor, 1.0).astype(np.float32))
     return Image.fromarray(a, "RGBA")
 
 
@@ -97,7 +123,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("name")
     ap.add_argument("--motion", required=True,
-                    choices=["pulse", "flicker", "wave", "shimmer"])
+                    choices=["pulse", "flicker", "wave", "shimmer", "swirl"])
     ap.add_argument("--frames", type=int, default=4)
     ap.add_argument("--amp", type=float, default=0.35)
     ap.add_argument("--no-mobile", action="store_true")
