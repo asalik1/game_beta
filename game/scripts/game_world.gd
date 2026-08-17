@@ -829,6 +829,7 @@ func _enter_room(i: int) -> void:
 		# while the pack still stands (playtest 2026-07-07).
 		_offer_cursed_chest(i)
 	refresh_quest()
+	_ensure_quest_quarry(i)  # a KILL-step stays completable after its rooms are cleared
 	_try_spawn_boss(i)
 	# Wave-1 co-op fix: a guest entering an already-cleared boss arena must find
 	# its gate OPEN. The gate-construction guard skips building a gate for a
@@ -840,6 +841,64 @@ func _enter_room(i: int) -> void:
 		_recheck_gates()
 	last_room = i
 	autosave()  # autosave on every room transition (DESIGN.md)
+
+## KILL-step completability guard (2026-08-17): rooms build once and cleared
+## rooms never respawn (DESIGN.md room-state persistence), so a quest that asks
+## you to "slay N winterfang" would be UNCOMPLETABLE if you cleared the
+## winterfang rooms before accepting it. On entering a fighting room while a
+## kill-step is still short and this room has no live quarry of that kind, top it
+## up with LOOSE quarry (the grave_spawn pattern: zero XP/gold so the fixed
+## chapter budget is untouched, force_aggro, NOT counted into zone_alive so the
+## purge seal is never re-engaged). Host-authoritative (guests mirror via
+## add_enemy); re-evaluated per entry, so a homeless despawn on room exit simply
+## re-tops on return — no permanent state to strand. `from_quest` makes the kill
+## count (game_flow.on_enemy_died) despite the zero reward.
+func _ensure_quest_quarry(i: int) -> void:
+	if net_guest() or not is_instance_valid(player) or player.dead:
+		return
+	if i < 0 or i >= zone_count:
+		return
+	var z: Dictionary = zones[i]
+	# Only in real fighting rooms — never a safe camp or a boss arena.
+	if String(z.get("type", "")) != "combat" or String(z.get("boss", "")) != "":
+		return
+	for id in Story.ALL_SIDE_QUESTS:
+		var sid := String(id)
+		if not get_flag("sq_on_" + sid, false) or get_flag("sq_paid_" + sid, false):
+			continue
+		for step in Story.ALL_SIDE_QUESTS[id].get("steps", []):
+			if String(step.get("kind", "flag")) != "kill":
+				continue
+			var f := String(step["flag"])
+			if get_flag(f, false):
+				continue
+			var need: int = maxi(1, int(step.get("count", 1)))
+			var short: int = need - int(quest_kills.get(f, 0))
+			if short <= 0:
+				continue
+			var kind := String(step.get("target", ""))
+			# Live targets of this kind already here? Let the player hunt them.
+			var live_here := 0
+			for node in get_tree().get_nodes_in_group("enemies"):
+				var e := node as Enemy
+				if e != null and is_instance_valid(e) and not e.dying and e.zone_idx == i and e.kind == kind:
+					live_here += 1
+			if live_here >= short:
+				continue
+			for _n in (short - live_here):
+				var pos := clamp_to_zone(player.global_position + Vector2(
+					randf_range(-240, 240), randf_range(-170, 170)), player.global_position)
+				var q := Enemy.make(self, kind, pos, tiered_level(kind, -1))
+				q.zone_idx = i
+				q.xp_value = 0
+				q.gold_value = 0
+				q.from_quest = true
+				q.force_aggro = true
+				add_enemy(q)
+				burst(pos, Color(0.75, 0.6, 0.42), 10)
+			spawn_text(player.global_position + Vector2(0, -88),
+				"The quarry answers your hunt", Color(0.9, 0.82, 0.6), 2.0)
+
 
 ## HOST (empty-room fix 2026-07-10): a room only builds + spawns on its LOCAL
 ## player's entry, so a room a GUEST walked into FIRST would sit empty — the

@@ -28,8 +28,10 @@ const SIDE_QUESTS := {
 			{"flag": "sq7_relay_vowstone", "text": "Stand a keeper's moment at the Vow-Stone"},
 			{"flag": "sq7_relay_cairn", "text": "Stand a keeper's moment at Korrag's Cairn"},
 			{"flag": "sq7_relay_shelf", "text": "Stand a keeper's moment at the shelf on the void's edge"},
+			{"kind": "kill", "target": "storm_harrier", "count": 3, "flag": "sq7_relay_held",
+				"text": "Hold the relay line — drive off the storm-harriers at the void's edge"},
 		],
-		"reward": {"gold": 220},
+		"reward": {"gold": 220, "gem": true},
 	},
 	"ch7_void_letter": {
 		"name": "For Someone Who Will Remember",
@@ -39,7 +41,7 @@ const SIDE_QUESTS := {
 			{"flag": "sq7_letter_taken", "text": "Take the sealed letter from the void shelf"},
 			{"flag": "sq7_letter_given", "text": "Bring it, seal unbroken, to Elder Maren at the Summit Camp"},
 		],
-		"reward": {"gold": 200},
+		"reward": {"gold": 200, "gem": true},
 	},
 	"ch7_korrags_due": {
 		"name": "Korrag's Due",
@@ -63,6 +65,17 @@ const QUEST_ITEMS := {
 }
 
 const CONVOS := {
+	# "For Someone Who Will Remember" — illustrated coda (2026-08-17). The
+	# turn-in chains here via "scene"; plate quests/quest_void_letter.png uses
+	# Elder Maren's canon splash as the design ref.
+	"void_letter_scene": {"cinematic": true, "start": "vl1", "nodes": {
+		"vl1": {"who": "Narrator", "cue": "q_void_letter",
+			"text": "At the summit camp, Elder Maren turns the sealed letter over once — the wax unbroken, the hand on it long dead — and does not open it. Some things are carried, not read. She sets it where the firelight can reach it, for whoever the void meant it for.",
+			"next": "vl_fade"},
+		"vl_fade": {"who": "Narrator", "cue": "fade",
+			"text": "It will be remembered. That was the whole of the asking.", "next": ""},
+	}},
+
 	# OVERRIDES ch7_zones.gd's ch7_wander_keeper — first-meeting flow
 	# unchanged; the ch7_vasse_met revisit now leads to Vasse's ask
 	# (accept), and quest-state variants handle reminder / completion.
@@ -211,7 +224,7 @@ const CONVOS := {
 		"m_letter": {"who": "Narrator", "text": "She holds out one hand, palm up — the summit's whole authority in five patient fingers.",
 			"choices": [
 				{"text": "Give her the letter, seal unbroken. \"From the void shelf. Addressed to someone who will remember. I did the arithmetic, Maren.\"",
-					"resonance": 3.0, "flags": {"sq7_letter_given": true}, "lose_item": "ch7_void_letter", "next": "m_letter2"},
+					"resonance": 3.0, "flags": {"sq7_letter_given": true}, "lose_item": "ch7_void_letter", "scene": "void_letter_scene", "next": "m_letter2"},
 				{"text": "\"...Not yet. It's still deciding whether it's for you.\" Keep the pack shut.", "next": ""},
 			]},
 		"m_letter2": {"who": "Narrator", "text": "She takes it like something that might go off — then turns it over, reads the address, and stops. All of her. For three full seconds the summit's one fixed point is an old woman not breathing. 'I know this hand,' she says at last, and does not say from where, and you understand that you have just watched sixty years arrive in one envelope. She sets it inside her coat, against the sternum. 'It will be read, bearer. After the stair. Some things you do not open with a storm watching — and your arithmetic was right. I remember EVERYTHING.'", "next": ""},

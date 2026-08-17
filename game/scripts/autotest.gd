@@ -2493,6 +2493,7 @@ func _run_campaign_ch2() -> void:
 	await _test_ch7_chapter()
 	await _test_side_quests()
 	await _test_quest_verbs()
+	await _test_quest_quarry()
 	await _test_quest_abandonment()
 	await _test_ch1_quests()
 	await _test_pc_curios()
@@ -5172,6 +5173,75 @@ func _test_quest_verbs() -> void:
 	print("ok: quest verbs (kill step, item/gem/kept rewards, sq_kept_ persists, q_ cue family + scene)")
 
 
+## KILL-step completability guard (2026-08-17): rooms build once and cleared
+## rooms never respawn, so a kill-quest whose target rooms are gone must still be
+## finishable — game_world._ensure_quest_quarry tops up a fighting room with
+## loose quarry. Verify it spawns the quarry when short + absent, that they carry
+## the from_quest tag (so they count at zero reward), and that it stays hands-off
+## a room that already has enough live targets.
+func _test_quest_quarry() -> void:
+	var combat_zi := -1
+	for zi in game.zone_count:
+		if String(game.zones[zi].get("type", "")) == "combat" and String(game.zones[zi].get("boss", "")) == "":
+			combat_zi = zi
+			break
+	if combat_zi < 0:
+		print("ok: quest quarry guard (no combat room in this world — soft skip)")
+		return
+	var snap_flags: Dictionary = game.flags.duplicate(true)
+	var snap_kills: Dictionary = game.quest_kills.duplicate(true)
+	var snap_pos: Vector2 = game.player.global_position
+	game.quest_kills.clear()
+	Story.ALL_SIDE_QUESTS["__qq_test"] = {
+		"name": "Quarry Test", "chapter": game.chapter_id,
+		"steps": [{"kind": "kill", "target": "wolf", "count": 3, "flag": "__qq_done", "text": "cull"}],
+		"reward": {"gold": 1},
+	}
+	game.set_flag("sq_on___qq_test")
+	game.player.global_position = game.room_center(combat_zi)
+	var before := 0
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e != null and is_instance_valid(e) and e.from_quest and e.kind == "wolf" and e.zone_idx == combat_zi:
+			before += 1
+	game._ensure_quest_quarry(combat_zi)
+	await _frames(2)
+	var quarry: Array = []
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e != null and is_instance_valid(e) and e.from_quest and e.kind == "wolf" and e.zone_idx == combat_zi:
+			quarry.append(e)
+	if quarry.size() - before < 3:
+		_fail("quest quarry: expected 3 loose wolves spawned, got %d" % (quarry.size() - before))
+		await get_tree().create_timer(60.0).timeout
+		return
+	if int(quarry[0].xp_value) != 0 or int(quarry[0].gold_value) != 0:
+		_fail("quest quarry must pay zero XP/gold (chapter budget)")
+		await get_tree().create_timer(60.0).timeout
+		return
+	# Hands-off: with 3 live quarry already here, a second call adds nothing.
+	game._ensure_quest_quarry(combat_zi)
+	await _frames(2)
+	var after := 0
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e != null and is_instance_valid(e) and e.from_quest and e.kind == "wolf" and e.zone_idx == combat_zi:
+			after += 1
+	if after != quarry.size():
+		_fail("quest quarry over-spawned when the room already held enough (%d -> %d)" % [quarry.size(), after])
+		await get_tree().create_timer(60.0).timeout
+		return
+	for e in quarry:
+		if is_instance_valid(e):
+			e.queue_free()
+	await _frames(1)
+	Story.ALL_SIDE_QUESTS.erase("__qq_test")
+	game.player.global_position = snap_pos
+	game.quest_kills = snap_kills
+	game.flags = snap_flags
+	print("ok: quest quarry guard (loose quarry top up a cleared room; from_quest zero-reward; no over-spawn)")
+
+
 ## Quest ABANDONMENT + DISCOVERY (2026-07-17). Two halves of one feature:
 ## a quest you accept and never finish is settled at the chapter's victory
 ## (the pledge you were PAID for is revoked, plus the lean for keeping it),
@@ -5424,7 +5494,7 @@ func _test_ch5_quests() -> void:
 	var chains := {
 		"ch5_forty_mouths": ["ch5_grain_guarded", "ch5_grain_taken", "ch5_grain_given"],
 		"ch5_spring_song": ["ch5_verse_taken", "ch5_verse_given"],
-		"ch5_count_sleepers": ["ch5_census_chapel", "ch5_census_vein", "ch5_census_told"],
+		"ch5_count_sleepers": ["ch5_census_chapel", "ch5_census_vein", "ch5_census_stilled", "ch5_census_told"],
 	}
 	for sqid in chains:
 		var before: int = game.player.gold
@@ -5546,8 +5616,10 @@ func _test_ch2_quests() -> void:
 	var snap_flags: Dictionary = game.flags.duplicate(true)
 	var snap_standing: Dictionary = game.player.faction_standing.duplicate(true)
 	var gold0: int = game.player.gold
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)  # ch2 quests now pay gems
+	var snap_drops: Array = game.dropped_loot.duplicate(true)
 	var chains := {
-		"still_blue": ["mill_seen", "mill_told"],
+		"still_blue": ["mill_road_cleared", "mill_seen", "mill_told"],
 		"bread_for_the_road": ["loaf_taken", "loaf_given"],
 		"ash_for_aldric": ["ash_taken", "ash_given"],
 	}
@@ -5586,6 +5658,8 @@ func _test_ch2_quests() -> void:
 		return
 	game.player.gold = gold0
 	game.player.faction_standing = snap_standing
+	game.player.gem_bag = snap_gems
+	game.dropped_loot = snap_drops
 	game.flags = snap_flags
 	print("ok: ch2 side quests (still_blue, bread_for_the_road, ash_for_aldric — single payouts)")
 
@@ -5624,8 +5698,10 @@ func _test_ch6_quests() -> void:
 	var snap_flags: Dictionary = game.flags.duplicate(true)
 	var snap_standing: Dictionary = game.player.faction_standing.duplicate(true)
 	var gold0: int = game.player.gold
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)  # ch6 quests now pay gems
+	var snap_drops: Array = game.dropped_loot.duplicate(true)
 	var chains := {
-		"ch6_far_shore": ["sq6_shore_seen", "sq6_shore_told"],
+		"ch6_far_shore": ["sq6_shore_seen", "sq6_shore_cleared", "sq6_shore_told"],
 		"ch6_gate_bread": ["sq6_bread_taken", "sq6_bread_left"],
 		"ch6_kesh_tally": ["sq6_tally_shrine", "sq6_tally_pool", "sq6_tally_cleared", "sq6_tally_told"],
 	}
@@ -5666,6 +5742,8 @@ func _test_ch6_quests() -> void:
 		return
 	game.player.gold = gold0
 	game.player.faction_standing = snap_standing
+	game.player.gem_bag = snap_gems
+	game.dropped_loot = snap_drops
 	game.flags = snap_flags
 	print("ok: ch6 side quests (ch6_far_shore, ch6_gate_bread, ch6_kesh_tally — single payouts + standings)")
 
@@ -5678,13 +5756,15 @@ func _test_ch7_quests() -> void:
 	var snap_flags: Dictionary = game.flags.duplicate(true)
 	var snap_standing: Dictionary = game.player.faction_standing.duplicate(true)
 	var gold0: int = game.player.gold
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)  # ch7 quests now pay gems
+	var snap_drops: Array = game.dropped_loot.duplicate(true)
 	for iid in ["ch7_void_letter", "ch7_korrag_token"]:
 		if Items.make_quest_item(String(iid)).is_empty():
 			_fail("ch7 quest item '%s' did not resolve" % iid)
 			await get_tree().create_timer(60.0).timeout
 			return
 	var chains := {
-		"ch7_relay_stands": ["sq7_relay_cairn", "sq7_relay_shelf", "sq7_relay_vowstone"],
+		"ch7_relay_stands": ["sq7_relay_cairn", "sq7_relay_shelf", "sq7_relay_vowstone", "sq7_relay_held"],
 		"ch7_void_letter": ["sq7_letter_taken", "sq7_letter_given"],
 		"ch7_korrags_due": ["sq7_token_taken", "sq7_cairn_cleared", "sq7_token_left"],
 	}
@@ -5722,6 +5802,8 @@ func _test_ch7_quests() -> void:
 		return
 	game.player.gold = gold0
 	game.player.faction_standing = snap_standing
+	game.player.gem_bag = snap_gems
+	game.dropped_loot = snap_drops
 	game.flags = snap_flags
 	print("ok: ch7 side quests (relay_stands, void_letter, korrags_due — single payouts + standing)")
 
@@ -5795,6 +5877,8 @@ func _test_promises_kept() -> void:
 	# Drive both chains: no early payout, pays once on the last step.
 	var snap_flags: Dictionary = game.flags.duplicate(true)
 	var gold0: int = game.player.gold
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)  # facing_home + nine_names now pay gems
+	var snap_drops: Array = game.dropped_loot.duplicate(true)
 	var chains := {
 		"ch3_facing_home": ["ch3_fenna_son_rested", "ch3_fenna_told"],
 		"ch4_nine_names": ["ch4_vents_capped", "ch4_names_carved"],
@@ -5826,6 +5910,8 @@ func _test_promises_kept() -> void:
 			await get_tree().create_timer(60.0).timeout
 			return
 	game.player.gold = gold0
+	game.player.gem_bag = snap_gems
+	game.dropped_loot = snap_drops
 	game.flags = snap_flags
 	print("ok: promises kept (facing_home, nine_names — single payouts; beat variants resolve)")
 

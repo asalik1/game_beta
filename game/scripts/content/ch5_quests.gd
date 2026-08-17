@@ -33,7 +33,7 @@ const SIDE_QUESTS := {
 			{"flag": "ch5_verse_taken", "text": "Have Ottar set the spring song down in writing"},
 			{"flag": "ch5_verse_given", "text": "Read the verse to Ansa of the Shore at the Last Fire"},
 		],
-		"reward": {"gold": 120},
+		"reward": {"gold": 120, "gem": true},
 	},
 	"ch5_count_sleepers": {
 		"name": "Count the Sleepers",
@@ -42,9 +42,11 @@ const SIDE_QUESTS := {
 		"steps": [
 			{"flag": "ch5_census_chapel", "text": "Count the congregation in the Buried Chapel"},
 			{"flag": "ch5_census_vein", "text": "Count the oldest sleeper, in the Vein of the Queen"},
+			{"kind": "kill", "target": "hushcaller", "count": 3, "flag": "ch5_census_stilled",
+				"text": "Still the hushcallers that wake among the counted dead"},
 			{"flag": "ch5_census_told", "text": "Bring the census back to Tracker Yri"},
 		],
-		"reward": {"gold": 180},
+		"reward": {"gold": 180, "gem": true},
 	},
 }
 

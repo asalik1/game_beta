@@ -40,7 +40,7 @@ const SIDE_QUESTS := {
 			{"flag": "ch4_refund_taken", "text": "Take crew five's wages back from Nix's stall"},
 			{"flag": "ch4_refund_given", "text": "Bring the pouch to Smith Petra at the Cinder Gate"},
 		],
-		"reward": {"gold": 150},
+		"reward": {"gold": 150, "gem": true},
 	},
 	"quench_prayer": {
 		"name": "The Quench Prayer",
@@ -50,7 +50,7 @@ const SIDE_QUESTS := {
 			{"flag": "ch4_token_taken", "text": "Carry Harl's water-quenched token into the deep"},
 			{"flag": "ch4_token_left", "text": "Set it on the lip of the Ember Font"},
 		],
-		"reward": {"gold": 120},
+		"reward": {"gold": 120, "gem": true, "kept": "sq_kept_quench"},
 	},
 }
 

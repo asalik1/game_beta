@@ -104,37 +104,45 @@ Adopt as a standing rule for everything below (and for new quests):
 
 ---
 
-## 1b. Status (2026-08-17)
+## 1b. Status — WHAT'S BUILT (2026-08-17)
 
-**Slice 1 of Layer A is BUILT + the quest-illustration hook (owner ask,
-this pass).** Shipped: the `kill` step kind, the `item`/`gem`/`kept` reward
-keys, `sq_kept_` as a persistent per-character prefix, and — reusing the
-chapter-opener storybook — a `"cinematic": true` convo opt-in, a `q_<base>`
-cue family (per-class `q_<base>_<class>` resolves automatically when the
-plate exists), and a `"scene"` convo-choice key that chains an illustrated
-beat after a choice. Worked example: the Heron Feather (the hat) turn-in
-now closes on an opener-style plate (`quests/quest_hat.png`), and
-`hunters_rounds` pays a gem + a `sq_kept_hunter_warden` mark. Suite-covered
-(`_test_quest_verbs`). Not yet built: `hunt`/`escort`/`defend`/`timed`/
-`deliver` step kinds, `keepsake`/`beat` rewards, Layers B–F. Details in
-§3.5.
+**Only Layer A (Quest verbs) has code. Layers B–F are proposal-only, zero
+code.** Precisely:
 
-**Roster retrofits (first batch — real combat objectives on existing
-couriers):** three quests that were "carry A to B" now demand action and
-leave a mark, using the `kill` step:
-- **The Hunter's Rounds (ch1)** — mark the 3 landmarks AND thin the wolf
-  pack the hunter warns of (`kill wolf ×3`, `hunter_pack_thinned`);
-  already pays gem + `sq_kept_hunter_warden`.
-- **Forty Mouths (ch5)** — drive the winterfang off the toll-cache before
-  recovering the grain (`kill winterfang ×3`, `ch5_grain_guarded`); now
-  pays a gem too.
-- **Korrag's Due (ch7)** — put down the void-shades circling the cairn
-  before leaving the token (`kill void_shade ×2`, `sq7_cairn_cleared`);
-  leaves `sq_kept_korrag_honored`.
-Each shows live `(0/3)` progress in the journal; tests updated + bag-leak
-guarded; full suite green. Remaining couriers/pilgrimages are the next
-pass (verbs where the fiction supports them; illustrated turn-ins on the
-emotionally-resonant ones).
+**✅ Layer A — Quest verbs: COMPLETE for the whole 24-quest roster.**
+- Engine: the `kill` step kind (host-authoritative counter,
+  `game_base.quest_kills`, journal shows live `(have/need)`); the
+  `item`/`gem`/`kept` reward keys (`kept` persists via the `sq_kept_`
+  prefix); the quest-illustration hook — a `"cinematic": true` convo
+  opt-in + a `q_<base>` cue family (per-class `q_<base>_<class>` auto-wins
+  when the plate exists) + a `"scene"` convo-choice key that chains an
+  illustrated beat after a turn-in.
+- **Completability guard** (`game_world._ensure_quest_quarry`): rooms build
+  once and cleared rooms never respawn, so a kill-step whose target rooms
+  were cleared before you accepted would strand — the world now tops up a
+  fighting room with loose zero-reward quarry (`Enemy.from_quest`) only
+  when you're short and the target is absent. Kill-quests are always
+  finishable.
+- Content: **all 24 side quests retrofitted, matched to tone.** 10 carry a
+  `kill` objective (placed only where the location is genuinely dangerous —
+  hunters_rounds, still_blue, ch3_unfilled_row, out_of_tolerance,
+  forty_mouths, count_sleepers, far_shore, kesh_tally, relay_stands,
+  korrags_due; + ch4_nine_names' existing boss). ~every quest pays a gem;
+  **11 leave a persistent `sq_kept_` mark** (the consequence substrate).
+  **5 have illustrated turn-ins** (canon-adhering Codex plates): the hat,
+  facing_home, void_letter, ash_for_aldric, bread_for_the_kneeling. The
+  quiet/grief quests got marks + illustrations, never bolted-on combat.
+- Suite: `_test_quest_verbs` + `_test_quest_quarry` + every chapter's
+  quest test (ch1–7 + promises) green; convo integrity green.
+- **Not built even in Layer A:** the `hunt`/`escort`/`defend`/`timed`/
+  `deliver` step kinds and the `keepsake`/`beat` reward keys (only `kill`
+  + item/gem/kept shipped). No side quest forks on class yet, so the
+  per-class illustration path is wired but unused.
+
+**❌ Layers B–F — NOT built (proposal only, zero code):** the Road Deck
+(§4), the Unlisted hidden bosses (§5), portal-stone pockets (§6),
+pets + minigames (§7), easter eggs (§8). The sections below are the
+design, not the state of the code.
 
 ## 2. The six layers (each shippable alone; §9 orders them)
 
@@ -153,9 +161,15 @@ emotionally-resonant ones).
 
 ### 3.1 Step kinds (`steps[].kind`, default `flag` — every existing quest keeps working)
 - `flag` — today's behavior.
-- `kill` — `{kind, count}`; run-scoped counter (the bounty
-  `bounty_progress` plumbing already fans kills out incl. co-op credit,
-  `game_base.gd:1222`). Only counts kills after accept.
+- `kill` — `{target, count}`; run-scoped counter (`game_base.quest_kills`,
+  host-authoritative, hooked in `on_enemy_died`). **Completability guard
+  (`game_world._ensure_quest_quarry`, BUILT):** rooms build once and
+  cleared rooms never respawn, so counting ambient mobs alone would strand
+  a quest whose target rooms were cleared before you accepted it. On
+  entering a combat room while the step is short and its target isn't
+  present, the world tops up with LOOSE quarry (zero XP/gold, `from_quest`
+  so they still count, not sealed into the room). Natural play never
+  triggers it; only the cleared/stuck case does.
 - `hunt` — spawns ONE named elite (`kind` + affix + display name) into a
   seeded room ahead of the player on accept; step done on its death.
   The "there is a specific wolf" quest — cheap, huge feel.
@@ -185,20 +199,31 @@ becomes the best farm in its chapter.
 5. One MARK: `kept` or `beat` — the world reads it at least once later.
    (One `req_wanderer` roll for giver + object where scarcity helps.)
 
-### 3.4 Retrofits (one verb each; ids from the audit)
-- `hunters_rounds` (ch1) — each waypoint has the ambush the hunter warned
-  of (`hunt` a named beast at the third; his tracks are the tell).
-- `oslas_debt` (ch1) — `deliver` a real pouch; the Toll card can demand it.
-- `bread_for_the_road` (ch2) — `timed` 6 rooms; stale bread pays half and
-  Ivo remembers (beat).
-- `ch3_facing_home` — `escort` the corpse-bearer sexton to Alder Row.
-- `ch5_forty_mouths` — the wagon cache is guarded (`kill` the scavenger
-  pack); skimming writes `kept` and Yri's ch7 line changes.
-- `ch6_kesh_tally` — poaching blooms spawns wildfang poachers two rooms
-  on (a Road Deck follow-up card, `req_flag`).
-- `ch7_korrags_due` — slapping the Vow-Stone wakes a revenant (`hunt`).
-- `heron_feather` — untouched, but write `sq_kept_hat` and the boy grows
-  up (§8 egg 1).
+### 3.4 Retrofits — DONE (all 24 side quests upgraded, 2026-08-17)
+The full roster was retrofitted with the built tools, matched to each
+quest's TONE (combat only where the location is genuinely dangerous; the
+tender/grief quests get gem + persistent mark, never bolted-on combat):
+
+- **Combat objective (`kill` step)** — 10 quests: `hunters_rounds` (wolf),
+  `still_blue` (blightwolf, the blighted mill road), `ch3_unfilled_row`
+  (gravewalker), `out_of_tolerance` (slag_brute), `ch5_forty_mouths`
+  (winterfang), `ch5_count_sleepers` (hushcaller, the Vein of the Queen),
+  `ch6_far_shore` (root_shambler, deep root gallery), `ch6_kesh_tally`
+  (bog_lurker), `ch7_relay_stands` (storm_harrier, the void's edge),
+  `ch7_korrags_due` (void_shade). Plus `ch4_nine_names`, which already
+  had its boss kill. Journal shows live `(0/N)`.
+- **Gem reward** — added to ~every quest so completions feel worth it.
+- **Persistent `sq_kept_` mark** — 11 quests (oak_debt, flame_lit,
+  mill_truth, aldric_ash, sexton_stone, quench, hunter_warden,
+  kesh_survey, korrag_honored, far_shore, fenna_son) — the substrate a
+  later beat can read; the consequence layer starts here.
+- **Illustrated turn-in** — `heron_feather` (the hat), the opener-style
+  plate (§3.5). The other tender quests (facing_home, bread_kneeling,
+  void_letter) are candidates for the same treatment in an art pass.
+
+Every affected autotest chain was extended and bag snapshot/restore added
+wherever a quest now pays a gem. Tone call held: the quiet quests stayed
+quiet, so the variety reads as intentional, not uniform.
 
 ### 3.5 Quest illustrations — BUILT (owner ask 2026-08-17: "copy how we generated art for opening scenes")
 

@@ -12,10 +12,12 @@ const SIDE_QUESTS := {
 		"chapter": "ch2",
 		"desc": "Widow Sera's mill stood on the Greyrun — grey walls, and a door she repainted blue every spring for twenty years. She wants to know if the door held.",
 		"steps": [
+			{"kind": "kill", "target": "blightwolf", "count": 2, "flag": "mill_road_cleared",
+				"text": "Cut through the blightwolves on the Greyrun road to the mill"},
 			{"flag": "mill_seen", "text": "Find the mill on the Greyrun — see whether the blue door stands"},
 			{"flag": "mill_told", "text": "Bring Sera the truth"},
 		],
-		"reward": {"gold": 150},
+		"reward": {"gold": 150, "gem": true, "kept": "sq_kept_mill_truth"},
 	},
 	"bread_for_the_road": {
 		"name": "Bread for the Road",
@@ -25,7 +27,7 @@ const SIDE_QUESTS := {
 			{"flag": "loaf_taken", "text": "Take Sera's loaf from Maren's camp"},
 			{"flag": "loaf_given", "text": "Deliver it to Scholar Ivo in the Crystal Deeps"},
 		],
-		"reward": {"gold": 150, "standing": {"accord": 2}},
+		"reward": {"gold": 150, "gem": true, "standing": {"accord": 2}},
 	},
 	"ash_for_aldric": {
 		"name": "Ash for the Old Knight",
@@ -35,7 +37,7 @@ const SIDE_QUESTS := {
 			{"flag": "ash_taken", "text": "Take the sealed jar from Scholar Ivo in the Crystal Deeps"},
 			{"flag": "ash_given", "text": "Set it by Ser Aldric's fire at Maren's camp"},
 		],
-		"reward": {"gold": 200},
+		"reward": {"gold": 200, "gem": true, "kept": "sq_kept_aldric_ash"},
 	},
 }
 
@@ -47,6 +49,17 @@ const QUEST_ITEMS := {
 }
 
 const CONVOS := {
+	# "Ash for the Old Knight" — illustrated coda (2026-08-17). Turn-in chains
+	# here via "scene"; plate quests/quest_ash_aldric.png uses Ser Aldric's
+	# canon splash as the design ref (the burned-out legend at his fire).
+	"ash_aldric_scene": {"cinematic": true, "start": "aa1", "nodes": {
+		"aa1": {"who": "Narrator", "cue": "q_ash_aldric",
+			"text": "Ser Aldric takes the sealed jar of Bastion ash in two scarred hands and holds it a long moment at his fire — the last knight of the Guard, who spent his ember on a killing blow that did not take, keeping a commission sixty years late. He does not open it either. He only nods, once, soldier to soldier.",
+			"next": "aa_fade"},
+		"aa_fade": {"who": "Narrator", "cue": "fade",
+			"text": "\"Tell Ivo it's paid,\" he says. It is the only thing he says.", "next": ""},
+	}},
+
 	# OVERRIDES ch2_hub.gd's "ch2_refugee" — verbatim copy, extended:
 	# r1 gains choices (Still Blue accept / bread courier / leave), and the
 	# mill_told variant now flows to r_after so the bread ask stays
@@ -177,7 +190,7 @@ const CONVOS := {
 				{"text": "Set a sealed jar by the fire. \"Bastion ash, ser. Ivo kept your commission.\"",
 					"req_flag": "ash_taken", "req_not_flag": "ash_given",
 					"lose_item": "bastion_ash", "flags": {"ash_given": true},
-					"resonance": 2.0, "next": "p_ash"},
+					"resonance": 2.0, "scene": "ash_aldric_scene", "next": "p_ash"},
 			]},
 
 		# -- Part 1: the killing blow, and the hollow it left.

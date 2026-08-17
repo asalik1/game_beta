@@ -22,9 +22,11 @@ const SIDE_QUESTS := {
 		"desc": "Fisher Dov hasn't rowed past the leaning reeds since midsummer, and nobody has seen the far shore. Find what the Root keeps of it — and come back and tell him true.",
 		"steps": [
 			{"flag": "sq6_shore_seen", "text": "Find the far shore's remainders in the deep root gallery"},
+			{"kind": "kill", "target": "root_shambler", "count": 2, "flag": "sq6_shore_cleared",
+				"text": "Break the root-shamblers barring the deep gallery"},
 			{"flag": "sq6_shore_told", "text": "Return to Fisher Dov at the Pilgrim Gate — and tell it true"},
 		],
-		"reward": {"gold": 150},
+		"reward": {"gold": 150, "gem": true, "kept": "sq_kept_far_shore"},
 	},
 	"ch6_gate_bread": {
 		"name": "Bread Between Camps",
@@ -34,7 +36,7 @@ const SIDE_QUESTS := {
 			{"flag": "sq6_bread_taken", "text": "Take the gate camp's loaf from Deacon Vela"},
 			{"flag": "sq6_bread_left", "text": "Set it on the table between the schism camps"},
 		],
-		"reward": {"gold": 120, "standing": {"choir": 2}},
+		"reward": {"gold": 120, "gem": true, "standing": {"choir": 2}},
 	},
 	"ch6_kesh_tally": {
 		"name": "Kesh's Tally",

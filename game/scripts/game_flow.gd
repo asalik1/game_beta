@@ -1140,6 +1140,11 @@ func on_enemy_died(e: Enemy) -> void:
 	if e.xp_value > 0 or e.gold_value > 0 or e.elite:
 		note_kill(e.kind)  # codex completion (scenery props and event mood spawns don't count)
 		quest_kill_note(e.kind)  # KILL-step quest progress (host-authoritative, same gate as a real kill)
+	elif e.from_quest:
+		# Loose quest quarry pay no XP/gold (so they don't touch the fixed chapter
+		# budget) but MUST still advance their KILL-step — else spawning them was
+		# pointless. note_kill stays gated (they're not authored content).
+		quest_kill_note(e.kind)
 	if e.elite:
 		run_elites += 1
 		bounty_progress("elite_kills")

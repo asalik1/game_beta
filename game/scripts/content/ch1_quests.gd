@@ -15,7 +15,7 @@ const SIDE_QUESTS := {
 			{"flag": "osla_pouch_taken", "text": "Carry Osla's coin pouch"},
 			{"flag": "osla_debt_paid", "text": "Leave it in the Hollow Oak's offering hollow"},
 		],
-		"reward": {"gold": 120},
+		"reward": {"gold": 120, "gem": true, "kept": "sq_kept_oak_debt"},
 	},
 	"hunters_rounds": {
 		"name": "The Hunter's Rounds",
@@ -42,7 +42,7 @@ const SIDE_QUESTS := {
 			{"flag": "pine_taken", "text": "Carry the pilgrim's stick of pine"},
 			{"flag": "pine_lit", "text": "Light it at the Drowned Chapel's altar"},
 		],
-		"reward": {"gold": 100},
+		"reward": {"gold": 100, "gem": true, "kept": "sq_kept_flame_lit"},
 	},
 }
 
