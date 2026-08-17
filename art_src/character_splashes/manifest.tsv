@@ -81,3 +81,41 @@ boss	veyx	Veyx, the Unchained Current	living lightning storm-drake
 boss	echo	The Echo of the Unnamed	faceless echo-knight of forgotten vows
 boss	stormmouth	Cyrraeth, Mouth of the Storm	apocalyptic storm dragon
 npc	scholar_ivo	Scholar Ivo	chronicler of the Crystal Deeps, catalogues the Waking
+mob	wolf	Blighted Wolf	ch1 melee beast - a gaunt blight-touched wolf, mangy and fearless
+mob	spider	Marsh Spider	ch1 melee beast - a huge bristling marsh spider
+mob	skeleton	Hollow Soldier	ch1 melee undead - an armored skeletal soldier, rusted mail and notched blade
+mob	zombie	Risen Corpse	ch1 melee undead - a shambling risen corpse, bloated and rotting
+mob	stormcult	Choir Cantor	ch1 ranged caster - a robed choir cantor raising a censer, chanting
+mob	blightwolf	Waking Wolf	ch2 melee beast - a blight-warped wolf, quills of corruption along its spine
+mob	bogspider	Greyrun Lurker	ch2 melee beast - a grey marsh lurker, a long-limbed ambush predator
+mob	beastkin_raider	Wildfang Raider	ch2 melee warrior - a savage beastkin raider in bone and hide armor, wielding a heavy blade
+mob	sporeshambler	Spore Shambler	ch2 melee beast - a lumbering fungal shambler, its body crusted with mushrooms
+mob	beastkin_howler	Wildfang Howler	ch2 ranged warrior - a lean beastkin howler, throat thrown back mid-howl, carrying a bow
+mob	wildkin_ranger	Wildkin Ranger	ch2 ranged warrior - a hooded wildkin ranger drawing a longbow, cloaked in leaf and hide
+mob	duneprowler	Dune Prowler	ch2 melee beast - a sinewy desert prowler, a big predatory cat-beast
+mob	sun_bleached	Sun-Bleached Husk	ch2 melee undead - a sun-bleached husk, desiccated bandage-wrapped remains
+mob	frost_husk	Frost-Bound Soldier	ch2 melee construct - a frost-bound armored soldier, ice crusting its steel
+mob	deep_stalker	Crystal Stalker	ch2 melee beast - a crystalline stalker, a chitinous cave predator studded with shards
+mob	null_acolyte	Null Acolyte	ch2 ranged caster - a robed null acolyte, hands raised, unravelling into nothing
+mob	void_husk	Voidbound Husk	ch2 melee caster - a voidbound husk, a skeletal mage wreathed in dark energy
+mob	gravewalker	Unburied Walker	ch3 melee undead - an unburied walker, a grave-soaked corpse trailing shroud-cloth
+mob	barrow_wight	Barrow Wight	ch3 melee undead - a barrow wight, a withered armored tomb-guardian
+mob	vale_mourner	Vale Mourner	ch3 ranged caster - a veiled vale mourner in black funeral robes, keening
+mob	casket_creeper	Casket Creeper	ch3 melee beast - a casket creeper, a scuttling grave-thing born from a broken coffin
+mob	plague_chanter	Plague Chanter	ch3 ranged caster - a plague chanter, a hunched ratkin caster clutching a bone talisman
+mob	cinder_whelp	Cinder Whelp	ch4 melee beast - a cinder whelp, a small molten-rock beast with glowing cracks
+mob	slag_brute	Slagbound Brute	ch4 melee construct - a slagbound brute, a massive body of cracked stone and magma
+mob	forge_acolyte	Forge Acolyte	ch4 ranged caster - a forge acolyte in scorched robes, cradling furnace-fire
+mob	vent_skitter	Vent Skitter	ch4 melee beast - a vent skitter, an armored insectoid crab-thing with lava-lit joints
+mob	cold_pilgrim	Cold Pilgrim	ch5 melee undead - a cold pilgrim, a frozen traveler locked mid-stride in ice
+mob	winterfang	Winterfang	ch5 melee beast - a winterfang, a great frost-furred wolf-beast breathing cold
+mob	hushcaller	Hushcaller	ch5 ranged caster - a hushcaller, a spectral wailing banshee half-dissolved into mist
+mob	frozen_guard	Frozen Guard	ch5 melee construct - a frozen guard, a royal knight sealed in a shell of blue ice
+mob	bog_lurker	Bog Lurker	ch6 melee beast - a bog lurker, an overgrown amphibious ambusher hung with weed
+mob	root_shambler	Root Shambler	ch6 melee beast - a root shambler, a walking mass of roots and long fungus
+mob	bloom_acolyte	Bloom Acolyte	ch6 ranged caster - a bloom acolyte, a druidic caster crowned in living flowers
+mob	grove_horror	Grove Horror	ch6 melee beast - a grove horror, an antlered plant-beast of bark, thorn and rot
+mob	storm_harrier	Storm Harrier	ch7 melee beast - a storm harrier, a crackling winged storm-beast
+mob	vow_sentinel	Vow Sentinel	ch7 melee construct - a vow sentinel, an ancient armored guardian humming with old oaths
+mob	static_caller	Static Caller	ch7 ranged caster - a static caller, a gaunt storm-caster wreathed in arcing current
+mob	void_shade	Void Shade	ch7 melee undead - a void shade, a shadow-cloaked rogue bleeding darkness

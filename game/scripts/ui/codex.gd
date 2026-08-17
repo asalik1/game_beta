@@ -51,8 +51,9 @@ const SECTIONS := [
 ## Field notes pages (chips) — the prose that used to head the monster and
 ## gear shelves, plus the old Gems/Bags/Rules gear sub-tabs.
 const NOTE_PAGES := [["elites", "Elites & Temptations"], ["gear", "Gear rules"], ["gems", "Gem rules"], ["bags", "Bags & consumables"]]
-## Gallery shelves (chips) — Heroes / Bosses / Folk of the Vale.
-const GALLERY_SHELVES := [["heroes", "Heroes"], ["bosses", "Bosses"], ["npcs", "Folk"]]
+## Gallery shelves (chips) — Heroes / Monsters / Bosses / Folk of the Vale
+## (mirrors the Bestiary rail's Monsters-before-Bosses order).
+const GALLERY_SHELVES := [["heroes", "Heroes"], ["monsters", "Monsters"], ["bosses", "Bosses"], ["npcs", "Folk"]]
 
 const SLOT_LABEL := {"weapon": "Weapons", "helmet": "Helmets", "armor": "Armor", "gloves": "Gloves",
 	"pants": "Pants", "boots": "Boots", "charm": "Charms"}
@@ -2581,7 +2582,7 @@ static func _gallery(m: Menus, list: VBoxContainer, tab: String) -> void:
 			seen_n += 1
 			m.game.call("meta_note_splash", String(e["sprite"]))
 		entries.append(e)
-	var shelf: String = {"heroes": "HEROES", "bosses": "BOSSES", "npcs": "FOLK OF THE VALE"}.get(bucket, "PORTRAITS")
+	var shelf: String = {"heroes": "HEROES", "monsters": "MONSTERS", "bosses": "BOSSES", "npcs": "FOLK OF THE VALE"}.get(bucket, "PORTRAITS")
 	m._lbl(list, "— %s —   met %d / %d" % [shelf, seen_n, entries.size()], 16, Color(0.95, 0.85, 0.5))
 	m._lbl(list, "Painted key art unlocks as you MEET its bearer in conversation. Select a portrait to see the full painting.",
 		12, Color(0.7, 0.72, 0.78))
@@ -2791,9 +2792,19 @@ static func _gallery_entries(m: Menus) -> Array:
 					break
 		if disp == "":
 			disp = slug.capitalize()
+		# Three-way bucket: a boss shelves under Bosses; a splash whose name
+		# resolves to a non-boss enemy KIND (ekind != "") is a Monster; anyone
+		# left — the speaking cast with no enemy form — is Folk. (A creature
+		# that is both a mob and a townsperson, the cultist, shelves as a
+		# Monster: its enemy kind wins.)
+		var gbucket := "npcs"
+		if is_boss:
+			gbucket = "bosses"
+		elif ekind != "":
+			gbucket = "monsters"
 		out.append({"sprite": String(entry["sprite"]), "aka": entry["aka"],
 			"name": disp, "kind": ekind,
-			"bucket": "bosses" if is_boss else "npcs", "sort": disp})
+			"bucket": gbucket, "sort": disp})
 
 	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return String(a.get("sort", a["name"])) < String(b.get("sort", b["name"])))
