@@ -5349,8 +5349,10 @@ func _test_ch4_quests() -> void:
 			return
 	var snap_flags: Dictionary = game.flags.duplicate(true)
 	var gold0: int = game.player.gold
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)  # out_of_tolerance now pays a gem
+	var snap_drops: Array = game.dropped_loot.duplicate(true)
 	var chains := {
-		"out_of_tolerance": ["ch4_core_taken", "ch4_core_returned"],
+		"out_of_tolerance": ["ch4_forge_cleared", "ch4_core_taken", "ch4_core_returned"],
 		"nix_receipts": ["ch4_refund_taken", "ch4_refund_given"],
 		"quench_prayer": ["ch4_token_taken", "ch4_token_left"],
 	}
@@ -5380,6 +5382,8 @@ func _test_ch4_quests() -> void:
 			await get_tree().create_timer(60.0).timeout
 			return
 	game.player.gold = gold0
+	game.player.gem_bag = snap_gems
+	game.dropped_loot = snap_drops
 	game.flags = snap_flags
 	print("ok: ch4 side quests (out_of_tolerance, nix_receipts, quench_prayer - single payouts)")
 
@@ -5481,8 +5485,10 @@ func _test_ch3_quests() -> void:
 		return
 	var snap_flags: Dictionary = game.flags.duplicate(true)
 	var gold0: int = game.player.gold
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)  # unfilled_row now pays a gem
+	var snap_drops: Array = game.dropped_loot.duplicate(true)
 	var chains := {
-		"ch3_unfilled_row": ["row_copied_chapel", "row_copied_reliquary", "row_reported"],
+		"ch3_unfilled_row": ["row_copied_chapel", "row_copied_reliquary", "row_dead_stilled", "row_reported"],
 		"ch3_bread_kneeling": ["vale_bread_left"],
 		"ch3_sexton_stone": ["sexton_stone_left"],
 	}
@@ -5512,6 +5518,8 @@ func _test_ch3_quests() -> void:
 			await get_tree().create_timer(60.0).timeout
 			return
 	game.player.gold = gold0
+	game.player.gem_bag = snap_gems
+	game.dropped_loot = snap_drops
 	game.flags = snap_flags
 	print("ok: ch3 side quests (unfilled_row, bread_kneeling, sexton_stone — single payouts)")
 
@@ -5619,7 +5627,7 @@ func _test_ch6_quests() -> void:
 	var chains := {
 		"ch6_far_shore": ["sq6_shore_seen", "sq6_shore_told"],
 		"ch6_gate_bread": ["sq6_bread_taken", "sq6_bread_left"],
-		"ch6_kesh_tally": ["sq6_tally_shrine", "sq6_tally_pool", "sq6_tally_told"],
+		"ch6_kesh_tally": ["sq6_tally_shrine", "sq6_tally_pool", "sq6_tally_cleared", "sq6_tally_told"],
 	}
 	for sqid in chains:
 		var sid := String(sqid)

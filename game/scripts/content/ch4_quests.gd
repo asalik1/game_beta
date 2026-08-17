@@ -23,12 +23,14 @@ const SIDE_QUESTS := {
 	"out_of_tolerance": {
 		"name": "Out of Tolerance",
 		"chapter": "ch4",
-		"desc": "Overseer Brann can prove the heats climb; he wants one number that goes the other way. Slag left in the Cold Forge goes honestly, completely cold — chip him a core of it.",
+		"desc": "Overseer Brann can prove the heats climb; he wants one number that goes the other way. Slag left in the Cold Forge goes honestly, completely cold — chip him a core of it, once you've cleared the slag-brutes that crowd the heap.",
 		"steps": [
+			{"kind": "kill", "target": "slag_brute", "count": 2, "flag": "ch4_forge_cleared",
+				"text": "Break the slag-brutes crowding the cold heap"},
 			{"flag": "ch4_core_taken", "text": "Chip a cold core from the slag heap in the Cold Forge"},
 			{"flag": "ch4_core_returned", "text": "Bring it back to Overseer Brann at the Cinder Gate"},
 		],
-		"reward": {"gold": 180},
+		"reward": {"gold": 180, "gem": true},
 	},
 	"nix_receipts": {
 		"name": "Nix's Receipts",

@@ -18,13 +18,15 @@ const SIDE_QUESTS := {
 	"ch3_unfilled_row": {
 		"name": "The Unfilled Row",
 		"chapter": "ch3",
-		"desc": "Cantor Ilse wants the Vale's old markers copied word for word — what the stones said when graves still closed, and what the Choir's empty relic cases still promise. Evidence, for when the burying starts.",
+		"desc": "Cantor Ilse wants the Vale's old markers copied word for word — what the stones said when graves still closed, and what the Choir's empty relic cases still promise. Evidence, for when the burying starts. But the dead here do not hold still to be read.",
 		"steps": [
 			{"flag": "row_copied_chapel", "text": "Copy Bram Tallow's headstone at the Hollow Chapel"},
 			{"flag": "row_copied_reliquary", "text": "Copy the empty placards in the Reliquary of Rot"},
+			{"kind": "kill", "target": "gravewalker", "count": 3, "flag": "row_dead_stilled",
+				"text": "Still the gravewalkers rising among the markers"},
 			{"flag": "row_reported", "text": "Bring the copies back to Cantor Ilse at the Vigil Gate"},
 		],
-		"reward": {"gold": 180},
+		"reward": {"gold": 180, "gem": true},
 	},
 	"ch3_bread_kneeling": {
 		"name": "Bread for the Kneeling",
