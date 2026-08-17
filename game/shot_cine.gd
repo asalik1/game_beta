@@ -496,14 +496,13 @@ func _scene_hero(cls: String) -> void:
 	# ranged straggler kept pulling the auto-aimed ult off the pack).
 	var kinds := ["wolf", "beastkin_raider", "blightwolf", "skeleton", "spider",
 		"beastkin_howler", "zombie", "blightwolf"]
-	var horde := kinds + kinds                 # 16 — a wall pressing from one side
-	# Mobs press from the RIGHT; the hero sits left-of-centre with open room to
-	# flee LEFT. A brief beat — mobs only show the per-class danger of running
-	# and shooting; the ULT is saved for the boss fights.
-	p.global_position = rr.position + Vector2(rr.size.x * 0.62, rr.size.y * 0.5)
+	# A frontal WAVE approaching from the RIGHT, FAR enough (≈360px) that it
+	# can't instantly dogpile — the hero has open room to the left and time to
+	# react and kite. (16 immortals at 200px pinned the hero on the spot.)
+	p.global_position = rr.position + Vector2(rr.size.x * 0.6, rr.size.y * 0.5)
 	game.camera.global_position = p.global_position
 	_begin("hero_" + cls)
-	await _arc_surround(horde, p.global_position, 200.0, 0.0, 200.0)   # right-facing arc
+	await _arc_surround(kinds, p.global_position, 360.0, 0.0, 130.0)   # frontal wave, far
 
 	if _play:
 		await _play_record(float(arg("secs", "10")))   # mob beats are brief
