@@ -157,7 +157,8 @@ const HERO_ROOM := {
 	"assassin": 7,   # The Deep Darkwood
 	"warrior": 17,   # The Outer Bailey (ruined keep)
 	"paladin": 20,   # The Inner Ward (keep)
-	"warlock": 22,   # The Throne Approach (keep) — open stone, no tall props to bury him
+	"warlock": 2,    # Darkwood — room 22 (Throne Approach) crashes capture (Vulkan
+	                 # vkEndCommandBuffer); rooms 2/17/20 are safe.
 }
 
 
