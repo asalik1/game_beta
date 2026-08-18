@@ -122,8 +122,13 @@ should work".
   brick-grid wall caps (owner flag). `shot.bat capgap`: 0 blocked on the re-run — the first
   run reported the Sable Court north route ending short at (636,192) with the same
   content: the walker is timing-sensitive; the suite's geometric guard passed ×3.
-- [ ] **P0.6** Owner in-game review → fix flags → merge `gameplay-polish` → main
-  (rebase in the worktree, ff main; `-c merge.renames=false` on the asset gap).
+- [x] **P0.6** Merged (19:40): committed 5444f61 → rebased onto main 0b22c1e (one conflict,
+  `mobile/game/scripts/game_flow.gd` = main's mobile mirror was STALE behind game/; resolved by
+  re-running `sync_mobile.py --apply`, follow-up commit b1b924a) → main fast-forwarded to
+  b1b924a with `merge --ff-only --autostash` because a sibling lane had uncommitted WIP in the
+  main checkout (mob-avoidance fan, boss art) — verified byte-identical before/after; the two
+  entries in the shared stash are not ours. **Owner in-game review pending** — flags reopen
+  here as new rows.
 
 ### P1 — hit-feedback stack (code, ~1 day) — the cheapest big win left
 - [ ] **P1.1 Hit-stop.** 40–70 ms presentation-only freeze on crit / heavy / kill
