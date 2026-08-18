@@ -12,6 +12,7 @@ tools/*
 !tools/content/
 !tools/*.py
 !tools/INDEX.md
+!tools/*.md
 __pycache__/
 
 # Local art backups (replaced originals + generation candidates; never commit)
