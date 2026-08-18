@@ -1210,12 +1210,11 @@ func _run_systems() -> void:
 	s_wpn["passive"] = "kingsblade"
 	s_wpn["passive_dormant"] = true
 	var keep_flags: Dictionary = game.flags.duplicate(true)
-	game.set_flag("s_awakened_warrior", false)
 	game.player.add_item(s_wpn)
 	game.player.equip(s_wpn)
 	if game.player.s_passive() != "kingsblade":
 		return _fail("old-save dormant legendary did not grandfather in live")
-	if Items.describe(s_wpn, false).contains("LOCKED"):
+	if Items.describe(s_wpn).contains("LOCKED"):
 		return _fail("describe still shows LOCKED — the awakening gate should be gone")
 	game.player.cds["a1"] = 0.0
 	game.player.use_ability("a1")

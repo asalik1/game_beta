@@ -304,7 +304,7 @@ static func _tab_econ(m: Menus, list: VBoxContainer) -> void:
 	m._btn(mrow3, "→ Open Bag (gems/reforge)", func() -> void: m.game.menus.open_inventory(), Color(0.9, 0.9, 0.95))
 
 
-## Full gear sets, gems by the crate, bags, mail, S-passive awaken.
+## Full gear sets, gems by the crate, bags, mail.
 static func _tab_items(m: Menus, list: VBoxContainer) -> void:
 	# ------------------------------------------------------------ items ---
 	_section(m, list, "ITEMS & GEMS")
@@ -713,8 +713,8 @@ static func _set_level(m: Menus, target: int) -> void:
 
 
 ## Write 6 fresh saves (one per class) built EXACTLY like a named DPS-bench preset
-## (BenchBuild.PRESETS) — full baked gear/gems/+plus/tree/attr/theme, S legendaries
-## awakened. Free slots only (never overwrites). Shares BenchBuild with the bench,
+## (BenchBuild.PRESETS) — full baked gear/gems/+plus/tree/attr/theme, S weapon
+## passives live. Free slots only (never overwrites). Shares BenchBuild with the bench,
 ## so a generated hero and its bench case are byte-identical. Returns how many made.
 static func create_benchmark_roster(m: Menus, preset_key: String) -> int:
 	if m.game.no_saves:

@@ -636,13 +636,11 @@ func chapter_available(chid: String, replay := false) -> bool:
 # Character history that survives a chapter replay: which opening you
 # played, what you chose in it, and which chapters you have finished.
 # Everything else is story state.
-# "s_awakened_" persists a class's legendary-passive awakening across chapters
-# (round 51b) — it is earned once per character, like completed_.
 # cap_ (2026-07-25 capital rework): Crownfall quest/meet progress describes
 # the CHARACTER — it survives chapter wipes and stays per-head in co-op via
 # the same list §5.4's set_flag routing reads.
 const KEPT_FLAG_PREFIXES := [
-	"opened_", "chose_", "completed_", "s_awakened_", "cap_",
+	"opened_", "chose_", "completed_", "cap_",
 	"saw_chapter_opening_", "sq_kept_",
 ]
 const KEPT_FLAGS := ["owned_the_harm", "excused_the_harm", "walked_away",
@@ -688,10 +686,10 @@ func _wipe_chapter_flags() -> void:
 ## owner in a co-op session — rather than shared WORLD state? The rule reuses
 ## the SAME list that already survives a chapter wipe (KEPT_FLAG_PREFIXES /
 ## KEPT_FLAGS): those flags describe the CHARACTER, not the host's world —
-## which opening they played and chose (opened_/chose_ + the moral KEPT_FLAGS),
-## their own chapter-completion credit (completed_), their legendary-passive
-## awakening (s_awakened_<cls>). A guest setting one must never rewrite the
-## host's (or a sibling guest's), so set_flag keeps them local. EVERY other
+## which opening they played and chose (opened_/chose_ + the moral KEPT_FLAGS)
+## and their own chapter-completion credit (completed_). A guest setting one
+## must never rewrite the host's (or a sibling guest's), so set_flag keeps
+## them local. EVERY other
 ## flag is world state — quest progress, opened ways, one-time reveals, pay-
 ## once desks, shrine/cache/curse once-per-room marks — and routes through the
 ## host so the whole party agrees (game_base.set_flag). Dynamically reached

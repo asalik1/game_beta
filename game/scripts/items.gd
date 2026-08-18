@@ -2719,19 +2719,16 @@ static func gem_buy_price(lvl: int, chid: String) -> int:
 	return int(round(per_gem * weight * Balance.FARM_TAX))
 
 
-## "★ <Passive>". The dormant/LOCKED path is GONE (2026-07-27): the legendary
-## tier retired and every passive is live on pickup — old-save legendaries
-## included (their passive_dormant field is simply ignored now). `awakened`
-## is kept for call-site compatibility and no longer changes the text.
-static func passive_label(item: Dictionary, _awakened := false) -> String:
+## "★ <Passive>". Every passive is live on pickup — the dormant/LOCKED path was
+## retired 2026-07-27 with the legendary tier (old-save legendaries included;
+## their passive_dormant field is simply ignored now).
+static func passive_label(item: Dictionary) -> String:
 	return "★ " + PASSIVES[item["passive"]]
 
 
-## `awakened` (the item's class flag s_awakened_<cls>) governs how a dormant
-## legendary's passive reads: pass game.get_flag(...) from player-facing UI.
 ## `show_sockets` off drops the ◆◇ glyph tail — for screens that render the
 ## REAL socket squares right below the text (inventory equipped column).
-static func describe(item: Dictionary, awakened := false, show_sockets := true) -> String:
+static func describe(item: Dictionary, show_sockets := true) -> String:
 	var bits: Array = []
 	var stats := stats_of(item)
 	for stat in stats:
@@ -2742,7 +2739,7 @@ static func describe(item: Dictionary, awakened := false, show_sockets := true) 
 			bits.append("%s +%d%%" % [STAT_LABEL.get(stat, stat), int(round(v * 100))])
 	var out := ", ".join(bits)
 	if item.has("passive"):
-		out += "  " + passive_label(item, awakened)
+		out += "  " + passive_label(item)
 	var slots: int = item.get("gem_slots", 0)
 	if slots > 0 and show_sockets:
 		var used: int = item.get("gems", []).size()
@@ -2752,9 +2749,9 @@ static func describe(item: Dictionary, awakened := false, show_sockets := true) 
 
 ## Stat-by-stat difference between a candidate item and what's equipped
 ## in that slot ("▲ ATK +5" / "▼ Crit -2%"). For hover tooltips.
-static func diff_text(new_item: Dictionary, old_item, awakened := false) -> String:
+static func diff_text(new_item: Dictionary, old_item) -> String:
 	if old_item == null:
-		return "Slot is empty — pure upgrade:\n" + describe(new_item, awakened)
+		return "Slot is empty — pure upgrade:\n" + describe(new_item)
 	var a := stats_of(new_item)
 	var b := stats_of(old_item)
 	var keys := {}
@@ -2776,7 +2773,7 @@ static func diff_text(new_item: Dictionary, old_item, awakened := false) -> Stri
 	if lines.size() == 1:
 		lines.append("(identical stats)")
 	if new_item.has("passive"):
-		lines.append(passive_label(new_item, awakened))
+		lines.append(passive_label(new_item))
 	return "\n".join(lines)
 
 

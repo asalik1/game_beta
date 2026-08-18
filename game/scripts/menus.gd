@@ -223,12 +223,7 @@ func _item_row(parent: Node, item: Dictionary, text: String) -> void:
 
 ## Hover tooltip comparing an item against what's equipped in its slot.
 func _diff_tip(item: Dictionary) -> String:
-	return Items.diff_text(item, game.local_player.equipment.get(item["slot"]), _awk(item))
-
-
-## Compatibility shim: all unique passives are live on pickup.
-func _awk(_item: Dictionary) -> bool:
-	return true
+	return Items.diff_text(item, game.local_player.equipment.get(item["slot"]))
 
 
 func _hint(vbox: Node, text := "ESC to close", touch_text := "") -> void:
@@ -1552,7 +1547,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 				continue
 			_bag_slot(grid, Art.icon_for(it), "", Items.GRADE_COLOR[it["grade"]],
 				func() -> void:
-					var info := "%s\n\nCompared to what's equipped:\n%s" % [Items.describe(it, _awk(it)), _diff_tip(it)]
+					var info := "%s\n\nCompared to what's equipped:\n%s" % [Items.describe(it), _diff_tip(it)]
 					var equip_cb := func() -> void:
 						game.local_player.equip(it)
 						open_inventory("gear", cat)
@@ -1791,7 +1786,7 @@ func _equipped_row(left: VBoxContainer, slot: String, cat: String) -> void:
 		nm.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		nm.custom_minimum_size = Vector2(text_w, 0)
 		nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var dl := _lbl(text, Items.describe(item, _awk(item), false), 11, Color(0.68, 0.7, 0.76))
+		var dl := _lbl(text, Items.describe(item, false), 11, Color(0.68, 0.7, 0.76))
 		dl.custom_minimum_size = Vector2(text_w, 0)
 		# (No overrun trim here: with autowrap it collapses the label's minimum
 		# height to 1px and the line vanishes — Godot 4.4.)
@@ -2365,7 +2360,7 @@ func open_item_panel(item: Dictionary, at := Vector2(-1, -1), tab := "info") -> 
 ## Info tab: the full stat line + live set-bonus tiers.
 func _item_info_tab(body: VBoxContainer, item: Dictionary) -> void:
 	var p: Player = game.local_player
-	var d := _lbl(body, Items.describe(item, _awk(item)), 13, Color(Items.GRADE_COLOR[item["grade"]], 0.9))
+	var d := _lbl(body, Items.describe(item), 13, Color(Items.GRADE_COLOR[item["grade"]], 0.9))
 	d.custom_minimum_size = Vector2(440, 0)
 	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	# Generic gear deliberately has no signature passive.
@@ -3494,7 +3489,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 		var can_afford: bool = p.gold >= cost
 		# Buying is confirmed from the shared detail popover.
 		var open_cb := func() -> void:
-			var info := "%d gold\n%s\n\nCompared to what's equipped:\n%s" % [cost, Items.describe(it, _awk(it)), _diff_tip(it)]
+			var info := "%d gold\n%s\n\nCompared to what's equipped:\n%s" % [cost, Items.describe(it), _diff_tip(it)]
 			var actions: Array = []
 			if can_afford:
 				var buy_cb := func() -> void:
@@ -3511,7 +3506,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				info += "\n\n(Not enough gold — %d short.)" % (cost - p.gold)
 			_open_detail_popover(Art.icon_for(it), Items.title(it), Items.GRADE_COLOR[it["grade"]], info, actions)
 		_shop_card(gear_grid, Art.icon_for(it), Items.title(it),
-			"%s — %d gold" % [Items.describe(it, _awk(it)), cost],
+			"%s — %d gold" % [Items.describe(it), cost],
 			Items.GRADE_COLOR[it["grade"]], true, open_cb)
 	_lbl(buy, "Upgrade equipped gear", 13, Color(0.6, 0.85, 1.0))
 	if _smith_msg != "":

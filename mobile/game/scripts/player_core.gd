@@ -840,8 +840,8 @@ func set_skin(skin_id: String) -> void:
 	_apply_class_sprite()
 
 
-## Re-resolve the current skin's sprite (e.g. after an S-weapon awakening flips
-## a skin to its awakened form). Safe to call live — same path as set_skin.
+## Re-resolve the current skin's sprite (e.g. after a live skin swap by a QA/dev
+## rig). Safe to call live — same path as set_skin.
 func refresh_skin_sprite() -> void:
 	if sprite != null:
 		_apply_class_sprite()
@@ -1040,18 +1040,15 @@ func play_death_anim() -> void:
 		_clip_locked = true
 
 
-## Passive granted by an equipped S-grade weapon ("" if none) — the SINGLE
-## accessor every kit/effect reads a weapon passive through. Since the legendary
-## tier retired (2026-07-27; see the inline note below) there is NO dormant /
-## awakening-quest gate: a weapon's passive is live the moment it's equipped, and
-## old-save "dormant" legendaries grandfather in (their passive_dormant is ignored).
+## Passive granted by an equipped S-grade weapon ("" if none) — every kit/effect
+## reads the weapon passive through here. Live on pickup: the legendary tier's
+## dormant/awakening gate was retired 2026-07-27, so a passive works the moment
+## its weapon is equipped. Old-save legendaries grandfather in — their stored
+## passive_dormant flag is simply ignored.
 func s_passive() -> String:
 	var w = equipment.get("weapon")
 	if w == null or not w.has("passive"):
 		return ""
-	# (2026-07-27) The dormant/awakening gate is GONE with the legendary tier —
-	# every weapon passive is live on pickup. Old-save legendaries grandfather
-	# in: their stored passive_dormant flag is ignored, the passive just works.
 	return w["passive"]
 
 
@@ -1147,13 +1144,6 @@ func uniq_set_k(prof: String, tier: int, key: String) -> float:
 	if uniq_set_n(prof) < tier:
 		return 0.0
 	return float(Balance.uniq_set(cls, prof, "s%d" % tier).get(key, 0.0))
-
-
-## Is this S weapon's class awakened for this character? (persisted flag)
-func weapon_awakened(w: Dictionary) -> bool:
-	if game == null:
-		return false
-	return bool(game.get_flag("s_awakened_" + String(w.get("cls", cls)), false))
 
 
 func _update_weapon_visual() -> void:

@@ -213,8 +213,8 @@ func _death_mark() -> void:
 	# converge THROUGH it in an X, slashing, then the assassin himself
 	# appears BEHIND it and drives the killing stab home.
 	_ult_sfx()
-	# The weave window (awakened Nightfang): for the mark's duration, Stab and Fan
-	# of Knives lose their shared lockout and fire together — the ult IS the burst.
+	# The weave window (with the mirrorstep S weapon): for the mark's duration, Stab
+	# and Fan of Knives lose their shared lockout and fire together — the ult IS the burst.
 	deathmark_time = rider("ult", "amp_secs")
 	var phantom := skin == "phantom"
 	if phantom:

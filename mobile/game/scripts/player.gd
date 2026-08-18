@@ -597,9 +597,9 @@ func use_ability(slot: String) -> void:
 	# lockout — Stab and Fan of Knives can each be spammed, but never
 	# WOVEN together. Point-blank stab+knives was double dps with ALL
 	# of it feeding the surge lifesteal: an immortality loop.
-	# EXCEPTION: the awakened Nightfang (mirrorstep S weapon) DROPS the lockout
-	# for the Death Mark window — Stab AND Fan weave for a huge burst in that short
-	# 5s. Its 30s ult cd + the BiS/awakening gate keep the lifesteal loop contained.
+	# EXCEPTION: the mirrorstep S weapon DROPS the lockout for the Death Mark
+	# window — Stab AND Fan weave for a huge burst in that short 5s. Its 30s ult
+	# cd + mirrorstep being a single rare BiS pickup keep the lifesteal loop contained.
 	if cls == "assassin" and slot in ["a1", "a3"] \
 			and not (deathmark_time > 0.0 and s_passive() == "mirrorstep"):
 		var twin := "a3" if slot == "a1" else "a1"

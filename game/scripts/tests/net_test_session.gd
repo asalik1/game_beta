@@ -71,7 +71,7 @@ extends Node
 ##   (a) a guest sets a WORLD flag through the real set_flag — the host and
 ##       the guest agree, and a fresh LATE JOINER receives it in its snapshot;
 ##       (a') a host-set flag reaches the guest (both directions);
-##       (a'') a PER-CHARACTER flag (s_awakened_<cls>) stays local — the
+##       (a'') a PER-CHARACTER flag (a kept-prefix flag) stays local — the
 ##       guest sets it and the host never does (classification holds);
 ##   (b) NPC BUSY-LOCK: the host opens a convo; the guest's interact on the
 ##       SAME npc gets no dialogue (a busy bark); the lock releases when the
@@ -1537,14 +1537,14 @@ func _run_host7() -> void:
 		return _fail("host->guest world flag never arrived: %s" % str(r))
 	print("[net_session] host7: host->guest world flag synced")
 
-	# (a'') a PER-CHARACTER flag stays local: the guest sets s_awakened_mage
+	# (a'') a PER-CHARACTER flag stays local: the guest sets a kept-prefix flag
 	# and the host must NEVER receive it (classification, §5.4).
-	r = await _watch(gid, "setflag", {"flag": "s_awakened_mage"})
+	r = await _watch(gid, "setflag", {"flag": "chose_mp13_local_probe"})
 	if r.is_empty() or not bool(r.get("ok", false)):
 		return _fail("guest could not set its per-character flag: %s" % str(r))
 	await get_tree().create_timer(1.0).timeout
-	if game.get_flag("s_awakened_mage", false):
-		return _fail("a per-character flag (s_awakened_mage) leaked to the host")
+	if game.get_flag("chose_mp13_local_probe", false):
+		return _fail("a per-character flag (chose_mp13_local_probe) leaked to the host")
 	print("[net_session] host7: per-character flag stayed local (classification holds)")
 
 	# (b) NPC BUSY-LOCK. The host opens a convo on 'mp13_npc'; the guest's
@@ -1651,7 +1651,7 @@ func _run_host7() -> void:
 
 
 func _run_guest7() -> void:
-	if not await _guest_boot("mage"):  # a mage: its own s_awakened_mage stays home
+	if not await _guest_boot("mage"):  # its per-character probe flag stays home
 		return
 	_rpc_report.rpc_id(1, {"ready": true})
 	if not await _wait_for(func() -> bool: return _finish, 300.0, "host finish signal"):
