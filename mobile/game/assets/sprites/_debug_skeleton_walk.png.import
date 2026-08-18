@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://usfgrgobib3j"
-path="res://.godot/imported/paladin_attackb_e.png-43c822619f902d64479d15a9940d3160.ctex"
+uid="uid://csi7bs3ex64bx"
+path="res://.godot/imported/_debug_skeleton_walk.png-53358b750a64729f4b04972d44ffd265.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/paladin_attackb_e.png"
-dest_files=["res://.godot/imported/paladin_attackb_e.png-43c822619f902d64479d15a9940d3160.ctex"]
+source_file="res://assets/sprites/_debug_skeleton_walk.png"
+dest_files=["res://.godot/imported/_debug_skeleton_walk.png-53358b750a64729f4b04972d44ffd265.ctex"]
 
 [params]
 

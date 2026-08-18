@@ -641,7 +641,7 @@ func chapter_available(chid: String, replay := false) -> bool:
 # the same list §5.4's set_flag routing reads.
 const KEPT_FLAG_PREFIXES := [
 	"opened_", "chose_", "completed_", "cap_",
-	"saw_chapter_opening_",
+	"saw_chapter_opening_", "sq_kept_",
 ]
 const KEPT_FLAGS := ["owned_the_harm", "excused_the_harm", "walked_away",
 	"gave_back", "kept_taking", "fled_theft", "told_truth", "hid_truth",
@@ -673,6 +673,7 @@ func _wipe_chapter_flags() -> void:
 		if keep:
 			kept[fname] = flags[fname]
 	flags = kept
+	quest_kills.clear()  # kill-step counters die with the quests that held them
 	# Quest keepsakes are run-scoped like the flags that earned them:
 	# an undelivered hat does not outlive its world.
 	if has_local_player():
@@ -1072,7 +1073,21 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			# window for guests to read their cards, the world marches on.
 			if dedicated:
 				_server_after_victory(next_ch)
-		if epilogue.is_empty():
+		# Solo: the per-class illustrated closer (CHAPTER_CLOSERS.md) plays on
+		# the Cutscene layer in place of the flat epilogue beat — the boss's
+		# dying lines, then a class-refracted reflection, then fade into the
+		# victory card. Co-op keeps the flat beat for v1: the closer is
+		# per-class and local, and this victory branch is host-authoritative
+		# (a per-client co-op closer is a follow-up, mirroring how net_advance
+		# replays the opener per client).
+		# TODO(MP-24, HIGH — owner 2026-08-17): play each client's OWN class
+		# closer locally in co-op too (see MP_TASKS.md Wave 10).
+		var closer_id := ""
+		if has_local_player():
+			closer_id = chapter_id + "_closing_" + String(player.cls)
+		if closer_id != "" and not net_online() and Story.ALL_CONVOS.has(closer_id):
+			run_cinematic_convo(closer_id, end_it)
+		elif epilogue.is_empty():
 			end_it.call()
 		else:
 			hud.dialogue(epilogue, end_it)
@@ -1136,6 +1151,12 @@ func on_enemy_died(e: Enemy) -> void:
 		Pickup.drop_gold(self, _kill_gold(e.gold_value), e.global_position)
 	if e.xp_value > 0 or e.gold_value > 0 or e.elite:
 		note_kill(e.kind)  # codex completion (scenery props and event mood spawns don't count)
+		quest_kill_note(e.kind)  # KILL-step quest progress (host-authoritative, same gate as a real kill)
+	elif e.from_quest:
+		# Loose quest quarry pay no XP/gold (so they don't touch the fixed chapter
+		# budget) but MUST still advance their KILL-step — else spawning them was
+		# pointless. note_kill stays gated (they're not authored content).
+		quest_kill_note(e.kind)
 	if e.elite:
 		run_elites += 1
 		bounty_progress("elite_kills")
@@ -1162,7 +1183,10 @@ func on_enemy_died(e: Enemy) -> void:
 					spawn_text(e.global_position + Vector2(0, -92), "+ Palimpsest of the Path", Color(0.6, 0.9, 1.0))
 			elif loot_rng.randf() < Balance.ELITE_BAG_CHANCE:
 				# 2026-07-09: bag grade follows the chapter's boss table (like boss bags).
-				player.acquire_bag(Items.make_bag(Balance.roll_bag_grade(loot_chapter(), loot_rng)))
+				# 2026-08-17: bags are items now — drop through give_loot so it lands
+				# LOOSE in the pack (equip it yourself), or on the ground / mail if full.
+				if give_loot({"kind": "bag", "grade": Balance.roll_bag_grade(loot_chapter(), loot_rng)}, e.global_position + Vector2(0, 12)):
+					spawn_text(e.global_position + Vector2(0, -92), "+ Bag", Color(0.95, 0.85, 0.5))
 			# Guaranteed elite material (Slice B; mirror roll_elite_pack): +1 grade,
 			# 2-3 units, ON TOP of the gem/chest/economy above.
 			apply_award_events([roll_material_drop(e.kind, true, e.global_position + Vector2(0, 16))])
@@ -1265,7 +1289,7 @@ func _curse_payout(zi: int) -> void:
 #     blocks above — when a solo faucet is tuned, tune its pack twin.
 #   apply_award_events / mob_kill_share — OWNER-side: land the share
 #     through the normal award paths (give_loot bag-or-ground + the
-#     owner's dropped_loot/mail registry, acquire_bag, Chest/Pickup
+#     owner's dropped_loot/mail registry, add_loose_bag, Chest/Pickup
 #     spawns, own Hunger/greed/weekly multipliers). Solo never runs any
 #     of this — the solo paths above are untouched.
 #
@@ -1363,7 +1387,10 @@ func apply_award_events(events: Array) -> void:
 						spawn_text(at + Vector2(0, -92), "The Alkahest Codex (already learned)",
 							Color(0.7, 0.7, 0.75))
 			"bag":
-				player.acquire_bag(Items.make_bag(String(ev.get("grade", "F"))))
+				# Bags are items now (2026-08-17): route through give_loot so the
+				# award lands LOOSE in the pack, or on the ground / mailbox if full.
+				if give_loot({"kind": "bag", "grade": String(ev.get("grade", "F"))}, at):
+					spawn_text(at + Vector2(0, float(ev.get("ty", -70))), "+ Bag", Color(0.95, 0.85, 0.5))
 			"sfx":
 				sfx(String(ev.get("id", "chest")), float(ev.get("vol", 1.0)))
 			"toast":
