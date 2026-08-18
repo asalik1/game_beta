@@ -1216,10 +1216,17 @@ const STRUCTURES := {
 	# circles were narrower than the pillar art, so a hero slipped sideways
 	# and stood inside the column). Rects span each pillar's base; the
 	# center passage stays open so the arch still reads as a way through.
+	# 2026-08-18 (owner report, the "onward" victory gate): the story portal's
+	# rects hung OUTBOARD at the front corners of its wide octagon base slab,
+	# not under the columns — an invisible wall out in the walkable stone where
+	# a hero got stopped short and had to slip DOWN past it to reach the swirl.
+	# Realigned onto the actual columns (source x 46-145 / 299-398 -> +/-64) and
+	# lifted off the front lip onto the pillar bases, so the whole front slab is
+	# now walkable straight up to the gate. South edge stays above +14 (contract).
 	"capital_portal_story": {"sprite": "capital_portal_story", "w": 226.4844,
 		"colliders": [
-			{"shape": "rect", "size": Vector2(54, 42), "off": Vector2(-78, -12)},
-			{"shape": "rect", "size": Vector2(54, 42), "off": Vector2(78, -12)}]},
+			{"shape": "rect", "size": Vector2(56, 54), "off": Vector2(-64, -46)},
+			{"shape": "rect", "size": Vector2(56, 54), "off": Vector2(64, -46)}]},
 	"capital_portal_crucible": {"sprite": "capital_portal_crucible", "w": 254.8438,
 		"visual_x": 0.5469,
 		"colliders": [
