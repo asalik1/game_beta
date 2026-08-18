@@ -32,7 +32,7 @@ const SIDE_QUESTS := {
 			{"flag": "ch3_fenna_son_rested", "text": "Find the fourth grave from the alder in the Misted Fields"},
 			{"flag": "ch3_fenna_told", "text": "Bring Old Fenna the truth of it"},
 		],
-		"reward": {"gold": 140},
+		"reward": {"gold": 140, "gem": true, "kept": "sq_kept_fenna_son"},
 	},
 	"ch4_nine_names": {
 		"name": "Nine Names",
@@ -42,7 +42,7 @@ const SIDE_QUESTS := {
 			{"flag": "ch4_vents_capped", "text": "Bring down Cinderhide in the Deep Vents"},
 			{"flag": "ch4_names_carved", "text": "Return to Smith Petra — nine names, carved proper"},
 		],
-		"reward": {"gold": 160},
+		"reward": {"gold": 160, "gem": true},
 	},
 }
 
@@ -84,6 +84,18 @@ const BEATS := {
 }
 
 const CONVOS := {
+	# Facing Home's illustrated coda (2026-08-17): the turn-in choices chain
+	# here via "scene". One shared grief plate (quests/quest_fenna_son.png,
+	# Old Fenna canon splash as the design ref) serves both the kept and the
+	# dropped endings — the dialogue already carried the fork.
+	"fenna_son_scene": {"cinematic": true, "start": "fs1", "nodes": {
+		"fs1": {"who": "Narrator", "cue": "q_fenna_son",
+			"text": "The fourth grave from the alder, turned at the last to face the mill road home. Somewhere below the cathedral an old woman who has buried nothing in sixty years breathes all the way out, and lets the waiting go.",
+			"next": "fs_fade"},
+		"fs_fade": {"who": "Narrator", "cue": "fade",
+			"text": "Grief is grief. You leave her the fire and the quiet.", "next": ""},
+	}},
+
 	# OVERRIDES ch3_quests.gd's "ch3_refugee" (which overrode ch3_zones) —
 	# verbatim copy, extended: the promise choice now ACCEPTS Facing Home
 	# (nudge at the word, +2; the old +4 moved to the delivery), and two
@@ -114,10 +126,10 @@ const CONVOS := {
 			"choices": [
 				{"text": "\"Fourth from the alder, grey coat. He fell facing home — I turned him at the last, like I said I would.\"",
 					"req_not_flag": "ch3_fenna_son_dropped", "resonance": 4.0,
-					"flags": {"ch3_fenna_told": true}, "next": "r_home"},
+					"flags": {"ch3_fenna_told": true}, "scene": "fenna_son_scene", "next": "r_home"},
 				{"text": "\"He's down, Fenna. It was quick. ...He fell where he stood.\"",
 					"req_flag": "ch3_fenna_son_dropped", "resonance": -2.0,
-					"flags": {"ch3_fenna_told": true}, "next": "r_stood"},
+					"flags": {"ch3_fenna_told": true}, "scene": "fenna_son_scene", "next": "r_stood"},
 				{"text": "\"...Not yet. Let me find the words first.\"", "next": ""},
 			]},
 		"r_home": {"who": "Old Fenna", "text": "Facing home. — She doesn't weep; she is sixty years past the easy kind. She just breathes out, all the way down, maybe for the first time since the mill. \"Then he's done walking, and I'm done waiting, and the coat's where coats and sons go. You kept a promise the Choir spent sixty years singing over, bearer. Flame keep your roads short and your word this heavy always.\"", "next": ""},

@@ -884,21 +884,23 @@ func open_class_select() -> void:
 		col.add_theme_constant_override("separation", 2 if dense else 6)
 		card.add_child(col)
 
-		# Number keys pick cards left-to-right.
-		if dense:
-			var header := HBoxContainer.new()
-			header.add_theme_constant_override("separation", 8)
-			col.add_child(header)
-			var icon := TextureRect.new()
-			icon.texture = Art.tex(c["sprite"])
-			icon.custom_minimum_size = Vector2(40, 40)
-			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			header.add_child(icon)
-			var nm := _lbl(header, "%s  (%d)" % [c["name"], idx], 18, Color(0.95, 0.85, 0.5))
-			nm.autowrap_mode = TextServer.AUTOWRAP_OFF
-			nm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			nm.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		# (2026-08-18 design pass, owner: "a polished modern game") — each card
+		# leads with the class PAINTING (the codex splash, cropped to a header
+		# band), the name in the header face, one line of role, the passive,
+		# the three themes as chips and the four ability NAMES. The scaling and
+		# rider maths that used to make the card a wall of text live in the
+		# card's tooltip (hover) — nothing is lost, the page just breathes.
+		var splash_tex: Texture2D = Art.tex("class_splash_%s" % id) \
+			if Art.has_sprite("class_splash_%s" % id) else null
+		if splash_tex != null:
+			var art := TextureRect.new()
+			art.texture = splash_tex
+			art.custom_minimum_size = Vector2(0, 168 if dense else 210)
+			art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+			art.clip_contents = true
+			art.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			col.add_child(art)
 		else:
 			var icon := TextureRect.new()
 			icon.texture = Art.tex(c["sprite"])
@@ -906,32 +908,60 @@ func open_class_select() -> void:
 			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			col.add_child(icon)
-			_lbl(col, "%s  (%d)" % [c["name"], idx], 20, Color(0.95, 0.85, 0.5))
-		_lbl(col, c["desc"], 12 if dense else 13, Color(0.8, 0.8, 0.8))
+		# Number keys pick cards left-to-right.
+		var nm := _lbl(col, "%s  (%d)" % [c["name"], idx], 19 if dense else 22, Color(0.95, 0.85, 0.5))
+		nm.autowrap_mode = TextServer.AUTOWRAP_OFF
+		UITheme.title(nm, 19 if dense else 22)
+		_lbl(col, c["desc"], 12 if dense else 13, Color(0.82, 0.82, 0.82))
 		if c.has("passive"):
 			_lbl(col, "★ " + c["passive"]["text"], 11 if dense else 12, Color(0.5, 0.95, 0.8))
-		var theme_names: Array = []
+		var chips := HBoxContainer.new()
+		chips.add_theme_constant_override("separation", 4)
+		col.add_child(chips)
 		for theme in Classes.THEMES[id]:
-			theme_names.append(theme["name"])
-		_lbl(col, "Themes: " + " / ".join(theme_names), 11 if dense else 12, Color(0.7, 0.8, 0.95))
+			_chip_lbl(chips, String(theme["name"]))
+		var tip := ""
 		for slot in ["a1", "a2", "a3", "ult"]:
 			var ab: Dictionary = c["abilities"][slot]
 			var tag: String = "ULT" if slot == "ult" else slot.to_upper()
+			_lbl(col, "%s  %s" % [tag, ab["name"]], 12 if dense else 13, Color(0.78, 0.82, 0.9))
 			var scaling: String = Classes.ability_scaling(id, slot)
 			var riders: String = Classes.ability_riders(id, slot)
-			# The compact card shows names plus scaling/rider summaries.
-			var line: String = "%s %s" % [tag, ab["name"]] if dense else "%s %s — %s" % [tag, ab["name"], ab["desc"]]
-			_lbl(col, line, 11 if dense else 12, Color(0.65, 0.7, 0.8))
+			tip += "%s %s — %s" % [tag, ab["name"], ab["desc"]]
 			if scaling != "":
-				_lbl(col, "    " + scaling, 10 if dense else 11, Color(0.58, 0.74, 0.66))
+				tip += "\n    " + scaling
 			if riders != "":
-				_lbl(col, "    " + riders, 10 if dense else 11, Color(0.82, 0.72, 0.48))
+				tip += "\n    " + riders
+			tip += "\n"
+		card.tooltip_text = tip.strip_edges()
 		var spacer := Control.new()
 		spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		col.add_child(spacer)
 		# Child controls pass clicks to the card.
 		_ignore_mouse_recursive(col)
 		idx += 1
+
+
+## A small rounded chip label (theme tags on the class cards).
+func _chip_lbl(parent: Node, text: String) -> PanelContainer:
+	var pc := PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(UITheme.SURFACE_RAISED, 0.9)
+	sb.border_color = Color(UITheme.BORDER, 0.8)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(8)
+	sb.content_margin_left = 7
+	sb.content_margin_right = 7
+	sb.content_margin_top = 2
+	sb.content_margin_bottom = 2
+	pc.add_theme_stylebox_override("panel", sb)
+	parent.add_child(pc)
+	var l := Label.new()
+	l.text = text
+	l.add_theme_font_size_override("font_size", 11)
+	l.add_theme_color_override("font_color", Color(0.78, 0.84, 0.95))
+	pc.add_child(l)
+	return pc
 
 
 ## Make class-card content transparent to pointer input.

@@ -6,7 +6,9 @@ Source: https://opengameart.org/content/jc-sounds-fantasy-sfx-pack-vol-1
 License: Creative Commons Attribution 4.0
 License text: https://creativecommons.org/licenses/by/4.0/
 Attribution: "Fantasy SFX Pack Vol. 1" by JC Sounds.
-Used for: fire and frost boss casts/impacts, plus storm boss impacts.
+Used for: fire and frost boss casts/impacts, plus storm boss impacts;
+Veyx's electric voice layer (Electric Spell Launch) and the Echo of the
+Unnamed's void voice (Dark Necromancy Chant).
 
 qubodup - Earth Element Magic Spell
 Source: https://opengameart.org/content/earth-element-magic-spell
@@ -32,8 +34,9 @@ Source: https://opengameart.org/content/80-cc0-creature-sfx
 License: CC0 1.0 Universal / public domain dedication
 License text: https://creativecommons.org/publicdomain/zero/1.0/
 Used for provisional individual voices for Sexton, Vess, Forgemistress,
-Ashpriest, Icebound, Sleepkeeper, Auroch, Veyx, the Unnamed Echo, and
-Cyrraeth/Stormmouth.
+Ashpriest, Icebound, Sleepkeeper, Auroch, and Cyrraeth/Stormmouth; and the
+creature-roar layer under Veyx's storm voice (monster_07). (The Unnamed
+Echo's rubberduck voice was replaced by the JC Dark Necromancy Chant.)
 
 Darsycho - Monster Snarls
 Source: https://opengameart.org/content/monster-snarls
@@ -58,3 +61,12 @@ Source: https://opengameart.org/content/nhfea-sound
 License: CC0 1.0 Universal / public domain dedication
 License text: https://creativecommons.org/publicdomain/zero/1.0/
 Used for: Saint Varo's resonant monster roar (as_d_roar.wav).
+
+Alesia Davina - Ghostly / ghost sound
+Source: Pixabay (alesiadavina-ghost-sound-ghostly-9-vol-005)
+License: Pixabay Content License (royalty-free, commercial use OK, no
+attribution required)
+License text: https://pixabay.com/service/license-summary/
+Attribution (optional, credited by choice): ghost sound by Alesia Davina.
+Used for: Morwen the Blightcaller's voice (roar_morwen.ogg), trimmed to its
+strong section for the 2.5s boss-roar cutoff.

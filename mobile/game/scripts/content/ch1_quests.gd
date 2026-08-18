@@ -15,18 +15,24 @@ const SIDE_QUESTS := {
 			{"flag": "osla_pouch_taken", "text": "Carry Osla's coin pouch"},
 			{"flag": "osla_debt_paid", "text": "Leave it in the Hollow Oak's offering hollow"},
 		],
-		"reward": {"gold": 120},
+		"reward": {"gold": 120, "gem": true, "kept": "sq_kept_oak_debt"},
 	},
 	"hunters_rounds": {
 		"name": "The Hunter's Rounds",
 		"chapter": "ch1",
-		"desc": "The Old Hunter's legs no longer make the full rounds, and a wood where nobody walks the landmarks starts believing nobody is watching it. Cut his sign at Ravine Edge, the Drowned Chapel, and the Collapsed Tower.",
+		"desc": "The Old Hunter's legs no longer make the full rounds, and a wood where nobody walks the landmarks starts believing nobody is watching it. Cut his sign at Ravine Edge, the Drowned Chapel, and the Collapsed Tower — and the packs he warned of move together now; thin the ones that shadow the rounds.",
 		"steps": [
 			{"flag": "hunter_mark_ravine", "text": "Mark the hunter's sign at Ravine Edge"},
 			{"flag": "hunter_mark_chapel", "text": "Mark the hunter's sign at the Drowned Chapel"},
 			{"flag": "hunter_mark_tower", "text": "Mark the hunter's sign at the Collapsed Tower"},
+			{"kind": "kill", "target": "wolf", "count": 3, "flag": "hunter_pack_thinned",
+				"text": "Thin the pack that shadows the rounds"},
 		],
-		"reward": {"gold": 180},
+		# Reward-key pass (2026-08-17, PROPOSALS/DYNAMIC_WORLD.md §3.2): walking
+		# the wood's rounds now pays more than coins — a gem for the road and a
+		# persistent "warden" mark (sq_kept_, survives the chapter wipe and stays
+		# per-character in co-op) that a later beat can read.
+		"reward": {"gold": 180, "gem": true, "kept": "sq_kept_hunter_warden"},
 	},
 	"flame_at_window": {
 		"name": "Flame at the Window",
@@ -36,7 +42,7 @@ const SIDE_QUESTS := {
 			{"flag": "pine_taken", "text": "Carry the pilgrim's stick of pine"},
 			{"flag": "pine_lit", "text": "Light it at the Drowned Chapel's altar"},
 		],
-		"reward": {"gold": 100},
+		"reward": {"gold": 100, "gem": true, "kept": "sq_kept_flame_lit"},
 	},
 }
 

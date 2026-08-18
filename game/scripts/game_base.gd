@@ -142,7 +142,6 @@ var camera: Camera2D
 var ambient: CanvasModulate
 var glow_env: WorldEnvironment
 var reticle: Sprite2D
-var reticle_label: Label
 
 # Rebindable keys. Movement is always WASD/arrows; ESC is fixed.
 var binds := {
@@ -240,6 +239,8 @@ var fight_stats := {}   # same shape, boss-FIGHT window (fight_engage resets)
 var party_stats_net := {}  # GUEST: the host's merged table (~1 Hz fan) — display copy
 
 var shake_amt := 0.0
+var _cam_look := Vector2.ZERO   # eased look-ahead offset (camera feel, 2026-08-18)
+var _cam_zoom_mult := 1.0       # eased combat zoom multiplier on the base zoom
 var sounds: Dictionary = {}
 var sound_pool: Array = []
 # Variant groups are discovered from override names ending in `_vN`.
@@ -3189,6 +3190,37 @@ func _floor_text_color(color: Color) -> Color:
 	return c
 
 
+# Floating-text presentation (gameplay-polish 2026-08-18; presentation
+# constants, not tuning). Outside readers called the old numbers "beta": the
+# engine-default face at 15px, every hit the same size, all spawning on one
+# point so a flurry stacked into a grey pile ("14 15 15 16 20! 22!"). Now:
+# the world face (UITheme.world), a scale-pop on spawn, an eased rise with a
+# small sideways lean so consecutive hits fan out, a fade over the last part
+# of the rise, and crits a size up. Words (status callouts, telegraph lines)
+# keep the calmer straight rise so they stay readable.
+const FLOAT_NUM_SIZE := 21          # a hit number ("47")
+const FLOAT_NUM_SIZE_CRIT := 27     # a crit ("128!")
+const FLOAT_LABEL_SIZE := 16        # a short callout ("WARD SHATTERED!")
+const FLOAT_LABEL_SIZE_LONG := 14   # a telegraph line ("FLASH FREEZE — FIND A VENT!")
+const FLOAT_NUM_SPREAD := 16.0      # ± px sideways lean per number
+const FLOAT_NUM_RISE := 46.0
+const FLOAT_NUM_LIFE := 0.85
+var _float_rng := RandomNumberGenerator.new()   # its own stream: never perturbs game RNG
+
+
+## 0 = words, 1 = a number ("47", "+12", "-9"), 2 = a crit ("128!", "-40 CRIT!").
+func _float_kind(text: String) -> int:
+	var t := text.strip_edges()
+	var crit := t.ends_with("!")
+	if crit:
+		t = t.trim_suffix("!").trim_suffix(" CRIT").strip_edges()
+	if t.begins_with("+") or t.begins_with("-"):
+		t = t.substr(1)
+	if t.is_valid_int():
+		return 2 if crit else 1
+	return 0
+
+
 ## hold: seconds the text sits still before the float-and-fade (the
 ## fight report needs reading time; combat numbers leave it at 0).
 func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
@@ -3196,22 +3228,51 @@ func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
 	l.text = text
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.z_index = 20
-	l.add_theme_font_size_override("font_size", 15)
-	# The rect clamps UP to the text's width, anchored at its left edge — so a
-	# long telegraph line ("FLASH FREEZE — FIND A VENT!") used to start at the
-	# 140px box's left edge and hang off to the RIGHT of the head it belongs
-	# over. Size first (clamp happens now), then center the REAL rect on pos.
-	l.size = Vector2(140, 22)
-	l.position = pos + Vector2(-l.size.x * 0.5, -10)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var kind := _float_kind(text)
+	var fsize := FLOAT_LABEL_SIZE
+	var outline := 4
+	if kind == 2:
+		fsize = FLOAT_NUM_SIZE_CRIT
+		outline = 5
+	elif kind == 1:
+		fsize = FLOAT_NUM_SIZE
+		outline = 5
+	elif text.length() > 18:
+		fsize = FLOAT_LABEL_SIZE_LONG
+	UITheme.world(l, fsize, outline)
 	l.add_theme_color_override("font_color", _floor_text_color(color))
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-	l.add_theme_constant_override("outline_size", 4)
+	# Size the rect to the STRING (font metrics are available off-tree once
+	# the overrides are set) so the centring and the pop pivot are exact — a
+	# fixed 140px box mis-centred long telegraph lines and clamped short ones.
+	var font: Font = l.get_theme_font("font")
+	if font == null:
+		font = ThemeDB.fallback_font
+	var ssz: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1, fsize)
+	l.size = Vector2(ssz.x + outline * 2.0 + 6.0, ssz.y + 6.0)
+	var lean := 0.0
+	if kind > 0:
+		lean = _float_rng.randf_range(-FLOAT_NUM_SPREAD, FLOAT_NUM_SPREAD)
+	l.position = pos + Vector2(-l.size.x * 0.5 + lean, -l.size.y * 0.5)
+	l.pivot_offset = l.size * 0.5
 	add_child(l)
 	var tween := create_tween()
-	if hold > 0.0:
-		tween.tween_interval(hold)
-	tween.tween_property(l, "position:y", l.position.y - 34.0, 0.9)
-	tween.parallel().tween_property(l, "modulate:a", 0.0, 0.9)
+	if kind > 0:
+		l.scale = Vector2(1.5, 1.5) if kind == 2 else Vector2(1.28, 1.28)
+		tween.tween_property(l, "scale", Vector2.ONE, 0.14) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		var rise := FLOAT_NUM_RISE * (1.2 if kind == 2 else 1.0)
+		var to := l.position + Vector2(lean * 0.6, -rise)
+		tween.parallel().tween_property(l, "position", to, FLOAT_NUM_LIFE) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tween.parallel().tween_property(l, "modulate:a", 0.0, FLOAT_NUM_LIFE * 0.45) \
+			.set_delay(FLOAT_NUM_LIFE * 0.55)
+	else:
+		if hold > 0.0:
+			tween.tween_interval(hold)
+		tween.tween_property(l, "position:y", l.position.y - 34.0, 0.9) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.parallel().tween_property(l, "modulate:a", 0.0, 0.9)
 	tween.tween_callback(l.queue_free)
 
 
@@ -3234,19 +3295,21 @@ func spawn_text_all(pos: Vector2, text: String, color: Color, hold := 0.0) -> vo
 func spawn_ally_damage(pos: Vector2, amount: int, crit: bool) -> void:
 	var l := Label.new()
 	l.text = "%d!" % amount if crit else str(amount)
-	l.position = pos + Vector2(-50, -6)
-	l.size = Vector2(100, 16)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.z_index = 19  # under your own numbers (z 20)
-	l.add_theme_font_size_override("font_size", 11)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	UITheme.world(l, 14, 3)   # same face as your own numbers, two sizes down
 	# A cool, dim tint marks it as someone else's damage; crits warm slightly.
 	var col := Color(1.0, 0.72, 0.45, 0.8) if crit else Color(0.78, 0.86, 0.95, 0.72)
 	l.add_theme_color_override("font_color", col)
 	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
-	l.add_theme_constant_override("outline_size", 3)
+	var lean := _float_rng.randf_range(-FLOAT_NUM_SPREAD * 0.6, FLOAT_NUM_SPREAD * 0.6)
+	l.size = Vector2(100, 20)
+	l.position = pos + Vector2(-50 + lean, -8)
 	add_child(l)
 	var tween := create_tween()
-	tween.tween_property(l, "position:y", l.position.y - 24.0, 0.75)
+	tween.tween_property(l, "position:y", l.position.y - 26.0, 0.75) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(l, "modulate:a", 0.0, 0.75)
 	tween.tween_callback(l.queue_free)
 

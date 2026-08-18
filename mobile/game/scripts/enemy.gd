@@ -40,6 +40,9 @@ var windup := 0.0     # yellow-flash wind-up before a melee bite lands
 var zone_idx := -1    # which room's clear-count this enemy belongs to
 var pack_id := 0      # aggro group within the room (per-pack aggro)
 var force_aggro := false  # pack woken: attack no matter the distance
+var from_quest := false   # loose quest quarry (game_world._ensure_quest_quarry): zero XP/gold
+                          # but STILL counts a KILL-step (game_flow.on_enemy_died) so a
+                          # kill-quest stays completable even after its rooms are cleared
 var alerted := false  # has shown its "!" bubble
 var los_lost_t := 0.0    # seconds since we last had line-of-sight (leash timer)
 var last_seen := Vector2.ZERO  # where the player was last visible (blind-chase point)
@@ -112,6 +115,11 @@ var base_mod := Color(1, 1, 1)
 var hp_bar_bg: ColorRect
 var hp_bar_fg: ColorRect
 var hp_bar_cap: ColorRect  # 1px darker end-cap: the remaining-HP edge stays crisp
+# Overhead bar geometry (presentation constants): fill width/height and the gap
+# between the body's head line and the bar's bottom edge.
+const HP_BAR_W := 36.0
+const HP_BAR_H := 5.0
+const HP_BAR_GAP := 8.0
 var face_left := false  # sprite art natively faces left (Crawl tiles)
 # 8-DIRECTION render (art audit 2026-07-10 seam): populated only when
 # assets/sprites/<sprite>_anim_<dir>.png exists. Empty for every
@@ -367,29 +375,53 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1,
 	sprite.modulate = base_mod
 	add_child(sprite)
 
-	# Tiny HP bar above the head, shown once the monster is damaged.
-	# Near-opaque bg = a full 1px dark outline all round the 4px fill, so
-	# the bar reads on ANY terrain (art audit 2026-07-10: the old 3px fill
-	# in a 70%-alpha bg collapsed to a 1px sliver on bright ground).
-	var bar_y: float = -8.0 * vscale - 8.0  # rides above the (rescaled) sprite head
-	hp_bar_bg = ColorRect.new()
-	hp_bar_bg.color = Color(0.04, 0.03, 0.04, 0.95)
-	hp_bar_bg.position = Vector2(-16, bar_y - 1)
-	hp_bar_bg.size = Vector2(32, 6)
+	# Small HP bar above the head, shown once the monster is damaged.
+	# Near-opaque bg = a full 1px dark outline all round the fill, so the bar
+	# reads on ANY terrain (art audit 2026-07-10: the old 3px fill in a
+	# 70%-alpha bg collapsed to a 1px sliver on bright ground).
+	# gameplay-polish 2026-08-18: FRAMED (a 1px bronze rim round the black
+	# backing), a 5px fill with a light top edge, and hung from the body's REAL
+	# head line (frame-0 top opaque row) instead of the cell top — the old
+	# `-8*vscale-8` floated 30-40px over a low quadruped's back because the
+	# art rarely fills its cell, and a bare red rect hovering in space was one
+	# of the "beta" tells in the trailer footage.
+	var bar_y: float = -8.0 * vscale - 8.0  # fallback: above the (rescaled) cell top
+	if sprite.texture != null:
+		var cell_h := float(sprite.texture.get_height())
+		var scan_w := int(cell_h) if sprite.hframes > 1 else sprite.texture.get_width()
+		var head := _strip_head_y(sprite.texture, cell_h, scan_w)
+		if head >= 0.0 and cell_h > 0.0:
+			bar_y = sprite.position.y + (sprite.offset.y + head - cell_h * 0.5) * sprite.scale.y - HP_BAR_GAP
+	hp_bar_bg = ColorRect.new()   # the rim
+	hp_bar_bg.color = Color(0.36, 0.31, 0.25, 0.95)
+	hp_bar_bg.position = Vector2(-HP_BAR_W * 0.5 - 2.0, bar_y - 2.0)
+	hp_bar_bg.size = Vector2(HP_BAR_W + 4.0, HP_BAR_H + 4.0)
 	hp_bar_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hp_bar_bg.visible = false
 	add_child(hp_bar_bg)
+	var inner := ColorRect.new()  # black backing inside the rim (follows bg visibility)
+	inner.color = Color(0.03, 0.02, 0.03, 0.97)
+	inner.position = Vector2(1, 1)
+	inner.size = Vector2(HP_BAR_W + 2.0, HP_BAR_H + 2.0)
+	inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hp_bar_bg.add_child(inner)
 	hp_bar_fg = ColorRect.new()
-	hp_bar_fg.color = Color(0.9, 0.25, 0.2)
-	hp_bar_fg.position = Vector2(-15, bar_y)
-	hp_bar_fg.size = Vector2(30, 4)
+	hp_bar_fg.color = Color(0.86, 0.22, 0.18)
+	hp_bar_fg.position = Vector2(-HP_BAR_W * 0.5, bar_y)
+	hp_bar_fg.size = Vector2(HP_BAR_W, HP_BAR_H)
 	hp_bar_fg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hp_bar_fg.visible = false
 	add_child(hp_bar_fg)
+	var hi := ColorRect.new()     # light top edge: the fill reads as a bar, not a stripe
+	hi.color = Color(1.0, 0.52, 0.44, 0.85)
+	hi.set_anchors_preset(Control.PRESET_TOP_WIDE)   # tracks the fill's width
+	hi.offset_bottom = 1.0
+	hi.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hp_bar_fg.add_child(hi)
 	hp_bar_cap = ColorRect.new()
 	hp_bar_cap.color = Color(0.5, 0.10, 0.08)
-	hp_bar_cap.position = Vector2(-15 + 29, bar_y)
-	hp_bar_cap.size = Vector2(1, 4)
+	hp_bar_cap.position = Vector2(-HP_BAR_W * 0.5 + HP_BAR_W - 1.0, bar_y)
+	hp_bar_cap.size = Vector2(1, HP_BAR_H)
 	hp_bar_cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hp_bar_cap.visible = false
 	add_child(hp_bar_cap)
@@ -443,6 +475,7 @@ func _facing_vec() -> Vector2:
 
 ## Point the Sprite2D at an idle/walk strip (hframes + normalized scale).
 func _apply_strip(info: Dictionary, is_action := false) -> void:
+	_end_squash()   # a strip swap rewrites the scale below; never over a live squash
 	sprite.texture = info["tex"]
 	var frames := int(info["frames"])
 	sprite.hframes = frames
@@ -523,6 +556,35 @@ static func _strip_feet_y(tex: Texture2D, cell: float) -> float:
 	return fy
 
 
+## Highest opaque row of a strip's frame 0 (mirror of _strip_feet_y): the
+## HEAD line the overhead HP bar hangs from. `scan_w` bounds the columns read
+## (the first cell of a strip, the whole width of a static texture). Cached
+## per texture; -1 when unreadable.
+static var _head_cache := {}
+static func _strip_head_y(tex: Texture2D, cell: float, scan_w: int) -> float:
+	if tex == null:
+		return -1.0
+	var key := tex.get_rid()
+	if _head_cache.has(key):
+		return _head_cache[key]
+	var hy := -1.0
+	var img := tex.get_image()
+	if img != null:
+		var w: int = mini(maxi(1, scan_w), img.get_width())
+		var h: int = mini(int(cell), img.get_height())
+		for y in h:
+			var hit := false
+			for x in w:
+				if img.get_pixel(x, y).a > 0.3:
+					hit = true
+					break
+			if hit:
+				hy = float(y)
+				break
+	_head_cache[key] = hy
+	return hy
+
+
 ## Play a one-shot ability strip once, then fall back to idle/walk. No-op
 ## unless the enemy has an idle strip AND assets/sprites/<sprite>_<action>.png
 ## exists — so ability code can call it unconditionally and it lights up
@@ -593,6 +655,7 @@ func _try_action_strip(action: String) -> bool:
 func swap_sprite(new_key: String) -> void:
 	if _sprite_key == new_key:
 		return
+	_end_squash()
 	_sprite_key = new_key
 	_strip_action = {}
 	_action_dir = {}
@@ -1589,6 +1652,34 @@ func _martyr_wail() -> void:
 		game.burst(e.global_position, Color(1.0, 0.5, 0.5), 8)
 
 
+## Hit FEEL (gameplay-polish 2026-08-18): a quick squash-and-recover of the
+## body on every non-silent hit, so a blow visibly LANDS instead of only
+## flashing white. Purely visual, local, co-op-safe (no time_scale). Any strip
+## swap that rewrites sprite.scale first kills a running squash (see
+## _apply_strip / morph) so a mid-squash idle->walk can never end on a stale
+## scale.
+var _squash_tw: Tween = null
+var _squash_base := Vector2.ONE
+func _hit_squash(is_crit: bool) -> void:
+	if sprite == null:
+		return
+	_end_squash()
+	_squash_base = sprite.scale
+	var k := 0.16 if is_crit else 0.10
+	sprite.scale = Vector2(_squash_base.x * (1.0 + k), _squash_base.y * (1.0 - k))
+	_squash_tw = create_tween()
+	_squash_tw.tween_property(sprite, "scale", _squash_base, 0.16 if is_crit else 0.12) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _end_squash() -> void:
+	if _squash_tw != null and _squash_tw.is_valid():
+		_squash_tw.kill()
+		if sprite != null:
+			sprite.scale = _squash_base
+	_squash_tw = null
+
+
 ## Keep the overhead HP bar honest after a heal (it normally only
 ## updates on damage).
 func refresh_hp_bar() -> void:
@@ -1599,10 +1690,10 @@ func refresh_hp_bar() -> void:
 ## Fill width + the 1px darker end-cap riding its right edge (the cap
 ## keeps the remaining-HP boundary crisp against any ground).
 func _update_hp_fill() -> void:
-	var w: float = 30.0 * clampf(hp / max_hp, 0.0, 1.0)
+	var w: float = HP_BAR_W * clampf(hp / max_hp, 0.0, 1.0)
 	hp_bar_fg.size.x = w
 	hp_bar_cap.visible = hp_bar_fg.visible and w >= 2.0
-	hp_bar_cap.position.x = -15.0 + w - 1.0
+	hp_bar_cap.position.x = -HP_BAR_W * 0.5 + w - 1.0
 
 
 ## Promote this monster to an ELITE — the between-boss miniboss beat
@@ -1858,6 +1949,7 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 		sprite.modulate = Color(3, 3, 3)
 		var tween := create_tween()
 		tween.tween_property(sprite, "modulate", base_mod, 0.15)
+		_hit_squash(is_crit)
 	# Show and update the overhead HP bar once damaged.
 	if hp_bar_bg and hp < max_hp and not dying:
 		hp_bar_bg.visible = true
@@ -1897,6 +1989,7 @@ func _net_mirror_hit(amount: float, from_dir: Vector2, is_crit: bool, silent: bo
 	sprite.modulate = Color(3, 3, 3)
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate", base_mod, 0.15)
+	_hit_squash(is_crit)
 	if hp_bar_bg and hp < max_hp:
 		hp_bar_bg.visible = true
 		hp_bar_fg.visible = true

@@ -11,7 +11,7 @@ lapidary / drill), a prop where it doesn't (portals, vault, archive desks).
 Landmarks may now be pure scenery (no uses) when an NPC in front owns the
 function. Auto-derives exits from grid adjacency, verifies one connected
 component, and emits the GDScript content module (CHAPTER const + CONVOS)."""
-import collections, sys
+import collections, os, sys
 
 ROOM_W, ROOM_H = 2112, 1248
 CX, CY = ROOM_W // 2, ROOM_H // 2  # 1056, 624
@@ -142,9 +142,21 @@ BACKDROPS = {
 }
 
 # Exact supporting furniture: deliberate social placements only.
+# 2026-08-18 plaza dressing (gameplay-polish, owner: the plaza read as one
+# facade on a bare cobble field): torch pillars mark the four plaza quarters
+# and the gate approach, urns flank the fountain approach, pots sit by the
+# market stalls. Every piece keeps clear of the road lanes (E-W band y 552-696,
+# N-S band x 984-1128) and the door lanes — the autotest lane flood-fill and
+# `shot.bat capgap` are the guard. Only painterly assets (no chunky props).
 FURNISHINGS = {
     "plaza": [("capital_city_bench", 700, 990, 110),
-              ("capital_city_bench", 1410, 990, 110)],
+              ("capital_city_bench", 1410, 990, 110),
+              ("torch_pillar", 220, 440, 60), ("torch_pillar", 220, 810, 60),
+              ("torch_pillar", 1892, 440, 60), ("torch_pillar", 1892, 810, 60),
+              ("torch_pillar", 900, 1090, 60), ("torch_pillar", 1212, 1090, 60),
+              ("garden_urns", 870, 730, 50), ("garden_urns", 1242, 730, 50),
+              ("clay_pot", 360, 985, 30), ("clay_pot", 1752, 985, 30)],
+    "gate": [("torch_pillar", 900, 900, 60), ("torch_pillar", 1212, 900, 60)],
     "tankard": [("capital_city_bench", 760, 810, 110),
                 ("capital_city_bench", 1352, 810, 110)],
     "acc_commons": [("capital_city_bench", 760, 815, 110),
@@ -541,7 +553,10 @@ for cid, convo in GOSSIP.items():
     convo_lines.append('\t"%s": %s,' % (cid, json.dumps(convo)))
 convos = "\n".join(convo_lines)
 
-OUT = r"C:/Users/asali/Projects/MMO/game/scripts/content/capital_hub.gd"
+# Output lands in THIS checkout (worktree-safe, 2026-08-18: the old absolute
+# main-checkout path wrote a worktree's regen into the owner's live tree).
+OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                   "game", "scripts", "content", "capital_hub.gd")
 header = '''## capital_hub — Crownfall, the capital (reworked 2026-07-25, see
 ## PROPOSALS/CAPITAL_REWORK.md). A STANDALONE 9-room authored city on a 3x3
 ## grid: Crown Plaza holds every everyday service (forge, lapidary, vault,

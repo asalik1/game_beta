@@ -71,6 +71,14 @@ const KNOWN_CUES := [
 	"tome", "tome_open", "fade",
 ]
 
+# Chapter closers (CHAPTER_CLOSERS.md) — per-class illustrated end cutscenes.
+# Each authored chapter derives three cue families the same way the openers
+# derive <shared>_<class>: <ch>_finish_<class> and <ch>_reflect_<class> map to
+# one class plate each, <ch>_fall to the shared fall plate. Plates live under
+# closing/. Extend this list as closers are authored for later chapters.
+const CLOSER_CHAPTERS := ["ch1", "ch2", "ch3", "ch4", "ch5", "ch6", "ch7"]
+const CLOSER_ROOT := "closing/"
+
 const FRAME_DISSOLVE := 0.82
 const FRAME_HOLD := 1.55
 const CAMERA_START_SCALE := Vector2(1.012, 1.012)
@@ -167,20 +175,52 @@ func cue(id: String) -> void:
 		return
 	var frame_names: Array = _frames_for_cue(id)
 	if frame_names.is_empty():
+		frame_names = _quest_frames(id)  # quest-event plates (per-class aware)
+	if frame_names.is_empty():
 		return
 	_play_sequence(frame_names)
 	_tint_motes(id)
 
 
+## Quest-event illustration plates (2026-08-17): a cue `"q_<base>"` in a
+## `cinematic` quest convo resolves to res://.../opening/quests/quest_<base>.png,
+## and — when the quest earns per-class flavor — automatically prefers
+## quests/quest_<base>_<class>.png if that file exists (the same "if the art
+## exists" rule Art.has_sprite uses for optional painted overrides). Authoring a
+## per-class plate is opt-in per class: drop the file and it takes over.
+func _quest_frames(id: String) -> Array:
+	if not id.begins_with("q_"):
+		return []
+	var base := id.substr(2)
+	var cls := ""
+	if is_instance_valid(game) and is_instance_valid(game.player):
+		cls = String(game.player.cls)
+	if cls != "":
+		var per := "quests/quest_%s_%s" % [base, cls]
+		if ResourceLoader.exists(FRAME_ROOT + per + ".png"):
+			return [per]
+	return ["quests/quest_" + base]
+
+
 static func is_known_cue(id: String) -> bool:
 	if id in KNOWN_CUES or id == "crown_hollow":
 		return true
+	if id.begins_with("q_") and id.length() > 2:
+		return true  # quest-event plate family (quests/quest_<base>[_<class>])
 	if CHAPTER_SHARED_CUES.has(id):
 		return true
 	for shared_cue in CHAPTER_SHARED_CUES:
 		if id.begins_with(String(shared_cue) + "_") \
 				and id.trim_prefix(String(shared_cue) + "_") in CHAPTER_CLASSES:
 			return true
+	for chapter_id in CLOSER_CHAPTERS:
+		var ch := String(chapter_id)
+		if id == ch + "_fall":
+			return true
+		for kind in ["finish", "reflect"]:
+			var pfx := "%s_%s_" % [ch, kind]
+			if id.begins_with(pfx) and id.trim_prefix(pfx) in CHAPTER_CLASSES:
+				return true
 	return false
 
 
@@ -202,6 +242,16 @@ static func _frames_for_cue(id: String) -> Array:
 			if class_id in CHAPTER_CLASSES:
 				var chapter_id: String = String(CHAPTER_SHARED_CUES[shared_cue])
 				return ["chapters/opening_%s_%s" % [chapter_id, class_id]]
+	for closer_chapter in CLOSER_CHAPTERS:
+		var ch := String(closer_chapter)
+		if id == ch + "_fall":
+			return [CLOSER_ROOT + "closing_%s_fall" % ch]
+		for kind in ["finish", "reflect"]:
+			var pfx := "%s_%s_" % [ch, kind]
+			if id.begins_with(pfx):
+				var cls := id.trim_prefix(pfx)
+				if cls in CHAPTER_CLASSES:
+					return [CLOSER_ROOT + "closing_%s_%s_%s" % [ch, cls, kind]]
 	return []
 
 

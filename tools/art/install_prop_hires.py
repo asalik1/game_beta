@@ -28,14 +28,20 @@ def load_rgba(p):
 
 
 def ensure_alpha(im):
-    """If the gen came back on a solid background, key the corner colour out."""
-    lo, _hi = im.getchannel("A").getextrema()
-    if lo < 250:
-        return im  # already has real transparency
+    """If the gen came back on a solid background, key the corner colour out.
+    A file that already carries real transparency is left alone — UNLESS its
+    corners are the chroma green we asked for: ImageGen sometimes returns a
+    feathered-edge subject (semi-alpha pixels inside the drift) on a solid
+    #00FF00 field, and the alpha-extrema test alone let the green through
+    (sand_drift, 2026-08-18)."""
     w, h = im.size
     px = im.load()
     corners = [px[0, 0], px[w - 1, 0], px[0, h - 1], px[w - 1, h - 1]]
     bg = max(set(corners), key=corners.count)[:3]
+    chroma = bg[1] > 200 and bg[0] < 80 and bg[2] < 80
+    lo, _hi = im.getchannel("A").getextrema()
+    if lo < 250 and not chroma:
+        return im  # already has real transparency
     out = []
     for r, g, b, a in im.getdata():
         d = abs(r - bg[0]) + abs(g - bg[1]) + abs(b - bg[2])

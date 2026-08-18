@@ -593,7 +593,9 @@ const ACCENT_PROFILES := {
 	"keep_arch": {"peak": 1.0, "sigma": 0.45, "max": 2, "radius": 54.0},
 	"keep_brazier": {"peak": 2.0, "sigma": 0.7, "max": 4, "radius": 74.0},
 	"log": {"peak": 2.0, "sigma": 0.7, "max": 4, "radius": 76.0},
-	"magma_chainrig": {"peak": 1.0, "sigma": 0.5, "max": 3, "radius": 62.0},
+	# One gibbet per stand (2026-08-18, owner: two of them stacked in one accent
+	# group "looks fake") — a big mechanical landmark never comes in a clump.
+	"magma_chainrig": {"peak": 1.0, "sigma": 0.05, "max": 1, "radius": 90.0},
 	"mushroom_purple": {"peak": 3.0, "sigma": 0.85, "max": 6, "radius": 84.0},
 	"rock_pale": {"peak": 3.0, "sigma": 0.9, "max": 6, "radius": 88.0},
 	"rock_volcanic": {"peak": 3.0, "sigma": 0.9, "max": 6, "radius": 90.0},
@@ -1167,6 +1169,13 @@ const STRUCTURES := {
 		"decals": [{"sprite": "flame", "off": Vector2(0, -80), "scale": 0.24, "z": 2,
 			"light": Color(1.0, 0.64, 0.3, 0.9), "light_energy": 1.0, "light_scale": 0.8}],
 		"fire": true},
+	# Small plaza dressing (2026-08-18 gameplay-polish): the painterly urn pair
+	# and clay pot as tiny furnishings (gen_capital FURNISHINGS) — an unlisted
+	# name would place at the 180px building default.
+	"garden_urns": {"sprite": "garden_urns", "w": 66.0,
+		"colliders": [{"shape": "rect", "size": Vector2(48.0, 16.0), "off": Vector2(0, -6.0)}]},
+	"clay_pot": {"sprite": "clay_pot", "w": 40.0,
+		"colliders": [{"shape": "circle", "radius": 11.0, "off": Vector2(0, -4.0)}]},
 	# ---- CROWNFALL authored landmark kit (2026-07-20) ----------------------
 	# Large generated environment sprites, width-normalized here so their source
 	# resolution never dictates world scale. Civic facades use a shallow base

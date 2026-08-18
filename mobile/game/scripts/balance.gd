@@ -27,6 +27,41 @@ const FACE_DEADZONE := 0.35
 # so the whole cast keeps its relative proportion. Purely visual: collision
 # radii, aggro/attack ranges and speeds are unchanged. Tune to taste; 1.0 = old size.
 const CHAR_RENDER_SCALE := 1.7
+# ------------------------------------------------- world look (2026-08-18) ---
+# Value separation between the FLOOR and the CAST (gameplay-polish pass; outside
+# readers called the raw frames flat: mobs were dark shapes on a dark floor).
+# WORLD_CONTRAST/SATURATION ride the WorldEnvironment adjustment (whole frame,
+# a light hand). CAUTION: with viewport/hdr_2d the adjustment runs in LINEAR
+# light, where a dark floor sits near 0 — contrast pivots on 0.5 and HALVED the
+# keep's floor at 1.06 (rig 2026-08-18); leave contrast at 1.0, saturation only.
+# FLOOR_LAYER_MODULATE tints ONLY the floor layers (field tile, ground detail)
+# a step darker/cooler so the unchanged actors sit forward of it.
+# 1.0 / 1.0 / white = the old look. Judge in-game (art-ingame-tonemap).
+const WORLD_CONTRAST := 1.0
+const WORLD_SATURATION := 1.06
+const FLOOR_LAYER_MODULATE := Color(0.94, 0.94, 0.965)
+# Hit feel: camera kick (px) per landed single-target blow / crit. The heavy
+# beats (ults, slams) sit at 5-9; these stay a whisper under them.
+const HIT_SHAKE := 1.4
+const HIT_SHAKE_CRIT := 3.0
+# Idle breath (2026-08-18): the standing hero's whole-body vertical bob —
+# amplitude in world px and rate in Hz. 0 = the old frozen idle.
+const IDLE_BREATH_PX := 1.6
+const IDLE_BREATH_HZ := 0.75
+# Camera feel (2026-08-18): look-ahead in the move direction (px at full
+# speed, eased) and the combat zoom-in (multiplier on the base zoom while
+# enemies are aggro'd within CAMERA_COMBAT_RANGE px, eased in/out).
+const CAMERA_LOOKAHEAD_PX := 44.0
+const CAMERA_LOOKAHEAD_EASE := 3.0      # 1/s toward the target offset
+const CAMERA_COMBAT_ZOOM := 1.08
+const CAMERA_COMBAT_RANGE := 520.0
+const CAMERA_ZOOM_EASE := 2.2           # 1/s toward the target zoom
+# HUD: the controls-hint lines fade out after this many seconds of play
+# (they return when a menu opens).
+const HINT_FADE_AFTER := 75.0
+# Hazard pools stay put (2026-08-18 owner ruling: "hazard pools should just
+# animate in place"). true = the old wandering spore/marsh poison clouds.
+const HAZARD_POOLS_DRIFT := false
 # Structures y-sort over a hero who walks north of their base. Keep only a
 # thin cool edge — clipped to the covering structure's own pixels, so just the
 # HIDDEN part of the body reads back (owner 2026-07-28: full-body outline over
@@ -93,6 +128,16 @@ const NPC_HEIGHT_BY_SPRITE := {
 	"keeper_vasse": 0.94, "storm_chaser_ilya": 0.98, "quartermaster_bel": 0.99,
 	"bellringer_tam": 0.93, "undertaker_prue": 0.96,
 	"scholar_ivo": 1.00,  # tall, stooped old chronicler — adult-man baseline
+	# The ch2 WANDERER archetypes (ch2_zones_side.gd WANDERERS): recast from the
+	# 33px placeholder gallery onto 256px painterly bodies (2026-08-18, owner:
+	# "Snarehand Ott seems to be using a legacy sprite") — they join the roster.
+	"npc_hunter": 0.98, "npc_wanderer": 0.97, "npc_villager_f": 0.95,
+	"npc_villager_m": 0.98, "npc_bandit_tracker": 0.97, "npc_scholar_a": 0.94,
+	"npc_scholar_b": 0.95, "npc_royal_archer": 0.98, "npc_elder2": 0.96,
+	# The Greyrun mill is a BUILDING drawn through the NPC hotspot path: its
+	# 384px painterly override renders NPC_RENDER_SCALE * 16 * this wide (~190px,
+	# a cottage's footprint), not person-sized (owner: "the mill looks horrible").
+	"mill": 2.3,
 }
 const NPC_HEIGHT_BY_CONVO := {
 	# Chapter 1 road people.
@@ -164,6 +209,9 @@ const NPC_BODY_TARGETS := {
 	"keeper_vasse": 52.0, "storm_chaser_ilya": 52.0, "quartermaster_bel": 52.0,
 	"bellringer_tam": 52.0, "undertaker_prue": 52.0,
 	"scholar_ivo": 52.0,
+	"npc_hunter": 52.0, "npc_wanderer": 52.0, "npc_villager_f": 52.0,
+	"npc_villager_m": 52.0, "npc_bandit_tracker": 52.0, "npc_scholar_a": 52.0,
+	"npc_scholar_b": 52.0, "npc_royal_archer": 52.0, "npc_elder2": 52.0,
 }
 
 # Hero name (chosen at creation, shown in the co-op lobby/party). Capped so a
@@ -323,7 +371,7 @@ static func potion_price(level: int) -> int:
 # you leave the chapter (absolute set in switch_chapter), so revisiting early
 # chapters can never farm freebies, and it is never sellable.
 const FREE_POTION_CHAPTERS := ["ch1", "ch2", "ch3"]
-const BAG_SELL_GOLD := 1             # bags ALWAYS cash out for exactly 1g (never the 0.45 formula — anti-exploit)
+const BAG_SELL_GOLD := 1             # bag resale, pinned at 1g. TODO(owner 2026-08-17): keep trivial FOR NOW so bags can't be farmed for gold; raise it once the anti-farm economy is designed. Bags are now loose sellable items (player_core.sell_loose_bag) — this is the single payout seam.
 const SHOP_STOCK_BY_TIER := {"wood": 3, "silver": 4, "gold": 5}  # rolled-gear count
 
 # --------------------------------------------------------- capital rework ---

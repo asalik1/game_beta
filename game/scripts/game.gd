@@ -175,6 +175,14 @@ func _ready() -> void:
 	env.set_glow_level(1, 0.5)
 	env.set_glow_level(3, 1.0)
 	env.set_glow_level(5, 0.6)
+	# gameplay-polish 2026-08-18: a light hand of contrast + saturation on the
+	# whole frame. The raw captures were flat — cast and floor compressed into
+	# one value band, mobs read as dark shapes on a dark floor. This is the
+	# global half of the value-separation pass (the floors themselves take a
+	# small step back in Balance.FLOOR_LAYER_MODULATE); no hero rim glows.
+	env.adjustment_enabled = true
+	env.adjustment_contrast = Balance.WORLD_CONTRAST
+	env.adjustment_saturation = Balance.WORLD_SATURATION
 	glow_env.environment = env
 	add_child(glow_env)
 
@@ -198,16 +206,10 @@ func _ready() -> void:
 	reticle.z_index = 25
 	reticle.visible = false
 	add_child(reticle)
-	# Target's level floats above the lock-on brackets.
-	reticle_label = Label.new()
-	reticle_label.position = Vector2(-30, -24)
-	reticle_label.size = Vector2(60, 14)
-	reticle_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	reticle_label.scale = Vector2(0.5, 0.5)
-	reticle_label.add_theme_font_size_override("font_size", 20)
-	reticle_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-	reticle_label.add_theme_constant_override("outline_size", 6)
-	reticle.add_child(reticle_label)
+	# (2026-08-18) No level tag in the WORLD any more: the old "Lv N" hovering
+	# every targeted mob read as debug text (owner). The target's level rides
+	# the HUD target bar instead — "Name · Lv N — 63%", level threat-tinted —
+	# see hud.track_target_bar. The lock brackets stay (they are the aim cue).
 
 	camera = Camera2D.new()
 	camera.position_smoothing_enabled = true
@@ -619,12 +621,6 @@ func _process(delta: float) -> void:
 		reticle.visible = true
 		reticle.global_position = target.global_position
 		reticle.modulate = Color(1.0, 0.45, 0.2) if target == local_player.locked_target else Color(1, 1, 1)
-		reticle_label.text = "Lv %d" % target.level
-		# Color the level by threat vs your own level. (target is the combat-
-		# target UNION since the duel refactor — .level is a Variant read.)
-		var diff: int = target.level - local_player.level
-		reticle_label.add_theme_color_override("font_color",
-			Color(1, 0.35, 0.3) if diff >= 3 else (Color(1, 0.85, 0.4) if diff >= 0 else Color(0.6, 1, 0.6)))
 	else:
 		reticle.visible = false
 
@@ -811,6 +807,27 @@ func _process(delta: float) -> void:
 
 	shake_amt = move_toward(shake_amt, 0.0, 20.0 * delta)
 	if camera:
-		camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * shake_amt
+		# Camera FEEL (2026-08-18): a little look-ahead in the move direction
+		# and a slight zoom-in while enemies press, both eased. Look-ahead
+		# rides camera.offset under the shake; the zoom multiplies whatever
+		# base zoom is current (dev keys / rigs set camera.zoom directly and
+		# are absorbed as the new base — nothing fights them).
+		var look_target := Vector2.ZERO
+		var in_combat := false
+		if has_local_player() and not local_player.dead:
+			var vel: Vector2 = local_player.velocity
+			var spd: float = maxf(1.0, float(local_player.speed))
+			look_target = vel.limit_length(spd) / spd * Balance.CAMERA_LOOKAHEAD_PX
+			for n in get_tree().get_nodes_in_group("enemies"):
+				if n is Enemy and n.alerted and not n.dying \
+						and n.global_position.distance_to(local_player.global_position) < Balance.CAMERA_COMBAT_RANGE:
+					in_combat = true
+					break
+		_cam_look = _cam_look.lerp(look_target, clampf(Balance.CAMERA_LOOKAHEAD_EASE * delta, 0.0, 1.0))
+		var base_zoom: float = camera.zoom.x / _cam_zoom_mult
+		var want_mult: float = Balance.CAMERA_COMBAT_ZOOM if in_combat else 1.0
+		_cam_zoom_mult = lerpf(_cam_zoom_mult, want_mult, clampf(Balance.CAMERA_ZOOM_EASE * delta, 0.0, 1.0))
+		camera.zoom = Vector2.ONE * (base_zoom * _cam_zoom_mult)
+		camera.offset = _cam_look + Vector2(randf_range(-1, 1), randf_range(-1, 1)) * shake_amt
 	# (The room-transition check at the top of _process is the safety
 	# net: any position outside the graph snaps back into the room.)

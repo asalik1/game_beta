@@ -2491,6 +2491,8 @@ func _run_campaign_ch2() -> void:
 	await _test_ch6_chapter()
 	await _test_ch7_chapter()
 	await _test_side_quests()
+	await _test_quest_verbs()
+	await _test_quest_quarry()
 	await _test_quest_abandonment()
 	await _test_ch1_quests()
 	await _test_pc_curios()
@@ -3462,6 +3464,7 @@ func _test_bags_discard() -> void:
 	var p := game.player
 	# Snapshot everything this section touches (restore, never clear).
 	var keep_bags: Array = p.bags
+	var keep_loose: Array = p.loose_bags
 	var keep_bp: Array = p.backpack
 	var keep_gold: int = p.gold
 	var keep_dropped: Array = game.dropped_loot
@@ -3474,15 +3477,40 @@ func _test_bags_discard() -> void:
 		return _fail("bag capacity is not the sum of equipped bags")
 	var cap0: int = p.bag_capacity()
 	var gold0: int = p.gold
-	# A bigger 6th bag displaces the smallest: kept, capacity grows, spare 1g.
-	if not p.acquire_bag(Items.make_bag("D")):
-		return _fail("a bigger 6th bag should be kept")
+	# Bags are ITEMS now (owner 2026-08-17): a picked-up bag lands LOOSE, never
+	# auto-equips, and NOTHING is ever auto-cashed.
+	p.loose_bags = []
+	if not p.add_loose_bag(Items.make_bag("D")):
+		return _fail("a picked-up bag should land loose in the pack")
+	if p.loose_bags.size() != 1 or p.bags.size() != Balance.MAX_BAGS:
+		return _fail("picking up a bag must not touch the equipped set")
+	if p.gold != gold0:
+		return _fail("picking up a bag must never pay gold (no auto-sell)")
+	# Full set: a direct equip refuses; a swap installs it and the displaced bag
+	# returns to the pack (still no gold moved).
+	if p.equip_loose_bag(0):
+		return _fail("equip must refuse when all bag slots are full")
+	p.swap_loose_bag(0, 0)   # replace an equipped F with the loose D
 	if p.bags.size() != Balance.MAX_BAGS:
-		return _fail("bag count exceeded MAX_BAGS after a 6th")
+		return _fail("swap must not change the equipped bag count")
 	if p.bag_capacity() <= cap0:
-		return _fail("capacity did not grow when a bigger bag displaced a smaller")
-	if p.gold != gold0 + Balance.BAG_SELL_GOLD:
-		return _fail("displaced bag did not cash for exactly 1g")
+		return _fail("swapping a bigger bag in did not grow capacity")
+	if p.loose_bags.size() != 1 or int(p.loose_bags[0].get("slots", 0)) != int(Items.BAG_SLOTS["F"]):
+		return _fail("the displaced F bag must return to the pack, not vanish or sell")
+	if p.gold != gold0:
+		return _fail("a swap must never pay gold (no auto-sell)")
+	# Selling a loose bag pays exactly BAG_SELL_GOLD once and removes it.
+	p.sell_loose_bag(0)
+	if not p.loose_bags.is_empty() or p.gold != gold0 + Balance.BAG_SELL_GOLD:
+		return _fail("selling a loose bag must pay exactly BAG_SELL_GOLD once")
+	# buy_install on a full set swaps the smallest; the displaced bag packs, no gold.
+	var gold1: int = p.gold
+	p.buy_install_bag(Items.make_bag("S"))
+	if p.bags.size() != Balance.MAX_BAGS or p.loose_bags.size() != 1:
+		return _fail("buy_install on a full set must swap and pack the displaced bag")
+	if p.gold != gold1:
+		return _fail("buy_install must not itself move gold (the shop charges separately)")
+	p.loose_bags = []
 
 	# --- slot curve (2026-07-09 v2): F=15 base, +5 per tier, S=45 ---------
 	# (every tier +5 over round 52b to compensate health potions taking slots)
@@ -3640,12 +3668,13 @@ func _test_bags_discard() -> void:
 	for node in get_tree().get_nodes_in_group("loot_pickups"):
 		node.queue_free()
 	p.bags = keep_bags
+	p.loose_bags = keep_loose
 	p.backpack = keep_bp
 	p.gold = keep_gold
 	game.dropped_loot = keep_dropped
 	p.recalc()
 	await _frames(2)
-	print("ok: stacking bags (sum-capacity, keep-best-N, +5/tier curve, UNIT-counting incl. health potions, grey-out, act drops, shop price, migration) + discard-throw")
+	print("ok: stacking bags (sum-capacity, loose-item pickup/equip/swap/sell — no auto-cash, +5/tier curve, UNIT-counting incl. health potions, grey-out, act drops, shop price, migration) + discard-throw")
 
 
 func _test_retention() -> void:
@@ -5085,6 +5114,160 @@ func _test_side_quests() -> void:
 	print("ok: side quests (accept, step tracking, single payout)")
 
 
+## Quest-verb pass (2026-08-17, PROPOSALS/DYNAMIC_WORLD.md): the new step KIND
+## `kill` (a counter that sets its flag at the target), the reward KEYS
+## item/gem/kept, and the illustration cue family + `scene` primitive. Injects a
+## throwaway quest into the merged table, drives it, then removes it —
+## SNAPSHOT + RESTORE shared state per the rule.
+func _test_quest_verbs() -> void:
+	var snap_flags: Dictionary = game.flags.duplicate(true)
+	var gold0: int = game.player.gold
+	# Full SNAPSHOT + RESTORE (the autotest rule): the reward pays a real gem
+	# (and could drop loot), so snapshot every collection it can touch — a
+	# leaked gem would bloat a later bag-slot assertion.
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)
+	var snap_back: Array = game.player.backpack.duplicate(true)
+	var snap_cons: Array = game.player.consumables.duplicate(true)
+	var snap_drops: Array = game.dropped_loot.duplicate(true)
+	var gems0: int = game.player.gem_bag.size()
+	var drops0: int = game.dropped_loot.size()
+	var ch0: String = game.chapter_id
+	game.chapter_id = "ch1"
+	game.quest_kills.clear()
+	Story.ALL_SIDE_QUESTS["__qv_test"] = {
+		"name": "Cull the Test Pack", "chapter": "ch1",
+		"steps": [{"kind": "kill", "target": "wolf", "count": 2, "flag": "__qv_done", "text": "cull the pack"}],
+		"reward": {"gold": 10, "gem": true, "kept": "sq_kept___qv"},
+	}
+	game.set_flag("sq_on___qv_test")
+	game.quest_kill_note("bog_lurker")   # wrong target: ignored
+	game.quest_kill_note("wolf")         # 1 of 2
+	if int(game.quest_kills.get("__qv_done", 0)) != 1 or game.get_flag("__qv_done", false):
+		_fail("kill step miscounted (expected 1/2, not yet done)")
+		await get_tree().create_timer(60.0).timeout
+		return
+	game.quest_kill_note("wolf")         # 2 of 2: sets the step flag -> completes
+	if not game.get_flag("__qv_done", false):
+		_fail("kill step did not complete at its count")
+		await get_tree().create_timer(60.0).timeout
+		return
+	if not game.get_flag("sq_paid___qv_test", false):
+		_fail("kill-step quest did not pay out on completion")
+		await get_tree().create_timer(60.0).timeout
+		return
+	if not game.get_flag("sq_kept___qv", false):
+		_fail("quest 'kept' reward did not set its persistent mark")
+		await get_tree().create_timer(60.0).timeout
+		return
+	if game.player.gem_bag.size() <= gems0 and game.dropped_loot.size() <= drops0:
+		_fail("quest 'gem' reward paid nothing (neither banked nor dropped)")
+		await get_tree().create_timer(60.0).timeout
+		return
+	if not ("sq_kept_" in game.KEPT_FLAG_PREFIXES):
+		_fail("sq_kept_ must be a persistent (kept) prefix so a quest mark outlives the chapter")
+		await get_tree().create_timer(60.0).timeout
+		return
+	# Illustration hook: the quest cue family is recognized (shared + per-class),
+	# and the hat quest's scene is a real cinematic convo chained by a `scene`.
+	if not Cutscene.is_known_cue("q_hat") or not Cutscene.is_known_cue("q_hat_warrior"):
+		_fail("quest cue family q_* not recognized by Cutscene.is_known_cue")
+		await get_tree().create_timer(60.0).timeout
+		return
+	var scene: Dictionary = Story.ALL_CONVOS.get("hat_returned_scene", {})
+	if scene.is_empty() or not bool(scene.get("cinematic", false)):
+		_fail("hat_returned_scene missing or not flagged cinematic")
+		await get_tree().create_timer(60.0).timeout
+		return
+	var give: Dictionary = Story.ALL_CONVOS["wander_orphan"]["nodes"]["o_hat"]
+	var has_scene := false
+	for c in give.get("choices", []):
+		if String(c.get("scene", "")) == "hat_returned_scene":
+			has_scene = true
+	if not has_scene:
+		_fail("the hat turn-in choice does not chain the illustrated scene")
+		await get_tree().create_timer(60.0).timeout
+		return
+	Story.ALL_SIDE_QUESTS.erase("__qv_test")
+	game.chapter_id = ch0
+	game.player.gold = gold0
+	game.player.gem_bag = snap_gems
+	game.player.backpack = snap_back
+	game.player.consumables = snap_cons
+	game.dropped_loot = snap_drops
+	game.quest_kills.clear()
+	game.flags = snap_flags
+	print("ok: quest verbs (kill step, item/gem/kept rewards, sq_kept_ persists, q_ cue family + scene)")
+
+
+## KILL-step completability guard (2026-08-17): rooms build once and cleared
+## rooms never respawn, so a kill-quest whose target rooms are gone must still be
+## finishable — game_world._ensure_quest_quarry tops up a fighting room with
+## loose quarry. Verify it spawns the quarry when short + absent, that they carry
+## the from_quest tag (so they count at zero reward), and that it stays hands-off
+## a room that already has enough live targets.
+func _test_quest_quarry() -> void:
+	var combat_zi := -1
+	for zi in game.zone_count:
+		if String(game.zones[zi].get("type", "")) == "combat" and String(game.zones[zi].get("boss", "")) == "":
+			combat_zi = zi
+			break
+	if combat_zi < 0:
+		print("ok: quest quarry guard (no combat room in this world — soft skip)")
+		return
+	var snap_flags: Dictionary = game.flags.duplicate(true)
+	var snap_kills: Dictionary = game.quest_kills.duplicate(true)
+	var snap_pos: Vector2 = game.player.global_position
+	game.quest_kills.clear()
+	Story.ALL_SIDE_QUESTS["__qq_test"] = {
+		"name": "Quarry Test", "chapter": game.chapter_id,
+		"steps": [{"kind": "kill", "target": "wolf", "count": 3, "flag": "__qq_done", "text": "cull"}],
+		"reward": {"gold": 1},
+	}
+	game.set_flag("sq_on___qq_test")
+	game.player.global_position = game.room_center(combat_zi)
+	var before := 0
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e != null and is_instance_valid(e) and e.from_quest and e.kind == "wolf" and e.zone_idx == combat_zi:
+			before += 1
+	game._ensure_quest_quarry(combat_zi)
+	await _frames(2)
+	var quarry: Array = []
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e != null and is_instance_valid(e) and e.from_quest and e.kind == "wolf" and e.zone_idx == combat_zi:
+			quarry.append(e)
+	if quarry.size() - before < 3:
+		_fail("quest quarry: expected 3 loose wolves spawned, got %d" % (quarry.size() - before))
+		await get_tree().create_timer(60.0).timeout
+		return
+	if int(quarry[0].xp_value) != 0 or int(quarry[0].gold_value) != 0:
+		_fail("quest quarry must pay zero XP/gold (chapter budget)")
+		await get_tree().create_timer(60.0).timeout
+		return
+	# Hands-off: with 3 live quarry already here, a second call adds nothing.
+	game._ensure_quest_quarry(combat_zi)
+	await _frames(2)
+	var after := 0
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e != null and is_instance_valid(e) and e.from_quest and e.kind == "wolf" and e.zone_idx == combat_zi:
+			after += 1
+	if after != quarry.size():
+		_fail("quest quarry over-spawned when the room already held enough (%d -> %d)" % [quarry.size(), after])
+		await get_tree().create_timer(60.0).timeout
+		return
+	for e in quarry:
+		if is_instance_valid(e):
+			e.queue_free()
+	await _frames(1)
+	Story.ALL_SIDE_QUESTS.erase("__qq_test")
+	game.player.global_position = snap_pos
+	game.quest_kills = snap_kills
+	game.flags = snap_flags
+	print("ok: quest quarry guard (loose quarry top up a cleared room; from_quest zero-reward; no over-spawn)")
+
+
 ## Quest ABANDONMENT + DISCOVERY (2026-07-17). Two halves of one feature:
 ## a quest you accept and never finish is settled at the chapter's victory
 ## (the pledge you were PAID for is revoked, plus the lean for keeping it),
@@ -5200,9 +5383,13 @@ func _test_ch1_quests() -> void:
 			return
 	var snap_flags: Dictionary = game.flags.duplicate(true)
 	var gold0: int = game.player.gold
+	# hunters_rounds now pays a gem — snapshot the bag so completing it here
+	# doesn't leak a gem into a later bag-slot assertion (the autotest rule).
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)
+	var snap_drops: Array = game.dropped_loot.duplicate(true)
 	var chains := {
 		"oslas_debt": ["osla_pouch_taken", "osla_debt_paid"],
-		"hunters_rounds": ["hunter_mark_ravine", "hunter_mark_chapel", "hunter_mark_tower"],
+		"hunters_rounds": ["hunter_mark_ravine", "hunter_mark_chapel", "hunter_mark_tower", "hunter_pack_thinned"],
 		"flame_at_window": ["pine_taken", "pine_lit"],
 	}
 	for qid in chains:
@@ -5232,6 +5419,8 @@ func _test_ch1_quests() -> void:
 			await get_tree().create_timer(60.0).timeout
 			return
 	game.player.gold = gold0
+	game.player.gem_bag = snap_gems
+	game.dropped_loot = snap_drops
 	game.flags = snap_flags
 	print("ok: ch1 side quests (oslas_debt, hunters_rounds, flame_at_window — single payouts)")
 
@@ -5256,8 +5445,10 @@ func _test_ch4_quests() -> void:
 			return
 	var snap_flags: Dictionary = game.flags.duplicate(true)
 	var gold0: int = game.player.gold
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)  # out_of_tolerance now pays a gem
+	var snap_drops: Array = game.dropped_loot.duplicate(true)
 	var chains := {
-		"out_of_tolerance": ["ch4_core_taken", "ch4_core_returned"],
+		"out_of_tolerance": ["ch4_forge_cleared", "ch4_core_taken", "ch4_core_returned"],
 		"nix_receipts": ["ch4_refund_taken", "ch4_refund_given"],
 		"quench_prayer": ["ch4_token_taken", "ch4_token_left"],
 	}
@@ -5287,6 +5478,8 @@ func _test_ch4_quests() -> void:
 			await get_tree().create_timer(60.0).timeout
 			return
 	game.player.gold = gold0
+	game.player.gem_bag = snap_gems
+	game.dropped_loot = snap_drops
 	game.flags = snap_flags
 	print("ok: ch4 side quests (out_of_tolerance, nix_receipts, quench_prayer - single payouts)")
 
@@ -5298,6 +5491,10 @@ func _test_ch5_quests() -> void:
 	var snap_flags: Dictionary = game.flags.duplicate(true)
 	var snap_standing: Dictionary = game.player.faction_standing.duplicate(true)
 	var gold0: int = game.player.gold
+	# forty_mouths now pays a gem — snapshot the bag so completing it here
+	# doesn't leak a gem into a later bag-slot assertion (the autotest rule).
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)
+	var snap_drops: Array = game.dropped_loot.duplicate(true)
 	for sqid in ["ch5_forty_mouths", "ch5_spring_song", "ch5_count_sleepers"]:
 		if not Story.ALL_SIDE_QUESTS.has(sqid):
 			_fail("ch5 side quest '%s' not registered" % sqid)
@@ -5321,9 +5518,9 @@ func _test_ch5_quests() -> void:
 			return
 	# Drive each chain: no early payout, pays once on the last step.
 	var chains := {
-		"ch5_forty_mouths": ["ch5_grain_taken", "ch5_grain_given"],
+		"ch5_forty_mouths": ["ch5_grain_guarded", "ch5_grain_taken", "ch5_grain_given"],
 		"ch5_spring_song": ["ch5_verse_taken", "ch5_verse_given"],
-		"ch5_count_sleepers": ["ch5_census_chapel", "ch5_census_vein", "ch5_census_told"],
+		"ch5_count_sleepers": ["ch5_census_chapel", "ch5_census_vein", "ch5_census_stilled", "ch5_census_told"],
 	}
 	for sqid in chains:
 		var before: int = game.player.gold
@@ -5357,6 +5554,8 @@ func _test_ch5_quests() -> void:
 		return
 	game.player.gold = gold0
 	game.player.faction_standing = snap_standing
+	game.player.gem_bag = snap_gems
+	game.dropped_loot = snap_drops
 	game.flags = snap_flags
 	print("ok: ch5 side quests (forty_mouths, spring_song, count_sleepers - single payouts)")
 
@@ -5382,8 +5581,10 @@ func _test_ch3_quests() -> void:
 		return
 	var snap_flags: Dictionary = game.flags.duplicate(true)
 	var gold0: int = game.player.gold
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)  # unfilled_row now pays a gem
+	var snap_drops: Array = game.dropped_loot.duplicate(true)
 	var chains := {
-		"ch3_unfilled_row": ["row_copied_chapel", "row_copied_reliquary", "row_reported"],
+		"ch3_unfilled_row": ["row_copied_chapel", "row_copied_reliquary", "row_dead_stilled", "row_reported"],
 		"ch3_bread_kneeling": ["vale_bread_left"],
 		"ch3_sexton_stone": ["sexton_stone_left"],
 	}
@@ -5413,6 +5614,8 @@ func _test_ch3_quests() -> void:
 			await get_tree().create_timer(60.0).timeout
 			return
 	game.player.gold = gold0
+	game.player.gem_bag = snap_gems
+	game.dropped_loot = snap_drops
 	game.flags = snap_flags
 	print("ok: ch3 side quests (unfilled_row, bread_kneeling, sexton_stone — single payouts)")
 
@@ -5439,8 +5642,10 @@ func _test_ch2_quests() -> void:
 	var snap_flags: Dictionary = game.flags.duplicate(true)
 	var snap_standing: Dictionary = game.player.faction_standing.duplicate(true)
 	var gold0: int = game.player.gold
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)  # ch2 quests now pay gems
+	var snap_drops: Array = game.dropped_loot.duplicate(true)
 	var chains := {
-		"still_blue": ["mill_seen", "mill_told"],
+		"still_blue": ["mill_road_cleared", "mill_seen", "mill_told"],
 		"bread_for_the_road": ["loaf_taken", "loaf_given"],
 		"ash_for_aldric": ["ash_taken", "ash_given"],
 	}
@@ -5479,6 +5684,8 @@ func _test_ch2_quests() -> void:
 		return
 	game.player.gold = gold0
 	game.player.faction_standing = snap_standing
+	game.player.gem_bag = snap_gems
+	game.dropped_loot = snap_drops
 	game.flags = snap_flags
 	print("ok: ch2 side quests (still_blue, bread_for_the_road, ash_for_aldric — single payouts)")
 
@@ -5517,10 +5724,12 @@ func _test_ch6_quests() -> void:
 	var snap_flags: Dictionary = game.flags.duplicate(true)
 	var snap_standing: Dictionary = game.player.faction_standing.duplicate(true)
 	var gold0: int = game.player.gold
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)  # ch6 quests now pay gems
+	var snap_drops: Array = game.dropped_loot.duplicate(true)
 	var chains := {
-		"ch6_far_shore": ["sq6_shore_seen", "sq6_shore_told"],
+		"ch6_far_shore": ["sq6_shore_seen", "sq6_shore_cleared", "sq6_shore_told"],
 		"ch6_gate_bread": ["sq6_bread_taken", "sq6_bread_left"],
-		"ch6_kesh_tally": ["sq6_tally_shrine", "sq6_tally_pool", "sq6_tally_told"],
+		"ch6_kesh_tally": ["sq6_tally_shrine", "sq6_tally_pool", "sq6_tally_cleared", "sq6_tally_told"],
 	}
 	for sqid in chains:
 		var sid := String(sqid)
@@ -5559,6 +5768,8 @@ func _test_ch6_quests() -> void:
 		return
 	game.player.gold = gold0
 	game.player.faction_standing = snap_standing
+	game.player.gem_bag = snap_gems
+	game.dropped_loot = snap_drops
 	game.flags = snap_flags
 	print("ok: ch6 side quests (ch6_far_shore, ch6_gate_bread, ch6_kesh_tally — single payouts + standings)")
 
@@ -5571,15 +5782,17 @@ func _test_ch7_quests() -> void:
 	var snap_flags: Dictionary = game.flags.duplicate(true)
 	var snap_standing: Dictionary = game.player.faction_standing.duplicate(true)
 	var gold0: int = game.player.gold
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)  # ch7 quests now pay gems
+	var snap_drops: Array = game.dropped_loot.duplicate(true)
 	for iid in ["ch7_void_letter", "ch7_korrag_token"]:
 		if Items.make_quest_item(String(iid)).is_empty():
 			_fail("ch7 quest item '%s' did not resolve" % iid)
 			await get_tree().create_timer(60.0).timeout
 			return
 	var chains := {
-		"ch7_relay_stands": ["sq7_relay_cairn", "sq7_relay_shelf", "sq7_relay_vowstone"],
+		"ch7_relay_stands": ["sq7_relay_cairn", "sq7_relay_shelf", "sq7_relay_vowstone", "sq7_relay_held"],
 		"ch7_void_letter": ["sq7_letter_taken", "sq7_letter_given"],
-		"ch7_korrags_due": ["sq7_token_taken", "sq7_token_left"],
+		"ch7_korrags_due": ["sq7_token_taken", "sq7_cairn_cleared", "sq7_token_left"],
 	}
 	for sqid in chains:
 		var sid := String(sqid)
@@ -5615,6 +5828,8 @@ func _test_ch7_quests() -> void:
 		return
 	game.player.gold = gold0
 	game.player.faction_standing = snap_standing
+	game.player.gem_bag = snap_gems
+	game.dropped_loot = snap_drops
 	game.flags = snap_flags
 	print("ok: ch7 side quests (relay_stands, void_letter, korrags_due — single payouts + standing)")
 
@@ -5688,6 +5903,8 @@ func _test_promises_kept() -> void:
 	# Drive both chains: no early payout, pays once on the last step.
 	var snap_flags: Dictionary = game.flags.duplicate(true)
 	var gold0: int = game.player.gold
+	var snap_gems: Array = game.player.gem_bag.duplicate(true)  # facing_home + nine_names now pay gems
+	var snap_drops: Array = game.dropped_loot.duplicate(true)
 	var chains := {
 		"ch3_facing_home": ["ch3_fenna_son_rested", "ch3_fenna_told"],
 		"ch4_nine_names": ["ch4_vents_capped", "ch4_names_carved"],
@@ -5719,6 +5936,8 @@ func _test_promises_kept() -> void:
 			await get_tree().create_timer(60.0).timeout
 			return
 	game.player.gold = gold0
+	game.player.gem_bag = snap_gems
+	game.dropped_loot = snap_drops
 	game.flags = snap_flags
 	print("ok: promises kept (facing_home, nine_names — single payouts; beat variants resolve)")
 
@@ -6671,12 +6890,22 @@ func _capital_in_city() -> void:
 	var keep_bags: Array = p_cap.bags
 	var keep_bp: Array = p_cap.backpack
 	var keep_gem_bag: Array = p_cap.gem_bag
+	# bag_used() also counts consumables, material stacks and LOOSE bags
+	# (bags-are-items rework 2026-08-17) — a campaign's worth of potions and
+	# ore filled the lent pack on its own and the gem was mailed (flake seen
+	# 2026-08-18: "the training gem did not reach the bag"). Lend the whole
+	# empty inventory, restore all of it below.
+	var keep_cons: Array = p_cap.consumables
+	var keep_mats: Array = p_cap.materials
+	var keep_loose: Array = p_cap.loose_bags
 	p_cap.bags = [Items.make_bag("S")]
 	p_cap.backpack = []
 	p_cap.gem_bag = []
+	p_cap.consumables = []
+	p_cap.materials = []
+	p_cap.loose_bags = []
 	p_cap.npc_favor.clear()
 	var keep_gold: int = p_cap.gold
-	var gems_before: int = p_cap.gem_bag.size()
 	game._hub_action("lapidary")
 	await _frames(2)
 	if game.hud.dialogue_active:
@@ -6694,8 +6923,24 @@ func _capital_in_city() -> void:
 	# With the pack lent above there is room, so the BENCH path is asserted
 	# outright — the old "...or a letter exists somewhere" disjunct passed on
 	# any leftover mail and let the bag-full case through silently.
-	if p_cap.gem_bag.size() != gems_before + 1:
-		return _fail("capital: the training gem did not reach the bag")
+	# Look for HER stone, not a count: the pack was just emptied, and a loose
+	# ground pickup dropped earlier in the run (a full bag drops loot at the
+	# hero's feet) can jump into the fresh room within the same frames — the
+	# count read 2 and failed (2026-08-18 diagnostics: "gems 2, mail 0").
+	var train_gem: Dictionary = {}
+	for g in p_cap.gem_bag:
+		var gd: Dictionary = g
+		if String(gd.get("stat", "")) == "atk_flat" and int(gd.get("lvl", 0)) == 1:
+			train_gem = gd
+	if train_gem.is_empty():
+		var mailed := 0
+		for m in game.mailbox:
+			if String(m.get("subject", "")).begins_with("The Lapidary"):
+				mailed += 1
+		return _fail("capital: the training gem did not reach the bag (gems %d, bag %d/%d, lapidary mail %d, kit charm in pack %s, dialogue %s, choices %s, menu %s)" % [
+			p_cap.gem_bag.size(), p_cap.bag_used(), p_cap.bag_capacity(), mailed,
+			str(p_cap.backpack.size()), str(game.hud.dialogue_active),
+			str(game.hud.choices_active), str(game.menus.is_open())])
 	if game.menus.is_open():
 		game.menus.close()
 	await _frames(1)
@@ -6710,7 +6955,6 @@ func _capital_in_city() -> void:
 	if kit_charm.is_empty():
 		return _fail("capital: the lapidary kit charm did not reach the bag (%d/%d slots used)" %
 			[p_cap.bag_used(), p_cap.bag_capacity()])
-	var train_gem: Dictionary = p_cap.gem_bag[p_cap.gem_bag.size() - 1]
 	if not p_cap.embed_gem_into(kit_charm, train_gem):
 		return _fail("capital: could not seat the training stone in the kit charm")
 	if not game.get_flag("cap_q_gem_done", false):
@@ -6736,6 +6980,9 @@ func _capital_in_city() -> void:
 	p_cap.bags = keep_bags
 	p_cap.backpack = keep_bp
 	p_cap.gem_bag = keep_gem_bag
+	p_cap.consumables = keep_cons
+	p_cap.materials = keep_mats
+	p_cap.loose_bags = keep_loose
 	p_cap.recalc()
 
 
@@ -7360,6 +7607,11 @@ func _test_materials() -> void:
 	var keep_gems: Array = p.gem_bag.duplicate()
 	var keep_cons: Array = p.consumables.duplicate()
 	var keep_mats: Array = p.materials.duplicate(true)
+	# Loose bags are carried items too (bags-are-items rework 2026-08-17):
+	# bag_used() counts them, so a bag that DROPPED this run made the slot
+	# math below off by one (flake 2026-08-18). Lend an empty pocket, restore
+	# on every exit (_mats_fail reads the snapshot below).
+	_mats_keep_loose = p.loose_bags.duplicate(true)
 
 	# (a) make_material: 35 valid, GearFlavor-keyed dicts whose sprite file ships.
 	for fam in Items.MATERIAL_FAMILIES:
@@ -7382,6 +7634,7 @@ func _test_materials() -> void:
 	p.gem_bag = []
 	p.consumables = []
 	p.materials = []
+	p.loose_bags = []
 
 	# (b) add_material STACKS into one slot per (family, grade); each stack = 1 slot.
 	if not p.add_material("metal", "F", 3):
@@ -7423,17 +7676,20 @@ func _test_materials() -> void:
 	p.gem_bag = keep_gems
 	p.consumables = keep_cons
 	p.materials = keep_mats
+	p.loose_bags = _mats_keep_loose
 	print("ok: crafting materials (5x7 dicts+sprites, stacking one-slot, icon, guaranteed elite drop)")
 
 
 ## Restore the bag pockets _test_materials cleared, then fail — the CLAUDE.md
 ## rule that FAILURE paths must restore shared state too (quit is only queued).
+var _mats_keep_loose: Array = []
 func _mats_fail(bp: Array, gb: Array, cn: Array, mt: Array, msg: String) -> void:
 	var p := game.player
 	p.backpack = bp
 	p.gem_bag = gb
 	p.consumables = cn
 	p.materials = mt
+	p.loose_bags = _mats_keep_loose
 	_fail(msg)
 
 

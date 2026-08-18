@@ -18,13 +18,15 @@ const SIDE_QUESTS := {
 	"ch3_unfilled_row": {
 		"name": "The Unfilled Row",
 		"chapter": "ch3",
-		"desc": "Cantor Ilse wants the Vale's old markers copied word for word — what the stones said when graves still closed, and what the Choir's empty relic cases still promise. Evidence, for when the burying starts.",
+		"desc": "Cantor Ilse wants the Vale's old markers copied word for word — what the stones said when graves still closed, and what the Choir's empty relic cases still promise. Evidence, for when the burying starts. But the dead here do not hold still to be read.",
 		"steps": [
 			{"flag": "row_copied_chapel", "text": "Copy Bram Tallow's headstone at the Hollow Chapel"},
 			{"flag": "row_copied_reliquary", "text": "Copy the empty placards in the Reliquary of Rot"},
+			{"kind": "kill", "target": "gravewalker", "count": 3, "flag": "row_dead_stilled",
+				"text": "Still the gravewalkers rising among the markers"},
 			{"flag": "row_reported", "text": "Bring the copies back to Cantor Ilse at the Vigil Gate"},
 		],
-		"reward": {"gold": 180},
+		"reward": {"gold": 180, "gem": true},
 	},
 	"ch3_bread_kneeling": {
 		"name": "Bread for the Kneeling",
@@ -33,7 +35,7 @@ const SIDE_QUESTS := {
 		"steps": [
 			{"flag": "vale_bread_left", "text": "Carry Fenna's loaf to the congregation at the Kneeling Field"},
 		],
-		"reward": {"gold": 120},
+		"reward": {"gold": 120, "gem": true},
 	},
 	"ch3_sexton_stone": {
 		"name": "A Stone for the Sexton",
@@ -42,7 +44,7 @@ const SIDE_QUESTS := {
 		"steps": [
 			{"flag": "sexton_stone_left", "text": "Set Haim's stone beside the last proper grave, in the Hollow Chapel"},
 		],
-		"reward": {"gold": 150},
+		"reward": {"gold": 150, "gem": true, "kept": "sq_kept_sexton_stone"},
 	},
 }
 
@@ -54,6 +56,17 @@ const QUEST_ITEMS := {
 }
 
 const CONVOS := {
+	# "Bread for the Kneeling" — illustrated coda (2026-08-17). All four turn-in
+	# paths chain here via "scene"; plate quests/quest_kneeling.png is the
+	# kneeling congregation in the misted field (generic — no single face).
+	"kneeling_scene": {"cinematic": true, "start": "kn1", "nodes": {
+		"kn1": {"who": "Narrator", "cue": "q_kneeling",
+			"text": "A whole field of them below the cathedral, kneeling in the mist while the Choir sings over their bowed heads and calls it feeding. You set Old Fenna's loaf down among them — the first thing anyone has handed them that they could actually eat. Nobody kneels well hungry.",
+			"next": "kn_fade"},
+		"kn_fade": {"who": "Narrator", "cue": "fade",
+			"text": "Grief is grief. Even theirs. You leave them the bread and the singing.", "next": ""},
+	}},
+
 	# OVERRIDES ch3_zones.gd's "ch3_briefing" — the ch3_briefed variant's
 	# next redirects "" -> "q_hub" so Ilse stays talkable after the
 	# briefing (the suite's chapter walk talks to her ONCE, pre-briefing,
@@ -155,11 +168,11 @@ const CONVOS := {
 				{"text": "Set Fenna's loaf down before the front row. \"From one who grieves as you do. No sermon with it.\"",
 					"req_flag": "sq_on_ch3_bread_kneeling", "req_not_flag": "vale_bread_left",
 					"resonance": 2.0, "faction": {"choir": 2}, "lose_item": "vale_bread",
-					"flags": {"vale_bread_left": true}, "next": "k_bread_kind"},
+					"flags": {"vale_bread_left": true}, "scene": "kneeling_scene", "next": "k_bread_kind"},
 				{"text": "Drop Fenna's loaf where they kneel. \"Eat. Your saint can't, and the singing feeds nobody.\"",
 					"req_flag": "sq_on_ch3_bread_kneeling", "req_not_flag": "vale_bread_left",
 					"resonance": -2.0, "faction": {"choir": -2}, "lose_item": "vale_bread",
-					"flags": {"vale_bread_left": true}, "next": "k_bread_cold"},
+					"flags": {"vale_bread_left": true}, "scene": "kneeling_scene", "next": "k_bread_cold"},
 			]},
 		"k_truth": {"who": "Narrator", "text": "The old cantor's mouth works. \"Returning him—\" He stops. Somewhere in the rows behind him, one voice — young, cracked — says: \"...he does scream at night. We all hear it. We SING over it.\" The kneeling field is very quiet as it opens you a lane. Grief, you understand suddenly, has been waiting sixty years for permission to just be grief.", "next": ""},
 		"k_scorn": {"who": "Narrator", "text": "The word WICK moves through the kneeling rows like cold water. Some flinch. Some harden — you have just handed the Choir's next generation its favorite story about the day the unbeliever spat on their proof. The lane they open you is wide, and no one in it will meet your eyes.", "next": ""},
@@ -171,11 +184,11 @@ const CONVOS := {
 				{"text": "Set Fenna's loaf down before the front row. \"From one who grieves as you do. No sermon with it.\"",
 					"req_flag": "sq_on_ch3_bread_kneeling", "req_not_flag": "vale_bread_left",
 					"resonance": 2.0, "faction": {"choir": 2}, "lose_item": "vale_bread",
-					"flags": {"vale_bread_left": true}, "next": "k_bread_kind"},
+					"flags": {"vale_bread_left": true}, "scene": "kneeling_scene", "next": "k_bread_kind"},
 				{"text": "Drop Fenna's loaf where they kneel. \"Eat. Your saint can't, and the singing feeds nobody.\"",
 					"req_flag": "sq_on_ch3_bread_kneeling", "req_not_flag": "vale_bread_left",
 					"resonance": -2.0, "faction": {"choir": -2}, "lose_item": "vale_bread",
-					"flags": {"vale_bread_left": true}, "next": "k_bread_cold"},
+					"flags": {"vale_bread_left": true}, "scene": "kneeling_scene", "next": "k_bread_cold"},
 			]},
 		"k_bread_kind": {"who": "Narrator", "text": "The old cantor looks at the loaf a long moment — dark bread, still warm at the middle, from an oven the Choir sang 'no' at sixty years ago. \"...From WHOM?\" You tell him. Hands come up out of the rows, one by one, and the loaf goes back through the kneeling field the way rain goes into dry ground. Nobody sings over it. That, you suspect, is the part Fenna wanted.", "next": ""},
 		"k_bread_cold": {"who": "Narrator", "text": "The loaf lands in the grass. For a long moment nobody moves — then a boy in the third row, too young to have buried anyone properly, takes it and tears it and passes it down, eyes on you the whole time like a dare. They eat. You said the singing feeds nobody, and they eat while the old cantor's mouth sets in a line. You were right, which is not the same as being welcome.", "next": ""},

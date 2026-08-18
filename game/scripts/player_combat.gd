@@ -1464,6 +1464,12 @@ func hit_enemy(target: CharacterBody2D, mult: float, effects := {}) -> void:
 	var dir := (e.global_position - global_position).normalized()
 	e.hit_src = self  # MP-10: attribute the blow (reflect/counter/aggro; solo: THE player)
 	e.take_damage(dmg, dir, is_crit)
+	# Hit FEEL (gameplay-polish 2026-08-18): a micro camera kick on every
+	# landed single-target blow (crits harder), so the world answers the hit.
+	# AoE and echo sub-hits stay quiet — a crowd hit must not turn the screen
+	# to jelly; the ult/heavy shakes above this remain the loud beats.
+	if not effects.get("aoe", false) and not effects.get("_echoed", false):
+		game.shake(Balance.HIT_SHAKE_CRIT if is_crit else Balance.HIT_SHAKE)
 	# Shadow phantom step: a dash armed a refund window — the kill that closes
 	# it (usually the Fan or ult-stab, rarely the dash itself) slashes the dash
 	# cd. One refund per window; a fresh dash re-arms it.

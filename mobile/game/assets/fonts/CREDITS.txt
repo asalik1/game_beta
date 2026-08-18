@@ -1,10 +1,38 @@
-Two fonts in this folder. Both SIL OFL 1.1, both free for commercial
-use, and both ship their license text (required by the OFL).
+Four font families in this folder. All SIL OFL 1.1, all free for
+commercial use, and each ships its license text (required by the OFL).
 
-PIXELIFY SANS (PixelifySans.ttf) — the UI's display/header face
-  (panel titles, section headers, HUD title cards, boss bar name,
-  speaker names). Body text stays the engine's default sans for
-  readability.
+CINZEL (Cinzel-Variable.ttf, the variable "Cinzel[wght].ttf" renamed;
+  used at weight 700) — the WORLD/HEADER face since the gameplay-polish
+  pass (2026-08-18): hit numbers and floating combat text, the target
+  reticle tag, interact prompts, HUD bar/cooldown numbers, and the chrome
+  headers (zone banner, chapter card, menu titles via UITheme.title()).
+  Roman inscriptional capitals — the same family the logo's Decorative
+  cut belongs to, so the world and the wordmark speak one language.
+
+  Copyright 2020 The Cinzel Project Authors
+  (https://github.com/NDISCOVER/Cinzel), Reserved Font Name 'Cinzel'
+  License: SIL Open Font License 1.1 — see OFL-Cinzel.txt.
+  Downloaded from the Google Fonts repository
+  (github.com/google/fonts, ofl/cinzel). Shipped UNMODIFIED (renamed
+  file only; the OFL's Reserved Font Name rule applies to modified
+  builds).
+
+ALEGREYA SANS (AlegreyaSans-Regular.ttf, AlegreyaSans-Bold.ttf) — the
+  BODY face since 2026-08-18: HUD stat lines, quest tracker, hints,
+  dialogue and menu text (UITheme.body_font(); the menu Theme's
+  default_font). A warm humanist sans that stays readable at 13-16px;
+  replaces the engine-default sans that outside readers called "beta".
+
+  Copyright 2013 The Alegreya Sans Project Authors
+  (https://github.com/huertatipografica/Alegreya-Sans)
+  License: SIL Open Font License 1.1 — see OFL-AlegreyaSans.txt.
+  Downloaded from the Google Fonts repository
+  (github.com/google/fonts, ofl/alegreyasans). Shipped unmodified.
+
+PIXELIFY SANS (PixelifySans.ttf) — was the UI's display/header face;
+  the 2026-08-02 HUD pass took it off the chrome and since 2026-08-18
+  the headers wear Cinzel, so it now draws only the map compass glyph
+  (kept: it may return for a pixel-flavoured screen).
 
   Copyright 2021 The Pixelify Sans Project Authors
   (https://github.com/eifetx/Pixelify-Sans)
@@ -29,8 +57,11 @@ CINZEL DECORATIVE (CinzelDecorative-Bold.ttf) — the LOGO face, and
   but if anyone ever edits the TTF, it must be renamed first.
 
 How the fonts are wired:
-  scripts/ui/theme.gd — UITheme.display_font() loads Pixelify and applies
-  it to titles/headers via UITheme.title()/header(); UITheme.logo_font()
-  loads Cinzel and is applied ONLY by UITheme.logo(), which only
-  ui/cover.gd calls. Deleting either TTF falls back to the default sans —
-  nothing breaks.
+  scripts/ui/theme.gd — UITheme.world_font() (Cinzel 700, else an
+  emboldened engine default) via UITheme.world(); UITheme.header_font()
+  (Cinzel) via UITheme.title()/header(); UITheme.body_font() (Alegreya
+  Sans) via hud._label() and the menu Theme's default_font;
+  UITheme.display_font() (Pixelify) is now only the map compass glyph;
+  UITheme.logo_font() (Cinzel Decorative) is applied ONLY by
+  UITheme.logo(), which only ui/cover.gd calls. Deleting any TTF falls
+  back to the engine default — nothing breaks.

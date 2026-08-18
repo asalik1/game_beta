@@ -1518,6 +1518,10 @@ static func tex(name: String) -> ImageTexture:
 			var wimg := Image.create_empty(8, 8, false, Image.FORMAT_RGBA8)
 			wimg.fill(Color(1, 1, 1))
 			t = ImageTexture.create_from_image(wimg)
+		"noise":  # seamless value noise (road-edge wobble, floor mottle)
+			t = ImageTexture.create_from_image(_make_noise())
+		"softshadow":  # 1-D vertical falloff (wall cast shadow, prop contact darkening)
+			t = ImageTexture.create_from_image(_make_softshadow())
 		"reticle":
 			t = ImageTexture.create_from_image(_make_reticle())
 		"telegraph":
@@ -2643,6 +2647,12 @@ static func gem_icon(col: Color, lvl := 1) -> ImageTexture:
 
 
 ## Soft dark ellipse drawn under every character (fake ground shadow).
+## Contact shadow under every character/prop. gameplay-polish 2026-08-18: the
+## old 20x9 ellipse peaked at 0.30 alpha and vanished on the tinted floors —
+## every body floated (an outside "beta" read on the trailer). Same 20x9
+## footprint (every caller's scale is sized to it), denser core: 0.6 at the
+## centre with a smoothstep falloff so the edge stays soft.
+const SHADOW_ALPHA := 0.6
 static func _make_shadow() -> Image:
 	var w := 20
 	var h := 9
@@ -2653,7 +2663,61 @@ static func _make_shadow() -> Image:
 			var dy := (y + 0.5 - h / 2.0) / (h / 2.0)
 			var d := dx * dx + dy * dy
 			if d < 1.0:
-				image.set_pixel(x, y, Color(0, 0, 0, 0.30 * (1.0 - d)))
+				var f := 1.0 - d
+				image.set_pixel(x, y, Color(0, 0, 0, SHADOW_ALPHA * f * f * (3.0 - 2.0 * f)))
+	return image
+
+
+## Seamless VALUE noise, 64x64, single channel in RGB (A=1). Bilinear-
+## interpolated random lattice at 8px + a half-strength octave at 4px, both
+## wrapping, so it tiles cleanly. Feeds the road shader (edge wobble, mottle).
+static func _make_noise() -> Image:
+	var n := 64
+	var image := Image.create_empty(n, n, false, Image.FORMAT_RGBA8)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7331
+	var lat := []
+	for i in 8 * 8:
+		lat.append(rng.randf())
+	var lat2 := []
+	for i in 16 * 16:
+		lat2.append(rng.randf())
+	for y in n:
+		for x in n:
+			var v := _lattice(lat, 8, x / 8.0, y / 8.0) * 0.68 + _lattice(lat2, 16, x / 4.0, y / 4.0) * 0.32
+			image.set_pixel(x, y, Color(v, v, v, 1.0))
+	return image
+
+
+static func _lattice(lat: Array, size: int, fx: float, fy: float) -> float:
+	var x0 := int(floorf(fx)) % size
+	var y0 := int(floorf(fy)) % size
+	var x1 := (x0 + 1) % size
+	var y1 := (y0 + 1) % size
+	var tx: float = fx - floorf(fx)
+	var ty: float = fy - floorf(fy)
+	tx = tx * tx * (3.0 - 2.0 * tx)
+	ty = ty * ty * (3.0 - 2.0 * ty)
+	var a: float = lat[y0 * size + x0]
+	var b: float = lat[y0 * size + x1]
+	var c: float = lat[y1 * size + x0]
+	var d: float = lat[y1 * size + x1]
+	return lerpf(lerpf(a, b, tx), lerpf(c, d, tx), ty)
+
+
+## A 1-D vertical soft falloff (8 wide x 32 tall): opaque black at the top row
+## easing to clear at the bottom. Stretched under a wall face it is the wall's
+## cast shadow on the floor; flipped/rotated it shades an east/west wall's
+## inner edge. Smooth (32 steps) so it never bands like the old baked 8-row.
+static func _make_softshadow() -> Image:
+	var w := 8
+	var h := 32
+	var image := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	for y in h:
+		var t := 1.0 - (y + 0.5) / float(h)
+		var a := t * t * (3.0 - 2.0 * t)
+		for x in w:
+			image.set_pixel(x, y, Color(0, 0, 0, a))
 	return image
 
 
@@ -3663,6 +3727,24 @@ static func has_ground_field(kind: String) -> bool:
 	return ground_field(kind) != null
 
 
+## Native-resolution AUTHORED wall tile — the wall twin of ground_field
+## (2026-08-18): a seamless square pixel-art tile (assets/sprites/
+## wall_field_<kind>.png, kind = the Terrains.wall_for name: wallblock,
+## wall_moss, wall_castle...) that game_world._wall draws at 1 texel = 1 world
+## px, so the room boundary reads at the same density as the floor and props
+## instead of a 16px brick tile scaled 3x. Null when the kind ships none.
+static var _wall_field_cache := {}
+static func wall_field(kind: String) -> Texture2D:
+	if _wall_field_cache.has(kind):
+		return _wall_field_cache[kind]
+	var tex: Texture2D = null
+	var path := "res://assets/sprites/wall_field_%s.png" % kind
+	if ResourceLoader.exists(path):
+		tex = load(path)
+	_wall_field_cache[kind] = tex
+	return tex
+
+
 ## A complete authored room surface. Unlike ground_<kind>.png tile sheets,
 ## this image is stretched once across the whole 44x26 room and never repeats.
 ## Roads, door-aware arms, wall shadow and boundary walls are still composited
@@ -3898,8 +3980,11 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 		var cy := rng.randi_range(0, ph - 1)
 		var r := rng.randi_range(3, 9)
 		var on_path := mask[cy * pw + cx] == 1
-		if (on_path and (tiled_path or authored_path)) or (not on_path and authored_base):
-			continue  # a PNG-tiled band carries its own detail
+		# A PNG-tiled band carries its own detail; over a FIELD the road is the
+		# shader quad (game_world._mark_roads) with its own mottle — a 3x-scaled
+		# 16px blob here landed as a blocky tan square ON the dirt track.
+		if (on_path and (tiled_path or authored_path or field_base)) or (not on_path and authored_base):
+			continue
 		var cols: Array = p_cols if on_path else g_cols
 		var col: Color = cols[1] if rng.randf() < 0.5 else cols[2]
 		for y in range(maxi(0, cy - r), mini(ph, cy + r)):
@@ -3913,8 +3998,8 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 		var x := rng.randi_range(0, pw - 1)
 		var y := rng.randi_range(0, ph - 1)
 		var on_path_px := mask[y * pw + x] == 1
-		if (on_path_px and (tiled_path or authored_path)) or (not on_path_px and authored_base):
-			continue  # skip speckle over a PNG-tiled band
+		if (on_path_px and (tiled_path or authored_path or field_base)) or (not on_path_px and authored_base):
+			continue  # skip speckle over a PNG-tiled band / the shader road
 		var cols: Array = p_cols if on_path_px else g_cols
 		image.set_pixel(x, y, cols[1] if rng.randf() < 0.5 else cols[2])
 

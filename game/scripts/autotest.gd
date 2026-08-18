@@ -6890,12 +6890,22 @@ func _capital_in_city() -> void:
 	var keep_bags: Array = p_cap.bags
 	var keep_bp: Array = p_cap.backpack
 	var keep_gem_bag: Array = p_cap.gem_bag
+	# bag_used() also counts consumables, material stacks and LOOSE bags
+	# (bags-are-items rework 2026-08-17) — a campaign's worth of potions and
+	# ore filled the lent pack on its own and the gem was mailed (flake seen
+	# 2026-08-18: "the training gem did not reach the bag"). Lend the whole
+	# empty inventory, restore all of it below.
+	var keep_cons: Array = p_cap.consumables
+	var keep_mats: Array = p_cap.materials
+	var keep_loose: Array = p_cap.loose_bags
 	p_cap.bags = [Items.make_bag("S")]
 	p_cap.backpack = []
 	p_cap.gem_bag = []
+	p_cap.consumables = []
+	p_cap.materials = []
+	p_cap.loose_bags = []
 	p_cap.npc_favor.clear()
 	var keep_gold: int = p_cap.gold
-	var gems_before: int = p_cap.gem_bag.size()
 	game._hub_action("lapidary")
 	await _frames(2)
 	if game.hud.dialogue_active:
@@ -6913,8 +6923,24 @@ func _capital_in_city() -> void:
 	# With the pack lent above there is room, so the BENCH path is asserted
 	# outright — the old "...or a letter exists somewhere" disjunct passed on
 	# any leftover mail and let the bag-full case through silently.
-	if p_cap.gem_bag.size() != gems_before + 1:
-		return _fail("capital: the training gem did not reach the bag")
+	# Look for HER stone, not a count: the pack was just emptied, and a loose
+	# ground pickup dropped earlier in the run (a full bag drops loot at the
+	# hero's feet) can jump into the fresh room within the same frames — the
+	# count read 2 and failed (2026-08-18 diagnostics: "gems 2, mail 0").
+	var train_gem: Dictionary = {}
+	for g in p_cap.gem_bag:
+		var gd: Dictionary = g
+		if String(gd.get("stat", "")) == "atk_flat" and int(gd.get("lvl", 0)) == 1:
+			train_gem = gd
+	if train_gem.is_empty():
+		var mailed := 0
+		for m in game.mailbox:
+			if String(m.get("subject", "")).begins_with("The Lapidary"):
+				mailed += 1
+		return _fail("capital: the training gem did not reach the bag (gems %d, bag %d/%d, lapidary mail %d, kit charm in pack %s, dialogue %s, choices %s, menu %s)" % [
+			p_cap.gem_bag.size(), p_cap.bag_used(), p_cap.bag_capacity(), mailed,
+			str(p_cap.backpack.size()), str(game.hud.dialogue_active),
+			str(game.hud.choices_active), str(game.menus.is_open())])
 	if game.menus.is_open():
 		game.menus.close()
 	await _frames(1)
@@ -6929,7 +6955,6 @@ func _capital_in_city() -> void:
 	if kit_charm.is_empty():
 		return _fail("capital: the lapidary kit charm did not reach the bag (%d/%d slots used)" %
 			[p_cap.bag_used(), p_cap.bag_capacity()])
-	var train_gem: Dictionary = p_cap.gem_bag[p_cap.gem_bag.size() - 1]
 	if not p_cap.embed_gem_into(kit_charm, train_gem):
 		return _fail("capital: could not seat the training stone in the kit charm")
 	if not game.get_flag("cap_q_gem_done", false):
@@ -6955,6 +6980,9 @@ func _capital_in_city() -> void:
 	p_cap.bags = keep_bags
 	p_cap.backpack = keep_bp
 	p_cap.gem_bag = keep_gem_bag
+	p_cap.consumables = keep_cons
+	p_cap.materials = keep_mats
+	p_cap.loose_bags = keep_loose
 	p_cap.recalc()
 
 
@@ -7579,6 +7607,11 @@ func _test_materials() -> void:
 	var keep_gems: Array = p.gem_bag.duplicate()
 	var keep_cons: Array = p.consumables.duplicate()
 	var keep_mats: Array = p.materials.duplicate(true)
+	# Loose bags are carried items too (bags-are-items rework 2026-08-17):
+	# bag_used() counts them, so a bag that DROPPED this run made the slot
+	# math below off by one (flake 2026-08-18). Lend an empty pocket, restore
+	# on every exit (_mats_fail reads the snapshot below).
+	_mats_keep_loose = p.loose_bags.duplicate(true)
 
 	# (a) make_material: 35 valid, GearFlavor-keyed dicts whose sprite file ships.
 	for fam in Items.MATERIAL_FAMILIES:
@@ -7601,6 +7634,7 @@ func _test_materials() -> void:
 	p.gem_bag = []
 	p.consumables = []
 	p.materials = []
+	p.loose_bags = []
 
 	# (b) add_material STACKS into one slot per (family, grade); each stack = 1 slot.
 	if not p.add_material("metal", "F", 3):
@@ -7642,17 +7676,20 @@ func _test_materials() -> void:
 	p.gem_bag = keep_gems
 	p.consumables = keep_cons
 	p.materials = keep_mats
+	p.loose_bags = _mats_keep_loose
 	print("ok: crafting materials (5x7 dicts+sprites, stacking one-slot, icon, guaranteed elite drop)")
 
 
 ## Restore the bag pockets _test_materials cleared, then fail — the CLAUDE.md
 ## rule that FAILURE paths must restore shared state too (quit is only queued).
+var _mats_keep_loose: Array = []
 func _mats_fail(bp: Array, gb: Array, cn: Array, mt: Array, msg: String) -> void:
 	var p := game.player
 	p.backpack = bp
 	p.gem_bag = gb
 	p.consumables = cn
 	p.materials = mt
+	p.loose_bags = _mats_keep_loose
 	_fail(msg)
 
 

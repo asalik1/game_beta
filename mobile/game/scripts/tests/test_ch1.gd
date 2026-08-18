@@ -533,9 +533,17 @@ func _test_vargoth_victory() -> void:
 	await _frames(5)
 	game.player.pending_theme_note = ""
 	if not game.hud.dialogue_active:
-		return _fail("epilogue did not open after vargoth")
+		return _fail("final-boss send-off did not open after vargoth")
 	await _skip_dialogue()
-	await _frames(10)
+	# Solo replaces the flat epilogue with the per-class illustrated CLOSER
+	# (CHAPTER_CLOSERS.md): after the last beat is skipped the cutscene runs a
+	# ~0.46s finish() dissolve before end_it sets ST_VICTORY (co-op / no-closer
+	# sets it the next frame). Poll wall-clock for victory instead of a fixed
+	# frame count — headless frames race ahead of the dissolve tween.
+	var vguard := 0
+	while game.state != Game.ST_VICTORY and vguard < 120:
+		await get_tree().create_timer(0.05).timeout
+		vguard += 1
 	if game.state != Game.ST_VICTORY:
 		return _fail("no victory state after final boss")
 	print("ok: vargoth killed + victory screen")

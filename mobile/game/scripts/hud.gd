@@ -58,6 +58,7 @@ var boss_name: Label
 var mob_box: Control
 var mob_fill: ColorRect
 var mob_name: Label
+var mob_level: Label   # threat-tinted "Lv N" at the mob bar's left end (2026-08-18)
 var rival_box: Control
 var rival_fill: ColorRect
 var rival_name: Label
@@ -66,7 +67,7 @@ var rival_name: Label
 var slot_boxes: Array = []      # [{bg, cd, key, name}] for a1,a2,a3,ult,potion
 
 # buff timer bar (active-effect row above the ability bar)
-var buff_slots: Array = []      # pooled [{border,box,name,time,fill}] widgets
+var buff_slots: Array = []      # pooled [{border,chip_style,icon,time_bg,time,fill,glyph}] widgets
 var _buff_peak := {}            # buff id -> peak seconds seen (for the drain fill)
 
 # click-to-reveal popover over the live HUD (the old hover tooltips, now
@@ -97,6 +98,8 @@ var choice_cb := Callable()
 var speaker_label: Label
 var text_label: Label
 var hint_labels: Array = []     # hidden during cutscenes
+var _hint_play_t := 0.0         # play seconds since the last menu (hint fade clock)
+var _hint_faded := false
 var _touch_mode := false        # mobile: keyboard-only chrome stays hidden (touch_hud replaces it)
 var dialogue_hint: Label = null # desktop advance keys vs touch tap-to-continue
 var minimap_title: Label = null # desktop hotkey suffix is omitted on touch
@@ -279,8 +282,19 @@ func _ready() -> void:
 	mp_text = _bar_text(Vector2(BAR_X, 40), Vector2(BAR_W, 14), 10)
 	_panel(Vector2(8, 76), Vector2(344, 148))
 	stats_label = _label(Vector2(18, 82), 15, Color(1, 1, 1), 650)
+	# Identity line in the body BOLD face (2026-08-18 HUD chip pass): the
+	# block reads as name / resources / two stat CHIPS instead of four
+	# same-weight text lines.
+	var id_bf := UITheme.body_bold_font()
+	if id_bf != null:
+		stats_label.add_theme_font_override("font", id_bf)
+	stats_label.add_theme_font_size_override("font_size", 16)
 	gold_label = _label(Vector2(18, 104), 15, Color(1.0, 0.85, 0.35))
-	cr_label = _label(Vector2(18, 126), 15, Color(0.65, 0.9, 1.0))
+	# Two chips: Combat Rating and Resonance sit in small rounded pills (the
+	# orb lives inside the second) so they read as gauges, not debug lines.
+	_chip(Vector2(14, 120), Vector2(176, 22))
+	_chip(Vector2(14, 146), Vector2(150, 24))
+	cr_label = _label(Vector2(22, 122), 14, Color(0.72, 0.9, 1.0))
 	cr_label.mouse_filter = Control.MOUSE_FILTER_PASS
 	cr_label.set_meta("tip", "Combat Rating — one number approximating your total power: gear and gems, level, attributes and skill tree combined.")
 	_click_to_popover(cr_label, "Combat Rating")
@@ -544,10 +558,22 @@ func _ready() -> void:
 	mob_name.position = Vector2(490, 64)
 	mob_name.size = Vector2(300, 20)
 	mob_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var mob_bf := UITheme.body_bold_font()
+	if mob_bf != null:
+		mob_name.add_theme_font_override("font", mob_bf)
 	mob_name.add_theme_font_size_override("font_size", 13)
 	mob_name.add_theme_color_override("font_color", Color(0.92, 0.88, 0.8))
 	_outline(mob_name)
 	mob_box.add_child(mob_name)
+	# The target's LEVEL lives here now (2026-08-18), not floating over the mob
+	# in the world: a small threat-tinted tag at the bar's left end (red = 3+
+	# over you, gold = at/above, green = below). See track_target_bar.
+	mob_level = Label.new()
+	mob_level.position = Vector2(490, 64)
+	mob_level.size = Vector2(70, 20)
+	mob_level.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	UITheme.world(mob_level, 12, 4)
+	mob_box.add_child(mob_level)
 
 	# Rival variant (PvP duels): between the two in weight, and it wears the
 	# rival's CLASS TINT — the bar itself says who you're fencing with.
@@ -782,6 +808,9 @@ func _ready() -> void:
 	var controls2 := _label(Vector2(14, 698), 11, Color(0.7, 0.7, 0.7), 400)
 	controls2.text = "I inventory · T skills · C codex · ESC menu"
 	hint_labels = [controls, controls2]
+	# The hint lines fade out after the first stretch of play (2026-08-18):
+	# a permanent "WASD move · TAB lock…" strip reads as a debug overlay.
+	# They come back at full alpha whenever a menu opens (see update_stats).
 	if game.dev_mode:
 		var dev_l := _label(Vector2(1120, 12), 14, Color(1.0, 0.5, 0.4), 150, HORIZONTAL_ALIGNMENT_RIGHT)
 		dev_l.text = "DEV (F1)"
@@ -859,9 +888,12 @@ func _build_ability_bar() -> void:
 		cd.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		cd.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(cd)
-		# Big countdown number in the middle of the slot.
+		# Big countdown number in the middle of the slot (world face: it is a
+		# number in the player's eye-line, like the hit numbers).
 		var num := _label(Vector2(x, y + 14), 22, Color(1, 1, 1), SLOT_SIZE, HORIZONTAL_ALIGNMENT_CENTER)
+		UITheme.world(num, 22, 5)
 		var key := _label(Vector2(x + 4, y - 1), 12, Color(0.95, 0.85, 0.5), 50)
+		UITheme.world(key, 12, 4)
 		var cost := _label(Vector2(x, y + SLOT_SIZE - 20), 12, Color(0.5, 0.7, 1.0), SLOT_SIZE - 5, HORIZONTAL_ALIGNMENT_RIGHT)
 		var name_l := _label(Vector2(x - 8, y + SLOT_SIZE + 4), 12, Color(1, 1, 1), SLOT_SIZE + 16, HORIZONTAL_ALIGNMENT_CENTER)
 		slot_boxes.append({"border": border, "ring_style": ring_style, "bg": bg, "glow": glow, "icon": icon, "cd": cd, "num": num,
@@ -902,24 +934,29 @@ const BUFF_ICONS := {
 ## left-to-right each frame.
 func _build_buff_bar() -> void:
 	var x0 := 470.0   # left edge of the ability bar
-	var y := 580.0    # taller chips still clear the ability bar at y=634
+	var y := 578.0    # rounded chips still clear the ability bar at y=634
 	for i in BUFF_SLOTS:
-		var x := x0 + i * (BUFF_W + 6.0)
-		var border := ColorRect.new()
-		border.position = Vector2(x - 2, y - 2)
-		border.size = Vector2(BUFF_W + 4, BUFF_H + 4)
+		var x := x0 + i * (BUFF_W + 8.0)
+		# A rounded medallion-chip that echoes the ability ring's language (soft
+		# corners, accent border, drop shadow) instead of a hard flat square. The
+		# stylebox is recolored per active buff in _update_buffs.
+		var frame := Panel.new()
+		frame.position = Vector2(x, y)
+		frame.size = Vector2(BUFF_W, BUFF_H)
+		var chip_style := StyleBoxFlat.new()
+		chip_style.bg_color = Color(0.05, 0.05, 0.09, 0.92)
+		chip_style.border_color = Color(0.4, 0.4, 0.46)
+		chip_style.set_border_width_all(2)
+		chip_style.set_corner_radius_all(11)
+		chip_style.shadow_color = Color(0, 0, 0, 0.55)
+		chip_style.shadow_size = 4
+		frame.add_theme_stylebox_override("panel", chip_style)
 		# PASS: the chip's hover target for its tooltip (see ability bar note).
-		border.mouse_filter = Control.MOUSE_FILTER_PASS
-		_click_to_popover(border, "")
-		add_child(border)
-		var box := ColorRect.new()
-		box.color = Color(0.06, 0.06, 0.10, 0.9)
-		box.position = Vector2(x, y)
-		box.size = Vector2(BUFF_W, BUFF_H)
-		box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(box)
+		frame.mouse_filter = Control.MOUSE_FILTER_PASS
+		_click_to_popover(frame, "")
+		add_child(frame)
 		var icon := TextureRect.new()
-		icon.position = Vector2(x + (BUFF_W - BUFF_ICON) * 0.5, y + 1)
+		icon.position = Vector2(x + (BUFF_W - BUFF_ICON) * 0.5, y + 2)
 		icon.custom_minimum_size = Vector2(BUFF_ICON, BUFF_ICON)
 		icon.size = icon.custom_minimum_size
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -927,22 +964,26 @@ func _build_buff_bar() -> void:
 		icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(icon)
-		# Countdown text overlays a compact dark footer instead of stealing a
-		# permanent half of the chip. Persistent effects with no stack text hide
-		# the footer entirely and let the medallion own the full tile.
-		var time_bg := ColorRect.new()
-		time_bg.color = Color(0.02, 0.02, 0.04, 0.78)
-		time_bg.position = Vector2(x + 2, y + 30)
-		time_bg.size = Vector2(BUFF_W - 4, 15)
+		# Countdown rides a slim rounded pill near the base instead of a hard black
+		# footer band. Persistent effects with no stack text hide it and let the
+		# medallion own the full tile.
+		var time_bg := Panel.new()
+		var time_sb := StyleBoxFlat.new()
+		time_sb.bg_color = Color(0.02, 0.02, 0.04, 0.74)
+		time_sb.set_corner_radius_all(6)
+		time_bg.add_theme_stylebox_override("panel", time_sb)
+		time_bg.position = Vector2(x + 5, y + BUFF_H - 18)
+		time_bg.size = Vector2(BUFF_W - 10, 15)
 		time_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(time_bg)
-		var time_l := _label(Vector2(x, y + 28), 14, Color(1, 1, 1), BUFF_W, HORIZONTAL_ALIGNMENT_CENTER)
+		var time_l := _label(Vector2(x, y + BUFF_H - 19), 13, Color(1, 1, 1), BUFF_W, HORIZONTAL_ALIGNMENT_CENTER)
+		# Thin drain bar hugging the rounded base, inset so it stays inside the frame.
 		var fill := ColorRect.new()
-		fill.position = Vector2(x, y + BUFF_H - 3)
-		fill.size = Vector2(BUFF_W, 3)
+		fill.position = Vector2(x + 4, y + BUFF_H - 3)
+		fill.size = Vector2(BUFF_W - 8, 2)
 		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(fill)
-		var slot := {"border": border, "box": box, "icon": icon, "time_bg": time_bg,
+		var slot := {"border": frame, "chip_style": chip_style, "icon": icon, "time_bg": time_bg,
 			"time": time_l, "fill": fill, "glyph": ""}
 		_set_buff_slot_visible(slot, false)
 		buff_slots.append(slot)
@@ -950,7 +991,6 @@ func _build_buff_bar() -> void:
 
 func _set_buff_slot_visible(slot: Dictionary, vis: bool) -> void:
 	slot["border"].visible = vis
-	slot["box"].visible = vis
 	slot["icon"].visible = vis
 	slot["time_bg"].visible = vis
 	slot["time"].visible = vis
@@ -1136,7 +1176,10 @@ func _update_buffs() -> void:
 		var col: Color = b["color"]
 		var t: float = b["t"]
 		_set_buff_slot_visible(slot, true)
-		slot["border"].color = col
+		# Recolor the rounded chip's border + a faint accent glow to the buff's hue.
+		var chip: StyleBoxFlat = slot["chip_style"]
+		chip.border_color = col
+		chip.shadow_color = Color(col, 0.3)
 		slot["border"].set_meta("tip", _wrap_tip(String(b.get("tip", ""))))
 		var glyph: String = String(b["glyph"])
 		# Prefer an authored status icon (assets/icons/buff_*.png) when this buff
@@ -1157,12 +1200,12 @@ func _update_buffs() -> void:
 			# Persistent state: no countdown, full bar; Grit-style chips show
 			# their stack text instead.
 			slot["time"].text = String(b.get("text", ""))
-			slot["fill"].size.x = BUFF_W
+			slot["fill"].size.x = BUFF_W - 8
 		else:
 			slot["time"].text = String(b["text"]) if b.has("text") \
 				else ("%.0f" % ceil(t) if t >= 1.0 else "%.1f" % t)
 			var peak: float = maxf(float(_buff_peak.get(b["id"], t)), 0.01)
-			slot["fill"].size.x = BUFF_W * clampf(t / peak, 0.0, 1.0)
+			slot["fill"].size.x = (BUFF_W - 8) * clampf(t / peak, 0.0, 1.0)
 		slot["time_bg"].visible = not slot["time"].text.is_empty()
 
 
@@ -1495,6 +1538,22 @@ func _update_avatar() -> void:
 	avatar_portrait.visible = true
 
 
+## A small rounded pill behind a stat readout (the HUD chip pass, 2026-08-18).
+func _chip(pos: Vector2, chip_size: Vector2) -> Panel:
+	var c := Panel.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(UITheme.SURFACE_RAISED, 0.9)
+	sb.border_color = Color(UITheme.BORDER, 0.8)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(9)
+	c.add_theme_stylebox_override("panel", sb)
+	c.position = pos
+	c.size = chip_size
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(c)
+	return c
+
+
 func _panel(pos: Vector2, panel_size: Vector2) -> void:
 	var bg := Panel.new()
 	var sb := StyleBoxFlat.new()
@@ -1576,10 +1635,8 @@ func _bar_text(pos: Vector2, bar_size: Vector2, font_size: int) -> Label:
 	l.size = Vector2(bar_size.x - 8.0, bar_size.y)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	l.add_theme_font_size_override("font_size", font_size)
+	UITheme.world(l, font_size, 3)   # bar numbers share the world face
 	l.add_theme_color_override("font_color", Color(1, 1, 1, 0.92))
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-	l.add_theme_constant_override("outline_size", 3)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(l)
 	return l
@@ -1590,6 +1647,12 @@ func _label(pos: Vector2, font_size: int, color: Color, width := 500.0, align :=
 	l.position = pos
 	l.size = Vector2(width, font_size + 14)
 	l.horizontal_alignment = align
+	# Body face for HUD text when one ships (UITheme.BODY_FONT_PATHS; the HUD
+	# root is a CanvasLayer, so this is per-label rather than a theme). No-op
+	# until then — the engine default stays and nothing reflows.
+	var bf := UITheme.body_font()
+	if bf != null:
+		l.add_theme_font_override("font", bf)
 	l.add_theme_font_size_override("font_size", font_size)
 	l.add_theme_color_override("font_color", color)
 	_outline(l)
@@ -1717,8 +1780,24 @@ func update_stats(p: Player) -> void:
 			p.gold, OS.get_keycode_string(game.binds["potion"]), p.potion_count()]
 	if p.gold >= 5000:
 		game.unlock_achievement("wealthy")  # idempotent: fires once
-	cr_label.text = "Combat Rating: %d" % p.combat_rating()
+	cr_label.text = "Combat Rating  %d" % p.combat_rating()
 	_update_resonance(p.resonance)
+
+	# Controls-hint fade (2026-08-18): count real play seconds; past
+	# HINT_FADE_AFTER ease the two lines to 0 alpha; a menu open resets the
+	# clock so a returning player gets the reminder again.
+	if game.play_started and not game.menus.is_open():
+		_hint_play_t += get_process_delta_time()
+		if _hint_play_t > Balance.HINT_FADE_AFTER and not _hint_faded:
+			_hint_faded = true
+			for l in hint_labels:
+				var tw: Tween = (l as Control).create_tween()
+				tw.tween_property(l, "modulate:a", 0.0, 1.5)
+	elif game.menus.is_open() and _hint_faded:
+		_hint_faded = false
+		_hint_play_t = 0.0
+		for l in hint_labels:
+			l.modulate.a = 1.0
 
 	# Unread-mail badge: red circle with the count (9+ past nine).
 	var unread := 0
@@ -2704,6 +2783,16 @@ func _show_mob_bar(e: CharacterBody2D) -> void:
 	var nm_v: Variant = e.get("display_name")
 	_target_bar_label = String(nm_v) if nm_v != null else "Enemy"
 	mob_name.text = _target_bar_label
+	# Level tag, threat-tinted against the LOCAL player's level (the world-space
+	# "Lv N" this replaces used the same bands).
+	var lv_v: Variant = e.get("level")
+	if lv_v != null and game != null and game.local_player != null:
+		var diff: int = int(lv_v) - int(game.local_player.level)
+		mob_level.text = "Lv %d" % int(lv_v)
+		mob_level.add_theme_color_override("font_color",
+			Color(1.0, 0.45, 0.4) if diff >= 3 else (Color(0.95, 0.82, 0.45) if diff >= 0 else Color(0.65, 0.95, 0.6)))
+	else:
+		mob_level.text = ""
 	mob_box.visible = true
 	boss_box.visible = false
 	rival_box.visible = false

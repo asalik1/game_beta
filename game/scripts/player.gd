@@ -281,7 +281,13 @@ func _physics_process(delta: float) -> void:
 		# Phantom (assassin mythic) additionally GLIDES — no side-to-side sway.
 		sprite.rotation = 0.0 if skin in ["phantom", "crystal_archmage"] else sin(anim_t * 11.0) * 0.06
 	else:
-		sprite.position.y = 0.0
+		# Idle BREATH (2026-08-18, owner: "a modern game breathes"): the class
+		# idles are single frames by design (hero-anim coverage ruling), so a
+		# slow, small vertical bob carries the weight shift instead — the whole
+		# body (baked weapon included) rises and settles at ~0.75 Hz. Held only
+		# while standing and not mid-clip; a dash/aim pose or a walk resets it.
+		sprite.position.y = sin(anim_t * TAU * Balance.IDLE_BREATH_HZ) * Balance.IDLE_BREATH_PX \
+			if not _dir_pose_active and _clip_loop else 0.0
 		sprite.rotation = 0.0
 
 	# Held weapon follows the facing side, with a light idle sway.

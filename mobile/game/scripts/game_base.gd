@@ -142,7 +142,6 @@ var camera: Camera2D
 var ambient: CanvasModulate
 var glow_env: WorldEnvironment
 var reticle: Sprite2D
-var reticle_label: Label
 
 # Rebindable keys. Movement is always WASD/arrows; ESC is fixed.
 var binds := {
@@ -240,6 +239,8 @@ var fight_stats := {}   # same shape, boss-FIGHT window (fight_engage resets)
 var party_stats_net := {}  # GUEST: the host's merged table (~1 Hz fan) — display copy
 
 var shake_amt := 0.0
+var _cam_look := Vector2.ZERO   # eased look-ahead offset (camera feel, 2026-08-18)
+var _cam_zoom_mult := 1.0       # eased combat zoom multiplier on the base zoom
 var sounds: Dictionary = {}
 var sound_pool: Array = []
 # Variant groups are discovered from override names ending in `_vN`.
@@ -306,6 +307,7 @@ var settings := {"music": 1.0, "sfx": 1.0, "fullscreen": false, "lang": "en", "t
 	# user://settings.json ("touch_layout": id -> [x,y] custom offset; "joystick_pos": [x,y] custom home)
 var music_gain_db := -16.0            # base+tune of the current track
 var flags := {}                       # persistent story flags (saved)
+var quest_kills := {}                 # KILL-step progress: step flag -> kills so far (saved, chapter-wiped)
 var _quest_avail_cache := -1          # any_quest_available memo: -1 dirty, 0 no, 1 yes (not saved)
 var quest_marks: Array = []           # live ❢ giver markers: [{node, quests}] (rebuilt with the world)
 var merchant_zones: Array = []        # rooms with a merchant present (saved)
@@ -1441,6 +1443,10 @@ func _try_receive(payload: Dictionary) -> bool:
 		"material":
 			return player.add_material(String(payload.get("family", "")),
 				String(payload.get("grade", "")), int(payload.get("count", 1)))
+		"bag":
+			# A dropped/awarded bag lands LOOSE in the pack (never auto-equips);
+			# a full pack refuses so give_loot drops it on the ground / mails it.
+			return player.add_loose_bag(Items.make_bag(String(payload.get("grade", "F"))))
 	return false
 
 
@@ -1558,11 +1564,66 @@ func _check_side_quests() -> void:
 		var standing: Dictionary = reward.get("standing", {})
 		for fac in standing:
 			player.faction_standing[fac] = int(player.faction_standing.get(fac, 0)) + int(standing[fac])
+		# Beyond coins + standing (2026-08-17 quest-verb pass, PROPOSALS/
+		# DYNAMIC_WORLD.md §3.2): a quest may also pay an ITEM (a chapter-band
+		# gear roll for the wearer's class, like a chest), a GEM (chapter drop
+		# level), and/or leave a persistent KEPT mark a later beat reads
+		# (sq_kept_/chose_-prefixed, so it survives the chapter wipe and stays
+		# per-character in co-op). Item/gem land on THIS machine's local player,
+		# exactly like the gold above; the mark routes like any world/kept flag.
+		var got_extra := ""
+		if has_local_player():
+			if reward.has("item"):
+				var it: Dictionary = Items.roll_item(loot_chapter(), loot_rng, player.cls)
+				if not it.is_empty():
+					give_loot({"kind": "item", "item": it}, player.global_position)
+					got_extra = "  + " + String(it.get("name", "gear"))
+			if reward.has("gem"):
+				var glvl := int(reward["gem"]) if not (reward["gem"] is bool) \
+					else Balance.gem_drop_level(loot_chapter())
+				var gem := drop_gem(glvl)
+				give_loot({"kind": "gem", "gem": gem}, player.global_position)
+				got_extra += "  + " + Items.gem_title(gem)
+		if reward.has("kept"):
+			set_flag(String(reward["kept"]))  # persistent per-character mark
 		sfx("levelup")
 		spawn_text(player.global_position + Vector2(0, -70),
-			"SIDE QUEST COMPLETE — %s%s" % [String(q["name"]),
-				"  (+%d gold)" % gold if gold > 0 else ""],
+			"SIDE QUEST COMPLETE — %s%s%s" % [String(q["name"]),
+				"  (+%d gold)" % gold if gold > 0 else "", got_extra],
 			Color(1.0, 0.85, 0.35), 4.0)
+
+## A kill toward any accepted, unfinished KILL-step quest (2026-08-17
+## quest-verb pass): a step with `kind:"kill"` names a `target` enemy kind and
+## a `count`; each matching kill bumps a run-scoped counter and, at the target,
+## SETS the step flag — so the step stays an ordinary flag to _check_side_quests
+## and the journal, the co-op flag-routing carries the completion, and the
+## save/wipe treat it like any quest progress. Host-authoritative (like every
+## spawn/kill credit) so a shared kill is counted once; the flag it sets routes
+## to the party. Called from game_flow.on_enemy_died beside note_kill.
+func quest_kill_note(kind: String) -> void:
+	if net_guest():
+		return  # the host owns the sim; the completion flag routes to guests
+	for id in Story.ALL_SIDE_QUESTS:
+		var sid := String(id)
+		if not get_flag("sq_on_" + sid, false) or get_flag("sq_paid_" + sid, false):
+			continue
+		var q: Dictionary = Story.ALL_SIDE_QUESTS[id]
+		for step in q.get("steps", []):
+			if String(step.get("kind", "flag")) != "kill" or String(step.get("target", "")) != kind:
+				continue
+			var f := String(step["flag"])
+			if get_flag(f, false):
+				continue
+			var need: int = maxi(1, int(step.get("count", 1)))
+			var have := int(quest_kills.get(f, 0)) + 1
+			quest_kills[f] = have
+			if have >= need:
+				set_flag(f)  # completes the step: routes, re-checks, clears the ❢
+			elif is_instance_valid(player):
+				spawn_text(player.global_position + Vector2(0, -84),
+					"%s  (%d/%d)" % [String(step.get("text", "quarry")), have, need],
+					Color(0.9, 0.85, 0.7), 1.6)
+
 
 ## Settle every side quest ACCEPTED in this chapter and never finished.
 ## Called from the victory beat (game_flow): victory is the chapter's point of
@@ -1668,6 +1729,15 @@ func get_flag(flag_name: String, def = false):
 
 func run_convo_id(id: String, on_done := Callable()) -> void:
 	var convo: Dictionary = Story.ALL_CONVOS[id]
+	# Illustrated opt-in (2026-08-17 quest-illustration pass): a convo flagged
+	# `"cinematic": true` plays through the storybook layer (Cutscene) exactly
+	# like a chapter opener — each node's `"cue"` stages an authored plate.
+	# This is the seam that lets a QUEST EVENT show opener-style art. Guard on
+	# `cutscene == null` so run_cinematic_convo (which sets it, then re-enters
+	# here) doesn't recurse; openers already own the layer when they call in.
+	if cutscene == null and bool(convo.get("cinematic", false)):
+		run_cinematic_convo(id, on_done)
+		return
 	# MP-13 (§5.4): in a co-op session, dialogue is a local overlay routed
 	# through the etiquette layer — a per-NPC busy-lock, world-flag sync,
 	# consequence toasts, and beat mirroring for the story-critical convos
@@ -1836,6 +1906,17 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 					call("_hub_action", act)
 					if on_done.is_valid():
 						on_done.call()
+			# Illustrated beat ("scene": 2026-08-17 quest-illustration pass): after
+			# this choice's whole path closes, play a cinematic convo — the quest's
+			# moment reuses the opener storybook (run_cinematic_convo). The plate(s)
+			# come from that convo's node cues; per-class art resolves automatically
+			# (Cutscene._quest_frames). Local-only, like hub_action; chains any prior
+			# done_after so hub_action + scene can coexist.
+			if c.has("scene"):
+				var scene_id := String(c["scene"])
+				var chain := done_after
+				done_after = func() -> void:
+					run_cinematic_convo(scene_id, chain)
 			# MP-13 (§5.4): resonance, standings, keepsakes and coins above all
 			# hit `player` = local_player, so a GUEST's choice moves only the
 			# guest — owner-side by construction (§5.4). The one SHARED
@@ -3109,6 +3190,37 @@ func _floor_text_color(color: Color) -> Color:
 	return c
 
 
+# Floating-text presentation (gameplay-polish 2026-08-18; presentation
+# constants, not tuning). Outside readers called the old numbers "beta": the
+# engine-default face at 15px, every hit the same size, all spawning on one
+# point so a flurry stacked into a grey pile ("14 15 15 16 20! 22!"). Now:
+# the world face (UITheme.world), a scale-pop on spawn, an eased rise with a
+# small sideways lean so consecutive hits fan out, a fade over the last part
+# of the rise, and crits a size up. Words (status callouts, telegraph lines)
+# keep the calmer straight rise so they stay readable.
+const FLOAT_NUM_SIZE := 21          # a hit number ("47")
+const FLOAT_NUM_SIZE_CRIT := 27     # a crit ("128!")
+const FLOAT_LABEL_SIZE := 16        # a short callout ("WARD SHATTERED!")
+const FLOAT_LABEL_SIZE_LONG := 14   # a telegraph line ("FLASH FREEZE — FIND A VENT!")
+const FLOAT_NUM_SPREAD := 16.0      # ± px sideways lean per number
+const FLOAT_NUM_RISE := 46.0
+const FLOAT_NUM_LIFE := 0.85
+var _float_rng := RandomNumberGenerator.new()   # its own stream: never perturbs game RNG
+
+
+## 0 = words, 1 = a number ("47", "+12", "-9"), 2 = a crit ("128!", "-40 CRIT!").
+func _float_kind(text: String) -> int:
+	var t := text.strip_edges()
+	var crit := t.ends_with("!")
+	if crit:
+		t = t.trim_suffix("!").trim_suffix(" CRIT").strip_edges()
+	if t.begins_with("+") or t.begins_with("-"):
+		t = t.substr(1)
+	if t.is_valid_int():
+		return 2 if crit else 1
+	return 0
+
+
 ## hold: seconds the text sits still before the float-and-fade (the
 ## fight report needs reading time; combat numbers leave it at 0).
 func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
@@ -3116,22 +3228,51 @@ func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
 	l.text = text
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.z_index = 20
-	l.add_theme_font_size_override("font_size", 15)
-	# The rect clamps UP to the text's width, anchored at its left edge — so a
-	# long telegraph line ("FLASH FREEZE — FIND A VENT!") used to start at the
-	# 140px box's left edge and hang off to the RIGHT of the head it belongs
-	# over. Size first (clamp happens now), then center the REAL rect on pos.
-	l.size = Vector2(140, 22)
-	l.position = pos + Vector2(-l.size.x * 0.5, -10)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var kind := _float_kind(text)
+	var fsize := FLOAT_LABEL_SIZE
+	var outline := 4
+	if kind == 2:
+		fsize = FLOAT_NUM_SIZE_CRIT
+		outline = 5
+	elif kind == 1:
+		fsize = FLOAT_NUM_SIZE
+		outline = 5
+	elif text.length() > 18:
+		fsize = FLOAT_LABEL_SIZE_LONG
+	UITheme.world(l, fsize, outline)
 	l.add_theme_color_override("font_color", _floor_text_color(color))
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-	l.add_theme_constant_override("outline_size", 4)
+	# Size the rect to the STRING (font metrics are available off-tree once
+	# the overrides are set) so the centring and the pop pivot are exact — a
+	# fixed 140px box mis-centred long telegraph lines and clamped short ones.
+	var font: Font = l.get_theme_font("font")
+	if font == null:
+		font = ThemeDB.fallback_font
+	var ssz: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1, fsize)
+	l.size = Vector2(ssz.x + outline * 2.0 + 6.0, ssz.y + 6.0)
+	var lean := 0.0
+	if kind > 0:
+		lean = _float_rng.randf_range(-FLOAT_NUM_SPREAD, FLOAT_NUM_SPREAD)
+	l.position = pos + Vector2(-l.size.x * 0.5 + lean, -l.size.y * 0.5)
+	l.pivot_offset = l.size * 0.5
 	add_child(l)
 	var tween := create_tween()
-	if hold > 0.0:
-		tween.tween_interval(hold)
-	tween.tween_property(l, "position:y", l.position.y - 34.0, 0.9)
-	tween.parallel().tween_property(l, "modulate:a", 0.0, 0.9)
+	if kind > 0:
+		l.scale = Vector2(1.5, 1.5) if kind == 2 else Vector2(1.28, 1.28)
+		tween.tween_property(l, "scale", Vector2.ONE, 0.14) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		var rise := FLOAT_NUM_RISE * (1.2 if kind == 2 else 1.0)
+		var to := l.position + Vector2(lean * 0.6, -rise)
+		tween.parallel().tween_property(l, "position", to, FLOAT_NUM_LIFE) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tween.parallel().tween_property(l, "modulate:a", 0.0, FLOAT_NUM_LIFE * 0.45) \
+			.set_delay(FLOAT_NUM_LIFE * 0.55)
+	else:
+		if hold > 0.0:
+			tween.tween_interval(hold)
+		tween.tween_property(l, "position:y", l.position.y - 34.0, 0.9) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.parallel().tween_property(l, "modulate:a", 0.0, 0.9)
 	tween.tween_callback(l.queue_free)
 
 
@@ -3154,19 +3295,21 @@ func spawn_text_all(pos: Vector2, text: String, color: Color, hold := 0.0) -> vo
 func spawn_ally_damage(pos: Vector2, amount: int, crit: bool) -> void:
 	var l := Label.new()
 	l.text = "%d!" % amount if crit else str(amount)
-	l.position = pos + Vector2(-50, -6)
-	l.size = Vector2(100, 16)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.z_index = 19  # under your own numbers (z 20)
-	l.add_theme_font_size_override("font_size", 11)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	UITheme.world(l, 14, 3)   # same face as your own numbers, two sizes down
 	# A cool, dim tint marks it as someone else's damage; crits warm slightly.
 	var col := Color(1.0, 0.72, 0.45, 0.8) if crit else Color(0.78, 0.86, 0.95, 0.72)
 	l.add_theme_color_override("font_color", col)
 	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
-	l.add_theme_constant_override("outline_size", 3)
+	var lean := _float_rng.randf_range(-FLOAT_NUM_SPREAD * 0.6, FLOAT_NUM_SPREAD * 0.6)
+	l.size = Vector2(100, 20)
+	l.position = pos + Vector2(-50 + lean, -8)
 	add_child(l)
 	var tween := create_tween()
-	tween.tween_property(l, "position:y", l.position.y - 24.0, 0.75)
+	tween.tween_property(l, "position:y", l.position.y - 26.0, 0.75) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(l, "modulate:a", 0.0, 0.75)
 	tween.tween_callback(l.queue_free)
 

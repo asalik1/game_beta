@@ -39,6 +39,7 @@ static func write(game: Game, slot: int) -> void:
 		"quest_key": game.quest_key,
 		"talked_to_elder": game.talked_to_elder,
 		"flags": game.flags,
+		"quest_kills": game.quest_kills,   # KILL-step counters (world/run state, chapter-wiped)
 		"merchant_zones": game.merchant_zones,
 		# Run stats describe THE RUN (this world's playthrough), not the
 		# traveling character — §5.7's take-home list is XP/gold/gems/gear/
@@ -123,7 +124,7 @@ static func _character_section(game: Game) -> Dictionary:
 		"capital_shop_day": game.capital_shop_day,
 		# --- gear ---
 		"equipment": p.equipment, "backpack": p.backpack, "gem_bag": p.gem_bag,
-		"bags": p.bags, "consumables": p.consumables, "materials": p.materials,
+		"bags": p.bags, "loose_bags": p.loose_bags, "consumables": p.consumables, "materials": p.materials,
 		"potion_rotation": p.potion_rotation, "active_potion": p.active_potion,
 		# Waking Depths: highest cleared checkpoint depth (re-entry point).
 		"depths_checkpoint": p.depths_checkpoint,
@@ -202,6 +203,7 @@ static func write_server_world(game: Game) -> void:
 		"quest_key": game.quest_key,
 		"talked_to_elder": game.talked_to_elder,
 		"flags": game.flags,
+		"quest_kills": game.quest_kills,
 		"merchant_zones": game.merchant_zones,
 		"run_time": game.run_time, "run_deaths": game.run_deaths,
 		"run_elites": game.run_elites, "run_secrets": game.run_secrets,
@@ -258,6 +260,7 @@ static func apply_server_world(game: Game, data: Dictionary) -> void:
 	game.quest_key = String(w.get("quest_key", "talk"))
 	game.talked_to_elder = bool(w.get("talked_to_elder", false))
 	game.flags = w.get("flags", {})
+	game.quest_kills = w.get("quest_kills", {})
 	game.run_time = float(w.get("run_time", 0.0))
 	game.run_deaths = int(w.get("run_deaths", 0))
 	game.run_elites = int(w.get("run_elites", 0))
@@ -310,7 +313,7 @@ static func world_of(data: Dictionary) -> Dictionary:
 # single-bag key (pre-`bags` saves) — routed so load_bags still sees it.
 const _V2_CHARACTER_FIELDS := ["name", "cls", "level", "xp", "skill_points", "tree_points",
 	"attr_points", "unspent_attr", "gold", "ability_theme", "chroma", "skin",
-	"resonance", "faction_standing", "equipment", "backpack", "gem_bag", "bags", "bag",
+	"resonance", "faction_standing", "equipment", "backpack", "gem_bag", "bags", "loose_bags", "bag",
 	"consumables", "materials", "potion_rotation", "active_potion", "depths_checkpoint", "hp", "mp",
 	"profession", "mastery", "blueprints", "swap_cost_step", "swap_week", "knows_alkahest",
 	"mailbox", "dropped_loot", "clock_anchor", "daily_last_day", "daily_streak",
@@ -318,7 +321,7 @@ const _V2_CHARACTER_FIELDS := ["name", "cls", "level", "xp", "skill_points", "tr
 	"bounties", "bounty_day", "bounty_week",
 	"vault_week", "vault_progress", "vault_claimed_week", "weekly_claimed_week",
 	"renown_cache_week", "waking_kills_week", "waking_kills"]
-const _V2_WORLD_FIELDS := ["quest_key", "talked_to_elder", "flags", "merchant_zones",
+const _V2_WORLD_FIELDS := ["quest_key", "talked_to_elder", "flags", "quest_kills", "merchant_zones",
 	"run_time", "run_deaths", "run_elites", "run_secrets",
 	"weekly_active", "weekly_week", "waking_week", "bosses_slain", "pos",
 	"cur_room", "last_safe_room", "visited_rooms", "cleared_rooms", "door_seen",
@@ -434,6 +437,7 @@ static func apply(game: Game, data: Dictionary) -> void:
 	game.quest_key = String(w.get("quest_key", "talk"))
 	game.talked_to_elder = bool(w.get("talked_to_elder", false))
 	game.flags = w.get("flags", {})
+	game.quest_kills = w.get("quest_kills", {})
 	# Run stats ride the save so the results card spans sessions. They are
 	# WORLD state (this run's card); only the weekly CLAIM ledger is the
 	# character's (see write()).
@@ -532,6 +536,13 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	for g in c.get("gem_bag", []):
 		p.gem_bag.append(_fix_gem(g))
 	p.bags = load_bags(c)
+	# Loose (unequipped) bags round-trip through make_bag so name/slots stay
+	# current; an entry with no grade simply drops (no-save-migration rule).
+	p.loose_bags = []
+	for lb in c.get("loose_bags", []):
+		var lg := String((lb as Dictionary).get("grade", "")) if lb is Dictionary else ""
+		if lg != "" and Items.BAG_NAMES.has(lg):
+			p.loose_bags.append(Items.make_bag(lg))
 	# Graded potions round-trip through make_potion so their effect params /
 	# sprite / price stay current; a family/grade/lane that no longer exists
 	# simply drops (no-save-migration rule). Stones/scrolls/quest items pass

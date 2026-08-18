@@ -18,6 +18,34 @@ const FONT_PATH := "res://assets/fonts/PixelifySans.ttf"
 ## title()/header(). See assets/fonts/CREDITS.txt.
 const LOGO_FONT_PATH := "res://assets/fonts/CinzelDecorative-Bold.ttf"
 
+## WORLD face (gameplay-polish 2026-08-18): damage numbers, floating combat
+## labels, the target reticle, enemy-bar tags, zone banners. Outside feedback
+## on the trailer read the engine-default sans over the world as "beta"; a
+## face with a spine fixes more than any single art asset. First path that
+## exists wins: Cinzel Bold (OFL, the inscriptional caps face — pending the
+## owner's download approval); else a synthetic-BOLD variation of the engine
+## default (FontVariation.embolden — heavier numbers with no new asset). NOT
+## Pixelify: its "2" reads as "S" at 21px (rig 2026-08-18: "22" -> "SS").
+const WORLD_FONT_PATHS: Array[String] = [
+	"res://assets/fonts/Cinzel-Bold.ttf",       # static Bold from the fonts.google.com zip
+	"res://assets/fonts/Cinzel-Variable.ttf",   # the variable file from github.com/google/fonts (Cinzel[wght].ttf, renamed; wght 700 applied)
+]
+const WORLD_FALLBACK_EMBOLDEN := 0.55
+const VARIABLE_BOLD_WGHT := 700
+## BODY face: HUD stat lines, dialogue, hints, menu text — a warm humanist
+## text face that stays readable at 13-16px (Alegreya Sans, OFL, pending
+## approval). Null when absent so the HUD keeps the engine default and
+## nothing reflows unexpectedly. Bold sibling for emphasis rows.
+const BODY_FONT_PATHS: Array[String] = ["res://assets/fonts/AlegreyaSans-Regular.ttf"]
+const BODY_BOLD_FONT_PATHS: Array[String] = ["res://assets/fonts/AlegreyaSans-Bold.ttf"]
+## HEADER face for chrome titles (title()/header(): zone banner, chapter card,
+## menu titles). Cinzel only — NO Pixelify fallback: the 2026-08-02 HUD pass
+## deliberately took the pixel face off the chrome, so absent Cinzel the
+## headers keep the engine default exactly as that pass left them.
+const HEADER_FONT_PATHS: Array[String] = [
+	"res://assets/fonts/Cinzel-Bold.ttf", "res://assets/fonts/Cinzel-Variable.ttf",
+]
+
 # Shared palette — the parchment-gold chrome language of the cover.
 const GOLD := Color(0.88, 0.67, 0.28)
 const GOLD_BRIGHT := Color(1.0, 0.82, 0.42)
@@ -35,6 +63,82 @@ static var _font_missing := false
 static var _logo_font: Font = null
 static var _logo_font_missing := false
 static var _theme: Theme = null
+static var _face_cache := {}   # "world"/"body"/"body_bold" -> Font or null (resolved once)
+
+
+## Resolve the first present font in a path list; null if none ships. A
+## VARIABLE font file ("[wght]" in the name) is wrapped in a FontVariation at
+## the bold weight — the world/header faces are the bold cut.
+static func _first_face(key: String, paths: Array[String]) -> Font:
+	if _face_cache.has(key):
+		return _face_cache[key]
+	var f: Font = null
+	for p in paths:
+		if ResourceLoader.exists(p):
+			f = load(p)
+			if p.contains("[wght]") or p.contains("-Variable"):
+				var fv := FontVariation.new()
+				fv.base_font = f
+				var wght_tag: int = TextServerManager.get_primary_interface().name_to_tag("wght")
+				fv.variation_opentype = {wght_tag: VARIABLE_BOLD_WGHT}
+				f = fv
+			break
+	_face_cache[key] = f
+	return f
+
+
+## The world/combat face (see WORLD_FONT_PATHS): the shipped face if any,
+## else an emboldened copy of the engine default. Never null.
+static func world_font() -> Font:
+	var f := _first_face("world", WORLD_FONT_PATHS)
+	if f != null:
+		return f
+	if not _face_cache.has("world_fallback"):
+		var fv := FontVariation.new()
+		fv.base_font = ThemeDB.fallback_font
+		fv.variation_embolden = WORLD_FALLBACK_EMBOLDEN
+		_face_cache["world_fallback"] = fv
+	return _face_cache["world_fallback"]
+
+
+## The body face for HUD/menu text (see BODY_FONT_PATHS). Null when absent.
+static func body_font() -> Font:
+	return _first_face("body", BODY_FONT_PATHS)
+
+
+static func body_bold_font() -> Font:
+	return _first_face("body_bold", BODY_BOLD_FONT_PATHS)
+
+
+## The chrome header face (see HEADER_FONT_PATHS). Null until Cinzel ships.
+static func header_font() -> Font:
+	return _first_face("header", HEADER_FONT_PATHS)
+
+
+## World-text treatment: the world face (when present) at `size`, with a
+## solid dark outline so it survives any floor. Returns the label.
+static func world(l: Label, size := 0, outline := 4) -> Label:
+	var f := world_font()
+	if f != null:
+		l.add_theme_font_override("font", f)
+	if size > 0:
+		l.add_theme_font_size_override("font_size", size)
+	if outline > 0:
+		l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.92))
+		l.add_theme_constant_override("outline_size", outline)
+	return l
+
+
+## Body-text treatment for a whole Control subtree: sets the theme's default
+## font to the body face so every Label/Button under `root` reskins at once.
+## No-op when no body face ships (the engine default stays, layouts unchanged).
+static func apply_body(root: Control) -> void:
+	var f := body_font()
+	if f == null:
+		return
+	var t: Theme = root.theme if root.theme != null else Theme.new()
+	t.default_font = f
+	root.theme = t
 
 
 ## The display font for titles/headers ONLY (body text stays the default
@@ -70,8 +174,12 @@ static func logo(l: Label, size := 0) -> Label:
 	return l
 
 
-## Panel/screen title treatment: display font at a title size.
+## Panel/screen title treatment: the header face (when it ships — see
+## HEADER_FONT_PATHS) at a title size; else just the size.
 static func title(l: Label, size := 0) -> Label:
+	var f := header_font()
+	if f != null:
+		l.add_theme_font_override("font", f)
 	if size > 0:
 		l.add_theme_font_size_override("font_size", size)
 	return l
@@ -215,6 +323,10 @@ static func _build() -> Theme:
 	if _theme != null:
 		return _theme
 	var t := Theme.new()
+	# Body face for every menu label/button when one ships (see BODY_FONT_PATHS).
+	var bf := body_font()
+	if bf != null:
+		t.default_font = bf
 
 	# --- Buttons: real bordered chrome with a hover state. The SEMANTIC
 	# font colors (green resume / red quit / grade colors) stay untouched —

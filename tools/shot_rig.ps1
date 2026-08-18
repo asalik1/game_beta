@@ -1,6 +1,6 @@
 # Shot-rig runner (2026-08-15)  -  the one way to run an in-engine screenshot rig.
 #
-#   shot.bat <rig> [--timeout=N] [--no-gate] [--no-import] [rig args...]
+#   shot.bat <rig> [--timeout=N] [--fixed-fps=N] [--no-gate] [--no-import] [rig args...]
 #
 #   <rig>      fx_series | shot_fx_series | qa_skins | any game/<name>.tscn or game/shot_<name>.tscn
 #   rig args   everything else is passed to the engine after `--` (a ShotRig reads them via arg()/flag()).
@@ -54,11 +54,14 @@ $grace = 60.0     # outer kill = timeout + grace; see the header for why 60
 $gate = $true
 $doImport = $true
 $rigArgs = @()
+$fixedFps = 0     # --fixed-fps=N: engine flag for frame-SERIES rigs (deterministic 1/N s per frame)
 foreach ($a in $rest) {
     $s = [string]$a
     if ($s -match '^--timeout=(.+)$') {
         $timeout = [double]$Matches[1]
         $rigArgs += $s            # the in-engine watchdog reads the same value
+    } elseif ($s -match '^--fixed-fps=(\d+)$') {
+        $fixedFps = [int]$Matches[1]
     } elseif ($s -eq '--no-gate') {
         $gate = $false
     } elseif ($s -eq '--no-import') {
@@ -121,7 +124,9 @@ $logDir = Join-Path $env:TEMP 'crownless_shots'
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 $outLog = Join-Path $logDir "$($scene -replace '\.tscn$','')_$stamp.out"
 $errLog = Join-Path $logDir "$($scene -replace '\.tscn$','')_$stamp.err"
-$argList = @('--audio-driver', 'Dummy', '--path', $gameDir, "res://$scene", '--') + $rigArgs
+$argList = @('--audio-driver', 'Dummy')
+if ($fixedFps -gt 0) { $argList += @('--fixed-fps', "$fixedFps") }
+$argList += @('--path', $gameDir, "res://$scene", '--') + $rigArgs
 $quoted = @()
 foreach ($a in $argList) {
     if ($a -match '\s') { $quoted += ('"' + $a + '"') } else { $quoted += $a }

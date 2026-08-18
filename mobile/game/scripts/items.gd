@@ -1664,8 +1664,12 @@ static func grand_potion_ids() -> Array:
 const ALKAHEST_CODEX_NAME := "The Alkahest Codex"
 
 static func make_alkahest_codex() -> Dictionary:
+	# sprite = the dedicated consumables/alkahest_codex icon (radiant gilded tome,
+	# Codex-generated 2026-08-16); Art.consumable_icon resolves it like the Grand
+	# flasks. Until the PNG lands, consumable_icon returns null and callers fall
+	# back to their glyph, exactly as before.
 	return {"kind": "codex", "id": "alkahest_codex", "grade": "S",
-		"name": ALKAHEST_CODEX_NAME,
+		"name": ALKAHEST_CODEX_NAME, "sprite": "consumables/alkahest_codex",
 		"desc": "The recovered formulary that marries a clean S potion to its laced twin. Learned once — then Herbalist Kesh can synthesise a Grand potion from the pair forever."}
 
 

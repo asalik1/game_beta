@@ -22,9 +22,11 @@ const SIDE_QUESTS := {
 		"desc": "Fisher Dov hasn't rowed past the leaning reeds since midsummer, and nobody has seen the far shore. Find what the Root keeps of it — and come back and tell him true.",
 		"steps": [
 			{"flag": "sq6_shore_seen", "text": "Find the far shore's remainders in the deep root gallery"},
+			{"kind": "kill", "target": "root_shambler", "count": 2, "flag": "sq6_shore_cleared",
+				"text": "Break the root-shamblers barring the deep gallery"},
 			{"flag": "sq6_shore_told", "text": "Return to Fisher Dov at the Pilgrim Gate — and tell it true"},
 		],
-		"reward": {"gold": 150},
+		"reward": {"gold": 150, "gem": true, "kept": "sq_kept_far_shore"},
 	},
 	"ch6_gate_bread": {
 		"name": "Bread Between Camps",
@@ -34,18 +36,20 @@ const SIDE_QUESTS := {
 			{"flag": "sq6_bread_taken", "text": "Take the gate camp's loaf from Deacon Vela"},
 			{"flag": "sq6_bread_left", "text": "Set it on the table between the schism camps"},
 		],
-		"reward": {"gold": 120, "standing": {"choir": 2}},
+		"reward": {"gold": 120, "gem": true, "standing": {"choir": 2}},
 	},
 	"ch6_kesh_tally": {
 		"name": "Kesh's Tally",
 		"chapter": "ch6",
-		"desc": "The Bloom takes ground faster than the cure-camp's runners can map it. Mark what the green has claimed — the sunken shrine, the cure pool's fence — and bring Kesh the tally.",
+		"desc": "The Bloom takes ground faster than the cure-camp's runners can map it. Mark what the green has claimed — the sunken shrine, the cure pool's fence — and bring Kesh the tally. The green does not survey quietly; bog-lurkers work the same line.",
 		"steps": [
 			{"flag": "sq6_tally_shrine", "text": "Cut the survey-mark at the Sunken Shrine"},
 			{"flag": "sq6_tally_pool", "text": "Cut the survey-mark on the Cure Pool's fence line"},
+			{"kind": "kill", "target": "bog_lurker", "count": 3, "flag": "sq6_tally_cleared",
+				"text": "Clear the bog-lurkers off the survey line"},
 			{"flag": "sq6_tally_told", "text": "Report the tally to Herbalist Kesh at the Pilgrim Gate"},
 		],
-		"reward": {"gold": 180, "standing": {"wildfang": 3}},
+		"reward": {"gold": 180, "standing": {"wildfang": 3}, "kept": "sq_kept_kesh_survey"},
 	},
 }
 

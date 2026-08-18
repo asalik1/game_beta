@@ -292,7 +292,16 @@ func dev_fire(action: String, aim: Vector2) -> void:
 			game.sfx(_boss_cast_sfx())
 			for s in [-0.25, 0.0, 0.25]:
 				_bolt(d.rotated(s) * _aimed_speed(), dmg)
-		"attack", "melee", "stab", "throw", "arc", "beam":
+		"attack", "melee", "stab":
+			# Match the live boss: a MELEE (non-ranged) boss's basic swing fires
+			# nothing and makes no cast tone (see _strike / _melee_swing) — the
+			# morph still shows the swing strip. Only a ranged boss looses its
+			# real bolt + cast here. (A melee beast emitting a magic "bolt" zap
+			# on its attack key was the Transform-preview mismatch behind this.)
+			if ranged:
+				game.sfx(_boss_cast_sfx())
+				_bolt(d * _aimed_speed(), dmg)
+		"throw", "arc", "beam":
 			game.sfx(_boss_cast_sfx())
 			_bolt(d * _aimed_speed(), dmg)
 		"ring":
@@ -306,8 +315,11 @@ func dev_fire(action: String, aim: Vector2) -> void:
 			roar()
 			_boss_telegraph(global_position + d * 150.0, 84.0, 0.5, dmg)
 		_:
-			game.sfx(_boss_cast_sfx())
-			_bolt(d * _aimed_speed(), dmg)
+			# Same rule as the basic swing: an unrecognized action on a melee
+			# boss stays silent with no projectile, matching live behavior.
+			if ranged:
+				game.sfx(_boss_cast_sfx())
+				_bolt(d * _aimed_speed(), dmg)
 
 
 func _boss_telegraph_safe(centers: Array, radius: float, delay: float, damage: float,

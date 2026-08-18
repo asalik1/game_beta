@@ -958,6 +958,7 @@ func _build_room(i: int) -> void:
 	ground.position = origin
 	ground.scale = Vector2(3, 3)
 	ground.z_index = -10
+	ground.modulate = Balance.FLOOR_LAYER_MODULATE  # floor sits a step behind the cast
 	world.add_child(ground)
 	zone_grounds[i] = ground
 	_apply_ground_field(i, terrain)  # crisp native-res floor under the -10 detail
@@ -1574,6 +1575,10 @@ func fast_travel(i: int) -> void:
 	_enter_room(i)
 	burst(player.global_position, Color(0.7, 0.8, 1.0), 12)
 
+## Where the mill's chimney mouth sits on its sprite: x as a fraction of the
+## rendered width from the centre (+ = right), y as a fraction of the height
+## from the top. Measured on mill.png (the 384px painterly override).
+const MILL_CHIMNEY := Vector2(0.33, 0.06)
 func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: Callable,
 		profile_key := "", reach := 0.0) -> Node2D:
 	# reach 0.0 = the standard person-to-person INTERACT_RANGE; prop hotspots
@@ -1637,13 +1642,21 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 		tw.tween_interval(0.45)
 	npc.add_child(spr)
 	if sprite_name == "mill":
+		# A building, not a person (2026-08-18): the contact shadow moves to
+		# its base and widens to the footprint instead of a person's disc.
+		var mill_h: float = float(spr.texture.get_height()) * spr.scale.y
+		var mill_w: float = float(spr.texture.get_width()) * spr.scale.x
+		shadow.position = Vector2(0, mill_h * 0.5 - 6.0)
+		shadow.scale = Vector2(2.6, 1.1) * nsize
 		# The mill's chimney breathes a thin smoke plume (visual pass) —
-		# somebody still lives behind that blue door.
+		# somebody still lives behind that blue door. The painterly override
+		# (2026-08-18) puts the chimney at the roof's right shoulder; the 16px
+		# grid had it near the ridge — the plume follows the art (MILL_CHIMNEY).
 		var smoke := CPUParticles2D.new()
 		smoke.amount = 10
 		smoke.lifetime = 3.5
 		smoke.preprocess = 3.5
-		smoke.position = Vector2(8, -float(spr.texture.get_height()) * spr.scale.y * 0.5 - 4.0)
+		smoke.position = Vector2(mill_w * MILL_CHIMNEY.x, -mill_h * 0.5 + mill_h * MILL_CHIMNEY.y)
 		smoke.direction = Vector2(0.25, -1)
 		smoke.spread = 14.0
 		smoke.gravity = Vector2(6, -16)
@@ -1656,14 +1669,23 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	var prompt := Label.new()
 	prompt.text = touchify(prompt_text)
 	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	prompt.add_theme_font_size_override("font_size", 14)
+	# Parchment interact prompt (gameplay-polish 2026-08-18): the body BOLD face
+	# (mixed case reads at 14px; the caps-only world face would shout a long
+	# "E — Gate of the Road (onward to ...)"), else the world face.
+	var pf := UITheme.body_bold_font()
+	if pf != null:
+		prompt.add_theme_font_override("font", pf)
+		prompt.add_theme_font_size_override("font_size", 15)
+		prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.92))
+		prompt.add_theme_constant_override("outline_size", 4)
+	else:
+		UITheme.world(prompt, 14, 4)
+	prompt.add_theme_color_override("font_color", Color(0.97, 0.92, 0.78))
 	# The rect clamps UP to the text's width — a long prompt ("E — Feed the
 	# shrine") anchored at a fixed left edge drifted right of the NPC. Size
 	# first, then center the real rect on the authored +8 anchor.
 	prompt.size = Vector2(96, 20)
 	prompt.position = Vector2(8.0 - prompt.size.x * 0.5, -58)
-	prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-	prompt.add_theme_constant_override("outline_size", 4)
 	prompt.visible = false
 	npc.add_child(prompt)
 	world.add_child(npc)
@@ -1694,11 +1716,13 @@ func _groupable(name: String) -> bool:
 ## Living scenery shares one restrained wind language. The earlier pass only
 ## moved large trees plus two flower types, leaving reed beds and undergrowth
 ## frozen like cardboard beneath a moving canopy.
+## (2026-08-18) Mushrooms and toadstools came OFF this list: a fungus has no
+## leaves to catch wind, and the sway read as the prop "shifting position"
+## (owner, spore/marsh rooms). Wind is for foliage — trees, bushes, grass,
+## flowers, reeds.
 func _wind_scenery(name: String) -> bool:
 	return name.contains("tree") or name.begins_with("bush") \
-		or name.begins_with("grass") or name in [
-			"mushroom", "mushroom_purple", "toadstool", "flower",
-			"cattail", "frost_reeds"]
+		or name.begins_with("grass") or name in ["flower", "cattail", "frost_reeds"]
 
 
 ## Clump size with a DECAYING tail: starts at 2, each extra member only GROW
@@ -1715,6 +1739,48 @@ func _clump_size(rng: RandomNumberGenerator) -> int:
 
 ## (Re)build a room's decor + obstacles from its TERRAIN — tombstones in
 ## the graveyard, snowy pines on the ice, crystals in the caverns...
+## FLOOR WEAR (gameplay-polish 2026-08-18): soft, low-contrast blotches over
+## the tiled floor — trodden dark patches and a few lighter worn/dusty ones —
+## so a room's ground has large-scale variation instead of reading as one
+## repeating tile with props on it (the "empty room" half of the outside
+## "beta" read; the anti-litter pass deliberately thinned the PROPS, this
+## layer adds no props). Non-colliding, under actors and shadows, cleaned
+## with the room's scenery. Sizes/alphas are presentation constants.
+const FLOOR_WEAR_PER_ROOM := Vector2i(14, 22)     # min/max blotches at full room area
+const FLOOR_WEAR_SIZE := Vector2(90.0, 230.0)     # px diameter band
+const FLOOR_WEAR_DARK_A := Vector2(0.12, 0.22)    # alpha band, dark blotches
+const FLOOR_WEAR_LIGHT_A := Vector2(0.06, 0.11)   # alpha band, light blotches
+const FLOOR_WEAR_LIGHT_SHARE := 0.3
+const FLOOR_WEAR_SQUASH := Vector2(0.55, 0.85)   # blotch height as a fraction of width
+func _spawn_floor_wear(zi: int, terrain: Dictionary, pr: Rect2) -> void:
+	var gk := String(terrain.get("ground", ""))
+	if not Art.GROUND.has(gk):
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = zi * 131 + terrain_by_zone[zi].hash() % 997
+	var area_frac := (pr.size.x * pr.size.y) / float(ROOM_W * ROOM_H)
+	var n := int(round(rng.randi_range(FLOOR_WEAR_PER_ROOM.x, FLOOR_WEAR_PER_ROOM.y) * area_frac))
+	var base_c: Color = Art.GROUND[gk][0]
+	var lum: float = 0.2126 * base_c.r + 0.7152 * base_c.g + 0.0722 * base_c.b
+	for i in n:
+		var s := Sprite2D.new()
+		s.texture = Art.tex("glow")   # soft radial falloff = a soft-edged blotch
+		var d := rng.randf_range(FLOOR_WEAR_SIZE.x, FLOOR_WEAR_SIZE.y)
+		s.scale = Vector2(d / GLOW_TEX_PX, d / GLOW_TEX_PX * rng.randf_range(FLOOR_WEAR_SQUASH.x, FLOOR_WEAR_SQUASH.y))
+		s.rotation = rng.randf_range(-0.5, 0.5)
+		s.position = pr.position + Vector2(rng.randf_range(80.0, pr.size.x - 80.0),
+			rng.randf_range(90.0, pr.size.y - 80.0))
+		if rng.randf() < FLOOR_WEAR_LIGHT_SHARE:
+			# Light wear: dark floors polish lighter, light floors dust darker.
+			var a := rng.randf_range(FLOOR_WEAR_LIGHT_A.x, FLOOR_WEAR_LIGHT_A.y)
+			s.modulate = Color(1, 1, 1, a) if lum < 0.45 else Color(0, 0, 0, a * 0.8)
+		else:
+			s.modulate = Color(0, 0, 0, rng.randf_range(FLOOR_WEAR_DARK_A.x, FLOOR_WEAR_DARK_A.y))
+		s.z_index = -9   # over the floor + road, under shadows/hazards/props
+		world.add_child(s)
+		zone_scenery[zi].append(s)
+
+
 func _spawn_scenery(zi: int) -> void:
 	for node in zone_scenery.get(zi, []):
 		if is_instance_valid(node):
@@ -1745,6 +1811,7 @@ func _spawn_scenery(zi: int) -> void:
 	var placed: Array = []
 	var reserved: Array = []
 	var unique_props_seen := {}
+	_spawn_floor_wear(zi, terrain, pr)
 
 	# ---- EXCLUSION ZONES first (owner 2026-08-17: nothing spawns on a surface
 	# it can't belong on — no tree/house/accent on the river, none in a hazard
@@ -2561,6 +2628,15 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 			lt.texture_scale = float(d.get("light_scale", 0.7))
 			lt.position = d.get("off", Vector2.ZERO)
 			body.add_child(lt)
+			# ...and a floor pool the light can't make on a dark floor (see
+			# _floor_glow): the torch's warmth lands on the ground around it.
+			var gz := room_at_pos(pos)
+			if gz >= 0:
+				var g := _floor_glow(body, lt.position + STRUCT_GLOW_DROP, lcol,
+					STRUCT_GLOW_RADIUS * lt.texture_scale,
+					STRUCT_GLOW_STRENGTH * float(d.get("light_energy", 0.8)), gz)
+				g.z_as_relative = false
+				g.z_index = -8   # over the floor, under the structure's own sprites
 
 	# Pure light sockets preserve a structure's authored illumination without
 	# requiring a second animated sprite to be pasted over its full-object
@@ -2573,15 +2649,38 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 		lt.texture_scale = float(light.get("scale", 0.7))
 		lt.position = light.get("off", Vector2.ZERO)
 		body.add_child(lt)
+		var gz2 := room_at_pos(pos)
+		if gz2 >= 0:
+			var g2 := _floor_glow(body, lt.position + STRUCT_GLOW_DROP, lt.color,
+				STRUCT_GLOW_RADIUS * lt.texture_scale,
+				STRUCT_GLOW_STRENGTH * float(light.get("energy", 0.8)), gz2)
+			g2.z_as_relative = false
+			g2.z_index = -8
 
 	if def.get("fire", false):
 		_attach_fire_audio(body)  # a lit structure crackles as you pass
 	world.add_child(body)
 	return body
 
+# Wall relief (gameplay-polish 2026-08-18; presentation constants). A wall used
+# to be ONE flat 48px strip of tile — no height, no shadow — so rooms read as
+# tinted rectangles. Now a north wall grows a shaded FACE below its cap (the
+# same tile in shade, so every terrain's wall keeps its material) and throws a
+# soft shadow onto the floor; a west wall throws a thin shadow east across the
+# floor. Light comes from the top-left, as everywhere else in the art.
+const WALL_FACE_H := 22.0                       # px of visible face under a north cap
+const WALL_FACE_SHADE := Color(0.56, 0.53, 0.54) # face = cap tile in shade
+const WALL_SHADOW_H := 30.0                     # floor shadow under the face
+const WALL_SHADOW_A := 0.55
+const WALL_SIDE_SHADOW_W := 18.0                # floor shadow east of a west wall
+const WALL_SIDE_SHADOW_A := 0.38
+
+
 ## A wall segment: collider + tiled wall visual. `wall_tex` is the terrain's
 ## seamless 16px wall tile (Terrains.wall_for); defaults to the stone block.
-func _wall(rect: Rect2, wall_tex := "wallblock") -> void:
+## `relief`: "S" = a north wall (face + floor shadow below), "E" = a west wall
+## (floor shadow to its east), "" = cap only (south/east walls, door stubs).
+func _wall(rect: Rect2, wall_tex := "wallblock", relief := "") -> void:
 	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
 		return
 	var body := StaticBody2D.new()
@@ -2606,16 +2705,80 @@ func _wall(rect: Rect2, wall_tex := "wallblock") -> void:
 	body.add_child(occ)
 	world.add_child(body)
 	var spr := Sprite2D.new()
-	spr.texture = Art.tex(wall_tex)
-	spr.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-	spr.region_enabled = true
-	spr.region_rect = Rect2(Vector2.ZERO, rect.size / 3.0)
+	_wall_dress(spr, wall_tex, rect.size)
 	spr.centered = false
 	spr.position = rect.position
-	spr.scale = Vector2(3, 3)
 	spr.z_index = -5
+	spr.set_meta("wall_rect", rect)     # a terrain repaint re-dresses cap + relief from this
+	spr.set_meta("wall_relief", relief)
 	world.add_child(spr)
 	_wall_sink.append(spr)  # tracked so a terrain repaint can retexture it live
+	_wall_relief(spr, wall_tex, rect, relief)
+
+
+## Relief children live UNDER the cap sprite: they inherit its terrain tint
+## (modulate) and its scale, so cap-local units are world px / k (k = the
+## cap's scale: 3 for a legacy 16px tile, 1 for a native wall field). Rebuilt
+## by a terrain repaint (the scale can flip 3 <-> 1 across kinds).
+func _wall_relief(spr: Sprite2D, wall_tex: String, rect: Rect2, relief: String) -> void:
+	for c in spr.get_children():
+		c.queue_free()
+	var k: float = spr.scale.x
+	if relief == "S":
+		var face := Sprite2D.new()   # the visible south face: the cap's tile in shade
+		_wall_dress(face, wall_tex, Vector2(rect.size.x, WALL_FACE_H), Vector2(0, 5.0 * k))
+		face.scale = Vector2.ONE       # inherits the cap's scale
+		face.centered = false
+		face.position = Vector2(0, rect.size.y / k)
+		face.modulate = WALL_FACE_SHADE
+		face.z_index = -1              # relative: just under the cap
+		spr.add_child(face)
+		var sh := Sprite2D.new()      # cast shadow on the floor under the face
+		sh.texture = Art.tex("softshadow")
+		sh.centered = false
+		sh.position = Vector2(0, (rect.size.y + WALL_FACE_H) / k)
+		sh.scale = Vector2(rect.size.x / k / 8.0, WALL_SHADOW_H / k / 32.0)
+		sh.modulate = Color(1, 1, 1, WALL_SHADOW_A)
+		sh.z_index = -3               # relative: over the floor, under everything else
+		spr.add_child(sh)
+	elif relief == "E":
+		var sh := Sprite2D.new()      # a west wall's shadow across the floor to its east
+		sh.texture = Art.tex("softshadow")
+		sh.centered = false
+		sh.rotation = -PI / 2.0        # opaque edge on the wall, fading eastward
+		sh.position = Vector2(rect.size.x / k, rect.size.y / k)
+		sh.scale = Vector2(rect.size.y / k / 8.0, WALL_SIDE_SHADOW_W / k / 32.0)
+		sh.modulate = Color(1, 1, 1, WALL_SIDE_SHADOW_A)
+		sh.z_index = -3
+		spr.add_child(sh)
+
+
+## Scale that draws a tile texture at ONE world tile (TILE px): x3 for the 16px
+## procedural art, 1:1-ish for a native override of any size (2026-08-18 —
+## gate/door art may ship hi-res without touching the callers).
+func _tile_scale(tex: Texture2D) -> Vector2:
+	if tex == null or tex.get_width() <= 0:
+		return Vector2(3, 3)
+	return Vector2(float(TILE) / float(tex.get_width()), float(TILE) / float(tex.get_height()))
+
+
+## Texture + region + scale for a wall sprite covering `size` world px.
+## A native-res WALL FIELD (assets/sprites/wall_field_<kind>.png, a seamless
+## square tile drawn 1 texel = 1 world px, the wall twin of ground_field —
+## 2026-08-18) draws at scale 1; else the legacy 16px tile at 3x. `tex_off`
+## is the region origin in the sprite's own texture units.
+func _wall_dress(spr: Sprite2D, wall_tex: String, size: Vector2, tex_off := Vector2.ZERO) -> void:
+	var field: Texture2D = Art.wall_field(wall_tex)
+	if field != null:
+		spr.texture = field
+		spr.scale = Vector2.ONE
+		spr.region_rect = Rect2(tex_off, size)
+	else:
+		spr.texture = Art.tex(wall_tex)
+		spr.scale = Vector2(3, 3)
+		spr.region_rect = Rect2(tex_off / 3.0, size / 3.0)
+	spr.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	spr.region_enabled = true
 
 ## Perimeter walls for one room, with door gaps on its open edges, and
 ## a gate body on any locked edge that isn't already satisfied.
@@ -2637,34 +2800,36 @@ func _build_room_walls(i: int) -> void:
 	for spec in [["N", r.position.y], ["S", r.end.y - TILE]]:
 		var dir: String = spec[0]
 		var y: float = spec[1]
+		var relief := "S" if dir == "N" else ""   # a north wall shows its face
 		if exits.has(dir):
 			var half := r.size.x / 2.0 - gap / 2.0
-			_wall(Rect2(r.position.x, y, half, TILE), wt)
-			_wall(Rect2(r.position.x + r.size.x / 2.0 + gap / 2.0, y, half, TILE), wt)
-			_door_torches(door_pos(i, dir), false)
+			_wall(Rect2(r.position.x, y, half, TILE), wt, relief)
+			_wall(Rect2(r.position.x + r.size.x / 2.0 + gap / 2.0, y, half, TILE), wt, relief)
+			_door_torches(i, door_pos(i, dir), false)
 			if ins.y > 0.0:
 				var cx := full.position.x + ROOM_W / 2.0
 				var cy := full.position.y if dir == "N" else r.end.y
 				_wall(Rect2(cx - gap / 2.0 - TILE, cy, TILE, ins.y), wt)
 				_wall(Rect2(cx + gap / 2.0, cy, TILE, ins.y), wt)
 		else:
-			_wall(Rect2(r.position.x, y, r.size.x, TILE), wt)
+			_wall(Rect2(r.position.x, y, r.size.x, TILE), wt, relief)
 	# West/east walls (gap centered on y).
 	for spec in [["W", r.position.x], ["E", r.end.x - TILE]]:
 		var dir: String = spec[0]
 		var x: float = spec[1]
+		var relief := "E" if dir == "W" else ""   # a west wall shades the floor east of it
 		if exits.has(dir):
 			var half := r.size.y / 2.0 - gap / 2.0
-			_wall(Rect2(x, r.position.y, TILE, half), wt)
-			_wall(Rect2(x, r.position.y + r.size.y / 2.0 + gap / 2.0, TILE, half), wt)
-			_door_torches(door_pos(i, dir), true)
+			_wall(Rect2(x, r.position.y, TILE, half), wt, relief)
+			_wall(Rect2(x, r.position.y + r.size.y / 2.0 + gap / 2.0, TILE, half), wt, relief)
+			_door_torches(i, door_pos(i, dir), true)
 			if ins.x > 0.0:
 				var cy2 := full.position.y + ROOM_H / 2.0
 				var cx2 := full.position.x if dir == "W" else r.end.x
 				_wall(Rect2(cx2, cy2 - gap / 2.0 - TILE, ins.x, TILE), wt)
 				_wall(Rect2(cx2, cy2 + gap / 2.0, ins.x, TILE), wt)
 		else:
-			_wall(Rect2(x, r.position.y, TILE, r.size.y), wt)
+			_wall(Rect2(x, r.position.y, TILE, r.size.y), wt, relief)
 	var wall_tint := Terrains.wall_tint_for(terrain_by_zone[i])
 	for wall_sprite in zone_wall_sprites[i]:
 		if is_instance_valid(wall_sprite):
@@ -2679,15 +2844,60 @@ func _build_room_walls(i: int) -> void:
 		if edge_locks.has(key) and not gates.has(key) and not _edge_unlocked(i, nb):
 			gates[key] = _build_gate(i, String(dir))
 
-## Flickering torches flank each doorway.
-func _door_torches(pos: Vector2, vertical: bool) -> void:
+## Flickering torches flank each doorway. (2026-08-18) They wear the hi-res
+## animated torch-PILLAR strip (the structure art, 160px cells, fire looping)
+## scaled to a door-side torch instead of the 16px procedural torch at 3x —
+## the last chunky sprite at every doorway; the procedural torch stays the
+## fallback when the strip is absent.
+const DOOR_TORCH_H := 64.0   # rendered height of the pillar torch (world px)
+const DOOR_TORCH_INSET := 40.0   # px the pair steps INTO the room off the wall line
+func _door_torches(zi: int, pos: Vector2, vertical: bool) -> void:
 	var span := DOOR_TILES * TILE / 2.0 + 26.0
+	var pillar: Dictionary = Art.anim_info("torch_pillar")
+	# Step the pair off the wall line INTO room zi (2026-08-18, owner: at a
+	# NORTH door only the stems showed — the torch stood on the room's top edge
+	# and the camera limit clipped its upper half; east/west doors lost a
+	# shoulder the same way). Both rooms sharing a door build a pair, each on
+	# ITS side of the doorway (before, the two pairs sat on the same spot).
+	var inset := Vector2.ZERO
+	if zi >= 0:
+		# Small rooms put the DOOR at the cell edge and reach it through a
+		# corridor the camera never shows (it clamps to the PLAY rect) — the
+		# rig tour (2026-08-18) still found the pair standing in that corridor,
+		# bases just peeking under the frame edge. Anchor on the play rect's
+		# edge (the corridor MOUTH the player sees) before stepping in.
+		var pr := play_rect(zi)
+		if vertical:
+			pos.x = clampf(pos.x, pr.position.x, pr.end.x)
+		else:
+			pos.y = clampf(pos.y, pr.position.y, pr.end.y)
+		var c: Vector2 = room_center(zi)
+		if vertical:
+			inset.x = DOOR_TORCH_INSET * (1.0 if pos.x < c.x else -1.0)
+		else:
+			inset.y = DOOR_TORCH_INSET * (1.0 if pos.y < c.y else -1.0)
 	for side in [-1, 1]:
-		var off := Vector2(0, side * span) if vertical else Vector2(side * span, 0)
+		var off := (Vector2(0, side * span) if vertical else Vector2(side * span, 0)) + inset
 		var torch := Sprite2D.new()
-		torch.texture = Art.tex("torch")
-		torch.scale = Vector2(3, 3)
-		torch.position = pos + off
+		if not pillar.is_empty():
+			torch.texture = pillar["tex"]
+			torch.hframes = int(pillar["frames"])
+			var cell := float(torch.texture.get_height())
+			var s := DOOR_TORCH_H / cell
+			torch.scale = Vector2(s, s)
+			# Base on the old torch's ground line (its 48px art was centred on pos).
+			torch.position = pos + off + Vector2(0, 24.0 - DOOR_TORCH_H * 0.5)
+			var per := 1.0 / maxf(1.0, float(pillar.get("fps", 6.0)))
+			var fl := torch.create_tween().set_loops()
+			for f in int(pillar["frames"]):
+				fl.tween_interval(per)
+				fl.tween_callback(func() -> void:
+					if is_instance_valid(torch):
+						torch.frame = (torch.frame + 1) % torch.hframes)
+		else:
+			torch.texture = Art.tex("torch")
+			torch.scale = Vector2(3, 3)
+			torch.position = pos + off
 		torch.z_index = 2
 		world.add_child(torch)
 		var glow := Sprite2D.new()
@@ -2701,6 +2911,10 @@ func _door_torches(pos: Vector2, vertical: bool) -> void:
 		tween.set_loops()
 		tween.tween_property(glow, "scale", Vector2(3.1, 3.1), 0.5 + randf() * 0.3)
 		tween.tween_property(glow, "scale", Vector2(2.4, 2.4), 0.5 + randf() * 0.3)
+		# Torchlight on the floor at the door (see _floor_glow).
+		if zi >= 0:
+			_floor_glow(world, torch.position + TORCH_GLOW_DROP, TORCH_GLOW_COLOR,
+				TORCH_GLOW_RADIUS, TORCH_GLOW_STRENGTH, zi)
 
 ## A gate barring the doorway on room i's `dir` edge.
 func _build_gate(i: int, dir: String) -> Node2D:
@@ -2718,7 +2932,7 @@ func _build_gate(i: int, dir: String) -> Node2D:
 	for row in DOOR_TILES:
 		var spr := Sprite2D.new()
 		spr.texture = Art.tex("gate")
-		spr.scale = Vector2(3, 3)
+		spr.scale = _tile_scale(spr.texture)   # 16px art x3; a native override at 1 tile
 		var off := (row - 1) * TILE
 		spr.position = Vector2(0, off) if vertical else Vector2(off, 0)
 		gate.add_child(spr)
@@ -2776,7 +2990,7 @@ func _build_door_seals() -> void:
 		for r in DOOR_TILES:
 			var bspr := Sprite2D.new()
 			bspr.texture = Art.tex("gate")
-			bspr.scale = Vector2(3, 3)
+			bspr.scale = _tile_scale(bspr.texture)
 			bspr.modulate = Color(1.0, 0.62, 0.58)
 			bspr.z_index = 3
 			bars.add_child(bspr)
@@ -3037,6 +3251,7 @@ func _apply_ground_field(zi: int, terrain: Dictionary) -> void:
 		# span makes 1 world px = 1 texel (native), tiling the seamless field
 		# ROOM/tile times via the repeat wrap.
 		poly.uv = poly.polygon
+		poly.modulate = Balance.FLOOR_LAYER_MODULATE  # floor sits a step behind the cast
 		world.add_child(poly)
 		zone_fields[zi] = poly
 	poly.texture = tex
@@ -3064,9 +3279,11 @@ func apply_terrain(zi: int, terrain_id: String) -> void:
 	var wt: String = Terrains.wall_for(terrain_id)
 	var wall_tint := Terrains.wall_tint_for(terrain_id)
 	for s in zone_wall_sprites.get(zi, []):
-		if is_instance_valid(s):
-			s.texture = Art.tex(wt)
+		if is_instance_valid(s) and s.has_meta("wall_rect"):
+			var wr: Rect2 = s.get_meta("wall_rect")
+			_wall_dress(s, wt, wr.size)     # cap: field (1x) or legacy tile (3x)
 			s.modulate = wall_tint
+			_wall_relief(s, wt, wr, String(s.get_meta("wall_relief", "")))
 	# If the player is standing in this room, refresh mood immediately.
 	if cur_room == zi:
 		var tween := create_tween()
@@ -3102,43 +3319,77 @@ func _mark_roads(zi: int) -> void:
 	var worn: Color
 	if pk == gk:
 		# Worn tone: dark floors polish LIGHTER underfoot, light floors tread
-		# DARKER — both at a whisper (presentation constants, not tuning).
+		# DARKER — a whisper (presentation constants, not tuning). A touch
+		# stronger than the old flat band: the feathered edge spends part of it.
 		var base_c: Color = Art.GROUND[gk][0]
 		var lum: float = 0.2126 * base_c.r + 0.7152 * base_c.g + 0.0722 * base_c.b
-		worn = Color(1, 1, 1, 0.075) if lum < 0.45 else Color(0, 0, 0, 0.10)
+		worn = Color(1, 1, 1, 0.085) if lum < 0.45 else Color(0, 0, 0, 0.12)
 	elif has_field:
 		# Contrasting path over a crisp field: ground() baked no dirt road, so
 		# lay the path color as a worn track so the walkway still reads.
 		var pc: Color = Art.GROUND.get(pk, Art.GROUND[gk])[0]
-		worn = Color(pc.r, pc.g, pc.b, 0.6)
+		worn = Color(pc.r, pc.g, pc.b, 0.72)
+		if bool(terrain.get("bright", false)):
+			# A BRIGHT floor (the capital's holystone plaza) under a dark stone
+			# path at 0.72 read as one huge shadow wedge across the square once
+			# the edges were feathered (rig tour 2026-08-18) — the walkway is a
+			# tone there, not a shadow.
+			worn.a = 0.30
 	else:
 		return  # procedural kind, contrasting path: the baked road already reads
 	# Art.ground's arm rects, scaled to world px (16px ground tile * 3 = TILE).
+	# gameplay-polish 2026-08-18: the arms run THROUGH the centre (no separate
+	# plaza square) and are drawn by ONE shader quad (shaders/road_band) as a
+	# union with rounded, feathered, noise-wobbled edges — the old per-arm white
+	# sprites were hard-edged tint rectangles, the single loudest "beta" tell in
+	# the trailer footage. One quad also means the arms never double up.
 	var path_top := float((TILES_H / 2 - 1) * TILE - 24)
 	var band := 3.0 * TILE
 	var vleft := float(ROOM_W / 2 - 72)
-	var arms: Array = [Rect2(vleft, path_top, band, band)]  # central plaza
+	var arms: Array = []
 	var exits: Array = rooms[zi]["exits"].keys()
 	if "W" in exits:
-		arms.append(Rect2(0, path_top, vleft, band))
+		arms.append(Rect2(0, path_top, vleft + band, band))
 	if "E" in exits:
-		arms.append(Rect2(vleft + band, path_top, ROOM_W - vleft - band, band))
+		arms.append(Rect2(vleft, path_top, ROOM_W - vleft, band))
 	if "N" in exits:  # vertical arms stop at the painted top/bottom wall row
-		arms.append(Rect2(vleft, TILE, band, path_top - TILE))
+		arms.append(Rect2(vleft, TILE, band, path_top - TILE + band))
 	if "S" in exits:
-		arms.append(Rect2(vleft, path_top + band, band, ROOM_H - path_top - band - TILE))
+		arms.append(Rect2(vleft, path_top, band, ROOM_H - path_top - TILE))
+	if arms.is_empty():
+		arms.append(Rect2(vleft, path_top, band, band))  # a sealed room keeps its plaza
 	var origin: Vector2 = rooms[zi]["origin"]
-	for arm in arms:
-		var r: Rect2 = arm
-		var s := Sprite2D.new()
-		s.texture = Art.tex("white")
-		s.centered = false
-		s.position = origin + r.position
-		s.scale = r.size / 8.0  # white tex is 8x8
-		s.modulate = worn
-		s.z_index = -10  # same layer as the ground, added after -> on top
-		world.add_child(s)
-		zone_road_marks[zi].append(s)
+	var s := Sprite2D.new()
+	s.texture = Art.tex("white")
+	s.centered = false
+	s.position = origin
+	s.scale = Vector2(ROOM_W, ROOM_H) / 8.0  # white tex is 8x8 -> one room-sized quad
+	s.modulate = worn                          # strength rides modulate.a
+	s.z_index = -10  # same layer as the ground, added after -> on top
+	var mat := ShaderMaterial.new()
+	mat.shader = _road_shader()
+	mat.set_shader_parameter("arm_count", arms.size())
+	var packed := PackedVector4Array()
+	for i in 6:
+		if i < arms.size():
+			var r: Rect2 = arms[i]
+			packed.append(Vector4(r.position.x, r.position.y, r.size.x, r.size.y))
+		else:
+			packed.append(Vector4.ZERO)
+	mat.set_shader_parameter("arms", packed)
+	mat.set_shader_parameter("room_size", Vector2(ROOM_W, ROOM_H))
+	mat.set_shader_parameter("path_color", Color(worn.r, worn.g, worn.b))
+	mat.set_shader_parameter("noise_tex", Art.tex("noise"))
+	s.material = mat
+	world.add_child(s)
+	zone_road_marks[zi].append(s)
+
+
+static var _road_shader_res: Shader = null
+static func _road_shader() -> Shader:
+	if _road_shader_res == null:
+		_road_shader_res = load("res://shaders/road_band.gdshader")
+	return _road_shader_res
 
 
 ## Decide the room's river FIRST — before hazards and scenery — so nothing ends
@@ -3187,7 +3438,10 @@ func _spawn_patches(zi: int) -> void:
 				continue  # no dry spot found — skip this pool rather than flood it
 			var radius := rng.randf_range(spec["radius"][0], spec["radius"][1])
 			var drift := Vector2.ZERO
-			if spec.get("drift", false):
+			# Wandering spore clouds are OFF (owner 2026-08-18: pools "keep shifting
+			# position" in the Sporewood — hazards animate in place). The data flag
+			# stays so the behaviour can return behind Balance.HAZARD_POOLS_DRIFT.
+			if spec.get("drift", false) and Balance.HAZARD_POOLS_DRIFT:
 				drift = Vector2(rng.randf_range(-20, 20), rng.randf_range(-14, 14))
 			_add_hazard(zi, spec["type"], pos, radius, -1.0, drift)
 
@@ -3208,6 +3462,67 @@ const HAZARD_STRIP_FRAMES := 4
 const HAZARD_STRIP_OFFSET := {
 	"lava": 3.0, "ice": -3.0, "poison": -16.0, "heal": -23.0, "slow": 0.0, "churned": -10.0,
 }
+
+
+# Emissive hazards light the floor around them (gameplay-polish 2026-08-18):
+# type -> [glow colour, strength, radius multiple of the pool radius].
+# (The glow texture peaks at 0.55 alpha and falls off squared, so an additive
+# pool needs strength well above 1 to be seen at the pool's rim.)
+const GLOW_TEX_PX := 48.0                       # Art "glow" texture edge
+const GLOW_PULSE_LOW := 0.72                    # pulse floor as a fraction of strength
+const GLOW_PULSE_PERIOD := Vector2(1.1, 1.6)    # seconds per half-pulse (random in band)
+const STRUCT_GLOW_RADIUS := 120.0               # px at light_scale 1 (structure decal / socket lights)
+const STRUCT_GLOW_STRENGTH := 0.9               # per unit light energy
+const STRUCT_GLOW_DROP := Vector2(0, 10.0)      # pool sits a little below the flame
+const TORCH_GLOW_RADIUS := 84.0                 # door torches
+const TORCH_GLOW_STRENGTH := 0.85
+const TORCH_GLOW_DROP := Vector2(0, 16.0)
+const TORCH_GLOW_COLOR := Color(1.0, 0.62, 0.22)
+const HAZARD_GLOW := {
+	"lava": [Color(1.0, 0.46, 0.12), 1.7, 3.0],
+	"poison": [Color(0.38, 0.9, 0.32), 0.6, 2.1],
+	"heal": [Color(1.0, 0.86, 0.5), 0.8, 2.2],
+}
+
+
+## The terrain's light budget for a room that may not be the CURRENT one
+## (refresh_ambience only tracks cur_room). Same formula.
+func _zone_light_mult(zi: int) -> float:
+	var tint: Color = Terrains.get_terrain(terrain_by_zone[zi])["tint"]
+	var lum := (tint.r + tint.g + tint.b) / 3.0
+	return clampf((1.05 - lum) * 2.2, 0.1, 1.0)
+
+
+## An additive floor GLOW under an emissive thing (lava pool, brazier, lit
+## socket). A PointLight2D scales with the floor's albedo, so over the dark
+## tinted floors a lava pool lit NOTHING and read as a sticker; an additive
+## sprite adds light regardless (the halo-pool trick refresh_ambience uses
+## for the void). Scaled by the terrain's light budget so daylight zones
+## don't bloom; a slow pulse keeps it alive. Returns the sprite.
+func _floor_glow(parent: Node, pos: Vector2, color: Color, radius_px: float,
+		strength: float, zi: int, pulse := true) -> Sprite2D:
+	var g := Sprite2D.new()
+	g.texture = Art.tex("glow")
+	g.position = pos
+	var a := strength * _zone_light_mult(zi)
+	g.modulate = Color(color.r, color.g, color.b, a)
+	var s := radius_px * 2.0 / GLOW_TEX_PX
+	g.scale = Vector2(s, s)
+	if parent is Node2D:               # a child of a scaled sprite: undo that scale
+		var ps: Vector2 = (parent as Node2D).scale
+		g.scale = Vector2(s / maxf(0.001, ps.x), s / maxf(0.001, ps.y))
+	var m := CanvasItemMaterial.new()
+	m.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	g.material = m
+	g.z_index = -8   # over the floor and the road, under hazards/props/actors
+	parent.add_child(g)
+	if pulse:
+		var tw := g.create_tween().set_loops()
+		tw.tween_property(g, "modulate:a", a * GLOW_PULSE_LOW,
+			randf_range(GLOW_PULSE_PERIOD.x, GLOW_PULSE_PERIOD.y)).set_trans(Tween.TRANS_SINE)
+		tw.tween_property(g, "modulate:a", a,
+			randf_range(GLOW_PULSE_PERIOD.x, GLOW_PULSE_PERIOD.y)).set_trans(Tween.TRANS_SINE)
+	return g
 
 
 ## Add a floor hazard (until < 0 = permanent, else expires at that time).
@@ -3239,6 +3554,13 @@ func _add_hazard(zi: int, type: String, pos: Vector2, radius: float, duration :=
 	spr.global_position = pos
 	spr.z_index = -7
 	world.add_child(spr)
+	# Emissive pools light the floor around them (child of the pool: it
+	# drifts, expires and frees with it; z relative -1 puts it just under).
+	if HAZARD_GLOW.has(type):
+		var gspec: Array = HAZARD_GLOW[type]
+		var g := _floor_glow(spr, Vector2.ZERO, gspec[0], radius * float(gspec[2]), float(gspec[1]), zi)
+		g.z_index = -1
+		g.z_as_relative = true
 	hazards.append({"zone": zi, "type": type, "pos": pos, "radius": radius,
 		"until": (Time.get_ticks_msec() / 1000.0 + duration) if duration > 0.0 else -1.0,
 		"drift": drift, "sprite": spr})

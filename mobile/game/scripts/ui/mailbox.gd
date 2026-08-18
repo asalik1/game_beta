@@ -113,6 +113,15 @@ static func open_letter(m: Menus, mail: Dictionary) -> void:
 						func() -> void:
 							m._open_detail_popover(Art.gem_icon(Items.gem_color(g), int(g.get("lvl", 1))),
 								Items.gem_title(g), Items.gem_color(g), Items.gem_title(g), []))
+				"bag":
+					# A bag mails itself when the pack was full on award (2026-08-17).
+					var bgr := str(payload.get("grade", "F"))
+					var btex: ImageTexture = Art.bag_icon(bgr)
+					m._bag_slot(grid, btex, "" if btex != null else "▣", Items.GRADE_COLOR.get(bgr, Color(1, 1, 1)),
+						func() -> void:
+							m._open_detail_popover(btex, str(Items.BAG_NAMES.get(bgr, "Bag")),
+								Items.GRADE_COLOR.get(bgr, Color(1, 1, 1)),
+								"%s-grade bag — %d carry slots. Claim it into your pack, then equip it." % [bgr, int(Items.BAG_SLOTS.get(bgr, 0))], []))
 				_:
 					var st: Dictionary = payload.get("stone", {})
 					var ctex: ImageTexture = Art.consumable_icon(st)
