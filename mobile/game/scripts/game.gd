@@ -805,6 +805,7 @@ func _process(delta: float) -> void:
 		# (_release_everything on the overlay gate).
 		player.clear_local_intents()
 
+	_tick_room_clear(delta)   # phantom "N monsters left" guard + straggler wake (game_flow)
 	shake_amt = move_toward(shake_amt, 0.0, 20.0 * delta)
 	# The directional kick decays exponentially (holds through a hit-stop —
 	# delta is 0 there — then springs back), the jitter linearly.

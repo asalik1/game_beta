@@ -1232,30 +1232,105 @@ func on_enemy_died(e: Enemy) -> void:
 		# doesn't turn into stragger-hunting. No-op once the room is clear.
 		if not _pack_alive(e.zone_idx, e.pack_id):
 			_wake_nearest_pack(e.zone_idx)
+		_straggler_idle = 0.0   # a kill: the room is live again
 		refresh_quest()
 		if zone_alive[e.zone_idx] == 0:
-			cleared[e.zone_idx] = true  # stays cleared for the run (saved)
-			if curse_pending.has(e.zone_idx):
-				curse_pending.erase(e.zone_idx)
-				_curse_payout(e.zone_idx)
-			bounty_progress("rooms_cleared")
-			if net_host():
-				net_session().host_party_credit("room")  # MP-11: guests' boards advance too
-			_try_spawn_boss(e.zone_idx)
-			_recheck_gates()  # "clear" locks on this room's edges open
-			if zones[e.zone_idx].get("boss", "") == "":
-				# Bossless rooms: clearing IS the objective ("clear_flag"),
-				# and the wandering merchant may arrive.
-				if e.zone_idx == cur_room:
-					_purge_fx()  # the blight recedes; the door seals lift
-				var cflag := String(zones[e.zone_idx].get("clear_flag", ""))
-				if cflag != "":
-					set_flag(cflag)
-				if loot_rng.randf() < 0.65 and not merchant_zones.has(e.zone_idx):
-					call_deferred("_merchant_arrives", e.zone_idx)
-				if e.zone_idx == cur_room and room_safe(cur_room):
-					last_safe_room = cur_room
-			autosave()
+			_room_cleared(e.zone_idx)
+
+
+## The room's last monster is gone: seals lift, the boss may appear, the
+## objective flag sets. Reached from a kill (above) AND from the counter
+## reconcile (`_tick_room_clear`) — the two must never diverge.
+func _room_cleared(zi: int) -> void:
+	cleared[zi] = true  # stays cleared for the run (saved)
+	if curse_pending.has(zi):
+		curse_pending.erase(zi)
+		_curse_payout(zi)
+	bounty_progress("rooms_cleared")
+	if net_host():
+		net_session().host_party_credit("room")  # MP-11: guests' boards advance too
+	_try_spawn_boss(zi)
+	_recheck_gates()  # "clear" locks on this room's edges open
+	if zones[zi].get("boss", "") == "":
+		# Bossless rooms: clearing IS the objective ("clear_flag"),
+		# and the wandering merchant may arrive.
+		if zi == cur_room:
+			_purge_fx()  # the blight recedes; the door seals lift
+		var cflag := String(zones[zi].get("clear_flag", ""))
+		if cflag != "":
+			set_flag(cflag)
+		if loot_rng.randf() < 0.65 and not merchant_zones.has(zi):
+			call_deferred("_merchant_arrives", zi)
+		if zi == cur_room and room_safe(cur_room):
+			last_safe_room = cur_room
+	autosave()
+
+
+## Living, counted monsters of room `zi` right now (host truth: non-mirror,
+## not dying, not a boss — bosses are spawned AFTER the clear and never sit
+## in zone_alive).
+func _alive_in_room(zi: int) -> Array:
+	var out: Array = []
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var e := node as Enemy
+		if e != null and is_instance_valid(e) and not e.dying and not e.net_mirror \
+				and not (e is Boss) and e.zone_idx == zi:
+			out.append(e)
+	return out
+
+
+## The "1 monster left, and I can't find it" guard (owner, Blightheart Bog,
+## 2026-08-19). zone_alive is a COUNTER kept by spawn/death events; anything
+## that removes a monster without its die() (a stray free, a despawn, an add
+## whose bookkeeping missed) leaves a phantom count that seals the room
+## forever. Every STRAGGLER_TICK seconds while the player stands in a room
+## with a positive count: (1) RECONCILE — if fewer real monsters live than the
+## counter says, the counter drops to the truth (0 → the room clears through
+## the same path a kill uses); (2) STRAGGLERS — after STRAGGLER_IDLE seconds
+## with no kill in the room, whatever still lives is woken and, if it stands
+## in a wall, nudged to open floor, so it comes to you instead of you hunting
+## for it. Both print a diagnostic so the cause can be learned from a log.
+var _straggler_idle := 0.0
+var _straggler_tick := 0.0
+const STRAGGLER_TICK := 1.0
+const STRAGGLER_IDLE := 12.0
+func _tick_room_clear(delta: float) -> void:
+	if net_guest() or state != ST_PLAYING or cur_room < 0 or cur_room >= zone_count:
+		return
+	var zi := cur_room
+	if zone_alive.get(zi, 0) <= 0:
+		_straggler_idle = 0.0
+		return
+	_straggler_idle += delta
+	_straggler_tick += delta
+	if _straggler_tick < STRAGGLER_TICK:
+		return
+	_straggler_tick = 0.0
+	var alive := _alive_in_room(zi)
+	if alive.size() < zone_alive[zi]:
+		print("[room-clear] reconcile: room %d '%s' counter %d but %d living -> %d" % [
+			zi, String(zones[zi].get("name", "")), zone_alive[zi], alive.size(), alive.size()])
+		zone_alive[zi] = alive.size()
+		refresh_quest()
+		if alive.is_empty():
+			_room_cleared(zi)
+			return
+	if _straggler_idle >= STRAGGLER_IDLE:
+		_straggler_idle = 0.0
+		var pr := play_rect(zi).grow(60.0)
+		for e in alive:
+			var en := e as Enemy
+			var stuck := _pos_in_wall(en.global_position)
+			var strayed := not pr.has_point(en.global_position)   # shoved/chased out through a door
+			print("[room-clear] straggler: %s at %s (alerted=%s, in_wall=%s, outside_room=%s) -> wake%s" % [
+				en.kind, en.global_position, en.alerted, stuck, strayed,
+				", nudge" if (stuck or strayed) else ""])
+			en.force_aggro = true
+			en.alerted = true
+			if strayed:
+				en.global_position = free_spawn_pos(en.home, en.home)
+			elif stuck:
+				en.global_position = free_spawn_pos(en.global_position, en.global_position)
 
 ## A cursed room's pack is purged: the chest honors its bargain — a
 ## golden chest and a guaranteed gem at the room's heart (risk events,

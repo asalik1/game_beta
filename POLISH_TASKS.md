@@ -161,6 +161,19 @@ should work".
   `capital_*` kit beside the cast; the owner names the offenders → repaint rows here.
   Candidates from the sheet: the two portals' neon plasma, the wellspring's cyan.
 
+### P0.8 — play-flags round 2 (2026-08-19)
+- [x] **"Killed everything, room says 1 monster left, can't find it" (Blightheart Bog)** —
+  `zone_alive` is a counter kept by spawn/death events; anything that removes a monster
+  without its `die()` leaves a phantom count that seals the room. `game_flow._tick_room_clear`
+  (every second while the player stands in a room with a positive count): RECONCILE the
+  counter to the living, non-dying, non-mirror monsters of that room (`_alive_in_room`) —
+  0 → the same `_room_cleared` path a kill uses (extracted from `on_enemy_died`); after
+  `STRAGGLER_IDLE` 12 s with no kill, wake whatever still lives, nudge one standing in a wall
+  to open floor and pull one that strayed OUTSIDE the room (shoved/chased through a door)
+  back home. Both print `[room-clear] …` diagnostics naming the kind/position so the root
+  cause is learnable from a log next time. Autotest section `_test_room_clear_reconcile`
+  (drift 2→1 + straggler wake/pull). Full suite PASS.
+
 ### P1 — hit-feedback stack (code, ~1 day) — the cheapest big win left (BUILT 2026-08-18 23:00)
 - [x] **P1.1 Hit-stop.** `game.hit_stop(sec)`: a REAL-TIME freeze (`Engine.time_scale` 0,
   restored to whatever it was — dev slow-mo aware; overlapping stops extend), SOLO only

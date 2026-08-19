@@ -1010,6 +1010,9 @@ func _run_systems() -> void:
 	# composite structures + wall decals, animated scenery props.
 	await _test_asset_seams()
 	_test_npc_interaction_facing()
+	# 3d18b. Room-clear counter reconcile + straggler wake (owner 2026-08-19:
+	# "1 monster left" and none to be found).
+	await _test_room_clear_reconcile()
 
 	# 3d19. NG+ difficulty tiers (2026-07-24): offsets, band shift + the
 	# S-band ch12 table, run_tier gates, zero XP, unlock meta, tier PBs,
@@ -4854,6 +4857,64 @@ func _test_npc_interaction_facing() -> void:
 	game.player.look_sign = keep_look
 	fenna.free()
 	print("ok: NPC interactions face the visitor (including Citizen/Fenna) + restore rest pose")
+
+
+## Room-clear counter RECONCILE + straggler wake (2026-08-19). zone_alive is a
+## counter; a monster removed without die() (any stray free) leaves a phantom
+## "1 monster left" that seals the room. _tick_room_clear drops the counter to
+## the living truth every second and, after STRAGGLER_IDLE with no kill, wakes
+## whatever still lives (and pulls one that strayed out of the room back home).
+## Snapshot + restore: zone_alive / cur_room / player pos / _straggler_* — the
+## reconcile is exercised 2 -> 1 (no clear-path side effects: flags, boss, save).
+func _test_room_clear_reconcile() -> void:
+	var zi: int = clampi(game.cur_room, 0, game.zone_count - 1)
+	var keep_alive: int = game.zone_alive.get(zi, 0)
+	var keep_pos: Vector2 = game.player.global_position
+	var keep_idle: float = game._straggler_idle
+	var keep_tick: float = game._straggler_tick
+	game.player.global_position = game.room_center(zi)
+	var a := Enemy.make(game, "wolf", game.room_center(zi) + Vector2(-140, 0))
+	a.zone_idx = zi
+	game.add_enemy(a)
+	var b := Enemy.make(game, "wolf", game.play_rect(zi).position + Vector2(120, 120))
+	b.zone_idx = zi
+	game.add_enemy(b)
+	# The counter agrees with the living count (whatever else this room holds);
+	# then `a` vanishes WITHOUT dying (the drift) — the tick must notice.
+	var living_before: int = game._alive_in_room(zi).size()
+	game.zone_alive[zi] = living_before
+	a.remove_from_group("enemies")
+	a.queue_free()
+	await get_tree().process_frame
+	game._straggler_tick = 99.0
+	game._straggler_idle = 0.0
+	game._tick_room_clear(0.016)
+	var ok: bool = int(game.zone_alive.get(zi, 0)) == living_before - 1
+	# Straggler wake: with the room quiet past STRAGGLER_IDLE, `b` (asleep,
+	# far corner) is woken; shove it OUTSIDE the room first — it must come home.
+	b.alerted = false
+	b.force_aggro = false
+	b.global_position = game.play_rect(zi).position - Vector2(300, 300)
+	game._straggler_tick = 99.0
+	game._straggler_idle = 99.0
+	game._tick_room_clear(0.016)
+	var woke: bool = b.alerted and b.force_aggro
+	var home_again: bool = game.play_rect(zi).grow(60.0).has_point(b.global_position)
+	# restore
+	b.remove_from_group("enemies")
+	b.queue_free()
+	game.zone_alive[zi] = keep_alive
+	game.player.global_position = keep_pos
+	game._straggler_idle = keep_idle
+	game._straggler_tick = keep_tick
+	game.refresh_quest()
+	if not ok:
+		return _fail("room-clear reconcile: counter should drop by one when a monster vanished without dying")
+	if not woke:
+		return _fail("room-clear straggler: the last quiet monster was not woken after STRAGGLER_IDLE")
+	if not home_again:
+		return _fail("room-clear straggler: a monster outside the room was not pulled back home")
+	print("ok: room-clear counter reconciles to living monsters; quiet stragglers wake and come home")
 
 
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------
