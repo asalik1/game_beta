@@ -244,9 +244,16 @@ should work".
 - [x] **P2.4 Ready pulse** — the medallion ring + icon spring 1.14→1 the instant an ability
   comes back up (`_pulse_slot`), on top of the existing white ring flash. Tooltip fade: not
   done (engine tooltips).
-- [~] **P2.5 Transitions** — dialogue box slides up + fades in (0.14 s, pause-safe, not
-  headless) — done 2026-08-19; room-enter fade / title-card easing not done (a room fade
-  risks reading as a hitch on every door).
+- [x] **P2.5 Transitions** — dialogue box slides up + fades in (0.14 s, pause-safe, not
+  headless) — done 2026-08-19 00:40. Room-enter + title card done 04:15: the title card
+  SETTLES down 14 px as it appears (cubic ease-out) with the sub-line a beat behind, and
+  both drift up as they leave (`hud.flash_title`, `TITLE_RISE`/`TITLE_SUB_DELAY`; end
+  screen resets the rest position); a REVISITED room eases in from part-black
+  (`hud.room_dip`, `Balance.ROOM_DIP_A` 0.55 over `ROOM_DIP_T` 0.28 s) instead of
+  jump-cutting — first visits keep the full fade-from-black + card. Never on headless,
+  never over a fade already in flight (title flash / death dim own the overlay). Hooked
+  in `_enter_room` for `play_started and not first_visit`. The hitch worry: the dip does
+  not ADD a stall — it hides the cut after one.
 
 ### P3 — atmosphere layer (code + a few strips, ~1 day) (BUILT 2026-08-18 23:45)
 - [x] **P3.1 Per-terrain ambient particles** — the layer already existed (`Terrains.AMBIENTS`
@@ -288,8 +295,20 @@ should work".
   terrain repaint). Door lanes + torch pairs stay clear. Colliders untouched. Vegetation
   walls keep their organic edge (they carry the canopy instead). Subtle by design — read at 1×
   in the bailey rig frame.
-- [ ] **P5.2 Asymmetric insets** for small rooms; decor clusters along walls
-  (`env-diversity` fill-vs-accent).
+- [x] **P5.2 Asymmetric insets + wall-hug clusters** (BUILT 2026-08-19 04:10) —
+  `game_base.room_inset_lt/rb`: each axis's shrink is split (1±ASYM·h) per room hash
+  (`Balance.ROOM_INSET_ASYM` 0.6; the play rect's SIZE is unchanged, so every size test
+  holds), so a shrunken room sits off-centre in its cell AROUND its door lanes (which stay
+  on the cell's centre lines — `door_pos`, roads, seals, gates untouched); the corridor on
+  the near side shortens, the far side lengthens. Authored-scale rooms (capital) stay
+  symmetric. `lane_local()` replaces every `pw/2, ph/2` door-lane assumption in
+  `_spawn_scenery` (buildings, landmark, obstacles, clumps, accents, bridge); walls, curtains,
+  canopy spans and pilasters cut their gaps at the lane; hazard pools roll inside the play
+  rect. Wall-hug composition: `Balance.SCENERY_WALL_HUG` 0.4 of decor + prop placements
+  sample the band 60-200 px off a wall (`_scatter_point`) and a clump that hugs a wall
+  stretches ALONG it 1.6× / squeezes across 0.45× (`_clump_jitter`) — hedges, rock lines,
+  mushroom fringes; open middles stay open. Rig-shot at 0.5 (Hollow Oak, Stilt Camp,
+  Wolfpaths): rooms visibly off-centre, tree lines along the west walls. Full suite PASS.
 - [ ] **P5.3 (long-term)** non-rectangular room footprints in world-gen.
 
 ### P6 — cast consistency (ART, separate lane; see mob-sheet-qa memory)

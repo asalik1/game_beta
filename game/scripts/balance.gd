@@ -69,6 +69,11 @@ const CAMERA_LOOKAHEAD_EASE := 3.0      # 1/s toward the target offset
 const CAMERA_COMBAT_ZOOM := 1.08
 const CAMERA_COMBAT_RANGE := 520.0
 const CAMERA_ZOOM_EASE := 2.2           # 1/s toward the target zoom
+# Room-enter dip (2026-08-19): a REVISITED room eases in from part-black
+# instead of jump-cutting (first visits keep the full fade + title card).
+# 0 alpha = off. Never on headless; never over a fade already in flight.
+const ROOM_DIP_A := 0.55
+const ROOM_DIP_T := 0.28
 # HUD: the controls-hint lines fade out after this many seconds of play
 # (they return when a menu opens).
 const HINT_FADE_AFTER := 75.0
@@ -2877,6 +2882,13 @@ const ROOM_SIZE_VAR := 0.15   # max shrink from the full cell (each dimension)
 ## Safety floor for authored hub-room scales. Content chooses the actual scale;
 ## this only prevents malformed data collapsing a playable room.
 const AUTHORED_ROOM_SCALE_MIN := 0.5
+# Asymmetric inset split (P5.2, 2026-08-19): each axis's shrink is divided
+# left/right (top/bottom) as (1±ASYM·h) with h a per-room hash in [-1, 1], so
+# a shrunken room sits off-centre in its cell around its (cell-centred) door
+# lanes instead of always being a centred rectangle. 0 = the old symmetric
+# split. Bound: SMALL_ROOM_INSET × (1+ASYM) must leave the door lane inside
+# the play rect (420·1.6 = 672 < ROOM_W/2 - gap; 246·1.6 = 394 < ROOM_H/2 - gap).
+const ROOM_INSET_ASYM := 0.6
 
 # Scenery density (anti-litter pass 2026-07-12): a room's props were reading
 # as clutter — the graveyard's 8-kind roster and the forests' big canopies
@@ -2916,6 +2928,14 @@ const SCENERY_CLUSTER_MAX := 4         # hard cap on clump size (5+ impossible)
 const SCENERY_CLUSTER_GROW := 0.5      # chance to add a 3rd member
 const SCENERY_CLUSTER_GROW_DECAY := 0.2  # each further member that much less likely
 const SCENERY_CLUSTER_RADIUS := 95.0   # px spread of a clump around its centre
+# Wall-hug composition (P5.2, 2026-08-19; env-diversity fill-vs-accent): this
+# share of decor + prop placements sample the band along one wall instead of
+# the open floor, and a clump that hugs a wall stretches along it (a hedge, a
+# rock line, a mushroom fringe at the skirting) — clusters where things gather,
+# open middles that stay open. 0 = the old uniform scatter.
+const SCENERY_WALL_HUG := 0.4                     # share of placements that hug a wall
+const SCENERY_WALL_BAND := Vector2(60.0, 200.0)   # px off the play-rect wall the hug point lands in
+const SCENERY_HUG_STRETCH := Vector2(1.6, 0.45)   # clump jitter along / across a hugged wall (x CLUSTER_RADIUS)
 # High-resolution environment overrides normalize to authored world widths
 # instead of inheriting the legacy "native pixels x3" rule. This keeps a 320px
 # generated oak and a 48px pack oak in the same combat-readable size band.

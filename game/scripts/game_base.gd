@@ -2048,11 +2048,40 @@ func _room_size_factor(i: int) -> float:
 	var bell := (a + b + c) / 3.0   # ~centred 0.5, extremes rare
 	return (1.0 - Balance.ROOM_SIZE_VAR) + Balance.ROOM_SIZE_VAR * bell
 
+## ASYMMETRIC insets (P5.2, 2026-08-19): room_inset() is the per-axis AVERAGE
+## (so the play rect's SIZE is unchanged — every size test/knob still holds),
+## and this is the TOP-LEFT share of it: the same total shrink split unevenly
+## between the two sides of each axis, so a small room is no longer always a
+## centred rectangle in its cell. The door lanes stay on the cell's centre
+## lines (door_pos), so a room simply sits off-centre AROUND its doors — the
+## corridors on the near side shorten, the far side lengthens. Authored-scale
+## rooms (capital `room_scale`) stay symmetric: their compositions were placed
+## and passability-audited that way. Hashed per room index — no RNG, identical
+## on every machine (co-op) and on every rebuild.
+func room_inset_lt(i: int) -> Vector2:
+	var ins := room_inset(i)
+	if ins == Vector2.ZERO or float(zones[i].get("room_scale", 1.0)) < 1.0:
+		return ins
+	var ax := float((i * 2654435761) & 1023) / 1023.0 * 2.0 - 1.0
+	var ay := float((i * 1597334677 + 7919) & 1023) / 1023.0 * 2.0 - 1.0
+	return Vector2(ins.x * (1.0 + Balance.ROOM_INSET_ASYM * ax),
+		ins.y * (1.0 + Balance.ROOM_INSET_ASYM * ay))
+
+## The bottom-right share (the rest of the shrink on each axis).
+func room_inset_rb(i: int) -> Vector2:
+	return room_inset(i) * 2.0 - room_inset_lt(i)
+
 ## The walled, walkable area of a room (equals room_rect for full-size
 ## rooms). Cameras, spawns and clamps all use THIS rect.
 func play_rect(i: int) -> Rect2:
 	var ins := room_inset(i)
-	return Rect2(rooms[i]["origin"] + ins, Vector2(ROOM_W, ROOM_H) - ins * 2.0)
+	return Rect2(rooms[i]["origin"] + room_inset_lt(i), Vector2(ROOM_W, ROOM_H) - ins * 2.0)
+
+## Room-local x/y of the door LANES (the cell's centre lines) inside the play
+## rect — where the roads run and the door gaps sit. Equal to half the play
+## rect only when the inset is symmetric.
+func lane_local(i: int) -> Vector2:
+	return Vector2(ROOM_W, ROOM_H) / 2.0 - room_inset_lt(i)
 
 ## Map an authored in-room position into the playable rect — authored
 ## coordinates assume the full cell, so small rooms scale them down.
@@ -2061,7 +2090,7 @@ func room_pos(i: int, x: float, y: float) -> Vector2:
 	var p: Vector2 = Vector2(x, y) * meta["scale"]
 	var ins := room_inset(i)
 	if ins != Vector2.ZERO:
-		p = ins + p * (Vector2(ROOM_W, ROOM_H) - ins * 2.0) / Vector2(ROOM_W, ROOM_H)
+		p = room_inset_lt(i) + p * (Vector2(ROOM_W, ROOM_H) - ins * 2.0) / Vector2(ROOM_W, ROOM_H)
 	return meta["origin"] + p
 
 func room_center(i: int) -> Vector2:

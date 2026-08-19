@@ -3046,12 +3046,20 @@ func boss_banner(boss_name: String) -> void:
 		title_label.scale = Vector2.ONE)
 
 
+# Title-card motion constants (presentation): the card's rest positions are
+# the labels' build positions; RISE is how far above rest it starts/ends.
+const TITLE_RISE := 14.0        # px above rest the title starts / ends
+const TITLE_SUB_DELAY := 0.12   # s the sub-line lags the title
+const TITLE_REST_Y := 200.0
+const SUBTITLE_REST_Y := 265.0
 func flash_title(text: String, sub := "", hold := 1.6, overlay_fade := true) -> void:
 	# Every arrival is a fresh run for boss-splash purposes: a replayed
 	# chapter's bosses get their entrance flash again.
 	_boss_splash_shown.clear()
 	title_label.text = text
 	subtitle_label.text = sub
+	title_label.position.y = TITLE_REST_Y - TITLE_RISE
+	subtitle_label.position.y = SUBTITLE_REST_Y - TITLE_RISE * 0.6
 	var tween := create_tween()
 	if overlay_fade:
 		# Every arrival (boot, load, replay, next chapter) fades in from
@@ -3063,10 +3071,36 @@ func flash_title(text: String, sub := "", hold := 1.6, overlay_fade := true) -> 
 		tween.parallel().tween_property(title_label, "modulate:a", 1.0, 0.4)
 	else:
 		tween.tween_property(title_label, "modulate:a", 1.0, 0.4)
-	tween.parallel().tween_property(subtitle_label, "modulate:a", 1.0, 0.4)
+	# Title-card motion (2026-08-19): the card no longer just alpha-pops — the
+	# title SETTLES down a few px as it appears (cubic ease-out), the sub-line
+	# follows a beat later, and both drift up a touch as they leave.
+	tween.parallel().tween_property(title_label, "position:y", TITLE_REST_Y, 0.55) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(subtitle_label, "modulate:a", 1.0, 0.4).set_delay(TITLE_SUB_DELAY)
+	tween.parallel().tween_property(subtitle_label, "position:y", SUBTITLE_REST_Y, 0.55) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT).set_delay(TITLE_SUB_DELAY)
 	tween.tween_interval(hold)
 	tween.tween_property(title_label, "modulate:a", 0.0, 0.6)
+	tween.parallel().tween_property(title_label, "position:y", TITLE_REST_Y - TITLE_RISE * 0.5, 0.6) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	tween.parallel().tween_property(subtitle_label, "modulate:a", 0.0, 0.6)
+	tween.parallel().tween_property(subtitle_label, "position:y", SUBTITLE_REST_Y - TITLE_RISE * 0.3, 0.6) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+
+
+## Room-enter DIP (2026-08-19): a revisited room used to jump-cut in — the
+## first frame after the door (and after any room-build stall) was the new
+## room at full brightness. A short dip from part-black settles the cut and
+## hides the stall's discontinuity behind a fade the eye reads as intent.
+## First visits keep flash_title's full fade-from-black + card. Never on
+## headless (tests read frames), never over a fade already in flight (a title
+## flash / the death dim own the overlay then).
+func room_dip() -> void:
+	if DisplayServer.get_name() == "headless" or overlay.color.a > 0.0:
+		return
+	overlay.color = Color(0, 0, 0, Balance.ROOM_DIP_A)
+	create_tween().tween_property(overlay, "color:a", 0.0, Balance.ROOM_DIP_T) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 
 func show_end_screen(text: String, sub: String, color: Color) -> void:
@@ -3074,6 +3108,8 @@ func show_end_screen(text: String, sub: String, color: Color) -> void:
 	title_label.add_theme_color_override("font_color", color)
 	title_label.text = text
 	subtitle_label.text = sub
+	title_label.position.y = TITLE_REST_Y        # a prior card's exit drift must not carry over
+	subtitle_label.position.y = SUBTITLE_REST_Y
 	title_label.modulate.a = 1.0
 	subtitle_label.modulate.a = 1.0
 

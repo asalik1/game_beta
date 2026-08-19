@@ -828,6 +828,8 @@ func _enter_room(i: int) -> void:
 		# The cursed chest's bargain is offered at the door, once,
 		# while the pack still stands (playtest 2026-07-07).
 		_offer_cursed_chest(i)
+	elif play_started and prev != i:
+		hud.room_dip()   # a revisit eases in instead of jump-cutting (2026-08-19)
 	refresh_quest()
 	_ensure_quest_quarry(i)  # a KILL-step stays completable after its rooms are cleared
 	_try_spawn_boss(i)
@@ -1793,6 +1795,38 @@ func _canopy_conflict(rect: Rect2, pos: Vector2, fronts: Array) -> bool:
 	return false
 
 
+## WALL-HUG composition (P5.2, 2026-08-19; env-diversity fill-vs-accent): a
+## room used to scatter every prop and every decor blade uniformly over the open
+## floor, so rooms read as evenly-sprinkled rectangles. Now a share of
+## placements sample the BAND along one wall (a stand at the skirting, a rock
+## line under the north face, a mushroom fringe), and a clump that hugs a wall
+## STRETCHES along it instead of blobbing — so things gather where they gather
+## in a real place, and the middle stays open. Knobs in Balance.SCENERY_WALL_*.
+## A room-local scatter point: open floor, or (hug) in the band along one wall.
+## Returns [pos: Vector2, side: int] — side -1 = open floor, else 0..3 = N,S,W,E.
+func _scatter_point(rng: RandomNumberGenerator, pw: float, ph: float,
+		x_min: float, x_max: float, y_min: float, y_max: float, hug: bool) -> Array:
+	if not hug:
+		return [Vector2(rng.randf_range(x_min, x_max), rng.randf_range(y_min, y_max)), -1]
+	var side := rng.randi_range(0, 3)
+	var d := rng.randf_range(Balance.SCENERY_WALL_BAND.x, Balance.SCENERY_WALL_BAND.y)
+	match side:
+		0: return [Vector2(rng.randf_range(x_min, x_max), maxf(y_min, d)), 0]
+		1: return [Vector2(rng.randf_range(x_min, x_max), minf(y_max, ph - d)), 1]
+		2: return [Vector2(maxf(x_min, d), rng.randf_range(y_min, y_max)), 2]
+	return [Vector2(minf(x_max, pw - d), rng.randf_range(y_min, y_max)), 3]
+
+## Member jitter around a clump centre: isotropic on the open floor, stretched
+## ALONG a hugged wall (and squeezed across it) so the stand reads as a line.
+func _clump_jitter(rng: RandomNumberGenerator, side: int) -> Vector2:
+	var j := Vector2(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0)) * Balance.SCENERY_CLUSTER_RADIUS
+	if side == 0 or side == 1:      # N/S wall: along = x
+		j = Vector2(j.x * Balance.SCENERY_HUG_STRETCH.x, j.y * Balance.SCENERY_HUG_STRETCH.y)
+	elif side == 2 or side == 3:    # W/E wall: along = y
+		j = Vector2(j.x * Balance.SCENERY_HUG_STRETCH.y, j.y * Balance.SCENERY_HUG_STRETCH.x)
+	return j
+
+
 ## Clump size with a DECAYING tail: starts at 2, each extra member only GROW
 ## as likely as the last (capped at MAX). Pairs/triples common, a dense stand
 ## of 4 rare, 5+ impossible — a natural distribution, not a flat 2..4 roll.
@@ -1873,6 +1907,10 @@ func _spawn_scenery(zi: int) -> void:
 	var origin: Vector2 = pr.position
 	var pw := pr.size.x
 	var ph := pr.size.y
+	# Door LANES in room-local px (the cell's centre lines — the roads run
+	# there and the door gaps sit there). With asymmetric insets (P5.2) they
+	# are no longer at pw/2, ph/2.
+	var lane := lane_local(zi)
 	var area_frac := (pw * ph) / float(ROOM_W * ROOM_H)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = zi * 77 + terrain_by_zone[zi].hash() % 1000
@@ -2032,7 +2070,11 @@ func _spawn_scenery(zi: int) -> void:
 		var dclump := 1
 		if _groupable(decor_name) and rng.randf() < Balance.SCENERY_CLUSTER_CHANCE:
 			dclump = _clump_size(rng)
-		var dcenter := origin + Vector2(rng.randf_range(70.0, pw - 70.0), rng.randf_range(80.0, ph - 80.0))
+		# Wall-hug share (P5.2): a fringe of grass/mushrooms at the skirting.
+		var dsp := _scatter_point(rng, pw, ph, 70.0, pw - 70.0, 80.0, ph - 80.0,
+			rng.randf() < Balance.SCENERY_WALL_HUG)
+		var dcenter: Vector2 = origin + (dsp[0] as Vector2)
+		var dside: int = dsp[1]
 		var decor_blocked := false
 		for reservation in reserved:
 			var reserve: Dictionary = reservation
@@ -2044,7 +2086,7 @@ func _spawn_scenery(zi: int) -> void:
 		for k in dclump:
 			var dpos := dcenter
 			if k > 0:
-				dpos = dcenter + Vector2(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0)) * Balance.SCENERY_CLUSTER_RADIUS
+				dpos = dcenter + _clump_jitter(rng, dside)
 				dpos.x = clampf(dpos.x, origin.x + 70.0, origin.x + pw - 70.0)
 				dpos.y = clampf(dpos.y, origin.y + 80.0, origin.y + ph - 80.0)
 			var decor_base := Terrains.prop_base(decor_name)
@@ -2081,7 +2123,7 @@ func _spawn_scenery(zi: int) -> void:
 	for bname in preview_buildings:
 		for attempt in 60:
 			var bpos := Vector2(rng.randf_range(200.0, max_x - 160.0), rng.randf_range(170.0, ph - 180.0))
-			if absf(bpos.y - ph / 2.0) < 160.0 or absf(bpos.x - pw / 2.0) < 190.0:
+			if absf(bpos.y - lane.y) < 160.0 or absf(bpos.x - lane.x) < 190.0:
 				continue  # the road and door lanes stay open
 			var bok := true
 			for other in placed:
@@ -2116,7 +2158,7 @@ func _spawn_scenery(zi: int) -> void:
 			terrain_by_zone[zi], landmark_roster, landmark_occurrence)
 		for attempt in 60:
 			var spos := Vector2(rng.randf_range(200.0, max_x - 160.0), rng.randf_range(170.0, ph - 180.0))
-			if absf(spos.y - ph / 2.0) < 160.0 or absf(spos.x - pw / 2.0) < 190.0:
+			if absf(spos.y - lane.y) < 160.0 or absf(spos.x - lane.x) < 190.0:
 				continue  # keep the road and door lanes open
 			var sok := true
 			for other in placed:
@@ -2155,13 +2197,19 @@ func _spawn_scenery(zi: int) -> void:
 		if _groupable(prop) and rng.randf() < Balance.SCENERY_CLUSTER_CHANCE:
 			clump = _clump_size(rng)
 		# Find a clump CENTRE that clears existing props and the road/door lanes.
+		# A share of placements HUG a wall (P5.2): a stand along the skirting, a
+		# rock line under the north face — and the clump then stretches along it.
+		var hug := rng.randf() < Balance.SCENERY_WALL_HUG
+		var side := -1
 		var center := Vector2.ZERO
 		var got := false
 		for attempt in Balance.SCENERY_PLACE_TRIES:
-			var pos := Vector2(rng.randf_range(90.0, max_x), rng.randf_range(100.0, ph - 100.0))
-			if pos.y > ph / 2.0 - 90.0 and pos.y < ph / 2.0 + 90.0:
+			var sp := _scatter_point(rng, pw, ph, 90.0, max_x, 100.0, ph - 100.0, hug)
+			var pos: Vector2 = sp[0]
+			side = sp[1]
+			if pos.y > lane.y - 90.0 and pos.y < lane.y + 90.0:
 				continue  # the road / east-west door lane stays open
-			if absf(pos.x - pw / 2.0) < 130.0:
+			if absf(pos.x - lane.x) < 130.0:
 				continue  # the north-south door lane stays open
 			var ok := true
 			for reservation in reserved:
@@ -2191,12 +2239,12 @@ func _spawn_scenery(zi: int) -> void:
 		for k in clump:
 			var mpos := center
 			if k > 0:
-				mpos = center + Vector2(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0)) * Balance.SCENERY_CLUSTER_RADIUS
+				mpos = center + _clump_jitter(rng, side)   # stretched along a hugged wall
 				mpos.x = clampf(mpos.x, 90.0, max_x)
 				mpos.y = clampf(mpos.y, 100.0, ph - 100.0)
-				if mpos.y > ph / 2.0 - 90.0 and mpos.y < ph / 2.0 + 90.0:
+				if mpos.y > lane.y - 90.0 and mpos.y < lane.y + 90.0:
 					continue
-				if absf(mpos.x - pw / 2.0) < 130.0:
+				if absf(mpos.x - lane.x) < 130.0:
 					continue
 				var okc := true
 				for other in placed:
@@ -2235,9 +2283,9 @@ func _spawn_scenery(zi: int) -> void:
 		var group_radius := float(spec.get("radius", Balance.SCENERY_ACCENT_GROUP_RADIUS))
 		for attempt in Balance.SCENERY_PLACE_TRIES:
 			var acenter := Vector2(rng.randf_range(90.0, max_x), rng.randf_range(100.0, ph - 100.0))
-			if acenter.y > ph / 2.0 - 90.0 and acenter.y < ph / 2.0 + 90.0:
+			if acenter.y > lane.y - 90.0 and acenter.y < lane.y + 90.0:
 				continue
-			if absf(acenter.x - pw / 2.0) < 130.0:
+			if absf(acenter.x - lane.x) < 130.0:
 				continue
 			var aok := true
 			# Same reservation the obstacle loop honours: an authored landmark's
@@ -2271,9 +2319,9 @@ func _spawn_scenery(zi: int) -> void:
 						apos = acenter + Vector2.from_angle(angle) * distance
 						apos.x = clampf(apos.x, 90.0, max_x)
 						apos.y = clampf(apos.y, 100.0, ph - 100.0)
-						if apos.y > ph / 2.0 - 90.0 and apos.y < ph / 2.0 + 90.0:
+						if apos.y > lane.y - 90.0 and apos.y < lane.y + 90.0:
 							continue
-						if absf(apos.x - pw / 2.0) < 130.0:
+						if absf(apos.x - lane.x) < 130.0:
 							continue
 						var member_ok := true
 						for other in placed:
@@ -2311,7 +2359,7 @@ func _spawn_scenery(zi: int) -> void:
 	if river_local.size.x > 0.0:
 		var rect := Rect2(origin + river_local.position, river_local.size)
 		var wpx := river_local.size.x
-		var bridge := Rect2(rect.position.x - 14.0, origin.y + ph / 2.0 - 84.0,
+		var bridge := Rect2(rect.position.x - 14.0, origin.y + lane.y - 84.0,
 			wpx + 28.0, 168.0)
 		var water := Sprite2D.new()
 		water.texture = Art.tex("white")
@@ -2897,50 +2945,54 @@ func _wall_dress(spr: Sprite2D, wall_tex: String, size: Vector2, tex_off := Vect
 func _build_room_walls(i: int) -> void:
 	var r := play_rect(i)
 	var full := room_rect(i)
-	var ins := room_inset(i)
+	# Per-side insets (P5.2): the play rect may sit off-centre in its cell; the
+	# door lanes stay on the CELL's centre lines, so every gap below is cut at
+	# the lane, not at the play rect's middle.
+	var lt := room_inset_lt(i)
+	var rb := room_inset_rb(i)
 	var exits: Dictionary = rooms[i]["exits"]
 	var gap := DOOR_TILES * TILE
+	var lane_x := full.position.x + ROOM_W / 2.0   # world x of the N/S door lane
+	var lane_y := full.position.y + ROOM_H / 2.0   # world y of the W/E door lane
 	# Terrain-aware wall tile (2026-07-08): stone keep, wood village, mossy
 	# forest/marsh, volcanic magma, ice, graveyard, sandstone — else stone.
 	# Track the wall sprites so apply_terrain can retexture them live.
 	var wt: String = Terrains.wall_for(terrain_by_zone[i])
 	zone_wall_sprites[i] = []
 	_wall_sink = zone_wall_sprites[i]
-	# North/south walls (gap centered on x).
-	for spec in [["N", r.position.y], ["S", r.end.y - TILE]]:
+	# North/south walls (gap on the lane).
+	for spec in [["N", r.position.y, lt.y], ["S", r.end.y - TILE, rb.y]]:
 		var dir: String = spec[0]
 		var y: float = spec[1]
+		var corridor: float = spec[2]   # this side's margin: door → cell edge
 		var relief := "S" if dir == "N" else ""   # a north wall shows its face
 		if exits.has(dir):
-			var half := r.size.x / 2.0 - gap / 2.0
-			_wall(Rect2(r.position.x, y, half, TILE), wt, relief)
-			_wall(Rect2(r.position.x + r.size.x / 2.0 + gap / 2.0, y, half, TILE), wt, relief)
+			_wall(Rect2(r.position.x, y, lane_x - gap / 2.0 - r.position.x, TILE), wt, relief)
+			_wall(Rect2(lane_x + gap / 2.0, y, r.end.x - (lane_x + gap / 2.0), TILE), wt, relief)
 			_door_torches(i, door_pos(i, dir), false)
-			if ins.y > 0.0:
-				var cx := full.position.x + ROOM_W / 2.0
+			if corridor > 0.0:
 				var cy := full.position.y if dir == "N" else r.end.y
-				_wall(Rect2(cx - gap / 2.0 - TILE, cy, TILE, ins.y), wt)
-				_wall(Rect2(cx + gap / 2.0, cy, TILE, ins.y), wt)
+				_wall(Rect2(lane_x - gap / 2.0 - TILE, cy, TILE, corridor), wt)
+				_wall(Rect2(lane_x + gap / 2.0, cy, TILE, corridor), wt)
 		else:
 			_wall(Rect2(r.position.x, y, r.size.x, TILE), wt, relief)
-	# West/east walls (gap centered on y).
-	for spec in [["W", r.position.x], ["E", r.end.x - TILE]]:
+	# West/east walls (gap on the lane).
+	for spec in [["W", r.position.x, lt.x], ["E", r.end.x - TILE, rb.x]]:
 		var dir: String = spec[0]
 		var x: float = spec[1]
+		var corridor: float = spec[2]
 		var relief := "E" if dir == "W" else ""   # a west wall shades the floor east of it
 		if exits.has(dir):
-			var half := r.size.y / 2.0 - gap / 2.0
-			_wall(Rect2(x, r.position.y, TILE, half), wt, relief)
-			_wall(Rect2(x, r.position.y + r.size.y / 2.0 + gap / 2.0, TILE, half), wt, relief)
+			_wall(Rect2(x, r.position.y, TILE, lane_y - gap / 2.0 - r.position.y), wt, relief)
+			_wall(Rect2(x, lane_y + gap / 2.0, TILE, r.end.y - (lane_y + gap / 2.0)), wt, relief)
 			_door_torches(i, door_pos(i, dir), true)
-			if ins.x > 0.0:
-				var cy2 := full.position.y + ROOM_H / 2.0
+			if corridor > 0.0:
 				var cx2 := full.position.x if dir == "W" else r.end.x
-				_wall(Rect2(cx2, cy2 - gap / 2.0 - TILE, ins.x, TILE), wt)
-				_wall(Rect2(cx2, cy2 + gap / 2.0, ins.x, TILE), wt)
+				_wall(Rect2(cx2, lane_y - gap / 2.0 - TILE, corridor, TILE), wt)
+				_wall(Rect2(cx2, lane_y + gap / 2.0, corridor, TILE), wt)
 		else:
 			_wall(Rect2(x, r.position.y, TILE, r.size.y), wt, relief)
-	_cell_curtain(i, full, ins, exits, gap, wt)
+	_cell_curtain(i, full, lt, rb, exits, gap, wt)
 	var wall_tint := Terrains.wall_tint_for(terrain_by_zone[i])
 	for wall_sprite in zone_wall_sprites[i]:
 		if is_instance_valid(wall_sprite):
@@ -2968,29 +3020,33 @@ func _build_room_walls(i: int) -> void:
 ## each with the door corridor's gap kept open. They ride _wall(), so a terrain
 ## repaint retextures them with the rest and the north band throws its face.
 const CURTAIN_MIN_INSET := 72.0   # TILE + a face: below this the band would sit on the wall itself
-func _cell_curtain(i: int, full: Rect2, ins: Vector2, exits: Dictionary, gap: float, wt: String) -> void:
-	if ins.y >= CURTAIN_MIN_INSET:
-		var cx := full.position.x + ROOM_W / 2.0
-		for spec in [["N", full.position.y, "S"], ["S", full.end.y - TILE, ""]]:
-			var dir: String = spec[0]
-			var y: float = spec[1]
-			var relief: String = spec[2]
-			if exits.has(dir):
-				_wall(Rect2(full.position.x, y, cx - gap / 2.0 - full.position.x, TILE), wt, relief)
-				_wall(Rect2(cx + gap / 2.0, y, full.end.x - (cx + gap / 2.0), TILE), wt, relief)
-			else:
-				_wall(Rect2(full.position.x, y, full.size.x, TILE), wt, relief)
-	if ins.x >= CURTAIN_MIN_INSET:
-		var cy := full.position.y + ROOM_H / 2.0
-		for spec in [["W", full.position.x, "E"], ["E", full.end.x - TILE, ""]]:
-			var dir: String = spec[0]
-			var x: float = spec[1]
-			var relief: String = spec[2]
-			if exits.has(dir):
-				_wall(Rect2(x, full.position.y, TILE, cy - gap / 2.0 - full.position.y), wt, relief)
-				_wall(Rect2(x, cy + gap / 2.0, TILE, full.end.y - (cy + gap / 2.0)), wt, relief)
-			else:
-				_wall(Rect2(x, full.position.y, TILE, full.size.y), wt, relief)
+func _cell_curtain(i: int, full: Rect2, lt: Vector2, rb: Vector2, exits: Dictionary, gap: float, wt: String) -> void:
+	var cx := full.position.x + ROOM_W / 2.0
+	var cy := full.position.y + ROOM_H / 2.0
+	# Each side closes on its own margin (asymmetric insets: one side may be
+	# deep enough for a curtain while the opposite wall sits on the cell edge).
+	for spec in [["N", full.position.y, "S", lt.y], ["S", full.end.y - TILE, "", rb.y]]:
+		if float(spec[3]) < CURTAIN_MIN_INSET:
+			continue
+		var dir: String = spec[0]
+		var y: float = spec[1]
+		var relief: String = spec[2]
+		if exits.has(dir):
+			_wall(Rect2(full.position.x, y, cx - gap / 2.0 - full.position.x, TILE), wt, relief)
+			_wall(Rect2(cx + gap / 2.0, y, full.end.x - (cx + gap / 2.0), TILE), wt, relief)
+		else:
+			_wall(Rect2(full.position.x, y, full.size.x, TILE), wt, relief)
+	for spec in [["W", full.position.x, "E", lt.x], ["E", full.end.x - TILE, "", rb.x]]:
+		if float(spec[3]) < CURTAIN_MIN_INSET:
+			continue
+		var dir: String = spec[0]
+		var x: float = spec[1]
+		var relief: String = spec[2]
+		if exits.has(dir):
+			_wall(Rect2(x, full.position.y, TILE, cy - gap / 2.0 - full.position.y), wt, relief)
+			_wall(Rect2(x, cy + gap / 2.0, TILE, full.end.y - (cy + gap / 2.0)), wt, relief)
+		else:
+			_wall(Rect2(x, full.position.y, TILE, full.size.y), wt, relief)
 
 ## Foreground CANOPY overhang (P3, 2026-08-18): forest rooms hang a strip of
 ## dark leaves along the north edge ABOVE the actors (z 20), so walking near
@@ -3017,11 +3073,11 @@ func _canopy_overhang(i: int, r: Rect2, exits: Dictionary, gap: float) -> void:
 	zone_canopy[i] = []
 	var spans: Array = []
 	if exits.has("N"):
-		# clear the door lane AND its torch pair (they stand ~74 px off centre)
+		# clear the door lane AND its torch pair (they stand ~74 px off the lane)
 		var clear := gap / 2.0 + CANOPY_DOOR_CLEAR
-		var half := r.size.x / 2.0 - clear
-		spans.append(Rect2(r.position.x, 0, half, 0))
-		spans.append(Rect2(r.position.x + r.size.x / 2.0 + clear, 0, half, 0))
+		var lane_x := door_pos(i, "N").x   # the cell's centre line, not the rect's
+		spans.append(Rect2(r.position.x, 0, lane_x - clear - r.position.x, 0))
+		spans.append(Rect2(lane_x + clear, 0, r.end.x - (lane_x + clear), 0))
 	else:
 		spans.append(Rect2(r.position.x, 0, r.size.x, 0))
 	for sp in spans:
@@ -3065,8 +3121,8 @@ func _wall_posts(i: int, r: Rect2, exits: Dictionary, gap: float, wt: String) ->
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7919 * (i + 1)
 	var clear := gap / 2.0 + CANOPY_DOOR_CLEAR
-	var cx := r.position.x + r.size.x / 2.0
-	var cy := r.position.y + r.size.y / 2.0
+	var cx := door_pos(i, "N").x   # door lanes sit on the CELL's centre lines
+	var cy := door_pos(i, "W").y
 	# north + south runs
 	for side in ["N", "S"]:
 		var x := r.position.x + CORNER_W + rng.randf_range(40.0, 120.0)
@@ -3730,17 +3786,19 @@ func _spawn_patches(zi: int) -> void:
 				hazards[i]["sprite"].queue_free()
 			hazards.remove_at(i)
 	var terrain := Terrains.get_terrain(terrain_by_zone[zi])
-	var origin: Vector2 = rooms[zi]["origin"]
+	# Pools land inside the PLAY rect (P5.2: with per-side insets a cell-wide
+	# roll would strand more of them in the unreachable margin).
+	var pr := play_rect(zi).grow(-120.0)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = zi * 991 + terrain_by_zone[zi].hash()
 	for spec in terrain.get("patches", []):
 		# Patch counts were tuned for the old strip; rooms are ~2.2x the area.
 		for i in int(ceil(float(spec["count"]) * 2.0)):
-			var pos := origin + Vector2(rng.randf_range(120.0, ROOM_W - 120.0), rng.randf_range(120.0, ROOM_H - 120.0))
+			var pos := Vector2(rng.randf_range(pr.position.x, pr.end.x), rng.randf_range(pr.position.y, pr.end.y))
 			# A hazard pool on the water makes no sense — keep it on dry ground.
 			var htries := 0
 			while rivers.has(zi) and (rivers[zi]["rect"] as Rect2).grow(20.0).has_point(pos) and htries < 8:
-				pos = origin + Vector2(rng.randf_range(120.0, ROOM_W - 120.0), rng.randf_range(120.0, ROOM_H - 120.0))
+				pos = Vector2(rng.randf_range(pr.position.x, pr.end.x), rng.randf_range(pr.position.y, pr.end.y))
 				htries += 1
 			if rivers.has(zi) and (rivers[zi]["rect"] as Rect2).grow(20.0).has_point(pos):
 				continue  # no dry spot found — skip this pool rather than flood it
