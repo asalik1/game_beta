@@ -966,7 +966,15 @@ func _physics_process(delta: float) -> void:
 ## same strip playback the live path uses (one-shot action strips,
 ## walk/idle swap at the snapshot's walk flag, the little bob).
 func _net_mirror_tick(delta: float) -> void:
-	global_position = global_position.lerp(net_target, minf(1.0, delta * 10.0))
+	# A snapshot could carry a non-finite net_target; lerp(nan) latches the
+	# mirror's position for good (the scrub in _physics_process sits AFTER this
+	# early-return, so it never reaches a mirror). Snap to a finite target —
+	# recovering an already-poisoned position — and never chase a bad one.
+	if net_target.is_finite():
+		global_position = net_target if not global_position.is_finite() \
+			else global_position.lerp(net_target, minf(1.0, delta * 10.0))
+	elif not global_position.is_finite():
+		global_position = Vector2.ZERO
 	if not _strip_action.is_empty():
 		_advance_action_anim(delta)
 	elif anim_frames > 1 or not _strip_walk.is_empty():

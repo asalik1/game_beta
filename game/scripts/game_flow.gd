@@ -2074,8 +2074,9 @@ func _apply_hazards() -> void:
 	if not rv.is_empty():
 		var rect: Rect2 = rv["rect"]
 		var bridge: Rect2 = rv["bridge"]
-		if lp != null and not lp.dead and rect.has_point(lp.global_position) \
-				and not bridge.has_point(lp.global_position):
+		if lp != null and not lp.dead and lp.global_position.is_finite() \
+				and rect.has_point(lp.global_position) \
+				and not bridge.has_point(lp.global_position):   # has_point(nan)=true — gate it
 			wading = true
 			lp.damp_time = Balance.DAMP_DURATION  # Damp: refreshes while wading, lingers after
 			if not was_wading:
@@ -2085,8 +2086,9 @@ func _apply_hazards() -> void:
 				_ripple(lp.global_position + Vector2(0, 14))
 		for node in get_tree().get_nodes_in_group("enemies"):
 			var e := node as Enemy
-			if e and not e.dying and rect.has_point(e.global_position) \
-					and not bridge.has_point(e.global_position):
+			if e and not e.dying and e.global_position.is_finite() \
+					and rect.has_point(e.global_position) \
+					and not bridge.has_point(e.global_position):   # has_point(nan)=true — gate it
 				e.hazard_speed = minf(e.hazard_speed, Balance.RIVER_WADE_MULT)
 	was_wading = wading
 
