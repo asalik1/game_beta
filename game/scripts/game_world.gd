@@ -2845,6 +2845,8 @@ func _build_room_walls(i: int) -> void:
 	for wall_sprite in zone_wall_sprites[i]:
 		if is_instance_valid(wall_sprite):
 			wall_sprite.modulate = wall_tint
+	_canopy_overhang(i, r, exits, gap)
+	_wall_posts(i, r, exits, gap, wt)
 	# Locked edges get a gate — built once per edge, by whichever room
 	# builds first, and only while the lock is still unmet.
 	for dir in exits.keys():
@@ -2854,6 +2856,142 @@ func _build_room_walls(i: int) -> void:
 		var key := _edge_key(i, nb)
 		if edge_locks.has(key) and not gates.has(key) and not _edge_unlocked(i, nb):
 			gates[key] = _build_gate(i, String(dir))
+
+## Foreground CANOPY overhang (P3, 2026-08-18): forest rooms hang a strip of
+## dark leaves along the north edge ABOVE the actors (z 20), so walking near
+## the top wall reads as passing under the trees — the one foreground layer the
+## flat top-down frame lacked. Left/right of the north door only (the door lane
+## and its torch pair stay clear); wall kind decides eligibility (mossy forest
+## walls, hedges), the art is `canopy_forest.png` (seamless left-to-right).
+const CANOPY_WALLS := {"wall_moss": true, "wall_hedge": true}
+const CANOPY_H := 96.0        # world px of strip shown (art is 128 tall @1:1)
+const CANOPY_LIFT := 22.0     # how far above the wall's top edge the strip starts
+const CANOPY_ALPHA := 0.92
+const CANOPY_Z := 20
+const CANOPY_DOOR_CLEAR := 100.0   # px each side of the door lane left open (torch pair)
+func _canopy_overhang(i: int, r: Rect2, exits: Dictionary, gap: float) -> void:
+	var wt: String = Terrains.wall_for(terrain_by_zone[i])
+	if not CANOPY_WALLS.has(wt) or not Art.has_sprite("canopy_forest"):
+		return
+	var tex: Texture2D = Art.tex("canopy_forest")
+	if tex == null:
+		return
+	for old in zone_canopy.get(i, []):
+		if is_instance_valid(old):
+			old.queue_free()
+	zone_canopy[i] = []
+	var spans: Array = []
+	if exits.has("N"):
+		# clear the door lane AND its torch pair (they stand ~74 px off centre)
+		var clear := gap / 2.0 + CANOPY_DOOR_CLEAR
+		var half := r.size.x / 2.0 - clear
+		spans.append(Rect2(r.position.x, 0, half, 0))
+		spans.append(Rect2(r.position.x + r.size.x / 2.0 + clear, 0, half, 0))
+	else:
+		spans.append(Rect2(r.position.x, 0, r.size.x, 0))
+	for sp in spans:
+		var s := Sprite2D.new()
+		s.texture = tex
+		s.centered = false
+		s.region_enabled = true
+		s.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		# offset the region per span so the tile phase differs left/right
+		s.region_rect = Rect2(sp.position.x * 0.5, 0, sp.size.x, minf(CANOPY_H, tex.get_height()))
+		s.position = Vector2(sp.position.x, r.position.y - CANOPY_LIFT)
+		s.modulate = Color(1, 1, 1, CANOPY_ALPHA)
+		s.z_index = CANOPY_Z
+		s.z_as_relative = false
+		world.add_child(s)
+		zone_canopy[i].append(s)
+
+
+## Wall SILHOUETTE variety (P5.1, 2026-08-18): masonry walls grow pilasters —
+## squat posts cut from the wall's own field that step a few px INTO the room
+## along the north/south runs (their own shaded face on the north side), plus a
+## heavier block at each corner — so a room boundary is no longer one flat
+## strip from door to door. Cosmetic: colliders untouched (a 10 px cosmetic
+## overhang is walked "under"). Spacing is per-room seeded and skips the door
+## lanes + torch pairs. Vegetation walls (moss/hedge/wood) keep their organic
+## edge; the stone kinds carry the posts.
+const POST_WALLS := {"wallblock": true, "wall_castle": true, "wall_sand": true,
+	"wall_sewer": true, "wall_volcanic": true, "wall_ice": true, "wall_grave": true}
+const POST_W := 28.0            # post width (px)
+const POST_DROP := 14.0         # px the post steps into the room past the cap
+const POST_STEP := 224.0        # nominal spacing along a wall (jittered)
+const POST_SHADE := Color(0.8, 0.8, 0.86)   # the post cap sits a step darker than the wall
+const CORNER_W := 44.0
+func _wall_posts(i: int, r: Rect2, exits: Dictionary, gap: float, wt: String) -> void:
+	for old in zone_posts.get(i, []):
+		if is_instance_valid(old):
+			old.queue_free()
+	zone_posts[i] = []
+	if not POST_WALLS.has(wt) or Art.wall_field(wt) == null:
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7919 * (i + 1)
+	var clear := gap / 2.0 + CANOPY_DOOR_CLEAR
+	var cx := r.position.x + r.size.x / 2.0
+	var cy := r.position.y + r.size.y / 2.0
+	# north + south runs
+	for side in ["N", "S"]:
+		var x := r.position.x + CORNER_W + rng.randf_range(40.0, 120.0)
+		while x < r.end.x - CORNER_W - POST_W:
+			var in_door := exits.has(side) and absf(x + POST_W / 2.0 - cx) < clear
+			if not in_door:
+				if side == "N":
+					_post(i, wt, Rect2(x, r.position.y, POST_W, TILE + POST_DROP), true)
+				else:
+					_post(i, wt, Rect2(x, r.end.y - TILE - POST_DROP, POST_W, TILE + POST_DROP), false)
+			x += POST_STEP + rng.randf_range(-48.0, 64.0)
+	# west + east runs (posts protrude sideways; no separate face)
+	for side in ["W", "E"]:
+		var y := r.position.y + CORNER_W + rng.randf_range(40.0, 120.0)
+		while y < r.end.y - CORNER_W - POST_W:
+			var in_door := exits.has(side) and absf(y + POST_W / 2.0 - cy) < clear
+			if not in_door:
+				if side == "W":
+					_post(i, wt, Rect2(r.position.x, y, TILE + POST_DROP, POST_W), false)
+				else:
+					_post(i, wt, Rect2(r.end.x - TILE - POST_DROP, y, TILE + POST_DROP, POST_W), false)
+			y += POST_STEP + rng.randf_range(-48.0, 64.0)
+	# corner blocks (a heavier tower foot at each corner)
+	_post(i, wt, Rect2(r.position.x, r.position.y, CORNER_W, CORNER_W), true)
+	_post(i, wt, Rect2(r.end.x - CORNER_W, r.position.y, CORNER_W, CORNER_W), true)
+	_post(i, wt, Rect2(r.position.x, r.end.y - CORNER_W, CORNER_W, CORNER_W), false)
+	_post(i, wt, Rect2(r.end.x - CORNER_W, r.end.y - CORNER_W, CORNER_W, CORNER_W), false)
+
+
+## One post/corner block: the wall field as its cap (a touch darker), and on
+## the north side a short shaded face + floor shadow under it (same recipe as
+## the wall's own relief), so it reads as a solid block, not a decal.
+func _post(i: int, wt: String, rect: Rect2, face: bool) -> void:
+	var s := Sprite2D.new()
+	zone_posts[i].append(s)
+	_wall_dress(s, wt, rect.size, Vector2(rect.position.x * 0.37, 7.0))
+	s.centered = false
+	s.position = rect.position
+	s.modulate = POST_SHADE
+	s.z_index = -4   # over the wall cap (-5), under actors
+	world.add_child(s)
+	if face:
+		var k: float = s.scale.x
+		var f := Sprite2D.new()
+		_wall_dress(f, wt, Vector2(rect.size.x, WALL_FACE_H * 0.7), Vector2(0, 5.0 * k))
+		f.scale = Vector2.ONE
+		f.centered = false
+		f.position = Vector2(0, rect.size.y / k)
+		f.modulate = WALL_FACE_SHADE
+		f.z_index = -1
+		s.add_child(f)
+		var sh := Sprite2D.new()
+		sh.texture = Art.tex("softshadow")
+		sh.centered = false
+		sh.position = Vector2(0, (rect.size.y + WALL_FACE_H * 0.7) / k)
+		sh.scale = Vector2(rect.size.x / k / 8.0, WALL_SHADOW_H * 0.6 / k / 32.0)
+		sh.modulate = Color(1, 1, 1, WALL_SHADOW_A)
+		sh.z_index = -3
+		s.add_child(sh)
+
 
 ## Flickering torches flank each doorway. (2026-08-18) They wear the hi-res
 ## animated torch-PILLAR strip (the structure art, 160px cells, fire looping)
@@ -2896,6 +3034,7 @@ func _door_torches(zi: int, pos: Vector2, vertical: bool) -> void:
 			var cell := float(torch.texture.get_height())
 			var s := DOOR_TORCH_H / cell
 			torch.scale = Vector2(s, s)
+			torch.modulate = Art.hdr(Color.WHITE, EMISSIVE_BLOOM_LIFT)   # flame tips bloom (P3)
 			# Base on the old torch's ground line (its 48px art was centred on pos).
 			torch.position = pos + off + Vector2(0, 24.0 - DOOR_TORCH_H * 0.5)
 			var per := 1.0 / maxf(1.0, float(pillar.get("fps", 6.0)))
@@ -3226,8 +3365,26 @@ func _setup_ambient_fx(terrain_id: String) -> void:
 	ambient_fx.gravity = spec["gravity"]
 	ambient_fx.initial_velocity_min = spec["vel"][0]
 	ambient_fx.initial_velocity_max = spec["vel"][1]
-	ambient_fx.scale_amount_min = spec["scale"][0]
-	ambient_fx.scale_amount_max = spec["scale"][1]
+	# Soft particle art (P3, 2026-08-18): the layer used to draw the engine's
+	# 1px square scaled 1.2-7x — literal squares drifting past the hero. Now
+	# leaves are spinning soft ellipses, rain is streaks, everything else a
+	# soft chip; the AMBIENTS scale numbers still mean "about that many px".
+	var akey := String(Terrains.get_terrain(terrain_id).get("ambient", "leaves_green"))
+	var chip := 6.0   # a 12px chip at scale 1/6 = the old 2px footprint, softened
+	if akey.begins_with("leaves"):
+		ambient_fx.texture = Art.tex("leaf")
+		chip = 4.0
+		ambient_fx.angle_min = -180.0
+		ambient_fx.angle_max = 180.0
+		ambient_fx.angular_velocity_min = -90.0
+		ambient_fx.angular_velocity_max = 90.0
+	elif akey == "rain":
+		ambient_fx.texture = Art.tex("streak")
+		chip = 1.2
+	else:
+		ambient_fx.texture = Art.tex("spark")
+	ambient_fx.scale_amount_min = float(spec["scale"][0]) / chip
+	ambient_fx.scale_amount_max = float(spec["scale"][1]) / chip
 	add_child(ambient_fx)
 
 
@@ -3295,6 +3452,11 @@ func apply_terrain(zi: int, terrain_id: String) -> void:
 			_wall_dress(s, wt, wr.size)     # cap: field (1x) or legacy tile (3x)
 			s.modulate = wall_tint
 			_wall_relief(s, wt, wr, String(s.get_meta("wall_relief", "")))
+	# The wall dressing that depends on the KIND follows the repaint too
+	# (pilasters on stone, canopy over forest walls) — both rebuild from scratch.
+	var pr := play_rect(zi)
+	_wall_posts(zi, pr, rooms[zi]["exits"], DOOR_TILES * TILE, wt)
+	_canopy_overhang(zi, pr, rooms[zi]["exits"], DOOR_TILES * TILE)
 	# If the player is standing in this room, refresh mood immediately.
 	if cur_room == zi:
 		var tween := create_tween()
@@ -3467,6 +3629,11 @@ const HAZARD_STRIP := {
 const HAZARD_STRIP_CELL := 192.0
 const HAZARD_STRIP_FILL := 0.8
 const HAZARD_STRIP_FRAMES := 4
+# Emissive bloom lift (P3, 2026-08-18): hazard pools, their floor glows and
+# door torches ride a hair above 1.0 so only their HOTTEST pixels cross the
+# glow threshold (1.1) and bloom softly. Never on actors (mythic pass ruling:
+# no hero rim glows) — presentation, judged in the magma rig frame.
+const EMISSIVE_BLOOM_LIFT := 1.16
 # Texture-space y offset (pre-scale) that puts each strip's pool EQUATOR (the
 # hazard circle's centre — build_fx_strip.py --valign widest prints it) on the
 # sprite origin; a wisp/bubble crown above the pool would otherwise sit it low.
@@ -3550,7 +3717,9 @@ func _add_hazard(zi: int, type: String, pos: Vector2, radius: float, duration :=
 		var s := (radius * 2.0) / (HAZARD_STRIP_CELL * HAZARD_STRIP_FILL)
 		spr.scale = Vector2(s, s)
 		spr.offset = Vector2(0, float(HAZARD_STRIP_OFFSET.get(type, 0.0)))
-		spr.modulate = Color(1, 1, 1, 0.9)
+		# A hair over white (P3): the pool's HOTTEST pixels cross the glow
+		# threshold and bloom softly; the body of the pool stays LDR.
+		spr.modulate = Art.hdr(Color(1, 1, 1, 0.9), EMISSIVE_BLOOM_LIFT)
 		var step := spr.create_tween().set_loops()
 		var per := randf_range(0.16, 0.22)
 		for i in HAZARD_STRIP_FRAMES:
@@ -3569,7 +3738,8 @@ func _add_hazard(zi: int, type: String, pos: Vector2, radius: float, duration :=
 	# drifts, expires and frees with it; z relative -1 puts it just under).
 	if HAZARD_GLOW.has(type):
 		var gspec: Array = HAZARD_GLOW[type]
-		var g := _floor_glow(spr, Vector2.ZERO, gspec[0], radius * float(gspec[2]), float(gspec[1]), zi)
+		var g := _floor_glow(spr, Vector2.ZERO, Art.hdr(gspec[0], EMISSIVE_BLOOM_LIFT * 1.15),
+			radius * float(gspec[2]), float(gspec[1]), zi)
 		g.z_index = -1
 		g.z_as_relative = true
 	hazards.append({"zone": zi, "type": type, "pos": pos, "radius": radius,

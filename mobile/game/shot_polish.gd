@@ -163,9 +163,20 @@ func _tour() -> void:
 				if n is Sprite2D and n.z_index == 2 and n.hframes > 1 \
 						and n.global_position.distance_to(game.door_pos(i, "N")) < 220.0:
 					torches.append(n.global_position)
-			step("ndoor %s: room=%s play=%s door=%s cam_top=%d screen_c=%s torches=%s" % [
+			var canopy_info := []
+			for c in game.zone_canopy.get(i, []):
+				if is_instance_valid(c):
+					canopy_info.append([c.global_position, c.region_rect, c.visible, c.z_index])
+			step("ndoor %s: room=%s play=%s door=%s cam_top=%d screen_c=%s torches=%s canopy=%s wall=%s" % [
 				nm, game.room_rect(i), game.play_rect(i), game.door_pos(i, "N"),
-				game.camera.limit_top, game.camera.get_screen_center_position(), torches])
+				game.camera.limit_top, game.camera.get_screen_center_position(), torches,
+				canopy_info, Terrains.wall_for(game.terrain_by_zone[i])])
+			var posts: Array = game.zone_posts.get(i, [])
+			var post_pos := []
+			for pn in posts.slice(0, 6):
+				if is_instance_valid(pn):
+					post_pos.append([pn.global_position, pn.region_rect.size, pn.visible, pn.z_index, pn.texture != null])
+			step("posts %s: n=%d first=%s" % [nm, posts.size(), post_pos])
 			shot("%s_ndoor" % s, "north door")
 		# west wall
 		p.global_position = rr.position + Vector2(230.0, rr.size.y * 0.5)

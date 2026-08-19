@@ -204,17 +204,23 @@ should work".
 - [ ] **P2.5 Transitions** — room enter fade / title-card easing / dialogue slide: not done
   (kept for the next pass; a room fade risks reading as a hitch on every door).
 
-### P3 — atmosphere layer (code + a few strips, ~1 day)
-- [ ] **P3.1 Per-terrain ambient particles** in `ambience.gd`: village dust motes
-  + pollen, forest leaves, marsh spores/flies, magma embers, ice snow, storm rain
-  streaks, void motes. Density curves, not uniform (env-distributions rule).
-- [ ] **P3.2 Emissive bloom** on hazards, braziers, portals via the existing
-  hdr_2d glow pass (`Art.hdr()` on the pool sprites); judge in-game (tonemap).
-- [ ] **P3.3 Flickering floor pools** — tween `_floor_glow` alpha in phase with the
-  torch/brazier flicker (±8 %); hero-carried faint light in dark terrains.
-- [ ] **P3.4 Foreground overhang** — canopy/eave silhouettes along forest and
-  keep room edges (z above actors, α 0.85), 3–4 authored strips.
-- [ ] **P3.5 Subtle vignette** on the world viewport (never on menus).
+### P3 — atmosphere layer (code + a few strips, ~1 day) (BUILT 2026-08-18 23:45)
+- [x] **P3.1 Per-terrain ambient particles** — the layer already existed (`Terrains.AMBIENTS`
+  ×12 kinds, every terrain mapped) but drew the engine's 1px square scaled 1.2-7× — squares
+  drifting past the hero. Now leaves are spinning soft ellipses (`Art.tex("leaf")`, random
+  angle + angular velocity), rain is streaks (`"streak"`), everything else a soft chip
+  (`"spark"`); the AMBIENTS scale numbers keep their pixel meaning (`_setup_ambient_fx`).
+- [x] **P3.2 Emissive bloom** — `EMISSIVE_BLOOM_LIFT` 1.16 on hazard-pool sprites, their floor
+  glows (×1.15) and the door-torch strips: only their hottest pixels cross the 1.1 glow
+  threshold, so lava pools get a soft halo and yellow bubbles pop; actors untouched (no
+  hero rim glows — mythic pass ruling). Rig: magma_room.
+- [x] **P3.3 Flickering floor pools** — already true: `_floor_glow(pulse)` breathes every pool
+  (`GLOW_PULSE_LOW/PERIOD`), the player carries a light with wall occluders. No change.
+- [x] **P3.4 Foreground overhang** — `canopy_forest.png` (Codex, seamless L→R, keyed at 512×128)
+  hangs along the north edge of forest/hedge-walled rooms ABOVE the actors (`_canopy_overhang`,
+  z 20, α 0.92, `CANOPY_*`), left/right of the door lane with the torch pair clear
+  (`CANOPY_DOOR_CLEAR`). Rig: darkwood road N door. Eaves for keep rooms: not done.
+- [x] **P3.5 Vignette** — already true (`hud.vignette`, low-HP pulse rides it). No change.
 
 ### P4 — hero animation coverage (ART, the real cost)
 - [ ] **P4.1 4-frame idle loops** for the 6 heroes via the ImageGen ONE-ROW-OF-
@@ -227,9 +233,14 @@ should work".
   unless "all classes").
 
 ### P5 — room composition (code, medium)
-- [ ] **P5.1 Wall silhouette variety** — pilasters/buttresses every N tiles,
-  corner towers on keep/castle kinds, root bulges on forest, per wall kind, in
-  `_build_room_walls` (procedural, no new art). Camera play-rect unaffected.
+- [x] **P5.1 Wall silhouette variety** (BUILT 2026-08-18 23:55) — stone wall kinds
+  (`POST_WALLS`: wallblock/castle/sand/sewer/volcanic/ice/grave) grow pilasters cut from the
+  wall's own field every ~224 px (per-room seeded jitter), stepping `POST_DROP` 14 px into the
+  room with their own shaded face + floor shadow on the north run, sideways on E/W, and a
+  `CORNER_W` 44 px block at each corner (`_wall_posts`/`_post`, `zone_posts`; rebuilt on a
+  terrain repaint). Door lanes + torch pairs stay clear. Colliders untouched. Vegetation
+  walls keep their organic edge (they carry the canopy instead). Subtle by design — read at 1×
+  in the bailey rig frame.
 - [ ] **P5.2 Asymmetric insets** for small rooms; decor clusters along walls
   (`env-diversity` fill-vs-accent).
 - [ ] **P5.3 (long-term)** non-rectangular room footprints in world-gen.

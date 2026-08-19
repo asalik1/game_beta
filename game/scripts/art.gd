@@ -1525,6 +1525,10 @@ static func tex(name: String) -> ImageTexture:
 			t = ImageTexture.create_from_image(_make_softshadow())
 		"spark":  # 12px soft-edged chip for particle bursts / impact sparks (P1)
 			t = ImageTexture.create_from_image(_make_spark())
+		"leaf":   # 8x14 soft ellipse — falling leaves / petals (P3 ambient layer)
+			t = ImageTexture.create_from_image(_make_leaf())
+		"streak": # 3x14 soft vertical line — rain (P3 ambient layer)
+			t = ImageTexture.create_from_image(_make_streak())
 		"reticle":
 			t = ImageTexture.create_from_image(_make_reticle())
 		"telegraph":
@@ -2695,6 +2699,36 @@ static func _make_spark() -> Image:
 				var f := 1.0 - d
 				var a := clampf(f * f * 1.6, 0.0, 1.0)     # hot core, soft rim
 				image.set_pixel(x, y, Color(1, 1, 1, a))
+	return image
+
+
+## A soft leaf: 8x14 ellipse, hot centre, so a spinning particle reads as a
+## petal/leaf rather than a dot (P3 ambient layer).
+static func _make_leaf() -> Image:
+	var w := 8
+	var h := 14
+	var image := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	for y in h:
+		for x in w:
+			var dx := (x + 0.5 - w / 2.0) / (w / 2.0)
+			var dy := (y + 0.5 - h / 2.0) / (h / 2.0)
+			var d := sqrt(dx * dx + dy * dy)
+			if d < 1.0:
+				var f := 1.0 - d
+				image.set_pixel(x, y, Color(1, 1, 1, clampf(f * 1.7, 0.0, 1.0)))
+	return image
+
+
+## A rain streak: 3x14, soft-edged, brighter toward the head (bottom).
+static func _make_streak() -> Image:
+	var w := 3
+	var h := 14
+	var image := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	for y in h:
+		for x in w:
+			var ax := 1.0 - absf(x - 1.0) * 0.55
+			var ay := 0.35 + 0.65 * (float(y) / float(h - 1))
+			image.set_pixel(x, y, Color(1, 1, 1, clampf(ax * ay, 0.0, 1.0)))
 	return image
 
 
