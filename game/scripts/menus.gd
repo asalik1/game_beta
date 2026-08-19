@@ -961,6 +961,7 @@ var _cs_stage: Control = null
 var _cs_model: AnimatedSprite2D = null
 var _cs_model_glow: Sprite2D = null
 var _cs_splash: TextureRect = null
+var _cs_video: VideoStreamPlayer = null   # in-game ability demo (csdemo_<class>_<slot>.ogv)
 var _cs_body_cache := {}   # "<class>|<clip>" -> (body_h, bottom_row) of the clip's first frame
 var _cs_info: VBoxContainer = null
 var _cs_detail: Label = null
@@ -1017,6 +1018,22 @@ func open_class_select() -> void:
 	_cs_model.position = Vector2(CS_STAGE.size.x * 0.5, CS_STAGE.size.y - 60.0)
 	_cs_model.animation_finished.connect(_cs_clip_done)
 	_cs_stage.add_child(_cs_model)
+	# In-game ability DEMO (owner 2026-08-19: "an in game gif of the attack to
+	# completion" — the bare body clips showed no FX): a pre-captured in-game
+	# take (real projectiles / dashes / ults; shot_csdemo.gd → build_csdemo.py)
+	# fills the stage while it plays, then the live model returns.
+	_cs_video = VideoStreamPlayer.new()
+	_cs_video.size = CS_STAGE.size - Vector2(2, 2)
+	_cs_video.position = Vector2(1, 1)
+	_cs_video.expand = true
+	_cs_video.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cs_video.visible = false
+	_cs_video.finished.connect(func() -> void:
+		if _cs_video != null and is_instance_valid(_cs_video):
+			_cs_video.visible = false
+			_cs_video.stop()
+		_cs_set_mode(_cs_mode))
+	_cs_stage.add_child(_cs_video)
 	# Splash / Model toggle, top-right of the stage
 	var tog := HBoxContainer.new()
 	tog.position = Vector2(CS_STAGE.size.x - 190.0, 10.0)
@@ -1200,16 +1217,15 @@ func _cs_preview(id: String) -> void:
 	_cs_info.add_child(row)
 	for slot in ["a1", "a2", "a3", "ult"]:
 		row.add_child(_cs_ability_card(id, String(slot)))
-	# (max_lines_visible on an autowrapped Label collapsed it to 1 px inside the
-	# VBox — trim the strings by length instead; the tooltip keeps the whole text)
+	# FULL text, wrapped (owner flag 2026-08-19: it was trimmed with an ellipsis
+	# AND the tooltip repeated the same words — redundant, with whitespace to
+	# spare). _lbl autowraps; the panel has the height. (The old max_lines_visible
+	# 1 px collapse was that property, not autowrap.)
 	_cs_detail = _lbl(_cs_info, "", 12, Color(0.82, 0.86, 0.94))
 	_cs_detail.custom_minimum_size = Vector2(470, 0)
 	if c.has("passive"):
-		var ptext := String(c["passive"]["text"])
-		var pl := _lbl(_cs_info, "★ " + (ptext if ptext.length() <= 190 else ptext.substr(0, 187).strip_edges() + "…"), 12, Color(0.5, 0.95, 0.8))
+		var pl := _lbl(_cs_info, "★ " + String(c["passive"]["text"]), 12, Color(0.5, 0.95, 0.8))
 		pl.custom_minimum_size = Vector2(470, 0)
-		pl.tooltip_text = ptext
-		pl.mouse_filter = Control.MOUSE_FILTER_PASS
 	_cs_show_ability(id, "a1")
 	if _cs_choose != null:
 		_cs_choose.text = "  Choose  %s  " % String(c["name"])
@@ -1272,14 +1288,14 @@ func _cs_show_ability(id: String, slot: String) -> void:
 		return
 	var ab: Dictionary = Classes.CLASSES[id]["abilities"][slot]
 	if _cs_detail != null and is_instance_valid(_cs_detail):
-		var desc := String(ab["desc"])
-		if desc.length() > 170:
-			desc = desc.substr(0, 167).strip_edges() + "…"
-		var text := "%s — %s" % [String(ab["name"]), desc]
+		var text := "%s — %s" % [String(ab["name"]), String(ab["desc"])]
 		var scaling: String = Classes.ability_scaling(id, slot)
 		if scaling != "":
 			text += "\n" + scaling
 		_cs_detail.text = text
+	# In-game demo video first (the full cast with its FX); body clip fallback.
+	if _cs_play_demo(id, slot):
+		return
 	var clip := "ult" if slot == "ult" else ("attack" if slot == "a1" else "cast")
 	for w in CS_ACTION_WORDS:
 		if String(ab["name"]).contains(w):
@@ -1287,6 +1303,33 @@ func _cs_show_ability(id: String, slot: String) -> void:
 	if not _cs_clips.has(clip):
 		clip = "attack" if _cs_clips.has("attack") else "idle"
 	_cs_play_clip(clip, clip == "idle")
+
+
+## Play the pre-captured in-game take for this class+slot on the stage, if it
+## ships (assets/videos/csdemo_<class>_<slot>.ogv). Returns true when playing.
+func _cs_play_demo(id: String, slot: String) -> bool:
+	if _cs_video == null or not is_instance_valid(_cs_video) or _cs_mode != "model":
+		return false
+	# Headless (autotest opens this screen): no renderer, and the theora load
+	# can HANG the process — the body-clip path is the safe one there.
+	if DisplayServer.get_name() == "headless":
+		return false
+	var path := "res://assets/videos/csdemo_%s_%s.ogv" % [id, slot]
+	if not ResourceLoader.exists(path) and not FileAccess.file_exists(path):
+		return false
+	var stream: VideoStream = load(path)
+	if stream == null:
+		return false
+	_cs_video.stream = stream
+	_cs_video.visible = true
+	if _cs_model != null and is_instance_valid(_cs_model):
+		_cs_model.visible = false
+	if _cs_model_glow != null and is_instance_valid(_cs_model_glow):
+		_cs_model_glow.visible = false
+	if _cs_splash != null and is_instance_valid(_cs_splash):
+		_cs_splash.visible = false
+	_cs_video.play()
+	return true
 
 
 ## Put a clip on the stage model: one-shot clips return to the idle when done.
@@ -1368,6 +1411,10 @@ func _cs_set_mode(mode: String) -> void:
 	_cs_mode = mode
 	if _cs_splash == null or not is_instance_valid(_cs_splash):
 		return
+	# A mode change interrupts a playing ability demo (Splash wins immediately).
+	if _cs_video != null and is_instance_valid(_cs_video) and _cs_video.visible:
+		_cs_video.stop()
+		_cs_video.visible = false
 	var has_splash := _cs_splash.texture != null
 	_cs_splash.visible = mode == "splash" and has_splash
 	if _cs_model != null and is_instance_valid(_cs_model):

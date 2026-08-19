@@ -476,6 +476,30 @@ attack them (A → B → C → D → E → F → G); each lands by the same gate
   foot-gap storyboard (wide → half → CLOSED/crossing → half, then mirrored with the
   other leg in front; "frames 1/3/5/7 must have four different lower-body silhouettes")
   installed at the idle's body height; v4 (same pose in every cell) archived.
+- [x] **Class-select clip size jump + splash decapitation + text redundancy** (owner,
+  ~17:45) — (a) ability clips scale by the first frame's ALPHA BODY (`CS_MODEL_BODY_H`,
+  cached), not the cell, so an attack strip's tall sword-arc cell no longer shrinks the
+  hero mid-swing; (b) the Splash view uses an explicit cover rect biased to the painting's
+  measured face line (`_cs_fit_splash`, `AVATAR_FOCUS` at 28 % of the stage) — heads stay
+  in frame; (c) ability + passive text render IN FULL (autowrap, whitespace was there) —
+  the length trims and the same-text tooltips are gone.
+- [~] **In-game ability DEMOS on the stage** (owner: "none of the class animations play
+  any of the fx… maybe an in game gif of the attack anim to completion") — new
+  `shot_csdemo.gd` rig casts every class × slot through the real `use_ability` at a
+  frozen wolf pack under `--fixed-fps=30` and dumps frames;
+  `tools/art/build_csdemo.py` encodes them to `assets/videos/csdemo_<class>_<slot>.ogv`
+  (libtheora, 640×400, **yuv420p — MANDATORY**, ~130–500 KB each, 5 MB all 24);
+  `menus._cs_play_demo` plays the take to completion on the stage (VideoStreamPlayer;
+  knives fly, dashes travel, ults roar), then the live model returns; body-clip fallback
+  when a video is absent or headless. TWO TRAPS: (1) ffmpeg picks yuv444p from PNG input
+  and Godot's theora decoder renders 444 as macroblock garbage — force
+  `-pix_fmt yuv420p`; keep both dimensions multiples of 16; (2) headless `load()` of an
+  .ogv can HANG the process — `_cs_play_demo` returns false under the headless
+  DisplayServer (the suite opens this screen). VERIFY-IN-WINDOW STILL OWED: after ~60
+  windowed engine launches today the AMD driver started dying at boot with "Vulkan
+  device was lost" (0xC000001D, even with the videos quarantined) — the playback look
+  needs one owner-side open of the class select after a reboot/driver recovery. Suite
+  PASS headless.
 
 ### P8 — readability / depth / life (the owner's review prompts, 2026-08-19 07:00)
 - [x] **Mob readability vs detailed floors** — decision: NO outline (house style, §40);

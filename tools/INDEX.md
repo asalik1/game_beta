@@ -157,7 +157,18 @@ SERIES per beat (forest/keep/HUD fights with a LIVE pack and the hero driven thr
 input path, road/magma/keep-wall walks) into `gif_<beat>/`; run with the runner's new
 `--fixed-fps=30` so each frame is a deterministic 1/30 s; then
 `python tools/art/gif_from_frames.py [--width 800] [--out ~/Downloads/crownless_polish_gifs]`
-stitches 15 fps GIFs with one shared palette per GIF (owner review artefacts)). All live in
+stitches 15 fps GIFs with one shared palette per GIF (owner review artefacts)) ·
+`shot_csdemo` (2026-08-19, a `ShotRig`: the CLASS-SELECT ability demos — per
+`--class=<id>`, casts every slot (a1/a2/a3/ult) through the REAL
+`player.use_ability` at a frozen immortal wolf pack and dumps every frame
+(`shot.bat csdemo --fixed-fps=30 --class=assassin`; fixed-fps is REQUIRED — the
+per-frame viewport readback drops the wall-clock rate to ~7 fps, fixed-fps makes
+each frame exactly 1/30 s) into `user://shots/csdemo/<class>_<slot>/f###.png`;
+then `python tools/art/build_csdemo.py [class ...]` ffmpeg-encodes them (crop to
+the action, scale 640x396, libtheora q6, ~130-260 KB each) into
+`game/assets/videos/csdemo_<class>_<slot>.ogv` (+ mobile mirror) — the class
+selector's stage plays these full in-game takes (`menus._cs_play_demo`) instead
+of the bare body clip). All live in
 `game/`; run via `shot.bat <name>` (legacy ones too — they just print no verdict
 line) or by hand per their `.gd` docs.
 
