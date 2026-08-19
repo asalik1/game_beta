@@ -4168,11 +4168,17 @@ func _shop_card(grid: GridContainer, icon: Texture2D, title: String, detail: Str
 	b.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.7))
 	b.add_theme_color_override("font_disabled_color", Color(color, 0.4))
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	b.custom_minimum_size = Vector2(0, 54)
+	b.custom_minimum_size = Vector2(0, 60)
 	if icon != null:
 		b.icon = icon
 		b.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+		# One icon size per shelf (polish 2026-08-19): the icon fills the card's
+		# height whatever its source resolution — a 32 px gear icon used to sit as
+		# a thumbnail beside 128 px potion bottles that stretched their cards to
+		# 130 px rows.
+		b.expand_icon = true
+		b.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.09, 0.09, 0.12, 0.92)
 	sb.border_color = Color(color, 0.55 if enabled else 0.28)

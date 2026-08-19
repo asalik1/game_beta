@@ -491,7 +491,9 @@ attack them (A → B → C → D → E → F → G); each lands by the same gate
 - [x] **Minimap title** in the Cinzel header face + hairline rule; **roster faces** lifted
   1.14× (dark paintings at 60 px); **cover cycle** opens on the painterly painting
   (`cover.png` ↔ `cover_2.png` swapped; the pixel crown follows at 10 s), the "press any
-  key" prompt in Cinzel, sine-eased.
+  key" prompt in Cinzel, sine-eased; **chapter map** vellum mottle under the grid;
+  **Settings** panel 400 px on desktop (520 only in touch mode); **shop cards** one icon
+  size (`expand_icon`, 60 px rows) instead of 32 px gear beside 128 px potions.
 - [x] **P7.G Class select v2** (BUILT 2026-08-19 06:20, suite PASS; owner's eyes owed —
   this one is taste; `UPSCALE_OWNER_REVIEW/02_class_select_v2.png` + `02b_…ult_clip.png`). `menus.open_class_select` is now: a medallion RAIL of the six classes
   (the class painting's face in a bronze ring, gold + 1.08× when selected, number key under
