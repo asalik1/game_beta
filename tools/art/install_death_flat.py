@@ -55,5 +55,6 @@ if __name__ == "__main__":
     art = sys.argv[2]
     cell = int(sys.argv[3])
     out_dir = sys.argv[4] if len(sys.argv) > 4 else \
-        r"C:\Users\asali\Projects\MMO\game\assets\sprites"
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                     "game", "assets", "sprites")
     install(frames_dir, art, cell, out_dir)

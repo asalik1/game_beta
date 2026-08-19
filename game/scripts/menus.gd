@@ -353,13 +353,22 @@ func open_slots() -> void:
 	game.set_music("roster")  # carries through chapter + class select
 
 	var have_saves := not saves.is_empty()
+	var roster_full := saves.size() >= SaveGame.MAX_SLOTS
 	# A NEW hero always begins at Chapter 1 (owner ruling 2026-08-19: "new
 	# characters always route to chapter 1, obviously") — straight to the class
 	# pick, no chapter selector. Later chapters are the REPLAY picker's business
 	# (pause menu, per-hero completed_ flags) and the co-op lobby's; the account-
 	# wide meta unlocks still gate those. Tests + dev keep open_chapter_select().
-	_btn(vbox, "  ⚔  New Character  ", func() -> void: new_character(),
-		Color(0.95, 0.85, 0.5))
+	# At capacity the button is DISABLED and a note points at delete: creating
+	# anyway would reuse an occupied slot and erase that hero (CR-001).
+	if roster_full:
+		_btn(vbox, "  ⚔  New Character  (roster full)  ", func() -> void: pass,
+			Color(0.6, 0.62, 0.7), false)
+		UITheme.header(_lbl(vbox, "All %d slots are full — delete a hero below to forge a new one." % SaveGame.MAX_SLOTS,
+			13, Color(1.0, 0.7, 0.55)))
+	else:
+		_btn(vbox, "  ⚔  New Character  ", func() -> void: new_character(),
+			Color(0.95, 0.85, 0.5))
 	_btn(vbox, "  ❖  Play Together  ", func() -> void: open_lobby(),
 		Color(0.6, 0.9, 1.0))
 	UITheme.header(_lbl(vbox, "— CONTINUE —" if have_saves else "No heroes yet — forge your first.",

@@ -1187,8 +1187,8 @@ func _run_host5() -> void:
 		return
 	if not bool(r.get("ok", false)):
 		return _fail("the award package never landed in the guest's bags: %s" % str(r))
-	print("[net_session] host5: award pack applied guest-side (gems %d, consumables %d, capacity %d)"
-		% [int(r.get("gems", -1)), int(r.get("cons", -1)), int(r.get("cap", -1))])
+	print("[net_session] host5: award pack applied guest-side (gems %d, consumables %d, loose bags %d)"
+		% [int(r.get("gems", -1)), int(r.get("cons", -1)), int(r.get("loose", -1))])
 
 	# (d) a guest-side ground drop flushes into the GUEST's mailbox — and
 	# never ours.
@@ -2367,7 +2367,7 @@ func _watch_setup(sess: Node, what: String, args: Dictionary) -> void:
 				game.player.global_position = c.global_position
 		"award":
 			_award_before = {"gems": game.player.gem_bag.size(),
-				"cons": game.player.consumables.size(), "cap": game.player.bag_capacity()}
+				"cons": game.player.consumables.size(), "loose": game.player.loose_bags.size()}
 		"seed_drop":
 			# A registered ground drop through the real API (discard idiom);
 			# deferred — Area2D spawns must not ride an RPC frame's flush.
@@ -2648,13 +2648,17 @@ func _probe(sess: Node, what: String, args: Dictionary) -> Dictionary:
 			return {"ok": got_item and got_gold, "item": last,
 				"gold_delta": game.player.gold - _gold_before}
 		"award":
-			# The crafted package (gem + stone + bag) landed in OUR bags.
+			# The crafted package (gem + stone + bag) landed in OUR bags. Bags are
+			# ITEMS now (2026-08-17 rework): an awarded bag lands LOOSE in the pack
+			# via add_loose_bag — it does NOT auto-equip, so equipped bag_capacity()
+			# is unchanged. Assert loose_bags GREW instead (the pre-rework capacity
+			# check could never pass for a bag award).
 			var p: Player = game.player
 			return {"ok": p.gem_bag.size() > int(_award_before.get("gems", 999999)) \
 				and p.consumables.size() > int(_award_before.get("cons", 999999)) \
-				and p.bag_capacity() > int(_award_before.get("cap", 999999)),
+				and p.loose_bags.size() > int(_award_before.get("loose", 999999)),
 				"gems": p.gem_bag.size(), "cons": p.consumables.size(),
-				"cap": p.bag_capacity()}
+				"loose": p.loose_bags.size()}
 		"seed_drop":
 			return {"ok": not game.dropped_loot.is_empty(),
 				"drops": game.dropped_loot.size()}

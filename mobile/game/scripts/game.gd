@@ -369,6 +369,10 @@ func on_class_chosen(id: String) -> void:
 	reset_run_stats()  # the results card starts counting from here
 	switch_chapter(chapter_id, true)  # lay out THIS run's world from the fresh seed
 	if not no_saves:
+		# A free slot, or -1 when the roster is full. The New Character UI blocks
+		# at capacity (menus.open_slots), so a real player never lands on -1; if a
+		# dev/replay path somehow does, leave save_slot < 0 so autosave holds off
+		# rather than overwriting an existing hero (CR-001).
 		save_slot = SaveGame.next_free_slot()
 	request_pause(false)
 	# The class-select menu hid the HUD on the way in — and the opening's

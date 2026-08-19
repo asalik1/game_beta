@@ -17,9 +17,12 @@ set "APPDATA=%EF_TEST_APPDATA%"
 "%~dp0tools\Godot_v4.4.1-stable_win64_console.exe" --headless --path "%~dp0game" --script res://check_compile.gd
 if errorlevel 1 goto fail
 
+rem run_suite.ps1 tees live to the log while preserving Godot's own exit code
+rem past the tee, and hands it to the verdict (CR-008 — see test.bat).
 set "EF_LOG=%EF_TEST_APPDATA%\suite.out"
-"%~dp0tools\Godot_v4.4.1-stable_win64_console.exe" --headless --path "%~dp0game" res://scenes/test.tscn -- --quick 2>&1 | powershell -NoProfile -Command "$input | Tee-Object -FilePath $env:EF_LOG"
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0suite_verdict.ps1" -LogPath "%EF_LOG%" -PassMarker "AUTOTEST QUICK PASS"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0run_suite.ps1" -Godot "%~dp0tools\Godot_v4.4.1-stable_win64_console.exe" -GamePath "%~dp0game" -Scene "res://scenes/test.tscn" -ExtraArgs "-- --quick" -Log "%EF_LOG%"
+set "EF_GODOT_RC=%ERRORLEVEL%"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0suite_verdict.ps1" -LogPath "%EF_LOG%" -PassMarker "AUTOTEST QUICK PASS" -ExitCode %EF_GODOT_RC%
 set "EF_EXIT=%ERRORLEVEL%"
 goto cleanup
 

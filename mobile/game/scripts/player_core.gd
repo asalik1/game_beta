@@ -1390,6 +1390,15 @@ func _occlusion_image(tex: Texture2D) -> Image:
 
 
 func set_class(id: String) -> void:
+	# The ONE chokepoint every class id crosses — solo pick, save load
+	# (apply_character) and co-op join (_spawn_remote) all route here. A save
+	# or wire payload can hand us an unknown id; recalc() below indexes
+	# Classes.CLASSES[cls] DIRECTLY, so a bad id would script-error the load /
+	# destabilize the host's join. Reject to the default instead of propagating
+	# it (CR-005 join handshake, CR-007 corrupt save).
+	if not Classes.CLASSES.has(id):
+		push_warning("set_class: unknown class '%s' — defaulting to warrior" % id)
+		id = "warrior"
 	# Switching class REFUNDS all progression points instead of orphaning
 	# them: spent tree points reference the OLD class's cells (they'd
 	# silently stop existing), and attribute ratios differ per class.

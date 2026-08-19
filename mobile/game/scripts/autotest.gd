@@ -4466,8 +4466,12 @@ func _test_asset_seams() -> void:
 			"camp_bonfire"]:
 		if Art.anim_info(pn).is_empty():
 			return _fail("showcase animated prop %s has no _anim strip" % pn)
-		if Art.anim_prop(pn) == null:
+		var _probe := Art.anim_prop(pn)
+		if _probe == null:
 			return _fail("showcase prop %s did not build an AnimatedSprite2D" % pn)
+		_probe.free()  # built only to prove the strip loads — never parented, so
+		               # free it or the node leaks at exit (CR-009: 6 CanvasItem/
+		               # DummyTexture RIDs were exactly these six probes).
 	# Active terrain props ship as complete four-frame objects. Their static
 	# source and every animation frame share one exact canvas. Rigid-object
 	# strips retain their opaque baseline and centre; authored silhouette

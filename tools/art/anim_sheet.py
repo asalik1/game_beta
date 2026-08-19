@@ -35,7 +35,8 @@ import os, sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-ASSETS = r"C:\Users\asali\Projects\MMO\game\assets\sprites"
+_REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+ASSETS = os.path.join(_REPO, "game", "assets", "sprites")
 DIRS = [("SOUTH (S)", "s"), ("SOUTH-EAST (SE)", "se"), ("EAST (E)", "e"),
         ("NORTH-EAST (NE)", "ne"), ("NORTH (N)", "n"), ("NORTH-WEST (NW)", "nw"),
         ("WEST (W)", "w"), ("SOUTH-WEST (SW)", "sw")]

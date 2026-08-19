@@ -152,6 +152,11 @@ var _convo_claims := {}
 ## mid-beat DISCONNECT of the initiator can close the stuck overlay everywhere
 ## (the normal end path never runs — the driver is gone). Cleared with the claim.
 var _beat_claims := {}
+## CR-004, GUEST: the pid the host announced as the current beat's initiator
+## (_rpc_beat_start). The beat-mirror/quest RPCs gate on it so a crafted peer
+## can't inject beat lines or force a quest key without driving the beat. 0 =
+## no beat live. The host uses its authoritative _beat_claims map instead.
+var _spectate_initiator := 0
 ## MP-13, GUEST: the convo this machine asked the host to claim, awaiting a
 ## grant/deny — {id, convo, on_done, is_beat}. One at a time (the interact
 ## talk_cd debounces the request that opens it).
@@ -486,23 +491,31 @@ func _spawn_remote(pid: int, block: Dictionary) -> void:
 	# snapshot (~1 tick) snaps it onto the owner's real position.
 	p.global_position = game.room_center(game.cur_room) + Vector2(40.0 * (pid % 5), 30.0)
 	game.register_remote_player(p)
+	# The join block is guest-authored (CR-005): set_class rejects an unknown
+	# cls to the default (it would otherwise crash recalc's Classes.CLASSES[cls]
+	# index), every numeric field is read type-safe and clamped to a finite
+	# envelope, and the name is length-bounded. A malformed join can no longer
+	# break the host's spawn path or plant impossible remote-shell state.
 	p.set_class(String(block.get("cls", "warrior")))
-	p.level = maxi(1, int(block.get("level", 1)))
+	p.level = clampi(_di(block, "level", 1), 1, Balance.NET_LEVEL_CAP)
 	p.recalc()
-	p.max_hp = maxf(1.0, float(block.get("max_hp", p.max_hp)))
-	p.max_mp = maxf(0.0, float(block.get("max_mp", p.max_mp)))
-	p.hp = clampf(float(block.get("hp", p.max_hp)), 1.0, p.max_hp)
-	p.mp = clampf(float(block.get("mp", p.max_mp)), 0.0, p.max_mp)
+	p.max_hp = clampf(_df(block, "max_hp", p.max_hp), 1.0, Balance.NET_MAX_VITAL)
+	p.max_mp = clampf(_df(block, "max_mp", p.max_mp), 0.0, Balance.NET_MAX_VITAL)
+	p.hp = clampf(_df(block, "hp", p.max_hp), 1.0, p.max_hp)
+	p.mp = clampf(_df(block, "mp", p.max_mp), 0.0, p.max_mp)
 	# Wave-2 co-op fix #7: overwrite the class-default crit with the owner's real
 	# values so a DoT this guest applies (host re-sources it to this shell) ticks
 	# its crit off the RIGHT sheet. Offensive-only — the shell never resolves its
 	# own attacks or defense host-side (incoming hits forward to the owner), so
 	# nothing else reads these. Absent (dev {cls,level} block) keeps the default.
-	p.crit = maxf(0.0, float(block.get("crit", p.crit)))
-	p.crit_dmg = maxf(1.0, float(block.get("crit_dmg", p.crit_dmg)))
+	p.crit = clampf(_df(block, "crit", p.crit), 0.0, 1.0e6)
+	p.crit_dmg = clampf(_df(block, "crit_dmg", p.crit_dmg), 1.0, 1.0e6)
 	# The owner's display name rides as metadata until name labels land
 	# (§5.6, phase 3) — nothing renders it yet, everything can reach it.
-	p.set_meta("net_name", String(block.get("name", "")))
+	var nm := String(block.get("name", ""))
+	if nm.length() > 64:
+		nm = nm.substr(0, 64)
+	p.set_meta("net_name", nm)
 
 
 ## The character block this machine announces to the session (MP-08):
@@ -719,7 +732,11 @@ func _rpc_move(pos: Vector2, vel: Vector2, look: float) -> void:
 	for q in game.players:
 		if q != null and is_instance_valid(q) and q != game.local_player \
 				and q.peer_id == pid:
-			q.net_push_snapshot(pos, vel, look)
+			# A NaN in a movement snapshot poisons the interp lerp and can pin a
+			# shell at (nan,nan) — the same soft-lock the position scrub guards
+			# (nan-softlock-bug-family). Sanitize before it enters the buffer.
+			q.net_push_snapshot(_finvec(pos, q.global_position), _finvec(vel),
+				_fin(look, 1.0e6, 0.0))
 			return
 
 
@@ -782,6 +799,15 @@ func dev_spawn_request(spec: Dictionary) -> void:
 @rpc("any_peer", "call_remote", "reliable")
 func _rpc_dev_spawn(spec: Dictionary) -> void:
 	if game == null or not multiplayer.is_server():
+		return
+	# CR-003: this is an unrestricted spawn authority — gate it. The sender must
+	# be an admitted peer, and the HOST must have authorized dev controls
+	# (dev_mode). Without this, any connected guest could spawn bosses/elites at
+	# will on a normal session; dev_spawn itself now also rejects unknown kinds.
+	var pid := multiplayer.get_remote_sender_id()
+	if pid <= 0 or not (pid in _net().peers):
+		return
+	if not game.dev_mode:
 		return
 	game.dev_spawn(spec)
 
@@ -1125,6 +1151,75 @@ func _player_of(pid: int) -> Player:
 	return null
 
 
+# ---- wire value sanitizers (CR-002/004/005 defense-in-depth) ----
+# A modified or merely desynced/buggy client can send NaN/inf or absurd
+# magnitudes. maxf/clampf do NOT filter NaN (a NaN argument passes straight
+# through — the NaN soft-lock family), so every accepted wire float/vector runs
+# through these before it touches sim state. Bounds live in Balance (NET_MAX_*).
+
+## Reject a non-finite wire float to `fallback`, then clamp into [-limit, limit].
+static func _fin(v: float, limit: float, fallback := 0.0) -> float:
+	if not is_finite(v):
+		return fallback
+	return clampf(v, -limit, limit)
+
+## A wire float that must be >= 0 (damage, dps, durations): non-finite → 0.
+static func _finpos(v: float, limit: float) -> float:
+	if not is_finite(v):
+		return 0.0
+	return clampf(v, 0.0, limit)
+
+## Sanitize a wire position: non-finite either axis → fallback, else clamp box.
+static func _finvec(v: Vector2, fallback := Vector2.ZERO) -> Vector2:
+	if not (is_finite(v.x) and is_finite(v.y)):
+		return fallback
+	return Vector2(clampf(v.x, -Balance.NET_MAX_POS, Balance.NET_MAX_POS),
+		clampf(v.y, -Balance.NET_MAX_POS, Balance.NET_MAX_POS))
+
+## A wire direction unit-ish vector: non-finite → ZERO (callers treat ZERO as
+## "no knockback direction", which every damage path already tolerates).
+static func _findir(v: Vector2) -> Vector2:
+	return v if (is_finite(v.x) and is_finite(v.y)) else Vector2.ZERO
+
+## Typed reads out of an attacker-controlled wire dict (the status/projectile
+## payloads). A wrong-typed field — a String where a number is expected — would
+## script-error the host on cast; these fall back to the default instead.
+static func _df(d: Dictionary, key: String, dflt: float) -> float:
+	var v = d.get(key, dflt)
+	if v is int:
+		return float(v)
+	if v is float and is_finite(v):
+		return v
+	return dflt
+
+static func _di(d: Dictionary, key: String, dflt: int) -> int:
+	var v = d.get(key, dflt)
+	if v is int:
+		return v
+	if v is float and is_finite(v):
+		return int(v)
+	return dflt
+
+static func _dvec(d: Dictionary, key: String, dflt: Vector2) -> Vector2:
+	var v = d.get(key, dflt)
+	return v if v is Vector2 else dflt
+
+static func _dcol(d: Dictionary, key: String, dflt: Color) -> Color:
+	var v = d.get(key, dflt)
+	return v if v is Color else dflt
+
+## A world flag a guest wants to set (CR-004): the name must be a bounded
+## non-empty string and the value a simple scalar (bool/int/float/String) — a
+## flag never legitimately holds an Array/Dictionary/Object, and a bounded
+## string value keeps a crafted payload from smuggling a huge blob into host state.
+static func _flag_payload_ok(flag_name: String, value) -> bool:
+	if flag_name.is_empty() or flag_name.length() > Balance.NET_MAX_FLAG_LEN:
+		return false
+	if value is String:
+		return value.length() <= Balance.NET_MAX_FLAG_LEN
+	return value is bool or value is int or value is float
+
+
 # ---- guest -> enemy damage (trusted client computes, host applies) ----
 
 ## GUEST -> HOST: a locally-computed hit landed on a mirror. `amount` is
@@ -1149,9 +1244,12 @@ func _rpc_hit_enemy(id: int, amount: float, from_dir: Vector2, crit: bool) -> vo
 		        # kill event (or free) is already on its way back
 	# The guest's host-side shell is the SOURCE: reflect/counter answer it,
 	# aggro turns on it, and the kill's death flow attributes normally.
+	# amount/from_dir are guest-authored — sanitize to a finite envelope before
+	# they reach the sim (CR-002; the host still re-applies vuln/ward/plate).
+	var dmg := _finpos(amount, Balance.NET_MAX_HIT)
 	e.hit_src = _player_of(pid)
-	e.take_damage(maxf(0.0, amount), from_dir, crit)
-	last_hit = {"id": id, "peer": pid, "amount": maxf(0.0, amount), "crit": crit}
+	e.take_damage(dmg, _findir(from_dir), crit)
+	last_hit = {"id": id, "peer": pid, "amount": dmg, "crit": crit}
 
 
 ## GUEST -> HOST: a rider/status a guest's kit applied to a mirror — the
@@ -1173,32 +1271,40 @@ func _rpc_enemy_status(id: int, kind: String, d: Dictionary) -> void:
 	var e: Enemy = net_enemies.get(id)
 	if e == null or not is_instance_valid(e) or e.dying:
 		return
+	# Every field below is guest-authored: sanitize DPS/durations to a finite
+	# envelope and coerce wrong-typed fields to defaults (CR-002). A malformed
+	# dict can no longer crash the host or feed NaN into a DoT clock.
 	var src: Player = _player_of(pid)
+	var dps := _finpos(_df(d, "dps", 0.0), Balance.NET_MAX_DPS)
+	var dur := _finpos(_df(d, "dur", 3.0), Balance.NET_MAX_STATUS_DUR)
 	match kind:
 		"burn":
-			e.apply_burn(float(d.get("dps", 0.0)), float(d.get("dur", 3.0)),
-				d.get("color", Color(1.4, 0.8, 0.6)), src)
+			e.apply_burn(dps, dur, _dcol(d, "color", Color(1.4, 0.8, 0.6)), src)
 		"toxin":
-			e.apply_toxin(float(d.get("dps", 0.0)), float(d.get("dur", 3.0)),
-				d.get("color", Color(0.5, 1.2, 0.5)), src)
+			e.apply_toxin(dps, dur, _dcol(d, "color", Color(0.5, 1.2, 0.5)), src)
 		"bleed":
-			e.apply_bleed(float(d.get("dps", 0.0)), float(d.get("dur", 3.0)), src)
+			e.apply_bleed(dps, dur, src)
 		"slow":
-			e.apply_slow(float(d.get("mult", 0.5)), float(d.get("dur", 2.0)))
+			# A slow only ever slows: clamp the movement multiplier to [0,1].
+			e.apply_slow(clampf(_df(d, "mult", 0.5), 0.0, 1.0),
+				_finpos(_df(d, "dur", 2.0), Balance.NET_MAX_STATUS_DUR))
 		"stun":
-			e.apply_stun(float(d.get("dur", 0.5)))
+			e.apply_stun(_finpos(_df(d, "dur", 0.5), Balance.NET_MAX_STATUS_DUR))
 		"vuln":
-			e.apply_vuln(float(d.get("dur", 3.0)), float(d.get("mult", -1.0)))
+			# mult -1.0 is the "use default" sentinel — keep it, just bound finite.
+			e.apply_vuln(_finpos(_df(d, "dur", 3.0), Balance.NET_MAX_STATUS_DUR),
+				_fin(_df(d, "mult", -1.0), 100.0, -1.0))
 		"brittle":
 			e.add_brittle()
 		"knock":
-			e.apply_knock(d.get("v", Vector2.ZERO), bool(d.get("crush", false)))
+			e.apply_knock(_finvec(_dvec(d, "v", Vector2.ZERO)), bool(d.get("crush", false)))
 		"drag":
 			# Chains of Wrath: the host tweens its REAL enemy to the guest's
 			# computed drag point; the mirror follows through the stream.
-			var dest: Vector2 = d.get("dest", e.global_position)
+			var dest: Vector2 = _finvec(_dvec(d, "dest", e.global_position), e.global_position)
 			var tw := e.create_tween()
-			tw.tween_property(e, "global_position", dest, float(d.get("dur", 0.28))) \
+			tw.tween_property(e, "global_position", dest,
+				_finpos(_df(d, "dur", 0.28), Balance.NET_MAX_STATUS_DUR)) \
 				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 
@@ -1231,8 +1337,9 @@ func _rpc_player_hit(amount: float, dmg_type: String, attacker_id: int, heavy: b
 		if m != null and is_instance_valid(m) and not m.dying:
 			attacker = m  # the mirror: real kind/level stats resolve the hit
 	# pvp_pen is the PvP striker's forwarded penetration (0 for enemy hits, whose
-	# pen resolves attacker-side against the mirror above).
-	p.take_damage(maxf(0.0, amount), dmg_type, attacker, heavy, pvp_pen)
+	# pen resolves attacker-side against the mirror above). Bound both finite.
+	p.take_damage(_finpos(amount, Balance.NET_MAX_HIT), dmg_type, attacker, heavy,
+		_fin(pvp_pen, 1.0e6, 0.0))
 
 
 ## HOST -> OWNER: a control effect a host-side source put on the shell
@@ -1261,13 +1368,14 @@ func _rpc_player_status(kind: String, a: float, b: float) -> void:
 	var p: Node = game.local_player
 	if p == null or not is_instance_valid(p):
 		return
+	var da := _finpos(a, Balance.NET_MAX_STATUS_DUR)
 	match kind:
 		"freeze":
-			p.apply_freeze(a)
+			p.apply_freeze(da)
 		"root":
-			p.apply_root(a)
+			p.apply_root(da)
 		"chill":
-			p.apply_chill(a, maxf(0.05, b))
+			p.apply_chill(da, maxf(0.05, _finpos(b, Balance.NET_MAX_STATUS_DUR)))
 
 
 # ---- vitals sync (owner broadcasts, shells display) ----
@@ -1304,9 +1412,11 @@ func _rpc_vitals(hp: float, max_hp: float, mp: float) -> void:
 	var q: Player = _player_of(pid)
 	if q == null or q == game.local_player:
 		return
-	q.max_hp = maxf(1.0, max_hp)
-	q.hp = clampf(hp, 0.0, q.max_hp)
-	q.mp = maxf(0.0, mp)
+	# Owner-authored vitals — bound them finite so a bad packet can't NaN a
+	# shell's bar or the host-side threshold reads that steer AI (CR-002).
+	q.max_hp = clampf(_fin(max_hp, Balance.NET_MAX_VITAL, 1.0), 1.0, Balance.NET_MAX_VITAL)
+	q.hp = clampf(_fin(hp, Balance.NET_MAX_VITAL), 0.0, q.max_hp)
+	q.mp = _finpos(mp, Balance.NET_MAX_VITAL)
 	# MP-12: a DOWNED/GHOST shell is NOT dead — the §5.3 state (which the
 	# owner broadcasts before this hp=0 lands on the same reliable channel)
 	# already steers AI off it via nearest_player's downed filter. `dead`
@@ -1848,6 +1958,8 @@ func send_down_state(st: int) -> void:
 func _rpc_down_state(st: int) -> void:
 	if game == null:
 		return
+	if st < 0 or st > 2:
+		return  # only 0=standing / 1=downed / 2=ghost are legal (CR-002)
 	var pid := multiplayer.get_remote_sender_id()
 	if pid <= 0:
 		return
@@ -2202,6 +2314,14 @@ func _rpc_flag_to_host(flag_name: String, value) -> void:
 	var pid := multiplayer.get_remote_sender_id()
 	if pid <= 0 or not (pid in _net().peers):
 		return
+	# CR-004: a guest may only push a WORLD flag carrying a simple scalar. Reject
+	# over-long names, container/object values, and character-LOCAL flags — those
+	# are the owner's own history (completed_/KEPT_*) and must never be written
+	# onto the host. This matches the local route, which only ships world flags.
+	if not _flag_payload_ok(flag_name, value):
+		return
+	if bool(game.call("_flag_is_local", flag_name)):
+		return
 	game.net_apply_flag(flag_name, value)
 	_rpc_set_flag.rpc(flag_name, value)
 
@@ -2399,8 +2519,23 @@ func _rpc_beat_start(initiator_pid: int, nm: String) -> void:
 		return
 	if initiator_pid == multiplayer.get_unique_id():
 		return  # I'm the driver, not a spectator
+	_spectate_initiator = initiator_pid  # CR-004: gate later beat traffic on it
 	if game.hud != null:
 		game.hud.mirror_begin(nm)
+
+
+## CR-004: is `pid` allowed to drive the current beat's mirror/quest traffic?
+## On the HOST, the authoritative test is holding a live beat claim; on a guest
+## spectator, it's being the initiator the host announced (_rpc_beat_start).
+func _beat_sender_ok(pid: int) -> bool:
+	if pid <= 0:
+		return false
+	if multiplayer.is_server():
+		return pid in _beat_claims.values()
+	# guest: the announced initiator, or the host (peer 1) — the session
+	# authority drives lifecycle cleanup (e.g. it broadcasts beat_end after a
+	# mid-beat disconnect, once the leaver's claim is already erased).
+	return pid == _spectate_initiator or pid == 1
 
 
 ## INITIATOR -> spectators: the current dialogue line (+ any options, shown
@@ -2419,13 +2554,24 @@ func _rpc_beat_line(speaker: String, text: String, options: Array) -> void:
 	# false for a still-in-lobby guest (which must ignore beat traffic).
 	if game == null or not game.play_started:
 		return
+	# CR-004: only the peer actually driving the beat may paint the mirror, and
+	# the payload is length-bounded so it can't spam an arbitrarily long overlay.
+	if not _beat_sender_ok(multiplayer.get_remote_sender_id()):
+		return
 	if game.hud != null:
-		game.hud.mirror_line(speaker, text, options)
+		game.hud.mirror_line(speaker.substr(0, 64), text.substr(0, 400),
+			options if options.size() <= 8 else options.slice(0, 8))
 
 
 @rpc("any_peer", "call_remote", "reliable")
 func _rpc_beat_end() -> void:
-	if game != null and game.hud != null:
+	if game == null:
+		return
+	if not _beat_sender_ok(multiplayer.get_remote_sender_id()):
+		return
+	if not multiplayer.is_server():
+		_spectate_initiator = 0  # the beat closed — stop accepting its traffic
+	if game.hud != null:
 		game.hud.mirror_end()
 
 
@@ -2435,7 +2581,11 @@ func _rpc_beat_end() -> void:
 func _rpc_beat_quest(qk: String) -> void:
 	if game == null or not game.play_started:  # host is a recipient too
 		return
-	game.quest_key = qk
+	# CR-004: on the host this REPLACES the persisted quest_key — bind it to the
+	# beat owner and bound the key length so a crafted peer can't force it.
+	if not _beat_sender_ok(multiplayer.get_remote_sender_id()):
+		return
+	game.quest_key = qk.substr(0, Balance.NET_MAX_QUEST_LEN)
 	game.refresh_quest()
 
 
@@ -2469,9 +2619,12 @@ func convo_toast(verb: String, label: String) -> void:
 func _rpc_convo_toast(text: String) -> void:
 	if game == null or not game.play_started:  # host is a recipient too
 		return
+	# CR-004: bound the length at the endpoint too — the normal caller trims to
+	# ~42, but a crafted peer can send any string; a floating toast should never
+	# be an arbitrarily long banner.
 	if game.local_player != null and is_instance_valid(game.local_player):
 		game.spawn_text(game.local_player.global_position + Vector2(0, -84),
-			text, Color(0.7, 0.85, 1.0), 2.5)
+			text.substr(0, 160), Color(0.7, 0.85, 1.0), 2.5)
 
 
 # ------------------------------------------ party UI + victory/advance (MP-14) ---
@@ -2889,7 +3042,9 @@ func _rpc_pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.
 ## HOST: land a validated strike on the target's owner. The host's own hero
 ## takes it directly; a guest's rides the existing owner-applied hit RPC.
 func _pvp_apply_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0) -> void:
-	amount = maxf(0.0, amount)
+	# Guest-forwarded strike values reach here — bound both finite (CR-002).
+	amount = _finpos(amount, Balance.NET_MAX_HIT)
+	pen = _fin(pen, 1.0e6, 0.0)
 	if amount <= 0.0:
 		return
 	if target_pid == 1:
@@ -2931,6 +3086,8 @@ func _rpc_pvp_status(target_pid: int, kind: String, a: float, b: float) -> void:
 
 
 func _pvp_apply_status(target_pid: int, kind: String, a: float, b: float) -> void:
+	a = _finpos(a, Balance.NET_MAX_STATUS_DUR)
+	b = _finpos(b, Balance.NET_MAX_STATUS_DUR)
 	if target_pid == 1:
 		var p: Player = game.local_player
 		if p == null or not is_instance_valid(p) or p.dead:

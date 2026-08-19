@@ -1494,6 +1494,24 @@ static func party_hp(n: int) -> float:
 static func party_dmg(n: int) -> float:
 	return PARTY_DMG_MULT[clampi(n, 1, 4)]
 
+# ------------------------------------------- net payload safety caps ---
+# Defense-in-depth envelopes for values a co-op GUEST hands the host over an
+# RPC (CR-002/CR-004/CR-005). The trusted-client model (MULTIPLAYER.md §MP-10)
+# means the host does NOT yet reconstruct every action authoritatively; until
+# it does, the receiving endpoints at least (a) reject non-finite floats —
+# NaN/inf are never legitimate and maxf/clampf do NOT filter them (see the NaN
+# soft-lock family), and (b) clamp wire values into a sane range so an
+# impossible/overflowing payload from a modified or desynced client can't crash
+# or wedge the host. Generous on purpose: they stop garbage, not skilled play.
+const NET_MAX_HIT := 1.0e9            # one guest→enemy hit (pre-mitigation)
+const NET_MAX_DPS := 1.0e8            # burn/toxin/bleed DPS from the wire
+const NET_MAX_STATUS_DUR := 60.0      # any wire status/effect duration (s)
+const NET_MAX_VITAL := 1.0e9          # remote hp/mp/max-hp/max-mp ceiling
+const NET_LEVEL_CAP := 999            # remote player level clamp (real cap is LEVEL_CAP)
+const NET_MAX_POS := 1.0e7            # |x|,|y| a wire position may claim (world units)
+const NET_MAX_FLAG_LEN := 96          # longest world-flag name a guest may set
+const NET_MAX_QUEST_LEN := 96         # longest quest key a beat may push
+
 # -------------------------------------------------------- mob traits ---
 # The mob-mechanic vocabulary (2026-07-07 REDESIGN — each is a decision,
 # not a stat check; most reuse an existing system). Data in each kind's

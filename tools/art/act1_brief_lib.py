@@ -19,7 +19,8 @@ art_src/bosses_codex_wave1/ACT1_PROGRESS.md).
 from __future__ import annotations
 import os, shutil, sys
 
-SPR = r"C:\Users\asali\Projects\MMO\game\assets\sprites"
+_REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+SPR = os.path.join(_REPO, "game", "assets", "sprites")
 
 # kind -> (sprite, identity one-liner, body: 'humanoid'|'seated'|'floating'|'beast')
 BOSSES = {

@@ -22,7 +22,7 @@ from __future__ import annotations
 import os, subprocess, sys, shutil
 from PIL import Image
 
-REPO = r"C:\Users\asali\Projects\MMO"
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SPR = os.path.join(REPO, "game", "assets", "sprites")
 BUILD = os.path.join(REPO, "tools", "art", "build_codex_2x2_strip.py")
 sys.path.insert(0, os.path.join(REPO, "tools", "art"))

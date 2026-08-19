@@ -3447,22 +3447,34 @@ func add_enemy(e: Enemy) -> void:
 ## rogue local node the host never hears about (the bug this fixes). Solo just
 ## calls it inline. `spec`: {what, kind, level, pos}.
 func dev_spawn(spec: Dictionary) -> void:
-	var pos: Vector2 = spec.get("pos", Vector2.ZERO)
+	# spec can arrive over the wire (net_session._rpc_dev_spawn) — validate the
+	# kind against the catalogue BEFORE any constructor indexes Story.ALL_ENEMIES
+	# with it, and bound position/level, so a malformed request is dropped rather
+	# than crashing the host (CR-003).
+	var pos := Vector2.ZERO
+	var rawpos = spec.get("pos", Vector2.ZERO)
+	if rawpos is Vector2 and is_finite(rawpos.x) and is_finite(rawpos.y):
+		pos = rawpos
+	var k := String(spec.get("kind", ""))
+	if not Story.ALL_ENEMIES.has(k):
+		return
+	var lvl := clampi(int(spec.get("level", 1)), 1, 9999)
 	match String(spec.get("what", "")):
 		"boss":
 			# A fresh spawn is a fresh benchmark: clear leftover fight state so
 			# this roster's report is trustworthy (matches the old inline path).
 			fight_reset()
-			var k := String(spec.get("kind", ""))
-			var b: Boss = Boss.make_boss(self, k, pos, int(spec.get("level", -1)))
+			# -1 asks make_boss for the kind's story anchor level; any other
+			# request is bounded above.
+			var blvl := -1 if int(spec.get("level", -1)) < 0 else lvl
+			var b: Boss = Boss.make_boss(self, k, pos, blvl)
 			bosses.append(b)
 			current_boss = b
 			add_child(b)
 			hud.show_boss_bar(Story.ALL_ENEMIES[k]["name"])
 			set_music(_boss_music())
 		"elite":
-			var e := Enemy.make(self, String(spec.get("kind", "")), pos,
-				int(spec.get("level", 1)))
+			var e := Enemy.make(self, k, pos, lvl)
 			e.promote_elite()
 			add_enemy(e)
 

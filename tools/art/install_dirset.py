@@ -159,6 +159,7 @@ if __name__ == "__main__":
     rot_dir = sys.argv[1]
     base = sys.argv[2]
     out_dir = sys.argv[3] if len(sys.argv) > 3 else \
-        r"C:\Users\asali\Projects\MMO\game\assets\sprites"
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                     "game", "assets", "sprites")
     margin = int(sys.argv[4]) if len(sys.argv) > 4 else 3
     install_static(rot_dir, base, out_dir, margin)

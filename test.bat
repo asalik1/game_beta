@@ -25,11 +25,15 @@ set "APPDATA=%EF_TEST_APPDATA%"
 "%~dp0tools\Godot_v4.4.1-stable_win64_console.exe" --headless --path "%~dp0game" --script res://check_compile.gd
 if errorlevel 1 goto fail
 
-rem cmd merges stderr into the pipe BEFORE powershell sees it: piping the native
-rem exe's stderr inside powershell would wrap each line in a NativeCommandError.
+rem run_suite.ps1 tees the run live to the log AND preserves Godot's OWN exit
+rem code past the tee (a bare "godot | tee" pipe reports the tee's exit, so a
+rem nonzero engine exit after the pass marker used to slip through). It also
+rem keeps the stderr->stdout merge inside cmd, so SCRIPT ERROR lines land in the
+rem log unwrapped. The captured engine code is handed to the verdict (CR-008).
 set "EF_LOG=%EF_TEST_APPDATA%\suite.out"
-"%~dp0tools\Godot_v4.4.1-stable_win64_console.exe" --headless --path "%~dp0game" res://scenes/test.tscn 2>&1 | powershell -NoProfile -Command "$input | Tee-Object -FilePath $env:EF_LOG"
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0suite_verdict.ps1" -LogPath "%EF_LOG%" -PassMarker "AUTOTEST PASS"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0run_suite.ps1" -Godot "%~dp0tools\Godot_v4.4.1-stable_win64_console.exe" -GamePath "%~dp0game" -Scene "res://scenes/test.tscn" -Log "%EF_LOG%"
+set "EF_GODOT_RC=%ERRORLEVEL%"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0suite_verdict.ps1" -LogPath "%EF_LOG%" -PassMarker "AUTOTEST PASS" -ExitCode %EF_GODOT_RC%
 set "EF_EXIT=%ERRORLEVEL%"
 goto cleanup
 

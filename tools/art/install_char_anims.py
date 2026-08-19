@@ -110,7 +110,8 @@ if __name__ == "__main__":
     zip_path = sys.argv[1]
     art = sys.argv[2]
     out_dir = sys.argv[3] if len(sys.argv) > 3 and not sys.argv[3].startswith("-") else \
-        r"C:\Users\asali\Projects\MMO\game\assets\sprites"
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                     "game", "assets", "sprites")
     # pass "all8" (or --all8) for asymmetric chars that generated all 8 dirs
     symmetric = not any(a.lstrip("-") == "all8" for a in sys.argv[3:])
     install(zip_path, art, out_dir, symmetric=symmetric)

@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from act1_brief_lib import BOSSES
 from build_act1_boss import CLIPS
 
-REPO = r"C:\Users\asali\Projects\MMO"
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SPR = os.path.join(REPO, "game", "assets", "sprites")
 
 

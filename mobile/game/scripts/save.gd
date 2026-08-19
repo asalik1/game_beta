@@ -29,6 +29,66 @@ static func exists(slot: int) -> bool:
 	return FileAccess.file_exists(path(slot))
 
 
+## Crash-safe JSON write (CR-006). Every persistent JSON file in the game routes
+## through here instead of opening the final path with FileAccess.WRITE (which
+## truncates the live file BEFORE the new bytes are committed — a crash, power
+## loss or disk-full mid-write then leaves an empty/half save). Instead:
+##   1. serialize to a sibling ".tmp" and flush it,
+##   2. re-read + parse the tmp to prove it is valid JSON,
+##   3. roll the current file to ".bak" (last-known-good),
+##   4. atomically rename tmp -> final.
+## The worst interruption leaves a stale-but-whole file plus a recoverable .bak;
+## read_json() below prefers the main file and falls back to the backup.
+## Returns true only when the final file now holds the new content.
+static func atomic_store(dst: String, text: String) -> bool:
+	var dir := dst.get_base_dir()
+	var base := dst.get_file()
+	var tmp := dst + ".tmp"
+	var f := FileAccess.open(tmp, FileAccess.WRITE)
+	if f == null:
+		push_warning("atomic_store: cannot open temp for %s" % dst)
+		return false
+	f.store_string(text)
+	f.flush()
+	f.close()
+	# Verify the temp parses before letting it replace the live file.
+	var chk := FileAccess.open(tmp, FileAccess.READ)
+	if chk == null:
+		return false
+	var parsed = JSON.parse_string(chk.get_as_text())
+	chk.close()
+	if not (parsed is Dictionary or parsed is Array):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(tmp))
+		push_warning("atomic_store: temp did not round-trip for %s" % dst)
+		return false
+	var d := DirAccess.open(dir)
+	if d == null:
+		return false
+	# rename() fails on Windows if the target exists, so the current file must
+	# step aside first — which conveniently leaves it as the .bak.
+	if FileAccess.file_exists(dst):
+		if FileAccess.file_exists(dst + ".bak"):
+			d.remove(base + ".bak")
+		d.rename(base, base + ".bak")
+	return d.rename(base + ".tmp", base) == OK
+
+
+## Read + JSON-parse a file written by atomic_store, transparently recovering
+## from its ".bak" if the main file is missing or corrupt (CR-006/CR-007).
+## Returns {} when neither yields a Dictionary.
+static func read_json(dst: String) -> Dictionary:
+	for p in [dst, dst + ".bak"]:
+		if not FileAccess.file_exists(p):
+			continue
+		var f := FileAccess.open(p, FileAccess.READ)
+		if f == null:
+			continue
+		var data = JSON.parse_string(f.get_as_text())
+		if data is Dictionary:
+			return data
+	return {}
+
+
 static func write(game: Game, slot: int) -> void:
 	var p := game.player
 	# CHARACTER — travels with the player between worlds (§5.7).
@@ -81,9 +141,7 @@ static func write(game: Game, slot: int) -> void:
 		"character": character,
 		"world": world,
 	}
-	var f := FileAccess.open(path(slot), FileAccess.WRITE)
-	if f:
-		f.store_string(JSON.stringify(data))
+	atomic_store(path(slot), JSON.stringify(data))
 
 
 ## The CHARACTER section (§5.7): everything that travels WITH the player
@@ -184,9 +242,7 @@ static func write_character_home(game: Game, slot: int) -> void:
 		"character": _character_section(game),
 		"world": world_of(data),
 	}
-	var f := FileAccess.open(path(slot), FileAccess.WRITE)
-	if f:
-		f.store_string(JSON.stringify(out))
+	atomic_store(path(slot), JSON.stringify(out))
 
 
 # ------------------------------------------ dedicated server world (MMO B) ---
@@ -232,9 +288,7 @@ static func write_server_world(game: Game) -> void:
 		"clock_anchor": game.trusted_now(),
 		"world": world,
 	}
-	var f := FileAccess.open(SERVER_WORLD_PATH, FileAccess.WRITE)
-	if f:
-		f.store_string(JSON.stringify(data))
+	atomic_store(SERVER_WORLD_PATH, JSON.stringify(data))
 
 
 static func exists_server_world() -> bool:
@@ -242,13 +296,7 @@ static func exists_server_world() -> bool:
 
 
 static func read_server_world() -> Dictionary:
-	if not FileAccess.file_exists(SERVER_WORLD_PATH):
-		return {}
-	var f := FileAccess.open(SERVER_WORLD_PATH, FileAccess.READ)
-	if f == null:
-		return {}
-	var data = JSON.parse_string(f.get_as_text())
-	return data if data is Dictionary else {}
+	return read_json(SERVER_WORLD_PATH)  # main, then .bak (CR-006)
 
 
 ## Apply a server world file onto a freshly rebuilt world — the world half
@@ -259,8 +307,8 @@ static func apply_server_world(game: Game, data: Dictionary) -> void:
 	game.clock_anchor = maxi(game.clock_anchor, int(data.get("clock_anchor", 0)))
 	game.quest_key = String(w.get("quest_key", "talk"))
 	game.talked_to_elder = bool(w.get("talked_to_elder", false))
-	game.flags = w.get("flags", {})
-	game.quest_kills = w.get("quest_kills", {})
+	game.flags = _as_dict(w.get("flags", {}))          # a non-dict flags blob can't poison the world
+	game.quest_kills = _as_dict(w.get("quest_kills", {}))
 	game.run_time = float(w.get("run_time", 0.0))
 	game.run_deaths = int(w.get("run_deaths", 0))
 	game.run_elites = int(w.get("run_elites", 0))
@@ -268,17 +316,17 @@ static func apply_server_world(game: Game, data: Dictionary) -> void:
 	game.run_xp = int(w.get("run_xp", 0))
 	game.run_levels = int(w.get("run_levels", 0))
 	game.boss_done = {}
-	for kind in w.get("bosses_slain", []):
+	for kind in _as_arr(w.get("bosses_slain", [])):
 		game.boss_done[String(kind)] = true
-	for r in w.get("visited_rooms", []):
-		game.visited[int(r)] = true
-	for r in w.get("cleared_rooms", []):
-		game.cleared[int(r)] = true
-	for r in w.get("door_seen", []):
-		game.door_seen[int(r)] = true
-	game.last_safe_room = clampi(int(w.get("last_safe_room", 0)), 0, game.zone_count - 1)
-	for z in w.get("merchant_zones", []):
-		game._spawn_merchant(int(z))
+	for r in _as_arr(w.get("visited_rooms", [])):
+		game.visited[_as_int(r, 0)] = true
+	for r in _as_arr(w.get("cleared_rooms", [])):
+		game.cleared[_as_int(r, 0)] = true
+	for r in _as_arr(w.get("door_seen", [])):
+		game.door_seen[_as_int(r, 0)] = true
+	game.last_safe_room = clampi(_as_int(w.get("last_safe_room", 0), 0), 0, game.zone_count - 1)
+	for z in _as_arr(w.get("merchant_zones", [])):
+		game._spawn_merchant(_as_int(z, 0))
 	# Stand the world at its last safe room: the join snapshot's spawn_room
 	# is cur_room, so joiners arrive somewhere pacified.
 	game._enter_room(game.last_safe_room)
@@ -288,25 +336,57 @@ static func apply_server_world(game: Game, data: Dictionary) -> void:
 ## Reads always return the v3 shape: legacy flat blobs are lifted in
 ## memory here (the file on disk stays as-is until the next autosave).
 static func read(slot: int) -> Dictionary:
-	if not exists(slot):
-		return {}
-	var f := FileAccess.open(path(slot), FileAccess.READ)
-	if f == null:
-		return {}
-	var data = JSON.parse_string(f.get_as_text())
-	return _migrate_v2(data) if data is Dictionary else {}
+	# read_json recovers from the .bak if an interrupted write left the main
+	# file missing or corrupt (CR-006).
+	var data := read_json(path(slot))
+	return _migrate_v2(data) if not data.is_empty() else {}
 
 
 ## Section accessors — the seam §5.7 builds on. Code outside save.gd
-## reaches into a save dict through these, never by raw key.
+## reaches into a save dict through these, never by raw key. A corrupt slot
+## whose section isn't a Dictionary resolves to {} rather than script-erroring
+## the roster (SaveGame.list scans EVERY slot, so one bad file must not break
+## access to the others — CR-007).
 static func character_of(data: Dictionary) -> Dictionary:
-	var c: Dictionary = data.get("character", {})
-	return c
+	return _as_dict(data.get("character", {}))
 
 
 static func world_of(data: Dictionary) -> Dictionary:
-	var w: Dictionary = data.get("world", {})
-	return w
+	return _as_dict(data.get("world", {}))
+
+
+# ---- defensive coercions for loaded JSON (CR-007) ----
+# A syntactically valid but wrong-shaped save (hand-edited, partially migrated,
+# or from a future format) must never hard-error a typed assignment or a
+# for-loop. These narrow an untrusted value to the expected container/scalar.
+static func _as_dict(v) -> Dictionary:
+	return v if v is Dictionary else {}
+
+static func _as_arr(v) -> Array:
+	return v if v is Array else []
+
+## A loaded value read as an int, tolerating JSON floats and numeric strings;
+## containers/objects/garbage fall back to `dflt` instead of throwing on int().
+static func _as_int(v, dflt: int) -> int:
+	if v is int:
+		return v
+	if v is float and is_finite(v):
+		return int(v)
+	if v is bool:
+		return 1 if v else 0
+	if v is String and v.is_valid_int():
+		return v.to_int()
+	return dflt
+
+## A loaded value read as a finite float; non-numeric/non-finite → `dflt`.
+static func _as_float(v, dflt: float) -> float:
+	if v is float:
+		return v if is_finite(v) else dflt
+	if v is int:
+		return float(v)
+	if v is String and v.is_valid_float():
+		return v.to_float()
+	return dflt
 
 
 # Where each v2 flat field lands in v3. "bag" is the round-52 legacy
@@ -352,8 +432,12 @@ static func _migrate_v2(d: Dictionary) -> Dictionary:
 
 
 static func delete(slot: int) -> void:
-	if exists(slot):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(path(slot)))
+	# Remove the main file AND its atomic-write sidecars (.bak/.tmp) so a deleted
+	# hero can't resurrect from a stale backup (CR-006).
+	for suffix in ["", ".bak", ".tmp"]:
+		var p: String = path(slot) + suffix
+		if FileAccess.file_exists(p):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(p))
 
 
 ## Rename a hero in place: rewrite ONLY the character name onto an existing
@@ -368,9 +452,7 @@ static func rename_character(slot: int, new_name: String) -> void:
 	var c := character_of(data)
 	c["name"] = new_name
 	data["character"] = c
-	var f := FileAccess.open(path(slot), FileAccess.WRITE)
-	if f != null:
-		f.store_string(JSON.stringify(data))
+	atomic_store(path(slot), JSON.stringify(data))
 
 
 ## Every existing save, newest first: [{slot, cls, level, quest, saved_at}].
@@ -385,19 +467,23 @@ static func list() -> Array:
 			"slot": slot,
 			"name": String(c.get("name", "")),
 			"cls": String(c.get("cls", "warrior")),
-			"level": int(c.get("level", 1)),
+			"level": _as_int(c.get("level", 1), 1),  # never int()-throw on a bad slot
 			"quest": String(world_of(d).get("quest_key", "talk")),
-			"saved_at": int(d.get("saved_at", 0)),
+			"saved_at": _as_int(d.get("saved_at", 0), 0),
 		})
 	out.sort_custom(func(a, b): return a["saved_at"] > b["saved_at"])
 	return out
 
 
+## The lowest unoccupied slot, or -1 when the roster is full. -1 is an
+## EXPLICIT "no free slot" — callers must not write over an existing save
+## (CR-001: returning MAX_SLOTS here silently overwrote slot 20). The New
+## Character UI blocks at capacity, so a real player never hits the -1 case.
 static func next_free_slot() -> int:
 	for slot in range(1, MAX_SLOTS + 1):
 		if not exists(slot):
 			return slot
-	return MAX_SLOTS  # all full: reuse the last slot
+	return -1  # all full — the caller must refuse, not reuse
 
 
 ## Load/migrate the equipped bags from a save dict (round 52) — the dict
@@ -411,14 +497,17 @@ static func next_free_slot() -> int:
 ## Split out so the migration is unit-testable without a full world apply().
 static func load_bags(data: Dictionary) -> Array:
 	var out: Array = []
-	var bags_raw: Array = data.get("bags", [])
+	var bags_raw: Array = _as_arr(data.get("bags", []))
 	if not bags_raw.is_empty():
 		for bd in bags_raw:
+			if not (bd is Dictionary):
+				continue  # a non-dict bag entry just drops (CR-007)
 			var b: Dictionary = bd
 			b["slots"] = int(Items.BAG_SLOTS.get(String(b.get("grade", "F")), b.get("slots", 0)))
 			out.append(b)
-		return out
-	var old_bag: Dictionary = data.get("bag", {})  # legacy single-bag save
+		if not out.is_empty():
+			return out
+	var old_bag: Dictionary = _as_dict(data.get("bag", {}))  # legacy single-bag save
 	if old_bag.has("grade"):
 		return [Items.make_bag(String(old_bag["grade"]))]  # remap grade -> new curve
 	return Items.starter_bags()
@@ -436,8 +525,8 @@ static func apply(game: Game, data: Dictionary) -> void:
 
 	game.quest_key = String(w.get("quest_key", "talk"))
 	game.talked_to_elder = bool(w.get("talked_to_elder", false))
-	game.flags = w.get("flags", {})
-	game.quest_kills = w.get("quest_kills", {})
+	game.flags = _as_dict(w.get("flags", {}))          # a non-dict flags blob can't poison the world
+	game.quest_kills = _as_dict(w.get("quest_kills", {}))
 	# Run stats ride the save so the results card spans sessions. They are
 	# WORLD state (this run's card); only the weekly CLAIM ledger is the
 	# character's (see write()).
@@ -452,7 +541,7 @@ static func apply(game: Game, data: Dictionary) -> void:
 	game.waking_week = int(w.get("waking_week", -1))
 	game.world_run_tier = clampi(int(w.get("run_tier_world", 0)), 0, Balance.TIER_NAMES.size() - 1)
 	game.boss_done = {}
-	for kind in w.get("bosses_slain", []):
+	for kind in _as_arr(w.get("bosses_slain", [])):
 		game.boss_done[String(kind)] = true
 	game.wander_seed = int(w.get("wander_seed", 0))
 
@@ -462,25 +551,29 @@ static func apply(game: Game, data: Dictionary) -> void:
 	# (Post-migration every dict says version 3, so v1 is detected by the
 	# absence of the room graph itself.)
 	if w.has("visited_rooms"):
-		for r in w.get("visited_rooms", []):
-			game.visited[int(r)] = true
-		for r in w.get("cleared_rooms", []):
-			game.cleared[int(r)] = true
-		for r in w.get("door_seen", []):
-			game.door_seen[int(r)] = true
-		game.last_safe_room = clampi(int(w.get("last_safe_room", 0)), 0, game.zone_count - 1)
+		for r in _as_arr(w.get("visited_rooms", [])):
+			game.visited[_as_int(r, 0)] = true
+		for r in _as_arr(w.get("cleared_rooms", [])):
+			game.cleared[_as_int(r, 0)] = true
+		for r in _as_arr(w.get("door_seen", [])):
+			game.door_seen[_as_int(r, 0)] = true
+		game.last_safe_room = clampi(_as_int(w.get("last_safe_room", 0), 0), 0, game.zone_count - 1)
 		# Wandering merchants that had arrived come back (nodes appear
 		# when their room builds).
-		for z in w.get("merchant_zones", []):
-			game._spawn_merchant(int(z))
-		var cur: int = clampi(int(w.get("cur_room", 0)), 0, game.zone_count - 1)
-		var pos: Array = w.get("pos", [400.0, 360.0])
+		for z in _as_arr(w.get("merchant_zones", [])):
+			game._spawn_merchant(_as_int(z, 0))
+		var cur: int = clampi(_as_int(w.get("cur_room", 0), 0), 0, game.zone_count - 1)
+		# pos: guard length AND element type — a short/garbage array must not
+		# throw on pos[0]/pos[1] (CR-007). Missing/bad axes fall back to spawn.
+		var pos: Array = _as_arr(w.get("pos", []))
+		var px := _as_float(pos[0], 400.0) if pos.size() > 0 else 400.0
+		var py := _as_float(pos[1], 360.0) if pos.size() > 1 else 360.0
 		var anchor: Vector2 = game.room_center(cur)
 		game._enter_room(cur)
-		p.global_position = game.clamp_to_zone(Vector2(float(pos[0]), float(pos[1])), anchor)
+		p.global_position = game.clamp_to_zone(Vector2(px, py), anchor)
 	else:
-		for z in w.get("merchant_zones", []):
-			game._spawn_merchant(int(z))
+		for z in _as_arr(w.get("merchant_zones", [])):
+			game._spawn_merchant(_as_int(z, 0))
 		p.global_position = game._start_pos()
 		game._enter_room(game.room_at_pos(p.global_position))
 	game.reconcile_after_load()
@@ -495,51 +588,57 @@ static func apply(game: Game, data: Dictionary) -> void:
 static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true) -> void:
 	var p := game.player
 	p.char_name = String(c.get("name", ""))
-	p.level = int(c.get("level", 1))
+	p.level = maxi(1, _as_int(c.get("level", 1), 1))
 	p.set_class(String(c.get("cls", "warrior")))
 	p.xp = int(c.get("xp", 0))
 	p.skill_points = int(c.get("skill_points", 0))
+	# Every container below is read defensively (CR-007): a wrong-typed field in
+	# a hand-edited or partly-migrated save falls back to empty instead of
+	# hard-erroring a typed assignment or a for-loop mid-load.
 	p.tree_points = {}
-	var tp: Dictionary = c.get("tree_points", {})
+	var tp := _as_dict(c.get("tree_points", {}))
 	for k in tp:
-		p.tree_points[k] = int(tp[k])
-	var saved_loadouts: Array = c.get("talent_loadouts", [])
+		p.tree_points[k] = _as_int(tp[k], 0)
+	var saved_loadouts: Array = _as_arr(c.get("talent_loadouts", []))
 	p.load_talent_loadouts(saved_loadouts, int(c.get("active_talent_loadout", 0)))
-	var ap: Dictionary = c.get("attr_points", {})
+	var ap := _as_dict(c.get("attr_points", {}))
 	for k in p.attr_points:
-		p.attr_points[k] = int(ap.get(k, 0))
+		p.attr_points[k] = _as_int(ap.get(k, 0), 0)
 	p.unspent_attr = int(c.get("unspent_attr", 0))
 	p.gold = int(c.get("gold", 0))
-	var themes: Dictionary = c.get("ability_theme", {})
+	var themes := _as_dict(c.get("ability_theme", {}))
 	for k in p.ability_theme:
 		p.ability_theme[k] = String(themes.get(k, p.ability_theme[k]))
 	p.pending_theme_note = ""
 	p.set_chroma(String(c.get("chroma", "")))
 	p.set_skin(String(c.get("skin", "")))
 	p.resonance = float(c.get("resonance", 0.0))
-	var fs: Dictionary = c.get("faction_standing", {})
+	var fs := _as_dict(c.get("faction_standing", {}))
 	for k in p.faction_standing:
-		p.faction_standing[k] = int(fs.get(k, 0))
+		p.faction_standing[k] = _as_int(fs.get(k, 0), 0)
 	p.npc_favor = {}
-	var nf: Dictionary = c.get("npc_favor", {})
+	var nf := _as_dict(c.get("npc_favor", {}))
 	for k in nf:
-		p.npc_favor[String(k)] = int(nf[k])
+		p.npc_favor[String(k)] = _as_int(nf[k], 0)
 
 	p.equipment = {}
-	var eq: Dictionary = c.get("equipment", {})
+	var eq := _as_dict(c.get("equipment", {}))
 	for slot in eq:
-		p.equipment[slot] = _fix_item(eq[slot])
+		if eq[slot] is Dictionary:
+			p.equipment[slot] = _fix_item(eq[slot])
 	p.backpack = []
-	for it in c.get("backpack", []):
-		p.backpack.append(_fix_item(it))
+	for it in _as_arr(c.get("backpack", [])):
+		if it is Dictionary:
+			p.backpack.append(_fix_item(it))
 	p.gem_bag = []
-	for g in c.get("gem_bag", []):
-		p.gem_bag.append(_fix_gem(g))
+	for g in _as_arr(c.get("gem_bag", [])):
+		if g is Dictionary:
+			p.gem_bag.append(_fix_gem(g))
 	p.bags = load_bags(c)
 	# Loose (unequipped) bags round-trip through make_bag so name/slots stay
 	# current; an entry with no grade simply drops (no-save-migration rule).
 	p.loose_bags = []
-	for lb in c.get("loose_bags", []):
+	for lb in _as_arr(c.get("loose_bags", [])):
 		var lg := String((lb as Dictionary).get("grade", "")) if lb is Dictionary else ""
 		if lg != "" and Items.BAG_NAMES.has(lg):
 			p.loose_bags.append(Items.make_bag(lg))
@@ -548,7 +647,9 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	# simply drops (no-save-migration rule). Stones/scrolls/quest items pass
 	# through untouched. The ch1-3 gift flag is preserved (game_world reconciles).
 	p.consumables = []
-	for rawc in c.get("consumables", []):
+	for rawc in _as_arr(c.get("consumables", [])):
+		if not (rawc is Dictionary):
+			continue
 		var cc: Dictionary = rawc
 		if String(cc.get("kind", "")) == "potion":
 			var np := Items.make_potion(String(cc.get("family", "")), String(cc.get("shape", "")),
@@ -563,14 +664,16 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	# name/sprite are always current, and any family/grade that no longer
 	# exists simply drops (no-save-migration rule — old ids die on load).
 	p.materials = []
-	for rawm in c.get("materials", []):
+	for rawm in _as_arr(c.get("materials", [])):
+		if not (rawm is Dictionary):
+			continue
 		var m: Dictionary = rawm
 		var fam := String(m.get("family", ""))
 		var gr := String(m.get("grade", ""))
 		var cnt := int(m.get("count", 1))
 		if cnt > 0 and Items.MATERIALS.has(fam) and Items.MATERIALS[fam].has(gr):
 			p.materials.append(Items.make_material(fam, gr, cnt))
-	p.potion_rotation = c.get("potion_rotation", [])
+	p.potion_rotation = _as_arr(c.get("potion_rotation", []))
 	p.active_potion = String(c.get("active_potion", "health"))
 	p.depths_checkpoint = int(c.get("depths_checkpoint", 0))  # pre-restructure saves: no checkpoint yet
 	p.run_tier = clampi(int(c.get("run_tier", 0)), 0, Balance.TIER_NAMES.size() - 1)  # pre-tier saves: Normal
@@ -579,11 +682,12 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	if not Balance.PROFESSION_TRADES.has(p.profession):
 		p.profession = ""  # a retired/unknown trade id just dies on load (no-migration rule)
 	p.mastery = {}
-	for t in c.get("mastery", {}):
+	var mastery_raw := _as_dict(c.get("mastery", {}))
+	for t in mastery_raw:
 		if Balance.PROFESSION_TRADES.has(String(t)):
-			p.mastery[String(t)] = int(c["mastery"][t])
+			p.mastery[String(t)] = _as_int(mastery_raw[t], 0)
 	p.blueprints = []
-	for key in c.get("blueprints", []):
+	for key in _as_arr(c.get("blueprints", [])):
 		if String(key) not in p.blueprints:
 			p.blueprints.append(String(key))
 	p.swap_cost_step = maxi(0, int(c.get("swap_cost_step", 0)))
@@ -592,8 +696,8 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	p.knows_alkahest = bool(c.get("knows_alkahest", false))
 
 	p.recalc()
-	p.hp = clampf(float(c.get("hp", p.max_hp)), 1.0, p.max_hp)
-	p.mp = clampf(float(c.get("mp", p.max_mp)), 0.0, p.max_mp)
+	p.hp = clampf(_as_float(c.get("hp", p.max_hp), p.max_hp), 1.0, p.max_hp)
+	p.mp = clampf(_as_float(c.get("mp", p.max_mp), p.max_mp), 0.0, p.max_mp)
 
 	# Mailbox (round 8). trusted_now() folds the saved anchor in, so the
 	# clock stays monotonic across sessions even if the OS clock rolled.
@@ -601,38 +705,41 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	game.daily_last_day = int(c.get("daily_last_day", -1))
 	game.daily_streak = int(c.get("daily_streak", 0))
 	game.capital_stock = []
-	for it in c.get("capital_stock", []):
-		game.capital_stock.append(_fix_item(it))
-	game.capital_bags = c.get("capital_bags", [])
+	for it in _as_arr(c.get("capital_stock", [])):
+		if it is Dictionary:
+			game.capital_stock.append(_fix_item(it))
+	game.capital_bags = _as_arr(c.get("capital_bags", []))
 	game.capital_shop_day = int(c.get("capital_shop_day", -1))
 	game.achievements = {}
-	for aid in c.get("achievements", []):
+	for aid in _as_arr(c.get("achievements", [])):
 		game.achievements[String(aid)] = true
 	game.splashes_seen = {}
-	for sp in c.get("splashes_seen", []):
+	for sp in _as_arr(c.get("splashes_seen", [])):
 		game.splashes_seen[String(sp)] = true
 	game.convo_log = {}
-	var cl: Dictionary = c.get("convo_log", {})
+	var cl := _as_dict(c.get("convo_log", {}))
 	for ck in cl:
-		var ce: Dictionary = cl[ck]
+		var ce := _as_dict(cl[ck])
 		var clines: Array = []
-		for l in ce.get("lines", []):
+		for l in _as_arr(ce.get("lines", [])):
 			if l is Array and l.size() >= 2:
 				clines.append([String(l[0]), String(l[1])])
 		game.convo_log[String(ck)] = {"chapter": String(ce.get("chapter", "")), "lines": clines}
 	game.convo_log_order = []
-	for ck2 in c.get("convo_log_order", []):
+	for ck2 in _as_arr(c.get("convo_log_order", [])):
 		if game.convo_log.has(String(ck2)):
 			game.convo_log_order.append(String(ck2))
 	game.boss_records = {}
-	var br: Dictionary = c.get("boss_records", {})
+	var br := _as_dict(c.get("boss_records", {}))
 	for k in br:
-		var r: Dictionary = br[k]
+		var r := _as_dict(br[k])
 		game.boss_records[String(k)] = {
 			"ttk": float(r.get("ttk", 0.0)), "dps": float(r.get("dps", 0.0)),
 			"kills": int(r.get("kills", 0))}
 	game.bounties = []
-	for raw in c.get("bounties", []):
+	for raw in _as_arr(c.get("bounties", [])):
+		if not (raw is Dictionary):
+			continue
 		var b: Dictionary = raw
 		game.bounties.append({
 			"scope": String(b.get("scope", "daily")), "type": String(b.get("type", "boss_kills")),
@@ -650,28 +757,38 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	game.renown_cache_week = int(c.get("renown_cache_week", -1))
 	game.waking_kills_week = int(c.get("waking_kills_week", -1))
 	game.waking_kills = []
-	for wk in c.get("waking_kills", []):
+	for wk in _as_arr(c.get("waking_kills", [])):
 		game.waking_kills.append(String(wk))
 	game.kill_counts = {}
-	var kc: Dictionary = c.get("kill_counts", {})
+	var kc := _as_dict(c.get("kill_counts", {}))
 	for k in kc:
-		game.kill_counts[String(k)] = int(kc[k])
+		game.kill_counts[String(k)] = _as_int(kc[k], 0)
 	game.player_title = String(c.get("player_title", ""))
 	if game.player_title != "" and not Achievements.TITLES.has(game.player_title):
 		game.player_title = ""  # a retired title never wedges a save
-	game.mailbox = c.get("mailbox", [])
-	game.dropped_loot = c.get("dropped_loot", [])
+	# Mailbox / ground loot: drop any non-dict entry rather than error on it.
+	game.mailbox = []
+	for mail in _as_arr(c.get("mailbox", [])):
+		if mail is Dictionary:
+			game.mailbox.append(mail)
+	game.dropped_loot = []
+	for pl in _as_arr(c.get("dropped_loot", [])):
+		if pl is Dictionary:
+			game.dropped_loot.append(pl)
 	for mail in game.mailbox:
 		mail["sent_at"] = int(mail.get("sent_at", 0))
-		for pl in mail.get("items", []):
-			_fix_payload(pl)
+		for pl in _as_arr(mail.get("items", [])):
+			if pl is Dictionary:
+				_fix_payload(pl)
 	for pl in game.dropped_loot:
 		_fix_payload(pl)
 	game.prune_mail()
 	if spawn_ground_loot:
 		for pl in game.dropped_loot:
-			var pp: Array = pl.get("pos", [0, 0])
-			Pickup.drop_loot(game, pl, Vector2(float(pp[0]), float(pp[1])))
+			var pp: Array = _as_arr(pl.get("pos", []))
+			var lx := _as_float(pp[0], 0.0) if pp.size() > 0 else 0.0
+			var ly := _as_float(pp[1], 0.0) if pp.size() > 1 else 0.0
+			Pickup.drop_loot(game, pl, Vector2(lx, ly))
 
 
 ## JSON loads every number as float; re-cast the fields the game

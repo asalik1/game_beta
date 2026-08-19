@@ -21,9 +21,10 @@ Usage (as a library from driver scripts; see main() examples at bottom).
 import os, shutil
 from PIL import Image
 
-GAME = r"C:\Users\asali\Projects\MMO\game\assets\sprites"
-MOBILE = r"C:\Users\asali\Projects\MMO\mobile\game\assets\sprites"
-BACKUP = r"C:\Users\asali\Projects\MMO\backup\drift_regen_2026-07-17"
+_REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+GAME = os.path.join(_REPO, "game", "assets", "sprites")
+MOBILE = os.path.join(_REPO, "mobile", "game", "assets", "sprites")
+BACKUP = os.path.join(_REPO, "backup", "drift_regen_2026-07-17")
 MARGIN = 3
 
 

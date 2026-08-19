@@ -7,13 +7,8 @@ extends "res://scripts/game_world.gd"
 ## Volume settings, persisted separately from saves (they're per-player,
 ## not per-character).
 func load_settings() -> void:
-	if not FileAccess.file_exists("user://settings.json"):
-		return
-	var f := FileAccess.open("user://settings.json", FileAccess.READ)
-	if f == null:
-		return
-	var data = JSON.parse_string(f.get_as_text())
-	if data is Dictionary:
+	var data := SaveGame.read_json("user://settings.json")  # main, then .bak (CR-006)
+	if not data.is_empty():
 		for key in settings:
 			if not data.has(key):
 				continue
@@ -35,9 +30,7 @@ func load_settings() -> void:
 	Loc.lang = String(settings.get("lang", "en"))
 
 func save_settings() -> void:
-	var f := FileAccess.open("user://settings.json", FileAccess.WRITE)
-	if f:
-		f.store_string(JSON.stringify(settings))
+	SaveGame.atomic_store("user://settings.json", JSON.stringify(settings))
 
 ## The SFX bus centralizes the sound-effect slider: the sound pool, ambience
 ## and every positional player (campfire, …) all route to it, so ONE bus level
@@ -253,13 +246,11 @@ func _load_meta() -> void:
 	if _meta_loaded:
 		return
 	_meta_loaded = true
-	if no_saves or not FileAccess.file_exists(META_PATH):
+	if no_saves:
 		return
-	var f := FileAccess.open(META_PATH, FileAccess.READ)
-	if f:
-		var data = JSON.parse_string(f.get_as_text())
-		if data is Dictionary:
-			_meta = data
+	var data := SaveGame.read_json(META_PATH)  # main, then .bak (CR-006)
+	if not data.is_empty():
+		_meta = data
 
 func meta_unlock(chid: String) -> void:
 	_load_meta()
@@ -272,9 +263,7 @@ func meta_unlock(chid: String) -> void:
 func _meta_write() -> void:
 	if no_saves:
 		return  # tests never touch the real user files
-	var f := FileAccess.open(META_PATH, FileAccess.WRITE)
-	if f:
-		f.store_string(JSON.stringify(_meta))
+	SaveGame.atomic_store(META_PATH, JSON.stringify(_meta))
 
 
 ## Chapter personal bests are ACCOUNT-wide (meta.json), keyed chapter ×
@@ -1062,10 +1051,10 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 				var pb := record_chapter_result(res)
 				hud.show_end_screen("VICTORY", vtext, Color(1.0, 0.85, 0.35))
 				hud.show_results(res, pb)
-			# MP-14 (§5.4): the party sees the card at the same moment. Each
-			# guest runs net_victory — its OWN run stats + its OWN chapter
-			# credit / weekly reward, applied owner-side (§5.7). Fan BEFORE the
-			# pause so the reliable RPC is queued while the sim is still live.
+			# MP-14 (§5.4): the party sees the card at the same moment. Each guest
+			# runs net_victory (its OWN run stats + chapter/weekly credit, applied
+			# owner-side per §5.7). Fan BEFORE the pause so the reliable RPC is
+			# queued while the sim is still live.
 			if net_host():
 				net_session().host_victory(vtext, next_ch != "")
 			request_pause(true)
@@ -1073,15 +1062,15 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			# window for guests to read their cards, the world marches on.
 			if dedicated:
 				_server_after_victory(next_ch)
-		# Solo: the per-class illustrated closer (CHAPTER_CLOSERS.md) plays on
-		# the Cutscene layer in place of the flat epilogue beat — the boss's
-		# dying lines, then a class-refracted reflection, then fade into the
-		# victory card. Co-op keeps the flat beat for v1: the closer is
-		# per-class and local, and this victory branch is host-authoritative
-		# (a per-client co-op closer is a follow-up, mirroring how net_advance
-		# replays the opener per client).
-		# TODO(MP-24, HIGH — owner 2026-08-17): play each client's OWN class
-		# closer locally in co-op too (see MP_TASKS.md Wave 10).
+		# Solo: the per-class illustrated closer (CHAPTER_CLOSERS.md) plays on the
+		# Cutscene layer in place of the flat epilogue beat. Co-op keeps the flat
+		# beat for now: a correct per-client closer needs the opener-style LOCAL
+		# play routing (net_advance's run_chapter_opener_if_needed), not the shared
+		# convo etiquette that run_cinematic_convo routes through in a session
+		# (net_session.begin_convo does claims + party-gather) — plus a 2-client
+		# in-game check the headless suite can't drive.
+		# TODO(MP-24, HIGH, owner 2026-08-17): play each client's OWN class closer
+		# locally in co-op too (see MP_TASKS.md Wave 10).
 		var closer_id := ""
 		if has_local_player():
 			closer_id = chapter_id + "_closing_" + String(player.cls)

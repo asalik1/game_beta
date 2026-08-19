@@ -13,7 +13,8 @@ Any direction omitted (failed gen) is mirror-filled from its L/R opposite.
 import io, os, sys, subprocess
 from PIL import Image
 
-SPR = r"C:\Users\asali\Projects\MMO\game\assets\sprites"
+_REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+SPR = os.path.join(_REPO, "game", "assets", "sprites")
 ACCT = "6e3973a7-b8ae-415c-b68f-db1337770a95"
 UA = {"User-Agent": "Mozilla/5.0"}
 DIR8 = ["s", "se", "e", "ne", "n", "nw", "w", "sw"]

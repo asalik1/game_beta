@@ -1321,24 +1321,28 @@ func ensure_stash_loaded() -> void:
 	if _stash_loaded:
 		return
 	_stash_loaded = true
-	if no_saves or not FileAccess.file_exists(STASH_PATH):
+	if no_saves:
 		return
-	var f := FileAccess.open(STASH_PATH, FileAccess.READ)
-	if f == null:
-		return
-	var data = JSON.parse_string(f.get_as_text())
-	if data is Array:
-		for pl in data:
-			SaveGame._fix_payload(pl)
-			stash.append(pl)
+	# The stash is a top-level JSON Array — read the main file, falling back to
+	# the atomic-write .bak if it's missing or corrupt (CR-006).
+	for p in [STASH_PATH, STASH_PATH + ".bak"]:
+		if not FileAccess.file_exists(p):
+			continue
+		var f := FileAccess.open(p, FileAccess.READ)
+		if f == null:
+			continue
+		var data = JSON.parse_string(f.get_as_text())
+		if data is Array:
+			for pl in data:
+				SaveGame._fix_payload(pl)
+				stash.append(pl)
+			return
 
 
 func save_stash() -> void:
 	if no_saves:
 		return  # tests never touch the real account file
-	var f := FileAccess.open(STASH_PATH, FileAccess.WRITE)
-	if f:
-		f.store_string(JSON.stringify(stash))
+	SaveGame.atomic_store(STASH_PATH, JSON.stringify(stash))
 
 
 ## Move a bag payload INTO the stash. False = stash full.
@@ -1980,18 +1984,11 @@ func _convo_variant(node: Dictionary) -> Dictionary:
 # ==================================================================== options
 
 func save_binds() -> void:
-	var f := FileAccess.open("user://keybinds.json", FileAccess.WRITE)
-	if f:
-		f.store_string(JSON.stringify(binds))
+	SaveGame.atomic_store("user://keybinds.json", JSON.stringify(binds))
 
 func load_binds() -> void:
-	if not FileAccess.file_exists("user://keybinds.json"):
-		return
-	var f := FileAccess.open("user://keybinds.json", FileAccess.READ)
-	if f == null:
-		return
-	var data = JSON.parse_string(f.get_as_text())
-	if data is Dictionary:
+	var data := SaveGame.read_json("user://keybinds.json")  # main, then .bak (CR-006)
+	if not data.is_empty():
 		for action in binds:
 			if data.has(action):
 				binds[action] = int(data[action])
