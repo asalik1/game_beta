@@ -45,10 +45,36 @@ func is_open() -> bool:
 	return root != null
 
 
+## Shell motion (POLISH_TASKS P2, 2026-08-18): screens ease in (fade + a
+## 0.97→1 settle around the screen centre) and ease out instead of popping.
+## Tweens run PAUSE-ALWAYS because a menu pauses the tree, and stay short so
+## nothing waits on them: input is live the same frame.
+const SHELL_IN := 0.13
+const SHELL_OUT := 0.10
+## Rigs and the headless suite shoot/measure a screen the frame it opens —
+## they turn the motion off (ShotRig.boot does; headless never eases).
+var shell_motion := true
+
+
+func _shell_motion() -> bool:
+	return shell_motion and DisplayServer.get_name() != "headless"
+
+
 func close() -> void:
 	if root:
-		root.queue_free()
+		var old := root
 		root = null
+		if _shell_motion():
+			# no clicks on the fading ghost, at any depth
+			old.propagate_call("set_mouse_filter", [Control.MOUSE_FILTER_IGNORE])
+			old.pivot_offset = get_viewport().get_visible_rect().size * 0.5
+			var tw := old.create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+			tw.tween_property(old, "modulate:a", 0.0, SHELL_OUT)
+			tw.parallel().tween_property(old, "scale", Vector2(0.985, 0.985), SHELL_OUT) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+			tw.tween_callback(old.queue_free)
+		else:
+			old.queue_free()
 	detail_popover = null
 	listening_action = ""
 	# Boot menus unpause only once the game actually starts. The lobby
@@ -84,6 +110,15 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
 	detail_popover = null  # any popover was a child of the old root; drop the ref
+	# Ease the shell in: fade + a settle around the screen centre (P2).
+	if _shell_motion():
+		root.pivot_offset = get_viewport().get_visible_rect().size * 0.5
+		root.modulate.a = 0.0
+		root.scale = Vector2(0.97, 0.97)
+		var tw_in := root.create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+		tw_in.tween_property(root, "modulate:a", 1.0, SHELL_IN)
+		tw_in.parallel().tween_property(root, "scale", Vector2.ONE, SHELL_IN) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 	var dim := ColorRect.new()
 	dim.color = Color(0.008, 0.012, 0.022, 0.74)
@@ -194,8 +229,30 @@ func _btn(parent: Node, text: String, cb: Callable, color := Color(1, 1, 1), ena
 			if game:
 				game.sfx("ui_click"))
 		b.pressed.connect(cb)
+		# P2 press feel: a hand cursor and a 0.97 squeeze while held (theme
+		# supplies the hover/pressed boxes; this is the motion on top).
+		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		_press_squeeze(b)
 	parent.add_child(b)
 	return b
+
+
+## Buttons squeeze slightly while held and spring back on release — pause-safe
+## tweens (menus pause the tree). Pivot is centred lazily on first press so
+## late layout can't leave it at the corner.
+func _press_squeeze(b: Button) -> void:
+	b.button_down.connect(func() -> void:
+		if not _shell_motion():
+			return
+		b.pivot_offset = b.size * 0.5
+		var tw := b.create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+		tw.tween_property(b, "scale", Vector2(0.97, 0.97), 0.05).set_trans(Tween.TRANS_SINE))
+	b.button_up.connect(func() -> void:
+		if not _shell_motion():
+			return
+		var tw := b.create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+		tw.tween_property(b, "scale", Vector2.ONE, 0.10) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT))
 
 
 func _tab(parent: Node, text: String, cb: Callable, active: bool,

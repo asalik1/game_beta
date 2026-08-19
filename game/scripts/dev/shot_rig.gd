@@ -160,6 +160,10 @@ func boot_game() -> Game:
 	game.no_saves = true
 	add_child(game)
 	await frames(10)
+	# Rigs shoot a screen the frame it opens: no shell fade/settle (P2 motion),
+	# or the first frame of every menu shot would be a translucent ghost.
+	if game.menus != null:
+		game.menus.shell_motion = false
 	return game
 
 

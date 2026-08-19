@@ -7,8 +7,16 @@ var game: Game
 
 # bars
 var hp_fill: ColorRect
+var hp_chip: ColorRect          # P2: pale damage trail under the red fill
+var _chip_frac := 1.0
+var _chip_hold := 0.0
+var _xp_shown := 0.0            # P2: eased XP fill (fraction currently drawn)
+var _last_level := 0            # P2: level-up flourish trigger
 var mp_fill: ColorRect
 var xp_fill: ColorRect
+const CHIP_HOLD := 0.32         # seconds the chip holds before draining
+const CHIP_DRAIN := 1.4         # bar-fractions per second while draining
+const XP_EASE := 7.0            # XP fill catch-up rate (per second, exponential)
 var hp_text: Label              # current/max, right-aligned inside the bar
 var mp_text: Label
 var stats_label: Label
@@ -279,6 +287,17 @@ func _ready() -> void:
 	_build_avatar()
 	_panel(Vector2(BAR_X - 4.0, 12), Vector2(BAR_W + 8, 66))
 	hp_fill = _bar(Vector2(BAR_X, 16), Vector2(BAR_W, 20), Color(0.8, 0.2, 0.2))
+	# Damage CHIP (P2): a pale trail under the red fill that holds a beat, then
+	# drains to the new value — the eye reads how much a hit took. Sits just
+	# below hp_fill in the tree so the fill draws over it.
+	hp_chip = ColorRect.new()
+	hp_chip.color = Color(0.98, 0.9, 0.78, 0.85)
+	hp_chip.position = hp_fill.position
+	hp_chip.size = hp_fill.size
+	hp_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hp_chip.set_meta("full_w", hp_fill.get_meta("full_w"))
+	add_child(hp_chip)
+	move_child(hp_chip, hp_fill.get_index())
 	mp_fill = _bar(Vector2(BAR_X, 40), Vector2(BAR_W, 14), Color(0.25, 0.45, 0.9))
 	xp_fill = _bar(Vector2(BAR_X, 58), Vector2(BAR_W, 8), Color(0.95, 0.8, 0.25))
 	hp_text = _bar_text(Vector2(BAR_X, 16), Vector2(BAR_W, 20), 12)
@@ -916,6 +935,19 @@ func _set_ability_ring(box: Dictionary, color: Color) -> void:
 	var ring: StyleBoxFlat = box["ring_style"]
 	ring.border_color = color
 	ring.shadow_color = Color(color, 0.22)
+
+
+## Ready pop (P2): ring + icon spring from 1.14 back to 1 around their centres.
+func _pulse_slot(box: Dictionary) -> void:
+	for key in ["border", "icon"]:
+		var n: Control = box.get(key)
+		if n == null:
+			continue
+		n.pivot_offset = n.size * 0.5
+		n.scale = Vector2(1.14, 1.14)
+		var tw := n.create_tween()
+		tw.tween_property(n, "scale", Vector2.ONE, 0.22) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 const BUFF_SLOTS := 8
@@ -1728,6 +1760,24 @@ func _set_fill(fill: ColorRect, fraction: float) -> void:
 	fill.size.x = maxf(0.0, fill.get_meta("full_w") * clampf(fraction, 0.0, 1.0))
 
 
+## Level-up flourish (P2): the XP bar flashes white and the identity line
+## pops gold, both easing back — the moment lands on the HUD too, not only in
+## the world text.
+func _level_up_flourish() -> void:
+	if xp_fill == null or stats_label == null:
+		return
+	var tw := create_tween()
+	xp_fill.modulate = Color(2.2, 2.2, 2.0)
+	tw.tween_property(xp_fill, "modulate", Color(1, 1, 1), 0.55).set_trans(Tween.TRANS_SINE)
+	stats_label.pivot_offset = Vector2(0, stats_label.get_minimum_size().y * 0.5)
+	stats_label.scale = Vector2(1.06, 1.06)
+	stats_label.modulate = Color(1.0, 0.92, 0.6)
+	var tw2 := create_tween()
+	tw2.tween_property(stats_label, "scale", Vector2.ONE, 0.45) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw2.parallel().tween_property(stats_label, "modulate", Color(1, 1, 1), 0.7)
+
+
 ## Pack the conditional tail of the top-left icon row. The daily reward and
 ## party controls come and go; fixed x slots left a conspicuous empty cell
 ## whenever either was hidden.
@@ -1761,7 +1811,30 @@ func update_stats(p: Player) -> void:
 	else:
 		vignette.modulate = Color(1, 1, 1)
 	_set_fill(hp_fill, hp_frac)
-	_set_fill(xp_fill, float(p.xp) / float(p.xp_needed()))
+	# Damage chip (P2): on a drop the pale trail holds CHIP_HOLD, then drains
+	# to the fill; heals snap it up with the fill.
+	var dt := get_process_delta_time()
+	if hp_frac >= _chip_frac - 0.0005:
+		_chip_frac = hp_frac
+		_chip_hold = CHIP_HOLD
+	else:
+		_chip_hold -= dt
+		if _chip_hold <= 0.0:
+			_chip_frac = move_toward(_chip_frac, hp_frac, CHIP_DRAIN * dt)
+	if hp_chip != null:
+		_set_fill(hp_chip, _chip_frac)
+	# XP eases toward its value (P2); a level-up wraps: snap to empty, then
+	# fill from zero, with a flourish on the bar and the identity line.
+	var xp_frac := float(p.xp) / float(maxi(1, p.xp_needed()))
+	if p.level > _last_level:
+		if _last_level > 0:
+			_level_up_flourish()
+			_xp_shown = 0.0
+		_last_level = p.level
+	_xp_shown = lerpf(_xp_shown, xp_frac, clampf(XP_EASE * dt, 0.0, 1.0))
+	if absf(_xp_shown - xp_frac) < 0.002:
+		_xp_shown = xp_frac
+	_set_fill(xp_fill, _xp_shown)
 	_update_avatar()
 	var identity: String = Classes.CLASSES[p.cls]["name"]
 	var hero_name := String(p.char_name).strip_edges()
@@ -1983,9 +2056,12 @@ func update_stats(p: Player) -> void:
 		else:
 			box["num"].text = ""
 
-		# Flash white the instant an ability comes back up.
+		# Flash white the instant an ability comes back up — and pop the
+		# medallion (P2): a 1.14 → 1 spring on the ring + icon so the eye
+		# catches "ready" from the corner without reading the ring colour.
 		if ready and not box["was_ready"]:
 			box["flash_ms"] = now_ms + 300
+			_pulse_slot(box)
 		box["was_ready"] = ready
 
 		if now_ms < box["flash_ms"]:

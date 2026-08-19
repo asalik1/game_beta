@@ -184,17 +184,25 @@ should work".
   sprite key, over a blood-red core) with 14 chips (host + guest-mirror paths). Boss
   phase-change pulse: not done (bosses have their own tells; revisit with P6).
 
-### P2 — UI motion + presentation (code/theme, ~1 day)
-- [ ] **P2.1 Panel open/close tween** (scale 0.96→1 + fade 120 ms; close reverses)
-  for every menu screen; `UITheme` helper so all screens share it.
-- [ ] **P2.2 Hover / pressed / focus states** on every button + row (stylebox
-  recolour, hand cursor) — §39m.
-- [ ] **P2.3 HP-bar damage chip** (delayed white/red trail on the player + enemy
-  bars), **XP fill tween**, **level-up flourish** (bar flash + world burst + SFX).
-- [ ] **P2.4 Cooldown ring sweep + ready pulse** on ability medallions; tooltip
-  fade-in.
-- [ ] **P2.5 Transitions.** Room enter fade/iris; chapter title card easing;
-  dialogue box slide.
+### P2 — UI motion + presentation (code/theme, ~1 day) (BUILT 2026-08-18 23:25)
+- [x] **P2.1 Panel open/close tween** — `menus._open` eases the shell in (fade + 0.97→1
+  settle around the screen centre, `SHELL_IN` 0.13 s, TRANS_BACK) and `close()` fades the old
+  root out (`SHELL_OUT` 0.10 s, clicks ignored on the ghost). Tweens run PAUSE-ALWAYS (a menu
+  pauses the tree). Off when headless and in rigs (`Menus.shell_motion`; `ShotRig.boot_game`
+  clears it) so a screen shot the frame it opens is never a translucent ghost.
+- [x] **P2.2 Hover / pressed states** — the theme already had hover (gold border) / pressed
+  (darker) boxes; added the hand cursor and a 0.97 press squeeze that springs back
+  (`_press_squeeze`) on every `_btn`/`_tab`.
+- [x] **P2.3 HP damage chip + XP ease + level-up** — a pale trail under the red fill holds
+  `CHIP_HOLD` 0.32 s then drains at `CHIP_DRAIN`; heals snap it. XP eases toward its value
+  (`XP_EASE`) and wraps on level-up (snap to empty, refill), with the bar flashing white and
+  the identity line popping gold (`_level_up_flourish`). Enemy-bar chip not done (the framed
+  36×5 bar is too small to read a trail).
+- [x] **P2.4 Ready pulse** — the medallion ring + icon spring 1.14→1 the instant an ability
+  comes back up (`_pulse_slot`), on top of the existing white ring flash. Tooltip fade: not
+  done (engine tooltips).
+- [ ] **P2.5 Transitions** — room enter fade / title-card easing / dialogue slide: not done
+  (kept for the next pass; a room fade risks reading as a hitch on every door).
 
 ### P3 — atmosphere layer (code + a few strips, ~1 day)
 - [ ] **P3.1 Per-terrain ambient particles** in `ambience.gd`: village dust motes
