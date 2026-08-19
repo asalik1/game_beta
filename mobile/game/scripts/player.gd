@@ -252,6 +252,16 @@ func _physics_process(delta: float) -> void:
 	velocity = dir * spd + game.gust_vec  # sandstorm gusts shove everyone
 	move_and_slide()
 
+	# Foot dust (life pass 2026-08-19): a running hero kicks a tiny puff of
+	# floor-coloured dust at the feet every FOOT_DUST_PERIOD — never headless.
+	if Balance.FOOT_DUST_PERIOD > 0.0 and dir != Vector2.ZERO and DisplayServer.get_name() != "headless":
+		_foot_dust_t += delta
+		if _foot_dust_t >= Balance.FOOT_DUST_PERIOD:
+			_foot_dust_t = 0.0
+			game.foot_dust(global_position + Vector2(-dir.x * 6.0, 18.0))
+	else:
+		_foot_dust_t = 0.0
+
 	# Speed-buff wind trail: a very faint gust off the back while a theme
 	# speed boost carries you — the only held buff without an aura tell.
 	wind_fx_t = maxf(0.0, wind_fx_t - delta)

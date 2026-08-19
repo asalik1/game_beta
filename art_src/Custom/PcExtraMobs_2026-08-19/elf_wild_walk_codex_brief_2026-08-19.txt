@@ -1,0 +1,37 @@
+You are generating ONE game sprite animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/1_idle_elf_wild.png : the BINDING identity, palette, pixel-art treatment AND body-scale reference — a horizontal 4-frame strip of square cells of the Wildkin Skirmisher standing at rest, facing LEFT. Match the figure, its proportions, gear and palette precisely; every walk frame must show it at the SAME full standing height as in Image 1 (head at the same height, same torso size) — it must not crouch, hunch or shrink.
+- Image 2 = refs/2_identity_elf_wild.png : secondary identity reference (the old tiny sprite; silhouette/palette only).
+
+TASK: generate exactly ONE new horizontal source sheet — ONE ROW of EIGHT figures — for its WALK cycle with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint). Use the tool's widest LANDSCAPE output size.
+
+---
+Use case: illustration-story
+Asset type: high-resolution 8-frame game sprite walk-cycle source, one horizontal row, to be cropped into a horizontal sprite strip. Landscape output canvas.
+Input images: Image 1 (4-frame idle strip) is the binding identity, palette, pixel-art treatment and body-scale reference; Image 2 is a secondary identity reference.
+Scene/backdrop: a perfectly flat uniform #00ff00 chroma-key background filling every pixel, including the gaps between figures. No scenery, floor plane, ground, platform, cast shadow, contact shadow, gradient, vignette, border, grid, line, panel divider, text, frame numbers or watermark. Do not use #00ff00 or any strong green in the figure.
+Primary request: create exactly EIGHT complete figures in ONE horizontal row, left to right, evenly spaced with a clear flat-green gutter between neighbours. Each figure is one consecutive frame of ONE natural two-step walk cycle. No figure may touch, overlap, or be cropped by its neighbour or by the canvas edge. All eight figures share identical scale, framing and ground line.
+Subject: a lean barefoot WILD ELF in LEFT-facing three-quarter view: long moss-green hair falling around the face, a crown of pale antler-like branch tines rising from the head, a cream-and-green tunic belted with cord, blue tribal face markings, bare arms and bare feet, a small green stone pendant, and a short bone-tipped hunting spear held low in the forward hand. Wiry, wary, quick. Same identity, proportions, palette and body scale as Image 1.
+Style/medium: crisp high-resolution dark-fantasy pixel art with hard readable pixel clusters and a controlled MUTED palette (exactly the treatment of Image 1, the installed Plague Chanter sibling) — not painterly, not 3D, not anime, no black outlines thicker than one pixel, no bright saturated colours, no gold trim, no glow except the stated eye glow.
+Composition/framing and ANCHOR RULE: all eight figures face LEFT and stand on ONE shared invisible ground line at the same height: every foot that is on the ground stands on that line. The camera never moves. The pelvis and torso stay at the same height in every figure except for a very slight bob (a few pixels); the head stays at the same height. Gait character: a light springy STALK: quiet quick steps, weight low, spear held level and low, hair and tunic hem swinging softly. Feet plant and do not slide.
+WALK storyboard — one coherent two-step loop; the NEAR leg is the leg closer to the camera, the FAR leg is the other:
+ f1 NEAR-foot contact: near leg planted forward toward screen-left; far leg trailing behind, toe on the ground.
+ f2 NEAR-foot load: weight rolls onto the flat near foot; far heel lifts, far knee begins to bend.
+ f3 FAR leg passes: the far leg swings forward past the planted near leg with a low knee, far foot lifted a few pixels off the ground; legs close together.
+ f4 NEAR-foot push, FAR-foot reaching forward: far leg extended forward, far heel about to touch the ground; near heel lifting behind.
+ f5 FAR-foot contact: far leg planted forward toward screen-left; near leg trailing behind, toe on the ground — the OPPOSITE leg leads compared with f1.
+ f6 FAR-foot load: weight rolls onto the flat far foot; near heel lifts, near knee begins to bend.
+ f7 NEAR leg passes: the near leg swings forward past the planted far leg with a low knee, near foot lifted a few pixels off the ground; legs close together.
+ f8 FAR-foot push, NEAR-foot reaching forward: near leg extended forward, near heel about to touch the ground; far heel lifting behind — flowing back into f1.
+Held items stay in the same hands; the arms swing gently opposite to the legs (or hang heavy if the creature's gait says so).
+Constraints: output only the eight figures on green; no text, watermark, UI, frame numbers, extra characters, scenery, floor artifact, shadow or separators. Natural gait, not a march, parade step, high-knee run, or standing poses. Do not recolor the legs, do not detach a foot, do not duplicate a figure, do not crouch or shrink the body. f1 and f5 must have OPPOSITE legs leading; f3 and f7 must show OPPOSITE legs passing.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./elf_wild_walk_master_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./elf_wild_walk_master_v1_keyed.png (auto-key sampling, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message, report: the raw output size in pixels, how many complete figures were produced, and figure by figure WHICH leg leads / whether f1 vs f5 and f3 vs f7 show opposite legs, whether the body height matches Image 1, and any deviation from the brief (a body that changes size, a foot off the ground line, extra limbs, wrong facing, an identical pair of figures, figures touching each other or the canvas edge). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

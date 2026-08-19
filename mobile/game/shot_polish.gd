@@ -40,6 +40,28 @@ func _ready() -> void:
 	var z := float(arg("zoom", "1.4"))
 	zoom(z)
 	await sim_wait(1.5)   # title card clears
+	if arg("menu", "") != "":
+		# --menu=stats|bag|class: one shot of a menu screen (review pack, P7.E/F/G)
+		game.hud.visible = true
+		match arg("menu", ""):
+			"stats": game.menus.open_inventory("stats")
+			"bag": game.menus.open_inventory("gear")
+			"class": game.menus.open_class_select()
+		await sim_wait(1.2)
+		shot("menu_" + arg("menu", ""), "menu " + arg("menu", ""))
+		if arg("menu", "") == "class":
+			# hover the third ability card: the stage plays its clip
+			game.menus._cs_show_ability(game.menus._cs_id, "ult")
+			await sim_wait(0.35)
+			shot("menu_class_ult", "ult clip on the stage")
+		finish()
+		return
+	if flag("review"):
+		# --review: the owner review pack's in-world beats in one run — a chest
+		# opening mid-burst, the boss bar dressed, the announcement plaque + feed.
+		await _review_shots()
+		finish()
+		return
 	if flag("tour"):
 		await _tour()
 		finish()
@@ -99,6 +121,56 @@ func _ready() -> void:
 	finish()
 
 
+## --review (2026-08-19): the in-world beats of the owner review pack.
+func _review_shots() -> void:
+	var i := 2
+	await _goto(i)
+	var rr := game.room_rect(i)
+	var p := game.player
+	p.global_position = rr.position + Vector2(rr.size.x * 0.5, rr.size.y * 0.55)
+	game.camera.global_position = p.global_position
+	game.hud.visible = true
+	await sim_wait(0.3)
+	# 1. a chest opening: drop a gold chest beside the hero, step onto it, shoot
+	#    mid-burst (lid up, light blooming, sparkle fountain rising)
+	step("chest open")
+	var c: Chest = Chest.drop(game, "gold", p.global_position + Vector2(140, 0))
+	await sim_wait(0.4)
+	shot("review_chest_closed", "chest closed, telegraph halo")
+	p.global_position = c.global_position
+	await sim_wait(0.22)
+	shot("review_chest_open", "chest opening: lid + burst + fountain")
+	await sim_wait(1.2)
+	shot("review_chest_held", "chest held open, loot banner")
+	# 2. the boss bar with its badge + level + numbers (the real drawing code on
+	#    a mock state — the live fight sets the same fields per frame)
+	step("boss bar")
+	game.hud.show_boss_bar("Fangmaw")   # (plays the splash intro first — wait it out)
+	await sim_wait(3.2)
+	game.hud.update_boss_bar(0.63)
+	game.hud.boss_level.text = "Lv 8"
+	game.hud.boss_hp_num.text = "2.3K / 3.6K"
+	await sim_wait(0.3)
+	shot("review_boss_bar", "boss bar: badge + level + numbers")
+	game.hud.hide_boss_bar()
+	# 3. announcements + feed
+	step("announce")
+	game.hud.announce("LORE UNEARTHED — see the Codex", Color(0.75, 0.9, 1.0), 3.0)
+	game.hud.log_event("+ Rusted Dagger", Items.GRADE_COLOR["D"])
+	game.hud.log_event("+12 XP", Color(1.0, 0.9, 0.4))
+	game.hud.log_event("+9 XP", Color(1.0, 0.9, 0.4))
+	game.hud.log_event("+30 gold", Color(1.0, 0.84, 0.35), "gold")
+	await sim_wait(0.75)
+	shot("review_announce", "LORE UNEARTHED plaque + event feed")
+	# 4. coins: spill a purse, shoot the scatter mid-arc then at rest
+	step("coins")
+	Pickup.drop_gold(game, 40, p.global_position + Vector2(-170, 40))
+	await sim_wait(0.18)
+	shot("review_coins_arc", "coins arcing out of the spill")
+	await sim_wait(0.8)
+	shot("review_coins_rest", "coins at rest: glow + glint")
+
+
 func _goto(i: int) -> void:
 	game.player.global_position = game.room_center(i)
 	game._enter_room(i)
@@ -138,6 +210,9 @@ func _tour() -> void:
 			continue
 		step("tour " + nm)
 		await _goto(i)
+		if arg("paint", "") != "":       # --paint=<terrain>: repaint the toured room first (fog, walls…)
+			apply_terrain(arg("paint", ""), i)
+			await sim_wait(0.6)
 		var rr := game.room_rect(i)
 		var p := game.player
 		var s := _slug(nm)

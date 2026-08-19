@@ -923,8 +923,377 @@ func new_character() -> void:
 
 
 # ------------------------------------------------------------ class select ---
+# P7.G (2026-08-19; owner, after the reference class-select screens): "you
+# choose a character icon and then you see the actual character … toggle
+# between the splash art and the in-game model … and a showcase of the
+# abilities, something players can interact with instead of a wall of text".
+# So: a medallion RAIL of the six classes at the bottom; the pick fills the
+# STAGE with the hero as they stand in the game (their live idle strip,
+# breathing, big) with a Splash / Model toggle against the class painting; a
+# right panel with name, role, passive, themes, difficulty pips; and an
+# ABILITY SHOWCASE — four cards that PLAY the hero's own clip (swing / charge /
+# cast / ult) on the stage when hovered or tapped, with the ability's text
+# under them. Number keys preview, Enter (or the Choose plate) confirms;
+# choose_class()/pick_class() keep their meaning for every caller and test.
+var _cs_id := ""                       # the previewed class
+var _cs_mode := "model"                # "model" | "splash"
+var _cs_stage: Control = null
+var _cs_model: AnimatedSprite2D = null
+var _cs_model_glow: Sprite2D = null
+var _cs_splash: TextureRect = null
+var _cs_info: VBoxContainer = null
+var _cs_detail: Label = null
+var _cs_choose: Button = null
+var _cs_rings: Dictionary = {}         # class id -> the medallion ring Panel (selected = gold)
+var _cs_clips: Dictionary = {}         # the previewed class's hero clips
+const CS_STAGE := Rect2(0, 0, 690, 430)
+const CS_MODEL_H := 360.0              # px the hero's idle frame is shown at (capped at 3x)
+const CS_DIFFICULTY := {"warrior": 1, "paladin": 2, "archer": 2, "mage": 3, "warlock": 3, "assassin": 4}
+const CS_ACTION_WORDS := ["Dash", "Leap", "Charge", "Step", "Blink", "Rush", "Lunge", "Bash", "Vault"]
 
 func open_class_select() -> void:
+	var vbox := _open("Choose your class", 1240, 716)
+	current = "class_select"
+	_lbl(vbox, "Pick a medallion to meet the class. The stage shows the hero as they stand in the game (or their painting); hover or tap an ability to watch it performed. Your class sets your four abilities and your three elemental THEMES.", 14, Color(0.75, 0.75, 0.75))
+	var body := Control.new()
+	body.custom_minimum_size = Vector2(1192, 580)
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_child(body)
+	# ---- the STAGE (left): glass panel, the model or the painting ----
+	_cs_stage = Panel.new()
+	_cs_stage.position = CS_STAGE.position
+	_cs_stage.size = CS_STAGE.size
+	_cs_stage.clip_contents = true
+	var ssb := StyleBoxFlat.new()
+	ssb.bg_color = Color(0.045, 0.045, 0.065, 0.92)
+	ssb.border_color = Color(UITheme.BORDER, 0.9)
+	ssb.set_border_width_all(1)
+	ssb.set_corner_radius_all(10)
+	_cs_stage.add_theme_stylebox_override("panel", ssb)
+	body.add_child(_cs_stage)
+	_cs_splash = TextureRect.new()
+	_cs_splash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_cs_splash.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_cs_splash.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_cs_splash.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	_cs_splash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cs_splash.visible = false
+	_cs_stage.add_child(_cs_splash)
+	_cs_model_glow = Sprite2D.new()          # a soft pool under the hero's feet
+	_cs_model_glow.texture = Art.tex("glow")
+	_cs_model_glow.modulate = Color(0.9, 0.8, 0.55, 0.28)
+	_cs_model_glow.scale = Vector2(3.2, 1.1)
+	_cs_model_glow.position = Vector2(CS_STAGE.size.x * 0.5, CS_STAGE.size.y - 48.0)
+	_cs_stage.add_child(_cs_model_glow)
+	_cs_model = AnimatedSprite2D.new()
+	_cs_model.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_cs_model.position = Vector2(CS_STAGE.size.x * 0.5, CS_STAGE.size.y - 60.0)
+	_cs_model.animation_finished.connect(_cs_clip_done)
+	_cs_stage.add_child(_cs_model)
+	# Splash / Model toggle, top-right of the stage
+	var tog := HBoxContainer.new()
+	tog.position = Vector2(CS_STAGE.size.x - 190.0, 10.0)
+	tog.add_theme_constant_override("separation", 6)
+	_cs_stage.add_child(tog)
+	_btn(tog, " Model ", func() -> void: _cs_set_mode("model"), Color(0.95, 0.85, 0.5))
+	_btn(tog, " Splash ", func() -> void: _cs_set_mode("splash"), Color(0.8, 0.85, 0.95))
+	# ---- the INFO panel (right) ----
+	var info_clip := Control.new()          # the panel never grows past the stage's height
+	info_clip.position = Vector2(712, 0)
+	info_clip.size = Vector2(480, CS_STAGE.size.y)
+	info_clip.clip_contents = true
+	body.add_child(info_clip)
+	_cs_info = VBoxContainer.new()
+	_cs_info.position = Vector2.ZERO
+	_cs_info.size = Vector2(480, CS_STAGE.size.y)
+	_cs_info.add_theme_constant_override("separation", 6)
+	info_clip.add_child(_cs_info)
+	# ---- the RAIL (bottom): six medallions + the Choose plate ----
+	var rail := HBoxContainer.new()
+	rail.position = Vector2(0, 452)
+	rail.add_theme_constant_override("separation", 18)
+	body.add_child(rail)
+	_cs_rings.clear()
+	var idx := 1
+	for id in Classes.CLASSES:
+		rail.add_child(_cs_medallion(String(id), idx))
+		idx += 1
+	_cs_choose = _btn(body, "  Choose  ", func() -> void:
+		if _cs_id != "":
+			choose_class(_cs_id), Color(0.6, 1.0, 0.6))
+	_cs_choose.position = Vector2(960, 460)     # right of the rail, under the info panel
+	_cs_choose.custom_minimum_size = Vector2(224, 54)
+	_cs_choose.add_theme_font_size_override("font_size", 20)
+	_hint(vbox, "1–6 preview a class  ·  hover/tap an ability to watch it  ·  Enter or Choose to commit")
+	_cs_preview(_cs_id if Classes.CLASSES.has(_cs_id) else String(Classes.CLASSES.keys()[0]))
+
+
+## One rail medallion: the class painting's face in a ring (gold when selected),
+## the class name + its number key under it. Click = preview.
+func _cs_medallion(id: String, num: int) -> Control:
+	var c: Dictionary = Classes.CLASSES[id]
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 2)
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	var ring := Panel.new()
+	ring.custom_minimum_size = Vector2(72, 72)
+	var rs := StyleBoxFlat.new()
+	rs.bg_color = Color(0.03, 0.03, 0.045, 0.98)
+	rs.border_color = Color(UITheme.BRONZE, 0.9)
+	rs.set_border_width_all(3)
+	rs.set_corner_radius_all(36)
+	ring.add_theme_stylebox_override("panel", rs)
+	ring.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	ring.gui_input.connect(func(e: InputEvent) -> void:
+		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+			_cs_preview(id))
+	ring.mouse_entered.connect(func() -> void: _cs_ring_style(id, _cs_id == id, true))
+	ring.mouse_exited.connect(func() -> void: _cs_ring_style(id, _cs_id == id, false))
+	col.add_child(ring)
+	var face := TextureRect.new()
+	face.position = Vector2(6, 6)
+	face.size = Vector2(60, 60)
+	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	face.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	face.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sh := Shader.new()
+	sh.code = """
+shader_type canvas_item;
+uniform vec4 crop_uv = vec4(0.0, 0.0, 1.0, 1.0);
+void fragment() {
+	vec2 d = UV - vec2(0.5);
+	float mask = 1.0 - smoothstep(0.475, 0.5, length(d));
+	vec4 c = texture(TEXTURE, crop_uv.xy + UV * crop_uv.zw);
+	COLOR = vec4(c.rgb, c.a * mask);
+}
+"""
+	var mat := ShaderMaterial.new()
+	mat.shader = sh
+	face.material = mat
+	var splash_key := "class_splash_%s" % id
+	if Art.has_sprite(splash_key):
+		var tex: Texture2D = Art.tex(splash_key)
+		var ssz := Vector2(tex.get_width(), tex.get_height())
+		var side := minf(ssz.x, ssz.y) * 0.46
+		var crop := Vector2(side / ssz.x, side / ssz.y)
+		var origin := Vector2(0.5, 0.22) - crop * Vector2(0.5, 0.35)
+		origin.x = clampf(origin.x, 0.0, 1.0 - crop.x)
+		origin.y = clampf(origin.y, 0.0, 1.0 - crop.y)
+		mat.set_shader_parameter("crop_uv", Vector4(origin.x, origin.y, crop.x, crop.y))
+		face.texture = tex
+	else:
+		face.texture = Art.tex(c["sprite"])
+		face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	ring.add_child(face)
+	_cs_rings[id] = ring
+	var nm := _lbl(col, "%s  (%d)" % [c["name"], num], 12, Color(0.85, 0.85, 0.9))
+	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nm.custom_minimum_size = Vector2(120, 0)
+	return col
+
+
+func _cs_ring_style(id: String, selected: bool, hover: bool) -> void:
+	var ring: Panel = _cs_rings.get(id)
+	if ring == null or not is_instance_valid(ring):
+		return
+	var rs := StyleBoxFlat.new()
+	rs.bg_color = Color(0.03, 0.03, 0.045, 0.98)
+	rs.border_color = Color(0.98, 0.86, 0.5, 1.0) if selected else (Color(0.8, 0.74, 0.55, 0.95) if hover else Color(UITheme.BRONZE, 0.9))
+	rs.set_border_width_all(4 if selected else 3)
+	rs.set_corner_radius_all(36)
+	ring.add_theme_stylebox_override("panel", rs)
+	ring.scale = Vector2(1.08, 1.08) if selected else Vector2.ONE
+	ring.pivot_offset = Vector2(36, 36)
+
+
+## Put a class on the stage: the model (live idle strip) + the info panel.
+func _cs_preview(id: String) -> void:
+	if not Classes.CLASSES.has(id) or current != "class_select":
+		return
+	var prev := _cs_id
+	_cs_id = id
+	if prev != "" and prev != id:
+		_cs_ring_style(prev, false, false)
+	_cs_ring_style(id, true, false)
+	var c: Dictionary = Classes.CLASSES[id]
+	game.sfx("ui_click")
+	# the model
+	_cs_clips = Art.hero_clips(String(c["sprite"]))
+	_cs_play_clip("idle", true)
+	# the painting
+	var splash_key := "class_splash_%s" % id
+	_cs_splash.texture = Art.tex(splash_key) if Art.has_sprite(splash_key) else null
+	_cs_set_mode(_cs_mode)
+	# the info panel
+	for ch in _cs_info.get_children():
+		ch.queue_free()
+	var nm := _lbl(_cs_info, String(c["name"]).to_upper(), 30, Color(0.96, 0.86, 0.52))
+	UITheme.title(nm, 30)
+	_lbl(_cs_info, String(c["desc"]), 14, Color(0.85, 0.85, 0.88))
+	var meta := HBoxContainer.new()
+	meta.add_theme_constant_override("separation", 14)
+	_cs_info.add_child(meta)
+	var kind := "Ranged" if String(c.get("dmg_type", "phys")) == "magic" or id == "archer" else "Melee"
+	var tl := _lbl(meta, "Type  %s" % kind, 13, Color(0.72, 0.78, 0.9))
+	tl.custom_minimum_size = Vector2(120, 0)      # HBox label-collapse trap
+	var pips := ""
+	var diff := int(CS_DIFFICULTY.get(id, 2))
+	for k in 4:
+		pips += "◆" if k < diff else "◇"
+	var dl := _lbl(meta, "Difficulty  %s" % pips, 13, Color(0.95, 0.82, 0.45))
+	dl.custom_minimum_size = Vector2(170, 0)
+	var chips := HBoxContainer.new()
+	chips.add_theme_constant_override("separation", 4)
+	_cs_info.add_child(chips)
+	for theme in Classes.THEMES[id]:
+		_chip_lbl(chips, String(theme["name"]))
+	# the ABILITY SHOWCASE sits at a fixed height; the passive (long) comes last
+	# and is trimmed so the cards never get pushed off the stage line.
+	UITheme.header(_lbl(_cs_info, "ABILITIES  —  hover or tap to watch", 13, Color(0.95, 0.85, 0.5)))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	_cs_info.add_child(row)
+	for slot in ["a1", "a2", "a3", "ult"]:
+		row.add_child(_cs_ability_card(id, String(slot)))
+	# (max_lines_visible on an autowrapped Label collapsed it to 1 px inside the
+	# VBox — trim the strings by length instead; the tooltip keeps the whole text)
+	_cs_detail = _lbl(_cs_info, "", 12, Color(0.82, 0.86, 0.94))
+	_cs_detail.custom_minimum_size = Vector2(470, 0)
+	if c.has("passive"):
+		var ptext := String(c["passive"]["text"])
+		var pl := _lbl(_cs_info, "★ " + (ptext if ptext.length() <= 190 else ptext.substr(0, 187).strip_edges() + "…"), 12, Color(0.5, 0.95, 0.8))
+		pl.custom_minimum_size = Vector2(470, 0)
+		pl.tooltip_text = ptext
+		pl.mouse_filter = Control.MOUSE_FILTER_PASS
+	_cs_show_ability(id, "a1")
+	if _cs_choose != null:
+		_cs_choose.text = "  Choose  %s  " % String(c["name"])
+
+
+## One ability card: icon plate + name + slot tag. Hover/tap plays the clip and
+## writes the ability's text under the row.
+func _cs_ability_card(id: String, slot: String) -> Control:
+	var c: Dictionary = Classes.CLASSES[id]
+	var ab: Dictionary = c["abilities"][slot]
+	var card := PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(UITheme.SURFACE, 0.95)
+	sb.border_color = Color(UITheme.BORDER, 0.9)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(8)
+	sb.content_margin_left = 6
+	sb.content_margin_right = 6
+	sb.content_margin_top = 6
+	sb.content_margin_bottom = 6
+	card.add_theme_stylebox_override("panel", sb)
+	card.custom_minimum_size = Vector2(112, 0)
+	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	var col := VBoxContainer.new()
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_theme_constant_override("separation", 3)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(col)
+	var icon := TextureRect.new()
+	icon.texture = Art.ability_icon(id, slot)
+	icon.custom_minimum_size = Vector2(44, 44)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(icon)
+	var nm := _lbl(col, String(ab["name"]), 11, Color(0.92, 0.92, 0.98))
+	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nm.custom_minimum_size = Vector2(100, 0)
+	nm.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var tag := _lbl(col, "ULT" if slot == "ult" else slot.to_upper(), 10, Color(0.62, 0.65, 0.73))
+	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_ignore_mouse_recursive(col)
+	card.mouse_entered.connect(func() -> void:
+		sb.border_color = Color(0.95, 0.85, 0.5, 0.95)
+		card.add_theme_stylebox_override("panel", sb)
+		_cs_show_ability(id, slot))
+	card.mouse_exited.connect(func() -> void:
+		sb.border_color = Color(UITheme.BORDER, 0.9)
+		card.add_theme_stylebox_override("panel", sb))
+	card.gui_input.connect(func(e: InputEvent) -> void:
+		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+			_cs_show_ability(id, slot))
+	return card
+
+
+## Play the hero's clip for an ability on the stage and write its text.
+func _cs_show_ability(id: String, slot: String) -> void:
+	if id != _cs_id or current != "class_select":
+		return
+	var ab: Dictionary = Classes.CLASSES[id]["abilities"][slot]
+	if _cs_detail != null and is_instance_valid(_cs_detail):
+		var desc := String(ab["desc"])
+		if desc.length() > 170:
+			desc = desc.substr(0, 167).strip_edges() + "…"
+		var text := "%s — %s" % [String(ab["name"]), desc]
+		var scaling: String = Classes.ability_scaling(id, slot)
+		if scaling != "":
+			text += "\n" + scaling
+		_cs_detail.text = text
+	var clip := "ult" if slot == "ult" else ("attack" if slot == "a1" else "cast")
+	for w in CS_ACTION_WORDS:
+		if String(ab["name"]).contains(w):
+			clip = "dash"
+	if not _cs_clips.has(clip):
+		clip = "attack" if _cs_clips.has("attack") else "idle"
+	_cs_play_clip(clip, clip == "idle")
+
+
+## Put a clip on the stage model: one-shot clips return to the idle when done.
+func _cs_play_clip(clip: String, loop: bool) -> void:
+	if _cs_model == null or not is_instance_valid(_cs_model):
+		return
+	if not _cs_clips.has(clip):
+		_cs_model.visible = false
+		return
+	var info: Dictionary = _cs_clips[clip]
+	var tex: Texture2D = info["tex"]
+	var frames := int(info["frames"])
+	var fsize: Vector2 = Vector2(info.get("frame_size", Vector2i(tex.get_height(), tex.get_height())))
+	var sf := SpriteFrames.new()
+	sf.add_animation("clip")
+	sf.set_animation_loop("clip", loop)
+	sf.set_animation_speed("clip", float(info.get("fps", 6.0)))
+	for f in frames:
+		var at := AtlasTexture.new()
+		at.atlas = tex
+		at.region = Rect2(f * fsize.x, 0, fsize.x, fsize.y)
+		sf.add_frame("clip", at)
+	_cs_model.sprite_frames = sf
+	var s := minf(3.0, CS_MODEL_H / maxf(1.0, fsize.y))
+	_cs_model.scale = Vector2(s, s)
+	_cs_model.position = Vector2(CS_STAGE.size.x * 0.5, CS_STAGE.size.y - 60.0 - fsize.y * s * 0.5)
+	_cs_model.visible = _cs_mode == "model"
+	_cs_model.play("clip")
+
+
+func _cs_clip_done() -> void:
+	if current == "class_select" and _cs_model != null and is_instance_valid(_cs_model) \
+			and _cs_model.sprite_frames != null and not _cs_model.sprite_frames.get_animation_loop("clip"):
+		_cs_play_clip("idle", true)
+
+
+func _cs_set_mode(mode: String) -> void:
+	_cs_mode = mode
+	if _cs_splash == null or not is_instance_valid(_cs_splash):
+		return
+	var has_splash := _cs_splash.texture != null
+	_cs_splash.visible = mode == "splash" and has_splash
+	if _cs_model != null and is_instance_valid(_cs_model):
+		_cs_model.visible = not _cs_splash.visible and _cs_model.sprite_frames != null
+	if _cs_model_glow != null and is_instance_valid(_cs_model_glow):
+		_cs_model_glow.visible = _cs_model.visible
+
+
+## The previous card layout (kept for reference / a dev fallback; not wired).
+func _open_class_cards() -> void:
 	# The tallest class card determines the full-height selector.
 	var vbox := _open("Choose your class", 1240, 716)
 	current = "class_select"
@@ -1822,6 +2191,13 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	if cat == "all":
 		for i in maxi(0, p.bag_capacity() - p.bag_used()):
 			_bag_empty(grid).set_drag_forwarding(Callable(), sock_can, sock_drop)
+		# P7.F (2026-08-19, the reference bag screens): capacity you could still
+		# EARN shows as one row of LOCKED cells under the free ones — a bag slot
+		# you haven't filled with a bag yet — so the pack reads as a grid with a
+		# ceiling, not a list that happens to stop.
+		if p.bags.size() < Balance.MAX_BAGS:
+			for i in grid.columns:
+				_bag_locked(grid, p.bags.size())
 	_hint(vbox, "ESC, ✕, click outside, or I to close")
 
 
@@ -1988,6 +2364,42 @@ func _bag_empty(grid: GridContainer) -> Panel:
 	sb.set_border_width_all(2)
 	sb.set_corner_radius_all(4)
 	pnl.add_theme_stylebox_override("panel", sb)
+	grid.add_child(pnl)
+	return pnl
+
+
+## A LOCKED bag cell (P7.F): dimmer than an empty socket, a small lock glyph,
+## a tooltip that says how to earn it. `bags_owned` decides the wording.
+func _bag_locked(grid: GridContainer, bags_owned: int) -> Panel:
+	var pnl := Panel.new()
+	pnl.custom_minimum_size = Vector2(48, 48)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.03, 0.03, 0.045, 0.9)
+	sb.border_color = Color(0.22, 0.2, 0.16, 0.8)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(4)
+	pnl.add_theme_stylebox_override("panel", sb)
+	pnl.tooltip_text = "Locked — bag slot %d of %d is empty. Find or buy a bag and equip it to open this row." % [
+		bags_owned + 1, Balance.MAX_BAGS]
+	# a small padlock drawn from shapes (no glyph dependency on the body font)
+	var lc := Color(0.48, 0.44, 0.36, 0.85)
+	var shackle := Panel.new()
+	var ss := StyleBoxFlat.new()
+	ss.bg_color = Color(0, 0, 0, 0)
+	ss.border_color = lc
+	ss.set_border_width_all(2)
+	ss.set_corner_radius_all(5)
+	shackle.add_theme_stylebox_override("panel", ss)
+	shackle.position = Vector2(19, 13)
+	shackle.size = Vector2(10, 12)
+	shackle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pnl.add_child(shackle)
+	var lbody := ColorRect.new()
+	lbody.color = lc
+	lbody.position = Vector2(16, 22)
+	lbody.size = Vector2(16, 12)
+	lbody.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pnl.add_child(lbody)
 	grid.add_child(pnl)
 	return pnl
 
@@ -2169,6 +2581,7 @@ func _sorted_gem_keys(groups: Dictionary) -> Array:
 ## the Skills › Attributes tab so the two never drift — 2026-08-16: they were
 ## two hand-built lists, one of them a raw text blob).
 func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
+	_paper_doll(vbox, p)   # P7.E: the hero + their seven pieces, above the ledger
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -2213,6 +2626,190 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 			last.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_stat_flash = {}
 	_hint(vbox, "ESC, ✕, click outside, or I to close")
+
+
+## PAPER DOLL (P7.E, 2026-08-19; the reference bag/character screens): the
+## hero as they stand in the game — their live idle strip, breathing — in a
+## small glass stage, their name / class / level / Combat Rating beside it, and
+## the seven equipped pieces as rarity-framed icon wells flanking the body
+## (three left, four right). Click a well for the piece's card. Sits above the
+## stat ledger so the sheet reads hero-first, numbers second.
+const PD_H := 176.0
+const PD_MODEL_H := 150.0
+const PD_LEFT := ["weapon", "helmet", "armor"]
+const PD_RIGHT := ["gloves", "pants", "boots", "charm"]
+func _paper_doll(vbox: VBoxContainer, p: Player) -> void:
+	var band := Control.new()
+	band.custom_minimum_size = Vector2(0, PD_H)
+	band.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_child(band)
+	# the stage
+	var stage := Panel.new()
+	stage.position = Vector2(0, 0)
+	stage.size = Vector2(1080, PD_H)
+	stage.clip_contents = true
+	var ssb := StyleBoxFlat.new()
+	ssb.bg_color = Color(0.045, 0.045, 0.065, 0.92)
+	ssb.border_color = Color(UITheme.BORDER, 0.9)
+	ssb.set_border_width_all(1)
+	ssb.set_corner_radius_all(10)
+	stage.add_theme_stylebox_override("panel", ssb)
+	band.add_child(stage)
+	var glow := Sprite2D.new()
+	glow.texture = Art.tex("glow")
+	glow.modulate = Color(0.9, 0.8, 0.55, 0.22)
+	glow.scale = Vector2(1.9, 0.7)
+	glow.position = Vector2(210, PD_H - 22)
+	stage.add_child(glow)
+	# The hero's actual art: the equipped skin's body when one is on, else the class body.
+	var art_name: String = Classes.CLASSES[p.cls]["sprite"]
+	var skin_art: String = Skins.skin_sprite(p.cls, p.skin)
+	if skin_art != "":
+		art_name = skin_art
+	var clips: Dictionary = Art.hero_clips(art_name)
+	if clips.has("idle"):
+		var info: Dictionary = clips["idle"]
+		var tex: Texture2D = info["tex"]
+		var frames := int(info["frames"])
+		var fsize: Vector2 = Vector2(info.get("frame_size", Vector2i(tex.get_height(), tex.get_height())))
+		var sf := SpriteFrames.new()
+		sf.add_animation("idle")
+		sf.set_animation_loop("idle", true)
+		sf.set_animation_speed("idle", float(info.get("fps", 6.0)))
+		for f in frames:
+			var at := AtlasTexture.new()
+			at.atlas = tex
+			at.region = Rect2(f * fsize.x, 0, fsize.x, fsize.y)
+			sf.add_frame("idle", at)
+		var model := AnimatedSprite2D.new()
+		model.sprite_frames = sf
+		model.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		var s := minf(2.2, PD_MODEL_H / maxf(1.0, fsize.y))
+		model.scale = Vector2(s, s)
+		model.position = Vector2(210, PD_H - 30.0 - fsize.y * s * 0.5)
+		stage.add_child(model)
+		model.play("idle")
+	# identity column right of the wells
+	var ident := VBoxContainer.new()
+	ident.position = Vector2(300, 14)
+	ident.size = Vector2(220, PD_H - 28)
+	ident.add_theme_constant_override("separation", 3)
+	stage.add_child(ident)
+	var hero_name := String(p.char_name).strip_edges()
+	var nm := _lbl(ident, hero_name if hero_name != "" else String(Classes.CLASSES[p.cls]["name"]), 20, Color(0.96, 0.86, 0.52))
+	UITheme.title(nm, 20)
+	nm.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	nm.custom_minimum_size = Vector2(210, 0)
+	_lbl(ident, "%s  ·  Lv %d" % [String(Classes.CLASSES[p.cls]["name"]), p.level], 13, Color(0.82, 0.84, 0.9))
+	_lbl(ident, "Combat Rating  %d" % p.combat_rating(), 13, Color(0.72, 0.9, 1.0))
+	_lbl(ident, "HP %d / %d     MP %d / %d" % [int(p.hp), int(p.max_hp), int(p.mp), int(p.max_mp)], 12, Color(0.85, 0.85, 0.9))
+	var theme_names: Array = []
+	for theme in Classes.THEMES[p.cls]:
+		theme_names.append(String(theme["name"]))
+	_lbl(ident, "Themes  " + " · ".join(theme_names), 11, UITheme.TEXT_MUTED)
+	# ACTIVE ABILITIES (the reference's ability cards): four icon plates with
+	# the ability's name and its cost line, right half of the band
+	var abrow := HBoxContainer.new()
+	abrow.position = Vector2(540, 18)
+	abrow.add_theme_constant_override("separation", 10)
+	stage.add_child(abrow)
+	for slot in ["a1", "a2", "a3", "ult"]:
+		var ab: Dictionary = Classes.CLASSES[p.cls]["abilities"][slot]
+		var card := PanelContainer.new()
+		var csb := StyleBoxFlat.new()
+		csb.bg_color = Color(UITheme.SURFACE, 0.95)
+		csb.border_color = Color(UITheme.BORDER, 0.9)
+		csb.set_border_width_all(1)
+		csb.set_corner_radius_all(8)
+		csb.content_margin_left = 8
+		csb.content_margin_right = 8
+		csb.content_margin_top = 8
+		csb.content_margin_bottom = 8
+		card.add_theme_stylebox_override("panel", csb)
+		card.custom_minimum_size = Vector2(122, PD_H - 36)
+		card.tooltip_text = "%s — %s" % [String(ab["name"]), String(ab["desc"])]
+		abrow.add_child(card)
+		var col := VBoxContainer.new()
+		col.alignment = BoxContainer.ALIGNMENT_CENTER
+		col.add_theme_constant_override("separation", 4)
+		col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.add_child(col)
+		var icon := TextureRect.new()
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture = Art.ability_icon(p.cls, String(slot))
+		icon.custom_minimum_size = Vector2(48, 48)
+		icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		col.add_child(icon)
+		var anm := _lbl(col, String(ab["name"]), 12, Color(0.94, 0.94, 0.98))
+		anm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		anm.custom_minimum_size = Vector2(104, 0)
+		anm.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		var cost := "%s MP · CD %ss" % [Hud._fmt_cost(float(ab.get("mp", 0))), str(ab.get("cd", 0))]
+		if Classes.CLASSES[p.cls].get("manaless", false):
+			cost = "CD %ss" % str(ab.get("cd", 0))
+		var cl := _lbl(col, cost, 10, UITheme.TEXT_MUTED)
+		cl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		cl.custom_minimum_size = Vector2(104, 0)
+		_ignore_mouse_recursive(col)
+	# the seven wells: three left of the body, four right (reference layout)
+	var wells := {"left": Vector2(18, 16), "right": Vector2(236, 10)}
+	for side in ["left", "right"]:
+		var slots: Array = PD_LEFT if side == "left" else PD_RIGHT
+		var origin: Vector2 = wells[side]
+		var step := (PD_H - 24.0) / float(slots.size())
+		for k in slots.size():
+			_pd_well(stage, String(slots[k]), p, origin + Vector2(0, step * k))
+	# a bronze rule under the band so the ledger starts on a line
+	var rule := ColorRect.new()
+	rule.color = Color(UITheme.GOLD, 0.35)
+	rule.position = Vector2(0, PD_H - 1)
+	rule.size = Vector2(1080, 1)
+	band.add_child(rule)
+
+
+## One paper-doll well: a 44 px rarity-framed icon (or the slot's initial when
+## empty); click = the piece's card (same popover the Gear tab opens).
+func _pd_well(parent: Control, slot: String, p: Player, at: Vector2) -> void:
+	var has: bool = p.equipment.has(slot)
+	var item: Dictionary = p.equipment[slot] if has else {}
+	var color: Color = Items.GRADE_COLOR[item["grade"]] if has else Color(0.4, 0.36, 0.26)
+	var well := Panel.new()
+	well.position = at
+	well.size = Vector2(44, 44)
+	var wsb := StyleBoxFlat.new()
+	wsb.bg_color = Color(0.05, 0.05, 0.07, 0.94)
+	wsb.border_color = Color(color, 0.9 if has else 0.55)
+	wsb.set_border_width_all(2)
+	wsb.set_corner_radius_all(5)
+	well.add_theme_stylebox_override("panel", wsb)
+	well.tooltip_text = (Items.title(item) if has else "%s — empty" % slot.capitalize())
+	well.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if has else Control.CURSOR_ARROW
+	parent.add_child(well)
+	if has:
+		var ic := TextureRect.new()
+		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ic.texture = Art.icon_for(item)
+		ic.position = Vector2(4, 4)
+		ic.size = Vector2(36, 36)
+		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		well.add_child(ic)
+		well.gui_input.connect(func(e: InputEvent) -> void:
+			if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+				_open_detail_popover(Art.icon_for(item), Items.title(item), color,
+					Items.describe(item), [], GearFlavor.of(item)))
+	else:
+		var mono := Label.new()
+		mono.text = slot.substr(0, 1).to_upper()
+		mono.set_anchors_preset(Control.PRESET_FULL_RECT)
+		mono.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		mono.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		mono.add_theme_font_size_override("font_size", 14)
+		mono.add_theme_color_override("font_color", Color(0.45, 0.42, 0.36))
+		mono.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		well.add_child(mono)
 
 
 ## Snapshot of a sheet's values by row name — taken BEFORE a point is spent so
@@ -4790,7 +5387,10 @@ func _input(event: InputEvent) -> void:
 			var ids: Array = Classes.CLASSES.keys()
 			var num: int = event.keycode - KEY_1
 			if num >= 0 and num < ids.size():
-				choose_class(ids[num])  # same splash reveal as a card click
+				_cs_preview(ids[num])   # P7.G: number keys PREVIEW; Enter / Choose commits
+				get_viewport().set_input_as_handled()
+			elif event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE] and _cs_id != "":
+				choose_class(_cs_id)
 				get_viewport().set_input_as_handled()
 			return  # can't ESC out of class select
 		if current == "name_entry":

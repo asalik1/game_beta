@@ -27,6 +27,7 @@ import shutil
 import sys
 from pathlib import Path
 
+import numpy as np
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -64,7 +65,13 @@ def scaled_reference(key: str) -> Path:
         strip = opened.convert("RGBA")
     cell = strip.height
     first = strip.crop((0, 0, cell, cell))
-    first.resize((CELL, CELL), Image.Resampling.NEAREST).save(out)
+    # The 32px pack sprites fill their cell to the last row/column; a body that
+    # touches the cell edge fails the repaired-mob contract (validate_motion), so
+    # the reference keeps a 4px margin all round: ground line at CELL-4, body
+    # 184/192 of the cell — a 2% smaller on-screen body, within size_var noise.
+    canvas = Image.new("RGBA", (CELL, CELL))
+    canvas.alpha_composite(first.resize((CELL - 8, CELL - 8), Image.Resampling.NEAREST), (4, 4))
+    canvas.save(out)
     return out
 
 
@@ -105,6 +112,66 @@ def grid4(image: Image.Image) -> list[Image.Image]:
         return four_grid_subjects(image)
 
 
+def eight_subjects(image: Image.Image) -> list[Image.Image]:
+    """A walk master is ONE ROW of eight, or (a re-roll for a crowded subject)
+    a 2x4 GRID: two rows split at the widest empty row band, four per row at
+    their real gutters, read left-to-right then top-to-bottom."""
+    alpha = np.asarray(image.getchannel("A")) > 32
+    if image.width >= image.height * 3.2:
+        return row_subjects(image, 8)
+    rows_empty = ~alpha.any(axis=1)
+    h = alpha.shape[0]
+    best = None
+    start = None
+    for y in range(h // 4, 3 * h // 4 + 1):
+        on = y < 3 * h // 4 and bool(rows_empty[y])
+        if on and start is None:
+            start = y
+        elif not on and start is not None:
+            if best is None or y - start > best[1] - best[0]:
+                best = (start, y)
+            start = None
+    if best is None:
+        return row_subjects(image, 8)
+    ycut = (best[0] + best[1]) // 2
+    top = image.crop((0, 0, image.width, ycut))
+    bottom = image.crop((0, ycut, image.width, image.height))
+    return row_subjects(top, 4) + row_subjects(bottom, 4)
+
+
+def row_subjects(image: Image.Image, count: int) -> list[Image.Image]:
+    """Split a row at its real transparent gutters; a gutter only has to be
+    one clean column wide (a khopesh tip two px from its neighbour is still a
+    complete figure), so fall back from whole_subjects' 8 px minimum to 1 px.
+    Figures that truly touch (no empty column) raise -- re-roll the master."""
+    try:
+        return whole_subjects(image, count)
+    except ValueError:
+        pass
+    occupied = (np.asarray(image.getchannel("A")) > 32).any(axis=0)
+    gaps = []
+    start = None
+    for x, value in enumerate(occupied):
+        if not value and start is None:
+            start = x
+        elif value and start is not None:
+            if start > 0:
+                gaps.append((start, x))
+            start = None
+    if len(gaps) < count - 1:
+        raise ValueError(f"generated strip has fewer than {count - 1} clean gutters (figures touch) -- re-roll")
+    seps = []
+    remaining = list(gaps)
+    for index in range(1, count):
+        target = image.width * index / count
+        gap = min(remaining, key=lambda g: abs((g[0] + g[1]) / 2 - target))
+        seps.append((gap[0] + gap[1]) // 2)
+        remaining.remove(gap)
+    seps.sort()
+    bounds = [0, *seps, image.width]
+    return [image.crop((bounds[i], 0, bounds[i + 1], image.height)) for i in range(count)]
+
+
 def install_idle(stage_root: Path, key: str) -> None:
     master = archive_master(stage_root / f"{key}_idle", key, "idle")
     backup(key)
@@ -127,7 +194,7 @@ def install_action(stage_root: Path, key: str) -> None:
             raise RuntimeError(f"{key}: install the idle phase first ({idle_ref} is {opened.height}px)")
     walk_master = archive_master(stage_root / f"{key}_walk", key, "walk")
     walk_src = remove_green(walk_master)
-    walk = normalize_locked_motion(whole_subjects(walk_src, 8), idle_ref, max_width_factor=1.5)
+    walk = normalize_locked_motion(eight_subjects(walk_src), idle_ref, max_width_factor=1.5)
     save_strip(walk, SPRITES / f"{key}_walk.png")
     mirror(f"{key}_walk.png")
     attack_master = archive_master(stage_root / f"{key}_attack", key, "attack")

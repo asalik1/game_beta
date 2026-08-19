@@ -314,9 +314,19 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1,
 	cs.shape = shape
 	add_child(cs)
 
+	var vscale: float = float(stats["scale"]) * size_var * render_mult  # visual size (mob body)
+	# Ground AO (readability pass 2026-08-19): a soft dark pool wider than the
+	# contact blob quiets the busy floor under the body so the mob reads by value
+	# against a detailed field — no outline. Under the shadow, over the floor.
+	if Balance.CHAR_GROUND_AO > 0.0:
+		var ao := Sprite2D.new()
+		ao.texture = Art.tex("glow")
+		ao.modulate = Color(0, 0, 0, Balance.CHAR_GROUND_AO)
+		ao.scale = Art.scale_for(ao.texture, vscale * Balance.CHAR_GROUND_AO_W) * Vector2(1.0, 0.5)
+		ao.position = Vector2(0, 6.0 * vscale)
+		add_child(ao)
 	var shadow := Sprite2D.new()
 	shadow.texture = Art.tex("shadow")
-	var vscale: float = float(stats["scale"]) * size_var * render_mult  # visual size (mob body)
 	shadow.scale = Vector2(vscale * 0.75, vscale * 0.75)
 	shadow.position = Vector2(0, 6.0 * vscale)
 	add_child(shadow)

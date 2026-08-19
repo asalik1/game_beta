@@ -1,0 +1,27 @@
+You are generating ONE game sprite animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/1_style_rat_mage.png : the STYLE, quality, perspective and BODY-SCALE benchmark — an installed sibling mob (the Plague Chanter) drawn at production resolution. Match its pixel treatment, palette restraint, LEFT-facing three-quarter view and the share of the canvas its body fills. It is NOT the design.
+- Image 2 = refs/2_identity_elf_wild.png : the CURRENT tiny (32px, upscaled) sprite of the Wildkin Skirmisher — silhouette, palette and gear IDENTITY only. Its chunky pixels are NOT the quality target; redraw the same creature at Image 1's resolution and quality.
+
+TASK: generate exactly ONE new source sheet — a 2x2 GRID of FOUR complete figures — for the Wildkin Skirmisher's IDLE (breathing) loop with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint). Use the tool's SQUARE output size.
+
+---
+Use case: illustration-story
+Asset type: high-resolution 4-frame game sprite idle-loop source, a 2x2 grid of four complete figures, to be cropped into a horizontal sprite strip. Square output canvas.
+Input images: Image 1 is the binding style / resolution / body-scale benchmark; Image 2 is the creature's identity reference (silhouette, palette, gear).
+Scene/backdrop: a perfectly flat uniform #00ff00 chroma-key background filling every pixel, including the gaps between figures. No scenery, floor plane, ground, platform, cast shadow, contact shadow, gradient, vignette, border, grid, line, panel divider, text, frame numbers or watermark. Do not use #00ff00 or any strong green in the figure.
+Primary request: create exactly FOUR complete figures in a 2x2 grid (two rows of two), each figure fully inside its own quadrant with a clear flat-green gutter to every neighbour and to the canvas edge. All four figures share identical scale, framing and, per row, one shared invisible ground line. They are four consecutive frames of ONE subtle idle breathing loop: f1 rest, f2 inhale (chest and shoulders rise a few pixels, held items lift a hair), f3 peak (slight settle of cloth/tail/wraps), f4 exhale (back toward rest) — the head, feet, facing, height and ground point stay locked; nothing steps, turns or changes size.
+Subject: a lean barefoot WILD ELF in LEFT-facing three-quarter view: long moss-green hair falling around the face, a crown of pale antler-like branch tines rising from the head, a cream-and-green tunic belted with cord, blue tribal face markings, bare arms and bare feet, a small green stone pendant, and a short bone-tipped hunting spear held low in the forward hand. Wiry, wary, quick.
+Style/medium: crisp high-resolution dark-fantasy pixel art with hard readable pixel clusters and a controlled MUTED palette (exactly the treatment of Image 1, the installed Plague Chanter sibling) — not painterly, not 3D, not anime, no black outlines thicker than one pixel, no bright saturated colours, no gold trim, no glow except the stated eye glow.
+Composition/framing and ANCHOR RULE: all four figures face LEFT in the same three-quarter view as Image 1, standing at the same full height with the feet on the row's shared ground line. The camera never moves. Body fills roughly the same share of its quadrant as Image 1's figure fills its canvas.
+Constraints: output only the four figures on green; no text, watermark, UI, extra characters, scenery, shadow or separators. Same gear in the same hands in every figure; do not add or drop limbs; do not duplicate a figure exactly; do not crouch or shrink the body.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./elf_wild_idle_master_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./elf_wild_idle_master_v1_keyed.png (auto-key sampling, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message, report: the raw output size, how many complete figures were produced, whether each sits wholly inside its quadrant with a clear gutter, whether the four differ only by a subtle breath (no step, no turn, no size change), the facing, and any deviation from the brief (extra limbs, gear that changes hands, a figure touching the canvas edge or a neighbour, green in the figure). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

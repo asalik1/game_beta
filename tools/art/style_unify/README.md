@@ -49,6 +49,26 @@ override). Add every new NPC name to `Balance.NPC_HEIGHT_BY_SPRITE` +
 `NPC_BODY_TARGETS` (52.0); a building through the NPC path gets its footprint
 from `NPC_HEIGHT_BY_SPRITE` (mill 2.3) and a base shadow in `_make_npc`.
 
+## Recipe (MOB bodies — P6.2, 2026-08-19)
+
+Mobs are NOT the painterly prop style: the mob house style is crisp hi-res
+dark-fantasy pixel art (the repaired cast; `rat_mage` = benchmark), LEFT-facing,
+on a flat `#00ff00` key with padded gutters — the 08-08/08-15 mob-repair
+contract. Two phases because walk/attack need the NEW idle as their binding
+identity:
+
+1. `make_pcmob_briefs.py <stage_root> --phase idle` → `stages_idle.txt` (2x2
+   breathing idle per mob; refs = `1_style_rat_mage.png` + the old 32px sprite
+   ×6 as `2_identity_<key>.png`) → batch runner → `python
+   tools/art/build_pc_extra_mobs.py <stage_root> --phase idle` (base + `_anim`,
+   192 cell, old body share kept).
+2. `make_pcmob_briefs.py <stage_root> --phase action` → `stages_action.txt`
+   (walk = ONE ROW of EIGHT gait-phase figures; attack = padded 2x2 ready /
+   wind-up / strike LEFT / follow-through; refs = the new `_anim` strip +
+   identity) → batch runner → `build_pc_extra_mobs.py --phase action`.
+3. `verify_art.py <keys>`, `--import`, gates; masters + briefs + results archive
+   under `art_src/Custom/PcExtraMobs_2026-08-19/`, replaced sprites under `old/`.
+
 ## Files
 
 | script | job |
@@ -57,6 +77,7 @@ from `NPC_HEIGHT_BY_SPRITE` (mill 2.3) and a base shadow in `_make_npc`.
 | `make_briefs.py` | repaint briefs (style sibling + subject); default PLAN = batch D |
 | `rerolls.py` | description-led briefs, no subject ref |
 | `make_npc_briefs.py` | 9 wanderer NPC archetypes + the mill |
+| `make_pcmob_briefs.py` | P6.2: the 7 Pixel Crawler extra mobs, idle / walk / attack masters (installer: `tools/art/build_pc_extra_mobs.py`) |
 | `make_wall_briefs.py` | seamless 128px WALL fields (weathered irregular masonry — never a brick grid); install with `install_ground_field.py --prefix wall_field_` |
 | `vet_sheet.py` / `green_check.py` | the LOOK step |
 | `install_stage.py` | key → tone-match → install (game + mobile) |

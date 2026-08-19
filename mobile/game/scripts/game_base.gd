@@ -255,6 +255,7 @@ var sound_group_last: Dictionary = {}   # semantic key -> last chosen index
 var sfx_rng := RandomNumberGenerator.new()
 var loot_rng := RandomNumberGenerator.new()
 var ambient_fx: CPUParticles2D = null
+var ground_fog: Sprite2D = null        # the misty terrains' floor-fog quad (atmosphere pass 2026-08-19)
 var npc_emote_t := 4.0
 # Battle seals: while the current room is HOT (an aggroed pack or a live
 # boss), every door of the room closes — no retreating mid-combat.
@@ -2080,15 +2081,97 @@ func play_rect(i: int) -> Rect2:
 func lane_local(i: int) -> Vector2:
 	return Vector2(ROOM_W, ROOM_H) / 2.0 - room_inset_lt(i)
 
+## CORNER BITES (P7.C, 2026-08-19; owner: "the room shape can also be
+## asymmetric"). A combat room may have one or two corners carved away as
+## SOLID wall blocks, so its footprint reads L- or T-shaped instead of a box.
+## Returns the notch rects in WORLD space ([] for rooms left whole: boss,
+## safe, authored-scale, non-combat). Hashed per room index — no RNG,
+## identical on every machine and every rebuild. A notch never reaches a door
+## lane (ROOM_NOTCH_LANE_CLEAR off the lane's gap), so corridors and the roads
+## stay open; game_world builds them as walls (_build_room_walls), scenery,
+## hazards and authored spawns avoid them (room_pos / reserved / _spawn_patches),
+## and free_spawn_pos sees them as walls through physics.
+func room_notches(i: int) -> Array:
+	if room_type(i) != "combat" or String(zones[i].get("boss", "")) != "" \
+			or float(zones[i].get("room_scale", 1.0)) < 1.0 or Balance.ROOM_NOTCH_CHANCE.is_empty():
+		return []
+	var h1 := float((i * 2246822519) & 1023) / 1023.0
+	var h2 := float((i * 3266489917 + 311) & 1023) / 1023.0
+	var h3 := float((i * 668265263 + 977) & 1023) / 1023.0
+	var h4 := float((i * 374761393 + 1531) & 1023) / 1023.0
+	# how many: cumulative chances [none, one, two]
+	var count := 0
+	var acc := 0.0
+	for n in Balance.ROOM_NOTCH_CHANCE.size():
+		acc += float(Balance.ROOM_NOTCH_CHANCE[n])
+		if h1 < acc:
+			count = n
+			break
+	if count <= 0:
+		return []
+	var r := play_rect(i)
+	var lane := lane_local(i)
+	var gap := DOOR_TILES * TILE
+	var clear := Balance.ROOM_NOTCH_LANE_CLEAR
+	var out: Array = []
+	var first := int(h2 * 4.0) % 4           # 0 NW, 1 NE, 2 SW, 3 SE
+	var corners := [first]
+	if count >= 2:
+		corners.append((first + 1 + int(h3 * 3.0) % 3) % 4)
+	for k in corners.size():
+		var corner: int = corners[k]
+		var hw := h3 if k == 0 else h4
+		var hh := h4 if k == 0 else h2
+		var w := lerpf(Balance.ROOM_NOTCH_MIN.x, Balance.ROOM_NOTCH_MAX.x, hw)
+		var hgt := lerpf(Balance.ROOM_NOTCH_MIN.y, Balance.ROOM_NOTCH_MAX.y, hh)
+		var west: bool = corner in [0, 2]
+		var north: bool = corner in [0, 1]
+		# never into a door lane: cap the reach toward the lane
+		var max_w: float = (lane.x - gap / 2.0 - clear) if west else (r.size.x - lane.x - gap / 2.0 - clear)
+		var max_h: float = (lane.y - gap / 2.0 - clear) if north else (r.size.y - lane.y - gap / 2.0 - clear)
+		w = minf(w, max_w)
+		hgt = minf(hgt, max_h)
+		if w < Balance.ROOM_NOTCH_MIN.x * 0.7 or hgt < Balance.ROOM_NOTCH_MIN.y * 0.7:
+			continue
+		var x := r.position.x if west else r.end.x - w
+		var y := r.position.y if north else r.end.y - hgt
+		out.append(Rect2(x, y, w, hgt))
+	return out
+
+
+## Push a point OUT of any corner bite (grown by `margin` so a body never
+## stands half inside the block): to the nearest edge of the grown rect.
+func notch_clear(i: int, p: Vector2, margin := 36.0) -> Vector2:
+	for n in room_notches(i):
+		var g: Rect2 = (n as Rect2).grow(margin)
+		if not g.has_point(p):
+			continue
+		var dl := p.x - g.position.x
+		var dr := g.end.x - p.x
+		var dt := p.y - g.position.y
+		var db := g.end.y - p.y
+		var m := minf(minf(dl, dr), minf(dt, db))
+		if m == dl:
+			p.x = g.position.x - 1.0
+		elif m == dr:
+			p.x = g.end.x + 1.0
+		elif m == dt:
+			p.y = g.position.y - 1.0
+		else:
+			p.y = g.end.y + 1.0
+	return p
+
+
 ## Map an authored in-room position into the playable rect — authored
-## coordinates assume the full cell, so small rooms scale them down.
+## coordinates assume the full cell, so small rooms scale them down. A point
+## that lands in a corner bite is pushed out of it (P7.C).
 func room_pos(i: int, x: float, y: float) -> Vector2:
 	var meta: Dictionary = rooms[i]
 	var p: Vector2 = Vector2(x, y) * meta["scale"]
 	var ins := room_inset(i)
 	if ins != Vector2.ZERO:
 		p = room_inset_lt(i) + p * (Vector2(ROOM_W, ROOM_H) - ins * 2.0) / Vector2(ROOM_W, ROOM_H)
-	return meta["origin"] + p
+	return notch_clear(i, meta["origin"] + p)
 
 func room_center(i: int) -> Vector2:
 	return rooms[i]["origin"] + Vector2(ROOM_W, ROOM_H) / 2.0
@@ -3327,12 +3410,22 @@ func _float_kind(text: String) -> int:
 ## hold: seconds the text sits still before the float-and-fade (the
 ## fight report needs reading time; combat numbers leave it at 0).
 func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
+	var kind := _float_kind(text)
+	# P7.A (2026-08-19): a line that asked for READING time is an announcement
+	# (discovery, unlock, victory, quest) — it gets the HUD plaque + the event
+	# log instead of a flat world label. Numbers, crits and quick callouts keep
+	# floating at their world point; pickups float AND log.
+	if kind == 0 and hud != null and is_instance_valid(hud):
+		if hold > 0.0:
+			hud.announce(text, color, hold)
+			return
+		if text.begins_with("+"):   # "+ Rusted Dagger", "+12 XP", "+ Bag"
+			hud.log_event(text, color)
 	var l := Label.new()
 	l.text = text
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.z_index = 20
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var kind := _float_kind(text)
 	var fsize := FLOAT_LABEL_SIZE
 	var outline := 4
 	if kind == 2:
@@ -3377,6 +3470,43 @@ func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		tween.parallel().tween_property(l, "modulate:a", 0.0, 0.9)
 	tween.tween_callback(l.queue_free)
+
+
+## FOOT DUST (life pass 2026-08-19): a tiny puff of floor-coloured dust at a
+## running foot — a few soft chips that drift up and fade. Tinted from the
+## current room's ground palette so it is sand on sand, loam on grass, ash on
+## magma. Cheap one-shot particles; callers throttle by FOOT_DUST_PERIOD.
+func foot_dust(pos: Vector2) -> void:
+	if Balance.FOOT_DUST_N <= 0:
+		return
+	var col := Color(0.55, 0.5, 0.42)
+	var zi := room_at_pos(pos)
+	if zi >= 0 and zi < zone_count:
+		var gk := String(Terrains.get_terrain(terrain_by_zone[zi]).get("ground", ""))
+		if Art.GROUND.has(gk):
+			var gc: Color = Art.GROUND[gk][1]
+			col = gc.lightened(0.25)
+	var p := CPUParticles2D.new()
+	p.position = pos
+	p.amount = Balance.FOOT_DUST_N
+	p.one_shot = true
+	p.explosiveness = 1.0
+	p.lifetime = 0.45
+	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = 5.0
+	p.direction = Vector2(0, -1)
+	p.spread = 60.0
+	p.gravity = Vector2(0, -8)
+	p.initial_velocity_min = 8.0
+	p.initial_velocity_max = 22.0
+	p.scale_amount_min = 0.12
+	p.scale_amount_max = 0.22
+	p.texture = Art.tex("glow")
+	p.color = Color(col.r, col.g, col.b, Balance.FOOT_DUST_A)
+	p.z_index = 3
+	add_child(p)
+	p.emitting = true
+	get_tree().create_timer(0.6).timeout.connect(p.queue_free)
 
 
 ## Wave-2 co-op fix #8: a floating banner shown on EVERY machine, not just the

@@ -24,6 +24,38 @@ var retry_cd := 0.0   # full-bag claim retry throttle
 var pickup_delay := 0.0  # discard-throw: ignore all claims until this elapses
 
 
+# Coin presentation (P7.B, 2026-08-19; owner: "the coins don't look polished
+# enough"). A coin is a SPINNING piece when `coin_anim.png` ships (a 6-frame
+# turn with the highlight sweeping its face — the Art.anim_prop seam, same as
+# any animated prop), else the static disc; it lands with a scatter ARC and two
+# bounces instead of a hop, pools a soft gold glow on the ground, winks a glint,
+# and on pickup bursts three chips toward the hero while the HUD gold line
+# pulses. Presentation constants.
+const COIN_ARC_H := 26.0          # px apex of the drop arc
+const COIN_SCATTER := 34.0        # px lateral scatter from the death spot
+const COIN_BOUNCE := 0.42         # second bounce = this share of the first
+const COIN_GLOW_A := 0.40
+
+## The coin's visual: the spin strip when installed, else the static disc.
+static func _coin_visual(width: float) -> Node2D:
+	var anim: AnimatedSprite2D = Art.anim_prop("coin")
+	var vis: Node2D = anim
+	var native := 16.0
+	if anim != null:
+		var sf: SpriteFrames = anim.sprite_frames
+		if sf != null and sf.get_frame_count("default") > 0:
+			native = float(sf.get_frame_texture("default", 0).get_width())
+		anim.scale = Vector2.ONE * (width / maxf(1.0, native))
+	else:
+		var sprite := Sprite2D.new()
+		sprite.texture = Art.tex("coin")
+		# Width-normalized: the coin renders `width` world px whether the art is
+		# the 8px procedural glyph or the painterly override (2026-08-18).
+		sprite.scale = Art.scale_for(sprite.texture, width / 16.0)
+		vis = sprite
+	return vis
+
+
 static func drop_gold(game_node: Node2D, amount: int, pos: Vector2) -> void:
 	# Scatter a few coins around the death spot.
 	amount = (game_node as Game).gold_scaled(amount)  # weekly "gilded" hook
@@ -32,19 +64,33 @@ static func drop_gold(game_node: Node2D, amount: int, pos: Vector2) -> void:
 		var c := Pickup.new()
 		c.game = game_node
 		c.value = maxi(1, amount / coins)
-		c.global_position = pos + Vector2(randf_range(-24, 24), randf_range(-18, 18))
-		var sprite := Sprite2D.new()
-		sprite.texture = Art.tex("coin")
-		# Width-normalized: the coin renders COIN_W world px whether the art is
-		# the 8px procedural glyph or the painterly override (2026-08-18).
-		sprite.scale = Art.scale_for(sprite.texture, COIN_W / 16.0)
+		# The coin is SPAWNED at the death spot and ARCS out to its rest point
+		# (tweened below), so the scatter reads as a spill, not a teleport.
+		var rest := pos + Vector2(randf_range(-COIN_SCATTER, COIN_SCATTER), randf_range(-18, 18))
+		c.global_position = pos
+		var sprite := _coin_visual(COIN_W)
 		c.add_child(sprite)
+		# soft gold pool under the coin — lifts it off a dark floor
+		var glow := Sprite2D.new()
+		glow.texture = Art.tex("glow")
+		glow.modulate = Color(1.0, 0.82, 0.4, COIN_GLOW_A)
+		glow.scale = Vector2(0.55, 0.4)
+		glow.position = Vector2(0, 4)
+		glow.z_index = -1
+		c.add_child(glow)
 		c._body_setup()
 		game_node.add_child(c)
-		# Coin hop.
-		var tween := c.create_tween()
-		tween.tween_property(sprite, "position:y", -8.0, 0.12)
-		tween.tween_property(sprite, "position:y", 0.0, 0.15)
+		# Drop arc: the body slides to its rest point while the visual hops an
+		# arc and bounces twice (position.y of the visual, body stays grounded).
+		var arc := c.create_tween()
+		arc.tween_property(c, "global_position", rest, 0.34).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		var hop := c.create_tween()
+		hop.tween_property(sprite, "position:y", -COIN_ARC_H, 0.17).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		hop.tween_property(sprite, "position:y", 0.0, 0.17).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		hop.tween_property(sprite, "position:y", -COIN_ARC_H * COIN_BOUNCE, 0.11).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		hop.tween_property(sprite, "position:y", 0.0, 0.11).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		hop.tween_property(sprite, "position:y", -COIN_ARC_H * COIN_BOUNCE * 0.35, 0.07)
+		hop.tween_property(sprite, "position:y", 0.0, 0.07)
 		# Sparkle (visual pass): a tiny glint winks on its own beat — gold
 		# on the ground CATCHES THE EYE. HDR so the wink blooms.
 		var glint := Sprite2D.new()
@@ -68,9 +114,7 @@ static func drop_goldrush(game_node: Node2D, pos: Vector2) -> void:
 	c.game = game_node
 	c.goldrush = true
 	c.global_position = pos
-	var sprite := Sprite2D.new()
-	sprite.texture = Art.tex("coin")
-	sprite.scale = Art.scale_for(sprite.texture, GOLDRUSH_COIN_W / 16.0)
+	var sprite := _coin_visual(GOLDRUSH_COIN_W)
 	sprite.modulate = Art.hdr(Color(1.0, 0.9, 0.5), 1.5)
 	c.add_child(sprite)
 	c._body_setup()
@@ -161,7 +205,7 @@ static func drop_loot(game_node: Node2D, payload: Dictionary, pos: Vector2) -> P
 ## terrain, a slow bob, and a winking HDR glint that blooms — the same treatment
 ## the gold coins get. Without it a gem/gear on dirt reads as background.
 ## `spr` may be null (glyph fallback); then only the glow + glint are added.
-func _loot_shine(spr: Sprite2D, tint: Color) -> void:
+func _loot_shine(spr: Node2D, tint: Color) -> void:
 	var glow := Sprite2D.new()
 	glow.texture = Art.tex("glow")
 	glow.modulate = Color(tint, 0.5)
@@ -246,6 +290,9 @@ func _on_body_entered(body: Node) -> void:
 		queue_free()
 	elif loot.is_empty():
 		body.gain_gold(value)
+		game.hud.log_event("+%d gold" % value, Color(1.0, 0.84, 0.35), "gold")  # P7.A feed (coalesces)
+		game.hud.pulse_gold()                                                   # the counter ticks
+		game.burst(global_position, Color(1.0, 0.85, 0.4), 3)                   # three chips fly
 		game.sfx("coin")
 		queue_free()
 	elif retry_cd <= 0.0 and pickup_delay <= 0.0:

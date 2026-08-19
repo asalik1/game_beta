@@ -22,6 +22,8 @@ var on_open := Callable()  # optional hook (dead-end caches set a flag)
 # gems/bags/potions. Supply fields are meaningless for a gear chest and vice
 # versa; drop() sets whichever the kind uses.
 var kind := "gear"          # "gear" | "supply"
+var art_key := ""           # the body sprite's art name (chest_<grade> / supply tier art)
+var body_sprite: Sprite2D = null
 var gear_gem_ok := true     # gear chest may also hold a loose gem (boss gear chest sets false — gems come from supply)
 var supply_tier := ""       # "bronze" | "silver" | "gold"
 var supply_gem := false     # this supply chest is a GUARANTEED-gem one (§3)
@@ -82,12 +84,14 @@ static func drop(game_node: Node2D, chest_tier: String, pos: Vector2, opts := {}
 		pulse.tween_property(halo, "scale", Vector2(1.35, 1.35), 0.9)
 
 	var sprite := Sprite2D.new()
+	c.art_key = Balance.supply_chest_art(c.supply_tier) if c.kind == "supply" \
+		else "chest_" + c.grade.to_lower()
 	if c.kind == "supply":
 		# Supply chests wear the metallic tier art (wood≈bronze); the halo above
 		# already carries the ceiling-grade colour, so leave the metal untinted.
-		sprite.texture = Art.tex(Balance.supply_chest_art(c.supply_tier))
+		sprite.texture = Art.tex(c.art_key)
 	else:
-		sprite.texture = Art.tex("chest_" + c.grade.to_lower())
+		sprite.texture = Art.tex(c.art_key)
 		# A light wash of the grade colour on top of the authored material, so
 		# F..C (four wooden boxes) still separate at a glance. Same colour
 		# language the item names and gem icons already speak.
@@ -98,6 +102,7 @@ static func drop(game_node: Node2D, chest_tier: String, pos: Vector2, opts := {}
 	var base_scale := Art.scale_for(sprite.texture, Balance.CHEST_SCALE_16PX)
 	sprite.scale = base_scale
 	c.add_child(sprite)
+	c.body_sprite = sprite
 
 	c.collision_layer = 0
 	c.collision_mask = 2  # player
@@ -153,15 +158,84 @@ func _on_body_entered(body: Node) -> void:
 	game.burst(global_position, Color(1.0, 0.85, 0.3), 14)
 	if on_open.is_valid():
 		on_open.call()
+	_open_moment()
 
 	if kind == "supply":
 		_open_supply(body)
 	else:
 		_open_gear(body)
 
+	# The chest stays OPEN for a beat (lid up, glow dying down) before it goes —
+	# the reference games hold the open box; ours used to vanish in 0.3 s.
 	var tween := create_tween()
-	tween.tween_property(self, "modulate:a", 0.0, 0.3)
+	tween.tween_interval(Balance.CHEST_OPEN_HOLD)
+	tween.tween_property(self, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(queue_free)
+
+
+# The OPENING MOMENT (P7.B, 2026-08-19; owner: "the chests…"): the lid FRAMES
+# when the art ships (`<art_key>_open.png`, a horizontal strip of square cells
+# closed → cracking → open → open-at-rest, played once and held), a white-gold
+# light burst that blooms and fades, a sparkle fountain rising out of the box,
+# and the grade's glow flaring then dying down. Without the strip the body
+# keeps its closed art and everything else still plays.
+func _open_moment() -> void:
+	var gc: Color = Items.GRADE_COLOR.get(grade, Color(1.0, 0.85, 0.4))
+	# lid frames (optional art)
+	if body_sprite != null and Art.has_sprite(art_key + "_open"):
+		var strip: Texture2D = Art.tex(art_key + "_open")
+		var cell := float(strip.get_height())
+		var frames := maxi(1, int(round(strip.get_width() / maxf(1.0, cell))))
+		body_sprite.texture = strip
+		body_sprite.hframes = frames
+		body_sprite.frame = 0
+		body_sprite.scale = Art.scale_for(strip, Balance.CHEST_SCALE_16PX, frames)
+		var per := Balance.CHEST_OPEN_FRAME_T
+		var lid := create_tween()
+		for f in range(1, frames):
+			lid.tween_interval(per)
+			lid.tween_callback(func() -> void:
+				if is_instance_valid(body_sprite):
+					body_sprite.frame = mini(f, frames - 1))
+	# light burst: a hot disc that blooms past the box and fades
+	var flash := Sprite2D.new()
+	flash.texture = Art.tex("glow")
+	flash.modulate = Art.hdr(Color(1.0, 0.95, 0.75, 0.9), 1.6)
+	flash.scale = Vector2(0.6, 0.6)
+	flash.position = Vector2(0, -6)
+	flash.z_index = 1
+	add_child(flash)
+	var ft := create_tween()
+	ft.tween_property(flash, "scale", Vector2(2.6, 2.6), 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	ft.parallel().tween_property(flash, "modulate:a", 0.0, 0.45)
+	ft.tween_callback(flash.queue_free)
+	# sparkle fountain out of the box (soft chips, grade-tinted + gold)
+	var fountain := CPUParticles2D.new()
+	fountain.position = Vector2(0, -10)
+	fountain.amount = 22
+	fountain.one_shot = true
+	fountain.explosiveness = 0.55
+	fountain.lifetime = 0.9
+	fountain.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	fountain.emission_sphere_radius = 8.0
+	fountain.direction = Vector2(0, -1)
+	fountain.spread = 34.0
+	fountain.gravity = Vector2(0, 220)
+	fountain.initial_velocity_min = 120.0
+	fountain.initial_velocity_max = 210.0
+	fountain.scale_amount_min = 0.25
+	fountain.scale_amount_max = 0.55
+	fountain.texture = Art.tex("spark")
+	fountain.color = Color(1.0, 0.92, 0.65).lerp(gc, 0.35)
+	fountain.z_index = 2
+	add_child(fountain)
+	fountain.emitting = true
+	# the telegraph halo (if any) flares then dies down with the lid
+	for c in get_children():
+		if c is Sprite2D and c != body_sprite and c.z_index == -1 and c.texture == Art.tex("glow"):
+			var ht := create_tween()
+			ht.tween_property(c, "modulate:a", minf(1.0, c.modulate.a * 2.2), 0.12)
+			ht.tween_property(c, "modulate:a", 0.0, Balance.CHEST_OPEN_HOLD)
 
 
 ## The classic gear box: one grade-matched piece + gold, and (world/elite

@@ -1,0 +1,28 @@
+You are generating ONE game sprite animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/1_idle_rat_rogue.png : the BINDING identity, palette, pixel-art treatment AND body-scale reference — a horizontal 4-frame strip of square cells of the Gutter Cutter standing at rest, facing LEFT. Match the figure, its proportions, gear and palette precisely; the ready pose must show it at the SAME full standing height as in Image 1.
+- Image 2 = refs/2_identity_rat_rogue.png : secondary identity reference (the old tiny sprite; silhouette/palette only).
+
+TASK: generate exactly ONE new source sheet — a padded 2x2 GRID of FOUR complete poses — for its ATTACK with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint). Use the tool's SQUARE output size.
+
+---
+Use case: illustration-story
+Asset type: high-resolution 4-frame game sprite attack source, a 2x2 grid of four complete poses, to be cropped into a horizontal sprite strip. Square output canvas.
+Input images: Image 1 (4-frame idle strip) is the binding identity, palette, pixel-art treatment and body-scale reference; Image 2 is a secondary identity reference.
+Scene/backdrop: a perfectly flat uniform #00ff00 chroma-key background filling every pixel, including the gaps between figures. No scenery, floor plane, ground, platform, cast shadow, contact shadow, gradient, vignette, border, grid, line, panel divider, text, frame numbers or watermark. Do not use #00ff00 or any strong green in the figure.
+Primary request: create exactly FOUR complete poses in a 2x2 grid (two rows of two), each pose fully inside its own quadrant with a clear flat-green gutter to every neighbour and to the canvas edge — a raised weapon or the strike arc must ALSO stay inside its quadrant. All four share identical scale and, per row, one shared invisible ground line; the planted foot / ground point and the torso position stay locked (only the striking limbs and gear travel).
+Subject: a hunched grey RATMAN CUTPURSE in LEFT-facing three-quarter view: mangy grey fur, a long pink naked tail, red-glowing beady eyes, a dirty brown hooded cloak with the hood UP, patched dark trousers, wrapped feet, and a small rusty knife held low and reversed in the forward hand. Low, skittering, furtive. Same identity, proportions, palette and body scale as Image 1.
+ATTACK storyboard, facing LEFT (the strike travels toward screen-left): ready (knife low, hunched) -> wind-up (knife pulled back beside the ribs, body coiled lower) -> STRIKE toward screen-left (a quick low stab-and-slash left, arm fully extended, tail whipping) -> follow-through (darting back, knife low).
+Style/medium: crisp high-resolution dark-fantasy pixel art with hard readable pixel clusters and a controlled MUTED palette (exactly the treatment of Image 1, the installed Plague Chanter sibling) — not painterly, not 3D, not anime, no black outlines thicker than one pixel, no bright saturated colours, no gold trim, no glow except the stated eye glow.
+Composition/framing and ANCHOR RULE: all four poses face LEFT in Image 1's three-quarter view; the ready pose stands at exactly Image 1's height. The camera never moves. Any slash arc is a short, dull, low-contrast streak of the weapon's own colour — not a bright magic effect.
+Constraints: output only the four poses on green; no text, watermark, UI, frame numbers, extra characters, scenery, shadow or separators. Same gear in the same hands in every pose; the strike goes LEFT (never right, never up-only); do not add or drop limbs; do not duplicate a pose; the whole face/head/tail/gear must be contained in each quadrant.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./rat_rogue_attack_master_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./rat_rogue_attack_master_v1_keyed.png (auto-key sampling, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message, report: the raw output size, how many complete poses were produced, whether each pose (including any raised weapon or arc) sits wholly inside its quadrant with a clear gutter, whether the strike travels LEFT, whether the ready pose matches Image 1's height, and any deviation from the brief. Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

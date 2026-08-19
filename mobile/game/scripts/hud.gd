@@ -27,6 +27,9 @@ var avatar_root: Control
 var avatar_portrait: TextureRect
 var avatar_border_layer: Control
 var avatar_default_border: Panel
+var avatar_level_badge: Panel      # P7.D: level disc on the ring
+var avatar_level_label: Label
+var _avatar_level_shown := -1
 var _avatar_art_key := ""
 var gold_label: Label
 var cr_label: Label
@@ -63,6 +66,11 @@ var subtitle_label: Label
 var boss_box: Control
 var boss_fill: ColorRect
 var boss_name: Label
+var boss_badge_root: Control      # P7.D: the boss's face in a crimson ring
+var boss_badge: TextureRect
+var boss_level: Label
+var boss_hp_num: Label
+var _boss_badge_key := ""
 # Target-bar variants (2026-08-06): the same top bar slot, dressed per target
 # kind — trash mobs a slim strip in their overhead-bar red, a duel rival
 # their class tint. game.gd feeds track_target_bar each frame.
@@ -148,7 +156,8 @@ var results_box: Control = null   # chapter results card (victory screen)
 var boss_base_name := ""
 var target_bar_unit: CharacterBody2D = null  # what the top bar tracks (display only)
 var _target_bar_label := ""  # mob/rival name half of "Name — 63%"
-var banner_y := 110.0
+const LOOT_BANNER_Y := 262.0   # first loot banner: under the minimap, clear of the boss bar
+var banner_y := LOOT_BANNER_Y
 
 # downed/revive indicators (MP-12 §5.3). The local player's own DOWNED/GHOST
 # banner + the over-head revive channel bar (the reviver/downed pair) live
@@ -576,6 +585,69 @@ func _ready() -> void:
 	boss_name.add_theme_color_override("font_color", Color(1, 0.6, 0.6))
 	_outline(boss_name)
 	boss_box.add_child(boss_name)
+	# P7.D (2026-08-19): the boss bar wears the boss's FACE — a circular masked
+	# crop of its splash in a crimson ring at the bar's left — plus its level
+	# under the ring and numeric HP at the bar's right end (the reference HUDs'
+	# badge + "191888/191888"). Name + fill unchanged.
+	boss_badge_root = Control.new()
+	boss_badge_root.position = Vector2(332, 62)
+	boss_badge_root.size = Vector2(48, 48)
+	boss_badge_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	boss_box.add_child(boss_badge_root)
+	var bb_back := Panel.new()
+	var bb_bs := StyleBoxFlat.new()
+	bb_bs.bg_color = Color(0.03, 0.02, 0.025, 0.98)
+	bb_bs.set_corner_radius_all(24)
+	bb_back.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bb_back.add_theme_stylebox_override("panel", bb_bs)
+	bb_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	boss_badge_root.add_child(bb_back)
+	boss_badge = TextureRect.new()
+	boss_badge.position = Vector2(4, 4)
+	boss_badge.size = Vector2(40, 40)
+	boss_badge.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	boss_badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	boss_badge.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	boss_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var bb_shader := Shader.new()
+	bb_shader.code = """
+shader_type canvas_item;
+uniform vec4 crop_uv = vec4(0.0, 0.0, 1.0, 1.0);
+void fragment() {
+	vec2 d = UV - vec2(0.5);
+	float mask = 1.0 - smoothstep(0.475, 0.5, length(d));
+	vec4 c = texture(TEXTURE, crop_uv.xy + UV * crop_uv.zw);
+	COLOR = vec4(c.rgb, c.a * mask);
+}
+"""
+	var bb_mat := ShaderMaterial.new()
+	bb_mat.shader = bb_shader
+	boss_badge.material = bb_mat
+	boss_badge_root.add_child(boss_badge)
+	var bb_ring := Panel.new()
+	var bb_rs := StyleBoxFlat.new()
+	bb_rs.bg_color = Color(0, 0, 0, 0)
+	bb_rs.border_color = Color(0.72, 0.16, 0.2, 1.0)
+	bb_rs.set_border_width_all(3)
+	bb_rs.set_corner_radius_all(24)
+	bb_ring.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bb_ring.add_theme_stylebox_override("panel", bb_rs)
+	bb_ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	boss_badge_root.add_child(bb_ring)
+	boss_level = Label.new()
+	boss_level.position = Vector2(326, 108)
+	boss_level.size = Vector2(60, 16)
+	boss_level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	UITheme.world(boss_level, 11, 3)
+	boss_level.add_theme_color_override("font_color", Color(1.0, 0.72, 0.7))
+	boss_box.add_child(boss_level)
+	boss_hp_num = Label.new()
+	boss_hp_num.position = Vector2(600, 104)
+	boss_hp_num.size = Vector2(290, 16)
+	boss_hp_num.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	UITheme.world(boss_hp_num, 11, 3)
+	boss_hp_num.add_theme_color_override("font_color", Color(1.0, 0.82, 0.8))
+	boss_box.add_child(boss_hp_num)
 
 	# Mob variant: same slot, slimmer strip in the mobs' own overhead-bar
 	# red — a glance says "trash", the width says "boss" never lies.
@@ -1460,6 +1532,310 @@ func achievement_toast(name: String, desc: String) -> void:
 	tw.tween_callback(panel.queue_free)
 
 
+# ------------------------------------------------------ announcements ---
+# P7.A (2026-08-19, owner: "in many MMOs the text isn't flat — like the LORE
+# UNEARTHED text; it's not the words, it's how they appear"). A discovery /
+# quest / victory / unlock line used to be the same outlined world Label as a
+# status callout, rising 34 px and fading. Now it ARRIVES: a glass plaque under
+# the boss-bar zone, thin gold rules, an icon glyph for its kind, the header face
+# in letter-spaced caps whose spacing EASES in, a light sweep across the plaque,
+# a sparkle puff, scale-pop → settle, a hold, then a drift-out. The same line is
+# mirrored into the rolling EVENT LOG (bottom-left). Presentation constants.
+const ANN_W := 560.0
+const ANN_H := 56.0
+const ANN_Y := 134.0            # below the boss bar (60-124 with its badge row), above the title card (200)
+const ANN_STACK := 62.0         # px per extra plaque when several land together
+const ANN_SPACING_IN := 7       # px glyph spacing the title starts at (eases to REST)
+const ANN_SPACING_REST := 2
+const ANN_HOLD_MIN := 2.2
+const ANN_ICONS := {            # kind -> HUD icon (assets/icons/ui_*.png) or sprite
+	"lore": "ui_book", "quest": "ui_quest", "victory": "ui_daily",
+	"item": "ui_bag", "gold": "coin", "party": "ui_party", "note": "",
+}
+var _ann_stack := 0
+
+
+## Classify an announcement line by its words (the call sites are legion; the
+## words already say what they are). Returns an ANN_ICONS key.
+static func announce_kind(text: String) -> String:
+	var t := text.to_upper()
+	if t.contains("LORE") or t.contains("CODEX") or t.contains("BLUEPRINT"):
+		return "lore"
+	if t.contains("QUEST") or t.contains("BOUNTY") or t.contains("CHALLENGE"):
+		return "quest"
+	if t.contains("GOLD") or t.contains("RENOWN") or t.begins_with("+"):
+		return "gold" if (t.contains("GOLD") or t.contains("RENOWN")) else "item"
+	if t.contains("CONQUERED") or t.contains("UNLOCKED") or t.contains("RECEDES") \
+			or t.contains("SEALS") or t.contains("LIFTS") or t.contains("COMPLETE") \
+			or t.contains("OPEN") or t.contains("VICTORY") or t.contains("SLAIN"):
+		return "victory"
+	if t.contains("PARTY") or t.contains("JOINED") or t.contains("LEFT THE"):
+		return "party"
+	return "note"
+
+
+## The plaque. `color` tints the title (the call site's colour — grade, renown,
+## tier); `hold` is the reading time the call site asked for. Headless-safe
+## (plain Controls + tweens), pause-safe (HUD tweens pause with the tree).
+func announce(text: String, color: Color, hold := 0.0, kind := "") -> void:
+	if kind == "":
+		kind = announce_kind(text)
+	# A long line ("X UNLOCKED — replay any chapter at the new tier") splits at
+	# its dash: the loud part is the title, the rest the sub-line.
+	var title := text
+	var sub := ""
+	for sep in [" — ", " -- ", "  ("]:
+		var at := text.find(sep)
+		if at > 0:
+			title = text.substr(0, at).strip_edges()
+			sub = text.substr(at + (0 if sep == "  (" else sep.length())).strip_edges()
+			break
+	var stacked := _ann_stack
+	_ann_stack += 1
+	var plaque := Panel.new()
+	plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.05, 0.045, 0.04, 0.86)
+	sb.border_color = Color(UITheme.GOLD, 0.85)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(5)
+	sb.shadow_color = Color(0, 0, 0, 0.55)
+	sb.shadow_size = 10
+	plaque.add_theme_stylebox_override("panel", sb)
+	var h := ANN_H + (16.0 if sub != "" else 0.0)
+	plaque.size = Vector2(ANN_W, h)
+	plaque.position = Vector2(640.0 - ANN_W * 0.5, ANN_Y + stacked * ANN_STACK)
+	plaque.pivot_offset = plaque.size * 0.5
+	plaque.clip_contents = true
+	add_child(plaque)
+	# hairline rules top + bottom (the plaque's "engraving")
+	for ry in [6.0, h - 7.0]:
+		var rule := ColorRect.new()
+		rule.color = Color(UITheme.GOLD, 0.32)
+		rule.position = Vector2(ANN_W * 0.14, ry)
+		rule.size = Vector2(ANN_W * 0.72, 1)
+		rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		plaque.add_child(rule)
+	# icon glyph
+	var icon_name := String(ANN_ICONS.get(kind, ""))
+	var text_x := 22.0
+	if icon_name != "":
+		var icon := TextureRect.new()
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE   # before the texture (size clamp)
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture = Art.ui_icon(icon_name) if icon_name.begins_with("ui_") else Art.tex(icon_name)
+		icon.position = Vector2(18, (h - 30.0) * 0.5)
+		icon.size = Vector2(30, 30)
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		plaque.add_child(icon)
+		text_x = 60.0
+	# title: header face, caps, letter-spaced (FontVariation.spacing_glyph eases in)
+	var tl := Label.new()
+	tl.text = title.to_upper() if title.length() <= 40 else title
+	tl.position = Vector2(text_x, 10 if sub == "" else 7)
+	tl.size = Vector2(ANN_W - text_x - 18.0, 34)
+	tl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if icon_name == "" else HORIZONTAL_ALIGNMENT_LEFT
+	tl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	tl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var base: Font = UITheme.header_font()
+	var fv := FontVariation.new()
+	fv.base_font = base if base != null else ThemeDB.fallback_font
+	fv.spacing_glyph = ANN_SPACING_IN
+	tl.add_theme_font_override("font", fv)
+	tl.add_theme_font_size_override("font_size", 20 if title.length() <= 28 else 16)
+	tl.add_theme_color_override("font_color", color.lightened(0.15))
+	tl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	tl.add_theme_constant_override("outline_size", 3)
+	plaque.add_child(tl)
+	if sub != "":
+		var sl := Label.new()
+		sl.text = sub
+		sl.position = Vector2(text_x, 40)
+		sl.size = Vector2(ANN_W - text_x - 18.0, 22)
+		sl.horizontal_alignment = tl.horizontal_alignment
+		sl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		sl.add_theme_font_size_override("font_size", 13)
+		sl.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9))
+		plaque.add_child(sl)
+	# light sweep: a soft pale band that crosses the plaque once
+	var sweep := TextureRect.new()
+	sweep.texture = Art.tex("softshadow")
+	sweep.rotation = -PI / 2.0
+	sweep.position = Vector2(-40, h)
+	sweep.scale = Vector2(h / 8.0, 90.0 / 32.0)
+	sweep.modulate = Color(1.0, 0.95, 0.8, 0.22)
+	sweep.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plaque.add_child(sweep)
+	# sparkle puff at the icon / left edge
+	var puff := CPUParticles2D.new()
+	puff.position = Vector2(text_x * 0.6, h * 0.5)
+	puff.amount = 10
+	puff.one_shot = true
+	puff.explosiveness = 0.9
+	puff.lifetime = 0.7
+	puff.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	puff.emission_sphere_radius = 14.0
+	puff.direction = Vector2(0, -1)
+	puff.spread = 70.0
+	puff.gravity = Vector2(0, 24)
+	puff.initial_velocity_min = 22.0
+	puff.initial_velocity_max = 58.0
+	puff.scale_amount_min = 0.25
+	puff.scale_amount_max = 0.5
+	puff.texture = Art.tex("spark")
+	puff.color = Color(1.0, 0.9, 0.6, 0.95)
+	plaque.add_child(puff)
+	puff.emitting = true
+	# motion: pop → settle, spacing eases in, sweep crosses, hold, drift out
+	plaque.modulate.a = 0.0
+	plaque.scale = Vector2(1.06, 1.06)
+	var tw := create_tween()
+	tw.tween_property(plaque, "modulate:a", 1.0, 0.18)
+	tw.parallel().tween_property(plaque, "scale", Vector2.ONE, 0.42) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(fv, "spacing_glyph", ANN_SPACING_REST, 0.55) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(sweep, "position:x", ANN_W + 60.0, 0.7) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT).set_delay(0.08)
+	tw.tween_interval(maxf(hold, ANN_HOLD_MIN))
+	tw.tween_property(plaque, "modulate:a", 0.0, 0.5)
+	tw.parallel().tween_property(plaque, "position:y", plaque.position.y - 10.0, 0.5) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tw.tween_callback(func() -> void:
+		_ann_stack = maxi(0, _ann_stack - 1)
+		if is_instance_valid(plaque):
+			plaque.queue_free())
+	log_event(text, color, kind)
+
+
+# ---------------------------------------------------------- event log ---
+# The rolling feed (P7.A): the last few things that happened, as one line
+# each with a small icon chip, bottom-left above the controls hint, newest at
+# the bottom; every line fades after LOG_LIFE. Pickups ("+ Rusted Dagger"),
+# XP, gold, lore, quest steps — the "Personal: You got 92 EXP (+69)" feed of
+# the reference HUDs, in our voice.
+const LOG_X := 14.0
+const LOG_BOTTOM := 672.0       # the newest line's baseline (just above the hints)
+const LOG_LINE_H := 20.0
+const LOG_MAX := 5
+const LOG_LIFE := 6.5
+var _log_lines: Array = []      # Controls, oldest first
+
+
+func log_event(text: String, color: Color, kind := "") -> void:
+	if kind == "":
+		kind = announce_kind(text)
+	# Streams of the same currency ("+12 XP" per kill, "+3 gold" per coin)
+	# COALESCE into the newest line instead of flooding the feed: "+12 XP" →
+	# "+24 XP", its fade restarted.
+	var agg := _log_agg_key(text)
+	if agg != "" and not _log_lines.is_empty():
+		var last: Control = _log_lines[-1]
+		if is_instance_valid(last) and String(last.get_meta("agg_key", "")) == agg:
+			var total: int = int(last.get_meta("agg_total", 0)) + _log_agg_amount(text)
+			last.set_meta("agg_total", total)
+			var ll: Label = last.get_meta("label")
+			ll.text = "+%d %s" % [total, agg]
+			var old_tw: Tween = last.get_meta("tween")
+			if old_tw != null and old_tw.is_valid():
+				old_tw.kill()
+			last.modulate.a = 1.0
+			var tw2 := create_tween()
+			tw2.tween_interval(LOG_LIFE)
+			tw2.tween_property(last, "modulate:a", 0.0, 0.8)
+			tw2.tween_callback(func() -> void:
+				_log_lines.erase(last)
+				if is_instance_valid(last):
+					last.queue_free()
+				_layout_log())
+			last.set_meta("tween", tw2)
+			return
+	var row := Control.new()
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.size = Vector2(420, LOG_LINE_H)
+	if agg != "":
+		row.set_meta("agg_key", agg)
+		row.set_meta("agg_total", _log_agg_amount(text))
+	add_child(row)
+	var x := 0.0
+	var icon_name := String(ANN_ICONS.get(kind, ""))
+	if icon_name != "":
+		var ic := TextureRect.new()
+		# expand_mode BEFORE the texture: a TextureRect clamps its size up to the
+		# texture's size until IGNORE_SIZE is on (the 64 px coin drew at 64).
+		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ic.texture = Art.ui_icon(icon_name) if icon_name.begins_with("ui_") else Art.tex(icon_name)
+		ic.position = Vector2(0, 2)
+		ic.size = Vector2(16, 16)
+		ic.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(ic)
+		x = 22.0
+	var l := Label.new()
+	l.text = text.replace("\n", " ")
+	l.position = Vector2(x, 0)
+	l.size = Vector2(400, LOG_LINE_H)
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	l.add_theme_font_size_override("font_size", 13)
+	l.add_theme_color_override("font_color", color.lightened(0.1))
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	l.add_theme_constant_override("outline_size", 3)
+	row.add_child(l)
+	row.set_meta("label", l)
+	_log_lines.append(row)
+	while _log_lines.size() > LOG_MAX:
+		var old: Control = _log_lines.pop_front()
+		if is_instance_valid(old):
+			var otw: Tween = old.get_meta("tween", null)
+			if otw != null and otw.is_valid():
+				otw.kill()   # its own age-out must not fire on a freed row
+			old.queue_free()
+	_layout_log()
+	# slide in from the left a touch, then age out
+	row.modulate.a = 0.0
+	row.position.x = LOG_X - 14.0
+	var tw := create_tween()
+	tw.tween_property(row, "modulate:a", 1.0, 0.18)
+	tw.parallel().tween_property(row, "position:x", LOG_X, 0.25) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(LOG_LIFE)
+	tw.tween_property(row, "modulate:a", 0.0, 0.8)
+	tw.tween_callback(func() -> void:
+		_log_lines.erase(row)
+		if is_instance_valid(row):
+			row.queue_free()
+		_layout_log())
+	row.set_meta("tween", tw)
+
+
+## "+12 XP" / "+3 gold" → the currency word the line adds up in ("" = not a stream).
+static func _log_agg_key(text: String) -> String:
+	var t := text.strip_edges()
+	if not t.begins_with("+"):
+		return ""
+	var parts := t.substr(1).strip_edges().split(" ", false)
+	if parts.size() == 2 and parts[0].is_valid_int() and parts[1] in ["XP", "gold", "Renown", "RENOWN"]:
+		return parts[1]
+	return ""
+
+
+static func _log_agg_amount(text: String) -> int:
+	var parts := text.strip_edges().substr(1).strip_edges().split(" ", false)
+	return int(parts[0]) if parts.size() >= 1 and parts[0].is_valid_int() else 0
+
+
+func _layout_log() -> void:
+	var n := _log_lines.size()
+	for i in n:
+		var row: Control = _log_lines[i]
+		if is_instance_valid(row):
+			row.position.y = LOG_BOTTOM - LOG_LINE_H * (n - i)
+
+
 # ------------------------------------------------------------- helpers ---
 
 ## Mana prices can be fractional (Quick Shot costs 0.5) — int() would
@@ -1545,6 +1921,29 @@ void fragment() {
 	avatar_default_border.add_theme_stylebox_override("panel", border_style)
 	avatar_default_border.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	avatar_border_layer.add_child(avatar_default_border)
+	# P7.D: LEVEL BADGE on the ring — a small gold-rimmed disc at the portrait's
+	# lower-right with the level number (the reference HUDs' "31" on the ring).
+	# Pops on level-up (see _level_up_flourish / update_stats).
+	avatar_level_badge = Panel.new()
+	var lb_style := StyleBoxFlat.new()
+	lb_style.bg_color = Color(0.08, 0.06, 0.03, 0.98)
+	lb_style.border_color = Color(0.88, 0.70, 0.32, 1.0)
+	lb_style.set_border_width_all(2)
+	lb_style.set_corner_radius_all(11)
+	avatar_level_badge.add_theme_stylebox_override("panel", lb_style)
+	avatar_level_badge.position = Vector2(46, 46)
+	avatar_level_badge.size = Vector2(24, 22)
+	avatar_level_badge.pivot_offset = Vector2(12, 11)
+	avatar_level_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	avatar_root.add_child(avatar_level_badge)
+	avatar_level_label = Label.new()
+	avatar_level_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	avatar_level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	avatar_level_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	UITheme.world(avatar_level_label, 11, 0)
+	avatar_level_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
+	avatar_level_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	avatar_level_badge.add_child(avatar_level_label)
 
 
 ## Crop the current skin/class splash to its upper-center face. Splash layouts
@@ -1851,6 +2250,15 @@ func update_stats(p: Player) -> void:
 	# Current/max lives INSIDE each bar now (theme pass) — the text line
 	# under them keeps class, level and the skill-point nudge.
 	stats_label.text = "%s, Lv %d%s" % [identity, p.level, pts]
+	if avatar_level_label != null and p.level != _avatar_level_shown:
+		# P7.D: the ring badge tracks the level; a CHANGE (level-up) pops it.
+		var grew: bool = _avatar_level_shown > 0 and p.level > _avatar_level_shown
+		_avatar_level_shown = p.level
+		avatar_level_label.text = str(p.level)
+		if grew:
+			avatar_level_badge.scale = Vector2(1.5, 1.5)
+			create_tween().tween_property(avatar_level_badge, "scale", Vector2.ONE, 0.45) \
+				.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	hp_text.text = "%d / %d" % [int(p.hp), int(p.max_hp)]
 	if Classes.CLASSES[p.cls].get("manaless", false):
 		# Manaless classes (assassin, round 31): no MP number, no blue bar.
@@ -2827,6 +3235,9 @@ func show_boss_bar(bname: String) -> void:
 	boss_box.visible = true
 	mob_box.visible = false
 	rival_box.visible = false
+	_dress_boss_badge(bname)
+	boss_level.text = ""
+	boss_hp_num.text = ""
 	# Spawn-announcement callers pass a NAME, not a node: drop the tracked
 	# unit so the next track_target_bar frame re-dresses from scratch
 	# (track's own boss path re-assigns right after this call).
@@ -2860,6 +3271,10 @@ func track_target_bar(unit: CharacterBody2D) -> void:
 	var frac: float = clampf(float(unit.hp) / maxf(1.0, float(unit.max_hp)), 0.0, 1.0)
 	if unit is Boss:
 		update_boss_bar(frac)
+		# P7.D: level under the badge, numeric HP at the bar's right end
+		var lv_v: Variant = unit.get("level")
+		boss_level.text = ("Lv %d" % int(lv_v)) if lv_v != null else ""
+		boss_hp_num.text = "%s / %s" % [game.fmt_meter(maxf(0.0, float(unit.hp))), game.fmt_meter(float(unit.max_hp))]
 	elif unit is Player:
 		_set_fill(rival_fill, frac)
 		rival_name.text = "%s — %d%%" % [_target_bar_label, int(ceil(frac * 100))]
@@ -2987,6 +3402,34 @@ func update_boss_bar(fraction: float) -> void:
 	boss_name.text = "%s — %d%%" % [boss_base_name, int(ceil(clampf(fraction, 0.0, 1.0) * 100))]
 
 
+## P7.D: the boss's face in the bar's ring — the same upper-centre splash crop
+## the hero portrait uses (AVATAR_* rules), from the boss's splash when it
+## ships; hidden when the boss has no splash.
+func _dress_boss_badge(bname: String) -> void:
+	var art_key := _splash_for(bname)
+	if art_key == _boss_badge_key:
+		return
+	_boss_badge_key = art_key
+	if art_key == "" or not Art.has_sprite(art_key):
+		boss_badge_root.visible = false
+		return
+	var source: Texture2D = Art.tex(art_key)
+	if source == null:
+		boss_badge_root.visible = false
+		return
+	var source_size := Vector2(source.get_width(), source.get_height())
+	var side := minf(source_size.x, source_size.y) * AVATAR_CROP_SCALE
+	var crop_size := Vector2(side / source_size.x, side / source_size.y)
+	var focus: Vector2 = AVATAR_FOCUS.get(art_key, AVATAR_FACE_DEFAULT)
+	var crop_origin := focus - crop_size * AVATAR_FACE_ANCHOR
+	crop_origin.x = clampf(crop_origin.x, 0.0, 1.0 - crop_size.x)
+	crop_origin.y = clampf(crop_origin.y, 0.0, 1.0 - crop_size.y)
+	(boss_badge.material as ShaderMaterial).set_shader_parameter(
+		"crop_uv", Vector4(crop_origin.x, crop_origin.y, crop_size.x, crop_size.y))
+	boss_badge.texture = source
+	boss_badge_root.visible = true
+
+
 ## Hides ALL target-bar dresses (the name predates the mob/rival variants;
 ## every existing kill/cleanup call site means "drop the top bar").
 func hide_boss_bar() -> void:
@@ -3018,7 +3461,9 @@ func loot_banner(item: Dictionary, bonus_gold: int) -> void:
 	var lines: int = l.text.count("\n") + 1
 	l.size = Vector2(380, lines * 21.0 + 2.0)
 	box.add_child(l)
-	banner_y = 110.0 if banner_y > 260.0 else banner_y + maxf(52.0, lines * 21.0 + 10.0)
+	# Banners stack from under the minimap (2026-08-19: they used to start at
+	# y 110 and lie across the minimap + the boss bar zone).
+	banner_y = LOOT_BANNER_Y if banner_y > 440.0 else banner_y + maxf(52.0, lines * 21.0 + 10.0)
 	var tween := box.create_tween()
 	tween.tween_interval(3.2)
 	tween.tween_property(box, "modulate:a", 0.0, 0.6)
@@ -3086,6 +3531,19 @@ func flash_title(text: String, sub := "", hold := 1.6, overlay_fade := true) -> 
 	tween.parallel().tween_property(subtitle_label, "modulate:a", 0.0, 0.6)
 	tween.parallel().tween_property(subtitle_label, "position:y", SUBTITLE_REST_Y - TITLE_RISE * 0.3, 0.6) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+
+
+## Gold counter tick (P7.B): the gold line pops a hair and flashes brighter the
+## instant a coin is banked, so the HUD answers the pickup.
+func pulse_gold() -> void:
+	if gold_label == null:
+		return
+	gold_label.pivot_offset = Vector2(0, gold_label.size.y * 0.5)
+	var tw := create_tween()
+	tw.tween_property(gold_label, "scale", Vector2(1.12, 1.12), 0.06)
+	tw.parallel().tween_property(gold_label, "modulate", Color(1.25, 1.18, 0.9), 0.06)
+	tw.tween_property(gold_label, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(gold_label, "modulate", Color.WHITE, 0.22)
 
 
 ## Room-enter DIP (2026-08-19): a revisited room used to jump-cut in — the
@@ -3729,11 +4187,32 @@ func _fit_dialogue_box() -> float:
 	return frame_top
 
 
+## Typewriter reveal (P7.A kin, 2026-08-19): a line WRITES itself at
+## Balance.DIALOG_TYPE_CPS characters/s instead of popping whole; the first
+## confirm press completes it, the next advances. Never headless (tests read
+## the whole line at once); AUTO still advances on its dwell.
+var _type_tw: Tween = null
+
+func _reveal_complete() -> bool:
+	return text_label.visible_ratio >= 1.0
+
+func _finish_reveal() -> void:
+	if _type_tw != null and _type_tw.is_valid():
+		_type_tw.kill()
+	_type_tw = null
+	text_label.visible_ratio = 1.0
+
 func _show_line() -> void:
 	var line: Array = dialogue_lines[dialogue_index]
 	speaker_label.text = line[0]
 	text_label.text = game.touchify(line[1])
 	_fit_dialogue_box()
+	_finish_reveal()
+	if Balance.DIALOG_TYPE_CPS > 0.0 and DisplayServer.get_name() != "headless":
+		text_label.visible_ratio = 0.0
+		_type_tw = create_tween()
+		_type_tw.tween_property(text_label, "visible_ratio", 1.0,
+			maxf(0.05, float(text_label.text.length()) / Balance.DIALOG_TYPE_CPS))
 	_set_splash(String(line[0]))
 	_log_push(String(line[0]), text_label.text)
 	_auto_t = 0.0
@@ -3750,6 +4229,7 @@ func _show_line() -> void:
 func _advance_dialogue() -> void:
 	dialogue_index += 1
 	if dialogue_index >= dialogue_lines.size():
+		_finish_reveal()
 		dialogue_active = false
 		dialogue_box.visible = false
 		_reset_dialogue_chrome()
@@ -4100,7 +4580,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		pressed_confirm = true
 
 	if pressed_confirm and dialogue_active and not (log_panel != null and log_panel.visible):
-		_advance_dialogue()
+		if not _reveal_complete():
+			_finish_reveal()       # first press: the line completes; the next advances
+		else:
+			_advance_dialogue()
 		get_viewport().set_input_as_handled()
 
 

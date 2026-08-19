@@ -1643,6 +1643,17 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 		tw.tween_callback(func() -> void: spr.frame = (spr.frame + 1) % maxi(1, spr.hframes))
 		tw.tween_interval(0.45)
 	npc.add_child(spr)
+	# Breath bob (life pass 2026-08-19): the roster bodies are single frames, so
+	# a villager used to stand frozen beside a breathing hero. A 1 px rise and
+	# settle with a random rest between breaths — a crowd never inhales together.
+	if sprite_name != "mill" and Balance.NPC_BREATH_PX > 0.0 and DisplayServer.get_name() != "headless":
+		var base_y := spr.position.y
+		var bt := spr.create_tween().set_loops()
+		bt.tween_interval(randf_range(0.2, 1.4))
+		bt.tween_property(spr, "position:y", base_y - Balance.NPC_BREATH_PX, 0.62) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		bt.tween_property(spr, "position:y", base_y, 0.74) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	if sprite_name == "mill":
 		# A building, not a person (2026-08-18): the contact shadow moves to
 		# its base and widens to the footprint instead of a person's disc.
@@ -1940,6 +1951,17 @@ func _spawn_scenery(zi: int) -> void:
 		if hz["zone"] == zi:
 			reserved.append({"pos": (hz["pos"] as Vector2) - origin,
 				"radius": float(hz["radius"]) + 26.0})
+	# Corner BITES (P7.C) are solid blocks: cover each with a run of reservation
+	# circles (radius = half its height + a prop's own reach) so nothing spawns
+	# inside or against it.
+	for n in room_notches(zi):
+		var nr: Rect2 = n
+		var rad := nr.size.y * 0.5 + 44.0
+		var nx := nr.position.x + nr.size.y * 0.5
+		while nx <= nr.end.x + 1.0:
+			reserved.append({"pos": Vector2(nx, nr.position.y + nr.size.y * 0.5) - origin, "radius": rad})
+			nx += nr.size.y * 0.5
+		reserved.append({"pos": Vector2(nr.end.x - nr.size.y * 0.5, nr.position.y + nr.size.y * 0.5) - origin, "radius": rad})
 
 	# Connected city-edge architecture gives the capital a skyline without
 	# pretending that every background window is another shop. Backdrops sit
@@ -2504,6 +2526,51 @@ func _add_obstacle(sprite_name: String, pos: Vector2, visual_variation := 1.0) -
 	spr.set_meta("occlusion_sort_y", pos.y)
 	spr.set_meta("occlusion_radius", _visual_size(spr).length() * visual_scale * 0.5)
 	spr.add_to_group("structure_occluders")
+	# CAST SHADOW (depth pass 2026-08-19): a tall STATIC prop throws a skewed,
+	# squashed dark copy of itself to the lower-right (light from the top-left),
+	# anchored on its base line — the classic 2D illusion of a third dimension.
+	# Static Sprite2D only (animated props would need frame sync; buildings keep
+	# their faces); wind-swayed foliage casts a swaying shadow (same material).
+	if Balance.CAST_SHADOW_A > 0.0 and (spr is Sprite2D or spr is AnimatedSprite2D) \
+			and _visual_size(spr).y * visual_scale >= Balance.CAST_SHADOW_MIN_H:
+		var cast: Node2D
+		if spr is AnimatedSprite2D:
+			# an animated prop (sway strip): the shadow shares the frames and
+			# FOLLOWS the prop's frame (it never plays on its own)
+			var a := AnimatedSprite2D.new()
+			var src := spr as AnimatedSprite2D
+			a.sprite_frames = src.sprite_frames
+			a.animation = src.animation
+			a.frame = src.frame
+			a.flip_h = src.flip_h
+			src.frame_changed.connect(func() -> void:
+				if is_instance_valid(a):
+					a.frame = src.frame)
+			cast = a
+		else:
+			var s2 := Sprite2D.new()
+			s2.texture = (spr as Sprite2D).texture
+			s2.flip_h = (spr as Sprite2D).flip_h
+			cast = s2
+		cast.modulate = Color(0, 0, 0, Balance.CAST_SHADOW_A)
+		cast.rotation = spr.rotation        # the seeded lean
+		# The shadow LIES ON THE FLOOR: the copy is flipped (feet stay at the
+		# base, the head projects away) and sheared so the head falls to the
+		# lower-RIGHT (light from the top-left), then squashed flat.
+		var k := Balance.CAST_SHADOW_SKEW
+		cast.skew = -k
+		cast.scale = Vector2(spr.scale.x, -absf(spr.scale.y) * Balance.CAST_SHADOW_SQUASH)
+		if spr.material != null:
+			cast.material = spr.material   # a swaying tree sways its shadow
+		# With scale.y < 0 the art's feet sit at local -hs/2; under skew -k that
+		# point maps to (-hs/2·sin k, -hs/2·cos k) — place the node so it lands
+		# on the prop's base line, and the head lands hs·(sin k, cos k) away.
+		var hs := _visual_size(spr).y * absf(cast.scale.y)
+		var base := Vector2(spr.position.x, spr.position.y + _visual_size(spr).y * visual_scale * 0.5)
+		cast.position = base + Vector2(hs * 0.5 * sin(k), hs * 0.5 * cos(k))
+		cast.z_index = -1   # under every body at z 0, over the floor layers
+		body.add_child(cast)
+		body.move_child(cast, 0)
 	body.add_child(spr)
 	if sprite_name == "camp_bonfire":
 		_attach_fire_audio(body)  # an open camp fire crackles like a hearth
@@ -2882,7 +2949,9 @@ func _wall_relief(spr: Sprite2D, wall_tex: String, rect: Rect2, relief: String) 
 	for c in spr.get_children():
 		c.queue_free()
 	var k: float = spr.scale.x
-	if relief == "S":
+	# "S" = south face + floor shadow below, "E" = shadow east; a corner bite
+	# block (P7.C) can carry both ("SE": its south face AND its east shadow).
+	if relief.contains("S"):
 		var face := Sprite2D.new()   # the visible south face: the cap's tile in shade
 		_wall_dress(face, wall_tex, Vector2(rect.size.x, WALL_FACE_H), Vector2(0, 5.0 * k))
 		face.scale = Vector2.ONE       # inherits the cap's scale
@@ -2899,7 +2968,7 @@ func _wall_relief(spr: Sprite2D, wall_tex: String, rect: Rect2, relief: String) 
 		sh.modulate = Color(1, 1, 1, WALL_SHADOW_A)
 		sh.z_index = -3               # relative: over the floor, under everything else
 		spr.add_child(sh)
-	elif relief == "E":
+	if relief.contains("E"):
 		var sh := Sprite2D.new()      # a west wall's shadow across the floor to its east
 		sh.texture = Art.tex("softshadow")
 		sh.centered = false
@@ -2993,6 +3062,16 @@ func _build_room_walls(i: int) -> void:
 		else:
 			_wall(Rect2(x, r.position.y, TILE, r.size.y), wt, relief)
 	_cell_curtain(i, full, lt, rb, exits, gap, wt)
+	# Corner BITES (P7.C): solid blocks in the room's own wall material. The
+	# faces follow the light: a north-west block shows its south face and throws
+	# east ("SE"), north-east = south face, south-west = east shadow, south-east
+	# = cap only. Colliders + occluders ride _wall(); repaint-tracked.
+	for n in room_notches(i):
+		var nr: Rect2 = n
+		var west := nr.position.x <= r.position.x + 1.0
+		var north := nr.position.y <= r.position.y + 1.0
+		var relief := ("S" if north else "") + ("E" if west else "")
+		_wall(nr, wt, relief)
 	var wall_tint := Terrains.wall_tint_for(terrain_by_zone[i])
 	for wall_sprite in zone_wall_sprites[i]:
 		if is_instance_valid(wall_sprite):
@@ -3123,11 +3202,16 @@ func _wall_posts(i: int, r: Rect2, exits: Dictionary, gap: float, wt: String) ->
 	var clear := gap / 2.0 + CANOPY_DOOR_CLEAR
 	var cx := door_pos(i, "N").x   # door lanes sit on the CELL's centre lines
 	var cy := door_pos(i, "W").y
+	var notches: Array = room_notches(i)   # posts and corner blocks skip a bite's span
 	# north + south runs
 	for side in ["N", "S"]:
 		var x := r.position.x + CORNER_W + rng.randf_range(40.0, 120.0)
 		while x < r.end.x - CORNER_W - POST_W:
 			var in_door := exits.has(side) and absf(x + POST_W / 2.0 - cx) < clear
+			var py := r.position.y + 2.0 if side == "N" else r.end.y - 2.0
+			for n in notches:
+				if (n as Rect2).grow(POST_W).has_point(Vector2(x + POST_W / 2.0, py)):
+					in_door = true
 			if not in_door:
 				if side == "N":
 					_post(i, wt, Rect2(x, r.position.y, POST_W, TILE + POST_DROP), true)
@@ -3139,17 +3223,35 @@ func _wall_posts(i: int, r: Rect2, exits: Dictionary, gap: float, wt: String) ->
 		var y := r.position.y + CORNER_W + rng.randf_range(40.0, 120.0)
 		while y < r.end.y - CORNER_W - POST_W:
 			var in_door := exits.has(side) and absf(y + POST_W / 2.0 - cy) < clear
+			var px := r.position.x + 2.0 if side == "W" else r.end.x - 2.0
+			for n in notches:
+				if (n as Rect2).grow(POST_W).has_point(Vector2(px, y + POST_W / 2.0)):
+					in_door = true
 			if not in_door:
 				if side == "W":
 					_post(i, wt, Rect2(r.position.x, y, TILE + POST_DROP, POST_W), false)
 				else:
 					_post(i, wt, Rect2(r.end.x - TILE - POST_DROP, y, TILE + POST_DROP, POST_W), false)
 			y += POST_STEP + rng.randf_range(-48.0, 64.0)
-	# corner blocks (a heavier tower foot at each corner)
-	_post(i, wt, Rect2(r.position.x, r.position.y, CORNER_W, CORNER_W), true)
-	_post(i, wt, Rect2(r.end.x - CORNER_W, r.position.y, CORNER_W, CORNER_W), true)
-	_post(i, wt, Rect2(r.position.x, r.end.y - CORNER_W, CORNER_W, CORNER_W), false)
-	_post(i, wt, Rect2(r.end.x - CORNER_W, r.end.y - CORNER_W, CORNER_W, CORNER_W), false)
+	# corner blocks (a heavier tower foot at each corner) — a bitten corner is
+	# already a block; its foot moves to the bite's inner corner instead.
+	for spec in [[Vector2(r.position.x, r.position.y), true], [Vector2(r.end.x - CORNER_W, r.position.y), true],
+			[Vector2(r.position.x, r.end.y - CORNER_W), false], [Vector2(r.end.x - CORNER_W, r.end.y - CORNER_W), false]]:
+		var at: Vector2 = spec[0]
+		var bitten := false
+		for n in notches:
+			if (n as Rect2).grow(2.0).has_point(at + Vector2(CORNER_W, CORNER_W) * 0.5):
+				bitten = true
+		if not bitten:
+			_post(i, wt, Rect2(at, Vector2(CORNER_W, CORNER_W)), spec[1])
+	for n in notches:
+		var nr: Rect2 = n
+		var west := nr.position.x <= r.position.x + 1.0
+		var north := nr.position.y <= r.position.y + 1.0
+		# the bite's inner corner: where its two room-facing edges meet
+		var ix := nr.end.x - CORNER_W if west else nr.position.x
+		var iy := nr.end.y - CORNER_W if north else nr.position.y
+		_post(i, wt, Rect2(ix, iy, CORNER_W, CORNER_W), north)
 
 
 ## One post/corner block: the wall field as its cap (a touch darker), and on
@@ -3545,10 +3647,45 @@ func _update_barrier() -> void:
 	for j in range(idx, door_seals.size()):
 		door_seals[j]["body"].position = Vector2(-4000, -4000)
 
+## Low GROUND FOG (atmosphere pass 2026-08-19): misty terrains (ambient preset
+## "mist" — graveyard, bog, fen, the Choir ward) get one room-sized fog quad
+## over the floor layers and under the actors: drifting noise banks, faded at
+## the room's edges (shaders/ground_fog.gdshader). Rebuilt per room enter like
+## the particle layer; `Balance.GROUND_FOG_A` 0 = off. The eight mist PARTICLES
+## stay on top of it — they are the wisps, this is the floor the wisps rise from.
+static var _ground_fog_shader: Shader = null
+func _ground_fog(zi: int, terrain_id: String) -> void:
+	if is_instance_valid(ground_fog):
+		ground_fog.queue_free()
+	ground_fog = null
+	var akey := String(Terrains.get_terrain(terrain_id).get("ambient", ""))
+	if Balance.GROUND_FOG_A <= 0.0 or not Balance.GROUND_FOG_AMBIENTS.has(akey) or zi < 0:
+		return
+	if _ground_fog_shader == null:
+		_ground_fog_shader = load("res://shaders/ground_fog.gdshader")
+	var s := Sprite2D.new()
+	s.texture = Art.tex("white")
+	s.centered = false
+	s.position = rooms[zi]["origin"]
+	s.scale = Vector2(ROOM_W, ROOM_H) / 8.0   # white tex is 8x8 -> one room-sized quad
+	s.z_index = -6                             # over floor / decor / pools, under actors
+	var mat := ShaderMaterial.new()
+	mat.shader = _ground_fog_shader
+	mat.set_shader_parameter("noise_tex", Art.tex("noise"))
+	mat.set_shader_parameter("room_size", Vector2(ROOM_W, ROOM_H))
+	mat.set_shader_parameter("alpha", Balance.GROUND_FOG_A)
+	var tint: Color = Terrains.get_terrain(terrain_id).get("tint", Color(0.9, 0.92, 0.95))
+	mat.set_shader_parameter("tint", Color(0.86, 0.89, 0.92).lerp(tint, 0.35))
+	s.material = mat
+	world.add_child(s)
+	ground_fog = s
+
+
 ## Weather particles driven by the terrain's ambient preset.
 func _setup_ambient_fx(terrain_id: String) -> void:
 	if is_instance_valid(ambient_fx):
 		ambient_fx.queue_free()
+	_ground_fog(cur_room, terrain_id)
 	var spec: Dictionary = Terrains.AMBIENTS.get(
 		Terrains.get_terrain(terrain_id).get("ambient", "leaves_green"), {})
 	if spec.is_empty():
@@ -3790,6 +3927,16 @@ func _decide_river(zi: int) -> void:
 		pr.position.x + pr.size.x * fx_pos - wpx / 2.0, pr.position.y, wpx, pr.size.y)}
 
 
+## A pool may not sit on the river or inside a corner bite (grown by its reach).
+func _pool_blocked(zi: int, pos: Vector2) -> bool:
+	if rivers.has(zi) and (rivers[zi]["rect"] as Rect2).grow(20.0).has_point(pos):
+		return true
+	for n in room_notches(zi):
+		if (n as Rect2).grow(70.0).has_point(pos):
+			return true
+	return false
+
+
 ## (Re)roll a room's static hazard patches from its terrain spec.
 func _spawn_patches(zi: int) -> void:
 	for i in range(hazards.size() - 1, -1, -1):
@@ -3807,13 +3954,14 @@ func _spawn_patches(zi: int) -> void:
 		# Patch counts were tuned for the old strip; rooms are ~2.2x the area.
 		for i in int(ceil(float(spec["count"]) * 2.0)):
 			var pos := Vector2(rng.randf_range(pr.position.x, pr.end.x), rng.randf_range(pr.position.y, pr.end.y))
-			# A hazard pool on the water makes no sense — keep it on dry ground.
+			# A hazard pool on the water (or inside a corner bite) makes no sense —
+			# keep it on dry, open ground.
 			var htries := 0
-			while rivers.has(zi) and (rivers[zi]["rect"] as Rect2).grow(20.0).has_point(pos) and htries < 8:
+			while _pool_blocked(zi, pos) and htries < 8:
 				pos = Vector2(rng.randf_range(pr.position.x, pr.end.x), rng.randf_range(pr.position.y, pr.end.y))
 				htries += 1
-			if rivers.has(zi) and (rivers[zi]["rect"] as Rect2).grow(20.0).has_point(pos):
-				continue  # no dry spot found — skip this pool rather than flood it
+			if _pool_blocked(zi, pos):
+				continue  # no open spot found — skip this pool rather than flood it
 			var radius := rng.randf_range(spec["radius"][0], spec["radius"][1])
 			var drift := Vector2.ZERO
 			# Wandering spore clouds are OFF (owner 2026-08-18: pools "keep shifting

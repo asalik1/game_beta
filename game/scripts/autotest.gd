@@ -1016,6 +1016,8 @@ func _run_systems() -> void:
 	# 3d18c. Canopy-vs-front placement (owner 2026-08-19: stall drawn over an
 	# oak's crown) — no tree behind a building/landmark its crown overlaps.
 	_test_canopy_fronts()
+	# 3d18d. Corner bites (P7.C): lanes clear, spawns + scenery pushed out.
+	_test_corner_bites()
 
 	# 3d19. NG+ difficulty tiers (2026-07-24): offsets, band shift + the
 	# S-band ch12 table, run_tier gates, zero XP, unlock meta, tier PBs,
@@ -4964,6 +4966,47 @@ func _test_canopy_fronts() -> void:
 						zi, tr["prop"], str(tr["pos"]), str(fr["pos"]), str(tr["rect"]), str(fr["rect"])])
 	print("ok: canopy-vs-front — %d trees / %d fronts across %d rooms, no tree hides behind a building it overlaps" % [
 		trees_seen, fronts_seen, game.zone_count])
+
+
+## Corner BITES (P7.C): a bite never reaches a door lane, authored spawns and
+## NPCs are pushed out of it (room_pos), and the seeded scenery never stands in
+## one. Runs over every room of the live chapter.
+func _test_corner_bites() -> void:
+	var bitten_rooms := 0
+	var gap := float(Game.DOOR_TILES * Game.TILE)
+	for zi in game.zone_count:
+		var notches: Array = game.room_notches(zi)
+		if notches.is_empty():
+			continue
+		bitten_rooms += 1
+		var r: Rect2 = game.play_rect(zi)
+		var lane_x: float = game.door_pos(zi, "N").x
+		var lane_y: float = game.door_pos(zi, "W").y
+		for n in notches:
+			var nr: Rect2 = n
+			if not r.grow(1.0).encloses(nr):
+				return _fail("room %d: bite %s leaves the play rect %s" % [zi, str(nr), str(r)])
+			if nr.position.x < lane_x + gap / 2.0 and nr.end.x > lane_x - gap / 2.0 \
+					and (nr.position.y <= r.position.y + 1.0 or nr.end.y >= r.end.y - 1.0):
+				return _fail("room %d: bite %s sits on the N/S door lane (x %.0f)" % [zi, str(nr), lane_x])
+			if nr.position.y < lane_y + gap / 2.0 and nr.end.y > lane_y - gap / 2.0 \
+					and (nr.position.x <= r.position.x + 1.0 or nr.end.x >= r.end.x - 1.0):
+				return _fail("room %d: bite %s sits on the W/E door lane (y %.0f)" % [zi, str(nr), lane_y])
+		for spawn in game.zones[zi].get("enemies", []):
+			var p: Vector2 = game.room_pos(zi, spawn[1], spawn[2])
+			for n in notches:
+				if (n as Rect2).grow(20.0).has_point(p):
+					return _fail("room %d: authored spawn %s lands inside bite %s" % [zi, str(p), str(n)])
+		game._spawn_scenery(zi)
+		for node in game.zone_scenery.get(zi, []):
+			if not is_instance_valid(node) or not (node is Node2D) or node is Sprite2D:
+				continue   # decor sprites are non-colliding floor litter; bodies matter
+			if not (node.has_meta("prop") or node.has_meta("building") or node.has_meta("structure")):
+				continue
+			for n in notches:
+				if (n as Rect2).grow(4.0).has_point((node as Node2D).position):
+					return _fail("room %d: scenery %s stands inside bite %s" % [zi, str(node.get_meta("prop", node.get_meta("building", node.get_meta("structure", "")))), str(n)])
+	print("ok: corner bites — %d bitten room(s) of %d; bites clear the lanes, spawns and scenery" % [bitten_rooms, game.zone_count])
 
 
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------

@@ -69,6 +69,41 @@ const CAMERA_LOOKAHEAD_EASE := 3.0      # 1/s toward the target offset
 const CAMERA_COMBAT_ZOOM := 1.08
 const CAMERA_COMBAT_RANGE := 520.0
 const CAMERA_ZOOM_EASE := 2.2           # 1/s toward the target zoom
+# Readability + depth pass (2026-08-19 review, owner prompts: "sometimes it's a
+# little hard to distinguish the mobs from the detailed floor tiles", "shadows
+# to give the illusion of 3D", "make the world seem more lifelike"):
+#  CHAR_GROUND_AO  — a soft DARK disc (ambient-occlusion pool) under every hero
+#    and mob, wider than the contact blob: it quiets the busy floor right under
+#    the body so the silhouette reads by VALUE, with no outline (the house style
+#    has none). 0 = off. _W = disc width as a multiple of the body width.
+#  CAST_SHADOW_*   — tall static scatter props (trees, pillars, statues, cacti)
+#    throw a SKEWED, squashed dark copy of themselves to the lower-right (light
+#    from the top-left), anchored on their base — the classic 2D cast shadow.
+#    Alpha, lean (rad), vertical squash, and the rendered height a prop needs
+#    before it casts one. Animated props and buildings are left to their faces.
+#  FOOT_DUST_*     — running heroes/mobs kick a tiny puff of floor-coloured dust
+#    every PERIOD seconds; N chips, alpha A. 0 period = off.
+const CHAR_GROUND_AO := 0.30
+const CHAR_GROUND_AO_W := 1.7
+const CAST_SHADOW_A := 0.30
+const CAST_SHADOW_SKEW := 0.55
+const CAST_SHADOW_SQUASH := 0.45
+const CAST_SHADOW_MIN_H := 70.0
+const FOOT_DUST_PERIOD := 0.22
+const FOOT_DUST_N := 2
+const FOOT_DUST_A := 0.55
+#  GROUND_FOG_*   — misty terrains lay a drifting low-fog quad over the floor,
+#    under the actors (shaders/ground_fog.gdshader); alpha is the whole mood
+#    knob (banks on a second look, never a white sheet). Which ambient presets
+#    get it. 0 = off.
+const GROUND_FOG_A := 0.14
+const GROUND_FOG_AMBIENTS := ["mist"]
+#  NPC_BREATH_PX   — single-frame roster NPCs rise/settle this many px per
+#    breath (random rest between breaths). 0 = frozen villagers.
+const NPC_BREATH_PX := 1.0
+#  DIALOG_TYPE_CPS — dialogue lines WRITE themselves at this many characters a
+#    second (first confirm completes the line, the next advances). 0 = pop whole.
+const DIALOG_TYPE_CPS := 42.0
 # Room-enter dip (2026-08-19): a REVISITED room eases in from part-black
 # instead of jump-cutting (first visits keep the full fade + title card).
 # 0 alpha = off. Never on headless; never over a fade already in flight.
@@ -1649,6 +1684,11 @@ const CHEST_SCALE_16PX := 3.0
 const CHEST_HALO_ALPHA := 0.5
 # How far a chest's art is washed toward its grade colour (0 = raw art).
 const CHEST_GRADE_TINT := 0.3
+# The opening moment (P7.B, 2026-08-19): the opened box holds this long before
+# it fades (lid up, glow dying); each lid frame of an `<art>_open.png` strip
+# shows for FRAME_T.
+const CHEST_OPEN_HOLD := 2.4
+const CHEST_OPEN_FRAME_T := 0.07
 
 # River wading (terrain mechanic, Graphics & Ambience track): speed
 # multiplier in the water for player AND enemies; the bridge is dry.
@@ -2907,6 +2947,14 @@ const AUTHORED_ROOM_SCALE_MIN := 0.5
 # split. Bound: SMALL_ROOM_INSET × (1+ASYM) must leave the door lane inside
 # the play rect (420·1.6 = 672 < ROOM_W/2 - gap; 246·1.6 = 394 < ROOM_H/2 - gap).
 const ROOM_INSET_ASYM := 0.6
+# Corner BITES (P7.C, 2026-08-19): a combat room carves 0 / 1 / 2 corners away as
+# solid wall blocks (L- / T-shaped footprints). CHANCE = cumulative shares for
+# none / one / two; a bite spans MIN..MAX px (hashed per room) and always stops
+# LANE_CLEAR px short of a door lane's gap. Boss / safe / authored rooms: never.
+const ROOM_NOTCH_CHANCE := [0.4, 0.4, 0.2]
+const ROOM_NOTCH_MIN := Vector2(170.0, 120.0)
+const ROOM_NOTCH_MAX := Vector2(330.0, 230.0)
+const ROOM_NOTCH_LANE_CLEAR := 90.0
 
 # Scenery density (anti-litter pass 2026-07-12): a room's props were reading
 # as clutter — the graveyard's 8-kind roster and the forests' big canopies

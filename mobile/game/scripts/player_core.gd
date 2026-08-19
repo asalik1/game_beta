@@ -491,6 +491,7 @@ var theme_speed_time := 0.0
 var theme_speed_amt := 0.0
 var damp_time := 0.0     # Damp debuff: while > 0, move speed x Balance.DAMP_SLOW_MULT (river wading)
 var wind_fx_t := 0.0     # throttle for the faint speed-buff wind trail
+var _foot_dust_t := 0.0  # throttle for the running foot-dust puffs (life pass 2026-08-19)
 var elixir_time := 0.0   # Elixir of Might: +elixir_atk damage while > 0
 var elixir_atk := 0.0
 var goldrush_time := 0.0  # Gold Rush coin: greed surges while > 0 (run state, not saved)
@@ -1174,6 +1175,15 @@ func _ready() -> void:
 	cs.shape = shape
 	add_child(cs)
 
+	# Ground AO (readability pass 2026-08-19): the same soft dark pool the mobs
+	# stand in — the hero's feet read on any floor. Under the shadow.
+	if Balance.CHAR_GROUND_AO > 0.0:
+		var ao := Sprite2D.new()
+		ao.texture = Art.tex("glow")
+		ao.modulate = Color(0, 0, 0, Balance.CHAR_GROUND_AO)
+		ao.scale = Art.scale_for(ao.texture, 3.9 * Balance.CHAR_RENDER_SCALE) * Vector2(1.0, 0.5)   # ~106 px wide under an 88 px hero
+		ao.position = Vector2(0, 20)
+		add_child(ao)
 	var shadow := Sprite2D.new()
 	shadow.texture = Art.tex("shadow")
 	shadow.scale = Vector2(2, 2) * Balance.CHAR_RENDER_SCALE  # matches the enlarged body
