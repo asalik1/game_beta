@@ -3346,6 +3346,15 @@ func dialogue(lines: Array, on_done := Callable()) -> void:
 	dialogue_active = true
 	game.request_pause(true)
 	dialogue_box.visible = true
+	# P2.5: the box slides up a hair and fades in (pause-safe: dialogue pauses
+	# the tree). Never headless — the suite reads the box the same frame.
+	if DisplayServer.get_name() != "headless":
+		dialogue_box.position = Vector2(0, 14)
+		dialogue_box.modulate.a = 0.0
+		var tw := dialogue_box.create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+		tw.tween_property(dialogue_box, "position", Vector2.ZERO, 0.14) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.parallel().tween_property(dialogue_box, "modulate:a", 1.0, 0.12)
 	_show_line()
 
 

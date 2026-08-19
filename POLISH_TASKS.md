@@ -201,8 +201,9 @@ should work".
 - [x] **P2.4 Ready pulse** — the medallion ring + icon spring 1.14→1 the instant an ability
   comes back up (`_pulse_slot`), on top of the existing white ring flash. Tooltip fade: not
   done (engine tooltips).
-- [ ] **P2.5 Transitions** — room enter fade / title-card easing / dialogue slide: not done
-  (kept for the next pass; a room fade risks reading as a hitch on every door).
+- [~] **P2.5 Transitions** — dialogue box slides up + fades in (0.14 s, pause-safe, not
+  headless) — done 2026-08-19; room-enter fade / title-card easing not done (a room fade
+  risks reading as a hitch on every door).
 
 ### P3 — atmosphere layer (code + a few strips, ~1 day) (BUILT 2026-08-18 23:45)
 - [x] **P3.1 Per-terrain ambient particles** — the layer already existed (`Terrains.AMBIENTS`
@@ -223,13 +224,16 @@ should work".
 - [x] **P3.5 Vignette** — already true (`hud.vignette`, low-HP pulse rides it). No change.
 
 ### P4 — hero animation coverage (ART, the real cost)
-- [ ] **P4.1 4-frame idle loops** for the 6 heroes via the ImageGen ONE-ROW-OF-
-  FRAMES recipe (CLAUDE.md, the raider-walk fix): breath + weapon settle, per
-  facing (8-dir sets where the hero has them). Body height constant, one ground
-  line, `verify_art` clip-vs-idle gate. **PixelLab only if the owner authorizes.**
+- [x] **P4.1 Idle loops — ALREADY THERE (checked 2026-08-19 00:15).** All six heroes carry
+  4-5-frame breathing idles per facing (`<cls>_anim_<dir>.png`, frames measurably differ), and
+  18 of the 20 live skin idles animate (only two ARCHIVED archer skins are static). The round-1
+  "static idle" read came from the trailer frames, where the breath is subtle; the idle bob
+  (`IDLE_BREATH_PX`) now sits on top. Nothing to generate.
 - [ ] **P4.2 Turn/lean frames** on direction change (2 frames) and **anticipation
-  frames** on heavy swings/casts (1–2 frames before the swing frame).
-- [ ] **P4.3 Skins inherit** whatever P4.1 ships (skin change scope rule: per skin
+  frames** on heavy swings/casts (1–2 frames before the swing frame). Owner call on the
+  route: ImageGen one-row recipe (cheap, drift risk on PixelLab bodies) vs PixelLab
+  `animate_character` (needs explicit authorization).
+- [ ] **P4.3 Skins inherit** whatever P4.2 ships (skin change scope rule: per skin
   unless "all classes").
 
 ### P5 — room composition (code, medium)
@@ -249,7 +253,10 @@ should work".
 - [ ] **P6.1** the 8 flagged mob sheets + recenter sweep.
 - [ ] **P6.2** the 32px `pc_extra_mobs` bodies BEFORE any zone places them (today
   none is placed — checked 2026-08-18).
-- [ ] **P6.3** `villager` (32px) still cast in ch3/5/7 zones → roster body.
+- [x] **P6.3** `villager` (32px) still cast in ch3/5/7 zones AND the fallback dialogue portrait
+  for Sera / Bren / Carter / the mother / Ren / Osric → 256² roster body (village woman in a
+  faded blue shawl; `make_npc_briefs.py` "villager", `build_npcs.py`), installed 2026-08-19 00:40,
+  suite PASS.
 
 ### Not in this board
 Trailer v2 + ElevenLabs VO (owner's account, marketing lane); grid-rectangle

@@ -25,7 +25,7 @@ sys.path.insert(0, TOOLS_ART)
 import install_prop_hires as iph  # noqa: E402
 
 NPCS = ["npc_hunter", "npc_wanderer", "npc_villager_f", "npc_villager_m", "npc_bandit_tracker",
-        "npc_scholar_a", "npc_scholar_b", "npc_royal_archer", "npc_elder2"]
+        "npc_scholar_a", "npc_scholar_b", "npc_royal_archer", "npc_elder2", "villager"]
 CANVAS, BODY_H, FEET_Y = 256, 223, 238
 MILL_W = 384
 

@@ -26,6 +26,9 @@ NPCS = {
     "npc_scholar_b": ("a young SCHOLAR: a woman in her twenties in a plain dark-green robe with a leather satchel of books slung across the chest, ink-stained fingers, hair pinned up, small brass loupe on a cord. Mood: eager, precise.", "dark green wool, brown leather, brass"),
     "npc_royal_archer": ("a ROYAL ARCHER of the fallen crown: a woman soldier in a faded crimson-and-grey tabard over a leather jerkin, a longbow held upright at her side, a quiver at the hip, a steel skullcap, wrapped forearms, boots. Mood: disciplined, tired.", "faded crimson, grey, dark leather, dull steel"),
     "npc_elder2": ("a VILLAGE ELDER: an old man with a long white beard, a heavy dark-grey shawl over a brown wool robe, a gnarled walking staff, a leather cord with a small wooden token at the neck. Mood: grave, steady.", "dark grey, brown wool, ash-white beard"),
+    # The shared `villager` body (P6.3, 2026-08-19): still a 32px pack sprite; stands in for
+    # Widow Sera / the mother / village hotspots and is the fallback dialogue portrait.
+    "villager": ("a VILLAGE WOMAN of the fallen crown's countryside: forties, tired but composed, a plain grey-brown wool dress under a faded blue shawl pinned at the chest, a linen headscarf, sleeves rolled, work-worn hands folded at the waist, simple leather shoes. Mood: quiet, decent, wary.", "grey-brown wool, faded blue, linen"),
 }
 
 NPC_BRIEF = """Generate ONE production pixel-art NPC sprite for the existing dark-fantasy game Crownless.
