@@ -109,6 +109,11 @@ class Critter extends Node2D:
 		spr.scale = Vector2(sc, sc)
 		spr.modulate = tint
 		add_child(spr)
+		# Ground critters (flitting birds, butterflies, rats) cast a small figure
+		# too (owner flag 2026-08-19); soaring birds / glows / fog do not.
+		if mode == "flit" and game != null and game.has_method("cast_shadow_for") \
+				and DisplayServer.get_name() != "headless":
+			game.cast_shadow_for(self, spr, 0.8)
 		_ft = randf() * 8.0
 		_phase = randf() * TAU
 		match mode:

@@ -386,6 +386,13 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1,
 	if def_tint is Color:
 		base_mod = def_tint
 	sprite.modulate = base_mod
+	# CAST shadow (owner flag 2026-08-19): the figure on the floor, not just the
+	# contact ellipse — mirrors the sprite's strip/frame/flip each frame. Big
+	# bodies (bosses) cast a little lighter so a 400 px silhouette doesn't
+	# black out the arena floor. Never headless; net mirrors cast too (visual).
+	if game != null and DisplayServer.get_name() != "headless":
+		var big: bool = art_scale * render_mult >= 6.0
+		game.cast_shadow_for(self, sprite, 0.7 if big else 1.0)
 	add_child(sprite)
 
 	# Small HP bar above the head, shown once the monster is damaged.

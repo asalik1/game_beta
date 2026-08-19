@@ -184,8 +184,13 @@ func _open_moment() -> void:
 	# lid frames (optional art)
 	if body_sprite != null and Art.has_sprite(art_key + "_open"):
 		var strip: Texture2D = Art.tex(art_key + "_open")
-		var cell := float(strip.get_height())
-		var frames := maxi(1, int(round(strip.get_width() / maxf(1.0, cell))))
+		# The cell is the CLOSED art's width, not the strip's height: the painted
+		# chests are taller than wide (128 × ~150), so width/height rounded to 4
+		# cells of 160 px and the lid played half a chest at a time (owner flag
+		# 2026-08-19: "one of the chests looks cut off"). The closed sprite is
+		# exactly one cell of the same strip, so its width IS the cell.
+		var cell_w := float(body_sprite.texture.get_width()) if body_sprite.texture != null else float(strip.get_height())
+		var frames := maxi(1, int(round(strip.get_width() / maxf(1.0, cell_w))))
 		body_sprite.texture = strip
 		body_sprite.hframes = frames
 		body_sprite.frame = 0

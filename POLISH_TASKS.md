@@ -446,6 +446,37 @@ attack them (A → B → C → D → E → F → G); each lands by the same gate
   Hero-between-columns and the currency top bar were NOT done — the owner called the bag
   "pretty solid"; the Stats tab's paper-doll (P7.E) carries the hero + slots view instead.
 
+### P0.10 — play-flags round 4 (owner, 2026-08-19 16:20, on the review pack build)
+- [x] **Event log misaligned** — a line without a glyph ("+21 XP") started at the panel
+  edge while its neighbours were indented past their icons → the icon column is ALWAYS
+  reserved (`hud.log_event` text x 22 for every line).
+- [x] **"One of the chests looks cut off"** — `chest._open_moment` derived the cell count
+  as width ÷ height; the painted chests are taller than wide (128 × ~150) so a 5-cell
+  strip read as 4 cells of 160 px and the lid played half a chest. The cell is the CLOSED
+  art's width now (the closed sprite is one cell of the same strip).
+- [x] **Class-select medallions** — the VBox stretched the ring to the label's width (a
+  pill, the face in its left half) → `SIZE_SHRINK_CENTER` keeps it a 72 px circle and the
+  face fills it flush inside the border (64 px at 4,4).
+- [x] **Paper-doll model off-centre** — the hero stood at x 210 with the well columns at
+  18..62 and 236..280 → on the midline (149), and the BODY is centred (alpha centroid of
+  frame 0), not the padded cell (`PD_WELL_*` consts).
+- [x] **Shadows everywhere** — (a) every prop above `CAST_SHADOW_MIN_H` (70 → 26 px)
+  casts, and every non-building structure (landmarks / accents: statues, wells, fountains,
+  stalls, shrines, grove trees; `w` ≤ `CAST_SHADOW_STRUCT_MAX_W` 280, a def may opt out
+  with `"cast": false`) casts through the shared `_prop_cast_shadow` (animated bases
+  frame-synced); (b) LIVING bodies cast a real figure: `Game.CastShadow` (inner class in
+  game_base) mirrors its source Sprite2D every frame — texture, strip cell, frame, flip,
+  offset, scale, alpha — flipped, sheared to the lower-right and squashed on the feet
+  line; `cast_shadow_for(parent, sprite, strength)` is attached to the hero
+  (player_core), every Enemy/Boss (0.7 strength for big bodies), every `_make_npc`
+  person, and flitting critters (ambience.gd). The contact ellipse stays as the feet's
+  grounding. Cast copies carry meta `cast_shadow`; autotest's "exactly one animated
+  part" counts (fountains, capital fire landmarks) skip them. Never headless.
+- [x] **Warren Breaker walk** (owner: "no proper leg crossover") — v5 roll with a per-cell
+  foot-gap storyboard (wide → half → CLOSED/crossing → half, then mirrored with the
+  other leg in front; "frames 1/3/5/7 must have four different lower-body silhouettes")
+  installed at the idle's body height; v4 (same pose in every cell) archived.
+
 ### P8 — readability / depth / life (the owner's review prompts, 2026-08-19 07:00)
 - [x] **Mob readability vs detailed floors** — decision: NO outline (house style, §40);
   a soft dark GROUND-AO pool under every mob and the hero (`Balance.CHAR_GROUND_AO` 0.30,

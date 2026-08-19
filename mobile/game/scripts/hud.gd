@@ -1772,7 +1772,11 @@ func log_event(text: String, color: Color, kind := "") -> void:
 		row.set_meta("agg_key", agg)
 		row.set_meta("agg_total", _log_agg_amount(text))
 	add_child(row)
-	var x := 0.0
+	# The icon column is ALWAYS reserved (owner flag 2026-08-19: a "+21 XP" line
+	# with no glyph started at the panel edge while its neighbours were indented
+	# past their icons — the feed read misaligned). Every line's text starts at
+	# the same x; a line without a glyph just leaves the column empty.
+	var x := 22.0
 	var icon_name := String(ANN_ICONS.get(kind, ""))
 	if icon_name != "":
 		var ic := TextureRect.new()
@@ -1786,7 +1790,6 @@ func log_event(text: String, color: Color, kind := "") -> void:
 		ic.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row.add_child(ic)
-		x = 22.0
 	var l := Label.new()
 	l.text = text.replace("\n", " ")
 	l.position = Vector2(x, 0)

@@ -1642,6 +1642,10 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 		# direction during an interaction keeps the new idle looping correctly.
 		tw.tween_callback(func() -> void: spr.frame = (spr.frame + 1) % maxi(1, spr.hframes))
 		tw.tween_interval(0.45)
+	# People cast a figure on the floor like the hero and the mobs (owner flag
+	# 2026-08-19); the mill is a building (it keeps its footprint shadow).
+	if sprite_name != "mill" and DisplayServer.get_name() != "headless":
+		cast_shadow_for(npc, spr)
 	npc.add_child(spr)
 	# Breath bob (life pass 2026-08-19): the roster bodies are single frames, so
 	# a villager used to stand frozen beside a breathing hero. A 1 px rise and
@@ -2543,51 +2547,69 @@ func _add_obstacle(sprite_name: String, pos: Vector2, visual_variation := 1.0) -
 	# anchored on its base line — the classic 2D illusion of a third dimension.
 	# Static Sprite2D only (animated props would need frame sync; buildings keep
 	# their faces); wind-swayed foliage casts a swaying shadow (same material).
-	if Balance.CAST_SHADOW_A > 0.0 and (spr is Sprite2D or spr is AnimatedSprite2D) \
-			and _visual_size(spr).y * visual_scale >= Balance.CAST_SHADOW_MIN_H:
-		var cast: Node2D
-		if spr is AnimatedSprite2D:
-			# an animated prop (sway strip): the shadow shares the frames and
-			# FOLLOWS the prop's frame (it never plays on its own)
-			var a := AnimatedSprite2D.new()
-			var src := spr as AnimatedSprite2D
-			a.sprite_frames = src.sprite_frames
-			a.animation = src.animation
-			a.frame = src.frame
-			a.flip_h = src.flip_h
-			src.frame_changed.connect(func() -> void:
-				if is_instance_valid(a):
-					a.frame = src.frame)
-			cast = a
-		else:
-			var s2 := Sprite2D.new()
-			s2.texture = (spr as Sprite2D).texture
-			s2.flip_h = (spr as Sprite2D).flip_h
-			cast = s2
-		cast.modulate = Color(0, 0, 0, Balance.CAST_SHADOW_A)
-		cast.rotation = spr.rotation        # the seeded lean
-		# The shadow LIES ON THE FLOOR: the copy is flipped (feet stay at the
-		# base, the head projects away) and sheared so the head falls to the
-		# lower-RIGHT (light from the top-left), then squashed flat.
-		var k := Balance.CAST_SHADOW_SKEW
-		cast.skew = -k
-		cast.scale = Vector2(spr.scale.x, -absf(spr.scale.y) * Balance.CAST_SHADOW_SQUASH)
-		if spr.material != null:
-			cast.material = spr.material   # a swaying tree sways its shadow
-		# With scale.y < 0 the art's feet sit at local -hs/2; under skew -k that
-		# point maps to (-hs/2·sin k, -hs/2·cos k) — place the node so it lands
-		# on the prop's base line, and the head lands hs·(sin k, cos k) away.
-		var hs := _visual_size(spr).y * absf(cast.scale.y)
-		var base := Vector2(spr.position.x, spr.position.y + _visual_size(spr).y * visual_scale * 0.5)
-		cast.position = base + Vector2(hs * 0.5 * sin(k), hs * 0.5 * cos(k))
-		cast.z_index = -1   # under every body at z 0, over the floor layers
-		body.add_child(cast)
-		body.move_child(cast, 0)
+	_prop_cast_shadow(body, spr)
 	body.add_child(spr)
 	if sprite_name == "camp_bonfire":
 		_attach_fire_audio(body)  # an open camp fire crackles like a hearth
 	world.add_child(body)
 	return body
+
+
+## CAST SHADOW for a STATIC prop / structure sprite (depth pass 2026-08-19; owner
+## flag the same day: "some props / accents / landmarks don't cast while others
+## do" — now every prop and every non-building structure above
+## CAST_SHADOW_MIN_H casts). The copy is flipped (feet stay on the base line,
+## the head projects away), sheared so the head falls to the lower-RIGHT (light
+## from the top-left), squashed flat, drawn under the body. An animated sprite
+## (sway / glow strip) shares its frames and FOLLOWS the prop's frame; a
+## wind-swayed prop sways its shadow (same material). `base_y_override` is the
+## body-local y of the art's bottom when the caller knows it (structures' +12
+## grounding line); else the sprite's own bottom.
+func _prop_cast_shadow(body: Node2D, spr: Node2D, base_y_override := NAN) -> void:
+	if Balance.CAST_SHADOW_A <= 0.0 or not (spr is Sprite2D or spr is AnimatedSprite2D):
+		return
+	var vsz: Vector2 = _visual_size(spr)
+	var vscale: float = absf(spr.scale.y)
+	if vsz.y * vscale < Balance.CAST_SHADOW_MIN_H:
+		return
+	var cast: Node2D
+	if spr is AnimatedSprite2D:
+		var a := AnimatedSprite2D.new()
+		var src := spr as AnimatedSprite2D
+		a.sprite_frames = src.sprite_frames
+		a.animation = src.animation
+		a.frame = src.frame
+		a.flip_h = src.flip_h
+		src.frame_changed.connect(func() -> void:
+			if is_instance_valid(a):
+				a.frame = src.frame)
+		cast = a
+	else:
+		var s2 := Sprite2D.new()
+		s2.texture = (spr as Sprite2D).texture
+		s2.flip_h = (spr as Sprite2D).flip_h
+		s2.hframes = (spr as Sprite2D).hframes
+		s2.vframes = (spr as Sprite2D).vframes
+		s2.frame = (spr as Sprite2D).frame
+		cast = s2
+	cast.modulate = Color(0, 0, 0, Balance.CAST_SHADOW_A)
+	cast.rotation = spr.rotation        # the seeded lean
+	var k := Balance.CAST_SHADOW_SKEW
+	cast.skew = -k
+	cast.scale = Vector2(spr.scale.x, -vscale * Balance.CAST_SHADOW_SQUASH)
+	if spr.material != null:
+		cast.material = spr.material   # a swaying tree sways its shadow
+	# With scale.y < 0 the art's feet sit at local -hs/2; under skew -k that
+	# point maps to (-hs/2·sin k, -hs/2·cos k) — place the node so it lands
+	# on the base line, and the head lands hs·(sin k, cos k) away.
+	var hs := vsz.y * absf(cast.scale.y)
+	var base_y: float = base_y_override if not is_nan(base_y_override) else spr.position.y + vsz.y * vscale * 0.5
+	var base := Vector2(spr.position.x, base_y)
+	cast.position = base + Vector2(hs * 0.5 * sin(k), hs * 0.5 * cos(k))
+	cast.z_index = -1   # under every body at z 0, over the floor layers
+	cast.set_meta("cast_shadow", true)   # autotest's "one animated part" counts skip it
+	body.add_child(cast)
+	body.move_child(cast, 0)
 
 
 ## Seeded micro-variation supplements real silhouette families: mirror, a
@@ -2809,6 +2831,12 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 	base_spr.set_meta("occlusion_sort_y", pos.y)
 	base_spr.set_meta("occlusion_radius", Vector2(bw, bh).length() * 0.5)
 	base_spr.add_to_group("structure_occluders")
+	# Landmarks / accents cast too (owner flag 2026-08-19) — statues, wells,
+	# fountains, stalls, shrines, the grove trees. Buildings don't: anything wider
+	# than CAST_SHADOW_STRUCT_MAX_W (halls, gates, the arcade) keeps its wall
+	# faces, and a def can opt out with "cast": false.
+	if def.get("cast", true) and float(def.get("w", 180.0)) <= Balance.CAST_SHADOW_STRUCT_MAX_W:
+		_prop_cast_shadow(body, base_spr, 12.0)
 	body.add_child(base_spr)
 	var target_w: float = float(def.get("w", 180.0))
 

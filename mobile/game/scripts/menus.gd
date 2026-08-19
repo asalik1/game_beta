@@ -1073,6 +1073,11 @@ func _cs_medallion(id: String, num: int) -> Control:
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	var ring := Panel.new()
 	ring.custom_minimum_size = Vector2(72, 72)
+	# A CIRCLE, not a stadium: the VBox used to stretch the ring to the label's
+	# 120 px width, so the 36 px corner radius drew a pill with the 60 px face
+	# sitting in its left half (owner flag 2026-08-19). Shrink-centre keeps it
+	# 72×72 and the face fills it flush inside the border.
+	ring.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	var rs := StyleBoxFlat.new()
 	rs.bg_color = Color(0.03, 0.03, 0.045, 0.98)
 	rs.border_color = Color(UITheme.BRONZE, 0.9)
@@ -1087,8 +1092,8 @@ func _cs_medallion(id: String, num: int) -> Control:
 	ring.mouse_exited.connect(func() -> void: _cs_ring_style(id, _cs_id == id, false))
 	col.add_child(ring)
 	var face := TextureRect.new()
-	face.position = Vector2(6, 6)
-	face.size = Vector2(60, 60)
+	face.position = Vector2(4, 4)
+	face.size = Vector2(64, 64)
 	face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	face.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -2668,6 +2673,9 @@ const PD_H := 176.0
 const PD_MODEL_H := 150.0
 const PD_LEFT := ["weapon", "helmet", "armor"]
 const PD_RIGHT := ["gloves", "pants", "boots", "charm"]
+const PD_WELL_W := 44.0
+const PD_WELL_LEFT_X := 18.0
+const PD_WELL_RIGHT_X := 236.0
 func _paper_doll(vbox: VBoxContainer, p: Player) -> void:
 	var band := Control.new()
 	band.custom_minimum_size = Vector2(0, PD_H)
@@ -2685,11 +2693,15 @@ func _paper_doll(vbox: VBoxContainer, p: Player) -> void:
 	ssb.set_corner_radius_all(10)
 	stage.add_theme_stylebox_override("panel", ssb)
 	band.add_child(stage)
+	# The model stands on the MIDLINE between the two well columns (left wells
+	# 18..62, right wells 236..280 → 149); it used to sit at 210, visibly right
+	# of centre (owner flag 2026-08-19).
+	var model_x: float = (PD_WELL_LEFT_X + PD_WELL_W + PD_WELL_RIGHT_X) * 0.5
 	var glow := Sprite2D.new()
 	glow.texture = Art.tex("glow")
 	glow.modulate = Color(0.9, 0.8, 0.55, 0.22)
 	glow.scale = Vector2(1.9, 0.7)
-	glow.position = Vector2(210, PD_H - 22)
+	glow.position = Vector2(model_x, PD_H - 22)
 	stage.add_child(glow)
 	# The hero's actual art: the equipped skin's body when one is on, else the class body.
 	var art_name: String = Classes.CLASSES[p.cls]["sprite"]
@@ -2716,7 +2728,18 @@ func _paper_doll(vbox: VBoxContainer, p: Player) -> void:
 		model.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		var s := minf(2.2, PD_MODEL_H / maxf(1.0, fsize.y))
 		model.scale = Vector2(s, s)
-		model.position = Vector2(210, PD_H - 30.0 - fsize.y * s * 0.5)
+		# Centre the BODY, not the cell: hero frames carry side padding, so the
+		# alpha centroid of frame 0 is the x that must land on the midline.
+		var body_dx := 0.0
+		var f0 := AtlasTexture.new()
+		f0.atlas = tex
+		f0.region = Rect2(0, 0, fsize.x, fsize.y)
+		var img0: Image = f0.get_image()
+		if img0 != null:
+			var r0 := img0.get_used_rect()
+			if r0.size.x > 0:
+				body_dx = (r0.position.x + r0.size.x * 0.5) - fsize.x * 0.5
+		model.position = Vector2(model_x - body_dx * s, PD_H - 30.0 - fsize.y * s * 0.5)
 		stage.add_child(model)
 		model.play("idle")
 	# identity column right of the wells
@@ -2784,7 +2807,7 @@ func _paper_doll(vbox: VBoxContainer, p: Player) -> void:
 		cl.custom_minimum_size = Vector2(104, 0)
 		_ignore_mouse_recursive(col)
 	# the seven wells: three left of the body, four right (reference layout)
-	var wells := {"left": Vector2(18, 16), "right": Vector2(236, 10)}
+	var wells := {"left": Vector2(PD_WELL_LEFT_X, 16), "right": Vector2(PD_WELL_RIGHT_X, 10)}
 	for side in ["left", "right"]:
 		var slots: Array = PD_LEFT if side == "left" else PD_RIGHT
 		var origin: Vector2 = wells[side]

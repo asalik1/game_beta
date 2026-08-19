@@ -1199,6 +1199,10 @@ func _ready() -> void:
 	sprite = Sprite2D.new()
 	_apply_class_sprite()
 	sprite.flip_h = face_left  # start facing right regardless of art
+	# The hero's CAST shadow (figure on the floor, lower-right) — added BEFORE
+	# the sprite so it draws under it; it mirrors the sprite every frame.
+	if game != null and DisplayServer.get_name() != "headless":
+		game.cast_shadow_for(self, sprite)
 	add_child(sprite)
 	_occlusion_outline_mat = ShaderMaterial.new()
 	_occlusion_outline_mat.shader = load("res://shaders/occluded_outline.gdshader")

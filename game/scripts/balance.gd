@@ -80,7 +80,9 @@ const CAMERA_ZOOM_EASE := 2.2           # 1/s toward the target zoom
 #    throw a SKEWED, squashed dark copy of themselves to the lower-right (light
 #    from the top-left), anchored on their base — the classic 2D cast shadow.
 #    Alpha, lean (rad), vertical squash, and the rendered height a prop needs
-#    before it casts one. Animated props and buildings are left to their faces.
+#    before it casts one (2026-08-19 owner pass: EVERY prop above MIN_H, every
+#    structure up to STRUCT_MAX_W wide, and every living body — hero, mobs,
+#    bosses, NPCs, critters — casts; only buildings keep just their faces).
 #  FOOT_DUST_*     — running heroes/mobs kick a tiny puff of floor-coloured dust
 #    every PERIOD seconds; N chips, alpha A. 0 period = off.
 const CHAR_GROUND_AO := 0.30
@@ -88,7 +90,8 @@ const CHAR_GROUND_AO_W := 1.7
 const CAST_SHADOW_A := 0.30
 const CAST_SHADOW_SKEW := 0.55
 const CAST_SHADOW_SQUASH := 0.45
-const CAST_SHADOW_MIN_H := 70.0
+const CAST_SHADOW_MIN_H := 26.0
+const CAST_SHADOW_STRUCT_MAX_W := 280.0
 const FOOT_DUST_PERIOD := 0.22
 const FOOT_DUST_N := 2
 const FOOT_DUST_A := 0.55

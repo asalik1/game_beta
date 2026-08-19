@@ -3509,6 +3509,75 @@ func foot_dust(pos: Vector2) -> void:
 	get_tree().create_timer(0.6).timeout.connect(p.queue_free)
 
 
+## CAST SHADOW for a LIVING body (owner flag 2026-08-19: "npcs / characters /
+## mobs / bosses should also cast a shadow — the circle under the feet is
+## lazy"). A Sprite2D that MIRRORS its source sprite every frame (texture,
+## strip cell, frame, flip, offset, scale, alpha) and draws it flipped,
+## sheared toward the lower-right and squashed flat, anchored on the source's
+## feet line — the same light as the props' cast shadows (CAST_SHADOW_*). The
+## contact ellipse stays (it grounds the feet); this adds the figure.
+class CastShadow extends Sprite2D:
+	var src: Sprite2D = null
+	var alpha := 0.3
+	var strength := 1.0   # per-body multiplier (bosses / big bodies tone it down)
+
+	func _ready() -> void:
+		centered = true
+		z_index = -1
+		set_meta("cast_shadow", true)
+		set_process(true)
+		_sync()
+
+	func _process(_dt: float) -> void:
+		_sync()
+
+	func _sync() -> void:
+		if src == null or not is_instance_valid(src) or src.texture == null:
+			visible = false
+			return
+		visible = src.visible
+		if not visible:
+			return
+		texture = src.texture
+		hframes = src.hframes
+		vframes = src.vframes
+		frame = mini(src.frame, maxi(0, hframes * vframes - 1))
+		flip_h = src.flip_h
+		flip_v = src.flip_v
+		offset = src.offset
+		centered = src.centered
+		rotation = src.rotation
+		var k: float = Balance.CAST_SHADOW_SKEW
+		skew = -k
+		var sy: float = absf(src.scale.y) * Balance.CAST_SHADOW_SQUASH
+		scale = Vector2(src.scale.x, -sy)
+		var fh: float = float(src.texture.get_height()) / float(maxi(1, src.vframes))
+		var feet_y: float = src.position.y + (src.offset.y + (fh * 0.5 if src.centered else fh)) * absf(src.scale.y)
+		var d: float = (src.offset.y + (fh * 0.5 if src.centered else fh)) * sy
+		position = Vector2(src.position.x, feet_y) + Vector2(d * sin(k), d * cos(k))
+		modulate = Color(0, 0, 0, alpha * strength * src.modulate.a * src.self_modulate.a)
+		# never the source's material: the hero's occlusion-outline / a skin's
+		# hue shader would draw on the shadow (the shadow is the silhouette only)
+
+
+## Attach a CastShadow that follows `src` (a child of the same parent as src,
+## drawn under it). Returns null when cast shadows are off or headless.
+func cast_shadow_for(parent: Node, src: Sprite2D, strength := 1.0) -> Node2D:
+	if Balance.CAST_SHADOW_A <= 0.0 or src == null:
+		return null
+	var cs := CastShadow.new()
+	cs.src = src
+	cs.alpha = Balance.CAST_SHADOW_A
+	cs.strength = strength
+	parent.add_child(cs)
+	# under the source sprite: move right before it in the sibling order too,
+	# so two z 0 sprites never race on draw order
+	var idx := src.get_index()
+	if cs.get_parent() == src.get_parent() and idx > 0:
+		parent.move_child(cs, idx)
+	return cs
+
+
 ## REMAINS STAIN (life pass 2026-08-19): a kill leaves a soft dark blotch on
 ## the floor in the creature's own palette that fades over DEATH_STAIN_LIFE —
 ## the room remembers the fight for a while instead of every body poofing

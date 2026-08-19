@@ -4576,6 +4576,8 @@ func _test_asset_seams() -> void:
 		var fountain_motion := 0
 		var broad_lobes := 0
 		for child in fountain.get_children():
+			if child.has_meta("cast_shadow"):
+				continue   # the frame-synced cast shadow copy is not a motion overlay
 			if child is AnimatedSprite2D:
 				fountain_motion += 1
 			elif child is CollisionShape2D:
@@ -4658,6 +4660,8 @@ func _test_asset_seams() -> void:
 		var landmark := game._add_structure(structure_name, Vector2(-4800, -4800))
 		var animated_parts := 0
 		for child in landmark.get_children():
+			if child.has_meta("cast_shadow"):
+				continue   # the frame-synced cast shadow copy is not a nested part
 			if child is AnimatedSprite2D:
 				animated_parts += 1
 		if animated_parts != 1:
