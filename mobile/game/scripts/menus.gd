@@ -579,7 +579,8 @@ func open_confirm(msg: String, on_yes: Callable, on_cancel := Callable()) -> voi
 var settings_return := "pause"
 func open_settings(from := "pause") -> void:
 	settings_return = from
-	var vbox := _open("Settings", 700, 520, true)
+	# Touch mode adds the joystick rows; on desktop the 520 px panel was 40 % empty.
+	var vbox := _open("Settings", 700, 520 if game.touch_mode else 400, true)
 	current = "settings"
 	for spec in [["Music volume", "music"], ["Sound effects", "sfx"]]:
 		var key: String = spec[1]
@@ -4625,6 +4626,22 @@ func open_map() -> void:
 	bbg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	bbg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	board.add_child(bbg)
+	# Parchment mottle (polish 2026-08-19): the seamless value noise, tiled warm
+	# and faint, so the chart reads as a drawn map on vellum instead of a flat
+	# dark panel with grid lines.
+	var vellum := TextureRect.new()
+	vellum.texture = Art.tex("noise")
+	vellum.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vellum.offset_left = 2
+	vellum.offset_top = 2
+	vellum.offset_right = -2
+	vellum.offset_bottom = -2
+	vellum.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	vellum.stretch_mode = TextureRect.STRETCH_TILE
+	vellum.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	vellum.modulate = Color(0.95, 0.82, 0.55, 0.075)
+	vellum.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	board.add_child(vellum)
 	var brim := Panel.new()
 	var brsb := StyleBoxFlat.new()
 	brsb.bg_color = Color(0, 0, 0, 0)
