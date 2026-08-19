@@ -342,11 +342,14 @@ should work".
   (reuses the 08-08 repair builder's keying / gutter-safe extraction / torso-locked
   normalization; 192 cell, the old body share kept so on-screen size is unchanged; masters
   archived under `art_src/Custom/PcExtraMobs_2026-08-19/`, old sprites under `old/`).
-  Idle + walk + attack installed for six; Warren Breaker (`rat_warrior`) has its idle +
-  attack, its walk row came back twice without clean gutters (gait cells touching) — a
-  third roll as a labelled 2x4 grid is the one outstanding job (old 33 px walk stays until
-  then; the builder's `eight_subjects` path installs it). Contact sheet:
-  `UPSCALE_OWNER_REVIEW/14_pc_mobs_sheet.png`. OUT OF SCOPE on purpose: the salvaged
+  Idle + walk + attack installed for all seven (14:58). Warren Breaker (`rat_warrior`) took
+  four walk rolls: row-of-8 ×2 came back with touching gait cells, the 2x4 grid v3 had two
+  cells with the tail stretched out (the builder's width clamp shrank the whole clip to
+  0.84x the idle body — verify_art CLIPSCALE), v4 with an explicit "tail curled tight, tip
+  never past the rear heel" clause installed clean at the idle's body height. Contact
+  sheets: `UPSCALE_OWNER_REVIEW/14_pc_mobs_sheet.png`, `14b_rat_warrior_idle_walk_attack.png`.
+  Lesson for the mob recipe: name the TAIL (or any trailing appendage) as a width budget
+  in the brief, or one stretched cell shrinks every frame. OUT OF SCOPE on purpose: the salvaged
   tick ×5 / verdant ×3 / scholar ×2 placeholders ("awaiting a home") — regenerate when a
   zone places them.
 - [x] **P6.3** `villager` (32px) still cast in ch3/5/7 zones AND the fallback dialogue portrait
