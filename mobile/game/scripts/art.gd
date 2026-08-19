@@ -1500,6 +1500,7 @@ static func tex(name: String) -> ImageTexture:
 			t = ImageTexture.create_from_image(_make_slash())
 		"shadow":
 			t = ImageTexture.create_from_image(_make_shadow())
+			t.set_size_override(Vector2i(20, 9))   # callers scale it as 20x9; samples stay 8x
 		"glow":
 			t = ImageTexture.create_from_image(_make_glow())
 		"slashline":
@@ -1546,7 +1547,10 @@ static func tex(name: String) -> ImageTexture:
 			t = ImageTexture.create_from_image(_make_crosshair())
 		_:
 			t = ImageTexture.create_from_image(img(name))
-	_cache[name] = t
+	# Same import-race guard as wall_field(): an override PNG that is on disk
+	# but not yet imported must not pin its procedural stand-in for the session.
+	if not FileAccess.file_exists(override_path):
+		_cache[name] = t
 	return t
 
 
@@ -2653,9 +2657,15 @@ static func gem_icon(col: Color, lvl := 1) -> ImageTexture:
 ## footprint (every caller's scale is sized to it), denser core: 0.6 at the
 ## centre with a smoothstep falloff so the edge stays soft.
 const SHADOW_ALPHA := 0.6
+## Contact-shadow ellipse. Authored at 20x9 "design px" (every caller scales it
+## as a 20x9 sprite) but RENDERED at SHADOW_OVERSAMPLE x that — a boss scales it
+## 8-10x and the 20x9 texture read as a staircase of blocks under Forgemistress
+## Calda (owner flag 2026-08-18); tex("shadow") size-overrides it back to 20x9
+## so no caller changes and the samples are 1:1 at boss scale.
+const SHADOW_OVERSAMPLE := 8
 static func _make_shadow() -> Image:
-	var w := 20
-	var h := 9
+	var w := 20 * SHADOW_OVERSAMPLE
+	var h := 9 * SHADOW_OVERSAMPLE
 	var image := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
 	for y in h:
 		for x in w:
@@ -3741,7 +3751,11 @@ static func wall_field(kind: String) -> Texture2D:
 	var path := "res://assets/sprites/wall_field_%s.png" % kind
 	if ResourceLoader.exists(path):
 		tex = load(path)
-	_wall_field_cache[kind] = tex
+	# Don't pin a MISS while the file exists on disk but isn't importable yet
+	# (the editor is still importing a fresh pull): a room built in that
+	# window would wear the legacy 16px tile for the whole session.
+	if tex != null or not FileAccess.file_exists(path):
+		_wall_field_cache[kind] = tex
 	return tex
 
 

@@ -12,6 +12,9 @@ class_name Pickup extends Area2D
 ## player — collection is gated to it below. Solo is untouched: the one
 ## player IS the local player.
 
+const COIN_W := 20.0            # rendered coin width (was the 8px glyph at 2.5x)
+const GOLDRUSH_COIN_W := 34.0   # the charged coin, oversized so it reads as an EVENT
+
 var value := 3
 var game: Game
 var magnet := false
@@ -32,7 +35,9 @@ static func drop_gold(game_node: Node2D, amount: int, pos: Vector2) -> void:
 		c.global_position = pos + Vector2(randf_range(-24, 24), randf_range(-18, 18))
 		var sprite := Sprite2D.new()
 		sprite.texture = Art.tex("coin")
-		sprite.scale = Vector2(2.5, 2.5)
+		# Width-normalized: the coin renders COIN_W world px whether the art is
+		# the 8px procedural glyph or the painterly override (2026-08-18).
+		sprite.scale = Art.scale_for(sprite.texture, COIN_W / 16.0)
 		c.add_child(sprite)
 		c._body_setup()
 		game_node.add_child(c)
@@ -65,7 +70,7 @@ static func drop_goldrush(game_node: Node2D, pos: Vector2) -> void:
 	c.global_position = pos
 	var sprite := Sprite2D.new()
 	sprite.texture = Art.tex("coin")
-	sprite.scale = Vector2(4.2, 4.2)
+	sprite.scale = Art.scale_for(sprite.texture, GOLDRUSH_COIN_W / 16.0)
 	sprite.modulate = Art.hdr(Color(1.0, 0.9, 0.5), 1.5)
 	c.add_child(sprite)
 	c._body_setup()

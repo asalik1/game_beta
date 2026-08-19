@@ -2565,9 +2565,20 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 	# sources whose removed left/right margins were asymmetric.
 	base_spr.position = Vector2(
 		float(def.get("visual_x", 0.0)), -bh * 0.5 + 12.0)
-	var probe_tex: Texture2D = Art.tex(String(def.get("sprite", name)))
+	# The pad probe reads the STATIC art. A base that ships only as an authored
+	# _anim strip (torch_pillar: pillar + fire in one loop, 2026-08-18) has no
+	# static and no procedural grid — Art.tex() would error on the grid lookup —
+	# so probe the strip's first frame instead.
+	var base_key := String(def.get("sprite", name))
+	var probe_tex: Texture2D = null
+	if Art.has_sprite(base_key) or Art.SPRITES.has(base_key):
+		probe_tex = Art.tex(base_key)
+	elif base_spr is AnimatedSprite2D:
+		var sf: SpriteFrames = (base_spr as AnimatedSprite2D).sprite_frames
+		if sf != null and sf.get_frame_count("default") > 0:
+			probe_tex = sf.get_frame_texture("default", 0)
 	if probe_tex != null:
-		base_spr.position.y += float(_art_pad_bottom(probe_tex, String(def.get("sprite", name)))) \
+		base_spr.position.y += float(_art_pad_bottom(probe_tex, base_key)) \
 			* (bh / maxf(1.0, float(probe_tex.get_height())))
 	base_spr.set_meta("occlusion_sort_y", pos.y)
 	base_spr.set_meta("occlusion_radius", Vector2(bw, bh).length() * 0.5)

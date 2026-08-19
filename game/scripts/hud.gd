@@ -22,7 +22,10 @@ var avatar_default_border: Panel
 var _avatar_art_key := ""
 var gold_label: Label
 var cr_label: Label
+var cr_chip: Panel              # the pill behind it; widens with the number
 var res_label: Label            # shard resonance, right under Combat Rating
+var res_chip: Panel
+const CHIP_H := 20.0            # stat chip height (the block must clear HUD_ICON_Y)
 var res_particles: CPUParticles2D
 var res_orb_glow: Sprite2D      # mood orb left of the number: gold fire..dark fire
 var res_orb_core: Sprite2D      # pearl heart of the orb
@@ -289,19 +292,26 @@ func _ready() -> void:
 	if id_bf != null:
 		stats_label.add_theme_font_override("font", id_bf)
 	stats_label.add_theme_font_size_override("font_size", 16)
-	gold_label = _label(Vector2(18, 104), 15, Color(1.0, 0.85, 0.35))
+	# The block is laid out from MEASURED label heights (the body face is taller
+	# than the engine default the old absolute y's assumed — the CR chip sat on
+	# the gold line's descenders; owner flag 2026-08-18) and stays clear of the
+	# icon row at HUD_ICON_Y.
+	var block_y := 82.0 + stats_label.get_minimum_size().y + 1.0
+	gold_label = _label(Vector2(18, block_y), 15, Color(1.0, 0.85, 0.35))
+	block_y += gold_label.get_minimum_size().y + 4.0
 	# Two chips: Combat Rating and Resonance sit in small rounded pills (the
 	# orb lives inside the second) so they read as gauges, not debug lines.
-	_chip(Vector2(14, 120), Vector2(176, 22))
-	_chip(Vector2(14, 146), Vector2(150, 24))
-	cr_label = _label(Vector2(22, 122), 14, Color(0.72, 0.9, 1.0))
+	cr_chip = _chip(Vector2(14, block_y), Vector2(176, CHIP_H))
+	cr_label = _label(Vector2(22, block_y + 1.0), 14, Color(0.72, 0.9, 1.0))
 	cr_label.mouse_filter = Control.MOUSE_FILTER_PASS
 	cr_label.set_meta("tip", "Combat Rating — one number approximating your total power: gear and gems, level, attributes and skill tree combined.")
 	_click_to_popover(cr_label, "Combat Rating")
+	block_y += CHIP_H + 4.0
 	# Resonance: golden and sparkling when positive (shinier as it
 	# climbs), black-on-pale when negative, pulses on every change.
 	# Nudged right to seat the mood orb on its left.
-	res_label = _label(Vector2(46, 147), 16, Color(0.75, 0.75, 0.8))
+	res_chip = _chip(Vector2(14, block_y), Vector2(150, CHIP_H + 2.0))
+	res_label = _label(Vector2(46, block_y + 1.0), 16, Color(0.75, 0.75, 0.8))
 	res_label.pivot_offset = Vector2(0, 10)
 	res_label.mouse_filter = Control.MOUSE_FILTER_PASS
 	res_label.set_meta("tip", "Resonance — how your shard leans: Virtue (+) or Temptation (−). Major choices move it, and the world answers through dialogue and merchant haggling.")
@@ -310,16 +320,17 @@ func _ready() -> void:
 	# fire when strongly Virtuous (+50), a dark flame when Tempted (-50),
 	# a calm white pearl at neutral, gradients between. Two glow sprites
 	# (outer aura + pearl heart) driven by _update_resonance_orb.
+	var orb_y := block_y + (CHIP_H + 2.0) * 0.5
 	res_orb_glow = Sprite2D.new()
 	res_orb_glow.texture = Art.tex("glow")
-	res_orb_glow.position = Vector2(30, 161)
+	res_orb_glow.position = Vector2(30, orb_y)
 	add_child(res_orb_glow)
 	res_orb_core = Sprite2D.new()
 	res_orb_core.texture = Art.tex("glow")
-	res_orb_core.position = Vector2(30, 161)
+	res_orb_core.position = Vector2(30, orb_y)
 	add_child(res_orb_core)
 	res_particles = CPUParticles2D.new()
-	res_particles.position = Vector2(88, 158)
+	res_particles.position = Vector2(88, orb_y - 3.0)
 	res_particles.amount = 6
 	res_particles.lifetime = 0.9
 	res_particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
@@ -1781,6 +1792,8 @@ func update_stats(p: Player) -> void:
 	if p.gold >= 5000:
 		game.unlock_achievement("wealthy")  # idempotent: fires once
 	cr_label.text = "Combat Rating  %d" % p.combat_rating()
+	if cr_chip != null:   # the pill hugs the number (a 6-digit CR overran the fixed 176px)
+		cr_chip.size.x = maxf(120.0, cr_label.get_minimum_size().x + 16.0)
 	_update_resonance(p.resonance)
 
 	# Controls-hint fade (2026-08-18): count real play seconds; past
@@ -3985,6 +3998,8 @@ func _on_escape() -> void:
 ## losses.
 func _update_resonance(res: float) -> void:
 	res_label.text = "Resonance: %+d" % int(res) if int(res) != 0 else "Resonance: 0"
+	if res_chip != null:
+		res_chip.size.x = maxf(120.0, res_label.get_minimum_size().x + 46.0)   # orb + text
 	_update_resonance_orb(res)
 	# Keep the popover's lean numbers live (refresh only when the value
 	# moves — no per-frame string building).

@@ -1055,12 +1055,15 @@ const STRUCTURES := {
 	# 14px boulder enlarged to 150px with a bucket pasted on its rim.
 	"old_well": {"sprite": "old_well", "w": 150.0, "mirror": true,
 		"colliders": [{"shape": "circle", "radius": 49.0, "off": Vector2(0, -4)}]},
-	# A signal fire: a stacked-log pyre that BURNS — an open flame decal with
-	# light + audio, ringed by a small footprint.
-	"signal_fire": {"sprite": "log", "w": 96.0,
-		"colliders": [{"shape": "circle", "radius": 14.0, "off": Vector2(0, 2)}],
-		"decals": [{"sprite": "camp_bonfire", "off": Vector2(0, -18), "scale": 0.5, "z": 2,
-			"light": Color(1.0, 0.55, 0.22, 0.95), "light_energy": 1.3, "light_scale": 1.0}],
+	# A signal fire: a stacked-log pyre that BURNS. The base IS the bonfire
+	# (its own animated fire, light + audio) — it used to be a bonfire decal
+	# pasted onto the `log` prop, which read fine while `log` was a 16px log
+	# stack and became "a campfire sitting on a fallen tree trunk" once `log`
+	# was regenerated as a real fallen trunk (owner flag 2026-08-18).
+	"signal_fire": {"sprite": "camp_bonfire", "w": 110.0,
+		"colliders": [{"shape": "circle", "radius": 16.0, "off": Vector2(0, 0)}],
+		"lights": [{"off": Vector2(0, -26), "color": Color(1.0, 0.55, 0.22, 0.95),
+			"energy": 1.3, "scale": 1.0}],
 		"fire": true},
 	# ---- ANIMATED composite structures (2026-07-18, Lane 2 x Lane 3) --------
 	# These pair the composite-structure seam with the animated-prop seam: a
@@ -1162,12 +1165,16 @@ const STRUCTURES := {
 			{"shape": "rect", "size": Vector2(120.0, 40.0), "off": Vector2(0, -8)},
 			{"shape": "circle", "radius": 12.0, "off": Vector2(-84, -2)},
 			{"shape": "circle", "radius": 12.0, "off": Vector2(84, -2)}]},
-	# A torch pillar: a stone column crowned with a live FLAME (flame ANIMATES)
-	# — the animated cousin of watch_brazier, for lit halls and dungeons.
-	"torch_pillar": {"sprite": "pillar", "w": 96.0,
+	# A torch pillar: a stone column crowned with a live FLAME — the animated
+	# cousin of watch_brazier, for lit halls and dungeons. The base is the
+	# integrated torch_pillar strip (pillar + fire in one authored 4-frame
+	# loop, the same art the door torches wear); it used to be the tall
+	# `pillar` prop with a 23px flame decal pasted at mid-height, which read as
+	# "a red blob stuck to a column" (owner flag 2026-08-18, Crown Plaza).
+	"torch_pillar": {"sprite": "torch_pillar", "w": 80.0,
 		"colliders": [{"shape": "circle", "radius": 12.0, "off": Vector2(0, -4)}],
-		"decals": [{"sprite": "flame", "off": Vector2(0, -80), "scale": 0.24, "z": 2,
-			"light": Color(1.0, 0.64, 0.3, 0.9), "light_energy": 1.0, "light_scale": 0.8}],
+		"lights": [{"off": Vector2(0, -62), "color": Color(1.0, 0.64, 0.3, 0.9),
+			"energy": 1.0, "scale": 0.8}],
 		"fire": true},
 	# Small plaza dressing (2026-08-18 gameplay-polish): the painterly urn pair
 	# and clay pot as tiny furnishings (gen_capital FURNISHINGS) — an unlisted

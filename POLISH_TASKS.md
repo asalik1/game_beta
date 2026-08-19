@@ -130,6 +130,37 @@ should work".
   entries in the shared stash are not ours. **Owner in-game review pending** — flags reopen
   here as new rows.
 
+### P0.7 — owner's first in-game pass on the merged build (2026-08-18 ~21:20)
+- [x] **HUD stat block overlaps** (CR chip on the gold line's descenders, chips fixed-width) →
+  block laid out from MEASURED label heights, chips hug their text (`hud.gd`, `CHIP_H`);
+  rig-verified `--hud`.
+- [x] **"A fire pit sitting on a log"** → `signal_fire` STRUCTURE was a `camp_bonfire` decal
+  pasted on the `log` prop (fine when `log` was a 16px log stack; nonsense once `log`
+  became a real fallen trunk). Base is now the bonfire itself + `lights` + fire audio.
+- [x] **Plaza torch pillar "fire looks fake af"** → `torch_pillar` STRUCTURE was the tall
+  `pillar` prop + a 23px `flame` decal at mid-height. Base is now the integrated
+  `torch_pillar` strip (pillar + fire in one loop; static = frame 0), `lights`; the pad probe
+  in `_add_structure` handles a strip-only base. Rig-verified (Emberward Gate).
+- [x] **Forgemistress Calda's shadow pixelated** → the 20×9 shadow texture scaled 8-10× under
+  a boss. `Art._make_shadow` renders at 8× and `tex("shadow")` size-overrides it back to 20×9,
+  so every caller is unchanged and boss-scale samples are 1:1.
+- [x] **Import-race hardening** — `Art.tex()` / `Art.wall_field()` no longer pin a procedural /
+  legacy fallback for the session when the override PNG is on disk but not yet imported
+  (a fresh pull opened in the editor imports ~600 files for minutes; rooms built in that
+  window wore legacy tiles until relaunch). Likely the "cartoonish bricks between the new
+  desert bricks" — not reproducible on a settled cache (rig: Scorching Dunes N wall =
+  weathered sand cap + face). **Owner: relaunch once; if it persists, name the room.**
+- [ ] **Gold coins cartoonish** → hi-res painterly `coin.png` (Codex, running) rendered at
+  `Pickup.COIN_W` 20 px / `GOLDRUSH_COIN_W` 34 px via `Art.scale_for` (was the 8px glyph
+  at 2.5×/4.2×).
+- [ ] **Crown Plaza fountain too cartoonish** → `capital_crown_fountain` repaint (Codex,
+  running: same silhouette — the tight-crop landmark contract + its 4-frame water strip
+  depend on it — muted stone, pale water, no neon cyan, no glowing figure) → re-derive
+  the strip (shimmer, amp 0.10) → audit + `capital_fire_structures`/tight-crop tests.
+- [ ] **"Some other plaza structures need an update"** → contact-sheet second look at the
+  `capital_*` kit beside the cast; the owner names the offenders → repaint rows here.
+  Candidates from the sheet: the two portals' neon plasma, the wellspring's cyan.
+
 ### P1 — hit-feedback stack (code, ~1 day) — the cheapest big win left
 - [ ] **P1.1 Hit-stop.** 40–70 ms presentation-only freeze on crit / heavy / kill
   (per-actor `process` pause of attacker + victim sprites, NOT `Engine.time_scale`
