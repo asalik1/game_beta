@@ -149,14 +149,17 @@ should work".
   (a fresh pull opened in the editor imports ~600 files for minutes; rooms built in that
   window wore legacy tiles until relaunch). Likely the "cartoonish bricks between the new
   desert bricks" — not reproducible on a settled cache (rig: Scorching Dunes N wall =
-  weathered sand cap + face). **Owner: relaunch once; if it persists, name the room.**
-- [ ] **Gold coins cartoonish** → hi-res painterly `coin.png` (Codex, running) rendered at
+  weathered sand cap + face). **UPDATE 2026-08-19 02:50: almost certainly the SAME bug as
+  P0.9's grey band — `Art.ground()` painted a `wallblock` brick row at every cell's top/bottom
+  edge regardless of terrain, so a sand-walled inset room showed grey stone bricks right
+  beside its sand walls. Removed with P0.9; owner: one more look at the desert.**
+- [x] **Gold coins cartoonish** → hi-res painterly `coin.png` (64 px) rendered at
   `Pickup.COIN_W` 20 px / `GOLDRUSH_COIN_W` 34 px via `Art.scale_for` (was the 8px glyph
-  at 2.5×/4.2×).
-- [ ] **Crown Plaza fountain too cartoonish** → `capital_crown_fountain` repaint (Codex,
-  running: same silhouette — the tight-crop landmark contract + its 4-frame water strip
-  depend on it — muted stone, pale water, no neon cyan, no glowing figure) → re-derive
-  the strip (shimmer, amp 0.10) → audit + `capital_fire_structures`/tight-crop tests.
+  at 2.5×/4.2×). Landed 7ebbba4.
+- [x] **Crown Plaza fountain too cartoonish** → `capital_crown_fountain` repainted (same
+  silhouette — the tight-crop landmark contract + its 4-frame water strip depend on it —
+  muted stone, pale water, no neon cyan, no glowing figure), 366×478 tight + despilled,
+  shimmer strip re-derived (amp 0.10), audits + tight-crop tests green. Landed 7ebbba4.
 - [ ] **"Some other plaza structures need an update"** → contact-sheet second look at the
   `capital_*` kit beside the cast; the owner names the offenders → repaint rows here.
   Candidates from the sheet: the two portals' neon plasma, the wellspring's cyan.
