@@ -263,7 +263,13 @@ should work".
 - [ ] **P5.3 (long-term)** non-rectangular room footprints in world-gen.
 
 ### P6 — cast consistency (ART, separate lane; see mob-sheet-qa memory)
-- [ ] **P6.1** the 8 flagged mob sheets + recenter sweep.
+- [ ] **P6.1** the 8 flagged mob sheets + recenter sweep. NOTE 2026-08-19 01:10: a
+  `recenter_strip.py` dry-run over all 59 placed enemy bases' idle/walk strips reported big
+  "drift" (casket_creeper walk 155 px, spider walk 63, greyrun_lurker 55, grove_horror 46 …) —
+  filmstrips with cell lines show those cells correctly assembled: multi-legged bodies whose
+  legs cross cell borders confuse the tool's column-band segmentation (false positives). NOT
+  applied. Leave for a hands-on mob-QA session with the mobqa rig (owner-reviewed lane); the
+  8 flagged sheets were "gates only for now" per the owner on 08-13.
 - [ ] **P6.2** the 32px `pc_extra_mobs` bodies BEFORE any zone places them (today
   none is placed — checked 2026-08-18).
 - [x] **P6.3** `villager` (32px) still cast in ch3/5/7 zones AND the fallback dialogue portrait
