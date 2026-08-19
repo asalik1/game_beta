@@ -1523,6 +1523,8 @@ static func tex(name: String) -> ImageTexture:
 			t = ImageTexture.create_from_image(_make_noise())
 		"softshadow":  # 1-D vertical falloff (wall cast shadow, prop contact darkening)
 			t = ImageTexture.create_from_image(_make_softshadow())
+		"spark":  # 12px soft-edged chip for particle bursts / impact sparks (P1)
+			t = ImageTexture.create_from_image(_make_spark())
 		"reticle":
 			t = ImageTexture.create_from_image(_make_reticle())
 		"telegraph":
@@ -2675,6 +2677,24 @@ static func _make_shadow() -> Image:
 			if d < 1.0:
 				var f := 1.0 - d
 				image.set_pixel(x, y, Color(0, 0, 0, SHADOW_ALPHA * f * f * (3.0 - 2.0 * f)))
+	return image
+
+
+## A soft particle chip: 12x12, white, radial falloff with a hot centre. Every
+## CPUParticles2D burst used to draw the engine's default 1px square scaled
+## 2-4x — literal squares — the "2004" particle tell (P1, 2026-08-18).
+static func _make_spark() -> Image:
+	var n := 12
+	var image := Image.create_empty(n, n, false, Image.FORMAT_RGBA8)
+	for y in n:
+		for x in n:
+			var dx := (x + 0.5 - n / 2.0) / (n / 2.0)
+			var dy := (y + 0.5 - n / 2.0) / (n / 2.0)
+			var d := sqrt(dx * dx + dy * dy)
+			if d < 1.0:
+				var f := 1.0 - d
+				var a := clampf(f * f * 1.6, 0.0, 1.0)     # hot core, soft rim
+				image.set_pixel(x, y, Color(1, 1, 1, a))
 	return image
 
 

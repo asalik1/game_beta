@@ -161,23 +161,28 @@ should work".
   `capital_*` kit beside the cast; the owner names the offenders → repaint rows here.
   Candidates from the sheet: the two portals' neon plasma, the wellspring's cyan.
 
-### P1 — hit-feedback stack (code, ~1 day) — the cheapest big win left
-- [ ] **P1.1 Hit-stop.** 40–70 ms presentation-only freeze on crit / heavy / kill
-  (per-actor `process` pause of attacker + victim sprites, NOT `Engine.time_scale`
-  — co-op sim must not stall; §5.4). Knob `Balance.HIT_STOP_MS{,_CRIT}`. Rig: a
-  GIF where the freeze is visible; suite: no timing test regresses (`test_quick`).
-- [ ] **P1.2 Directional shake.** `game.shake(strength, dir)` — offset along the
-  attacker→victim vector, exponential decay (`HIT_SHAKE_DECAY`), current random
-  kick becomes the fallback. Cap combined amplitude; respect the shake toggle.
-- [ ] **P1.3 Impact sparks.** Replace `game.burst` SQUARES with strip-based
-  sparks/chips at the contact point per damage type (phys = grey chips + white
-  spark, fire = embers, frost = shards, void = motes), authored via
-  `build_fx_strip.py`; body under / ≤50 % over the actor (fx-layering ruling).
-- [ ] **P1.4 Knockback + hit-flash consistency.** Every melee/arrow hit nudges the
-  victim 6–10 px along the hit vector (already true for some kits) and the white
-  flash + squash + sparks land on the SAME frame as damage (attack-FX↔anim rule).
-- [ ] **P1.5 Kill punctuation.** Last-hit: slightly longer stop, brighter flash,
-  death particles in the mob's palette; boss phase-change screen pulse.
+### P1 — hit-feedback stack (code, ~1 day) — the cheapest big win left (BUILT 2026-08-18 23:00)
+- [x] **P1.1 Hit-stop.** `game.hit_stop(sec)`: a REAL-TIME freeze (`Engine.time_scale` 0,
+  restored to whatever it was — dev slow-mo aware; overlapping stops extend), SOLO only
+  (`net_online()` → no-op, §5.4), never headless (the suite would only slow), never under a
+  pause. Crit `HIT_STOP_CRIT` 45 ms, kill `HIT_STOP_KILL` 70 ms, `effects.heavy`
+  `HIT_STOP_HEAVY` 60 ms; ordinary hits don't stop (a fast class would stutter). Note: the
+  plan said per-actor pause; a real freeze reads far better and is safe with the gates above.
+- [x] **P1.2 Directional shake.** `game.shake(amount, dir, kick)` adds `_shake_kick` px along
+  the hit vector, exponential decay (`HIT_SHAKE_KICK` 3 / crit ×1.8 / kill ×1.4,
+  `HIT_SHAKE_KICK_DECAY` 14 s⁻¹) on top of the old jitter; holds through the freeze.
+- [x] **P1.3 Impact sparks.** `game.impact(pos, dir, color, crit)`: chips flung AWAY from the
+  striker (`HIT_SPARKS` 5 / crit ×1.8), white-hot over the theme colour, gravity, 0.26 s. All
+  `game.burst()` particles now draw `Art.tex("spark")` (12px soft chip) instead of the engine's
+  1px squares — the "2004 particles" tell, fixed everywhere at once. (Per-damage-type strip
+  sparks deferred: the soft chips + the existing crit `fx_impact` strip cover it.)
+- [x] **P1.4 Knockback + sync.** Already true: `take_damage` sets `knock = dir × 160/220` and
+  the flash + squash + number land in the same call as damage; sparks/kick/stop now fire in
+  `hit_enemy` on that same frame.
+- [x] **P1.5 Kill punctuation.** Kill = the longest stop + a ×1.4 kick; the death burst wears
+  the mob's own palette (`Enemy._death_color()`, mean of the frame's opaque pixels, cached per
+  sprite key, over a blood-red core) with 14 chips (host + guest-mirror paths). Boss
+  phase-change pulse: not done (bosses have their own tells; revisit with P6).
 
 ### P2 — UI motion + presentation (code/theme, ~1 day)
 - [ ] **P2.1 Panel open/close tween** (scale 0.96→1 + fade 120 ms; close reverses)

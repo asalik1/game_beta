@@ -44,6 +44,19 @@ const FLOOR_LAYER_MODULATE := Color(0.94, 0.94, 0.965)
 # beats (ults, slams) sit at 5-9; these stay a whisper under them.
 const HIT_SHAKE := 1.4
 const HIT_SHAKE_CRIT := 3.0
+# Hit-feedback STACK (POLISH_TASKS P1, 2026-08-18): the three synchronized
+# beats every landed blow gets — a DIRECTIONAL camera kick along the hit
+# vector (px, exponential decay per second), impact SPARKS flung away from
+# the striker (count; crit x1.8), and a HIT-STOP freeze (seconds of real
+# time; solo only — a shared world never stalls, §5.4; headless never
+# stops). Ordinary hits do not stop (a fast class would stutter); crits,
+# kills and heavy blows do, in that order of weight.
+const HIT_SHAKE_KICK := 3.0
+const HIT_SHAKE_KICK_DECAY := 14.0
+const HIT_SPARKS := 5
+const HIT_STOP_CRIT := 0.045
+const HIT_STOP_KILL := 0.07
+const HIT_STOP_HEAVY := 0.06
 # Idle breath (2026-08-18): the standing hero's whole-body vertical bob —
 # amplitude in world px and rate in Hz. 0 = the old frozen idle.
 const IDLE_BREATH_PX := 1.6

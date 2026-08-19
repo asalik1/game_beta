@@ -1059,7 +1059,10 @@ func net_mirror_die() -> void:
 		hp_bar_cap.visible = false
 	remove_from_group("enemies")
 	game.sfx("edie")
-	game.burst(global_position, Color(0.9, 0.3, 0.3))
+	# Death punctuation (P1): the burst wears the mob's OWN palette (a wolf
+	# scatters grey-brown, a slime green) over a blood-red core and throws
+	# more chips than a hit — the kill reads as this creature coming apart.
+	game.burst(global_position, _death_color().lerp(Color(0.9, 0.3, 0.3), 0.35), 14)
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate:a", 0.0, 0.35)
 	tween.parallel().tween_property(sprite, "scale", sprite.scale * 1.3, 0.35)
@@ -1680,6 +1683,38 @@ func _end_squash() -> void:
 	_squash_tw = null
 
 
+## The mob's dominant body colour — the mean of its current frame's opaque
+## pixels, cached per sprite key — so a death burst can wear the creature's own
+## palette (P1). Falls back to the old blood red when the art can't be read.
+static var _death_color_cache := {}
+func _death_color() -> Color:
+	var key := _sprite_key if _sprite_key != "" else kind
+	if _death_color_cache.has(key):
+		return _death_color_cache[key]
+	var col := Color(0.9, 0.3, 0.3)
+	if sprite != null and sprite is Sprite2D and (sprite as Sprite2D).texture != null:
+		var s2 := sprite as Sprite2D
+		var img: Image = s2.texture.get_image()
+		if img != null:
+			if img.is_compressed():
+				img.decompress()
+			var fw := int(img.get_width() / maxi(1, s2.hframes))
+			var fh := int(img.get_height() / maxi(1, s2.vframes))
+			var acc := Vector3.ZERO
+			var n := 0
+			for y in range(0, fh, 3):
+				for x in range(0, fw, 3):
+					var c := img.get_pixel(x, y)
+					if c.a > 0.5:
+						acc += Vector3(c.r, c.g, c.b)
+						n += 1
+			if n > 8:
+				acc /= float(n)
+				col = Color(acc.x, acc.y, acc.z).lightened(0.15)
+	_death_color_cache[key] = col
+	return col
+
+
 ## Keep the overhead HP bar honest after a heal (it normally only
 ## updates on damage).
 func refresh_hp_bar() -> void:
@@ -2010,7 +2045,10 @@ func die() -> void:
 		hp_bar_cap.visible = false
 	remove_from_group("enemies")
 	game.sfx("edie")
-	game.burst(global_position, Color(0.9, 0.3, 0.3))
+	# Death punctuation (P1): the burst wears the mob's OWN palette (a wolf
+	# scatters grey-brown, a slime green) over a blood-red core and throws
+	# more chips than a hit — the kill reads as this creature coming apart.
+	game.burst(global_position, _death_color().lerp(Color(0.9, 0.3, 0.3), 0.35), 14)
 	# --- death-trigger traits (ch3+) ---
 	# BLOAT: bursts into a lingering blight pool — kill it at range.
 	if traits.has("bloat") and zone_idx >= 0:

@@ -239,6 +239,10 @@ var fight_stats := {}   # same shape, boss-FIGHT window (fight_engage resets)
 var party_stats_net := {}  # GUEST: the host's merged table (~1 Hz fan) — display copy
 
 var shake_amt := 0.0
+var _shake_kick := Vector2.ZERO  # directional camera kick along the last hit vector (P1)
+var _hitstop_active := false      # a real-time freeze is running (solo only)
+var _hitstop_end_ms := 0
+var _hitstop_restore := 1.0       # the time_scale to return to (dev slow-mo aware)
 var _cam_look := Vector2.ZERO   # eased look-ahead offset (camera feel, 2026-08-18)
 var _cam_zoom_mult := 1.0       # eased combat zoom multiplier on the base zoom
 var sounds: Dictionary = {}
@@ -2749,8 +2753,74 @@ func sfx(name: String, pitch := 1.0, cutoff := 0.0, vol_db := 0.0) -> void:
 			chosen.volume_db = -8.0
 		)
 
-func shake(amount: float) -> void:
+## Camera shake. `amount` = the random jitter (existing beats), `dir` + `kick`
+## = a DIRECTIONAL push of `kick` px along the hit vector that decays
+## exponentially (Balance.HIT_SHAKE_KICK_DECAY) — the P1 hit-feedback stack
+## reads the direction of a blow, not just its size.
+func shake(amount: float, dir := Vector2.ZERO, kick := 0.0) -> void:
 	shake_amt = maxf(shake_amt, amount)
+	if kick > 0.0 and dir != Vector2.ZERO:
+		_shake_kick += dir.normalized() * kick
+
+
+## HIT-STOP: freeze the world for `sec` of REAL time (Engine.time_scale 0,
+## restored to whatever it was — dev slow-mo included). Presentation only:
+## SOLO only (a shared world never stalls, §5.4 — co-op keeps the sprite juice
+## and skips this), never headless (the suite would only slow down), never
+## under a pause. Overlapping stops extend, they don't stack.
+func hit_stop(sec: float) -> void:
+	if sec <= 0.0 or get_tree().paused:
+		return
+	if net_online() or DisplayServer.get_name() == "headless":
+		return
+	var end_ms := Time.get_ticks_msec() + int(sec * 1000.0)
+	if _hitstop_active:
+		_hitstop_end_ms = maxi(_hitstop_end_ms, end_ms)
+		return
+	_hitstop_active = true
+	_hitstop_end_ms = end_ms
+	_hitstop_restore = Engine.time_scale
+	Engine.time_scale = 0.0
+	_hitstop_run()
+
+
+func _hitstop_run() -> void:
+	while Time.get_ticks_msec() < _hitstop_end_ms:
+		# real-time timer: process_always, not physics, IGNORES time_scale
+		await get_tree().create_timer(0.004, true, false, true).timeout
+		if not is_inside_tree():
+			return
+	Engine.time_scale = _hitstop_restore
+	_hitstop_active = false
+
+
+## Impact SPARKS at the contact point: a few bright chips flung AWAY from the
+## striker along `dir`, tinted by the hit (white-hot core over the theme colour),
+## short-lived, under gravity. The middle beat of the P1 stack; a crit throws
+## more and faster.
+func impact(pos: Vector2, dir: Vector2, color: Color, is_crit := false) -> void:
+	var p := CPUParticles2D.new()
+	p.position = pos + Vector2(0, -10)
+	p.amount = int(round(Balance.HIT_SPARKS * (1.8 if is_crit else 1.0)))
+	p.one_shot = true
+	p.explosiveness = 1.0
+	p.lifetime = 0.26
+	p.texture = Art.tex("spark")
+	p.direction = dir if dir != Vector2.ZERO else Vector2.UP
+	p.spread = 48.0
+	p.initial_velocity_min = 140.0 if not is_crit else 190.0
+	p.initial_velocity_max = 260.0 if not is_crit else 340.0
+	p.gravity = Vector2(0, 520)
+	p.damping_min = 40.0
+	p.damping_max = 90.0
+	p.scale_amount_min = 0.55
+	p.scale_amount_max = 1.0 if not is_crit else 1.3
+	p.color = Color(1, 1, 1).lerp(color, 0.45)
+	p.color_ramp = null
+	p.z_index = 15
+	add_child(p)
+	p.emitting = true
+	p.finished.connect(p.queue_free)
 
 ## Telegraphed ground attack: a danger zone appears, pulses for `delay`
 ## seconds, then erupts — heavy damage if the player is still inside.
@@ -3141,13 +3211,16 @@ func burst(pos: Vector2, color: Color, count := 10) -> void:
 	p.one_shot = true
 	p.explosiveness = 1.0
 	p.lifetime = 0.45
+	# Soft chips instead of the engine's default 1px squares scaled 2-4x (P1):
+	# the same footprint (12px chip x 0.2-0.4 = 2.5-5px), no more hard squares.
+	p.texture = Art.tex("spark")
 	p.direction = Vector2.UP
 	p.spread = 180.0
 	p.initial_velocity_min = 60.0
 	p.initial_velocity_max = 160.0
 	p.gravity = Vector2(0, 260)
-	p.scale_amount_min = 2.0
-	p.scale_amount_max = 4.0
+	p.scale_amount_min = 0.22
+	p.scale_amount_max = 0.42
 	p.color = color
 	p.z_index = 15
 	add_child(p)

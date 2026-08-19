@@ -1463,13 +1463,26 @@ func hit_enemy(target: CharacterBody2D, mult: float, effects := {}) -> void:
 
 	var dir := (e.global_position - global_position).normalized()
 	e.hit_src = self  # MP-10: attribute the blow (reflect/counter/aggro; solo: THE player)
+	var hp_before := e.hp
 	e.take_damage(dmg, dir, is_crit)
-	# Hit FEEL (gameplay-polish 2026-08-18): a micro camera kick on every
-	# landed single-target blow (crits harder), so the world answers the hit.
-	# AoE and echo sub-hits stay quiet — a crowd hit must not turn the screen
-	# to jelly; the ult/heavy shakes above this remain the loud beats.
+	# Hit FEEL (gameplay-polish 2026-08-18, P1 stack): on every landed
+	# single-target blow the world answers in three synchronized beats — a
+	# DIRECTIONAL camera kick along the hit vector (+ the old jitter), impact
+	# sparks flung away from the striker, and on crits / kills / heavy blows a
+	# real-time HIT-STOP (solo only). AoE and echo sub-hits stay quiet — a
+	# crowd hit must not turn the screen to jelly; the ult/heavy shakes above
+	# this remain the loud beats.
 	if not effects.get("aoe", false) and not effects.get("_echoed", false):
-		game.shake(Balance.HIT_SHAKE_CRIT if is_crit else Balance.HIT_SHAKE)
+		var killed := hp_before > 0.0 and (e.dying or e.hp <= 0.0)
+		var kick: float = Balance.HIT_SHAKE_KICK * (1.8 if is_crit else 1.0) * (1.4 if killed else 1.0)
+		game.shake(Balance.HIT_SHAKE_CRIT if is_crit else Balance.HIT_SHAKE, dir, kick)
+		game.impact(e.global_position, dir, _tcolor if _themed else Color(1.0, 0.85, 0.6), is_crit)
+		if killed:
+			game.hit_stop(Balance.HIT_STOP_KILL)
+		elif is_crit:
+			game.hit_stop(Balance.HIT_STOP_CRIT)
+		elif effects.get("heavy", false):
+			game.hit_stop(Balance.HIT_STOP_HEAVY)
 	# Shadow phantom step: a dash armed a refund window — the kill that closes
 	# it (usually the Fan or ult-stab, rarely the dash itself) slashes the dash
 	# cd. One refund per window; a fresh dash re-arms it.

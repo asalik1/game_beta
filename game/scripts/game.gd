@@ -806,6 +806,9 @@ func _process(delta: float) -> void:
 		player.clear_local_intents()
 
 	shake_amt = move_toward(shake_amt, 0.0, 20.0 * delta)
+	# The directional kick decays exponentially (holds through a hit-stop —
+	# delta is 0 there — then springs back), the jitter linearly.
+	_shake_kick = _shake_kick.lerp(Vector2.ZERO, clampf(Balance.HIT_SHAKE_KICK_DECAY * delta, 0.0, 1.0))
 	if camera:
 		# Camera FEEL (2026-08-18): a little look-ahead in the move direction
 		# and a slight zoom-in while enemies press, both eased. Look-ahead
@@ -828,6 +831,6 @@ func _process(delta: float) -> void:
 		var want_mult: float = Balance.CAMERA_COMBAT_ZOOM if in_combat else 1.0
 		_cam_zoom_mult = lerpf(_cam_zoom_mult, want_mult, clampf(Balance.CAMERA_ZOOM_EASE * delta, 0.0, 1.0))
 		camera.zoom = Vector2.ONE * (base_zoom * _cam_zoom_mult)
-		camera.offset = _cam_look + Vector2(randf_range(-1, 1), randf_range(-1, 1)) * shake_amt
+		camera.offset = _cam_look + _shake_kick + Vector2(randf_range(-1, 1), randf_range(-1, 1)) * shake_amt
 	# (The room-transition check at the top of _process is the safety
 	# net: any position outside the graph snaps back into the room.)
