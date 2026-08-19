@@ -84,6 +84,10 @@ def install_chest(stage_root: Path, key: str) -> None:
     boxes = [alpha_box(f) for f in frames]
     closed_w = boxes[0][2] - boxes[0][0]
     scale = CHEST_W / max(1, closed_w)
+    # A wide-open lid can be wider than the closed body (chest_d's flares out
+    # ~12%): never let any frame overflow its cell, or the lid gets clipped.
+    widest = max(b[2] - b[0] for b in boxes)
+    scale = min(scale, (CHEST_CELL - 4) / max(1, widest))
     subs = [scaled(f, b, scale) for f, b in zip(frames, boxes)]
     # One anchor: bottom-centre of the CLOSED frame; the body never moves, so
     # every frame's bottom lands on the same line. Cell height = tallest + margin.

@@ -1358,9 +1358,23 @@ func _build_minimap() -> void:
 	minimap_title.name = "MinimapTitle"
 	minimap_title.text = "MAP  (M)"
 	minimap_title.position = Vector2(8, 3)
+	# The chrome's header face (Cinzel, tracked) like every other panel title,
+	# not the body sans — the minimap was the last HUD panel titled in it.
+	var mh: Font = UITheme.header_font()
+	if mh != null:
+		var mfv := FontVariation.new()
+		mfv.base_font = mh
+		mfv.spacing_glyph = 2
+		minimap_title.add_theme_font_override("font", mfv)
 	minimap_title.add_theme_font_size_override("font_size", 12)
-	minimap_title.add_theme_color_override("font_color", Color(0.75, 0.77, 0.83))
+	minimap_title.add_theme_color_override("font_color", Color(UITheme.GOLD, 0.9))
 	minimap_root.add_child(minimap_title)
+	var mrule := ColorRect.new()
+	mrule.color = Color(UITheme.GOLD, 0.28)
+	mrule.position = Vector2(8, 22)
+	mrule.size = Vector2(182, 1)
+	mrule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	minimap_root.add_child(mrule)
 	var legend := Label.new()
 	legend.text = "◆ here   ☠ boss   ✓ cleared"
 	legend.position = Vector2(8, 150)
@@ -3361,22 +3375,103 @@ func _boss_splash_intro(bname: String) -> void:
 	scrim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(scrim)
+	# A dark foot gradient so the title reads on any painting (the flat scrim
+	# alone left a pale-bottomed splash fighting the name).
+	var foot := TextureRect.new()
+	var g := Gradient.new()
+	g.set_color(0, Color(0, 0, 0, 0.0))
+	g.set_color(1, Color(0, 0, 0, 0.78))
+	var gt := GradientTexture2D.new()
+	gt.gradient = g
+	gt.fill_from = Vector2(0.5, 0.0)
+	gt.fill_to = Vector2(0.5, 1.0)
+	gt.width = 16
+	gt.height = 128
+	foot.texture = gt
+	foot.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	foot.stretch_mode = TextureRect.STRETCH_SCALE
+	foot.position = Vector2(0, 440)
+	foot.size = Vector2(1280, 280)
+	foot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(foot)
+	# Title plate: NAME in the inscriptional face, tracked out and easing in,
+	# its epithet ("the Ravener") as a small crimson caps line below, a pair of
+	# gold hairlines growing outward from the name — the boss is ANNOUNCED, not
+	# labelled (it used to be one red line in the body sans).
+	var name_main := bname
+	var epithet := ""
+	for sep: String in [" the ", " of ", ", "]:
+		var at: int = bname.find(sep)
+		if at > 0:
+			name_main = bname.substr(0, at)
+			epithet = bname.substr(at + (1 if sep == ", " else 0)).strip_edges()
+			break
+	var base: Font = UITheme.header_font()
+	var fv := FontVariation.new()
+	fv.base_font = base if base != null else ThemeDB.fallback_font
+	fv.spacing_glyph = 12
 	var nm := Label.new()
-	nm.text = bname
-	nm.position = Vector2(0, 566)
+	nm.text = name_main.to_upper()
+	nm.position = Vector2(0, 548 if epithet != "" else 566)
 	nm.size = Vector2(1280, 70)
 	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	nm.add_theme_font_size_override("font_size", 48)
-	nm.add_theme_color_override("font_color", Color(0.95, 0.3, 0.25))
-	nm.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-	nm.add_theme_constant_override("outline_size", 9)
+	nm.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	nm.add_theme_font_override("font", fv)
+	nm.add_theme_font_size_override("font_size", 52 if name_main.length() <= 14 else 42)
+	nm.add_theme_color_override("font_color", Color(0.97, 0.9, 0.74))
+	nm.add_theme_color_override("font_outline_color", Color(0.12, 0.02, 0.02, 0.95))
+	nm.add_theme_constant_override("outline_size", 8)
+	nm.add_theme_color_override("font_shadow_color", Color(0.55, 0.08, 0.06, 0.75))
+	nm.add_theme_constant_override("shadow_offset_y", 3)
+	nm.add_theme_constant_override("shadow_outline_size", 4)
 	layer.add_child(nm)
+	var rules: Array = []
+	for side in [-1, 1]:
+		var rule := ColorRect.new()
+		rule.color = Color(0.92, 0.78, 0.42, 0.85)
+		rule.size = Vector2(0, 1)
+		rule.position = Vector2(640.0, nm.position.y + 36.0)
+		rule.pivot_offset = Vector2(0, 0)
+		rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		layer.add_child(rule)
+		rules.append([rule, side])
+	var ep: Label = null
+	if epithet != "":
+		ep = Label.new()
+		ep.text = epithet.to_upper()
+		ep.position = Vector2(0, 612)
+		ep.size = Vector2(1280, 30)
+		ep.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var efv := FontVariation.new()
+		efv.base_font = fv.base_font
+		efv.spacing_glyph = 5
+		ep.add_theme_font_override("font", efv)
+		ep.add_theme_font_size_override("font_size", 20)
+		ep.add_theme_color_override("font_color", Color(0.9, 0.42, 0.36))
+		ep.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		ep.add_theme_constant_override("outline_size", 5)
+		ep.modulate.a = 0.0
+		layer.add_child(ep)
 	layer.modulate.a = 0.0
 	var tw := layer.create_tween()
 	tw.tween_property(layer, "modulate:a", 1.0, 0.18)
 	tw.parallel().tween_property(art, "scale", Vector2.ONE, 0.7) \
 		.set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
-	tw.tween_interval(0.95)
+	tw.parallel().tween_property(fv, "spacing_glyph", 3, 0.7) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	var half_w: float = minf(560.0, 120.0 + 14.0 * name_main.length())
+	for pair in rules:
+		var r: ColorRect = pair[0]
+		var side: int = pair[1]
+		var rule_w: float = 150.0
+		var target_x: float = 640.0 + side * half_w - (rule_w if side < 0 else 0.0)
+		tw.parallel().tween_property(r, "size:x", rule_w, 0.55) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT).set_delay(0.12)
+		tw.parallel().tween_property(r, "position:x", target_x, 0.55) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT).set_delay(0.12)
+	if ep != null:
+		tw.parallel().tween_property(ep, "modulate:a", 1.0, 0.35).set_delay(0.3)
+	tw.tween_interval(1.05)
 	tw.tween_property(layer, "modulate:a", 0.0, 0.4)
 	tw.tween_callback(layer.queue_free)
 

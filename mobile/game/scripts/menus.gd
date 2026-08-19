@@ -408,17 +408,36 @@ func open_slots() -> void:
 			pframe.add_theme_stylebox_override("panel", pfsb)
 			pframe.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			row.add_child(pframe)
+			# The hero's FACE (2026-08-19, the reference rosters): the class
+			# painting's head-and-shoulders crop fills the frame — the tiny
+			# whole-body sprite it replaces read as a debug thumbnail. The
+			# sprite stays the fallback where a class has no painting.
 			var port := TextureRect.new()
-			port.texture = Art.tex(cls_info["sprite"])
 			port.set_anchors_preset(Control.PRESET_FULL_RECT)
-			port.offset_left = 5
-			port.offset_top = 5
-			port.offset_right = -5
-			port.offset_bottom = -5
-			port.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			port.offset_left = 3
+			port.offset_top = 3
+			port.offset_right = -3
+			port.offset_bottom = -3
 			port.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			port.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			port.modulate = Color(1.3, 1.28, 1.2)  # tonemap-dark sprites need the lift
+			var splash_key := "class_splash_%s" % String(s["cls"])
+			if Art.has_sprite(splash_key):
+				var stex: Texture2D = Art.tex(splash_key)
+				var ssz := Vector2(stex.get_width(), stex.get_height())
+				var cr := _splash_face_crop(splash_key, stex)
+				var at := AtlasTexture.new()
+				at.atlas = stex
+				at.region = Rect2(cr.position * ssz, cr.size * ssz)
+				port.texture = at
+				port.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+				port.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+				# The paintings are dark-fantasy dark; a small lift keeps a 60 px
+				# face readable in the list without flattening it.
+				port.modulate = Color(1.14, 1.12, 1.08)
+			else:
+				port.texture = Art.tex(cls_info["sprite"])
+				port.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+				port.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+				port.modulate = Color(1.3, 1.28, 1.2)  # tonemap-dark sprites need the lift
 			pframe.add_child(port)
 		# Lead with the hero's name (account name for unnamed legacy saves) so
 		# same-class, same-level heroes stay tellable apart. The ✎ renames.
@@ -1029,6 +1048,21 @@ func open_class_select() -> void:
 	_cs_preview(_cs_id if Classes.CLASSES.has(_cs_id) else String(Classes.CLASSES.keys()[0]))
 
 
+## A class painting's FACE crop, normalized (origin, size): the HUD portrait's
+## measured per-splash eye-line (Hud.AVATAR_FOCUS) so the roster, the class rail
+## and the HUD all centre the same face; `scale` = crop side as a share of the
+## painting's short edge (the HUD uses 0.28; menus a touch wider).
+static func _splash_face_crop(key: String, tex: Texture2D, scale := 0.34) -> Rect2:
+	var ssz := Vector2(tex.get_width(), tex.get_height())
+	var side := minf(ssz.x, ssz.y) * scale
+	var crop := Vector2(side / ssz.x, side / ssz.y)
+	var focus: Vector2 = Hud.AVATAR_FOCUS.get(key, Hud.AVATAR_FACE_DEFAULT)
+	var origin := focus - crop * Vector2(0.5, 0.32)
+	origin.x = clampf(origin.x, 0.0, 1.0 - crop.x)
+	origin.y = clampf(origin.y, 0.0, 1.0 - crop.y)
+	return Rect2(origin, crop)
+
+
 ## One rail medallion: the class painting's face in a ring (gold when selected),
 ## the class name + its number key under it. Click = preview.
 func _cs_medallion(id: String, num: int) -> Control:
@@ -1075,13 +1109,8 @@ void fragment() {
 	var splash_key := "class_splash_%s" % id
 	if Art.has_sprite(splash_key):
 		var tex: Texture2D = Art.tex(splash_key)
-		var ssz := Vector2(tex.get_width(), tex.get_height())
-		var side := minf(ssz.x, ssz.y) * 0.46
-		var crop := Vector2(side / ssz.x, side / ssz.y)
-		var origin := Vector2(0.5, 0.22) - crop * Vector2(0.5, 0.35)
-		origin.x = clampf(origin.x, 0.0, 1.0 - crop.x)
-		origin.y = clampf(origin.y, 0.0, 1.0 - crop.y)
-		mat.set_shader_parameter("crop_uv", Vector4(origin.x, origin.y, crop.x, crop.y))
+		var cr := _splash_face_crop(splash_key, tex)
+		mat.set_shader_parameter("crop_uv", Vector4(cr.position.x, cr.position.y, cr.size.x, cr.size.y))
 		face.texture = tex
 	else:
 		face.texture = Art.tex(c["sprite"])

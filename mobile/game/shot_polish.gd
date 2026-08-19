@@ -47,6 +47,15 @@ func _ready() -> void:
 			"stats": game.menus.open_inventory("stats")
 			"bag": game.menus.open_inventory("gear")
 			"class": game.menus.open_class_select()
+			"title": game.menus.open_title()
+			"roster": game.menus.open_slots()
+			"skills": game.menus.open_skills()
+			"pause": game.menus.open_pause()
+			"shop": game.menus.open_shop(0)
+			"codex": game.menus.open_codex("monsters")
+			"map": game.menus.open_map()
+			"settings": game.menus.open_settings()
+			"wardrobe": game.menus.open_wardrobe()
 		await sim_wait(1.2)
 		shot("menu_" + arg("menu", ""), "menu " + arg("menu", ""))
 		if arg("menu", "") == "class":
@@ -83,11 +92,12 @@ func _ready() -> void:
 		await frames(2)
 		_pack(["wolf", "beastkin_raider", "blightwolf", "skeleton", "spider"], p.global_position)
 		await sim_wait(0.6)
-		for i in 3:
-			for m in _mobs:
-				if is_instance_valid(m):
-					m.take_damage(randf_range(9.0, 60.0), Vector2.RIGHT, i == 2 and m == _mobs[0])
-			await sim_wait(0.18)
+		if not flag("calm"):   # --calm: the pack just STANDS (readability shots, no numbers)
+			for i in 3:
+				for m in _mobs:
+					if is_instance_valid(m):
+						m.take_damage(randf_range(9.0, 60.0), Vector2.RIGHT, i == 2 and m == _mobs[0])
+				await sim_wait(0.18)
 		await sim_wait(0.12)
 		shot("%02d_room" % room, "room=%d zoom=%.2f" % [room, z])
 		if flag("hud"):
@@ -145,8 +155,10 @@ func _review_shots() -> void:
 	# 2. the boss bar with its badge + level + numbers (the real drawing code on
 	#    a mock state — the live fight sets the same fields per frame)
 	step("boss bar")
-	game.hud.show_boss_bar("Fangmaw")   # (plays the splash intro first — wait it out)
-	await sim_wait(3.2)
+	game.hud.show_boss_bar("Fangmaw the Ravener")   # (plays the splash intro first)
+	await sim_wait(0.95)
+	shot("review_boss_intro", "boss intro: splash + title plate (name, epithet, rules)")
+	await sim_wait(2.4)
 	game.hud.update_boss_bar(0.63)
 	game.hud.boss_level.text = "Lv 8"
 	game.hud.boss_hp_num.text = "2.3K / 3.6K"

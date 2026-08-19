@@ -3509,6 +3509,55 @@ func foot_dust(pos: Vector2) -> void:
 	get_tree().create_timer(0.6).timeout.connect(p.queue_free)
 
 
+## REMAINS STAIN (life pass 2026-08-19): a kill leaves a soft dark blotch on
+## the floor in the creature's own palette that fades over DEATH_STAIN_LIFE —
+## the room remembers the fight for a while instead of every body poofing
+## away clean. Two soft stamps (a body and a smaller splash offset along the
+## hit line), z just above the floor wear, below every actor; never in
+## headless runs; capped so a long grind cannot pile up sprites.
+var _stain_roots: Array[Node2D] = []
+
+func death_stain(pos: Vector2, color: Color, dir: Vector2 = Vector2.ZERO) -> void:
+	if Balance.DEATH_STAIN_A <= 0.0 or DisplayServer.get_name() == "headless":
+		return
+	var tex: Texture2D = Art.tex("softshadow")
+	if tex == null:
+		return
+	var tint := color.darkened(0.55)
+	tint.a = Balance.DEATH_STAIN_A
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(pos.x * 7.0 + pos.y * 13.0)
+	var root := Node2D.new()
+	root.position = pos
+	root.z_index = -8
+	root.z_as_relative = false
+	for k in 2:
+		var s := Sprite2D.new()
+		s.texture = tex
+		s.modulate = tint if k == 0 else Color(tint.r, tint.g, tint.b, tint.a * 0.7)
+		var w: float = rng.randf_range(26.0, 38.0) if k == 0 else rng.randf_range(12.0, 18.0)
+		var ts := tex.get_size()
+		s.scale = Vector2(w / maxf(1.0, ts.x), (w * rng.randf_range(0.55, 0.8)) / maxf(1.0, ts.y))
+		s.rotation = rng.randf_range(-0.5, 0.5)
+		if k == 1:
+			var d: Vector2 = dir.normalized() if dir.length() > 0.01 else Vector2.from_angle(rng.randf() * TAU)
+			s.position = d * rng.randf_range(14.0, 24.0)
+		root.add_child(s)
+	add_child(root)
+	_stain_roots.append(root)
+	while _stain_roots.size() > Balance.DEATH_STAIN_MAX:
+		var old: Node2D = _stain_roots.pop_front()
+		if is_instance_valid(old):
+			old.queue_free()
+	var tw := root.create_tween()
+	tw.tween_interval(Balance.DEATH_STAIN_LIFE * 0.6)
+	tw.tween_property(root, "modulate:a", 0.0, Balance.DEATH_STAIN_LIFE * 0.4)
+	tw.tween_callback(func() -> void:
+		_stain_roots.erase(root)
+		if is_instance_valid(root):
+			root.queue_free())
+
+
 ## Wave-2 co-op fix #8: a floating banner shown on EVERY machine, not just the
 ## caller's. Boss readability callouts — enrage, intercept orders, verdicts,
 ## warn tells — are host-simulated on a guest, so a plain spawn_text stays home;

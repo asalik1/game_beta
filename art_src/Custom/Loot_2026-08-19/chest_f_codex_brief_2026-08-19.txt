@@ -1,0 +1,32 @@
+You are generating ONE game sprite master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Three images are attached:
+- Image 1 = refs/1_style_hideout_barrel.png and Image 2 = refs/2_style_coffin.png : the STYLE benchmark — installed painterly world props of this game (low top-down three-quarter view, light from the top-left, soft painterly shading, NO black outlines, muted palette, crisp readable silhouette). Match their treatment exactly. They are NOT the subject.
+- Image 3 = refs/3_subject_chest_f.png : the CURRENT tiny (32px, upscaled) chest — its SHAPE, proportions, material and colour family are the identity to keep; its chunky pixels and black outlines are NOT the target.
+
+TASK: generate exactly ONE new source sheet — ONE ROW of FIVE figures — of this chest OPENING, with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint). Use the tool's widest LANDSCAPE output size.
+
+---
+Use case: illustration-story
+Asset type: high-resolution 5-frame game prop animation source, one horizontal row, to be cropped into a sprite strip. Landscape output canvas.
+Input images: Images 1-2 are the binding style / perspective / shading benchmark; Image 3 is the subject's identity (shape, material, colours).
+Scene/backdrop: a perfectly flat uniform #00ff00 chroma-key background filling every pixel, including the gaps between figures. No scenery, floor, ground plane, cast shadow, contact shadow, gradient, vignette, border, grid, line, panel divider, text or watermark. Do not use #00ff00 or any strong green in the figures.
+Primary request: create exactly FIVE complete figures in ONE horizontal row, left to right, evenly spaced with a clear flat-green gutter between neighbours; no figure touches or is cropped by a neighbour or the canvas edge. All five are the SAME chest, at the SAME scale, SAME position within its slot and SAME ground line, seen from the SAME angle — only the LID moves and the light inside changes:
+ f1 CLOSED at rest (this frame is also the static sprite).
+ f2 the lid cracks open a few degrees; a thin line of warm light shows at the seam.
+ f3 the lid half open (about 45°), warm light spilling out over the rim.
+ f4 the lid fully open (about 100°, resting back), the brightest warm glow from inside, a few soft sparkle motes above the box.
+ f5 open at rest: lid fully open, the inner glow softer, no motes.
+Subject: the POOREST chest: a small plain pale-pine box of rough planks, a flat lid, a frayed rope handle, no metal at all, scuffed and dusty. Same chest in every frame; the lid is hinged at the BACK edge and opens away from the viewer.
+Style/medium: painterly, soft-shaded, no black outlines, muted dark-fantasy palette — exactly the treatment of Images 1-2; not pixel art, not cartoon, not 3D render, not anime; no thick outlines, no rim glow on the body.
+Composition/framing: low top-down three-quarter view like Images 1-2 (we see the front and the top), light from the top-left, the chest about the same share of its slot in every frame; the open lid may rise above the closed silhouette but must stay inside its slot.
+Constraints: output only the five figures on green; no text, watermark, UI, frame numbers, extra objects, scenery, shadow or separators. The body of the chest never moves, scales or changes colour between frames; only the lid and the inner light.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./chest_f_open_master_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./chest_f_open_master_v1_keyed.png (auto-key sampling, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message, report: the raw output size, how many complete figures were produced, whether the body stays put across the five, whether the lid opens progressively f1→f4 and holds in f5, and any deviation from the brief (a body that moves or changes colour, figures touching, green in the figure, outlines, cartoon shading). Be blunt; do not soften defects.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

@@ -15,11 +15,12 @@ and `CODING_GUIDELINES.md` §40 hold the standing art rules it produced;
 worktree `gameplay-polish`; **everything below through P5.2 / P0.9 is on `main`**
 (each block fast-forwarded after its own full-suite PASS — see "Gates status").
 
-**Status at a glance (2026-08-19 04:30):** P0–P3, P5.1–P5.2, P2.5, P6.3 and the
-play-flag rounds P0.7–P0.9 are BUILT and on main. OPEN: P4.2/4.3 (owner route call),
-P5.3 (long-term), P6.1 (owner-eyes mob QA), P6.2 (in progress: 7 PC mobs → 192 px,
-Codex batch running), the capital kit repaint (owner names the pieces). The owner's
-in-game verdict on the whole pass is the gate for calling it done.
+**Status at a glance (2026-08-19 08:30):** P0–P3, P5.1–P5.3 (corner bites = P7.C),
+P2.5, P6.2 (7 PC mobs, one walk re-roll outstanding), P6.3, P7.A–G and P8, plus the
+play-flag rounds P0.7–P0.9, are BUILT (each block full-suite green; on main after its
+ff). OPEN: P4.2/4.3 (owner route call), P6.1 (owner-eyes mob QA), the capital kit repaint
+(owner names the pieces), and the owner's in-game verdict on everything — the review
+pack for that is `C:\Users\asali\Downloads\UPSCALE_OWNER_REVIEW\` (images + DECISIONS.md).
 
 ## 1. What "polished" is (the bar we measure against)
 
@@ -319,7 +320,9 @@ should work".
   stretches ALONG it 1.6× / squeezes across 0.45× (`_clump_jitter`) — hedges, rock lines,
   mushroom fringes; open middles stay open. Rig-shot at 0.5 (Hollow Oak, Stilt Camp,
   Wolfpaths): rooms visibly off-centre, tree lines along the west walls. Full suite PASS.
-- [ ] **P5.3 (long-term)** non-rectangular room footprints in world-gen.
+- [x] **P5.3** non-rectangular room footprints — the first, cheap form shipped as P7.C
+  (corner bites: 0/1/2 solid corner blocks per combat room, hashed, door lanes kept clear).
+  True L/T footprints in world-gen stay long-term.
 
 ### P6 — cast consistency (ART, separate lane; see mob-sheet-qa memory)
 - [ ] **P6.1** the 8 flagged mob sheets + recenter sweep. NOTE 2026-08-19 01:10: a
@@ -329,8 +332,8 @@ should work".
   legs cross cell borders confuse the tool's column-band segmentation (false positives). NOT
   applied. Leave for a hands-on mob-QA session with the mobqa rig (owner-reviewed lane); the
   8 flagged sheets were "gates only for now" per the owner on 08-13.
-- [~] **P6.2** the 32px `pc_extra_mobs` bodies BEFORE any zone places them (today
-  none is placed — checked 2026-08-18). IN PROGRESS 2026-08-19 04:30: the seven Pixel
+- [x] **P6.2** the 32px `pc_extra_mobs` bodies BEFORE any zone places them (today
+  none is placed — checked 2026-08-18). BUILT 2026-08-19 08:00: the seven Pixel
   Crawler mobs (Bloated Dead, Grave Cutter, Tomb Warden, Sporeling, Wildkin Skirmisher,
   Gutter Cutter, Warren Breaker; the Plague Chanter already had its 192 px body) →
   192 px bodies in the mob house style (Plague Chanter = style/scale benchmark), headless
@@ -339,9 +342,13 @@ should work".
   (reuses the 08-08 repair builder's keying / gutter-safe extraction / torso-locked
   normalization; 192 cell, the old body share kept so on-screen size is unchanged; masters
   archived under `art_src/Custom/PcExtraMobs_2026-08-19/`, old sprites under `old/`).
-  Gutter Cutter idle installed as the probe (4×192, beside the Chanter: same style/scale).
-  OUT OF SCOPE on purpose: the salvaged tick ×5 / verdant ×3 / scholar ×2 placeholders
-  ("awaiting a home") — regenerate when a zone places them.
+  Idle + walk + attack installed for six; Warren Breaker (`rat_warrior`) has its idle +
+  attack, its walk row came back twice without clean gutters (gait cells touching) — a
+  third roll as a labelled 2x4 grid is the one outstanding job (old 33 px walk stays until
+  then; the builder's `eight_subjects` path installs it). Contact sheet:
+  `UPSCALE_OWNER_REVIEW/14_pc_mobs_sheet.png`. OUT OF SCOPE on purpose: the salvaged
+  tick ×5 / verdant ×3 / scholar ×2 placeholders ("awaiting a home") — regenerate when a
+  zone places them.
 - [x] **P6.3** `villager` (32px) still cast in ch3/5/7 zones AND the fallback dialogue portrait
   for Sera / Bren / Carter / the mother / Ren / Osric → 256² roster body (village woman in a
   faded blue shawl; `make_npc_briefs.py` "villager", `build_npcs.py`), installed 2026-08-19 00:40,
@@ -363,8 +370,8 @@ stage with name/type/specialty/difficulty/lore panel, toggleable against the spl
 **Owner: "this is all accurate and should be documented."** Agreed gaps, in the order to
 attack them (A → B → C → D → E → F → G); each lands by the same gate ritual as P1–P5.
 
-- [~] **P7.A Announcements + event log** (BUILT 2026-08-19 06:00, gates pending the Codex
-  batch). `hud.announce(text, color, hold, kind)`: a glass plaque (560×56, dark, 1 px gold
+- [x] **P7.A Announcements + event log** (BUILT 2026-08-19 06:00, suite PASS).
+  `hud.announce(text, color, hold, kind)`: a glass plaque (560×56, dark, 1 px gold
   border, two hairline rules) under the boss-bar zone, an icon glyph by kind
   (`announce_kind`: lore → ui_book, quest → ui_quest, victory → ui_daily sunburst, item →
   ui_bag, gold/renown → coin, party → ui_party), the header face in caps whose
@@ -377,7 +384,12 @@ attack them (A → B → C → D → E → F → G); each lands by the same gate
   CHAPTER CONQUERED, THE CURSE LIFTS, weekly/Waking lines) to the plaque and mirrors every
   "+…" pickup/XP line into the feed; the room-clear "THE BLIGHT RECEDES" calls `announce`
   directly; coin pickups log "+N gold". Numbers, crits and short callouts keep floating.
-- [~] **P7.B Coins + chests** (code BUILT 06:05; ART = Codex batch queued behind P6.2's).
+- [x] **P7.B Coins + chests** (code BUILT 06:05; ART INSTALLED 08:20 — all ten chests +
+  their open strips + the 6-frame coin spin, contact sheet
+  `UPSCALE_OWNER_REVIEW/08_loot_chests_coins_sheet.png`; `CHEST_GRADE_TINT` dropped to
+  0.12 because the painted chests carry their grade in the wood/metal already; the
+  builder clamps the frame scale so a wide-open lid never overflows its cell — chest_d's
+  did on the first pass).
   CODE — coin (`pickup.gd`): `_coin_visual` uses the SPIN strip `coin_anim.png` when it ships
   (6-frame turn, `Art.anim_prop` seam, fps 6) else the disc; coins now spawn at the death
   spot and ARC out to a scattered rest point with two bounces (`COIN_ARC_H/SCATTER/BOUNCE`),
@@ -396,7 +408,7 @@ attack them (A → B → C → D → E → F → G); each lands by the same gate
   `coin.png` + `coin_anim.png`; masters/old art archived under
   `art_src/Custom/Loot_2026-08-19/`). Unopened-glow pulse: the existing B+ halo breathes
   already (scale 1.35↔1.55); left as is.
-- [~] **P7.C Corner bites = P5.3 pulled forward** (BUILT 06:10, gates pending).
+- [x] **P7.C Corner bites = P5.3 pulled forward** (BUILT 06:10, suite PASS).
   `game_base.room_notches(i)`: a combat room (never boss / safe / authored-scale) carves
   0 / 1 / 2 corners (`Balance.ROOM_NOTCH_CHANCE` [.4 .4 .2]) as SOLID blocks, 170–330 ×
   120–230 px (hashed per room — co-op-safe), always `ROOM_NOTCH_LANE_CLEAR` 90 px short of a
@@ -408,13 +420,14 @@ attack them (A → B → C → D → E → F → G); each lands by the same gate
   authored spawns / NPCs / landmarks are pushed out by `room_pos` → `notch_clear`;
   `free_spawn_pos` already sees them as walls through physics. Autotest `_test_corner_bites`
   (lanes clear, spawns + scenery out, inside the play rect).
-- [~] **P7.D Boss bar + portrait chrome** (BUILT 06:15, gates pending). Boss bar: the boss's
+- [x] **P7.D Boss bar + portrait chrome** (BUILT 06:15, suite PASS). Boss bar: the boss's
   FACE — a circular masked crop of its splash (the hero-portrait crop rules) in a crimson ring
   at the bar's left (`boss_badge`, `_dress_boss_badge`), "Lv N" under it, numeric HP
   "2.3K / 4.4K" at the bar's right (`track_target_bar`). Hero portrait: a gold-rimmed LEVEL
   BADGE disc on the ring's lower-right (`avatar_level_badge`) that pops on level-up. Ally
   nameplates: already drawn in co-op (`party_names`); left as is.
-- [~] **P7.E Paper-doll character sheet** (first cut BUILT 2026-08-19 07:30, gates pending).
+- [x] **P7.E Paper-doll character sheet** (BUILT 2026-08-19 07:30, rig-verified
+  `UPSCALE_OWNER_REVIEW/15_paper_doll.png`).
   The Stats tab opens with a PAPER-DOLL band above the ledger: the hero as they stand in the
   game (live idle strip, breathing, on a floor glow), their seven pieces as rarity-framed
   icon wells flanking the body (three left / four right, click = the piece's card), name /
@@ -422,7 +435,8 @@ attack them (A → B → C → D → E → F → G); each lands by the same gate
   icon plates with name + cost line on the band's right half (`_paper_doll`, `_pd_well`).
   The three-column ledger (already the label / value language) stays below. Not done: green
   stat deltas in the ledger, panel particles.
-- [~] **P7.F Bag / inventory layout** (slice BUILT 07:20). The bag grid already had fixed
+- [x] **P7.F Bag / inventory layout** (slice BUILT 07:20, rig-verified
+  `UPSCALE_OWNER_REVIEW/16_bag_locked_row.png`). The bag grid already had fixed
   cells, empties and a capacity bar; added the reference's LOCKED ROW — when fewer than
   `MAX_BAGS` bags are equipped, one row of dim padlock cells (drawn from shapes, no glyph
   dependency) closes the grid with a tooltip that says how to earn it (`_bag_locked`).
@@ -446,8 +460,37 @@ attack them (A → B → C → D → E → F → G); each lands by the same gate
   `_ground_fog`, `Balance.GROUND_FOG_A` 0.14); rig-verified (graveyard paint).
 - [x] **NPC breath** — single-frame roster villagers rise/settle 1 px with a random rest
   between breaths (`Balance.NPC_BREATH_PX`; never headless).
-- [~] **P7.G Class select v2** (BUILT 2026-08-19 06:20, gates pending; owner's eyes owed —
-  this one is taste). `menus.open_class_select` is now: a medallion RAIL of the six classes
+- [x] **Dialogue typewriter** — lines REVEAL at `Balance.DIALOG_TYPE_CPS` 42 chars/s
+  (punctuation holds a beat); the first confirm press completes the line, the next
+  advances — the modern-RPG read rhythm instead of a wall appearing at once (`hud._type_tw`,
+  `_show_line`; instant when headless / in tests).
+- [x] **Custom cursor** — a painted arrow (`assets/icons/cursor_arrow.png`) and a hand for
+  hover (`cursor_hand.png`) replace the OS cursor on desktop (`game.gd`,
+  `Input.set_custom_mouse_cursor`; never on touch builds).
+- [x] **Roster faces** — the Roster / save rows and the class medallions share one face crop
+  of the class painting (`Menus._splash_face_crop`, the `Hud.AVATAR_FOCUS` rules) instead
+  of the 32 px in-game thumbnail (`18_roster_faces.png`).
+- [x] **Loot banner** moved to `Hud.LOOT_BANNER_Y` 262 so it never sits on the minimap / the
+  boss bar / the announce plaque.
+- [x] **Repaint hygiene** — `_canopy_overhang` frees the old forest canopy BEFORE the
+  terrain check, so a room repainted away from a forest drops its leaves (was left hanging
+  over a desert repaint in the rig).
+- [x] **Boss intro title plate** (`hud._boss_splash_intro`) — NAME in tracked Cinzel
+  (ivory-gold, crimson under-shadow, tracking eases 12 → 3), the epithet split off at
+  " the " / " of " / ", " as a crimson caps line, two gold hairlines growing outward, a
+  dark foot gradient; hold 1.05 s. It was one red 48 px line in the body sans.
+  `UPSCALE_OWNER_REVIEW/21_boss_intro_title_plate.png`.
+- [x] **Remains stains** (`game_base.death_stain`, `Balance.DEATH_STAIN_A/LIFE/MAX`) — a
+  kill stamps a soft dark blotch in the creature's palette + a splash along the killing
+  blow (`Enemy.last_hit_dir`), z -8, fades over 28 s, capped at 48; never headless.
+- [x] **Interact prompt pills** — `_make_npc` prompts sit in a dark rounded StyleBox pill
+  with a gold hairline, measured after styling so they centre on the anchor.
+- [x] **Minimap title** in the Cinzel header face + hairline rule; **roster faces** lifted
+  1.14× (dark paintings at 60 px); **cover cycle** opens on the painterly painting
+  (`cover.png` ↔ `cover_2.png` swapped; the pixel crown follows at 10 s), the "press any
+  key" prompt in Cinzel, sine-eased.
+- [x] **P7.G Class select v2** (BUILT 2026-08-19 06:20, suite PASS; owner's eyes owed —
+  this one is taste; `UPSCALE_OWNER_REVIEW/02_class_select_v2.png` + `02b_…ult_clip.png`). `menus.open_class_select` is now: a medallion RAIL of the six classes
   (the class painting's face in a bronze ring, gold + 1.08× when selected, number key under
   each); the pick fills the STAGE (690×430 glass panel) with the hero as they stand in the
   game — the live idle strip as an AnimatedSprite2D at up to 3× on a soft floor glow — with

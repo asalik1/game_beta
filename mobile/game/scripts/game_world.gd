@@ -1694,11 +1694,23 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	else:
 		UITheme.world(prompt, 14, 4)
 	prompt.add_theme_color_override("font_color", Color(0.97, 0.92, 0.78))
-	# The rect clamps UP to the text's width — a long prompt ("E — Feed the
-	# shrine") anchored at a fixed left edge drifted right of the NPC. Size
-	# first, then center the real rect on the authored +8 anchor.
-	prompt.size = Vector2(96, 20)
-	prompt.position = Vector2(8.0 - prompt.size.x * 0.5, -58)
+	# Pill tag (polish 2026-08-19): the prompt sits in a dark rounded pill with a
+	# hairline gold edge instead of hanging as bare outlined text over the scene —
+	# the same tag language as the HUD chips. Measured AFTER the style lands so
+	# the pill is centred on the authored +8 anchor whatever its length.
+	var pill := StyleBoxFlat.new()
+	pill.bg_color = Color(0.05, 0.045, 0.07, 0.78)
+	pill.border_color = Color(0.85, 0.72, 0.38, 0.55)
+	pill.set_border_width_all(1)
+	pill.set_corner_radius_all(9)
+	pill.content_margin_left = 9.0
+	pill.content_margin_right = 9.0
+	pill.content_margin_top = 2.0
+	pill.content_margin_bottom = 2.0
+	prompt.add_theme_stylebox_override("normal", pill)
+	prompt.size = Vector2.ZERO
+	prompt.size = prompt.get_minimum_size().max(Vector2(96, 20))
+	prompt.position = Vector2(8.0 - prompt.size.x * 0.5, -60)
 	prompt.visible = false
 	npc.add_child(prompt)
 	world.add_child(npc)
@@ -3140,16 +3152,18 @@ const CANOPY_ALPHA := 0.92
 const CANOPY_Z := 20
 const CANOPY_DOOR_CLEAR := 100.0   # px each side of the door lane left open (torch pair)
 func _canopy_overhang(i: int, r: Rect2, exits: Dictionary, gap: float) -> void:
+	# Free the old strip FIRST: a repaint from a forest to any other terrain
+	# must drop the leaves (it used to return early and leave them hanging).
+	for old in zone_canopy.get(i, []):
+		if is_instance_valid(old):
+			old.queue_free()
+	zone_canopy[i] = []
 	var wt: String = Terrains.wall_for(terrain_by_zone[i])
 	if not CANOPY_WALLS.has(wt) or not Art.has_sprite("canopy_forest"):
 		return
 	var tex: Texture2D = Art.tex("canopy_forest")
 	if tex == null:
 		return
-	for old in zone_canopy.get(i, []):
-		if is_instance_valid(old):
-			old.queue_free()
-	zone_canopy[i] = []
 	var spans: Array = []
 	if exits.has("N"):
 		# clear the door lane AND its torch pair (they stand ~74 px off the lane)

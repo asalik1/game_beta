@@ -210,11 +210,19 @@ static func _prompt(root: Control, game: Game) -> void:
 	p.position = Vector2(0, 636)
 	p.size = Vector2(1280, 30)
 	p.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	p.add_theme_font_size_override("font_size", 16)
+	# The chrome's inscriptional face (Cinzel) at a small size, tracked out a
+	# little — the prompt used to be the only line on the cover in the engine's
+	# default sans, which read as a placeholder under the Cinzel wordmark.
+	UITheme.title(p, 17)
+	if UITheme.header_font() != null:
+		var fv := FontVariation.new()
+		fv.base_font = UITheme.header_font()
+		fv.spacing_glyph = 2
+		p.add_theme_font_override("font", fv)
 	p.add_theme_color_override("font_color", Color(0.85, 0.82, 0.75))
 	p.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	p.add_theme_constant_override("outline_size", 6)
 	root.add_child(p)
 	var tw := p.create_tween().set_loops()
-	tw.tween_property(p, "modulate:a", 0.25, 0.9)
-	tw.tween_property(p, "modulate:a", 1.0, 0.9)
+	tw.tween_property(p, "modulate:a", 0.3, 1.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(p, "modulate:a", 1.0, 1.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)

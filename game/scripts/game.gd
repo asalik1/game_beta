@@ -206,6 +206,17 @@ func _ready() -> void:
 	reticle.z_index = 25
 	reticle.visible = false
 	add_child(reticle)
+	# Custom CURSOR (polish 2026-08-19): the OS arrow over a painted world is one
+	# of the loudest "unfinished" tells; a gold, dark-rimmed pointer (a brighter
+	# one over clickables) is shipped as two 24 px PNGs. Desktop only; the touch
+	# build has no pointer and headless has no display.
+	if not dedicated and not touch_mode and DisplayServer.get_name() != "headless":
+		var cur: Texture2D = Art.ui_icon("cursor_arrow")
+		var hand: Texture2D = Art.ui_icon("cursor_hand")
+		if cur != null:
+			Input.set_custom_mouse_cursor(cur, Input.CURSOR_ARROW, Vector2(2, 2))
+		if hand != null:
+			Input.set_custom_mouse_cursor(hand, Input.CURSOR_POINTING_HAND, Vector2(2, 2))
 	# (2026-08-18) No level tag in the WORLD any more: the old "Lv N" hovering
 	# every targeted mob read as debug text (owner). The target's level rides
 	# the HUD target bar instead — "Name · Lv N — 63%", level threat-tinted —

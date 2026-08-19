@@ -78,6 +78,9 @@ var hit_src: Player = null
 # them without a burn tick re-taunting the victim every half second.
 # Captured-and-cleared beside hit_src in take_damage.
 var stat_src: Player = null
+# Direction of the last blow that landed (presentation only: the death stain's
+# splash is thrown along it). Zero until something with a direction hits.
+var last_hit_dir := Vector2.ZERO
 # MP-10: squelch the mirror status forward while apply_toxin calls
 # apply_burn internally — one "toxin" event carries both to the host.
 var _status_mute := false
@@ -1095,6 +1098,7 @@ func net_mirror_die() -> void:
 	# scatters grey-brown, a slime green) over a blood-red core and throws
 	# more chips than a hit — the kill reads as this creature coming apart.
 	game.burst(global_position, _death_color().lerp(Color(0.9, 0.3, 0.3), 0.35), 14)
+	game.death_stain(global_position, _death_color(), last_hit_dir)
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate:a", 0.0, 0.35)
 	tween.parallel().tween_property(sprite, "scale", sprite.scale * 1.3, 0.35)
@@ -1941,6 +1945,8 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 		return
 	if dying or untargetable:
 		return
+	if from_dir.length_squared() > 0.0001:
+		last_hit_dir = from_dir
 	# Wounding one pack member wakes its whole pack (ranged openers too).
 	if zone_idx >= 0 and not force_aggro:
 		game.wake_pack(zone_idx, pack_id)
@@ -2081,6 +2087,7 @@ func die() -> void:
 	# scatters grey-brown, a slime green) over a blood-red core and throws
 	# more chips than a hit — the kill reads as this creature coming apart.
 	game.burst(global_position, _death_color().lerp(Color(0.9, 0.3, 0.3), 0.35), 14)
+	game.death_stain(global_position, _death_color(), last_hit_dir)
 	# --- death-trigger traits (ch3+) ---
 	# BLOAT: bursts into a lingering blight pool — kill it at range.
 	if traits.has("bloat") and zone_idx >= 0:

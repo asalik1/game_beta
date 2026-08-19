@@ -1,0 +1,32 @@
+You are generating ONE game sprite master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached:
+- Image 1 = refs/1_style_hideout_barrel.png : the STYLE benchmark — an installed painterly world prop of this game (soft painterly shading, no black outlines, muted palette, light from the top-left). Match its treatment. It is NOT the subject.
+- Image 2 = refs/2_subject_coin.png : the CURRENT coin — a round gold coin with an embossed CROWN on its face; keep that identity (round, gold, crown face, plain rim), but give it real depth: a bevelled rim, a specular highlight, a darker lower edge.
+
+TASK: generate exactly ONE new source sheet — ONE ROW of SIX figures — of this coin TURNING about its vertical axis, with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint). Use the tool's widest LANDSCAPE output size.
+
+---
+Use case: illustration-story
+Asset type: high-resolution 6-frame game pickup spin-cycle source, one horizontal row, to be cropped into a sprite strip. Landscape output canvas.
+Input images: Image 1 is the binding style benchmark; Image 2 is the coin's identity.
+Scene/backdrop: a perfectly flat uniform #00ff00 chroma-key background filling every pixel, including the gaps between figures. No scenery, floor, shadow, gradient, border, grid, line, text or watermark. Do not use #00ff00 or any strong green in the figures.
+Primary request: create exactly SIX complete figures in ONE horizontal row, left to right, evenly spaced with a clear flat-green gutter between neighbours; none touches a neighbour or the canvas edge. All six are the SAME coin at the SAME scale, the SAME height (its full diameter, top to bottom, never changes) and CENTRED at the same height in each slot; the coin turns about its VERTICAL axis by 60° per frame, so only its apparent WIDTH and the highlight change:
+ f1 full face (a perfect circle, crown face, highlight upper-left).
+ f2 turned 60° (an upright ellipse about half as wide as it is tall; the crown foreshortened; the bevelled rim visible on one side).
+ f3 turned 120° (a narrow upright ellipse about a quarter as wide as tall; mostly rim, a sliver of face).
+ f4 EDGE-ON (a thin bright upright bar of rim, the full diameter tall, a few pixels wide).
+ f5 turned 240° (narrow ellipse, the REVERSE face — the same crown design — showing).
+ f6 turned 300° (half-wide ellipse, reverse face) — flowing back into f1.
+Subject: a round gold coin, warm antique gold with a bevelled rim, an embossed crown on both faces, a specular highlight upper-left and a darker lower edge; clean, not cartoon-shiny.
+Style/medium: painterly, soft-shaded, no black outlines, exactly the treatment of Image 1; not pixel art, not cartoon, not 3D render.
+Constraints: output only the six coins on green; no text, watermark, sparkles, motion lines, shadow or separators. The diameter (height) is identical in every frame; the vertical centre is identical; only the width narrows toward f4 and widens again.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./coin_spin_master_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./coin_spin_master_v1_keyed.png (auto-key sampling, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message, report: the raw output size, how many coins were produced, whether the height is constant across all six, whether f4 is edge-on and f1 full face, and any deviation (a coin that changes height, touches a neighbour, green in the coin). Be blunt; do not soften defects.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

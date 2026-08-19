@@ -104,6 +104,12 @@ const NPC_BREATH_PX := 1.0
 #  DIALOG_TYPE_CPS — dialogue lines WRITE themselves at this many characters a
 #    second (first confirm completes the line, the next advances). 0 = pop whole.
 const DIALOG_TYPE_CPS := 42.0
+#  DEATH_STAIN_*   — a kill leaves a soft floor blotch in the creature's palette
+#    (game_base.death_stain) that fades over LIFE seconds; MAX caps live stains.
+#    A = 0 turns it off.
+const DEATH_STAIN_A := 0.34
+const DEATH_STAIN_LIFE := 28.0
+const DEATH_STAIN_MAX := 48
 # Room-enter dip (2026-08-19): a REVISITED room eases in from part-black
 # instead of jump-cutting (first visits keep the full fade + title card).
 # 0 alpha = off. Never on headless; never over a fade already in flight.
@@ -1683,7 +1689,9 @@ const CHEST_SCALE_16PX := 3.0
 # Halo alpha on B+ chests — the "rich chest across the room" tell.
 const CHEST_HALO_ALPHA := 0.5
 # How far a chest's art is washed toward its grade colour (0 = raw art).
-const CHEST_GRADE_TINT := 0.3
+# 0.3 → 0.12 (2026-08-19): the painterly chests carry their grade in their
+# MATERIAL (pine → iron → lacquer → brass → gold crown); the wash is a hint now.
+const CHEST_GRADE_TINT := 0.12
 # The opening moment (P7.B, 2026-08-19): the opened box holds this long before
 # it fades (lid up, glow dying); each lid frame of an `<art>_open.png` strip
 # shows for FRAME_T.
