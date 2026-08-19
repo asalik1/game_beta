@@ -155,15 +155,27 @@ func _review_shots() -> void:
 	# 2. the boss bar with its badge + level + numbers (the real drawing code on
 	#    a mock state — the live fight sets the same fields per frame)
 	step("boss bar")
-	game.hud.show_boss_bar("Fangmaw the Ravener")   # (plays the splash intro first)
+	# A REAL boss: the per-frame target tracker (game.gd → hud.track_target_bar)
+	# hides the bar the moment nothing is targeted, so a bare show_boss_bar()
+	# call vanished before the shot. current_boss is the tracker's fallback.
+	var fm: Boss = Boss.make_boss(game, "fangmaw", p.global_position + Vector2(260, -40))
+	game.bosses.append(fm)          # the same registration _spawn_boss does
+	game.world.add_child(fm)
+	fm.set_physics_process(false)
+	fm.set_process(false)
+	game.current_boss = fm
+	game.hud.show_boss_bar(fm.display_name)   # (plays the splash intro first)
 	await sim_wait(0.95)
 	shot("review_boss_intro", "boss intro: splash + title plate (name, epithet, rules)")
 	await sim_wait(2.4)
-	game.hud.update_boss_bar(0.63)
-	game.hud.boss_level.text = "Lv 8"
-	game.hud.boss_hp_num.text = "2.3K / 3.6K"
+	fm.hp = fm.max_hp * 0.63
 	await sim_wait(0.3)
 	shot("review_boss_bar", "boss bar: badge + level + numbers")
+	game.bosses.erase(fm)
+	game.current_boss = null
+	if is_instance_valid(fm):
+		fm.queue_free()
+	await frames(2)
 	game.hud.hide_boss_bar()
 	# 3. announcements + feed
 	step("announce")
