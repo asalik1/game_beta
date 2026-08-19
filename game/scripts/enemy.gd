@@ -768,6 +768,19 @@ func _physics_process(delta: float) -> void:
 	anim_t += delta
 	attack_cd = maxf(0.0, attack_cd - delta)
 	knock = knock.move_toward(Vector2.ZERO, 900.0 * delta)
+	# NaN scrub (owner, wolves stranded at (nan,nan), 2026-08-19). A single
+	# degenerate divide in some steering/knockback path yields a non-finite
+	# `knock`/`velocity`; move_and_slide writes it into global_position, and
+	# NaN.move_toward stays NaN FOREVER — an invisible, un-hittable enemy that
+	# pins its room's clear-counter above zero (soft-lock: "N monsters left",
+	# none in sight). Catch it before it integrates, source-agnostic: zero a
+	# bad knock, and snap a body that already went non-finite back to its home
+	# floor with motion cleared, so it becomes a real, killable straggler again.
+	if not knock.is_finite():
+		knock = Vector2.ZERO
+	if not global_position.is_finite():
+		global_position = game.free_spawn_pos(home, home) if game != null else home
+		velocity = Vector2.ZERO
 	# Sticky re-target (MP seam): re-pick the prey on a slow cadence;
 	# _get_target() re-resolves immediately if it dies/frees in between.
 	retarget_t -= delta
@@ -1268,7 +1281,7 @@ func _avoid_obstacles(move: Vector2) -> Vector2:
 			if _feeler_clear(space, dir.rotated(ang * turn), reach):
 				_avoid_turn = turn
 				return dir.rotated(ang * turn) * spd
-	return move  # boxed in on every feeler: let move_and_slide slide it along the wall
+	return move  # surrounded on every feeler incl. the near-reversals: nothing clear to back out to, let move_and_slide slide it along the wall
 
 
 ## True when a ray `reach` px from the body center along `dir` hits no wall or

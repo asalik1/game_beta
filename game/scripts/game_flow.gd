@@ -1320,8 +1320,14 @@ func _tick_room_clear(delta: float) -> void:
 		var pr := play_rect(zi).grow(60.0)
 		for e in alive:
 			var en := e as Enemy
-			var stuck := _pos_in_wall(en.global_position)
-			var strayed := not pr.has_point(en.global_position)   # shoved/chased out through a door
+			# A non-finite position is the worst straggler: it renders nowhere,
+			# collides with nothing, and Rect2.has_point(nan) returns TRUE (every
+			# NaN compare is false), so it misreads as "inside, on open floor" and
+			# never gets nudged (owner, 2026-08-19). Enemy._physics_process now
+			# scrubs NaN at the source; this is the belt-and-braces catch.
+			var finite := en.global_position.is_finite()
+			var stuck := finite and _pos_in_wall(en.global_position)
+			var strayed := not finite or not pr.has_point(en.global_position)   # shoved/chased out through a door, or NaN
 			print("[room-clear] straggler: %s at %s (alerted=%s, in_wall=%s, outside_room=%s) -> wake%s" % [
 				en.kind, en.global_position, en.alerted, stuck, strayed,
 				", nudge" if (stuck or strayed) else ""])
