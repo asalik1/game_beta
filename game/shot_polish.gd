@@ -63,6 +63,12 @@ func _ready() -> void:
 			game.menus._cs_show_ability(game.menus._cs_id, "ult")
 			await sim_wait(0.35)
 			shot("menu_class_ult", "ult clip on the stage")
+			game.menus._cs_show_ability(game.menus._cs_id, "a1")
+			await sim_wait(0.3)
+			shot("menu_class_a1", "a1 (swing) clip on the stage — same body size as idle")
+			game.menus._cs_set_mode("splash")
+			await sim_wait(0.2)
+			shot("menu_class_splash", "splash mode: the painting, head in frame")
 		finish()
 		return
 	if flag("review"):

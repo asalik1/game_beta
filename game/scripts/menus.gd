@@ -961,6 +961,7 @@ var _cs_stage: Control = null
 var _cs_model: AnimatedSprite2D = null
 var _cs_model_glow: Sprite2D = null
 var _cs_splash: TextureRect = null
+var _cs_body_cache := {}   # "<class>|<clip>" -> (body_h, bottom_row) of the clip's first frame
 var _cs_info: VBoxContainer = null
 var _cs_detail: Label = null
 var _cs_choose: Button = null
@@ -968,6 +969,7 @@ var _cs_rings: Dictionary = {}         # class id -> the medallion ring Panel (s
 var _cs_clips: Dictionary = {}         # the previewed class's hero clips
 const CS_STAGE := Rect2(0, 0, 690, 430)
 const CS_MODEL_H := 360.0              # px the hero's idle frame is shown at (capped at 3x)
+const CS_MODEL_BODY_H := 300.0         # px the hero's BODY (first-frame alpha height) is shown at — every clip, same body size (owner flag 2026-08-19: the attack clip played smaller)
 const CS_DIFFICULTY := {"warrior": 1, "paladin": 2, "archer": 2, "mage": 3, "warlock": 3, "assassin": 4}
 const CS_ACTION_WORDS := ["Dash", "Leap", "Charge", "Step", "Blink", "Rush", "Lunge", "Bash", "Vault"]
 
@@ -993,9 +995,13 @@ func open_class_select() -> void:
 	_cs_stage.add_theme_stylebox_override("panel", ssb)
 	body.add_child(_cs_stage)
 	_cs_splash = TextureRect.new()
-	_cs_splash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	# Explicit cover rect (set per class in _cs_preview → _cs_fit_splash): the
+	# paintings are portrait, the stage is landscape, and KEEP_ASPECT_COVERED
+	# crops from the CENTRE — which cut every hero's head off (owner flag
+	# 2026-08-19). The rect is biased so the painting's face line sits in the
+	# stage's upper third.
 	_cs_splash.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_cs_splash.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_cs_splash.stretch_mode = TextureRect.STRETCH_SCALE
 	_cs_splash.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_cs_splash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_cs_splash.visible = false
@@ -1160,6 +1166,8 @@ func _cs_preview(id: String) -> void:
 	# the painting
 	var splash_key := "class_splash_%s" % id
 	_cs_splash.texture = Art.tex(splash_key) if Art.has_sprite(splash_key) else null
+	if _cs_splash.texture != null:
+		_cs_fit_splash(splash_key, _cs_splash.texture)
 	_cs_set_mode(_cs_mode)
 	# the info panel
 	for ch in _cs_info.get_children():
@@ -1302,11 +1310,52 @@ func _cs_play_clip(clip: String, loop: bool) -> void:
 		at.region = Rect2(f * fsize.x, 0, fsize.x, fsize.y)
 		sf.add_frame("clip", at)
 	_cs_model.sprite_frames = sf
-	var s := minf(3.0, CS_MODEL_H / maxf(1.0, fsize.y))
+	# Scale by the BODY, not the cell (the same rule the game uses,
+	# player_core._measure_hero_frame): an attack / ult strip can ship a taller
+	# square cell to hold a sword arc, so a cell-fit scale shrank the hero mid
+	# swing. Measure the first frame's alpha box once per clip: the body height
+	# sets the scale, its bottom row sits on the stage's floor line.
+	var body_h: float = fsize.y
+	var bot: float = fsize.y
+	var ck := "%s|%s" % [String(_cs_id), clip]
+	if _cs_body_cache.has(ck):
+		body_h = _cs_body_cache[ck].x
+		bot = _cs_body_cache[ck].y
+	else:
+		var img: Image = tex.get_image()
+		if img != null:
+			var first := img.get_region(Rect2i(0, 0, int(fsize.x), int(fsize.y)))
+			var used := first.get_used_rect()
+			if used.size.y > 0:
+				body_h = float(used.size.y)
+				bot = float(used.end.y)
+		_cs_body_cache[ck] = Vector2(body_h, bot)
+	var s := minf(3.0, CS_MODEL_BODY_H / maxf(1.0, body_h))
 	_cs_model.scale = Vector2(s, s)
-	_cs_model.position = Vector2(CS_STAGE.size.x * 0.5, CS_STAGE.size.y - 60.0 - fsize.y * s * 0.5)
+	var floor_y: float = CS_STAGE.size.y - 60.0
+	_cs_model.position = Vector2(CS_STAGE.size.x * 0.5, floor_y - (bot - fsize.y * 0.5) * s)
 	_cs_model.visible = _cs_mode == "model"
 	_cs_model.play("clip")
+
+
+## Aspect-COVER the class painting over the stage with the crop biased so the
+## painting's face line (Hud.AVATAR_FOCUS, the measured eye-line) lands around
+## 28 % down the stage — the head stays in frame on every class, and a short
+## painting still fills the panel.
+func _cs_fit_splash(key: String, tex: Texture2D) -> void:
+	var ts := Vector2(tex.get_width(), tex.get_height())
+	if ts.x <= 0.0 or ts.y <= 0.0:
+		return
+	var stage := CS_STAGE.size
+	var k: float = maxf(stage.x / ts.x, stage.y / ts.y)
+	var draw := ts * k
+	var focus: Vector2 = Hud.AVATAR_FOCUS.get(key, Hud.AVATAR_FACE_DEFAULT)
+	var overflow := draw - stage
+	var off := Vector2(-overflow.x * 0.5, 0.0)
+	# put the face line at 28 % of the stage height; clamp inside the painting
+	off.y = -clampf(focus.y * draw.y - stage.y * 0.28, 0.0, maxf(0.0, overflow.y))
+	_cs_splash.position = off
+	_cs_splash.size = draw
 
 
 func _cs_clip_done() -> void:
