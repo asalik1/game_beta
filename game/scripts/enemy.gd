@@ -935,7 +935,8 @@ func _physics_process(delta: float) -> void:
 	# to the player's horizontal side within the aim cone; fall back to a
 	# LOW-PASSED velocity (jitter-free) when unaggroed or the target is
 	# overhead. Left-facing art (Crawl sprites) flips the opposite way.
-	_face_vx = lerpf(_face_vx, velocity.x, 0.2)
+	if is_finite(velocity.x):   # a one-frame non-finite velocity would latch this low-pass forever
+		_face_vx = lerpf(_face_vx, velocity.x, 0.2)
 	var os := 0.0
 	var tgt: Player = _get_target()
 	if (alerted or force_aggro) and tgt != null and not tgt.dead:

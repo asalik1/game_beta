@@ -2546,7 +2546,7 @@ func _update_party_ui(_p: Player) -> void:
 		var name_l := slot["name"] as Label
 		name_l.text = nm
 		name_l.add_theme_color_override("font_color", Color(0.92, 0.92, 0.98))
-		_set_fill(slot["hp_fill"], clampf(float(d["hp"]) / float(d["max_hp"]), 0.0, 1.0))
+		_set_fill(slot["hp_fill"], clampf(float(d["hp"]) / maxf(1.0, float(d["max_hp"])), 0.0, 1.0))
 		(slot["hp_text"] as Label).text = "%d/%d" % [int(d["hp"]), int(d["max_hp"])]
 		_apply_frame_state(slot, String(d["state"]), _ally_by_peer(int(d["peer"])))
 	_update_party_arrows(data)

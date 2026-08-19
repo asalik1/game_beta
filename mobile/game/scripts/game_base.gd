@@ -2494,6 +2494,8 @@ func clamp_to_zone(pos: Vector2, anchor: Vector2) -> Vector2:
 	if zi < 0:
 		zi = clampi(cur_room, 0, zone_count - 1)
 	var r := play_rect(zi)
+	if not pos.is_finite():
+		return r.get_center()   # clampf(nan) passes nan through; bound to the room instead
 	return Vector2(
 		clampf(pos.x, r.position.x + 80.0, r.end.x - 80.0),
 		clampf(pos.y, r.position.y + 90.0, r.end.y - 90.0)

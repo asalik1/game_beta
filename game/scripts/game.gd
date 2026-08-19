@@ -658,10 +658,20 @@ func _process(delta: float) -> void:
 	# (Aggro is per-pack now — entering a room wakes nobody by itself.)
 	var zi := room_at_pos(player.global_position)
 	if zi == -1:
-		# Physics glitch outside the graph: snap back into the room.
+		# Physics glitch outside the graph: snap back into the room. A NON-FINITE
+		# position lands here too (room_at_pos(nan) -> -1), but clampf(nan) stays
+		# nan — the clamp can't recover it, and the avatar is then invisible/off-
+		# map for good (death can't save you either: enemies read distance_to(nan)
+		# = nan and never land the killing hit). Same engine-depenetration NaN as
+		# the enemy twin (2026-08-19): hard-reset to the room centre, motion
+		# cleared, BEFORE the clamp.
 		var rr := play_rect(clampi(cur_room, 0, zone_count - 1))
-		player.global_position.x = clampf(player.global_position.x, rr.position.x + 52.0, rr.end.x - 52.0)
-		player.global_position.y = clampf(player.global_position.y, rr.position.y + 62.0, rr.end.y - 62.0)
+		if not player.global_position.is_finite():
+			player.global_position = rr.get_center()
+			player.velocity = Vector2.ZERO
+		else:
+			player.global_position.x = clampf(player.global_position.x, rr.position.x + 52.0, rr.end.x - 52.0)
+			player.global_position.y = clampf(player.global_position.y, rr.position.y + 62.0, rr.end.y - 62.0)
 		zi = cur_room
 	elif zi != cur_room and state == ST_PLAYING:
 		if _room_hot(cur_room):
