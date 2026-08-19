@@ -82,13 +82,13 @@ suite green at the time, **C** = compile-gate only (in-engine look still owed).
 | rule | Standing rule for prop style + motion | CLAUDE.md "World props", `CODING_GUIDELINES.md` §40, `audit_prop_anims.py`, memory | — |
 | suite | Flake hardening: capital lapidary section lends the WHOLE inventory + asserts the training gem by identity; materials section snapshots `loose_bags` | `autotest.gd` | S |
 
-**Gates status (19:20):** everything above on one tree: `--import` clean, COMPILE OK
-(game 107 + mobile 107), `test_quick` PASS, FULL suite AUTOTEST PASS ×3 (the third
-after the evening torch/road/wall edits), preflight 0 fail / 75 warn (presentation
-literals, fire-strip GHOST/ANCHOR heuristics), 60 prop strips audit-clean, mobile in
-sync (20,659 files, 0 drift) + mobile quick PASS. Staged via
-`scratchpad/stage_polish.ps1` (path-listed; `.import` churn reverted). Nothing committed;
-branch `gameplay-polish` not merged.
+**Gates status:** the round-1–3 pass merged 2026-08-18 19:40 (59ff165 + b1b924a; full suite
+PASS ×3, preflight 0 fail, mobile synced). Since then, each block below landed on `main` by
+fast-forward with its own compile → quick → FULL suite PASS → mobile sync: P0.7 (7ebbba4),
+P1 (ef58081), P2 (960b67e), P3 + P5.1 (f7414c5), P2.5-dialogue + P6.3 (503355d).
+Worktree quirk: after a `git checkout -- '**/*.import'` the next `--import` re-imports all
+20k files (~16 min) and `git status` lists them modified with EMPTY diffs (identical blobs);
+harmless — don't loop on it.
 
 ## 4. Open board — this pass (P0) and the next pass (P1–P6)
 
