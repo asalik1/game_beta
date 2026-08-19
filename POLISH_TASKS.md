@@ -174,6 +174,33 @@ should work".
   cause is learnable from a log next time. Autotest section `_test_room_clear_reconcile`
   (drift 2→1 + straggler wake/pull). Full suite PASS.
 
+### P0.9 — play-flags round 3 (2026-08-19 ~02:00)
+- [x] **Market stall drawn ON TOP of a big oak's crown** ("shouldn't the stand be below the
+  bush?"). Y-sort was right — the oak's trunk stood ~100 px north of the stall, so it sorted
+  behind and the awning cut a clean rectangle out of the canopy; a crown that close reads as
+  hanging OVER a low building, so a building drawn over it looks pasted. Fixed by PLACEMENT,
+  not sorting: `game_world._canopy_conflict` — a scatter/accent tree (centre AND clump
+  members) is rejected when its rendered art rect would overlap a building/landmark that sorts
+  in FRONT of it (tree base north of the front's base); a tree standing SOUTH of a building may
+  overhang it (the natural read). Fronts = `_add_building` + non-tree `_add_structure` bodies
+  (`_front_of`, base sprite `wpx/hpx` meta — buildings now carry it too). Bodies now tagged
+  (`prop` / `building` / `structure` meta). Guard: autotest `_test_canopy_fronts` rebuilds every
+  room's seeded scenery and asserts the invariant (quick run: 188 trees / 22 fronts / 25 rooms).
+- [x] **New Character showed the chapter selector** — a new hero always begins at Chapter 1
+  (owner ruling). `menus.new_character()` → `pick_chapter(first chapter)` → class select; the
+  selector stays for REPLAY (pause menu, per-hero `completed_` flags), the co-op lobby's host
+  pick, and tests/dev (`open_chapter_select`). The account-wide `unlocked_` meta flags still
+  gate those two. DESIGN.md line added.
+- [x] **"Cartoonish grey bricks" along the LOWER edge of the Darkwood Road (zoomed out)** —
+  reproduced in the rig at zoom 0.55: NOT the wall sprite (moss field, dark) but the
+  `Art.ground()` legacy border — a 16 px `wallblock` brick row painted along the cell's top and
+  bottom edge, 3x chunky, grey whatever the terrain — showing below the inset room's real wall
+  (combat arenas shrink on a bell curve, so most have a margin). Removed from `ground()`;
+  the cell edge is now closed by `game_world._cell_curtain`: real `_wall()` segments in the
+  room's OWN wall field (N/S when the vertical inset ≥ 72 px, W/E when the horizontal one is;
+  door corridor gaps kept; north band throws its face; repaint-tracked). Rig re-shot: dark
+  moss curtain, no grey band.
+
 ### P1 — hit-feedback stack (code, ~1 day) — the cheapest big win left (BUILT 2026-08-18 23:00)
 - [x] **P1.1 Hit-stop.** `game.hit_stop(sec)`: a REAL-TIME freeze (`Engine.time_scale` 0,
   restored to whatever it was — dev slow-mo aware; overlapping stops extend), SOLO only

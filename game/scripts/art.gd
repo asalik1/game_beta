@@ -4119,16 +4119,13 @@ static func ground(base_kind: String, path_kind: String, tiles_w: int, tiles_h: 
 				var c := image.get_pixel(x, y)
 				image.set_pixel(x, y, Color(c.r * f, c.g * f, c.b * f, 1.0))
 
-	# Stone border wall along the top and bottom edge — EXCEPT across a
-	# real doorway: painting the whole row walled the N/S doors shut
-	# visually even though the collider gap was open (playtest round 3).
-	var wall := img("wallblock")
-	for tx in tiles_w:
-		var in_gap: bool = tx * 16 + 16 > vleft and tx * 16 < vright
-		if not (in_gap and "N" in dirs):
-			image.blit_rect(wall, Rect2i(0, 0, 16, 16), Vector2i(tx * 16, 0))
-		if not (in_gap and "S" in dirs):
-			image.blit_rect(wall, Rect2i(0, 0, 16, 16), Vector2i(tx * 16, (tiles_h - 1) * 16))
+	# (2026-08-19) The 16px "wallblock" border rows that used to be painted along
+	# the cell's top and bottom edge here are GONE: they were the pre-wall-sprite
+	# boundary, always the grey stone brick whatever the terrain, drawn 3x — and
+	# below an inset room's real (moss/sand/...) wall they showed as a strip of
+	# cartoon grey bricks (owner, Darkwood Road zoomed out). The cell edge is
+	# now closed by game_world._cell_curtain: real wall sprites in the room's own
+	# wall FIELD, 1 texel = 1 px, door gaps kept.
 	var t := ImageTexture.create_from_image(image)
 	_cache[key] = t
 	return t

@@ -1013,6 +1013,9 @@ func _run_systems() -> void:
 	# 3d18b. Room-clear counter reconcile + straggler wake (owner 2026-08-19:
 	# "1 monster left" and none to be found).
 	await _test_room_clear_reconcile()
+	# 3d18c. Canopy-vs-front placement (owner 2026-08-19: stall drawn over an
+	# oak's crown) — no tree behind a building/landmark its crown overlaps.
+	_test_canopy_fronts()
 
 	# 3d19. NG+ difficulty tiers (2026-07-24): offsets, band shift + the
 	# S-band ch12 table, run_tier gates, zero XP, unlock meta, tier PBs,
@@ -4915,6 +4918,48 @@ func _test_room_clear_reconcile() -> void:
 	if not home_again:
 		return _fail("room-clear straggler: a monster outside the room was not pulled back home")
 	print("ok: room-clear counter reconciles to living monsters; quiet stragglers wake and come home")
+
+
+## Canopy-vs-front placement (owner 2026-08-19: a market stall drew over an
+## oak's crown). Rebuild every room's scenery (seeded — identical to what play
+## lays down) and assert no TREE stands behind a building/landmark whose art its
+## crown overlaps. Trees south of a front (overhanging it) are allowed.
+func _test_canopy_fronts() -> void:
+	var trees_seen := 0
+	var fronts_seen := 0
+	for zi in game.zone_count:
+		game._spawn_scenery(zi)
+		var fronts: Array = []
+		var trees: Array = []
+		for node in game.zone_scenery.get(zi, []):
+			if not is_instance_valid(node) or not (node is Node2D):
+				continue
+			var body := node as Node2D
+			if body.has_meta("building") or (body.has_meta("structure")
+					and not game._structure_is_tree(String(body.get_meta("structure")))):
+				var f: Dictionary = game._front_of(body, body.position)
+				if (f["rect"] as Rect2).size.x > 0.0:
+					fronts.append(f)
+			elif body.has_meta("prop") and Terrains.prop_base(String(body.get_meta("prop"))).contains("tree"):
+				for c in body.get_children():
+					if (c is Sprite2D or c is AnimatedSprite2D) and c.is_in_group("structure_occluders"):
+						var sz: Vector2 = game._visual_size(c) * (c as Node2D).scale.abs()
+						var centre: Vector2 = body.position + (c as Node2D).position
+						trees.append({"pos": body.position, "prop": String(body.get_meta("prop")),
+							"rect": Rect2(centre - sz * 0.5, sz)})
+		trees_seen += trees.size()
+		fronts_seen += fronts.size()
+		for t in trees:
+			var tr: Dictionary = t
+			for f in fronts:
+				var fr: Dictionary = f
+				if (tr["pos"] as Vector2).y >= (fr["pos"] as Vector2).y + game.CANOPY_FRONT_MARGIN:
+					continue
+				if (tr["rect"] as Rect2).intersects(fr["rect"] as Rect2):
+					return _fail("room %d: %s at %s stands BEHIND a front at %s and its crown overlaps its art (%s vs %s)" % [
+						zi, tr["prop"], str(tr["pos"]), str(fr["pos"]), str(tr["rect"]), str(fr["rect"])])
+	print("ok: canopy-vs-front — %d trees / %d fronts across %d rooms, no tree hides behind a building it overlaps" % [
+		trees_seen, fronts_seen, game.zone_count])
 
 
 # ---- CONTENT: Chapter 3 bosses — the Unburied Vale (BOSSES.md) ----------

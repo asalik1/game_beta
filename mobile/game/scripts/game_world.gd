@@ -1725,6 +1725,74 @@ func _wind_scenery(name: String) -> bool:
 		or name.begins_with("grass") or name in ["flower", "cattail", "frost_reeds"]
 
 
+## CANOPY vs FRONT — the "stall pasted on a tree" bug (owner 2026-08-19: a
+## market stall drew OVER a big oak's crown). Both were y-sorted correctly:
+## the oak's trunk stood a hundred px north of the stall, so it sorted behind,
+## and the stall's awning cut a clean rectangle out of the canopy — the eye
+## reads a canopy that close as hanging OVER a low building, so a building
+## drawn on top of it looks pasted. Placement fixes it, not sorting: a tree
+## whose rendered art would overlap a building/landmark that sorts in FRONT
+## of it (tree base north of the front's base) is rejected. A tree standing
+## SOUTH of a building may overhang it — that is the natural read.
+## `fronts` rows: {"pos": room-local base, "rect": room-local art rect}.
+const CANOPY_FRONT_MARGIN := 4.0   # px the tree must stand south of a front's base to count as "in front"
+
+## Room-local art rect of a scatter prop as _add_obstacle would render it
+## (rendered w/h from the family's authored width x the largest jitter, base
+## line at +38 for authored-width families, the legacy centre for the rest).
+static var _prop_native_cache := {}
+func _prop_art_rect(name: String, pos: Vector2) -> Rect2:
+	var family_base := Terrains.prop_base(name)
+	var variant := Terrains.prop_variant(name, int(pos.x * 31.0 + pos.y * 17.0))
+	if not _prop_native_cache.has(variant):
+		var vis := _prop_visual(variant)
+		_prop_native_cache[variant] = _visual_size(vis)
+		vis.free()
+	var native: Vector2 = _prop_native_cache[variant]
+	var s: float = float(Balance.SCENERY_RENDER_WIDTH.get(family_base, native.x * 3.0)) \
+		* Balance.SCENERY_SCALE_JITTER.y / maxf(1.0, native.x)
+	var w := native.x * s
+	var h := native.y * s
+	var is_tree := family_base.contains("tree")
+	var bottom: float
+	if Balance.SCENERY_RENDER_WIDTH.has(family_base):
+		bottom = 38.0 if is_tree else 22.0
+	elif is_tree:
+		bottom = -18.0 + h * 0.5
+	else:
+		bottom = h * 0.5
+	return Rect2(pos.x - w * 0.5, pos.y + bottom - h, w, h)
+
+## Room-local art rect of a placed building/structure body's BASE sprite (the
+## first child carrying wpx/hpx meta), for the canopy-vs-front test.
+func _front_of(body: Node2D, local_pos: Vector2) -> Dictionary:
+	for c in body.get_children():
+		if (c is Sprite2D or c is AnimatedSprite2D) and c.has_meta("wpx"):
+			var w := float(c.get_meta("wpx"))
+			var h := float(c.get_meta("hpx"))
+			var cp: Vector2 = (c as Node2D).position
+			return {"pos": local_pos, "rect": Rect2(local_pos.x + cp.x - w * 0.5,
+				local_pos.y + cp.y - h * 0.5, w, h)}
+	return {"pos": local_pos, "rect": Rect2(local_pos, Vector2.ZERO)}
+
+## Structures whose BASE is itself a tree (village_grove, darkwood_hollow,
+## marsh_islet…) are not fronts: a scatter tree behind a grove is a wood.
+func _structure_is_tree(name: String) -> bool:
+	var def: Dictionary = Terrains.STRUCTURES.get(name, {})
+	return Terrains.prop_base(String(def.get("sprite", name))).contains("tree")
+
+## True when a tree at `pos` (art `rect`) would be drawn BEHIND a front whose
+## art it overlaps — the pasted-building read. Trees south of the front pass.
+func _canopy_conflict(rect: Rect2, pos: Vector2, fronts: Array) -> bool:
+	for f in fronts:
+		var fr: Dictionary = f
+		if pos.y >= (fr["pos"] as Vector2).y + CANOPY_FRONT_MARGIN:
+			continue  # stands in front: an overhanging crown is the natural read
+		if rect.intersects(fr["rect"] as Rect2):
+			return true
+	return false
+
+
 ## Clump size with a DECAYING tail: starts at 2, each extra member only GROW
 ## as likely as the last (capped at MAX). Pairs/triples common, a dense stand
 ## of 4 rare, 5+ impossible — a natural distribution, not a flat 2..4 roll.
@@ -1810,6 +1878,7 @@ func _spawn_scenery(zi: int) -> void:
 	rng.seed = zi * 77 + terrain_by_zone[zi].hash() % 1000
 	var placed: Array = []
 	var reserved: Array = []
+	var fronts: Array = []   # buildings/landmarks a tree may not hide behind (canopy-vs-front)
 	var unique_props_seen := {}
 	_spawn_floor_wear(zi, terrain, pr)
 
@@ -1873,6 +1942,8 @@ func _spawn_scenery(zi: int) -> void:
 			"radius": float(spec.get("clearance", 190.0))})
 		var landmark_node := _add_structure(landmark_name, landmark_world)
 		zone_scenery[zi].append(landmark_node)
+		if not _structure_is_tree(landmark_name):
+			fronts.append(_front_of(landmark_node, landmark_pos))
 		for unique_name in Terrains.structure_unique_props(landmark_name):
 			unique_props_seen[String(unique_name)] = true
 		# The structure's rendered height (base sprite meta) — the prompt
@@ -1935,8 +2006,10 @@ func _spawn_scenery(zi: int) -> void:
 		placed.append(furnish_pos)
 		reserved.append({"pos": furnish_pos,
 			"radius": float(furnish_spec.get("clearance", 0.0))})
-		zone_scenery[zi].append(
-			_add_structure(String(furnish_spec.get("name", "")), furnish_world))
+		var furnish_node := _add_structure(String(furnish_spec.get("name", "")), furnish_world)
+		zone_scenery[zi].append(furnish_node)
+		if not _structure_is_tree(String(furnish_spec.get("name", ""))):
+			fronts.append(_front_of(furnish_node, furnish_pos))
 
 	# Per-room density jitter: not every room is equally dense (see Balance).
 	var dens := rng.randf_range(Balance.SCENERY_DENSITY_JITTER.x, Balance.SCENERY_DENSITY_JITTER.y)
@@ -2021,7 +2094,9 @@ func _spawn_scenery(zi: int) -> void:
 					break
 			if bok:
 				placed.append(bpos)
-				zone_scenery[zi].append(_add_building(String(bname), origin + bpos))
+				var bnode := _add_building(String(bname), origin + bpos)
+				zone_scenery[zi].append(bnode)
+				fronts.append(_front_of(bnode, bpos))
 				break
 
 	# LANDMARK: select exactly ONE candidate from the terrain roster. Ecology,
@@ -2057,6 +2132,8 @@ func _spawn_scenery(zi: int) -> void:
 				var landmark_node := _add_structure(String(sname), origin + spos)
 				landmark_node.set_meta("terrain_landmark", String(sname))
 				zone_scenery[zi].append(landmark_node)
+				if not _structure_is_tree(String(sname)):
+					fronts.append(_front_of(landmark_node, spos))
 				for unique_name in Terrains.structure_unique_props(String(sname)):
 					unique_props_seen[String(unique_name)] = true
 				break
@@ -2096,6 +2173,11 @@ func _spawn_scenery(zi: int) -> void:
 				if pos.distance_to(other) < Balance.SCENERY_MIN_SPACING:
 					ok = false
 					break
+			# A tree may not stand BEHIND a building/landmark its crown would
+			# overlap (the front would cut a rectangle out of the canopy).
+			if ok and prop_base.contains("tree") and not fronts.is_empty() \
+					and _canopy_conflict(_prop_art_rect(prop, pos), pos, fronts):
+				ok = false
 			if ok:
 				center = pos
 				got = true
@@ -2121,6 +2203,10 @@ func _spawn_scenery(zi: int) -> void:
 					if mpos.distance_to(other) < intra:
 						okc = false
 						break
+				# Clump members honour the same canopy-vs-front rule as the centre.
+				if okc and prop_base.contains("tree") and not fronts.is_empty() \
+						and _canopy_conflict(_prop_art_rect(prop, mpos), mpos, fronts):
+					okc = false
 				if not okc:
 					continue
 			placed.append(mpos)
@@ -2167,6 +2253,11 @@ func _spawn_scenery(zi: int) -> void:
 				if acenter.distance_to(other) < Balance.SCENERY_MIN_SPACING:
 					aok = false
 					break
+			# Tree accents (tree_gnarled and kin) obey canopy-vs-front too.
+			var accent_tree := Terrains.prop_base(aname).contains("tree")
+			if aok and accent_tree and not fronts.is_empty() \
+					and _canopy_conflict(_prop_art_rect(aname, acenter), acenter, fronts):
+				aok = false
 			if not aok:
 				continue
 			var group_positions: Array = []
@@ -2193,6 +2284,9 @@ func _spawn_scenery(zi: int) -> void:
 							if apos.distance_to(sibling) < Balance.SCENERY_ACCENT_INTRA_SPACING:
 								member_ok = false
 								break
+						if member_ok and accent_tree and not fronts.is_empty() \
+								and _canopy_conflict(_prop_art_rect(aname, apos), apos, fronts):
+							member_ok = false
 						if member_ok:
 							member_found = true
 							break
@@ -2243,6 +2337,7 @@ func _spawn_scenery(zi: int) -> void:
 func _add_building(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	var body := StaticBody2D.new()
 	body.position = pos  # the base line is the sort anchor
+	body.set_meta("building", sprite_name)
 	body.collision_layer = 1
 	body.collision_mask = 0
 	var spr := _prop_visual(sprite_name)
@@ -2267,6 +2362,8 @@ func _add_building(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	var hpx := native_size.y * bscale
 	var wpx := native_size.x * bscale
 	spr.position = Vector2(0, -hpx * 0.5 + 12.0)
+	spr.set_meta("wpx", wpx)   # rendered size, read by the canopy-vs-front test
+	spr.set_meta("hpx", hpx)
 	spr.set_meta("occlusion_sort_y", pos.y)
 	spr.set_meta("occlusion_radius", Vector2(wpx, hpx).length() * 0.5)
 	spr.add_to_group("structure_occluders")
@@ -2322,6 +2419,7 @@ func _add_obstacle(sprite_name: String, pos: Vector2, visual_variation := 1.0) -
 	var is_tree := family_base.contains("tree")
 	var body := StaticBody2D.new()
 	body.position = pos
+	body.set_meta("prop", sprite_name)   # what stands here (tests / canopy audit)
 	body.collision_layer = 1
 	body.collision_mask = 0
 	var cs := CollisionShape2D.new()
@@ -2546,6 +2644,7 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 	var def: Dictionary = Terrains.STRUCTURES.get(name, {})
 	var body := StaticBody2D.new()
 	body.position = pos  # the base line is the y-sort anchor
+	body.set_meta("structure", name)
 	body.collision_layer = 1
 	body.collision_mask = 0
 
@@ -2841,6 +2940,7 @@ func _build_room_walls(i: int) -> void:
 				_wall(Rect2(cx2, cy2 + gap / 2.0, ins.x, TILE), wt)
 		else:
 			_wall(Rect2(x, r.position.y, TILE, r.size.y), wt, relief)
+	_cell_curtain(i, full, ins, exits, gap, wt)
 	var wall_tint := Terrains.wall_tint_for(terrain_by_zone[i])
 	for wall_sprite in zone_wall_sprites[i]:
 		if is_instance_valid(wall_sprite):
@@ -2856,6 +2956,41 @@ func _build_room_walls(i: int) -> void:
 		var key := _edge_key(i, nb)
 		if edge_locks.has(key) and not gates.has(key) and not _edge_unlocked(i, nb):
 			gates[key] = _build_gate(i, String(dir))
+
+
+## The OUTER curtain of an inset room (2026-08-19). A shrunken arena walls its
+## playable rect well inside its grid cell; the margin between wall and cell
+## edge is floor nobody can reach. Art.ground() used to close that edge with a
+## painted 16px stone-brick row (grey whatever the terrain, 3x chunky) — the
+## "cartoon grey bricks" under a mossy forest wall. Now the cell edge is closed
+## with real wall segments in the room's OWN wall field: N/S bands when the
+## vertical inset is at least a wall's depth, W/E when the horizontal one is,
+## each with the door corridor's gap kept open. They ride _wall(), so a terrain
+## repaint retextures them with the rest and the north band throws its face.
+const CURTAIN_MIN_INSET := 72.0   # TILE + a face: below this the band would sit on the wall itself
+func _cell_curtain(i: int, full: Rect2, ins: Vector2, exits: Dictionary, gap: float, wt: String) -> void:
+	if ins.y >= CURTAIN_MIN_INSET:
+		var cx := full.position.x + ROOM_W / 2.0
+		for spec in [["N", full.position.y, "S"], ["S", full.end.y - TILE, ""]]:
+			var dir: String = spec[0]
+			var y: float = spec[1]
+			var relief: String = spec[2]
+			if exits.has(dir):
+				_wall(Rect2(full.position.x, y, cx - gap / 2.0 - full.position.x, TILE), wt, relief)
+				_wall(Rect2(cx + gap / 2.0, y, full.end.x - (cx + gap / 2.0), TILE), wt, relief)
+			else:
+				_wall(Rect2(full.position.x, y, full.size.x, TILE), wt, relief)
+	if ins.x >= CURTAIN_MIN_INSET:
+		var cy := full.position.y + ROOM_H / 2.0
+		for spec in [["W", full.position.x, "E"], ["E", full.end.x - TILE, ""]]:
+			var dir: String = spec[0]
+			var x: float = spec[1]
+			var relief: String = spec[2]
+			if exits.has(dir):
+				_wall(Rect2(x, full.position.y, TILE, cy - gap / 2.0 - full.position.y), wt, relief)
+				_wall(Rect2(x, cy + gap / 2.0, TILE, full.end.y - (cy + gap / 2.0)), wt, relief)
+			else:
+				_wall(Rect2(x, full.position.y, TILE, full.size.y), wt, relief)
 
 ## Foreground CANOPY overhang (P3, 2026-08-18): forest rooms hang a strip of
 ## dark leaves along the north edge ABOVE the actors (z 20), so walking near

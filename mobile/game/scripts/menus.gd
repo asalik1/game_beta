@@ -353,7 +353,12 @@ func open_slots() -> void:
 	game.set_music("roster")  # carries through chapter + class select
 
 	var have_saves := not saves.is_empty()
-	_btn(vbox, "  ⚔  New Character  ", func() -> void: open_chapter_select(),
+	# A NEW hero always begins at Chapter 1 (owner ruling 2026-08-19: "new
+	# characters always route to chapter 1, obviously") — straight to the class
+	# pick, no chapter selector. Later chapters are the REPLAY picker's business
+	# (pause menu, per-hero completed_ flags) and the co-op lobby's; the account-
+	# wide meta unlocks still gate those. Tests + dev keep open_chapter_select().
+	_btn(vbox, "  ⚔  New Character  ", func() -> void: new_character(),
 		Color(0.95, 0.85, 0.5))
 	_btn(vbox, "  ❖  Play Together  ", func() -> void: open_lobby(),
 		Color(0.6, 0.9, 1.0))
@@ -899,6 +904,13 @@ func pick_chapter(id: String) -> void:
 	current = ""
 	game.switch_chapter(id)  # no-op if it is already the built chapter
 	open_class_select()
+
+
+## New hero: Chapter 1, then the class pick. The one seam the roster's "New
+## Character" button uses; the chapter selector is for replays/tests/dev.
+func new_character() -> void:
+	chapter_replay = false
+	pick_chapter(String(Story.CHAPTER_LIST.keys()[0]))
 
 
 # ------------------------------------------------------------ class select ---

@@ -69,6 +69,8 @@ Context: first human playthroughs — Ch1 ~5 min, Ch2 ~8. Target **100 hours acr
 ### Acts vs chapters
 Acts = narrative superstructure AND level thirds (agreed 2026-07-04): **Act 1 = early game L1–40, Act 2 = mid game ~40–70, Act 3 = endgame ~70–100**. Chapters = the playable unit (own world/bosses/save-replay): **~7 per act, 45–75 min first run**. Ch1–2 re-slot as Act 1 openers after the retrofit; nothing thrown away. Act 1's full chapter/boss roster (Ch3–Ch7, L16→41) lives in **BOSSES.md**.
 
+**A new hero always begins at Chapter 1 (owner ruling 2026-08-19).** The roster's New Character goes straight to the class pick — no chapter selector. Later chapters are reached by PLAYING (the same hero journeys on) or by the REPLAY picker (pause menu; per-hero `completed_` flags, NG+ tier); the co-op lobby's host pick is the other place chapters are chosen. The account-wide `unlocked_` meta flags (finish a chapter with any hero) still gate those pickers — they no longer offer a level-1 alt a chapter-3 start.
+
 ### Mono-terrain chapters
 One terrain family per early chapter; later chapters blend (the corruption merging is itself a story beat). Mechanics escalate across the chapter; cheaper to author depth than breadth. **Mono-family, not mono-look** — a graveyard chapter drifts misty fields → barrows → crypt stone → boss cathedral; literal tile repetition reads as monotony.
 
