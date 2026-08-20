@@ -538,6 +538,16 @@ attack them (A → B → C → D → E → F → G); each lands by the same gate
   LINEAR filter on the selector stage + paper-doll preview models only (in-game rendering
   keeps the global NEAREST). Audit scripts in the session scratchpad; sheet =
   `UPSCALE_OWNER_REVIEW/27_resolution_audit_equal_zoom.png`.
+- [x] **Per-CLIP addendum** (owner: "did u look at the crispness of the attack anim") —
+  measured every hero clip, not just idles. The basic ATTACK clips (attack/attackb/
+  attack2) match their idles everywhere: warrior 1.89×, paladin 1.94×, assassin 2.00×,
+  warlock 2.04×, archer 2.14×, mage 2.33×. But four classes carry an OLDER small-body
+  clip generation (~104–117 px bodies) for some strips, and several LIVE abilities play
+  them: archer Tumble (dash 1.39×) + Arrow Storm (cast 1.44×) + run; assassin Shadow
+  Dash + Death Mark + run/death (1.15–1.16×); warlock Hex (ult) + Void Rift (cast) +
+  run/death (1.18×); mage death (1.20×). Warrior + paladin are uniform. At 1× game zoom
+  the dip is subtle (sheet: `UPSCALE_OWNER_REVIEW/28_ability_clip_crispness.png`);
+  REGEN SHORTLIST (14 strips, 4 classes) parked until the owner unfreezes generation.
 - [~] **Fire-on-the-move** (owner: spamming a low-cd shot while moving locks the standing
   pose) — the CODE SEAM is in: `attack_walk` is a registered hero clip
   (`<art>_attack_walk.png`, 12 fps, single facing + mirror); `use_ability` swaps a moving
