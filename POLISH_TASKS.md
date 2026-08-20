@@ -385,7 +385,8 @@ attack them (A → B → C → D → E → F → G); each lands by the same gate
   "+3 gold" streams COALESCE into one growing line. Routing: `game_base.spawn_text` sends any
   kind-0 line that asked for reading time (`hold > 0` — LORE UNEARTHED, X UNLOCKED, +N RENOWN,
   CHAPTER CONQUERED, THE CURSE LIFTS, weekly/Waking lines) to the plaque and mirrors every
-  "+…" pickup/XP line into the feed; the room-clear "THE BLIGHT RECEDES" calls `announce`
+  "+…" pickup/XP line into the feed; the room-clear "THE BLIGHT BREAKS" (owner renamed it
+  off "recedes" 2026-08-19) calls `announce`
   directly; coin pickups log "+N gold". Numbers, crits and short callouts keep floating.
 - [x] **P7.B Coins + chests** (code BUILT 06:05; ART INSTALLED 08:20 — all ten chests +
   their open strips + the 6-frame coin spin, contact sheet

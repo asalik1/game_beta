@@ -204,3 +204,21 @@ fidelity vs owners, gating, suite-walk safety, cross-module collisions
 (none), reward bands. One fix applied: Still Blue gains a retroactive
 accept on Sera's report choice (explorer-first players used to lose the
 quest). Full suite green.
+
+
+## Q8 - Onboarding: talents + gear after the FIRST room clear (OPEN - owner request 2026-08-19)
+The player is never TAUGHT the two systems that carry the whole power curve.
+After clearing the first combat room of a new hero's Chapter 1:
+1. A guided beat teaches ALLOCATING TALENT POINTS (the first point lands about
+   then; point at Skills > Talents, let them spend it before moving on).
+2. A guided beat teaches EQUIPPING GEAR (the first drops have landed by then;
+   open the bag, equip something).
+3. AUTO-EQUIP button in the inventory - BUILT AS PART OF THIS TASK (owner):
+   one button that fills empty slots and takes strict upgrades from the bag
+   (reuse the _diff_tip comparison; never swap a piece a build might prefer -
+   strict upgrades and empty slots only). The teaching beat can then close
+   with "or press Auto-equip".
+Shape: NOT a side-quest module - this belongs in the ch1 flow (a one-time
+beat after _room_cleared, or a line from Elder Maren), gated on
+tut_talents_done / tut_gear_done flags, skippable, never in chapter replays
+and never on co-op guests.

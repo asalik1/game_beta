@@ -2453,6 +2453,10 @@ func _add_building(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	spr.set_meta("occlusion_sort_y", pos.y)
 	spr.set_meta("occlusion_radius", Vector2(wpx, hpx).length() * 0.5)
 	spr.add_to_group("structure_occluders")
+	# Buildings ground themselves with the hugging shadow too (owner flag
+	# 2026-08-19: "this building has no shadow") — their wide base classifies
+	# as a hug in _prop_cast_shadow, so only a soft rim peeks bottom-right.
+	_prop_cast_shadow(body, spr, 12.0)
 	body.add_child(spr)
 	var cs := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
@@ -2555,23 +2559,35 @@ func _add_obstacle(sprite_name: String, pos: Vector2, visual_variation := 1.0) -
 	return body
 
 
-## CAST SHADOW for a STATIC prop / structure sprite (depth pass 2026-08-19; owner
-## flag the same day: "some props / accents / landmarks don't cast while others
-## do" — now every prop and every non-building structure above
-## CAST_SHADOW_MIN_H casts). The copy is flipped (feet stay on the base line,
-## the head projects away), sheared so the head falls to the lower-RIGHT (light
-## from the top-left), squashed flat, drawn under the body. An animated sprite
-## (sway / glow strip) shares its frames and FOLLOWS the prop's frame; a
+## CAST SHADOW for a STATIC prop / structure / building sprite (depth pass
+## 2026-08-19; owner rounds the same day: "some props don't cast", then "the
+## fountain / log shadows originate wrong and flowers should have one too").
+## TWO SHAPES, picked by the art's silhouette:
+##  - PROJECTED figure — a flipped, sheared, squashed copy whose feet stay on
+##    the base line and whose head falls to the lower-right. Correct ONLY for
+##    STANDING silhouettes: tall enough, and NARROW at the ground (a trunk, a
+##    pedestal, a pillar — the bottom rows under 55 % of the full width).
+##  - HUGGING drop shadow — the same sprite unflipped, offset a little to the
+##    lower-right UNDER the prop, so only a soft dark rim peeks out along the
+##    bottom-right edges. Correct for everything ELSE: squat/wide shapes whose
+##    projected copy read as a detached blob (the fountain, a lying log, rocks,
+##    flowers, buildings).
+## An animated sprite shares its frames and FOLLOWS the prop's frame; a
 ## wind-swayed prop sways its shadow (same material). `base_y_override` is the
 ## body-local y of the art's bottom when the caller knows it (structures' +12
 ## grounding line); else the sprite's own bottom.
+var _shadow_shape_cache := {}   # texture key -> bottom-band width / full width
+
 func _prop_cast_shadow(body: Node2D, spr: Node2D, base_y_override := NAN) -> void:
 	if Balance.CAST_SHADOW_A <= 0.0 or not (spr is Sprite2D or spr is AnimatedSprite2D):
 		return
 	var vsz: Vector2 = _visual_size(spr)
 	var vscale: float = absf(spr.scale.y)
-	if vsz.y * vscale < Balance.CAST_SHADOW_MIN_H:
+	var hpx: float = vsz.y * vscale
+	if hpx < Balance.CAST_SHADOW_HUG_MIN_H:
 		return
+	var projected: bool = hpx >= Balance.CAST_SHADOW_MIN_H \
+		and _shadow_bottom_ratio(spr) < Balance.CAST_SHADOW_STAND_RATIO
 	var cast: Node2D
 	if spr is AnimatedSprite2D:
 		var a := AnimatedSprite2D.new()
@@ -2592,24 +2608,73 @@ func _prop_cast_shadow(body: Node2D, spr: Node2D, base_y_override := NAN) -> voi
 		s2.vframes = (spr as Sprite2D).vframes
 		s2.frame = (spr as Sprite2D).frame
 		cast = s2
-	cast.modulate = Color(0, 0, 0, Balance.CAST_SHADOW_A)
 	cast.rotation = spr.rotation        # the seeded lean
-	var k := Balance.CAST_SHADOW_SKEW
-	cast.skew = -k
-	cast.scale = Vector2(spr.scale.x, -vscale * Balance.CAST_SHADOW_SQUASH)
 	if spr.material != null:
 		cast.material = spr.material   # a swaying tree sways its shadow
-	# With scale.y < 0 the art's feet sit at local -hs/2; under skew -k that
-	# point maps to (-hs/2·sin k, -hs/2·cos k) — place the node so it lands
-	# on the base line, and the head lands hs·(sin k, cos k) away.
-	var hs := vsz.y * absf(cast.scale.y)
-	var base_y: float = base_y_override if not is_nan(base_y_override) else spr.position.y + vsz.y * vscale * 0.5
-	var base := Vector2(spr.position.x, base_y)
-	cast.position = base + Vector2(hs * 0.5 * sin(k), hs * 0.5 * cos(k))
+	if projected:
+		cast.modulate = Color(0, 0, 0, Balance.CAST_SHADOW_A)
+		var k := Balance.CAST_SHADOW_SKEW
+		cast.skew = -k
+		cast.scale = Vector2(spr.scale.x, -vscale * Balance.CAST_SHADOW_SQUASH)
+		# With scale.y < 0 the art's feet sit at local -hs/2; under skew -k that
+		# point maps to (-hs/2·sin k, -hs/2·cos k) — place the node so it lands
+		# on the base line, and the head lands hs·(sin k, cos k) away.
+		var hs := vsz.y * absf(cast.scale.y)
+		var base_y: float = base_y_override if not is_nan(base_y_override) else spr.position.y + vsz.y * vscale * 0.5
+		var base := Vector2(spr.position.x, base_y)
+		cast.position = base + Vector2(hs * 0.5 * sin(k), hs * 0.5 * cos(k))
+	else:
+		# hug: same footprint, nudged toward the light's far side; most of it
+		# hides under the prop, the rim grounds it.
+		cast.modulate = Color(0, 0, 0, Balance.CAST_SHADOW_A * 0.9)
+		cast.scale = spr.scale
+		var off: float = clampf(hpx * 0.07, 5.0, 24.0)
+		cast.position = spr.position + Vector2(off, off * 0.75)
 	cast.z_index = -1   # under every body at z 0, over the floor layers
 	cast.set_meta("cast_shadow", true)   # autotest's "one animated part" counts skip it
 	body.add_child(cast)
 	body.move_child(cast, 0)
+
+
+## Width of the art's BOTTOM rows (the lowest 8 %) as a share of its full alpha
+## width — under CAST_SHADOW_STAND_RATIO means "stands on a narrow foot" (a
+## trunk, a pedestal), which is what makes a projected shadow read true.
+func _shadow_bottom_ratio(spr: Node2D) -> float:
+	var tex: Texture2D = null
+	var hf := 1
+	if spr is Sprite2D:
+		tex = (spr as Sprite2D).texture
+		hf = maxi(1, (spr as Sprite2D).hframes)
+	elif spr is AnimatedSprite2D:
+		var sf: SpriteFrames = (spr as AnimatedSprite2D).sprite_frames
+		if sf != null and sf.get_frame_count("default") > 0:
+			tex = sf.get_frame_texture("default", 0)
+	if tex == null:
+		return 1.0
+	var key: int = tex.get_rid().get_id()
+	if _shadow_shape_cache.has(key):
+		return _shadow_shape_cache[key]
+	var img: Image = null
+	if tex is AtlasTexture:
+		var at := tex as AtlasTexture
+		if at.atlas != null:
+			var full: Image = at.atlas.get_image()
+			if full != null:
+				img = full.get_region(Rect2i(at.region))
+	else:
+		img = tex.get_image()
+	var ratio := 1.0
+	if img != null:
+		var cw: int = img.get_width() / hf
+		var cell: Image = img.get_region(Rect2i(0, 0, cw, img.get_height())) if hf > 1 else img
+		var used: Rect2i = cell.get_used_rect()
+		if used.size.x > 0 and used.size.y > 2:
+			var band_h: int = maxi(2, int(used.size.y * 0.08))
+			var band: Rect2i = Rect2i(used.position.x, used.end.y - band_h, used.size.x, band_h)
+			var bw: int = cell.get_region(band).get_used_rect().size.x
+			ratio = float(bw) / float(used.size.x)
+	_shadow_shape_cache[key] = ratio
+	return ratio
 
 
 ## Seeded micro-variation supplements real silhouette families: mirror, a
@@ -2831,11 +2896,11 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 	base_spr.set_meta("occlusion_sort_y", pos.y)
 	base_spr.set_meta("occlusion_radius", Vector2(bw, bh).length() * 0.5)
 	base_spr.add_to_group("structure_occluders")
-	# Landmarks / accents cast too (owner flag 2026-08-19) — statues, wells,
-	# fountains, stalls, shrines, the grove trees. Buildings don't: anything wider
-	# than CAST_SHADOW_STRUCT_MAX_W (halls, gates, the arcade) keeps its wall
-	# faces, and a def can opt out with "cast": false.
-	if def.get("cast", true) and float(def.get("w", 180.0)) <= Balance.CAST_SHADOW_STRUCT_MAX_W:
+	# Landmarks / accents / halls cast too (owner flags 2026-08-19) — the shape
+	# helper picks projected vs hugging by silhouette, so wide structures get a
+	# safe base-hugging shadow instead of a giant projection. `"cast": false`
+	# opts a def out.
+	if def.get("cast", true):
 		_prop_cast_shadow(body, base_spr, 12.0)
 	body.add_child(base_spr)
 	var target_w: float = float(def.get("w", 180.0))

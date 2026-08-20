@@ -3520,6 +3520,12 @@ class CastShadow extends Sprite2D:
 	var src: Sprite2D = null
 	var alpha := 0.3
 	var strength := 1.0   # per-body multiplier (bosses / big bodies tone it down)
+	# frame-0 alpha bottom per texture (px from the cell top). The FRAME bottom
+	# is the wrong feet line: hero/NPC cells carry padding below the boots, and
+	# that padding became a visible GAP between body and shadow (owner flag
+	# 2026-08-19: "the archer looks like it's floating", "the elder woman's
+	# shadow is way detached").
+	static var _feet_cache := {}
 
 	func _ready() -> void:
 		centered = true
@@ -3530,6 +3536,21 @@ class CastShadow extends Sprite2D:
 
 	func _process(_dt: float) -> void:
 		_sync()
+
+	static func _art_feet(tex: Texture2D, hf: int, vf: int) -> float:
+		var key: int = tex.get_rid().get_id()
+		if _feet_cache.has(key):
+			return _feet_cache[key]
+		var ch: int = tex.get_height() / maxi(1, vf)
+		var bot := float(ch)
+		var img: Image = tex.get_image()
+		if img != null:
+			var cw: int = img.get_width() / maxi(1, hf)
+			var used: Rect2i = img.get_region(Rect2i(0, 0, cw, ch)).get_used_rect()
+			if used.size.y > 0:
+				bot = float(used.end.y)
+		_feet_cache[key] = bot
+		return bot
 
 	func _sync() -> void:
 		if src == null or not is_instance_valid(src) or src.texture == null:
@@ -3551,10 +3572,14 @@ class CastShadow extends Sprite2D:
 		skew = -k
 		var sy: float = absf(src.scale.y) * Balance.CAST_SHADOW_SQUASH
 		scale = Vector2(src.scale.x, -sy)
-		var fh: float = float(src.texture.get_height()) / float(maxi(1, src.vframes))
-		var feet_y: float = src.position.y + (src.offset.y + (fh * 0.5 if src.centered else fh)) * absf(src.scale.y)
-		var d: float = (src.offset.y + (fh * 0.5 if src.centered else fh)) * sy
-		position = Vector2(src.position.x, feet_y) + Vector2(d * sin(k), d * cos(k))
+		var cell_h: float = float(src.texture.get_height()) / float(maxi(1, src.vframes))
+		# e = the art's FEET row in the sprite's local space (offset included):
+		# the flipped copy is placed so that row lands exactly on the source's
+		# feet, and projects away from there — no gap, no overlap.
+		var bot: float = _art_feet(src.texture, src.hframes, src.vframes)
+		var e: float = bot - (cell_h * 0.5 if src.centered else 0.0) + src.offset.y
+		var feet_y: float = src.position.y + e * absf(src.scale.y)
+		position = Vector2(src.position.x, feet_y) + Vector2(e * sy * sin(k), e * sy * cos(k))
 		modulate = Color(0, 0, 0, alpha * strength * src.modulate.a * src.self_modulate.a)
 		# never the source's material: the hero's occlusion-outline / a skin's
 		# hue shader would draw on the shadow (the shadow is the silhouette only)

@@ -4562,6 +4562,8 @@ func _test_asset_seams() -> void:
 	var bonfire_building := game._add_building("camp_bonfire", Vector2(-4540, -4540))
 	var bonfire_base_anim := 0
 	for child in bonfire_building.get_children():
+		if child.has_meta("cast_shadow"):
+			continue   # the frame-synced cast shadow copy is not a motion overlay
 		if child is AnimatedSprite2D:
 			bonfire_base_anim += 1
 	if bonfire_base_anim != 1:

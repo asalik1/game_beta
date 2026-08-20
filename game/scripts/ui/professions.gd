@@ -16,11 +16,19 @@ const CRAFT_GRADES := ["F", "E", "D", "C", "B", "A"]  # S is drop-only (never cr
 
 ## `msg`/`msg_color` show the last in-place action's result; `slot` is unused
 ## for now (kept for a future focus, single-screen refresh flow).
+## Trade → its shelf icon (existing icon art: the smith's hammer, the
+## alchemist's bottle, the tailor's needle). assets/icons/<name>.png.
+const TRADE_ICON := {"blacksmith": "w_hammer", "alchemist": "potion", "tailor": "u_silkneedle"}
+
+
 static func open(m: Menus, msg := "", msg_color := Color(0.8, 0.85, 1.0), slot := "") -> void:
 	var g := m.game
 	var p: Player = g.local_player
 	var at_capital: bool = g.chapter_id == "capital"
-	var vbox := m._open("Professions — Craft, Mastery & Blueprints", 1060, 660, true)
+	# No trade locked = three lock rows + two one-line stubs — the full-height
+	# panel was two-thirds whitespace (owner flag 2026-08-19). Size by state.
+	var vbox := m._open("Professions — Craft, Mastery & Blueprints", 1060,
+		420.0 if p.profession == "" else 660.0, true)
 	m.current = "professions"
 
 	if msg != "":
@@ -73,8 +81,19 @@ static func _trade_section(m: Menus, list: VBoxContainer, p: Player, at_capital:
 	m._lbl(list, "— Trade  (locked: one at a time; mastery persists across swaps) —", 15, Color(0.85, 0.8, 0.7))
 	for t in Professions.trades():
 		var label := "%s  [%s]" % [Professions.trade_name(t), ", ".join(Professions.slots_of(t))]
+		var ticon: Texture2D = Art.ui_icon(String(TRADE_ICON.get(t, "")))
 		if t == p.profession:
-			m._lbl(list, "   ● %s — active" % label, 14, Color(0.6, 1.0, 0.6))
+			var row := HBoxContainer.new()
+			row.add_theme_constant_override("separation", 8)
+			list.add_child(row)
+			if ticon != null:
+				var ic := TextureRect.new()
+				ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+				ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+				ic.texture = ticon
+				ic.custom_minimum_size = Vector2(26, 26)
+				row.add_child(ic)
+			m._lbl(row, "● %s — active" % label, 14, Color(0.6, 1.0, 0.6))
 			continue
 		var free_lock := p.profession == ""
 		var cost := 0 if free_lock else Professions.swap_cost(p)
@@ -83,7 +102,8 @@ static func _trade_section(m: Menus, list: VBoxContainer, p: Player, at_capital:
 		var kept := "" if mpts == 0 else "   (mastery %d kept)" % mpts
 		var enabled := at_capital and (free_lock or p.gold >= cost)
 		m._btn(list, "   Lock %s  —  %s%s" % [label, cost_txt, kept],
-			_lock_cb(m, t, slot), Color(0.9, 0.85, 0.6) if enabled else Color(0.5, 0.5, 0.55), enabled)
+			_lock_cb(m, t, slot), Color(0.9, 0.85, 0.6) if enabled else Color(0.5, 0.5, 0.55),
+			enabled, ticon)
 
 
 static func _lock_cb(m: Menus, trade: String, slot: String) -> Callable:

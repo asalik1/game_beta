@@ -96,6 +96,12 @@ func close() -> void:
 
 ## Open the shared modal shell. Closable screens expose ✕ and click-outside.
 func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxContainer:
+	# The shell ease plays only when a menu OPENS from gameplay. Rebuilding
+	# while one is already up — spending a talent point re-runs open_skills,
+	# buying re-runs open_shop, tab hops — must swap instantly: replaying the
+	# fade+settle on every refresh read as UI flicker (owner regression flag
+	# 2026-08-19).
+	var was_open := root != null
 	if root:
 		root.queue_free()
 	game.request_pause(true)
@@ -111,7 +117,7 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 	add_child(root)
 	detail_popover = null  # any popover was a child of the old root; drop the ref
 	# Ease the shell in: fade + a settle around the screen centre (P2).
-	if _shell_motion():
+	if _shell_motion() and not was_open:
 		root.pivot_offset = get_viewport().get_visible_rect().size * 0.5
 		root.modulate.a = 0.0
 		root.scale = Vector2(0.97, 0.97)
@@ -1028,6 +1034,19 @@ func open_class_select() -> void:
 	_cs_video.expand = true
 	_cs_video.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_cs_video.visible = false
+	# hdr_2d runs the canvas in LINEAR light and the theora frame is uploaded
+	# without an sRGB flag, so the video rendered near-BLACK (its sRGB values
+	# got treated as linear). Lift it back with the inverse transfer curve.
+	var vsh := Shader.new()
+	vsh.code = """
+shader_type canvas_item;
+void fragment() {
+	COLOR.rgb = pow(max(COLOR.rgb, vec3(0.0)), vec3(0.4545));
+}
+"""
+	var vmat := ShaderMaterial.new()
+	vmat.shader = vsh
+	_cs_video.material = vmat
 	_cs_video.finished.connect(func() -> void:
 		if _cs_video != null and is_instance_valid(_cs_video):
 			_cs_video.visible = false

@@ -1606,6 +1606,23 @@ func announce(text: String, color: Color, hold := 0.0, kind := "") -> void:
 			break
 	var stacked := _ann_stack
 	_ann_stack += 1
+	# The box FITS its text (owner 2026-08-19: a short line in the fixed 560 px
+	# plaque was mostly whitespace). Measure the title at its SETTLED spacing —
+	# the brief wider ease-in clips inside the box — and the sub-line, and take
+	# the larger; clamp so a one-word line still reads as a plaque.
+	var icon_name := String(ANN_ICONS.get(kind, ""))
+	var text_x: float = 60.0 if icon_name != "" else 22.0
+	var base: Font = UITheme.header_font()
+	var fv := FontVariation.new()
+	fv.base_font = base if base != null else ThemeDB.fallback_font
+	fv.spacing_glyph = ANN_SPACING_REST
+	var title_size := 20 if title.length() <= 28 else 16
+	var title_text := title.to_upper() if title.length() <= 40 else title
+	var need: float = fv.get_string_size(title_text, HORIZONTAL_ALIGNMENT_LEFT, -1, title_size).x
+	if sub != "":
+		need = maxf(need, ThemeDB.fallback_font.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x)
+	var pw: float = clampf(text_x + need + 26.0, 280.0, ANN_W)
+	fv.spacing_glyph = ANN_SPACING_IN
 	var plaque := Panel.new()
 	plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var sb := StyleBoxFlat.new()
@@ -1617,8 +1634,8 @@ func announce(text: String, color: Color, hold := 0.0, kind := "") -> void:
 	sb.shadow_size = 10
 	plaque.add_theme_stylebox_override("panel", sb)
 	var h := ANN_H + (16.0 if sub != "" else 0.0)
-	plaque.size = Vector2(ANN_W, h)
-	plaque.position = Vector2(640.0 - ANN_W * 0.5, ANN_Y + stacked * ANN_STACK)
+	plaque.size = Vector2(pw, h)
+	plaque.position = Vector2(640.0 - pw * 0.5, ANN_Y + stacked * ANN_STACK)
 	plaque.pivot_offset = plaque.size * 0.5
 	plaque.clip_contents = true
 	add_child(plaque)
@@ -1626,13 +1643,11 @@ func announce(text: String, color: Color, hold := 0.0, kind := "") -> void:
 	for ry in [6.0, h - 7.0]:
 		var rule := ColorRect.new()
 		rule.color = Color(UITheme.GOLD, 0.32)
-		rule.position = Vector2(ANN_W * 0.14, ry)
-		rule.size = Vector2(ANN_W * 0.72, 1)
+		rule.position = Vector2(pw * 0.14, ry)
+		rule.size = Vector2(pw * 0.72, 1)
 		rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		plaque.add_child(rule)
 	# icon glyph
-	var icon_name := String(ANN_ICONS.get(kind, ""))
-	var text_x := 22.0
 	if icon_name != "":
 		var icon := TextureRect.new()
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE   # before the texture (size clamp)
@@ -1643,21 +1658,16 @@ func announce(text: String, color: Color, hold := 0.0, kind := "") -> void:
 		icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		plaque.add_child(icon)
-		text_x = 60.0
 	# title: header face, caps, letter-spaced (FontVariation.spacing_glyph eases in)
 	var tl := Label.new()
-	tl.text = title.to_upper() if title.length() <= 40 else title
+	tl.text = title_text
 	tl.position = Vector2(text_x, 10 if sub == "" else 7)
-	tl.size = Vector2(ANN_W - text_x - 18.0, 34)
+	tl.size = Vector2(pw - text_x - 18.0, 34)
 	tl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if icon_name == "" else HORIZONTAL_ALIGNMENT_LEFT
 	tl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	tl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var base: Font = UITheme.header_font()
-	var fv := FontVariation.new()
-	fv.base_font = base if base != null else ThemeDB.fallback_font
-	fv.spacing_glyph = ANN_SPACING_IN
 	tl.add_theme_font_override("font", fv)
-	tl.add_theme_font_size_override("font_size", 20 if title.length() <= 28 else 16)
+	tl.add_theme_font_size_override("font_size", title_size)
 	tl.add_theme_color_override("font_color", color.lightened(0.15))
 	tl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 	tl.add_theme_constant_override("outline_size", 3)
@@ -1666,7 +1676,7 @@ func announce(text: String, color: Color, hold := 0.0, kind := "") -> void:
 		var sl := Label.new()
 		sl.text = sub
 		sl.position = Vector2(text_x, 40)
-		sl.size = Vector2(ANN_W - text_x - 18.0, 22)
+		sl.size = Vector2(pw - text_x - 18.0, 22)
 		sl.horizontal_alignment = tl.horizontal_alignment
 		sl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		sl.add_theme_font_size_override("font_size", 13)
@@ -1710,7 +1720,7 @@ func announce(text: String, color: Color, hold := 0.0, kind := "") -> void:
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.parallel().tween_property(fv, "spacing_glyph", ANN_SPACING_REST, 0.55) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(sweep, "position:x", ANN_W + 60.0, 0.7) \
+	tw.parallel().tween_property(sweep, "position:x", pw + 60.0, 0.7) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT).set_delay(0.08)
 	tw.tween_interval(maxf(hold, ANN_HOLD_MIN))
 	tw.tween_property(plaque, "modulate:a", 0.0, 0.5)

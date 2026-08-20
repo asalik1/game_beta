@@ -3136,12 +3136,15 @@ void fragment() {
 	float a2 = sin((y * 54.0 - t * 5.0) * 3.14159 - x * 9.0);
 	float a3 = sin((y * 14.0 + t * 1.4) * 3.14159 + x * 13.0);
 	float surf = (a1 * 0.45 + a2 * 0.30 + a3 * 0.25) * 0.5 + 0.5;
-	float glint = smoothstep(0.86, 1.0, surf);            // sharp sparkle on crests
-	float crest = smoothstep(0.55, 0.85, surf) * 0.10;    // soft body highlight
-	float foam = smoothstep(0.11, 0.02, x) + smoothstep(0.89, 0.98, x);
+	// Quiet water (owner 2026-08-19: the marsh river read cartoonish — the
+	// glints painted big pale blobs): sparser, dimmer crests; foam stays at
+	// the banks only.
+	float glint = smoothstep(0.93, 1.0, surf);            // sparse sparkle on crests
+	float crest = smoothstep(0.62, 0.9, surf) * 0.05;     // faint body highlight
+	float foam = smoothstep(0.08, 0.015, x) + smoothstep(0.92, 0.985, x);
 	float depth = 1.0 - 0.16 * smoothstep(0.5, 0.05, abs(x - 0.5));  // darker mid-channel
-	vec3 rgb = water_col.rgb * depth + glint * 0.24 + crest + foam * 0.28;
-	float alpha = clamp(water_col.a * edge + foam * 0.22 + glint * 0.05, 0.0, 0.93);
+	vec3 rgb = water_col.rgb * depth + glint * 0.12 + crest + foam * 0.16;
+	float alpha = clamp(water_col.a * edge + foam * 0.16 + glint * 0.04, 0.0, 0.93);
 	COLOR = vec4(rgb, alpha);
 }
 """

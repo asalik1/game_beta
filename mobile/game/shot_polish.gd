@@ -56,9 +56,12 @@ func _ready() -> void:
 			"map": game.menus.open_map()
 			"settings": game.menus.open_settings()
 			"wardrobe": game.menus.open_wardrobe()
+			"professions": game.menus.open_professions()
 		await sim_wait(1.2)
 		shot("menu_" + arg("menu", ""), "menu " + arg("menu", ""))
 		if arg("menu", "") == "class":
+			game.menus._cs_preview(cls)   # the shots review the BOOTED class's stage
+			await sim_wait(0.4)
 			# hover the third ability card: the stage plays its clip
 			game.menus._cs_show_ability(game.menus._cs_id, "ult")
 			await sim_wait(0.35)

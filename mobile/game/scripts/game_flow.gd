@@ -1644,7 +1644,9 @@ func _purge_fx() -> void:
 	sfx("nova", 0.65, 0.0, -9.0)
 	shake(3.0)
 	if is_instance_valid(player):
-		hud.announce("THE BLIGHT RECEDES", Color(0.55, 0.95, 0.6), 2.2, "victory")  # P7.A plaque
+		# "THE BLIGHT BREAKS" — owner 2026-08-19: his issue was the word
+		# "recedes" specifically; the blight framing stays.
+		hud.announce("THE BLIGHT BREAKS", Color(0.55, 0.95, 0.6), 2.2, "victory")  # P7.A plaque
 		burst(player.global_position + Vector2(0, -20), Color(0.5, 0.9, 0.55), 16)
 
 ## Death: back to the last safe room with gear/gold/XP intact; the room

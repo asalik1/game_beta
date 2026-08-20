@@ -49,6 +49,11 @@ func _goto_room2() -> void:
 	game.player.global_position = game.room_center(2)
 	game._enter_room(2)
 	await frames(10)
+	# A BRIGHT stage: the Darkwood's night tint made the first takes near-black
+	# on the class-select panel. Village paint = daylight grass, the reference
+	# backdrop every class reads on.
+	apply_terrain("village", 2)
+	await frames(6)
 	for n in get_tree().get_nodes_in_group("enemies"):
 		if is_instance_valid(n):
 			n.queue_free()

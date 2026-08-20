@@ -47,7 +47,11 @@ def encode(cls: str, slot: str) -> bool:
         # yuv420p EXPLICITLY: from PNG input ffmpeg picks yuv444p, which
         # Godot's theora decoder renders as macroblock garbage at best and
         # crashes on (0xC000001D) at worst — 4:2:0 is the one safe profile.
-        "-pix_fmt", "yuv420p",
+        # -g 1 = INTRA-ONLY: with normal keyframe spacing, Godot's decoder
+        # corrupts the inter-predicted (moving) blocks of ffmpeg-encoded
+        # theora — the owner saw green macroblock soup exactly where the hero
+        # casts. All-keyframes costs ~2-3x the bytes and decodes clean.
+        "-pix_fmt", "yuv420p", "-g", "1",
         "-c:v", "libtheora", "-q:v", "6",
         "-an", str(out),
     ]
