@@ -548,6 +548,19 @@ attack them (A → B → C → D → E → F → G); each lands by the same gate
   run/death (1.18×); mage death (1.20×). Warrior + paladin are uniform. At 1× game zoom
   the dip is subtle (sheet: `UPSCALE_OWNER_REVIEW/28_ability_clip_crispness.png`);
   REGEN SHORTLIST (14 strips, 4 classes) parked until the owner unfreezes generation.
+  → DONE 2026-08-20 (owner authorized PixelLab Resize for all 94 strips — the 8-dir sets
+  included): `tools/art/pixellab_resize_soft_clips.py` replayed the /v2/resize contract on
+  every soft strip (~700 calls); every hero clip now measures its class's flat ratio
+  (assassin 2.00, warlock 2.02, archer 2.14-2.19, mage 2.25-2.39 — the 1.15-1.44 tail is
+  gone). THE FX LESSON (three repair passes, all deterministic, no extra API): the model
+  redraw is excellent for BODIES but unreliable for FX — it dropped baked flames/glows on
+  scattered frames (flicker), redrew the warlock void ring as a pill, and broke identity
+  on one storm frame; saturation masks miss BLACK smoke and WHITE rings, so the final
+  rule is content-based — restore any original alpha the redraw dropped (composite), and
+  full-replace frames missing >35% or shape-broken (LANCZOS of the original; FX-dominant
+  frames read fine upscaled plainly). fx_repair scripts in the session scratchpad;
+  originals under `art_src/Custom/HeroClipResize_2026-08-19/runtime_pre_install/`.
+  Review sheet: `UPSCALE_OWNER_REVIEW/29_soft_clips_before_after.png`.
 - [~] **Fire-on-the-move** (owner: spamming a low-cd shot while moving locks the standing
   pose) — the CODE SEAM is in: `attack_walk` is a registered hero clip
   (`<art>_attack_walk.png`, 12 fps, single facing + mirror); `use_ability` swaps a moving
