@@ -158,6 +158,15 @@ input path, road/magma/keep-wall walks) into `gif_<beat>/`; run with the runner'
 `--fixed-fps=30` so each frame is a deterministic 1/30 s; then
 `python tools/art/gif_from_frames.py [--width 800] [--out ~/Downloads/crownless_polish_gifs]`
 stitches 15 fps GIFs with one shared palette per GIF (owner review artefacts)) ·
+`tools/art/pixellab_resize_soft_clips.py` (2026-08-19, owner-authorized PixelLab:
+upscales the OLD-generation hero action strips — assassin/warlock/archer
+run·dash·cast·ult 8-dir sets + the four flat deaths, 94 strips — through
+PixelLab /v2/resize exactly like `pixellab_resize_assassin_attack.py` did for
+the crisp attack strips: per frame tight-crop → identity-prompt + runtime-
+palette-locked redraw at the 180 px (mage 202) body → paste back at original
+coordinates in a 277 cell (auto-grows), baseline cell-22; `run` = spend
+generations (resumable, frames cache), `install` = assemble + backup + write
+game/+mobile/, `status` = progress) ·
 `shot_csdemo` (2026-08-19, a `ShotRig`: the CLASS-SELECT ability demos — per
 `--class=<id>`, casts every slot (a1/a2/a3/ult) through the REAL
 `player.use_ability` at a frozen immortal wolf pack and dumps every frame
