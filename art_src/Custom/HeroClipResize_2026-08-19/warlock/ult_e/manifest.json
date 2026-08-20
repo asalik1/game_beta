@@ -1,0 +1,73 @@
+{
+ "source": "C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\gameplay-polish\\game\\assets\\sprites\\warlock_ult_e.png",
+ "cell": 277,
+ "baseline": 255,
+ "scale": 1.011049723756906,
+ "frames": {
+  "5": {
+   "box": [
+    95,
+    74,
+    178,
+    255
+   ],
+   "target": [
+    88,
+    187
+   ],
+   "rc": 277
+  },
+  "2": {
+   "box": [
+    89,
+    74,
+    173,
+    253
+   ],
+   "target": [
+    89,
+    185
+   ],
+   "rc": 277
+  },
+  "4": {
+   "box": [
+    90,
+    75,
+    174,
+    255
+   ],
+   "target": [
+    89,
+    186
+   ],
+   "rc": 277
+  },
+  "3": {
+   "box": [
+    90,
+    74,
+    174,
+    252
+   ],
+   "target": [
+    89,
+    184
+   ],
+   "rc": 277
+  },
+  "6": {
+   "box": [
+    95,
+    74,
+    178,
+    255
+   ],
+   "target": [
+    88,
+    187
+   ],
+   "rc": 277
+  }
+ }
+}

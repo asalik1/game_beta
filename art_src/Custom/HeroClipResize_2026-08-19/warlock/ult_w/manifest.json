@@ -1,0 +1,21 @@
+{
+ "source": "C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\gameplay-polish\\game\\assets\\sprites\\warlock_ult_w.png",
+ "cell": 277,
+ "baseline": 255,
+ "scale": 1.011049723756906,
+ "frames": {
+  "4": {
+   "box": [
+    53,
+    76,
+    198,
+    255
+   ],
+   "target": [
+    151,
+    185
+   ],
+   "rc": 277
+  }
+ }
+}

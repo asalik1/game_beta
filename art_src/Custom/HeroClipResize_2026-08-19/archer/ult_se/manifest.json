@@ -1,0 +1,34 @@
+{
+ "source": "C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\gameplay-polish\\game\\assets\\sprites\\archer_ult_se.png",
+ "cell": 287,
+ "baseline": 265,
+ "scale": 1.0054945054945055,
+ "frames": {
+  "6": {
+   "box": [
+    31,
+    83,
+    258,
+    262
+   ],
+   "target": [
+    232,
+    184
+   ],
+   "rc": 277
+  },
+  "7": {
+   "box": [
+    9,
+    85,
+    287,
+    265
+   ],
+   "target": [
+    282,
+    185
+   ],
+   "rc": 286
+  }
+ }
+}

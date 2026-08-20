@@ -1,0 +1,21 @@
+{
+ "source": "C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\gameplay-polish\\game\\assets\\sprites\\warlock_cast_nw.png",
+ "cell": 277,
+ "baseline": 255,
+ "scale": 1.0166666666666666,
+ "frames": {
+  "6": {
+   "box": [
+    49,
+    75,
+    191,
+    254
+   ],
+   "target": [
+    148,
+    186
+   ],
+   "rc": 277
+  }
+ }
+}

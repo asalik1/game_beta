@@ -1,0 +1,34 @@
+{
+ "source": "C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\gameplay-polish\\game\\assets\\sprites\\archer_cast_se.png",
+ "cell": 277,
+ "baseline": 252,
+ "scale": 1.0054945054945055,
+ "frames": {
+  "1": {
+   "box": [
+    85,
+    72,
+    208,
+    252
+   ],
+   "target": [
+    128,
+    185
+   ],
+   "rc": 277
+  },
+  "2": {
+   "box": [
+    97,
+    72,
+    206,
+    251
+   ],
+   "target": [
+    114,
+    184
+   ],
+   "rc": 277
+  }
+ }
+}

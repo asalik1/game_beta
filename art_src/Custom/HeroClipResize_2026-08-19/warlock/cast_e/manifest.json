@@ -1,0 +1,47 @@
+{
+ "source": "C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\gameplay-polish\\game\\assets\\sprites\\warlock_cast_e.png",
+ "cell": 277,
+ "baseline": 254,
+ "scale": 1.011049723756906,
+ "frames": {
+  "6": {
+   "box": [
+    105,
+    74,
+    194,
+    253
+   ],
+   "target": [
+    94,
+    185
+   ],
+   "rc": 277
+  },
+  "5": {
+   "box": [
+    95,
+    75,
+    194,
+    252
+   ],
+   "target": [
+    104,
+    183
+   ],
+   "rc": 277
+  },
+  "8": {
+   "box": [
+    98,
+    75,
+    177,
+    254
+   ],
+   "target": [
+    84,
+    185
+   ],
+   "rc": 277
+  }
+ }
+}

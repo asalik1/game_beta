@@ -165,10 +165,19 @@ def resize_strip(cls: str, clip: str, d: str, token: str) -> int:
         crop = f.crop(crop_box)
         target = (round(crop.width * scale), round(crop.height * scale))
         api = (min(target[0], 200), min(target[1], 200))
+        # /v2/resize caps the REFERENCE at 200 px per edge too (422 on the
+        # archer's wide bow crops, cell 242): shrink an oversized reference to
+        # fit — the final geometry still restores from the ORIGINAL crop size.
+        ref = crop
+        if max(crop.width, crop.height) > 200:
+            rk = 200.0 / max(crop.width, crop.height)
+            ref = crop.resize((max(1, round(crop.width * rk)),
+                               max(1, round(crop.height * rk))),
+                              Image.Resampling.LANCZOS)
         body = {
             "description": desc,
-            "reference_image": {"type": "base64", "base64": _png_b64(crop), "format": "png"},
-            "reference_image_size": {"width": crop.width, "height": crop.height},
+            "reference_image": {"type": "base64", "base64": _png_b64(ref), "format": "png"},
+            "reference_image_size": {"width": ref.width, "height": ref.height},
             "target_size": {"width": api[0], "height": api[1]},
             "view": "low top-down",
             "direction": direction,
