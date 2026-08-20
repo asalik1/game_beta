@@ -46,7 +46,13 @@ MOBILE = REPO / "mobile/game/assets/sprites"
 STAGE = REPO / "art_src/Custom/HeroBand_2026-08-20"
 SEED = 20260820
 FEET_MARGIN = 22
+# Concurrency, MEASURED (2026-08-20): /v2/resize sustains ~4 in flight clean
+# (the whole 94-strip run: zero 429s). 24 in flight thrashed it into constant
+# 429s (2.3 frames/min) and appears to trip a lingering account cooldown —
+# even 8 stayed rate-limited right after. The tier's "20 workers" is the
+# generation queue, NOT this endpoint. Stay at 4, strips serial.
 WORKERS = 4
+STRIP_WORKERS = 1
 TIMEOUT = 300
 ATTEMPTS = 4
 CRS = 1.7
@@ -245,9 +251,16 @@ def main() -> int:
                    == Image.open(SPR / rel).width // Image.open(SPR / rel).height)
         print(f"{len(jobs)} strips below band; {done} staged complete")
         return 0
-    for cls, rel, d in jobs:
-        print(f"STRIP {rel}", flush=True)
-        print(process_strip(cls, rel, d, token), flush=True)
+    for cls in classes:
+        if any(j[0] == cls for j in jobs):
+            class_palette(cls)   # prime once, before threads race on it
+    with ThreadPoolExecutor(max_workers=STRIP_WORKERS) as strip_pool:
+        futs = {strip_pool.submit(process_strip, cls, rel, d, token): rel
+                for cls, rel, d in jobs}
+        done_n = 0
+        for fut in as_completed(futs):
+            done_n += 1
+            print(f"[{done_n}/{len(jobs)}] {fut.result()}", flush=True)
     print("BAND_RUN_DONE")
     return 0
 
