@@ -81,7 +81,7 @@ const CHAPTER := {
 		"district": "approach", "mark": "",
 		"obstacles": [], "obstacle_count": 0,
 		"decor": [], "decor_count": 0, "accents": [], "structures": [],
-		"landmarks": [{"name": "capital_emberward_gate", "x": 1056, "y": 560, "clearance": 280, "uses": [{"type": "action", "prompt": "E — Leave Crownfall", "x": 0, "y": 80, "ref": "portal_story"}]}],
+		"landmarks": [{"name": "capital_emberward_gate", "x": 1056, "y": 560, "clearance": 280, "uses": [{"type": "action", "prompt": "E — Muster your party  (Play Together)", "x": 0, "y": 80, "ref": "guild"}]}],
 		"furnishings": [{"name": "torch_pillar", "x": 900, "y": 900, "clearance": 60}, {"name": "torch_pillar", "x": 1212, "y": 900, "clearance": 60}],
 		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 405, "w": 1653.75}],
 		"npcs": [
@@ -146,7 +146,7 @@ const CONVOS := {
 	"cap_citizen": {"start": "a", "nodes": {"a": {"who": "A Citizen", "text": "First visit? Everything a returning company needs rings this plaza — Petra's forge west, the Lapidary east, your vault by the fountain, the bazaar and mail at the south stalls. Gates north, Tankard west, Archive east, the four ward halls at the corners.", "next": ""}}},
 	"cap_petra": {"start": "a", "nodes": {"a": {"who": "Smith Petra", "text": "The city's one forge worth the name. Quench, reforge, transmute — bring me the piece and the coin and I'll bring the fire. Spend enough seasons at my bench and you'll find my rates soften for a regular.", "next": ""}}},
 	"cap_lapidary": {"start": "a", "nodes": {"a": {"who": "Master Lapidary", "text": "Petra handles metal; I handle what lives inside it. Stones, sockets, synthesis — all of it at these benches and nowhere else. Gems are patient work; patrons who keep coming back get my patient prices.", "next": ""}}},
-	"cap_gate": {"start": "a", "nodes": {"a": {"who": "Gate Sergeant", "text": "The Emberward Gate. Portcullis stays up in peacetime; the wild stays out on its honour. You came in clean — most do.", "next": ""}}},
+	"cap_gate": {"start": "a", "nodes": {"a": {"who": "Gate Sergeant", "text": "The Emberward Gate. Portcullis stays up in peacetime; the wild stays out on its honour. Companies muster under the arch before they march — the road itself you take from the Wayfinder Sanctum, north of the plaza.", "next": ""}}},
 	"cap_callis": {"start": "a", "nodes": {"a": {"who": "Warden Callis", "text": "The tribes hold this enclave by truce, not welcome. Honest work, then: survey what the Waking's made of the east, and bring us word. Daily, if you're able.", "next": ""}}},
 	"cap_ottar": {"start": "a", "nodes": {"a": {"who": "Skald Ottar", "text": "A fire that never dies and a skald who never stops. Go do a thing worth singing — I'll trade you the doing for the song. Come back with a story.", "next": ""}}},
 	"cap_ilse": {"start": "a", "nodes": {"a": {"who": "Cantor Ilse", "text": "The Choir does not bury its dead — rot is the land's honest truth, and the dead keep their own vigil here. Tend them with me. It's patient work. Daily work.", "next": ""}}},

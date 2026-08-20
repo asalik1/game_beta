@@ -809,8 +809,19 @@ func open_endgame_result(summary: Dictionary) -> void:
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_child(spacer)
-	_btn(vbox, "  Return to title  (spoils are in your mailbox)  ",
-		func() -> void: game.exit_to_title(), Color(0.6, 1.0, 0.6))
+	# A run ends back in CROWNFALL (owner 2026-08-19: dying in the Crucible /
+	# Depths must not read "exit to title") — the gates live there, the spoils
+	# mail is there, the next run starts there. Endgame runs are solo (the
+	# arena swap refuses sessions), so the capital return needs no net path.
+	_btn(vbox, "  Return to Crownfall  (spoils are in your mailbox)  ",
+		func() -> void:
+			game.endgame_active = false
+			close()
+			game.enter_capital()
+			game.state = game.ST_PLAYING
+			game.play_started = true
+			game.request_pause(false)
+			game.hud.visible = true, Color(0.6, 1.0, 0.6))
 	_hint(vbox, "Your rewards are banked. Press to return.")
 
 
@@ -5179,7 +5190,8 @@ func _open_capital_map() -> void:
 			var npc: Dictionary = npc_def
 			var action := String(npc.get("action", ""))
 			if action.begins_with("portal_"):
-				service_rooms["portals"] = i
+				if not service_rooms.has("portals"):   # first wins: the Wayfinder's THREE gates, never a later single door
+					service_rooms["portals"] = i
 			elif action != "" and not service_rooms.has(action):
 				service_rooms[action] = i
 		# Crownfall's accessible facades now own their services directly. Keep
@@ -5194,7 +5206,8 @@ func _open_capital_map() -> void:
 					continue
 				var landmark_action := String(landmark_use.get("ref", ""))
 				if landmark_action.begins_with("portal_"):
-					service_rooms["portals"] = i
+					if not service_rooms.has("portals"):   # first wins (Wayfinder Sanctum)
+						service_rooms["portals"] = i
 				elif landmark_action != "" and not service_rooms.has(landmark_action):
 					service_rooms[landmark_action] = i
 

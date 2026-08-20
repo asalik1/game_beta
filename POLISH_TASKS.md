@@ -502,6 +502,28 @@ attack them (A → B → C → D → E → F → G); each lands by the same gate
   needs one owner-side open of the class select after a reboot/driver recovery. Suite
   PASS headless.
 
+### P0.11 — capital flow round (owner, 2026-08-19 evening)
+- [x] **Duplicate exit rooms** — the Emberward Gate's "Leave Crownfall" duplicated the
+  Wayfinder Sanctum's Story Gate. The gate is the MUSTER POINT now ("E — Muster your
+  party (Play Together)" → the party lobby; the Sergeant's line sells it and points the
+  road itself at the Wayfinder). Changed in `tools/content/gen_capital.py` and
+  regenerated — never edit `capital_hub.gd` by hand.
+- [x] **Story Gate → chapter selector** — solo it opens `open_chapter_select(true)`
+  (replay picker with NG+ tiers) instead of throwing you into the last chapter; the
+  party paths (host reprise picker / guest message) unchanged.
+- [x] **Crucible + Depths sealed until Chapter 7 is cleared** —
+  `game_world.endgame_gates_open()` = `completed_ch7` (per character; dev mode keeps its
+  key). `_hub_action` refuses with "The gate is sealed — clear Chapter 7 to open it."; the
+  hotspot prompt reads "Sealed — clear Chapter 7…"; `_seal_portal` freezes the portal's
+  strip on frame 0, kills its lights and goes cold-dark (meta `sealed`) — animated =
+  unlocked, exactly the owner's ruling. Rig beats: `shot.bat polish --capital`
+  (sealed / open / muster).
+- [x] **Endgame death → Crownfall** — the run-result card's exit is "Return to
+  Crownfall" (endgame_active off, `enter_capital()`, live state) instead of "Return to
+  title"; covers Crucible AND Depths (both settle through one path).
+- [x] **City directory routes to the Wayfinder** — `service_rooms["portals"]` is
+  first-wins (the three-gate room indexes before any later single door).
+
 ### P8 — readability / depth / life (the owner's review prompts, 2026-08-19 07:00)
 - [x] **Mob readability vs detailed floors** — decision: NO outline (house style, §40);
   a soft dark GROUND-AO pool under every mob and the hero (`Balance.CHAR_GROUND_AO` 0.30,

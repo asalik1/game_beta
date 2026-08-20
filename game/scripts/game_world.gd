@@ -177,6 +177,29 @@ func switch_chapter(id: String, force := false) -> void:
 		call("teardown_pvp_controller")
 
 
+## The Crucible / Depths gates open once THIS character has cleared Chapter 7
+## (owner ruling 2026-08-19); dev mode keeps its skeleton key. Tests that call
+## enter_endgame directly are not gated — this is the DOOR, not the mode.
+func endgame_gates_open() -> bool:
+	return dev_mode or bool(get_flag("completed_ch7", false))
+
+
+## A SEALED portal reads sealed (owner: "the gates need a visual locked state,
+## only when unlocked do they become animated"): the strip freezes on frame 0,
+## its lights die, and the whole body goes cold and dark.
+func _seal_portal(body: Node2D) -> void:
+	body.modulate = Color(0.52, 0.54, 0.6)
+	body.set_meta("sealed", true)
+	for child in body.get_children():
+		if child.has_meta("cast_shadow"):
+			continue
+		if child is AnimatedSprite2D:
+			(child as AnimatedSprite2D).stop()
+			(child as AnimatedSprite2D).frame = 0
+		elif child is PointLight2D:
+			(child as PointLight2D).visible = false
+
+
 ## Enter Crownfall, the standalone capital hub (dev panel "Go To Capital").
 ## Remembers the chapter we left so the hub's Story gate can return there.
 func enter_capital() -> void:
@@ -203,8 +226,8 @@ func _hub_action(act: String) -> void:
 			# Wave 9: in a PARTY the portal is the content queue — the HOST
 			# picks the road (chapter + NG+ tier, the reprise picker) and the
 			# MP-20 ready check reaches every head in the plaza; guests are
-			# told who leads. Solo (or a party of 1) keeps the simple door:
-			# back to the campaign we came from (dev may have jumped in cold).
+			# told who leads. Solo: the CHAPTER SELECTOR (owner 2026-08-19 —
+			# the gate used to throw you straight into the last chapter).
 			if net_online() and net_guest():
 				spawn_text(player.global_position + Vector2(0, -90),
 					"The party leader chooses the road — gather at the portal.",
@@ -213,11 +236,16 @@ func _hub_action(act: String) -> void:
 				menus.lobby["reprise"] = true
 				menus.open_lobby("chapter")
 			else:
-				switch_chapter(_pre_capital_chapter if _pre_capital_chapter != "" else "ch1", true)
-		"portal_crucible":
-			call("enter_endgame", "crucible")
-		"portal_depths":
-			call("enter_endgame", "depths")
+				menus.open_chapter_select(true)
+		"portal_crucible", "portal_depths":
+			# Post-campaign gates (owner 2026-08-19): sealed until this
+			# character has cleared Chapter 7. Dev mode keeps its skeleton key.
+			if not endgame_gates_open():
+				spawn_text(player.global_position + Vector2(0, -90),
+					"The gate is sealed — clear Chapter 7 to open it.",
+					Color(1.0, 0.7, 0.5), 3.0)
+			else:
+				call("enter_endgame", "crucible" if act == "portal_crucible" else "depths")
 		"vault":
 			menus.open_stash()
 		"wardrobe":
@@ -2018,6 +2046,10 @@ func _spawn_scenery(zi: int) -> void:
 			"radius": float(spec.get("clearance", 190.0))})
 		var landmark_node := _add_structure(landmark_name, landmark_world)
 		zone_scenery[zi].append(landmark_node)
+		# Sealed endgame gates read sealed (frozen strip, dead lights, cold).
+		if landmark_name in ["capital_portal_crucible", "capital_portal_depths"] \
+				and not endgame_gates_open():
+			_seal_portal(landmark_node)
 		if not _structure_is_tree(landmark_name):
 			fronts.append(_front_of(landmark_node, landmark_pos))
 		for unique_name in Terrains.structure_unique_props(landmark_name):
@@ -2059,8 +2091,12 @@ func _spawn_scenery(zi: int) -> void:
 				continue
 			# Prop hotspots demand adjacency (owner report 2026-07-25: the
 			# fountain's prompt fired tiles away and floated below the art).
+			var use_prompt := String(use_spec.get("prompt", "E — Use"))
+			if String(use_spec.get("ref", "")) in ["portal_crucible", "portal_depths"] \
+					and not endgame_gates_open():
+				use_prompt = "Sealed — clear Chapter 7 to open this gate"
 			var hotspot := _make_npc("book", use_pos,
-				String(use_spec.get("prompt", "E — Use")), use_action, "",
+				use_prompt, use_action, "",
 				Balance.PROP_HOTSPOT_REACH)
 			for child in hotspot.get_children():
 				if child is Sprite2D:

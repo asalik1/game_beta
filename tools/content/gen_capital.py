@@ -197,7 +197,10 @@ LANDMARK_USES = {
     # as her talking): Nix's gossip hub opens the party lobby, Fenna's offers
     # the warm-up. Only the unattended alembic keeps a prop hotspot.
     ("tankard", 2): [ACTION("E — Prepare your potion loadout", "potions", y=80)],
-    ("gate", 0): [ACTION("E — Leave Crownfall", "portal_story", y=80)],
+    # Owner 2026-08-19: the gate's old "Leave Crownfall" duplicated the
+    # Wayfinder's Story Gate (the ONE way onto the road). The Emberward Gate is
+    # the MUSTER POINT instead — companies gather at the gate before marching.
+    ("gate", 0): [ACTION("E — Muster your party  (Play Together)", "guild", y=80)],
     ("wf_moot", 0): [ACTION("E — Review Wildfang contracts", "journal", y=95)],
     ("ch_chapel", 0): [ACTION("E — Review Choir contracts", "journal", y=90)],
     ("acc_commons", 0): [ACTION("E — Review Accord contracts", "journal", y=95)],
@@ -466,7 +469,7 @@ CONVOS = {
  "cap_citizen": ("A Citizen", "First visit? Everything a returning company needs rings this plaza — Petra's forge west, the Lapidary east, your vault by the fountain, the bazaar and mail at the south stalls. Gates north, Tankard west, Archive east, the four ward halls at the corners."),
  "cap_petra": ("Smith Petra", "The city's one forge worth the name. Quench, reforge, transmute — bring me the piece and the coin and I'll bring the fire. Spend enough seasons at my bench and you'll find my rates soften for a regular."),
  "cap_lapidary": ("Master Lapidary", "Petra handles metal; I handle what lives inside it. Stones, sockets, synthesis — all of it at these benches and nowhere else. Gems are patient work; patrons who keep coming back get my patient prices."),
- "cap_gate": ("Gate Sergeant", "The Emberward Gate. Portcullis stays up in peacetime; the wild stays out on its honour. You came in clean — most do."),
+ "cap_gate": ("Gate Sergeant", "The Emberward Gate. Portcullis stays up in peacetime; the wild stays out on its honour. Companies muster under the arch before they march — the road itself you take from the Wayfinder Sanctum, north of the plaza."),
  "cap_callis": ("Warden Callis", "The tribes hold this enclave by truce, not welcome. Honest work, then: survey what the Waking's made of the east, and bring us word. Daily, if you're able."),
  "cap_ottar": ("Skald Ottar", "A fire that never dies and a skald who never stops. Go do a thing worth singing — I'll trade you the doing for the song. Come back with a story."),
  "cap_ilse": ("Cantor Ilse", "The Choir does not bury its dead — rot is the land's honest truth, and the dead keep their own vigil here. Tend them with me. It's patient work. Daily work."),

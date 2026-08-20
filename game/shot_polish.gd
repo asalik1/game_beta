@@ -74,6 +74,40 @@ func _ready() -> void:
 			shot("menu_class_splash", "splash mode: the painting, head in frame")
 		finish()
 		return
+	if flag("capital"):
+		# The Wayfinder Sanctum's endgame gates: SEALED (fresh hero) vs OPEN
+		# (chapter 7 cleared) — the owner's locked-state ruling made visible.
+		game.enter_capital()
+		await frames(10)
+		await skip_dialogue()
+		var wf := _room_by_name("wayfinder_sanctum")
+		if wf >= 0:
+			game.fast_travel(wf)
+			await sim_wait(1.2)
+			game.player.global_position = game.room_pos(wf, 1056, 800)
+			game.camera.global_position = game.room_pos(wf, 1056, 560)
+			await sim_wait(0.4)
+			shot("capital_gates_sealed", "crucible + depths sealed (fresh hero)")
+			game.set_flag("completed_ch7")
+			game.switch_chapter("capital", true)
+			await frames(10)
+			await skip_dialogue()
+			game.fast_travel(wf)
+			await sim_wait(1.2)
+			game.player.global_position = game.room_pos(wf, 1056, 800)
+			game.camera.global_position = game.room_pos(wf, 1056, 560)
+			await sim_wait(0.4)
+			shot("capital_gates_open", "all three gates live (ch7 cleared)")
+		var em := _room_by_name("the_emberward_gate")
+		if em >= 0:
+			game.fast_travel(em)
+			await sim_wait(1.2)
+			game.player.global_position = game.room_pos(em, 1056, 820)
+			game.camera.global_position = game.room_pos(em, 1056, 600)
+			await sim_wait(0.4)
+			shot("capital_emberward_muster", "the muster point (no duplicate leave door)")
+		finish()
+		return
 	if flag("review"):
 		# --review: the owner review pack's in-world beats in one run — a chest
 		# opening mid-burst, the boss bar dressed, the announcement plaque + feed.
