@@ -649,7 +649,21 @@ func use_ability(slot: String) -> void:
 			var av := aim_dir()
 			if Art.dir8_suffix(av) == "s":
 				action_face_hint = Vector2(1.0 if av.x >= 0.0 else -1.0, 1.0)
-		play_action(action_clip)
+		# FIRE ON THE MOVE (owner 2026-08-19): a basic shot/swing spammed while
+		# MOVING used to lock the body into the standing pose sliding over the
+		# floor. When the art ships <art>_attack_walk (a stride that draws and
+		# looses mid-step; single facing, mirrored for the other side), a moving
+		# basic attack plays THAT — and a re-cast mid-cycle lets the cycle finish
+		# instead of restarting it, so the gait stays continuous under spam.
+		# Art-driven: no strip = the standing swing, exactly as before.
+		var walk_fire: bool = action_clip in ["attack", "attackb", "attack2"] \
+			and _clips.has("attack_walk") and velocity.length() > 20.0
+		if walk_fire:
+			action_clip = "attack_walk"
+		if walk_fire and _clip == "attack_walk" and not _clip_loop:
+			pass  # mid-cycle re-cast: the playing stride carries the visual
+		else:
+			play_action(action_clip)
 		if cls == "warrior" and action_clip == "ult":
 			# Berserk swings the red-blade cleave (the ult clip) at Cleave's
 			# rage cadence — 0.45s, less under cdr — but that clip is authored

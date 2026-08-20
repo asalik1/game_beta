@@ -524,6 +524,30 @@ attack them (A → B → C → D → E → F → G); each lands by the same gate
 - [x] **City directory routes to the Wayfinder** — `service_rooms["portals"]` is
   first-wins (the three-gate room indexes before any later single door).
 
+### P0.12 — resolution audit + fire-on-the-move seam (owner, 2026-08-19 night)
+- [x] **Resolution-vs-rendered-size audit** (owner: "compare the classes to the
+  mobs/npcs/bosses") — measured every placed kind's ART body height against its on-screen
+  body (source-px-per-screen-px; ≥1 = downscaled/crisp). Results: classes 1.89× (warrior)
+  – 2.33× (mage); NPC roster 2.0–2.6×; placed mobs 2.3–5.5× (wolf 4.7, cultist 5.5);
+  codex bosses 3.0–4.4× (Vargoth 3.0, Morwen 4.4). Roster median 2.28×. NOTHING placed
+  renders upscaled — the only <1.0 entries are the UNPLACED pc_bosses/pc_extra salvage
+  kinds (ticks/verdant/scholars/cyclops/kraken/flame_giant/tengu/bats/ooze/great_spirit,
+  0.33–0.76×), already ruled "regenerate when a zone places them". The "class sprites
+  look lower quality" observation = the CLASS-SELECT stage upscaling the ~180 px body
+  ~1.7× with NEAREST (uneven doubled pixels beside 2048 px paintings) — fixed with a
+  LINEAR filter on the selector stage + paper-doll preview models only (in-game rendering
+  keeps the global NEAREST). Audit scripts in the session scratchpad; sheet =
+  `UPSCALE_OWNER_REVIEW/27_resolution_audit_equal_zoom.png`.
+- [~] **Fire-on-the-move** (owner: spamming a low-cd shot while moving locks the standing
+  pose) — the CODE SEAM is in: `attack_walk` is a registered hero clip
+  (`<art>_attack_walk.png`, 12 fps, single facing + mirror); `use_ability` swaps a moving
+  basic attack onto it and a re-cast mid-cycle lets the cycle finish (gait continuity);
+  contact timing unchanged (swing_delay reads the base delay). Art-driven: no strip = the
+  standing swing exactly as before. ART NOT GENERATED — owner said "don't generate
+  anything for now" (2026-08-19); when he gives the word, the archer brief = walk strip
+  as gait/scale ref + attack strip as bow identity, row-of-8 facing LEFT, no baked
+  arrows, install via normalize against the idle cell (install_clip.py anchor invariant).
+
 ### P8 — readability / depth / life (the owner's review prompts, 2026-08-19 07:00)
 - [x] **Mob readability vs detailed floors** — decision: NO outline (house style, §40);
   a soft dark GROUND-AO pool under every mob and the hero (`Balance.CHAR_GROUND_AO` 0.30,

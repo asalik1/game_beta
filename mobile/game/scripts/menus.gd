@@ -1031,7 +1031,11 @@ func open_class_select() -> void:
 	_cs_model_glow.position = Vector2(CS_STAGE.size.x * 0.5, CS_STAGE.size.y - 48.0)
 	_cs_stage.add_child(_cs_model_glow)
 	_cs_model = AnimatedSprite2D.new()
-	_cs_model.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	# LINEAR here, not the global NEAREST: the stage UPSCALES the ~180 px body
+	# ~1.7x, and non-integer nearest gives uneven doubled pixels — the "class
+	# sprites look lower quality" the owner saw beside the 2048 px paintings.
+	# In-game rendering (a ~2x DOWNscale) keeps the global NEAREST crisp look.
+	_cs_model.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	_cs_model.position = Vector2(CS_STAGE.size.x * 0.5, CS_STAGE.size.y - 60.0)
 	_cs_model.animation_finished.connect(_cs_clip_done)
 	_cs_stage.add_child(_cs_model)
@@ -2851,7 +2855,9 @@ func _paper_doll(vbox: VBoxContainer, p: Player) -> void:
 			sf.add_frame("idle", at)
 		var model := AnimatedSprite2D.new()
 		model.sprite_frames = sf
-		model.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		# LINEAR: this preview scales the body off-integer (nearest = uneven
+		# pixels up, dropped rows down) — same call as the class-select stage.
+		model.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		var s := minf(2.2, PD_MODEL_H / maxf(1.0, fsize.y))
 		model.scale = Vector2(s, s)
 		# Centre the BODY, not the cell: hero frames carry side padding, so the

@@ -3622,6 +3622,11 @@ const HERO_CLIP_FILES := {
 	# alternation): a1 flips attack <-> attackb every cast when the strip is
 	# installed (<art>_attackb[_<dir>].png). Absent = the single swing, as before.
 	"attackb": "attackb",
+	# "attack_walk" = firing ON THE MOVE (owner 2026-08-19: spamming a low-cd
+	# shot while moving locked the body into the standing pose sliding over the
+	# floor). A walk cycle that draws/looses mid-stride; use_ability swaps a
+	# moving basic attack onto it when the strip ships. Absent = unchanged.
+	"attack_walk": "attack_walk",
 }
 const HERO_CLIP_FPS := {
 	# Action clips run FAST so a ~7-frame swing/throw/dash lands in ~0.3s and
@@ -3630,6 +3635,9 @@ const HERO_CLIP_FPS := {
 	"idle": 6.0, "walk": 9.0, "run": 11.0, "attack": 22.0, "attack2": 22.0,
 	"cast": 10.0, "dash": 26.0, "ult": 11.0, "ultidle": 6.0, "death": 9.0,
 	"attackb": 22.0,
+	# A full 8-frame fire-on-the-move cycle in ~0.67 s — a brisk stride with one
+	# draw-and-loose per cycle; re-casts mid-cycle let it finish (no restart).
+	"attack_walk": 12.0,
 }
 
 ## Every installed animation clip for a hero class, keyed by clip name.
