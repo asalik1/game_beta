@@ -4177,7 +4177,9 @@ func _test_swing_alternation() -> void:
 		game.player.pending_theme_note = ""
 		if game.player._alt_basic_clip() != "attack":
 			return _fail("%s: a re-applied body must open on the primary swing" % cls)
-	# Skins ship no alt art (yet): the fallback keeps the single swing every cast.
+	# A skin WITHOUT its own attackb art must fall back to the single swing every
+	# cast (dreadknight, unless it later ships one -- elite skins that DO ship it
+	# are checked below).
 	game.player.set_class("warrior")
 	game.player.set_skin("dreadknight")
 	game.player.pending_theme_note = ""
@@ -4188,6 +4190,30 @@ func _test_swing_alternation() -> void:
 		var b: String = game.player._alt_basic_clip()
 		if a != "attack" or b != "attack":
 			return _fail("skin without attackb art must keep the single swing (saw %s, %s)" % [a, b])
+	game.player.set_skin(saved_skin)
+	# Melee ELITE SKINS that DO ship an attackb family must alternate exactly
+	# like the base class (2026-08-21: emberbound_heir/erased_name added them,
+	# owner flagged the alternating basic swing on skins). A skin missing a
+	# direction silently falls back to the single swing -- reads as a stuck strike.
+	for pair in [["warrior", "emberbound_heir"], ["assassin", "erased_name"]]:
+		var pcls: String = pair[0]
+		var pskin: String = pair[1]
+		game.player.set_class(pcls)
+		game.player.set_skin(pskin)
+		game.player.pending_theme_note = ""
+		if not game.player._clips.has("attackb") or not game.player._dir_loco.has("attackb") \
+				or int(game.player._dir_loco["attackb"].size()) != 8:
+			return _fail("skin %s: attackb family incomplete (flat + 8-dir) -- melee alternation dies" % pskin)
+		var seen_skin: Array[String] = []
+		for _i in 3:
+			game.player.cds["a1"] = 0.0
+			game.player.mp = game.player.max_mp
+			game.player.berserk_time = 0.0
+			game.player.use_ability("a1")
+			seen_skin.append(game.player._strike_clip)
+			await _frames(1)
+		if seen_skin != ["attack", "attackb", "attack"]:
+			return _fail("skin %s: a1 should alternate attack/attackb/attack, saw %s" % [pskin, seen_skin])
 	game.player.set_skin(saved_skin)
 	# Contact sync: the assassin's cross-slash lands later than the lunge.
 	game.player.set_class("assassin")
