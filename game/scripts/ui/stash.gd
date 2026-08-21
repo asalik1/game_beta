@@ -82,7 +82,8 @@ static func _column(m: Menus, parent: HBoxContainer, title: String, entries: Arr
 	list.add_theme_constant_override("separation", 3)
 	scroll.add_child(list)
 	if entries.is_empty():
-		m._lbl(list, "(empty)", 13, Color(0.55, 0.55, 0.6))
+		# Authored empty state, not a bare "(empty)" in a tall column (review).
+		m._lbl(list, "Your bag is empty — loot you carry shows here to deposit.", 13, Color(0.55, 0.55, 0.6))
 		return
 	for pl in entries:
 		var payload: Dictionary = pl

@@ -59,10 +59,8 @@ const SLOT_LABEL := {"weapon": "Weapons", "helmet": "Helmets", "armor": "Armor",
 	"pants": "Pants", "boots": "Boots", "charm": "Charms"}
 
 ## The dev-only Future shelf's categories (chips), in the old subtab order.
-const FUTURE_CATS := [["future_terrains", "Terrains"], ["future_mobs", "Mobs"], ["future_bosses", "Bosses"],
-	["future_npcs", "NPCs"], ["future_critters", "Critters"], ["future_items", "Items"],
-	["future_armory", "Armory"], ["future_supplies", "Supplies"], ["future_provisions", "Provisions"],
-	["future_alchemy", "Alchemy"], ["future_relics", "Relics"]]
+const FUTURE_CATS := [["future_terrains", "Terrains"], ["future_mobs", "Mobs"],
+	["future_npcs", "NPCs"], ["future_relics", "Relics"]]
 
 # ---------------------------------------------------- remembered UI state ---
 static var _sec := "monsters"       # open section id
@@ -2481,7 +2479,7 @@ static func _future(m: Menus, list: VBoxContainer, tab: String) -> void:
 ## Relic groups that own a dedicated Future subtab. The Relics shelf is the
 ## catch-all for every OTHER group (and the ungrouped) — a newly minted
 ## group lands there visibly instead of going invisible everywhere.
-const FUTURE_GROUP_TABS := ["armory", "supplies", "alchemy", "provisions", "critters"]
+const FUTURE_GROUP_TABS := []
 
 
 ## One Future gallery: placeholder-flagged entries of `table` whose "group"

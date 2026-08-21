@@ -1142,7 +1142,7 @@ func _think(delta: float) -> Vector2:
 		if dist > aggro_range or not can_see:
 			return _drift_home()
 		alerted = true
-		game.emote(self, "!", 0.9)
+		game.alert_emote(self)  # throttled: one "!" per area, not one per mob
 		# One noticed you — the whole pack answers (per-pack aggro).
 		if zone_idx >= 0:
 			game.wake_pack(zone_idx, pack_id)

@@ -1,0 +1,41 @@
+Use the image_gen tool to create ONE painted character splash and save it as
+splash_merchant_v1.png in this directory (PNG, square, at least 1024x1024,
+fully opaque).
+
+WHAT THIS IS
+The dialogue/shop splash portrait for the traveling merchant of "Crownless",
+a painterly dark-fantasy action RPG. It must sit beside 165 sibling splashes:
+style_sibling_splash.png (attached) is one of them — match its rendering
+style, level of finish, palette discipline and dramatic lighting EXACTLY.
+Painterly digital painting, muted desaturated palette, moody atmosphere,
+soft-shaded, NO black comic outlines, no cel shading.
+
+IDENTITY (from identity_merchant_body.png, the in-game sprite — keep him
+recognizable as the SAME man):
+- An older human trader: swept-back GREY hair, short grey beard, weathered,
+  shrewd but kindly face.
+- Heavy dark blue-grey traveling coat, worn and patched; a thick knitted
+  scarf wound at the neck.
+- A big leather pack on his back with rolled goods strapped to it.
+- His signature prop: a small BRASS BALANCE SCALES, held up in one hand or
+  hanging from the pack — it must be clearly visible.
+
+COMPOSITION
+- Three-quarter view, from about the knees up, filling the frame like the
+  attached sibling splash does.
+- Setting: his roadside stall at dusk — a wooden cart or crate of wares
+  beside him, a warm hanging lantern giving amber key light against a cool
+  blue-grey dusk with a ruined road or distant walls softly out of focus.
+- His FACE is the most important region: sharp, well-lit and readable, eyes
+  toward the viewer, slight knowing half-smile. The shop UI crops the face
+  at small size, so keep the head large and uncluttered — nothing
+  overlapping the face or hat brim shadows hiding the eyes.
+
+HARD CONSTRAINTS
+- No text, no watermark, no signature, no border or frame.
+- Opaque background (it is a full-bleed painting, not a cutout).
+- One figure only. No hood covering the hair. Hands with five fingers.
+
+After saving, describe in one short paragraph what you drew: face direction,
+where the scales ended up, and lighting — so a reviewer can vet drift
+without opening the file first.

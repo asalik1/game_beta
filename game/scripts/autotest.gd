@@ -2110,6 +2110,7 @@ func _run_systems() -> void:
 	await _frames(2)
 	print("ok: shop, codex, records, journal, daily, skill tree, theme, stats, map, dev UI")
 	_test_status_icon_coverage()
+	_test_hud_icon_integrity()
 
 	# 5c. Endgame modes (ACT2_DESIGN.md §II): The Crucible + The Waking Depths.
 	await _test_endgame()
@@ -2504,7 +2505,6 @@ func _run_campaign_ch2() -> void:
 	await _test_quest_abandonment()
 	await _test_ch1_quests()
 	await _test_pc_curios()
-	await _test_rv_na()
 	await _test_capital()
 	await _test_capital_rework_economy()
 	await _test_ch2_quests()
@@ -4285,13 +4285,13 @@ func _test_asset_seams() -> void:
 	# and ships its own correctly sized room texture.
 	var future_grounds := {
 		"ph_mossmeadow": "mossmeadow", "ph_amberwood": "amberleaf",
-		"ph_hollowgrove": "hollowsoil", "ph_moonfen": "moonmire",
+		"ph_hollowgrove": "hollowsoil",
 		"ph_mournfields": "mournearth", "ph_barrowmoor": "barrowgrass",
 		"ph_ossuary": "bonefloor", "ph_ashflats": "ashsoil",
-		"ph_slagworks": "slagstone", "ph_obsidianreach": "obsidian",
-		"ph_cinderquarry": "cinderstone", "ph_rimewood": "rimegrass",
+		"ph_obsidianreach": "obsidian",
+		"ph_rimewood": "rimegrass",
 		"ph_frozenlake": "blueice", "ph_hoarfrostruins": "hoarfrost",
-		"ph_crystalchasm": "deepcrystal", "ph_drownedfen": "drownedsoil",
+		"ph_crystalchasm": "deepcrystal",
 		"ph_rootboundbog": "rootsoil", "ph_fungalcathedral": "fungalhumus",
 		"ph_stormspire": "stormstone", "ph_voidscar": "voidscar",
 	}
@@ -4313,8 +4313,6 @@ func _test_asset_seams() -> void:
 		var room_surface := Art._ground_room_surface(ground_key, 704, 416)
 		if room_surface == null or room_surface.get_size() != Vector2i(704, 416):
 			return _fail("%s has no 704x416 authored room surface" % future_id)
-	if Terrains.DATA["ph_moonfen"].has("river") or Terrains.DATA["ph_drownedfen"].has("river"):
-		return _fail("authored fen surfaces must not receive a second generic river overlay")
 
 	# --- Environment taxonomy: 1 landmark, 5+ kinds per tier -----------
 	if "garden_statue" not in Terrains.structure_unique_props("village_grove"):
@@ -6505,10 +6503,11 @@ func _drag_ev(th: TouchHud, pos: Vector2, rel: Vector2) -> void:
 	th._input(e)
 
 
-## Endgame boss pools must never roll a PLACEHOLDER boss (pc_bosses.gd: the
-## dev-only Ninja Adventure sweep, tagged "placeholder": true, unplaced, no
-## mechanics). Covers the _boss_pool() thin-record fallback that leaked them,
-## plus the earned-kills path (record_boss logs dev-panel placeholder kills).
+## Endgame boss pools must never roll a PLACEHOLDER enemy. The dev-only
+## placeholder bosses (pc_bosses.gd) were removed 2026-08-20, but the guard
+## stays: pc_extra_mobs still ships placeholder-flagged mobs, and a dev-panel
+## kill of any placeholder ("tick") must not ride record_boss into the pool.
+## Covers the _boss_pool() thin-record fallback and the earned-kills path.
 func _test_endgame_no_placeholder_bosses() -> void:
 	var kept_records: Dictionary = game.boss_records.duplicate(true)
 	# One recorded kill (< 3) forces _boss_pool onto the full-roster fallback.
@@ -6520,13 +6519,13 @@ func _test_endgame_no_placeholder_bosses() -> void:
 	# Earned path: 3 real kills keep _boss_pool off the fallback, so the
 	# placeholder kill would ride the record straight into the pool.
 	var rec := {"ttk": 30.0, "dps": 100.0, "kills": 1}
-	game.boss_records = {"fangmaw": rec, "morwen": rec, "vargoth": rec, "cyclops": rec}
+	game.boss_records = {"fangmaw": rec, "morwen": rec, "vargoth": rec, "tick": rec}
 	var earned: Array = eg._boss_pool()
 	eg.free()
 	game.boss_records = kept_records
 	if roster.is_empty() or pool.is_empty():
 		return _fail("endgame pools: empty (roster %d / fallback %d)" % [roster.size(), pool.size()])
-	if earned.size() != 3 or "cyclops" in earned:
+	if earned.size() != 3 or "tick" in earned:
 		return _fail("endgame pools: earned pool wrong (%s) — placeholder kill should be skipped" % [earned])
 	for kind in roster + pool + earned:
 		if Story.ALL_ENEMIES.get(kind, {}).get("placeholder", false):
@@ -6548,37 +6547,15 @@ func _test_pc_curios() -> void:
 	game.dev_mode = true
 	game.menus.open_codex("curios")
 	await _frames(3)
-	# The Future shelf: every placeholder category renders in dev mode.
-	for ft in ["future_terrains", "future_mobs", "future_items",
-			"future_armory", "future_supplies", "future_provisions", "future_relics"]:
+	# The Future shelf: every remaining placeholder category renders in dev mode.
+	for ft in ["future_terrains", "future_mobs", "future_relics"]:
 		game.menus.open_codex(ft)
 		await _frames(2)
 	game.menus.close()
 	game.dev_mode = _dev0
 	await _frames(2)
-	print("ok: pc_curios (curios shelf + Future tab: terrains/mobs/items/armory/supplies/relics)")
+	print("ok: pc_curios (SHIPPED relics gallery + Future tab: terrains/mobs/relics)")
 
-
-# ---- CONTENT: rv_na_gallery — Raven icons + Ninja animals ----------------
-## Second-source sweep (2026-07-18): merge + art-resolution selftest for the
-## Raven icon families (alchemy/armory/supplies/provisions curios) and the
-## Ninja Adventure critter strips, then a UI smoke of the two new Future
-## subtabs. Content-module hook; never touches existing sections.
-func _test_rv_na() -> void:
-	var err: String = await preload("res://scripts/content/rv_na_gallery.gd").selftest(game)
-	if err != "":
-		_fail(err)
-		await get_tree().create_timer(60.0).timeout
-		return
-	var _dev0: bool = game.dev_mode
-	game.dev_mode = true
-	for ft in ["future_alchemy", "future_critters"]:
-		game.menus.open_codex(ft)
-		await _frames(2)
-	game.menus.close()
-	game.dev_mode = _dev0
-	await _frames(2)
-	print("ok: rv_na_gallery (145 Raven icons + 13 critters; Future: alchemy/critters)")
 
 
 # ---- CONTENT: capital_hub — Crownfall, the 9-room capital (rework) --------
@@ -8609,6 +8586,30 @@ func _test_status_icon_coverage() -> void:
 		if not active_ids.has(id):
 			return _fail("stale status icon mapping has no active effect: %s" % id)
 	print("ok: status icons (%d active ids, all authored PNGs, no procedural fallbacks)" % active_ids.size())
+
+
+## Regression guard (visual-review item 8, 2026-08-21): every persistent HUD /
+## menu utility icon must resolve to authored painted art. The procedural
+## fallbacks were removed 2026-08-20 (owner: "no fallbacks — either it exists
+## or it doesn't"), so a missing PNG or a broken import now ships a BLANK
+## button, not a low-res 2004-era stand-in. This test fails first, and also
+## source-scans hud.gd so a fallback can't quietly creep back in.
+func _test_hud_icon_integrity() -> void:
+	var hud_icons := ["ui_mail", "ui_bag", "ui_book", "ui_skills",
+		"ui_settings", "ui_daily", "ui_quest", "ui_party"]
+	for icon_name in hud_icons:
+		if not ResourceLoader.exists("res://assets/icons/%s.png" % icon_name):
+			return _fail("HUD icon missing authored PNG: %s.png" % icon_name)
+		if Art.ui_icon(icon_name) == null:
+			return _fail("HUD icon failed to load (a blank button would ship): %s" % icon_name)
+	# No procedural-fallback wiring may creep back onto the HUD icon buttons.
+	var src := FileAccess.get_file_as_string("res://scripts/hud.gd")
+	for banned in ["else Art.tex(\"mail\")", "else Art.tex(\"bag\")",
+			"else Art.tex(\"book\")", "else Art.tex(\"skills\")",
+			"else Art.tex(\"settings\")"]:
+		if src.find(banned) >= 0:
+			return _fail("HUD icon fallback re-introduced (%s) — utility icons are painted-only" % banned)
+	print("ok: HUD utility icons all painted, no fallback wiring (%d icons)" % hud_icons.size())
 
 
 # =========================================================== pvp arena (v1)

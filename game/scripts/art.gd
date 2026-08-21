@@ -1343,19 +1343,15 @@ const GROUND := {
 	"mossmeadow":   [Color(0.34, 0.50, 0.32), Color(0.27, 0.42, 0.26), Color(0.43, 0.59, 0.39)],
 	"amberleaf":    [Color(0.43, 0.32, 0.21), Color(0.34, 0.24, 0.16), Color(0.54, 0.40, 0.25)],
 	"hollowsoil":   [Color(0.25, 0.31, 0.24), Color(0.18, 0.24, 0.18), Color(0.33, 0.39, 0.29)],
-	"moonmire":     [Color(0.25, 0.34, 0.34), Color(0.18, 0.27, 0.28), Color(0.34, 0.43, 0.42)],
 	"mournearth":   [Color(0.45, 0.43, 0.40), Color(0.36, 0.34, 0.32), Color(0.54, 0.52, 0.48)],
 	"barrowgrass":  [Color(0.36, 0.43, 0.33), Color(0.28, 0.35, 0.26), Color(0.45, 0.51, 0.40)],
 	"bonefloor":    [Color(0.49, 0.47, 0.41), Color(0.39, 0.37, 0.32), Color(0.59, 0.56, 0.49)],
 	"ashsoil":      [Color(0.37, 0.33, 0.31), Color(0.29, 0.25, 0.24), Color(0.46, 0.40, 0.37)],
-	"slagstone":    [Color(0.30, 0.22, 0.20), Color(0.23, 0.16, 0.15), Color(0.40, 0.28, 0.23)],
 	"obsidian":     [Color(0.22, 0.21, 0.25), Color(0.16, 0.15, 0.19), Color(0.31, 0.29, 0.34)],
-	"cinderstone":  [Color(0.36, 0.23, 0.16), Color(0.27, 0.16, 0.11), Color(0.47, 0.31, 0.20)],
 	"rimegrass":    [Color(0.57, 0.64, 0.67), Color(0.47, 0.55, 0.59), Color(0.68, 0.73, 0.76)],
 	"blueice":      [Color(0.56, 0.68, 0.77), Color(0.45, 0.58, 0.68), Color(0.69, 0.79, 0.86)],
 	"hoarfrost":    [Color(0.54, 0.58, 0.62), Color(0.44, 0.48, 0.53), Color(0.65, 0.68, 0.72)],
 	"deepcrystal":  [Color(0.25, 0.28, 0.39), Color(0.18, 0.21, 0.31), Color(0.35, 0.39, 0.53)],
-	"drownedsoil":  [Color(0.24, 0.33, 0.27), Color(0.17, 0.26, 0.21), Color(0.32, 0.41, 0.34)],
 	"rootsoil":     [Color(0.29, 0.25, 0.20), Color(0.22, 0.18, 0.14), Color(0.38, 0.33, 0.25)],
 	"fungalhumus":  [Color(0.31, 0.23, 0.29), Color(0.23, 0.16, 0.22), Color(0.42, 0.31, 0.39)],
 	"stormstone":   [Color(0.31, 0.35, 0.40), Color(0.24, 0.28, 0.33), Color(0.41, 0.46, 0.51)],
@@ -1393,19 +1389,15 @@ const GROUND_ROOM_PATH := {
 	"mossmeadow":  {"pattern": "stepping", "tint": Color("#748b43"), "accent": Color("#b7b66c"), "alpha": 0.12, "period": 22},
 	"amberleaf":   {"pattern": "leafwind", "tint": Color("#6d4227"), "accent": Color("#b06d2d"), "alpha": 0.14, "period": 17},
 	"hollowsoil":  {"pattern": "root", "tint": Color("#343229"), "accent": Color("#666047"), "alpha": 0.16, "period": 25},
-	"moonmire":    {"pattern": "boardwalk", "tint": Color("#46504b"), "accent": Color("#8b8c76"), "alpha": 0.18, "period": 8},
 	"mournearth":  {"pattern": "procession", "tint": Color("#b0a999"), "accent": Color("#77736b"), "alpha": 0.11, "period": 20},
 	"barrowgrass": {"pattern": "moortrack", "tint": Color("#4c4431"), "accent": Color("#777057"), "alpha": 0.15, "period": 21},
 	"bonefloor":   {"pattern": "inlay", "tint": Color("#77736c"), "accent": Color("#c0b798"), "alpha": 0.12, "period": 18},
 	"ashsoil":     {"pattern": "ashwind", "tint": Color("#625d58"), "accent": Color("#8a8075"), "alpha": 0.13, "period": 24},
-	"slagstone":   {"pattern": "rail", "tint": Color("#29272a"), "accent": Color("#8c4d32"), "alpha": 0.16, "period": 10},
 	"obsidian":    {"pattern": "glass", "tint": Color("#242033"), "accent": Color("#665482"), "alpha": 0.10, "period": 29},
-	"cinderstone": {"pattern": "quarry", "tint": Color("#56372d"), "accent": Color("#8d4d32"), "alpha": 0.14, "period": 16},
 	"rimegrass":   {"pattern": "snowtrack", "tint": Color("#899caf"), "accent": Color("#c0c9cd"), "alpha": 0.12, "period": 23},
 	"blueice":     {"pattern": "iceridge", "tint": Color("#7092aa"), "accent": Color("#c1d4df"), "alpha": 0.09, "period": 31},
 	"hoarfrost":   {"pattern": "runes", "tint": Color("#77818d"), "accent": Color("#b8c4ca"), "alpha": 0.11, "period": 20},
 	"deepcrystal": {"pattern": "mineral", "tint": Color("#343b67"), "accent": Color("#7c89ae"), "alpha": 0.12, "period": 27},
-	"drownedsoil": {"pattern": "sunkenplank", "tint": Color("#30372e"), "accent": Color("#6f6a54"), "alpha": 0.18, "period": 9},
 	"rootsoil":    {"pattern": "root", "tint": Color("#53412c"), "accent": Color("#8a6a42"), "alpha": 0.13, "period": 22},
 	"fungalhumus": {"pattern": "mycelium", "tint": Color("#5b3d50"), "accent": Color("#b69a83"), "alpha": 0.11, "period": 19},
 	"stormstone":  {"pattern": "storm", "tint": Color("#46586b"), "accent": Color("#9eb2c4"), "alpha": 0.10, "period": 26},
@@ -1470,10 +1462,9 @@ static func bag_icon(grade: String) -> ImageTexture:
 		var authored := ImageTexture.create_from_image(im)
 		_cache[key] = authored
 		return authored
-	var hud_bag := ui_icon("ui_bag")
-	var fallback: ImageTexture = hud_bag if hud_bag != null else tex("bag")
-	_cache[key] = fallback
-	return fallback
+	var hud_bag := ui_icon("ui_bag")  # painted ui_bag.png; no procedural fallback
+	_cache[key] = hud_bag
+	return hud_bag
 
 
 ## Get (and cache) the texture for a named sprite.
@@ -1537,19 +1528,9 @@ static func tex(name: String) -> ImageTexture:
 			t = ImageTexture.create_from_image(_make_tree(name))
 		"bubble":
 			t = ImageTexture.create_from_image(_make_bubble())
-		"bag":  # HUD inventory button
-			t = ImageTexture.create_from_image(_make_bag())
-		"book":  # HUD codex button
+		"book":  # codex-lectern WORLD prop (game_world "book" hotspot) — procedural primitive
 			t = ImageTexture.create_from_image(_make_book())
-		"mail":  # HUD mailbox button (the ✉ glyph has no mobile font — draw an envelope)
-			t = ImageTexture.create_from_image(_make_mail())
-		"skills":  # HUD skill-tree button
-			t = ImageTexture.create_from_image(_make_skills())
-		"settings":  # HUD menu/settings (gear) button
-			t = ImageTexture.create_from_image(_make_gear())
-		"stash":  # HUD stash (treasure chest) button
-			t = ImageTexture.create_from_image(_make_stash())
-		"crosshair":  # touch target-lock button (red scope crosshair)
+		"crosshair":  # touch target-lock button — procedural primitive, no painted version exists
 			t = ImageTexture.create_from_image(_make_crosshair())
 		_:
 			t = ImageTexture.create_from_image(img(name))
@@ -2805,45 +2786,9 @@ static func _ink_outline(img: Image, ink: Color) -> void:
 		img.set_pixel(p.x, p.y, ink)
 
 
-## HUD inventory icon: a cinched leather coin-pouch (reads as "bag").
-static func _make_bag() -> Image:
-	var w := 20
-	var h := 22
-	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
-	var body := Color(0.60, 0.40, 0.20)
-	var body_d := Color(0.40, 0.25, 0.11)
-	var body_l := Color(0.74, 0.53, 0.29)
-	var tie := Color(0.86, 0.72, 0.45)
-	var ink := Color(0.14, 0.08, 0.04)
-	var cx := 9.5
-	# Sack body: an egg shape, fatter toward the bottom.
-	for y in range(6, 21):
-		for x in range(1, 19):
-			var ry := (y - 13.0) / 8.0
-			var wx: float = 8.2 - maxf(0.0, -ry) * 1.6  # narrower up near the neck
-			var rx := (x - cx) / wx
-			if rx * rx + ry * ry <= 1.0:
-				var c := body
-				if (x - cx) < -1.5 and (y - 13.0) < 2.0:
-					c = body_l
-				elif (x - cx) > 2.5 or (y - 13.0) > 4.0:
-					c = body_d
-				img.set_pixel(x, y, c)
-	# Cinched neck + collar.
-	for x in range(6, 14):
-		img.set_pixel(x, 5, body_d)
-		img.set_pixel(x, 6, tie)
-	# Drawstring ends flaring up from the knot.
-	for p: Vector2i in [Vector2i(7, 4), Vector2i(12, 4), Vector2i(6, 3), Vector2i(13, 3)]:
-		img.set_pixel(p.x, p.y, tie)
-	# A knot/coin glint low on the belly.
-	img.set_pixel(9, 14, tie)
-	img.set_pixel(10, 14, tie)
-	_ink_outline(img, ink)
-	return img
-
-
-## HUD codex icon: a closed red book with a gold title band + page edges.
+## Codex-lectern WORLD prop (the game_world "book" hotspot): a closed red book
+## with a gold title band + page edges. A procedural primitive (no painted
+## version), distinct from the ui_book HUD button.
 static func _make_book() -> Image:
 	var w := 20
 	var h := 22
@@ -2875,152 +2820,6 @@ static func _make_book() -> Image:
 		img.set_pixel(x, 8, gold)
 		img.set_pixel(x, 11, gold)
 	img.set_pixel(15, 10, gold)
-	_ink_outline(img, ink)
-	return img
-
-
-## HUD mailbox icon: a closed envelope with a folded flap (the ✉ glyph has no
-## coverage in the mobile pixel font, so the HUD draws this instead).
-static func _make_mail() -> Image:
-	var w := 20
-	var h := 22
-	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
-	var paper := Color(0.93, 0.90, 0.80)
-	var paper_d := Color(0.74, 0.70, 0.58)
-	var crease := Color(0.56, 0.50, 0.40)
-	var ink := Color(0.16, 0.12, 0.07)
-	# Envelope body (wider than tall), y 6..17, x 2..17.
-	for y in range(6, 18):
-		for x in range(2, 18):
-			img.set_pixel(x, y, paper)
-	for x in range(2, 18):
-		img.set_pixel(x, 6, paper_d)   # top edge shade
-		img.set_pixel(x, 17, paper_d)  # bottom edge shade
-	# Flap: two diagonals from the top corners meeting at a low centre point.
-	var apex_x := 10
-	var apex_y := 13
-	for i in range(0, 9):
-		var t: float = float(i) / 8.0
-		var lx: int = int(round(2.0 + (float(apex_x) - 2.0) * t))
-		var ly: int = int(round(6.0 + (float(apex_y) - 6.0) * t))
-		img.set_pixel(clampi(lx, 0, w - 1), clampi(ly, 0, h - 1), crease)
-		var rx: int = int(round(17.0 + (float(apex_x) - 17.0) * t))
-		var ry: int = int(round(6.0 + (float(apex_y) - 6.0) * t))
-		img.set_pixel(clampi(rx, 0, w - 1), clampi(ry, 0, h - 1), crease)
-	_ink_outline(img, ink)
-	return img
-
-
-## HUD skill-tree icon: three talent nodes joined by branches (top node forking
-## to two below), reading as "skills / progression".
-static func _make_skills() -> Image:
-	var w := 20
-	var h := 22
-	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
-	var node := Color(0.55, 0.80, 1.0)
-	var node_l := Color(0.82, 0.94, 1.0)
-	var line := Color(0.45, 0.62, 0.86)
-	var ink := Color(0.10, 0.14, 0.22)
-	var top := Vector2(10, 4)
-	var bl := Vector2(5, 16)
-	var br := Vector2(15, 16)
-	# Branches: top node down to each lower node (2px thick).
-	for pair in [[top, bl], [top, br]]:
-		var a: Vector2 = pair[0]
-		var b: Vector2 = pair[1]
-		for i in range(0, 15):
-			var t: float = float(i) / 14.0
-			var px: int = int(round(a.x + (b.x - a.x) * t))
-			var py: int = int(round(a.y + (b.y - a.y) * t))
-			img.set_pixel(clampi(px, 0, w - 1), clampi(py, 0, h - 1), line)
-			img.set_pixel(clampi(px + 1, 0, w - 1), clampi(py, 0, h - 1), line)
-	# Nodes as small filled discs.
-	for n: Vector2 in [top, bl, br]:
-		for y in range(0, h):
-			for x in range(0, w):
-				var d: float = Vector2(x - n.x, y - n.y).length()
-				if d <= 3.0:
-					img.set_pixel(x, y, node_l if d < 1.4 else node)
-	_ink_outline(img, ink)
-	return img
-
-
-## HUD menu/settings icon: a cogwheel (eight teeth, dark axle bore).
-static func _make_gear() -> Image:
-	var w := 20
-	var h := 22
-	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
-	var metal := Color(0.62, 0.66, 0.74)
-	var metal_d := Color(0.42, 0.46, 0.54)
-	var metal_l := Color(0.80, 0.84, 0.92)
-	var bore := Color(0.20, 0.22, 0.27)
-	var ink := Color(0.12, 0.13, 0.16)
-	var cx := 10.0
-	var cy := 11.0
-	# Teeth: eight blocks around the rim (drawn first; the disc overlaps their base).
-	for k in range(0, 8):
-		var ang: float = float(k) * PI / 4.0
-		var tx: int = int(round(cx + cos(ang) * 8.0))
-		var ty: int = int(round(cy + sin(ang) * 8.0))
-		for dy in range(-1, 2):
-			for dx in range(-1, 2):
-				var px: int = tx + dx
-				var py: int = ty + dy
-				if px >= 0 and py >= 0 and px < w and py < h:
-					img.set_pixel(px, py, metal_d)
-	# Body disc with a diagonal light-to-dark shade.
-	for y in range(0, h):
-		for x in range(0, w):
-			var d: float = Vector2(x - cx, y - cy).length()
-			if d <= 6.5:
-				var c := metal
-				if (x - cx) + (y - cy) < -3.0:
-					c = metal_l
-				elif (x - cx) + (y - cy) > 3.0:
-					c = metal_d
-				img.set_pixel(x, y, c)
-	# Axle bore (dark, so it reads as a hole without punching transparency).
-	for y in range(0, h):
-		for x in range(0, w):
-			if Vector2(x - cx, y - cy).length() <= 2.4:
-				img.set_pixel(x, y, bore)
-	_ink_outline(img, ink)
-	return img
-
-
-## HUD stash icon: a banded treasure chest (distinct from the coin-pouch bag).
-static func _make_stash() -> Image:
-	var w := 20
-	var h := 22
-	var img := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
-	var wood := Color(0.54, 0.35, 0.18)
-	var wood_d := Color(0.37, 0.22, 0.10)
-	var wood_l := Color(0.66, 0.45, 0.24)
-	var band := Color(0.82, 0.68, 0.34)
-	var band_d := Color(0.56, 0.45, 0.20)
-	var lock := Color(0.88, 0.76, 0.42)
-	var ink := Color(0.13, 0.07, 0.03)
-	# Lower box (the chest body), y 11..19, x 3..17.
-	for y in range(11, 19):
-		for x in range(3, 17):
-			img.set_pixel(x, y, wood if x < 13 else wood_d)
-	# Domed lid, y 5..11 — pull the top row in a pixel each side to round it.
-	for y in range(5, 11):
-		var inset: int = 1 if y == 5 else 0
-		for x in range(3 + inset, 17 - inset):
-			img.set_pixel(x, y, wood_l if y < 8 else wood)
-	# Lid seam.
-	for x in range(3, 17):
-		img.set_pixel(x, 11, band_d)
-	# Two vertical brass bands.
-	for y in range(5, 19):
-		img.set_pixel(6, y, band if y % 2 == 0 else band_d)
-		img.set_pixel(13, y, band if y % 2 == 0 else band_d)
-	# Centre lock plate + keyhole.
-	for y in range(10, 14):
-		for x in range(9, 12):
-			img.set_pixel(x, y, lock)
-	img.set_pixel(10, 12, ink)
 	_ink_outline(img, ink)
 	return img
 
@@ -4204,7 +4003,7 @@ static func _ground_macro(image: Image, mask: PackedByteArray, base_kind: String
 			_gm_grass(image, mask, pw, ph, rng, tiles)
 		"forest", "amberleaf", "hollowsoil":
 			_gm_forest(image, mask, pw, ph, rng, tiles)
-		"marsh", "moonmire", "drownedsoil":
+		"marsh":
 			_gm_wetland(image, mask, pw, ph, rng, tiles, true)
 		"bogsoil", "rootsoil":
 			_gm_wetland(image, mask, pw, ph, rng, tiles, false)
@@ -4212,7 +4011,7 @@ static func _ground_macro(image: Image, mask: PackedByteArray, base_kind: String
 			_gm_flagstones(image, mask, pw, ph, rng, tiles, false)
 		"holystone":
 			_gm_flagstones(image, mask, pw, ph, rng, tiles, true)
-		"basalt", "ashsoil", "slagstone", "cinderstone", "obsidian":
+		"basalt", "ashsoil", "obsidian":
 			_gm_basalt(image, mask, pw, ph, rng, tiles)
 		"snow", "rimegrass", "blueice":
 			_gm_snow(image, mask, pw, ph, rng, tiles)

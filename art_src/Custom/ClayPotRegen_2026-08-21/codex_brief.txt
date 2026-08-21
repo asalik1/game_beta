@@ -1,0 +1,37 @@
+Use the image_gen tool to create ONE world-prop render and save it as
+clay_pot_v1_keyed.png in this directory (PNG, 1024x1024).
+
+WHAT THIS IS
+A replacement for a warped prop in "Crownless", a painterly dark-fantasy
+action RPG. The old asset (subject_old_clay_pot.png, attached) is the SUBJECT
+reference ONLY — keep its footprint and colour identity, but its body bulges
+off-axis and looks melted; do NOT copy that distortion. The two attached
+siblings (style_sibling_amphora.png, style_sibling_garden_urns.png) are the
+STYLE bar: painterly, soft-shaded, believable ceramic material — match them.
+
+SUBJECT
+- ONE squat round-bellied TERRACOTTA POT, upright and SYMMETRIC about its
+  vertical axis: wide rolled rim, full rounded belly, slightly narrower flat
+  base. NO handles (the amphora already has handles; this pot has none).
+- Terracotta orange-brown like the old asset, with subtle fired-clay tonal
+  variation, a few faint chips/scuffs for age. Muted palette — nothing
+  saturated or glossy.
+
+RENDERING RULES (the game's world-prop contract)
+- Top-down three-quarter view: seen a little from above, so the rim reads
+  as an ellipse and we see slightly into the mouth (dark interior).
+- Light from the TOP-LEFT, soft shading, NO black outlines, no cel shading.
+- No cast shadow on the ground — the engine adds shadows.
+- The pot centered with generous margin, nothing cropped.
+
+BACKGROUND
+- Solid pure magenta #FF00FF everywhere around the pot (a chroma key that
+  will be removed). No gradient, no vignette, no magenta light spilling onto
+  the pot itself.
+
+HARD CONSTRAINTS
+- Perfectly symmetric silhouette left-right. No lean, no warp, no bulge to
+  one side. No text, no watermark.
+
+After saving, state in one sentence whether the silhouette is symmetric and
+whether any magenta spilled onto the ceramic.

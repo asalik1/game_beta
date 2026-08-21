@@ -895,9 +895,12 @@ func open_chapter_select(replay := false) -> void:
 		var b := _btn(chlist, "  %d.  %s%s  " % [idx, "" if unlocked else "🔒 ", chapter["name"]],
 			pick, Color(0.95, 0.85, 0.5) if unlocked else Color(0.5, 0.5, 0.55), unlocked)
 		b.add_theme_font_size_override("font_size", 18)
-		var sub_text: String = String(chapter.get("sub", "")) if unlocked \
-			else "Locked — finish the previous chapter to open this road."
-		var sub_col := Color(0.65, 0.68, 0.78) if unlocked else Color(0.5, 0.5, 0.55)
+		# Each row shows the chapter's own authored teaser — locked ones too, so
+		# they read as destinations, not duplicated disabled rows (visual-review
+		# P0). The unlock rule is stated once in the intro above; the 🔒 on the
+		# name marks the locked state by more than dimness alone.
+		var sub_text: String = String(chapter.get("sub", ""))
+		var sub_col := Color(0.65, 0.68, 0.78) if unlocked else Color(0.52, 0.54, 0.6)
 		# Replay picker: print the XP ceiling on the door (REPLAY_XP.md §3) —
 		# a cleared chapter pays XP until its reach level, then goes grey.
 		if replay and unlocked and game.has_local_player():
@@ -4222,24 +4225,87 @@ func open_shop(zone: int, tab := "") -> void:
 	shop_tab = tab
 
 	var p: Player = game.local_player
-	var vbox := _open(("The Crown Bazaar — you have %d gold" if at_capital
-		else "Merchant — you have %d gold") % p.gold, 1120, 600, true)
+	var vbox := _open("The Crown Bazaar" if at_capital else "Merchant", 1120, 600, true)
 	current = "shop"
+	# Merchant band (visual-review "item fantasy" pass, 2026-08-21): the trader
+	# himself — waist-up crop of the painted merchant body — fronts the shop,
+	# his resonance-voiced line reads as SPEECH beside him, and your gold is a
+	# coin chip instead of a number buried in the title.
+	var band := HBoxContainer.new()
+	band.add_theme_constant_override("separation", 14)
+	vbox.add_child(band)
+	# Face crop of the painted splash (2026-08-21) — crisp at band size; the
+	# same splash_merchant.png auto-lights the merchant in dialogue for free.
+	var mtex: Texture2D = Art.tex("splash_merchant")
+	if mtex != null:
+		var pframe := PanelContainer.new()
+		var pfsb := StyleBoxFlat.new()
+		pfsb.bg_color = Color(0.07, 0.06, 0.05, 0.9)
+		pfsb.border_color = Color(UITheme.BRONZE, 0.55)
+		pfsb.set_border_width_all(1)
+		pfsb.set_corner_radius_all(8)
+		pfsb.set_content_margin_all(3)
+		pframe.add_theme_stylebox_override("panel", pfsb)
+		pframe.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		band.add_child(pframe)
+		var at := AtlasTexture.new()
+		at.atlas = mtex
+		at.region = Rect2(410, 30, 430, 430)   # face + scarf out of the 1254px splash
+		var prect := TextureRect.new()
+		prect.texture = at
+		prect.custom_minimum_size = Vector2(78, 78)
+		prect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		prect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		prect.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		pframe.add_child(prect)
+	var bcol := VBoxContainer.new()
+	bcol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bcol.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	bcol.add_theme_constant_override("separation", 3)
+	band.add_child(bcol)
 	match Story.res_band(p.resonance):
 		"steady":
-			_lbl(vbox, "\"For YOU? Fair rates, friend — the road speaks well of you.\"  (prices 10% kinder)", 14, Color(0.6, 0.9, 0.6))
+			_lbl(bcol, "\"For YOU? Fair rates, friend — the road speaks well of you.\"  (prices 10% kinder)", 15, Color(0.68, 0.9, 0.66))
 		"tempted":
-			_lbl(vbox, "\"Prices are... firm today. Nothing personal — the till gets nervous around your sort.\"  (prices 10% wary)", 14, Color(1.0, 0.65, 0.55))
+			_lbl(bcol, "\"Prices are... firm today. Nothing personal — the till gets nervous around your sort.\"  (prices 10% wary)", 15, Color(1.0, 0.7, 0.6))
 		_:
-			_lbl(vbox, "\"Ah, a customer! Dangerous roads make good business.\"", 14, Color(0.75, 0.7, 0.6))
+			_lbl(bcol, "\"Ah, a customer! Dangerous roads make good business.\"", 15, Color(0.88, 0.82, 0.68))
 	if at_capital:
 		var left: int = maxi(0, (game.daily_day_index() + 1) * 86400 - game.trusted_now())
-		_lbl(vbox, "Fresh stock at dawn — new shelf in %dh %02dm." % [left / 3600, (left % 3600) / 60],
+		_lbl(bcol, "Fresh stock at dawn — new shelf in %dh %02dm." % [left / 3600, (left % 3600) / 60],
 			13, Color(0.85, 0.8, 0.55))
 	elif game.shop_markup(zone) > 1.0:
-		# Road markup is named explicitly in the shop copy.
-		_lbl(vbox, "Road prices — everything +%d%% out here. The Crown Bazaar sells fair." %
-			int(round((game.shop_markup(zone) - 1.0) * 100.0)), 13, Color(1.0, 0.75, 0.5))
+		# Road markup, named as trade talk in warm amber — not alarm red.
+		_lbl(bcol, "Road prices — everything +%d%% out here. The Crown Bazaar sells fair." %
+			int(round((game.shop_markup(zone) - 1.0) * 100.0)), 13, Color(0.85, 0.72, 0.5))
+	# Gold chip: the painterly coin + your purse, top-right of the band.
+	var chip := PanelContainer.new()
+	var chsb := StyleBoxFlat.new()
+	chsb.bg_color = Color(0.10, 0.085, 0.06, 0.92)
+	chsb.border_color = Color(UITheme.BRONZE, 0.4)
+	chsb.set_border_width_all(1)
+	chsb.set_corner_radius_all(14)
+	chsb.content_margin_left = 12
+	chsb.content_margin_right = 14
+	chsb.content_margin_top = 5
+	chsb.content_margin_bottom = 5
+	chip.add_theme_stylebox_override("panel", chsb)
+	chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	band.add_child(chip)
+	var chrow := HBoxContainer.new()
+	chrow.add_theme_constant_override("separation", 7)
+	chip.add_child(chrow)
+	var cico := TextureRect.new()
+	cico.texture = Art.tex("coin")
+	cico.custom_minimum_size = Vector2(22, 22)
+	cico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	cico.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	cico.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	cico.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	chrow.add_child(cico)
+	var camt := _lbl(chrow, _fmt_gold(p.gold), 17, Color(0.96, 0.84, 0.44))
+	camt.autowrap_mode = TextServer.AUTOWRAP_OFF   # HBox label-collapse trap
+	camt.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 	# Buy and Sell are separate full-width views.
 	var tabs := HBoxContainer.new()
@@ -4278,7 +4344,7 @@ func open_black_market(source := "fence") -> void:
 	buy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	buy.add_theme_constant_override("separation", 6)
 	scroll.add_child(buy)
-	_lbl(buy, "— Black Market (laced, F→A) —", 13, Color(0.72, 0.55, 0.6))
+	_shop_shelf(buy, "Black Market  ·  laced, F→A", Color(0.78, 0.55, 0.62))
 	var grid := _shop_grid(buy)
 	# Reputation modifies the stored laced price; there is no road markup.
 	var haggle: float = game.band_price_mult()
@@ -4299,6 +4365,36 @@ func open_black_market(source := "fence") -> void:
 	_hint(vbox)
 
 
+## "12,450" — gold amounts read as money with thousands separators.
+func _fmt_gold(n: int) -> String:
+	var s := str(n)
+	var out := ""
+	var c := 0
+	for i in range(s.length() - 1, -1, -1):
+		out = s[i] + out
+		c += 1
+		if c % 3 == 0 and i > 0:
+			out = "," + out
+	return out
+
+
+## A shelf header: small-caps bronze label + a hairline rule running to the
+## panel edge — a labelled shelf, not a dim "— Gear —" annotation (review P1).
+func _shop_shelf(parent: Node, text: String, color := Color(0.85, 0.74, 0.48)) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	parent.add_child(row)
+	var l := _lbl(row, text.to_upper(), 13, color)
+	l.autowrap_mode = TextServer.AUTOWRAP_OFF   # HBox label-collapse trap
+	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var rule := ColorRect.new()
+	rule.color = Color(color, 0.28)
+	rule.custom_minimum_size = Vector2(0, 1)
+	rule.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rule.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(rule)
+
+
 ## A two-column shelf grid.
 func _shop_grid(parent: Node) -> GridContainer:
 	var grid := GridContainer.new()
@@ -4310,35 +4406,99 @@ func _shop_grid(parent: Node) -> GridContainer:
 	return grid
 
 
-## One item card in a shop grid.
+## One item card in a shop grid. A STRUCTURED row — icon · (name + detail) ·
+## price — so a shelf scans by column instead of reading like a stat spreadsheet
+## (visual-review P1). The "N gold" token is auto-split out of `detail` (wherever
+## the caller put it) and right-aligned in gold; it turns red when the player
+## can't afford it. Clicks fall through the content layer to the button beneath.
 func _shop_card(grid: GridContainer, icon: Texture2D, title: String, detail: String,
 		color: Color, enabled: bool, cb: Callable) -> Button:
+	# Pull the price into its own column so it stops hiding inside the stat line.
+	var price_text := ""
+	var affordable := true
+	var re := RegEx.new()
+	re.compile("([0-9][0-9,]*)\\s*gold\\b")
+	var pm := re.search(detail)
+	if pm != null:
+		var num := int(pm.get_string(1).replace(",", ""))
+		price_text = "%d g" % num
+		if game != null and game.has_local_player():
+			affordable = game.player.gold >= num
+		detail = (detail.substr(0, pm.get_start()) + detail.substr(pm.get_end())).strip_edges()
+		detail = detail.trim_prefix("—").trim_prefix("-").strip_edges()
+		detail = detail.trim_suffix("—").trim_suffix("-").strip_edges()
+		if detail == "()":
+			detail = ""
 	var b := Button.new()
-	b.text = "%s\n%s" % [title, detail] if detail != "" else title
 	b.disabled = not enabled
-	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	b.clip_text = true
-	b.add_theme_font_size_override("font_size", 14)
-	b.add_theme_color_override("font_color", color)
-	b.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.7))
-	b.add_theme_color_override("font_disabled_color", Color(color, 0.4))
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.custom_minimum_size = Vector2(0, 60)
+	# Content layer: laid out over the button, transparent to the mouse so the
+	# whole card stays one click target.
+	var row := HBoxContainer.new()
+	row.set_anchors_preset(Control.PRESET_FULL_RECT)
+	row.offset_left = 10
+	row.offset_right = -10
+	row.add_theme_constant_override("separation", 10)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(row)
 	if icon != null:
-		b.icon = icon
-		b.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
-		# One icon size per shelf (polish 2026-08-19): the icon fills the card's
-		# height whatever its source resolution — a 32 px gear icon used to sit as
-		# a thumbnail beside 128 px potion bottles that stretched their cards to
-		# 130 px rows.
-		b.expand_icon = true
-		b.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		# Icon rides in a dark inset SOCKET (the inventory-slot chrome) so even
+		# a dark F-grade icon reads against the card's warmer surface.
+		var well := PanelContainer.new()
+		var wsb := StyleBoxFlat.new()
+		wsb.bg_color = Color(0.045, 0.045, 0.055, 0.95)
+		wsb.border_color = Color(UITheme.BRONZE, 0.3)
+		wsb.set_border_width_all(1)
+		wsb.set_corner_radius_all(5)
+		wsb.set_content_margin_all(3)
+		well.add_theme_stylebox_override("panel", wsb)
+		well.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		well.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(well)
+		var ic := TextureRect.new()
+		ic.texture = icon
+		ic.custom_minimum_size = Vector2(42, 42)
+		# One icon size per shelf whatever the source resolution (a 128px potion
+		# bottle and a 32px gear icon both fit the box) — IGNORE_SIZE makes the
+		# rect honour custom_minimum_size instead of the texture's native size.
+		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ic.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		well.add_child(ic)
+	var vb := VBoxContainer.new()
+	vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	vb.add_theme_constant_override("separation", 1)
+	vb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(vb)
+	var nm := _lbl(vb, title, 15, color if enabled else Color(color, 0.5))
+	nm.autowrap_mode = TextServer.AUTOWRAP_OFF
+	nm.clip_text = true
+	nm.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if detail != "":
+		var dt := _lbl(vb, detail, 12, Color(0.74, 0.76, 0.82) if enabled else Color(0.58, 0.58, 0.64))
+		dt.autowrap_mode = TextServer.AUTOWRAP_OFF
+		dt.clip_text = true
+		dt.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		dt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if price_text != "":
+		var pr := _lbl(row, price_text, 15, Color(0.96, 0.84, 0.44) if affordable else Color(0.86, 0.46, 0.42))
+		pr.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		pr.autowrap_mode = TextServer.AUTOWRAP_OFF
+		pr.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		pr.custom_minimum_size = Vector2(88, 0)
+		pr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Card MATERIAL (review P1): a warm elevated leather surface with a neutral
+	# bronze hairline — not a black box in a colored wireframe. The grade speaks
+	# through a left accent bar (and the name's color), not a full outline.
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.09, 0.09, 0.12, 0.92)
-	sb.border_color = Color(color, 0.55 if enabled else 0.28)
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(4)
+	sb.bg_color = Color(0.135, 0.115, 0.09, 0.96) if enabled else Color(0.10, 0.09, 0.075, 0.9)
+	sb.border_color = Color(UITheme.BRONZE, 0.25 if enabled else 0.14)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(6)
 	sb.content_margin_left = 8
 	sb.content_margin_right = 8
 	sb.content_margin_top = 4
@@ -4346,10 +4506,19 @@ func _shop_card(grid: GridContainer, icon: Texture2D, title: String, detail: Str
 	b.add_theme_stylebox_override("normal", sb)
 	b.add_theme_stylebox_override("disabled", sb)
 	var sbh: StyleBoxFlat = sb.duplicate()
-	sbh.bg_color = Color(0.17, 0.17, 0.23, 0.95)
-	sbh.border_color = Color(color, 0.9)
+	sbh.bg_color = Color(0.185, 0.16, 0.125, 0.97)
+	sbh.border_color = Color(UITheme.BRONZE, 0.6)
 	b.add_theme_stylebox_override("hover", sbh)
 	b.add_theme_stylebox_override("pressed", sbh)
+	var accent := ColorRect.new()
+	accent.color = Color(color, 0.9 if enabled else 0.4)
+	accent.set_anchors_preset(Control.PRESET_LEFT_WIDE)
+	accent.offset_top = 4
+	accent.offset_bottom = -4
+	accent.offset_left = 0
+	accent.offset_right = 4
+	accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(accent)
 	if enabled:
 		b.pressed.connect(func() -> void:
 			if game:
@@ -4377,7 +4546,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	# Gear uses farm-cost pricing; staple consumables remain flat.
 
 	# ================================================================ GEAR ===
-	_lbl(buy, "— Gear —", 13, Color(0.62, 0.64, 0.7))
+	_shop_shelf(buy, "Gear")
 	var gear_grid := _shop_grid(buy)
 	for item in game.shop_stock[zone]:
 		var it: Dictionary = item
@@ -4404,7 +4573,9 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 		_shop_card(gear_grid, Art.icon_for(it), Items.title(it),
 			"%s — %d gold" % [Items.describe(it), cost],
 			Items.GRADE_COLOR[it["grade"]], true, open_cb)
-	_lbl(buy, "Upgrade equipped gear", 13, Color(0.6, 0.85, 1.0))
+	# Nothing equipped (a fresh hero) = no dangling empty "Upgrade" shelf.
+	if not p.equipment.is_empty():
+		_shop_shelf(buy, "Upgrade equipped gear", Color(0.6, 0.82, 0.95))
 	if _smith_msg != "":
 		_lbl(buy, _smith_msg, 12, _smith_msg_color)
 		_smith_msg = ""
@@ -4445,7 +4616,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	var pot_act: int = Story.act_of(price_ch)
 	var pot_shapes := [["health", "instant"], ["health", "tonic"], ["mana", "instant"],
 		["mana", "tonic"], ["might", "buff"], ["ward", "buff"], ["renewal", "burst"]]
-	_lbl(buy, "— Alchemist's Shelf (Accord) —", 13, Color(0.6, 0.72, 0.66))
+	_shop_shelf(buy, "Alchemist's Shelf  ·  Accord", Color(0.62, 0.8, 0.68))
 	var acc_grid := _shop_grid(buy)
 	for ps in pot_shapes:
 		var fam: String = ps[0]
@@ -4482,7 +4653,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	# Laced potions remain exclusive to black-market vendors.
 
 	# ======================================================= MISCELLANEOUS ===
-	_lbl(buy, "— Miscellaneous —", 13, Color(0.62, 0.64, 0.7))
+	_shop_shelf(buy, "Miscellaneous")
 	var misc_grid := _shop_grid(buy)
 	# Loose gems appear only once their drops have entered the campaign.
 	if Balance.regular_gems_drop(price_ch):
@@ -4618,7 +4789,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	# --- gear cards ---
 	if not p.backpack.is_empty():
 		sold_any = true
-		_lbl(list, "— Gear —", 13, Color(0.62, 0.64, 0.7))
+		_shop_shelf(list, "Gear")
 		var gear_grid := _shop_grid(list)
 		for item in p.backpack:
 			var it: Dictionary = item
@@ -4637,7 +4808,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	var gem_keys := _sorted_gem_keys(gem_groups)
 	if not gem_keys.is_empty():
 		sold_any = true
-		_lbl(list, "— Gems —", 13, Color(0.62, 0.64, 0.7))
+		_shop_shelf(list, "Gems")
 		var gem_grid := _shop_grid(list)
 		for key in gem_keys:
 			var g: Dictionary = gem_groups[key]["gem"]
@@ -4672,7 +4843,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 		cg[gid]["count"] += 1
 	if not corder.is_empty():
 		sold_any = true
-		_lbl(list, "— Consumables —", 13, Color(0.62, 0.64, 0.7))
+		_shop_shelf(list, "Consumables")
 		var cons_grid := _shop_grid(list)
 		for gid in corder:
 			var cc: Dictionary = cg[gid]["c"]
@@ -4693,7 +4864,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	# --- materials: click sells one unit from the stack ---
 	if not p.materials.is_empty():
 		sold_any = true
-		_lbl(list, "— Materials —", 13, Color(0.62, 0.64, 0.7))
+		_shop_shelf(list, "Materials")
 		var mat_grid := _shop_grid(list)
 		for m in p.materials:
 			var mm: Dictionary = m
@@ -4716,7 +4887,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	# BAG_SELL_GOLD is pinned at 1g for now (anti-farm); see the knob's TODO.
 	if not p.loose_bags.is_empty():
 		sold_any = true
-		_lbl(list, "— Bags —", 13, Color(0.62, 0.64, 0.7))
+		_shop_shelf(list, "Bags")
 		var bag_grid := _shop_grid(list)
 		for bli in p.loose_bags.size():
 			var lb: Dictionary = p.loose_bags[bli]
@@ -4852,15 +5023,23 @@ func open_map() -> void:
 	chrome.draw.connect(func() -> void:
 		var sz: Vector2 = chrome.size
 		var gcol := Color(0.9, 0.8, 0.5, 0.055)
-		var gx: float = fposmod(grid_org.x, pitch.x)
-		while gx < sz.x - 6.0:
-			if gx > 6.0:
-				chrome.draw_line(Vector2(gx, 6.0), Vector2(gx, sz.y - 6.0), gcol, 1.0)
+		# Grid spans ONLY the charted patch (explored rooms + one breathing
+		# cell), not the whole board — an early one-room map then reads as a
+		# small chart fragment on vellum, not a node lost in a giant empty grid
+		# (visual-review P0). Beyond the patch stays plain vellum = "unexplored".
+		var cx0 := maxf(6.0, grid_org.x)
+		var cx1 := minf(sz.x - 6.0, grid_org.x + cols * pitch.x)
+		var cy0 := maxf(6.0, grid_org.y)
+		var cy1 := minf(sz.y - 6.0, grid_org.y + rows * pitch.y)
+		var gx := grid_org.x
+		while gx <= cx1 + 0.5:
+			if gx >= cx0:
+				chrome.draw_line(Vector2(gx, cy0), Vector2(gx, cy1), gcol, 1.0)
 			gx += pitch.x
-		var gy: float = fposmod(grid_org.y, pitch.y)
-		while gy < sz.y - 6.0:
-			if gy > 6.0:
-				chrome.draw_line(Vector2(6.0, gy), Vector2(sz.x - 6.0, gy), gcol, 1.0)
+		var gy := grid_org.y
+		while gy <= cy1 + 0.5:
+			if gy >= cy0:
+				chrome.draw_line(Vector2(cx0, gy), Vector2(cx1, gy), gcol, 1.0)
 			gy += pitch.y
 		var cpos := Vector2(sz.x - 58.0, 62.0)
 		chrome.draw_arc(cpos, 30.0, 0.0, TAU, 48, Color(0.9, 0.8, 0.5, 0.30), 1.5)
@@ -5437,11 +5616,7 @@ const BOSS_KINDS := ["fangmaw", "morwen", "vargoth",
 	"forgemistress", "cinderhide", "ashpriest",  # ch4 Slagfields (BOSSES.md)
 	"whitepelt", "icebound", "sleepkeeper",  # ch5 Long Sleep (BOSSES.md)
 	"auroch", "gardener", "curetwisted",  # ch6 Blooming Deep (BOSSES.md)
-	"stormdrake_veyx", "unnamed_echo", "stormmouth",  # ch7 Breaking Sky — Act 1 finale (BOSSES.md)
-	# Ninja Adventure sweep (2026-07-08): PLACEHOLDER bosses (pc_bosses.gd) —
-	# dev-only (unplaced → codex hides them outside dev), spawnable from the
-	# dev panel. Not yet assigned to any chapter.
-	"cyclops", "tengu", "flame_giant", "great_spirit", "ooze", "kraken"]
+	"stormdrake_veyx", "unnamed_echo", "stormmouth"]  # ch7 Breaking Sky — Act 1 finale (BOSSES.md)
 
 ## Codex screens live in ui/codex.gd. Passing a boss `kind` opens that
 ## boss's focused mechanics detail view instead of the tab list.

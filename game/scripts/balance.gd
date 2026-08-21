@@ -517,7 +517,7 @@ const MATERIAL_MOB_BODY := {
 	# Beasts
 	"wolf": "beast", "spider": "beast", "bat": "beast", "direbat": "beast",
 	"blightwolf": "beast", "bogspider": "beast", "duneprowler": "beast",
-	"winterfang": "beast", "storm_harrier": "beast", "kraken": "beast",
+	"winterfang": "beast", "storm_harrier": "beast",
 	# Humanoids / cultists
 	"cultist": "humanoid", "stormcult": "humanoid", "beastkin_raider": "humanoid",
 	"beastkin_howler": "humanoid", "wildkin_ranger": "humanoid", "null_acolyte": "humanoid",
@@ -527,16 +527,15 @@ const MATERIAL_MOB_BODY := {
 	"skeleton": "undead", "zombie": "undead", "sun_bleached": "undead",
 	"frost_husk": "undead", "gravewalker": "undead", "barrow_wight": "undead",
 	"vale_mourner": "undead", "casket_creeper": "undead", "bloated_dead": "undead",
-	"grave_cutter": "undead", "frozen_guard": "undead", "great_spirit": "undead",
+	"grave_cutter": "undead", "frozen_guard": "undead",
 	# Construct / elemental
 	"slag_core": "construct", "cinder_whelp": "construct", "slag_brute": "construct",
-	"flame_giant": "construct", "cyclops": "construct", "deep_stalker": "construct",
-	"tengu": "construct",
+	"deep_stalker": "construct",
 	# Plant / fungal
 	"sporeshambler": "plant", "root_shambler": "plant", "bog_lurker": "plant",
 	"grove_horror": "plant",
 	# Void / aberration
-	"void_husk": "void", "void_shade": "void", "ooze": "void",
+	"void_husk": "void", "void_shade": "void",
 }
 
 
@@ -1489,6 +1488,10 @@ const MOB_DENSITY_EXTRA := 0.15 # +15% pack size (seeded duplicate chance)
 # the hold range past aggro so an edge target doesn't flicker.
 const MOB_AGGRO_LEASH := 1.6    # seconds blind before a woken mob deaggros
 const MOB_AGGRO_KEEP := 1.5     # hold-aggro range = aggro_range * this
+# Combat readability (visual-review P1): when a whole area lights up at once,
+# one "!" alert bubble reads as danger; five read as noise. Show at most one
+# every ALERT_EMOTE_GAP seconds — the rest of the pack still aggros, silently.
+const ALERT_EMOTE_GAP := 0.6    # seconds between visible enemy "!" bubbles
 # Sticky targeting (MP phase 0, MULTIPLAYER.md §5.2): enemies/bosses
 # re-resolve their prey via game.pick_target() on this cadence — never
 # per-frame, so future packs don't oscillate between players. Solo:
@@ -1507,8 +1510,13 @@ const MOB_RETARGET_EVERY := 1.0 # seconds between sticky target re-picks
 # (radians, smallest first) it tries. MAX_SPEED gates it OFF for committed
 # dashes (charge/pounce run far faster than any walk speed — those should
 # connect, not curve around cover).
+# The last two angles are near-reversals (>90°): they only ever get tried once
+# every narrower heading is blocked, and they are what lets a mob boxed into a
+# concave pocket (two props, or a prop-and-wall corner) turn around and back
+# OUT instead of pressing forever into the gap and wedging. Wider angles cost
+# nothing in the common clear-ahead case (that returns on the very first ray).
 const MOB_AVOID_LOOKAHEAD := 24.0
-const MOB_AVOID_FAN: Array[float] = [0.6, 1.2, 1.9]  # ~34°, 69°, 109°
+const MOB_AVOID_FAN: Array[float] = [0.6, 1.2, 1.9, 2.5, 2.9]  # ~34°, 69°, 109°, 143°, 166°
 const MOB_AVOID_MAX_SPEED := 1.5   # skip avoidance above walk_speed * this
 
 # Reposition-to-fire (enemy._reacquire_shot): a ranged shooter (mob, or a
