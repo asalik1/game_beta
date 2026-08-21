@@ -46,6 +46,38 @@ another single build.
 | Warlock | **Approved** | Ledgerbound Debtor with closed tethered hip ledger and clean ink-marked hand |
 | Warrior | **Approved** | Emberbound Heir with canonical self-restraint helm |
 
+### Fate of these designs (owner ruling 2026-08-21): ELITE SKINS, not base replacements
+
+The approved v2 concept set (archived in `art_src/class_concepts_2026-08-21/`) wires in
+as one new ELITE skin per class in `Skins.SKINS` — the base class sprites stay exactly as
+they are (and the band-normalize pass runs over all of them untouched). Production runs
+the Codex ImageGen pipeline (`tools/art/IMAGEGEN_SPRITE_PIPELINE.md`, the Oathbound
+Arbiter recipe) with the QA gates that doc records: five-view identity rotations
+approved before any animation, direction-specific walks, deterministic builder,
+contact-sheet + runtime-size gates. Skin ids: warrior `emberbound_heir`, assassin
+`erased_name`, archer `severed_thread`, warlock `ledgerbound`, mage `blighted_healer`.
+
+### Symmetry constraint (owner ruling 2026-08-21, binding on every treatment above)
+
+Hero base designs must be left/right symmetric apart from held weapons. A unique
+per-side feature is a permanent QA tax: generators routinely drift or swap it on
+the north/west directions, and every mirrored fallback (flat deaths, the planned
+attack_walk left-mirrors-right) flips it outright — so it has to be hand-policed
+across every direction of every animation forever. The ruling came from the v1
+concept round and retires three earlier clauses:
+
+- Warrior: the Heir's ONE bare arm is out ("one arm exposed is difficult to qa").
+  Both arms armored identically; the humanity/restraint story carries through the
+  unlit enclosed helm, laborer-repaired gear, and the ember line confined to the
+  sword fuller plus a centered breastplate seam.
+- Assassin: the long-stiletto-plus-short-knife hand pair is out ("different sized
+  daggers held on both arms... annoying to qa enforce"). Two identical daggers in
+  matching grip; the Fan of Knives lives as a symmetric row of small knives on the
+  front of the belt, not a diagonal chest bandolier.
+- General: mismatched pauldrons, single-shoulder mantles and other per-side marks
+  are reserved for bosses/NPCs that get true 8-direction art with no mirroring
+  (the shipped paladin's one-shoulder mantle predates this ruling and stands).
+
 ## Mage — keep
 
 ### Why the design works

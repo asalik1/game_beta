@@ -571,6 +571,54 @@ attack them (A → B → C → D → E → F → G); each lands by the same gate
   as gait/scale ref + attack strip as bow identity, row-of-8 facing LEFT, no baked
   arrows, install via normalize against the idle cell (install_clip.py anchor invariant).
 
+### P0.13 — hero band-normalize + elite-skin line (owner, 2026-08-20/21)
+- [~] **Band normalize** (owner: "the goal is they all have a tight resolution of 2.2 to
+  2.35 band") — `tools/art/pixellab_resize_band.py` (owner-authorized PixelLab) redraws
+  every hero clip under 2.2× at its class's mid-band body: warrior 218, assassin 206,
+  warlock 202, archer 191 px (mage already in band). PALADIN is the exception at 235 px
+  / ~2.53× (owner ruling 2026-08-21 — the Arbiter base joins the premium 235px-min tier
+  with the elite skins; every other base stays in the tight 2.2–2.35× band). Warrior
+  anim/walk/run
+  slice committed (784eff8); run continues over the remaining ~366 strips, resumable
+  per-frame cache under `art_src/Custom/HeroBand_2026-08-20/`. Facts baked into the
+  driver: /v2/resize sustains ~4 in flight (24 = 429 thrash; the advertised "20
+  concurrent jobs" is the async generation queue only); FX-dominant frames skip the API
+  for plain LANCZOS (fraction-of-visible test, not raw count); paladin identity prompt =
+  the Oathbound Arbiter contract from `art_src/paladin_oathbound_arbiter/README.md`, NOT
+  the retired hooded zip design. Close-out on completion: FX-loss belt scan → --import →
+  compile/quick/full → csdemo re-capture → idle lineup re-measure → verify_art → mobile
+  gate → commit.
+- [~] **Elite-skin line from the approved class concepts** (owner ruling 2026-08-21:
+  "wire these new designs in as elite skins" — base sprites unchanged; route = Codex,
+  "the paladin ... is already using codex, it just needed proper qa"). Identity contracts
+  = `art_src/class_concepts_2026-08-21/` (v2 set, symmetry ruling built in); recipe =
+  `tools/art/IMAGEGEN_SPRITE_PIPELINE.md` (the Arbiter playbook). All five skins build at
+  a **235 px source body** (owner ruling 2026-08-21 — the premium tier is crisper than the
+  in-band bases; ratios 2.46–2.80× by class). Skin ids: warrior `emberbound_heir`, assassin `erased_name`, archer
+  `severed_thread`, warlock `ledgerbound`, mage `blighted_healer`; wiring = one
+  `Skins.SKINS` elite entry each (`skins/elite/<cls>_<id>` sprite base), SWING contact
+  times measured per strike clip, `splash_skin_<cls>_<id>` = the concept art, base-class
+  FX v1 (Umbral Phantom precedent; per-skin FX identity later). NOTE: data entries land
+  ONLY with the finished art — the wardrobe auto-sells every SKINS row. Phases: (1)
+  five-view identity rotations [DONE 08-21, owner approved "yes" — sheet 36, all facing-
+  correct + identity-faithful, archived art_src/class_concepts_2026-08-21/rotations/];
+  (2) locomotion + (3) ability/death masters [WARRIOR DONE 08-21: all 13 clips at the
+  base contract counts, whirlwind/dash/berserk/death all verified — sheet 38];
+  (4) deterministic builder [`tools/art/build_skin_family.py <skin_id>`, config-driven for
+  all 5 skins: 235 px body, green-key + 5→8 mirror + flat death; installs skins/elite/] +
+  (5) wiring [`Skins.SKINS` elite entry per skin]. WARRIOR (emberbound_heir) COMPLETE 08-21:
+  built + installed + splash + wired + verify_art OK + test_quick PASS (also covers the
+  idle-float fix); sheets 38/39. ALL 5 SKINS BUILT + WIRED (08-21): assassin erased_name,
+  warlock ledgerbound, archer severed_thread, mage blighted_healer — masters generated (Fan
+  of Knives / Death Mark / bow shots / neutral casts all verified), built via
+  `build_skin_family.py`, splashes from the concepts, `Skins.SKINS` entries added, compile-
+  clean; sheets 40/41. REMAINING: import done → verify_art ×4 → FULL suite → mobile sync →
+  resume band. Then owner in-game review. MIRROR: all skins use the 5→8 east-mirror like the shipped
+  Arbiter paladin (accepted precedent); archer bow / mage staff swap hands on W facings —
+  flag for owner veto (cheap to author 3 W dirs if rejected). Final gates (full suite + mobile
+  sync) after all 5 built. GAMMA: skins built raw; `CROWNLESS_SKIN_GAMMA=0.85` bakes the
+  Forward+ pre-brighten if the owner's in-game look reads dark (all 5 rebuild cheaply).
+
 ### P8 — readability / depth / life (the owner's review prompts, 2026-08-19 07:00)
 - [x] **Mob readability vs detailed floors** — decision: NO outline (house style, §40);
   a soft dark GROUND-AO pool under every mob and the hero (`Balance.CHAR_GROUND_AO` 0.30,

@@ -135,6 +135,11 @@ const SKINS := {
 	# family. Eldritch Warlock intentionally ships without that sprite upgrade;
 	# the awakening-art pass is later and must not block nailing its abilities.
 	"warrior": [
+		# Emberbound Heir (2026-08-21): the era-3 Codex class concept, wired as an
+		# elite skin (owner ruling). Enclosed unlit helm as self-restraint, ember
+		# held to the sword fuller + one breastplate seam; symmetric plate (QA rule).
+		{"id": "emberbound_heir", "name": "Emberbound Heir", "tier": "elite",
+			"sprite": "skins/elite/warrior_emberbound_heir"},
 		{"id": "dreadknight", "name": "Dreadknight", "tier": "elite",
 			"sprite": "skins/elite/warrior_dreadknight"},
 		# Awakened: the storm wakes — the plate deepens toward violet, the
@@ -143,6 +148,9 @@ const SKINS := {
 			"sprite": "skins/mythic/warrior_stormforged"},
 	],
 	"archer": [
+		# Severed-Thread Ranger (2026-08-21): era-3 Codex class concept as an elite skin (owner ruling).
+		{"id": "severed_thread", "name": "Severed-Thread Ranger", "tier": "elite",
+			"sprite": "skins/elite/archer_severed_thread"},
 		{"id": "frostfall_ranger", "name": "Frostfall Ranger", "tier": "elite",
 			"sprite": "skins/elite/archer_frostfall_ranger"},
 		# Awakened: the void deepens — the grey cloak drinks dusk-violet and
@@ -152,6 +160,9 @@ const SKINS := {
 	],
 	"mage": [
 		# Awakened: prismatic — bright facets bleach to white light while the
+		# Blighted Healer (2026-08-21): era-3 Codex class concept as an elite skin (owner ruling).
+		{"id": "blighted_healer", "name": "the Blighted Healer", "tier": "elite",
+			"sprite": "skins/elite/mage_blighted_healer"},
 		# robe's shadows refract indigo-violet.
 		{"id": "crystal_archmage", "name": "Crystal Archmage", "tier": "mythic",
 			"sprite": "skins/mythic/mage_crystal_archmage"},
@@ -159,6 +170,9 @@ const SKINS := {
 	"assassin": [
 		# Golden Ronin (id kept as "blade_dancer" for save/sprite-path compat).
 		# Signature FX: its knife-throw (Fan of Knives) hurls spinning shuriken
+		# Erased Name (2026-08-21): era-3 Codex class concept as an elite skin (owner ruling).
+		{"id": "erased_name", "name": "the Erased Name", "tier": "elite",
+			"sprite": "skins/elite/assassin_erased_name"},
 		# with a fading after-image instead of the kunai — see player_kit_assassin.
 		{"id": "blade_dancer", "name": "Golden Ronin", "tier": "elite",
 			"sprite": "skins/elite/assassin_blade_dancer"},
@@ -189,6 +203,9 @@ const SKINS := {
 			"sprite": "skins/mythic/paladin_fallen_arbiter"},
 	],
 	"warlock": [
+		# Ledgerbound Debtor (2026-08-21): era-3 Codex class concept as an elite skin (owner ruling).
+		{"id": "ledgerbound", "name": "Ledgerbound Debtor", "tier": "elite",
+			"sprite": "skins/elite/warlock_ledgerbound"},
 		{"id": "hellfire_inquisitor", "name": "Hellfire Inquisitor", "tier": "elite",
 			"sprite": "skins/elite/warlock_hellfire_inquisitor"},
 		# The former Eldritch Herald is retained as an elite under its new identity.
