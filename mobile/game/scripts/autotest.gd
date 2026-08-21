@@ -4177,25 +4177,25 @@ func _test_swing_alternation() -> void:
 		game.player.pending_theme_note = ""
 		if game.player._alt_basic_clip() != "attack":
 			return _fail("%s: a re-applied body must open on the primary swing" % cls)
-	# A skin WITHOUT its own attackb art must fall back to the single swing every
-	# cast (dreadknight, unless it later ships one -- elite skins that DO ship it
-	# are checked below).
+	# Fallback: with NO attackb clip loaded, a1 keeps the single swing every cast.
+	# Every melee skin now ships an attackb, so exercise the fallback synthetically
+	# by clearing the clip (the exact path a future no-alt skin would take), then
+	# reload it with set_class.
 	game.player.set_class("warrior")
-	game.player.set_skin("dreadknight")
+	game.player.set_skin("")
 	game.player.pending_theme_note = ""
-	if game.player._clips.has("attackb"):
-		print("  (note: dreadknight now ships an attackb strip — fallback branch not exercised)")
-	else:
-		var a: String = game.player._alt_basic_clip()
-		var b: String = game.player._alt_basic_clip()
-		if a != "attack" or b != "attack":
-			return _fail("skin without attackb art must keep the single swing (saw %s, %s)" % [a, b])
+	game.player._clips.erase("attackb")
+	var fa: String = game.player._alt_basic_clip()
+	var fb: String = game.player._alt_basic_clip()
+	if fa != "attack" or fb != "attack":
+		return _fail("no attackb art must keep the single swing (saw %s, %s)" % [fa, fb])
+	game.player.set_class("warrior")  # reload the cleared attackb clip
 	game.player.set_skin(saved_skin)
-	# Melee ELITE SKINS that DO ship an attackb family must alternate exactly
-	# like the base class (2026-08-21: emberbound_heir/erased_name added them,
-	# owner flagged the alternating basic swing on skins). A skin missing a
-	# direction silently falls back to the single swing -- reads as a stuck strike.
-	for pair in [["warrior", "emberbound_heir"], ["assassin", "erased_name"]]:
+	# Melee SKINS that ship an attackb family must alternate exactly like the base
+	# class (2026-08-21: owner flagged the alternating basic swing on skins; each
+	# custom-sprite melee skin gets its own attackb). A skin missing a direction
+	# silently falls back to the single swing -- reads as a stuck strike.
+	for pair in [["warrior", "emberbound_heir"], ["assassin", "erased_name"], ["warrior", "dreadknight"]]:
 		var pcls: String = pair[0]
 		var pskin: String = pair[1]
 		game.player.set_class(pcls)
