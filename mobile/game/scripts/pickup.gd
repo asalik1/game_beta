@@ -122,6 +122,18 @@ static func drop_goldrush(game_node: Node2D, pos: Vector2) -> void:
 	c._loot_shine(sprite, Color(1.0, 0.85, 0.35))
 
 
+## Consumable icons are authored LARGE — up to Art.CONSUMABLE_ICON_MAX (128px)
+## for the bag/HUD, where a Control downsizes them to its rect. On the world
+## floor the sprite is drawn at raw texture size, so a 128px bottle at a fixed
+## 1.1x rendered ~3x an item drop (owner: "potion dropped and rendered HUGE").
+## Normalize any authored consumable so its longest side reads ~item-drop size.
+const _WORLD_CONSUMABLE_PX := 48.0
+static func _world_consumable_scale(tex: Texture2D) -> Vector2:
+	var mx := float(maxi(tex.get_width(), tex.get_height()))
+	var s := _WORLD_CONSUMABLE_PX / maxf(mx, 1.0)
+	return Vector2(s, s)
+
+
 ## A loot payload ({"kind": "item"/"gem"/"stone", ...}) dropped where a
 ## full bag rejected it. The registry entry (game.dropped_loot) is the
 ## caller's job; this only builds the world node.
@@ -168,7 +180,7 @@ static func drop_loot(game_node: Node2D, payload: Dictionary, pos: Vector2) -> P
 			if ptex != null:
 				spr = Sprite2D.new()
 				spr.texture = ptex
-				spr.scale = Vector2(1.1, 1.1)
+				spr.scale = _world_consumable_scale(ptex)
 			else:
 				c._glyph("⚗", tint)
 		"bag":
@@ -190,7 +202,7 @@ static func drop_loot(game_node: Node2D, payload: Dictionary, pos: Vector2) -> P
 			if ctex != null:
 				spr = Sprite2D.new()
 				spr.texture = ctex
-				spr.scale = Vector2(1.1, 1.1)
+				spr.scale = _world_consumable_scale(ctex)
 			else:
 				c._glyph("⟲", tint)
 	if spr != null:

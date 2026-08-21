@@ -1,0 +1,991 @@
+﻿codex.exe : Reading prompt from stdin...
+At line:7 char:14
++ ...    $brief | & $codex exec -C $d -s workspace-write --skip-git-repo-ch ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Reading prompt from stdin...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+OpenAI Codex v0.148.0-alpha.9
+--------
+workdir: C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\beam\n
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: danger-full-access
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a01707-eb3b-7c41-b1d1-3249267d15d1
+--------
+user
+You are generating ONE game sprite animation master with your built-in image_gen tool. Read 
+$CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current 
+directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/nullwarden_idle.png : the BINDING identity, palette, pixel-art treatment AND body-scale reference ??? 
+a colossal horned sentinel-brute in heavy dark plate armor with cold blue null-light glowing in the armor seams and 
+eyes, an UNARMED bruiser with huge oversized armored gauntleted fists and no weapon of any kind ??? it fights with its 
+fists and channels null-magic from its hands, shown front-facing (facing the viewer). Reproduce this EXACT character, 
+its proportions, gear, markings and palette. Do not redesign it.
+- Image 2 = refs/nullwarden_static.png : a secondary identity reference of the same character.
+
+TASK: generate exactly ONE new 2x2 source sheet for its BEAM (BACK view) animation with this image_gen prompt (adapt 
+only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: illustration-story
+Asset type: high-resolution 4-frame game sprite animation source, to be cropped into a horizontal sprite strip. Square 
+output canvas.
+Input images: Image 1 is the binding identity, palette, pixel-art treatment and body-scale reference (front-facing); 
+Image 2 is a secondary identity reference.
+Scene/backdrop: a perfectly flat uniform #00ff00 chroma-key background filling every pixel, including the seams 
+between cells. No scenery, floor plane, ground, puddle, platform, cast shadow, contact shadow, gradient, vignette, 
+border, grid, line, or panel divider.
+Primary request: create exactly four separate equal square sprite cells as a clean 2x2 contact sheet in reading order 
+top-left, top-right, bottom-left, bottom-right. The source will be cropped into a horizontal strip. All four cells 
+have identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat green 
+between the two columns and between the two rows.
+Subject: a colossal horned sentinel-brute in heavy dark plate armor with cold blue null-light glowing in the armor 
+seams and eyes, an UNARMED bruiser with huge oversized armored gauntleted fists and no weapon of any kind ??? it 
+fights with its fists and channels null-magic from its hands, FRONT-FACING (facing the viewer), the exact same 
+character as Image 1 in every cell ??? same body, gear, proportions and palette.
+Style/medium: crisp high-resolution dark-fantasy pixel art with hard readable pixel clusters and a controlled palette, 
+matching Image 1; not painterly, not 3D, not anime.
+Composition/framing and ANCHOR RULE: the character is centred in each square cell, front-facing, its standing body 
+about 70% of the cell height, with generous green margin on every side so raised arms/weapons and effects fit. It 
+stays in the SAME spot in every cell ??? its head/crown and its feet (or lowest hem) sit at the same coordinates in 
+every frame that has them; nothing slides sideways, the camera never moves. Only the parts named in the storyboard 
+move.
+BEAM (BACK view) storyboard - four VISIBLY DIFFERENT poses of THIS character:
+ frame 1 (top-left) wind-up: both hands coming up and forward, aimed forward in the direction it faces, a bright point 
+kindling at the fingertips/muzzle
+ frame 2 (top-right) charge: the hands/head drawn back, the point swelling into a bright compact node, the whole body 
+tensing
+ frame 3 (bottom-left) FIRE: a short thick beam of the signature energy projected forward forward in the direction it 
+faces from the hands or the face/core, no longer than one body-width, compact and not touching a cell edge
+ frame 4 (bottom-right) recover: the beam gone, the hands lowering, residual glow fading
+IDENTITY LOCK (critical): the character is EXACTLY a colossal horned sentinel-brute in heavy dark plate armor with 
+cold blue null-light glowing in the armor seams and eyes, an UNARMED bruiser with huge oversized armored gauntleted 
+fists and no weapon of any kind ??? it fights with its fists and channels null-magic from its hands. In every cell it 
+must be THAT specific character with THAT silhouette, gear and palette ??? do NOT substitute a generic armored 
+knight/swordsman, a generic robed mage, or any other boss's design. If Image 1 has no sword, draw no sword; if it is 
+hooded and robed, keep it hooded and robed; match Image 1 exactly, only rotated to the stated facing.
+BACK VIEW ??? MANDATORY IN ALL FOUR CELLS: the character has turned around and faces directly AWAY from the camera. We 
+see ONLY its back: the BACK of its head/helm/hood/horns/crown, the back of its shoulders, spine, cape and heels. Its 
+FACE IS NOT VISIBLE in any frame (no eyes, no front of the face) ??? if you can see the face you have drawn the wrong 
+view. It is the exact same character, gear and palette as Image 1, rotated 180 degrees so its front points UP into the 
+screen, away from us. Its attack drives forward toward the TOP of the frame (away from the camera); arms/weapon reach 
+up-and-away.
+A short forward beam, not a thin line to the edge; body planted.
+PROJECTILE RULE (critical, overrides any effect mentioned in the storyboard): the game engine draws every bolt, orb, 
+beam, ray, cone, ring, wave, spawned creature, ground zone and telegraph SEPARATELY. This sprite must show ONLY the 
+character's body motion ??? the wind-up, the swing/thrust/cast gesture, and the follow-through. A faint SMALL glow or 
+spark right AT the hand, weapon-tip or mouth at the moment of release is allowed, but do NOT draw any projectile, 
+bolt, orb, beam, ray, cone, ring, wave or effect leaving the body, flying, traveling through the air, or landing 
+anywhere. Nothing detached from the character.
+SWORD REMOVAL (critical, overrides the reference image): the attached reference still shows a large sword floating 
+vertically over/through the body from a previous version ??? that weapon is OBSOLETE and must be COMPLETELY DELETED. 
+Draw NO sword, NO blade, NO hilt, NO weapon anywhere in any cell ??? not floating, not held, not sheathed. This 
+sentinel is UNARMED: huge empty armored gauntlet fists at the ends of its arms. Any magic it uses is cold blue 
+null-light channelled straight from its open hands/fists, never from a weapon.
+Constraints: output only the four cells on green; no text, watermark, UI, extra characters, scenery, floor artifact, 
+shadow, or separators. Do not use #00ff00 or any bright/pure green anywhere on the character or its effects (use its 
+own palette; a signature GREEN creature must use a darker desaturated green so chroma removal stays clean). Keep the 
+character identical to Image 1 in all four frames ??? same silhouette, gear and palette. Frames 1, 2, 3 and 4 must 
+each have a clearly different pose from every other frame.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./beam_master_2x2_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./beam_master_2x2_v1_keyed.png 
+(auto-key sampling, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all four cells were produced with visibly 
+different poses (frame by frame), and any deviation from the brief you noticed (the character redesigned or off-model, 
+poses sliding/resizing between frames, an effect touching an edge, extra limbs, wrong facing, a fourth head, etc.). Be 
+blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.
+
+
+codex
+IΓÇÖm using the `imagegen` skill because this is a raster sprite-generation and chroma-key workflow. IΓÇÖll generate 
+one master only, preserve the raw output unchanged, key a separate RGBA copy, and keep all writes confined to this 
+staging directory.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'" in 
+C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\beam\n
+ succeeded in 721ms:
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, 
+illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new 
+image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset 
+rather than repo-native code or vector. Do not use when the task is better handled by editing existing 
+SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in 
+HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product 
+mockups, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for image generation, editing, and 
+transparent-image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for or confirms the 
+CLI/API/model path. Requires `OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- For transparent images, ask built-in `image_gen` for a transparent background and preserve the generated alpha.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`; ask the user first 
+unless they explicitly requested `gpt-image-1.5`.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate 
+assets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per 
+requested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires 
+`OPENAI_API_KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK 
+runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific 
+location is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before 
+finishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the 
+default `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling 
+versioned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, 
+compositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request 
+as **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images 
+generated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool 
+so the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit 
+CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or 
+variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and 
+needs many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; 
+distinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including transparent-output requests; fallback CLI only if 
+explicitly requested or confirmed.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with 
+`view_image` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, 
+use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic 
+that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative 
+requirements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, ask built-in `image_gen` for a transparent background and preserve the generated 
+alpha channel.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default 
+`$CODEX_HOME/generated_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or 
+references. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user 
+explicitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, 
+size, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and 
+whether the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Ask built-in `image_gen` for a genuinely transparent background and preserve its alpha.
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, 
+but do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra 
+labeled line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural ├óΓé¼ΓÇ¥ candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup ├óΓé¼ΓÇ¥ product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup ├óΓé¼ΓÇ¥ app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram ├óΓé¼ΓÇ¥ diagrams/infographics with structured layout and text.
+- scientific-educational ├óΓé¼ΓÇ¥ classroom explainers, scientific diagrams, and learning visuals with required labels 
+and accuracy constraints.
+- ads-marketing ├óΓé¼ΓÇ¥ campaign concepts and ad creatives with audience, brand position, scene, and exact 
+tagline/copy.
+- productivity-visual ├óΓé¼ΓÇ¥ slide, chart, workflow, and data-heavy business visuals.
+- logo-brand ├óΓé¼ΓÇ¥ logo/mark exploration, vector-friendly.
+- illustration-story ├óΓé¼ΓÇ¥ comics, children├óΓé¼Γäós book art, narrative scenes.
+- stylized-concept ├óΓé¼ΓÇ¥ style-driven concept art, 3D/stylized renders.
+- historical-scene ├óΓé¼ΓÇ¥ period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization ├óΓé¼ΓÇ¥ translate/replace in-image text, preserve layout.
+- identity-preserve ├óΓé¼ΓÇ¥ try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit ├óΓé¼ΓÇ¥ remove/replace a specific element (including interior swaps).
+- lighting-weather ├óΓé¼ΓÇ¥ time-of-day/season/atmosphere changes only.
+- background-extraction ├óΓé¼ΓÇ¥ transparent background / clean cutout. Ask built-in `image_gen` for actual 
+transparency.
+- style-transfer ├óΓé¼ΓÇ¥ apply reference style while changing subject/scene.
+- compositing ├óΓé¼ΓÇ¥ multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render ├óΓé¼ΓÇ¥ drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D/etc>
+Composition/framing: <wide/close/top-down; placement>
+Lighting/mood: <lighting + mood>
+Color palette: <palette notes>
+Materials/textures: <surface details>
+Text (verbatim): "<exact text>"
+Constraints: <must keep/must avoid>
+Avoid: <negative constraints>
+```
+
+Notes:
+- `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
+- `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which 
+controls output transparency behavior.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong 
+in the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+
+Augmentation rules:
+- Keep it short.
+- Add only the details needed to improve the prompt materially.
+- For edits, explicitly list invariants (`change only X; keep Y unchanged`).
+- If any critical detail is missing and blocks success, ask a question; otherwise proceed.
+
+## Examples
+
+### Generation example (hero image)
+```text
+Use case: product-mockup
+Asset type: landing page hero
+Primary request: a minimal hero image of a ceramic coffee mug
+Style/medium: clean product photography
+Composition/framing: wide composition with usable negative space for page copy if needed
+Lighting/mood: soft studio lighting
+Constraints: no logos, no text, no watermark
+```
+
+### Edit example (invariants)
+```text
+Use case: precise-object-edit
+Asset type: product photo background replacement
+Primary request: replace only the background with a warm sunset gradient
+Constraints: change only the background; keep the product and its edges unchanged; no text; no watermark
+```
+
+## Prompting best practices
+- Structure prompt as scene/backdrop -> subject -> details -> constraints.
+- Include intended use (ad, UI mock, infographic) to set the mode and polish level.
+- Use camera/composition language for photorealism.
+- Only use SVG/vector stand-ins when the user explicitly asked for vector output or a non-image placeholder.
+- Quote exact text and specify typography + placement.
+- For tricky words, spell them letter-by-letter and require verbatim rendering.
+- For multi-image inputs, reference images by index and describe how they should be used.
+- For edits, repeat invariants every iteration to reduce drift.
+- Iterate with single-change follow-ups.
+- If the prompt is generic, add only the extra detail that will materially help.
+- If the prompt is already detailed, normalize it instead of expanding it.
+- For CLI fallback only, see `references/cli.md` and `references/image-api.md` for model, `quality`, `input_fidelity`, 
+masks, output format, and output-path guidance.
+- For transparent images, ask built-in `image_gen` for actual transparency and preserve its alpha.
+
+More principles shared by both modes: `references/prompting.md`.
+Copy/paste specs shared by both modes: `references/sample-prompts.md`.
+
+## Guidance by asset type
+Asset-type templates (website assets, game assets, wireframes, logo) are consolidated in 
+`references/sample-prompts.md`.
+
+## gpt-image-2 guidance for CLI fallback
+
+The fallback CLI defaults to `gpt-image-2`.
+
+- Use `gpt-image-2` for new CLI/API workflows unless the user confirms a different model.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user 
+explicitly requested that model.
+- `gpt-image-2` always uses high fidelity for image inputs; do not set `input_fidelity` with this model.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- Use `quality low` for fast drafts, thumbnails, and quick iterations. Use `medium`, `high`, or `auto` for final 
+assets, dense text, diagrams, identity-sensitive edits, or high-resolution outputs.
+- Square images are typically fastest to generate. Use `1024x1024` for fast square drafts.
+- If the user asks for 4K-style output, use `3840x2160` for landscape or `2160x3840` for portrait.
+- `gpt-image-2` size may be `auto` or `WIDTHxHEIGHT` if all constraints hold: max edge `<= 3840px`, both edges 
+multiples of `16px`, long-to-short ratio `<= 3:1`, total pixels between `655,360` and `8,294,400`.
+
+Popular `gpt-image-2` sizes:
+- `1024x1024` square
+- `1536x1024` landscape
+- `1024x1536` portrait
+- `2048x2048` 2K square
+- `2048x1152` 2K landscape
+- `3840x2160` 4K landscape
+- `2160x3840` 4K portrait
+- `auto`
+
+## Fallback CLI mode only
+
+### Temp and output conventions
+These conventions apply only to the CLI fallback. They do not describe built-in `image_gen` output behavior.
+- Use `tmp/imagegen/` for intermediate files (for example JSONL batches); delete them when done.
+- Write final artifacts under `output/imagegen/`.
+- Use `--out` or `--out-dir` to control output paths; keep filenames stable and descriptive.
+
+### Dependencies
+Prefer `uv` for dependency management in this repo.
+
+Required Python package:
+```bash
+uv pip install openai
+```
+
+Optional for image inspection and downscaling:
+```bash
+uv pip install pillow
+```
+
+Portability note:
+- If you are using the installed skill outside this repo, install dependencies into that environment with its package 
+manager.
+- In uv-managed environments, `uv pip install ...` remains the preferred path.
+
+### Environment
+- `OPENAI_API_KEY` must be set for live API calls.
+- Do not ask the user for `OPENAI_API_KEY` when using the built-in `image_gen` tool.
+- Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
+
+If the key is missing, give the user these steps:
+1. Create an API key in the OpenAI platform UI: https://platform.openai.com/api-keys
+2. Set `OPENAI_API_KEY` as an environment variable in their system.
+3. Offer to guide them through setting the environment variable for their OS/shell if needed.
+
+If installation is not possible in this environment, tell the user which dependency is missing and how to install it 
+into their active environment.
+
+### Script-mode notes
+- CLI commands + examples: `references/cli.md`
+- API parameter quick reference: `references/image-api.md`
+- Network approvals / sandbox settings for CLI mode: `references/codex-network.md`
+
+## Reference map
+- `references/prompting.md`: shared prompting principles for both modes.
+- `references/sample-prompts.md`: shared copy/paste prompt recipes for both modes.
+- `references/cli.md`: fallback-only CLI usage via `scripts/image_gen.py`.
+- `references/image-api.md`: fallback-only API/CLI parameter reference.
+- `references/codex-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
+- `scripts/image_gen.py`: fallback-only CLI implementation. Use only when the user explicitly chooses or confirms CLI 
+mode.
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw '.\\CLAUDE.md'" in 
+C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\beam\n
+2026-08-18T22:40:14.293606Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 0.8 seconds
+Output:
+Get-Content : Cannot find path 
+'C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\beam\n\CLAUDE.md' because it does not exist.
+At line:2 char:1
++ Get-Content -Raw '.\CLAUDE.md'
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\asali\...eam\n\CLAUDE.md:String) [Get-Content], ItemNotFoundEx 
+   ception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+
+ exited 1 in 772ms:
+Get-Content : Cannot find path 
+'C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\beam\n\CLAUDE.md' because it does not exist.
+At line:2 char:1
++ Get-Content -Raw '.\CLAUDE.md'
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\asali\...eam\n\CLAUDE.md:String) [Get-Content], ItemNotFoundEx 
+   ception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+
+codex
+The referenced `CLAUDE.md` is not present in the staging directory. IΓÇÖm locating the repository-level copy read-only 
+before generation; no project files will be modified.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg --files 
+'C:\\Users\\asali\\Projects\\MMO' -g 'CLAUDE.md'" in 
+C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\beam\n
+2026-08-18T22:40:21.329170Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 0.8 seconds
+Output:
+rg : The term 'rg' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the 
+spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:2 char:1
++ rg --files 'C:\Users\asali\Projects\MMO' -g 'CLAUDE.md'
++ ~~
+    + CategoryInfo          : ObjectNotFound: (rg:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+
+ exited 1 in 773ms:
+rg : The term 'rg' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the 
+spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:2 char:1
++ rg --files 'C:\Users\asali\Projects\MMO' -g 'CLAUDE.md'
++ ~~
+    + CategoryInfo          : ObjectNotFound: (rg:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$taskDir = (Get-Location).Path; while 
+($taskDir -and $taskDir.StartsWith('"'C:\\Users\\asali\\Projects\\MMO', [System.StringComparison]::OrdinalIgnoreCase)) 
+{ "'$candidate = Join-Path $taskDir '"'CLAUDE.md'; if (Test-Path -LiteralPath "'$candidate) { Write-Output $candidate 
+}; $parent = Split-Path -Parent $taskDir; if ($parent -eq $taskDir) { break }; $taskDir = $parent }' in 
+C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\beam\n
+ succeeded in 693ms:
+C:\Users\asali\Projects\MMO\CLAUDE.md
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw 
+'C:\\Users\\asali\\Projects\\MMO\\CLAUDE.md'" in 
+C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\beam\n
+ succeeded in 1578ms:
+# Crownless ├óΓé¼ΓÇ¥ working practices (all agents)
+
+## Mobile version ├óΓé¼ΓÇ¥ kept in sync (unfrozen 2026-07-15)
+- `mobile/` (repo root) holds the iOS/Android version: a snapshot fork of `game/` plus a small, fixed set of mobile 
+deltas (Mobile renderer, touch HUD, export presets ├óΓé¼ΓÇ¥ the exact list lives in `mobile/README.md`). Deployment is 
+proven end to end ├óΓé¼ΓÇ¥ GitHub Actions **"Mobile builds"** produces a signed-debug APK and an unsigned iOS `.ipa`; 
+both install/run on-device (sideload).
+- **Policy change (was "frozen, do not touch"):** keep `mobile/game/` in sync with `game/`. `game/` is still the 
+**source of truth** ├óΓé¼ΓÇ¥ never edit `mobile/` to fix a desktop issue; fix it in `game/` and re-sync. To re-sync: 
+re-copy `game/` over `mobile/game/`, re-apply the mobile deltas from `mobile/README.md`, then run the compile gate + 
+`test_quick` against `mobile/game` before committing. Keep the delta list small and current.
+
+## Code layout (see CODING_GUIDELINES.md ├é┬º38)
+- Tuning knobs ├óΓÇáΓÇÖ `balance.gd`; data tables stay in domain files (classes/items/story). Never inline a bare 
+tuning number.
+- Docs split (2026-07-06): balance/pacing round narratives go in `BALANCE_HISTORY.md` (newest at TOP of the tuning 
+list); `DESIGN.md` holds only current decisions + distilled standing rules ├óΓé¼ΓÇ¥ never append round-by-round 
+history there.
+- Big node classes are inheritance CHAINS (verbatim moves, calls flow derived├óΓÇáΓÇÖbase, all vars in the base layer):
+  - Game: `game_base` (state/flags/convo/lookups/fx) ├óΓÇá┬É `game_world` (graph/rooms/walls/spawning/gates) ├óΓÇá┬É 
+`game_flow` (deaths/loot/chapters/settings/terrain events) ├óΓÇá┬É `game.gd` (boot + per-frame).
+  - Player: `player_core` (state/stats/gear/progression) ├óΓÇá┬É `player_combat` (targeting/hit/shared juice + shared 
+primitives) ├óΓÇá┬É `player_kit_{warrior,archer,mage,assassin,paladin,warlock}` (one file per class: `_use_<class>` 
+dispatch + its abilities) ├óΓÇá┬É `player.gd` (dispatch/survival/per-frame). Primitives shared by several kits 
+(`_dash_strike`, `_melee_arc`, `_mist`, `_beam_fx`, `_grant_stab_surge`) stay in `player_combat` ├óΓé¼ΓÇ¥ calls only 
+flow derived├óΓÇáΓÇÖbase.
+  - Tests: `tests/test_base` (helpers) ├óΓÇá┬É `tests/test_ch1` ├óΓÇá┬É `tests/test_ch2` ├óΓÇá┬É `autotest.gd` (entry 
++ systems tier).
+- Self-contained UI screens = static modules in `scripts/ui/` (dev_panel, codex) taking the Menus instance.
+- New `class_name` script ├óΓÇáΓÇÖ run `--import` before any headless run.
+- The in-game **codex** (`scripts/ui/codex.gd`) is the player-facing reference for monsters/bosses/terrains/gear 
+├óΓé¼ΓÇ¥ it goes stale silently. Whenever you add player-facing content or a feature, ask whether the codex should 
+reflect it, and if so update it in the same change. It reads `Story.ALL_ENEMIES`/data tables directly, but a few 
+hand-maintained parallel lists still gate it (e.g. `menus.gd` `BOSS_KINDS` decides monster-vs-boss bucketing) ├óΓé¼ΓÇ¥ 
+update those too, or a new boss lands in the wrong bucket. Layout since 2026-08-15 = rail of sections 
+(`UICodex.SECTIONS`) + filter chips + ledger/detail; a new section is one SECTIONS row + a `_rows`/`_detail` (or page) 
+builder, and every legacy `open_codex("<tab>")` id routes through `_resolve()` ├óΓé¼ΓÇ¥ extend that, never fork the 
+panel. Reference prose lives under Field notes (`NOTE_PAGES`), not above a shelf.
+
+## Testing ├óΓé¼ΓÇ¥ ALWAYS in this order
+1. Compile gate first, every time (`test_quick.bat`/`test.bat` run `check_compile.gd` first). Never invoke the test 
+scene directly: one parse error anywhere makes the suite script fail to compile and the headless engine idles FOREVER 
+(a zombie that looks like a slow run). The gate catches it in ~3s with the real error.
+2. Iterate with `test_quick.bat` (~15s): gate ├óΓÇáΓÇÖ boot ├óΓÇáΓÇÖ one class kit ├óΓÇáΓÇÖ systems ├óΓÇáΓÇÖ UI smoke 
+├óΓÇáΓÇÖ pause menu.
+3. `test.bat` (full suite, minutes; plays both chapters end to end) must be green before staging.
+
+## Agent toolkit (the map: `tools/INDEX.md` ├óΓé¼ΓÇ¥ check it before writing a helper script)
+- `preflight.bat` ├óΓé¼ΓÇ¥ the traps below, mechanized: stale/forgotten `--import`, codex/BOSS_KINDS staleness, 
+unregistered content modules, diff-scoped balance-number + CONNECT_DEFERRED lints, new shot rig not `extends ShotRig`. 
+Run it before staging; every finding prints its one-line fix.
+- `python tools/safe_commit.py -m "msg" <your paths>` ├óΓé¼ΓÇ¥ the serialized-commit etiquette as a guardrail: 
+path-scoped commit that lists sibling-staged work instead of swallowing it.
+- `python tools/sync_mobile.py` ├óΓé¼ΓÇ¥ mobile drift report; `--apply [--gate]` performs the re-sync ritual from 
+`mobile/README.md`.
+- **Headless Codex (`codex exec`, the default generated-art lane): calling guide = 
+`C:\Users\asali\Projects\CODEX_HEADLESS.md` (Projects root, shared by every project on this box: binary, call, all 
+flags, machine limits) + `tools/CODEX_HEADLESS.md` (the MMO layer: runner, drivers, vet/install).** The binary's 
+install dir is re-hashed on every app update ├óΓé¼ΓÇ¥ resolve it (`python tools/codex_bin.py` / `Resolve-Codex` in 
+`run_codex_batch.ps1`), never hard-code it; prompt goes on STDIN; on this shared box run image batches serial + 
+RAM-gated (`run_codex_batch.ps1 -MaxParallel 1 -MinFreeGB 1.3`), never beside a Godot suite (a parallel batch + suite 
+OOM-crashed the host 2026-08-17).
+- `python tools/art/verify_art.py <base>` ├óΓé¼ΓÇ¥ post-install sprite checks (strip geometry, 8-dir completeness, 
+green-bleed, stale import, and in-cell content gates: anchor drift/ghost chunks/edge cuts/clip-vs-idle body scale).
+- **Screenshot rigs: never write a standalone one (2026-08-15).** Twenty-three `game/shot_*.gd` files are copies of 
+the same 25-line boot/`_shot`/quit boilerplate, none with a watchdog, muted only by convention. New rig = `extends 
+ShotRig` (`scripts/dev/shot_rig.gd`: `boot()`, `shot()`, sim-clock waits, `arg()`/`flag()`, Master-bus mute, 
+`--timeout=N` watchdog) + `_ready()` of steps + `finish()`; run it ├óΓé¼ΓÇ¥ and every legacy rig ├óΓé¼ΓÇ¥ through 
+`shot.bat <rig> [--timeout=N] [rig args]`, which injects `--audio-driver Dummy`, compile-gates the rig script 
+(check_compile's default walk skips `game/` root: a parse error there = a window that idles forever), and hard-kills a 
+hung engine. `preflight` FAILs a new rig that doesn't extend it and WARNs on an edited legacy one (convert on touch). 
+Worked example: `shot_fx_series.gd`; the map: `tools/INDEX.md` "In-engine shot rigs".
+- **Windowed shot rigs (`shot_*.tscn`, `qa_skins`, anything not `--headless`) run MUTED: always pass `--audio-driver 
+Dummy`.** They boot the real game with music + SFX on the owner's shared machine; an unmuted rig blares through his 
+speakers mid-session (owner ruling 2026-08-15). Headless suites are already silent.
+
+## GDScript traps (each has bitten us) ├óΓé¼ΓÇ¥ review-time deep list: `CODING_GUIDELINES.md` ├é┬º38
+- `var x := obj.method()` on a loosely-typed obj (or any Variant expression, e.g. `Dictionary.get`) = PARSE ERROR 
+"cannot infer type". Annotate: `var x: float = ...`.
+- New `class_name` ├óΓÇáΓÇÖ `--import` first or headless silently hangs.
+- Labels inside HBoxContainer collapse to one char per line without `custom_minimum_size`.
+- Multiline lambda: following call args must sit on the SAME line as the lambda's last statement.
+- Tests waiting on timed effects must poll wall-clock (`await create_timer(0.2)`) ├óΓé¼ΓÇ¥ frames race ahead headless.
+- Autotest sections SNAPSHOT + RESTORE shared state (flags, resonance, standings); never `.clear()`. Two corollaries, 
+both learned from one flaky capital run (2026-07-26):
+  - **Restore on the FAILURE paths too.** `_fail` only QUEUES `quit(1)` ├óΓé¼ΓÇ¥ the suite keeps running to the end of 
+the frame, so the next section still executes and reads whatever the failed one left behind. A mid-city failure 
+stranded `chapter_id == "capital"`, where `shop_markup` answers a flat 1.0, and the road-markup section then reported 
+a second, entirely bogus failure. Put the assertions in a helper and the restore in its caller, so all ~40 exits pass 
+through it.
+  - **Never assert against state an earlier section accumulated.** A content-tier section inherits a whole campaign of 
+loot, gold, resonance and bag capacity ├óΓé¼ΓÇ¥ all of it loot-luck. The capital's lapidary quest asserted its kit 
+landed in the bag, and a full bag legally mails the kit instead: pass or fail came down to whether a bag DROPPED that 
+run. Control the precondition (lend a bag, pin the shard) or the assert is a coin flip.
+- canvas_item shader `fragment()`: `COLOR` arrives PREMULTIPLIED (modulate ├âΓÇö TEXTURE sample). Writing `COLOR = 
+result * COLOR` multiplies the texture in twice ├óΓé¼ΓÇ¥ everything darkens and "brighten" shaders read as darken 
+(phantom_charge was bitten; owner saw "only gets darker"). Reuse ONLY `COLOR.a` (silhouette.gdshader convention).
+- Spawning an Area2D + CollisionShape2D (Chest/Pickup/Projectile) from inside a `body_entered`/`area_entered` handler 
+= non-fatal "Can't change this state while flushing queries" engine error (`area_set_shape_disabled`) ├óΓé¼ΓÇ¥ the new 
+shape's enter-tree hits the physics-flush guard. Connect physics signals with `CONNECT_DEFERRED` or `call_deferred` 
+the spawn (chest open + projectile ricochet were bitten).
+- `draw_colored_polygon` on a SLIVER (near-collinear points) = random non-fatal "Invalid polygon data, triangulation 
+failed" spam: the triangulator picks winding from a float32 shoelace over RAW coords, so a sliver's sign is rounding 
+noise at world-scale coordinates ├óΓé¼ΓÇ¥ coordinate-dependent coin flip, NOT deterministic per shape (knife-trail 
+fold-back miters were bitten). Pre-check `Geometry2D.triangulate_polygon(p).is_empty()` and skip ├óΓé¼ΓÇ¥ the exact 
+C++ path behind the error, and everything it rejects is sub-pixel (the `_poly` guard in player_combat.gd).
+- **In co-op, the tree pause is NOT an input gate.** `request_pause(true)` NO-OPS online (`game_base.gd`, ├é┬º5.4 
+├óΓé¼ΓÇ¥ a shared world never pauses), so anything leaning on the pause to stop input/processing keeps running in a 
+session. Menus, dialogue and choice prompts all pause solo and none of them pause online. Gate on the OVERLAY STATE 
+instead ├óΓé¼ΓÇ¥ `menus.is_open()` / `hud.dialogue_active` / `hud.choices_active`, the guard `game.gd`'s tap-to-talk 
+already uses. The touch HUD had no `process_mode` override and only checked `state == ST_PLAYING` (there is no 
+`ST_MENU`), so its joystick ├óΓé¼ΓÇ¥ the whole left half of the screen ├óΓé¼ΓÇ¥ stayed live UNDER every menu and a 
+drag walked your hero mid-fight. Note the shape of the miss: it was invisible in BOTH cheap tests (solo-on-phone 
+pauses; co-op-on-desktop has no touch HUD) and only existed in the mobile ├âΓÇö co-op cross-product. When a feature is 
+platform- or session-conditional, ask what its gate is in the OTHER combination.
+
+## Multi-agent etiquette
+- Task boards (`CH2_TASKS.md` pattern): one owner per task, claim before starting; content lands as NEW modules under 
+`game/scripts/content/` (format: `scripts/content/README.md`) + one registration line in `Story.CONTENT_MODULES`.
+- Stage with `git add` after a green full suite. No commits unless the user asks.
+- **Commits are SERIALIZED (2026-07-07):** a commit sweeps the WHOLE index, and sibling agents stage concurrently 
+├óΓé¼ΓÇ¥ so immediately before committing, run `git status` and look at what's actually staged. If the index holds 
+another agent's work, either fold it into an accurate combined message or stop and say so ├óΓé¼ΓÇ¥ never commit a 
+message that describes only your slice. (Trigger: an itemization pass got swallowed into a commit labeled "cover + 
+boot flow" by exactly this race.)
+- Commit messages: NO author/co-author trailers (no `Co-Authored-By`, no attribution lines) ├óΓé¼ΓÇ¥ this project 
+keeps commits authorless; credit lives in a separate credits file.
+- Autotest additions: content modules use the marked CONTENT-MODULE TEST HOOK (one func at file end + one call line); 
+never edit existing sections.
+
+## Asset sourcing
+- **Allowed ├óΓé¼ΓÇ¥ and that's the whole list:** ONLY these two, or anything we generate ourselves (must be up to 
+par: semantic fit + reads clean in-game).
+  1. **CC0 / public domain** ├óΓé¼ΓÇ¥ zero obligations, ideal.
+  2. **CC-BY / MIT / Apache / OFL** ├óΓé¼ΓÇ¥ fine; ship the attribution file (we already do, in 
+`assets/*/CREDITS.txt`).
+  No pre-approval needed for these. Source from anywhere ├óΓé¼ΓÇ¥ OpenGameArt, Kenney, itch.io, the Dungeon Crawl 
+tileset (CC0), etc.
+- **Everything else is off-limits** ├óΓé¼ΓÇ¥ do not use, don't even ask: share-alike (CC-BY-SA, GPL), non-commercial 
+(CC-NC), proprietary/paid asset-store packs, and anything with no stated license (default = all rights reserved). This 
+game ships commercially on Steam; these licenses either forbid selling it or can force us to open-source the whole 
+project.
+- Install flow: probe/download, and LOOK at the image (or listen to the audio) before installing; overrides drop into 
+`assets/sounds|music|sprites/` by name (a PNG/wav there overrides the procedural version of the same name).
+- Audio taste: semantic fit over quality; no melodic-jingle chiptunes for ults/terrains; never human grunts on casts; 
+never touch `ult_mage.wav` or the village/story/boss synth tracks.
+
+## Generated art tool authorization
+- **NEVER assume PixelLab is authorized. PixelLab may be used only when the owner explicitly authorizes PixelLab for 
+the specific task.** Existing PixelLab assets, PixelLab helper scripts, character metadata, or a matching PixelLab 
+workflow elsewhere in the repo do not grant permission for a new generation.
+- When an agent has a built-in image-generation/editing tool (for example, ChatGPT/Codex image generation), that 
+built-in tool is the default for generated art unless the owner explicitly requests or authorizes another generator.
+- This rule applies even when another generator appears technically better suited. If the built-in tool cannot meet 
+the requirement, stop and ask the owner; do not silently switch tools or spend external generation credits.
+
+### Codex built-in ImageGen walk-animation observations
+- For bipedal characters, the built-in ImageGen tool often fails to preserve a fluid left/right leg cycle. A real 
+same-colored leg crossing over the other in one passing frame can create a convincing walking illusion; keep that 
+crossing to one or at most two frames rather than making every frame crossed.
+- If ImageGen repeats nearly identical crossed poses, give each cell an explicit foot-position storyboard instead of 
+only asking for "alternating legs": use a wide split, a tight crossover, a second crossover with a different spread 
+and the opposite leg emerging, then the opposite wide split or a subtle toe-off. State that frames 1, 3, and 4 must 
+have visibly different lower-body silhouettes. (Tried on the Wild Fang Raider 2026-08-14 and again 08-15: the 4-cell 
+2x2 kept coming back with the SAME leg leading in both stride cells and the body ~11% short ├óΓé¼ΓÇ¥ the owner still 
+called the walk bad.)
+- **What actually fixed the Wild Fang Raider walk (2026-08-15): ONE ROW of EIGHT figures, each frame labelled with its 
+gait phase** (near-foot contact / load / far leg passes / reach, then the same four for the other leg ├óΓé¼ΓÇ¥ the 
+pipeline doc's "legs do not alternate" remedy). The row came back with 8 distinct poses, constant body height and one 
+ground line; installed as an 8-frame strip (the engine's strip reader is frame-count agnostic ├óΓé¼ΓÇ¥ width/height 
+├óΓé¼ΓÇ¥ so 8 is fine; at the 2x walk clock the loop runs 0.67 s). Prefer this over 4-cell 2x2 for any bipedal walk. 
+Ask Codex to report leg-lead per frame in its final message; it is a candid critic of its own output.
+- Every ImageGen-keyed strip carried a dark-green antialias rim (`build_mob_walk_repairs.remove_green` now despills 
+the 2px edge band); a strip that "looks fine" on a dark contact sheet can still ring green over grass ├óΓé¼ΓÇ¥ check 
+`G > max(R,B)+20` counts on the rim, not just the semi-alpha BLEED gate.
+- The tool is generally more reliable for non-bipedal walks (for example, spiders and wolves), and for characters 
+whose locomotion does not expose a conventional leg cycle: robes can communicate motion through cloth flutter, and 
+floating characters can use body/cloth drift.
+- For bipedal sheets, prompt for fixed torso/pelvis anchors, a shared foot baseline, compact stride, 
+held-weapon/upper-body continuity, and explicit negative constraints against recoloring legs, detached feet, 
+duplicated frames, and high-knee marching. Inspect the generated sheet before installation and run 
+`tools/art/verify_art.py <base>` afterward; anchor drift can still remain even when the sheet looks visually centered.
+
+## PixelLab characters ├óΓé¼ΓÇ¥ regenerating an EXISTING one (deep dive: `tools/art/PIXELLAB_BOSS_EDITS.md`)
+- **Authorization gate:** this section applies only after the owner has explicitly authorized PixelLab for the current 
+task. It is not permission to choose PixelLab.
+- **RULE: before you regenerate, re-roll, or tweak an existing PixelLab character (boss/hero/skin), ALWAYS read its 
+export metadata FIRST.** Download the zip (`curl -H "Authorization: Bearer $PIXELLAB_SECRET" 
+https://api.pixellab.ai/mcp/characters/<id>/download -o out.zip`) and read `metadata.json` ├óΓé¼ΓÇ¥ it stores the 
+ORIGINAL creation `prompt` (plus size, `template_id`, view). Regenerate from that EXACT prompt and change ONLY the 
+clause the owner flagged.
+- **Never invent a fresh description from a screenshot or memory** ├óΓé¼ΓÇ¥ it silently drifts the design 
+(proportions, palette, silhouette) even when the fix was one word. `get_character` does NOT return the creation 
+prompt; the zip's `metadata.json` is the only source of truth.
+
+## PixelLab characters ├óΓé¼ΓÇ¥ new generation workflow (prompt-craft cases: `tools/art/PIXELLAB_PROMPT_LESSONS.md`)
+- **CHECK ALL 8 ROTATIONS before generating animations.** After a character body is created, visually inspect every 
+direction (S, SE, E, NE, N, NW, W, SW) for consistency ├óΓé¼ΓÇ¥ same proportions, same gear, same silhouette. v3 mode 
+frequently produces inconsistent north/west directions (wrong body shape, missing equipment, different outfit). If any 
+direction is broken, re-roll the body first. Generating animations on a broken body wastes hundreds of generations.
+- **Heroes use v3 mode (NOT pro).** The gold-standard assassin and warlock were both v3. Pro mode produces stocky 
+proportions for visible-face characters. The `style: -, -, -` field in `get_character` appears in BOTH v3 and pro 
+├óΓé¼ΓÇ¥ it cannot distinguish modes.
+- **Standard mode is useless for proportions testing.** Its template skeleton produces chibi proportions regardless of 
+description. Only useful for testing color palette and design elements.
+- **Description formula (proven on assassin):** archetype first ├óΓÇáΓÇÖ every piece of gear described precisely 
+├óΓÇáΓÇÖ body type ("lean and gaunt" / "lean and tall") ├óΓÇáΓÇÖ art mood ("muted dark palette, somber dark fantasy") 
+├óΓÇáΓÇÖ explicit negatives ("no hood", "no smoke"). Leave no room for the model to improvise.
+- Worked example (2026-07-12): owner said Vess should have "no smoke from mouth". The metadata prompt literally 
+contained `faint blue-white keening light at the mouth` ├óΓé¼ΓÇ¥ the fix was deleting that one clause from the 
+original prompt, not writing a new banshee description.
+
+
+codex
+The prompt contains an internal conflict (ΓÇ£front-facingΓÇ¥ and a FIRE beam) that is explicitly overridden later by 
+the mandatory back-view and projectile rules. IΓÇÖm preserving the brief and making those override rules decisive: all 
+four sprites must face away, and frame 3 may show only a small attached release glowΓÇöno emitted beam. IΓÇÖm now 
+making the single permitted generation call.
+codex
+The one generated sheet is complete. It has four back-facing, unarmed poses and no emitted beam; IΓÇÖm now copying the 
+untouched 1254├ù1254 raw PNG into staging, then applying the skillΓÇÖs prescribed auto-sampled despill key to a 
+separate RGBA file. Afterward IΓÇÖll inspect both files for dimensions, alpha, cell occupancy, and visible defects.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen' -Recurse -Filter 'remove_chroma_key.py' | Select-Object 
+-ExpandProperty FullName" in C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\beam\n
+ succeeded in 1196ms:
+C:\Users\asali\.codex\skills\.system\imagegen\scripts\remove_chroma_key.py
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py' --help" in 
+C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\beam\n
+ succeeded in 713ms:
+usage: remove_chroma_key.py [-h] --input INPUT --out OUT
+                            [--key-color KEY_COLOR] [--tolerance TOLERANCE]
+                            [--auto-key {none,corners,border}] [--soft-matte]
+                            [--transparent-threshold TRANSPARENT_THRESHOLD]
+                            [--opaque-threshold OPAQUE_THRESHOLD]
+                            [--edge-feather EDGE_FEATHER]
+                            [--edge-contract EDGE_CONTRACT] [--spill-cleanup]
+                            [--despill] [--force]
+
+Remove a solid chroma-key background and write an image with alpha.
+
+options:
+  -h, --help            show this help message and exit
+  --input INPUT         Input image path.
+  --out OUT             Output .png or .webp path.
+  --key-color KEY_COLOR
+                        Hex RGB key color to remove, for example #00ff00.
+  --tolerance TOLERANCE
+                        Hard-key per-channel tolerance for matching the key
+                        color, 0-255.
+  --auto-key {none,corners,border}
+                        Sample the key color from image corners or border
+                        instead of --key-color.
+  --soft-matte          Use a smooth alpha ramp between transparent and opaque
+                        thresholds.
+  --transparent-threshold TRANSPARENT_THRESHOLD
+                        Soft-matte distance at or below which pixels become
+                        fully transparent.
+  --opaque-threshold OPAQUE_THRESHOLD
+                        Soft-matte distance at or above which pixels become
+                        fully opaque.
+  --edge-feather EDGE_FEATHER
+                        Optional alpha blur radius for softened edges, 0-64.
+  --edge-contract EDGE_CONTRACT
+                        Shrink the visible alpha matte by this many pixels
+                        before feathering.
+  --spill-cleanup       Reduce obvious key-color spill on opaque pixels.
+  --despill             Alias for --spill-cleanup; decontaminate key-color
+                        edge spill.
+  --force               Overwrite an existing output file.
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$sourcePng = '"'C:\\Users\\asali\\.codex\\ge
+nerated_images\\01a01707-eb3b-7c41-b1d1-3249267d15d1\\exec-282beb5c-3d22-4594-a398-259277e442ee.png'; "'$rawPng = 
+Join-Path (Get-Location) '"'beam_master_2x2_v1.png'; "'$keyedPng = Join-Path (Get-Location) 
+'"'beam_master_2x2_v1_keyed.png'; Copy-Item -LiteralPath "'$sourcePng -Destination $rawPng -Force; python 
+'"'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py' --input "'$rawPng --out 
+$keyedPng --auto-key border --despill --force; Add-Type -AssemblyName System.Drawing; $rawImg = 
+[System.Drawing.Image]::FromFile($rawPng); $keyImg = [System.Drawing.Image]::FromFile($keyedPng); try { 
+[pscustomobject]@{ RawWidth=$rawImg.Width; RawHeight=$rawImg.Height; RawPixelFormat=$rawImg.PixelFormat.ToString(); 
+KeyedWidth=$keyImg.Width; KeyedHeight=$keyImg.Height; KeyedPixelFormat=$keyImg.PixelFormat.ToString(); 
+SourceSHA256=(Get-FileHash -LiteralPath $sourcePng -Algorithm SHA256).Hash; RawSHA256=(Get-FileHash -LiteralPath 
+$rawPng -Algorithm SHA256).Hash; KeyedBytes=(Get-Item -LiteralPath $keyedPng).Length } | Format-List } finally { 
+$rawImg.Dispose(); $keyImg.Dispose() }' in C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\beam\n
+ succeeded in 8467ms:
+Wrote C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\beam\n\beam_master_2x2_v1_keyed.png
+Key color: #04f807
+Transparent pixels: 1272728/1572516
+Partially transparent pixels: 0/1572516
+
+
+RawWidth         : 1254
+RawHeight        : 1254
+RawPixelFormat   : Format24bppRgb
+KeyedWidth       : 1254
+KeyedHeight      : 1254
+KeyedPixelFormat : Format32bppArgb
+SourceSHA256     : E9E9603169C02CB512433D53F5FAD0557EA66320D5111413554894ECC55B0104
+RawSHA256        : E9E9603169C02CB512433D53F5FAD0557EA66320D5111413554894ECC55B0104
+KeyedBytes       : 724062
+
+
+
+
+codex
+The keyed file is valid RGBA and the raw copy is byte-identical to the built-in output. Visual QA already shows a 
+material defect: the generated background is near-green rather than perfectly uniform `#00ff00`, so the mandated 
+auto-key pass leaves a conspicuous bright-green fringe, especially around the cyan hand glows and armor silhouette. 
+IΓÇÖm measuring per-cell bounds now so the final defect report can distinguish real pose changes from scale/anchor 
+drift.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+from collections import deque
+p='beam_master_2x2_v1_keyed.png'
+im=Image.open(p).convert('RGBA')
+w,h=im.size
+cw,ch=w//2,h//2
+for idx,(x0,y0) in enumerate(((0,0),(cw,0),(0,ch),(cw,ch)),1):
+    crop=im.crop((x0,y0,x0+cw,y0+ch))
+    a=crop.getchannel('A')
+    pix=a.load(); seen=set(); comps=[]
+    for y in range(ch):
+        for x in range(cw):
+            if pix[x,y] == 0 or (x,y) in seen: continue
+            q=[(x,y)]; seen.add((x,y)); n=0; minx=miny=10**9; maxx=maxy=-1
+            for cx,cy in q:
+                n+=1; minx=min(minx,cx); maxx=max(maxx,cx); miny=min(miny,cy); maxy=max(maxy,cy)
+                for ny in range(max(0,cy-1),min(ch,cy+2)):
+                    for nx in range(max(0,cx-1),min(cw,cx+2)):
+                        if pix[nx,ny] and (nx,ny) not in seen:
+                            seen.add((nx,ny)); q.append((nx,ny))
+            comps.append((n,(minx+x0,miny+y0,maxx+x0,maxy+y0)))
+    comps.sort(reverse=True)
+    significant=[c for c in comps if c[0]>=20]
+    union=None
+    if significant:
+        union=(min(c[1][0] for c in significant),min(c[1][1] for c in significant),max(c[1][2] for c in 
+significant),max(c[1][3] for c in significant))
+    print(f'frame {idx}: significant_union={union}, largest_components={significant[:5]}')
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\beam\n
+ succeeded in 7450ms:
+frame 1: significant_union=(154, 81, 437, 510), largest_components=[(72671, (154, 103, 437, 510)), (188, (173, 97, 
+191, 116)), (183, (401, 97, 417, 116)), (125, (217, 81, 232, 97)), (109, (360, 81, 372, 95))]
+frame 2: significant_union=(785, 128, 1102, 511), largest_components=[(74265, (785, 128, 1102, 511)), (112, (1005, 
+128, 1017, 142))]
+frame 3: significant_union=(169, 700, 421, 1138), largest_components=[(75382, (169, 700, 421, 1138))]
+frame 4: significant_union=(797, 755, 1088, 1138), largest_components=[(75510, (797, 755, 1088, 1138)), (197, (1055, 
+788, 1073, 806)), (189, (813, 788, 830, 806)), (177, (1007, 780, 1023, 799)), (177, (861, 780, 878, 797))]
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+from collections import Counter
+raw=Image.open('beam_master_2x2_v1.png').convert('RGB')
+key=Image.open('beam_master_2x2_v1_keyed.png').convert('RGBA')
+c=Counter(raw.getdata())
+exact=c[(0,255,0)]
+print('raw_exact_00ff00',exact,'of',raw.width*raw.height)
+print('raw_top_colors',c.most_common(8))
+print('raw_corners',[raw.getpixel(p) for p in [(0,0),(raw.width-1,0),(0,raw.height-1),(raw.width-1,raw.height-1)]])
+opaque=0; green=0; brightgreen=0
+for r,g,b,a in key.getdata():
+    if a:
+        opaque+=1
+        if g>max(r,b)+20: green+=1
+        if g>=180 and g>max(r,b)+40: brightgreen+=1
+print('keyed_opaque',opaque,'green_dominant',green,'bright_green_dominant',brightgreen)
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\beam\n
+ succeeded in 2761ms:
+raw_exact_00ff00 6 of 1572516
+raw_top_colors [((5, 248, 8), 161217), ((5, 248, 7), 112025), ((5, 247, 8), 108615), ((4, 247, 7), 88693), ((4, 248, 
+7), 74512), ((5, 247, 7), 73083), ((4, 247, 8), 49260), ((5, 248, 9), 47296)]
+raw_corners [(19, 240, 20), (20, 239, 16), (21, 240, 21), (19, 243, 16)]
+keyed_opaque 299788 green_dominant 23098 bright_green_dominant 15330
+<stdin>:5: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+<stdin>:11: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+
+codex
+Generated one source sheet using built-in ImageGen:
+
+- [Raw master 
+PNG](C:/Users/asali/Projects/MMO/art_src/boss_qa_fix_2026-08-18/nullwarden/beam/n/beam_master_2x2_v1.png) ΓÇö 
+**1254├ù1254 px**, byte-identical to generated output.
+- [Keyed RGBA 
+PNG](C:/Users/asali/Projects/MMO/art_src/boss_qa_fix_2026-08-18/nullwarden/beam/n/beam_master_2x2_v1_keyed.png) ΓÇö 
+auto-key border sampling with despill.
+
+All four poses are visibly different:
+
+1. Both fists raised overhead, hands spread.
+2. Fists pulled beside the head, elbows flared.
+3. Fists raised higher and closer together in the release pose.
+4. Arms lowered with residual sparks.
+
+Defects:
+
+- The background is not uniform `#00ff00`; only 6 pixels match it exactly. It varies around `#05f808`.
+- Keying leaves a severe bright-green fringe: approximately 15,330 bright-green-dominant pixels remain.
+- The character is noticeably taller, slimmer, and less squat than the binding reference.
+- Frames 1/3 sit roughly 20 px left of frames 2/4. Foot baseline is otherwise stable.
+- No weapons, emitted projectile, edge-touching effect, extra limbs, or visible face. All four views correctly face 
+away.
+
+No slicing or installation was performed.
+tokens used
+65,659
+Generated one source sheet using built-in ImageGen:
+
+- [Raw master PNG](C:/Users/asali/Projects/MMO/art_src/boss_qa_fix_2026-08-18/nullwarden/beam/n/beam_master_2x2_v1.png) ΓÇö **1254├ù1254 px**, byte-identical to generated output.
+- [Keyed RGBA PNG](C:/Users/asali/Projects/MMO/art_src/boss_qa_fix_2026-08-18/nullwarden/beam/n/beam_master_2x2_v1_keyed.png) ΓÇö auto-key border sampling with despill.
+
+All four poses are visibly different:
+
+1. Both fists raised overhead, hands spread.
+2. Fists pulled beside the head, elbows flared.
+3. Fists raised higher and closer together in the release pose.
+4. Arms lowered with residual sparks.
+
+Defects:
+
+- The background is not uniform `#00ff00`; only 6 pixels match it exactly. It varies around `#05f808`.
+- Keying leaves a severe bright-green fringe: approximately 15,330 bright-green-dominant pixels remain.
+- The character is noticeably taller, slimmer, and less squat than the binding reference.
+- Frames 1/3 sit roughly 20 px left of frames 2/4. Foot baseline is otherwise stable.
+- No weapons, emitted projectile, edge-touching effect, extra limbs, or visible face. All four views correctly face away.
+
+No slicing or installation was performed.

@@ -1,0 +1,37 @@
+You are generating ONE game sprite animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/nullwarden_idle.png : the BINDING identity, palette, pixel-art treatment AND body-scale reference — a colossal horned sentinel-brute in heavy dark plate armor with cold blue null-light glowing in the armor seams and eyes, an UNARMED bruiser with huge oversized armored gauntleted fists and no weapon of any kind — it fights with its fists and channels null-magic from its hands, shown front-facing (facing the viewer). Reproduce this EXACT character, its proportions, gear, markings and palette. Do not redesign it.
+- Image 2 = refs/nullwarden_static.png : a secondary identity reference of the same character.
+
+TASK: generate exactly ONE new 2x2 source sheet for its basic ATTACK (FRONT view) animation with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: illustration-story
+Asset type: high-resolution 4-frame game sprite animation source, to be cropped into a horizontal sprite strip. Square output canvas.
+Input images: Image 1 is the binding identity, palette, pixel-art treatment and body-scale reference (front-facing); Image 2 is a secondary identity reference.
+Scene/backdrop: a perfectly flat uniform #00ff00 chroma-key background filling every pixel, including the seams between cells. No scenery, floor plane, ground, puddle, platform, cast shadow, contact shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly four separate equal square sprite cells as a clean 2x2 contact sheet in reading order top-left, top-right, bottom-left, bottom-right. The source will be cropped into a horizontal strip. All four cells have identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat green between the two columns and between the two rows.
+Subject: a colossal horned sentinel-brute in heavy dark plate armor with cold blue null-light glowing in the armor seams and eyes, an UNARMED bruiser with huge oversized armored gauntleted fists and no weapon of any kind — it fights with its fists and channels null-magic from its hands, FRONT-FACING (facing the viewer), the exact same character as Image 1 in every cell — same body, gear, proportions and palette.
+Style/medium: crisp high-resolution dark-fantasy pixel art with hard readable pixel clusters and a controlled palette, matching Image 1; not painterly, not 3D, not anime.
+Composition/framing and ANCHOR RULE: the character is centred in each square cell, front-facing, its standing body about 70% of the cell height, with generous green margin on every side so raised arms/weapons and effects fit. It stays in the SAME spot in every cell — its head/crown and its feet (or lowest hem) sit at the same coordinates in every frame that has them; nothing slides sideways, the camera never moves. Only the parts named in the storyboard move.
+basic ATTACK (FRONT view) storyboard - four VISIBLY DIFFERENT poses of THIS character:
+ frame 1 (top-left) wind-up: weight settling, the weapon or casting hand drawing back a little
+ frame 2 (top-right) gather: the weapon cocked back or the hand gathering a small charge of its signature energy
+ frame 3 (bottom-left) strike: a committed forward attack forward in the direction it faces — weapon swung down-forward or the hand thrust out with a faint spark of energy right at the hand/weapon, never touching a cell edge
+ frame 4 (bottom-right) recover: the weapon/hand returning toward rest
+IDENTITY LOCK (critical): the character is EXACTLY a colossal horned sentinel-brute in heavy dark plate armor with cold blue null-light glowing in the armor seams and eyes, an UNARMED bruiser with huge oversized armored gauntleted fists and no weapon of any kind — it fights with its fists and channels null-magic from its hands. In every cell it must be THAT specific character with THAT silhouette, gear and palette — do NOT substitute a generic armored knight/swordsman, a generic robed mage, or any other boss's design. If Image 1 has no sword, draw no sword; if it is hooded and robed, keep it hooded and robed; match Image 1 exactly, only rotated to the stated facing.
+The character faces the CAMERA in the SAME front view as Image 1 (we see its face/front). Its attack drives forward toward the BOTTOM of the frame (toward the viewer).
+The strike frame must be the clearly biggest, most-committed pose.
+PROJECTILE RULE (critical, overrides any effect mentioned in the storyboard): the game engine draws every bolt, orb, beam, ray, cone, ring, wave, spawned creature, ground zone and telegraph SEPARATELY. This sprite must show ONLY the character's body motion — the wind-up, the swing/thrust/cast gesture, and the follow-through. A faint SMALL glow or spark right AT the hand, weapon-tip or mouth at the moment of release is allowed, but do NOT draw any projectile, bolt, orb, beam, ray, cone, ring, wave or effect leaving the body, flying, traveling through the air, or landing anywhere. Nothing detached from the character.
+SWORD REMOVAL (critical, overrides the reference image): the attached reference still shows a large sword floating vertically over/through the body from a previous version — that weapon is OBSOLETE and must be COMPLETELY DELETED. Draw NO sword, NO blade, NO hilt, NO weapon anywhere in any cell — not floating, not held, not sheathed. This sentinel is UNARMED: huge empty armored gauntlet fists at the ends of its arms. Any magic it uses is cold blue null-light channelled straight from its open hands/fists, never from a weapon.
+Constraints: output only the four cells on green; no text, watermark, UI, extra characters, scenery, floor artifact, shadow, or separators. Do not use #00ff00 or any bright/pure green anywhere on the character or its effects (use its own palette; a signature GREEN creature must use a darker desaturated green so chroma removal stays clean). Keep the character identical to Image 1 in all four frames — same silhouette, gear and palette. Frames 1, 2, 3 and 4 must each have a clearly different pose from every other frame.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./attack_master_2x2_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./attack_master_2x2_v1_keyed.png (auto-key sampling, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all four cells were produced with visibly different poses (frame by frame), and any deviation from the brief you noticed (the character redesigned or off-model, poses sliding/resizing between frames, an effect touching an edge, extra limbs, wrong facing, a fourth head, etc.). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

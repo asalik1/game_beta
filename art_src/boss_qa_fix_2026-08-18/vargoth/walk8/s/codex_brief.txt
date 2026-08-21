@@ -1,0 +1,40 @@
+You are generating ONE game sprite animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/vargoth_idle.png : the BINDING identity, palette, pixel-art treatment AND body-scale reference — an armored hollow king in dark plate and a tattered dark cape, a horned crowned helm, wielding a large flaming greatsword in both hands, shown front-facing. Reproduce this EXACT character, its proportions, gear, markings and palette. Do not redesign it.
+- Image 2 = refs/vargoth_static.png : a secondary identity reference of the same character.
+
+TASK: generate exactly ONE new source sheet for its 8-FRAME WALK cycle (FRONT view) with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: illustration-story
+Asset type: high-resolution pixel-art WALK-CYCLE source, ONE horizontal ROW of EXACTLY EIGHT equal square frames, to be cropped into an 8-frame sprite strip. Wide landscape canvas.
+Input images: Image 1 is the binding identity, palette, pixel-art treatment and body-scale reference; Image 2 is a secondary identity reference.
+Scene/backdrop: a perfectly flat uniform #00ff00 chroma-key background filling every pixel, including the gutters between frames. No scenery, floor plane, ground line drawn, puddle, platform, cast shadow, contact shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly EIGHT separate equal square frames in ONE straight horizontal row, reading left to right as frames 1 through 8. All eight are the SAME character at identical scale and framing; no frame overlaps another; no drawn separators; leave a broad band of flat green between each pair of frames.
+Subject: an armored hollow king in dark plate and a tattered dark cape, a horned crowned helm, wielding a large flaming greatsword in both hands, the exact same character as Image 1 in every frame — same body, gear, proportions and palette.
+Style/medium: crisp high-resolution dark-fantasy pixel art with hard readable pixel clusters and a controlled palette, matching Image 1; not painterly, not 3D, not anime.
+Composition/framing and ANCHOR RULE: the character is centred in each square frame, its standing body about 66% of the frame height, with generous green margin all around. Its head/crown stays on ONE horizontal line and its feet share ONE ground line across all eight frames; the whole figure does NOT slide sideways and the camera never moves. Only the legs (and cape/hanging cloth) move; the torso just bobs a few pixels.
+FACING: all eight frames show the character in the SAME front view as Image 1 (we see its face/front); it walks toward the BOTTOM of the frame (toward the viewer).
+8-FRAME WALK cycle (FRONT view) storyboard — eight frames of ONE continuous two-step walk, left to right:
+ frame 1 LEFT-foot contact: the near (left) foot plants heel-first well forward in the travel direction, the right leg extended back on its toe, stride at its WIDEST split, body at mid height
+ frame 2 LEFT load / push: weight rolls fully onto the flat left foot, body at its LOWEST, the right foot peeling off the ground behind, knees still apart
+ frame 3 right leg PASSING: the right leg swings forward UNDER the body past the left, the two legs cross close together, body at its HIGHEST (the up-bob)
+ frame 4 right reach: the right foot swings out ahead and lowers toward the ground, left leg now trailing behind, body dropping from high toward mid — about to plant
+ frame 5 RIGHT-foot contact: the right foot plants heel-first well forward (the clear MIRROR of frame 1 — OPPOSITE leg leading now), left leg extended back on its toe, widest split, body at mid height
+ frame 6 RIGHT load / push: weight rolls fully onto the flat right foot, body at its LOWEST again, the left foot peeling off the ground behind
+ frame 7 left leg PASSING: the left leg swings forward under the body past the right, legs cross close, body at its HIGHEST (the up-bob)
+ frame 8 left reach: the left foot swings out ahead and lowers toward the ground, right leg trailing, body dropping toward mid — flowing straight back into frame 1
+Draw NO weapons swinging, NO spell effects, NO projectiles, NO motion blur — only the character's locomotion. The background stays pure flat green.
+This is ONE continuous TWO-STEP walk cycle read left to right, NOT eight standing poses and NOT a march. The legs MUST VISIBLY ALTERNATE: frames 1-4 lead with the LEFT foot, frames 5-8 lead with the RIGHT foot; frame 1 and frame 5 are mirror opposites; the passing frames (3 and 7) are the only ones with the legs crossed close together and the body bobbed up; the contact frames (1 and 5) have the WIDEST leg split. Low knee lift, ordinary grounded travel, feet that PLANT and push (never sliding, hovering, or marching high). The head/pelvis stay on ONE horizontal band and every figure shares ONE ground line — only the legs (and cape/cloth) move, the body just bobs a few pixels between the low contacts and the high passes. WEAPON-HAND LOCK (critical): any large held weapon stays gripped in the SAME hand, at the SAME angle, on the SAME side of the body in ALL EIGHT frames — it never swings, sweeps, flips, crosses the body, or changes hands; if Image 1 holds it low on one side, keep it low on that same side every frame. In your final message, REPORT which foot leads in each of the 8 frames so the alternation can be verified.
+IDENTITY LOCK (critical): the character is EXACTLY an armored hollow king in dark plate and a tattered dark cape, a horned crowned helm, wielding a large flaming greatsword in both hands. In every frame it must be THAT specific character with THAT silhouette, gear and palette — do NOT substitute a generic armored knight/swordsman or robed mage. If Image 1 has no sword, draw no sword.
+Constraints: output only the eight frames on green; no text, watermark, UI, extra characters, scenery, floor artifact, shadow, frame numbers, or separators. Do not use #00ff00 or any bright/pure green anywhere on the character. Keep the character identical to Image 1 in all eight frames — same silhouette, gear and palette.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./walk8_master_1x8_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./walk8_master_1x8_v1_keyed.png (auto-key sampling, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, WHICH FOOT LEADS in each of the 8 frames (to verify left/right alternation), and any deviation you noticed (identity drift, non-alternating or marching legs, the body sliding/resizing between frames, weapon swinging or changing hands, an effect touching an edge, extra limbs, wrong facing). Be blunt about defects.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

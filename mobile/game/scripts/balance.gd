@@ -1507,8 +1507,13 @@ const MOB_RETARGET_EVERY := 1.0 # seconds between sticky target re-picks
 # (radians, smallest first) it tries. MAX_SPEED gates it OFF for committed
 # dashes (charge/pounce run far faster than any walk speed — those should
 # connect, not curve around cover).
+# The last two angles are near-reversals (>90°): they only ever get tried once
+# every narrower heading is blocked, and they are what lets a mob boxed into a
+# concave pocket (two props, or a prop-and-wall corner) turn around and back
+# OUT instead of pressing forever into the gap and wedging. Wider angles cost
+# nothing in the common clear-ahead case (that returns on the very first ray).
 const MOB_AVOID_LOOKAHEAD := 24.0
-const MOB_AVOID_FAN: Array[float] = [0.6, 1.2, 1.9]  # ~34°, 69°, 109°
+const MOB_AVOID_FAN: Array[float] = [0.6, 1.2, 1.9, 2.5, 2.9]  # ~34°, 69°, 109°, 143°, 166°
 const MOB_AVOID_MAX_SPEED := 1.5   # skip avoidance above walk_speed * this
 
 # Reposition-to-fire (enemy._reacquire_shot): a ranged shooter (mob, or a

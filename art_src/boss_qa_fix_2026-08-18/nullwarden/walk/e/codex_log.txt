@@ -1,0 +1,2053 @@
+﻿codex.exe : Reading prompt from stdin...
+At line:7 char:14
++ ...    $brief | & $codex exec -C $d -s workspace-write --skip-git-repo-ch ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Reading prompt from stdin...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+OpenAI Codex v0.148.0-alpha.9
+--------
+workdir: C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\walk\e
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: danger-full-access
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0173c-d29b-7b02-834a-181502e5ba5f
+--------
+user
+You are generating ONE game sprite animation master with your built-in image_gen tool. Read 
+$CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current 
+directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/nullwarden_idle.png : the BINDING identity, palette, pixel-art treatment AND body-scale reference ??? 
+a colossal horned sentinel-brute in heavy dark plate armor with cold blue null-light glowing in the armor seams and 
+eyes, an UNARMED bruiser with huge oversized armored gauntleted fists and no weapon of any kind ??? it fights with its 
+fists and channels null-magic from its hands, shown front-facing (facing the viewer). Reproduce this EXACT character, 
+its proportions, gear, markings and palette. Do not redesign it.
+- Image 2 = refs/nullwarden_static.png : a secondary identity reference of the same character.
+
+TASK: generate exactly ONE new 2x2 source sheet for its WALK cycle (RIGHT PROFILE view) animation with this image_gen 
+prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: illustration-story
+Asset type: high-resolution 4-frame game sprite animation source, to be cropped into a horizontal sprite strip. Square 
+output canvas.
+Input images: Image 1 is the binding identity, palette, pixel-art treatment and body-scale reference (front-facing); 
+Image 2 is a secondary identity reference.
+Scene/backdrop: a perfectly flat uniform #00ff00 chroma-key background filling every pixel, including the seams 
+between cells. No scenery, floor plane, ground, puddle, platform, cast shadow, contact shadow, gradient, vignette, 
+border, grid, line, or panel divider.
+Primary request: create exactly four separate equal square sprite cells as a clean 2x2 contact sheet in reading order 
+top-left, top-right, bottom-left, bottom-right. The source will be cropped into a horizontal strip. All four cells 
+have identical scale and framing; no cell may overlap another; no drawn separators; leave a broad band of flat green 
+between the two columns and between the two rows.
+Subject: a colossal horned sentinel-brute in heavy dark plate armor with cold blue null-light glowing in the armor 
+seams and eyes, an UNARMED bruiser with huge oversized armored gauntleted fists and no weapon of any kind ??? it 
+fights with its fists and channels null-magic from its hands, FRONT-FACING (facing the viewer), the exact same 
+character as Image 1 in every cell ??? same body, gear, proportions and palette.
+Style/medium: crisp high-resolution dark-fantasy pixel art with hard readable pixel clusters and a controlled palette, 
+matching Image 1; not painterly, not 3D, not anime.
+Composition/framing and ANCHOR RULE: the character is centred in each square cell, front-facing, its standing body 
+about 66% of the cell height, with generous green margin on every side so raised arms/weapons and effects fit. It 
+stays in the SAME spot in every cell ??? its head/crown and its feet (or lowest hem) sit at the same coordinates in 
+every frame that has them; nothing slides sideways, the camera never moves. Only the parts named in the storyboard 
+move.
+WALK cycle (RIGHT PROFILE view) storyboard - four VISIBLY DIFFERENT poses of THIS character:
+ frame 1 (top-left) left-foot CONTACT: the near (left) leg reaches forward and plants heel-first in the travel 
+direction, the far (right) leg trailing back on its toe, body at mid height, weapon/arms swinging naturally to counter 
+the stride
+ frame 2 (top-right) PASSING (right leg): the right leg swings forward UNDER the body past the left, knees close 
+together, the body at its highest point of the step, weight over the planted left foot
+ frame 3 (bottom-left) right-foot CONTACT: the far (right) leg now reaches forward and plants in the travel direction, 
+the left leg trailing back ??? the clear MIRROR of frame 1, opposite legs leading, body at mid height
+ frame 4 (bottom-right) PASSING (left leg): the left leg swings forward under the body past the right, knees close, 
+body at its highest again, weight over the planted right foot ??? flowing back into frame 1
+IDENTITY LOCK (critical): the character is EXACTLY a colossal horned sentinel-brute in heavy dark plate armor with 
+cold blue null-light glowing in the armor seams and eyes, an UNARMED bruiser with huge oversized armored gauntleted 
+fists and no weapon of any kind ??? it fights with its fists and channels null-magic from its hands. In every cell it 
+must be THAT specific character with THAT silhouette, gear and palette ??? do NOT substitute a generic armored 
+knight/swordsman, a generic robed mage, or any other boss's design. If Image 1 has no sword, draw no sword; if it is 
+hooded and robed, keep it hooded and robed; match Image 1 exactly, only rotated to the stated facing.
+The character is shown in full RIGHT-SIDE PROFILE, turned to face the RIGHT edge of the frame (we see its right side, 
+its front pointing right). It is the exact same character, gear and palette as Image 1, rotated 90 degrees to face 
+right. It walks toward the RIGHT edge of the frame.
+This is ONE continuous two-step walk cycle, not four standing poses. LEGS ARE THE POINT: the boots must be in a 
+VISIBLY DIFFERENT position in every frame ??? frame 1 has one foot planted well forward and the other back, frame 3 is 
+the clear OPPOSITE (the other foot forward). A viewer flipping between the four frames must instantly read a striding 
+walk, NOT a standing figure with only the cape moving. Ordinary grounded travel: low knee lift, a small vertical body 
+bob, feet that PLANT and push (never sliding, hovering, or marching high). Any cape or robe hangs BEHIND the legs and 
+must NOT cover them ??? both boots stay visible so the stride reads. WEAPON-HAND LOCK (the ONLY thing held still): any 
+large held weapon (sword, axe, scythe, staff, mace) stays gripped in the SAME hand, at the SAME angle, on the SAME 
+side of the body in all four frames ??? it never swings, sweeps, flips, crosses the body, or changes hands. Everything 
+ELSE ??? legs, hips, shoulders, cape, hanging cloth ??? moves freely and strongly with the stride. If Image 1 holds 
+the weapon low on one side, keep it low on that same side every frame; the game moves the whole body, so keep it 
+centred in each cell.
+Draw NO weapons swinging, NO spell effects, NO projectiles ??? this is only the character's locomotion. Feet/hem may 
+kick up nothing; the background stays pure green.
+SWORD REMOVAL (critical, overrides the reference image): the attached reference still shows a large sword floating 
+vertically over/through the body from a previous version ??? that weapon is OBSOLETE and must be COMPLETELY DELETED. 
+Draw NO sword, NO blade, NO hilt, NO weapon anywhere in any cell ??? not floating, not held, not sheathed. This 
+sentinel is UNARMED: huge empty armored gauntlet fists at the ends of its arms. Any magic it uses is cold blue 
+null-light channelled straight from its open hands/fists, never from a weapon.
+Constraints: output only the four cells on green; no text, watermark, UI, extra characters, scenery, floor artifact, 
+shadow, or separators. Do not use #00ff00 or any bright/pure green anywhere on the character or its effects (use its 
+own palette; a signature GREEN creature must use a darker desaturated green so chroma removal stays clean). Keep the 
+character identical to Image 1 in all four frames ??? same silhouette, gear and palette. Frames 1, 2, 3 and 4 must 
+each have a clearly different pose from every other frame.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./walk_master_2x2_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./walk_master_2x2_v1_keyed.png 
+(auto-key sampling, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, whether all four cells were produced with visibly 
+different poses (frame by frame), and any deviation from the brief you noticed (the character redesigned or off-model, 
+poses sliding/resizing between frames, an effect touching an edge, extra limbs, wrong facing, a fourth head, etc.). Be 
+blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.
+
+
+codex
+IΓÇÖm using the `imagegen` skill because this is a bitmap sprite-sheet generation/editing task. IΓÇÖll first read its 
+full workflow and the repository practices, then generate exactly one sheet, preserve the raw PNG, chroma-key it, and 
+visually inspect both outputs for the blunt QA report. IΓÇÖll confine all writes to the current staging directory.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$targets = @('"'.\\CLAUDE.md', 
+\""'$env:CODEX_HOME'"\\skills\\.system\\imagegen\\SKILL.md\", 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'); foreach ("'$t in $targets) { if (Test-Path 
+-LiteralPath $t) { Write-Output "FILE:$t"; Get-Content -LiteralPath $t -Raw } }' in 
+C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\walk\e
+ succeeded in 1445ms:
+FILE:C:\Users\asali\.codex\skills\.system\imagegen\SKILL.md
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, 
+illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new 
+image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset 
+rather than repo-native code or vector. Do not use when the task is better handled by editing existing 
+SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in 
+HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product 
+mockups, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for image generation, editing, and 
+transparent-image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for or confirms the 
+CLI/API/model path. Requires `OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- For transparent images, ask built-in `image_gen` for a transparent background and preserve the generated alpha.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`; ask the user first 
+unless they explicitly requested `gpt-image-1.5`.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate 
+assets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per 
+requested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires 
+`OPENAI_API_KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK 
+runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific 
+location is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before 
+finishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the 
+default `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling 
+versioned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, 
+compositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request 
+as **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images 
+generated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool 
+so the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit 
+CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or 
+variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and 
+needs many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; 
+distinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including transparent-output requests; fallback CLI only if 
+explicitly requested or confirmed.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with 
+`view_image` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, 
+use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic 
+that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative 
+requirements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, ask built-in `image_gen` for a transparent background and preserve the generated 
+alpha channel.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default 
+`$CODEX_HOME/generated_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or 
+references. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user 
+explicitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, 
+size, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and 
+whether the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Ask built-in `image_gen` for a genuinely transparent background and preserve its alpha.
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, 
+but do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra 
+labeled line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural ├óΓé¼ΓÇ¥ candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup ├óΓé¼ΓÇ¥ product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup ├óΓé¼ΓÇ¥ app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram ├óΓé¼ΓÇ¥ diagrams/infographics with structured layout and text.
+- scientific-educational ├óΓé¼ΓÇ¥ classroom explainers, scientific diagrams, and learning visuals with required labels 
+and accuracy constraints.
+- ads-marketing ├óΓé¼ΓÇ¥ campaign concepts and ad creatives with audience, brand position, scene, and exact 
+tagline/copy.
+- productivity-visual ├óΓé¼ΓÇ¥ slide, chart, workflow, and data-heavy business visuals.
+- logo-brand ├óΓé¼ΓÇ¥ logo/mark exploration, vector-friendly.
+- illustration-story ├óΓé¼ΓÇ¥ comics, children├óΓé¼Γäós book art, narrative scenes.
+- stylized-concept ├óΓé¼ΓÇ¥ style-driven concept art, 3D/stylized renders.
+- historical-scene ├óΓé¼ΓÇ¥ period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization ├óΓé¼ΓÇ¥ translate/replace in-image text, preserve layout.
+- identity-preserve ├óΓé¼ΓÇ¥ try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit ├óΓé¼ΓÇ¥ remove/replace a specific element (including interior swaps).
+- lighting-weather ├óΓé¼ΓÇ¥ time-of-day/season/atmosphere changes only.
+- background-extraction ├óΓé¼ΓÇ¥ transparent background / clean cutout. Ask built-in `image_gen` for actual 
+transparency.
+- style-transfer ├óΓé¼ΓÇ¥ apply reference style while changing subject/scene.
+- compositing ├óΓé¼ΓÇ¥ multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render ├óΓé¼ΓÇ¥ drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D/etc>
+Composition/framing: <wide/close/top-down; placement>
+Lighting/mood: <lighting + mood>
+Color palette: <palette notes>
+Materials/textures: <surface details>
+Text (verbatim): "<exact text>"
+Constraints: <must keep/must avoid>
+Avoid: <negative constraints>
+```
+
+Notes:
+- `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
+- `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which 
+controls output transparency behavior.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong 
+in the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+
+Augmentation rules:
+- Keep it short.
+- Add only the details needed to improve the prompt materially.
+- For edits, explicitly list invariants (`change only X; keep Y unchanged`).
+- If any critical detail is missing and blocks success, ask a question; otherwise proceed.
+
+## Examples
+
+### Generation example (hero image)
+```text
+Use case: product-mockup
+Asset type: landing page hero
+Primary request: a minimal hero image of a ceramic coffee mug
+Style/medium: clean product photography
+Composition/framing: wide composition with usable negative space for page copy if needed
+Lighting/mood: soft studio lighting
+Constraints: no logos, no text, no watermark
+```
+
+### Edit example (invariants)
+```text
+Use case: precise-object-edit
+Asset type: product photo background replacement
+Primary request: replace only the background with a warm sunset gradient
+Constraints: change only the background; keep the product and its edges unchanged; no text; no watermark
+```
+
+## Prompting best practices
+- Structure prompt as scene/backdrop -> subject -> details -> constraints.
+- Include intended use (ad, UI mock, infographic) to set the mode and polish level.
+- Use camera/composition language for photorealism.
+- Only use SVG/vector stand-ins when the user explicitly asked for vector output or a non-image placeholder.
+- Quote exact text and specify typography + placement.
+- For tricky words, spell them letter-by-letter and require verbatim rendering.
+- For multi-image inputs, reference images by index and describe how they should be used.
+- For edits, repeat invariants every iteration to reduce drift.
+- Iterate with single-change follow-ups.
+- If the prompt is generic, add only the extra detail that will materially help.
+- If the prompt is already detailed, normalize it instead of expanding it.
+- For CLI fallback only, see `references/cli.md` and `references/image-api.md` for model, `quality`, `input_fidelity`, 
+masks, output format, and output-path guidance.
+- For transparent images, ask built-in `image_gen` for actual transparency and preserve its alpha.
+
+More principles shared by both modes: `references/prompting.md`.
+Copy/paste specs shared by both modes: `references/sample-prompts.md`.
+
+## Guidance by asset type
+Asset-type templates (website assets, game assets, wireframes, logo) are consolidated in 
+`references/sample-prompts.md`.
+
+## gpt-image-2 guidance for CLI fallback
+
+The fallback CLI defaults to `gpt-image-2`.
+
+- Use `gpt-image-2` for new CLI/API workflows unless the user confirms a different model.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user 
+explicitly requested that model.
+- `gpt-image-2` always uses high fidelity for image inputs; do not set `input_fidelity` with this model.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- Use `quality low` for fast drafts, thumbnails, and quick iterations. Use `medium`, `high`, or `auto` for final 
+assets, dense text, diagrams, identity-sensitive edits, or high-resolution outputs.
+- Square images are typically fastest to generate. Use `1024x1024` for fast square drafts.
+- If the user asks for 4K-style output, use `3840x2160` for landscape or `2160x3840` for portrait.
+- `gpt-image-2` size may be `auto` or `WIDTHxHEIGHT` if all constraints hold: max edge `<= 3840px`, both edges 
+multiples of `16px`, long-to-short ratio `<= 3:1`, total pixels between `655,360` and `8,294,400`.
+
+Popular `gpt-image-2` sizes:
+- `1024x1024` square
+- `1536x1024` landscape
+- `1024x1536` portrait
+- `2048x2048` 2K square
+- `2048x1152` 2K landscape
+- `3840x2160` 4K landscape
+- `2160x3840` 4K portrait
+- `auto`
+
+## Fallback CLI mode only
+
+### Temp and output conventions
+These conventions apply only to the CLI fallback. They do not describe built-in `image_gen` output behavior.
+- Use `tmp/imagegen/` for intermediate files (for example JSONL batches); delete them when done.
+- Write final artifacts under `output/imagegen/`.
+- Use `--out` or `--out-dir` to control output paths; keep filenames stable and descriptive.
+
+### Dependencies
+Prefer `uv` for dependency management in this repo.
+
+Required Python package:
+```bash
+uv pip install openai
+```
+
+Optional for image inspection and downscaling:
+```bash
+uv pip install pillow
+```
+
+Portability note:
+- If you are using the installed skill outside this repo, install dependencies into that environment with its package 
+manager.
+- In uv-managed environments, `uv pip install ...` remains the preferred path.
+
+### Environment
+- `OPENAI_API_KEY` must be set for live API calls.
+- Do not ask the user for `OPENAI_API_KEY` when using the built-in `image_gen` tool.
+- Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
+
+If the key is missing, give the user these steps:
+1. Create an API key in the OpenAI platform UI: https://platform.openai.com/api-keys
+2. Set `OPENAI_API_KEY` as an environment variable in their system.
+3. Offer to guide them through setting the environment variable for their OS/shell if needed.
+
+If installation is not possible in this environment, tell the user which dependency is missing and how to install it 
+into their active environment.
+
+### Script-mode notes
+- CLI commands + examples: `references/cli.md`
+- API parameter quick reference: `references/image-api.md`
+- Network approvals / sandbox settings for CLI mode: `references/codex-network.md`
+
+## Reference map
+- `references/prompting.md`: shared prompting principles for both modes.
+- `references/sample-prompts.md`: shared copy/paste prompt recipes for both modes.
+- `references/cli.md`: fallback-only CLI usage via `scripts/image_gen.py`.
+- `references/image-api.md`: fallback-only API/CLI parameter reference.
+- `references/codex-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
+- `scripts/image_gen.py`: fallback-only CLI implementation. Use only when the user explicitly chooses or confirms CLI 
+mode.
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$dir = (Get-Location).Path; while ($true) { 
+$candidate = Join-Path $dir '"'CLAUDE.md'; if (Test-Path -LiteralPath "'$candidate) { Write-Output "FILE:$candidate"; 
+Get-Content -LiteralPath $candidate -Raw; break }; $parent = Split-Path -Parent $dir; if ($parent -eq $dir -or 
+[string]::IsNullOrWhiteSpace($parent)) { Write-Output '"'CLAUDE_NOT_FOUND'; break }; "'$dir = $parent }; Write-Output 
+'"'CURRENT_FILES:'; Get-ChildItem -Force | Select-Object Name,Length,Mode; Write-Output 'IMAGEGEN_FILES:'; 
+Get-ChildItem -LiteralPath 'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen' -Recurse -File | Select-Object 
+FullName" in C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\walk\e
+ succeeded in 1072ms:
+FILE:C:\Users\asali\Projects\MMO\CLAUDE.md
+# Crownless ├óΓé¼ΓÇ¥ working practices (all agents)
+
+## Mobile version ├óΓé¼ΓÇ¥ kept in sync (unfrozen 2026-07-15)
+- `mobile/` (repo root) holds the iOS/Android version: a snapshot fork of `game/` plus a small, fixed set of mobile 
+deltas (Mobile renderer, touch HUD, export presets ├óΓé¼ΓÇ¥ the exact list lives in `mobile/README.md`). Deployment is 
+proven end to end ├óΓé¼ΓÇ¥ GitHub Actions **"Mobile builds"** produces a signed-debug APK and an unsigned iOS `.ipa`; 
+both install/run on-device (sideload).
+- **Policy change (was "frozen, do not touch"):** keep `mobile/game/` in sync with `game/`. `game/` is still the 
+**source of truth** ├óΓé¼ΓÇ¥ never edit `mobile/` to fix a desktop issue; fix it in `game/` and re-sync. To re-sync: 
+re-copy `game/` over `mobile/game/`, re-apply the mobile deltas from `mobile/README.md`, then run the compile gate + 
+`test_quick` against `mobile/game` before committing. Keep the delta list small and current.
+
+## Code layout (see CODING_GUIDELINES.md ├é┬º38)
+- Tuning knobs ├óΓÇáΓÇÖ `balance.gd`; data tables stay in domain files (classes/items/story). Never inline a bare 
+tuning number.
+- Docs split (2026-07-06): balance/pacing round narratives go in `BALANCE_HISTORY.md` (newest at TOP of the tuning 
+list); `DESIGN.md` holds only current decisions + distilled standing rules ├óΓé¼ΓÇ¥ never append round-by-round 
+history there.
+- Big node classes are inheritance CHAINS (verbatim moves, calls flow derived├óΓÇáΓÇÖbase, all vars in the base layer):
+  - Game: `game_base` (state/flags/convo/lookups/fx) ├óΓÇá┬É `game_world` (graph/rooms/walls/spawning/gates) ├óΓÇá┬É 
+`game_flow` (deaths/loot/chapters/settings/terrain events) ├óΓÇá┬É `game.gd` (boot + per-frame).
+  - Player: `player_core` (state/stats/gear/progression) ├óΓÇá┬É `player_combat` (targeting/hit/shared juice + shared 
+primitives) ├óΓÇá┬É `player_kit_{warrior,archer,mage,assassin,paladin,warlock}` (one file per class: `_use_<class>` 
+dispatch + its abilities) ├óΓÇá┬É `player.gd` (dispatch/survival/per-frame). Primitives shared by several kits 
+(`_dash_strike`, `_melee_arc`, `_mist`, `_beam_fx`, `_grant_stab_surge`) stay in `player_combat` ├óΓé¼ΓÇ¥ calls only 
+flow derived├óΓÇáΓÇÖbase.
+  - Tests: `tests/test_base` (helpers) ├óΓÇá┬É `tests/test_ch1` ├óΓÇá┬É `tests/test_ch2` ├óΓÇá┬É `autotest.gd` (entry 
++ systems tier).
+- Self-contained UI screens = static modules in `scripts/ui/` (dev_panel, codex) taking the Menus instance.
+- New `class_name` script ├óΓÇáΓÇÖ run `--import` before any headless run.
+- The in-game **codex** (`scripts/ui/codex.gd`) is the player-facing reference for monsters/bosses/terrains/gear 
+├óΓé¼ΓÇ¥ it goes stale silently. Whenever you add player-facing content or a feature, ask whether the codex should 
+reflect it, and if so update it in the same change. It reads `Story.ALL_ENEMIES`/data tables directly, but a few 
+hand-maintained parallel lists still gate it (e.g. `menus.gd` `BOSS_KINDS` decides monster-vs-boss bucketing) ├óΓé¼ΓÇ¥ 
+update those too, or a new boss lands in the wrong bucket. Layout since 2026-08-15 = rail of sections 
+(`UICodex.SECTIONS`) + filter chips + ledger/detail; a new section is one SECTIONS row + a `_rows`/`_detail` (or page) 
+builder, and every legacy `open_codex("<tab>")` id routes through `_resolve()` ├óΓé¼ΓÇ¥ extend that, never fork the 
+panel. Reference prose lives under Field notes (`NOTE_PAGES`), not above a shelf.
+
+## Testing ├óΓé¼ΓÇ¥ ALWAYS in this order
+1. Compile gate first, every time (`test_quick.bat`/`test.bat` run `check_compile.gd` first). Never invoke the test 
+scene directly: one parse error anywhere makes the suite script fail to compile and the headless engine idles FOREVER 
+(a zombie that looks like a slow run). The gate catches it in ~3s with the real error.
+2. Iterate with `test_quick.bat` (~15s): gate ├óΓÇáΓÇÖ boot ├óΓÇáΓÇÖ one class kit ├óΓÇáΓÇÖ systems ├óΓÇáΓÇÖ UI smoke 
+├óΓÇáΓÇÖ pause menu.
+3. `test.bat` (full suite, minutes; plays both chapters end to end) must be green before staging.
+
+## Agent toolkit (the map: `tools/INDEX.md` ├óΓé¼ΓÇ¥ check it before writing a helper script)
+- `preflight.bat` ├óΓé¼ΓÇ¥ the traps below, mechanized: stale/forgotten `--import`, codex/BOSS_KINDS staleness, 
+unregistered content modules, diff-scoped balance-number + CONNECT_DEFERRED lints, new shot rig not `extends ShotRig`. 
+Run it before staging; every finding prints its one-line fix.
+- `python tools/safe_commit.py -m "msg" <your paths>` ├óΓé¼ΓÇ¥ the serialized-commit etiquette as a guardrail: 
+path-scoped commit that lists sibling-staged work instead of swallowing it.
+- `python tools/sync_mobile.py` ├óΓé¼ΓÇ¥ mobile drift report; `--apply [--gate]` performs the re-sync ritual from 
+`mobile/README.md`.
+- **Headless Codex (`codex exec`, the default generated-art lane): calling guide = 
+`C:\Users\asali\Projects\CODEX_HEADLESS.md` (Projects root, shared by every project on this box: binary, call, all 
+flags, machine limits) + `tools/CODEX_HEADLESS.md` (the MMO layer: runner, drivers, vet/install).** The binary's 
+install dir is re-hashed on every app update ├óΓé¼ΓÇ¥ resolve it (`python tools/codex_bin.py` / `Resolve-Codex` in 
+`run_codex_batch.ps1`), never hard-code it; prompt goes on STDIN; on this shared box run image batches serial + 
+RAM-gated (`run_codex_batch.ps1 -MaxParallel 1 -MinFreeGB 1.3`), never beside a Godot suite (a parallel batch + suite 
+OOM-crashed the host 2026-08-17).
+- `python tools/art/verify_art.py <base>` ├óΓé¼ΓÇ¥ post-install sprite checks (strip geometry, 8-dir completeness, 
+green-bleed, stale import, and in-cell content gates: anchor drift/ghost chunks/edge cuts/clip-vs-idle body scale).
+- **Screenshot rigs: never write a standalone one (2026-08-15).** Twenty-three `game/shot_*.gd` files are copies of 
+the same 25-line boot/`_shot`/quit boilerplate, none with a watchdog, muted only by convention. New rig = `extends 
+ShotRig` (`scripts/dev/shot_rig.gd`: `boot()`, `shot()`, sim-clock waits, `arg()`/`flag()`, Master-bus mute, 
+`--timeout=N` watchdog) + `_ready()` of steps + `finish()`; run it ├óΓé¼ΓÇ¥ and every legacy rig ├óΓé¼ΓÇ¥ through 
+`shot.bat <rig> [--timeout=N] [rig args]`, which injects `--audio-driver Dummy`, compile-gates the rig script 
+(check_compile's default walk skips `game/` root: a parse error there = a window that idles forever), and hard-kills a 
+hung engine. `preflight` FAILs a new rig that doesn't extend it and WARNs on an edited legacy one (convert on touch). 
+Worked example: `shot_fx_series.gd`; the map: `tools/INDEX.md` "In-engine shot rigs".
+- **Windowed shot rigs (`shot_*.tscn`, `qa_skins`, anything not `--headless`) run MUTED: always pass `--audio-driver 
+Dummy`.** They boot the real game with music + SFX on the owner's shared machine; an unmuted rig blares through his 
+speakers mid-session (owner ruling 2026-08-15). Headless suites are already silent.
+
+## GDScript traps (each has bitten us) ├óΓé¼ΓÇ¥ review-time deep list: `CODING_GUIDELINES.md` ├é┬º38
+- `var x := obj.method()` on a loosely-typed obj (or any Variant expression, e.g. `Dictionary.get`) = PARSE ERROR 
+"cannot infer type". Annotate: `var x: float = ...`.
+- New `class_name` ├óΓÇáΓÇÖ `--import` first or headless silently hangs.
+- Labels inside HBoxContainer collapse to one char per line without `custom_minimum_size`.
+- Multiline lambda: following call args must sit on the SAME line as the lambda's last statement.
+- Tests waiting on timed effects must poll wall-clock (`await create_timer(0.2)`) ├óΓé¼ΓÇ¥ frames race ahead headless.
+- Autotest sections SNAPSHOT + RESTORE shared state (flags, resonance, standings); never `.clear()`. Two corollaries, 
+both learned from one flaky capital run (2026-07-26):
+  - **Restore on the FAILURE paths too.** `_fail` only QUEUES `quit(1)` ├óΓé¼ΓÇ¥ the suite keeps running to the end of 
+the frame, so the next section still executes and reads whatever the failed one left behind. A mid-city failure 
+stranded `chapter_id == "capital"`, where `shop_markup` answers a flat 1.0, and the road-markup section then reported 
+a second, entirely bogus failure. Put the assertions in a helper and the restore in its caller, so all ~40 exits pass 
+through it.
+  - **Never assert against state an earlier section accumulated.** A content-tier section inherits a whole campaign of 
+loot, gold, resonance and bag capacity ├óΓé¼ΓÇ¥ all of it loot-luck. The capital's lapidary quest asserted its kit 
+landed in the bag, and a full bag legally mails the kit instead: pass or fail came down to whether a bag DROPPED that 
+run. Control the precondition (lend a bag, pin the shard) or the assert is a coin flip.
+- canvas_item shader `fragment()`: `COLOR` arrives PREMULTIPLIED (modulate ├âΓÇö TEXTURE sample). Writing `COLOR = 
+result * COLOR` multiplies the texture in twice ├óΓé¼ΓÇ¥ everything darkens and "brighten" shaders read as darken 
+(phantom_charge was bitten; owner saw "only gets darker"). Reuse ONLY `COLOR.a` (silhouette.gdshader convention).
+- Spawning an Area2D + CollisionShape2D (Chest/Pickup/Projectile) from inside a `body_entered`/`area_entered` handler 
+= non-fatal "Can't change this state while flushing queries" engine error (`area_set_shape_disabled`) ├óΓé¼ΓÇ¥ the new 
+shape's enter-tree hits the physics-flush guard. Connect physics signals with `CONNECT_DEFERRED` or `call_deferred` 
+the spawn (chest open + projectile ricochet were bitten).
+- `draw_colored_polygon` on a SLIVER (near-collinear points) = random non-fatal "Invalid polygon data, triangulation 
+failed" spam: the triangulator picks winding from a float32 shoelace over RAW coords, so a sliver's sign is rounding 
+noise at world-scale coordinates ├óΓé¼ΓÇ¥ coordinate-dependent coin flip, NOT deterministic per shape (knife-trail 
+fold-back miters were bitten). Pre-check `Geometry2D.triangulate_polygon(p).is_empty()` and skip ├óΓé¼ΓÇ¥ the exact 
+C++ path behind the error, and everything it rejects is sub-pixel (the `_poly` guard in player_combat.gd).
+- **In co-op, the tree pause is NOT an input gate.** `request_pause(true)` NO-OPS online (`game_base.gd`, ├é┬º5.4 
+├óΓé¼ΓÇ¥ a shared world never pauses), so anything leaning on the pause to stop input/processing keeps running in a 
+session. Menus, dialogue and choice prompts all pause solo and none of them pause online. Gate on the OVERLAY STATE 
+instead ├óΓé¼ΓÇ¥ `menus.is_open()` / `hud.dialogue_active` / `hud.choices_active`, the guard `game.gd`'s tap-to-talk 
+already uses. The touch HUD had no `process_mode` override and only checked `state == ST_PLAYING` (there is no 
+`ST_MENU`), so its joystick ├óΓé¼ΓÇ¥ the whole left half of the screen ├óΓé¼ΓÇ¥ stayed live UNDER every menu and a 
+drag walked your hero mid-fight. Note the shape of the miss: it was invisible in BOTH cheap tests (solo-on-phone 
+pauses; co-op-on-desktop has no touch HUD) and only existed in the mobile ├âΓÇö co-op cross-product. When a feature is 
+platform- or session-conditional, ask what its gate is in the OTHER combination.
+
+## Multi-agent etiquette
+- Task boards (`CH2_TASKS.md` pattern): one owner per task, claim before starting; content lands as NEW modules under 
+`game/scripts/content/` (format: `scripts/content/README.md`) + one registration line in `Story.CONTENT_MODULES`.
+- Stage with `git add` after a green full suite. No commits unless the user asks.
+- **Commits are SERIALIZED (2026-07-07):** a commit sweeps the WHOLE index, and sibling agents stage concurrently 
+├óΓé¼ΓÇ¥ so immediately before committing, run `git status` and look at what's actually staged. If the index holds 
+another agent's work, either fold it into an accurate combined message or stop and say so ├óΓé¼ΓÇ¥ never commit a 
+message that describes only your slice. (Trigger: an itemization pass got swallowed into a commit labeled "cover + 
+boot flow" by exactly this race.)
+- Commit messages: NO author/co-author trailers (no `Co-Authored-By`, no attribution lines) ├óΓé¼ΓÇ¥ this project 
+keeps commits authorless; credit lives in a separate credits file.
+- Autotest additions: content modules use the marked CONTENT-MODULE TEST HOOK (one func at file end + one call line); 
+never edit existing sections.
+
+## Asset sourcing
+- **Allowed ├óΓé¼ΓÇ¥ and that's the whole list:** ONLY these two, or anything we generate ourselves (must be up to 
+par: semantic fit + reads clean in-game).
+  1. **CC0 / public domain** ├óΓé¼ΓÇ¥ zero obligations, ideal.
+  2. **CC-BY / MIT / Apache / OFL** ├óΓé¼ΓÇ¥ fine; ship the attribution file (we already do, in 
+`assets/*/CREDITS.txt`).
+  No pre-approval needed for these. Source from anywhere ├óΓé¼ΓÇ¥ OpenGameArt, Kenney, itch.io, the Dungeon Crawl 
+tileset (CC0), etc.
+- **Everything else is off-limits** ├óΓé¼ΓÇ¥ do not use, don't even ask: share-alike (CC-BY-SA, GPL), non-commercial 
+(CC-NC), proprietary/paid asset-store packs, and anything with no stated license (default = all rights reserved). This 
+game ships commercially on Steam; these licenses either forbid selling it or can force us to open-source the whole 
+project.
+- Install flow: probe/download, and LOOK at the image (or listen to the audio) before installing; overrides drop into 
+`assets/sounds|music|sprites/` by name (a PNG/wav there overrides the procedural version of the same name).
+- Audio taste: semantic fit over quality; no melodic-jingle chiptunes for ults/terrains; never human grunts on casts; 
+never touch `ult_mage.wav` or the village/story/boss synth tracks.
+
+## Generated art tool authorization
+- **NEVER assume PixelLab is authorized. PixelLab may be used only when the owner explicitly authorizes PixelLab for 
+the specific task.** Existing PixelLab assets, PixelLab helper scripts, character metadata, or a matching PixelLab 
+workflow elsewhere in the repo do not grant permission for a new generation.
+- When an agent has a built-in image-generation/editing tool (for example, ChatGPT/Codex image generation), that 
+built-in tool is the default for generated art unless the owner explicitly requests or authorizes another generator.
+- This rule applies even when another generator appears technically better suited. If the built-in tool cannot meet 
+the requirement, stop and ask the owner; do not silently switch tools or spend external generation credits.
+
+### Codex built-in ImageGen walk-animation observations
+- For bipedal characters, the built-in ImageGen tool often fails to preserve a fluid left/right leg cycle. A real 
+same-colored leg crossing over the other in one passing frame can create a convincing walking illusion; keep that 
+crossing to one or at most two frames rather than making every frame crossed.
+- If ImageGen repeats nearly identical crossed poses, give each cell an explicit foot-position storyboard instead of 
+only asking for "alternating legs": use a wide split, a tight crossover, a second crossover with a different spread 
+and the opposite leg emerging, then the opposite wide split or a subtle toe-off. State that frames 1, 3, and 4 must 
+have visibly different lower-body silhouettes. (Tried on the Wild Fang Raider 2026-08-14 and again 08-15: the 4-cell 
+2x2 kept coming back with the SAME leg leading in both stride cells and the body ~11% short ├óΓé¼ΓÇ¥ the owner still 
+called the walk bad.)
+- **What actually fixed the Wild Fang Raider walk (2026-08-15): ONE ROW of EIGHT figures, each frame labelled with its 
+gait phase** (near-foot contact / load / far leg passes / reach, then the same four for the other leg ├óΓé¼ΓÇ¥ the 
+pipeline doc's "legs do not alternate" remedy). The row came back with 8 distinct poses, constant body height and one 
+ground line; installed as an 8-frame strip (the engine's strip reader is frame-count agnostic ├óΓé¼ΓÇ¥ width/height 
+├óΓé¼ΓÇ¥ so 8 is fine; at the 2x walk clock the loop runs 0.67 s). Prefer this over 4-cell 2x2 for any bipedal walk. 
+Ask Codex to report leg-lead per frame in its final message; it is a candid critic of its own output.
+- Every ImageGen-keyed strip carried a dark-green antialias rim (`build_mob_walk_repairs.remove_green` now despills 
+the 2px edge band); a strip that "looks fine" on a dark contact sheet can still ring green over grass ├óΓé¼ΓÇ¥ check 
+`G > max(R,B)+20` counts on the rim, not just the semi-alpha BLEED gate.
+- The tool is generally more reliable for non-bipedal walks (for example, spiders and wolves), and for characters 
+whose locomotion does not expose a conventional leg cycle: robes can communicate motion through cloth flutter, and 
+floating characters can use body/cloth drift.
+- For bipedal sheets, prompt for fixed torso/pelvis anchors, a shared foot baseline, compact stride, 
+held-weapon/upper-body continuity, and explicit negative constraints against recoloring legs, detached feet, 
+duplicated frames, and high-knee marching. Inspect the generated sheet before installation and run 
+`tools/art/verify_art.py <base>` afterward; anchor drift can still remain even when the sheet looks visually centered.
+
+## PixelLab characters ├óΓé¼ΓÇ¥ regenerating an EXISTING one (deep dive: `tools/art/PIXELLAB_BOSS_EDITS.md`)
+- **Authorization gate:** this section applies only after the owner has explicitly authorized PixelLab for the current 
+task. It is not permission to choose PixelLab.
+- **RULE: before you regenerate, re-roll, or tweak an existing PixelLab character (boss/hero/skin), ALWAYS read its 
+export metadata FIRST.** Download the zip (`curl -H "Authorization: Bearer $PIXELLAB_SECRET" 
+https://api.pixellab.ai/mcp/characters/<id>/download -o out.zip`) and read `metadata.json` ├óΓé¼ΓÇ¥ it stores the 
+ORIGINAL creation `prompt` (plus size, `template_id`, view). Regenerate from that EXACT prompt and change ONLY the 
+clause the owner flagged.
+- **Never invent a fresh description from a screenshot or memory** ├óΓé¼ΓÇ¥ it silently drifts the design 
+(proportions, palette, silhouette) even when the fix was one word. `get_character` does NOT return the creation 
+prompt; the zip's `metadata.json` is the only source of truth.
+
+## PixelLab characters ├óΓé¼ΓÇ¥ new generation workflow (prompt-craft cases: `tools/art/PIXELLAB_PROMPT_LESSONS.md`)
+- **CHECK ALL 8 ROTATIONS before generating animations.** After a character body is created, visually inspect every 
+direction (S, SE, E, NE, N, NW, W, SW) for consistency ├óΓé¼ΓÇ¥ same proportions, same gear, same silhouette. v3 mode 
+frequently produces inconsistent north/west directions (wrong body shape, missing equipment, different outfit). If any 
+direction is broken, re-roll the body first. Generating animations on a broken body wastes hundreds of generations.
+- **Heroes use v3 mode (NOT pro).** The gold-standard assassin and warlock were both v3. Pro mode produces stocky 
+proportions for visible-face characters. The `style: -, -, -` field in `get_character` appears in BOTH v3 and pro 
+├óΓé¼ΓÇ¥ it cannot distinguish modes.
+- **Standard mode is useless for proportions testing.** Its template skeleton produces chibi proportions regardless of 
+description. Only useful for testing color palette and design elements.
+- **Description formula (proven on assassin):** archetype first ├óΓÇáΓÇÖ every piece of gear described precisely 
+├óΓÇáΓÇÖ body type ("lean and gaunt" / "lean and tall") ├óΓÇáΓÇÖ art mood ("muted dark palette, somber dark fantasy") 
+├óΓÇáΓÇÖ explicit negatives ("no hood", "no smoke"). Leave no room for the model to improvise.
+- Worked example (2026-07-12): owner said Vess should have "no smoke from mouth". The metadata prompt literally 
+contained `faint blue-white keening light at the mouth` ├óΓé¼ΓÇ¥ the fix was deleting that one clause from the 
+original prompt, not writing a new banshee description.
+
+CURRENT_FILES:
+
+Name            Length Mode  
+----            ------ ----  
+refs                   d-----
+codex_brief.txt 8460   -a----
+codex_log.txt   9658   -a----
+IMAGEGEN_FILES:
+                             
+                             
+                             
+                             
+                             
+                             
+                             
+                             
+                             
+                             
+                             
+                             
+
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -LiteralPath 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\references\\prompting.md' -Raw" in 
+C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\walk\e
+ succeeded in 1503ms:
+# Prompting best practices
+
+These prompting principles are shared by both top-level modes of the skill:
+- built-in `image_gen` tool (default)
+- explicit `scripts/image_gen.py` CLI fallback
+
+This file is about prompt structure, specificity, and iteration. Fallback-only execution controls such as `quality`, 
+`input_fidelity`, masks, output format, and output paths live in the fallback docs.
+
+## Contents
+- [Structure](#structure)
+- [Specificity policy](#specificity-policy)
+- [Allowed and disallowed augmentation](#allowed-and-disallowed-augmentation)
+- [Composition and layout](#composition-and-layout)
+- [Constraints and invariants](#constraints-and-invariants)
+- [Text in images](#text-in-images)
+- [Input images and references](#input-images-and-references)
+- [Iterate deliberately](#iterate-deliberately)
+- [Transparent images](#transparent-images)
+- [Fallback-only execution controls](#fallback-only-execution-controls)
+- [Use-case tips](#use-case-tips)
+- [Where to find copy/paste recipes](#where-to-find-copypaste-recipes)
+
+## Structure
+- Use a consistent order: scene/backdrop -> subject -> key details -> constraints -> output intent.
+- Include intended use (ad, UI mock, infographic) to set the level of polish.
+- For complex requests, use short labeled lines instead of one long paragraph.
+
+## Specificity policy
+- If the user prompt is already specific and detailed, normalize it into a clean spec without adding creative 
+requirements.
+- If the prompt is generic, you may add tasteful detail when it materially improves the output.
+- Treat examples in `sample-prompts.md` as fully-authored recipes, not as the default amount of augmentation to add to 
+every request.
+- For photorealism, include `photorealistic` directly when that is the goal, plus concrete real-world texture such as 
+pores, wrinkles, fabric wear, material grain, or imperfect everyday detail.
+
+## Allowed and disallowed augmentation
+
+Allowed augmentation for generic prompts:
+- composition and framing cues
+- intended-use or polish-level hints
+- practical layout guidance
+- reasonable scene concreteness that supports the request
+
+Do not add:
+- extra characters, props, or objects that are not implied
+- brand palettes, slogans, or story beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Composition and layout
+- Specify framing and viewpoint (close-up, wide, top-down) and placement only when it materially helps.
+- Call out negative space if the asset clearly needs room for UI or copy.
+- Avoid making left/right layout decisions unless the user or surrounding layout supports them.
+- For people, describe body framing, scale, gaze, and object interactions when they matter (`full body visible`, 
+`looking down at the book`, `hands naturally gripping the handlebars`).
+
+## Constraints and invariants
+- State what must not change (`keep background unchanged`).
+- For edits, say `change only X; keep Y unchanged` and repeat invariants on every iteration to reduce drift.
+
+## Text in images
+- Put literal text in quotes or ALL CAPS and specify typography (font style, size, color, placement).
+- Spell uncommon words letter-by-letter if accuracy matters.
+- For in-image copy, require verbatim rendering and no extra characters.
+- In CLI fallback mode, use `medium` or `high` quality for small text, dense infographics, data-heavy slides, 
+multi-font layouts, legends, axes, and footnotes.
+
+## Input images and references
+- Do not assume that every provided image is an edit target.
+- Label each image by index and role (`Image 1: edit target`, `Image 2: style reference`).
+- If the user provides images for style, composition, or mood guidance and does not ask to modify them, treat the 
+request as generation with references.
+- If the user asks to preserve an existing image while changing specific parts, treat the request as an edit.
+- For compositing, describe how the images interact (`place the subject from Image 2 into Image 1`).
+
+## Iterate deliberately
+- Start with a clean base prompt, then make small single-change edits.
+- Re-specify critical constraints when you iterate.
+- Prefer one targeted follow-up at a time over rewriting the whole prompt.
+
+## Transparent images
+- Ask built-in `image_gen` for a genuinely transparent background and preserve its alpha.
+
+## Fallback-only execution controls
+- `quality`, `input_fidelity`, explicit masks, output format, and output paths are fallback-only execution controls.
+- Do not assume they are built-in `image_gen` tool arguments.
+- If the user explicitly chooses CLI fallback, see `references/cli.md` and `references/image-api.md` for those 
+controls.
+- In CLI fallback mode, `gpt-image-2` is the default. It supports `quality=low|medium|high|auto`; use `low` for fast 
+drafts and thumbnails, and move to `medium`, `high`, or `auto` for final assets.
+- `gpt-image-2` always uses high fidelity for image inputs, so do not set `input_fidelity` with that model.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user 
+explicitly requested that model.
+- If the user asks for 4K-style output with `gpt-image-2`, use `3840x2160` for landscape or `2160x3840` for portrait.
+
+## Use-case tips
+Generate:
+- photorealistic-natural: Prompt as if a real photo is captured in the moment; use photography language (lens, 
+lighting, framing); call for real texture; avoid over-stylized polish unless requested.
+- product-mockup: Describe the product/packaging and materials; ensure clean silhouette and label clarity; if in-image 
+text is needed, require verbatim rendering and specify typography.
+- ui-mockup: Describe the target fidelity first (shippable mockup or low-fi wireframe), then focus on layout, 
+hierarchy, and practical UI elements; avoid concept-art language.
+- infographic-diagram: Define the audience and layout flow; label parts explicitly; require verbatim text; prefer 
+higher quality in CLI mode for dense labels.
+- logo-brand: Keep it simple and scalable; ask for a strong silhouette and balanced negative space; avoid decorative 
+flourishes unless requested.
+- ads-marketing: Write like a creative brief; include brand positioning, audience, desired vibe, scene, and exact 
+tagline if text must appear.
+- productivity-visual: Name the exact artifact (slide, chart, workflow diagram), define the canvas and hierarchy, 
+provide real labels/data, and ask for readable typography and polished spacing.
+- scientific-educational: Define audience, lesson objective, required labels, scientific constraints, arrows, and 
+scan-friendly whitespace.
+- illustration-story: Define panels or scene beats; keep each action concrete.
+- stylized-concept: Specify style cues, material finish, and rendering approach (3D, painterly, clay) without 
+inventing new story elements.
+- historical-scene: State the location/date and required period accuracy; constrain clothing, props, and environment 
+to match the era.
+
+Edit:
+- text-localization: Change only the text; preserve layout, typography, spacing, and hierarchy; no extra words or 
+reflow unless needed.
+- identity-preserve: Lock identity (face, body, pose, hair, expression); change only the specified elements; match 
+lighting and shadows.
+- precise-object-edit: Specify exactly what to remove/replace; preserve surrounding texture and lighting; keep 
+everything else unchanged.
+- lighting-weather: Change only environmental conditions (light, shadows, atmosphere, precipitation); keep geometry, 
+framing, and subject identity.
+- background-extraction: Request a clean cutout on a genuinely transparent background; preserve fine edges and label 
+text; no halos or restyling.
+- style-transfer: Specify style cues to preserve (palette, texture, brushwork) and what must change; add `no extra 
+elements` to prevent drift.
+- compositing: Reference inputs by index; specify what moves where; match lighting, perspective, and scale; keep the 
+base framing unchanged.
+- sketch-to-render: Preserve layout, proportions, and perspective; choose materials and lighting that support the 
+supplied sketch without adding new elements.
+
+## Where to find copy/paste recipes
+For copy/paste prompt specs (examples only), see `references/sample-prompts.md`. This file focuses on principles, 
+specificity, and iteration patterns.
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -LiteralPath 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\references\\sample-prompts.md' -Raw" in 
+C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\walk\e
+ succeeded in 1088ms:
+# Sample prompts (copy/paste)
+
+These prompt recipes are shared across both top-level modes of the skill:
+- built-in `image_gen` tool (default)
+- `scripts/image_gen.py` CLI fallback for explicit or user-confirmed CLI/API/model requests
+
+Use these as starting points. They are intentionally complete prompt recipes, not the default amount of augmentation 
+to add to every user request.
+
+When adapting a user's prompt:
+- keep user-provided requirements
+- only add detail according to the specificity policy in `SKILL.md`
+- do not treat every example below as permission to invent extra story elements
+
+The labeled lines are prompt scaffolding, not a closed schema. `Asset type` and `Input images` are prompt-only 
+scaffolding; the CLI does not expose them as dedicated flags.
+
+Execution details such as explicit CLI flags, `quality`, `input_fidelity`, masks, output formats, and local output 
+paths depend on mode. Use built-in `image_gen` by default, request transparent backgrounds directly, and preserve the 
+generated alpha; apply CLI-specific controls only when the user chooses or confirms that fallback.
+
+CLI model notes:
+- `gpt-image-2` is the fallback CLI default for new workflows.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- For 4K-style `gpt-image-2` output, use `3840x2160` or `2160x3840`.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user 
+explicitly requested that model.
+- Do not set `input_fidelity` with `gpt-image-2`; image inputs already use high fidelity.
+
+For prompting principles (structure, specificity, invariants, iteration), see `references/prompting.md`.
+
+## Generate
+
+### photorealistic-natural
+```
+Use case: photorealistic-natural
+Primary request: candid photo of an elderly sailor on a small fishing boat adjusting a net
+Scene/backdrop: coastal water with soft haze
+Subject: weathered skin with wrinkles and sun texture
+Style/medium: photorealistic candid photo
+Composition/framing: medium close-up, eye-level
+Lighting/mood: soft coastal daylight, shallow depth of field, subtle film grain
+Materials/textures: real skin texture, worn fabric, salt-worn wood
+Constraints: natural color balance; no heavy retouching; no glamorization; no watermark
+Avoid: studio polish; staged look
+```
+
+### product-mockup
+```
+Use case: product-mockup
+Primary request: premium product photo of a matte black shampoo bottle with a minimal label
+Scene/backdrop: clean studio gradient from light gray to white
+Subject: single bottle centered with subtle reflection
+Style/medium: premium product photography
+Composition/framing: centered, slight three-quarter angle, generous padding
+Lighting/mood: softbox lighting, clean highlights, controlled shadows
+Materials/textures: matte plastic, crisp label printing
+Constraints: no logos or trademarks; no watermark
+```
+
+### ui-mockup
+```
+Use case: ui-mockup
+Primary request: mobile app home screen for a local farmers market with vendors and daily specials
+Asset type: mobile app screen
+Style/medium: realistic product UI, not concept art
+Composition/framing: clean vertical mobile layout with clear hierarchy
+Constraints: practical layout, clear typography, no logos or trademarks, no watermark
+```
+
+### infographic-diagram
+```
+Use case: infographic-diagram
+Primary request: detailed infographic of an automatic coffee machine flow
+Scene/backdrop: clean, light neutral background
+Subject: bean hopper -> grinder -> brew group -> boiler -> water tank -> drip tray
+Style/medium: clean vector-like infographic with clear callouts and arrows
+Composition/framing: vertical poster layout, top-to-bottom flow
+Text (verbatim): "Bean Hopper", "Grinder", "Brew Group", "Boiler", "Water Tank", "Drip Tray"
+Constraints: clear labels, strong contrast, no logos or trademarks, no watermark
+```
+
+### scientific-educational
+```
+Use case: scientific-educational
+Primary request: biology diagram titled "Cellular Respiration at a Glance" for high school students
+Scene/backdrop: clean white classroom handout background
+Subject: glucose turns into energy inside a cell; include glycolysis, Krebs cycle, and electron transport chain
+Style/medium: flat scientific diagram with consistent icons, arrows, and readable labels
+Composition/framing: landscape slide-style layout with clear hierarchy and generous whitespace
+Text (verbatim): "Cellular Respiration at a Glance", "Glucose", "Pyruvate", "ATP", "NADH", "FADH2", "CO2", "O2", "H2O"
+Constraints: scientifically plausible; avoid tiny text; no extra decoration; no watermark
+```
+
+### logo-brand
+```
+Use case: logo-brand
+Primary request: original logo for "Field & Flour", a local bakery
+Style/medium: vector logo mark; flat colors; minimal
+Composition/framing: single centered logo on a plain background with generous padding
+Constraints: strong silhouette, balanced negative space; original design only; no gradients unless essential; no 
+trademarks; no watermark
+```
+
+### illustration-story
+```
+Use case: illustration-story
+Primary request: 4-panel comic about a pet left alone at home
+Scene/backdrop: cozy living room across panels
+Subject: pet reacting to the owner leaving, then relaxing, then returning to a composed pose
+Style/medium: comic illustration with clear panels
+Composition/framing: 4 equal-sized vertical panels, readable actions per panel
+Constraints: no text; no logos or trademarks; no watermark
+```
+
+### stylized-concept
+```
+Use case: stylized-concept
+Primary request: cavernous hangar interior with tall support beams and drifting fog
+Scene/backdrop: industrial hangar interior, deep scale, light haze
+Subject: compact shuttle parked near the center
+Style/medium: cinematic concept art, industrial realism
+Composition/framing: wide-angle, low-angle
+Lighting/mood: volumetric light rays cutting through fog
+Constraints: no logos or trademarks; no watermark
+```
+
+### ads-marketing
+```
+Use case: ads-marketing
+Primary request: campaign image for a streetwear brand called Thread
+Subject: group of friends hanging out together in a stylish urban setting
+Style/medium: polished youth streetwear campaign photography
+Composition/framing: vertical ad layout with natural poses and integrated headline space
+Lighting/mood: contemporary, energetic, tasteful
+Text (verbatim): "Yours to Create."
+Constraints: render the tagline exactly once; clean legible typography; no extra text; no watermarks; no unrelated 
+logos
+```
+
+### productivity-visual
+```
+Use case: productivity-visual
+Primary request: one pitch-deck slide titled "Market Opportunity"
+Asset type: fundraising slide image
+Style/medium: clean modern deck slide, white background, crisp sans-serif typography
+Subject: TAM/SAM/SOM concentric-circle diagram plus a small growth bar chart from 2021 to 2026
+Composition/framing: 16:9 landscape slide, clear data hierarchy, polished spacing
+Text (verbatim): "Market Opportunity", "TAM: $42B", "SAM: $8.7B", "SOM: $340M", "AGI Research, 2024", "Internal 
+analysis"
+Constraints: readable labels, no clip art, no stock photography, no decorative clutter, no watermark
+```
+
+### historical-scene
+```
+Use case: historical-scene
+Primary request: outdoor crowd scene in Bethel, New York on August 16, 1969
+Scene/backdrop: open field with period-appropriate staging
+Subject: crowd in period-accurate clothing, authentic environment
+Style/medium: photorealistic photo
+Composition/framing: wide shot, eye-level
+Constraints: period-accurate details; no modern objects; no logos or trademarks; no watermark
+```
+
+## Asset type templates (taxonomy-aligned)
+
+### Website assets template
+```
+Use case: <photorealistic-natural|stylized-concept|product-mockup|infographic-diagram|ui-mockup>
+Asset type: <hero image / section illustration / blog header>
+Primary request: <short description>
+Scene/backdrop: <environment or abstract backdrop>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D>
+Composition/framing: <wide/centered; note usable negative space only if needed>
+Lighting/mood: <soft/bright/neutral>
+Color palette: <brand colors or neutral>
+Constraints: <no text; no logos; no watermark; leave room for UI if needed>
+```
+
+### Website assets example: minimal hero background
+```
+Use case: stylized-concept
+Asset type: landing page hero background
+Primary request: minimal abstract background with a soft gradient and subtle texture
+Style/medium: matte illustration / soft-rendered abstract background
+Composition/framing: wide composition with usable negative space for page copy
+Lighting/mood: gentle studio glow
+Color palette: restrained neutral palette
+Constraints: no text; no logos; no watermark
+```
+
+### Website assets example: feature section illustration
+```
+Use case: stylized-concept
+Asset type: feature section illustration
+Primary request: simple abstract shapes suggesting connection and flow
+Scene/backdrop: subtle light-gray backdrop with faint texture
+Style/medium: flat illustration; soft shadows; restrained contrast
+Composition/framing: centered cluster; open margins for UI
+Color palette: muted neutral palette
+Constraints: no text; no logos; no watermark
+```
+
+### Website assets example: blog header image
+```
+Use case: photorealistic-natural
+Asset type: blog header image
+Primary request: overhead desk scene with notebook, pen, and coffee cup
+Scene/backdrop: warm wooden tabletop
+Style/medium: photorealistic photo
+Composition/framing: wide crop with clean room for page copy
+Lighting/mood: soft morning light
+Constraints: no text; no logos; no watermark
+```
+
+### Game assets template
+```
+Use case: stylized-concept
+Asset type: <game environment concept art / game character concept / game UI icon / tileable game texture>
+Primary request: <biome/scene/character/icon/material>
+Scene/backdrop: <location + set dressing> (if applicable)
+Subject: <main focal element(s)>
+Style/medium: <realistic/stylized>; <concept art / character render / UI icon / texture>
+Composition/framing: <wide/establishing/top-down>; <camera angle>; <focal point placement>
+Lighting/mood: <time of day>; <mood>; <volumetric/fog/etc>
+Constraints: no logos or trademarks; no watermark
+```
+
+### Game assets example: environment concept art
+```
+Use case: stylized-concept
+Asset type: game environment concept art
+Primary request: cavernous hangar interior with tall support beams and drifting fog
+Scene/backdrop: industrial hangar interior, deep scale, light haze
+Subject: compact shuttle parked near the center
+Style/medium: cinematic concept art, industrial realism
+Composition/framing: wide-angle, low-angle
+Lighting/mood: volumetric light rays cutting through fog
+Constraints: no logos or trademarks; no watermark
+```
+
+### Game assets example: character concept
+```
+Use case: stylized-concept
+Asset type: game character concept
+Primary request: desert scout character with layered travel gear
+Subject: long coat, satchel, practical travel clothing
+Style/medium: character render; stylized realism
+Composition/framing: neutral hero pose on a simple backdrop
+Constraints: no logos or trademarks; no watermark
+```
+
+### Game assets example: UI icon
+```
+Use case: stylized-concept
+Asset type: game UI icon
+Primary request: round shield icon with a subtle rune pattern
+Style/medium: painted game UI icon
+Composition/framing: centered icon; generous padding; clear silhouette
+Constraints: no text; no background scene elements; no logos or trademarks; no watermark
+```
+
+### Game assets example: tileable texture
+```
+Use case: stylized-concept
+Asset type: tileable game texture
+Primary request: worn sandstone blocks
+Style/medium: seamless tileable texture; PBR-ish look
+Scene/backdrop: neutral lighting reference only
+Constraints: seamless edges; no obvious focal elements; no text; no logos or trademarks; no watermark
+```
+
+### Wireframe template
+```
+Use case: ui-mockup
+Asset type: website wireframe
+Primary request: <page or flow to sketch>
+Style/medium: low-fi grayscale wireframe
+Composition/framing: <landscape or portrait to match expected device>
+Subject: <sections in order; grid/columns; key labels>
+Constraints: no color; no logos; no real photos; no watermark
+```
+
+### Wireframe example: homepage (desktop)
+```
+Use case: ui-mockup
+Asset type: website wireframe
+Primary request: SaaS homepage layout with clear hierarchy
+Style/medium: low-fi grayscale wireframe
+Subject: top nav; hero with headline and CTA; three feature cards; testimonial strip; pricing preview; footer
+Composition/framing: landscape desktop layout
+Constraints: label major blocks; no color; no logos; no real photos; no watermark
+```
+
+### Wireframe example: pricing page
+```
+Use case: ui-mockup
+Asset type: website wireframe
+Primary request: pricing page layout with comparison table
+Style/medium: low-fi grayscale wireframe
+Subject: header; plan toggle; 3 pricing cards; comparison table; FAQ accordion; footer
+Composition/framing: desktop or tablet layout
+Constraints: label key areas; no color; no logos; no real photos; no watermark
+```
+
+### Wireframe example: mobile onboarding flow
+```
+Use case: ui-mockup
+Asset type: mobile onboarding wireframe
+Primary request: three-screen mobile onboarding flow
+Style/medium: low-fi grayscale wireframe
+Subject: screen 1 headline and CTA; screen 2 feature bullets; screen 3 form fields and CTA
+Composition/framing: portrait mobile layout
+Constraints: label screens and blocks; no color; no logos; no real photos; no watermark
+```
+
+### Logo template
+```
+Use case: logo-brand
+Asset type: logo concept
+Primary request: <brand idea or symbol concept>
+Style/medium: vector logo mark; flat colors; minimal
+Composition/framing: centered mark; clear silhouette; generous margin
+Color palette: <1-2 colors; high contrast>
+Text (verbatim): "<exact name>" (only if needed)
+Constraints: no gradients; no mockups; no 3D; no watermark
+```
+
+### Logo example: abstract symbol mark
+```
+Use case: logo-brand
+Asset type: logo concept
+Primary request: geometric leaf symbol suggesting sustainability and growth
+Style/medium: vector logo mark; flat colors; minimal
+Composition/framing: centered mark; clear silhouette
+Color palette: deep green and off-white
+Constraints: no text unless requested; no gradients; no mockups; no 3D; no watermark
+```
+
+### Logo example: monogram mark
+```
+Use case: logo-brand
+Asset type: logo concept
+Primary request: interlocking monogram of the letters "AV"
+Style/medium: vector logo mark; flat colors; minimal
+Composition/framing: centered mark; balanced spacing
+Color palette: black on white
+Constraints: no gradients; no mockups; no 3D; no watermark
+```
+
+### Logo example: wordmark
+```
+Use case: logo-brand
+Asset type: logo concept
+Primary request: clean wordmark for a modern studio
+Style/medium: vector wordmark; flat colors; minimal
+Text (verbatim): "Studio North"
+Composition/framing: centered text; even letter spacing
+Constraints: no gradients; no mockups; no 3D; no watermark
+```
+
+## Edit
+
+### text-localization
+```
+Use case: text-localization
+Input images: Image 1: original infographic
+Primary request: replace "Bean Hopper", "Grinder", "Brew Group", "Boiler", "Water Tank", and "Drip Tray" with "Tolva", 
+"Molino", "Grupo de infusi├â┬│n", "Caldera", "Dep├â┬│sito de agua", and "Bandeja de goteo"
+Constraints: change only the text; preserve layout, typography, spacing, and hierarchy; no extra words; do not alter 
+logos or imagery
+```
+
+### identity-preserve
+```
+Use case: identity-preserve
+Input images: Image 1: person photo; Image 2..N: clothing references
+Primary request: replace only the clothing with the provided garments
+Constraints: preserve face, body shape, pose, hair, expression, and identity; match lighting and shadows; keep the 
+background unchanged; no accessories or text
+```
+
+### precise-object-edit
+```
+Use case: precise-object-edit
+Input images: Image 1: room photo
+Primary request: replace only the white chairs with wooden chairs
+Constraints: preserve camera angle, room lighting, floor shadows, and surrounding objects; keep all other aspects 
+unchanged
+```
+
+### lighting-weather
+```
+Use case: lighting-weather
+Input images: Image 1: original photo
+Primary request: make it look like a winter evening with gentle snowfall
+Constraints: preserve subject identity, geometry, camera angle, and composition; change only lighting, atmosphere, and 
+weather
+```
+
+### style-transfer
+```
+Use case: style-transfer
+Input images: Image 1: style reference
+Primary request: apply Image 1's visual style to a man riding a motorcycle on a plain white backdrop
+Constraints: preserve palette, texture, and brushwork; no extra elements
+```
+
+### compositing
+```
+Use case: compositing
+Input images: Image 1: base scene; Image 2: subject to insert
+Primary request: place the subject from Image 2 next to the person in Image 1
+Constraints: match lighting, perspective, and scale; keep the base framing unchanged; no extra elements
+```
+
+### character consistency workflow
+```
+Use case: identity-preserve
+Input images: Image 1: previous character anchor illustration
+Primary request: continue the story with the same character in a new scene and action
+Scene/backdrop: snowy forest after a winter storm
+Subject: same young forest hero gently helping a frightened squirrel out of a fallen tree
+Style/medium: same children's book watercolor illustration style as Image 1
+Constraints: do not redesign the character; preserve facial features, proportions, outfit, color palette, and 
+personality; no text; no watermark
+```
+
+### sketch-to-render
+```
+Use case: sketch-to-render
+Input images: Image 1: drawing
+Primary request: turn the drawing into a photorealistic image
+Constraints: preserve layout, proportions, and perspective; choose realistic materials and lighting; do not add new 
+elements or text
+```
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen' -Recurse -File | ForEach-Object { "'$_.FullName }' in 
+C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\walk\e
+ succeeded in 1132ms:
+C:\Users\asali\.codex\skills\.system\imagegen\LICENSE.txt
+C:\Users\asali\.codex\skills\.system\imagegen\SKILL.md
+C:\Users\asali\.codex\skills\.system\imagegen\agents\openai.yaml
+C:\Users\asali\.codex\skills\.system\imagegen\assets\imagegen-small.svg
+C:\Users\asali\.codex\skills\.system\imagegen\assets\imagegen.png
+C:\Users\asali\.codex\skills\.system\imagegen\references\cli.md
+C:\Users\asali\.codex\skills\.system\imagegen\references\codex-network.md
+C:\Users\asali\.codex\skills\.system\imagegen\references\image-api.md
+C:\Users\asali\.codex\skills\.system\imagegen\references\prompting.md
+C:\Users\asali\.codex\skills\.system\imagegen\references\sample-prompts.md
+C:\Users\asali\.codex\skills\.system\imagegen\scripts\image_gen.py
+C:\Users\asali\.codex\skills\.system\imagegen\scripts\remove_chroma_key.py
+
+codex
+The references are loaded. One conflict in the supplied prose says ΓÇ£front-facing,ΓÇ¥ but the task title, storyboard, 
+and later explicit override all require a full right-facing profile; IΓÇÖm treating the reference as front-facing 
+identity input and the generated sprites as right-facing profile poses. IΓÇÖm now making the single permitted 
+generation call with both local references attached.
+codex
+The one generated sheet has four sprites and the correct right-facing, unarmed identity. Initial visual QA already 
+shows the two contact poses are near-duplicates instead of clean opposite-foot mirrors, so this will need to be 
+reported as a real walk-cycle defect. IΓÇÖm preserving the raw output now, then IΓÇÖll run the mandated 
+auto-key/despill helper and inspect the keyed alpha edges.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py' --help" in 
+C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\walk\e
+ succeeded in 1078ms:
+usage: remove_chroma_key.py [-h] --input INPUT --out OUT
+                            [--key-color KEY_COLOR] [--tolerance TOLERANCE]
+                            [--auto-key {none,corners,border}] [--soft-matte]
+                            [--transparent-threshold TRANSPARENT_THRESHOLD]
+                            [--opaque-threshold OPAQUE_THRESHOLD]
+                            [--edge-feather EDGE_FEATHER]
+                            [--edge-contract EDGE_CONTRACT] [--spill-cleanup]
+                            [--despill] [--force]
+
+Remove a solid chroma-key background and write an image with alpha.
+
+options:
+  -h, --help            show this help message and exit
+  --input INPUT         Input image path.
+  --out OUT             Output .png or .webp path.
+  --key-color KEY_COLOR
+                        Hex RGB key color to remove, for example #00ff00.
+  --tolerance TOLERANCE
+                        Hard-key per-channel tolerance for matching the key
+                        color, 0-255.
+  --auto-key {none,corners,border}
+                        Sample the key color from image corners or border
+                        instead of --key-color.
+  --soft-matte          Use a smooth alpha ramp between transparent and opaque
+                        thresholds.
+  --transparent-threshold TRANSPARENT_THRESHOLD
+                        Soft-matte distance at or below which pixels become
+                        fully transparent.
+  --opaque-threshold OPAQUE_THRESHOLD
+                        Soft-matte distance at or above which pixels become
+                        fully opaque.
+  --edge-feather EDGE_FEATHER
+                        Optional alpha blur radius for softened edges, 0-64.
+  --edge-contract EDGE_CONTRACT
+                        Shrink the visible alpha matte by this many pixels
+                        before feathering.
+  --spill-cleanup       Reduce obvious key-color spill on opaque pixels.
+  --despill             Alias for --spill-cleanup; decontaminate key-color
+                        edge spill.
+  --force               Overwrite an existing output file.
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:\\Users\\asali\\.c
+odex\\generated_images\\01a0173c-d29b-7b02-834a-181502e5ba5f\\exec-67d0262a-3122-4c35-8149-e4fbc1c2c7c9.png' 
+-Destination '.\\walk_master_2x2_v1.png'; python 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py' --input 
+'.\\walk_master_2x2_v1.png' --out '.\\walk_master_2x2_v1_keyed.png' --auto-key border --despill" in 
+C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\walk\e
+ succeeded in 9374ms:
+Wrote walk_master_2x2_v1_keyed.png
+Key color: #05f807
+Transparent pixels: 1292647/1572516
+Partially transparent pixels: 0/1572516
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+from collections import Counter
+from pathlib import Path
+import hashlib
+raw_p=Path('walk_master_2x2_v1.png')
+key_p=Path('walk_master_2x2_v1_keyed.png')
+src_p=Path(r'C:\\Users\\asali\\.codex\\generated_images\\01a0173c-d29b-7b02-834a-181502e5ba5f\\exec-67d0262a-3122-4c35-
+8149-e4fbc1c2c7c9.png')
+raw=Image.open(raw_p)
+key=Image.open(key_p).convert('RGBA')
+print('raw_size_mode', raw.size, raw.mode)
+print('key_size_mode', key.size, key.mode)
+for p in (raw_p,src_p,key_p):
+    print(p.name, p.stat().st_size, hashlib.sha256(p.read_bytes()).hexdigest())
+print('raw_corners', [raw.convert('RGB').getpixel(pt) for pt in 
+[(0,0),(raw.width-1,0),(0,raw.height-1),(raw.width-1,raw.height-1)]])
+print('key_corners', [key.getpixel(pt) for pt in [(0,0),(key.width-1,0),(0,key.height-1),(key.width-1,key.height-1)]])
+print('raw_top_colors', Counter(raw.convert('RGB').getdata()).most_common(10))
+alpha=key.getchannel('A')
+print('alpha_extrema', alpha.getextrema(), 'alpha_values', Counter(alpha.getdata()).most_common())
+# Alpha bbox and residual green counts per quadrant
+w,h=key.size
+for i,(x0,y0,x1,y1) in enumerate([(0,0,w//2,h//2),(w//2,0,w,h//2),(0,h//2,w//2,h),(w//2,h//2,w,h)],1):
+    crop=key.crop((x0,y0,x1,y1))
+    a=crop.getchannel('A')
+    bb=a.getbbox()
+    if bb:
+        absbb=(bb[0]+x0,bb[1]+y0,bb[2]+x0,bb[3]+y0)
+        bw,bh=bb[2]-bb[0],bb[3]-bb[1]
+        opaque=sum(1 for v in a.getdata() if v)
+        green=0
+        brightgreen=0
+        for r,g,b,aa in crop.getdata():
+            if aa and g>max(r,b)+20: green+=1
+            if aa and g>200 and r<80 and b<80: brightgreen+=1
+        print('frame',i,'bbox',absbb,'size',(bw,bh),'opaque',opaque,'green_dominant',green,'bright_green',brightgreen)
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\walk\e
+ succeeded in 8264ms:
+raw_size_mode (1254, 1254) RGB
+key_size_mode (1254, 1254) RGBA
+walk_master_2x2_v1.png 1395968 3fdfe27ac4bc1bed56d68dcdedc85351e3b3b1d3736297a23c8b47edbbbf93a8
+exec-67d0262a-3122-4c35-8149-e4fbc1c2c7c9.png 1395968 3fdfe27ac4bc1bed56d68dcdedc85351e3b3b1d3736297a23c8b47edbbbf93a8
+walk_master_2x2_v1_keyed.png 687408 8e1ca67fc19bbd9e78836a7a1be2d3d5c6f5f30c4221b004703b5bc15cdc53be
+raw_corners [(20, 240, 19), (22, 240, 16), (22, 241, 22), (22, 243, 18)]
+key_corners [(20, 240, 19, 255), (22, 240, 16, 255), (22, 241, 22, 255), (22, 243, 18, 255)]
+raw_top_colors [((6, 248, 8), 136009), ((6, 248, 9), 124553), ((5, 248, 8), 94909), ((5, 248, 7), 72475), ((6, 249, 
+8), 69436), ((6, 249, 9), 46352), ((6, 248, 10), 45451), ((7, 248, 10), 38292), ((6, 248, 7), 37925), ((5, 247, 8), 
+35484)]
+alpha_extrema (0, 255) alpha_values [(0, 1292647), (255, 279869)]
+frame 1 bbox (0, 0, 457, 503) size (457, 503) opaque 73851 green_dominant 3816 bright_green 1280
+frame 2 bbox (823, 0, 1254, 503) size (431, 503) opaque 64318 green_dominant 2753 bright_green 856
+frame 3 bbox (0, 723, 452, 1254) size (452, 531) opaque 72801 green_dominant 3550 bright_green 1250
+frame 4 bbox (834, 723, 1254, 1254) size (420, 531) opaque 68899 green_dominant 3268 bright_green 1192
+<stdin>:16: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+<stdin>:18: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+<stdin>:28: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+<stdin>:31: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+
+codex
+The raw file is an exact byte-for-byte copy of the generator output at 1254├ù1254. The first chroma pass exposed a 
+serious background defect: the generated green is not flat `#00ff00`ΓÇöit varies enough that the default auto-key 
+leaves opaque green corner pixels and a visible green rim. IΓÇÖm checking the helperΓÇÖs documented defaults before 
+deciding whether an allowed auto-sampling mode can produce the cleanest mandated keyed file without altering or 
+resizing the raw master.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -LiteralPath 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py' -Raw" in 
+C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\walk\e
+ succeeded in 1001ms:
+#!/usr/bin/env python3
+"""Remove a solid chroma-key background from an image.
+
+This helper supports the imagegen skill's built-in-first transparent workflow:
+generate an image on a flat key color, then convert that key color to alpha.
+"""
+
+from __future__ import annotations
+
+import argparse
+from io import BytesIO
+from pathlib import Path
+import re
+from statistics import median
+import sys
+from typing import Tuple
+
+
+Color = Tuple[int, int, int]
+KEY_DOMINANCE_THRESHOLD = 16.0
+ALPHA_NOISE_FLOOR = 8
+
+
+def _die(message: str, code: int = 1) -> None:
+    print(f"Error: {message}", file=sys.stderr)
+    raise SystemExit(code)
+
+
+def _dependency_hint(package: str) -> str:
+    return (
+        "Activate the repo-selected environment first, then install it with "
+        f"`uv pip install {package}`. If this repo uses a local virtualenv, start with "
+        "`source .venv/bin/activate`; otherwise use this repo's configured shared fallback "
+        "environment."
+    )
+
+
+def _load_pillow():
+    try:
+        from PIL import Image, ImageFilter
+    except ImportError:
+        _die(f"Pillow is required for chroma-key removal. {_dependency_hint('pillow')}")
+    return Image, ImageFilter
+
+
+def _parse_key_color(raw: str) -> Color:
+    value = raw.strip()
+    match = re.fullmatch(r"#?([0-9a-fA-F]{6})", value)
+    if not match:
+        _die("key color must be a hex RGB value like #00ff00.")
+    hex_value = match.group(1)
+    return (
+        int(hex_value[0:2], 16),
+        int(hex_value[2:4], 16),
+        int(hex_value[4:6], 16),
+    )
+
+
+def _validate_args(args: argparse.Namespace) -> None:
+    if args.tolerance < 0 or args.tolerance > 255:
+        _die("--tolerance must be between 0 and 255.")
+    if args.transparent_threshold < 0 or args.transparent_threshold > 255:
+        _die("--transparent-threshold must be between 0 and 255.")
+    if args.opaque_threshold < 0 or args.opaque_threshold > 255:
+        _die("--opaque-threshold must be between 0 and 255.")
+    if args.soft_matte and args.transparent_threshold >= args.opaque_threshold:
+        _die("--transparent-threshold must be lower than --opaque-threshold.")
+    if args.edge_feather < 0 or args.edge_feather > 64:
+        _die("--edge-feather must be between 0 and 64.")
+    if args.edge_contract < 0 or args.edge_contract > 16:
+        _die("--edge-contract must be between 0 and 16.")
+
+    src = Path(args.input)
+    if not src.exists():
+        _die(f"Input image not found: {src}")
+
+    out = Path(args.out)
+    if out.exists() and not args.force:
+        _die(f"Output already exists: {out} (use --force to overwrite)")
+
+    if out.suffix.lower() not in {".png", ".webp"}:
+        _die("--out must end in .png or .webp so the alpha channel is preserved.")
+
+
+def _channel_distance(a: Color, b: Color) -> int:
+    return max(abs(a[0] - b[0]), abs(a[1] - b[1]), abs(a[2] - b[2]))
+
+
+def _clamp_channel(value: float) -> int:
+    return max(0, min(255, int(round(value))))
+
+
+def _smoothstep(value: float) -> float:
+    value = max(0.0, min(1.0, value))
+    return value * value * (3.0 - 2.0 * value)
+
+
+def _soft_alpha(distance: int, transparent_threshold: float, opaque_threshold: float) -> int:
+    if distance <= transparent_threshold:
+        return 0
+    if distance >= opaque_threshold:
+        return 255
+    ratio = (float(distance) - transparent_threshold) / (
+        opaque_threshold - transparent_threshold
+    )
+    return _clamp_channel(255.0 * _smoothstep(ratio))
+
+
+def _dominance_alpha(rgb: Color, key: Color) -> int:
+    spill_channels = _spill_channels(key)
+    if not spill_channels:
+        return 255
+
+    channels = [float(value) for value in rgb]
+    non_spill = [idx for idx in range(3) if idx not in spill_channels]
+    key_strength = (
+        min(channels[idx] for idx in spill_channels)
+        if len(spill_channels) > 1
+        else channels[spill_channels[0]]
+    )
+    non_key_strength = max((channels[idx] for idx in non_spill), default=0.0)
+    dominance = key_strength - non_key_strength
+    if dominance <= 0:
+        return 255
+
+    denominator = max(1.0, float(max(key)) - non_key_strength)
+    alpha = 1.0 - min(1.0, dominance / denominator)
+    return _clamp_channel(alpha * 255.0)
+
+
+def _spill_channels(key: Color) -> list[int]:
+    key_max = max(key)
+    if key_max < 128:
+        return []
+    return [idx for idx, value in enumerate(key) if value >= key_max - 16 and value >= 128]
+
+
+def _key_channel_dominance(rgb: Color, key: Color) -> float:
+    spill_channels = _spill_channels(key)
+    if not spill_channels:
+        return 0.0
+
+    channels = [float(value) for value in rgb]
+    non_spill = [idx for idx in range(3) if idx not in spill_channels]
+    key_strength = (
+        min(channels[idx] for idx in spill_channels)
+        if len(spill_channels) > 1
+        else channels[spill_channels[0]]
+    )
+    non_key_strength = max((channels[idx] for idx in non_spill), default=0.0)
+    return key_strength - non_key_strength
+
+
+def _looks_key_colored(rgb: Color, key: Color, distance: int) -> bool:
+    if distance <= 32:
+        return True
+
+    spill_channels = _spill_channels(key)
+    if not spill_channels:
+        return True
+
+    return _key_channel_dominance(rgb, key) >= KEY_DOMINANCE_THRESHOLD
+
+
+def _cleanup_spill(rgb: Color, key: Color, alpha: int = 255) -> Color:
+    if alpha >= 252:
+        return rgb
+
+    spill_channels = _spill_channels(key)
+    if not spill_channels:
+        return rgb
+
+    channels = [float(value) for value in rgb]
+    non_spill = [idx for idx in range(3) if idx not in spill_channels]
+    if non_spill:
+        anchor = max(channels[idx] for idx in non_spill)
+        cap = max(0.0, anchor - 1.0)
+        for idx in spill_channels:
+            if channels[idx] > cap:
+                channels[idx] = cap
+
+    return (
+        _clamp_channel(channels[0]),
+        _clamp_channel(channels[1]),
+        _clamp_channel(channels[2]),
+    )
+
+
+def _apply_alpha_to_image(
+    image,
+    *,
+    key: Color,
+    tolerance: int,
+    spill_cleanup: bool,
+    soft_matte: bool,
+    transparent_threshold: float,
+    opaque_threshold: float,
+) -> int:
+    pixels = image.load()
+    width, height = image.size
+    transparent = 0
+
+    for y in range(height):
+        for x in range(width):
+            red, green, blue, alpha = pixels[x, y]
+            rgb = (red, green, blue)
+            distance = _channel_distance(rgb, key)
+            key_like = _looks_key_colored(rgb, key, distance)
+            output_alpha = (
+                min(
+                    _soft_alpha(distance, transparent_threshold, opaque_threshold),
+                    _dominance_alpha(rgb, key),
+                )
+                if soft_matte and key_like
+                else (0 if distance <= tolerance else 255)
+            )
+            output_alpha = int(round(output_alpha * (alpha / 255.0)))
+            if 0 < output_alpha <= ALPHA_NOISE_FLOOR:
+                output_alpha = 0
+
+            if output_alpha == 0:
+                pixels[x, y] = (0, 0, 0, 0)
+                transparent += 1
+                continue
+
+            if spill_cleanup and key_like:
+                red, green, blue = _cleanup_spill(rgb, key, output_alpha)
+            pixels[x, y] = (red, green, blue, output_alpha)
+
+    return transparent
+
+
+def _contract_alpha(image, pixels: int):
+    if pixels == 0:
+        return image
+
+    _, ImageFilter = _load_pillow()
+    alpha = image.getchannel("A")
+    for _ in range(pixels):
+        alpha = alpha.filter(ImageFilter.MinFilter(3))
+    image.putalpha(alpha)
+    return image
+
+
+def _apply_edge_feather(image, radius: float):
+    if radius == 0:
+        return image
+
+    _, ImageFilter = _load_pillow()
+    alpha = image.getchannel("A")
+    alpha = alpha.filter(ImageFilter.GaussianBlur(radius=radius))
+    image.putalpha(alpha)
+    return image
+
+
+def _encode_image(image, output_format: str) -> bytes:
+    out = BytesIO()
+    image.save(out, format=output_format.upper())
+    return out.getvalue()
+
+
+def _alpha_counts(image) -> tuple[int, int, int]:
+    pixels = image.load()
+    width, height = image.size
+    total = 0
+    transparent = 0
+    partial = 0
+
+    for y in range(height):
+        for x in range(width):
+            alpha = pixels[x, y][3]
+            total += 1
+            if alpha == 0:
+                transparent += 1
+            elif alpha < 255:
+                partial += 1
+
+    return total, transparent, partial
+
+
+def _sample_border_key(image, mode: str) -> Color:
+    width, height = image.size
+    pixels = image.load()
+    samples: list[Color] = []
+
+    if mode == "corners":
+        patch = max(1, min(width, height, 12))
+        boxes = [
+            (0, 0, patch, patch),
+            (width - patch, 0, width, patch),
+            (0, height - patch, patch, height),
+            (width - patch, height - patch, width, height),
+        ]
+        for left, top, right, bottom in boxes:
+            for y in range(top, bottom):
+                for x in range(left, right):
+                    red, green, blue = pixels[x, y][:3]
+                    samples.append((red, green, blue))
+    else:
+        band = max(1, min(width, height, 6))
+        step = max(1, min(width, height) // 256)
+        for x in range(0, width, step):
+            for y in range(band):
+                red, green, blue = pixels[x, y][:3]
+                samples.append((red, green, blue))
+                red, green, blue = pixels[x, height - 1 - y][:3]
+                samples.append((red, green, blue))
+        for y in range(0, height, step):
+            for x in range(band):
+                red, green, blue = pixels[x, y][:3]
+                samples.append((red, green, blue))
+                red, green, blue = pixels[width - 1 - x, y][:3]
+                samples.append((red, green, blue))
+
+    if not samples:
+        _die("Could not sample background key color from image border.")
+
+    return (
+        int(round(median(sample[0] for sample in samples))),
+        int(round(median(sample[1] for sample in samples))),
+        int(round(median(sample[2] for sample in samples))),
+    )
+
+
+def _remove_chroma_key(args: argparse.Namespace) -> None:
+    Image, _ = _load_pillow()
+    src = Path(args.input)
+    out = Path(args.out)
+
+    with Image.open(src) as image:
+        rgba = image.convert("RGBA")
+    key = (
+        _sample_border_key(rgba, args.auto_key)
+        if args.auto_key != "none"
+        else _parse_key_color(args.key_color)
+    )
+
+    transparent = _apply_alpha_to_image(
+        rgba,
+        key=key,
+        tolerance=args.tolerance,
+        spill_cleanup=args.spill_cleanup,
+        soft_matte=args.soft_matte,
+        transparent_threshold=args.transparent_threshold,
+        opaque_threshold=args.opaque_threshold,
+    )
+    rgba = _contract_alpha(rgba, args.edge_contract)
+    rgba = _apply_edge_feather(rgba, args.edge_feather)
+
+    total, transparent_after, partial_after = _alpha_counts(rgba)
+
+    out.parent.mkdir(parents=True, exist_ok=True)
+    output_format = "PNG" if out.suffix.lower() == ".png" else "WEBP"
+    out.write_bytes(_encode_image(rgba, output_format))
+
+    print(f"Wrote {out}")
+    print(f"Key color: #{key[0]:02x}{key[1]:02x}{key[2]:02x}")
+    print(f"Transparent pixels: {transparent_after}/{total}")
+    print(f"Partially transparent pixels: {partial_after}/{total}")
+    if transparent == 0:
+        print("Warning: no pixels matched the key color before feathering.", file=sys.stderr)
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Remove a solid chroma-key background and write an image with alpha."
+    )
+    parser.add_argument("--input", required=True, help="Input image path.")
+    parser.add_argument("--out", required=True, help="Output .png or .webp path.")
+    parser.add_argument(
+        "--key-color",
+        default="#00ff00",
+        help="Hex RGB key color to remove, for example #00ff00.",
+    )
+    parser.add_argument(
+        "--tolerance",
+        type=int,
+        default=12,
+        help="Hard-key per-channel tolerance for matching the key color, 0-255.",
+    )
+    parser.add_argument(
+        "--auto-key",
+        choices=["none", "corners", "border"],
+        default="none",
+        help="Sample the key color from image corners or border instead of --key-color.",
+    )
+    parser.add_argument(
+        "--soft-matte",
+        action="store_true",
+        help="Use a smooth alpha ramp between transparent and opaque thresholds.",
+    )
+    parser.add_argument(
+        "--transparent-threshold",
+        type=float,
+        default=12.0,
+        help="Soft-matte distance at or below which pixels become fully transparent.",
+    )
+    parser.add_argument(
+        "--opaque-threshold",
+        type=float,
+        default=96.0,
+        help="Soft-matte distance at or above which pixels become fully opaque.",
+    )
+    parser.add_argument(
+        "--edge-feather",
+        type=float,
+        default=0.0,
+        help="Optional alpha blur radius for softened edges, 0-64.",
+    )
+    parser.add_argument(
+        "--edge-contract",
+        type=int,
+        default=0,
+        help="Shrink the visible alpha matte by this many pixels before feathering.",
+    )
+    parser.add_argument(
+        "--spill-cleanup",
+        dest="spill_cleanup",
+        action="store_true",
+        help="Reduce obvious key-color spill on opaque pixels.",
+    )
+    parser.add_argument(
+        "--despill",
+        dest="spill_cleanup",
+        action="store_true",
+        help="Alias for --spill-cleanup; decontaminate key-color edge spill.",
+    )
+    parser.add_argument("--force", action="store_true", help="Overwrite an existing output file.")
+    return parser
+
+
+def main() -> None:
+    parser = _build_parser()
+    args = parser.parse_args()
+    _validate_args(args)
+    _remove_chroma_key(args)
+
+
+if __name__ == "__main__":
+    main()
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py' --input 
+'.\\walk_master_2x2_v1.png' --out '.\\walk_master_2x2_v1_keyed.png' --auto-key border --soft-matte --despill --force" 
+in C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\walk\e
+ succeeded in 14457ms:
+Wrote walk_master_2x2_v1_keyed.png
+Key color: #05f807
+Transparent pixels: 1295115/1572516
+Partially transparent pixels: 11482/1572516
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "@'
+from PIL import Image
+from pathlib import Path
+from collections import Counter
+p=Path('walk_master_2x2_v1_keyed.png')
+im=Image.open(p).convert('RGBA')
+print('size_mode',im.size,im.mode,'bytes',p.stat().st_size)
+a=im.getchannel('A')
+counts=Counter(a.getdata())
+print('alpha_zero',counts[0],'alpha_partial',sum(v for k,v in counts.items() if 0<k<255),'alpha_opaque',counts[255])
+w,h=im.size
+quads=[(0,0,w//2,h//2),(w//2,0,w,h//2),(0,h//2,w//2,h),(w//2,h//2,w,h)]
+for i,(x0,y0,x1,y1) in enumerate(quads,1):
+ c=im.crop((x0,y0,x1,y1)); aa=c.getchannel('A'); bb=aa.getbbox()
+ absbb=(bb[0]+x0,bb[1]+y0,bb[2]+x0,bb[3]+y0)
+ relbb=(bb[0],bb[1],bb[2],bb[3])
+ visible=[px for px in c.getdata() if px[3]>0]
+ green=sum(1 for r,g,b,al in visible if g>max(r,b)+20)
+ bright=sum(1 for r,g,b,al in visible if g>200 and r<80 and b<80)
+ print('frame',i,'abs_bbox',absbb,'rel_bbox',relbb,'size',(bb[2]-bb[0],bb[3]-bb[1]),'green_dominant',green,'bright_gree
+n',bright)
+'@ | python -" in C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\walk\e
+ succeeded in 3552ms:
+size_mode (1254, 1254) RGBA bytes 687864
+alpha_zero 1295115 alpha_partial 11482 alpha_opaque 265919
+frame 1 abs_bbox (139, 87, 457, 503) rel_bbox (139, 87, 457, 503) size (318, 416) green_dominant 0 bright_green 0
+frame 2 abs_bbox (826, 87, 1101, 503) rel_bbox (199, 87, 474, 503) size (275, 416) green_dominant 0 bright_green 0
+frame 3 abs_bbox (113, 723, 452, 1144) rel_bbox (113, 96, 452, 517) size (339, 421) green_dominant 0 bright_green 0
+frame 4 abs_bbox (834, 723, 1110, 1144) rel_bbox (207, 96, 483, 517) size (276, 421) green_dominant 0 bright_green 0
+<stdin>:8: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+<stdin>:16: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+
+codex
+The second pass still uses the required auto-key and despill, with the helperΓÇÖs soft matte enabled so despill 
+actually affects edge pixels. It removed the corner artifacts and all measurable green-dominant visible pixels; the 
+keyed result remains 1254├ù1254 RGBA. Final QA confirms four distinct silhouettes overall, but frames 1 and 3 do not 
+alternate the leading leg as required, and the view is three-quarter-right rather than a strict right profile.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Item -LiteralPath 
+'.\\walk_master_2x2_v1.png','.\\walk_master_2x2_v1_keyed.png' | Select-Object Name,Length,LastWriteTime" in 
+C:\Users\asali\Projects\MMO\art_src\boss_qa_fix_2026-08-18\nullwarden\walk\e
+ succeeded in 1417ms:
+
+Name                          Length LastWriteTime       
+----                          ------ -------------       
+walk_master_2x2_v1.png       1395968 8/18/2026 7:39:24 PM
+walk_master_2x2_v1_keyed.png  687864 8/18/2026 7:41:34 PM
+
+
+
+codex
+Generated exactly one sheet with built-in ImageGen.
+
+- Raw: [walk_master_2x2_v1.png](C:/Users/asali/Projects/MMO/art_src/boss_qa_fix_2026-08-18/nullwarden/walk/e/walk_maste
+r_2x2_v1.png) ΓÇö **1254├ù1254 RGB**, unresized.
+- Keyed: [walk_master_2x2_v1_keyed.png](C:/Users/asali/Projects/MMO/art_src/boss_qa_fix_2026-08-18/nullwarden/walk/e/wa
+lk_master_2x2_v1_keyed.png) ΓÇö **1254├ù1254 RGBA**, auto-keyed with despill.
+
+Pose QA:
+
+- Frame 1: clear wide contact pose.
+- Frame 2: visibly different compact passing pose.
+- Frame 3: visibly different drawing, but repeats frame 1ΓÇÖs leading-foot arrangement instead of showing the 
+opposite-foot contact.
+- Frame 4: distinct passing pose, but the lifted knee is too high for the requested grounded walk.
+
+Blunt defects:
+
+- Not a valid alternating two-step cycle: frames 1 and 3 fail the critical opposite-leg requirement.
+- All frames face right, but they are three-quarter viewsΓÇönot strict right-side profiles.
+- Character is recognizable, but narrower and less colossal than the reference; fists and shoulder silhouette are 
+reduced/off-model.
+- Bottom frames drift roughly 9 px downward and are about 5 px taller. Frame 3 also shifts approximately 16 px left.
+- Raw background is not uniform `#00ff00`; sampled key was `#05f807`, with visible color variation. The soft-matte 
+keyed result removed the background and left no measurable green-dominant visible pixels.
+- No weapons, effects, shadows, separators, extra heads, or extra limbs were produced.
+
+Final prompt followed the supplied brief, resolving its orientation contradiction in favor of the repeated explicit 
+right-profile requirement.
+tokens used
+57,440
+Generated exactly one sheet with built-in ImageGen.
+
+- Raw: [walk_master_2x2_v1.png](C:/Users/asali/Projects/MMO/art_src/boss_qa_fix_2026-08-18/nullwarden/walk/e/walk_master_2x2_v1.png) ΓÇö **1254├ù1254 RGB**, unresized.
+- Keyed: [walk_master_2x2_v1_keyed.png](C:/Users/asali/Projects/MMO/art_src/boss_qa_fix_2026-08-18/nullwarden/walk/e/walk_master_2x2_v1_keyed.png) ΓÇö **1254├ù1254 RGBA**, auto-keyed with despill.
+
+Pose QA:
+
+- Frame 1: clear wide contact pose.
+- Frame 2: visibly different compact passing pose.
+- Frame 3: visibly different drawing, but repeats frame 1ΓÇÖs leading-foot arrangement instead of showing the opposite-foot contact.
+- Frame 4: distinct passing pose, but the lifted knee is too high for the requested grounded walk.
+
+Blunt defects:
+
+- Not a valid alternating two-step cycle: frames 1 and 3 fail the critical opposite-leg requirement.
+- All frames face right, but they are three-quarter viewsΓÇönot strict right-side profiles.
+- Character is recognizable, but narrower and less colossal than the reference; fists and shoulder silhouette are reduced/off-model.
+- Bottom frames drift roughly 9 px downward and are about 5 px taller. Frame 3 also shifts approximately 16 px left.
+- Raw background is not uniform `#00ff00`; sampled key was `#05f807`, with visible color variation. The soft-matte keyed result removed the background and left no measurable green-dominant visible pixels.
+- No weapons, effects, shadows, separators, extra heads, or extra limbs were produced.
+
+Final prompt followed the supplied brief, resolving its orientation contradiction in favor of the repeated explicit right-profile requirement.

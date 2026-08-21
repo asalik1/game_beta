@@ -27,9 +27,9 @@ BOSSES = {
     "vargoth": ("vargoth", "an armored hollow king in dark plate and a tattered dark cape, a horned crowned helm, wielding a large flaming greatsword in both hands", "humanoid"),
     "stormwarden": ("korrag", "a huge broken storm-giant in battered plate with curved horns, crackling with blue lightning, a long heavy chain-whip in one hand", "humanoid"),
     "choirmother": ("choirmother", "a tall hooded figure in a deep blue and gold layered choir robe, face lost in the hood, hands in wide draping sleeves", "humanoid"),
-    "nullwarden": ("nullwarden", "a colossal faceless sentinel in heavy dark plate armor, cold blue null-light glowing in the armor seams, holding a massive greatsword", "humanoid"),
+    "nullwarden": ("nullwarden", "a colossal horned sentinel-brute in heavy dark plate armor with cold blue null-light glowing in the armor seams and eyes, an UNARMED bruiser with huge oversized armored gauntleted fists and no weapon of any kind — it fights with its fists and channels null-magic from its hands", "humanoid"),
     "sexton": ("sexton", "a gaunt cloaked gravedigger with a bare skull face under a wide black brimmed hat, a long curved scythe in one hand and a glowing green lantern in the other", "humanoid"),
-    "vess": ("vess", "a tattered grey widow in a torn mourning veil and ragged gown, a gaunt pale sorrowful face, thin arms spread", "humanoid"),
+    "vess": ("vess", "a tattered grey widow in a ragged gown and a thin torn mourning veil pushed back off her face, her gaunt pale sorrowful face CLEARLY VISIBLE and lit (hollow dark eyes, open mourning mouth) — the veil/hood frames the face but never drops it into shadow or hides it, thin arms spread", "humanoid"),
     "saint_varo": ("saint_varo", "a skeletal crowned saint seated and fused into an ornate gold reliquary throne, purple and gold vestments, the lower body part of the throne", "seated"),
     "forgemistress": ("forgemistress", "a dark sorceress-queen in a black and red gown with a crown of live orange flame, braziers of fire flanking her", "humanoid"),
     "ashpriest": ("ashpriest", "a robed molten high priest in a horned iron helm and dark layered robes edged with glowing fire, holding a heavy censer-mace", "humanoid"),
@@ -65,12 +65,28 @@ WALK = ("left-foot CONTACT: the near (left) leg reaches forward and plants heel-
         "PASSING (right leg): the right leg swings forward UNDER the body past the left, knees close together, the body at its highest point of the step, weight over the planted left foot",
         "right-foot CONTACT: the far (right) leg now reaches forward and plants in the travel direction, the left leg trailing back — the clear MIRROR of frame 1, opposite legs leading, body at mid height",
         "PASSING (left leg): the left leg swings forward under the body past the right, knees close, body at its highest again, weight over the planted right foot — flowing back into frame 1",
-        "This is ONE continuous two-step walk cycle, not four standing poses. The legs must VISIBLY ALTERNATE — frame 1 and frame 3 are opposite (left leads vs right leads). Ordinary grounded travel: low knee lift, a small vertical body bob, feet that PLANT and push (never sliding or hovering). NO march, parade step, high-knee, or run. Keep the head, torso, gear and weapon continuous; the whole body TRAVELS in the facing direction across the loop but stays centred in each cell (the game moves it).")
+        "This is ONE continuous two-step walk cycle, not four standing poses. LEGS ARE THE POINT: the boots must be in a VISIBLY DIFFERENT position in every frame — frame 1 has one foot planted well forward and the other back, frame 3 is the clear OPPOSITE (the other foot forward). A viewer flipping between the four frames must instantly read a striding walk, NOT a standing figure with only the cape moving. Ordinary grounded travel: low knee lift, a small vertical body bob, feet that PLANT and push (never sliding, hovering, or marching high). Any cape or robe hangs BEHIND the legs and must NOT cover them — both boots stay visible so the stride reads. WEAPON-HAND LOCK (the ONLY thing held still): any large held weapon (sword, axe, scythe, staff, mace) stays gripped in the SAME hand, at the SAME angle, on the SAME side of the body in all four frames — it never swings, sweeps, flips, crosses the body, or changes hands. Everything ELSE — legs, hips, shoulders, cape, hanging cloth — moves freely and strongly with the stride. If Image 1 holds the weapon low on one side, keep it low on that same side every frame; the game moves the whole body, so keep it centred in each cell.")
 WALK_GLIDE = ("neutral glide: the robe/body drifts in the travel direction, hem and cloth trailing slightly back, a gentle downward settle",
               "rise: the body lifts a few pixels (a slow hovering bob up), robe folds lifting, cloth streaming back from the travel direction",
               "neutral glide: back to mid height, hem and sleeves sweeping with the drift, a small opposite cloth sway",
               "settle: the body eases back down, cloth settling, flowing back into frame 1",
               "This body GLIDES/hovers — it has no visible walking legs. Communicate travel ONLY through cloth flutter, hem drift, sleeve sway and a slow vertical bob, all trailing back from the travel direction. Show NO stepping legs, NO feet, NO stride. Keep the head, torso and gear continuous and centred in each cell.")
+
+# --- 8-FRAME walk (owner 2026-08-18): the 2x2 4-frame walk makes ImageGen draw
+# a near-static standing pose with NON-alternating legs (CLAUDE.md: the proven
+# fix is ONE ROW of EIGHT gait-labelled figures). For LEG-walkers only; robed
+# gliders keep the 2x2 WALK_GLIDE. Eight phases = two full steps, each leg
+# leading once, with the passing frames raised and the contacts lowered. ---
+WALK8 = (
+    "LEFT-foot contact: the near (left) foot plants heel-first well forward in the travel direction, the right leg extended back on its toe, stride at its WIDEST split, body at mid height",
+    "LEFT load / push: weight rolls fully onto the flat left foot, body at its LOWEST, the right foot peeling off the ground behind, knees still apart",
+    "right leg PASSING: the right leg swings forward UNDER the body past the left, the two legs cross close together, body at its HIGHEST (the up-bob)",
+    "right reach: the right foot swings out ahead and lowers toward the ground, left leg now trailing behind, body dropping from high toward mid — about to plant",
+    "RIGHT-foot contact: the right foot plants heel-first well forward (the clear MIRROR of frame 1 — OPPOSITE leg leading now), left leg extended back on its toe, widest split, body at mid height",
+    "RIGHT load / push: weight rolls fully onto the flat right foot, body at its LOWEST again, the left foot peeling off the ground behind",
+    "left leg PASSING: the left leg swings forward under the body past the right, legs cross close, body at its HIGHEST (the up-bob)",
+    "left reach: the left foot swings out ahead and lowers toward the ground, right leg trailing, body dropping toward mid — flowing straight back into frame 1",
+    "This is ONE continuous TWO-STEP walk cycle read left to right, NOT eight standing poses and NOT a march. The legs MUST VISIBLY ALTERNATE: frames 1-4 lead with the LEFT foot, frames 5-8 lead with the RIGHT foot; frame 1 and frame 5 are mirror opposites; the passing frames (3 and 7) are the only ones with the legs crossed close together and the body bobbed up; the contact frames (1 and 5) have the WIDEST leg split. Low knee lift, ordinary grounded travel, feet that PLANT and push (never sliding, hovering, or marching high). The head/pelvis stay on ONE horizontal band and every figure shares ONE ground line — only the legs (and cape/cloth) move, the body just bobs a few pixels between the low contacts and the high passes. WEAPON-HAND LOCK (critical): any large held weapon stays gripped in the SAME hand, at the SAME angle, on the SAME side of the body in ALL EIGHT frames — it never swings, sweeps, flips, crosses the body, or changes hands; if Image 1 holds it low on one side, keep it low on that same side every frame. In your final message, REPORT which foot leads in each of the 8 frames so the alternation can be verified.")
 
 # The one rule that fixes the "literal bolt" note — appended to every directional brief.
 NO_PROJECTILE = ("PROJECTILE RULE (critical, overrides any effect mentioned in the storyboard): the "
@@ -242,6 +258,34 @@ VERB = {
               "A mitosis-style split into echoes; the head/core stays centred as the anchor; wings may spread wide but stay inside the cell."),
 }
 
+# Per-kind note appended to EVERY clip's brief — a design correction that must
+# reinforce across all clips even while the installed reference image still
+# shows the OLD design. nullwarden's installed idle still shows a floating
+# greatsword; every regen must DELETE it (owner 2026-08-18: fists + magic, no sword).
+EXTRA_NOTE = {
+    "nullwarden": ("SWORD REMOVAL (critical, overrides the reference image): the attached "
+        "reference still shows a large sword floating vertically over/through the body from a "
+        "previous version — that weapon is OBSOLETE and must be COMPLETELY DELETED. Draw NO "
+        "sword, NO blade, NO hilt, NO weapon anywhere in any cell — not floating, not held, not "
+        "sheathed. This sentinel is UNARMED: huge empty armored gauntlet fists at the ends of its "
+        "arms. Any magic it uses is cold blue null-light channelled straight from its open "
+        "hands/fists, never from a weapon."),
+}
+
+# Per-(kind, clip) full storyboard override, for a clip whose shared VERB entry
+# is wrong for THIS boss. saint_varo (the SEATED throne form) has NO sword — its
+# 'blade' cast must be an EMPTY-HAND gesture that conjures the blades the game
+# spawns, not a held greatsword (owner 2026-08-18: only the awakened STANDING
+# form wields a sword; the seated saint gestures).
+CLIP_OVERRIDE = {
+    ("saint_varo", "blade"): (
+        "wind-up: the seated saint raises one open skeletal hand in front of the chest, palm up, a faint point of pale gold-and-purple holy light kindling above the palm — NO weapon in hand",
+        "gather: both open hands rise and frame a growing point of holy light above the upturned palms, fingers spread, the throne and lower body unmoving",
+        "CALL: both open hands thrust upward and outward in a commanding conjuring gesture, a bright compact flare of holy light bursting from the EMPTY hands and upward, staying above the hands and not touching the top edge — hands empty, no sword, no hilt",
+        "recover: the hands lowering back to the throne arms, the flare fading",
+        "A two-handed upward CONJURING GESTURE with EMPTY hands — the saint holds NO sword and NO weapon of any kind (the falling holy blades are spawned by the game). The saint is seated and fused to its gold reliquary throne: ONLY the upper body, head and arms move; the throne and lower body stay perfectly fixed."),
+}
+
 TEMPLATE = """You are generating ONE game sprite animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\\Users\\asali\\Projects\\MMO.
 
 Two images are attached to this prompt:
@@ -302,7 +346,9 @@ GLIDE_WALK = {"choirmother", "vess", "serane", "forgemistress", "ashpriest",
 
 def brief(kind: str, clip: str, facing: str = "s", directional: bool = False) -> str:
     sprite, ident, body = BOSSES[kind]
-    if clip == "walk":
+    if (kind, clip) in CLIP_OVERRIDE:
+        v = list(CLIP_OVERRIDE[(kind, clip)])
+    elif clip == "walk":
         v = list(WALK_GLIDE if sprite in GLIDE_WALK else WALK)
     else:
         v = list(VERB[clip])
@@ -338,8 +384,81 @@ def brief(kind: str, clip: str, facing: str = "s", directional: bool = False) ->
         f1, f2, f3, f4 = frames
     else:
         f1, f2, f3, f4, extra = v[0], v[1], v[2], v[3], v[4]
+    note = EXTRA_NOTE.get(kind, "")
+    if note:
+        extra = extra + "\n" + note
     return TEMPLATE.format(sprite=sprite, ident=face_ident, CLIP=clipname, clip=clip,
                            occ=occ, f1=f1, f2=f2, f3=f3, f4=f4, extra=extra)
+
+
+TEMPLATE8 = """You are generating ONE game sprite animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\\Users\\asali\\Projects\\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/{sprite}_idle.png : the BINDING identity, palette, pixel-art treatment AND body-scale reference — {ident}, shown front-facing. Reproduce this EXACT character, its proportions, gear, markings and palette. Do not redesign it.
+- Image 2 = refs/{sprite}_static.png : a secondary identity reference of the same character.
+
+TASK: generate exactly ONE new source sheet for its {CLIP} with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: illustration-story
+Asset type: high-resolution pixel-art WALK-CYCLE source, ONE horizontal ROW of EXACTLY EIGHT equal square frames, to be cropped into an 8-frame sprite strip. Wide landscape canvas.
+Input images: Image 1 is the binding identity, palette, pixel-art treatment and body-scale reference; Image 2 is a secondary identity reference.
+Scene/backdrop: a perfectly flat uniform #00ff00 chroma-key background filling every pixel, including the gutters between frames. No scenery, floor plane, ground line drawn, puddle, platform, cast shadow, contact shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly EIGHT separate equal square frames in ONE straight horizontal row, reading left to right as frames 1 through 8. All eight are the SAME character at identical scale and framing; no frame overlaps another; no drawn separators; leave a broad band of flat green between each pair of frames.
+Subject: {ident}, the exact same character as Image 1 in every frame — same body, gear, proportions and palette.
+Style/medium: crisp high-resolution dark-fantasy pixel art with hard readable pixel clusters and a controlled palette, matching Image 1; not painterly, not 3D, not anime.
+Composition/framing and ANCHOR RULE: the character is centred in each square frame, its standing body about {occ}% of the frame height, with generous green margin all around. Its head/crown stays on ONE horizontal line and its feet share ONE ground line across all eight frames; the whole figure does NOT slide sideways and the camera never moves. Only the legs (and cape/hanging cloth) move; the torso just bobs a few pixels.
+{FACE}
+{CLIP} storyboard — eight frames of ONE continuous two-step walk, left to right:
+ frame 1 {f1}
+ frame 2 {f2}
+ frame 3 {f3}
+ frame 4 {f4}
+ frame 5 {f5}
+ frame 6 {f6}
+ frame 7 {f7}
+ frame 8 {f8}
+{tail}
+{lock}
+Constraints: output only the eight frames on green; no text, watermark, UI, extra characters, scenery, floor artifact, shadow, frame numbers, or separators. Do not use #00ff00 or any bright/pure green anywhere on the character. Keep the character identical to Image 1 in all eight frames — same silhouette, gear and palette.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./walk8_master_1x8_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./walk8_master_1x8_v1_keyed.png (auto-key sampling, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels, WHICH FOOT LEADS in each of the 8 frames (to verify left/right alternation), and any deviation you noticed (identity drift, non-alternating or marching legs, the body sliding/resizing between frames, weapon swinging or changing hands, an effect touching an edge, extra limbs, wrong facing). Be blunt about defects.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.
+"""
+
+
+def brief8(kind: str, facing: str = "s") -> str:
+    """8-frame single-row WALK brief for a LEG-walker (Vargoth, Nullwarden).
+    The 2x2 walk gives non-alternating legs; this uses the CLAUDE.md-proven
+    one-row-of-eight gait-labelled format."""
+    sprite, ident, body = BOSSES[kind]
+    occ = 64 if facing == "e" else 66
+    lock = (f"IDENTITY LOCK (critical): the character is EXACTLY {ident}. In every frame it must be "
+            f"THAT specific character with THAT silhouette, gear and palette — do NOT substitute a "
+            f"generic armored knight/swordsman or robed mage. If Image 1 has no sword, draw no sword.")
+    face = {
+        "s": "FACING: all eight frames show the character in the SAME front view as Image 1 (we see its face/front); it walks toward the BOTTOM of the frame (toward the viewer).",
+        "n": "FACING (BACK VIEW — all eight frames): the character has turned 180 degrees and faces directly AWAY; we see ONLY its back (back of head/helm/hood/horns/crown, shoulders, spine, cape, heels) — the FACE IS NOT VISIBLE in any frame. Same character, gear and palette as Image 1, rotated so its front points up into the screen; it walks toward the TOP of the frame.",
+        "e": "FACING (RIGHT PROFILE — all eight frames): the character is in full RIGHT-SIDE profile, turned to face the RIGHT edge; same character, gear and palette as Image 1, rotated 90 degrees to face right; it walks toward the RIGHT edge. A side profile is the CLEAREST view of the alternating leg stride — make the near and far legs unmistakably different each frame.",
+    }[facing]
+    tail = ("Draw NO weapons swinging, NO spell effects, NO projectiles, NO motion blur — only the "
+            "character's locomotion. The background stays pure flat green.")
+    note = EXTRA_NOTE.get(kind, "")
+    if note:
+        tail = tail + "\n" + note
+    v = WALK8
+    return TEMPLATE8.format(
+        sprite=sprite, ident=ident, occ=occ,
+        CLIP="8-FRAME WALK cycle" + {"s": " (FRONT view)", "n": " (BACK view)", "e": " (RIGHT PROFILE view)"}[facing],
+        FACE=face, tail=tail + "\n" + v[8], lock=lock,
+        f1=v[0], f2=v[1], f3=v[2], f4=v[3], f5=v[4], f6=v[5], f7=v[6], f8=v[7])
+
 
 def main():
     # act1_brief_lib.py <kind> <clip> <stage> [facing s|n|e]  (facing => directional)
@@ -360,7 +479,7 @@ def main():
     else:
         shutil.copy(os.path.join(SPR, f"{sprite}_anim.png"), os.path.join(stage, "refs", f"{sprite}_static.png"))
     with open(os.path.join(stage, "codex_brief.txt"), "w", encoding="utf-8") as f:
-        f.write(brief(kind, clip, facing, directional))
+        f.write(brief8(kind, facing) if clip == "walk8" else brief(kind, clip, facing, directional))
     print(f"wrote {stage}/codex_brief.txt ({kind}/{clip}, sprite {sprite}, facing {facing}{' DIRECTIONAL' if directional else ''})")
 
 if __name__ == "__main__":

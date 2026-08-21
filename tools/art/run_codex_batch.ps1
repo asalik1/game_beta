@@ -63,9 +63,24 @@ foreach ($d in $dirs) {
   $d = $d.Trim()
   if ($d -eq "") { continue }
   if (-not (Test-Path "$d\codex_brief.txt")) { Write-Output "SKIP (no brief): $d"; continue }
+  # ABSOLUTE path: Start-Job's child runspace starts in a DIFFERENT working dir
+  # (usually the user profile), so a relative stage path silently breaks every
+  # -C/-o/Get-Content inside the job -> empty log, no result, FAIL. Resolve here.
+  $d = (Resolve-Path -LiteralPath $d).Path
   # throttle: slots + RAM gate
   while ($true) {
-    $running = @($jobs | Where-Object { $_.State -eq 'Running' }).Count
+    # watchdog: a hung job would otherwise block the serial launch loop forever
+    if ($TimeoutSec -gt 0) {
+      foreach ($j in @($jobs | Where-Object { $_.State -eq 'Running' -and $_.PSBeginTime })) {
+        if (((Get-Date) - $j.PSBeginTime).TotalSeconds -gt $TimeoutSec) {
+          Write-Output ("watchdog: stopping job past {0}s" -f $TimeoutSec); Stop-Job $j
+        }
+      }
+    }
+    # NotStarted counts as busy: a just-Start-Job'd job reports 'NotStarted' for a
+    # moment, so counting only 'Running' let -MaxParallel 1 launch the next job in
+    # parallel (two image gens contended + OOM-risked at 1.5GB free).
+    $running = @($jobs | Where-Object { $_.State -in @('Running','NotStarted') }).Count
     $slotOk = ($MaxParallel -le 0) -or ($running -lt $MaxParallel)
     $ramOk = $true
     if ($MinFreeGB -gt 0) { $free = Get-FreeGB; $ramOk = ($free -ge $MinFreeGB) }

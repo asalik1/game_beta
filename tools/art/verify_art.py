@@ -152,11 +152,13 @@ def _clip_of(stem: str) -> str | None:
     parts = stem.split("_")
     if parts[-1] in DIR8:
         parts = parts[:-1]
-    # Codex-regen idle strips are "<base>_anim_codex" — treat as an idle ("anim")
-    # so they're stat'd and can serve as the CLIPSCALE reference (the engine runs
-    # the boss off this strip via art.gd BOSS_IDLE_STRIP_BASE).
-    if len(parts) >= 2 and parts[-1] == "codex" and parts[-2] == "anim":
-        return "anim"
+    # "codex" is a GENERATION TAG, not a clip token: "<base>_anim_codex" is the
+    # live Codex-regen idle (art.gd BOSS_IDLE_STRIP_BASE) and
+    # "<base>_walk_codex_<dir>" the Codex directional walk (BOSS_DIRECTIONAL_WALK).
+    # Strip the tag so both are stat'd under their real clip — the idle then
+    # serves as the CLIPSCALE reference and the walks get gated at all.
+    if len(parts) >= 2 and parts[-1] == "codex":
+        parts = parts[:-1]
     if len(parts) >= 2 and (parts[-1] in BODY_GATE_CLIPS
                             or parts[-1] in ability_tokens()):
         return parts[-1]
@@ -212,7 +214,11 @@ def belongs(stem: str, base: str) -> bool:
     if not stem.startswith(base + "_"):
         return False
     ok = set(CLIPS) | set(DIR8) | ability_tokens()
-    return all(t in ok for t in stem[len(base) + 1:].split("_"))
+    # "codex" is a generation tag riding a real clip token (anim_codex /
+    # walk_codex_<dir>), not a clip itself — without dropping it here the LIVE
+    # Codex idle is excluded from the stats table and CLIPSCALE falls back to
+    # the legacy low-res <base>_anim (every new clip then reads ~4x, spurious).
+    return all(t in ok for t in stem[len(base) + 1:].split("_") if t != "codex")
 
 
 def check_import(png: Path) -> None:
