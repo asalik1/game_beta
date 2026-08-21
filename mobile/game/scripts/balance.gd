@@ -517,7 +517,7 @@ const MATERIAL_MOB_BODY := {
 	# Beasts
 	"wolf": "beast", "spider": "beast", "bat": "beast", "direbat": "beast",
 	"blightwolf": "beast", "bogspider": "beast", "duneprowler": "beast",
-	"winterfang": "beast", "storm_harrier": "beast", "kraken": "beast",
+	"winterfang": "beast", "storm_harrier": "beast",
 	# Humanoids / cultists
 	"cultist": "humanoid", "stormcult": "humanoid", "beastkin_raider": "humanoid",
 	"beastkin_howler": "humanoid", "wildkin_ranger": "humanoid", "null_acolyte": "humanoid",
@@ -527,16 +527,15 @@ const MATERIAL_MOB_BODY := {
 	"skeleton": "undead", "zombie": "undead", "sun_bleached": "undead",
 	"frost_husk": "undead", "gravewalker": "undead", "barrow_wight": "undead",
 	"vale_mourner": "undead", "casket_creeper": "undead", "bloated_dead": "undead",
-	"grave_cutter": "undead", "frozen_guard": "undead", "great_spirit": "undead",
+	"grave_cutter": "undead", "frozen_guard": "undead",
 	# Construct / elemental
 	"slag_core": "construct", "cinder_whelp": "construct", "slag_brute": "construct",
-	"flame_giant": "construct", "cyclops": "construct", "deep_stalker": "construct",
-	"tengu": "construct",
+	"deep_stalker": "construct",
 	# Plant / fungal
 	"sporeshambler": "plant", "root_shambler": "plant", "bog_lurker": "plant",
 	"grove_horror": "plant",
 	# Void / aberration
-	"void_husk": "void", "void_shade": "void", "ooze": "void",
+	"void_husk": "void", "void_shade": "void",
 }
 
 
@@ -1489,6 +1488,10 @@ const MOB_DENSITY_EXTRA := 0.15 # +15% pack size (seeded duplicate chance)
 # the hold range past aggro so an edge target doesn't flicker.
 const MOB_AGGRO_LEASH := 1.6    # seconds blind before a woken mob deaggros
 const MOB_AGGRO_KEEP := 1.5     # hold-aggro range = aggro_range * this
+# Combat readability (visual-review P1): when a whole area lights up at once,
+# one "!" alert bubble reads as danger; five read as noise. Show at most one
+# every ALERT_EMOTE_GAP seconds — the rest of the pack still aggros, silently.
+const ALERT_EMOTE_GAP := 0.6    # seconds between visible enemy "!" bubbles
 # Sticky targeting (MP phase 0, MULTIPLAYER.md §5.2): enemies/bosses
 # re-resolve their prey via game.pick_target() on this cadence — never
 # per-frame, so future packs don't oscillate between players. Solo:

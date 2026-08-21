@@ -1169,9 +1169,7 @@ const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/ch7_quests.gd"),     # (Q7) Breaking Sky side quests (after ch7_zones: overrides its convos)
 	preload("res://scripts/content/pc_extra_mobs.gd"),  # Pixel Crawler asset pass (2026-07-08): 8 extra mobs — roster/codex only, TODO placement
 	preload("res://scripts/content/pc_npc_gallery.gd"), # Pixel Crawler asset pass: placeholder NPC convos (humans wired into ch2 hub for review)
-	preload("res://scripts/content/pc_bosses.gd"),      # Ninja Adventure sweep (2026-07-08): 6 placeholder bosses — dev-only, TODO real fights
-	preload("res://scripts/content/pc_curios.gd"),      # Pixel Crawler mining (2026-07-18): placeholder quest-item curios + codex relics gallery
-	preload("res://scripts/content/rv_na_gallery.gd"),  # Raven Icons + Ninja animals (2026-07-18): placeholder alchemy/armory/supplies/provisions/critters
+	preload("res://scripts/content/pc_curios.gd"),      # Pixel Crawler mining (2026-07-18): SHIPPED codex relics & landmarks gallery (placeholder curios removed 2026-08-20)
 	preload("res://scripts/content/capital_hub.gd"),    # Crownfall (reworked 2026-07-25): standalone LIVE 9-room capital hub (3x3 grid) — reached via the Travel button + first-ch1-clear routing + dev panel; CONVOS merge here; CHAPTER resolved in chapter()
 	preload("res://scripts/content/pvp_arena.gd"),      # The Proving Grounds (PvP v1 2026-08-01): 3-room duel arena — no CONVOS/ENEMIES; CHAPTER resolved in chapter(), match flow in pvp.gd
 	preload("res://scripts/content/promises_kept.gd"),  # (P1) promises kept — overrides chN_quests convos

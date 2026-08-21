@@ -382,8 +382,8 @@ func _ready() -> void:
 	# icon overrides it if one is ever dropped in.
 	mail_btn = Button.new()
 	mail_btn.flat = true
-	var mail_tex: Texture2D = Art.ui_icon("ui_mail")  # pack art if present; else the drawn envelope
-	mail_btn.icon = mail_tex if mail_tex != null else Art.tex("mail")
+	var mail_tex: Texture2D = Art.ui_icon("ui_mail")  # painted icon (assets/icons/ui_mail.png); no procedural fallback
+	mail_btn.icon = mail_tex
 	mail_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mail_btn.tooltip_text = "Mailbox"
 	mail_btn.position = Vector2(16, HUD_ICON_Y)
@@ -492,8 +492,8 @@ func _ready() -> void:
 	# Bag = inventory, Book = codex (small procedural icons, native size).
 	inv_btn = Button.new()
 	inv_btn.flat = true
-	var bag_tex: Texture2D = Art.ui_icon("ui_bag")  # Raven pack art; procedural fallback
-	inv_btn.icon = bag_tex if bag_tex != null else Art.tex("bag")
+	var bag_tex: Texture2D = Art.ui_icon("ui_bag")  # painted icon; no procedural fallback
+	inv_btn.icon = bag_tex
 	inv_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	inv_btn.tooltip_text = "Inventory"
 	inv_btn.position = Vector2(100, HUD_ICON_Y)
@@ -504,8 +504,8 @@ func _ready() -> void:
 	add_child(inv_btn)
 	codex_btn = Button.new()
 	codex_btn.flat = true
-	var book_tex: Texture2D = Art.ui_icon("ui_book")  # Raven pack art; procedural fallback
-	codex_btn.icon = book_tex if book_tex != null else Art.tex("book")
+	var book_tex: Texture2D = Art.ui_icon("ui_book")  # painted icon; no procedural fallback
+	codex_btn.icon = book_tex
 	codex_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	codex_btn.tooltip_text = "Codex"
 	codex_btn.position = Vector2(142, HUD_ICON_Y)
@@ -520,8 +520,8 @@ func _ready() -> void:
 	# / save+quit), NOT the audio/controls sub-panel.
 	skills_btn = Button.new()
 	skills_btn.flat = true
-	var skill_tex: Texture2D = Art.ui_icon("ui_skills")  # pack art if present; else drawn nodes
-	skills_btn.icon = skill_tex if skill_tex != null else Art.tex("skills")
+	var skill_tex: Texture2D = Art.ui_icon("ui_skills")  # painted icon; no procedural fallback
+	skills_btn.icon = skill_tex
 	skills_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	skills_btn.tooltip_text = "Skill Tree"
 	skills_btn.position = Vector2(226, HUD_ICON_Y)
@@ -532,8 +532,8 @@ func _ready() -> void:
 	add_child(skills_btn)
 	settings_btn = Button.new()
 	settings_btn.flat = true
-	var gear_tex: Texture2D = Art.ui_icon("ui_settings")  # pack art if present; else drawn cog
-	settings_btn.icon = gear_tex if gear_tex != null else Art.tex("settings")
+	var gear_tex: Texture2D = Art.ui_icon("ui_settings")  # painted icon; no procedural fallback
+	settings_btn.icon = gear_tex
 	settings_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	settings_btn.tooltip_text = "Menu"
 	settings_btn.position = Vector2(268, HUD_ICON_Y)

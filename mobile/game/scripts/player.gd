@@ -285,26 +285,41 @@ func _physics_process(delta: float) -> void:
 		# line (up/down = 90°, diagonals = 45°); the bob would fight it.
 		sprite.rotation = _clip_rot
 		sprite.position.y = 0.0
+		sprite.scale.y = sprite.scale.x   # clear any residual breath squash
 	elif dir != Vector2.ZERO:
 		# Walk bob (up/down hop) removed — old artifact, no class needs it.
 		sprite.position.y = 0.0
+		sprite.scale.y = sprite.scale.x   # clear any residual breath squash
 		# Phantom (assassin mythic) additionally GLIDES — no side-to-side sway.
 		sprite.rotation = 0.0 if skin in ["phantom", "crystal_archmage"] else sin(anim_t * 11.0) * 0.06
 	else:
-		# Idle BREATH (2026-08-18, owner: "a modern game breathes"): the class
-		# idles are single frames by design (hero-anim coverage ruling), so a
-		# slow, small vertical bob carries the weight shift instead — the whole
-		# body (baked weapon included) rises and settles at ~0.75 Hz. Held only
-		# while standing and not mid-clip; a dash/aim pose or a walk resets it.
-		sprite.position.y = sin(anim_t * TAU * Balance.IDLE_BREATH_HZ) * Balance.IDLE_BREATH_PX \
-			if not _dir_pose_active and _clip_loop else 0.0
+		# Idle BREATH (2026-08-18, owner: "a modern game breathes") — reworked
+		# 2026-08-21 (owner: the whole-sprite vertical bob read as FLOATING):
+		# the body now breathes by a subtle vertical SCALE pinned at the FEET —
+		# chest/head rise ~IDLE_BREATH_PX at the same ~0.75 Hz while the boots
+		# never leave the ground line (the motion contract's "animate in
+		# place", applied to the hero). Held only while standing and not
+		# mid-clip; a dash/aim pose or a walk resets it.
+		var s0: float = sprite.scale.x
+		if not _dir_pose_active and _clip_loop and sprite.texture != null and s0 > 0.0:
+			var cell_h: float = float(sprite.texture.get_height())
+			var e: float = sin(anim_t * TAU * Balance.IDLE_BREATH_HZ) \
+				* Balance.IDLE_BREATH_PX / maxf(1.0, cell_h * s0)
+			sprite.scale.y = s0 * (1.0 + e)
+			# centered sprite: pin the BOTTOM edge (the feet line) as y grows.
+			sprite.position.y = -(cell_h / 2.0 + sprite.offset.y) * s0 * e
+		else:
+			sprite.scale.y = s0
+			sprite.position.y = 0.0
 		sprite.rotation = 0.0
 
 	# Held weapon follows the facing side, with a light idle sway.
 	if weapon_spr and weapon_spr.visible:
 		var side := look_sign
 		var rs := Balance.CHAR_RENDER_SCALE  # held-weapon offsets track the enlarged body
-		weapon_spr.position = Vector2(20.0 * rs * side, 8.0 * rs + sprite.position.y)
+		# Breath: sprite.position.y now holds the feet-pin compensation (down
+		# while the chest rises) — the held weapon rides the CHEST, so invert.
+		weapon_spr.position = Vector2(20.0 * rs * side, 8.0 * rs - sprite.position.y)
 		weapon_spr.flip_h = side < 0.0
 		if melee_swing > 0.0:
 			melee_swing = maxf(0.0, melee_swing - delta)

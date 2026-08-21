@@ -3284,6 +3284,22 @@ func idle_emote_symbol() -> String:
 
 
 ## Floating emote bubble above a character ("!", "♪", "…", "?").
+var _alert_emote_ms := 0  # throttle timestamp for the enemy "!" alert bubble
+
+
+## Throttled enemy "!" alert bubble (visual-review P1): when several enemies
+## gain sight of the player in the same instant, one "!" says "danger" and the
+## rest are visual noise stacked over the pack. Show at most one every
+## Balance.ALERT_EMOTE_GAP seconds; suppressed mobs still alert and aggro, they
+## just skip the redundant bubble.
+func alert_emote(target: Node2D) -> void:
+	var now := Time.get_ticks_msec()
+	if now - _alert_emote_ms < int(Balance.ALERT_EMOTE_GAP * 1000.0):
+		return
+	_alert_emote_ms = now
+	emote(target, "!", 0.9)
+
+
 func emote(target: Node2D, symbol: String, dur := 1.4) -> void:
 	if not is_instance_valid(target):
 		return
@@ -3391,6 +3407,12 @@ const FLOAT_LABEL_SIZE_LONG := 14   # a telegraph line ("FLASH FREEZE — FIND A
 const FLOAT_NUM_SPREAD := 16.0      # ± px sideways lean per number
 const FLOAT_NUM_RISE := 46.0
 const FLOAT_NUM_LIFE := 0.85
+# Density cap (visual-review P1): at max pack size a burst of hits can bury the
+# enemies under numbers. Keep at most this many floating numbers alive at once —
+# high enough that normal fights never notice, low enough to stay legible in an
+# AoE storm. Only bites past ~this-many hits inside one FLOAT_NUM_LIFE window.
+const FLOAT_NUM_MAX := 22
+var _float_nums: Array = []          # live floating-number labels, oldest first
 var _float_rng := RandomNumberGenerator.new()   # its own stream: never perturbs game RNG
 
 
@@ -3409,6 +3431,14 @@ func _float_kind(text: String) -> int:
 
 ## hold: seconds the text sits still before the float-and-fade (the
 ## fight report needs reading time; combat numbers leave it at 0).
+## Retire a floating number: drop it from the live list and free it. Bound as
+## a number's tween-end callback so the density-cap list never keeps stale refs.
+func _retire_float_num(l: Node) -> void:
+	_float_nums.erase(l)
+	if is_instance_valid(l):
+		l.queue_free()
+
+
 func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
 	var kind := _float_kind(text)
 	# P7.A (2026-08-19): a line that asked for READING time is an announcement
@@ -3452,7 +3482,15 @@ func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
 	l.position = pos + Vector2(-l.size.x * 0.5 + lean, -l.size.y * 0.5)
 	l.pivot_offset = l.size * 0.5
 	add_child(l)
-	var tween := create_tween()
+	if kind > 0:
+		# Density cap (visual-review P1): retire the oldest number so a burst of
+		# hits stays legible instead of burying the pack under digits.
+		_float_nums.append(l)
+		while _float_nums.size() > FLOAT_NUM_MAX:
+			var oldest: Node = _float_nums.pop_front()
+			if is_instance_valid(oldest):
+				oldest.queue_free()
+	var tween := l.create_tween()   # label-bound: dies cleanly if retired early
 	if kind > 0:
 		l.scale = Vector2(1.5, 1.5) if kind == 2 else Vector2(1.28, 1.28)
 		tween.tween_property(l, "scale", Vector2.ONE, 0.14) \
@@ -3469,7 +3507,10 @@ func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
 		tween.tween_property(l, "position:y", l.position.y - 34.0, 0.9) \
 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		tween.parallel().tween_property(l, "modulate:a", 0.0, 0.9)
-	tween.tween_callback(l.queue_free)
+	if kind > 0:
+		tween.tween_callback(_retire_float_num.bind(l))
+	else:
+		tween.tween_callback(l.queue_free)
 
 
 ## FOOT DUST (life pass 2026-08-19): a tiny puff of floor-coloured dust at a
