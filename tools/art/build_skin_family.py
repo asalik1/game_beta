@@ -34,24 +34,27 @@ DIRS = ("s", "se", "e", "ne", "n")
 # clips: runtime_clip -> (master_stem, cols). Rows are always 5 (S/SE/E/NE/N).
 # walk is per-direction (walk_<dir>, `walk` cols). death is flat (`death` cols).
 SKIN_CONFIGS = {
+    # run sheets removed 2026-08-21 (owner: no run clip anywhere -- walk covers
+    # all movement). Masters may still exist under art_src but are never built or
+    # installed.
     "emberbound_heir": {"cls": "warrior", "name": "Emberbound Heir",
-        "sheets": {"anim": ("idle", 4), "run": ("run", 6), "attack": ("attack", 7),
+        "sheets": {"anim": ("idle", 4), "attack": ("attack", 7),
                    "attack2": ("attack2", 7), "attackb": ("attackb", 7), "dash": ("dash", 7),
                    "ult": ("ult", 7), "ultidle": ("ultidle", 4)}, "walk": 6, "death": 9},
     "erased_name": {"cls": "assassin", "name": "the Erased Name",
-        "sheets": {"anim": ("idle", 4), "run": ("run", 6), "attack": ("attack", 8),
+        "sheets": {"anim": ("idle", 4), "attack": ("attack", 8),
                    "attack2": ("attack2", 8), "attackb": ("attackb", 8), "dash": ("dash", 7),
                    "ult": ("ult", 9), "ultidle": ("ultidle", 7)}, "walk": 6, "death": 9},
     "ledgerbound": {"cls": "warlock", "name": "Ledgerbound Debtor",
-        "sheets": {"anim": ("idle", 4), "run": ("run", 7), "attack": ("attack", 9),
+        "sheets": {"anim": ("idle", 4), "attack": ("attack", 9),
                    "attack2": ("attack2", 9), "cast": ("cast", 9), "ult": ("ult", 9)},
         "walk": 7, "death": 9},
     "severed_thread": {"cls": "archer", "name": "Severed-Thread Ranger",
-        "sheets": {"anim": ("idle", 4), "run": ("run", 6), "attack": ("attack", 9),
+        "sheets": {"anim": ("idle", 4), "attack": ("attack", 9),
                    "attack2": ("attack2", 9), "cast": ("cast", 9), "dash": ("dash", 6),
                    "ult": ("ult", 9), "ultidle": ("ultidle", 5)}, "walk": 6, "death": 9},
     "blighted_healer": {"cls": "mage", "name": "the Blighted Healer",
-        "sheets": {"anim": ("idle", 5), "run": ("run", 7), "attack": ("attack", 7),
+        "sheets": {"anim": ("idle", 5), "attack": ("attack", 7),
                    "cast": ("cast", 7), "dash": ("dash", 7)}, "walk": 8, "death": 9},
 }
 

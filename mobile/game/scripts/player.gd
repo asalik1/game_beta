@@ -534,7 +534,7 @@ func apply_chill(mult: float, dur := 0.35) -> void:
 # ================================================================= abilities
 
 # -------------------------------------------------- clip state machine ---
-# Locomotion (idle/walk/run) loops; a one-shot action clip plays through once
+# Locomotion (idle/walk) loops; a one-shot action clip plays through once
 # then hands back to locomotion; death latches the final frame. Called every
 # physics frame whenever a class sheet is installed (strip_frames > 0).
 func _advance_clip(delta: float) -> void:
@@ -595,8 +595,8 @@ func _loco_dir_frame() -> void:
 	sprite.flip_h = false
 
 
-## Which looping clip fits the current movement: run while a speed buff or
-## berserk carries you, walk on foot, berserk-idle when standing enraged.
+## Which looping clip fits the current movement: walk while moving (run removed
+## 2026-08-21 -- walk covers all movement), berserk-idle when standing enraged.
 func _loco_clip() -> String:
 	# Crystal Archmage never walks: velocity still picks the directional idle
 	# strip while the animated dais in SkinAmbient performs the movement.
@@ -606,8 +606,8 @@ func _loco_clip() -> String:
 		if berserk_time > 0.0 and _clips.has("ultidle"):
 			return "ultidle"
 		return "idle"
-	if (theme_speed_time > 0.0 or berserk_time > 0.0) and _clips.has("run"):
-		return "run"
+	# (run clip removed 2026-08-21, owner: no run anywhere — walk covers all
+	# movement, including speed-theme/berserk hustle.)
 	if _clips.has("walk"):
 		return "walk"
 	return "idle"

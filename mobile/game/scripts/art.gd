@@ -3414,7 +3414,7 @@ static func dir_set(base: String) -> Dictionary:
 # that return to locomotion. idle keeps the legacy "_anim" suffix so the
 # enemy/anim_info seam is untouched. Absent files are simply skipped.
 const HERO_CLIP_FILES := {
-	"idle": "anim", "walk": "walk", "run": "run", "attack": "attack",
+	"idle": "anim", "walk": "walk", "attack": "attack",
 	"attack2": "attack2", "cast": "cast", "dash": "dash", "ult": "ult",
 	"ultidle": "ultidle", "death": "death",
 	# "attackb" = the ALTERNATE basic swing (2026-08-16 melee swing
@@ -3431,7 +3431,7 @@ const HERO_CLIP_FPS := {
 	# Action clips run FAST so a ~7-frame swing/throw/dash lands in ~0.3s and
 	# doesn't trail an arm-swing after the hit. (Directional clips only pick
 	# these up via the _dir_loco fps stamp in player_core — dir_set defaults 6.)
-	"idle": 6.0, "walk": 9.0, "run": 11.0, "attack": 22.0, "attack2": 22.0,
+	"idle": 6.0, "walk": 9.0, "attack": 22.0, "attack2": 22.0,
 	"cast": 10.0, "dash": 26.0, "ult": 11.0, "ultidle": 6.0, "death": 9.0,
 	"attackb": 22.0,
 	# A full 8-frame fire-on-the-move cycle in ~0.67 s — a brisk stride with one

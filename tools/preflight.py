@@ -261,7 +261,7 @@ _DIR8 = ("s", "se", "e", "ne", "n", "nw", "w", "sw")
 # verify_art CLIPS). Stripping them off a changed file's stem recovers the base
 # name verify_art globs its whole family on.
 _STRIP_TOKENS = frozenset(
-    ("anim", "walk", "run", "attack", "attack2", "attackb", "cast", "dash",
+    ("anim", "walk", "attack", "attack2", "attackb", "cast", "dash",
      "hurt", "death", "spawn", "dir") + _DIR8)
 VERIFY_ART = ROOT / "tools" / "art" / "verify_art.py"
 

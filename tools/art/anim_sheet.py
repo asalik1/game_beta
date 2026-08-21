@@ -41,15 +41,15 @@ DIRS = [("SOUTH (S)", "s"), ("SOUTH-EAST (SE)", "se"), ("EAST (E)", "e"),
         ("NORTH-EAST (NE)", "ne"), ("NORTH (N)", "n"), ("NORTH-WEST (NW)", "nw"),
         ("WEST (W)", "w"), ("SOUTH-WEST (SW)", "sw")]
 # clip name -> file suffix (idle keeps the legacy "anim" suffix)
-CLIP_FILE = {"idle": "anim", "walk": "walk", "run": "run", "dash": "dash",
+CLIP_FILE = {"idle": "anim", "walk": "walk", "dash": "dash",
              "attack": "attack", "attack2": "attack2", "cast": "cast",
              "ult": "ult", "ultidle": "ultidle", "death": "death"}
 GROUPS = {
-    "movement": ["idle", "walk", "run", "dash"],
+    "movement": ["idle", "walk", "dash"],
     "attacks":  ["attack", "attack2", "cast"],
     "ult":      ["ult", "ultidle"],
     "death":    ["death"],
-    "all":      ["idle", "walk", "run", "dash", "attack", "attack2", "cast",
+    "all":      ["idle", "walk", "dash", "attack", "attack2", "cast",
                  "ult", "ultidle", "death"],
 }
 

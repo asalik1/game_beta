@@ -88,15 +88,15 @@ SPRITES = ROOT / "game" / "assets" / "sprites"
 GAME = ROOT / "game"
 
 DIR8 = ("s", "se", "e", "ne", "n", "nw", "w", "sw")
-CLIPS = ("anim", "walk", "run", "attack", "attack2", "attackb", "cast", "dash",
+CLIPS = ("anim", "walk", "attack", "attack2", "attackb", "cast", "dash",
          "ult", "ultidle", "death", "stab", "throw", "dir")
 
 # Content-geometry gates (see module docstring). Thresholds calibrated
 # 2026-08-13 against the owner's mob QA pass over the full sprites corpus.
 # ("attackb" = the hero's alternate basic swing, Art.HERO_CLIP_FILES; gated
 # exactly like "attack".)
-BODY_GATE_CLIPS = ("anim", "walk", "run", "attack", "attack2", "attackb")
-LOCO_CLIPS = ("anim", "walk", "run")
+BODY_GATE_CLIPS = ("anim", "walk", "attack", "attack2", "attackb")
+LOCO_CLIPS = ("anim", "walk")
 
 # Boss ability strips (<base>_<action>[_<dir>].png, engine seam
 # Art.action_info / enemy _apply_strip is_action=true). The action
@@ -138,6 +138,19 @@ RIGID_DRIFT_PX = 3     # a full-bleed prop whose L/R bbox edge moves more than
 # 0.82-0.88 defects carry EDGECUT/GHOST signatures instead. Runs are exempt
 # outright -- a sprint lean is legitimately shorter (archer run 0.74-0.78).
 SCALE_LO_LOCO, SCALE_LO_ACTION, SCALE_HI = 0.88, 0.82, 1.18
+
+# Hero render (player_core _measure_hero_frame) locks a strip's scale to its
+# FIRST frame's body height: on-screen height of frame i = target * bh_i/bh_0.
+# So a clip whose body height VARIES frame to frame renders as a size PULSE.
+# This gate is scoped to DASH: it is a LOCOMOTION clip (a fast reposition), so a
+# size swing reads as a scaling glitch, and every accepted base-hero dash holds
+# body height constant -- the archer Tumble dash that swings 188..316px against
+# a 235px frame 0 (0.80x..1.42x on screen) is the sole offender. Attack/ult/cast
+# legitimately lunge/draw and the owner accepts that pulse, so they are NOT
+# gated here (they trip >0.22 across accepted art). FRAMEDEV 0.22 = a frame
+# rendering >22% larger/smaller than frame 1.
+HERO_BASES = {"warrior", "archer", "mage", "assassin", "paladin", "warlock"}
+FRAMEDEV = 0.22
 
 FAIL, WARN = [], []
 
@@ -193,6 +206,8 @@ def _frame_metrics(a: np.ndarray, frame_width: int) -> list[dict | None]:
             continue
         occupied = np.unique(ys)
         gaps = np.diff(occupied)
+        occupied_x = np.unique(xs)
+        xgaps = np.diff(occupied_x)
         out.append({
             "bh": int(ys.max() - ys.min() + 1),
             "cx": float(xs.mean()), "cy": float(ys.mean()),
@@ -201,6 +216,7 @@ def _frame_metrics(a: np.ndarray, frame_width: int) -> list[dict | None]:
             "left": bool((xs <= 0).any()),
             "right": bool((xs >= frame_width - 1).any()),
             "vgap": int(gaps.max()) - 1 if len(gaps) else 0,
+            "hgap": int(xgaps.max()) - 1 if len(xgaps) else 0,
         })
     return out
 
@@ -277,7 +293,7 @@ def check_file(png: Path) -> None:
     # normalizer shrinks the body to a miniature.  Catch catastrophic body-box
     # collapse on ordinary full-body clips; effects/death/dash are excluded
     # because deliberate vanish/transform frames are valid there.
-    body_clips = ("anim", "walk", "run", "attack", "attack2", "attackb")
+    body_clips = ("anim", "walk", "attack", "attack2", "attackb")
     is_body_clip = any(
         re.search(rf"_{clip}(?:_|$)", stem) for clip in body_clips
     )
@@ -336,6 +352,19 @@ def check_file(png: Path) -> None:
                                 f"({', '.join(drift)} of cell) -- plays as an on-screen "
                                 "slide/wobble; off-grid assembly, repair: "
                                 "tools/art/recenter_strip.py")
+                # A locomotion frame must be ONE connected silhouette; a
+                # horizontally-disjoint band beside the figure is a mis-slice --
+                # a stray chunk (held weapon, neighbour's limb) pulled in from the
+                # adjacent cell. GHOST (below) only detects VERTICAL splits, so a
+                # bow floating to the archer's side sits in the same rows as the
+                # body and slips past it -- this is the lateral counterpart.
+                hsplit = [(i + 1, m["hgap"]) for i, m in enumerate(metrics)
+                          if m and m["hgap"] >= max(6.0, GHOST_GAP * frame_width)]
+                if hsplit:
+                    htxt = ", ".join(f"f{i} ({g}px gap)" for i, g in hsplit)
+                    WARN.append(f"[HSPLIT] {rel}: {htxt} -- content splits into "
+                                "horizontally disjoint bands; a stray chunk beside the "
+                                "figure (mis-slice from the neighbour cell)")
             ghost_frames = [
                 (i + 1, m["vgap"]) for i, m in enumerate(metrics)
                 if m and m["vgap"] >= max(4.0, GHOST_GAP * h)]
@@ -372,6 +401,27 @@ def check_file(png: Path) -> None:
                     WARN.append(f"[EDGECUT] {rel}: f{cut} content touches a left/right cell "
                                 "edge -- limb clipped at the frame cut, or bleed from the "
                                 "neighbour cell")
+
+    # Hero body-scale + stray-content gates (hero strips only). Run independent
+    # of _clip_of so they cover dash/ult/cast -- the clips that are otherwise
+    # content-unchecked. See FRAMEDEV / HERO_BASES above.
+    is_hero = (png.parent == SPRITES or "skins" in png.parent.parts) \
+        and stem.split("_")[0] in HERO_BASES
+    if is_hero and is_strip and not in_fx and frame_width > 0 \
+            and w % frame_width == 0 and frames >= 3:
+        hm = _frame_metrics(a, frame_width)
+        hlive = [m for m in hm if m]
+        parts = stem.split("_")
+        clip_tok = parts[-2] if parts[-1] in DIR8 else parts[-1]
+        if clip_tok == "dash" and len(hlive) >= 3 and hm[0] and hm[0]["bh"] > 0:
+            b0 = hm[0]["bh"]
+            devs = [(i + 1, m["bh"] / b0) for i, m in enumerate(hm) if m]
+            worst = max(devs, key=lambda t: abs(t[1] - 1.0))
+            if abs(worst[1] - 1.0) >= FRAMEDEV:
+                WARN.append(f"[FRAMEDEV] {rel}: f{worst[0]} body renders {worst[1]:.2f}x frame 1 "
+                            f"(bh {hm[worst[0] - 1]['bh']}px vs {b0}px) -- the hero renderer locks "
+                            "the dash scale to frame 1, so an uneven body height plays as an "
+                            "on-screen size pulse; hold body height ~constant across the dash")
 
     semi = int(((a > 0) & (a < 255)).sum())
     if semi:

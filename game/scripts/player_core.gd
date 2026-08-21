@@ -655,7 +655,7 @@ var strip_frames := 0
 var strip_fps := 6.0
 var strip_t := 0.0
 # Clip state machine (round: Custom sheets — full per-class animation set).
-# _clips: name -> {tex,frames,fps}. Locomotion (idle/walk/run) loops; action
+# _clips: name -> {tex,frames,fps}. Locomotion (idle/walk) loops; action
 # clips (attack/cast/dash/ult/death) play once then fall back to locomotion.
 var _clips := {}
 var _clip := ""                # current clip name
@@ -756,7 +756,7 @@ func _apply_class_sprite() -> void:
 	sprite.frame = 0
 	_dir_clips = Art.hero_dir_clips(art_name)
 	_a1_swing = 0  # a fresh body opens on its primary swing
-	# 8-direction locomotion sets (idle/walk/run/... = <class>_<file>_<dir>).
+	# 8-direction locomotion sets (idle/walk/... = <class>_<file>_<dir>).
 	# Empty for every current class; lights up when directional art lands.
 	_dir_loco = {}
 	for clip in Art.HERO_CLIP_FILES:
