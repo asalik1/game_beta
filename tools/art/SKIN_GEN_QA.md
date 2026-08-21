@@ -72,6 +72,19 @@ and edge alpha (BLEED). #1-4 and #6 are eyes-only.
   (keep the largest component for loco, or the largest + limbs >=160px for actions) yields a
   clean frame instantly and deterministically, where a fresh gen risks new problems. Re-roll
   only when the figure ITSELF is wrong, not when a loose fragment rode along.
+- **A detached component is NOT automatically a stray -- compare the BASE sprite first.**
+  Some detached components are CONVENTION: the base archer bakes a small arrow at loose (f7),
+  the base warrior's tabard hangs as its own component between the legs, and casters may show
+  a spell orb at release. Scan the matching `<class>_<clip>_s.png` base strip the same way; a
+  detached component the base ALSO has is legit (keep it), one only the skin has is the
+  mis-slice (remove it). The warrior skin's floating SWORD TIP (waist-left, frames 4-6) had no
+  base equivalent and was removed; its tabard, which the base shares, was left. When the base
+  bakes nothing but the skin bakes a coherent projectile (warlock orb), that is a skin-only
+  inconsistency -- flag it for the owner rather than silently deleting a possible design beat.
+- **Melee basic attacks ALTERNATE (attack <-> attackb).** Both swings are separate clips and
+  BOTH need the per-frame gate; QAing only `attack` misses the cleave/second-swing. A melee
+  skin must ship a complete 8-dir `attackb` or the alternation silently falls back to one
+  swing (autotest `_test_swing_alternation` now asserts this for the elite skins).
 - **When a defect ships, add the test, then answer "why didn't it catch it" honestly.** The
   walk stray shared the figure's vertical band (GHOST is vertical-only) → added HSPLIT
   (lateral). The dash was never body-gated (dash is not in BODY_GATE_CLIPS) and CLIPSCALE uses
