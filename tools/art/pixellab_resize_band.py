@@ -68,10 +68,15 @@ PROMPT["warrior"] = ("battle-worn ember war-knight in heavy dark blackened plate
     "veins of glowing molten ember-orange running through every crack and seam of the "
     "armor, a heavy greatsword with a molten glowing edge, weathered helm with a faint "
     "ember glow in the visor slit, grim and imposing, ash drifting, somber dark fantasy")
-PROMPT["paladin"] = ("grim hooded hammer-paladin in dark tarnished plate armor, heavy gold "
-    "binding-chains coiling from the waist, a glowing chain-flail warhammer, ash-grey torn "
-    "cloak, restrained pale-gold light only at the chain-links, stern and weary, no bright "
-    "colors, somber dark fantasy")
+# The LIVE paladin is the Codex-made Oathbound Arbiter (2026-07-30), NOT the
+# old hooded PixelLab character — its identity comes from the regeneration's
+# own prompt contract (art_src/paladin_oathbound_arbiter/README.md). /v2/resize
+# happily redraws Codex art; only the DESCRIPTION must match what's on screen.
+PROMPT["paladin"] = ("the Oathbound Arbiter paladin: visible weathered middle-aged face, "
+    "short dark hair and beard, pale steel and warm ivory plate armor, deep judicial-blue "
+    "tabard and one-shoulder mantle, brass oath-chain crossing a large round seal over the "
+    "heart, square-headed war hammer in the right hand, tall battered pale shield on the "
+    "left arm, protective and authoritative, muted palette, somber dark fantasy")
 
 _palettes: dict[str, dict] = {}
 
