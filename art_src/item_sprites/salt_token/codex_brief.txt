@@ -1,0 +1,12 @@
+Generate ONE small painterly ITEM ICON for the dark-fantasy game Crownless, using the built-in image_gen tool. Save the raw generation into THIS working directory as `salt_token_source.png`. It MUST be a SINGLE object, centered, on a FULLY TRANSPARENT background (no scene, no ground, no shadow cast on ground). Report the path in your final message.
+
+You have TWO attached images:
+- IMAGE 1 ("01_style_loaf") and IMAGE 2 ("02_style_ash") are existing ITEM ICONS from this same game (a bread loaf, a small clay jar). Match their painterly, soft-shaded STYLE exactly: warm muted palette, soft top-left light, gentle rounded rendering, NO black outlines, a single small object filling most of the frame, transparent background, readable at tiny size.
+
+SUBJECT: a PILGRIM'S SALT TOKEN — a single round DISC of pressed grey SALT, roughly coin-to-palm sized, hand-pressed and worn smooth from carrying. Pale grey-white, slightly rough crystalline surface catching soft light, a faint worn bevel at the rim, maybe a shallow pressed thumb-mark. Humble, sacred, plain. Think a communion-wafer-thick disc of rock salt, not a gem, not a coin, not metal.
+
+FRAMING: the disc centered, filling ~70% of a square frame, seen from a slight three-quarter top angle so it reads as a solid disc (not a flat circle). Soft self-shadow under the near edge, no separate drop shadow on any ground.
+
+NEGATIVES (hard): no background scene, no ground plane, no cast shadow on ground, no text/letters/numbers/runes carved in it, no metallic sheen, no gemstone facets, no coin markings, no hand, no second object, no border or frame, no watermark; keep it a plain grey salt disc, not white marble, not a pearl.
+
+Author it already-bright. Output at the tool's native size on transparent background; a human will crop and downscale it to the 32-48px game icon.

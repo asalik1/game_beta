@@ -8,10 +8,13 @@
 ##   straight_answer(Q10)— the Null Bastion's warden logs, and Ivo's fork
 ## Q10 adds no zones and no new spawns: the two props ride ZONE_PROPS (Q9) onto
 ## existing rooms by name, gated by req_flag; the quest givers are fixed camp
-## NPCs (Piet, the pilgrim) or the already-overridden Ivo. Two Q10 turn-ins are
-## illustrated (opener-style plates via the "scene"/cinematic hook): A Straight
-## Answer (Ivo, cue q_straight_answer) and The Second Bell (Piet, q_second_bell)
-## — both Codex-generated off the giver's canon splash.
+## NPCs (Piet, the pilgrim) or the already-overridden Ivo. All three Q10 turn-ins
+## are illustrated (opener-style plates via the "scene"/cinematic hook): A
+## Straight Answer (Ivo, q_straight_answer), The Second Bell (Piet, q_second_bell)
+## and The Salt Reliquary (the pilgrim's hymn stops, q_salt_reliquary) — each
+## Codex-generated off the giver's canon splash. Two custom sprites back the
+## slate: the salt_token item icon and the fallen_bell prop (which replaced the
+## watch_brazier stand-in on the Howling Fields bell hook).
 
 const SIDE_QUESTS := {
 	"still_blue": {
@@ -87,11 +90,7 @@ const QUEST_ITEMS := {
 		"desc": "Dark bread in waxed cloth, oven-warm when she tied it. Baked for whoever mans the far crossings.", "grade": "C"},
 	"bastion_ash": {"name": "Jar of Bastion Ash", "icon": "bastion_ash",
 		"desc": "Grey ash off the Null Bastion's road, sealed and labeled in Ivo's exact hand: 'ALDRIC — AS COMMISSIONED.'", "grade": "C"},
-	# No "icon" field (unlike sera_loaf/bastion_ash, which have sprite assets):
-	# the Curios codex renders a quest item's "icon" via Art.tex, which hard-
-	# crashes on a sprite name with no asset. Until a salt_token sprite exists,
-	# omitting it shows a graceful blank there (the bag uses a glyph regardless).
-	"salt_token": {"name": "Pilgrim's Salt Token",
+	"salt_token": {"name": "Pilgrim's Salt Token", "icon": "salt_token",
 		"desc": "A disc of grey salt, pressed by hand and worn smooth from carrying. The pilgrim would not tell you whose debt it settles.", "grade": "C"},
 }
 
@@ -103,7 +102,7 @@ const ZONE_PROPS := {
 		# Piet's cracked bell, out where the storm dropped it. req_flag keeps it
 		# from cluttering the fields until you've taken the errand.
 		"The Howling Fields": [
-			{"sprite": "watch_brazier", "x": 980, "y": 470, "prompt": "E — The fallen bell",
+			{"sprite": "fallen_bell", "x": 980, "y": 470, "prompt": "E — The fallen bell",
 				"convo": "ch2_bell", "req_flag": "sq_on_second_bell", "req_not_flag": "bell_heard"},
 		],
 		# The Bastion's warden logs — only worth reading once Ivo asks for them.
@@ -142,6 +141,12 @@ const CONVOS := {
 			"text": "At the fence's edge Sentry Piet turns the split curl of bronze in the watch-fire's light — the bell that called Korrag's pack, snapped clean by the storm that broke them. Not neglect. The weather. His shoulders come down an inch they have not come down in years.", "next": "sb_fade"},
 		"sb_fade": {"who": "Narrator", "cue": "fade",
 			"text": "\"Twenty years I rang it on time,\" he says. \"A man wants to know the quiet wasn't his own doing.\" He pockets the shard, and stands his watch a little lighter.", "next": ""},
+	}},
+	"salt_reliquary_scene": {"cinematic": true, "start": "sr1", "nodes": {
+		"sr1": {"who": "Narrator", "cue": "q_salt_reliquary",
+			"text": "For the first time the pilgrim's hymn stops. Her clasped hands come apart, her bowed head lifts, and for a breath she is only a woman at a camp gate — the salt laid on the old imperial line, the debt at the far stone gone quiet at last.", "next": "sr_fade"},
+		"sr_fade": {"who": "Narrator", "cue": "fade",
+			"text": "\"The garden noticed,\" she says. \"It notices the small doors too.\" Then the hymn returns, softer than before, and she is a psalm again.", "next": ""},
 	}},
 
 	# ---- Q10: The Second Bell (Sentry Piet) --------------------------------
@@ -203,7 +208,8 @@ const CONVOS := {
 					"gain_item": "salt_token", "flags": {"salt_taken": true},
 					"side_quest": "salt_reliquary", "next": "hp_take"},
 				{"text": "\"Whose debt is it?\"", "req_not_flag": "salt_taken", "next": "hp_why"},
-				{"text": "\"The stone's quiet now, pilgrim.\"", "req_flag": "salt_laid", "next": "hp_done"},
+				{"text": "\"The stone's quiet now, pilgrim.\"", "req_flag": "salt_laid",
+					"scene": "salt_reliquary_scene", "next": "hp_done"},
 				{"text": "\"Not today.\" (leave)", "next": ""},
 			]},
 		"hp_take": {"who": "Choir Pilgrim", "text": "\"Salt keeps. It won't spoil on the road, and neither will the debt.\" She folds your fingers over the disc with both hands. \"Lay it flat on the imperial face. It will know the face.\"", "next": ""},

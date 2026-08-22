@@ -1,0 +1,12 @@
+Generate ONE painterly WORLD PROP sprite for the dark-fantasy game Crownless, using the built-in image_gen tool. Save the raw generation into THIS working directory as `fallen_bell_source.png`. It MUST be a SINGLE object on a FULLY TRANSPARENT background (no scene, no ground plane, no separate cast shadow). Report the path in your final message.
+
+You have ONE attached image:
+- IMAGE 1 ("01_style_prop") is an existing WORLD PROP from this same game (a watch-brazier). Match its rendering STYLE exactly: painterly, soft-shaded, MUTED palette, soft light from the TOP-LEFT, a top-down THREE-QUARTER viewing angle, and NO black outlines. Same brush feel and same overall scale-in-frame.
+
+SUBJECT: a CRACKED WATCH-BELL, fallen. A weathered BRONZE hand/watch-bell about the size of a bucket, lying on its SIDE on the ground, its lip SPLIT clean through (a jagged vertical crack, one curved shard slightly separated) — snapped by a storm, not rusted through. Dark green-brown patina on aged bronze, a worn iron yoke/mount still attached at the crown, the clapper hanging still. A few blades of windswept grey grass around its base. It should read instantly as "a broken bell on the ground."
+
+FRAMING: the bell seen from the top-down three-quarter angle (like IMAGE 1), lying on its side, filling ~75% of a square frame, transparent background, soft self-shadow beneath it only (no separate drop shadow on any ground).
+
+NEGATIVES (hard): no black outlines, no cel-shading, no bright saturated colours, no background scene or ground plane, no separate cast shadow, no text/letters/numbers/runes, no gemstones, no glow or magic, no hand or figure, no second object, no border/frame, no watermark; keep it a plain broken bronze bell (aged patina), NOT gold, NOT a temple gong, NOT intact.
+
+Author it already-bright. Output at the tool's native size on transparent background; a human will crop and downscale it to the ~96-128px prop sprite.
