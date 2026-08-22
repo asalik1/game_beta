@@ -4162,6 +4162,9 @@ func _test_swing_alternation() -> void:
 			return _fail("%s: attackb has %d directions, need 8" % [cls, game.player._dir_loco["attackb"].size()])
 		# Live path: two a1 casts play attack, then attackb (_strike_clip is
 		# what swing_delay keys on — the same value use_ability handed play_action).
+		# 3-way (attack/attackb/attackc) if this class ships an attackc, else 2-way.
+		var expect: Array = ["attack", "attackb", "attackc"] if game.player._clips.has("attackc") \
+			else ["attack", "attackb", "attack"]
 		var seen: Array[String] = []
 		for _i in 3:
 			game.player.cds["a1"] = 0.0
@@ -4170,8 +4173,8 @@ func _test_swing_alternation() -> void:
 			game.player.use_ability("a1")
 			seen.append(game.player._strike_clip)
 			await _frames(1)
-		if seen != ["attack", "attackb", "attack"]:
-			return _fail("%s: a1 should alternate attack/attackb/attack, saw %s" % [cls, seen])
+		if seen != expect:
+			return _fail("%s: a1 should cycle %s, saw %s" % [cls, expect, seen])
 		# A fresh body opens on the primary swing again.
 		game.player.set_class(cls)
 		game.player.pending_theme_note = ""

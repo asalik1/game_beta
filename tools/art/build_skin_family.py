@@ -39,8 +39,8 @@ SKIN_CONFIGS = {
     # installed.
     "emberbound_heir": {"cls": "warrior", "name": "Emberbound Heir",
         "sheets": {"anim": ("idle", 4), "attack": ("attack", 7),
-                   "attack2": ("attack2", 7), "attackb": ("attackb", 7), "dash": ("dash", 7),
-                   "ult": ("ult", 7), "ultidle": ("ultidle", 4)}, "walk": 6, "death": 9},
+                   "attack2": ("attack2", 7), "attackb": ("attackb", 7), "attackc": ("attackc", 7),
+                   "dash": ("dash", 7), "ult": ("ult", 7), "ultidle": ("ultidle", 4)}, "walk": 6, "death": 9},
     "erased_name": {"cls": "assassin", "name": "the Erased Name",
         "sheets": {"anim": ("idle", 4), "attack": ("attack", 8),
                    "attack2": ("attack2", 8), "attackb": ("attackb", 8), "attackc": ("attackc", 8),
