@@ -291,6 +291,7 @@ var _halo_pool: Sprite2D = null  # the hero's additive floor-glow (QA 5)
 # ---------------------------------------------------------- persistence ---
 var save_slot := -1                   # active save file (-1 = none yet)
 var no_saves := false                 # autotest: never touch real save files
+var pending_tutorial := ""            # queued onboarding beat ("talents"/"gear"), drained in game.gd once no overlay is up (transient, not saved)
 ## DEDICATED SERVER (--server, MMO step A): this process is a headless world
 ## authority with NO local player — pure host, peers connect in. Every
 ## "host-personal" path (own loot share, own heals, HUD-driven story beats,
@@ -753,6 +754,16 @@ func favor_tier_name(npc: String) -> String:
 ## The artisan's bench-cost multiplier for this patron (1.0 at Stranger).
 func favor_price_mult(npc: String) -> float:
 	return 1.0 - Balance.FAVOR_DISCOUNT_PER_TIER * float(favor_tier(npc))
+
+
+## Shift a faction's standing on the LOCAL character (accord / cinderborn /
+## wildfang / choir — the key is `cinderborn`, never `cinder`). One seam so
+## quest rewards, convo forks and ward contracts all move standing the same
+## way. Guarded like every other local-character write (dedicated has none).
+func add_standing(faction: String, delta: int) -> void:
+	if delta == 0 or not has_local_player():
+		return
+	player.faction_standing[faction] = int(player.faction_standing.get(faction, 0)) + delta
 
 
 ## Add favor with the shard read applied; announces tier climbs. Favor is
@@ -1649,7 +1660,9 @@ func _expire_side_quests() -> Array:
 	for id in Story.ALL_SIDE_QUESTS:
 		var sid := String(id)
 		var q: Dictionary = Story.ALL_SIDE_QUESTS[id]
-		if String(q.get("chapter", "")) != chapter_id:
+		# Unscoped (capital/world) quests are never charged for abandonment —
+		# they have no chapter deadline to break.
+		if not Story.quest_scoped(q) or String(q.get("chapter", "")) != chapter_id:
 			continue
 		if not get_flag("sq_on_" + sid, false) or get_flag("sq_paid_" + sid, false):
 			continue
@@ -1709,7 +1722,11 @@ func any_quest_available() -> bool:
 ## whose giver never rolled (wanderer givers are seeded per run).
 func side_quest_available(sqid: String) -> bool:
 	var q: Dictionary = Story.ALL_SIDE_QUESTS.get(sqid, {})
-	if q.is_empty() or String(q.get("chapter", "")) != chapter_id:
+	if q.is_empty():
+		return false
+	# Chapter quests only offer in their chapter; unscoped ones offer wherever
+	# their giver is reachable (a capital NPC is only reachable in Crownfall).
+	if Story.quest_scoped(q) and String(q.get("chapter", "")) != chapter_id:
 		return false
 	if get_flag("sq_on_" + sqid, false) or get_flag("sq_paid_" + sqid, false):
 		return false
@@ -1853,7 +1870,7 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 				_resonance_reward(res_delta)
 			var fac_shifts: Dictionary = c.get("faction", {})
 			for fac in fac_shifts:
-				player.faction_standing[fac] = int(player.faction_standing.get(fac, 0)) + int(fac_shifts[fac])
+				add_standing(String(fac), int(fac_shifts[fac]))
 			# Side-quest acceptance runs BEFORE the choice's flags land, so
 			# a single choice can accept a quest and complete its first
 			# step (or even the whole chain) in one breath. Quests bind to
@@ -1862,7 +1879,11 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 			if c.has("side_quest"):
 				var sqid := String(c["side_quest"])
 				var sq: Dictionary = Story.ALL_SIDE_QUESTS.get(sqid, {})
-				if not sq.is_empty() and String(sq.get("chapter", chapter_id)) == chapter_id \
+				# Unscoped (capital/world) quests accept anywhere; chapter quests
+				# only in their own chapter (a wanderer repeating his ask later
+				# can't open an uncompletable job).
+				if not sq.is_empty() \
+						and (not Story.quest_scoped(sq) or String(sq.get("chapter", chapter_id)) == chapter_id) \
 						and not get_flag("sq_on_" + sqid, false):
 					set_flag("sq_on_" + sqid)
 					# What saying YES paid (Balance §quest abandonment): the

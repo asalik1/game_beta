@@ -1256,6 +1256,9 @@ static func load_content() -> void:
 	ALL_RELICS = {}
 	ALL_WANDERERS = {}
 	CHAPTER_LIST = CHAPTERS.duplicate(true)
+	# ZONE_PROPS from every module, applied in a SECOND pass so a prop can
+	# target a zone another module APPENDED (a quest hooking a side room).
+	var pending_props: Array = []   # [{"chid":..., "by_name": {...}, "src": path}]
 	for m in CONTENT_MODULES:
 		var consts: Dictionary = m.get_script_constant_map()
 		ALL_CONVOS.merge(consts.get("CONVOS", {}), true)
@@ -1272,6 +1275,35 @@ static func load_content() -> void:
 		for chid in extra_zones:
 			if CHAPTER_LIST.has(chid):
 				CHAPTER_LIST[chid]["zones"] = CHAPTER_LIST[chid]["zones"] + extra_zones[chid]
+		var zone_props: Dictionary = consts.get("ZONE_PROPS", {})
+		for chid in zone_props:
+			pending_props.append({"chid": String(chid), "by_name": zone_props[chid],
+				"src": String(m.resource_path)})
+	# Second pass: drop each module's ZONE_PROPS onto EXISTING zones by NAME
+	# (append to "npcs"). Never a new zone — quests hook rooms that already
+	# exist, so room counts stay fixed (autotest asserts them).
+	for entry in pending_props:
+		var chid: String = entry["chid"]
+		if not CHAPTER_LIST.has(chid):
+			push_warning("ZONE_PROPS: unknown chapter '%s' in %s" % [chid, entry["src"]])
+			continue
+		var by_name: Dictionary = entry["by_name"]
+		var zarr: Array = CHAPTER_LIST[chid]["zones"]
+		for want in by_name:
+			var matched := false
+			# Zones appended from a module's CHAPTER_ZONES are the script's CONST
+			# dicts (read-only). Replace the array slot with a mutable deep copy
+			# that carries the extra props, rather than writing into the const.
+			for zi in range(zarr.size()):
+				var zdict: Dictionary = zarr[zi]
+				if String(zdict.get("name", "")) == String(want):
+					var merged: Dictionary = zdict.duplicate(true)
+					merged["npcs"] = merged.get("npcs", []) + by_name[want]
+					zarr[zi] = merged
+					matched = true
+			if not matched:
+				push_warning("ZONE_PROPS: no zone named '%s' in %s (%s)" % [
+					want, chid, entry["src"]])
 
 
 ## The social-wanderer pool for a chapter (module-supplied, else the
@@ -1327,6 +1359,16 @@ static func is_pvp(id: String) -> bool:
 static func quest_text(key: String) -> String:
 	load_content()
 	return String(ALL_QUESTS.get(key, ""))
+
+
+## A side quest's SCOPE (Q9): "chapter" (default) quests live and die with the
+## chapter that authored them — accepted, expired and wiped against chapter_id.
+## "capital" / "world" quests are UNSCOPED: they persist across chapter wipes
+## and are never expiry-charged. Their accept/paid/pledge markers are kept by
+## _wipe_chapter_flags explicitly; their STEP flags must ride a kept prefix
+## (cap_/sq_kept_) by authoring rule (autotest _test_quest_schema enforces it).
+static func quest_scoped(q: Dictionary) -> bool:
+	return String(q.get("scope", "chapter")) == "chapter"
 
 
 ## Boss-door beats read the bearer (2026-07-06): a beat key may author

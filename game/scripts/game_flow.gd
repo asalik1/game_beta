@@ -630,7 +630,7 @@ func chapter_available(chid: String, replay := false) -> bool:
 # the same list §5.4's set_flag routing reads.
 const KEPT_FLAG_PREFIXES := [
 	"opened_", "chose_", "completed_", "cap_",
-	"saw_chapter_opening_", "sq_kept_",
+	"saw_chapter_opening_", "sq_kept_", "tut_",
 ]
 const KEPT_FLAGS := ["owned_the_harm", "excused_the_harm", "walked_away",
 	"gave_back", "kept_taking", "fled_theft", "told_truth", "hid_truth",
@@ -661,6 +661,17 @@ func _wipe_chapter_flags() -> void:
 				keep = true
 		if keep:
 			kept[fname] = flags[fname]
+	# Unscoped (capital/world) quests outlive the chapter: their step flags
+	# already ride kept prefixes (cap_/sq_kept_), but the engine's own
+	# accept/paid/pledge markers are not prefixed — carry them explicitly so a
+	# persistent quest is not silently reset to "never accepted" on a wipe.
+	for id in Story.ALL_SIDE_QUESTS:
+		if Story.quest_scoped(Story.ALL_SIDE_QUESTS[id]):
+			continue
+		for pre in ["sq_on_", "sq_paid_", "sq_pledge_"]:
+			var k: String = String(pre) + String(id)
+			if flags.has(k):
+				kept[k] = flags[k]
 	flags = kept
 	quest_kills.clear()  # kill-step counters die with the quests that held them
 	# Quest keepsakes are run-scoped like the flags that earned them:
@@ -1252,7 +1263,64 @@ func _room_cleared(zi: int) -> void:
 			call_deferred("_merchant_arrives", zi)
 		if zi == cur_room and room_safe(cur_room):
 			last_safe_room = cur_room
+	_onboard_maybe_queue(zi)
 	autosave()
+
+
+## --- Onboarding (Q8): teach talents, then gear, once per NEW ch1 hero -----
+## The two systems that carry the whole power curve are never TAUGHT. After a
+## fresh hero clears a ch1 combat room we point them at Skills > Talents (the
+## first point is already theirs — skill_points starts at 1) and, a room later
+## once drops have landed, at the bag (with Auto-equip as the shortcut). Both
+## are one-time and skippable: showing the beat marks it done, so it never
+## nags. Per-CHARACTER, not account — a new hero learns again (owner ask).
+
+## Is onboarding step `step` ("talents"/"gear") still owed to THIS hero? Pure
+## gate: real solo play only (never autotest/dedicated/guest), first ch1 run,
+## not a replay, not already shown.
+func _onboard_due(step: String) -> bool:
+	if no_saves or dedicated or not has_local_player() or net_guest():
+		return false
+	if chapter_id != "ch1" or get_flag("completed_ch1", false):
+		return false
+	if menus != null and menus.chapter_replay:
+		return false
+	return not get_flag("tut_" + step + "_done", false)
+
+
+## Queue the next owed beat off a combat-room clear (drained in game.gd behind
+## overlays). Talents first; gear only once talents is taught AND the bag has
+## something to equip — otherwise "open your bag" points at nothing.
+func _onboard_maybe_queue(zi: int) -> void:
+	if pending_tutorial != "" or zi != cur_room or room_type(zi) != "combat":
+		return
+	if _onboard_due("talents"):
+		pending_tutorial = "talents"
+	elif get_flag("tut_talents_done", false) and _onboard_due("gear") \
+			and is_instance_valid(player) and not player.backpack.is_empty():
+		pending_tutorial = "gear"
+
+
+## Play the queued beat: one casual line from Elder Maren, then open the exact
+## screen. Mark done up front — the teaching is the pointer, spending/equipping
+## stays the player's call (skippable). Casual voice, no em dashes (ruling 08-18).
+func _run_tutorial_beat(step: String) -> void:
+	if not has_local_player():
+		return
+	if step == "talents":
+		set_flag("tut_talents_done")
+		hud.dialogue([["Elder Maren",
+			"You're getting stronger. Open your Skills and drop that talent point wherever you like."]],
+			func() -> void:
+				if menus != null:
+					menus.open_skills("talents"))
+	elif step == "gear":
+		set_flag("tut_gear_done")
+		hud.dialogue([["Elder Maren",
+			"The fallen leave good gear behind. Open your bag and put some on, or just hit Auto-equip and let it fill your slots."]],
+			func() -> void:
+				if menus != null:
+					menus.open_inventory("gear"))
 
 
 ## Living, counted monsters of room `zi` right now (host truth: non-mirror,

@@ -1,10 +1,14 @@
-## (Q2) Chapter 2 side quests — three flag-chain quests on the side-quest
-## engine (QUESTS_TASKS.md), hooked onto existing NPCs by convo override:
+## (Q2 + Q10) Chapter 2 side quests on the side-quest engine (QUESTS_TASKS.md),
+## hooked onto existing NPCs by convo override (never edit the owning module):
 ##   still_blue          — Sera's mill arc (existing flags) as a visible quest
 ##   bread_for_the_road  — Sera's loaf, carried to Scholar Ivo in the Deeps
 ##   ash_for_aldric      — Ivo's sealed jar of Bastion ash, back to Aldric
-## No zones, no new spawns: every hook lands on a fixed NPC that already
-## stands in the world (ch2_hub.gd / ch2_zones_act2.gd / ch2_aldric.gd).
+##   second_bell   (Q10) — Piet's cracked watch-bell, out on the Howling Fields
+##   salt_reliquary(Q10) — a Choir pilgrim's salt token, laid at the reliquary
+##   straight_answer(Q10)— the Null Bastion's warden logs, and Ivo's fork
+## Q10 adds no zones and no new spawns: the two props ride ZONE_PROPS (Q9) onto
+## existing rooms by name, gated by req_flag; the quest givers are fixed camp
+## NPCs (Piet, the pilgrim) or the already-overridden Ivo.
 
 const SIDE_QUESTS := {
 	"still_blue": {
@@ -39,6 +43,40 @@ const SIDE_QUESTS := {
 		],
 		"reward": {"gold": 200, "gem": true, "kept": "sq_kept_aldric_ash"},
 	},
+
+	# ---- Q10 slate (2026-08-21) — three quests hooking ch2's camp cast and
+	# the retrofit side rooms, on the Q9 seams (ZONE_PROPS props into an
+	# owner's room, req_flag-gated props, add_standing forks).
+	"second_bell": {
+		"name": "The Second Bell",
+		"chapter": "ch2",
+		"desc": "Sentry Piet's watch-bell cracked in the storm that broke Korrag's pack. He can't leave his post to look for where it fell — but the wolves out on the Howling Fields still answer a bell that isn't rung anymore.",
+		"steps": [
+			{"flag": "bell_heard", "text": "Find Piet's fallen watch-bell out on the Howling Fields"},
+			{"flag": "bell_told", "text": "Tell Piet what the storm left of it"},
+		],
+		"reward": {"gold": 150, "gem": true, "kept": "sq_kept_bell"},
+	},
+	"salt_reliquary": {
+		"name": "The Salt Reliquary",
+		"chapter": "ch2",
+		"desc": "A Choir pilgrim can't make the walk to the old boundary stone at the Salt Reliquary. She asks you to carry her salt token there — not as worship, she insists. As a debt.",
+		"steps": [
+			{"flag": "salt_taken", "text": "Take the pilgrim's salt token at Maren's camp"},
+			{"flag": "salt_laid", "text": "Lay it at the boundary stone in the Salt Reliquary"},
+		],
+		"reward": {"gold": 160, "gem": true, "standing": {"choir": 2}},
+	},
+	"straight_answer": {
+		"name": "A Straight Answer",
+		"chapter": "ch2",
+		"desc": "Scholar Ivo suspects the Null Bastion's warden logs contradict the Accord's tidy account of how the sealing went. He wants the transcription — and then he wants to decide, with you, what to do with it.",
+		"steps": [
+			{"flag": "logs_read", "text": "Read the warden logs inside the Null Bastion"},
+			{"flag": "ivo_told", "text": "Bring Ivo what the logs actually say"},
+		],
+		"reward": {"gold": 200, "gem": true},
+	},
 }
 
 const QUEST_ITEMS := {
@@ -46,6 +84,31 @@ const QUEST_ITEMS := {
 		"desc": "Dark bread in waxed cloth, oven-warm when she tied it. Baked for whoever mans the far crossings.", "grade": "C"},
 	"bastion_ash": {"name": "Jar of Bastion Ash", "icon": "bastion_ash",
 		"desc": "Grey ash off the Null Bastion's road, sealed and labeled in Ivo's exact hand: 'ALDRIC — AS COMMISSIONED.'", "grade": "C"},
+	# No "icon" field (unlike sera_loaf/bastion_ash, which have sprite assets):
+	# the Curios codex renders a quest item's "icon" via Art.tex, which hard-
+	# crashes on a sprite name with no asset. Until a salt_token sprite exists,
+	# omitting it shows a graceful blank there (the bag uses a glyph regardless).
+	"salt_token": {"name": "Pilgrim's Salt Token",
+		"desc": "A disc of grey salt, pressed by hand and worn smooth from carrying. The pilgrim would not tell you whose debt it settles.", "grade": "C"},
+}
+
+# ZONE_PROPS (Q9): drop a quest prop into an EXISTING ch2 room by NAME, without
+# editing the owning zone module or appending a zone. Both are gated so they
+# only stand once their quest is live — a normal first pass never sees them.
+const ZONE_PROPS := {
+	"ch2": {
+		# Piet's cracked bell, out where the storm dropped it. req_flag keeps it
+		# from cluttering the fields until you've taken the errand.
+		"The Howling Fields": [
+			{"sprite": "watch_brazier", "x": 980, "y": 470, "prompt": "E — The fallen bell",
+				"convo": "ch2_bell", "req_flag": "sq_on_second_bell", "req_not_flag": "bell_heard"},
+		],
+		# The Bastion's warden logs — only worth reading once Ivo asks for them.
+		"The Null Bastion": [
+			{"sprite": "pillar", "x": 760, "y": 430, "prompt": "E — Warden logs",
+				"convo": "ch2_bastion_logs", "req_flag": "sq_on_straight_answer", "req_not_flag": "logs_read"},
+		],
+	},
 }
 
 const CONVOS := {
@@ -58,6 +121,109 @@ const CONVOS := {
 			"next": "aa_fade"},
 		"aa_fade": {"who": "Narrator", "cue": "fade",
 			"text": "\"Tell Ivo it's paid,\" he says. It is the only thing he says.", "next": ""},
+	}},
+
+	# ---- Q10: The Second Bell (Sentry Piet) --------------------------------
+	# OVERRIDES ch2_hub.gd's "ch2_sentry" — verbatim copy, extended: s1 now
+	# flows to a hub (it used to end), which offers the bell errand and takes
+	# the report. All new choices are req-gated, so the index-0 convo walk is
+	# unchanged.
+	"ch2_sentry": {"start": "s1", "nodes": {
+		"s1": {"who": "Sentry Piet",
+			"text": "Quiet shift, thank the flame. The wolves out there sing most nights — real wolves, mind. You learn to tell the difference by the second week.",
+			"variants": [
+				{"band": "tempted", "text": "...You mind standing a bit further off? No offense. We had one of yours through last month with that same look, and I still dream about the fence."},
+				{"band": "steady", "text": "Shard-bearer. Good — with you standing there the night feels half as long. Maren picks the decent ones, whatever the villages say."},
+			],
+			"next": "sp_hub"},
+		"sp_hub": {"who": "Sentry Piet", "text": "Something on your mind, or just keeping the fence company?",
+			"next": "",
+			"choices": [
+				{"text": "\"Your bell's gone quiet. Where did it fall?\"",
+					"req_not_flag": "sq_on_second_bell", "resonance": 2.0,
+					"side_quest": "second_bell", "next": "sp_bell"},
+				{"text": "\"I found your bell. What's left of it isn't good.\"",
+					"req_flag": "bell_heard", "req_not_flag": "bell_told",
+					"side_quest": "second_bell", "flags": {"bell_told": true}, "next": "sp_told"},
+				{"text": "\"Stay sharp, Piet.\" (leave)", "next": ""},
+			]},
+		"sp_bell": {"who": "Sentry Piet", "text": "\"Cracked in the storm that broke Korrag's lot — you'll have heard, if you've been east. Thing is, the wolves still come to where it hung. To the SOUND of it, and there's no sound. I can't leave the fence to go looking. But if you're out on the Fields anyway — I'd want to know where it landed. And what shape it's in.\"", "next": ""},
+		"sp_told": {"who": "Sentry Piet", "text": "He turns the split shard over twice, and something in his shoulders comes down an inch. \"Snapped, not rusted. So it wasn't neglect — it was the storm leaning on the note till the iron let go.\" He pockets it. \"Twenty years I rang that bell on time. A man wants to know the quiet wasn't his own doing. Thank you, bearer.\"", "next": ""},
+	}},
+
+	# ---- Q10: The Salt Reliquary (Choir Pilgrim) ---------------------------
+	# OVERRIDES ch2_factions.gd's "ch2_choir_pilgrim" — verbatim copy, extended:
+	# the first-contact paths (listen / rebuke / revisit) now flow to a hub
+	# that carries the salt errand, so she stays talkable after one meeting.
+	"ch2_choir_pilgrim": {"start": "h1", "nodes": {
+		"h1": {"who": "Choir Pilgrim",
+			"text": "A grey-wrapped pilgrim sways by the gate, humming a hymn with no words you know. The sentries won't touch her. \"The rot is honest,\" she says, to no one. \"It only takes what was already leaving.\"",
+			"variants": [
+				{"flag": "heard_litany", "text": "The pilgrim inclines her head as you pass. \"The Choir keeps a place for those who listened once,\" she murmurs.", "next": "hp_hub"},
+			],
+			"next": "h2"},
+		"h2": {"who": "Choir Pilgrim", "text": "She notices you — or notices the shard. \"It hums our hymn too, bearer. Will you hear one verse? Nothing is asked. The Choir does not recruit. It WAITS.\"",
+			"choices": [
+				{"text": "Listen to the verse. (It costs nothing. Probably.)",
+					"flags": {"heard_litany": true}, "faction": {"choir": 6},
+					"resonance": -2.0, "next": "h_listen"},
+				{"text": "\"Take your rot-psalms away from these people.\"",
+					"flags": {"heard_litany": true}, "faction": {"choir": -6},
+					"resonance": 2.0, "next": "h_rebuke"},
+			]},
+		"h_listen": {"who": "Narrator", "text": "The verse is about a garden that stopped pretending. It is beautiful the way a flooded quarry is beautiful, and it stays in your head three days longer than you'd like.", "next": "hp_hub"},
+		"h_rebuke": {"who": "Choir Pilgrim", "text": "\"The garden doesn't mind,\" she says mildly, and keeps humming. Somehow that is worse than an argument.", "next": "hp_hub"},
+		"hp_hub": {"who": "Choir Pilgrim", "text": "\"One thing, since you walk where I cannot. There is a boundary stone out in the salt — the old reliquary. A debt of mine is owed there. Salt for salt.\" A worn grey disc waits in her open hand, not quite offered yet.",
+			"next": "",
+			"choices": [
+				{"text": "Take the salt token. \"I'll lay it at the stone.\"",
+					"req_not_flag": "salt_taken", "resonance": 2.0,
+					"gain_item": "salt_token", "flags": {"salt_taken": true},
+					"side_quest": "salt_reliquary", "next": "hp_take"},
+				{"text": "\"Whose debt is it?\"", "req_not_flag": "salt_taken", "next": "hp_why"},
+				{"text": "\"The stone's quiet now, pilgrim.\"", "req_flag": "salt_laid", "next": "hp_done"},
+				{"text": "\"Not today.\" (leave)", "next": ""},
+			]},
+		"hp_take": {"who": "Choir Pilgrim", "text": "\"Salt keeps. It won't spoil on the road, and neither will the debt.\" She folds your fingers over the disc with both hands. \"Lay it flat on the imperial face. It will know the face.\"", "next": ""},
+		"hp_why": {"who": "Choir Pilgrim", "text": "\"Mine,\" she says, which is not an answer, and hums until you stop asking.", "next": "hp_hub"},
+		"hp_done": {"who": "Choir Pilgrim", "text": "For the first time the hymn stops. \"Then it is paid.\" For a moment she looks like a woman and not a psalm. \"Thank you, bearer. The garden noticed. It notices the small doors too.\"", "next": ""},
+	}},
+
+	# OVERRIDES ch2_zones_side.gd's "ch2_lore_reliquary" — verbatim copy, with
+	# a gated deposit choice appended. Carrying the pilgrim's token unlocks
+	# laying it; the ungated "read again" keeps the prop walkable for everyone.
+	"ch2_lore_reliquary": {"start": "l1", "nodes": {
+		"l1": {"who": "Narrator", "text": "A boundary stone, half-swallowed by dune. The imperial side reads: BY ORDER OF THE CROWN, ALL WELLS BETWEEN THIS MARK AND THE SALT ARE HELD IN COMMON. The other face has been cut more recently, with a worse chisel, by somebody who had to lie down in the sand to reach it: AND THE CROWN IS DEAD AND THE WELLS ARE DRY AND WE HELD THEM IN COMMON RIGHT TO THE END. Both hands were proud of their work. Only one of them was joking.",
+			"next": "",
+			"choices": [
+				{"text": "Lay the pilgrim's salt flat on the imperial face.",
+					"req_flag": "salt_taken", "req_not_flag": "salt_laid",
+					"lose_item": "salt_token", "flags": {"salt_laid": true},
+					"resonance": 2.0, "next": "l_laid"},
+				{"text": "Read it again, and step back.", "next": ""},
+			]},
+		"l_laid": {"who": "Narrator", "text": "The salt disc sits on the old imperial line like a coin on a closed eye. It does not glow, or hum, or do anything a shard would do. It just sits there, being held in common, right to the end. Somewhere back at the camp, a pilgrim's debt goes quiet.", "next": ""},
+	}},
+
+	# ---- Q10 props: the bell on the Fields, the logs in the Bastion --------
+	# (placed by ZONE_PROPS above; both set a step flag through a single choice.)
+	"ch2_bell": {"start": "b1", "nodes": {
+		"b1": {"who": "Narrator", "text": "The bell lies half in a wind-scour, its lip split clean through — not corroded, SNAPPED, the way iron goes when something too large leans on the note. Wolf tracks ring it, old and new. They come to where the sound used to be, and mill, and leave, and come back.",
+			"next": "",
+			"choices": [
+				{"text": "Pry loose a shard of the broken lip for Piet.",
+					"flags": {"bell_heard": true}, "next": "b2"},
+			]},
+		"b2": {"who": "Narrator", "text": "The curl of split iron is lighter than it should be, as if the storm took something out of it that wasn't only shape.", "next": ""},
+	}},
+	"ch2_bastion_logs": {"start": "b1", "nodes": {
+		"b1": {"who": "Narrator", "text": "A warden's log, still legible where the void-frost kept it. The Accord's histories call the sealing clean — six wardens, one rite, no losses. The log disagrees: it counts NINE names struck through, and a last entry in a shaking hand that says the seal did not hold the first time. Or the second.",
+			"next": "",
+			"choices": [
+				{"text": "Transcribe it, word for word, for Ivo.",
+					"flags": {"logs_read": true}, "next": "b2"},
+			]},
+		"b2": {"who": "Narrator", "text": "You copy it out exact — the struck names, the shaking last line, all of it. Ivo said 'exact' four times. You believe he meant it four times.", "next": ""},
 	}},
 
 	# OVERRIDES ch2_hub.gd's "ch2_refugee" — verbatim copy, extended:
@@ -139,8 +305,27 @@ const CONVOS := {
 					"resonance": 2.0, "next": "s_loaf"},
 				{"text": "Nod at the sealed jar on his sample desk — the one labeled ALDRIC.",
 					"req_not_flag": "ash_taken", "next": "s_jar"},
+				# Q10: A Straight Answer — accept, then report the warden logs.
+				{"text": "\"Your Bastion notes stop right where it gets interesting. What are you afraid they say?\"",
+					"req_not_flag": "sq_on_straight_answer", "resonance": 2.0,
+					"side_quest": "straight_answer", "next": "s_ask"},
+				{"text": "\"I read the warden logs. The Accord's version is a lie of omission.\"",
+					"req_flag": "logs_read", "req_not_flag": "ivo_told", "next": "s_fork"},
 			]},
 		"s3": {"who": "Scholar Ivo", "text": "\"Shed its armor before it sheds yours — it protects the frame, not the function. And when the grid stamps, DON'T be where you were standing. That sentence has cost four lives to write, so do me the courtesy of surviving it.\"", "next": ""},
+		# -- A Straight Answer: the ask, then the fork over what to do with it.
+		"s_ask": {"who": "Scholar Ivo", "text": "\"Afraid. Yes. Good word.\" He sets down his stylus. \"The Accord's account of the sealing is TOO clean — six wardens, one rite, done. Inside the Bastion there's a warden's own log. If it says what I think it says, then the tidy version is a kindness someone chose to tell. Read it for me. Word for word — the crystals taught me what 'roughly' costs.\"", "next": ""},
+		"s_fork": {"who": "Scholar Ivo", "text": "He reads your transcription twice, the second time slower. \"Nine names. Three attempts. A last line by a man who knew.\" He is very still. \"So. I can publish this exactly — the sealing was a slaughter dressed as a rite, and the Accord has been printing the dress. Or I summarize kindly: it held, the cost was borne, spare the grandchildren the arithmetic. You carried it. You've earned the vote.\"",
+			"next": "",
+			"choices": [
+				{"text": "\"Publish it whole. People who bury the count get to do it twice.\"",
+					"flags": {"ivo_told": true, "chose_ivo_truth": true},
+					"faction": {"accord": -2}, "resonance": 2.0, "next": "s_publish"},
+				{"text": "\"Summarize it kindly. The dead are past caring who knows the number.\"",
+					"flags": {"ivo_told": true}, "faction": {"accord": 2}, "next": "s_kind"},
+			]},
+		"s_publish": {"who": "Scholar Ivo", "text": "\"Then it's on the record, and so is my name under it.\" He copies it into a bound folio, unhurried. \"The Accord will call me unaffiliated a great deal louder now. Let them. A chronicle that flatters the chronicler's patrons is a receipt, bearer, not a history.\"", "next": ""},
+		"s_kind": {"who": "Scholar Ivo", "text": "\"...Kind. Yes.\" He folds the transcription once and sets it under a heavier stone. \"It held. The cost was borne. Both true, and both a little less than the whole. I'll keep the whole here, where the crystals can't repeat it, for whoever comes asking after we're all past minding.\"", "next": ""},
 		"s_desk": {"who": "Scholar Ivo", "text": "\"Back again. Good — the crystals repeat dull company.\" He waves at the sample desk without looking up.",
 			"next": "",
 			"choices": [
@@ -150,6 +335,11 @@ const CONVOS := {
 					"resonance": 2.0, "next": "s_loaf"},
 				{"text": "Nod at the sealed jar on his sample desk — the one labeled ALDRIC.",
 					"req_not_flag": "ash_taken", "next": "s_jar"},
+				{"text": "\"Your Bastion notes stop right where it gets interesting. What are you afraid they say?\"",
+					"req_not_flag": "sq_on_straight_answer", "resonance": 2.0,
+					"side_quest": "straight_answer", "next": "s_ask"},
+				{"text": "\"I read the warden logs. The Accord's version is a lie of omission.\"",
+					"req_flag": "logs_read", "req_not_flag": "ivo_told", "next": "s_fork"},
 				{"text": "\"Mind the crystals, Ivo.\" (leave)", "next": ""},
 			]},
 		"s_loaf": {"who": "Scholar Ivo", "text": "\"...Bread. OVEN bread.\" He takes the bundle in both hands, the way one handles a first edition. \"I have catalogued four hundred resonance events this year, bearer, and this is the finest data among them. Tell Sera the crossing is manned — and that the crossing says thank you. From Ivo. Not 'the deeps'. Ivo.\"", "next": ""},

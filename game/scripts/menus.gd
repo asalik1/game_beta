@@ -2160,6 +2160,16 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		ab.add_theme_font_size_override("font_size", 12)
 		ab.custom_minimum_size.y = 28.0 if not game.touch_mode else 34.0
 		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nIn Crownfall, gems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag); on the road only\nthe bag merges — socketed work waits for the Lapidary."
+	if not p.backpack.is_empty():
+		var equip_all_cb := func() -> void:
+			var n: int = game.local_player.auto_equip()
+			game.spawn_text(game.local_player.global_position + Vector2(0, -60),
+				"%d EQUIPPED" % n if n > 0 else "NOTHING BETTER", Color(0.6, 1.0, 0.6))
+			open_inventory("gear", cat)
+		var eb := _btn(catrow, "⚖ Auto-equip", equip_all_cb, Color(0.6, 1.0, 0.6))
+		eb.add_theme_font_size_override("font_size", 12)
+		eb.custom_minimum_size.y = 28.0 if not game.touch_mode else 34.0
+		eb.tooltip_text = "Fill every empty gear slot and take strict upgrades from the bag.\nNever swaps out a piece you might want — anything holding gems or\na unique passive is left alone, and side-grades are skipped."
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL

@@ -766,6 +766,13 @@ func _process(delta: float) -> void:
 	# moving the hero beneath the panel.
 	var overlay_up: bool = hud.dialogue_active or hud.choices_active or menus.is_open() \
 		or hud.chat_active  # MP-19: an open chat line is an input overlay (§5.4)
+	# Onboarding beat (Q8): drained behind overlays, not fired inline at
+	# room-clear — a session never pauses (§5.4), so wait for the same
+	# composite the interact poll uses before popping a menu on the player.
+	if pending_tutorial != "" and state == ST_PLAYING and not overlay_up:
+		var _step := pending_tutorial
+		pending_tutorial = ""
+		_run_tutorial_beat(_step)
 	if state == ST_PLAYING and not overlay_up:
 		player._poll_local_intents()
 		# Several interactables can share one interact reach (capital stations

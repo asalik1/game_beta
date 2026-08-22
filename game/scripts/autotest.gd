@@ -989,6 +989,14 @@ func _run_systems() -> void:
 	# 3d15. Equip / unequip: slot empties back to the bag, bag-full guard.
 	_test_equip_unequip()
 
+	# 3d15a. Auto-equip (Q8): fills empty slots + strict upgrades only; never
+	# ejects a gemmed / unique piece; skips class-locked and side-grades.
+	_test_auto_equip()
+
+	# 3d15a2. Onboarding gate (Q8): fresh ch1 hero is taught talents then gear
+	# once; completed/replay/guest/already-taught never re-fire.
+	_test_onboarding()
+
 	# 3d15b. Stacking bags (round 52): sum-capacity, keep-best-5, act-tiered
 	# drops, shop pricing, discard-throw, save round-trip + old-save migration.
 	await _test_bags_discard()
@@ -2503,6 +2511,8 @@ func _run_campaign_ch2() -> void:
 	await _test_quest_verbs()
 	await _test_quest_quarry()
 	await _test_quest_abandonment()
+	_test_quest_schema()
+	_test_quest_scope()
 	await _test_ch1_quests()
 	await _test_pc_curios()
 	await _test_capital()
@@ -3465,6 +3475,135 @@ func _test_equip_unequip() -> void:
 	p.bags = keep_bags
 	p.recalc()
 	print("ok: equip / unequip (slot empties to bag, bag-full guard)")
+
+
+# ---- Q8: Auto-equip (fill empties + strict upgrades only) --------------
+func _test_auto_equip() -> void:
+	var p := game.player
+	var keep_eq: Dictionary = p.equipment
+	var keep_bp: Array = p.backpack
+	var keep_bags: Array = p.bags
+	var keep_cls: String = p.cls
+	p.bags = [Items.make_bag("S")]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 23
+
+	# --- strictly_better unit truths (the shared basis auto_equip uses) ---
+	var mk := func(main: Dictionary, subs: Dictionary, plus: int, extra := {}) -> Dictionary:
+		var it := {"slot": "weapon", "grade": "C", "plus": plus,
+			"main": main, "subs": subs, "gems": [], "cls": "", "name": "T"}
+		for k in extra:
+			it[k] = extra[k]
+		return it
+	var empty_wins := Items.strictly_better(mk.call({"atk": 5.0}, {}, 0), null)
+	var strict_up := Items.strictly_better(mk.call({"atk": 10.0}, {}, 0), mk.call({"atk": 5.0}, {}, 0))
+	var side_grade := Items.strictly_better(mk.call({"atk": 10.0}, {}, 0), mk.call({"atk": 5.0}, {"def": 8.0}, 0))
+	var worse := Items.strictly_better(mk.call({"atk": 3.0}, {}, 0), mk.call({"atk": 5.0}, {}, 0))
+	var equal := Items.strictly_better(mk.call({"atk": 5.0}, {}, 0), mk.call({"atk": 5.0}, {}, 0))
+	var over_gem := Items.strictly_better(mk.call({"atk": 100.0}, {}, 0),
+		mk.call({"atk": 1.0}, {}, 0, {"gems": [{"stat": "atk", "lvl": 1}]}))
+	var over_passive := Items.strictly_better(mk.call({"atk": 100.0}, {}, 0),
+		mk.call({"atk": 1.0}, {}, 0, {"passive": "reprisal"}))
+
+	# --- end-to-end: plus-scaling gives a clean strict-dominance pair ------
+	var base := Items.roll_item_of("weapon", "B", rng, p.cls)
+	var weak := base.duplicate(true); weak["plus"] = 0
+	var strong := base.duplicate(true); strong["plus"] = 3
+
+	# Empty slot fills.
+	p.equipment = {}
+	p.backpack = [weak.duplicate(true)]
+	var n_empty := p.auto_equip()
+	var filled_empty := n_empty == 1 and p.equipment.has("weapon") and p.backpack.is_empty()
+
+	# A strict upgrade in the bag displaces the weaker worn piece (which
+	# returns to the bag); a side-grade / worse piece would not.
+	p.equipment = {"weapon": weak.duplicate(true)}
+	p.backpack = [strong.duplicate(true)]
+	var n_up := p.auto_equip()
+	var took_upgrade := n_up == 1 and int(p.equipment["weapon"]["plus"]) == 3 and p.backpack.size() == 1
+
+	# A gemmed worn piece is NEVER auto-swapped, even by a strict stat win.
+	var gemmed := weak.duplicate(true)
+	gemmed["gems"] = [Items.make_gem("atk", 1)]
+	p.equipment = {"weapon": gemmed}
+	p.backpack = [strong.duplicate(true)]
+	var n_gem := p.auto_equip()
+	var kept_gemmed := n_gem == 0 and (p.equipment["weapon"]["gems"] as Array).size() == 1
+
+	# A class-locked item is skipped (empty slot stays empty).
+	var locked := Items.roll_item_of("helmet", "B", rng, p.cls)
+	locked["cls"] = "warrior" if p.cls != "warrior" else "mage"
+	p.equipment = {}
+	p.backpack = [locked]
+	var n_locked := p.auto_equip()
+	var skipped_locked := n_locked == 0 and not p.equipment.has("helmet")
+
+	# Restore before any assert (failure paths too — CLAUDE.md).
+	p.equipment = keep_eq
+	p.backpack = keep_bp
+	p.bags = keep_bags
+	p.cls = keep_cls
+	p.recalc()
+
+	if not (empty_wins and strict_up and not side_grade and not worse and not equal):
+		return _fail("strictly_better: empty=win, strict-up=win, side-grade/worse/equal=no")
+	if over_gem or over_passive:
+		return _fail("strictly_better must never displace a gemmed / unique-passive piece")
+	if not filled_empty:
+		return _fail("auto_equip did not fill an empty slot")
+	if not took_upgrade:
+		return _fail("auto_equip did not take a strict upgrade (worn piece back to bag)")
+	if not kept_gemmed:
+		return _fail("auto_equip wrongly swapped out a gemmed worn piece")
+	if not skipped_locked:
+		return _fail("auto_equip equipped a class-locked item")
+	print("ok: auto-equip (empties + strict upgrades; gemmed/locked/side-grade left)")
+
+
+# ---- Q8: onboarding gate (teach talents then gear, once per new ch1 hero)
+func _test_onboarding() -> void:
+	var g := game
+	var snap_flags: Dictionary = g.flags.duplicate(true)
+	var ch0: String = g.chapter_id
+	var ns0: bool = g.no_saves
+	var rep0: bool = g.menus.chapter_replay
+	var pt0: String = g.pending_tutorial
+	# A real fresh ch1 solo hero (autotest normally sets no_saves, which the
+	# gate treats as "not real play").
+	g.chapter_id = "ch1"
+	g.no_saves = false
+	g.menus.chapter_replay = false
+	g.flags.erase("completed_ch1")
+	g.flags.erase("tut_talents_done")
+	g.flags.erase("tut_gear_done")
+	var due_fresh: bool = g._onboard_due("talents")
+	g.flags["completed_ch1"] = true
+	var due_completed: bool = g._onboard_due("talents")
+	g.flags.erase("completed_ch1")
+	g.menus.chapter_replay = true
+	var due_replay: bool = g._onboard_due("talents")
+	g.menus.chapter_replay = false
+	g.flags["tut_talents_done"] = true
+	var due_taught: bool = g._onboard_due("talents")
+	var kept: bool = "tut_" in g.KEPT_FLAG_PREFIXES
+	# Restore before any assert.
+	g.flags = snap_flags
+	g.chapter_id = ch0
+	g.no_saves = ns0
+	g.menus.chapter_replay = rep0
+	g.pending_tutorial = pt0
+	if not due_fresh:
+		return _fail("onboarding: a fresh ch1 hero should be due the talents beat")
+	if due_completed:
+		return _fail("onboarding: a completed ch1 must not re-teach")
+	if due_replay:
+		return _fail("onboarding: a chapter replay must not teach")
+	if due_taught:
+		return _fail("onboarding: an already-taught step must not re-fire")
+	if not kept:
+		return _fail("onboarding: tut_ must be a kept prefix so the mark survives the wipe")
+	print("ok: onboarding gate (fresh ch1 due; completed/replay/taught blocked; tut_ kept)")
 
 
 # ---- CORE: stacking bags + discard-throw (round 52) --------------------
@@ -5271,6 +5410,85 @@ func _test_side_quests() -> void:
 	print("ok: side quests (accept, step tracking, single payout)")
 
 
+## Q9: every authored side quest is well-formed — known step kinds + reward
+## keys + scope, kill steps carry target/count, and an UNSCOPED (capital/world)
+## quest's step flags all ride a kept prefix so they survive the chapter wipe
+## (the invariant the scope persistence leans on). Read-only; no restore needed.
+func _test_quest_schema() -> void:
+	var allowed_kinds := {"flag": true, "kill": true}
+	var allowed_reward := {"gold": true, "standing": true, "item": true,
+		"gem": true, "kept": true, "keepsake": true}
+	var allowed_scope := {"chapter": true, "capital": true, "world": true}
+	var kept_prefixes: Array = game.KEPT_FLAG_PREFIXES
+	for id in Story.ALL_SIDE_QUESTS:
+		var q: Dictionary = Story.ALL_SIDE_QUESTS[id]
+		var scope := String(q.get("scope", "chapter"))
+		if not allowed_scope.has(scope):
+			return _fail("quest %s: unknown scope '%s'" % [id, scope])
+		var unscoped := scope != "chapter"
+		for step in q.get("steps", []):
+			if not step.has("flag"):
+				return _fail("quest %s: a step has no flag" % id)
+			var kind := String(step.get("kind", "flag"))
+			if not allowed_kinds.has(kind):
+				return _fail("quest %s: step kind '%s' is not a built kind" % [id, kind])
+			if kind == "kill" and (String(step.get("target", "")) == "" \
+					or int(step.get("count", 0)) < 1):
+				return _fail("quest %s: a kill step needs target + count>=1" % id)
+			if unscoped:
+				var f := String(step["flag"])
+				var kept := false
+				for pre in kept_prefixes:
+					if f.begins_with(String(pre)):
+						kept = true
+						break
+				if not kept:
+					return _fail("quest %s (%s): step flag '%s' must use a kept prefix" % [id, scope, f])
+		for rk in q.get("reward", {}):
+			if not allowed_reward.has(String(rk)):
+				return _fail("quest %s: reward key '%s' is not supported" % [id, rk])
+	print("ok: quest schema (kinds / reward keys / scope; unscoped flags kept)")
+
+
+## Q9: an UNSCOPED (capital/world) quest persists across a chapter wipe and is
+## never charged for abandonment — the property capital/interlude quests need.
+## Injects a throwaway capital quest, drives the two persistence seams, restores.
+func _test_quest_scope() -> void:
+	var g := game
+	var snap_flags: Dictionary = g.flags.duplicate(true)
+	var snap_kills: Dictionary = g.quest_kills.duplicate(true)
+	var snap_cons: Array = g.player.consumables.duplicate(true)
+	var ch0: String = g.chapter_id
+	Story.ALL_SIDE_QUESTS["__scope_test"] = {
+		"name": "Scope Probe", "scope": "capital", "chapter": "capital",
+		"desc": "probe", "steps": [{"flag": "cap_scope_test_done", "text": "x"}],
+		"reward": {"gold": 1},
+	}
+	g.flags["sq_on___scope_test"] = true
+	g.flags["sq_pledge___scope_test"] = 2.0
+	# The wipe must KEEP the unscoped accept marker (its step flag rides cap_).
+	g._wipe_chapter_flags()
+	var survived: bool = g.get_flag("sq_on___scope_test", false)
+	# Expiry (run from a chapter with no chapter-scoped quests) must SKIP it.
+	g.chapter_id = "capital"
+	var broken: Array = g._expire_side_quests()
+	var not_expired := true
+	for line in broken:
+		if String(line).find("Scope Probe") >= 0:
+			not_expired = false
+	# Restore before asserting.
+	Story.ALL_SIDE_QUESTS.erase("__scope_test")
+	g.flags = snap_flags
+	g.quest_kills = snap_kills
+	g.player.consumables = snap_cons
+	g.chapter_id = ch0
+	if not survived:
+		return _fail("scope: an unscoped (capital) quest's accept marker was wiped")
+	if not not_expired:
+		return _fail("scope: an unscoped quest was charged for abandonment")
+	print("ok: quest scope (capital quest survives the wipe, never expiry-charged)")
+
+
 ## Quest-verb pass (2026-08-17, PROPOSALS/DYNAMIC_WORLD.md): the new step KIND
 ## `kill` (a counter that sets its flag at the target), the reward KEYS
 ## item/gem/kept, and the illustration cue family + `scene` primitive. Injects a
@@ -5782,16 +6000,33 @@ func _test_ch3_quests() -> void:
 ## items resolve, and each chain pays once on its last step. Drives the
 ## flags by hand; SNAPSHOT + RESTORE shared state per the rule.
 func _test_ch2_quests() -> void:
-	# Override nodes must be present in the merged convo table.
+	# Override nodes must be present in the merged convo table (incl. the Q10
+	# slate: Piet's bell hub, the pilgrim's salt hub, the reliquary deposit,
+	# Ivo's straight-answer fork, and the two ZONE_PROPS prop convos).
 	for probe in [["ch2_refugee", "r_accept"], ["ch2_refugee", "r_after"],
 			["ch2_scholar", "s_desk"], ["ch2_scholar", "s_jar"],
-			["ch2_aldric", "p_ash"]]:
+			["ch2_aldric", "p_ash"], ["ch2_sentry", "sp_told"],
+			["ch2_choir_pilgrim", "hp_hub"], ["ch2_lore_reliquary", "l_laid"],
+			["ch2_scholar", "s_fork"], ["ch2_bell", "b2"], ["ch2_bastion_logs", "b2"]]:
 		var nodes: Dictionary = Story.ALL_CONVOS[probe[0]]["nodes"]
 		if not nodes.has(probe[1]):
 			_fail("ch2 quests: override node %s/%s missing (module must preload AFTER the ch2 modules)" % [probe[0], probe[1]])
 			await get_tree().create_timer(60.0).timeout
 			return
-	for qiid in ["sera_loaf", "bastion_ash"]:
+	# The Q10 props ride ZONE_PROPS onto two existing ch2 zones — assert they
+	# landed (the merge is by zone NAME; a rename would silently drop them).
+	for zname in ["The Howling Fields", "The Null Bastion"]:
+		var found_prop := false
+		for zdict in Story.CHAPTER_LIST["ch2"]["zones"]:
+			if String(zdict.get("name", "")) == zname:
+				for npc in zdict.get("npcs", []):
+					if String(npc.get("convo", "")) in ["ch2_bell", "ch2_bastion_logs"]:
+						found_prop = true
+		if not found_prop:
+			_fail("ch2 quests: ZONE_PROPS did not attach a prop to '%s'" % zname)
+			await get_tree().create_timer(60.0).timeout
+			return
+	for qiid in ["sera_loaf", "bastion_ash", "salt_token"]:
 		if Items.make_quest_item(String(qiid)).is_empty():
 			_fail("ch2 quest item '%s' does not resolve" % qiid)
 			await get_tree().create_timer(60.0).timeout
@@ -5805,6 +6040,9 @@ func _test_ch2_quests() -> void:
 		"still_blue": ["mill_road_cleared", "mill_seen", "mill_told"],
 		"bread_for_the_road": ["loaf_taken", "loaf_given"],
 		"ash_for_aldric": ["ash_taken", "ash_given"],
+		"second_bell": ["bell_heard", "bell_told"],
+		"salt_reliquary": ["salt_taken", "salt_laid"],
+		"straight_answer": ["logs_read", "ivo_told"],
 	}
 	for sqid in chains:
 		var sid := String(sqid)
@@ -5839,12 +6077,17 @@ func _test_ch2_quests() -> void:
 		_fail("ch2 quests: bread_for_the_road did not pay its Accord standing")
 		await get_tree().create_timer(60.0).timeout
 		return
+	# The Salt Reliquary's reward carries its Choir standing shift (Q10).
+	if int(game.player.faction_standing.get("choir", 0)) != int(snap_standing.get("choir", 0)) + 2:
+		_fail("ch2 quests: salt_reliquary did not pay its Choir standing")
+		await get_tree().create_timer(60.0).timeout
+		return
 	game.player.gold = gold0
 	game.player.faction_standing = snap_standing
 	game.player.gem_bag = snap_gems
 	game.dropped_loot = snap_drops
 	game.flags = snap_flags
-	print("ok: ch2 side quests (still_blue, bread_for_the_road, ash_for_aldric — single payouts)")
+	print("ok: ch2 side quests (6 chains — still_blue/bread/ash + bell/salt/straight-answer, single payouts)")
 
 
 # ---- Q6: Chapter 6 side quests (scripts/content/ch6_quests.gd) ----------

@@ -1009,6 +1009,13 @@ func _build_room(i: int) -> void:
 		if npc_def.has("req_wanderer") \
 				and not _wanderer_rolled(String(npc_def["req_wanderer"])):
 			continue
+		# Flag-gated props (Q9): a quest/chain prop that only exists once (or
+		# only until) a story flag lands — the seam ZONE_PROPS quest hooks,
+		# capital-chain steps and interlude overlays all lean on.
+		if npc_def.has("req_flag") and not get_flag(String(npc_def["req_flag"]), false):
+			continue
+		if npc_def.has("req_not_flag") and get_flag(String(npc_def["req_not_flag"]), false):
+			continue
 		# Placeholder NPCs (extracted art wired for review) only exist in the
 		# dev launcher — a normal playthrough never sees them in the world.
 		if npc_def.get("placeholder", false) and not dev_mode:

@@ -2811,6 +2811,54 @@ func auto_synthesize() -> int:
 	return upgrades
 
 
+## One click, zero tedium (onboarding + inventory button): fill every empty
+## gear slot from the bag and take STRICT upgrades only — never eject a piece
+## a build might prefer (gems / a unique passive: Items.strictly_better guards
+## that). Mirrors auto_synthesize's shape (loop to a fixed point, one recalc +
+## one sfx) and its silent-refusal pre-checks — we swap inline rather than call
+## equip() so the class-lock and special-gem guards never fire mid-loop and the
+## equip sound plays once, not once per piece. Returns pieces equipped.
+func auto_equip() -> int:
+	var changed := 0
+	while true:
+		var did := false
+		for item in backpack.duplicate():
+			var slot := String(item.get("slot", ""))
+			if slot == "":
+				continue
+			# Class lock — a mage never auto-equips assassin boots (equip() rule).
+			var icls := String(item.get("cls", ""))
+			if icls != "" and icls != cls:
+				continue
+			# One special gem per stat across the loadout: skip an item equip()
+			# would refuse for duplicating a special gem already worn elsewhere.
+			var conflict := false
+			for g in item.get("gems", []):
+				var st := String(g["stat"])
+				if st in Balance.SPECIAL_GEM_STATS and _special_in_other_slots(st, slot):
+					conflict = true
+					break
+			if conflict:
+				continue
+			if not Items.strictly_better(item, equipment.get(slot)):
+				continue
+			# Swap in (equip()'s core, minus the per-call recalc/visual/sfx).
+			backpack.erase(item)
+			if equipment.has(slot):
+				backpack.append(equipment[slot])
+			equipment[slot] = item
+			changed += 1
+			did = true
+			break   # equipment changed — restart the scan so later items re-diff
+		if not did:
+			break
+	if changed > 0:
+		recalc()
+		_update_weapon_visual()
+		game.sfx("equip")
+	return changed
+
+
 ## Level up ONE socketed gem in place (eats two matching bag gems).
 func _upgrade_equipped_once() -> bool:
 	for slot in equipment:

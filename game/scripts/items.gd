@@ -2777,6 +2777,36 @@ static func diff_text(new_item: Dictionary, old_item) -> String:
 	return "\n".join(lines)
 
 
+## Would AUTO-EQUIP swap `new_item` in for `old_item` (menus.gd Auto-equip)?
+## Strict dominance ONLY: over the union of stats, `new` is >= on every stat
+## and > on at least one. An empty slot (`old_item == null`) always takes the
+## item. We NEVER displace a piece a build might prefer — one carrying gems or
+## a unique passive — even for a stat win, because that is the player's call.
+## Shares the stats_of()/union basis with diff_text so the tooltip agrees.
+static func strictly_better(new_item: Dictionary, old_item) -> bool:
+	if old_item == null:
+		return true
+	if (old_item.get("gems", []) as Array).size() > 0:
+		return false
+	if String(old_item.get("passive", "")) != "":
+		return false
+	var a := stats_of(new_item)
+	var b := stats_of(old_item)
+	var keys := {}
+	for stat in a:
+		keys[stat] = true
+	for stat in b:
+		keys[stat] = true
+	var any_gt := false
+	for stat in keys:
+		var d: float = a.get(stat, 0.0) - b.get(stat, 0.0)
+		if d < -0.001:
+			return false
+		if d > 0.001:
+			any_gt = true
+	return any_gt
+
+
 static func title(item: Dictionary) -> String:
 	var plus: String = "" if item["plus"] == 0 else " +%d" % item["plus"]
 	return "[%s] %s%s" % [item["grade"], item["name"], plus]
