@@ -966,6 +966,14 @@ func _play_clip(name: String, loop: bool) -> void:
 ## skins need no art to keep working. Advances the parity on every call.
 func _alt_basic_clip() -> String:
 	_a1_swing += 1
+	# Melee basic-swing alternation. 3-way (attack -> attackb -> attackc) when the
+	# body ships an attackc, else 2-way (attack <-> attackb), else the single swing.
+	# _a1_swing starts at 0, so a fresh body always opens on the primary "attack".
+	if _clips.has("attackc") and _clips.has("attackb"):
+		var m: int = _a1_swing % 3
+		if m == 1:
+			return "attack"
+		return "attackb" if m == 2 else "attackc"
 	if _a1_swing % 2 == 0 and _clips.has("attackb"):
 		return "attackb"
 	return "attack"

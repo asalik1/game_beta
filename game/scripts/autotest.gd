@@ -4204,6 +4204,9 @@ func _test_swing_alternation() -> void:
 		if not game.player._clips.has("attackb") or not game.player._dir_loco.has("attackb") \
 				or int(game.player._dir_loco["attackb"].size()) != 8:
 			return _fail("skin %s: attackb family incomplete (flat + 8-dir) -- melee alternation dies" % pskin)
+		# 3-way (attack/attackb/attackc) if the skin ships an attackc, else 2-way.
+		var expect: Array = ["attack", "attackb", "attackc"] if game.player._clips.has("attackc") \
+			else ["attack", "attackb", "attack"]
 		var seen_skin: Array[String] = []
 		for _i in 3:
 			game.player.cds["a1"] = 0.0
@@ -4212,8 +4215,8 @@ func _test_swing_alternation() -> void:
 			game.player.use_ability("a1")
 			seen_skin.append(game.player._strike_clip)
 			await _frames(1)
-		if seen_skin != ["attack", "attackb", "attack"]:
-			return _fail("skin %s: a1 should alternate attack/attackb/attack, saw %s" % [pskin, seen_skin])
+		if seen_skin != expect:
+			return _fail("skin %s: a1 should cycle %s, saw %s" % [pskin, expect, seen_skin])
 	game.player.set_skin(saved_skin)
 	# Contact sync: the assassin's cross-slash lands later than the lunge.
 	game.player.set_class("assassin")

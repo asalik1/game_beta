@@ -88,14 +88,14 @@ SPRITES = ROOT / "game" / "assets" / "sprites"
 GAME = ROOT / "game"
 
 DIR8 = ("s", "se", "e", "ne", "n", "nw", "w", "sw")
-CLIPS = ("anim", "walk", "attack", "attack2", "attackb", "cast", "dash",
+CLIPS = ("anim", "walk", "attack", "attack2", "attackb", "attackc", "cast", "dash",
          "ult", "ultidle", "death", "stab", "throw", "dir")
 
 # Content-geometry gates (see module docstring). Thresholds calibrated
 # 2026-08-13 against the owner's mob QA pass over the full sprites corpus.
 # ("attackb" = the hero's alternate basic swing, Art.HERO_CLIP_FILES; gated
 # exactly like "attack".)
-BODY_GATE_CLIPS = ("anim", "walk", "attack", "attack2", "attackb")
+BODY_GATE_CLIPS = ("anim", "walk", "attack", "attack2", "attackb", "attackc")
 LOCO_CLIPS = ("anim", "walk")
 
 # Boss ability strips (<base>_<action>[_<dir>].png, engine seam
