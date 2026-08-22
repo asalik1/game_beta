@@ -671,7 +671,7 @@ func use_ability(slot: String) -> void:
 		# basic attack plays THAT — and a re-cast mid-cycle lets the cycle finish
 		# instead of restarting it, so the gait stays continuous under spam.
 		# Art-driven: no strip = the standing swing, exactly as before.
-		var walk_fire: bool = action_clip in ["attack", "attackb", "attack2"] \
+		var walk_fire: bool = action_clip in ["attack", "attackb", "attackc", "attack2"] \
 			and _clips.has("attack_walk") and velocity.length() > 20.0
 		if walk_fire:
 			action_clip = "attack_walk"

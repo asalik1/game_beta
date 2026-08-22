@@ -421,7 +421,13 @@ def check_file(png: Path) -> None:
                         drift.append(f"centroid-y {cy_span:.0%}")
                     if feet_span >= ANCHOR_FEET:
                         drift.append(f"feet line {feet_span:.0%}")
-                    if h_span >= ANCHOR_H:
+                    # attack_walk is a walk+draw HYBRID: the bow/staff/arm draw
+                    # legitimately raises the bbox top (archer S draw = 235..268px,
+                    # 12%), the same reason attack strips are drift-exempt. The
+                    # render scale-locks to frame 1, so the BODY stays constant --
+                    # only the raised weapon grows the box. Keep feet/centroid
+                    # (a real walk stays planted); exempt bbox-height alone.
+                    if h_span >= ANCHOR_H and "attack_walk" not in stem:
                         drift.append(f"body height {h_span:.0%}")
                 if drift:
                     WARN.append(f"[ANCHOR] {rel}: figure wanders inside its cells "

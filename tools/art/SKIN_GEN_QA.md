@@ -102,6 +102,25 @@ QA the clip the ability actually plays, not the one its name suggests. From `ABI
 - warrior berserk swaps the a1 cleave onto the **ult** clip (red blade) -- so "the ult" plays
   during a normal cleave under berserk.
 
+## Fire-on-move: the `attack_walk` clip (owner 2026-08-22)
+
+Spamming a low-cd basic WHILE MOVING used to lock the standing swing pose sliding over the
+floor. `player.gd` already swaps `action_clip -> "attack_walk"` when a basic is cast moving
+(`velocity > 20`), and a mid-cycle re-cast lets the stride finish instead of restarting -- so
+the gait stays continuous under spam. Art-driven: no `<base>_attack_walk` strip = the standing
+swing, exactly as before. Registered in `art.gd` HERO_CLIP_FILES + FPS (12).
+
+- The swap fires for `action_clip in ["attack","attackb","attack2"]`. Per `ABILITY_CLIP` the
+  enhanced-base basics land there: mage Firebolt=`attack`, warlock Shadowbolt=`attack`,
+  archer Quick Shot=`attack`, **assassin Fan of Knives=`attack2`**. All four covered.
+- Build lane = `scratchpad/attack_walk_codex.py` (stage/build/install). 8-frame WALK-AND-FIRE
+  row: the feet ALTERNATE below the hem while the upper body fires ONCE per cycle. NO baked
+  projectile (the game spawns it -- just the fire MOTION at the hand/bow).
+- Author S/E/N/W; E serves SE/NE, W serves NW/SW; flat = S (the base-hero mirror convention).
+- Per-direction best version: `build <skin> <dir> <vNN>` picks that source (else newest). Judge
+  each candidate by eye -- legs must alternate, the release must land mid-stride, no stray
+  projectile in the gutters -- before install.
+
 ## verify_art gates added for this class of defect (2026-08-21..22)
 
 - **FRAMEDEV** (dash): a frame rendering >22% off frame 1 -- the engine locks a strip's scale
@@ -116,6 +135,12 @@ QA the clip the ability actually plays, not the one its name suggests. From `ABI
 - **PARTIAL** (attack/attack2/attackb/attackc/cast/ult): a frame whose figure MASS is <35% of
   the clip median = a butchered slice (thin sliver, cut-off body, or a projectile-only cell
   counted as a frame -- the warlock hex). Mass not height, so a full-height sliver still trips.
+- **ANCHOR (attack_walk exemption)**: `attack_walk` classifies as `walk` (last token), so it
+  runs the loco ANCHOR checks -- but the bow/staff/arm DRAW legitimately raises the bbox top
+  (archer S draw = 235..268px, 12%), the same reason plain attack strips are drift-exempt. The
+  render scale-locks to frame 1, so the BODY stays constant and only the raised weapon grows the
+  box. So the bbox-HEIGHT drift is exempt for attack_walk; feet-line and centroid stay active (a
+  real walk keeps its feet planted -- that's the check that catches a bad walk).
 - These are ADVISORY WARNs, calibrated to ~zero false positives on accepted base-hero art.
 
 ## Deterministic frame fixes (no re-roll) -- scratchpad helpers
