@@ -643,14 +643,14 @@ func use_ability(slot: String) -> void:
 	_strike_clip = ""  # reset; set below to the clip this ability swings (skin FX-sync)
 	if dir_pose == "" or not play_dir_anim(dir_pose, aim_dir()):
 		var action_clip: String = ABILITY_CLIP.get(cls, {}).get(slot, "")
-		if cls == "warrior" and berserk_time > 0.0 and action_clip in ["attack", "attack2"]:
-			action_clip = "ult"  # berserk swings the RED blade, not the gold one
-		# Melee swing ALTERNATION (owner ruling 2026-08-16): a basic attack flips
-		# between the two authored swings every cast (attack <-> attackb) so
-		# Cleave / Judgment / Stab don't replay one identical motion. Art-driven
-		# — no attackb strip = the single swing, unchanged. Berserk's red-blade
-		# "ult" swing above is left alone (it has no alt clip).
-		elif slot == "a1" and action_clip == "attack":
+		# Berserk cleave/whirlwind play the REAL swing now, not the "ult" clip -- that
+		# clip is the berserk ACTIVATION (ignite/roar), not a swing, so under spam the
+		# cleave never finished (owner 2026-08-22). Berserk red comes from the slash
+		# FX (player_combat), not a clip swap.
+		# Melee swing ALTERNATION (owner 2026-08-16): a1 flips between the authored
+		# swings each cast (attack -> attackb -> attackc) so Cleave / Judgment / Stab
+		# do not replay one motion. Art-driven -- no alt strip = the single swing.
+		if slot == "a1" and action_clip == "attack":
 			action_clip = _alt_basic_clip()
 		# A dash's clip faces the TRAVEL direction, not the aimed target — a
 		# north/south dash was rendering sideways toward a side target.
@@ -679,14 +679,6 @@ func use_ability(slot: String) -> void:
 			pass  # mid-cycle re-cast: the playing stride carries the visual
 		else:
 			play_action(action_clip)
-		if cls == "warrior" and action_clip == "ult":
-			# Berserk swings the red-blade cleave (the ult clip) at Cleave's
-			# rage cadence — 0.45s, less under cdr — but that clip is authored
-			# for a slower 0.64s one-shot, so each swing was chopped before its
-			# follow-through. Re-pace it to finish inside the real recast window
-			# so the cleave reads as a full swing at any attack speed (the ult
-			# ACTIVATION roar, on its 40s cd, stays at authored pace).
-			fit_action_clip(cds[slot])
 		_strike_clip = action_clip  # skin FX-sync: swing_delay() reads this
 		action_face_hint = Vector2.ZERO
 	var f := dm(slot)
