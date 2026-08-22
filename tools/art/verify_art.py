@@ -459,7 +459,7 @@ def check_clip_scale(files: list[Path]) -> None:
                 break
         if not ref or ref["med_h"] <= 0 or ref["cell"] <= 0:
             continue
-        is_action = stat["clip"] in ("attack", "attack2", "attackb") \
+        is_action = stat["clip"] in ("attack", "attack2", "attackb", "attackc") \
             or stat["clip"] in ability_tokens()
         action_like = is_action or (stat["clip"] == "walk" and base in scale_walk)
         denom = ref["cell"] if action_like else stat["cell"]
