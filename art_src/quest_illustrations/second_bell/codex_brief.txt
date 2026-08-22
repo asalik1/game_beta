@@ -1,0 +1,14 @@
+Generate ONE painterly wide cinematic story plate for the dark-fantasy game Crownless, using the built-in image_gen tool. Save the raw generation into THIS working directory as `quest_second_bell_source.png`, then also save a WIDE 1672x941 (16:9) LANCZOS copy (crop to the central 16:9 if needed) as `quest_second_bell.png`. Do not write anywhere else. In your final message report both paths and describe what you drew.
+
+You have TWO attached images:
+- IMAGE 1 ("01_style_night_camp") is a chapter story plate from this same game — match its painterly STYLE, muted palette, moody low-key firelit lighting, wide 16:9 cinematic framing and brush texture (NOT its exact content).
+- IMAGE 2 ("02_piet_design") is the CANON splash of SENTRY PIET — the DESIGN CONTRACT for who he is (a weary young-to-middle watchman, dark tousled hair, light stubble, a patched dark long coat over a brown belted tunic, a scarf at the throat, a metal pendant on a cord, a rope belt with a chain link). Render the same man.
+
+SCENE — the turn-in beat of the quiet side quest "The Second Bell": at the camp's palisade fence at night, SENTRY PIET is handed a broken shard of his cracked watch-bell and learns the storm broke it, not his neglect.
+- SENTRY PIET (adhere to IMAGE 2): standing at a rough timber PALISADE FENCE, holding in two hands a small curved SHARD OF BROKEN BRONZE BELL (a split curl of dark metal), looking down at it, shoulders easing — relief mixed with grief. His spear leans against the fence beside him (not raised). His patched coat, scarf and pendant exactly as the reference.
+- Setting: a night watch-post on the edge of the stormy Howling Fields — a low banked watch-fire or lantern casting warm light on Piet and the shard, the dark windswept grassland and a broken bell-post silhouetted beyond, a moonlit stormy sky (echo IMAGE 1's mood).
+- Mood: quiet, worn relief. A man learning the quiet wasn't his fault.
+
+NEGATIVES (hard): no wolves, no monsters, no creatures in the dark, no raised weapon, no blood, no glowing eyes or magic, no bright saturated colours, no lettering or numbers, no watermark, no second figure, no halo/wings/crown, no frame or border; do not crop Piet or the shard out of frame; keep Piet faithful to IMAGE 2 (weary watchman in a patched coat — not armored, not a knight).
+
+Author it already-bright (shown in-engine with no tonemap). Output the raw at the tool's native landscape size, then the 1672x941 copy.

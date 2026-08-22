@@ -6031,6 +6031,24 @@ func _test_ch2_quests() -> void:
 			_fail("ch2 quest item '%s' does not resolve" % qiid)
 			await get_tree().create_timer(60.0).timeout
 			return
+	# Q10 illustrated turn-ins: each scene convo is cinematic, its cue is
+	# recognized, and its plate is actually installed (a wired scene pointing at
+	# a missing PNG would show a broken cutscene in play).
+	for sc in [["straight_answer_scene", "q_straight_answer"], ["second_bell_scene", "q_second_bell"]]:
+		var scv: Dictionary = Story.ALL_CONVOS.get(String(sc[0]), {})
+		if scv.is_empty() or not bool(scv.get("cinematic", false)):
+			_fail("ch2 quests: scene convo '%s' missing or not cinematic" % sc[0])
+			await get_tree().create_timer(60.0).timeout
+			return
+		if not Cutscene.is_known_cue(String(sc[1])):
+			_fail("ch2 quests: quest cue '%s' not recognized" % sc[1])
+			await get_tree().create_timer(60.0).timeout
+			return
+		var plate := "res://assets/sprites/opening/quests/quest_%s.png" % String(sc[1]).substr(2)
+		if not ResourceLoader.exists(plate):
+			_fail("ch2 quests: plate '%s' not installed" % plate)
+			await get_tree().create_timer(60.0).timeout
+			return
 	var snap_flags: Dictionary = game.flags.duplicate(true)
 	var snap_standing: Dictionary = game.player.faction_standing.duplicate(true)
 	var gold0: int = game.player.gold

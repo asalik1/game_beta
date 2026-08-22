@@ -8,7 +8,10 @@
 ##   straight_answer(Q10)— the Null Bastion's warden logs, and Ivo's fork
 ## Q10 adds no zones and no new spawns: the two props ride ZONE_PROPS (Q9) onto
 ## existing rooms by name, gated by req_flag; the quest givers are fixed camp
-## NPCs (Piet, the pilgrim) or the already-overridden Ivo.
+## NPCs (Piet, the pilgrim) or the already-overridden Ivo. Two Q10 turn-ins are
+## illustrated (opener-style plates via the "scene"/cinematic hook): A Straight
+## Answer (Ivo, cue q_straight_answer) and The Second Bell (Piet, q_second_bell)
+## — both Codex-generated off the giver's canon splash.
 
 const SIDE_QUESTS := {
 	"still_blue": {
@@ -123,6 +126,24 @@ const CONVOS := {
 			"text": "\"Tell Ivo it's paid,\" he says. It is the only thing he says.", "next": ""},
 	}},
 
+	# ---- Q10 illustrated turn-in beats (opener-style plates) ---------------
+	# Both plates were Codex-generated with the giver's CANON splash as the
+	# design ref (splash_scholar_ivo / splash_sentry_piet) + an opener plate as
+	# the style ref; installed at opening/quests/quest_<base>.png. The turn-in
+	# choices chain here via "scene"; each node's "cue" stages its plate.
+	"straight_answer_scene": {"cinematic": true, "start": "sa1", "nodes": {
+		"sa1": {"who": "Narrator", "cue": "q_straight_answer",
+			"text": "Deep in the crystal dark, Scholar Ivo reads the dead warden's words a third time — nine names struck through, three attempts, a last line by a man who knew the seal would not hold the first time. He does not reach for his instruments. Some readings do not want a second measure.", "next": "sa_fade"},
+		"sa_fade": {"who": "Narrator", "cue": "fade",
+			"text": "\"The Accord printed the dress and buried the wound,\" he says, to the crystals as much as to you. \"Whatever we do with this now, bearer — we do it knowing.\"", "next": ""},
+	}},
+	"second_bell_scene": {"cinematic": true, "start": "sb1", "nodes": {
+		"sb1": {"who": "Narrator", "cue": "q_second_bell",
+			"text": "At the fence's edge Sentry Piet turns the split curl of bronze in the watch-fire's light — the bell that called Korrag's pack, snapped clean by the storm that broke them. Not neglect. The weather. His shoulders come down an inch they have not come down in years.", "next": "sb_fade"},
+		"sb_fade": {"who": "Narrator", "cue": "fade",
+			"text": "\"Twenty years I rang it on time,\" he says. \"A man wants to know the quiet wasn't his own doing.\" He pockets the shard, and stands his watch a little lighter.", "next": ""},
+	}},
+
 	# ---- Q10: The Second Bell (Sentry Piet) --------------------------------
 	# OVERRIDES ch2_hub.gd's "ch2_sentry" — verbatim copy, extended: s1 now
 	# flows to a hub (it used to end), which offers the bell errand and takes
@@ -144,7 +165,8 @@ const CONVOS := {
 					"side_quest": "second_bell", "next": "sp_bell"},
 				{"text": "\"I found your bell. What's left of it isn't good.\"",
 					"req_flag": "bell_heard", "req_not_flag": "bell_told",
-					"side_quest": "second_bell", "flags": {"bell_told": true}, "next": "sp_told"},
+					"side_quest": "second_bell", "flags": {"bell_told": true},
+					"scene": "second_bell_scene", "next": "sp_told"},
 				{"text": "\"Stay sharp, Piet.\" (leave)", "next": ""},
 			]},
 		"sp_bell": {"who": "Sentry Piet", "text": "\"Cracked in the storm that broke Korrag's lot — you'll have heard, if you've been east. Thing is, the wolves still come to where it hung. To the SOUND of it, and there's no sound. I can't leave the fence to go looking. But if you're out on the Fields anyway — I'd want to know where it landed. And what shape it's in.\"", "next": ""},
@@ -320,9 +342,11 @@ const CONVOS := {
 			"choices": [
 				{"text": "\"Publish it whole. People who bury the count get to do it twice.\"",
 					"flags": {"ivo_told": true, "chose_ivo_truth": true},
-					"faction": {"accord": -2}, "resonance": 2.0, "next": "s_publish"},
+					"faction": {"accord": -2}, "resonance": 2.0,
+					"scene": "straight_answer_scene", "next": "s_publish"},
 				{"text": "\"Summarize it kindly. The dead are past caring who knows the number.\"",
-					"flags": {"ivo_told": true}, "faction": {"accord": 2}, "next": "s_kind"},
+					"flags": {"ivo_told": true}, "faction": {"accord": 2},
+					"scene": "straight_answer_scene", "next": "s_kind"},
 			]},
 		"s_publish": {"who": "Scholar Ivo", "text": "\"Then it's on the record, and so is my name under it.\" He copies it into a bound folio, unhurried. \"The Accord will call me unaffiliated a great deal louder now. Let them. A chronicle that flatters the chronicler's patrons is a receipt, bearer, not a history.\"", "next": ""},
 		"s_kind": {"who": "Scholar Ivo", "text": "\"...Kind. Yes.\" He folds the transcription once and sets it under a heavier stone. \"It held. The cost was borne. Both true, and both a little less than the whole. I'll keep the whole here, where the crystals can't repeat it, for whoever comes asking after we're all past minding.\"", "next": ""},
