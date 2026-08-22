@@ -151,6 +151,25 @@ SCALE_LO_LOCO, SCALE_LO_ACTION, SCALE_HI = 0.88, 0.82, 1.18
 # rendering >22% larger/smaller than frame 1.
 HERO_BASES = {"warrior", "archer", "mage", "assassin", "paladin", "warlock"}
 FRAMEDEV = 0.22
+# Detached-content + butchered-frame gates for HERO ability clips (cast/dash/ult)
+# and basic attacks -- these clips are NOT in BODY_GATE_CLIPS, so GHOST/HSPLIT
+# never ran on them and baked-projectile mis-slices (archer arrow-storm specks in
+# the CAST clip, warrior dash fragment, warlock shadowbolt chunk) shipped. The
+# game spawns projectiles, so a detached component off a hero figure is almost
+# always a slice artifact. Advisory WARN -- a genuinely detached authored fx is
+# rare on heroes; judge those by eye.
+# STRAY runs only on clips that should be ONE clean figure -- idle, walk, and the
+# single-target basic swings. attack2/cast/dash/ult legitimately bake AoE/FX
+# (base-hero casts carry 2-3k px of authored effect), so gating them floods; their
+# baked-projectile strays are an eyes-only review item (despur before install).
+STRAY_CLIPS = ("anim", "walk", "attack", "attackb", "attackc")
+# PARTIAL (butchered / projectile-only frame) is safe on the FX clips too -- it
+# measures the FIGURE shrinking, not the effect.
+PARTIAL_CLIPS = ("attack", "attack2", "attackb", "attackc", "cast", "ult")
+STRAY_MIN_COMP = 240      # a single detached component this big = a stray
+STRAY_MIN_TOTAL = 380     # or this much detached mass across a frame (speck swarms)
+PARTIAL_FRAC = 0.35       # a frame whose figure MASS is <this of the clip median =
+                          # a butchered / cut-off frame (warlock hex f5/f8)
 
 FAIL, WARN = [], []
 
@@ -219,6 +238,63 @@ def _frame_metrics(a: np.ndarray, frame_width: int) -> list[dict | None]:
             "hgap": int(xgaps.max()) - 1 if len(xgaps) else 0,
         })
     return out
+
+
+def _frame_components(reg: np.ndarray) -> tuple[int, int, list[int]]:
+    """4-connected components of one cell's alpha>A_SOLID mask via row-run
+    union-find (fast: O(runs), not O(pixels)). Returns (largest_size,
+    largest_bbox_height, other_component_sizes) for the hero STRAY/PARTIAL gates."""
+    mask = reg > A_SOLID
+    h = mask.shape[0]
+    parent = [0]
+    size = [0]
+    ymin = [0]
+    ymax = [0]
+
+    def find(a: int) -> int:
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    def union(a: int, b: int) -> None:
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[rb] = ra
+            size[ra] += size[rb]
+            ymin[ra] = min(ymin[ra], ymin[rb])
+            ymax[ra] = max(ymax[ra], ymax[rb])
+
+    prev: list[tuple[int, int, int]] = []   # (x0, x1 exclusive, root)
+    for y in range(h):
+        row = mask[y]
+        if not row.any():
+            prev = []
+            continue
+        d = np.diff(np.concatenate(([0], row.view(np.int8), [0])))
+        starts = np.flatnonzero(d == 1)
+        ends = np.flatnonzero(d == -1)
+        runs: list[tuple[int, int, int]] = []
+        for x0, x1 in zip(starts, ends):
+            lab = len(parent)
+            parent.append(lab)
+            size.append(int(x1 - x0))
+            ymin.append(y)
+            ymax.append(y)
+            root = lab
+            for px0, px1, proot in prev:
+                if px0 < x1 and px1 > x0:
+                    union(root, proot)
+                    root = find(root)
+            runs.append((int(x0), int(x1), root))
+        prev = runs
+    roots: dict[int, bool] = {}
+    for i in range(1, len(parent)):
+        roots[find(i)] = True
+    comps = sorted(((size[r], ymax[r] - ymin[r] + 1) for r in roots), reverse=True)
+    if not comps:
+        return 0, 0, []
+    return comps[0][0], comps[0][1], [c[0] for c in comps[1:]]
 
 
 def belongs(stem: str, base: str) -> bool:
@@ -422,6 +498,33 @@ def check_file(png: Path) -> None:
                             f"(bh {hm[worst[0] - 1]['bh']}px vs {b0}px) -- the hero renderer locks "
                             "the dash scale to frame 1, so an uneven body height plays as an "
                             "on-screen size pulse; hold body height ~constant across the dash")
+        # Detached-content + butchered-frame gates for hero ability/attack clips.
+        if clip_tok in (STRAY_CLIPS + PARTIAL_CLIPS) and frames >= 3:
+            comps = [_frame_components(a[:, i * frame_width:(i + 1) * frame_width])
+                     for i in range(frames)]
+            if clip_tok in STRAY_CLIPS:
+                stray_hits = []
+                for i, (_big, _bh, others) in enumerate(comps):
+                    if others and (max(others) >= STRAY_MIN_COMP or sum(others) >= STRAY_MIN_TOTAL):
+                        stray_hits.append(f"f{i + 1} ({max(others)}px)")
+                if stray_hits:
+                    WARN.append(f"[STRAY] {rel}: {', '.join(stray_hits)} -- a detached chunk sits off "
+                                "the figure (baked projectile / mis-slice from a neighbour cell). The "
+                                "game spawns projectiles; keep the character strip figure-only")
+            # Butchered / cut-off frames: the figure (largest component) has far
+            # less MASS than the clip's typical frame -- a thin sliver, a partial
+            # cut-off body, or a projectile-only cell counted as a frame (the
+            # warlock hex). Mass, not height, because a vertical sliver keeps full
+            # height. PARTIAL_CLIPS excludes dash (blink near-vanishes) / death.
+            if clip_tok in PARTIAL_CLIPS:
+                masses = [c[0] for c in comps if c[0] > 0]
+                med = float(np.median(masses)) if masses else 0.0
+                cut = [f"f{i + 1}" for i, (sz, _bh, _o) in enumerate(comps)
+                       if 0 < sz < PARTIAL_FRAC * med]
+                if med > 0 and cut:
+                    WARN.append(f"[PARTIAL] {rel}: {', '.join(cut)} -- figure mass far below the "
+                                f"clip's typical frame (~{med:.0f}px); a butchered slice (partial "
+                                "cut-off body or a projectile-only cell counted as a frame)")
 
     semi = int(((a > 0) & (a < 255)).sum())
     if semi:

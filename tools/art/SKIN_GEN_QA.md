@@ -91,5 +91,43 @@ and edge alpha (BLEED). #1-4 and #6 are eyes-only.
   the MEDIAN while the engine uses FRAME 1 → added FRAMEDEV (frame-1 deviation, dash-scoped).
   Both were calibrated to ZERO false positives across accepted base-hero art before shipping.
 
+## An ability plays a DIFFERENT clip than its name (player_core ABILITY_CLIP)
+
+QA the clip the ability actually plays, not the one its name suggests. From `ABILITY_CLIP`:
+- mage Frost Nova = **cast**, mage Meteor (ult) = **cast** too (one clip, both abilities);
+  mage Blink = **dash**.
+- archer Arrow Storm (ult) = **cast** (NOT the `ult` clip -- despurring the ult clip did
+  nothing for the arrow-storm specks; they were in `cast`).
+- warlock Shadowbolt = **attack**, warlock Hex = **ult**, warlock Void Rift (ult) = **cast**.
+- warrior berserk swaps the a1 cleave onto the **ult** clip (red blade) -- so "the ult" plays
+  during a normal cleave under berserk.
+
+## verify_art gates added for this class of defect (2026-08-21..22)
+
+- **FRAMEDEV** (dash): a frame rendering >22% off frame 1 -- the engine locks a strip's scale
+  to frame 1, so an uneven dash body height plays as a size pulse (archer/assassin dashes).
+- **HSPLIT** (loco): a horizontally-disjoint band in a walk/idle frame -- lateral mis-slice
+  (GHOST is vertical-only).
+- **STRAY** (idle/walk/attack/attackb/attackc only -- clips that should be ONE clean figure):
+  a detached component (>=240px, or >=380px total) off the figure = baked projectile / mis-slice.
+  Scoped OFF attack2/cast/dash/ult because those legitimately bake AoE/FX (base-hero casts carry
+  2-3k px of authored effect) and gating them floods -- their strays are an EYES-ONLY review
+  item: the game spawns projectiles, so DESPUR baked ones before install.
+- **PARTIAL** (attack/attack2/attackb/attackc/cast/ult): a frame whose figure MASS is <35% of
+  the clip median = a butchered slice (thin sliver, cut-off body, or a projectile-only cell
+  counted as a frame -- the warlock hex). Mass not height, so a full-height sliver still trips.
+- These are ADVISORY WARNs, calibrated to ~zero false positives on accepted base-hero art.
+
+## Deterministic frame fixes (no re-roll) -- scratchpad helpers
+
+- **despur_strays.py** `<glob> largest|keepbig [min_keep]` -- drop detached mis-slice
+  components (keep the figure, or figure + parts >= min_keep). Baked projectiles, stray weapons.
+- **frame_swap.py** `<glob> <dst> <src>` -- overwrite a bad frame with a good neighbour (the
+  warrior dash f4 crouch+fragment -> f3; the mage cast f6 warped staff -> f5). Owner's
+  "overwrite that frame with the previous frame".
+- **frame_reorder.py** `<glob> "1,3,4,4,5,6,7"` -- re-time a clip (mage Blink: front-load the
+  vanish so she blinks out early, not mid-dash). Frame 1 of the result MUST be non-empty (the
+  renderer measures it for scale).
+
 See `IMAGEGEN_SPRITE_PIPELINE.md` for the full generation→build→install pipeline; this file
 is the skin-specific QA addendum learned from the era-3 elite-skin batch.
