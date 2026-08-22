@@ -642,16 +642,19 @@ func _scene_bossfight(cls: String, boss_kind: String) -> void:
 
 	var melee := cls in ["warrior", "paladin", "assassin"]
 	if melee:
-		# Melee closes on the boss, weaving in and out; full kit + ult.
+		# Melee closes on the boss, weaving in and out; then the ultimate.
 		await _kite_run(
 			[[KEY_A, 0.55], [KEY_W, 0.4], [KEY_A, 0.5], [KEY_S, 0.4], [KEY_D, 0.4]],
-			[[0.4, "a2"], [1.3, "a3"], [2.1, "a2"], [3.0, "ult"]], 0.28)
+			[[0.4, "a2"], [1.3, "a3"], [2.0, "a2"]], 0.28)
 	else:
-		# Ranged kites RIGHT into the open, basic peppering the boss; full kit + ult.
+		# Ranged kites RIGHT into the open, basic peppering the boss; then the ult.
 		await _kite_run(
 			[[KEY_D, 0.75], [KEY_W, 0.5], [KEY_D, 0.65], [KEY_S, 0.5], [KEY_D, 0.5]],
-			[[1.0, "a2"], [2.1, "a3"], [3.2, "ult"]], 0.24)
-	await _record(2.0)                              # hold the ult on the boss
+			[[1.0, "a2"], [2.1, "a3"]], 0.24)
+	# Ult AFTER the kite so it always fires (scheduling it inside the loop past
+	# the loop's length silently dropped it) — single target, auto-aims the boss.
+	_cast("ult")
+	await _record(2.2)                              # hold the ult on the boss
 	_clear_field()
 
 
