@@ -116,10 +116,17 @@ swing, exactly as before. Registered in `art.gd` HERO_CLIP_FILES + FPS (12).
 - Build lane = `scratchpad/attack_walk_codex.py` (stage/build/install). 8-frame WALK-AND-FIRE
   row: the feet ALTERNATE below the hem while the upper body fires ONCE per cycle. NO baked
   projectile (the game spawns it -- just the fire MOTION at the hand/bow).
-- Author S/E/N/W; E serves SE/NE, W serves NW/SW; flat = S (the base-hero mirror convention).
-- Per-direction best version: `build <skin> <dir> <vNN>` picks that source (else newest). Judge
-  each candidate by eye -- legs must alternate, the release must land mid-stride, no stray
-  projectile in the gutters -- before install.
+- **THE TECHNIQUE (owner 2026-08-23): it's the WALK clip + a firing arm, not a from-scratch walk.**
+  `stage()` uses `<base>_walk_<dir>` as Image 1 (the leg-cycle ref) and the brief says "reproduce
+  this exact walk -- same crossing gait, closed garment -- change ONLY the hand to fire." From-
+  scratch walk briefs (even with a per-frame boot storyboard) glided or never crossed the legs, AND
+  a "front-slit" instruction made ImageGen draw bare/exposed legs -- BOTH rejected. Referencing the
+  real walk carries its crossing gait for free and keeps the garment closed. Keep the brief SHORT.
+- Author S/E/N; E serves SE/NE; **left MIRRORS right** (W/NW/SW = mirror of E, owner ruling); flat = S.
+- Per-direction best version: `build <skin> <dir> <vNN>` picks that source (else newest). Judge each
+  by eye -- legs must CROSS like the walk, garment stays closed (no exposed legs), no baked flame.
+  The mage firebolt spark shares her skin/gold palette (un-maskable except its bright-yellow core),
+  so keep it out at gen time rather than trying to erase it after.
 
 ## verify_art gates added for this class of defect (2026-08-21..22)
 
