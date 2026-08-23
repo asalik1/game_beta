@@ -76,6 +76,18 @@
 - **Why:** a full REGEN pass over all the real skins is planned (owner 2026-08-22, "for later"). Until that pass, leave them exactly as committed — a piecemeal fix now is wasted work the regen overwrites, and it drifts the design.
 - **Known-defect note:** the real skins carry the same feet-slide artifact the enhanced-base + bosses/mobs were fixed for (2026-08-22), so `verify_art` will emit `FEETSLIDE` WARNs on them. That is EXPECTED and intentionally left for the regen pass — do not "fix" it.
 
+## Required per-class animation clips beyond the standard set (so a regen knows what to produce) — 2026-08-23
+Some abilities need EXTRA clips on top of anim/walk/attack/attack2/dash/cast/ult/death. A class or skin regen MUST produce these or the ability silently falls back to a worse pose. Both are art-driven (no strip = the fallback), so they're easy to forget — hence this manifest.
+
+- **Fire-on-move (`<base>_attack_walk[_<dir>]`)** — a walk cycle that fires the basic mid-stride, so spamming a low-cd RANGED basic WHILE MOVING doesn't lock the standing pose sliding over the floor (`player.gd` `walk_fire`; a mid-cycle re-cast lets the stride finish). Needed by the ranged spammables ONLY:
+  - mage **Firebolt** (a1=attack), warlock **Shadowbolt** (a1=attack), archer **Quick Shot** (a1=attack), assassin **Fan of Knives** (a3=attack2).
+  - NOT the melee 3-way basic — the assassin STAB keeps its attack/attackb/attackc alternation while moving (gated by `slot=="a1" and _clips.has("attackb")`, which only excludes the assassin).
+  - Contract: 8-frame walk+fire; feet PLANTED (no in-cell slide → FEETSLIDE); the garment stays CLOSED and design-accurate (NO slit, NO exposed legs/bare skin — the walk reads through the BOOTS alternating below the hem + the hem swaying); NO baked projectile (the game spawns it). Author S/E/N; E→SE/NE; **left MIRRORS right** (W/NW/SW = mirror of E); flat = S. Build lane: `scratchpad/attack_walk_codex.py`.
+
+- **Melee swing alternation (`attackb`, and `attackc` for enhanced variants)** — melee basics cycle multiple authored swings per cast (`player_core.gd` `_alt_basic_clip`: attack→attackb→attackc) so Cleave / Smite / Stab don't replay one motion. Which classes ship which:
+  - **warrior, paladin, assassin** carry `attackb` (2-way minimum). Ranged classes (mage/archer/warlock) have only `attack`.
+  - **3-way (`attackc`)**: base **paladin**, warrior **emberbound_heir**, assassin **erased_name** (owner 2026-08-22 — the enhanced variants). `attackc` is a DISTINCT 3rd motion (a rising uppercut), not a recolor of attack/attackb. autotest `_test_swing_alternation` expects 3-way when a body ships an attackc.
+
 ## Generated art tool authorization
 - **NEVER assume PixelLab is authorized. PixelLab may be used only when the owner explicitly authorizes PixelLab for the specific task.** Existing PixelLab assets, PixelLab helper scripts, character metadata, or a matching PixelLab workflow elsewhere in the repo do not grant permission for a new generation.
 - When an agent has a built-in image-generation/editing tool (for example, ChatGPT/Codex image generation), that built-in tool is the default for generated art unless the owner explicitly requests or authorizes another generator.
