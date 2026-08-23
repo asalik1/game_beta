@@ -3414,29 +3414,34 @@ static func dir_set(base: String) -> Dictionary:
 # that return to locomotion. idle keeps the legacy "_anim" suffix so the
 # enemy/anim_info seam is untouched. Absent files are simply skipped.
 const HERO_CLIP_FILES := {
-	"idle": "anim", "walk": "walk", "run": "run", "attack": "attack",
+	"idle": "anim", "walk": "walk", "attack": "attack",
 	"attack2": "attack2", "cast": "cast", "dash": "dash", "ult": "ult",
 	"ultidle": "ultidle", "death": "death",
-	# "attackb" = the ALTERNATE basic swing (2026-08-16 melee swing
-	# alternation): a1 flips attack <-> attackb every cast when the strip is
-	# installed (<art>_attackb[_<dir>].png). Absent = the single swing, as before.
-	"attackb": "attackb",
+	# "attackb"/"attackc" = the ALTERNATE basic swings (2026-08-16 melee swing
+	# alternation, extended to 3-way 2026-08-21): a1 cycles attack -> attackb ->
+	# attackc every cast for each strip that is installed (<art>_attack{b,c}[_<dir>]).
+	# attackc alone falls back to 2-way, neither to the single swing, as before.
+	"attackb": "attackb", "attackc": "attackc",
 	# "attack_walk" = firing ON THE MOVE (owner 2026-08-19: spamming a low-cd
 	# shot while moving locked the body into the standing pose sliding over the
 	# floor). A walk cycle that draws/looses mid-stride; use_ability swaps a
 	# moving basic attack onto it when the strip ships. Absent = unchanged.
 	"attack_walk": "attack_walk",
+	# "attack_walk_b" = the ALTERNATE fire-on-move variant; player.gd alternates
+	# attack_walk <-> attack_walk_b each fresh moving-basic cycle (owner 2026-08-23),
+	# like the melee attack<->attackb. Absent = attack_walk plays every cycle.
+	"attack_walk_b": "attack_walk_b",
 }
 const HERO_CLIP_FPS := {
 	# Action clips run FAST so a ~7-frame swing/throw/dash lands in ~0.3s and
 	# doesn't trail an arm-swing after the hit. (Directional clips only pick
 	# these up via the _dir_loco fps stamp in player_core — dir_set defaults 6.)
-	"idle": 6.0, "walk": 9.0, "run": 11.0, "attack": 22.0, "attack2": 22.0,
+	"idle": 6.0, "walk": 9.0, "attack": 22.0, "attack2": 22.0,
 	"cast": 10.0, "dash": 26.0, "ult": 11.0, "ultidle": 6.0, "death": 9.0,
-	"attackb": 22.0,
+	"attackb": 22.0, "attackc": 22.0,
 	# A full 8-frame fire-on-the-move cycle in ~0.67 s — a brisk stride with one
 	# draw-and-loose per cycle; re-casts mid-cycle let it finish (no restart).
-	"attack_walk": 12.0,
+	"attack_walk": 12.0, "attack_walk_b": 12.0,
 }
 
 ## Every installed animation clip for a hero class, keyed by clip name.

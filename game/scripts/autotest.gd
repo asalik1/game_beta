@@ -4301,6 +4301,9 @@ func _test_swing_alternation() -> void:
 			return _fail("%s: attackb has %d directions, need 8" % [cls, game.player._dir_loco["attackb"].size()])
 		# Live path: two a1 casts play attack, then attackb (_strike_clip is
 		# what swing_delay keys on — the same value use_ability handed play_action).
+		# 3-way (attack/attackb/attackc) if this class ships an attackc, else 2-way.
+		var expect: Array = ["attack", "attackb", "attackc"] if game.player._clips.has("attackc") \
+			else ["attack", "attackb", "attack"]
 		var seen: Array[String] = []
 		for _i in 3:
 			game.player.cds["a1"] = 0.0
@@ -4309,24 +4312,53 @@ func _test_swing_alternation() -> void:
 			game.player.use_ability("a1")
 			seen.append(game.player._strike_clip)
 			await _frames(1)
-		if seen != ["attack", "attackb", "attack"]:
-			return _fail("%s: a1 should alternate attack/attackb/attack, saw %s" % [cls, seen])
+		if seen != expect:
+			return _fail("%s: a1 should cycle %s, saw %s" % [cls, expect, seen])
 		# A fresh body opens on the primary swing again.
 		game.player.set_class(cls)
 		game.player.pending_theme_note = ""
 		if game.player._alt_basic_clip() != "attack":
 			return _fail("%s: a re-applied body must open on the primary swing" % cls)
-	# Skins ship no alt art (yet): the fallback keeps the single swing every cast.
+	# Fallback: with NO attackb clip loaded, a1 keeps the single swing every cast.
+	# Every melee skin now ships an attackb, so exercise the fallback synthetically
+	# by clearing the clip (the exact path a future no-alt skin would take), then
+	# reload it with set_class.
 	game.player.set_class("warrior")
-	game.player.set_skin("dreadknight")
+	game.player.set_skin("")
 	game.player.pending_theme_note = ""
-	if game.player._clips.has("attackb"):
-		print("  (note: dreadknight now ships an attackb strip — fallback branch not exercised)")
-	else:
-		var a: String = game.player._alt_basic_clip()
-		var b: String = game.player._alt_basic_clip()
-		if a != "attack" or b != "attack":
-			return _fail("skin without attackb art must keep the single swing (saw %s, %s)" % [a, b])
+	game.player._clips.erase("attackb")
+	var fa: String = game.player._alt_basic_clip()
+	var fb: String = game.player._alt_basic_clip()
+	if fa != "attack" or fb != "attack":
+		return _fail("no attackb art must keep the single swing (saw %s, %s)" % [fa, fb])
+	game.player.set_class("warrior")  # reload the cleared attackb clip
+	game.player.set_skin(saved_skin)
+	# Melee SKINS that ship an attackb family must alternate exactly like the base
+	# class (2026-08-21: owner flagged the alternating basic swing on skins; each
+	# custom-sprite melee skin gets its own attackb). A skin missing a direction
+	# silently falls back to the single swing -- reads as a stuck strike.
+	for pair in [["warrior", "emberbound_heir"], ["assassin", "erased_name"], ["warrior", "dreadknight"]]:
+		var pcls: String = pair[0]
+		var pskin: String = pair[1]
+		game.player.set_class(pcls)
+		game.player.set_skin(pskin)
+		game.player.pending_theme_note = ""
+		if not game.player._clips.has("attackb") or not game.player._dir_loco.has("attackb") \
+				or int(game.player._dir_loco["attackb"].size()) != 8:
+			return _fail("skin %s: attackb family incomplete (flat + 8-dir) -- melee alternation dies" % pskin)
+		# 3-way (attack/attackb/attackc) if the skin ships an attackc, else 2-way.
+		var expect: Array = ["attack", "attackb", "attackc"] if game.player._clips.has("attackc") \
+			else ["attack", "attackb", "attack"]
+		var seen_skin: Array[String] = []
+		for _i in 3:
+			game.player.cds["a1"] = 0.0
+			game.player.mp = game.player.max_mp
+			game.player.berserk_time = 0.0
+			game.player.use_ability("a1")
+			seen_skin.append(game.player._strike_clip)
+			await _frames(1)
+		if seen_skin != expect:
+			return _fail("skin %s: a1 should cycle %s, saw %s" % [pskin, expect, seen_skin])
 	game.player.set_skin(saved_skin)
 	# Contact sync: the assassin's cross-slash lands later than the lunge.
 	game.player.set_class("assassin")

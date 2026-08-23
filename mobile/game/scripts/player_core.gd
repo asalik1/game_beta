@@ -655,7 +655,7 @@ var strip_frames := 0
 var strip_fps := 6.0
 var strip_t := 0.0
 # Clip state machine (round: Custom sheets — full per-class animation set).
-# _clips: name -> {tex,frames,fps}. Locomotion (idle/walk/run) loops; action
+# _clips: name -> {tex,frames,fps}. Locomotion (idle/walk) loops; action
 # clips (attack/cast/dash/ult/death) play once then fall back to locomotion.
 var _clips := {}
 var _clip := ""                # current clip name
@@ -725,6 +725,10 @@ var _strike_clip := ""
 ## Purely cosmetic and per-node, so co-op needs no sync (a shell alternates on
 ## its own casts). Reset with the class sprite.
 var _a1_swing := 0
+## Fire-on-move alternation counter (attack_walk <-> attack_walk_b), incremented
+## per fresh walk-fire cycle in player.gd -- separate from _a1_swing because it
+## must also tick for the assassin's a3 fan-of-knives, not just the a1 basic.
+var _walkfire_swing := 0
 ## Playback speedup applied to the current one-shot clip by fit_action_clip so
 ## it finishes inside a fast recast window (1.0 = authored pace). swing_delay
 ## divides by it to keep the hit FX on the now-earlier contact frame.
@@ -756,7 +760,7 @@ func _apply_class_sprite() -> void:
 	sprite.frame = 0
 	_dir_clips = Art.hero_dir_clips(art_name)
 	_a1_swing = 0  # a fresh body opens on its primary swing
-	# 8-direction locomotion sets (idle/walk/run/... = <class>_<file>_<dir>).
+	# 8-direction locomotion sets (idle/walk/... = <class>_<file>_<dir>).
 	# Empty for every current class; lights up when directional art lands.
 	_dir_loco = {}
 	for clip in Art.HERO_CLIP_FILES:
@@ -966,6 +970,14 @@ func _play_clip(name: String, loop: bool) -> void:
 ## skins need no art to keep working. Advances the parity on every call.
 func _alt_basic_clip() -> String:
 	_a1_swing += 1
+	# Melee basic-swing alternation. 3-way (attack -> attackb -> attackc) when the
+	# body ships an attackc, else 2-way (attack <-> attackb), else the single swing.
+	# _a1_swing starts at 0, so a fresh body always opens on the primary "attack".
+	if _clips.has("attackc") and _clips.has("attackb"):
+		var m: int = _a1_swing % 3
+		if m == 1:
+			return "attack"
+		return "attackb" if m == 2 else "attackc"
 	if _a1_swing % 2 == 0 and _clips.has("attackb"):
 		return "attackb"
 	return "attack"

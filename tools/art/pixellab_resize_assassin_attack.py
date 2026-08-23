@@ -101,12 +101,19 @@ def _post(
             # jobs meaningful time to clear; gateway errors can retry sooner.
             time.sleep(attempt * (15 if error.code == 429 else 2))
         except (TimeoutError, urllib.error.URLError) as error:
+            # Surface the REAL reason -- this branch catches every URLError, not
+            # just timeouts (connection reset, TLS, DNS, a socket killed by the
+            # machine sleeping mid-call). Labelling all of them "timeout" hid the
+            # cause during the 2026-08-22 timeout-storm diagnosis; the true text
+            # (e.g. reason=[WinError 10054] / timed out) tells them apart.
+            reason = getattr(error, "reason", error)
             if attempt == max_attempts:
                 raise RuntimeError(
-                    f"PixelLab resize network failure after {attempt} attempts: {error}"
+                    f"PixelLab resize network failure after {attempt} attempts: "
+                    f"{type(error).__name__}: {reason}"
                 ) from error
             print(
-                f"PixelLab resize network timeout; "
+                f"PixelLab resize network error ({type(error).__name__}: {reason}); "
                 f"retry {attempt}/{max_attempts}"
             )
             time.sleep(attempt * 2)

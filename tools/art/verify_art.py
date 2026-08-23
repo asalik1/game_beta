@@ -28,6 +28,13 @@ all defects INSIDE the cells, invisible to the tiling check):
              The engine draws every cell on one fixed anchor, so in-cell
              drift IS the on-screen slide ("assembled off the frame grid",
              repair: tools/art/recenter_strip.py).             -> WARN
+  FEETSLIDE  ACTION strips (attack/cast/ult/boss-abilities): the feet drift
+             across frames while the bbox CENTER stays put -- the figure
+             slides instead of animating in place (built centred on the
+             bbox, so a limb/fx extending shoves the body opposite). A
+             genuine lunge moves the center too and is spared. This closes
+             the hole that let hero/skin/mob/boss slides ship unchecked --
+             action clips were previously exempt from every drift gate. -> WARN
   GHOST      a frame whose content splits into vertically disjoint bands --
              a stray chunk of another pose baked into the cell (the Frozen
              Guard "second frame below his feet").              -> WARN
@@ -88,15 +95,15 @@ SPRITES = ROOT / "game" / "assets" / "sprites"
 GAME = ROOT / "game"
 
 DIR8 = ("s", "se", "e", "ne", "n", "nw", "w", "sw")
-CLIPS = ("anim", "walk", "run", "attack", "attack2", "attackb", "cast", "dash",
+CLIPS = ("anim", "walk", "attack", "attack2", "attackb", "attackc", "cast", "dash",
          "ult", "ultidle", "death", "stab", "throw", "dir")
 
 # Content-geometry gates (see module docstring). Thresholds calibrated
 # 2026-08-13 against the owner's mob QA pass over the full sprites corpus.
 # ("attackb" = the hero's alternate basic swing, Art.HERO_CLIP_FILES; gated
 # exactly like "attack".)
-BODY_GATE_CLIPS = ("anim", "walk", "run", "attack", "attack2", "attackb")
-LOCO_CLIPS = ("anim", "walk", "run")
+BODY_GATE_CLIPS = ("anim", "walk", "attack", "attack2", "attackb", "attackc")
+LOCO_CLIPS = ("anim", "walk")
 
 # Boss ability strips (<base>_<action>[_<dir>].png, engine seam
 # Art.action_info / enemy _apply_strip is_action=true). The action
@@ -128,6 +135,18 @@ ANCHOR_CX_RUN = 0.10   # runs sway more legitimately (airborne stride)
 ANCHOR_CY = 0.08       # centroid-y drift, fraction of cell height
 ANCHOR_FEET = 0.07     # lowest-opaque-row drift (the engine's anchor line)
 ANCHOR_H = 0.12        # bbox-height drift within a locomotion strip
+# FEETSLIDE (action clips: swings/casts/boss abilities). A stand-and-attack clip
+# should animate IN PLACE -- the feet stay planted while the arm/weapon/fx moves.
+# build_skin_family (and the older mob/boss builds) centered each frame on its
+# BBOX, so when a limb/fx extends, the whole body slides opposite to keep the box
+# centered -> the character slides on screen (owner flag 2026-08-22: warlock hex).
+# The tell that separates this ARTIFACT from a genuine LUNGE: the artifact drifts
+# the feet while the bbox CENTER stays put (it was mechanically centered); a lunge
+# moves both together. So flag only feet-drift-high AND center-drift-low. Calibrated
+# over 1,439 corpus action strips: 84 trip (nullwarden 74%/0.1%, wolf 49%/0.1%),
+# while every lunge/step (saint_varo 40%/27%, warrior cleave 39%/21%) is spared.
+FEETSLIDE_FEET = 0.12    # feet-center-x drift, fraction of cell width
+FEETSLIDE_CENTER = 0.06  # bbox-center-x drift below this == mechanically centered
 GHOST_GAP = 0.06       # vertical content gap, fraction of cell height
 RIGID_DRIFT_PX = 3     # a full-bleed prop whose L/R bbox edge moves more than
                        # this is a rigid body wandering (capital_portal_depths
@@ -138,6 +157,38 @@ RIGID_DRIFT_PX = 3     # a full-bleed prop whose L/R bbox edge moves more than
 # 0.82-0.88 defects carry EDGECUT/GHOST signatures instead. Runs are exempt
 # outright -- a sprint lean is legitimately shorter (archer run 0.74-0.78).
 SCALE_LO_LOCO, SCALE_LO_ACTION, SCALE_HI = 0.88, 0.82, 1.18
+
+# Hero render (player_core _measure_hero_frame) locks a strip's scale to its
+# FIRST frame's body height: on-screen height of frame i = target * bh_i/bh_0.
+# So a clip whose body height VARIES frame to frame renders as a size PULSE.
+# This gate is scoped to DASH: it is a LOCOMOTION clip (a fast reposition), so a
+# size swing reads as a scaling glitch, and every accepted base-hero dash holds
+# body height constant -- the archer Tumble dash that swings 188..316px against
+# a 235px frame 0 (0.80x..1.42x on screen) is the sole offender. Attack/ult/cast
+# legitimately lunge/draw and the owner accepts that pulse, so they are NOT
+# gated here (they trip >0.22 across accepted art). FRAMEDEV 0.22 = a frame
+# rendering >22% larger/smaller than frame 1.
+HERO_BASES = {"warrior", "archer", "mage", "assassin", "paladin", "warlock"}
+FRAMEDEV = 0.22
+# Detached-content + butchered-frame gates for HERO ability clips (cast/dash/ult)
+# and basic attacks -- these clips are NOT in BODY_GATE_CLIPS, so GHOST/HSPLIT
+# never ran on them and baked-projectile mis-slices (archer arrow-storm specks in
+# the CAST clip, warrior dash fragment, warlock shadowbolt chunk) shipped. The
+# game spawns projectiles, so a detached component off a hero figure is almost
+# always a slice artifact. Advisory WARN -- a genuinely detached authored fx is
+# rare on heroes; judge those by eye.
+# STRAY runs only on clips that should be ONE clean figure -- idle, walk, and the
+# single-target basic swings. attack2/cast/dash/ult legitimately bake AoE/FX
+# (base-hero casts carry 2-3k px of authored effect), so gating them floods; their
+# baked-projectile strays are an eyes-only review item (despur before install).
+STRAY_CLIPS = ("anim", "walk", "attack", "attackb", "attackc")
+# PARTIAL (butchered / projectile-only frame) is safe on the FX clips too -- it
+# measures the FIGURE shrinking, not the effect.
+PARTIAL_CLIPS = ("attack", "attack2", "attackb", "attackc", "cast", "ult")
+STRAY_MIN_COMP = 240      # a single detached component this big = a stray
+STRAY_MIN_TOTAL = 380     # or this much detached mass across a frame (speck swarms)
+PARTIAL_FRAC = 0.35       # a frame whose figure MASS is <this of the clip median =
+                          # a butchered / cut-off frame (warlock hex f5/f8)
 
 FAIL, WARN = [], []
 
@@ -193,16 +244,82 @@ def _frame_metrics(a: np.ndarray, frame_width: int) -> list[dict | None]:
             continue
         occupied = np.unique(ys)
         gaps = np.diff(occupied)
+        occupied_x = np.unique(xs)
+        xgaps = np.diff(occupied_x)
+        # feet center-x: center of the lowest 15%-of-body band. A stand-and-swing/
+        # cast keeps the feet planted; the whole-body slide from build-time
+        # bbox-centering shows as feet_cx drift WHILE the bbox center stays put.
+        band_lo = ys.max() - max(6, int((ys.max() - ys.min()) * 0.15))
+        fxs = xs[ys >= band_lo]
+        feet_cx = float((int(fxs.min()) + int(fxs.max())) / 2.0) if len(fxs) else float(xs.mean())
         out.append({
             "bh": int(ys.max() - ys.min() + 1),
             "cx": float(xs.mean()), "cy": float(ys.mean()),
-            "feet": int(ys.max()),
+            "feet": int(ys.max()), "feet_cx": feet_cx,
             "xmin": int(xs.min()), "xmax": int(xs.max()),
             "left": bool((xs <= 0).any()),
             "right": bool((xs >= frame_width - 1).any()),
             "vgap": int(gaps.max()) - 1 if len(gaps) else 0,
+            "hgap": int(xgaps.max()) - 1 if len(xgaps) else 0,
         })
     return out
+
+
+def _frame_components(reg: np.ndarray) -> tuple[int, int, list[int]]:
+    """4-connected components of one cell's alpha>A_SOLID mask via row-run
+    union-find (fast: O(runs), not O(pixels)). Returns (largest_size,
+    largest_bbox_height, other_component_sizes) for the hero STRAY/PARTIAL gates."""
+    mask = reg > A_SOLID
+    h = mask.shape[0]
+    parent = [0]
+    size = [0]
+    ymin = [0]
+    ymax = [0]
+
+    def find(a: int) -> int:
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    def union(a: int, b: int) -> None:
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[rb] = ra
+            size[ra] += size[rb]
+            ymin[ra] = min(ymin[ra], ymin[rb])
+            ymax[ra] = max(ymax[ra], ymax[rb])
+
+    prev: list[tuple[int, int, int]] = []   # (x0, x1 exclusive, root)
+    for y in range(h):
+        row = mask[y]
+        if not row.any():
+            prev = []
+            continue
+        d = np.diff(np.concatenate(([0], row.view(np.int8), [0])))
+        starts = np.flatnonzero(d == 1)
+        ends = np.flatnonzero(d == -1)
+        runs: list[tuple[int, int, int]] = []
+        for x0, x1 in zip(starts, ends):
+            lab = len(parent)
+            parent.append(lab)
+            size.append(int(x1 - x0))
+            ymin.append(y)
+            ymax.append(y)
+            root = lab
+            for px0, px1, proot in prev:
+                if px0 < x1 and px1 > x0:
+                    union(root, proot)
+                    root = find(root)
+            runs.append((int(x0), int(x1), root))
+        prev = runs
+    roots: dict[int, bool] = {}
+    for i in range(1, len(parent)):
+        roots[find(i)] = True
+    comps = sorted(((size[r], ymax[r] - ymin[r] + 1) for r in roots), reverse=True)
+    if not comps:
+        return 0, 0, []
+    return comps[0][0], comps[0][1], [c[0] for c in comps[1:]]
 
 
 def belongs(stem: str, base: str) -> bool:
@@ -277,7 +394,7 @@ def check_file(png: Path) -> None:
     # normalizer shrinks the body to a miniature.  Catch catastrophic body-box
     # collapse on ordinary full-body clips; effects/death/dash are excluded
     # because deliberate vanish/transform frames are valid there.
-    body_clips = ("anim", "walk", "run", "attack", "attack2", "attackb")
+    body_clips = ("anim", "walk", "attack", "attack2", "attackb")
     is_body_clip = any(
         re.search(rf"_{clip}(?:_|$)", stem) for clip in body_clips
     )
@@ -329,13 +446,32 @@ def check_file(png: Path) -> None:
                         drift.append(f"centroid-y {cy_span:.0%}")
                     if feet_span >= ANCHOR_FEET:
                         drift.append(f"feet line {feet_span:.0%}")
-                    if h_span >= ANCHOR_H:
+                    # attack_walk is a walk+draw HYBRID: the bow/staff/arm draw
+                    # legitimately raises the bbox top (archer S draw = 235..268px,
+                    # 12%), the same reason attack strips are drift-exempt. The
+                    # render scale-locks to frame 1, so the BODY stays constant --
+                    # only the raised weapon grows the box. Keep feet/centroid
+                    # (a real walk stays planted); exempt bbox-height alone.
+                    if h_span >= ANCHOR_H and "attack_walk" not in stem:
                         drift.append(f"body height {h_span:.0%}")
                 if drift:
                     WARN.append(f"[ANCHOR] {rel}: figure wanders inside its cells "
                                 f"({', '.join(drift)} of cell) -- plays as an on-screen "
                                 "slide/wobble; off-grid assembly, repair: "
                                 "tools/art/recenter_strip.py")
+                # A locomotion frame must be ONE connected silhouette; a
+                # horizontally-disjoint band beside the figure is a mis-slice --
+                # a stray chunk (held weapon, neighbour's limb) pulled in from the
+                # adjacent cell. GHOST (below) only detects VERTICAL splits, so a
+                # bow floating to the archer's side sits in the same rows as the
+                # body and slips past it -- this is the lateral counterpart.
+                hsplit = [(i + 1, m["hgap"]) for i, m in enumerate(metrics)
+                          if m and m["hgap"] >= max(6.0, GHOST_GAP * frame_width)]
+                if hsplit:
+                    htxt = ", ".join(f"f{i} ({g}px gap)" for i, g in hsplit)
+                    WARN.append(f"[HSPLIT] {rel}: {htxt} -- content splits into "
+                                "horizontally disjoint bands; a stray chunk beside the "
+                                "figure (mis-slice from the neighbour cell)")
             ghost_frames = [
                 (i + 1, m["vgap"]) for i, m in enumerate(metrics)
                 if m and m["vgap"] >= max(4.0, GHOST_GAP * h)]
@@ -372,6 +508,72 @@ def check_file(png: Path) -> None:
                     WARN.append(f"[EDGECUT] {rel}: f{cut} content touches a left/right cell "
                                 "edge -- limb clipped at the frame cut, or bleed from the "
                                 "neighbour cell")
+            # FEETSLIDE (action clips: swings/casts/boss abilities -- see the
+            # constant). A stand-and-attack should animate IN PLACE. Feet drift while
+            # the bbox CENTER holds == the body was slid to keep a mechanically-
+            # centered box (the build artifact), not a genuine lunge (which moves the
+            # center too). This is the gate that was MISSING -- action clips were
+            # exempt from every drift check, so hero/skin/mob/boss slides shipped
+            # silently (owner: "our test should've caught this... mobs and bosses too").
+            if clip in ("attack", "attack2", "attack3", "attackb", "attackc",
+                        "cast", "ult") or clip in ability_tokens():
+                feet_span = (max(m["feet_cx"] for m in live)
+                             - min(m["feet_cx"] for m in live)) / frame_width
+                cens = [(m["xmin"] + m["xmax"]) / 2.0 for m in live]
+                cen_span = (max(cens) - min(cens)) / frame_width
+                if feet_span >= FEETSLIDE_FEET and cen_span <= FEETSLIDE_CENTER:
+                    WARN.append(f"[FEETSLIDE] {rel}: feet drift {feet_span:.0%} of cell while the "
+                                f"bbox center holds ({cen_span:.0%}) -- the figure SLIDES instead "
+                                "of animating in place (built centred on the bbox; re-anchor the "
+                                "feet). A genuine lunge would move the center too")
+
+    # Hero body-scale + stray-content gates (hero strips only). Run independent
+    # of _clip_of so they cover dash/ult/cast -- the clips that are otherwise
+    # content-unchecked. See FRAMEDEV / HERO_BASES above.
+    is_hero = (png.parent == SPRITES or "skins" in png.parent.parts) \
+        and stem.split("_")[0] in HERO_BASES
+    if is_hero and is_strip and not in_fx and frame_width > 0 \
+            and w % frame_width == 0 and frames >= 3:
+        hm = _frame_metrics(a, frame_width)
+        hlive = [m for m in hm if m]
+        parts = stem.split("_")
+        clip_tok = parts[-2] if parts[-1] in DIR8 else parts[-1]
+        if clip_tok == "dash" and len(hlive) >= 3 and hm[0] and hm[0]["bh"] > 0:
+            b0 = hm[0]["bh"]
+            devs = [(i + 1, m["bh"] / b0) for i, m in enumerate(hm) if m]
+            worst = max(devs, key=lambda t: abs(t[1] - 1.0))
+            if abs(worst[1] - 1.0) >= FRAMEDEV:
+                WARN.append(f"[FRAMEDEV] {rel}: f{worst[0]} body renders {worst[1]:.2f}x frame 1 "
+                            f"(bh {hm[worst[0] - 1]['bh']}px vs {b0}px) -- the hero renderer locks "
+                            "the dash scale to frame 1, so an uneven body height plays as an "
+                            "on-screen size pulse; hold body height ~constant across the dash")
+        # Detached-content + butchered-frame gates for hero ability/attack clips.
+        if clip_tok in (STRAY_CLIPS + PARTIAL_CLIPS) and frames >= 3:
+            comps = [_frame_components(a[:, i * frame_width:(i + 1) * frame_width])
+                     for i in range(frames)]
+            if clip_tok in STRAY_CLIPS:
+                stray_hits = []
+                for i, (_big, _bh, others) in enumerate(comps):
+                    if others and (max(others) >= STRAY_MIN_COMP or sum(others) >= STRAY_MIN_TOTAL):
+                        stray_hits.append(f"f{i + 1} ({max(others)}px)")
+                if stray_hits:
+                    WARN.append(f"[STRAY] {rel}: {', '.join(stray_hits)} -- a detached chunk sits off "
+                                "the figure (baked projectile / mis-slice from a neighbour cell). The "
+                                "game spawns projectiles; keep the character strip figure-only")
+            # Butchered / cut-off frames: the figure (largest component) has far
+            # less MASS than the clip's typical frame -- a thin sliver, a partial
+            # cut-off body, or a projectile-only cell counted as a frame (the
+            # warlock hex). Mass, not height, because a vertical sliver keeps full
+            # height. PARTIAL_CLIPS excludes dash (blink near-vanishes) / death.
+            if clip_tok in PARTIAL_CLIPS:
+                masses = [c[0] for c in comps if c[0] > 0]
+                med = float(np.median(masses)) if masses else 0.0
+                cut = [f"f{i + 1}" for i, (sz, _bh, _o) in enumerate(comps)
+                       if 0 < sz < PARTIAL_FRAC * med]
+                if med > 0 and cut:
+                    WARN.append(f"[PARTIAL] {rel}: {', '.join(cut)} -- figure mass far below the "
+                                f"clip's typical frame (~{med:.0f}px); a butchered slice (partial "
+                                "cut-off body or a projectile-only cell counted as a frame)")
 
     semi = int(((a > 0) & (a < 255)).sum())
     if semi:
@@ -409,7 +611,7 @@ def check_clip_scale(files: list[Path]) -> None:
                 break
         if not ref or ref["med_h"] <= 0 or ref["cell"] <= 0:
             continue
-        is_action = stat["clip"] in ("attack", "attack2", "attackb") \
+        is_action = stat["clip"] in ("attack", "attack2", "attackb", "attackc") \
             or stat["clip"] in ability_tokens()
         action_like = is_action or (stat["clip"] == "walk" and base in scale_walk)
         denom = ref["cell"] if action_like else stat["cell"]

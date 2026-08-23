@@ -534,7 +534,7 @@ func apply_chill(mult: float, dur := 0.35) -> void:
 # ================================================================= abilities
 
 # -------------------------------------------------- clip state machine ---
-# Locomotion (idle/walk/run) loops; a one-shot action clip plays through once
+# Locomotion (idle/walk) loops; a one-shot action clip plays through once
 # then hands back to locomotion; death latches the final frame. Called every
 # physics frame whenever a class sheet is installed (strip_frames > 0).
 func _advance_clip(delta: float) -> void:
@@ -595,8 +595,8 @@ func _loco_dir_frame() -> void:
 	sprite.flip_h = false
 
 
-## Which looping clip fits the current movement: run while a speed buff or
-## berserk carries you, walk on foot, berserk-idle when standing enraged.
+## Which looping clip fits the current movement: walk while moving (run removed
+## 2026-08-21 -- walk covers all movement), berserk-idle when standing enraged.
 func _loco_clip() -> String:
 	# Crystal Archmage never walks: velocity still picks the directional idle
 	# strip while the animated dais in SkinAmbient performs the movement.
@@ -606,8 +606,8 @@ func _loco_clip() -> String:
 		if berserk_time > 0.0 and _clips.has("ultidle"):
 			return "ultidle"
 		return "idle"
-	if (theme_speed_time > 0.0 or berserk_time > 0.0) and _clips.has("run"):
-		return "run"
+	# (run clip removed 2026-08-21, owner: no run anywhere — walk covers all
+	# movement, including speed-theme/berserk hustle.)
 	if _clips.has("walk"):
 		return "walk"
 	return "idle"
@@ -643,14 +643,14 @@ func use_ability(slot: String) -> void:
 	_strike_clip = ""  # reset; set below to the clip this ability swings (skin FX-sync)
 	if dir_pose == "" or not play_dir_anim(dir_pose, aim_dir()):
 		var action_clip: String = ABILITY_CLIP.get(cls, {}).get(slot, "")
-		if cls == "warrior" and berserk_time > 0.0 and action_clip in ["attack", "attack2"]:
-			action_clip = "ult"  # berserk swings the RED blade, not the gold one
-		# Melee swing ALTERNATION (owner ruling 2026-08-16): a basic attack flips
-		# between the two authored swings every cast (attack <-> attackb) so
-		# Cleave / Judgment / Stab don't replay one identical motion. Art-driven
-		# — no attackb strip = the single swing, unchanged. Berserk's red-blade
-		# "ult" swing above is left alone (it has no alt clip).
-		elif slot == "a1" and action_clip == "attack":
+		# Berserk cleave/whirlwind play the REAL swing now, not the "ult" clip -- that
+		# clip is the berserk ACTIVATION (ignite/roar), not a swing, so under spam the
+		# cleave never finished (owner 2026-08-22). Berserk red comes from the slash
+		# FX (player_combat), not a clip swap.
+		# Melee swing ALTERNATION (owner 2026-08-16): a1 flips between the authored
+		# swings each cast (attack -> attackb -> attackc) so Cleave / Judgment / Stab
+		# do not replay one motion. Art-driven -- no alt strip = the single swing.
+		if slot == "a1" and action_clip == "attack":
 			action_clip = _alt_basic_clip()
 		# A dash's clip faces the TRAVEL direction, not the aimed target — a
 		# north/south dash was rendering sideways toward a side target.
@@ -671,22 +671,29 @@ func use_ability(slot: String) -> void:
 		# basic attack plays THAT — and a re-cast mid-cycle lets the cycle finish
 		# instead of restarting it, so the gait stays continuous under spam.
 		# Art-driven: no strip = the standing swing, exactly as before.
-		var walk_fire: bool = action_clip in ["attack", "attackb", "attack2"] \
-			and _clips.has("attack_walk") and velocity.length() > 20.0
+		# The melee 3-way basic (assassin stab: attack->attackb->attackc) keeps its
+		# alternation while moving -- collapsing it to the single attack_walk clip
+		# showed only one anim (owner 2026-08-23). attack_walk stays for the ranged
+		# spammables: mage firebolt / warlock shadowbolt / archer quick-shot (a1
+		# "attack", no attackb) and assassin fan-of-knives (a3 "attack2"). The tell
+		# for "this is the alternating melee basic" is slot a1 on a class that ships
+		# an attackb (only the assassin has both attackb AND attack_walk).
+		var walk_fire: bool = action_clip in ["attack", "attackb", "attackc", "attack2"] \
+			and _clips.has("attack_walk") and velocity.length() > 20.0 \
+			and not (slot == "a1" and _clips.has("attackb"))
+		# Fire-on-move alternates attack_walk <-> attack_walk_b each fresh cycle
+		# (owner 2026-08-23), like melee attack<->attackb, so spamming a moving basic
+		# doesn't replay one clip. Art-driven: no _b strip = attack_walk only.
 		if walk_fire:
-			action_clip = "attack_walk"
-		if walk_fire and _clip == "attack_walk" and not _clip_loop:
-			pass  # mid-cycle re-cast: the playing stride carries the visual
+			if _clip in ["attack_walk", "attack_walk_b"] and not _clip_loop:
+				action_clip = _clip  # mid-cycle re-cast: the playing stride carries on
+			else:
+				_walkfire_swing += 1
+				action_clip = "attack_walk_b" if (_walkfire_swing % 2 == 0 \
+					and _clips.has("attack_walk_b")) else "attack_walk"
+				play_action(action_clip)
 		else:
 			play_action(action_clip)
-		if cls == "warrior" and action_clip == "ult":
-			# Berserk swings the red-blade cleave (the ult clip) at Cleave's
-			# rage cadence — 0.45s, less under cdr — but that clip is authored
-			# for a slower 0.64s one-shot, so each swing was chopped before its
-			# follow-through. Re-pace it to finish inside the real recast window
-			# so the cleave reads as a full swing at any attack speed (the ult
-			# ACTIVATION roar, on its 40s cd, stays at authored pace).
-			fit_action_clip(cds[slot])
 		_strike_clip = action_clip  # skin FX-sync: swing_delay() reads this
 		action_face_hint = Vector2.ZERO
 	var f := dm(slot)
