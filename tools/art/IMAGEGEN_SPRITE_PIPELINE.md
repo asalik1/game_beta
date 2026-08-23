@@ -1156,6 +1156,10 @@ The same pipeline applies beyond player characters:
   intentionally building future-ready seams; preserve combat telegraphs.
 - **Skins:** identify whether the skin changes identity, silhouette, equipment,
   palette only, or FX; retain the base class's gameplay-readable silhouette.
+  **Read [`SKIN_GEN_QA.md`](SKIN_GEN_QA.md) first** — the per-frame QA gate and the
+  ImageGen failure modes (facing flip, dropped weapon, distorted face, projectile
+  mis-slice, glide walk, green fade) learned from the era-3 elite-skin batch;
+  verify_art + a facing glance do NOT catch them.
 - **Props/landmarks:** replace directions with object states; lock footprint,
   crop, collision assumptions, and animation-static geometry.
 - **Projectiles:** replace ground baseline with a stable visual center and

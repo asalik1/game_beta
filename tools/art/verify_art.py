@@ -28,6 +28,13 @@ all defects INSIDE the cells, invisible to the tiling check):
              The engine draws every cell on one fixed anchor, so in-cell
              drift IS the on-screen slide ("assembled off the frame grid",
              repair: tools/art/recenter_strip.py).             -> WARN
+  FEETSLIDE  ACTION strips (attack/cast/ult/boss-abilities): the feet drift
+             across frames while the bbox CENTER stays put -- the figure
+             slides instead of animating in place (built centred on the
+             bbox, so a limb/fx extending shoves the body opposite). A
+             genuine lunge moves the center too and is spared. This closes
+             the hole that let hero/skin/mob/boss slides ship unchecked --
+             action clips were previously exempt from every drift gate. -> WARN
   GHOST      a frame whose content splits into vertically disjoint bands --
              a stray chunk of another pose baked into the cell (the Frozen
              Guard "second frame below his feet").              -> WARN
@@ -128,6 +135,18 @@ ANCHOR_CX_RUN = 0.10   # runs sway more legitimately (airborne stride)
 ANCHOR_CY = 0.08       # centroid-y drift, fraction of cell height
 ANCHOR_FEET = 0.07     # lowest-opaque-row drift (the engine's anchor line)
 ANCHOR_H = 0.12        # bbox-height drift within a locomotion strip
+# FEETSLIDE (action clips: swings/casts/boss abilities). A stand-and-attack clip
+# should animate IN PLACE -- the feet stay planted while the arm/weapon/fx moves.
+# build_skin_family (and the older mob/boss builds) centered each frame on its
+# BBOX, so when a limb/fx extends, the whole body slides opposite to keep the box
+# centered -> the character slides on screen (owner flag 2026-08-22: warlock hex).
+# The tell that separates this ARTIFACT from a genuine LUNGE: the artifact drifts
+# the feet while the bbox CENTER stays put (it was mechanically centered); a lunge
+# moves both together. So flag only feet-drift-high AND center-drift-low. Calibrated
+# over 1,439 corpus action strips: 84 trip (nullwarden 74%/0.1%, wolf 49%/0.1%),
+# while every lunge/step (saint_varo 40%/27%, warrior cleave 39%/21%) is spared.
+FEETSLIDE_FEET = 0.12    # feet-center-x drift, fraction of cell width
+FEETSLIDE_CENTER = 0.06  # bbox-center-x drift below this == mechanically centered
 GHOST_GAP = 0.06       # vertical content gap, fraction of cell height
 RIGID_DRIFT_PX = 3     # a full-bleed prop whose L/R bbox edge moves more than
                        # this is a rigid body wandering (capital_portal_depths
@@ -227,10 +246,16 @@ def _frame_metrics(a: np.ndarray, frame_width: int) -> list[dict | None]:
         gaps = np.diff(occupied)
         occupied_x = np.unique(xs)
         xgaps = np.diff(occupied_x)
+        # feet center-x: center of the lowest 15%-of-body band. A stand-and-swing/
+        # cast keeps the feet planted; the whole-body slide from build-time
+        # bbox-centering shows as feet_cx drift WHILE the bbox center stays put.
+        band_lo = ys.max() - max(6, int((ys.max() - ys.min()) * 0.15))
+        fxs = xs[ys >= band_lo]
+        feet_cx = float((int(fxs.min()) + int(fxs.max())) / 2.0) if len(fxs) else float(xs.mean())
         out.append({
             "bh": int(ys.max() - ys.min() + 1),
             "cx": float(xs.mean()), "cy": float(ys.mean()),
-            "feet": int(ys.max()),
+            "feet": int(ys.max()), "feet_cx": feet_cx,
             "xmin": int(xs.min()), "xmax": int(xs.max()),
             "left": bool((xs <= 0).any()),
             "right": bool((xs >= frame_width - 1).any()),
@@ -483,6 +508,24 @@ def check_file(png: Path) -> None:
                     WARN.append(f"[EDGECUT] {rel}: f{cut} content touches a left/right cell "
                                 "edge -- limb clipped at the frame cut, or bleed from the "
                                 "neighbour cell")
+            # FEETSLIDE (action clips: swings/casts/boss abilities -- see the
+            # constant). A stand-and-attack should animate IN PLACE. Feet drift while
+            # the bbox CENTER holds == the body was slid to keep a mechanically-
+            # centered box (the build artifact), not a genuine lunge (which moves the
+            # center too). This is the gate that was MISSING -- action clips were
+            # exempt from every drift check, so hero/skin/mob/boss slides shipped
+            # silently (owner: "our test should've caught this... mobs and bosses too").
+            if clip in ("attack", "attack2", "attack3", "attackb", "attackc",
+                        "cast", "ult") or clip in ability_tokens():
+                feet_span = (max(m["feet_cx"] for m in live)
+                             - min(m["feet_cx"] for m in live)) / frame_width
+                cens = [(m["xmin"] + m["xmax"]) / 2.0 for m in live]
+                cen_span = (max(cens) - min(cens)) / frame_width
+                if feet_span >= FEETSLIDE_FEET and cen_span <= FEETSLIDE_CENTER:
+                    WARN.append(f"[FEETSLIDE] {rel}: feet drift {feet_span:.0%} of cell while the "
+                                f"bbox center holds ({cen_span:.0%}) -- the figure SLIDES instead "
+                                "of animating in place (built centred on the bbox; re-anchor the "
+                                "feet). A genuine lunge would move the center too")
 
     # Hero body-scale + stray-content gates (hero strips only). Run independent
     # of _clip_of so they cover dash/ult/cast -- the clips that are otherwise

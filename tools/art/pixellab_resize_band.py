@@ -3,8 +3,10 @@ band (owner-authorized PixelLab, 2026-08-20; ratio = painted body px / on-screen
 body px, screen = 52 * class_height * CHAR_RENDER_SCALE).
 
 Discovery: every `<cls>_<clip>[_<dir>].png` whose frame-0 body ratio < 2.2.
-Targets sit mid-band (2.28x): warrior 218, paladin 212, assassin 206,
-warlock 202, archer 191. The mage (2.33x) is already in band.
+Targets sit mid-band (2.28x): warrior 218, assassin 206, warlock 202,
+archer 191. The mage (2.33x) is already in band. PALADIN is the exception
+(235 px / ~2.53x): owner ruling 2026-08-21 put the Arbiter base in the premium
+235px-min tier with the elite skins.
 
 Per frame, the lessons from HeroClipResize_2026-08-19 are BUILT IN:
   - FX-DOMINANT frames (saturated px > 2000) never touch the API — the model
@@ -57,9 +59,12 @@ TIMEOUT = 300
 ATTEMPTS = 4
 CRS = 1.7
 HEIGHT = {"warrior": 1.08, "paladin": 1.05, "assassin": 1.02, "warlock": 1.0, "archer": 0.95}
-TARGET_BODY = {"warrior": 218, "paladin": 212, "assassin": 206, "warlock": 202, "archer": 191}
-CLIPS = ["anim", "walk", "run", "attack", "attackb", "attack2", "cast", "dash",
-         "ult", "ultidle", "death"]
+# Owner ruling 2026-08-21: the PALADIN base joins the premium 235px-min tier with
+# the new elite skins (it is the Codex-made Oathbound Arbiter, elite-grade already)
+# -> 235 px / ~2.53x. Every OTHER base stays in the tight 2.2-2.35x band (2.28x mid).
+TARGET_BODY = {"warrior": 218, "paladin": 235, "assassin": 206, "warlock": 202, "archer": 191}
+CLIPS = ["anim", "walk", "attack", "attackb", "attack2", "cast", "dash",
+         "ult", "ultidle", "death"]  # run removed 2026-08-21 (owner: no run anywhere)
 DIRS = ["", "e", "ne", "n", "nw", "w", "sw", "s", "se"]
 # Warrior/paladin identity = the ORIGINAL creation prompts from their character
 # zips (read-metadata rule; Warrior 2f5dbe25, Paladin 54e9c3a8).
@@ -245,6 +250,22 @@ def process_strip(cls: str, rel: str, d: str, token: str) -> str:
     return f"INSTALLED {rel}: {len(imgs)}x{rc} ({calls} calls)"
 
 
+def _keep_system_awake(on: bool) -> None:
+    """Stop Windows sleeping mid-run. A sleep orphans the in-flight /v2/resize
+    socket; on wake urllib waits out the full read timeout, which is exactly the
+    "network timeout; retry" STORM the overnight run produced (diagnosed
+    2026-08-22: the endpoint itself was healthy at ~40s/call, no timeouts when
+    the machine stayed awake). ES_SYSTEM_REQUIRED keeps the box awake but lets
+    the DISPLAY sleep -- right for a headless grind. No-op off Windows."""
+    if sys.platform != "win32":
+        return
+    import ctypes
+    ES_CONTINUOUS = 0x80000000
+    ES_SYSTEM_REQUIRED = 0x00000001
+    flags = (ES_CONTINUOUS | ES_SYSTEM_REQUIRED) if on else ES_CONTINUOUS
+    ctypes.windll.kernel32.SetThreadExecutionState(flags)
+
+
 def main() -> int:
     mode = sys.argv[1] if len(sys.argv) > 1 else "status"
     classes = sys.argv[2:] or list(TARGET_BODY.keys())
@@ -259,13 +280,17 @@ def main() -> int:
     for cls in classes:
         if any(j[0] == cls for j in jobs):
             class_palette(cls)   # prime once, before threads race on it
-    with ThreadPoolExecutor(max_workers=STRIP_WORKERS) as strip_pool:
-        futs = {strip_pool.submit(process_strip, cls, rel, d, token): rel
-                for cls, rel, d in jobs}
-        done_n = 0
-        for fut in as_completed(futs):
-            done_n += 1
-            print(f"[{done_n}/{len(jobs)}] {fut.result()}", flush=True)
+    _keep_system_awake(True)
+    try:
+        with ThreadPoolExecutor(max_workers=STRIP_WORKERS) as strip_pool:
+            futs = {strip_pool.submit(process_strip, cls, rel, d, token): rel
+                    for cls, rel, d in jobs}
+            done_n = 0
+            for fut in as_completed(futs):
+                done_n += 1
+                print(f"[{done_n}/{len(jobs)}] {fut.result()}", flush=True)
+    finally:
+        _keep_system_awake(False)
     print("BAND_RUN_DONE")
     return 0
 

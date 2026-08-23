@@ -671,8 +671,16 @@ func use_ability(slot: String) -> void:
 		# basic attack plays THAT — and a re-cast mid-cycle lets the cycle finish
 		# instead of restarting it, so the gait stays continuous under spam.
 		# Art-driven: no strip = the standing swing, exactly as before.
+		# The melee 3-way basic (assassin stab: attack->attackb->attackc) keeps its
+		# alternation while moving -- collapsing it to the single attack_walk clip
+		# showed only one anim (owner 2026-08-23). attack_walk stays for the ranged
+		# spammables: mage firebolt / warlock shadowbolt / archer quick-shot (a1
+		# "attack", no attackb) and assassin fan-of-knives (a3 "attack2"). The tell
+		# for "this is the alternating melee basic" is slot a1 on a class that ships
+		# an attackb (only the assassin has both attackb AND attack_walk).
 		var walk_fire: bool = action_clip in ["attack", "attackb", "attackc", "attack2"] \
-			and _clips.has("attack_walk") and velocity.length() > 20.0
+			and _clips.has("attack_walk") and velocity.length() > 20.0 \
+			and not (slot == "a1" and _clips.has("attackb"))
 		if walk_fire:
 			action_clip = "attack_walk"
 		if walk_fire and _clip == "attack_walk" and not _clip_loop:
