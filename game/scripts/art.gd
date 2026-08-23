@@ -3428,6 +3428,10 @@ const HERO_CLIP_FILES := {
 	# floor). A walk cycle that draws/looses mid-stride; use_ability swaps a
 	# moving basic attack onto it when the strip ships. Absent = unchanged.
 	"attack_walk": "attack_walk",
+	# "attack_walk_b" = the ALTERNATE fire-on-move variant; player.gd alternates
+	# attack_walk <-> attack_walk_b each fresh moving-basic cycle (owner 2026-08-23),
+	# like the melee attack<->attackb. Absent = attack_walk plays every cycle.
+	"attack_walk_b": "attack_walk_b",
 }
 const HERO_CLIP_FPS := {
 	# Action clips run FAST so a ~7-frame swing/throw/dash lands in ~0.3s and
@@ -3438,7 +3442,7 @@ const HERO_CLIP_FPS := {
 	"attackb": 22.0, "attackc": 22.0,
 	# A full 8-frame fire-on-the-move cycle in ~0.67 s — a brisk stride with one
 	# draw-and-loose per cycle; re-casts mid-cycle let it finish (no restart).
-	"attack_walk": 12.0,
+	"attack_walk": 12.0, "attack_walk_b": 12.0,
 }
 
 ## Every installed animation clip for a hero class, keyed by clip name.

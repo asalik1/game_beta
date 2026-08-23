@@ -725,6 +725,10 @@ var _strike_clip := ""
 ## Purely cosmetic and per-node, so co-op needs no sync (a shell alternates on
 ## its own casts). Reset with the class sprite.
 var _a1_swing := 0
+## Fire-on-move alternation counter (attack_walk <-> attack_walk_b), incremented
+## per fresh walk-fire cycle in player.gd -- separate from _a1_swing because it
+## must also tick for the assassin's a3 fan-of-knives, not just the a1 basic.
+var _walkfire_swing := 0
 ## Playback speedup applied to the current one-shot clip by fit_action_clip so
 ## it finishes inside a fast recast window (1.0 = authored pace). swing_delay
 ## divides by it to keep the hit FX on the now-earlier contact frame.

@@ -681,10 +681,17 @@ func use_ability(slot: String) -> void:
 		var walk_fire: bool = action_clip in ["attack", "attackb", "attackc", "attack2"] \
 			and _clips.has("attack_walk") and velocity.length() > 20.0 \
 			and not (slot == "a1" and _clips.has("attackb"))
+		# Fire-on-move alternates attack_walk <-> attack_walk_b each fresh cycle
+		# (owner 2026-08-23), like melee attack<->attackb, so spamming a moving basic
+		# doesn't replay one clip. Art-driven: no _b strip = attack_walk only.
 		if walk_fire:
-			action_clip = "attack_walk"
-		if walk_fire and _clip == "attack_walk" and not _clip_loop:
-			pass  # mid-cycle re-cast: the playing stride carries the visual
+			if _clip in ["attack_walk", "attack_walk_b"] and not _clip_loop:
+				action_clip = _clip  # mid-cycle re-cast: the playing stride carries on
+			else:
+				_walkfire_swing += 1
+				action_clip = "attack_walk_b" if (_walkfire_swing % 2 == 0 \
+					and _clips.has("attack_walk_b")) else "attack_walk"
+				play_action(action_clip)
 		else:
 			play_action(action_clip)
 		_strike_clip = action_clip  # skin FX-sync: swing_delay() reads this
