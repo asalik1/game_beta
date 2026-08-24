@@ -1172,6 +1172,7 @@ const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/pc_curios.gd"),      # Pixel Crawler mining (2026-07-18): SHIPPED codex relics & landmarks gallery (placeholder curios removed 2026-08-20)
 	preload("res://scripts/content/capital_hub.gd"),    # Crownfall (reworked 2026-07-25): standalone LIVE 9-room capital hub (3x3 grid) — reached via the Travel button + first-ch1-clear routing + dev panel; CONVOS merge here; CHAPTER resolved in chapter()
 	preload("res://scripts/content/pvp_arena.gd"),      # The Proving Grounds (PvP v1 2026-08-01): 3-room duel arena — no CONVOS/ENEMIES; CHAPTER resolved in chapter(), match flow in pvp.gd
+	preload("res://scripts/content/eggs.gd"),           # Easter eggs (DYNAMIC_WORLD §8): flag-gated flavor; no overrides, so position is free
 	preload("res://scripts/content/promises_kept.gd"),  # (P1) promises kept — overrides chN_quests convos
 	preload("res://scripts/content/promises_kept_2.gd"),# (P2) promises kept, 2nd pass — MUST stay LAST (after P1: no override fight)
 ]
@@ -1517,7 +1518,9 @@ const SIDE_QUESTS := {
 			{"flag": "hat_taken", "text": "Find the miller's hat, somewhere in the Darkwood"},
 			{"flag": "hat_given", "text": "Bring it to the boy at the village edge"},
 		],
-		"reward": {"gold": 150},
+		# sq_kept_hat: a persistent mark the world reads later — the boy grows up
+		# and stands a Guard watch in ch7, still wearing the hat (content/eggs.gd).
+		"reward": {"gold": 150, "kept": "sq_kept_hat"},
 	},
 }
 

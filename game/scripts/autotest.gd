@@ -2508,6 +2508,7 @@ func _run_campaign_ch2() -> void:
 	await _test_ch5_chapter()
 	await _test_ch6_chapter()
 	await _test_ch7_chapter()
+	_test_eggs()
 	await _test_side_quests()
 	await _test_quest_verbs()
 	await _test_quest_quarry()
@@ -9264,3 +9265,25 @@ func _test_ch2_side_rooms() -> void:
 	await _goto_room(0)
 	await _frames(5)
 	print("ok: ch2 side rooms (10 rooms / mix 3-2-2-2-1, refs resolve, wanderer pool, Font shrine, cache chest, waystation shop)")
+
+
+# ---- Egg module (content/eggs.gd): the boy grows up -------------------------
+func _test_eggs() -> void:
+	# The hat quest leaves the mark the ch7 recruit reads.
+	var hq: Dictionary = Story.ALL_SIDE_QUESTS.get("heron_feather", {})
+	if String(hq.get("reward", {}).get("kept", "")) != "sq_kept_hat":
+		return _fail("egg: heron_feather must leave sq_kept_hat for the ch7 recruit")
+	# The recruit convo merged, and its ZONE_PROPS prop attached to The Wayhouse
+	# gated on sq_kept_hat.
+	if not Story.ALL_CONVOS.has("ch7_heron_recruit"):
+		return _fail("egg: ch7_heron_recruit convo missing")
+	var attached := false
+	for z in Story.CHAPTER_LIST["ch7"]["zones"]:
+		if String(z.get("name", "")) == "The Wayhouse":
+			for n in z.get("npcs", []):
+				if String(n.get("convo", "")) == "ch7_heron_recruit" \
+						and String(n.get("req_flag", "")) == "sq_kept_hat":
+					attached = true
+	if not attached:
+		return _fail("egg: heron recruit not attached to The Wayhouse gated on sq_kept_hat")
+	print("ok: eggs (the boy grows up — sq_kept_hat -> ch7 heron-feather recruit)")
