@@ -9,6 +9,9 @@
 ##   widows_arithmetic(Q10)— the mill's grain ledger, and Sera's own name in it
 ##   what_cage_holds(Q10)— the caged beastkin's question about the spore hollows
 ##   ferryman_due  (Q10) — the fare the drowned ferryman couldn't collect
+## Plus faction ARC STEP 2 (Q10): recruiter overrides route the arc-1-done desk
+## to a second commission — Accord walk-the-blight-line (ch2_accord2), Cinderborn
+## assay-the-seal (ch2_cinder2) — each a waypoint prop (ZONE_PROPS) + a desk report.
 ## Q10 adds no zones and no new spawns: the two props ride ZONE_PROPS (Q9) onto
 ## existing rooms by name, gated by req_flag; the quest givers are fixed camp
 ## NPCs (Piet, the pilgrim) or the already-overridden Ivo. All three Q10 turn-ins
@@ -140,6 +143,13 @@ const QUEST_ITEMS := {
 		"desc": "A water-stained account book — twenty years of the Greyrun's harvests in a careful hand, the last season's page counted twice and once crossed out.", "grade": "C"},
 }
 
+# Faction arc STEP 2 HUD objective strings (Q10). Merged over ch2_factions.gd's
+# QUESTS (ALL_QUESTS.merge is additive) — arc-1's strings stay.
+const QUESTS := {
+	"ch2_accord2": "Accord: walk the blight-line and map where the Waking's edge sits now",
+	"ch2_cinder2": "Cinderborn: assay the recovered seal — learn what it unlocks",
+}
+
 # ZONE_PROPS (Q9): drop a quest prop into an EXISTING ch2 room by NAME, without
 # editing the owning zone module or appending a zone. Both are gated so they
 # only stand once their quest is live — a normal first pass never sees them.
@@ -165,6 +175,16 @@ const ZONE_PROPS := {
 		"The Drowned Race": [
 			{"sprite": "bones", "x": 620, "y": 520, "prompt": "E — A drowned marker",
 				"convo": "ch2_ferry_mark_a", "req_flag": "sq_on_ferryman_due", "req_not_flag": "due_drowned"},
+		],
+		# Faction arc-2 waypoints — gated on having ACCEPTED the arc-2 assignment
+		# at the recruiter desk (accord_arc2_on / cinder_arc2_on).
+		"The Lee of the Stones": [
+			{"sprite": "pillar", "x": 900, "y": 430, "prompt": "E — The blight-line",
+				"convo": "ch2_blight_line", "req_flag": "accord_arc2_on", "req_not_flag": "blight_line_walked"},
+		],
+		"The Echoing Gallery": [
+			{"sprite": "pillar", "x": 840, "y": 450, "prompt": "E — Assay the seal",
+				"convo": "ch2_seal_assay", "req_flag": "cinder_arc2_on", "req_not_flag": "seal_assayed"},
 		],
 	},
 }
@@ -346,6 +366,23 @@ const CONVOS := {
 					"flags": {"due_drowned": true}, "next": "m2"},
 			]},
 		"m2": {"who": "Narrator", "text": "The coin sits bright against the mud a moment, then the bog takes it, quiet as it takes everything. One fare paid, late.", "next": ""},
+	}},
+	# ---- Q10 faction arc-2 waypoint props ---------------------------------
+	"ch2_blight_line": {"start": "b1", "nodes": {
+		"b1": {"who": "Narrator", "text": "The Waking's leading edge, marked the old way — a line of standing stones the storm has half-thrown down. Near side, grass. Far side, the grey. Callis wants to know where the line SITS now, not where the maps say it should. You pace it, and note where the grey has crept since the last survey: further than anyone at the camp will want to hear.",
+			"next": "",
+			"choices": [
+				{"text": "Map the true edge for Callis.", "flags": {"blight_line_walked": true}, "next": "b2"},
+			]},
+		"b2": {"who": "Narrator", "text": "You fix the line in your notes — honest yardage, the unglamorous kind that keeps the Accord from planting on ground that will be grey by spring.", "next": ""},
+	}},
+	"ch2_seal_assay": {"start": "a1", "nodes": {
+		"a1": {"who": "Narrator", "text": "The recovered imperial seal, held to the crystal's hum the way Vessa asked. The gallery answers, and old metal does not lie to crystal: the seal is not a mark of office at all. It is a KEY — cut for a lock the Concord built, in a hand older than Vargoth's empire. Whatever it opens, the Cinderborn did not know they were paying you to find it.",
+			"next": "",
+			"choices": [
+				{"text": "Note what the seal really is, for Vessa.", "flags": {"seal_assayed": true}, "next": "a2"},
+			]},
+		"a2": {"who": "Narrator", "text": "You record the assay in the exact, deniable language Vessa prefers — enough that she will understand, little enough that the note itself sells for nothing.", "next": ""},
 	}},
 	# ---- Q10: What the Cage Holds (Caged Beastkin) ------------------------
 	# OVERRIDES ch2_factions.gd's "ch2_beastkin_cage" — verbatim copy, w2
@@ -653,5 +690,130 @@ const CONVOS := {
 		"p_ash2": {"who": "Ser Aldric", "text": "It burned GREEN, the night we took that road. Sixty years the ash held the color of the wound — I know, I kept asking. And now it's just ash again. The land forgets faster than the men do, bearer. That is the kindest thing anyone has carried me in years, and it came in a JAR.", "next": "hub"},
 
 		"g_bye": {"who": "Ser Aldric", "text": "Easy is for the dead, and they earned it. Go on, bearer. Mind the east road — and mind the voice more.", "next": ""},
+	}},
+
+	# ---- Q10: faction arc STEP 2 (recruiter overrides) --------------------
+	# OVERRIDES ch2_factions.gd's "ch2_accord_recruit" / "ch2_cinder_recruit" —
+	# verbatim copies, with the arc-1-done status variant rerouted to an arc-2
+	# hub (assign the second commission, take its report). The join flow (a1/a2,
+	# c1/c2) is byte-for-byte the same, so the faction-join suite walk is
+	# unchanged; arc-2 lives on nodes reachable only after joining + arc-1.
+	"ch2_accord_recruit": {"start": "a1", "nodes": {
+		"a1": {"who": "Warden Callis",
+			"text": "Shard-bearer. I won't circle it: the Accord wants every shard gathered and the hollow throne broken for good — yours included, one day, with your consent. We ask people to become LESS so the world can be more. Maren trusts us. Mostly.",
+			"variants": [
+				{"flag": "joined_accord", "text": "Warden Callis salutes. \"Colleague.\"", "next": "a_status"},
+				{"flag": "joined_cinderborn", "text": "\"You wear Vessa's colors now. Then we are done talking, bearer — the Accord does not bargain for what should never be owned.\" She turns back to the palisade.", "next": ""},
+				{"band": "tempted", "text": "The warden's hand settles — casually, precisely — on her hilt before she speaks. \"Shard-bearer. I'll make the Accord's case anyway. Consider it optimism under arms: we gather the shards, we break the throne, and we ask people like you to become LESS before that voice makes you MORE.\""},
+				{"band": "steady", "text": "\"Shard-bearer.\" The warden looks you over once and, remarkably, relaxes. \"You hold it well. That's exactly who the Accord wants: we gather the shards, break the hollow throne, and ask the strong to become less so the world can be more. Few carry the asking better than you would.\""},
+			],
+			"next": "a2"},
+		"a2": {"who": "Warden Callis", "text": "Join us, and your first task is honest work: survey what the Waking has made of the east road. No thrones, no leashes. Just the slow unglamorous mending of the world.",
+			"choices": [
+				{"text": "\"A world that asks me to be less... and asks itself first. I'm in.\"",
+					"req_not_flag": "faction_chosen", "resonance": 6.0,
+					"flags": {"joined_accord": true, "faction_chosen": true},
+					"faction": {"accord": 20, "cinderborn": -10},
+					"quest": "ch2_accord1", "next": "a_join"},
+				{"text": "\"Not yet. I keep my own counsel a while longer.\"",
+					"next": "a_later"},
+				{"text": "\"Become LESS? You first, warden.\"",
+					"req_band": "tempted", "resonance": -3.0,
+					"faction": {"accord": -5}, "next": "a_mock"},
+			]},
+		"a_join": {"who": "Warden Callis", "text": "Then welcome to the long defeat, colleague — that's Accord humor, you'll learn to survive it. East road. Eyes open. Report what the blight has taken.", "next": ""},
+		"a_status": {"who": "Warden Callis",
+			"text": "\"The east road, colleague. The blight will not survey itself — and Vessa's coin-counters would love to beat us to it.\"",
+			"variants": [
+				{"flag": "accord_arc1_done", "text": "\"Your survey's already gone up the chain, colleague — first honest map of the Waking anyone's drawn. There'll be more work when the Accord digests it.\"", "next": "a_arc2"},
+			],
+			"next": "",
+			"choices": [
+				{"text": "\"The survey's done. The Greyrun is scouted — here's what the blight has taken.\"",
+					"req_flag": "blight_scouted", "req_not_flag": "accord_arc1_done",
+					"flags": {"accord_arc1_done": true}, "faction": {"accord": 12},
+					"resonance": 2.0, "next": "a_report"},
+				{"text": "\"Still walking it, warden.\"", "next": ""},
+			]},
+		"a_report": {"who": "Warden Callis", "text": "She reads without a word, twice, then grips your shoulder with the strength of someone who buries fewer friends because of paper like this. \"Good work. UNGLAMOROUS work — the only kind that mends anything. The Accord remembers, colleague.\"", "next": ""},
+		"a_later": {"who": "Warden Callis", "text": "Sensible. The shards make joiners of some and hermits of others. The offer keeps — the Accord is patient the way stone is patient.", "next": ""},
+		"a_mock": {"who": "Warden Callis", "text": "...There it is. The little voice that thinks power should never kneel. I've buried friends who listened to it, bearer. The offer stands anyway — that is the difference between us and it.", "next": ""},
+		# -- Arc step 2: the blight-line survey.
+		"a_arc2": {"who": "Warden Callis", "text": "\"The Accord digested your survey and wants more, colleague — of course it does. The blight-line. Walk the Waking's true edge and map where the grey sits NOW, not where last season's map pretends. Unglamorous. Necessary. Yours, if you'll take it.\"",
+			"variants": [
+				{"flag": "accord_arc2_done", "text": "\"Both surveys in, and both honest. You've drawn the Accord a truer map of the front than its own scouts. There'll always be more line to walk — but rest, colleague. You've earned the fire.\"", "next": ""},
+			],
+			"next": "",
+			"choices": [
+				{"text": "\"I'll walk the blight-line and map the true edge.\"",
+					"req_not_flag": "accord_arc2_on", "flags": {"accord_arc2_on": true},
+					"quest": "ch2_accord2", "resonance": 2.0, "next": "a_arc2_go"},
+				{"text": "\"The blight-line's walked. Here's where the grey sits now.\"",
+					"req_flag": "blight_line_walked", "req_not_flag": "accord_arc2_done",
+					"flags": {"accord_arc2_done": true}, "faction": {"accord": 12},
+					"resonance": 2.0, "next": "a_arc2_report"},
+				{"text": "\"Later, warden.\"", "next": ""},
+			]},
+		"a_arc2_go": {"who": "Warden Callis", "text": "\"The stones out past the Lee — that's the old survey line. Pace it. Trust your own eyes over the map; the map is a year of wishful thinking.\"", "next": ""},
+		"a_arc2_report": {"who": "Warden Callis", "text": "She lays your yardage beside the old survey and goes quiet at the difference. \"...That much, since spring.\" She rolls it up with the care you give bad news you intend to act on. \"The Accord plants where you say it's safe now, colleague, and nowhere else. That's what an honest map is FOR.\"", "next": ""},
+	}},
+
+	"ch2_cinder_recruit": {"start": "c1", "nodes": {
+		"c1": {"who": "Envoy Vessa",
+			"text": "Ah — the camp's newest miracle. Envoy Vessa, of the Cinderborn. Before Maren's people fill your ears: we do not miss the tyrant. We miss ROADS. Granaries. Law. A crown is a tool, and Vaelscar is bleeding for the lack of one.",
+			"variants": [
+				{"flag": "joined_cinderborn", "text": "\"Associate.\"", "next": "c_status"},
+				{"flag": "joined_accord", "text": "\"Maren's warden got to you first, I see. A pity — you'd have looked well in better tailoring. Do give the Accord my regards while you're being noble at each other.\"", "next": ""},
+				{"band": "tempted", "text": "Envoy Vessa's smile sharpens by a full karat. \"Now THERE is a bearer who understands wanting things. Vessa, of the Cinderborn. We don't miss the tyrant, darling — we miss ROADS. And we pay people who reach for what they want.\""},
+				{"band": "steady", "text": "\"Hm. The disciplined sort.\" Vessa recalibrates her smile to something almost honest. \"Good — discipline is half of what a crown is FOR. Envoy Vessa, of the Cinderborn. We miss roads, granaries, and law. Hear the offer before Maren's people talk you into camping forever.\""},
+			],
+			"next": "c2"},
+		"c2": {"who": "Envoy Vessa", "text": "Work with us and be paid, protected, and REMEMBERED. First commission: an imperial courier vanished on the east road with a seal of office. Recover it. History belongs to whoever holds the paperwork.",
+			"choices": [
+				{"text": "\"Roads and granaries. Fine — I'll hear what order pays. I'm in.\"",
+					"req_not_flag": "faction_chosen", "resonance": -6.0,
+					"flags": {"joined_cinderborn": true, "faction_chosen": true},
+					"faction": {"cinderborn": 20, "accord": -10},
+					"quest": "ch2_cinder1", "next": "c_join"},
+				{"text": "\"Not yet. Crowns and I are having a complicated moment.\"",
+					"next": "c_later"},
+				{"text": "\"The last crown you people polished got up and walked. No.\"",
+					"resonance": 3.0, "faction": {"cinderborn": -5}, "next": "c_refuse"},
+			]},
+		"c_join": {"who": "Envoy Vessa", "text": "Splendid. A retainer will find you — we pay in coin, not sermons. The seal, associate. East road. Try not to die; the paperwork for that is dreadful.", "next": ""},
+		"c_status": {"who": "Envoy Vessa",
+			"text": "\"The seal, when you have it — the east road ate an imperial courier and his satchel, and history is written by whoever holds the paperwork.\"",
+			"variants": [
+				{"flag": "cinder_arc1_done", "text": "\"Ah, my favorite associate — the one whose paperwork ARRIVES. The seal is already opening doors in three provinces.\"", "next": "c_arc2"},
+			],
+			"next": "",
+			"choices": [
+				{"text": "Hand over the courier's seal. \"One commission, delivered.\"",
+					"req_flag": "relic_recovered", "req_not_flag": "cinder_arc1_done",
+					"flags": {"cinder_arc1_done": true}, "faction": {"cinderborn": 12},
+					"next": "c_reward"},
+				{"text": "\"The road hasn't given it up yet.\"", "next": ""},
+			]},
+		"c_reward": {"who": "Envoy Vessa", "text": "She turns the cold white metal over once and smiles like a ledger balancing. \"Do you know what this unlocks? Neither do the people who'll pay to find out. Coin follows by courier — a LIVING one, we've learned our lesson. The Cinderborn remember their associates.\"", "next": ""},
+		"c_later": {"who": "Envoy Vessa", "text": "Complicated moments pass. Poverty and banditry, historically, do not. You know our colors when you tire of camping.", "next": ""},
+		"c_refuse": {"who": "Envoy Vessa", "text": "The last crown was WORN BADLY — a fault of the head, not the hat. But yes, do go tell the Accord how principled you are. They give out so little else.", "next": ""},
+		# -- Arc step 2: assay the recovered seal.
+		"c_arc2": {"who": "Envoy Vessa", "text": "\"Since you're the associate whose paperwork ARRIVES — a second commission, more delicate. That seal you recovered. I want it ASSAYED. Held to the crystal-hum in the Echoing Gallery, where old metal tells the truth. I want to know what it opens before the people paying me do.\"",
+			"variants": [
+				{"flag": "cinder_arc2_done", "text": "\"My associate who knows what the merchandise IS before it's sold. Do you know how rare that is? The seal is worth a province now, and quietly, so are you. There is always more history to hold — but rest, darling. Even I let a good associate breathe.\"", "next": ""},
+			],
+			"next": "",
+			"choices": [
+				{"text": "\"I'll assay the seal. Let's see what history you've bought.\"",
+					"req_not_flag": "cinder_arc2_on", "flags": {"cinder_arc2_on": true},
+					"quest": "ch2_cinder2", "resonance": -2.0, "next": "c_arc2_go"},
+				{"text": "\"I assayed the seal. It isn't a mark of office — it's a key.\"",
+					"req_flag": "seal_assayed", "req_not_flag": "cinder_arc2_done",
+					"flags": {"cinder_arc2_done": true}, "faction": {"cinderborn": 12},
+					"resonance": 2.0, "next": "c_arc2_report"},
+				{"text": "\"Later, envoy.\"", "next": ""},
+			]},
+		"c_arc2_go": {"who": "Envoy Vessa", "text": "\"The Echoing Gallery — the crystals there repeat what old metal remembers. Hold the seal to the hum and listen. And associate: whatever it tells you, it tells ME first. That's the arrangement.\"", "next": ""},
+		"c_arc2_report": {"who": "Envoy Vessa", "text": "For once the smile doesn't reach the ledger behind her eyes. \"...A key. Not a seal. A KEY.\" She recovers in half a breath, but you saw it — Vessa, briefly, out of her depth. \"Then it opens something the Concord wanted shut. We will find out what, associate, and QUIETLY. The Cinderborn remember who brought them the lock as well as the key.\"", "next": ""},
 	}},
 }

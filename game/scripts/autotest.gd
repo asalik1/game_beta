@@ -6042,7 +6042,9 @@ func _test_ch2_quests() -> void:
 			["ch2_scholar", "s_fork"], ["ch2_bell", "b2"], ["ch2_bastion_logs", "b2"],
 			["ch2_refugee", "r_ledger_fork"], ["ch2_mill", "d_revisit"],
 			["ch2_beastkin_cage", "wq_report"], ["ch2_lore_ferry", "l_hub"],
-			["ch2_cage_hollow", "c2"], ["ch2_ferry_mark_a", "m2"]]:
+			["ch2_cage_hollow", "c2"], ["ch2_ferry_mark_a", "m2"],
+			["ch2_accord_recruit", "a_arc2"], ["ch2_cinder_recruit", "c_arc2"],
+			["ch2_blight_line", "b2"], ["ch2_seal_assay", "a2"]]:
 		var nodes: Dictionary = Story.ALL_CONVOS[probe[0]]["nodes"]
 		if not nodes.has(probe[1]):
 			_fail("ch2 quests: override node %s/%s missing (module must preload AFTER the ch2 modules)" % [probe[0], probe[1]])
@@ -6051,7 +6053,8 @@ func _test_ch2_quests() -> void:
 	# The Q10 props ride ZONE_PROPS onto existing ch2 zones by NAME — assert
 	# each landed (a zone rename would silently drop them).
 	for zc in [["The Howling Fields", "ch2_bell"], ["The Null Bastion", "ch2_bastion_logs"],
-			["The Sporewood", "ch2_cage_hollow"], ["The Drowned Race", "ch2_ferry_mark_a"]]:
+			["The Sporewood", "ch2_cage_hollow"], ["The Drowned Race", "ch2_ferry_mark_a"],
+			["The Lee of the Stones", "ch2_blight_line"], ["The Echoing Gallery", "ch2_seal_assay"]]:
 		var found_prop := false
 		for zdict in Story.CHAPTER_LIST["ch2"]["zones"]:
 			if String(zdict.get("name", "")) == String(zc[0]):
@@ -6094,6 +6097,12 @@ func _test_ch2_quests() -> void:
 	for spr in ["salt_token", "fallen_bell"]:
 		if not ResourceLoader.exists("res://assets/sprites/%s.png" % spr):
 			_fail("ch2 quests: sprite '%s.png' not installed" % spr)
+			await get_tree().create_timer(60.0).timeout
+			return
+	# Faction arc step 2: the HUD objective strings merged over ch2_factions.
+	for qk in ["ch2_accord2", "ch2_cinder2"]:
+		if Story.quest_text(qk) == "":
+			_fail("ch2 quests: arc-2 objective string '%s' missing" % qk)
 			await get_tree().create_timer(60.0).timeout
 			return
 	var snap_flags: Dictionary = game.flags.duplicate(true)
