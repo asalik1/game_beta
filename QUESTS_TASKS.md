@@ -708,7 +708,22 @@ curve bounds over N seeds, never boss/safe/ch1-first, a card's
 follow-up draws when its mark is set, `defend` fail path, Toll's
 `lose_item` on a carried quest item. Re-run `econ_audit.gd`.
 
-## Q15 — The Unlisted + portal-stone pockets (OPEN; needs Q14)
+## Q15 — The Unlisted + portal-stone pockets (mostly OPEN; needs Q14)
+**Shipped ahead (commit pending): The Hatless Man** (§10.5, owner ruling
+2026-08-24 #8 — "build it cruel, no warmth"). Egg #2 in `content/eggs.gd`,
+NOT a Road Deck card — a flag-gated hidden encounter, no new art. The miller's
+boy's father, who "went toward the howling" and died at the ravine, stands as a
+blighted revenant at **ch1 › Ravine Edge** (`zombie` sprite, `req_flag:
+boy_answered` — only players inside the hat storyline meet him). Gives NOTHING
+back — no fight, no reward, no resonance, no closure; the warm ending ("a good
+place to stop walking") inverted, he never stopped. Diverges INSIDE on
+`hat_given` (owner ruling #1): if you returned the hat, he feels his bare scalp
+for the missing brim. Reads once (`heron_father_met`). `_test_eggs`
+`selftest_present` extended; full suite green. **Prose + placement + the
+`boy_answered` gate are owner-review-pending (in-game).** The rest of Q15 below
+(the Unlisted bosses + portal-stone pockets) still needs Q14's combat-verb tech.
+
+### Q15 (remainder) — The Unlisted + portal-stone pockets
 Estimated: 3 agent-days. Spec: DYNAMIC_WORLD §5 (Tithe-Collector,
 Greymantle) + §6 (Molten Court, Still Larder).
 - **Unlisted**: `content/unlisted.gd` roster; `_unlisted_inject(zones,
