@@ -6039,26 +6039,30 @@ func _test_ch2_quests() -> void:
 			["ch2_scholar", "s_desk"], ["ch2_scholar", "s_jar"],
 			["ch2_aldric", "p_ash"], ["ch2_sentry", "sp_told"],
 			["ch2_choir_pilgrim", "hp_hub"], ["ch2_lore_reliquary", "l_laid"],
-			["ch2_scholar", "s_fork"], ["ch2_bell", "b2"], ["ch2_bastion_logs", "b2"]]:
+			["ch2_scholar", "s_fork"], ["ch2_bell", "b2"], ["ch2_bastion_logs", "b2"],
+			["ch2_refugee", "r_ledger_fork"], ["ch2_mill", "d_revisit"],
+			["ch2_beastkin_cage", "wq_report"], ["ch2_lore_ferry", "l_hub"],
+			["ch2_cage_hollow", "c2"], ["ch2_ferry_mark_a", "m2"]]:
 		var nodes: Dictionary = Story.ALL_CONVOS[probe[0]]["nodes"]
 		if not nodes.has(probe[1]):
 			_fail("ch2 quests: override node %s/%s missing (module must preload AFTER the ch2 modules)" % [probe[0], probe[1]])
 			await get_tree().create_timer(60.0).timeout
 			return
-	# The Q10 props ride ZONE_PROPS onto two existing ch2 zones — assert they
-	# landed (the merge is by zone NAME; a rename would silently drop them).
-	for zname in ["The Howling Fields", "The Null Bastion"]:
+	# The Q10 props ride ZONE_PROPS onto existing ch2 zones by NAME — assert
+	# each landed (a zone rename would silently drop them).
+	for zc in [["The Howling Fields", "ch2_bell"], ["The Null Bastion", "ch2_bastion_logs"],
+			["The Sporewood", "ch2_cage_hollow"], ["The Drowned Race", "ch2_ferry_mark_a"]]:
 		var found_prop := false
 		for zdict in Story.CHAPTER_LIST["ch2"]["zones"]:
-			if String(zdict.get("name", "")) == zname:
+			if String(zdict.get("name", "")) == String(zc[0]):
 				for npc in zdict.get("npcs", []):
-					if String(npc.get("convo", "")) in ["ch2_bell", "ch2_bastion_logs"]:
+					if String(npc.get("convo", "")) == String(zc[1]):
 						found_prop = true
 		if not found_prop:
-			_fail("ch2 quests: ZONE_PROPS did not attach a prop to '%s'" % zname)
+			_fail("ch2 quests: ZONE_PROPS did not attach '%s' to '%s'" % [zc[1], zc[0]])
 			await get_tree().create_timer(60.0).timeout
 			return
-	for qiid in ["sera_loaf", "bastion_ash", "salt_token"]:
+	for qiid in ["sera_loaf", "bastion_ash", "salt_token", "mill_ledger"]:
 		if Items.make_quest_item(String(qiid)).is_empty():
 			_fail("ch2 quest item '%s' does not resolve" % qiid)
 			await get_tree().create_timer(60.0).timeout
@@ -6103,6 +6107,9 @@ func _test_ch2_quests() -> void:
 		"second_bell": ["bell_heard", "bell_told"],
 		"salt_reliquary": ["salt_taken", "salt_laid"],
 		"straight_answer": ["logs_read", "ivo_told"],
+		"widows_arithmetic": ["ledger_taken", "sera_ledger_told"],
+		"what_cage_holds": ["hollow_listened", "cage_told"],
+		"ferryman_due": ["due_drowned", "ferryman_paid"],
 	}
 	for sqid in chains:
 		var sid := String(sqid)
@@ -6147,7 +6154,7 @@ func _test_ch2_quests() -> void:
 	game.player.gem_bag = snap_gems
 	game.dropped_loot = snap_drops
 	game.flags = snap_flags
-	print("ok: ch2 side quests (6 chains — still_blue/bread/ash + bell/salt/straight-answer, single payouts)")
+	print("ok: ch2 side quests (9 chains — still_blue/bread/ash + bell/salt/straight-answer + widow/cage/ferryman, single payouts)")
 
 
 # ---- Q6: Chapter 6 side quests (scripts/content/ch6_quests.gd) ----------

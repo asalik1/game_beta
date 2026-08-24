@@ -6,6 +6,9 @@
 ##   second_bell   (Q10) — Piet's cracked watch-bell, out on the Howling Fields
 ##   salt_reliquary(Q10) — a Choir pilgrim's salt token, laid at the reliquary
 ##   straight_answer(Q10)— the Null Bastion's warden logs, and Ivo's fork
+##   widows_arithmetic(Q10)— the mill's grain ledger, and Sera's own name in it
+##   what_cage_holds(Q10)— the caged beastkin's question about the spore hollows
+##   ferryman_due  (Q10) — the fare the drowned ferryman couldn't collect
 ## Q10 adds no zones and no new spawns: the two props ride ZONE_PROPS (Q9) onto
 ## existing rooms by name, gated by req_flag; the quest givers are fixed camp
 ## NPCs (Piet, the pilgrim) or the already-overridden Ivo. All three Q10 turn-ins
@@ -83,6 +86,42 @@ const SIDE_QUESTS := {
 		],
 		"reward": {"gold": 200, "gem": true},
 	},
+
+	# ---- Q10 slate, second batch ------------------------------------------
+	"widows_arithmetic": {
+		"name": "Widow's Arithmetic",
+		"chapter": "ch2",
+		"desc": "The mill's blue door held — but Widow Sera wants the season's grain ledger back. She means to settle, in her own hand, exactly who the blight starved and who only claimed it did.",
+		"steps": [
+			{"flag": "ledger_taken", "text": "Recover the mill's grain ledger from the Greyrun mill"},
+			{"flag": "sera_ledger_told", "text": "Bring the ledger to Sera at Maren's camp"},
+		],
+		"reward": {"gold": 150, "gem": true},
+	},
+	"what_cage_holds": {
+		"name": "What the Cage Holds",
+		"chapter": "ch2",
+		"desc": "The camp's caged beastkin does not ask for freedom. It asks whether the spore hollows of the Sporewood still SING — and it will know if you lie.",
+		"steps": [
+			{"flag": "hollow_listened", "text": "Listen at a spore hollow in the Sporewood"},
+			{"flag": "cage_told", "text": "Bring the beastkin word — true or kind"},
+		],
+		"reward": {"gold": 180, "gem": true},
+		# Strand-safe: freeing or leaving the cage before you report simply
+		# forfeits the quest — no abandonment penalty for an errand you can't
+		# finish because the one who asked is gone.
+		"abandon": {"resonance": 0.0},
+	},
+	"ferryman_due": {
+		"name": "The Ferryman's Due",
+		"chapter": "ch2",
+		"desc": "The Greyrun's ferryman poled souls out of the blight for eleven days, then tied himself to his own post and stayed. Someone should pay the fare he never could collect.",
+		"steps": [
+			{"flag": "due_drowned", "text": "Leave a coin at the drowned marker in the Drowned Race"},
+			{"flag": "ferryman_paid", "text": "Lay the last coin on the ferryman's own tally"},
+		],
+		"reward": {"gold": 150, "gem": true},
+	},
 }
 
 const QUEST_ITEMS := {
@@ -92,6 +131,10 @@ const QUEST_ITEMS := {
 		"desc": "Grey ash off the Null Bastion's road, sealed and labeled in Ivo's exact hand: 'ALDRIC — AS COMMISSIONED.'", "grade": "C"},
 	"salt_token": {"name": "Pilgrim's Salt Token", "icon": "salt_token",
 		"desc": "A disc of grey salt, pressed by hand and worn smooth from carrying. The pilgrim would not tell you whose debt it settles.", "grade": "C"},
+	# No "icon": the mill ledger has no sprite asset, so omit it (the Curios
+	# codex shows a graceful blank; the bag uses a glyph).
+	"mill_ledger": {"name": "The Mill's Grain Ledger",
+		"desc": "A water-stained account book — twenty years of the Greyrun's harvests in a careful hand, the last season's page counted twice and once crossed out.", "grade": "C"},
 }
 
 # ZONE_PROPS (Q9): drop a quest prop into an EXISTING ch2 room by NAME, without
@@ -109,6 +152,16 @@ const ZONE_PROPS := {
 		"The Null Bastion": [
 			{"sprite": "pillar", "x": 760, "y": 430, "prompt": "E — Warden logs",
 				"convo": "ch2_bastion_logs", "req_flag": "sq_on_straight_answer", "req_not_flag": "logs_read"},
+		],
+		# A spore hollow to listen at (What the Cage Holds).
+		"The Sporewood": [
+			{"sprite": "fungus_long", "x": 720, "y": 440, "prompt": "E — Listen at the hollow",
+				"convo": "ch2_cage_hollow", "req_flag": "sq_on_what_cage_holds", "req_not_flag": "hollow_listened"},
+		],
+		# A drowned-soul marker for the Ferryman's Due (bog room).
+		"The Drowned Race": [
+			{"sprite": "bones", "x": 620, "y": 520, "prompt": "E — A drowned marker",
+				"convo": "ch2_ferry_mark_a", "req_flag": "sq_on_ferryman_due", "req_not_flag": "due_drowned"},
 		],
 	},
 }
@@ -254,6 +307,91 @@ const CONVOS := {
 		"b2": {"who": "Narrator", "text": "You copy it out exact — the struck names, the shaking last line, all of it. Ivo said 'exact' four times. You believe he meant it four times.", "next": ""},
 	}},
 
+	# ---- Q10 props: the spore hollow (Cage) + two drowned markers (Ferryman)
+	"ch2_cage_hollow": {"start": "c1", "nodes": {
+		"c1": {"who": "Narrator", "text": "A spore hollow at the base of a fungal trunk, the size of a curled sleeper. You put your ear to it, the way the beastkin asked, and wait. It is not silent. Deep in the wood something ANSWERS — a low chord, felt more than heard, older than the blight and patient as roots. The hollows still sing. The Sporewood remembers being a forest.",
+			"next": "",
+			"choices": [
+				{"text": "Fix the chord in your memory for the caged scout.",
+					"flags": {"hollow_listened": true}, "next": "c2"},
+			]},
+		"c2": {"who": "Narrator", "text": "You carry the sound out with you, or as much of it as a shard-bearer can carry. It will not translate cleanly. You will have to CHOOSE what to tell.", "next": ""},
+	}},
+	"ch2_ferry_mark_a": {"start": "m1", "nodes": {
+		"m1": {"who": "Narrator", "text": "Bones half-sunk in the black water of the Drowned Race, weighted the way the current weights the ones who never reached the ferry. A soul the ferryman couldn't pole across.",
+			"next": "",
+			"choices": [
+				{"text": "Set a coin on the bank — the fare he couldn't collect.",
+					"flags": {"due_drowned": true}, "next": "m2"},
+			]},
+		"m2": {"who": "Narrator", "text": "The coin sits bright against the mud a moment, then the bog takes it, quiet as it takes everything. One fare paid, late.", "next": ""},
+	}},
+	# ---- Q10: What the Cage Holds (Caged Beastkin) ------------------------
+	# OVERRIDES ch2_factions.gd's "ch2_beastkin_cage" — verbatim copy, w2
+	# gains the scout ask (accept) and the report fork at the END. The
+	# free/water/walk fork is untouched; the quest is strand-safe (abandon: 0)
+	# so freeing the cage before reporting costs nothing.
+	"ch2_beastkin_cage": {"start": "w1", "nodes": {
+		"w1": {"who": "Caged Beastkin",
+			"text": "The cage holds a wiry beastkin scout — Fangmaw's blood, three generations on. It watches you with too-clever eyes and says nothing. The sentries argue about what to do with it.",
+			"variants": [
+				{"flag": "cage_resolved", "text": "The cage stands empty now. One of the sentries has planted herbs in it, out of spite or optimism.", "next": ""},
+				{"band": "tempted", "text": "The caged scout presses itself against the FAR bars as you approach — the first fear it has shown anyone in this camp. \"Two hungry things,\" it rasps, \"and only one of us is caged.\""},
+			],
+			"next": "w2"},
+		"w2": {"who": "Caged Beastkin", "text": "\"Shard-carrier,\" it rasps, finally. \"Your pack or mine — a cage is a cage. The Tribes remember who opens doors. And who watches.\"",
+			"choices": [
+				{"text": "Open the cage. \"Run before the sentries agree on anything.\"",
+					"resonance": 4.0, "flags": {"freed_beastkin": true, "cage_resolved": true},
+					"faction": {"wildfang": 10, "accord": -4}, "next": "w_free"},
+				{"text": "Pass a waterskin through the bars and say nothing.",
+					"flags": {"cage_resolved": true}, "faction": {"wildfang": 4}, "next": "w_water"},
+				{"text": "\"The Tribes raid grain carts. Watch, then.\" Walk away.",
+					"flags": {"cage_resolved": true}, "faction": {"wildfang": -5}, "next": "w_walk"},
+				{"text": "\"You watch me like you want something. What is it?\"",
+					"req_not_flag": "sq_on_what_cage_holds", "side_quest": "what_cage_holds",
+					"next": "wq_ask"},
+				{"text": "\"I listened at the hollows, like you asked.\"",
+					"req_flag": "hollow_listened", "req_not_flag": "cage_told", "next": "wq_report"},
+			]},
+		"w_free": {"who": "Narrator", "text": "It is over the palisade before the latch stops swinging. From the treeline, one short howl — a NOTE, not a threat. Something out there is keeping accounts.", "next": ""},
+		"w_water": {"who": "Narrator", "text": "It drinks without taking its eyes off you, and sets the skin down with strange care. The Tribes remember small doors too.", "next": ""},
+		"w_walk": {"who": "Narrator", "text": "The too-clever eyes follow you all the way across the camp. You have been entered into someone's ledger, and not on the generous page.", "next": ""},
+		"wq_ask": {"who": "Caged Beastkin", "text": "\"...Not freedom. I know these bars. I want to know if the SPORE HOLLOWS still sing — the deep ones, in the Sporewood. My grandmother's grandmother could hear them from the ridge. If they've gone quiet, then the Tribes were right to stop listening, and I can stop, too.\" The too-clever eyes are, for once, only tired. \"You'll go where I can't. Put your ear to a hollow. And tell me TRUE — I'll know the other thing.\"", "next": ""},
+		"wq_report": {"who": "Caged Beastkin", "text": "It goes very still against the bars. \"Well? Do they sing?\"",
+			"next": "",
+			"choices": [
+				{"text": "\"They still sing. The Sporewood remembers being a forest. I won't pretend that's a kindness to you in here.\"",
+					"flags": {"cage_told": true}, "faction": {"wildfang": 2}, "resonance": -4.0, "next": "wq_truth"},
+				{"text": "\"They've gone quiet. It's just rot out there now. Nothing's aching for you.\"",
+					"flags": {"cage_told": true}, "faction": {"wildfang": -2}, "resonance": 4.0, "next": "wq_lie"},
+			]},
+		"wq_truth": {"who": "Caged Beastkin", "text": "The breath goes out of it slowly. \"...They sing.\" It closes its eyes, and something that is not quite grief and not quite home moves across its face. \"Then I was wrong to stop listening. Thank you, shard-carrier. A cruel gift is still a gift — the Tribes remember the ones who don't soften the truth.\"", "next": ""},
+		"wq_lie": {"who": "Caged Beastkin", "text": "It searches your face a long moment, then lets its shoulders down. \"...Quiet. Then there's nothing to ache for.\" It almost looks relieved, and you did that. Whether it BELIEVED you, you will never know — but it sleeps that night, and the caged do not sleep easily.", "next": ""},
+	}},
+
+	# ---- Q10: The Ferryman's Due (object-first off the landing lore prop) --
+	# OVERRIDES ch2_zones_side.gd's "ch2_lore_ferry" — verbatim l1 text, now a
+	# hub: take up his tally (accept), and lay the last coin once the two
+	# drowned markers are paid.
+	"ch2_lore_ferry": {"start": "l1", "nodes": {
+		"l1": {"who": "Narrator", "text": "A landing stage on the black water, and the ferryman still tied to his own post — rope around the waist, the way a man secures himself for a long night's work he intends to survive. He took people out of the Greyrun for eleven days after the blight came up. The tally is cut into the post beside him, five and five and five, and the last group is a group of one, and the notch for it is deeper than the others, as though cut slowly, by somebody with the evening free.",
+			"next": "l_hub"},
+		"l_hub": {"who": "Narrator", "text": "The fare-box at his belt is empty. He collected nothing for the last eleven days; a ferryman who takes no coin is not a ferryman, he is a drowning man with a boat.",
+			"next": "",
+			"choices": [
+				{"text": "Take up his tally. Pay the fare he couldn't collect, at each place the drowned still lie.",
+					"req_not_flag": "sq_on_ferryman_due", "resonance": 3.0,
+					"side_quest": "ferryman_due", "next": "l_accept"},
+				{"text": "Lay the last coin on his own tally. The debt is closed.",
+					"req_flag": "due_drowned", "req_not_flag": "ferryman_paid",
+					"flags": {"ferryman_paid": true}, "resonance": 2.0, "next": "l_paid"},
+				{"text": "Leave him to his long night. (step back)", "next": ""},
+			]},
+		"l_accept": {"who": "Narrator", "text": "You mark the place the Greyrun took the most — the Drowned Race, downstream — and set out with a coin for the fare it swallowed, and one more for the man at the post. The ferryman does not thank you. Ferrymen don't. But the rope around his waist seems, in the failing light, a little less like a knot and a little more like a mooring.", "next": ""},
+		"l_paid": {"who": "Narrator", "text": "You set the last coin in the notch cut deepest — the group of one, the fare he cut slowly with the evening free, because the one it counted was himself. The post takes the coin like it was carved to hold it. Somewhere the accounting balances, eleven days late, and the black water goes on being black water.", "next": ""},
+	}},
+
 	# OVERRIDES ch2_hub.gd's "ch2_refugee" — verbatim copy, extended:
 	# r1 gains choices (Still Blue accept / bread courier / leave), and the
 	# mill_told variant now flows to r_after so the bread ask stays
@@ -305,8 +443,62 @@ const CONVOS := {
 					"req_flag": "act1_complete", "req_not_flag": "loaf_taken",
 					"gain_item": "sera_loaf", "flags": {"loaf_taken": true},
 					"side_quest": "bread_for_the_road", "next": "r_loaf"},
+				# Q10: Widow's Arithmetic — the mill's ledger, and a quiet fork.
+				{"text": "\"The door held. What else does the mill still owe you?\"",
+					"req_not_flag": "sq_on_widows_arithmetic", "side_quest": "widows_arithmetic",
+					"next": "r_ledger_ask"},
+				{"text": "Set the mill's grain ledger on the cook-bench in front of her.",
+					"req_flag": "ledger_taken", "req_not_flag": "sera_ledger_told",
+					"next": "r_ledger_fork"},
 				{"text": "\"Keep the fire, Sera.\" (leave)", "next": ""},
 			]},
+		"r_ledger_ask": {"who": "Widow Sera", "text": "Her jaw sets. \"The GRAIN book. Twenty years of the Greyrun's harvests, and the last season counted twice. The village says the blight starved us. I say the blight starved SOME of us, and the rest sold the shortfall and blamed the water. Bring me the book and I'll settle it in my own hand — who starved, and who only claimed to.\" A beat. \"It's in the mill office, under the third floorboard where I kept the coin. You'll have seen the shape of that.\"", "next": ""},
+		"r_ledger_fork": {"who": "Widow Sera", "text": "She opens it to the last season and runs a finger down the column, and her mouth thins. \"There. Millwright's own tithe, laid by while the row cottages went hollow. My late husband's partner. My daughter's godfather.\" She looks up at you. \"You read it too, on the road. Do I settle this whole — every name, mine among them where I took my share — or...\"",
+			"next": "",
+			"choices": [
+				{"text": "\"Whole. Every name, yours included. The truth doesn't get to pick who it spares.\"",
+					"lose_item": "mill_ledger", "flags": {"sera_ledger_told": true},
+					"resonance": 4.0, "next": "r_ledger_whole"},
+				{"text": "Tear out the page that names her own hoard first, then hand her the rest.",
+					"lose_item": "mill_ledger", "flags": {"sera_ledger_told": true, "chose_sera_page": true},
+					"resonance": -6.0, "next": "r_ledger_page"},
+			]},
+		"r_ledger_whole": {"who": "Widow Sera", "text": "She takes it whole and does not flinch from her own line. \"Then it's honest. First honest thing on the Greyrun in a year.\" She'll post the reckoning at the mill door — the blue one — where twenty years of spring paint can watch the village read it. \"You didn't soften it for me. Nobody's done that since the water came up.\"", "next": ""},
+		"r_ledger_page": {"who": "Widow Sera", "text": "The torn page goes into the cook-fire and is gone before she can change her mind, and something in her goes quiet with it. \"...The rest is true. Truer than most.\" She won't meet your eye, and she won't ask what you'll do with what you know. The reckoning she posts at the blue door names everyone but her — and every reader who was there will notice the one name missing, and say nothing, the way the Greyrun says nothing.", "next": ""},
+	}},
+
+	# OVERRIDES ch2_zones_act1.gd's "ch2_mill" — verbatim d1/d2/d3/d_loot, with
+	# the mill_seen / mill_looted revisit variants (and the two outcome nodes)
+	# rerouted to a revisit hub so the grain ledger (Widow's Arithmetic) is
+	# takeable on a return trip once the quest is live. First-visit flow (see
+	# the door, remember/loot) is byte-for-byte the same.
+	"ch2_mill": {"start": "d1", "nodes": {
+		"d1": {"who": "Narrator",
+			"text": "A mill hunches over the black water of the Greyrun. The wheel is furred with blight-moss and the walls have gone grey — but the door is blue. Still blue. Somebody sanded and repainted it every spring for twenty years, and the rot seems, for now, to be losing the argument with the paint.",
+			"variants": [
+				{"flag": "mill_looted", "text": "The blue door stands where it stood. You know now what the paint was guarding, and how light a tin of coin rides — and you find you don't check on the door the way you meant to. It watches you pass instead.", "next": "d_revisit"},
+				{"flag": "mill_seen", "text": "The blue door stands where it stood. You find you check on it now, the way Sera must have — one glance, every pass, to make sure the argument is still being lost.", "next": "d_revisit"},
+			],
+			"next": "d2"},
+		"d2": {"who": "Narrator", "text": "Sera asked one thing: to know whether it still stands. It does. That will matter to exactly one person in the world, which — you begin to suspect — is what mattering usually looks like.",
+			"choices": [
+				{"text": "Remember it for her. (The door is standing.)",
+					"flags": {"mill_seen": true}, "resonance": 3.0, "next": "d3"},
+				{"text": "Remember it for her — then work the wheel-side shutter loose. Twenty years of paint guarded SOMETHING worth carrying.",
+					"flags": {"mill_seen": true, "mill_looted": true}, "resonance": -8.0,
+					"gold": 30, "next": "d_loot"},
+			]},
+		"d3": {"who": "Narrator", "text": "You fix the blue in your mind against the grey. Small honest cargo for the road back.", "next": "d_revisit"},
+		"d_loot": {"who": "Narrator", "text": "The shutter gives the way twenty-year hinges give: apologizing. Inside, the mill keeps house the way she must have kept it — jars labeled, tools oiled, and under the third floorboard a tin of coin against a leaner spring than this one. You take the tin. The door stays blue behind you, and stands a little less for it — though only you would know, and you intend to be the only one who ever does.", "next": "d_revisit"},
+		"d_revisit": {"who": "Narrator", "text": "The mill keeps its own counsel over the black water, the blue door holding its line.",
+			"next": "",
+			"choices": [
+				{"text": "Into the mill office — Sera's grain ledger is under the third floorboard, where the coin was.",
+					"req_flag": "sq_on_widows_arithmetic", "req_not_flag": "ledger_taken",
+					"gain_item": "mill_ledger", "flags": {"ledger_taken": true}, "next": "d_ledger"},
+				{"text": "Leave the mill to its water. (step back)", "next": ""},
+			]},
+		"d_ledger": {"who": "Narrator", "text": "The third floorboard gives the way it gave to whoever came before. The grain book is under it, dry in an oilcloth — twenty years of harvests, the last season counted twice and once crossed out. Sera will know what the crossing-out means. You are beginning to.", "next": ""},
 	}},
 
 	# OVERRIDES ch2_zones_act2.gd's "ch2_scholar" — verbatim copy, extended:
