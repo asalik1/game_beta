@@ -89,8 +89,9 @@ def verdict(ratio: float, mn: float) -> str:
     return "LOW"
 
 
-def audit(entities: dict | None, mn: float, only: set[str] | None):
+def audit(entities: dict | None, mn: float, only: set[str] | None, include_unplaced: bool = False):
     rows = []   # (category, asset, authored, rendered, ratio, verdict, note)
+    skipped_unplaced = 0
 
     def want(c):
         return not only or c in only
@@ -121,6 +122,9 @@ def audit(entities: dict | None, mn: float, only: set[str] | None):
     # ---- mobs / bosses / npcs (need runtime scale) ----
     if entities:
         for kind, e in entities.get("enemies", {}).items():
+            if not e.get("placed", True) and not include_unplaced:
+                skipped_unplaced += 1
+                continue
             spr = e.get("sprite", "")
             p = _idle_png(spr)
             if not p:
@@ -168,6 +172,7 @@ def audit(entities: dict | None, mn: float, only: set[str] | None):
             rows.append(("prop", fam, native_w, round(rendered, 1), round(native_w / rendered, 2),
                          verdict(native_w / rendered, mn), f"render_w {rw:.0f}"))
 
+    audit.skipped_unplaced = skipped_unplaced
     return rows
 
 
@@ -177,10 +182,12 @@ def main() -> int:
     ap.add_argument("--csv", type=Path, default=None)
     ap.add_argument("--min", type=float, default=2.0)
     ap.add_argument("--only", default="")
+    ap.add_argument("--include-unplaced", action="store_true",
+                    help="audit enemies defined but never placed in a zone (default: skip — they're not seen)")
     args = ap.parse_args()
     ents = json.loads(args.entities.read_text()) if args.entities and args.entities.exists() else None
     only = {s.strip() for s in args.only.split(",") if s.strip()} or None
-    rows = audit(ents, args.min, only)
+    rows = audit(ents, args.min, only, args.include_unplaced)
 
     if args.csv:
         with open(args.csv, "w", newline="") as f:
@@ -207,7 +214,10 @@ def main() -> int:
         if len(cr) > 14:
             print(f"  ... {len(cr)-14} more")
     if not ents:
-        print("\n(no --entities json: mob/boss/npc skipped — run tools/fidelity_dump.gd first)")
+        print("\n(no --entities json: mob/boss/npc skipped — run game/fidelity_dump.gd first)")
+    elif getattr(audit, "skipped_unplaced", 0):
+        print(f"\n(skipped {audit.skipped_unplaced} enemies DEFINED but never placed in a zone — "
+              "not seen in game; --include-unplaced to audit them anyway)")
     print(f"\nTOTAL under {args.min}x: {total_bad} / {len(rows)}")
     return 0
 

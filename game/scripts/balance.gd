@@ -515,7 +515,7 @@ const MATERIAL_DEFAULT_BODY := "humanoid"  # any unclassified kind (cloth/reagen
 # MATERIAL_DEFAULT_BODY; keep in step with Story.ALL_ENEMIES as the roster grows.
 const MATERIAL_MOB_BODY := {
 	# Beasts
-	"wolf": "beast", "spider": "beast", "bat": "beast", "direbat": "beast",
+	"wolf": "beast", "spider": "beast",
 	"blightwolf": "beast", "bogspider": "beast", "duneprowler": "beast",
 	"winterfang": "beast", "storm_harrier": "beast",
 	# Humanoids / cultists
@@ -2833,6 +2833,14 @@ const WAKING_AFFIXES := 1         # each wears one week-seeded elite affix
 const WAKING_GEM_LVL := 3         # banked kill: one bright gem (above the vault's Lv2)
 const WAKING_GOLD := 350          # banked kill: bonus gold (level-scaled like the daily)
 const RENOWN_WAKING := 25         # all three banked in a week -> the chest + this
+
+# The Unlisted (Q15, content/unlisted.gd): rare HIDDEN bosses, seeded per RUN.
+# Per-boss draw chance — FIRST-GUESS frequencies, OWNER REVIEW PENDING
+# (ruling 2026-08-24 #5). Each Unlisted rolls independently on a chapter load.
+const UNLISTED_CHANCE := {"tithe_collector": 0.125, "greymantle": 0.10}  # ~1-in-8 / 1-in-10
+const UNLISTED_LEVEL_BONUS := 0   # they fight at the chapter finale's level (affixes carry the extra teeth)
+const RENOWN_UNLISTED := 12       # regard for felling one; rides the rogue path's gold/gem too
+const UNLISTED_GREY_WILDFANG := 2 # Wildfang standing shift on Greymantle's fall (DYNAMIC_WORLD §5)
 
 static func renown_price(kind: String, tier := "") -> int:
 	if kind == "chroma":

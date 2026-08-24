@@ -9,6 +9,23 @@ func _init() -> void:
 	Story.load_content()   # populate ALL_ENEMIES / CHAPTER_LIST (not auto in a --script boot)
 	var out := {"enemies": {}, "npcs": {}}
 	var boss_kinds: Array = Menus.BOSS_KINDS
+	# PLACED set (mirrors dump_codex_data / codex used-filter): only enemies a
+	# player actually meets — a zone-spawn kind, a zone boss, or a chapter final
+	# boss. Enemies merely DEFINED in ALL_ENEMIES but never placed (bat/direbat)
+	# must not pollute the fidelity audit as phantom fails.
+	var placed := {}
+	for chid in Story.CHAPTER_LIST:
+		var ch: Dictionary = Story.CHAPTER_LIST[chid]
+		var fb := String(ch.get("final_boss", ""))
+		if fb != "":
+			placed[fb] = true
+		for zone in ch.get("zones", []):
+			var zb := String(zone.get("boss", ""))
+			if zb != "":
+				placed[zb] = true
+			for e in zone.get("enemies", []):
+				if e is Array and e.size() > 0:
+					placed[String(e[0])] = true
 	for kind in Story.ALL_ENEMIES:
 		var st: Dictionary = Story.ALL_ENEMIES[kind]
 		if st.get("placeholder", false):
@@ -17,6 +34,7 @@ func _init() -> void:
 			"sprite": String(st.get("sprite", kind)),
 			"scale": float(st.get("scale", 1.0)),
 			"boss": bool(kind in boss_kinds),
+			"placed": bool(placed.has(String(kind))),
 		}
 	# NPCs: unique sprites across every chapter's zones (codex._npcs walk).
 	for chid in Story.CHAPTER_LIST:

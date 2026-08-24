@@ -541,12 +541,11 @@ const ENEMIES := {
 	# >=1 real trait, and "swift" is the mildest (just quicker on its feet, no
 	# special behavior). Revisit later: re-add the evasive flit / a real
 	# flight AI once the aerial-swarm design is finalized. Roster + codex only.
-	"bat":      {"name": "Cave Bat",   "sprite": "bat",     "hp": 24.0, "dmg": 10.0, "speed": 230.0, "xp": 6,  "gold": 3,  "ranged": false, "scale": 2.8,
-		"physres": 0.0, "magres": 0.0, "eva": 0.0, "critres": 0.0, "dmg_type": "phys",
-		"level": 3, "hp_g": 0.09, "dmg_g": 0.08, "traits": ["swift"]},
-	"direbat":  {"name": "Blightbat",  "sprite": "direbat", "hp": 70.0, "dmg": 18.0, "speed": 205.0, "xp": 14, "gold": 11, "ranged": false, "scale": 3.6,
-		"physres": 8.0, "magres": 8.0, "eva": 0.0, "critres": 0.0, "dmg_type": "phys",
-		"level": 8, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["swift"]},
+	# bat / direbat MOBS dropped 2026-08-24 (owner: unplaced + low-fidelity =
+	# drop). Neither was in any zone spawn or summoned by a mechanic, and both
+	# rendered UPSCALED (bat 0.59x / direbat 0.62x — the fidelity audit's worst).
+	# bat.png survives as an ambient critter flock (ambience.gd) + the cinder_bat
+	# skin; direbat's sprites are removed.
 	# Bosses: strong base AND strong growth ("dragon-grade" scaling).
 # HP pools follow the TTK BUDGET (playtest round 9: "Fangmaw died in
 # <10s to C-gear, zero talents"): at level with modest gear a boss
