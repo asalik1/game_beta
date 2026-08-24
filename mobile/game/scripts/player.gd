@@ -678,9 +678,14 @@ func use_ability(slot: String) -> void:
 		# "attack", no attackb) and assassin fan-of-knives (a3 "attack2"). The tell
 		# for "this is the alternating melee basic" is slot a1 on a class that ships
 		# an attackb (only the assassin has both attackb AND attack_walk).
-		var walk_fire: bool = action_clip in ["attack", "attackb", "attackc", "attack2"] \
-			and _clips.has("attack_walk") and velocity.length() > 20.0 \
-			and not (slot == "a1" and _clips.has("attackb"))
+		# Gate on SLOT, not just clip name: the fire-on-move basics are the ranged
+		# a1 ("attack", no attackb -> mage/warlock/archer quick-shot) and the
+		# assassin's a3 fan-of-knives ("attack2"). Matching any "attack2" also caught
+		# the archer's a2 MULTISHOT (same clip name, different ability), which then
+		# borrowed the quick-shot walk clip while moving (owner 2026-08-23) -- exclude it.
+		var walk_fire: bool = _clips.has("attack_walk") and velocity.length() > 20.0 \
+			and ((slot == "a1" and action_clip == "attack" and not _clips.has("attackb")) \
+				or (slot == "a3" and action_clip == "attack2"))
 		# Fire-on-move alternates attack_walk <-> attack_walk_b each fresh cycle
 		# (owner 2026-08-23), like melee attack<->attackb, so spamming a moving basic
 		# doesn't replay one clip. Art-driven: no _b strip = attack_walk only.

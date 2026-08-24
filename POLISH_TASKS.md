@@ -296,6 +296,22 @@ should work".
   `animate_character` (needs explicit authorization).
 - [ ] **P4.3 Skins inherit** whatever P4.2 ships (skin change scope rule: per skin
   unless "all classes").
+- [ ] **P4.4 Elite-skin walk diagonals are COPIES, not authored (owner: fix later, 2026-08-23).**
+  Tech-debt from the P0.13 elite-skin line: to save generation, three of the five
+  enhanced-base skins have their base `_walk` diagonals byte-copied from the side profiles —
+  `walk_ne`/`walk_se` == `walk_e`, `walk_nw`/`walk_sw` == `walk_w`. So moving DIAGONALLY in
+  those skins shows a pure side-on walk, not a 3/4 diagonal. Affected: **archer_severed_thread,
+  assassin_erased_name, warlock_ledgerbound**. CLEAN (distinct authored diagonals, leave them):
+  **mage_blighted_healer, warrior_emberbound_heir**, and all six BASE-class walks. Lower
+  priority because these are preview-only elite skins and the base classes players actually walk
+  in are fine. Fix = author true ne/nw diagonal walks for the three (walk-referenced technique;
+  mirror left-from-right where the design is symmetric), then install over the copies.
+  Detect/verify by hashing each `<skin>_walk_<dir>.png` under `skins/elite/` — a skin is
+  affected when `walk_ne`==`walk_se`==`walk_e` and `walk_nw`==`walk_sw`==`walk_w` (byte-identical).
+  NOTE: the
+  `attack_walk` fire-on-move clips copy diagonals the SAME way for every skin, but that is the
+  accepted fire-on-move method (§ "Required per-class animation clips"), not this bug — don't
+  "fix" those.
 
 ### P5 — room composition (code, medium)
 - [x] **P5.1 Wall silhouette variety** (BUILT 2026-08-18 23:55) — stone wall kinds

@@ -147,6 +147,15 @@ ANCHOR_H = 0.12        # bbox-height drift within a locomotion strip
 # while every lunge/step (saint_varo 40%/27%, warrior cleave 39%/21%) is spared.
 FEETSLIDE_FEET = 0.12    # feet-center-x drift, fraction of cell width
 FEETSLIDE_CENTER = 0.06  # bbox-center-x drift below this == mechanically centered
+# HEROBODY: the HERO renderer (player_core _measure_hero_frame) locks a clip's on-screen
+# scale to FRAME 0's CONTENT bbox height, then plays the whole clip at it. If frame 0's
+# rest pose already raises a weapon (content > body), the BODY renders below idle size for
+# the entire clip -- the archer-multishot shrink (frame0 content 235 / body 200 -> 0.85x)
+# that CLIPSCALE (median/cell, the ENEMY model) structurally cannot see. Flag a hero action
+# clip whose frame-0 body renders below this x the idle's frame-0 body. A NEUTRAL rest frame
+# (weapon down) reads ~1.0; a legit crouch/lunge still starts neutral, so it is spared.
+HERO_CLASSES = ("warrior", "archer", "mage", "warlock", "assassin", "paladin")
+HERO_BODY_LO = 0.90
 GHOST_GAP = 0.06       # vertical content gap, fraction of cell height
 RIGID_DRIFT_PX = 3     # a full-bleed prop whose L/R bbox edge moves more than
                        # this is a rigid body wandering (capital_portal_depths
@@ -263,6 +272,22 @@ def _frame_metrics(a: np.ndarray, frame_width: int) -> list[dict | None]:
             "hgap": int(xgaps.max()) - 1 if len(xgaps) else 0,
         })
     return out
+
+
+def _frame0_body_content(a: np.ndarray, fw: int) -> tuple[int, int]:
+    """Frame 0: (width-thresholded body height, full content bbox height).
+    The width threshold ignores a THIN raised weapon (a bow/arrow a few px wide) so
+    the BODY is measured; content is what the hero renderer locks the clip scale to."""
+    reg = a[:, :fw]
+    solid = reg > A_SOLID
+    rows_any = np.where(solid.any(axis=1))[0]
+    if not len(rows_any):
+        return 0, 0
+    content_h = int(rows_any[-1] - rows_any[0] + 1)
+    wt = max(9, int(fw * 0.045))
+    rows_body = np.where(solid.sum(axis=1) > wt)[0]
+    body_h = int(rows_body[-1] - rows_body[0] + 1) if len(rows_body) else content_h
+    return body_h, content_h
 
 
 def _frame_components(reg: np.ndarray) -> tuple[int, int, list[int]]:
@@ -625,6 +650,51 @@ def check_clip_scale(files: list[Path]) -> None:
                         "smaller/larger than the body")
 
 
+def check_hero_body_scale(files: list[Path]) -> None:
+    """Hero action clips: catch the frame-0 scale-lock shrink CLIPSCALE misses.
+    player_core locks a clip's on-screen scale to frame 0's CONTENT bbox; if the rest
+    pose raises a weapon (content > body), the whole clip renders the body small."""
+    idle_cache: dict[tuple, tuple | None] = {}
+
+    def frame0bc(p: Path) -> tuple[int, int]:
+        img = Image.open(p).convert("RGBA")
+        return _frame0_body_content(np.asarray(img)[:, :, 3], img.height)
+
+    for png in files:
+        parts = png.stem.split("_")
+        if parts[0] not in HERO_CLASSES:
+            continue
+        d = parts[-1] if parts[-1] in DIR8 else None
+        core = parts[:-1] if d else parts
+        if len(core) < 2:
+            continue
+        clip = core[-1]
+        base = "_".join(core[:-1])
+        if not (clip in ("attack", "attack2", "attackb", "attackc") or clip in ability_tokens()):
+            continue
+        ikey = (str(png.parent), base, d)
+        if ikey not in idle_cache:
+            ref = None
+            for cand in ([f"{base}_anim_{d}"] if d else []) + [f"{base}_anim", f"{base}_anim_s"]:
+                p = png.parent / f"{cand}.png"
+                if p.exists():
+                    ref = p
+                    break
+            idle_cache[ikey] = frame0bc(ref) if ref else None
+        idle_bc = idle_cache[ikey]
+        if not idle_bc or idle_bc[0] <= 0 or idle_bc[1] <= 0:
+            continue
+        b0, c0 = frame0bc(png)
+        if b0 <= 0 or c0 <= 0:
+            continue
+        render = (b0 / c0) / (idle_bc[0] / idle_bc[1])
+        if render < HERO_BODY_LO:
+            WARN.append(f"[HEROBODY] {png.relative_to(SPRITES)}: frame-0 body renders "
+                        f"{render:.2f}x the idle body -- the rest pose raises a weapon "
+                        f"(frame-0 content {c0}px vs body {b0}px), inflating the scale lock "
+                        f"so the whole clip plays small (player_core locks scale to frame 0)")
+
+
 def check_dir_sets(files: list[Path]) -> None:
     groups: dict[str, set[str]] = {}
     for f in files:
@@ -663,6 +733,7 @@ def main() -> int:
         for p in mine:
             check_file(p)
         check_clip_scale(mine)
+        check_hero_body_scale(mine)
         check_dir_sets(mine)
 
     for f in FAIL:
