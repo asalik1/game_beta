@@ -172,6 +172,7 @@ var door_seen := {}              # room idx -> true (its door was visible from
 var last_safe_room := 0          # death returns you here
 
 var elder: Node2D
+var pet_follower: Sprite2D = null  # Q16 cosmetic companion; lags the local player, rebuilt with the world
 var interactables: Array = []    # [{node, prompt, action}]
 var active_facing_interactable: Dictionary = {} # NPC temporarily turned toward the local player
 var interact_in_range := false   # is the player next to any interactable? (touch Act-button gate)

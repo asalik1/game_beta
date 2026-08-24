@@ -478,7 +478,7 @@ func meta_fold_gallery() -> void:
 func buy_cosmetic(kind: String, cls: String, id: String) -> bool:
 	if owns_cosmetic(kind, cls, id):
 		return false
-	var entry: Dictionary = Skins.find_skin(cls, id) if kind == "skin" else Skins.find(cls, id)
+	var entry: Dictionary = Skins.find_pet(id) if kind == "pet" else (Skins.find_skin(cls, id) if kind == "skin" else Skins.find(cls, id))
 	if entry.is_empty():
 		return false
 	if not spend_renown(Balance.renown_price(kind, String(entry.get("tier", "")))):
@@ -494,7 +494,7 @@ func buy_cosmetic(kind: String, cls: String, id: String) -> bool:
 func grant_cosmetic(kind: String, cls: String, id: String) -> bool:
 	if id == "" or owns_cosmetic(kind, cls, id):
 		return false
-	var entry: Dictionary = Skins.find_skin(cls, id) if kind == "skin" else Skins.find(cls, id)
+	var entry: Dictionary = Skins.find_pet(id) if kind == "pet" else (Skins.find_skin(cls, id) if kind == "skin" else Skins.find(cls, id))
 	if entry.is_empty():
 		return false
 	_meta["own_%s_%s_%s" % [kind, cls, id]] = true

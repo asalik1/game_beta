@@ -2802,6 +2802,11 @@ const RENOWN_PB_DEPTHS := 2          # per depth past the previous Depths best
 const RENOWN_PRICE_CHROMA := 60
 const RENOWN_PRICE_ELITE := 240
 const RENOWN_PRICE_MYTHIC := 600
+# Discovery-lane pets (Q16): unsellable for gold, but Renown-buyable — Renown is
+# the unified cosmetic gateway (owner ruling 2026-08-24). Cheaper than skins;
+# a pet is a companion, not a whole new look.
+const RENOWN_PRICE_PET_COMMON := 80
+const RENOWN_PRICE_PET_RARE := 200
 # The weekly supply cache: once per trusted-clock week PER CHARACTER, a
 # bundle of one of each utility consumable. Renown's only consumable
 # faucet — capped so it stays collected-not-farmed and never undercuts
@@ -2832,6 +2837,8 @@ const RENOWN_WAKING := 25         # all three banked in a week -> the chest + th
 static func renown_price(kind: String, tier := "") -> int:
 	if kind == "chroma":
 		return RENOWN_PRICE_CHROMA
+	if kind == "pet":
+		return RENOWN_PRICE_PET_RARE if tier == "rare" else RENOWN_PRICE_PET_COMMON
 	return RENOWN_PRICE_MYTHIC if tier == "mythic" else RENOWN_PRICE_ELITE
 
 # ------------------------------------------------------------ consumables ---

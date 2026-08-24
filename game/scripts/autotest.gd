@@ -7790,6 +7790,45 @@ func _test_renown() -> void:
 	if game.buy_cosmetic("skin", "warrior", "dreadknight") or game.renown() != 500:
 		return _fail("double-buy must refuse without charging")
 
+	# --- pets (Q16): Renown-buyable, class-agnostic, equip one at a time ---
+	if Balance.renown_price("pet", "common") >= Balance.renown_price("pet", "rare") \
+			or Balance.renown_price("pet", "rare") >= Balance.RENOWN_PRICE_ELITE:
+		return _fail("pet price ladder should climb common < rare < elite skin")
+	if Skins.pets().is_empty() or not Skins.find_pet("__no_pet__").is_empty():
+		return _fail("pet catalog empty or a bogus pet id resolves")
+	var pet0: Dictionary = Skins.pets()[0]
+	var petid: String = String(pet0["id"])
+	var pet_key := "own_pet_all_" + petid
+	var keep_pet_own = game._meta.get(pet_key)
+	var keep_equipped: String = game.player.equipped_pet
+	game._meta.erase(pet_key)
+	game.player.equipped_pet = ""
+	if game.owns_cosmetic("pet", "all", petid):
+		return _fail("unbought pet reads owned")
+	game._meta["renown"] = Balance.renown_price("pet", String(pet0.get("tier", ""))) - 1
+	if game.buy_cosmetic("pet", "all", petid):
+		return _fail("pet buy while short on Renown must refuse")
+	game._meta["renown"] = Balance.renown_price("pet", String(pet0.get("tier", "")))
+	if not game.buy_cosmetic("pet", "all", petid) or not game.owns_cosmetic("pet", "all", petid) \
+			or game.renown() != 0:
+		return _fail("pet buy should charge full price and record account ownership")
+	game._meta["renown"] = 500
+	if game.buy_cosmetic("pet", "all", petid) or game.renown() != 500:
+		return _fail("pet double-buy must refuse without charging")
+	game.player.set_pet(petid)
+	var equip_ok: bool = game.player.equipped_pet == petid
+	game.player.set_pet("__bogus_pet__")            # invalid id -> no change
+	equip_ok = equip_ok and game.player.equipped_pet == petid
+	game.player.set_pet("")                          # unequip
+	equip_ok = equip_ok and game.player.equipped_pet == ""
+	game.player.equipped_pet = keep_equipped
+	if keep_pet_own == null:
+		game._meta.erase(pet_key)
+	else:
+		game._meta[pet_key] = keep_pet_own
+	if not equip_ok:
+		return _fail("pet equip/unequip/bogus-id handling wrong")
+
 	# --- record faucets pay the PUSH, once. Achievements snapshotted:
 	# record_* re-checks tracks and can unlock tiers mid-test. ---
 	var keep_ach := game.achievements.duplicate()

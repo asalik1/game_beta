@@ -169,6 +169,7 @@ static func _character_section(game: Game) -> Dictionary:
 		"ability_theme": p.ability_theme,
 		"chroma": p.chroma,
 		"skin": p.skin,
+		"equipped_pet": p.equipped_pet,
 		# Standings + resonance are PER-CHARACTER (§5.7): reputation and band
 		# lean travel into a friend's world and come home with you.
 		"resonance": p.resonance,
@@ -394,7 +395,7 @@ static func _as_float(v, dflt: float) -> float:
 # Where each v2 flat field lands in v3. "bag" is the round-52 legacy
 # single-bag key (pre-`bags` saves) — routed so load_bags still sees it.
 const _V2_CHARACTER_FIELDS := ["name", "cls", "level", "xp", "skill_points", "tree_points",
-	"attr_points", "unspent_attr", "gold", "ability_theme", "chroma", "skin",
+	"attr_points", "unspent_attr", "gold", "ability_theme", "chroma", "skin", "equipped_pet",
 	"resonance", "faction_standing", "equipment", "backpack", "gem_bag", "bags", "loose_bags", "bag",
 	"consumables", "materials", "potion_rotation", "active_potion", "depths_checkpoint", "hp", "mp",
 	"profession", "mastery", "blueprints", "swap_cost_step", "swap_week", "knows_alkahest",
@@ -615,6 +616,7 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	p.pending_theme_note = ""
 	p.set_chroma(String(c.get("chroma", "")))
 	p.set_skin(String(c.get("skin", "")))
+	p.equipped_pet = String(c.get("equipped_pet", ""))  # follower (re)built on world build
 	p.resonance = float(c.get("resonance", 0.0))
 	var fs := _as_dict(c.get("faction_standing", {}))
 	for k in p.faction_standing:

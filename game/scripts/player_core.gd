@@ -28,6 +28,7 @@ var ability_theme := {"a1": "", "a2": "", "a3": "", "ult": ""}
 var themes_known := 0
 var chroma := ""   # active chroma id ("" = base skin, e.g. "obsidian")
 var skin := ""     # active skin id ("" = default, e.g. "dreadknight")
+var equipped_pet := ""  # active cosmetic companion id ("" = none); game_world draws the follower (Q16)
 var _skin_ambient: Node2D = null  # mythic locomotion/idle identity; built by player_combat
 var _skin_ambient_id := ""
 var dev_morph: DevMorph = null  # dev-mode codex TRANSFORM: creature puppet over the hero (dev_morph.gd)
@@ -848,6 +849,17 @@ func set_skin(skin_id: String) -> void:
 	if resolved_id != "":
 		chroma = ""
 	_apply_class_sprite()
+
+
+## Equip (or clear, "") a cosmetic companion (Q16). Validates the id, then asks
+## the world to (re)build its follower sprite. Owning is checked by the caller
+## (the Stable UI) — this just sets the active pet.
+func set_pet(pet_id: String) -> void:
+	if pet_id != "" and Skins.find_pet(pet_id).is_empty():
+		return
+	equipped_pet = pet_id
+	if is_instance_valid(game):
+		game.call("refresh_pet_follower")
 
 
 ## Re-resolve the current skin's sprite (e.g. after a live skin swap by a QA/dev
