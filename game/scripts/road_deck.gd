@@ -30,12 +30,20 @@ const CARDS := {
 		"room_types": ["social", "dead_end"],
 		"codex": "A king's rider lies against a milestone, an arrow in his side and a heavy satchel across his chest. Spend a draught to mend him and he presses coin and goodwill on you; cut the strap instead and the purse is yours, but word of a road-thief travels.",
 	},
+	"wager": {
+		"title": "The Stranger's Wager",
+		"sprite": "roadside_peddler",
+		"prompt": "E — A hooded gambler at a fire",
+		"weight": 2,
+		"room_types": ["social", "dead_end"],
+		"codex": "A hooded figure crouches at a low fire, turning three walnut shells over the dirt. A fair 1-in-3: follow the pea and double your stake (rarely a gem falls out too); lose it and the stake is his.",
+	},
 }
 
 ## Draw order / eligibility list. Weights inside CARDS bias which one is picked
 ## once a draw succeeds; adding a card is one row here + one row in CARDS + one
 ## dispatch arm in game_world._road_card_node.
-const DECK := ["toll", "courier"]
+const DECK := ["toll", "courier", "wager"]
 
 static func card(id: String) -> Dictionary:
 	return CARDS.get(id, {})

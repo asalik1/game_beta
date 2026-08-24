@@ -7985,7 +7985,9 @@ func _test_road_deck() -> void:
 	var keep_hp := game.player.hp
 	var keep_acc: int = int(game.player.faction_standing.get("accord", 0))
 	var keep_rc := game.run_road_cards
-	var rooms_used := [901, 902, 903, 904, 905, 906, 907]
+	var keep_gems: Array = game.player.gem_bag.duplicate(true)   # a wager win may drop a gem
+	var keep_drop: Array = game.dropped_loot.duplicate(true)
+	var rooms_used := [901, 902, 903, 904, 905, 906, 907, 908, 909, 910]
 	var keep_flags := {}
 	for r in rooms_used:
 		keep_flags[r] = game.flags.get(game._road_flag(int(r)))
@@ -8039,18 +8041,35 @@ func _test_road_deck() -> void:
 	if game.player.gold < 230 or int(game.player.faction_standing["accord"]) != -Balance.ROAD_COURIER_STANDING:
 		return _fail("courier rob: wrong gold/standing")
 
+	# Wager (Q16): a right pick pays +stake (>= at greed 0) and marks drawn;
+	# a wrong pick forfeits the stake (never below 0) and marks drawn.
+	game.player.gold = 200
+	game._road_wager_pick(908, _road_dummy(), 100, 1, 1)   # pick == winning -> WIN
+	if game.player.gold < 300 or not game.get_flag(game._road_flag(908), false):
+		return _fail("wager win should pay +stake and mark drawn")
+	game.player.gold = 200
+	game._road_wager_pick(909, _road_dummy(), 100, 1, 0)   # pick != winning -> LOSE
+	if game.player.gold != 100 or not game.get_flag(game._road_flag(909), false):
+		return _fail("wager loss should forfeit the stake and mark drawn")
+	game.player.gold = 30
+	game._road_wager_pick(910, _road_dummy(), 100, 2, 0)   # lose more than held -> clamps to 0
+	if game.player.gold != 0:
+		return _fail("wager loss must not drive gold negative")
+
 	# --- restore ---
 	game.player.gold = keep_gold
 	game.player.hp = keep_hp
 	game.player.faction_standing["accord"] = keep_acc
 	game.run_road_cards = keep_rc
+	game.player.gem_bag = keep_gems
+	game.dropped_loot = keep_drop
 	for r in rooms_used:
 		var k: String = game._road_flag(int(r))
 		if keep_flags[r] == null:
 			game.flags.erase(k)
 		else:
 			game.flags[k] = keep_flags[r]
-	print("ok: road deck (registry schema, diminishing chance, toll/courier resolve deltas)")
+	print("ok: road deck (registry schema, diminishing chance, toll/courier/wager resolve deltas)")
 
 
 ## Throwaway interactable node for the road-card handler tests: _road_resolve

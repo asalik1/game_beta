@@ -581,6 +581,31 @@ func open_confirm(msg: String, on_yes: Callable, on_cancel := Callable()) -> voi
 	_hint(vbox, "ESC to cancel")
 
 
+## The Stranger's Wager (Q16 minigame): a hooded gambler's shell game. Three
+## shells; one hides the pea (the caller rolls `winning` TRUE-random from
+## loot_rng, so a reload can't scum it). Presented as a menu, so input is
+## OVERLAY-gated — it pauses solo, and online the overlay state gates input,
+## never the tree (co-op §5.4). Not closable: once you're at the fire you pick.
+## on_pick(pick: int) fires with the chosen shell; the caller owns the payout.
+func open_wager(stake: int, on_pick: Callable) -> void:
+	var vbox := _open("The Stranger's Wager", 640, 400, false)
+	current = "wager"
+	var l := _lbl(vbox, "A hooded figure crouches at a low fire, turning three walnut shells over the dirt. \"One hides the pea, traveler. %d gold says your eye isn't quick enough to follow it.\"" % stake, 15, Color(0.9, 0.88, 0.82))
+	l.custom_minimum_size = Vector2(560, 0)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 18)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(row)
+	var labels := ["   Left shell   ", "   Middle shell   ", "   Right shell   "]
+	for s in 3:
+		var pick := s
+		_btn(row, labels[s], func() -> void:
+			close()
+			on_pick.call(pick), Color(0.95, 0.85, 0.5))
+	_hint(vbox, "Pick a shell — the bet is already down")
+
+
 ## Live sound, display, language and input settings.
 var settings_return := "pause"
 func open_settings(from := "pause") -> void:

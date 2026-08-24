@@ -3242,6 +3242,10 @@ const ROAD_COURIER_HEAL_COST := 40 # gold, scaled by daily_gold_mult(level)
 const ROAD_COURIER_GIFT_GOLD := 90 # his gratitude (base, scaled) — net near break-even, paid in goodwill
 const ROAD_COURIER_STANDING := 2   # standing gained for mending / lost for robbing
 const ROAD_COURIER_ROB_GOLD := 130 # the satchel, if you cut the strap (base, scaled)
+# The Stranger's Wager (Q16 minigame card): a fair 1-in-3 shell game. Win pays
+# the stake back doubled (net +stake) + a rare gem; lose forfeits the stake.
+const ROAD_WAGER_STAKE_BASE := 60  # gold on the table, scaled by daily_gold_mult(level)
+const ROAD_WAGER_GEM_CHANCE := 0.25 # a clean read also drops a gem this often
 
 # ------------------------------------------------------------ loot fanfare ---
 # Rarity is audio-visual (retention roadmap #3): every gear drop plays a

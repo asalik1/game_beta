@@ -1693,6 +1693,7 @@ static func _notes_elites(m: Menus, list: VBoxContainer) -> void:
 		"Between the fighting, the road throws people at you. In some quiet rooms a lone figure waits at the door and withdraws after %d seconds if you pass them by — at most a card or two a run, so they stay an event, not a checkpoint." % int(Balance.ROAD_CARD_WINDOW),
 		"THE BRIDGEWARD'S TOLL — a collector bars the way. Pay his gold for safe passage (you catch your breath, and the crown warms to you), or push past for free — the ditch may lift a few coins, and the crown remembers a stiffed toll.",
 		"THE WOUNDED COURIER — a king's rider bleeds by a milestone. Spend gold on the draught that saves him and he presses coin and goodwill on you; cut the strap instead and the satchel is yours, but a road-thief's name travels.",
+		"THE STRANGER'S WAGER — a hooded gambler and three shells. Stake gold, follow the pea: a clean read doubles your money (and now and then shakes a gem loose); a wrong shell keeps your coin at the fire. A fair one-in-three, once per road.",
 		"Road encounters pay NO experience — they are about gold and the crown's regard, not levels. Rolled per character, so a replay meets a different road."]:
 		var rl := m._lbl(rcard, String(rline), 13, Color(0.78, 0.8, 0.86))
 		rl.custom_minimum_size = Vector2(PAGE_W, 0)

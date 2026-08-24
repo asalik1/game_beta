@@ -1648,6 +1648,7 @@ func _road_card_node(i: int, id: String) -> void:
 		match id:
 			"toll": _road_toll(room, npc)
 			"courier": _road_courier(room, npc)
+			"wager": _road_wager(room, npc)
 
 
 ## A resolved card: mark it drawn (once per character per room), tick the run
@@ -1659,6 +1660,7 @@ func _road_resolve(room: int, npc: Node2D, msg: String, col: Color) -> void:
 		spawn_text(player.global_position + Vector2(0, -84), msg, col, 3.2)
 	sfx("gate", 0.9)
 	_remove_interactable(npc)
+	autosave()  # persist the drawn-flag now, so a reload can't re-draw/scum a card
 
 
 ## The Bridgeward's Toll — pay gold for safe passage (+standing, a rest that
@@ -1725,6 +1727,38 @@ func _road_courier_rob(room: int, npc: Node2D, loot: int) -> void:
 	_road_resolve(room, npc,
 		"You cut the strap. +%d gold — but a road-thief's name travels. (-%d accord)"
 			% [loot, Balance.ROAD_COURIER_STANDING], Color(0.9, 0.65, 0.55))
+
+
+## The Stranger's Wager (Q16 minigame): a shell game. Stake gold you can cover;
+## the winning shell is a TRUE loot_rng roll made now (a reload re-rolls it, so
+## it's un-scummable), and the menu is overlay-gated. Nothing is deducted until
+## you PICK, so backing out costs nothing. Win = +stake (a rare gem too); lose =
+## −stake. Once per run (the resolve marks + autosaves the drawn flag).
+func _road_wager(room: int, npc: Node2D) -> void:
+	var stake := int(ceil(Balance.ROAD_WAGER_STAKE_BASE * Balance.daily_gold_mult(player.level)))
+	if player.gold < stake:
+		if is_instance_valid(player):
+			spawn_text(player.global_position + Vector2(0, -70),
+				"You've not the %d gold to sit at his fire." % stake, Color(0.85, 0.8, 0.7))
+		return  # card stays until the window lapses
+	var winning := loot_rng.randi() % 3
+	menus.open_wager(stake, _road_wager_pick.bind(room, npc, stake, winning))
+
+func _road_wager_pick(room: int, npc: Node2D, stake: int, winning: int, pick: int) -> void:
+	if pick == winning:
+		player.gain_gold(stake)          # you kept your stake AND matched it
+		var extra := ""
+		if loot_rng.randf() < Balance.ROAD_WAGER_GEM_CHANCE and Balance.regular_gems_drop(loot_chapter()):
+			var gem := drop_gem(Balance.gem_drop_level(loot_chapter()))
+			give_loot({"kind": "gem", "gem": gem}, player.global_position + Vector2(0, 44))
+			extra = " and %s tumbles out with it" % Items.gem_title(gem)
+		_road_resolve(room, npc,
+			"The pea sits under your shell. +%d gold%s. \"...huh.\"" % [stake, extra], Color(0.75, 0.9, 0.7))
+	else:
+		player.gold = maxi(0, player.gold - stake)
+		_road_resolve(room, npc,
+			"The pea was never where you thought. -%d gold, and a smile you'd like to wipe off." % stake,
+			Color(0.9, 0.65, 0.55))
 
 
 func _spawn_wanderer(i: int) -> void:
