@@ -646,7 +646,39 @@ asserts untouched (not in CHAPTER_LIST); co-op: entry blocked online v1
 (interludes swap worlds like endgame — `enter_endgame`'s `net_online()`
 guard, `game_flow.gd:842`).
 
-## Q14 — Road Deck v1 (OPEN; needs Q9 a; owner decisions 2)
+## Q14 — Road Deck (v1 SLICE SHIPPED 2026-08-24; remainder OPEN)
+**Shipped (commit pending):** the framework + 2 talk-resolve cards, built as a
+DELIBERATELY DE-RISKED slice that does NOT touch combat-room invariants.
+- `road_deck.gd` (`class_name RoadDeck`): `CARDS` + `DECK` data registry
+  (title/sprite/prompt/weight/room_types/codex). Behavior split into
+  game_world handlers (like Terrains/Items).
+- Draw: `game_world._offer_road_card(i)` in the `_enter_room` first-visit
+  block beside `_offer_cursed_chest` — SAFE rooms only (social/dead_end),
+  campaign chapters only, seeded off `wander_seed` (co-op/reload deterministic,
+  no `randf()` in the draw), DIMINISHING per run via `run_road_cards`
+  (`Balance.ROAD_CARD_CHANCE * FALLOFF^n`). One card per char per room
+  (`_road_flag(i)`, wiped on chapter change → replay re-rolls). Withdraws
+  after `ROAD_CARD_WINDOW` if walked past, only a resolved choice sets the flag.
+- Cards (immediate-resolve, 2-way `open_confirm`, named `.bind()` handlers →
+  no lambda-arg trap, directly unit-tested): **The Bridgeward's Toll**
+  (pay gold → +accord + a heal / refuse → free, −accord, a seeded purse-cut,
+  no fight) and **The Wounded Courier** (mend: spend gold → +gift gold +accord /
+  rob: +satchel gold −accord). 0 XP + no loss penalty (owner rulings #3/#4).
+- `run_road_cards` counter (+ `road` key in the run summary), codex Field
+  notes › Elites & Temptations gained an "ON THE ROAD" block.
+- `_test_road_deck`: registry schema, diminishing-chance math, and every
+  handler's gold/standing/heal/flag/counter delta. Full suite green.
+- **Frequencies flagged for owner review** (ruling #5): `Balance.ROAD_CARD_*`.
+
+**Still OPEN (the richer half of the original spec below):** combat-verb cards
+(`spawn_pack` / `spawn_hunt` / `defend_waves` / `wager`), the Caravan +
+Bridge-Out cards (`merchant_zones` / `edge_locks` edits), spine-room binding
+stored in the WORLD save, per-card `req_flag`/`req_band`/`req_class` gating +
+mark follow-ups, and a full codex **Encounters** SECTIONS page + journal WORLD
+lines. These need a safe loose-combat-in-safe-room primitive (the `zone_alive`
+seal minefield) or the save-bound spine draw — neither built. Original spec:
+
+### Q14 — Road Deck v1 (original full spec; needs Q9 a; owner decisions 2)
 Estimated: 3 agent-days. Spec: DYNAMIC_WORLD §4 (cards 1,2,3,4,6 in v1;
 card 5 The Cage waits for Q16's follower; 7/8/11 ride Q15/Q16).
 - `content/road_deck.gd`: `CARDS` (convo id, `req_flag`/`req_band`/

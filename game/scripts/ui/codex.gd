@@ -1684,6 +1684,18 @@ static func _notes_elites(m: Menus, list: VBoxContainer) -> void:
 		"And keep your eyes open in dead ends: not everything glints until you're near it."]:
 		var tl := m._lbl(tcard, String(tline), 13, Color(0.78, 0.8, 0.86))
 		tl.custom_minimum_size = Vector2(PAGE_W, 0)
+	# The Road Deck — safe-room encounter cards (Q14).
+	UITheme.header(m._lbl(list, "— ON THE ROAD —", 16, Color(0.7, 0.85, 1.0)))
+	var rcard := VBoxContainer.new()
+	rcard.add_theme_constant_override("separation", 2)
+	_card(list).add_child(rcard)
+	for rline in [
+		"Between the fighting, the road throws people at you. In some quiet rooms a lone figure waits at the door and withdraws after %d seconds if you pass them by — at most a card or two a run, so they stay an event, not a checkpoint." % int(Balance.ROAD_CARD_WINDOW),
+		"THE BRIDGEWARD'S TOLL — a collector bars the way. Pay his gold for safe passage (you catch your breath, and the crown warms to you), or push past for free — the ditch may lift a few coins, and the crown remembers a stiffed toll.",
+		"THE WOUNDED COURIER — a king's rider bleeds by a milestone. Spend gold on the draught that saves him and he presses coin and goodwill on you; cut the strap instead and the satchel is yours, but a road-thief's name travels.",
+		"Road encounters pay NO experience — they are about gold and the crown's regard, not levels. Rolled per character, so a replay meets a different road."]:
+		var rl := m._lbl(rcard, String(rline), 13, Color(0.78, 0.8, 0.86))
+		rl.custom_minimum_size = Vector2(PAGE_W, 0)
 
 
 ## FIELD NOTES › Gear rules — the shape and unique explainers that used to

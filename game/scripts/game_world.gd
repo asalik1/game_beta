@@ -856,6 +856,9 @@ func _enter_room(i: int) -> void:
 		# The cursed chest's bargain is offered at the door, once,
 		# while the pack still stands (playtest 2026-07-07).
 		_offer_cursed_chest(i)
+		# The Road Deck draws at the door too — but only in SAFE rooms, so it
+		# never overlaps the cursed chest (combat-only). Diminishing per run.
+		_offer_road_card(i)
 	elif play_started and prev != i:
 		hud.room_dip()   # a revisit eases in instead of jump-cutting (2026-08-19)
 	refresh_quest()
@@ -1540,6 +1543,148 @@ func _spawn_road_smuggler(i: int) -> void:
 	var pos := room_center(i) + Vector2(rng.randf_range(-210.0, 210.0), rng.randf_range(120.0, 200.0))
 	_make_npc("roadside_peddler", pos, "E — A hooded smuggler", func() -> void:
 		menus.open_black_market("smuggler"))
+
+
+## ---------------------------------------------------------------- Road Deck ---
+## Road Deck v1 (Q14, road_deck.gd): offer ONE seeded ENCOUNTER card at the door
+## of a SAFE campaign room on first visit. The chance DIMINISHES per card drawn
+## this run (run_road_cards), so a long run meets ~1-2 cards, not one per room.
+## Cards pay ZERO xp and losing carries no penalty (owner rulings 2026-08-24);
+## the FREQUENCIES (Balance.ROAD_CARD_*) are a first guess flagged for review.
+## Same seeded, withdraw-after-a-window shape as _offer_cursed_chest; the card
+## DATA + resolve behavior split mirrors Terrains/Items (data in road_deck.gd,
+## behavior here). SAFE rooms only — no combat-room / zone_alive interaction.
+func _offer_road_card(i: int) -> void:
+	if net_guest() or not is_instance_valid(player) or player.dead:
+		return
+	if not Story.CHAPTER_LIST.has(chapter_id):        # campaign chapters only (not capital/arenas)
+		return
+	if room_type(i) not in ["social", "dead_end"]:    # SAFE rooms only
+		return
+	if merchant_zones.has(i) or get_flag(_road_flag(i), false):
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = wander_seed * 97 + i * 569 + chapter_id.hash() % 7823
+	var chance: float = Balance.ROAD_CARD_CHANCE * pow(Balance.ROAD_CARD_FALLOFF, run_road_cards)
+	if rng.randf() >= chance:
+		return
+	# Seeded weighted pick among the cards eligible for this room type.
+	var pool: Array = []
+	for id in RoadDeck.DECK:
+		var card: Dictionary = RoadDeck.CARDS[id]
+		if room_type(i) in card.get("room_types", []):
+			for _w in maxi(1, int(card.get("weight", 1))):
+				pool.append(String(id))
+	if pool.is_empty():
+		return
+	_road_card_node(i, String(pool[rng.randi_range(0, pool.size() - 1)]))
+
+
+## Materialize a card's figure at the door with a decision window, then dispatch
+## its resolve on interaction. A card the player walks past withdraws WITHOUT
+## setting the drawn-flag (like the cursed chest), so it can reappear on a
+## re-enter until they actually engage it — only a resolved choice marks it drawn.
+func _road_card_node(i: int, id: String) -> void:
+	var card: Dictionary = RoadDeck.card(id)
+	if card.is_empty() or not is_instance_valid(player):
+		return
+	var room := i
+	var toward: Vector2 = room_center(i) - player.global_position
+	var dir := toward.normalized() if toward.length() > 1.0 else Vector2.RIGHT
+	var pos := clamp_to_zone(player.global_position + dir * 150.0, player.global_position)
+	var npc := _make_npc(String(card["sprite"]), pos,
+		String(card.get("prompt", "E — A stranger")), Callable())
+	burst(pos, Color(0.9, 0.85, 0.6), 10)
+	# Decision window: a CHILD Timer (pauses with the tree, dies with the room).
+	var ticker := Timer.new()
+	ticker.wait_time = Balance.ROAD_CARD_WINDOW
+	ticker.one_shot = true
+	ticker.autostart = true
+	npc.add_child(ticker)
+	ticker.timeout.connect(func() -> void:
+		if is_instance_valid(npc) and not get_flag(_road_flag(room), false):
+			_remove_interactable(npc))
+	interactables[-1]["action"] = func() -> void:
+		match id:
+			"toll": _road_toll(room, npc)
+			"courier": _road_courier(room, npc)
+
+
+## A resolved card: mark it drawn (once per character per room), tick the run
+## counter (drives the diminishing chance + results summary), announce, withdraw.
+func _road_resolve(room: int, npc: Node2D, msg: String, col: Color) -> void:
+	set_flag(_road_flag(room))
+	run_road_cards += 1
+	if is_instance_valid(player):
+		spawn_text(player.global_position + Vector2(0, -84), msg, col, 3.2)
+	sfx("gate", 0.9)
+	_remove_interactable(npc)
+
+
+## The Bridgeward's Toll — pay gold for safe passage (+standing, a rest that
+## mends you), or shove past for free at a standing cost (the ditch brigands
+## lift what they can from your purse; no fight — owner ruling #4, no loss tax).
+func _road_toll(room: int, npc: Node2D) -> void:
+	var cost := int(ceil(Balance.ROAD_TOLL_COST_BASE * Balance.daily_gold_mult(player.level)))
+	menus.open_confirm(
+		"A toll-collector bars the road. \"The bridge is the crown's, traveler. %d gold sees you across — safe.\"\n\nPay the toll? (Refuse to push past — it may cost you less, or more.)" % cost,
+		_road_toll_pay.bind(room, npc, cost),
+		_road_toll_refuse.bind(room, npc, cost))
+
+func _road_toll_pay(room: int, npc: Node2D, cost: int) -> void:
+	var paid: int = mini(cost, player.gold)
+	player.gold -= paid
+	add_standing("accord", Balance.ROAD_TOLL_STANDING)
+	if is_instance_valid(player):
+		player.hp = minf(player.max_hp, player.hp + player.max_hp * 0.25)
+	_road_resolve(room, npc,
+		"The toll is paid. He waves you across with a nod, and you catch your breath. (+%d accord)"
+			% Balance.ROAD_TOLL_STANDING, Color(0.75, 0.9, 0.7))
+
+func _road_toll_refuse(room: int, npc: Node2D, cost: int) -> void:
+	var loss := 0
+	if player.gold > 0:
+		loss = mini(player.gold, int(round(cost * randf_range(0.2, 0.7))))
+		player.gold -= loss
+	add_standing("accord", -Balance.ROAD_TOLL_STANDING)
+	var msg := "You push past. Empty pockets earn only a curse at your back. (-%d accord)" % Balance.ROAD_TOLL_STANDING
+	if loss > 0:
+		msg = "You push past — the ditch stirs. They lift %d gold, and the crown's men remember. (-%d accord)" \
+			% [loss, Balance.ROAD_TOLL_STANDING]
+	_road_resolve(room, npc, msg, Color(0.9, 0.65, 0.55))
+
+
+## The Wounded Courier — mend him with a draught (spend gold) for his coin and
+## the crown's goodwill, or cut the strap and take the satchel at a standing cost.
+func _road_courier(room: int, npc: Node2D) -> void:
+	var m := Balance.daily_gold_mult(player.level)
+	var heal := int(ceil(Balance.ROAD_COURIER_HEAL_COST * m))
+	var gift := int(ceil(Balance.ROAD_COURIER_GIFT_GOLD * m))
+	var loot := int(ceil(Balance.ROAD_COURIER_ROB_GOLD * m))
+	menus.open_confirm(
+		"A king's rider slumps against a milestone, an arrow in his side. \"Please... I carry the crown's post. %d gold buys the draught that saves me.\"\n\nMend him? (Refuse to cut the strap and take his satchel.)" % heal,
+		_road_courier_mend.bind(room, npc, heal, gift),
+		_road_courier_rob.bind(room, npc, loot))
+
+func _road_courier_mend(room: int, npc: Node2D, heal: int, gift: int) -> void:
+	if player.gold < heal:
+		if is_instance_valid(player):
+			spawn_text(player.global_position + Vector2(0, -70),
+				"You've not the %d gold to mend him." % heal, Color(0.85, 0.8, 0.7))
+		return  # card stays open; he waits until the window lapses
+	player.gold -= heal
+	player.gain_gold(gift)
+	add_standing("accord", Balance.ROAD_COURIER_STANDING)
+	_road_resolve(room, npc,
+		"He lives. He presses %d gold on you — \"the crown remembers.\" (+%d accord)"
+			% [gift, Balance.ROAD_COURIER_STANDING], Color(0.75, 0.9, 0.7))
+
+func _road_courier_rob(room: int, npc: Node2D, loot: int) -> void:
+	player.gain_gold(loot)
+	add_standing("accord", -Balance.ROAD_COURIER_STANDING)
+	_road_resolve(room, npc,
+		"You cut the strap. +%d gold — but a road-thief's name travels. (-%d accord)"
+			% [loot, Balance.ROAD_COURIER_STANDING], Color(0.9, 0.65, 0.55))
 
 
 func _spawn_wanderer(i: int) -> void:

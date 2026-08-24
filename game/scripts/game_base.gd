@@ -393,6 +393,7 @@ var run_time := 0.0            # seconds in ST_PLAYING this chapter run
 var run_deaths := 0
 var run_elites := 0            # elite kills this run
 var run_secrets := 0           # caches unearthed this run
+var run_road_cards := 0        # Road Deck encounters drawn this run (drives the diminishing chance)
 var run_xp := 0                # XP banked this run (after the replay ceiling)
 var run_levels := 0            # levels gained this run
 var xp_capped_noted := false   # the once-per-run "outgrown this road" note (not saved)
@@ -1091,6 +1092,7 @@ func reset_run_stats() -> void:
 	run_deaths = 0
 	run_elites = 0
 	run_secrets = 0
+	run_road_cards = 0
 	run_xp = 0
 	run_levels = 0
 	xp_capped_noted = false
@@ -1121,7 +1123,7 @@ func run_results() -> Dictionary:
 	if get_flag("completed_" + chapter_id, false):
 		xp_reach = Balance.replay_xp_reach(Story.chapter_parity_level(chapter_id))
 	return {"time": run_time, "deaths": run_deaths, "elites": run_elites,
-		"secrets": run_secrets, "explored": explored, "rooms": zone_count,
+		"secrets": run_secrets, "road": run_road_cards, "explored": explored, "rooms": zone_count,
 		"grade": grade, "xp": run_xp, "lv_from": lv_now - run_levels, "lv_to": lv_now,
 		"xp_reach": xp_reach}
 
@@ -2448,6 +2450,11 @@ func _shrine_flag(i: int) -> String:
 
 func _hidden_flag(i: int) -> String:
 	return "hidden_%s_%d" % [chapter_id, i]
+
+## Road Deck (Q14): one card per character per room. Not a kept prefix, so a
+## chapter wipe re-rolls the deck on replay — like cursed_/shrined_/hidden_.
+func _road_flag(i: int) -> String:
+	return "road_%s_%d" % [chapter_id, i]
 
 ## The gamble shrine's ask, scaled with level like the daily gold.
 func shrine_cost() -> int:

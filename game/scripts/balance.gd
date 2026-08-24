@@ -3217,6 +3217,24 @@ const SHRINE_BLESS_CHANCE := 0.6   # else the shrine drinks deeper
 const HIDDEN_CACHE_CHANCE := 0.25
 const HIDDEN_CACHE_GOLD_TIER := 0.3   # else silver
 
+# Road Deck v1 (Q14, road_deck.gd): a seeded ENCOUNTER card offered at the door
+# of a SAFE campaign room, at most ~1-2 per run. FIRST-GUESS frequencies —
+# OWNER REVIEW PENDING (ruling 2026-08-24 #5): tune these once he has played it.
+const ROAD_CARD_CHANCE := 0.30     # base per-safe-room draw chance...
+const ROAD_CARD_FALLOFF := 0.45    # ...multiplied by this per card already drawn this run (diminishing)
+const ROAD_CARD_WINDOW := 12.0     # seconds the card waits at the door, then withdraws
+# The Bridgeward's Toll: pay gold to pass (small standing), or refuse and fight
+# his brigands (loose, zero-reward like quest quarry — owner ruling #4: no loss penalty).
+const ROAD_TOLL_COST_BASE := 55    # gold, scaled by daily_gold_mult(level) like the shrine
+const ROAD_TOLL_BRIGANDS := 3      # loose enemies spawned on refuse
+const ROAD_TOLL_STANDING := 1      # standing with the local ward for paying the toll
+# The Wounded Courier: mend him (spend gold) for coin + goodwill, or rob him for
+# more gold now at a standing cost.
+const ROAD_COURIER_HEAL_COST := 40 # gold, scaled by daily_gold_mult(level)
+const ROAD_COURIER_GIFT_GOLD := 90 # his gratitude (base, scaled) — net near break-even, paid in goodwill
+const ROAD_COURIER_STANDING := 2   # standing gained for mending / lost for robbing
+const ROAD_COURIER_ROB_GOLD := 130 # the satchel, if you cut the strap (base, scaled)
+
 # ------------------------------------------------------------ loot fanfare ---
 # Rarity is audio-visual (retention roadmap #3): every gear drop plays a
 # per-grade chime; B and above also raise a grade-colored light beam that

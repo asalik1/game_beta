@@ -1038,6 +1038,11 @@ func _run_systems() -> void:
 	# weekly supply cache, cache-ledger save round-trip, Wardrobe smoke.
 	await _test_renown()
 
+	# 3d20b. Road Deck v1 (Q14, 2026-08-24): card registry schema, the
+	# diminishing per-run draw math, and the toll/courier resolve deltas
+	# (gold spend/gain, ward standing, heal, drawn-flag, run counter).
+	await _test_road_deck()
+
 	# 3d21. Waking Incursions (2026-07-24): week-seeded cross-domain
 	# roster, pure zone injection, the once-per-week bank (gem/gold per
 	# breach, chest + Renown on the sweep, stale-week refusal), and the
@@ -7944,6 +7949,109 @@ func _test_renown() -> void:
 	game.player.consumables = keep_cons
 	game.dropped_loot = keep_dropped
 	print("ok: renown (prices, wallet, buy/own, PB + tier faucets pay once, weekly cache, save round-trip, wardrobe UI)")
+
+
+## Road Deck v1 (Q14): the card registry is pure data; the draw is seeded +
+## diminishing; the resolve behavior lives in game_world handlers. We assert the
+## schema + the chance math directly, then call each handler and check the
+## gold/standing/heal/flag/counter deltas (gain_gold carries a greed multiplier,
+## so gained-gold paths assert >= the greed-0 value, spends assert exactly).
+func _test_road_deck() -> void:
+	# --- registry schema (pure data) ---
+	if RoadDeck.DECK.is_empty():
+		return _fail("road deck is empty")
+	for id in RoadDeck.DECK:
+		var c: Dictionary = RoadDeck.CARDS.get(id, {})
+		var rts: Array = c.get("room_types", [])
+		if c.is_empty() or String(c.get("title", "")) == "" or String(c.get("sprite", "")) == "" or rts.is_empty():
+			return _fail("road card '%s' missing title/sprite/room_types" % id)
+	if not RoadDeck.card("__nope__").is_empty():
+		return _fail("bogus road card id resolves")
+	# --- the per-run draw chance diminishes and stays bounded in (0,1) ---
+	if not (Balance.ROAD_CARD_FALLOFF > 0.0 and Balance.ROAD_CARD_FALLOFF < 1.0):
+		return _fail("road card falloff must be in (0,1)")
+	if Balance.ROAD_CARD_CHANCE * pow(Balance.ROAD_CARD_FALLOFF, 1.0) >= Balance.ROAD_CARD_CHANCE:
+		return _fail("road card chance should diminish per draw")
+
+	# --- handlers apply the right deltas (called directly, bypassing the menu) ---
+	var keep_gold := game.player.gold
+	var keep_hp := game.player.hp
+	var keep_acc: int = int(game.player.faction_standing.get("accord", 0))
+	var keep_rc := game.run_road_cards
+	var rooms_used := [901, 902, 903, 904, 905, 906, 907]
+	var keep_flags := {}
+	for r in rooms_used:
+		keep_flags[r] = game.flags.get(game._road_flag(int(r)))
+
+	# Toll PAY: -min(cost,gold), +standing, heals, marks drawn, ticks counter
+	game.player.gold = 500
+	game.player.faction_standing["accord"] = 0
+	game.player.hp = maxf(1.0, game.player.max_hp * 0.5)
+	game.run_road_cards = 0
+	game._road_toll_pay(901, _road_dummy(), 120)
+	if game.player.gold != 380 or int(game.player.faction_standing["accord"]) != Balance.ROAD_TOLL_STANDING \
+			or game.player.hp <= game.player.max_hp * 0.5 or game.run_road_cards != 1 \
+			or not game.get_flag(game._road_flag(901), false):
+		return _fail("toll pay: wrong gold/standing/heal/counter/flag")
+	game.player.gold = 30
+	game._road_toll_pay(905, _road_dummy(), 120)
+	if game.player.gold != 0:
+		return _fail("toll pay must clamp to held gold (no negative)")
+
+	# Toll REFUSE: -standing, purse-cut inside [0, cost], never negative
+	game.player.gold = 500
+	game.player.faction_standing["accord"] = 0
+	game._road_toll_refuse(902, _road_dummy(), 100)
+	if int(game.player.faction_standing["accord"]) != -Balance.ROAD_TOLL_STANDING \
+			or game.player.gold < 400 or game.player.gold > 500:
+		return _fail("toll refuse: wrong standing or purse-cut out of range")
+	game.player.gold = 0
+	game._road_toll_refuse(906, _road_dummy(), 100)
+	if game.player.gold != 0:
+		return _fail("toll refuse must not drive gold negative")
+
+	# Courier MEND: -heal then +gift (>= net at greed 0), +standing, drawn
+	game.player.gold = 500
+	game.player.faction_standing["accord"] = 0
+	game._road_courier_mend(903, _road_dummy(), 40, 90)
+	if game.player.gold < 550 or int(game.player.faction_standing["accord"]) != Balance.ROAD_COURIER_STANDING \
+			or not game.get_flag(game._road_flag(903), false):
+		return _fail("courier mend: wrong net gold/standing/flag")
+	# too poor to mend: no-op, and the card is NOT marked drawn
+	game.player.gold = 10
+	game.player.faction_standing["accord"] = 5
+	game._road_courier_mend(907, _road_dummy(), 40, 90)
+	if game.player.gold != 10 or int(game.player.faction_standing["accord"]) != 5 \
+			or game.get_flag(game._road_flag(907), false):
+		return _fail("courier mend while short must no-op and not mark drawn")
+
+	# Courier ROB: +loot (>= at greed 0), -standing
+	game.player.gold = 100
+	game.player.faction_standing["accord"] = 0
+	game._road_courier_rob(904, _road_dummy(), 130)
+	if game.player.gold < 230 or int(game.player.faction_standing["accord"]) != -Balance.ROAD_COURIER_STANDING:
+		return _fail("courier rob: wrong gold/standing")
+
+	# --- restore ---
+	game.player.gold = keep_gold
+	game.player.hp = keep_hp
+	game.player.faction_standing["accord"] = keep_acc
+	game.run_road_cards = keep_rc
+	for r in rooms_used:
+		var k: String = game._road_flag(int(r))
+		if keep_flags[r] == null:
+			game.flags.erase(k)
+		else:
+			game.flags[k] = keep_flags[r]
+	print("ok: road deck (registry schema, diminishing chance, toll/courier resolve deltas)")
+
+
+## Throwaway interactable node for the road-card handler tests: _road_resolve
+## queue_frees the node it's given, so each resolving call gets a fresh one.
+func _road_dummy() -> Node2D:
+	var n := Node2D.new()
+	game.add_child(n)
+	return n
 
 
 func _test_waking() -> void:
