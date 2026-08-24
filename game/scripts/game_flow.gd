@@ -812,6 +812,10 @@ func on_rogue_boss_died(kind: String, dead: Boss = null) -> void:
 	# A Waking breach echo also banks toward the week's incursion reward.
 	if is_instance_valid(src) and src.waking_boss:
 		_waking_bank_kill(kind, boss_pos)
+	# A Q15 Unlisted hidden boss banks once per run (its premium on top of the
+	# rogue path's gold chest/pile above).
+	if is_instance_valid(src) and src.unlisted_id != "":
+		_unlisted_bank_kill(src.unlisted_id, boss_pos)
 
 
 ## Bank a breach-echo kill (once per kind per trusted-clock week, per
@@ -842,6 +846,23 @@ func _waking_bank_kill(kind: String, pos: Vector2) -> void:
 		add_renown(Balance.RENOWN_WAKING)
 		spawn_text(player.global_position + Vector2(0, -134),
 			"THE WAKING RECEDES — the week's chest is yours", Color(1.0, 0.85, 0.4), 5.0)
+	autosave()
+
+## Bank a Q15 Unlisted kill (once per run): a bright gem + a little Renown, on
+## top of the rogue path's gold chest/pile. Greymantle also moves Wildfang
+## standing (DYNAMIC_WORLD §5). Records/codex count it as the base kind.
+func _unlisted_bank_kill(id: String, pos: Vector2) -> void:
+	if not has_local_player() or unlisted_banked_has(id):
+		return
+	unlisted_banked.append(id)
+	var e: Dictionary = Unlisted.entry(id)
+	give_loot({"kind": "gem", "gem": drop_gem(Balance.gem_drop_level(loot_chapter()))}, pos + Vector2(40, 44))
+	add_renown(Balance.RENOWN_UNLISTED)
+	if id == "greymantle":
+		add_standing("wildfang", Balance.UNLISTED_GREY_WILDFANG)
+	spawn_text(player.global_position + Vector2(0, -104),
+		"THE UNLISTED FALLS — %s was no legend of theirs" % String(e.get("name", "a hidden boss")),
+		Color(0.95, 0.82, 0.5), 5.0)
 	autosave()
 
 ## A boss killed inside an endgame arena run (Boss.endgame_boss): clear the bar

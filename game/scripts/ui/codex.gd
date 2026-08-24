@@ -1696,6 +1696,16 @@ static func _notes_elites(m: Menus, list: VBoxContainer) -> void:
 		"Road encounters pay NO experience — they are about gold and the crown's regard, not levels. Rolled per character, so a replay meets a different road."]:
 		var rl := m._lbl(rcard, String(rline), 13, Color(0.78, 0.8, 0.86))
 		rl.custom_minimum_size = Vector2(PAGE_W, 0)
+	# The Unlisted — rare hidden bosses (Q15).
+	UITheme.header(m._lbl(list, "— THE UNLISTED —", 16, Color(0.95, 0.55, 0.5)))
+	var ucard := VBoxContainer.new()
+	ucard.add_theme_constant_override("separation", 2)
+	_card(list).add_child(ucard)
+	for uline in [
+		"Some things are not on any bestiary the crown keeps. Rarely — and only past the first chapter — a room holds a boss that shouldn't be there: a foe grown out of an old grudge, wearing the elite marks of a real threat. It is never on the map until you walk in, and something always warns you first if you're listening.",
+		"They fight down the same rules as any boss and give a hidden-boss's due — a bright gem, the crown's regard, and whatever a grudge that size is carrying. Rolled per character; most runs meet none. Kill it or don't; it was never expecting you either."]:
+		var ul := m._lbl(ucard, String(uline), 13, Color(0.78, 0.8, 0.86))
+		ul.custom_minimum_size = Vector2(PAGE_W, 0)
 
 
 ## FIELD NOTES › Gear rules — the shape and unique explainers that used to

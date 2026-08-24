@@ -121,6 +121,11 @@ func switch_chapter(id: String, force := false) -> void:
 		# chapter dict is shared Story data and must never grow permanently.
 		zones = _waking_inject(zones, id, waking_week)
 		zone_count = zones.size()
+	# Q15 Unlisted: rare hidden-boss rooms, seeded per RUN off wander_seed
+	# (campaign chapters only; the inject returns a NEW array too).
+	if Story.CHAPTER_LIST.has(id):
+		zones = _unlisted_inject(zones, id)
+		zone_count = zones.size()
 
 	if is_instance_valid(world):
 		world.free()  # immediate: everything world-owned dies with it
@@ -653,6 +658,41 @@ func _waking_inject(zones_in: Array, chid: String, week: int) -> Array:
 			"terrain": String(e["terrain"]), "enemies": [],
 			"boss": String(e["kind"]), "boss_level": int(e["level"]),
 			"waking": String(e["kind"]),
+			"obstacle_count": 0, "decor_count": 0})
+	return out
+
+
+## Q15 Unlisted (DYNAMIC_WORLD §5) — extend a chapter's zone list with rare
+## HIDDEN-boss rooms, seeded per RUN off wander_seed. Never ch1. Each eligible
+## Unlisted rolls independently; a hit appends one exploration-only boss room
+## (side-attached like the Waking breaches). The room is ALWAYS injected once
+## rolled (deterministic per seed, like _waking_inject) — re-spawn/re-reward are
+## gated later by boss_done + unlisted_banked, so this never reads run state.
+## Reuses an existing boss KIND at the chapter finale's level + a bespoke name.
+func _unlisted_inject(zones_in: Array, chid: String) -> Array:
+	if chid == "ch1":
+		return zones_in   # never in the first chapter's authored experience
+	var target := int(Story.ALL_ENEMIES.get(String(Story.chapter(chid).get("final_boss", "")), {})
+		.get("level", 10)) + Balance.UNLISTED_LEVEL_BONUS
+	var host_terrain := "village"
+	if not zones_in.is_empty():
+		host_terrain = String(zones_in[0].get("terrain", "village"))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = wander_seed * 131 + chid.hash() % 100003 + 977
+	var out: Array = zones_in.duplicate()
+	for id in Unlisted.for_chapter(chid):
+		var e: Dictionary = Unlisted.entry(id)
+		var kind := String(e.get("kind", ""))
+		# roll EVERY eligible id (advance the rng identically regardless) so the
+		# stream stays stable if the roster grows; skip on miss / bad kind.
+		var hit := rng.randf() < float(Balance.UNLISTED_CHANCE.get(id, 0.1))
+		if not hit or not Story.ALL_ENEMIES.has(kind):
+			continue
+		var native := int(Story.ALL_ENEMIES[kind].get("level", 1))
+		out.append({"name": String(e.get("name", "The Unlisted")), "type": "combat",
+			"terrain": host_terrain, "enemies": [],
+			"boss": kind, "boss_level": maxi(target, native),
+			"unlisted": id,
 			"obstacle_count": 0, "decor_count": 0})
 	return out
 
@@ -3808,8 +3848,8 @@ func _on_boss_trigger(zi: int) -> void:
 	if boss_done.get(kind, false):
 		return
 	boss_spawned[zi] = true
-	if String(zones[zi].get("waking", "")) != "":
-		_spawn_boss(zi, kind)  # a breach echo: no story beat out of its chapter
+	if String(zones[zi].get("waking", "")) != "" or String(zones[zi].get("unlisted", "")) != "":
+		_spawn_boss(zi, kind)  # a breach echo / Unlisted: rogue path, no story beat
 		return
 	var beat: Array = Story.beat_for("pre_" + kind,
 		Story.res_band(player.resonance), flags)
@@ -3836,9 +3876,11 @@ func _spawn_boss(zi: int, kind: String) -> void:
 		rooms[zi]["origin"] + Vector2(ROOM_W - 420.0, ROOM_H / 2.0),
 		tiered_level(kind, int(zones[zi].get("boss_level", -1))))
 	var waking: bool = String(zones[zi].get("waking", "")) != ""
-	# A breach echo dies down the ROGUE path (rewards only, no story) plus
-	# the weekly bank; a zone boss drives quests/gates as always.
-	current_boss.story_boss = not waking
+	var unlisted_id := String(zones[zi].get("unlisted", ""))
+	# A breach echo / Unlisted dies down the ROGUE path (rewards only, no story);
+	# a zone boss drives quests/gates as always. Both wear a bespoke name.
+	var named := waking or unlisted_id != ""
+	current_boss.story_boss = not named
 	if waking:
 		current_boss.waking_boss = true
 		# One week-seeded elite affix — the same exam for everyone this week.
@@ -3850,12 +3892,23 @@ func _spawn_boss(zi: int, kind: String) -> void:
 			current_boss.affix = String(Balance.AFFIXES[akey]["name"])
 		if current_boss.affix != "":
 			current_boss.display_name = current_boss.affix + " " + current_boss.display_name
+	elif unlisted_id != "":
+		# Q15 Unlisted: the roster's fixed affixes + its bespoke name (the kit
+		# is a reused kind; make_boss already set the base display_name).
+		current_boss.unlisted_id = unlisted_id
+		var ue: Dictionary = Unlisted.entry(unlisted_id)
+		var afx: Array = ue.get("affixes", [])
+		for akey in afx:
+			Endgame.apply_affix(current_boss, String(akey))
+		if not afx.is_empty():
+			current_boss.affix = String(Balance.AFFIXES.get(String(afx[0]), {}).get("name", ""))
+		current_boss.display_name = String(ue.get("name", current_boss.display_name))
 	current_boss.zone_idx = zi
 	bosses.append(current_boss)
 	world.add_child(current_boss)
 	current_boss.roar()
-	hud.show_boss_bar(current_boss.display_name if waking else Story.ALL_ENEMIES[kind]["name"])
-	hud.boss_banner(current_boss.display_name if waking else Story.ALL_ENEMIES[kind]["name"])
+	hud.show_boss_bar(current_boss.display_name if named else Story.ALL_ENEMIES[kind]["name"])
+	hud.boss_banner(current_boss.display_name if named else Story.ALL_ENEMIES[kind]["name"])
 	set_music(_boss_music())
 
 func _try_spawn_boss(zi: int, force := false) -> void:
@@ -3875,6 +3928,8 @@ func _try_spawn_boss(zi: int, force := false) -> void:
 		return
 	if String(zones[zi].get("waking", "")) != "" and waking_banked(kind):
 		return  # a banked echo does not rise again this week
+	if String(zones[zi].get("unlisted", "")) != "" and unlisted_banked_has(String(zones[zi]["unlisted"])):
+		return  # a felled Unlisted does not rise again this run
 	_on_boss_trigger(zi)
 
 func add_enemy(e: Enemy) -> void:

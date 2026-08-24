@@ -130,6 +130,8 @@ static func write(game: Game, slot: int) -> void:
 		"cleared_rooms": game.cleared.keys(),
 		"door_seen": game.door_seen.keys(),
 		"wander_seed": game.wander_seed,
+		# Q15 Unlisted felled THIS run — world state (a reload never re-raises one).
+		"unlisted_banked": game.unlisted_banked,
 	}
 	var data := {
 		"version": VERSION,
@@ -281,6 +283,8 @@ static func write_server_world(game: Game) -> void:
 		"cleared_rooms": game.cleared.keys(),
 		"door_seen": game.door_seen.keys(),
 		"wander_seed": game.wander_seed,
+		# Q15 Unlisted felled THIS run — world state (a reload never re-raises one).
+		"unlisted_banked": game.unlisted_banked,
 	}
 	var data := {
 		"version": VERSION,
@@ -409,7 +413,7 @@ const _V2_WORLD_FIELDS := ["quest_key", "talked_to_elder", "flags", "quest_kills
 	"run_time", "run_deaths", "run_elites", "run_secrets",
 	"weekly_active", "weekly_week", "waking_week", "bosses_slain", "pos",
 	"cur_room", "last_safe_room", "visited_rooms", "cleared_rooms", "door_seen",
-	"wander_seed"]
+	"wander_seed", "unlisted_banked"]
 
 
 ## Lift a legacy flat blob (v1/v2) into the v3 two-section shape, in
@@ -548,6 +552,9 @@ static func apply(game: Game, data: Dictionary) -> void:
 	for kind in _as_arr(w.get("bosses_slain", [])):
 		game.boss_done[String(kind)] = true
 	game.wander_seed = int(w.get("wander_seed", 0))
+	game.unlisted_banked = []
+	for ub in _as_arr(w.get("unlisted_banked", [])):
+		game.unlisted_banked.append(String(ub))
 
 	# --- room state (v2+). Pre-graph saves (v1) keep the character and
 	# the story, but restart the chapter's GEOGRAPHY from its first room

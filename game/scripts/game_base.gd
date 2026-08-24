@@ -388,6 +388,14 @@ var waking_kills: Array = []
 func waking_banked(kind: String) -> bool:
 	return waking_kills_week == _week_index() and waking_kills.has(kind)
 
+# Q15 Unlisted: which hidden bosses this RUN has already felled (world state,
+# reset per chapter run, saved so a reload never re-raises a downed Unlisted).
+var unlisted_banked: Array = []
+
+## Has THIS run already downed the Unlisted `id`? (Guards its spawn + re-inject.)
+func unlisted_banked_has(id: String) -> bool:
+	return unlisted_banked.has(id)
+
 # --- chapter run stats (results card; persisted mid-run, reset per run) ---
 var run_time := 0.0            # seconds in ST_PLAYING this chapter run
 var run_deaths := 0
@@ -1096,6 +1104,7 @@ func reset_run_stats() -> void:
 	run_xp = 0
 	run_levels = 0
 	xp_capped_noted = false
+	unlisted_banked.clear()   # Q15: a fresh run may meet its hidden bosses again
 	party_stats.clear()   # battle-stats meters restart with the run
 	fight_stats.clear()
 	party_stats_net.clear()

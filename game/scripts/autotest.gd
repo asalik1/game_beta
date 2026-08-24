@@ -1049,6 +1049,10 @@ func _run_systems() -> void:
 	# world-week + character-ledger save round-trip.
 	await _test_waking()
 
+	# 3d22. The Unlisted (Q15, 2026-08-24): hidden bosses seeded per run —
+	# roster/eligibility, deterministic injection (never ch1), per-run bank.
+	await _test_unlisted()
+
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
 	await _frames(3)
@@ -5361,8 +5365,11 @@ func _walk_act1_chapter(chid: String, briefing_prompt: String, gate_flag: String
 	await _frames(10)
 	if game.chapter_id != chid:
 		return "%s did not boot" % chid
-	if game.zone_count != want_zones:
-		return "%s zones did not append (zones=%d, want %d)" % [chid, game.zone_count, want_zones]
+	# >= not ==: a Q15 Unlisted may side-attach an extra hidden-boss room this
+	# run (seeded off replay_chapter's fresh wander_seed). A short count still
+	# means the content module's CHAPTER_ZONES failed to append.
+	if game.zone_count < want_zones:
+		return "%s zones did not append (zones=%d, want >= %d)" % [chid, game.zone_count, want_zones]
 	# Structural integrity: every authored reference must resolve.
 	for zi in game.zone_count:
 		var zone: Dictionary = game.zones[zi]
@@ -8165,6 +8172,103 @@ func _test_waking() -> void:
 	game.player.gem_bag = keep_gems
 	game.player.consumables = keep_cons
 	print("ok: waking incursions (cross-domain seeded roster, pure injection, weekly bank + Renown sweep, stale refusal, save round-trip)")
+
+
+## Q15 Unlisted hidden bosses: the roster/eligibility, the per-RUN seeded
+## injection (deterministic, never ch1, correct shape, fires across a sweep),
+## and the once-per-run bank (gem + Renown + Wildfang). Attachment of the
+## coordless injected room rides the same side-attach path as the Waking
+## breaches (proven in _generate_layout), so this stays a pure inject/bank test.
+func _test_unlisted() -> void:
+	# --- roster / eligibility (pure data) ---
+	if Unlisted.ids().is_empty():
+		return _fail("unlisted roster empty")
+	if not Unlisted.for_chapter("ch1").is_empty():
+		return _fail("the Unlisted never appear in ch1")
+	if Unlisted.for_chapter("ch3").is_empty():
+		return _fail("ch3 should field at least one Unlisted")
+	if not Unlisted.entry("__nope__").is_empty():
+		return _fail("bogus unlisted id resolves")
+	for id in Unlisted.ids():
+		if not Story.ALL_ENEMIES.has(String(Unlisted.entry(id).get("kind", ""))):
+			return _fail("unlisted '%s' reuses a missing boss kind" % id)
+
+	# --- injection: deterministic per seed, never grows the shared array,
+	# correct shape, fires across a seed sweep, never in ch1 ---
+	var authored: Array = Story.chapter("ch3")["zones"]
+	var n0: int = authored.size()
+	var keep_seed: int = game.wander_seed
+	var fb_lvl: int = int(Story.ALL_ENEMIES[String(Story.chapter("ch3")["final_boss"])].get("level", 10)) \
+		+ Balance.UNLISTED_LEVEL_BONUS
+	var any_hit := false
+	for s in range(0, 60):
+		game.wander_seed = s
+		var a: Array = game._unlisted_inject(authored, "ch3")
+		if authored.size() != n0:
+			return _fail("unlisted injection must never grow the shared Story array")
+		if str(a) != str(game._unlisted_inject(authored, "ch3")):
+			return _fail("unlisted injection must be deterministic per seed")
+		for i in range(n0, a.size()):
+			any_hit = true
+			var z: Dictionary = a[i]
+			var uid := String(z.get("unlisted", ""))
+			if uid == "" or Unlisted.entry(uid).is_empty():
+				return _fail("an unlisted zone must carry a valid unlisted id")
+			if String(z.get("boss", "")) != String(Unlisted.entry(uid).get("kind", "")):
+				return _fail("unlisted zone boss should be the roster kind")
+			var native: int = int(Story.ALL_ENEMIES[String(z["boss"])].get("level", 1))
+			if int(z.get("boss_level", -1)) != maxi(fb_lvl, native):
+				return _fail("unlisted zone should pin max(finale, native) level")
+			if not (z.get("enemies", [null]) as Array).is_empty():
+				return _fail("unlisted rooms are boss-only (no packs)")
+	if not any_hit:
+		return _fail("no Unlisted fired across the seed sweep — chance too low or broken")
+	game.wander_seed = 7
+	var ch1z: Array = Story.chapter("ch1")["zones"]
+	if game._unlisted_inject(ch1z, "ch1").size() != ch1z.size():
+		return _fail("ch1 must never inject an Unlisted")
+	game.wander_seed = keep_seed
+
+	# --- the per-run bank: gem + Renown + Wildfang; once per run ---
+	game._load_meta()
+	var keep_ren = game._meta.get("renown")
+	var keep_bank: Array = game.unlisted_banked.duplicate()
+	var keep_wf: int = int(game.player.faction_standing.get("wildfang", 0))
+	var keep_drop: Array = game.dropped_loot.duplicate(true)
+	var keep_gems: Array = game.player.gem_bag.duplicate(true)
+	game._meta["renown"] = 0
+	game.unlisted_banked = []
+	game.player.faction_standing["wildfang"] = 0
+	var pos: Vector2 = game.player.global_position
+	game._unlisted_bank_kill("greymantle", pos)
+	if not game.unlisted_banked_has("greymantle") or game.renown() != Balance.RENOWN_UNLISTED \
+			or int(game.player.faction_standing["wildfang"]) != Balance.UNLISTED_GREY_WILDFANG:
+		return _fail("greymantle bank: wrong ledger/renown/wildfang")
+	game._unlisted_bank_kill("greymantle", pos)  # once per run
+	if game.unlisted_banked.size() != 1 or game.renown() != Balance.RENOWN_UNLISTED:
+		return _fail("an Unlisted banks once per run")
+
+	# --- save round-trip: the run's banked list is world state ---
+	game.unlisted_banked = ["tithe_collector", "greymantle"]
+	SaveGame.write(game, SaveGame.MAX_SLOTS)
+	game.unlisted_banked = []
+	var sv := SaveGame.read(SaveGame.MAX_SLOTS)
+	SaveGame.apply(game, sv)
+	await _frames(2)
+	if game.unlisted_banked != ["tithe_collector", "greymantle"]:
+		return _fail("unlisted_banked lost in the save round-trip")
+	SaveGame.delete(SaveGame.MAX_SLOTS)
+
+	# --- restore ---
+	if keep_ren == null:
+		game._meta.erase("renown")
+	else:
+		game._meta["renown"] = keep_ren
+	game.unlisted_banked = keep_bank
+	game.player.faction_standing["wildfang"] = keep_wf
+	game.dropped_loot = keep_drop
+	game.player.gem_bag = keep_gems
+	print("ok: unlisted hidden bosses (roster/eligibility, deterministic injection, per-run bank + Renown/Wildfang, save round-trip)")
 
 
 # ---- CORE: capital rework economy — road markup curve + save round-trip ---
