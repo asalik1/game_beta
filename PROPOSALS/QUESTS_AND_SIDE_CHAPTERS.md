@@ -285,3 +285,32 @@ remembers being worn.
 > map bigger exactly where the fiction was already pointing: under the
 > city, west of the war, inside the paperwork, and six feet over the
 > Guard.
+
+---
+
+## Owner decisions — RESOLVED (2026-08-24)
+
+The §5 open questions here, plus the DYNAMIC_WORLD §10 set, were answered
+(full record: memory `quest-framework-owner-decisions-2026-08-24`, and
+QUESTS_TASKS.md Phase 2). Resolutions:
+
+- **Interlude exclusivity** → all four earnable in ONE playthrough; divergence
+  lives inside each (not hard per-run forks).
+- **Moonfen boss (The First Howl)** reading resonance band as a combat variable
+  → SANCTIONED (both bands winnable; tempted harder + 10% gold).
+- **Contract cap / favor** → KEEP the shipped 4 claims/day + favor +5 + standing
+  +1 (Q11, live).
+- **Voss fork (Alms Ledger)** → PERMANENT NPC replacement (the colder clerk
+  really replaces him — the capital's first irreversible world-change).
+- **Ch2 slate** → DONE (all 6 quests + arc-2, built + illustrated).
+
+DYNAMIC_WORLD §10 (recorded here since that doc is mid-edit by another agent):
+- Encounter XP → ZERO. Losing to bandits → NO penalty. Frequencies → accept the
+  first-guess rates BUT owner will REVIEW them. Pockets → IN-GRAPH (co-op-safe).
+- **Pets → unsellable but PURCHASABLE WITH RENOWN. Ruling: Renown is the UNIFIED
+  cosmetic gateway — pets, titles, avatar borders/art, skins are ALL Renown-
+  acquirable** (overrides the earlier "one pet family money can't reach").
+- **The Hatless Man → BUILD IT, cruel, no warmth** (the boy's father returned
+  wrong; do not soften toward ch1's warm hat quest).
+- Abandon-on-replay → YES (charge on pause-menu replay too; quiet, no card).
+- Co-op-host onboarding beats → DEFERRED (owner still deciding; stays host-only).
