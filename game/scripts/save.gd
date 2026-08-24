@@ -218,6 +218,8 @@ static func _character_section(game: Game) -> Dictionary:
 		# faucets (instanced per player in co-op — §5.5). The weekly RUN
 		# marker itself is world state; only the claim ledger travels.
 		"bounties": game.bounties, "bounty_day": game.bounty_day, "bounty_week": game.bounty_week,
+		"contracts": game.contracts, "contract_day": game.contract_day,
+		"contract_claims_day": game.contract_claims_day,
 		"vault_week": game.vault_week, "vault_progress": game.vault_progress,
 		"vault_claimed_week": game.vault_claimed_week,
 		"weekly_claimed_week": game.weekly_claimed_week,
@@ -399,6 +401,7 @@ const _V2_CHARACTER_FIELDS := ["name", "cls", "level", "xp", "skill_points", "tr
 	"mailbox", "dropped_loot", "clock_anchor", "daily_last_day", "daily_streak",
 	"achievements", "boss_records", "kill_counts", "player_title",
 	"bounties", "bounty_day", "bounty_week",
+	"contracts", "contract_day", "contract_claims_day",
 	"vault_week", "vault_progress", "vault_claimed_week", "weekly_claimed_week",
 	"renown_cache_week", "waking_kills_week", "waking_kills"]
 const _V2_WORLD_FIELDS := ["quest_key", "talked_to_elder", "flags", "quest_kills", "merchant_zones",
@@ -750,6 +753,18 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 			"done": bool(b.get("done", false))})
 	game.bounty_day = int(c.get("bounty_day", -1))
 	game.bounty_week = int(c.get("bounty_week", -1))
+	game.contracts = []
+	for raw in _as_arr(c.get("contracts", [])):
+		if not (raw is Dictionary):
+			continue
+		var ct: Dictionary = raw
+		game.contracts.append({
+			"ward": String(ct.get("ward", "accord")), "type": String(ct.get("type", "boss_kills")),
+			"target": int(ct.get("target", 1)), "progress": int(ct.get("progress", 0)),
+			"desc": String(ct.get("desc", "")), "gold": int(ct.get("gold", 0)),
+			"done": bool(ct.get("done", false)), "claimed": bool(ct.get("claimed", false))})
+	game.contract_day = int(c.get("contract_day", -1))
+	game.contract_claims_day = int(c.get("contract_claims_day", 0))
 	game.vault_week = int(c.get("vault_week", -1))
 	game.vault_progress = int(c.get("vault_progress", 0))
 	game.vault_claimed_week = int(c.get("vault_claimed_week", -1))

@@ -265,10 +265,52 @@ static func _available_quests(m: Menus, list: VBoxContainer) -> void:
 # ---------------------------------------------------------- ACTIVITIES ---
 
 static func _activities(m: Menus, list: VBoxContainer) -> void:
+	_contracts(m, list)
 	_bounties(m, list)
 	_vault(m, list)
 	_weekly(m, list)
 	_waking(m, list)
+
+
+## Ward contracts (Q11): the capital's daily deed board. Deeds auto-progress off
+## the same events as bounties; the reward is CLAIMED here, capped per day.
+static func _contracts(m: Menus, list: VBoxContainer) -> void:
+	var g := m.game
+	if g.contracts.is_empty():
+		return
+	var cap: int = Balance.WARD_CONTRACT_DAILY_CAP
+	_section(m, list, "WARD CONTRACTS",
+		"The capital's daily deed board · %d/%d claimed today" % [g.contract_claims_day, cap],
+		Color(0.82, 0.86, 0.62))
+	for ward in Balance.WARD_CONTRACT_WARDS:
+		var wname := String(Balance.WARD_CONTRACT_WARD_NAME.get(String(ward), String(ward)))
+		var has_favor: bool = Balance.WARD_CONTRACT_FAVOR_NPC.has(String(ward))
+		for c in g.contracts:
+			if String(c["ward"]) != String(ward):
+				continue
+			var done: bool = bool(c["done"])
+			var claimed: bool = bool(c.get("claimed", false))
+			var card := _card(list, GREEN if claimed else (GOLD if done else Color(0.7, 0.78, 0.6)))
+			_status_line(m, card,
+				"✓  CLAIMED" if claimed else ("◆  READY TO CLAIM" if done else "○  %s CONTRACT" % wname.to_upper()),
+				"WARD", GREEN if claimed else (GOLD if done else BODY))
+			var title := m._lbl(card, String(c["desc"]), 15, Color.WHITE)
+			_wrap(title)
+			_meter(m, card, int(c["progress"]), int(c["target"]),
+				GREEN if done else Color(0.7, 0.78, 0.6),
+				"PROGRESS", "%d / %d" % [int(c["progress"]), int(c["target"])])
+			m._lbl(card, "Reward  ·  %d gold  +  %s standing%s" % [int(c["gold"]), wname,
+				"  + Kesh favor" if has_favor else ""], 12, Color(0.9, 0.82, 0.58))
+			if claimed:
+				continue
+			if done:
+				var cc: Dictionary = c
+				var can_claim: bool = g.contract_claims_day < cap
+				var label := "  ◆  CLAIM  " if can_claim else "  daily cap reached — return tomorrow  "
+				var claim := m._btn(card, label, func() -> void:
+					g.claim_contract(cc)
+					m.open_journal("activities"), GREEN if can_claim else MUTED, can_claim)
+				claim.custom_minimum_size = Vector2(0, 34)
 
 
 static func _bounties(m: Menus, list: VBoxContainer) -> void:

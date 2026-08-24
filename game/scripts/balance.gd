@@ -2670,6 +2670,28 @@ const RES_CONSTANCY_HEAL_MAX := 0.25  # bonus potion healing at full lean
 const QUEST_ABANDON_RESONANCE := 3.0      # ON TOP of revoking the accept's pledge
 const QUEST_ABANDON_STANDING_FRAC := 0.5  # of the quest's standing reward, LOST instead of gained
 
+# ---------------------------------------------------- ward contracts (Q11) ---
+# The capital's four ward desks finally do something: a per-ward DAILY deed
+# board (QUESTS_AND_SIDE_CHAPTERS §2 Layer 1). The four wards ARE the four
+# factions — a contract pays gold + that faction's STANDING, and where the ward
+# hosts a trainer, that trainer's FAVOR (the favor faucet PROFESSIONS §4 wants).
+# Deeds auto-PROGRESS off the same events as bounties; the player CLAIMS the
+# reward (in the journal), capped account-wide per day so it's a coffee-break
+# loop, not a chore list. Seeded per ward per day (relog can't reroll).
+const WARD_CONTRACT_PER_WARD := 2
+const WARD_CONTRACT_DAILY_CAP := 4        # claims/day, account-wide
+const WARD_CONTRACT_STANDING := 1         # ward-faction standing per claim
+const WARD_CONTRACT_FAVOR := 5            # trainer favor where the ward hosts one
+const WARD_CONTRACT_WARDS := ["wildfang", "choir", "accord", "cinderborn"]
+const WARD_CONTRACT_WARD_NAME := {"wildfang": "Fangmoot", "choir": "Choir",
+	"accord": "Accord", "cinderborn": "Cinderborn"}
+const WARD_CONTRACT_FAVOR_NPC := {"accord": "kesh"}   # Herbalist Kesh, Accord Commons
+const WARD_CONTRACT_POOL := [
+	{"type": "boss_kills",    "target": 1, "desc": "Bank a boss on the ward's writ", "gold": 160},
+	{"type": "rooms_cleared", "target": 5, "desc": "Clear five rooms for the ward",  "gold": 120},
+	{"type": "elite_kills",   "target": 3, "desc": "Put down three elites",          "gold": 140},
+]
+
 # --------------------------------------------------------------- mailbox ---
 # Unclaimed mail (dropped-loot letters, event gifts) expires after this
 # many days on the TRUSTED clock (game.trusted_now — monotonic, cheat-

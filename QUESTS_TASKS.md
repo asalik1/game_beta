@@ -268,6 +268,20 @@ and never on co-op guests.
   the ward-desk autotest assertion (autotest.gd ~6877) updated — a full
   task, not a tail-of-session add.
 
+- **Q10 — DONE (full suite green).** All six ch2 quests built + illustrated +
+  faction arc step 2. Commits 4c090f1 / 82ea9bc / 081c977 (content, plates,
+  arc-2). Six turn-in plates + salt_token/fallen_bell sprites.
+- **Q11 — v1 DONE (full suite green).** Ward contracts as a bounty-shaped
+  per-ward daily deed board (the 4 wards = the 4 factions): auto-progress off
+  the same events as bounties, CLAIM in the journal (capped 4/day), paying
+  gold + ward standing + Kesh favor (Accord). `Balance.WARD_CONTRACT_*` +
+  `game_base` refresh_contracts/contract_progress/claim_contract + save fields
+  + journal ACTIVITIES section + `_test_ward_contracts`. NOTE: kept the ward
+  DESKS on their existing `journal` ref (no gen_capital regen — the generator
+  is stale vs the committed capital_hub.gd, would revert the amphora change);
+  contracts surface in the journal the desks open. A dedicated per-ward desk
+  UI is the deferred v2 (needs the generator resynced first).
+
 Every line below was checked against the code the day it was written;
 `file:line` refs drift, grep the symbol if a number is off. Engine facts
 the plan leans on:

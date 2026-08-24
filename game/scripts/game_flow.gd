@@ -928,6 +928,7 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 	if boss_done.size() >= 9:
 		unlock_achievement("boss_hunter")
 	bounty_progress("boss_kills")
+	contract_progress("boss_kills")
 	vault_note_boss()
 	var src: Boss = dead if is_instance_valid(dead) else current_boss
 	var boss_pos: Vector2 = src.global_position if is_instance_valid(src) \
@@ -1160,6 +1161,7 @@ func on_enemy_died(e: Enemy) -> void:
 	if e.elite:
 		run_elites += 1
 		bounty_progress("elite_kills")
+		contract_progress("elite_kills")
 		# Elite loot pinata (playtest round 6): a guaranteed gem, a
 		# guaranteed good chest, and the elite-exclusive economy —
 		# talent reset stones and bigger bags. XP is zero by design
@@ -1247,6 +1249,7 @@ func _room_cleared(zi: int) -> void:
 		curse_pending.erase(zi)
 		_curse_payout(zi)
 	bounty_progress("rooms_cleared")
+	contract_progress("rooms_cleared")
 	if net_host():
 		net_session().host_party_credit("room")  # MP-11: guests' boards advance too
 	_try_spawn_boss(zi)

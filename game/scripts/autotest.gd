@@ -954,6 +954,7 @@ func _run_systems() -> void:
 
 	# 3d8. Bounties + weekly vault: roll, progress reward, vault claim.
 	_test_bounties()
+	_test_ward_contracts()
 
 	# 3d9. Reforge bench: affix reroll, value reroll, add socket + cap.
 	_test_reforge()
@@ -2953,6 +2954,96 @@ func _test_bounties() -> void:
 	game.player.gem_bag = keep_gems
 	game.dropped_loot = keep_dropped
 	print("ok: bounties + weekly vault (deterministic roll, progress reward, vault claim)")
+
+
+# ---- Q11: ward contracts (per-ward daily deed board, claim-capped) ------
+func _test_ward_contracts() -> void:
+	var g := game
+	var snap_c: Array = g.contracts.duplicate(true)
+	var snap_day: int = g.contract_day
+	var snap_claims: int = g.contract_claims_day
+	var gold0: int = g.player.gold
+	var snap_standing: Dictionary = g.player.faction_standing.duplicate(true)
+	var snap_favor: Dictionary = g.player.npc_favor.duplicate(true)
+
+	# Deterministic per-ward roll: same seed -> same board (relog can't reroll).
+	g.contracts = []
+	for wi in Balance.WARD_CONTRACT_WARDS.size():
+		g._roll_contracts(String(Balance.WARD_CONTRACT_WARDS[wi]), Balance.WARD_CONTRACT_PER_WARD, 777 + wi)
+	var first_types: Array = []
+	for c in g.contracts:
+		first_types.append(String(c["ward"]) + ":" + String(c["type"]))
+	var expect := Balance.WARD_CONTRACT_WARDS.size() * Balance.WARD_CONTRACT_PER_WARD
+	g.contracts = []
+	for wi in Balance.WARD_CONTRACT_WARDS.size():
+		g._roll_contracts(String(Balance.WARD_CONTRACT_WARDS[wi]), Balance.WARD_CONTRACT_PER_WARD, 777 + wi)
+	var second_types: Array = []
+	for c in g.contracts:
+		second_types.append(String(c["ward"]) + ":" + String(c["type"]))
+	var deterministic: bool = first_types == second_types and g.contracts.size() == expect
+
+	# contract_progress marks a deed done WITHOUT paying (the claim pays).
+	g.contracts = []
+	g._roll_contracts("accord", 2, 55)
+	var tc: Dictionary = g.contracts[0]
+	var gold_pre: int = g.player.gold
+	g.contract_progress(String(tc["type"]), int(tc["target"]))
+	var progress_only: bool = bool(tc["done"]) and not bool(tc.get("claimed", false)) and g.player.gold == gold_pre
+
+	# Claim pays gold + ward standing (+ favor for Accord). Cap gates the rest.
+	g.contracts = []
+	for wi in Balance.WARD_CONTRACT_WARDS.size():
+		g._roll_contracts(String(Balance.WARD_CONTRACT_WARDS[wi]), 2, 900 + wi)
+	g.contract_claims_day = 0
+	for c in g.contracts:
+		c["done"] = true
+	var gold_before: int = g.player.gold
+	var paid := 0
+	var cap_reason := ""
+	for c in g.contracts:
+		var r: String = g.claim_contract(c)
+		if r == "":
+			paid += 1
+		else:
+			cap_reason = r
+	var cap_ok: bool = paid == Balance.WARD_CONTRACT_DAILY_CAP \
+		and g.contract_claims_day == Balance.WARD_CONTRACT_DAILY_CAP and cap_reason != ""
+	var pay_ok: bool = g.player.gold > gold_before
+	# a re-claim of an already-claimed contract is refused
+	var reclaim_refused := true
+	for c in g.contracts:
+		if bool(c.get("claimed", false)):
+			reclaim_refused = g.claim_contract(c) != ""
+			break
+
+	# An Accord contract also pays Kesh favor (the ward hosts the trainer).
+	g.contracts = []
+	g._roll_contracts("accord", 1, 42)
+	g.contract_claims_day = 0
+	g.contracts[0]["done"] = true
+	var kesh_before: int = int(g.player.npc_favor.get("kesh", 0))
+	g.claim_contract(g.contracts[0])
+	var favor_ok: bool = int(g.player.npc_favor.get("kesh", 0)) > kesh_before
+
+	# Restore.
+	g.contracts = snap_c
+	g.contract_day = snap_day
+	g.contract_claims_day = snap_claims
+	g.player.gold = gold0
+	g.player.faction_standing = snap_standing
+	g.player.npc_favor = snap_favor
+
+	if not deterministic:
+		return _fail("ward contracts: non-deterministic roll or wrong count")
+	if not progress_only:
+		return _fail("ward contracts: contract_progress paid before claim / did not mark done")
+	if not (cap_ok and pay_ok):
+		return _fail("ward contracts: claim/pay/cap wrong (paid %d, claims %d)" % [paid, g.contract_claims_day])
+	if not reclaim_refused:
+		return _fail("ward contracts: an already-claimed contract paid twice")
+	if not favor_ok:
+		return _fail("ward contracts: an Accord contract did not pay Kesh favor")
+	print("ok: ward contracts (deterministic per-ward roll, progress-then-claim, 4/day cap, standing+favor, no double-claim)")
 
 
 # ---- CORE: reforge bench (affix reroll, value reroll, add socket) -------

@@ -354,6 +354,9 @@ var boss_records := {}         # boss kind -> {"ttk": best secs, "dps": best, "k
 var bounties: Array = []       # active: {scope,type,target,progress,desc,gold,gems,gem_lvl,done}
 var bounty_day := -1           # trusted-clock day the daily set was rolled
 var bounty_week := -1          # trusted-clock week the weekly was rolled
+var contracts: Array = []      # ward contracts (Q11): {ward,type,target,progress,desc,gold,done,claimed}
+var contract_day := -1         # trusted-clock day the board was rolled
+var contract_claims_day := 0   # claims used today (Balance.WARD_CONTRACT_DAILY_CAP)
 
 # --- weekly vault (great-vault style; persisted) ---
 var vault_week := -1           # trusted-clock week the current progress belongs to
@@ -1281,6 +1284,110 @@ func _award_bounty(b: Dictionary) -> void:
 	sfx("chest")
 	spawn_text(player.global_position + Vector2(0, -78),
 		"BOUNTY: %s  (+%d gold%s)" % [b["desc"], g, extra], Color(0.6, 1.0, 0.6), 4.0)
+
+
+# ---------------------------------------------------------- ward contracts ---
+# The four capital ward desks' daily deed board (Q11). Rolls per ward per day;
+# deeds auto-progress off the same kill/clear events as bounties; the player
+# claims the reward in the journal, capped account-wide per day.
+
+## Roll the day's board if the trusted-clock day has ticked over (or the board
+## is empty). Seeded per ward per day so a relog can't reroll it (bounty law).
+func refresh_contracts() -> void:
+	if not play_started or no_saves:
+		return
+	var day := daily_day_index()
+	if day == contract_day and not contracts.is_empty():
+		return
+	contract_day = day
+	contract_claims_day = 0
+	contracts = []
+	for wi in Balance.WARD_CONTRACT_WARDS.size():
+		_roll_contracts(String(Balance.WARD_CONTRACT_WARDS[wi]),
+			Balance.WARD_CONTRACT_PER_WARD, day * 4 + wi * 101 + 7)
+	autosave()
+
+
+func _roll_contracts(ward: String, count: int, seed_val: int) -> void:
+	var pool: Array = Balance.WARD_CONTRACT_POOL
+	var idxs: Array = []
+	for i in pool.size():
+		idxs.append(i)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_val
+	for i in range(idxs.size() - 1, 0, -1):  # seeded Fisher-Yates
+		var j := rng.randi_range(0, i)
+		var tmp = idxs[i]; idxs[i] = idxs[j]; idxs[j] = tmp
+	for k in mini(count, pool.size()):
+		var t: Dictionary = pool[idxs[k]]
+		contracts.append({"ward": ward, "type": String(t["type"]), "target": int(t["target"]),
+			"progress": 0, "desc": String(t["desc"]), "gold": int(t.get("gold", 0)),
+			"done": false, "claimed": false})
+
+
+## A deed toward every active, unfinished ward contract of `type`. Marks the
+## contract ready to claim at the target — it does NOT pay (the claim does, so
+## the daily cap can gate WHICH deeds you cash). Host-authoritative like kills.
+func contract_progress(type: String, n := 1) -> void:
+	if net_guest():
+		return
+	var touched := false
+	for c in contracts:
+		if String(c["type"]) == type and not bool(c["done"]):
+			c["progress"] = mini(int(c["progress"]) + n, int(c["target"]))
+			touched = true
+			if int(c["progress"]) >= int(c["target"]):
+				c["done"] = true
+				if is_instance_valid(player):
+					spawn_text(player.global_position + Vector2(0, -84),
+						"%s contract ready — claim it in the journal" %
+						Balance.WARD_CONTRACT_WARD_NAME.get(String(c["ward"]), String(c["ward"])),
+						Color(0.8, 0.9, 0.6), 2.4)
+	if touched:
+		autosave()
+
+
+## Claim a completed contract's reward: gold (level-scaled), the ward faction's
+## standing, and — where the ward hosts a trainer — that trainer's favor. Capped
+## account-wide per day (Balance.WARD_CONTRACT_DAILY_CAP). Returns "" on success
+## or a short failure reason the journal can show.
+func claim_contract(c: Dictionary) -> String:
+	if not has_local_player():
+		return "no character"
+	if not bool(c.get("done", false)):
+		return "not finished"
+	if bool(c.get("claimed", false)):
+		return "already claimed"
+	if contract_claims_day >= Balance.WARD_CONTRACT_DAILY_CAP:
+		return "daily cap reached — come back tomorrow"
+	contract_claims_day += 1
+	c["claimed"] = true
+	var ward := String(c["ward"])
+	var g := int(float(c["gold"]) * Balance.daily_gold_mult(player.level))
+	player.gold += g
+	add_standing(ward, Balance.WARD_CONTRACT_STANDING)
+	var favor_extra := ""
+	var fnpc := String(Balance.WARD_CONTRACT_FAVOR_NPC.get(ward, ""))
+	if fnpc != "":
+		favor_add(fnpc, Balance.WARD_CONTRACT_FAVOR)
+		favor_extra = " + favor"
+	sfx("chest")
+	spawn_text(player.global_position + Vector2(0, -78),
+		"%s CONTRACT  (+%d gold, +%d %s%s)" % [
+			Balance.WARD_CONTRACT_WARD_NAME.get(ward, ward).to_upper(), g,
+			Balance.WARD_CONTRACT_STANDING, ward.capitalize(), favor_extra],
+		Color(0.7, 0.9, 0.6), 4.0)
+	autosave()
+	return ""
+
+
+## Contracts finished and not yet claimed — the journal badge / claim count.
+func contracts_claimable() -> int:
+	var n := 0
+	for c in contracts:
+		if bool(c.get("done", false)) and not bool(c.get("claimed", false)):
+			n += 1
+	return n
 
 
 # ----------------------------------------------------------- weekly vault ---
