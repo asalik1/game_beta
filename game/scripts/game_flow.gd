@@ -488,6 +488,20 @@ func buy_cosmetic(kind: String, cls: String, id: String) -> bool:
 	return true
 
 
+## Grant a catalog cosmetic FREE (a quest KEEPSAKE / interlude relic — identity,
+## never bought). Records account ownership like buy_cosmetic but charges no
+## Renown; refuses an unknown id or a repeat. True when it landed.
+func grant_cosmetic(kind: String, cls: String, id: String) -> bool:
+	if id == "" or owns_cosmetic(kind, cls, id):
+		return false
+	var entry: Dictionary = Skins.find_skin(cls, id) if kind == "skin" else Skins.find(cls, id)
+	if entry.is_empty():
+		return false
+	_meta["own_%s_%s_%s" % [kind, cls, id]] = true
+	_meta_write()
+	return true
+
+
 ## The weekly supply cache (per character, per trusted-clock week).
 func cache_available() -> bool:
 	return renown_cache_week != _week_index()
@@ -1150,6 +1164,10 @@ func on_enemy_died(e: Enemy) -> void:
 	# anyone. Solo behavior is identical — the player is always valid there.)
 	if has_local_player():
 		Pickup.drop_gold(self, _kill_gold(e.gold_value), e.global_position)
+	# HUNT-step named quarry: its death directly completes the step (the flag
+	# routes to the party like any set_flag). Host-authoritative.
+	if e.hunt_flag != "" and not net_guest():
+		set_flag(e.hunt_flag)
 	if e.xp_value > 0 or e.gold_value > 0 or e.elite:
 		note_kill(e.kind)  # codex completion (scenery props and event mood spawns don't count)
 		quest_kill_note(e.kind)  # KILL-step quest progress (host-authoritative, same gate as a real kill)

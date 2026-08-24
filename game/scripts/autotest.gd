@@ -2515,6 +2515,7 @@ func _run_campaign_ch2() -> void:
 	await _test_quest_abandonment()
 	_test_quest_schema()
 	_test_quest_scope()
+	await _test_hunt_and_keepsake()
 	await _test_ch1_quests()
 	await _test_pc_curios()
 	await _test_capital()
@@ -5539,7 +5540,7 @@ func _test_side_quests() -> void:
 ## quest's step flags all ride a kept prefix so they survive the chapter wipe
 ## (the invariant the scope persistence leans on). Read-only; no restore needed.
 func _test_quest_schema() -> void:
-	var allowed_kinds := {"flag": true, "kill": true}
+	var allowed_kinds := {"flag": true, "kill": true, "hunt": true}
 	var allowed_reward := {"gold": true, "standing": true, "item": true,
 		"gem": true, "kept": true, "keepsake": true}
 	var allowed_scope := {"chapter": true, "capital": true, "world": true}
@@ -5559,6 +5560,8 @@ func _test_quest_schema() -> void:
 			if kind == "kill" and (String(step.get("target", "")) == "" \
 					or int(step.get("count", 0)) < 1):
 				return _fail("quest %s: a kill step needs target + count>=1" % id)
+			if kind == "hunt" and String(step.get("target", "")) == "":
+				return _fail("quest %s: a hunt step needs a target enemy kind" % id)
 			if unscoped:
 				var f := String(step["flag"])
 				var kept := false
@@ -9287,3 +9290,60 @@ func _test_eggs() -> void:
 	if not attached:
 		return _fail("egg: heron recruit not attached to The Wayhouse gated on sq_kept_hat")
 	print("ok: eggs (the boy grows up — sq_kept_hat -> ch7 heron-feather recruit)")
+
+
+# ---- Q9: hunt step kind + keepsake reward -----------------------------------
+func _test_hunt_and_keepsake() -> void:
+	var g := game
+	# --- keepsake: grant_cosmetic (free, once, refuses unknown) ---
+	var bogus: bool = g.grant_cosmetic("chroma", "warrior", "__no_such_id__")
+	var had_dk: bool = g.owns_cosmetic("skin", "warrior", "dreadknight")
+	var granted: bool = true if had_dk else g.grant_cosmetic("skin", "warrior", "dreadknight")
+	var regrant: bool = g.grant_cosmetic("skin", "warrior", "dreadknight")  # already owned -> false
+	if not had_dk:
+		g._meta.erase("own_skin_warrior_dreadknight")  # restore (no_saves: never hit disk)
+
+	# --- hunt: inject a quest, spawn its named quarry in a combat room, and
+	# confirm the quarry's death (via the flag) completes the quest.
+	var snap_flags: Dictionary = g.flags.duplicate(true)
+	var mob := ""
+	for k in Story.ALL_ENEMIES:
+		if not bool(Story.ALL_ENEMIES[k].get("boss", false)):
+			mob = String(k); break
+	Story.ALL_SIDE_QUESTS["__hunt_test"] = {
+		"name": "Hunt Probe", "chapter": g.chapter_id,
+		"steps": [{"kind": "hunt", "target": mob, "name": "The Test Quarry", "flag": "hunt_probe_done"}],
+		"reward": {"gold": 1},
+	}
+	g.set_flag("sq_on___hunt_test")
+	var ci := -1
+	for i in g.zone_count:
+		if String(g.zones[i].get("type", "")) == "combat" and String(g.zones[i].get("boss", "")) == "":
+			ci = i
+			break
+	var spawned := false
+	if ci >= 0 and is_instance_valid(g.player):
+		g._ensure_quest_hunt(ci)
+		for node in g.get_tree().get_nodes_in_group("enemies"):
+			var e := node as Enemy
+			if e != null and is_instance_valid(e) and String(e.hunt_flag) == "hunt_probe_done":
+				spawned = e.display_name == "The Test Quarry" and e.elite and e.from_quest
+				e.hunt_flag = ""   # neutralise before cleanup so it can't set the flag late
+				e.queue_free()
+		await _frames(2)
+	# The step flag completes the chain (the death sets it in on_enemy_died).
+	g.set_flag("hunt_probe_done")
+	var paid: bool = g.get_flag("sq_paid___hunt_test", false)
+
+	Story.ALL_SIDE_QUESTS.erase("__hunt_test")
+	g.flags = snap_flags
+
+	if bogus:
+		return _fail("keepsake: grant_cosmetic accepted an unknown id")
+	if not granted or regrant:
+		return _fail("keepsake: grant_cosmetic free-grant / no-repeat wrong")
+	if ci >= 0 and not spawned:
+		return _fail("hunt: named elite quarry did not spawn (name/elite/from_quest)")
+	if not paid:
+		return _fail("hunt: completing the hunt-step flag did not pay the quest")
+	print("ok: hunt step + keepsake reward (named-elite quarry spawn+flag completion; free cosmetic grant, no repeat)")

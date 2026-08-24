@@ -1713,6 +1713,14 @@ func _check_side_quests() -> void:
 				var gem := drop_gem(glvl)
 				give_loot({"kind": "gem", "gem": gem}, player.global_position)
 				got_extra += "  + " + Items.gem_title(gem)
+			# A cosmetic KEEPSAKE (identity, never power/currency): a chroma, skin
+			# or title granted free to THIS class. grant_cosmetic is on the derived
+			# layer, so reach it through call() from the base.
+			if reward.has("keepsake"):
+				var ks: Dictionary = reward["keepsake"]
+				if bool(call("grant_cosmetic", String(ks.get("kind", "chroma")),
+						player.cls, String(ks.get("id", "")))):
+					got_extra += "  + " + String(ks.get("name", "a keepsake"))
 		if reward.has("kept"):
 			set_flag(String(reward["kept"]))  # persistent per-character mark
 		sfx("levelup")

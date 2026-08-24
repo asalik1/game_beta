@@ -43,6 +43,8 @@ var force_aggro := false  # pack woken: attack no matter the distance
 var from_quest := false   # loose quest quarry (game_world._ensure_quest_quarry): zero XP/gold
                           # but STILL counts a KILL-step (game_flow.on_enemy_died) so a
                           # kill-quest stays completable even after its rooms are cleared
+var hunt_flag := ""       # HUNT-step named quarry (game_world._ensure_quest_hunt): killing
+                          # it sets this side-quest step flag directly (game_flow.on_enemy_died)
 var alerted := false  # has shown its "!" bubble
 var los_lost_t := 0.0    # seconds since we last had line-of-sight (leash timer)
 var last_seen := Vector2.ZERO  # where the player was last visible (blind-chase point)

@@ -860,6 +860,7 @@ func _enter_room(i: int) -> void:
 		hud.room_dip()   # a revisit eases in instead of jump-cutting (2026-08-19)
 	refresh_quest()
 	_ensure_quest_quarry(i)  # a KILL-step stays completable after its rooms are cleared
+	_ensure_quest_hunt(i)    # a HUNT-step's named quarry stalks combat rooms until killed
 	_try_spawn_boss(i)
 	# Wave-1 co-op fix: a guest entering an already-cleared boss arena must find
 	# its gate OPEN. The gate-construction guard skips building a gate for a
@@ -928,6 +929,64 @@ func _ensure_quest_quarry(i: int) -> void:
 				burst(pos, Color(0.75, 0.6, 0.42), 10)
 			spawn_text(player.global_position + Vector2(0, -88),
 				"The quarry answers your hunt", Color(0.9, 0.82, 0.6), 2.0)
+
+
+## HUNT step (Q9): a quest names ONE quarry — a specific NAMED ELITE — and it
+## stalks you. On entering a combat room while a hunt step is unfinished and its
+## quarry isn't already here, spawn it (an elite with the authored display name +
+## optional affix, zero XP/gold like the loose quarry). Its death completes the
+## step (game_flow.on_enemy_died reads hunt_flag). Homeless-despawns on exit and
+## re-spawns on the next combat room, so it can never be permanently missed.
+func _ensure_quest_hunt(i: int) -> void:
+	if net_guest() or not is_instance_valid(player) or player.dead:
+		return
+	if i < 0 or i >= zone_count:
+		return
+	var z: Dictionary = zones[i]
+	if String(z.get("type", "")) != "combat" or String(z.get("boss", "")) != "":
+		return
+	for id in Story.ALL_SIDE_QUESTS:
+		var sid := String(id)
+		if not get_flag("sq_on_" + sid, false) or get_flag("sq_paid_" + sid, false):
+			continue
+		for step in Story.ALL_SIDE_QUESTS[id].get("steps", []):
+			if String(step.get("kind", "flag")) != "hunt":
+				continue
+			var f := String(step["flag"])
+			if get_flag(f, false):
+				continue
+			var already := false  # this quarry already stalking this room?
+			for node in get_tree().get_nodes_in_group("enemies"):
+				var e := node as Enemy
+				if e != null and is_instance_valid(e) and not e.dying and e.zone_idx == i and e.hunt_flag == f:
+					already = true
+					break
+			if already:
+				continue
+			var kind := String(step.get("target", ""))
+			if kind == "" or not Story.ALL_ENEMIES.has(kind):
+				continue
+			var pos := clamp_to_zone(player.global_position + Vector2(
+				randf_range(-260, 260), randf_range(-190, 190)), player.global_position)
+			var q := Enemy.make(self, kind, pos, tiered_level(kind, -1))
+			q.zone_idx = i
+			q.promote_elite()
+			var nm := String(step.get("name", ""))
+			if nm != "":
+				q.display_name = nm
+			var affix := String(step.get("affix", ""))
+			if affix != "" and Balance.AFFIXES.has(affix):
+				Endgame.apply_affix(q, affix)
+				q.affix = String(Balance.AFFIXES[affix].get("name", ""))
+			q.xp_value = 0
+			q.gold_value = 0
+			q.hunt_flag = f
+			q.from_quest = true
+			q.force_aggro = true
+			add_enemy(q)
+			burst(pos, Color(0.85, 0.5, 0.5), 14)
+			spawn_text(player.global_position + Vector2(0, -92),
+				"%s is here" % (nm if nm != "" else "Your quarry"), Color(0.95, 0.62, 0.55), 2.4)
 
 
 ## HOST (empty-room fix 2026-07-10): a room only builds + spawns on its LOCAL
