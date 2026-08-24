@@ -1,0 +1,1 @@
+Saved [lapis_master_v1_keyed.png](C:\Users\asali\Projects\MMO\art_src\Custom\GemsRegen_2026-08-21\lapis\lapis_master_v1_keyed.png) via built-in ImageGen: a rounded shield cabochon cut using five stepped lapis-blue tones, gold-pyrite flecks, one white glint, and exact `#FF00FF` keying.

@@ -1629,11 +1629,11 @@ static func _gems_page(m: Menus, list: VBoxContainer) -> void:
 		row.add_child(ladder)
 		for lv in [1, 4, 7, 10]:
 			var gi := TextureRect.new()
-			gi.texture = Art.gem_icon(info["color"], lv)
+			gi.texture = Art.gem_codex_icon(info["color"], lv)   # 128px master
 			gi.custom_minimum_size = Vector2(28, 28)
 			gi.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			gi.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			gi.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			gi.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR   # clean 128->28 downscale
 			gi.tooltip_text = "%s Lv %d" % [String(info["name"]), lv]
 			ladder.add_child(gi)
 		var name_l := m._lbl(row, String(info["name"]), 13, info["color"])

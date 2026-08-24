@@ -1,0 +1,26 @@
+Use the image_gen tool to create ONE cut-gemstone ICON and save it as
+opal_master_v1_keyed.png in this directory (PNG, 256x256).
+
+WHAT THIS IS
+The bag/socket icon for the Opal gem in "Crownless", a painterly
+dark-fantasy RPG. It renders at ~32px, so it MUST stay crisp when shrunk (the
+old gems failed here — soft gradients turn to mush). identity_old_cut.png is
+the colour/subject reference; redraw BOLDER and HARDER-EDGED with a DISTINCT
+cut so it isn't confused with other gems of a similar colour.
+
+SUBJECT
+- ONE Opal: a smooth oval CABOCHON with soft iridescent opal shimmer (hints of pastel colour), luminous not bright, in pale milky blue-white. Centred, upright, filling ~80% of the frame,
+  face-on with a slight top-down tilt.
+
+RENDERING RULES (beat the mush)
+- BOLD FLAT FACETS, HARD edges between them. NO soft airbrush gradient, NO
+  blur, NO photoreal gloss.
+- Limited palette: ~4-5 stepped tones dark-core-to-bright-edge, plus ONE small
+  white specular glint upper-left (light top-left). MUTED, jewel-like, not neon.
+- A clear darker rim so the silhouette reads at tiny size.
+
+BACKGROUND / CONSTRAINTS
+- Solid pure magenta #FF00FF behind the gem (chroma key). No magenta spill, no
+  glow, no vignette, no metal setting, no ring, no text, no shadow.
+
+After saving, name the cut and the tone count in one sentence.

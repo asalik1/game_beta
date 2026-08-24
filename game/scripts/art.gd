@@ -2582,6 +2582,28 @@ static func _gem_stat_for_color(col: Color) -> String:
 ## internal motif, with a shared rough 1-3 / cut 4-6 / fine 7-9 / perfected 10
 ## quality rhythm. The old tintable cut ladder remains the missing-art fallback.
 ## 32x32, cached — bags hold a lot of gems.
+## High-fidelity (128px) gem icon for the codex + detail popover — the gear-tier
+## master (assets/icons/codex/gem_<stat>_lvN.png), parallel to codex_item_icon.
+## Falls back to the 32px bag icon when the codex master is absent. Callers that
+## render LARGE (codex ladder, popover header) use this; the bag/world/drag keep
+## gem_icon (2026-08-21 dual-res, owner fidelity ruling).
+static func gem_codex_icon(col: Color, lvl := 1) -> ImageTexture:
+	var safe_lvl := clampi(lvl, 1, 10)
+	var key := "gemcodex_%s_%d" % [col.to_html(false), safe_lvl]
+	if _cache.has(key):
+		return _cache[key]
+	var stat := _gem_stat_for_color(col)
+	if stat != "":
+		var big := _icon_override("codex/gem_%s_lv%d" % [stat, safe_lvl])
+		if big != null:
+			var t := ImageTexture.create_from_image(big)
+			_cache[key] = t
+			return t
+	var fb := gem_icon(col, lvl)
+	_cache[key] = fb
+	return fb
+
+
 static func gem_icon(col: Color, lvl := 1) -> ImageTexture:
 	var safe_lvl := clampi(lvl, 1, 10)
 	var key := "gemicon_%s_%d" % [col.to_html(false), safe_lvl]

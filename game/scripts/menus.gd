@@ -2315,7 +2315,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 				if can_synth:
 					actions.append(["  ⚒  Synthesize  (3 → 1 Lv%d)  " % (g["lvl"] + 1), Color(0.6, 0.9, 1.0), synth_cb])
 				actions.append(["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb])
-				_open_detail_popover(Art.gem_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g), Items.gem_color(g), info, actions, GearFlavor.of(g))
+				_open_detail_popover(Art.gem_codex_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g), Items.gem_color(g), info, actions, GearFlavor.of(g))
 			var gbtn := _bag_slot(grid, Art.gem_icon(Items.gem_color(g), int(g["lvl"])),
 				("x%d" % count) if count > 1 else "", Items.gem_color(g), gem_cb)
 			# Gem stacks accept gems dragged back out of equipment.
@@ -2638,7 +2638,9 @@ func _popover_header(vbox: VBoxContainer, icon: Texture2D, title: String, title_
 		var ic := TextureRect.new()
 		ic.texture = icon
 		ic.custom_minimum_size = Vector2(40, 40)
+		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ic.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR   # clean downscale of 128px codex icons
 		head.add_child(ic)
 	var tl := UITheme.title(_lbl(head, title, 18, title_color), 19)
 	tl.custom_minimum_size = Vector2(300, 0)
@@ -3580,7 +3582,7 @@ func _open_socketed_gem_popover(item: Dictionary, idx: int, refresh: Callable) -
 	var remove_cb := func() -> void:
 		game.local_player.remove_gem(item, idx)
 		refresh.call()
-	_open_detail_popover(Art.gem_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g),
+	_open_detail_popover(Art.gem_codex_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g),
 		Items.gem_color(g), info, [["  ⇩  Remove  (back to bag)  ", Color(1.0, 0.8, 0.5), remove_cb]])
 
 

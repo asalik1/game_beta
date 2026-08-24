@@ -1,0 +1,30 @@
+Use the image_gen tool to create ONE cut-gemstone ICON at HIGH FIDELITY
+and save it as ruby_master_v1_keyed.png in this directory (PNG, 512x512).
+
+WHAT THIS IS
+The inventory/codex icon for the Ruby gem in "Crownless", a painterly
+dark-fantasy RPG. FIDELITY BAR: match the game's 128px GEAR icons — a piece of
+armour is painted with real material depth, sculpted light and shadow, and
+fine detail. Paint this gem with THAT SAME CARE. It is NOT a flat vector/pixel
+gem; it is a richly rendered JEWEL. (identity_old_cut.png = colour/subject ref.)
+
+SUBJECT
+- ONE Ruby: a faceted brilliant CRYSTAL (upright, pointed, hexagonal facets), in deep blood-red. Centred, upright, filling ~80% of the frame,
+  face-on with a slight top-down tilt.
+
+RENDERING — high-fidelity painterly jewel
+- Deep internal colour that graduates from a luminous bright edge to a rich
+  dark core; visible FACETS each catching light differently (bright highlight
+  facets, deep shadow facets), a sense of refraction and inner glow.
+- A crisp bright specular glint on the upper-left crown (light from top-left),
+  and a subtle darker rim so the silhouette still reads when small.
+- MUTED dark-fantasy palette — jewel-toned and believable, not neon or candy.
+  Soft-shaded and painterly like the gear, NO black comic outline.
+
+BACKGROUND / CONSTRAINTS
+- Solid pure magenta #FF00FF behind the gem (chroma key, removed later). No
+  magenta spill onto the gem, no glow bloom, no vignette, no metal setting, no
+  ring/band, no text, no drop shadow. One gem only.
+
+After saving, describe the cut, the light direction, and the internal depth in
+one sentence.
