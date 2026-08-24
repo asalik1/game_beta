@@ -1,0 +1,13 @@
+Generate ONE painterly wide cinematic story plate for the dark-fantasy game Crownless, using the built-in image_gen tool. Save the raw generation into THIS working directory as `quest_ferryman_due_source.png`, then also save a WIDE 1672x941 (16:9) LANCZOS copy (crop to the central 16:9 if needed) as `quest_ferryman_due.png`. Do not write anywhere else. In your final message report both paths and describe what you drew.
+
+You have ONE attached image:
+- IMAGE 1 ("01_style_dark") is a story plate from this same game — match its painterly STYLE, muted desaturated palette, moody very-low-key lighting, wide 16:9 cinematic framing and brush texture (NOT its exact content).
+
+SCENE — the turn-in beat of the quiet side quest "The Ferryman's Due": on a bog landing over black water, the drowned ferryman is still lashed to his own mooring post, and a lone coin is laid in the deepest notch of the tally he cut into it. This is an ATMOSPHERIC OBJECT/PLACE plate — no living hero, no portrait.
+- FOREGROUND: a weathered timber MOORING POST at a rotting landing stage, a coil of old rope, and slumped against the post the still, shrouded FIGURE of the dead ferryman (rope around the waist, seen from behind or in deep silhouette — a shape, not a face). Cut into the post: a TALLY of notches in rows of five; in the lowest, deepest notch sits a single small bronze COIN catching the last light. An old wooden ferry-pole leans nearby; a flat-bottomed skiff half-sunk at the stage.
+- Setting: dead black bog water under a cold dusk sky, drowned reeds, drifting mist, a faint drowned marker or two out in the water. Almost no warm light — one thin gleam on the coin.
+- Mood: still, mournful, accounts balanced eleven days too late.
+
+NEGATIVES (hard): no living faces, no hero/player figure, no monsters, no weapon raised, no blood, no glowing eyes or magic, no bright saturated colours, no lettering or numbers, no watermark, no halo/wings/crown, no frame or border; the ferryman is a silhouetted shape only, never a rendered face; do not crop the post or the coin out of frame.
+
+Author it already-bright (shown in-engine with no tonemap). Output the raw at the tool's native landscape size, then the 1672x941 copy.

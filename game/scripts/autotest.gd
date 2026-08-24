@@ -6071,7 +6071,8 @@ func _test_ch2_quests() -> void:
 	# recognized, and its plate is actually installed (a wired scene pointing at
 	# a missing PNG would show a broken cutscene in play).
 	for sc in [["straight_answer_scene", "q_straight_answer"], ["second_bell_scene", "q_second_bell"],
-			["salt_reliquary_scene", "q_salt_reliquary"]]:
+			["salt_reliquary_scene", "q_salt_reliquary"], ["widows_arithmetic_scene", "q_widows_arithmetic"],
+			["what_cage_holds_scene", "q_what_cage_holds"], ["ferryman_due_scene", "q_ferryman_due"]]:
 		var scv: Dictionary = Story.ALL_CONVOS.get(String(sc[0]), {})
 		if scv.is_empty() or not bool(scv.get("cinematic", false)):
 			_fail("ch2 quests: scene convo '%s' missing or not cinematic" % sc[0])

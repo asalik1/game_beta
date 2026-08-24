@@ -14,10 +14,13 @@
 ## NPCs (Piet, the pilgrim) or the already-overridden Ivo. All three Q10 turn-ins
 ## are illustrated (opener-style plates via the "scene"/cinematic hook): A
 ## Straight Answer (Ivo, q_straight_answer), The Second Bell (Piet, q_second_bell)
-## and The Salt Reliquary (the pilgrim's hymn stops, q_salt_reliquary) — each
-## Codex-generated off the giver's canon splash. Two custom sprites back the
-## slate: the salt_token item icon and the fallen_bell prop (which replaced the
-## watch_brazier stand-in on the Howling Fields bell hook).
+## and The Salt Reliquary (the pilgrim's hymn stops, q_salt_reliquary), plus
+## Widow's Arithmetic (Sera at her ledger, q_widows_arithmetic), What the Cage
+## Holds (the scout hears the hollows sing, q_what_cage_holds) and The Ferryman's
+## Due (the coin on the tally, q_ferryman_due) — each Codex-generated off the
+## giver's canon splash (the ferryman is an atmospheric object plate). Two custom
+## sprites back the slate: the salt_token item icon and the fallen_bell prop
+## (which replaced the watch_brazier stand-in on the Howling Fields bell hook).
 
 const SIDE_QUESTS := {
 	"still_blue": {
@@ -201,6 +204,24 @@ const CONVOS := {
 		"sr_fade": {"who": "Narrator", "cue": "fade",
 			"text": "\"The garden noticed,\" she says. \"It notices the small doors too.\" Then the hymn returns, softer than before, and she is a psalm again.", "next": ""},
 	}},
+	"widows_arithmetic_scene": {"cinematic": true, "start": "wa1", "nodes": {
+		"wa1": {"who": "Narrator", "cue": "q_widows_arithmetic",
+			"text": "By the cook-fire Widow Sera opens the grain ledger to the last season and runs a finger down the column — and stops on a name. Her own, laid by while the row cottages went hollow. Twenty years of honest weather-paint on a blue door, and here in her own hand the one sum she never meant read aloud.", "next": "wa_fade"},
+		"wa_fade": {"who": "Narrator", "cue": "fade",
+			"text": "She does not look away from the line. Whatever she does with it now, she does it having seen it.", "next": ""},
+	}},
+	"what_cage_holds_scene": {"cinematic": true, "start": "wc1", "nodes": {
+		"wc1": {"who": "Narrator", "cue": "q_what_cage_holds",
+			"text": "The caged scout presses to the bars for the answer, and hears it. Its ears go back, its eyes close, and something that is not quite grief and not quite homecoming crosses its face: the Sporewood remembers being a forest, and the hollows are singing it, and the one who would have listened is here — behind timber, in a stranger's camp.", "next": "wc_fade"},
+		"wc_fade": {"who": "Narrator", "cue": "fade",
+			"text": "\"The Tribes remember,\" it says, very quietly, \"who tells them true.\" And that night, the caged thing sleeps.", "next": ""},
+	}},
+	"ferryman_due_scene": {"cinematic": true, "start": "fd1", "nodes": {
+		"fd1": {"who": "Narrator", "cue": "q_ferryman_due",
+			"text": "The last coin goes into the deepest notch of the tally — the group of one, cut slowly by a man with the evening free, because the fare it counted was his own. The drowned ferryman keeps his post over the black water, rope at his waist, and the accounting balances eleven days too late — which is to say: it balances.", "next": "fd_fade"},
+		"fd_fade": {"who": "Narrator", "cue": "fade",
+			"text": "The bog takes nothing more tonight. It has what it was owed, and so, at last, does he.", "next": ""},
+	}},
 
 	# ---- Q10: The Second Bell (Sentry Piet) --------------------------------
 	# OVERRIDES ch2_hub.gd's "ch2_sentry" — verbatim copy, extended: s1 now
@@ -362,9 +383,11 @@ const CONVOS := {
 			"next": "",
 			"choices": [
 				{"text": "\"They still sing. The Sporewood remembers being a forest. I won't pretend that's a kindness to you in here.\"",
-					"flags": {"cage_told": true}, "faction": {"wildfang": 2}, "resonance": -4.0, "next": "wq_truth"},
+					"flags": {"cage_told": true}, "faction": {"wildfang": 2}, "resonance": -4.0,
+					"scene": "what_cage_holds_scene", "next": "wq_truth"},
 				{"text": "\"They've gone quiet. It's just rot out there now. Nothing's aching for you.\"",
-					"flags": {"cage_told": true}, "faction": {"wildfang": -2}, "resonance": 4.0, "next": "wq_lie"},
+					"flags": {"cage_told": true}, "faction": {"wildfang": -2}, "resonance": 4.0,
+					"scene": "what_cage_holds_scene", "next": "wq_lie"},
 			]},
 		"wq_truth": {"who": "Caged Beastkin", "text": "The breath goes out of it slowly. \"...They sing.\" It closes its eyes, and something that is not quite grief and not quite home moves across its face. \"Then I was wrong to stop listening. Thank you, shard-carrier. A cruel gift is still a gift — the Tribes remember the ones who don't soften the truth.\"", "next": ""},
 		"wq_lie": {"who": "Caged Beastkin", "text": "It searches your face a long moment, then lets its shoulders down. \"...Quiet. Then there's nothing to ache for.\" It almost looks relieved, and you did that. Whether it BELIEVED you, you will never know — but it sleeps that night, and the caged do not sleep easily.", "next": ""},
@@ -385,7 +408,8 @@ const CONVOS := {
 					"side_quest": "ferryman_due", "next": "l_accept"},
 				{"text": "Lay the last coin on his own tally. The debt is closed.",
 					"req_flag": "due_drowned", "req_not_flag": "ferryman_paid",
-					"flags": {"ferryman_paid": true}, "resonance": 2.0, "next": "l_paid"},
+					"flags": {"ferryman_paid": true}, "resonance": 2.0,
+					"scene": "ferryman_due_scene", "next": "l_paid"},
 				{"text": "Leave him to his long night. (step back)", "next": ""},
 			]},
 		"l_accept": {"who": "Narrator", "text": "You mark the place the Greyrun took the most — the Drowned Race, downstream — and set out with a coin for the fare it swallowed, and one more for the man at the post. The ferryman does not thank you. Ferrymen don't. But the rope around his waist seems, in the failing light, a little less like a knot and a little more like a mooring.", "next": ""},
@@ -458,10 +482,10 @@ const CONVOS := {
 			"choices": [
 				{"text": "\"Whole. Every name, yours included. The truth doesn't get to pick who it spares.\"",
 					"lose_item": "mill_ledger", "flags": {"sera_ledger_told": true},
-					"resonance": 4.0, "next": "r_ledger_whole"},
+					"resonance": 4.0, "scene": "widows_arithmetic_scene", "next": "r_ledger_whole"},
 				{"text": "Tear out the page that names her own hoard first, then hand her the rest.",
 					"lose_item": "mill_ledger", "flags": {"sera_ledger_told": true, "chose_sera_page": true},
-					"resonance": -6.0, "next": "r_ledger_page"},
+					"resonance": -6.0, "scene": "widows_arithmetic_scene", "next": "r_ledger_page"},
 			]},
 		"r_ledger_whole": {"who": "Widow Sera", "text": "She takes it whole and does not flinch from her own line. \"Then it's honest. First honest thing on the Greyrun in a year.\" She'll post the reckoning at the mill door — the blue one — where twenty years of spring paint can watch the village read it. \"You didn't soften it for me. Nobody's done that since the water came up.\"", "next": ""},
 		"r_ledger_page": {"who": "Widow Sera", "text": "The torn page goes into the cook-fire and is gone before she can change her mind, and something in her goes quiet with it. \"...The rest is true. Truer than most.\" She won't meet your eye, and she won't ask what you'll do with what you know. The reckoning she posts at the blue door names everyone but her — and every reader who was there will notice the one name missing, and say nothing, the way the Greyrun says nothing.", "next": ""},
