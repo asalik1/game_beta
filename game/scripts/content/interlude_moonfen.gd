@@ -44,7 +44,7 @@ const ENEMIES := {
 	# what the shard-bearer became. band_read makes it fight to your resonance.
 	# v1 sprite: fangmaw (a giant beast); a bespoke body/splash is the art pass.
 	"first_howl": {
-		"name": "The First Howl", "sprite": "fangmaw",  # the real pixel-art beast strip (fangmaw_anim_codex) until a bespoke pixel-art First Howl is regenerated to match
+		"name": "The First Howl", "sprite": "first_howl",  # bespoke pixel-art dire-wolf idle (first_howl_anim_codex), matched to the fangmaw/auroch_minotaur boss-strip style
 		"music": "boss_whitepelt",  # v1: the wolf-chief theme; a bespoke track can follow
 		"hp": 205000.0, "dmg": 235.0, "speed": 150.0, "xp": 0, "gold": 1300,
 		"ranged": false, "scale": 9.0,

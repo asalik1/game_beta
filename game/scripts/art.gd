@@ -3315,6 +3315,7 @@ const BOSS_ACTION_FALLBACK := {
 ## comparisons while these regenerated idles are the live ones.
 const BOSS_IDLE_STRIP_BASE := {
 	"fangmaw": "fangmaw_anim_codex",
+	"first_howl": "first_howl_anim_codex",   # Q13 Moonfen boss — bespoke pixel-art dire-wolf idle
 	"cinderhide": "cinderhide_anim_codex",
 	"morwen": "morwen_anim_codex",
 	# Act 1 regeneration: <sprite>_anim_codex is the live Codex idle.
