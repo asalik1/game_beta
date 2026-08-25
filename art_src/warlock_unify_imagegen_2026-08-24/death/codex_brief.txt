@@ -1,0 +1,39 @@
+You are generating ONE game sprite animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/1_identity_idle_s.png : the BINDING identity, FACING, palette, pixel-art treatment AND body-scale reference. Reproduce this EXACT warlock in this EXACT facing: a LEAN, SLENDER hooded warlock with slim elegant proportions, a near-black / dark charcoal robe and cloak, a smooth VERTICAL dark-gold tabard panel down the center front with a gold crossed/V chest treatment below a gold V-neck collar and a small red gem at the throat, thin gold hem and cuff trim, a cracked bone SKULL familiar wreathed in VIOLET flame floating beside his LEFT shoulder, and an open glowing grimoire (dark red/brown cover) held in his RIGHT hand. Reproduce his slim proportions, gear, markings and palette. Do NOT redesign him, do NOT make him stocky or broad-shouldered, do NOT add crossed shoulder straps or an X-sash beyond the gold chest treatment already shown, do NOT change the facing.
+- Image 2 = refs/2_identity_front.png : the same warlock seen from the FRONT, for identity/palette consistency ONLY. Do NOT copy its facing — keep the facing of Image 1.
+
+TASK: generate exactly ONE new horizontal 9-frame source ROW for this warlock's DEATH animation, FRONT / SOUTH facing (facing the viewer, looking down-screen), with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: illustration-story
+Asset type: high-resolution game sprite animation source, a SINGLE horizontal ROW of exactly nine equal square cells, to be cropped into a horizontal sprite strip. Wide landscape canvas.
+Input images: Image 1 is the binding identity + FACING + palette + pixel-art + body-scale reference; Image 2 is a front-view identity-consistency reference only.
+Scene/backdrop: a perfectly flat uniform #00ff00 chroma-key background filling every pixel, including the gutters between cells. No scenery, floor plane, ground, puddle, platform, cast shadow, contact shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly NINE separate equal square sprite cells arranged left-to-right in ONE horizontal row (reading order frame 1 through frame 9). All nine cells have identical scale, camera and framing; no cell may overlap another; no drawn separators; leave a broad band of flat green between every pair of cells.
+Subject: the exact same LEAN slender warlock as Image 1 in every cell — same slim proportions, same near-black robe with the vertical gold tabard, gold chest treatment, gold V-collar with red throat-gem, the violet-flamed bone skull familiar and the open red grimoire — FRONT / SOUTH facing in all nine cells.
+Style/medium: crisp high-resolution dark-fantasy pixel art with hard readable pixel clusters and a controlled palette, matching Image 1; not painterly, not 3D, not anime, not a smooth digital painting.
+Composition/framing and ANCHOR RULE: the warlock is centred in each square cell, his standing body about 66% of the cell height, with generous green margin on every side so raised arms and small effects fit. He stays in the SAME spot in every cell — his head and his feet sit at the same coordinates in every frame; nothing slides sideways, the camera never moves, the body never changes size. Only the arms/hands, cloak and the small hand-glow move.
+DEATH 9-frame storyboard - nine VISIBLY DIFFERENT poses of THIS character, collapsing and dying, all in the SAME FRONT / SOUTH facing (facing the viewer, looking down-screen) facing:
+ frame 1 standing, a sharp hit landing, the body flinching
+ frame 2 staggering, head snapping back, one step off balance
+ frame 3 buckling, the knees starting to give, arms flailing loose
+ frame 4 dropping to one knee, torso pitching forward, the grimoire slipping from the hand
+ frame 5 collapsing further, both knees down, body folding
+ frame 6 falling sideways, losing all support
+ frame 7 hitting the ground, body sprawling
+ frame 8 settling, the violet skull-flame guttering out
+ frame 9 final grounded corpse, fully collapsed and still, a suitable held death pose
+IDENTITY LOCK (critical): in every cell he is EXACTLY the lean slender warlock of Image 1 in the SAME facing, with THAT slim silhouette, the vertical gold tabard and chest treatment, the gold V-collar and red throat-gem, the violet-flamed skull familiar and the red grimoire on the SAME sides as Image 1. Do NOT make him stocky, broad-shouldered or heavy; do NOT swap the skull and grimoire sides; do NOT change the face; do NOT rotate him to a different facing between frames (the final recovery frame must still face the same way as frame 1).
+FX RULE (critical, overrides any effect wording above): the game engine draws any death FX, blood or soul wisps SEPARATELY. This sprite must show ONLY the warlock's body motion plus his PERSISTENT props already in Image 1 (the violet-flamed skull familiar and the open glowing grimoire). A small compact violet spark/glow right AT his casting hand(s) at the peak is allowed, but do NOT draw any large ring, portal, sigil, orb, beam, ray, wave, or effect leaving the body, flying, or floating detached in the cell.
+Constraints: output only the nine cells on green; no text, watermark, numbers, UI, extra characters, extra limbs, duplicate props, scenery, floor artifact, shadow, or separators. Do not use #00ff00 or any bright/pure green anywhere on the character or its effects (the violet flame and gold trim are fine; just no green on him). Keep the warlock identical to Image 1 in all nine frames. Frames 1 through 9 must each have a clearly different pose from every other frame, and frame 6 must be the widest/most-committed pose.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./death_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./death_v1_keyed.png (auto-key sampling, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels; whether all NINE cells were produced in one row with visibly different poses; whether the warlock stayed LEAN/slender, on-model and in the correct FRONT / SOUTH facing (facing the viewer, looking down-screen) facing vs Image 1 (or drifted stocky / wrong robe / wrong face / wrong facing); and any deviation you noticed (poses sliding/resizing, effect touching an edge, extra limbs, skull/grimoire swapped, fewer than 9 cells, final frame flipping facing). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.

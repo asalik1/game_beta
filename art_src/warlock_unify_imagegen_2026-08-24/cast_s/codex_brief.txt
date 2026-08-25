@@ -1,0 +1,39 @@
+You are generating ONE game sprite animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under C:\Users\asali\Projects\MMO.
+
+Two images are attached to this prompt:
+- Image 1 = refs/1_identity_idle_s.png : the BINDING identity, palette, pixel-art treatment AND body-scale reference. This is the EXACT warlock to reproduce: a LEAN, SLENDER hooded warlock, front-facing, with a gaunt clean-featured pale young face partly shadowed under a deep hood, a near-black / dark charcoal robe and cloak, a smooth VERTICAL dark-gold tabard panel running straight down the center of the front, a gold V-neck collar with a small red gem at the throat, thin gold hem and cuff trim, a cracked bone SKULL familiar wreathed in VIOLET flame floating beside his LEFT shoulder (screen-right of him), and an open glowing grimoire (dark red/brown cover) held in his RIGHT hand (screen-left). Reproduce this EXACT character, its slim elegant proportions, gear, markings and palette. Do NOT redesign it, do NOT make it stocky or broad-shouldered.
+- Image 2 = refs/2_style_attack_s.png : a secondary identity + pixel-art finish reference of the same warlock mid-cast. Use it only for the pixel treatment and material readability.
+
+TASK: generate exactly ONE new horizontal 9-frame source ROW for this warlock's CAST (Void Rift) animation, FRONT / SOUTH facing (facing the viewer), with this image_gen prompt (adapt only if the tool's parameters require it; keep every constraint):
+
+---
+Use case: illustration-story
+Asset type: high-resolution game sprite animation source, a SINGLE horizontal ROW of exactly nine equal square cells, to be cropped into a horizontal sprite strip. Wide landscape canvas.
+Input images: Image 1 is the binding identity, palette, pixel-art treatment and body-scale reference (front-facing); Image 2 is a secondary identity + finish reference.
+Scene/backdrop: a perfectly flat uniform #00ff00 chroma-key background filling every pixel, including the gutters between cells. No scenery, floor plane, ground, puddle, platform, cast shadow, contact shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: create exactly NINE separate equal square sprite cells arranged left-to-right in ONE horizontal row (reading order frame 1 through frame 9). All nine cells have identical scale, camera and framing; no cell may overlap another; no drawn separators; leave a broad band of flat green between every pair of cells.
+Subject: the exact same LEAN slender hooded warlock as Image 1 in every cell — same slim proportions, same near-black robe with the smooth vertical gold tabard, gold V-collar with red throat-gem, the violet-flamed bone skull familiar floating beside his LEFT shoulder, the open red grimoire in his RIGHT hand — FRONT-FACING (facing the viewer) in all nine cells.
+Style/medium: crisp high-resolution dark-fantasy pixel art with hard readable pixel clusters and a controlled palette, matching Image 1; not painterly, not 3D, not anime, not a smooth digital painting.
+Composition/framing and ANCHOR RULE: the warlock is centred in each square cell, front-facing, his standing body about 66% of the cell height, with generous green margin on every side so raised arms and small effects fit. He stays in the SAME spot in every cell — his head and his feet sit at the same coordinates in every frame; nothing slides sideways, the camera never moves, the body never changes size. Only the arms/hands, cloak and the small hand-glow move.
+CAST (Void Rift, front view) 9-frame storyboard - nine VISIBLY DIFFERENT poses of THIS character tearing open a rift with BOTH hands:
+ frame 1 neutral standing rest, identical to the idle pose, both arms low
+ frame 2 both forearms begin to lift, weight settling
+ frame 3 both hands raised to chest height, fingers spreading, a faint violet spark kindling between the palms
+ frame 4 hands pushing apart, beginning to pull the rift open, arms bending outward
+ frame 5 hands spread wider, arms opening, a small violet tear of energy pinched between the fingertips
+ frame 6 PEAK: arms spread wide and slightly forward, hands pulling the rift its widest, the strongest committed pose, a compact violet glow between the hands
+ frame 7 arms still wide but beginning to draw the power inward, glow condensing
+ frame 8 hands drawing back toward the chest, arms folding in
+ frame 9 recovery, arms lowering back toward the frame-1 rest pose
+IDENTITY LOCK (critical): in every cell he is EXACTLY the lean slender warlock of Image 1 with THAT slim silhouette, the vertical gold tabard, the gold V-collar and red throat-gem, the violet-flamed skull on his LEFT shoulder and the red grimoire in his RIGHT hand. Do NOT make him stocky, broad-shouldered or heavy; do NOT redraw the robe with crossed straps or an X-sash; do NOT swap the skull and grimoire sides; do NOT change the face. Match Image 1 exactly, only the arms and hands move through the cast.
+FX RULE (critical, overrides any effect wording above): the game engine draws the big void-rift ring, beams and burst SEPARATELY. This sprite must show ONLY the warlock's body motion plus his PERSISTENT props that are already in Image 1 (the violet-flamed skull familiar and the open glowing grimoire). A small compact violet spark/glow right AT or BETWEEN his hands at the peak is allowed, but do NOT draw any rift ring, portal, orb, beam, ray, wave, or large effect leaving the body, flying, or floating detached in the cell. Nothing large or detached beyond the skull familiar that is already part of his design.
+Constraints: output only the nine cells on green; no text, watermark, numbers, UI, extra characters, extra limbs, duplicate props, scenery, floor artifact, shadow, or separators. Do not use #00ff00 or any bright/pure green anywhere on the character or its effects (the violet flame and gold trim are fine; just no green on him). Keep the warlock identical to Image 1 in all nine frames. Frames 1 through 9 must each have a clearly different arm/hand pose from every other frame, and frame 6 must be the widest, most-committed pose.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./cast_s_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./cast_s_v1_keyed.png (auto-key sampling, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project. I will do the slicing.
+4. In your final message report: the raw output size in pixels; whether all NINE cells were produced in one row with visibly different poses (frame by frame); whether the warlock stayed LEAN/slender and on-model vs Image 1 (or drifted stocky / crossed-strap / wrong face); and any deviation you noticed (poses sliding/resizing between frames, an effect touching an edge, extra limbs, wrong facing, skull/grimoire swapped sides, fewer than 9 cells). Be blunt about defects; do not soften them.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.
