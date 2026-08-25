@@ -251,6 +251,20 @@ func _hub_action(act: String) -> void:
 					Color(1.0, 0.7, 0.5), 3.0)
 			else:
 				call("enter_endgame", "crucible" if act == "portal_crucible" else "depths")
+		"portal_moonfen":
+			# Q13 I2 entry. SOLO only (interludes swap worlds like the endgame),
+			# gated on clearing Act 1 + standing with the Wildfang.
+			if net_online():
+				spawn_text(player.global_position + Vector2(0, -90),
+					"The Moonfen is a road walked alone — leave the party to answer it.",
+					Color(0.8, 0.85, 1.0), 3.0)
+			elif not (get_flag("completed_ch7", false) and has_local_player() \
+					and int(player.faction_standing.get("wildfang", 0)) >= Balance.MOONFEN_UNLOCK_WILDFANG):
+				spawn_text(player.global_position + Vector2(0, -90),
+					"The fen stays shut. (Clear Act 1, and stand with the Wildfang.)",
+					Color(1.0, 0.7, 0.5), 3.5)
+			else:
+				call("enter_interlude", "interlude_moonfen")
 		"vault":
 			menus.open_stash()
 		"wardrobe":
@@ -3937,6 +3951,15 @@ func _spawn_boss(zi: int, kind: String) -> void:
 		if not afx.is_empty():
 			current_boss.affix = String(Balance.AFFIXES.get(String(afx[0]), {}).get("name", ""))
 		current_boss.display_name = String(ue.get("name", current_boss.display_name))
+	# Q13 band-read boss (The First Howl): the resonance band you carry in picks
+	# how it fights — TEMPTED runs faster, hits harder, and its fall pays more
+	# (owner ruling #2; both bands winnable). Read once, on spawn, from the local hero.
+	if bool(Story.ALL_ENEMIES.get(kind, {}).get("band_read", false)) and is_instance_valid(player) \
+			and Story.res_band(player.resonance) == "tempted":
+		current_boss.speed *= Balance.FIRST_HOWL_TEMPTED_SPEED
+		current_boss.dmg *= Balance.FIRST_HOWL_TEMPTED_DMG
+		current_boss.band_tempted = true
+		current_boss.display_name = current_boss.display_name + ", Unbound"
 	current_boss.zone_idx = zi
 	bosses.append(current_boss)
 	world.add_child(current_boss)

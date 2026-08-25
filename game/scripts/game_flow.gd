@@ -80,6 +80,30 @@ func replay_chapter(id: String) -> void:
 		autosave())
 
 
+## Enter a Q13 INTERLUDE — a standalone side-chapter reached from the capital.
+## Like a chapter replay (fresh rolled world, run stats reset, transient story
+## state wiped) but the character's FACTION STANDINGS ride through UNTOUCHED — an
+## interlude is a side-trip, not a campaign reset — and the send-off returns to
+## the capital (victory_dismiss / the victory text branch on is_interlude).
+## SOLO ONLY v1: interludes swap worlds like the endgame arenas, which net play
+## hard-blocks; the caller (the capital portal) also gates on the unlock flags.
+func enter_interlude(id: String) -> void:
+	if net_online() or not Story.is_interlude(id) or not has_local_player():
+		return
+	_wipe_chapter_flags()               # transient story state resets; kept flags (completed_/cap_/…) survive
+	wander_seed = randi() % 1000000     # a fresh rolled world each visit
+	weekly_active = false
+	reset_run_stats()
+	switch_chapter(id, true)
+	play_started = true
+	request_pause(false)
+	hud.visible = true
+	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
+	run_chapter_opener_if_needed(id, func() -> void:
+		hud.flash_title(zones[cur_room]["name"], String(Story.chapter(id)["name"]))
+		autosave())
+
+
 ## Begin this week's challenge run: the WEEK'S fixed seed (everyone plays
 ## the same map), the week's modifier live, PB recorded on the clear.
 ## Mechanically a replay — standings reset, character rides along.
@@ -193,6 +217,11 @@ func victory_dismiss() -> void:
 	hud.visible = true
 	if chapter_id == "ch1" and not net_online() and not get_flag("cap_seen", false) \
 			and has_local_player():
+		enter_capital()
+		return
+	# Q13 interludes are side-trips from the hub: the send-off returns you there,
+	# never onto the campaign way-gates.
+	if Story.is_interlude(chapter_id):
 		enter_capital()
 		return
 	spawn_victory_gates()
@@ -1002,6 +1031,13 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		net_session().host_full_heal()
 		net_session().host_boss_kill(kind, boss_pos, boss_lv, first_clear)
 
+	# Q13 First Howl: a tempted-band kill pays its +10% bounty (owner ruling #2).
+	if is_instance_valid(src) and src.band_tempted and has_local_player():
+		var howl_bonus := int(float(Story.ALL_ENEMIES.get(kind, {}).get("gold", 60)) \
+			* Balance.daily_gold_mult(player.level) * (Balance.FIRST_HOWL_TEMPTED_GOLD - 1.0))
+		if howl_bonus > 0:
+			Pickup.drop_gold(self, howl_bonus, boss_pos + Vector2(0, 30))
+
 	# Now that the room is safe, a wandering merchant MAY set up camp.
 	if loot_rng.randf() < 0.65 and not merchant_zones.has(mzi):
 		call_deferred("_merchant_arrives", mzi)
@@ -1041,8 +1077,10 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			if not bool(_meta.get(Balance.ENDGAME_UNLOCK_META, false)):
 				_meta[Balance.ENDGAME_UNLOCK_META] = true
 				_meta_write()
-		# NG+ ladder credit (host's own; guests mirror in net_victory).
-		_maybe_unlock_next_tier()
+		# NG+ ladder credit (host's own; guests mirror in net_victory). Interludes
+		# are off the campaign ladder — they never advance the NG+ tier.
+		if not Story.is_interlude(chapter_id):
+			_maybe_unlock_next_tier()
 		if first_clear and has_local_player():
 			_first_clear_reward(boss_lv)
 		var next_ch := Story.next_chapter(chapter_id)
@@ -1078,6 +1116,12 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			else:
 				vtext += "\n\nCONTINUE — rise. The way-gates stand beside the arena:\nCrownfall  ·  a fresh pass  ·  onward to %s" \
 					% String(Story.chapter(next_ch)["name"])
+		elif Story.is_interlude(chapter_id):
+			# Q13 interludes end back at the capital, not on the campaign way-gates.
+			vtext = String(Story.chapter(chapter_id).get("victory_text",
+				"It is finished. The road back to Crownfall is quiet now."))
+			vtext += _broken_promises_text(broken)
+			vtext += "\n\nCONTINUE — return to CROWNFALL."
 		else:
 			vtext = String(Story.chapter(chapter_id).get("victory_text",
 				"Thanks for playing!"))

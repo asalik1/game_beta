@@ -2842,6 +2842,14 @@ const UNLISTED_LEVEL_BONUS := 0   # they fight at the chapter finale's level (af
 const RENOWN_UNLISTED := 12       # regard for felling one; rides the rogue path's gold/gem too
 const UNLISTED_GREY_WILDFANG := 2 # Wildfang standing shift on Greymantle's fall (DYNAMIC_WORLD §5)
 
+# Q13 Interludes. The Moonfen (I2) unlock — cleared Act 1 + stood with the
+# Wildfang. The First Howl reads your resonance BAND on spawn (owner ruling
+# 2026-08-24 #2): TEMPTED is a harder fight that pays more; both are winnable.
+const MOONFEN_UNLOCK_WILDFANG := 2   # Wildfang standing required to open the Moonfen portal
+const FIRST_HOWL_TEMPTED_SPEED := 1.15  # tempted-band First Howl runs faster...
+const FIRST_HOWL_TEMPTED_DMG := 1.15    # ...and hits harder
+const FIRST_HOWL_TEMPTED_GOLD := 1.10   # ...and its fall pays +10% gold
+
 static func renown_price(kind: String, tier := "") -> int:
 	if kind == "chroma":
 		return RENOWN_PRICE_CHROMA

@@ -2552,6 +2552,9 @@ func _run_campaign_ch2() -> void:
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
 	await _test_chapter_progression()
+	# Q13 interludes LAST — it ends back in the capital + wipes transient flags,
+	# so nothing downstream inherits its world.
+	await _test_interludes()
 
 	print("AUTOTEST PASS")
 	get_tree().paused = false
@@ -8198,6 +8201,78 @@ func _test_waking() -> void:
 ## and the once-per-run bank (gem + Renown + Wildfang). Attachment of the
 ## coordless injected room rides the same side-attach path as the Waking
 ## breaches (proven in _generate_layout), so this stays a pure inject/bank test.
+## Q13 Interludes (I2 Moonfen): the shared standalone engine + the band-read
+## boss + the finale routing. Resolution/registration checks, then a full
+## end-to-end in the TEMPTED band — enter from code, walk the 3-room spine, meet
+## The First Howl (assert it read the band), kill it, and confirm the finale set
+## completed_ and returned to the capital (not the campaign way-gates).
+func _test_interludes() -> void:
+	# --- registration + resolution (pure) ---
+	if not Story.is_interlude("interlude_moonfen") or not Story.is_standalone("interlude_moonfen"):
+		return _fail("interlude_moonfen not registered as a standalone interlude")
+	if Story.CHAPTER_LIST.has("interlude_moonfen"):
+		return _fail("interludes must stay OUT of CHAPTER_LIST (chapter select / advance never see them)")
+	if String(Story.chapter("interlude_moonfen").get("final_boss", "")) != "first_howl":
+		return _fail("interlude chapter() did not resolve its final boss")
+	if not Story.ALL_ENEMIES.has("first_howl") or not bool(Story.ALL_ENEMIES["first_howl"].get("band_read", false)):
+		return _fail("first_howl missing or not band_read")
+
+	# --- snapshot ---
+	var keep_chapter := game.chapter_id
+	var keep_res: float = game.player.resonance
+	var keep_completed = game.flags.get("completed_interlude_moonfen")
+
+	# --- enter (TEMPTED) + walk + band-read + finale ---
+	game.player.resonance = -100.0   # well past -RES_BAND_AT: tempted
+	game.flags.erase("completed_interlude_moonfen")
+	game.enter_interlude("interlude_moonfen")
+	await _frames(10)
+	if game.chapter_id != "interlude_moonfen" or game.zone_count != 3:
+		return _fail("enter_interlude did not build the 3-room Moonfen")
+	if not Story.is_interlude(game.chapter_id):
+		return _fail("in-interlude is_interlude(chapter_id) reads false")
+	_buff()
+	await _goto_room(0)
+	await _kill_room(0)
+	await _goto_room(1)
+	await _kill_room(1)
+	await _goto_room(2)
+	var guard := 0
+	while not is_instance_valid(game.current_boss) and guard < 200:
+		await _frames(5)
+		guard += 5
+		if game.hud.dialogue_active:
+			await _skip_dialogue()
+	if not is_instance_valid(game.current_boss) or game.current_boss.kind != "first_howl":
+		return _fail("The First Howl did not spawn in the Moonfen arena")
+	if not game.current_boss.band_tempted:
+		return _fail("The First Howl did not read the TEMPTED band on spawn")
+	game.current_boss.take_damage(99999999.0)
+	var vguard := 0
+	while game.state != Game.ST_VICTORY and vguard < 200:
+		await _frames(5)
+		vguard += 5
+		if game.hud.dialogue_active:
+			await _skip_dialogue()
+	if game.state != Game.ST_VICTORY:
+		return _fail("killing The First Howl did not reach victory")
+	if not game.get_flag("completed_interlude_moonfen", false):
+		return _fail("interlude finale did not set completed_interlude_moonfen")
+	game.victory_dismiss()
+	await _frames(10)
+	if game.chapter_id != "capital":
+		return _fail("interlude send-off did not return to the capital")
+
+	# --- restore ---
+	game.flags.erase("completed_interlude_moonfen")
+	if keep_completed != null:
+		game.flags["completed_interlude_moonfen"] = keep_completed
+	game.player.resonance = keep_res
+	game.switch_chapter(keep_chapter, true)
+	await _frames(5)
+	print("ok: interludes (Moonfen standalone engine, enter/walk/band-read tempted, finale -> completed + back to capital)")
+
+
 func _test_unlisted() -> void:
 	# --- roster / eligibility (pure data) ---
 	if Unlisted.ids().is_empty():
