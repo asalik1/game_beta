@@ -50,7 +50,7 @@ const CHAPTER := {
 		"district": "civic", "mark": "◆",
 		"obstacles": [], "obstacle_count": 0,
 		"decor": [], "decor_count": 0, "accents": [], "structures": [],
-		"landmarks": [{"name": "capital_portal_story", "x": 560, "y": 560, "clearance": 150, "uses": [{"type": "action", "prompt": "E — Enter the Story Gate", "x": 0, "y": 30, "ref": "portal_story"}]}, {"name": "capital_portal_crucible", "x": 1056, "y": 560, "clearance": 160, "uses": [{"type": "action", "prompt": "E — Enter the Crucible Gate", "x": 0, "y": 30, "ref": "portal_crucible"}]}, {"name": "capital_portal_depths", "x": 1552, "y": 560, "clearance": 145, "uses": [{"type": "action", "prompt": "E — Enter the Depths Gate", "x": 0, "y": 30, "ref": "portal_depths"}]}],
+		"landmarks": [{"name": "capital_portal_story", "x": 560, "y": 560, "clearance": 150, "uses": [{"type": "action", "prompt": "E — Enter the Story Gate", "x": 0, "y": 30, "ref": "portal_story"}]}, {"name": "capital_portal_crucible", "x": 1056, "y": 560, "clearance": 160, "uses": [{"type": "action", "prompt": "E — Enter the Crucible Gate", "x": 0, "y": 30, "ref": "portal_crucible"}]}, {"name": "capital_portal_depths", "x": 1552, "y": 560, "clearance": 145, "uses": [{"type": "action", "prompt": "E — Enter the Depths Gate", "x": 0, "y": 30, "ref": "portal_depths"}, {"type": "action", "prompt": "E — Enter the Moonfen", "x": -150, "y": 30, "ref": "portal_moonfen"}]}],
 		"furnishings": [],
 		"backdrops": [],
 		"npcs": [],
@@ -173,7 +173,7 @@ static func selftest(_game: Node2D) -> String:
 	if ch.get("zones", []).size() != 9:
 		return "capital: expected 9 zones, got %d" % ch.get("zones", []).size()
 	var coords := {}
-	var known_actions := ["blackmarket", "codex", "daily", "drill", "forge", "guild", "journal", "lapidary", "mail", "map", "portal_crucible", "portal_depths", "portal_story", "potions", "professions", "records", "synthesis", "vault", "wardrobe"]
+	var known_actions := ["blackmarket", "codex", "daily", "drill", "forge", "guild", "journal", "lapidary", "mail", "map", "portal_crucible", "portal_depths", "portal_moonfen", "portal_story", "potions", "professions", "records", "synthesis", "vault", "wardrobe"]
 	for z in ch["zones"]:
 		if z.get("type", "") != "safe":
 			return "capital: zone %s is not safe" % z.get("name", "?")

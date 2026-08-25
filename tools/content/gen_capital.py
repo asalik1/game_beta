@@ -30,7 +30,7 @@ START_Y = CY - 28
 #             duplicating the access point.
 P = "convo"; A = "action"
 HUB_ACTIONS = {
-    "portal_story", "portal_crucible", "portal_depths",
+    "portal_story", "portal_crucible", "portal_depths", "portal_moonfen",
     "vault", "codex", "daily", "map", "mail", "journal", "records",
     "guild", "potions", "wardrobe", "forge", "lapidary", "drill",
     # Professions craft station (PROFESSIONS §7): trade lock, mastery,
@@ -191,7 +191,10 @@ LANDMARK_USES = {
     ("plaza", 5): [ACTION("E — Check your mailbox", "mail", y=100)],
     ("portal", 0): [ACTION("E — Enter the Story Gate", "portal_story", y=30)],
     ("portal", 1): [ACTION("E — Enter the Crucible Gate", "portal_crucible", y=30)],
-    ("portal", 2): [ACTION("E — Enter the Depths Gate", "portal_depths", y=30)],
+    ("portal", 2): [ACTION("E — Enter the Depths Gate", "portal_depths", y=30),
+                    # Q13: the Moonfen interlude gate rides the Depths pillar (a
+                    # second hotspot). Sealed until Act 1 + Wildfang (game_world).
+                    ACTION("E — Enter the Moonfen", "portal_moonfen", x=-150, y=30)],
     ("archive", 0): [
         ACTION("E — Browse the Codex", "codex", x=-170, y=100),
         ACTION("E — Read your journal", "journal", y=100),

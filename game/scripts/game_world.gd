@@ -2394,6 +2394,12 @@ func _spawn_scenery(zi: int) -> void:
 			if String(use_spec.get("ref", "")) in ["portal_crucible", "portal_depths"] \
 					and not endgame_gates_open():
 				use_prompt = "Sealed — clear Chapter 7 to open this gate"
+			# Q13 Moonfen interlude gate: sealed until Act 1 is cleared and the
+			# Wildfang trust you (the hub_action enforces it too).
+			if String(use_spec.get("ref", "")) == "portal_moonfen" \
+					and not (get_flag("completed_ch7", false) and has_local_player() \
+					and int(player.faction_standing.get("wildfang", 0)) >= Balance.MOONFEN_UNLOCK_WILDFANG):
+				use_prompt = "Sealed — the Moonfen opens to those who clear Act 1 and stand with the Wildfang"
 			var hotspot := _make_npc("book", use_pos,
 				use_prompt, use_action, "",
 				Balance.PROP_HOTSPOT_REACH)
