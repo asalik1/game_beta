@@ -2838,6 +2838,10 @@ const RENOWN_WAKING := 25         # all three banked in a week -> the chest + th
 # Per-boss draw chance — FIRST-GUESS frequencies, OWNER REVIEW PENDING
 # (ruling 2026-08-24 #5). Each Unlisted rolls independently on a chapter load.
 const UNLISTED_CHANCE := {"tithe_collector": 0.125, "greymantle": 0.10}  # ~1-in-8 / 1-in-10
+# Q15 portal-stone pockets (content/pockets.gd): the per-run chance a pocket
+# rolls, + the Renown its boss pays. FIRST-GUESS (owner review pending #5).
+const POCKET_CHANCE := 0.25     # ~1 in 4 runs (never ch1)
+const RENOWN_POCKET := 15       # regard for clearing a pocket; rides the rogue path's gold/gem too
 const UNLISTED_LEVEL_BONUS := 0   # they fight at the chapter finale's level (affixes carry the extra teeth)
 const RENOWN_UNLISTED := 12       # regard for felling one; rides the rogue path's gold/gem too
 const UNLISTED_GREY_WILDFANG := 2 # Wildfang standing shift on Greymantle's fall (DYNAMIC_WORLD §5)

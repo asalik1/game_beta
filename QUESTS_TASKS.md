@@ -594,7 +594,32 @@ Codex: NPC section entries for Voss/Corin once they gain convos (the
 `npcs` shelf reads convos). Illustrations: Petra's final step (canon
 `splash_smith_petra`) and Fenna's memorial are the two plates.
 
-## Q13 — Interludes I1 Undercroft + I2 Moonfen (OPEN; needs Q12 step 1 + owner decisions 1)
+## Q13 — Interludes (ENGINE + I2 Moonfen core SHIPPED 2026-08-24; art + I1 open)
+**Shipped (commit fddaabe), full suite green incl. a new end-to-end interlude test:**
+- **Shared engine slice:** `Story.STANDALONE_WORLDS` (merged from modules' new
+  `STANDALONE` const; `chapter()`/`is_standalone`/`is_interlude` read it, kept OUT
+  of `CHAPTER_LIST`). Finale routing: `on_boss_died` final-boss block +
+  `victory_dismiss` branch on `is_interlude` → `completed_<id>` + `epilogue_<id>`
+  + return to the CAPITAL, NG+ ladder skipped (campaign path byte-identical,
+  guarded). `game_flow.enter_interlude` (replay pattern minus the standing reset;
+  SOLO-only, net-blocked like the endgame world swap).
+- **I2 The Moonfen** (`content/interlude_moonfen.gd`): a 3-room marsh spine +
+  THE FIRST HOWL. The boss reads your resonance BAND on spawn (owner ruling #2):
+  TEMPTED is faster/harder, gains ", Unbound", pays +10% gold; both winnable —
+  wired generically via the boss def's `"band_read": true` in `_spawn_boss` +
+  `Boss.band_tempted` + the `on_boss_died` bonus (`Balance.FIRST_HOWL_*`). Entry
+  `_hub_action("portal_moonfen")` gated `completed_ch7` + Wildfang ≥
+  `Balance.MOONFEN_UNLOCK_WILDFANG`. `BOSS_KINDS`+`first_howl`; band-variant
+  pre_/epilogue beats; `_test_interludes` (tempted-band walk to the finale).
+- v1 REUSES `marsh` terrain + `fangmaw` sprite + `boss_whitepelt` track.
+
+**Follow-ups (open):** bespoke First Howl body/splash (Codex art wave — a single
+idle in progress; full 8-dir/ability regen later) + a `ph_moonfen` terrain; the
+capital ENTRY LANDMARK that calls `portal_moonfen` (a `gen_capital` pass with a
+new `req_standing` use-gate); and **I1 Undercroft** (needs the Crown Below unlock
+chain + the Archivist's Redaction `locked_slot` mechanic). Original spec:
+
+### Q13 — Interludes I1 Undercroft + I2 Moonfen (original spec; owner decisions 1)
 Estimated: 5+ agent-days each incl. art; one owner per interlude after
 a shared engine slice. I3/I4 are blocked on Act 2 — do not start.
 Spec: QUESTS_AND_SIDE_CHAPTERS §4.
@@ -678,6 +703,20 @@ mark follow-ups, and a full codex **Encounters** SECTIONS page + journal WORLD
 lines. These need a safe loose-combat-in-safe-room primitive (the `zone_alive`
 seal minefield) or the save-bound spine draw — neither built. Original spec:
 
+**Combat-verb cards — the blocker, diagnosed (2026-08-24).** The remaining
+slice-1 cards (Toll *fight*, Caravan *defend*, spawn_pack) all want to SPAWN
+combat, and the v1 Road Deck draws in SAFE (social/dead_end) rooms. Spawning
+into a safe room does not work cleanly: a loose enemy with `zone_idx == i`
+decrements `zone_alive` on death, but `add_enemy` never incremented it, so
+`zone_alive` sits at 0 and `_room_cleared(i)` MISFIRES on the FIRST kill (the
+room reads "cleared" — merchant spawn + rooms_cleared bounty credit — while the
+rest of the pack still fights). `zone_idx = -1` (rogue) skips that but then the
+pack never despawns on room exit (rogue spawns are "left to death/reset",
+`_calm_left_room` only calms `zone_idx == prev`). So the combat cards need the
+Road Deck to grow a COMBAT-ROOM draw path (the board's original design), where
+`zone_alive` is already live and the quest-quarry loose-spawn pattern is
+absorbed cleanly. That draw-path extension is the real prerequisite — deferred.
+
 ### Q14 — Road Deck v1 (original full spec; needs Q9 a; owner decisions 2)
 Estimated: 3 agent-days. Spec: DYNAMIC_WORLD §4 (cards 1,2,3,4,6 in v1;
 card 5 The Cage waits for Q16's follower; 7/8/11 ride Q15/Q16).
@@ -722,6 +761,22 @@ for the missing brim. Reads once (`heron_father_met`). `_test_eggs`
 `selftest_present` extended; full suite green. **Prose + placement + the
 `boy_answered` gate are owner-review-pending (in-game).** The rest of Q15 below
 (the Unlisted bosses + portal-stone pockets) still needs Q14's combat-verb tech.
+
+### Q15 — portal-stone pockets (v1 SHIPPED 2026-08-24)
+**Shipped (commit pending), full suite green incl. `_test_pockets`:** an in-graph
+FLOATING boss arena (decision #6 — teleport in/out, returns to the exact origin,
+never a world swap). `content/pockets.gd` (class_name Pockets) roster: Molten
+Court (cinderhide+savage, magma) + Still Larder (icebound+bulwark, ice), reusing
+kits like the Unlisted. `_pocket_inject` (seeded per run, never ch1, ~25% —
+`Balance.POCKET_CHANCE`) appends ONE floating arena (`_generate_layout` parks
+pocket rooms off-grid with no exits + a backstop for any unplaced room). A portal
+stone drops in the first safe room (`_offer_pocket_stone`) → `_enter_pocket`
+(teleport + remember origin) → the arena boss (rogue path, bespoke name, affix) →
+`_pocket_complete` (gem + `RENOWN_POCKET`, banked once via `pocket_done`) →
+`_pocket_return` after a beat. Saved (`pocket_done`/`pocket_origin`); codex
+"PORTAL STONES" note. **TWIST ENFORCEMENT DEFERRED** (v1 ships the loop; the
+per-pocket twists — floor-tithes / no-potions — are noted in the roster, not yet
+enforced). Original spec below:
 
 ### Q15 (remainder) — The Unlisted + portal-stone pockets
 Estimated: 3 agent-days. Spec: DYNAMIC_WORLD §5 (Tithe-Collector,

@@ -132,6 +132,10 @@ static func write(game: Game, slot: int) -> void:
 		"wander_seed": game.wander_seed,
 		# Q15 Unlisted felled THIS run — world state (a reload never re-raises one).
 		"unlisted_banked": game.unlisted_banked,
+		# Q15 pocket: whether its boss fell this run + where to return (a reload
+		# inside the pocket). pocket_room/id are re-derived by the seeded inject.
+		"pocket_done": game.pocket_done,
+		"pocket_origin": game.pocket_origin,
 	}
 	var data := {
 		"version": VERSION,
@@ -285,6 +289,10 @@ static func write_server_world(game: Game) -> void:
 		"wander_seed": game.wander_seed,
 		# Q15 Unlisted felled THIS run — world state (a reload never re-raises one).
 		"unlisted_banked": game.unlisted_banked,
+		# Q15 pocket: whether its boss fell this run + where to return (a reload
+		# inside the pocket). pocket_room/id are re-derived by the seeded inject.
+		"pocket_done": game.pocket_done,
+		"pocket_origin": game.pocket_origin,
 	}
 	var data := {
 		"version": VERSION,
@@ -413,7 +421,7 @@ const _V2_WORLD_FIELDS := ["quest_key", "talked_to_elder", "flags", "quest_kills
 	"run_time", "run_deaths", "run_elites", "run_secrets",
 	"weekly_active", "weekly_week", "waking_week", "bosses_slain", "pos",
 	"cur_room", "last_safe_room", "visited_rooms", "cleared_rooms", "door_seen",
-	"wander_seed", "unlisted_banked"]
+	"wander_seed", "unlisted_banked", "pocket_done", "pocket_origin"]
 
 
 ## Lift a legacy flat blob (v1/v2) into the v3 two-section shape, in
@@ -555,6 +563,8 @@ static func apply(game: Game, data: Dictionary) -> void:
 	game.unlisted_banked = []
 	for ub in _as_arr(w.get("unlisted_banked", [])):
 		game.unlisted_banked.append(String(ub))
+	game.pocket_done = bool(w.get("pocket_done", false))
+	game.pocket_origin = int(w.get("pocket_origin", -1))
 
 	# --- room state (v2+). Pre-graph saves (v1) keep the character and
 	# the story, but restart the chapter's GEOGRAPHY from its first room

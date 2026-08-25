@@ -126,6 +126,9 @@ func switch_chapter(id: String, force := false) -> void:
 	if Story.CHAPTER_LIST.has(id):
 		zones = _unlisted_inject(zones, id)
 		zone_count = zones.size()
+		# Q15 pockets: a floating boss arena reached by a portal stone.
+		zones = _pocket_inject(zones, id)
+		zone_count = zones.size()
 
 	if is_instance_valid(world):
 		world.free()  # immediate: everything world-owned dies with it
@@ -711,6 +714,85 @@ func _unlisted_inject(zones_in: Array, chid: String) -> Array:
 	return out
 
 
+## Q15 portal-stone pockets (DYNAMIC_WORLD §6) — roll ONE floating boss-arena
+## room per RUN (seeded, never ch1). It side-steps the side-attach pass (placed
+## FLOATING in _generate_layout) and is reached only by a portal stone's
+## teleport. Sets pocket_room/pocket_id (deterministic per seed, so a reload
+## recomputes them); pocket_done (saved) gates the reward. Reuses a boss kit +
+## affix, at the chapter finale's level.
+func _pocket_inject(zones_in: Array, chid: String) -> Array:
+	pocket_room = -1
+	pocket_id = ""
+	if chid == "ch1":
+		return zones_in
+	var elig: Array = Pockets.for_chapter(chid)
+	if elig.is_empty():
+		return zones_in
+	var rng := RandomNumberGenerator.new()
+	rng.seed = wander_seed * 149 + chid.hash() % 100003 + 613
+	if rng.randf() >= Balance.POCKET_CHANCE:
+		return zones_in
+	var id := String(elig[rng.randi_range(0, elig.size() - 1)])
+	var e: Dictionary = Pockets.entry(id)
+	var kind := String(e.get("kind", ""))
+	if not Story.ALL_ENEMIES.has(kind):
+		return zones_in
+	var target := int(Story.ALL_ENEMIES.get(String(Story.chapter(chid).get("final_boss", "")), {})
+		.get("level", 10))
+	var native := int(Story.ALL_ENEMIES[kind].get("level", 1))
+	var out: Array = zones_in.duplicate()
+	pocket_room = out.size()
+	pocket_id = id
+	out.append({"name": String(e.get("name", "A Pocket")), "type": "combat",
+		"terrain": String(e.get("terrain", "magma")), "enemies": [],
+		"boss": kind, "boss_level": maxi(target, native),
+		"pocket": id,
+		"obstacle_count": 0, "decor_count": 0})
+	return out
+
+
+## Drop the portal stone into the FIRST safe room visited this run (once), if a
+## pocket rolled and isn't cleared. Interacting teleports into the floating arena
+## and remembers where you left, so the boss's fall can return you.
+func _offer_pocket_stone(i: int) -> void:
+	if net_guest() or not is_instance_valid(player) or player.dead:
+		return
+	if pocket_room < 0 or pocket_done or _pocket_stone_placed:
+		return
+	if room_type(i) not in ["social", "dead_end"]:
+		return
+	_pocket_stone_placed = true
+	var e: Dictionary = Pockets.entry(pocket_id)
+	var pos := clamp_to_zone(room_center(i) + Vector2(0, -70), player.global_position)
+	var npc := _make_npc("pillar", pos, "E — A portal stone hums", Callable())
+	npc.modulate = Color(0.7, 0.85, 1.05)
+	burst(pos, Color(0.6, 0.8, 1.0), 12)
+	interactables[-1]["action"] = func() -> void:
+		menus.open_confirm(
+			"A portal stone hums with a cold light — a way into %s, and a way back. Step through?"
+				% String(e.get("name", "a hidden place")),
+			_enter_pocket.bind(i), func() -> void: pass)
+
+func _enter_pocket(origin: int) -> void:
+	if pocket_room < 0 or pocket_room >= zone_count or not is_instance_valid(player):
+		return
+	pocket_origin = origin
+	sfx("blink")
+	player.global_position = room_center(pocket_room)
+	_enter_room(pocket_room)
+	burst(player.global_position, Color(0.6, 0.8, 1.0), 14)
+
+## The pocket boss has fallen (game_flow._pocket_complete) — carry the hero back
+## to the origin room after a beat, so the death plays before the world shifts.
+func _pocket_return() -> void:
+	if pocket_origin < 0 or pocket_origin >= zone_count or not is_instance_valid(player):
+		return
+	sfx("blink")
+	player.global_position = room_center(pocket_origin)
+	_enter_room(pocket_origin)
+	burst(player.global_position, Color(0.6, 0.8, 1.0), 14)
+
+
 # ------------------------------------------------------- the room graph ---
 
 ## Build the runtime graph meta (grid coords, exits, locks, scales)
@@ -818,6 +900,8 @@ func _generate_layout(spine: Array) -> void:
 	for i in zone_count:
 		if coord.has(i):
 			continue
+		if String(zones[i].get("pocket", "")) != "":
+			continue  # Q15 pockets place FLOATING below (teleport-only, no walk edge)
 		var cands: Array = []
 		for pass_same in [true, false]:
 			for p in placed:
@@ -842,8 +926,27 @@ func _generate_layout(spine: Array) -> void:
 		room_exits[i][OPP[host_dir]] = ""
 		placed.append(i)
 
+	# Q15 pockets: floating boss arenas, reached ONLY by the portal stone's
+	# teleport and hidden on the map (no walkable edge). Park each far off the
+	# grid so its coord never collides with a spine/side room.
+	var float_slot := 0
+	for i in zone_count:
+		if coord.has(i):
+			continue
+		if String(zones[i].get("pocket", "")) != "":
+			coord[i] = Vector2i(9000 + float_slot, 9000)
+			room_exits[i] = {}
+			taken[coord[i]] = true
+			placed.append(i)
+			float_slot += 1
 	# --- write the runtime meta (same shape as the authored path) ---
 	for i in zone_count:
+		if not coord.has(i):
+			# An unplaced room (edges exhausted) would crash the meta write; drop
+			# it to a far parking coord so the graph stays whole (rare backstop).
+			coord[i] = Vector2i(9500 + i, 9500)
+			room_exits[i] = {}
+			coord_to_room[coord[i]] = i
 		var meta := {"coord": coord[i], "scale": Vector2.ONE, "exits": room_exits[i],
 			"origin": Vector2(coord[i].x * ROOM_W, coord[i].y * ROOM_H)}
 		rooms.append(meta)
@@ -913,6 +1016,8 @@ func _enter_room(i: int) -> void:
 		# The Road Deck draws at the door too — but only in SAFE rooms, so it
 		# never overlaps the cursed chest (combat-only). Diminishing per run.
 		_offer_road_card(i)
+		# The portal stone waits in the first safe room, if a pocket rolled.
+		_offer_pocket_stone(i)
 	elif play_started and prev != i:
 		hud.room_dip()   # a revisit eases in instead of jump-cutting (2026-08-19)
 	refresh_quest()
@@ -3902,8 +4007,9 @@ func _on_boss_trigger(zi: int) -> void:
 	if boss_done.get(kind, false):
 		return
 	boss_spawned[zi] = true
-	if String(zones[zi].get("waking", "")) != "" or String(zones[zi].get("unlisted", "")) != "":
-		_spawn_boss(zi, kind)  # a breach echo / Unlisted: rogue path, no story beat
+	if String(zones[zi].get("waking", "")) != "" or String(zones[zi].get("unlisted", "")) != "" \
+			or String(zones[zi].get("pocket", "")) != "":
+		_spawn_boss(zi, kind)  # breach echo / Unlisted / pocket: rogue path, no story beat
 		return
 	var beat: Array = Story.beat_for("pre_" + kind,
 		Story.res_band(player.resonance), flags)
@@ -3931,9 +4037,10 @@ func _spawn_boss(zi: int, kind: String) -> void:
 		tiered_level(kind, int(zones[zi].get("boss_level", -1))))
 	var waking: bool = String(zones[zi].get("waking", "")) != ""
 	var unlisted_id := String(zones[zi].get("unlisted", ""))
-	# A breach echo / Unlisted dies down the ROGUE path (rewards only, no story);
-	# a zone boss drives quests/gates as always. Both wear a bespoke name.
-	var named := waking or unlisted_id != ""
+	var pocket_bid := String(zones[zi].get("pocket", ""))
+	# A breach echo / Unlisted / pocket dies down the ROGUE path (rewards only, no
+	# story); a zone boss drives quests/gates as always. All wear a bespoke name.
+	var named := waking or unlisted_id != "" or pocket_bid != ""
 	current_boss.story_boss = not named
 	if waking:
 		current_boss.waking_boss = true
@@ -3957,6 +4064,17 @@ func _spawn_boss(zi: int, kind: String) -> void:
 		if not afx.is_empty():
 			current_boss.affix = String(Balance.AFFIXES.get(String(afx[0]), {}).get("name", ""))
 		current_boss.display_name = String(ue.get("name", current_boss.display_name))
+	elif pocket_bid != "":
+		# Q15 pocket arena boss: the roster's affixes + bespoke name; its fall
+		# pays the pocket reward and returns you home (game_flow._pocket_complete).
+		current_boss.pocket_boss = true
+		var pe: Dictionary = Pockets.entry(pocket_bid)
+		var pfx: Array = pe.get("affixes", [])
+		for akey in pfx:
+			Endgame.apply_affix(current_boss, String(akey))
+		if not pfx.is_empty():
+			current_boss.affix = String(Balance.AFFIXES.get(String(pfx[0]), {}).get("name", ""))
+		current_boss.display_name = String(pe.get("name", current_boss.display_name))
 	# Q13 band-read boss (The First Howl): the resonance band you carry in picks
 	# how it fights — TEMPTED runs faster, hits harder, and its fall pays more
 	# (owner ruling #2; both bands winnable). Read once, on spawn, from the local hero.

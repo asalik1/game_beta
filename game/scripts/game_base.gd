@@ -396,6 +396,15 @@ var unlisted_banked: Array = []
 func unlisted_banked_has(id: String) -> bool:
 	return unlisted_banked.has(id)
 
+# Q15 portal-stone pockets (DYNAMIC_WORLD §6) — an IN-GRAPH floating boss arena
+# reached only by a portal stone's teleport and returned to the origin room on
+# the boss's fall (decision #6: in-graph, co-op-safe, never a world swap).
+var pocket_room := -1        # the injected arena's room index this run (-1 = none rolled)
+var pocket_id := ""          # which pocket rolled (content/pockets.gd id)
+var pocket_origin := -1      # the room to return to (set on entry; saved for a mid-pocket reload)
+var pocket_done := false     # its boss felled this run (banks the reward once)
+var _pocket_stone_placed := false  # transient: the stone has been dropped into a safe room this run
+
 # --- chapter run stats (results card; persisted mid-run, reset per run) ---
 var run_time := 0.0            # seconds in ST_PLAYING this chapter run
 var run_deaths := 0
@@ -1105,6 +1114,8 @@ func reset_run_stats() -> void:
 	run_levels = 0
 	xp_capped_noted = false
 	unlisted_banked.clear()   # Q15: a fresh run may meet its hidden bosses again
+	pocket_done = false        # Q15: a fresh run may open its pocket again
+	_pocket_stone_placed = false
 	party_stats.clear()   # battle-stats meters restart with the run
 	fight_stats.clear()
 	party_stats_net.clear()

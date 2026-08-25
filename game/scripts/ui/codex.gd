@@ -1707,6 +1707,16 @@ static func _notes_elites(m: Menus, list: VBoxContainer) -> void:
 		"They fight down the same rules as any boss and give a hidden-boss's due — a bright gem, the crown's regard, and whatever a grudge that size is carrying. Rolled per character; most runs meet none. Kill it or don't; it was never expecting you either."]:
 		var ul := m._lbl(ucard, String(uline), 13, Color(0.78, 0.8, 0.86))
 		ul.custom_minimum_size = Vector2(PAGE_W, 0)
+	# Portal stones -> pockets (Q15).
+	UITheme.header(m._lbl(list, "— PORTAL STONES —", 16, Color(0.7, 0.85, 1.0)))
+	var pcard := VBoxContainer.new()
+	pcard.add_theme_constant_override("separation", 2)
+	_card(list).add_child(pcard)
+	for pline in [
+		"Now and then a stone in a quiet room hums with a cold light — a door into a POCKET, a small sealed place that is not on any map: a lone arena, one boss that shouldn't be anywhere, and a way back to exactly where you were standing.",
+		"Step through if you like. Fell what's inside and the pocket collapses, paying a gem and the crown's regard, then sets you back down where you left. Rolled per character; the door is always open when it appears, and it asks nothing to walk away from."]:
+		var pl := m._lbl(pcard, String(pline), 13, Color(0.78, 0.8, 0.86))
+		pl.custom_minimum_size = Vector2(PAGE_W, 0)
 
 
 ## FIELD NOTES › Gear rules — the shape and unique explainers that used to

@@ -845,6 +845,9 @@ func on_rogue_boss_died(kind: String, dead: Boss = null) -> void:
 	# rogue path's gold chest/pile above).
 	if is_instance_valid(src) and src.unlisted_id != "":
 		_unlisted_bank_kill(src.unlisted_id, boss_pos)
+	# A Q15 pocket boss pays the pocket reward + carries you home.
+	if is_instance_valid(src) and src.pocket_boss:
+		_pocket_complete(boss_pos)
 
 
 ## Bank a breach-echo kill (once per kind per trusted-clock week, per
@@ -893,6 +896,22 @@ func _unlisted_bank_kill(id: String, pos: Vector2) -> void:
 		"THE UNLISTED FALLS — %s was no legend of theirs" % String(e.get("name", "a hidden boss")),
 		Color(0.95, 0.82, 0.5), 5.0)
 	autosave()
+
+## A Q15 pocket boss has fallen: bank the reward once (a gem + Renown on top of
+## the rogue path's gold chest/pile), then carry the hero back to the origin room
+## after a beat so the death plays before the world shifts (game_world._pocket_return).
+func _pocket_complete(pos: Vector2) -> void:
+	if not has_local_player() or pocket_done:
+		return
+	pocket_done = true
+	give_loot({"kind": "gem", "gem": drop_gem(Balance.gem_drop_level(loot_chapter()))}, pos + Vector2(40, 44))
+	add_renown(Balance.RENOWN_POCKET)
+	spawn_text(player.global_position + Vector2(0, -104),
+		"THE POCKET COLLAPSES — the stone's bargain is paid", Color(0.7, 0.85, 1.0), 4.0)
+	if pocket_origin >= 0:
+		get_tree().create_timer(2.5).timeout.connect(_pocket_return)
+	autosave()
+
 
 ## A boss killed inside an endgame arena run (Boss.endgame_boss): clear the bar
 ## and advance the run. NO full heal — HP/MP carry between fights (ACT2 §II).

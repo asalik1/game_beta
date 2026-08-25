@@ -22,6 +22,7 @@ var story_boss := false      # spawned by the zone flow (drives quests on death)
 var waking_boss := false     # a Waking Incursion breach echo (rogue-path death + weekly bank)
 var unlisted_id := ""        # a Q15 Unlisted hidden boss (rogue-path death + per-run bank); "" = not one
 var band_tempted := false    # Q13 First Howl: spawned in the tempted resonance band (harder + pays +10% gold)
+var pocket_boss := false     # Q15 portal-pocket arena boss: its fall pays the pocket reward + returns you home
 var endgame_boss := false    # spawned by the endgame controller (drives the run on death)
 var affix := ""              # elite affix key worn in the endgame modes (Balance.AFFIXES), "" = none
 

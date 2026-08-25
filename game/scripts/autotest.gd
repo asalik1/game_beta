@@ -1053,6 +1053,10 @@ func _run_systems() -> void:
 	# roster/eligibility, deterministic injection (never ch1), per-run bank.
 	await _test_unlisted()
 
+	# 3d23. Portal-stone pockets (Q15, 2026-08-24): floating boss-arena inject +
+	# once-per-run completion reward.
+	await _test_pockets()
+
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
 	await _frames(3)
@@ -8073,6 +8077,103 @@ func _test_road_deck() -> void:
 		else:
 			game.flags[k] = keep_flags[r]
 	print("ok: road deck (registry schema, diminishing chance, toll/courier/wager resolve deltas)")
+
+
+## Q15 portal-stone pockets: roster/eligibility, the per-run seeded FLOAT
+## injection (deterministic, never ch1, boss-only arena, sets pocket_room), and
+## the once-per-run completion (reward + bank). The stone/teleport/return ride
+## the same materialize + fast-travel paths exercised elsewhere; this stays a
+## pure inject/complete test.
+func _test_pockets() -> void:
+	if Pockets.ids().is_empty():
+		return _fail("pockets roster empty")
+	if not Pockets.for_chapter("ch1").is_empty():
+		return _fail("pockets never roll in ch1")
+	if Pockets.for_chapter("ch4").is_empty():
+		return _fail("ch4 should field a pocket")
+	if not Pockets.entry("__nope__").is_empty():
+		return _fail("bogus pocket id resolves")
+	for id in Pockets.ids():
+		if not Story.ALL_ENEMIES.has(String(Pockets.entry(id).get("kind", ""))):
+			return _fail("pocket '%s' reuses a missing boss kind" % id)
+
+	var keep_seed: int = game.wander_seed
+	var keep_room := game.pocket_room
+	var keep_pid := game.pocket_id
+	var keep_origin := game.pocket_origin
+	var keep_done := game.pocket_done
+
+	# injection: deterministic, floating boss-only arena, fires across a sweep
+	var authored: Array = Story.chapter("ch4")["zones"]
+	var n0: int = authored.size()
+	var any_hit := false
+	for s in range(0, 40):
+		game.wander_seed = s
+		var a: Array = game._pocket_inject(authored, "ch4")
+		if authored.size() != n0:
+			return _fail("pocket injection must not grow the shared Story array")
+		if a.size() == n0 + 1:
+			any_hit = true
+			if game.pocket_room != n0 or game.pocket_id == "":
+				return _fail("a pocket hit must set pocket_room/pocket_id")
+			var z: Dictionary = a[game.pocket_room]
+			if String(z.get("pocket", "")) == "" \
+					or String(z.get("boss", "")) != String(Pockets.entry(game.pocket_id).get("kind", "")):
+				return _fail("pocket zone must carry the id + roster boss kind")
+			if not (z.get("enemies", [null]) as Array).is_empty():
+				return _fail("a pocket arena is boss-only (no packs)")
+		elif a.size() != n0:
+			return _fail("pocket inject appended more than one room")
+		elif game.pocket_room != -1:
+			return _fail("a miss must leave pocket_room -1")
+	if not any_hit:
+		return _fail("no pocket rolled across the seed sweep")
+	game.wander_seed = 5
+	var ch1z: Array = Story.chapter("ch1")["zones"]
+	if game._pocket_inject(ch1z, "ch1").size() != ch1z.size() or game.pocket_room != -1:
+		return _fail("ch1 must never inject a pocket")
+
+	# completion: reward + bank once (origin -1 -> no return teleport in the test)
+	game._load_meta()
+	var keep_ren = game._meta.get("renown")
+	var keep_drop: Array = game.dropped_loot.duplicate(true)
+	var keep_gems: Array = game.player.gem_bag.duplicate(true)
+	game._meta["renown"] = 0
+	game.pocket_done = false
+	game.pocket_origin = -1
+	game._pocket_complete(game.player.global_position)
+	if not game.pocket_done or game.renown() != Balance.RENOWN_POCKET:
+		return _fail("pocket complete should bank done + Renown")
+	game._pocket_complete(game.player.global_position)
+	if game.renown() != Balance.RENOWN_POCKET:
+		return _fail("a cleared pocket must not re-pay")
+
+	# save round-trip
+	game.pocket_done = true
+	game.pocket_origin = 3
+	SaveGame.write(game, SaveGame.MAX_SLOTS)
+	game.pocket_done = false
+	game.pocket_origin = -1
+	var sv := SaveGame.read(SaveGame.MAX_SLOTS)
+	SaveGame.apply(game, sv)
+	await _frames(2)
+	if not game.pocket_done or game.pocket_origin != 3:
+		return _fail("pocket state lost in the save round-trip")
+	SaveGame.delete(SaveGame.MAX_SLOTS)
+
+	# restore
+	if keep_ren == null:
+		game._meta.erase("renown")
+	else:
+		game._meta["renown"] = keep_ren
+	game.dropped_loot = keep_drop
+	game.player.gem_bag = keep_gems
+	game.wander_seed = keep_seed
+	game.pocket_room = keep_room
+	game.pocket_id = keep_pid
+	game.pocket_origin = keep_origin
+	game.pocket_done = keep_done
+	print("ok: pockets (roster/eligibility, deterministic float inject, complete reward+bank, save round-trip)")
 
 
 ## Throwaway interactable node for the road-card handler tests: _road_resolve
