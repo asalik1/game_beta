@@ -54,8 +54,13 @@ ROOMS = [
       ("smith_petra","E — Smith Petra","forge",A,"cap_petra"),
       ("archivist_lene","E — Master Lapidary","lapidary",A,"cap_lapidary"),
       ("warden_corin","E — Marshal Corin","drill",A),
-      ("clerk_voss","E — Claim the daily alms","daily",A),
-      ("capital_vault_chest","E — Open your vault","vault",A)]),
+      # Clerk Voss (Q12 Alms Ledger) — a CONVO now, not a bare "daily" action:
+      # the alms claim is one choice, the ledger reveal another. Turning him in
+      # PERMANENTLY replaces him (cap_voss_reported is a kept, per-character flag)
+      # with the cold clerk added at the end of this cast, pinned to his desk.
+      ("clerk_voss","E — Clerk Voss","cap_voss",P,{"req_not_flag":"cap_voss_reported"}),
+      ("capital_vault_chest","E — Open your vault","vault",A),
+      ("clerk_voss","E — The alms clerk","cap_voss_cold",P,{"req_flag":"cap_voss_reported","pos":(830,830)})]),
   # --- BRANCHES: one door from the plaza each ---
   ("portal","Wayfinder Sanctum",0,-1,"capital_wayfinder",0.82,[]),
   ("archive","The Grand Archive",1,0,"capital_civic",0.72,[]),
@@ -240,10 +245,20 @@ def mark_of(rid):
     return ""
 
 def cast_fields(entry):
-    """(sprite, prompt, ref, kind[, greet]) -> normalized 5-tuple."""
-    if len(entry) == 4:
-        return entry[0], entry[1], entry[2], entry[3], ""
-    return entry
+    """(sprite, prompt, ref, kind[, greet][, extra_dict]) -> 6-tuple.
+
+    After the four required fields, an entry may carry — in any order — a
+    greet convo id (str, ACTION NPCs only) and/or an EXTRA dict with any of
+    "req_flag" / "req_not_flag" (spawn gate) and "pos" (explicit (x,y), used
+    for the Voss permanent-swap pair that shares one desk)."""
+    spr, prompt, ref, kind = entry[0], entry[1], entry[2], entry[3]
+    greet, extra = "", {}
+    for x in entry[4:]:
+        if isinstance(x, dict):
+            extra = x
+        else:
+            greet = x
+    return spr, prompt, ref, kind, greet, extra
 
 # ---------- verify: unique coords, connected graph ----------
 coord_of = {}
@@ -397,15 +412,20 @@ def gd_zone(i, room):
         npc_lines = []
         slots = NPC_SLOT_OVERRIDES.get(rid, SLOTS)
         for j,entry in enumerate(cast):
-            spr,prompt,ref,kind,greet = cast_fields(entry)
-            x,y = slots[j % len(slots)]
+            spr,prompt,ref,kind,greet,extra = cast_fields(entry)
+            x,y = extra["pos"] if "pos" in extra else slots[j % len(slots)]
+            req = ''
+            if extra.get("req_flag"):
+                req += ', "req_flag": "%s"' % extra["req_flag"]
+            if extra.get("req_not_flag"):
+                req += ', "req_not_flag": "%s"' % extra["req_not_flag"]
             if kind == A:
                 greet_field = ', "greet": "%s"' % greet if greet else ''
-                npc_lines.append('\t\t\t{"sprite": "%s", "x": %d, "y": %d, "prompt": "%s", "action": "%s"%s}'
-                                 % (spr, x, y, prompt, ref, greet_field))
+                npc_lines.append('\t\t\t{"sprite": "%s", "x": %d, "y": %d, "prompt": "%s", "action": "%s"%s%s}'
+                                 % (spr, x, y, prompt, ref, greet_field, req))
             else:
-                npc_lines.append('\t\t\t{"sprite": "%s", "x": %d, "y": %d, "prompt": "%s", "convo": "%s"}'
-                                 % (spr, x, y, prompt, ref))
+                npc_lines.append('\t\t\t{"sprite": "%s", "x": %d, "y": %d, "prompt": "%s", "convo": "%s"%s}'
+                                 % (spr, x, y, prompt, ref, req))
         lines.append('\t\t"npcs": [\n' + ",\n".join(npc_lines) + '],')
     else:
         lines.append('\t\t"npcs": [],')
@@ -419,6 +439,42 @@ def gd_zone(i, room):
 # "hub_action": <game_world._hub_action ref> to open a game surface when its
 # path ends.
 GOSSIP = {
+ # Clerk Voss — the Alms Ledger (Q12, owner ruling 2026-08-24 #9: turning him
+ # in PERMANENTLY replaces him). The claim is a hub_action choice so the daily
+ # relief still works; the ledger reveal is a moral fork. Report -> +accord,
+ # +resonance, and the cold clerk takes the desk for good (cap_voss_reported).
+ # Keep his secret -> a kickback + a resonance hit, and he counts you in
+ # (cap_voss_covered hides the reveal and warms his greet). Greed pays coin now;
+ # virtue pays the crown's regard and costs you a friendly face.
+ "cap_voss": {"start": "a", "nodes": {
+    "a": {"who": "Clerk Voss",
+          "text": "Clerk Voss keeps the alms desk — a ledger, a strongbox, and a smile worn thin by the queue. \"Daily relief for shard-bearers, by the Accord's grace. Sign, and I count it out.\"",
+          "variants": [
+             {"flag": "cap_voss_covered", "text": "Voss slides the box a finger's width your way before you ask. \"Our arrangement holds, friend. Sign, and I count a little heavy — quietly.\""}],
+          "choices": [
+             {"text": "Claim the daily alms", "hub_action": "daily", "next": ""},
+             {"text": "\"Your count runs light. The same coin short, every day.\"", "req_not_flag": "cap_voss_covered", "next": "ledger"},
+             {"text": "(Leave)", "next": ""}]},
+    "ledger": {"who": "Clerk Voss",
+          "text": "The smile holds; something behind it does not. \"...You watch closely, for a soldier.\" A breath. \"The Accord pays relief for the dead as well as the living, and the dead do not sign. I draw what a ghost would have drawn. It feeds MY children, bearer — the Accord loses nothing it ever counted on.\" His hand settles on the strongbox. \"You can walk to Marshal Corin. Or you can let a clerk feed his family.\"",
+          "choices": [
+             {"text": "\"Corin will want to hear this.\"  (Turn him in)", "resonance": 3.0, "faction": {"accord": 2}, "flags": {"cap_voss_reported": True}, "next": "reported"},
+             {"text": "\"...Count me in for the ghosts, then.\"  (Keep his secret)", "resonance": -3.0, "gold": 90, "flags": {"cap_voss_covered": True}, "next": "covered"}]},
+    "reported": {"who": "Narrator",
+          "text": "Marshal Corin listens without blinking, thanks you without warmth, and by morning the desk wears a new face — a clerk who counts twice, smiles never, and does not learn your name. The queue moves faster. It feels worse. Voss is not in it, and no one says where he went.",
+          "next": ""},
+    "covered": {"who": "Clerk Voss",
+          "text": "The strongbox slides. \"A cut, for a closed mouth. The ghosts do not spend it.\" He counts you your share, and a little of theirs. You are in the ledger now — on the wrong line. It pays, and it will keep paying.",
+          "next": ""}}},
+ # The cold replacement (only present once cap_voss_reported is set). Evergreen
+ # text — it re-narrates each visit like every gossip hub, and it still hands
+ # out the daily relief. Same coat, colder columns.
+ "cap_voss_cold": {"start": "a", "nodes": {
+    "a": {"who": "The Alms Clerk",
+          "text": "The alms desk wears a colder face now — grey coat, fresh columns, a ledger that counts once and counts true. \"Relief for shard-bearers. Sign. I do not count for the dead.\" There is no smile here to wear thin.",
+          "choices": [
+             {"text": "Claim the daily alms", "hub_action": "daily", "next": ""},
+             {"text": "(Leave)", "next": ""}]}}},
  "cap_fenna": {"start": "a", "nodes": {
     "a": {"who": "Old Fenna",
           "text": "Warmth or words, dear? The hearth gives both, and neither costs a thing.",
@@ -489,7 +545,7 @@ used_convos = set()
 used_actions = set()
 for *_x, cast in ROOMS:
     for entry in cast:
-        spr, prompt, ref, kind, greet = cast_fields(entry)
+        spr, prompt, ref, kind, greet, _extra = cast_fields(entry)
         if kind == P:
             used_convos.add(ref)
         else:
@@ -526,7 +582,7 @@ for room in ROOMS:
                  for use in uses if use["type"] == "action"]
     room_refs += [cast_fields(e)[2] for e in cast if cast_fields(e)[3] == A]
     for e in cast:
-        _spr, _prompt, ref, kind, _greet = cast_fields(e)
+        _spr, _prompt, ref, kind, _greet, _extra = cast_fields(e)
         if kind == P and ref in GOSSIP:
             for node in GOSSIP[ref]["nodes"].values():
                 for choice in node.get("choices", []):
@@ -658,6 +714,13 @@ body = (header.replace("@START_X@", str(CX)).replace("@START_Y@", str(START_Y))
         .replace("@ZONES@", zones).replace("@CONVOS@", convos)
         .replace("@NZONES@", str(len(ROOMS)))
         .replace("@ACTIONS@", ", ".join('"%s"' % action for action in sorted(HUB_ACTIONS))))
-open(OUT, "w", encoding="utf-8", newline="\n").write(body)
-print("wrote", OUT)
+try:
+    open(OUT, "w", encoding="utf-8", newline="\n").write(body)
+    print("wrote", OUT)
+except OSError:
+    # The target is locked (a running Godot watches res://) — dump beside it
+    # so the caller can place the file with a tool that isn't fighting the lock.
+    fallback = OUT + ".gen"
+    open(fallback, "w", encoding="utf-8", newline="\n").write(body)
+    print("LOCKED — wrote fallback", fallback)
 print("zones:", len(ROOMS), "| convos:", len(CONVOS) + len(GOSSIP), "| start_pos:", [CX, START_Y])
