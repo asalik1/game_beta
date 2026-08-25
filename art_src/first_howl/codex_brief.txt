@@ -1,0 +1,9 @@
+Generate ONE top-down three-quarter game sprite of a boss creature on a FULLY TRANSPARENT background. Output a single PNG, the creature centered, its feet touching the bottom edge (feet-anchored), no ground, no shadow, no frame, no text.
+
+SUBJECT: "The First Howl" — the first thing that ever hunted. A colossal, ancient dire-wolf, primeval and scarred, far larger and older than any living wolf. Massive shoulders and a heavy lowered head; a thick shaggy pelt of weathered grey and bone-white, streaked with dried fen-mud and a faint cold moonlit sheen along the back. Old scars, a torn ear, exposed grey muzzle. The eyes are flat and pale, like moonlight on deep still water — no glow, just an ancient patience. It stands in a low, coiled, watchful stance, weight back, about to move. Reads instantly as a WOLF, not a bear or a generic beast.
+
+STYLE (match the reference cast exactly): painterly, soft-shaded, NO black outlines, muted desaturated palette, top-down three-quarter view, light from the top-left. Semi-realistic dark-fantasy, somber. NOT cartoonish, NOT cel-shaded, NOT flat pixel-art. The second reference shows the exact painting style and top-down angle to match; the first reference shows the silhouette weight/scale of a large beast boss to aim for (make the wolf clearly larger and heavier).
+
+NEGATIVES: no rider, no armor, no collar, no chains, no fire, no magic aura, no glowing eyes, no background, no baseline/ground, no shadow, no motion blur, no text or UI. One creature only.
+
+In your final message, describe the pose, palette, and how the silhouette reads as a wolf at a glance.
