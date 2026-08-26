@@ -28,6 +28,21 @@ None of that is repeated here. This page is only what the MMO adds on top.
 | readers | `tools/art/scan_drift.py` keys on each job's `codex_result.md` self-report to pre-filter identity drift in a directional wave. Prefer `--output-schema` (root guide §3) for any NEW script that reads Codex verdicts. |
 | strip/sheet builders | what turns a Codex master into an engine strip: `build_codex_2x2_strip.py`, `build_fx_strip.py`, `build_mob_walk_repairs.py`, `install_critter.py`, `install_prop_anim.py`, `install_ground_field.py`, … — one line each in `tools/INDEX.md` "Art — generate & install". |
 
+### Watching a running batch — verdict, not proxies (2026-08-26; two blind stalls bit)
+A batch can sit un-progressing for HOURS while every naive check reads "still working". Two
+proven failure modes:
+- **DEAD-ORPHAN:** a job dies/refuses but leaves an orphaned `codex.exe` — "process exists"
+  then reads as "still generating" forever (one job sat dead 2h behind an orphan).
+- **STALLED-GATE:** the runner is alive but every job is held at the `-MinFreeGB` RAM gate
+  (it politely prints `wait: free RAM ...` and launches nothing while the box is heavy).
+Neither "master count went up?" nor "is codex.exe alive?" distinguishes these from real
+progress — the truth is in the RUNNER LOG'S CONTENT + freshest-output age. Use
+**`tools/art/batch_health.sh <runner_log> <stage_dirs...>`**: prints one verdict —
+`OK-PROGRESSING` / `STALLED-GATE` (gate line quoted) / `DEAD-ORPHAN` (no new master >12 min
+AND stale log) / `DONE` — and exit codes a monitor loop can branch on. Poll THIS, never the
+process table. On DEAD-ORPHAN: `taskkill` the orphan, re-list unfinished stages (absolute
+paths), relaunch.
+
 ### run_codex_batch.ps1 gotchas (all bit on 2026-08-18; runner patched)
 - **VALIDATE ONE STAGE FIRST.** Run one real stage through the runner (same background mode, same path style you'll batch with) and confirm a `*_keyed.png` actually landed BEFORE firing a batch. Exit 0 + empty log + no PNG is a *failure*, not a pass — and a foreground `codex exec` probe does NOT prove the `Start-Job` path works ([[verify-tool-output-before-batching]]).
 - **`Start-Job` child runspace ≠ your cwd.** The job runs `codex exec` in a child runspace whose working dir is the user profile, NOT the repo — so a RELATIVE `-Stages` path silently broke every `-C`/`-o`/brief read → empty log, no result, `FAIL`. The runner now `Resolve-Path`s each stage to absolute; still safest to pass absolute stage paths.
