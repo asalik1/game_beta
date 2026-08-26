@@ -1,0 +1,552 @@
+{
+	"enemies": {
+		"ashpriest": {
+			"boss": true,
+			"placed": true,
+			"scale": 10.5,
+			"sprite": "ashpriest"
+		},
+		"auroch": {
+			"boss": true,
+			"placed": true,
+			"scale": 11.5,
+			"sprite": "auroch_minotaur"
+		},
+		"barrow_wight": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.2,
+			"sprite": "skeleton_rogue"
+		},
+		"beastkin_howler": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.3,
+			"sprite": "orc_rogue"
+		},
+		"beastkin_raider": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.4,
+			"sprite": "orc"
+		},
+		"blightwolf": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.2,
+			"sprite": "blightwolf"
+		},
+		"bloated_dead": {
+			"boss": false,
+			"placed": false,
+			"scale": 3.3,
+			"sprite": "zombie_overweight"
+		},
+		"bloom_acolyte": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.2,
+			"sprite": "elf_druid"
+		},
+		"bog_lurker": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.2,
+			"sprite": "bog_lurker"
+		},
+		"bogspider": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.2,
+			"sprite": "greyrun_lurker"
+		},
+		"casket_creeper": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.1,
+			"sprite": "casket_creeper"
+		},
+		"choir_censer": {
+			"boss": false,
+			"placed": true,
+			"scale": 2.6,
+			"sprite": "choir_censer"
+		},
+		"choirmother": {
+			"boss": true,
+			"placed": true,
+			"scale": 8.5,
+			"sprite": "choirmother"
+		},
+		"cinder_whelp": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.0,
+			"sprite": "stone_base"
+		},
+		"cinderhide": {
+			"boss": true,
+			"placed": true,
+			"scale": 10.5,
+			"sprite": "cinderhide"
+		},
+		"cold_pilgrim": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.2,
+			"sprite": "cold_pilgrim"
+		},
+		"cultist": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.0,
+			"sprite": "cultist"
+		},
+		"curetwisted": {
+			"boss": true,
+			"placed": true,
+			"scale": 10.5,
+			"sprite": "kaethra"
+		},
+		"deep_stalker": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.4,
+			"sprite": "deep_stalker"
+		},
+		"duneprowler": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.3,
+			"sprite": "duneprowler"
+		},
+		"echo_clone": {
+			"boss": false,
+			"placed": true,
+			"scale": 10.0,
+			"sprite": "echo"
+		},
+		"fangmaw": {
+			"boss": true,
+			"placed": true,
+			"scale": 8.5,
+			"sprite": "fangmaw"
+		},
+		"first_howl": {
+			"boss": true,
+			"placed": false,
+			"scale": 9.0,
+			"sprite": "first_howl"
+		},
+		"forge_acolyte": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.2,
+			"sprite": "mummy_mage"
+		},
+		"forgemistress": {
+			"boss": true,
+			"placed": true,
+			"scale": 8.5,
+			"sprite": "forgemistress"
+		},
+		"frost_husk": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.4,
+			"sprite": "skeleton_warrior"
+		},
+		"frozen_guard": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.3,
+			"sprite": "royal_knight"
+		},
+		"gardener": {
+			"boss": true,
+			"placed": true,
+			"scale": 10.2,
+			"sprite": "rotmaw"
+		},
+		"grave_cutter": {
+			"boss": false,
+			"placed": false,
+			"scale": 3.2,
+			"sprite": "mummy_rogue"
+		},
+		"gravewalker": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.1,
+			"sprite": "zombie"
+		},
+		"grove_horror": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.6,
+			"sprite": "grove_horror"
+		},
+		"gutter_cutter": {
+			"boss": false,
+			"placed": false,
+			"scale": 3.0,
+			"sprite": "rat_rogue"
+		},
+		"hushcaller": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.3,
+			"sprite": "banshee"
+		},
+		"icebound": {
+			"boss": true,
+			"placed": true,
+			"scale": 8.5,
+			"sprite": "serane"
+		},
+		"morwen": {
+			"boss": true,
+			"placed": true,
+			"scale": 9.0,
+			"sprite": "morwen"
+		},
+		"null_acolyte": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.3,
+			"sprite": "null_acolyte"
+		},
+		"nullwarden": {
+			"boss": true,
+			"placed": true,
+			"scale": 10.5,
+			"sprite": "nullwarden"
+		},
+		"plague_chanter": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.0,
+			"sprite": "rat_mage"
+		},
+		"root_shambler": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.4,
+			"sprite": "fungus_long"
+		},
+		"saint_varo": {
+			"boss": true,
+			"placed": true,
+			"scale": 10.5,
+			"sprite": "saint_varo"
+		},
+		"sexton": {
+			"boss": true,
+			"placed": true,
+			"scale": 9.0,
+			"sprite": "sexton"
+		},
+		"skeleton": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.0,
+			"sprite": "skeleton"
+		},
+		"slag_brute": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.5,
+			"sprite": "stone_broken"
+		},
+		"sleepkeeper": {
+			"boss": true,
+			"placed": true,
+			"scale": 11.0,
+			"sprite": "halla"
+		},
+		"spider": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.0,
+			"sprite": "spider"
+		},
+		"sporeling": {
+			"boss": false,
+			"placed": false,
+			"scale": 2.7,
+			"sprite": "fungus_immature"
+		},
+		"sporeshambler": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.5,
+			"sprite": "fungus_heavy"
+		},
+		"static_caller": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.2,
+			"sprite": "static_caller"
+		},
+		"storm_harrier": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.1,
+			"sprite": "storm_harrier"
+		},
+		"stormcult": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.2,
+			"sprite": "stormcult"
+		},
+		"stormdrake_veyx": {
+			"boss": true,
+			"placed": true,
+			"scale": 22.0,
+			"sprite": "veyx"
+		},
+		"stormmouth": {
+			"boss": true,
+			"placed": true,
+			"scale": 15.0,
+			"sprite": "stormmouth"
+		},
+		"stormwarden": {
+			"boss": true,
+			"placed": true,
+			"scale": 9.5,
+			"sprite": "korrag"
+		},
+		"sun_bleached": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.5,
+			"sprite": "mummy"
+		},
+		"tomb_warden": {
+			"boss": false,
+			"placed": false,
+			"scale": 3.5,
+			"sprite": "mummy_warrior"
+		},
+		"unnamed_echo": {
+			"boss": true,
+			"placed": true,
+			"scale": 10.0,
+			"sprite": "echo"
+		},
+		"vale_mourner": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.2,
+			"sprite": "vale_mourner"
+		},
+		"vargoth": {
+			"boss": true,
+			"placed": true,
+			"scale": 13.0,
+			"sprite": "vargoth"
+		},
+		"vent_skitter": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.1,
+			"sprite": "vent_skitter"
+		},
+		"vess": {
+			"boss": true,
+			"placed": true,
+			"scale": 8.5,
+			"sprite": "vess"
+		},
+		"void_husk": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.6,
+			"sprite": "skeleton_mage"
+		},
+		"void_shade": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.2,
+			"sprite": "bandit_scout"
+		},
+		"vow_sentinel": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.4,
+			"sprite": "vow_sentinel"
+		},
+		"warren_breaker": {
+			"boss": false,
+			"placed": false,
+			"scale": 3.2,
+			"sprite": "rat_warrior"
+		},
+		"whitepelt": {
+			"boss": true,
+			"placed": true,
+			"scale": 9.0,
+			"sprite": "hrolgar"
+		},
+		"wildkin_elf": {
+			"boss": false,
+			"placed": false,
+			"scale": 3.1,
+			"sprite": "elf_wild"
+		},
+		"wildkin_ranger": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.2,
+			"sprite": "elf_ranger"
+		},
+		"winterfang": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.1,
+			"sprite": "winterfang"
+		},
+		"wolf": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.0,
+			"sprite": "wolf"
+		},
+		"zombie": {
+			"boss": false,
+			"placed": true,
+			"scale": 3.0,
+			"sprite": "zombie"
+		}
+	},
+	"npcs": {
+		"aldric": {
+			"body_target": 52.0
+		},
+		"ansa_shore": {
+			"body_target": 52.0
+		},
+		"apprentice_sorrel": {
+			"body_target": 52.0
+		},
+		"bones": {
+			"body_target": 0.0
+		},
+		"caged_beastkin": {
+			"body_target": 52.0
+		},
+		"callis": {
+			"body_target": 52.0
+		},
+		"cantor_ilse": {
+			"body_target": 52.0
+		},
+		"choir_pilgrim": {
+			"body_target": 52.0
+		},
+		"commander_ashe": {
+			"body_target": 52.0
+		},
+		"consul_verane": {
+			"body_target": 52.0
+		},
+		"crystal": {
+			"body_target": 0.0
+		},
+		"deacon_vela": {
+			"body_target": 52.0
+		},
+		"deadtree": {
+			"body_target": 0.0
+		},
+		"elder": {
+			"body_target": 52.0
+		},
+		"envoy_cassia": {
+			"body_target": 52.0
+		},
+		"factor_imre": {
+			"body_target": 52.0
+		},
+		"fallen_bell": {
+			"body_target": 0.0
+		},
+		"fisher_dov": {
+			"body_target": 52.0
+		},
+		"fungus_long": {
+			"body_target": 0.0
+		},
+		"garden_fountain": {
+			"body_target": 0.0
+		},
+		"herbalist_kesh": {
+			"body_target": 52.0
+		},
+		"mill": {
+			"body_target": 0.0
+		},
+		"millers_boy": {
+			"body_target": 52.0
+		},
+		"old_fenna": {
+			"body_target": 52.0
+		},
+		"overseer_brann": {
+			"body_target": 52.0
+		},
+		"piet": {
+			"body_target": 52.0
+		},
+		"pilgrims_schism": {
+			"body_target": 58.0
+		},
+		"pillar": {
+			"body_target": 0.0
+		},
+		"rock": {
+			"body_target": 0.0
+		},
+		"scholar_ivo": {
+			"body_target": 52.0
+		},
+		"sera": {
+			"body_target": 52.0
+		},
+		"smith_petra": {
+			"body_target": 52.0
+		},
+		"suli": {
+			"body_target": 52.0
+		},
+		"tombstone": {
+			"body_target": 0.0
+		},
+		"tracker_yri": {
+			"body_target": 52.0
+		},
+		"vessa": {
+			"body_target": 52.0
+		},
+		"villager": {
+			"body_target": 52.0
+		},
+		"warden_corin": {
+			"body_target": 52.0
+		},
+		"warden_edda": {
+			"body_target": 52.0
+		},
+		"warden_palla": {
+			"body_target": 52.0
+		},
+		"warden_sighne": {
+			"body_target": 52.0
+		},
+		"zombie": {
+			"body_target": 0.0
+		}
+	}
+}

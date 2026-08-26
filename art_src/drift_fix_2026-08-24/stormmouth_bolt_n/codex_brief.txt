@@ -1,0 +1,35 @@
+You are generating ONE game sprite animation master with your built-in image_gen tool. Read $CODEX_HOME/skills/.system/imagegen/SKILL.md first, then follow this brief exactly. Work only inside the current directory (the staging dir). Do NOT touch any file under the MMO project.
+
+Three images are attached to this prompt:
+- Image 1 = refs/stormmouth_1back.png : THE BINDING VIEW AND ORIENTATION. The SAME character seen exactly FROM BEHIND — we see its BACK: the back of its horned helm/head (NO face, NO eyes), the back of its shoulders and spine, the tabard/cloth hanging down its BACK. REPRODUCE THIS EXACT BACK-FACING VIEW in all four cells. Do NOT rotate it to the front; only the attack motion changes.
+- Image 2 = refs/stormmouth_2idle.png : identity/palette/gear DETAIL reference (shown front) — use it ONLY for the exact armour, horns, weapon and colours. Do NOT copy its front orientation; the view stays the BACK of Image 1.
+- Image 3 = refs/stormmouth_3static.png : secondary identity reference (detail only, not orientation).
+
+TASK: generate exactly ONE new 2x2 source sheet of this character's BOLT cast BACK view animation, SEEN FROM BEHIND exactly as Image 1:
+
+---
+Use case: illustration-story
+Asset type: high-resolution 4-frame game sprite animation source, cropped into a horizontal strip. Square output canvas.
+Scene/backdrop: a perfectly flat uniform #00ff00 chroma-key background filling every pixel including the seams. No scenery, floor, shadow, gradient, vignette, border, grid, line, or panel divider.
+Primary request: exactly four separate equal square cells as a clean 2x2 contact sheet, reading order TL, TR, BL, BR; identical scale/framing; no overlap; no drawn separators; a broad band of flat green between the columns and rows.
+Subject: a colossal armored storm-titan with a bright blue glowing core set in its chest, huge horned helm and heavy plated shoulders, arcs of lightning, seen FROM BEHIND exactly as Image 1 in every cell — same body, gear, proportions, palette, back-facing.
+Style/medium: crisp high-resolution dark-fantasy pixel art with hard readable pixel clusters and a controlled palette matching Image 2; not painterly, not 3D, not anime.
+BACK VIEW LOCK (critical, ALL FOUR cells): the character faces directly AWAY from the camera, front pointing UP into the screen. We see ONLY its back — back of the horned helm (no face, no eyes, no chin), back of shoulders and spine, tabard/cloth down the BACK. NO front V-collar, NO front chest straps, NO front-hanging tabard. If ANY front detail (face, eyes, chest V-neck, cross-straps, front tabard) appears you drew the WRONG view — redraw as the back. The bolt drives forward toward the TOP of the frame (away from us); arms/weapon reach up-and-away over the shoulders.
+Composition and ANCHOR RULE: centred in each square cell, back-facing, standing body about 70% of cell height, generous green margin so a raised weapon fits. Same spot in every cell — head/crown and feet/hem at the same coordinates; nothing slides; camera never moves. Only storyboard parts move.
+bolt storyboard (BACK VIEW) - four VISIBLY DIFFERENT back-facing poses:
+ frame 1 (top-left) wind-up: wind-up: turning forward in the direction it faces, one hand drawing back to the hip, a small spark of the boss's signature energy forming in the palm
+ frame 2 (top-right) gather: gather: that hand cocked back, the energy compacting into a bright compact orb
+ frame 3 (bottom-left) strike: cast: the hand thrust forward forward in the direction it faces in a casting thrust with only a faint spark at the fingertips, never touching a cell edge
+ frame 4 (bottom-right) recover: recover: the arm lowering, a few motes fading
+The strike frame is the biggest, most committed pose; its weapon/energy drives up-and-away toward the top, never touching a cell edge.
+IDENTITY LOCK: the character is EXACTLY a colossal armored storm-titan with a bright blue glowing core set in its chest, huge horned helm and heavy plated shoulders, arcs of lightning — that silhouette, gear and palette. Do NOT substitute a generic armoured knight/swordsman or robed mage. Match Image 2's gear/palette while keeping Image 1's BACK view.
+Constraints: only the four cells on green; no text, watermark, UI, extra characters, scenery, floor artifact, shadow, separators. Do not use #00ff00 or any bright/pure green on the character or its effects. Frames 1-4 each a clearly different pose. EVERY cell is the BACK view.
+---
+
+AFTER generation:
+1. Copy the raw generated PNG (do not resize it) to ./bolt_master_2x2_v1.png in the current directory.
+2. Run the skill's remove_chroma_key.py helper on it and write the keyed RGBA result to ./bolt_master_2x2_v1_keyed.png (auto-key sampling, despill on).
+3. Do NOT slice, do NOT install, do NOT write anywhere under the MMO project.
+4. In your final message report: raw output size in px, and for EACH of the four cells state explicitly whether it is a BACK view (face hidden) or accidentally a front/3-quarter view; note any identity drift, sliding/resizing, an effect touching an edge, or extra limbs. Be blunt.
+
+If image_gen is unavailable, say so and stop; do not fall back to another provider or the CLI.
