@@ -515,7 +515,7 @@ const MATERIAL_DEFAULT_BODY := "humanoid"  # any unclassified kind (cloth/reagen
 # MATERIAL_DEFAULT_BODY; keep in step with Story.ALL_ENEMIES as the roster grows.
 const MATERIAL_MOB_BODY := {
 	# Beasts
-	"wolf": "beast", "spider": "beast", "bat": "beast", "direbat": "beast",
+	"wolf": "beast", "spider": "beast",
 	"blightwolf": "beast", "bogspider": "beast", "duneprowler": "beast",
 	"winterfang": "beast", "storm_harrier": "beast",
 	# Humanoids / cultists
@@ -2670,6 +2670,28 @@ const RES_CONSTANCY_HEAL_MAX := 0.25  # bonus potion healing at full lean
 const QUEST_ABANDON_RESONANCE := 3.0      # ON TOP of revoking the accept's pledge
 const QUEST_ABANDON_STANDING_FRAC := 0.5  # of the quest's standing reward, LOST instead of gained
 
+# ---------------------------------------------------- ward contracts (Q11) ---
+# The capital's four ward desks finally do something: a per-ward DAILY deed
+# board (QUESTS_AND_SIDE_CHAPTERS §2 Layer 1). The four wards ARE the four
+# factions — a contract pays gold + that faction's STANDING, and where the ward
+# hosts a trainer, that trainer's FAVOR (the favor faucet PROFESSIONS §4 wants).
+# Deeds auto-PROGRESS off the same events as bounties; the player CLAIMS the
+# reward (in the journal), capped account-wide per day so it's a coffee-break
+# loop, not a chore list. Seeded per ward per day (relog can't reroll).
+const WARD_CONTRACT_PER_WARD := 2
+const WARD_CONTRACT_DAILY_CAP := 4        # claims/day, account-wide
+const WARD_CONTRACT_STANDING := 1         # ward-faction standing per claim
+const WARD_CONTRACT_FAVOR := 5            # trainer favor where the ward hosts one
+const WARD_CONTRACT_WARDS := ["wildfang", "choir", "accord", "cinderborn"]
+const WARD_CONTRACT_WARD_NAME := {"wildfang": "Fangmoot", "choir": "Choir",
+	"accord": "Accord", "cinderborn": "Cinderborn"}
+const WARD_CONTRACT_FAVOR_NPC := {"accord": "kesh"}   # Herbalist Kesh, Accord Commons
+const WARD_CONTRACT_POOL := [
+	{"type": "boss_kills",    "target": 1, "desc": "Bank a boss on the ward's writ", "gold": 160},
+	{"type": "rooms_cleared", "target": 5, "desc": "Clear five rooms for the ward",  "gold": 120},
+	{"type": "elite_kills",   "target": 3, "desc": "Put down three elites",          "gold": 140},
+]
+
 # --------------------------------------------------------------- mailbox ---
 # Unclaimed mail (dropped-loot letters, event gifts) expires after this
 # many days on the TRUSTED clock (game.trusted_now — monotonic, cheat-
@@ -2780,6 +2802,11 @@ const RENOWN_PB_DEPTHS := 2          # per depth past the previous Depths best
 const RENOWN_PRICE_CHROMA := 60
 const RENOWN_PRICE_ELITE := 240
 const RENOWN_PRICE_MYTHIC := 600
+# Discovery-lane pets (Q16): unsellable for gold, but Renown-buyable — Renown is
+# the unified cosmetic gateway (owner ruling 2026-08-24). Cheaper than skins;
+# a pet is a companion, not a whole new look.
+const RENOWN_PRICE_PET_COMMON := 80
+const RENOWN_PRICE_PET_RARE := 200
 # The weekly supply cache: once per trusted-clock week PER CHARACTER, a
 # bundle of one of each utility consumable. Renown's only consumable
 # faucet — capped so it stays collected-not-farmed and never undercuts
@@ -2807,9 +2834,31 @@ const WAKING_GEM_LVL := 3         # banked kill: one bright gem (above the vault
 const WAKING_GOLD := 350          # banked kill: bonus gold (level-scaled like the daily)
 const RENOWN_WAKING := 25         # all three banked in a week -> the chest + this
 
+# The Unlisted (Q15, content/unlisted.gd): rare HIDDEN bosses, seeded per RUN.
+# Per-boss draw chance — FIRST-GUESS frequencies, OWNER REVIEW PENDING
+# (ruling 2026-08-24 #5). Each Unlisted rolls independently on a chapter load.
+const UNLISTED_CHANCE := {"tithe_collector": 0.125, "greymantle": 0.10}  # ~1-in-8 / 1-in-10
+# Q15 portal-stone pockets (content/pockets.gd): the per-run chance a pocket
+# rolls, + the Renown its boss pays. FIRST-GUESS (owner review pending #5).
+const POCKET_CHANCE := 0.25     # ~1 in 4 runs (never ch1)
+const RENOWN_POCKET := 15       # regard for clearing a pocket; rides the rogue path's gold/gem too
+const UNLISTED_LEVEL_BONUS := 0   # they fight at the chapter finale's level (affixes carry the extra teeth)
+const RENOWN_UNLISTED := 12       # regard for felling one; rides the rogue path's gold/gem too
+const UNLISTED_GREY_WILDFANG := 2 # Wildfang standing shift on Greymantle's fall (DYNAMIC_WORLD §5)
+
+# Q13 Interludes. The Moonfen (I2) unlock — cleared Act 1 + stood with the
+# Wildfang. The First Howl reads your resonance BAND on spawn (owner ruling
+# 2026-08-24 #2): TEMPTED is a harder fight that pays more; both are winnable.
+const MOONFEN_UNLOCK_WILDFANG := 2   # Wildfang standing required to open the Moonfen portal
+const FIRST_HOWL_TEMPTED_SPEED := 1.15  # tempted-band First Howl runs faster...
+const FIRST_HOWL_TEMPTED_DMG := 1.15    # ...and hits harder
+const FIRST_HOWL_TEMPTED_GOLD := 1.10   # ...and its fall pays +10% gold
+
 static func renown_price(kind: String, tier := "") -> int:
 	if kind == "chroma":
 		return RENOWN_PRICE_CHROMA
+	if kind == "pet":
+		return RENOWN_PRICE_PET_RARE if tier == "rare" else RENOWN_PRICE_PET_COMMON
 	return RENOWN_PRICE_MYTHIC if tier == "mythic" else RENOWN_PRICE_ELITE
 
 # ------------------------------------------------------------ consumables ---
@@ -3187,6 +3236,28 @@ const SHRINE_BLESS_CHANCE := 0.6   # else the shrine drinks deeper
 # counts as a secret on the results card.
 const HIDDEN_CACHE_CHANCE := 0.25
 const HIDDEN_CACHE_GOLD_TIER := 0.3   # else silver
+
+# Road Deck v1 (Q14, road_deck.gd): a seeded ENCOUNTER card offered at the door
+# of a SAFE campaign room, at most ~1-2 per run. FIRST-GUESS frequencies —
+# OWNER REVIEW PENDING (ruling 2026-08-24 #5): tune these once he has played it.
+const ROAD_CARD_CHANCE := 0.30     # base per-safe-room draw chance...
+const ROAD_CARD_FALLOFF := 0.45    # ...multiplied by this per card already drawn this run (diminishing)
+const ROAD_CARD_WINDOW := 12.0     # seconds the card waits at the door, then withdraws
+# The Bridgeward's Toll: pay gold to pass (small standing), or refuse and fight
+# his brigands (loose, zero-reward like quest quarry — owner ruling #4: no loss penalty).
+const ROAD_TOLL_COST_BASE := 55    # gold, scaled by daily_gold_mult(level) like the shrine
+const ROAD_TOLL_BRIGANDS := 3      # loose enemies spawned on refuse
+const ROAD_TOLL_STANDING := 1      # standing with the local ward for paying the toll
+# The Wounded Courier: mend him (spend gold) for coin + goodwill, or rob him for
+# more gold now at a standing cost.
+const ROAD_COURIER_HEAL_COST := 40 # gold, scaled by daily_gold_mult(level)
+const ROAD_COURIER_GIFT_GOLD := 90 # his gratitude (base, scaled) — net near break-even, paid in goodwill
+const ROAD_COURIER_STANDING := 2   # standing gained for mending / lost for robbing
+const ROAD_COURIER_ROB_GOLD := 130 # the satchel, if you cut the strap (base, scaled)
+# The Stranger's Wager (Q16 minigame card): a fair 1-in-3 shell game. Win pays
+# the stake back doubled (net +stake) + a rare gem; lose forfeits the stake.
+const ROAD_WAGER_STAKE_BASE := 60  # gold on the table, scaled by daily_gold_mult(level)
+const ROAD_WAGER_GEM_CHANCE := 0.25 # a clean read also drops a gem this often
 
 # ------------------------------------------------------------ loot fanfare ---
 # Rarity is audio-visual (retention roadmap #3): every gear drop plays a

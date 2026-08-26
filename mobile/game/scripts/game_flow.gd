@@ -80,6 +80,30 @@ func replay_chapter(id: String) -> void:
 		autosave())
 
 
+## Enter a Q13 INTERLUDE — a standalone side-chapter reached from the capital.
+## Like a chapter replay (fresh rolled world, run stats reset, transient story
+## state wiped) but the character's FACTION STANDINGS ride through UNTOUCHED — an
+## interlude is a side-trip, not a campaign reset — and the send-off returns to
+## the capital (victory_dismiss / the victory text branch on is_interlude).
+## SOLO ONLY v1: interludes swap worlds like the endgame arenas, which net play
+## hard-blocks; the caller (the capital portal) also gates on the unlock flags.
+func enter_interlude(id: String) -> void:
+	if net_online() or not Story.is_interlude(id) or not has_local_player():
+		return
+	_wipe_chapter_flags()               # transient story state resets; kept flags (completed_/cap_/…) survive
+	wander_seed = randi() % 1000000     # a fresh rolled world each visit
+	weekly_active = false
+	reset_run_stats()
+	switch_chapter(id, true)
+	play_started = true
+	request_pause(false)
+	hud.visible = true
+	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
+	run_chapter_opener_if_needed(id, func() -> void:
+		hud.flash_title(zones[cur_room]["name"], String(Story.chapter(id)["name"]))
+		autosave())
+
+
 ## Begin this week's challenge run: the WEEK'S fixed seed (everyone plays
 ## the same map), the week's modifier live, PB recorded on the clear.
 ## Mechanically a replay — standings reset, character rides along.
@@ -193,6 +217,11 @@ func victory_dismiss() -> void:
 	hud.visible = true
 	if chapter_id == "ch1" and not net_online() and not get_flag("cap_seen", false) \
 			and has_local_player():
+		enter_capital()
+		return
+	# Q13 interludes are side-trips from the hub: the send-off returns you there,
+	# never onto the campaign way-gates.
+	if Story.is_interlude(chapter_id):
 		enter_capital()
 		return
 	spawn_victory_gates()
@@ -478,10 +507,24 @@ func meta_fold_gallery() -> void:
 func buy_cosmetic(kind: String, cls: String, id: String) -> bool:
 	if owns_cosmetic(kind, cls, id):
 		return false
-	var entry: Dictionary = Skins.find_skin(cls, id) if kind == "skin" else Skins.find(cls, id)
+	var entry: Dictionary = Skins.find_pet(id) if kind == "pet" else (Skins.find_skin(cls, id) if kind == "skin" else Skins.find(cls, id))
 	if entry.is_empty():
 		return false
 	if not spend_renown(Balance.renown_price(kind, String(entry.get("tier", "")))):
+		return false
+	_meta["own_%s_%s_%s" % [kind, cls, id]] = true
+	_meta_write()
+	return true
+
+
+## Grant a catalog cosmetic FREE (a quest KEEPSAKE / interlude relic — identity,
+## never bought). Records account ownership like buy_cosmetic but charges no
+## Renown; refuses an unknown id or a repeat. True when it landed.
+func grant_cosmetic(kind: String, cls: String, id: String) -> bool:
+	if id == "" or owns_cosmetic(kind, cls, id):
+		return false
+	var entry: Dictionary = Skins.find_pet(id) if kind == "pet" else (Skins.find_skin(cls, id) if kind == "skin" else Skins.find(cls, id))
+	if entry.is_empty():
 		return false
 	_meta["own_%s_%s_%s" % [kind, cls, id]] = true
 	_meta_write()
@@ -630,7 +673,7 @@ func chapter_available(chid: String, replay := false) -> bool:
 # the same list §5.4's set_flag routing reads.
 const KEPT_FLAG_PREFIXES := [
 	"opened_", "chose_", "completed_", "cap_",
-	"saw_chapter_opening_", "sq_kept_",
+	"saw_chapter_opening_", "sq_kept_", "tut_",
 ]
 const KEPT_FLAGS := ["owned_the_harm", "excused_the_harm", "walked_away",
 	"gave_back", "kept_taking", "fled_theft", "told_truth", "hid_truth",
@@ -661,6 +704,17 @@ func _wipe_chapter_flags() -> void:
 				keep = true
 		if keep:
 			kept[fname] = flags[fname]
+	# Unscoped (capital/world) quests outlive the chapter: their step flags
+	# already ride kept prefixes (cap_/sq_kept_), but the engine's own
+	# accept/paid/pledge markers are not prefixed — carry them explicitly so a
+	# persistent quest is not silently reset to "never accepted" on a wipe.
+	for id in Story.ALL_SIDE_QUESTS:
+		if Story.quest_scoped(Story.ALL_SIDE_QUESTS[id]):
+			continue
+		for pre in ["sq_on_", "sq_paid_", "sq_pledge_"]:
+			var k: String = String(pre) + String(id)
+			if flags.has(k):
+				kept[k] = flags[k]
 	flags = kept
 	quest_kills.clear()  # kill-step counters die with the quests that held them
 	# Quest keepsakes are run-scoped like the flags that earned them:
@@ -787,6 +841,13 @@ func on_rogue_boss_died(kind: String, dead: Boss = null) -> void:
 	# A Waking breach echo also banks toward the week's incursion reward.
 	if is_instance_valid(src) and src.waking_boss:
 		_waking_bank_kill(kind, boss_pos)
+	# A Q15 Unlisted hidden boss banks once per run (its premium on top of the
+	# rogue path's gold chest/pile above).
+	if is_instance_valid(src) and src.unlisted_id != "":
+		_unlisted_bank_kill(src.unlisted_id, boss_pos)
+	# A Q15 pocket boss pays the pocket reward + carries you home.
+	if is_instance_valid(src) and src.pocket_boss:
+		_pocket_complete(boss_pos)
 
 
 ## Bank a breach-echo kill (once per kind per trusted-clock week, per
@@ -818,6 +879,39 @@ func _waking_bank_kill(kind: String, pos: Vector2) -> void:
 		spawn_text(player.global_position + Vector2(0, -134),
 			"THE WAKING RECEDES — the week's chest is yours", Color(1.0, 0.85, 0.4), 5.0)
 	autosave()
+
+## Bank a Q15 Unlisted kill (once per run): a bright gem + a little Renown, on
+## top of the rogue path's gold chest/pile. Greymantle also moves Wildfang
+## standing (DYNAMIC_WORLD §5). Records/codex count it as the base kind.
+func _unlisted_bank_kill(id: String, pos: Vector2) -> void:
+	if not has_local_player() or unlisted_banked_has(id):
+		return
+	unlisted_banked.append(id)
+	var e: Dictionary = Unlisted.entry(id)
+	give_loot({"kind": "gem", "gem": drop_gem(Balance.gem_drop_level(loot_chapter()))}, pos + Vector2(40, 44))
+	add_renown(Balance.RENOWN_UNLISTED)
+	if id == "greymantle":
+		add_standing("wildfang", Balance.UNLISTED_GREY_WILDFANG)
+	spawn_text(player.global_position + Vector2(0, -104),
+		"THE UNLISTED FALLS — %s was no legend of theirs" % String(e.get("name", "a hidden boss")),
+		Color(0.95, 0.82, 0.5), 5.0)
+	autosave()
+
+## A Q15 pocket boss has fallen: bank the reward once (a gem + Renown on top of
+## the rogue path's gold chest/pile), then carry the hero back to the origin room
+## after a beat so the death plays before the world shifts (game_world._pocket_return).
+func _pocket_complete(pos: Vector2) -> void:
+	if not has_local_player() or pocket_done:
+		return
+	pocket_done = true
+	give_loot({"kind": "gem", "gem": drop_gem(Balance.gem_drop_level(loot_chapter()))}, pos + Vector2(40, 44))
+	add_renown(Balance.RENOWN_POCKET)
+	spawn_text(player.global_position + Vector2(0, -104),
+		"THE POCKET COLLAPSES — the stone's bargain is paid", Color(0.7, 0.85, 1.0), 4.0)
+	if pocket_origin >= 0:
+		get_tree().create_timer(2.5).timeout.connect(_pocket_return)
+	autosave()
+
 
 ## A boss killed inside an endgame arena run (Boss.endgame_boss): clear the bar
 ## and advance the run. NO full heal — HP/MP carry between fights (ACT2 §II).
@@ -917,6 +1011,7 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 	if boss_done.size() >= 9:
 		unlock_achievement("boss_hunter")
 	bounty_progress("boss_kills")
+	contract_progress("boss_kills")
 	vault_note_boss()
 	var src: Boss = dead if is_instance_valid(dead) else current_boss
 	var boss_pos: Vector2 = src.global_position if is_instance_valid(src) \
@@ -954,6 +1049,13 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 	if net_host():
 		net_session().host_full_heal()
 		net_session().host_boss_kill(kind, boss_pos, boss_lv, first_clear)
+
+	# Q13 First Howl: a tempted-band kill pays its +10% bounty (owner ruling #2).
+	if is_instance_valid(src) and src.band_tempted and has_local_player():
+		var howl_bonus := int(float(Story.ALL_ENEMIES.get(kind, {}).get("gold", 60)) \
+			* Balance.daily_gold_mult(player.level) * (Balance.FIRST_HOWL_TEMPTED_GOLD - 1.0))
+		if howl_bonus > 0:
+			Pickup.drop_gold(self, howl_bonus, boss_pos + Vector2(0, 30))
 
 	# Now that the room is safe, a wandering merchant MAY set up camp.
 	if loot_rng.randf() < 0.65 and not merchant_zones.has(mzi):
@@ -994,8 +1096,10 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			if not bool(_meta.get(Balance.ENDGAME_UNLOCK_META, false)):
 				_meta[Balance.ENDGAME_UNLOCK_META] = true
 				_meta_write()
-		# NG+ ladder credit (host's own; guests mirror in net_victory).
-		_maybe_unlock_next_tier()
+		# NG+ ladder credit (host's own; guests mirror in net_victory). Interludes
+		# are off the campaign ladder — they never advance the NG+ tier.
+		if not Story.is_interlude(chapter_id):
+			_maybe_unlock_next_tier()
 		if first_clear and has_local_player():
 			_first_clear_reward(boss_lv)
 		var next_ch := Story.next_chapter(chapter_id)
@@ -1031,6 +1135,12 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			else:
 				vtext += "\n\nCONTINUE — rise. The way-gates stand beside the arena:\nCrownfall  ·  a fresh pass  ·  onward to %s" \
 					% String(Story.chapter(next_ch)["name"])
+		elif Story.is_interlude(chapter_id):
+			# Q13 interludes end back at the capital, not on the campaign way-gates.
+			vtext = String(Story.chapter(chapter_id).get("victory_text",
+				"It is finished. The road back to Crownfall is quiet now."))
+			vtext += _broken_promises_text(broken)
+			vtext += "\n\nCONTINUE — return to CROWNFALL."
 		else:
 			vtext = String(Story.chapter(chapter_id).get("victory_text",
 				"Thanks for playing!"))
@@ -1138,6 +1248,10 @@ func on_enemy_died(e: Enemy) -> void:
 	# anyone. Solo behavior is identical — the player is always valid there.)
 	if has_local_player():
 		Pickup.drop_gold(self, _kill_gold(e.gold_value), e.global_position)
+	# HUNT-step named quarry: its death directly completes the step (the flag
+	# routes to the party like any set_flag). Host-authoritative.
+	if e.hunt_flag != "" and not net_guest():
+		set_flag(e.hunt_flag)
 	if e.xp_value > 0 or e.gold_value > 0 or e.elite:
 		note_kill(e.kind)  # codex completion (scenery props and event mood spawns don't count)
 		quest_kill_note(e.kind)  # KILL-step quest progress (host-authoritative, same gate as a real kill)
@@ -1149,6 +1263,7 @@ func on_enemy_died(e: Enemy) -> void:
 	if e.elite:
 		run_elites += 1
 		bounty_progress("elite_kills")
+		contract_progress("elite_kills")
 		# Elite loot pinata (playtest round 6): a guaranteed gem, a
 		# guaranteed good chest, and the elite-exclusive economy —
 		# talent reset stones and bigger bags. XP is zero by design
@@ -1236,6 +1351,7 @@ func _room_cleared(zi: int) -> void:
 		curse_pending.erase(zi)
 		_curse_payout(zi)
 	bounty_progress("rooms_cleared")
+	contract_progress("rooms_cleared")
 	if net_host():
 		net_session().host_party_credit("room")  # MP-11: guests' boards advance too
 	_try_spawn_boss(zi)
@@ -1252,7 +1368,64 @@ func _room_cleared(zi: int) -> void:
 			call_deferred("_merchant_arrives", zi)
 		if zi == cur_room and room_safe(cur_room):
 			last_safe_room = cur_room
+	_onboard_maybe_queue(zi)
 	autosave()
+
+
+## --- Onboarding (Q8): teach talents, then gear, once per NEW ch1 hero -----
+## The two systems that carry the whole power curve are never TAUGHT. After a
+## fresh hero clears a ch1 combat room we point them at Skills > Talents (the
+## first point is already theirs — skill_points starts at 1) and, a room later
+## once drops have landed, at the bag (with Auto-equip as the shortcut). Both
+## are one-time and skippable: showing the beat marks it done, so it never
+## nags. Per-CHARACTER, not account — a new hero learns again (owner ask).
+
+## Is onboarding step `step` ("talents"/"gear") still owed to THIS hero? Pure
+## gate: real solo play only (never autotest/dedicated/guest), first ch1 run,
+## not a replay, not already shown.
+func _onboard_due(step: String) -> bool:
+	if no_saves or dedicated or not has_local_player() or net_guest():
+		return false
+	if chapter_id != "ch1" or get_flag("completed_ch1", false):
+		return false
+	if menus != null and menus.chapter_replay:
+		return false
+	return not get_flag("tut_" + step + "_done", false)
+
+
+## Queue the next owed beat off a combat-room clear (drained in game.gd behind
+## overlays). Talents first; gear only once talents is taught AND the bag has
+## something to equip — otherwise "open your bag" points at nothing.
+func _onboard_maybe_queue(zi: int) -> void:
+	if pending_tutorial != "" or zi != cur_room or room_type(zi) != "combat":
+		return
+	if _onboard_due("talents"):
+		pending_tutorial = "talents"
+	elif get_flag("tut_talents_done", false) and _onboard_due("gear") \
+			and is_instance_valid(player) and not player.backpack.is_empty():
+		pending_tutorial = "gear"
+
+
+## Play the queued beat: one casual line from Elder Maren, then open the exact
+## screen. Mark done up front — the teaching is the pointer, spending/equipping
+## stays the player's call (skippable). Casual voice, no em dashes (ruling 08-18).
+func _run_tutorial_beat(step: String) -> void:
+	if not has_local_player():
+		return
+	if step == "talents":
+		set_flag("tut_talents_done")
+		hud.dialogue([["Elder Maren",
+			"You're getting stronger. Open your Skills and drop that talent point wherever you like."]],
+			func() -> void:
+				if menus != null:
+					menus.open_skills("talents"))
+	elif step == "gear":
+		set_flag("tut_gear_done")
+		hud.dialogue([["Elder Maren",
+			"The fallen leave good gear behind. Open your bag and put some on, or just hit Auto-equip and let it fill your slots."]],
+			func() -> void:
+				if menus != null:
+					menus.open_inventory("gear"))
 
 
 ## Living, counted monsters of room `zi` right now (host truth: non-mirror,

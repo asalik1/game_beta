@@ -541,12 +541,11 @@ const ENEMIES := {
 	# >=1 real trait, and "swift" is the mildest (just quicker on its feet, no
 	# special behavior). Revisit later: re-add the evasive flit / a real
 	# flight AI once the aerial-swarm design is finalized. Roster + codex only.
-	"bat":      {"name": "Cave Bat",   "sprite": "bat",     "hp": 24.0, "dmg": 10.0, "speed": 230.0, "xp": 6,  "gold": 3,  "ranged": false, "scale": 2.8,
-		"physres": 0.0, "magres": 0.0, "eva": 0.0, "critres": 0.0, "dmg_type": "phys",
-		"level": 3, "hp_g": 0.09, "dmg_g": 0.08, "traits": ["swift"]},
-	"direbat":  {"name": "Blightbat",  "sprite": "direbat", "hp": 70.0, "dmg": 18.0, "speed": 205.0, "xp": 14, "gold": 11, "ranged": false, "scale": 3.6,
-		"physres": 8.0, "magres": 8.0, "eva": 0.0, "critres": 0.0, "dmg_type": "phys",
-		"level": 8, "hp_g": 0.11, "dmg_g": 0.10, "traits": ["swift"]},
+	# bat / direbat MOBS dropped 2026-08-24 (owner: unplaced + low-fidelity =
+	# drop). Neither was in any zone spawn or summoned by a mechanic, and both
+	# rendered UPSCALED (bat 0.59x / direbat 0.62x — the fidelity audit's worst).
+	# bat.png survives as an ambient critter flock (ambience.gd) + the cinder_bat
+	# skin; direbat's sprites are removed.
 	# Bosses: strong base AND strong growth ("dragon-grade" scaling).
 # HP pools follow the TTK BUDGET (playtest round 9: "Fangmaw died in
 # <10s to C-gear, zero talents"): at level with modest gear a boss
@@ -1172,6 +1171,8 @@ const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/pc_curios.gd"),      # Pixel Crawler mining (2026-07-18): SHIPPED codex relics & landmarks gallery (placeholder curios removed 2026-08-20)
 	preload("res://scripts/content/capital_hub.gd"),    # Crownfall (reworked 2026-07-25): standalone LIVE 9-room capital hub (3x3 grid) — reached via the Travel button + first-ch1-clear routing + dev panel; CONVOS merge here; CHAPTER resolved in chapter()
 	preload("res://scripts/content/pvp_arena.gd"),      # The Proving Grounds (PvP v1 2026-08-01): 3-room duel arena — no CONVOS/ENEMIES; CHAPTER resolved in chapter(), match flow in pvp.gd
+	preload("res://scripts/content/interlude_moonfen.gd"), # (Q13 I2) The Moonfen interlude: STANDALONE world + first_howl boss (band-read); merges into STANDALONE_WORLDS, kept out of CHAPTER_LIST
+	preload("res://scripts/content/eggs.gd"),           # Easter eggs (DYNAMIC_WORLD §8): flag-gated flavor; no overrides, so position is free
 	preload("res://scripts/content/promises_kept.gd"),  # (P1) promises kept — overrides chN_quests convos
 	preload("res://scripts/content/promises_kept_2.gd"),# (P2) promises kept, 2nd pass — MUST stay LAST (after P1: no override fight)
 ]
@@ -1193,6 +1194,10 @@ static var ALL_QUEST_ITEMS: Dictionary = {}  # module keepsakes (Items.make_ques
 static var ALL_RELICS: Dictionary = {}  # notable world props (codex Curios tab)
 static var ALL_WANDERERS: Dictionary = {}  # chapter id -> wanderer pool
 static var CHAPTER_LIST: Dictionary = {}
+# Interludes (Q13) — standalone side-chapters resolved by chapter() but kept OUT
+# of CHAPTER_LIST, so chapter select / advance_chapter never see them (they DO
+# carry a final_boss). Merged from each interlude module's STANDALONE const.
+static var STANDALONE_WORLDS: Dictionary = {}  # interlude id -> chapter dict
 static var _quest_givers: Dictionary = {}   # side-quest id -> Array of convo ids that OFFER it
 static var _quest_offers: Dictionary = {}   # convo id -> Array of side-quest ids it can hand out
 static var _givers_built := false
@@ -1255,7 +1260,11 @@ static func load_content() -> void:
 	ALL_SIDE_QUESTS = SIDE_QUESTS.duplicate(true)
 	ALL_RELICS = {}
 	ALL_WANDERERS = {}
+	STANDALONE_WORLDS = {}
 	CHAPTER_LIST = CHAPTERS.duplicate(true)
+	# ZONE_PROPS from every module, applied in a SECOND pass so a prop can
+	# target a zone another module APPENDED (a quest hooking a side room).
+	var pending_props: Array = []   # [{"chid":..., "by_name": {...}, "src": path}]
 	for m in CONTENT_MODULES:
 		var consts: Dictionary = m.get_script_constant_map()
 		ALL_CONVOS.merge(consts.get("CONVOS", {}), true)
@@ -1265,6 +1274,7 @@ static func load_content() -> void:
 		ALL_SIDE_QUESTS.merge(consts.get("SIDE_QUESTS", {}), true)
 		ALL_QUEST_ITEMS.merge(consts.get("QUEST_ITEMS", {}), true)
 		ALL_RELICS.merge(consts.get("RELICS", {}), true)
+		STANDALONE_WORLDS.merge(consts.get("STANDALONE", {}), true)  # Q13 interludes
 		# Per-chapter social-wanderer pools ({"ch3": [...]}) — chapters
 		# without one fall back to the Chapter 1 WANDERERS pool.
 		ALL_WANDERERS.merge(consts.get("WANDERERS", {}), true)
@@ -1272,6 +1282,35 @@ static func load_content() -> void:
 		for chid in extra_zones:
 			if CHAPTER_LIST.has(chid):
 				CHAPTER_LIST[chid]["zones"] = CHAPTER_LIST[chid]["zones"] + extra_zones[chid]
+		var zone_props: Dictionary = consts.get("ZONE_PROPS", {})
+		for chid in zone_props:
+			pending_props.append({"chid": String(chid), "by_name": zone_props[chid],
+				"src": String(m.resource_path)})
+	# Second pass: drop each module's ZONE_PROPS onto EXISTING zones by NAME
+	# (append to "npcs"). Never a new zone — quests hook rooms that already
+	# exist, so room counts stay fixed (autotest asserts them).
+	for entry in pending_props:
+		var chid: String = entry["chid"]
+		if not CHAPTER_LIST.has(chid):
+			push_warning("ZONE_PROPS: unknown chapter '%s' in %s" % [chid, entry["src"]])
+			continue
+		var by_name: Dictionary = entry["by_name"]
+		var zarr: Array = CHAPTER_LIST[chid]["zones"]
+		for want in by_name:
+			var matched := false
+			# Zones appended from a module's CHAPTER_ZONES are the script's CONST
+			# dicts (read-only). Replace the array slot with a mutable deep copy
+			# that carries the extra props, rather than writing into the const.
+			for zi in range(zarr.size()):
+				var zdict: Dictionary = zarr[zi]
+				if String(zdict.get("name", "")) == String(want):
+					var merged: Dictionary = zdict.duplicate(true)
+					merged["npcs"] = merged.get("npcs", []) + by_name[want]
+					zarr[zi] = merged
+					matched = true
+			if not matched:
+				push_warning("ZONE_PROPS: no zone named '%s' in %s (%s)" % [
+					want, chid, entry["src"]])
 
 
 ## The social-wanderer pool for a chapter (module-supplied, else the
@@ -1285,6 +1324,8 @@ static func chapter(id: String) -> Dictionary:
 	load_content()
 	if ENDGAME_ARENAS.has(id):   # endgame arenas resolve here, never via CHAPTER_LIST
 		return ENDGAME_ARENAS[id]
+	if STANDALONE_WORLDS.has(id): # Q13 interludes — standalone side-chapters
+		return STANDALONE_WORLDS[id]
 	if id == "capital":          # Crownfall hub — standalone; the PARTY TOWN (Wave 9: pause-menu travel, open-gates hosting, portal ready checks)
 		return CapitalHub.CHAPTER
 	if id == "pvp_arena":        # The Proving Grounds — the PvP duel world (pvp.gd)
@@ -1314,7 +1355,13 @@ static func is_endgame(id: String) -> bool:
 ## A STANDALONE world resolved by chapter() but kept out of CHAPTER_LIST — not
 ## campaign, not endgame. Crownfall, the capital hub. switch_chapter allows it.
 static func is_standalone(id: String) -> bool:
-	return id == "capital"
+	load_content()
+	return id == "capital" or STANDALONE_WORLDS.has(id)
+
+## Is this a Q13 INTERLUDE (a standalone side-chapter, not the capital hub)?
+static func is_interlude(id: String) -> bool:
+	load_content()
+	return STANDALONE_WORLDS.has(id)
 
 
 ## The PvP duel world (The Proving Grounds) — resolved by chapter(), kept out
@@ -1327,6 +1374,16 @@ static func is_pvp(id: String) -> bool:
 static func quest_text(key: String) -> String:
 	load_content()
 	return String(ALL_QUESTS.get(key, ""))
+
+
+## A side quest's SCOPE (Q9): "chapter" (default) quests live and die with the
+## chapter that authored them — accepted, expired and wiped against chapter_id.
+## "capital" / "world" quests are UNSCOPED: they persist across chapter wipes
+## and are never expiry-charged. Their accept/paid/pledge markers are kept by
+## _wipe_chapter_flags explicitly; their STEP flags must ride a kept prefix
+## (cap_/sq_kept_) by authoring rule (autotest _test_quest_schema enforces it).
+static func quest_scoped(q: Dictionary) -> bool:
+	return String(q.get("scope", "chapter")) == "chapter"
 
 
 ## Boss-door beats read the bearer (2026-07-06): a beat key may author
@@ -1475,7 +1532,9 @@ const SIDE_QUESTS := {
 			{"flag": "hat_taken", "text": "Find the miller's hat, somewhere in the Darkwood"},
 			{"flag": "hat_given", "text": "Bring it to the boy at the village edge"},
 		],
-		"reward": {"gold": 150},
+		# sq_kept_hat: a persistent mark the world reads later — the boy grows up
+		# and stands a Guard watch in ch7, still wearing the hat (content/eggs.gd).
+		"reward": {"gold": 150, "kept": "sq_kept_hat"},
 	},
 }
 

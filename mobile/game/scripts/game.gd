@@ -754,6 +754,8 @@ func _process(delta: float) -> void:
 		sfx("victory")
 		player.pending_theme_note = ""
 
+	_update_pet_follower(delta)  # Q16 cosmetic companion trails the local player
+
 	# NPC interactions (elder, merchants). Interact is GAMEPLAY input — it
 	# fires convos/chests/desks in the shared world — so it routes through
 	# the player's intents (MP seam). The poll-through refresh keeps the
@@ -766,6 +768,13 @@ func _process(delta: float) -> void:
 	# moving the hero beneath the panel.
 	var overlay_up: bool = hud.dialogue_active or hud.choices_active or menus.is_open() \
 		or hud.chat_active  # MP-19: an open chat line is an input overlay (§5.4)
+	# Onboarding beat (Q8): drained behind overlays, not fired inline at
+	# room-clear — a session never pauses (§5.4), so wait for the same
+	# composite the interact poll uses before popping a menu on the player.
+	if pending_tutorial != "" and state == ST_PLAYING and not overlay_up:
+		var _step := pending_tutorial
+		pending_tutorial = ""
+		_run_tutorial_beat(_step)
 	if state == ST_PLAYING and not overlay_up:
 		player._poll_local_intents()
 		# Several interactables can share one interact reach (capital stations
@@ -860,3 +869,52 @@ func _process(delta: float) -> void:
 		camera.offset = _cam_look + _shake_kick + Vector2(randf_range(-1, 1), randf_range(-1, 1)) * shake_amt
 	# (The room-transition check at the top of _process is the safety
 	# net: any position outside the graph snaps back into the room.)
+
+
+## Q16 cosmetic pet: a half-scale companion sprite that trails the local player.
+## Lives under `world` (rebuilt with it each chapter — recreated here when the
+## old one is freed). Purely visual; no collision, no combat, no sim.
+func _update_pet_follower(_delta: float) -> void:
+	var active: bool = has_local_player() and String(player.equipped_pet) != "" and is_instance_valid(world)
+	if not active:
+		if is_instance_valid(pet_follower):
+			pet_follower.queue_free()
+		pet_follower = null
+		return
+	# (Re)build if missing, orphaned (world rebuilt), or the equipped pet changed.
+	if not is_instance_valid(pet_follower) or pet_follower.get_parent() != world \
+			or String(pet_follower.get_meta("pet_id", "")) != String(player.equipped_pet):
+		if is_instance_valid(pet_follower):
+			pet_follower.queue_free()
+		pet_follower = null
+		var pet: Dictionary = Skins.find_pet(String(player.equipped_pet))
+		if pet.is_empty():
+			return
+		var tex := Art.tex(String(pet["sprite"]))
+		if tex == null:
+			return
+		pet_follower = Sprite2D.new()
+		pet_follower.texture = tex
+		if tex.get_width() > int(tex.get_height() * 1.6):  # a strip: show frame 0
+			pet_follower.hframes = maxi(1, int(round(float(tex.get_width()) / float(tex.get_height()))))
+			pet_follower.frame = 0
+		var fh: float = float(tex.get_height()) / float(maxi(1, pet_follower.hframes))
+		if fh > 0.0:
+			pet_follower.scale = Vector2.ONE * (42.0 / fh)  # ~half a hero's on-screen height
+		pet_follower.z_index = 1
+		pet_follower.global_position = player.global_position
+		pet_follower.set_meta("pet_id", String(player.equipped_pet))
+		world.add_child(pet_follower)
+	# Trail the hero, only while actually playing (so it doesn't drift under a
+	# menu / cutscene). A lazy lerp reads as "following", not "glued".
+	if state == ST_PLAYING:
+		var target: Vector2 = player.global_position + Vector2(-44.0, -8.0)
+		pet_follower.global_position = pet_follower.global_position.lerp(target, clampf(_delta * 4.5, 0.0, 1.0))
+
+
+## Force the follower to rebuild (Player.set_pet calls this when the equipped pet
+## changes). Freeing it makes _update_pet_follower respawn the new one.
+func refresh_pet_follower() -> void:
+	if is_instance_valid(pet_follower):
+		pet_follower.queue_free()
+	pet_follower = null

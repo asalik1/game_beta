@@ -315,6 +315,36 @@ static func find_skin(cls: String, skin_id: String) -> Dictionary:
 	return {}
 
 
+## Discovery-lane PETS (Q16): cosmetic companions, class-agnostic, reusing
+## existing critter/mob sprites at half scale. Renown-buyable (owner ruling
+## 2026-08-24: Renown is the unified cosmetic gateway); one follows the hero
+## (game_world's pet follower). `tier` ("common"/"rare") drives the price.
+const PETS := [
+	{"id": "hearth_hopper", "name": "Hearth Hopper", "sprite": "frog", "tier": "common",
+		"lore": "A bog frog that decided your bootheel was home. Harmless, and loud at dusk."},
+	{"id": "spore_pup", "name": "Spore Pup", "sprite": "fungus_immature", "tier": "common",
+		"lore": "A young shambler that never grew teeth. It follows warmth, and you are the warmest thing on this road."},
+	{"id": "cinder_bat", "name": "Cinder Bat", "sprite": "bat", "tier": "common",
+		"lore": "It roosts in your pack by day and wheels overhead by night, eating the small things that bite."},
+	{"id": "ash_crow", "name": "Ash Crow", "sprite": "critter_crow", "tier": "rare",
+		"lore": "It has watched a hundred bearers walk toward the howling. You are the first it chose to follow."},
+	{"id": "glimmerwing", "name": "Glimmerwing", "sprite": "critter_dragonfly", "tier": "rare",
+		"lore": "A dragonfly the blight forgot to ruin. It still catches the light the old way, and lends you a little."},
+	{"id": "pale_flutter", "name": "Pale Flutter", "sprite": "critter_butterfly", "tier": "rare",
+		"lore": "A white moth that flies only for the quiet-handed. The Choir would call it an omen; you call it company."},
+]
+
+static func pets() -> Array:
+	return PETS
+
+## Look up a pet by id (class-agnostic). Returns {} when not found.
+static func find_pet(id: String) -> Dictionary:
+	for p in PETS:
+		if String(p["id"]) == id:
+			return p
+	return {}
+
+
 ## Return the Art sprite name for a skin, or "" if invalid/no skin.
 ## (2026-07-27) Awakened forms are RETIRED with the legendary tier — a skin is
 ## one look, always. `_awakened` is kept for call-site compatibility only.

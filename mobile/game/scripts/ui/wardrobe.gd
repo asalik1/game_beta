@@ -63,6 +63,18 @@ static func open(m: Menus) -> void:
 		var sk: Dictionary = entry
 		_skin_row(m, list, String(sk["id"]), sk)
 
+	# --- pets (Q16): cosmetic companions, class-agnostic, Renown-buyable ---
+	m._lbl(list, "— COMPANIONS — a pet that follows your hero —", 15, Color(0.75, 0.95, 0.7))
+	var none_row := _row(list)
+	_state_btn(m, none_row, p.equipped_pet == "", true, func() -> void:
+		p.set_pet("")
+		g.autosave()
+		open(m))
+	m._lbl(none_row, "No companion" + ("   ← out" if p.equipped_pet == "" else ""), 14,
+		Color(1.0, 0.88, 0.45) if p.equipped_pet == "" else Color(0.85, 0.88, 0.94)).custom_minimum_size = Vector2(240, 0)
+	for entry in Skins.pets():
+		_pet_row(m, list, String(entry["id"]), entry)
+
 	# --- the weekly supply cache ---
 	m._lbl(list, "— SUPPLY CACHE — once a week, per hero —", 15, Color(0.7, 1.0, 0.7))
 	var krow := _row(list)
@@ -165,6 +177,46 @@ static func _skin_row(m: Menus, list: VBoxContainer, id: String, sk: Dictionary)
 		("   ← worn" if worn else ""), 14,
 		Color(1.0, 0.88, 0.45) if worn else (Color(0.85, 0.88, 0.94) if owned else Color(0.62, 0.64, 0.7)))
 	nm.custom_minimum_size = Vector2(300, 0)
+
+
+## A companion (pet) row: class-agnostic (cls "all"), Renown-buyable, equip one
+## at a time. Owning is account-wide; the equipped pet is per-hero.
+static func _pet_row(m: Menus, list: VBoxContainer, id: String, pet: Dictionary) -> void:
+	var g := m.game
+	var p := g.player
+	var row := _row(list)
+	var owned: bool = g.owns_cosmetic("pet", "all", id)
+	var worn: bool = p.equipped_pet == id
+	if owned:
+		_state_btn(m, row, worn, false, func() -> void:
+			p.set_pet("" if worn else id)
+			g.autosave()
+			open(m))
+	else:
+		var price := Balance.renown_price("pet", String(pet.get("tier", "")))
+		var afford: bool = g.renown() >= price
+		var b := m._btn(row, "  Buy  ◈ %d  " % price, func() -> void:
+			if g.buy_cosmetic("pet", "all", id):
+				g.sfx("levelup")
+			open(m), Color(0.7, 1.0, 0.7))
+		b.disabled = not afford
+		if not afford:
+			b.tooltip_text = "Not enough Renown (you have %d)" % g.renown()
+	var thumb: Texture2D = Art.tex(String(pet["sprite"]))
+	if thumb != null:
+		var tr := TextureRect.new()
+		tr.texture = thumb
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.custom_minimum_size = Vector2(48, 48)
+		row.add_child(tr)
+	var rare: bool = String(pet.get("tier", "")) == "rare"
+	var chip := m._lbl(row, "RARE" if rare else "COMMON", 12,
+		Balance.RENOWN_COLOR if rare else Color(0.72, 0.9, 0.72))
+	chip.custom_minimum_size = Vector2(64, 0)
+	var nm := m._lbl(row, String(pet["name"]) + ("   ← out" if worn else ""), 14,
+		Color(1.0, 0.88, 0.45) if worn else (Color(0.85, 0.88, 0.94) if owned else Color(0.62, 0.64, 0.7)))
+	nm.custom_minimum_size = Vector2(240, 0)
 
 
 ## The buy control for an unowned cosmetic: price + Buy (confirm-gated for

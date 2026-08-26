@@ -121,6 +121,14 @@ func switch_chapter(id: String, force := false) -> void:
 		# chapter dict is shared Story data and must never grow permanently.
 		zones = _waking_inject(zones, id, waking_week)
 		zone_count = zones.size()
+	# Q15 Unlisted: rare hidden-boss rooms, seeded per RUN off wander_seed
+	# (campaign chapters only; the inject returns a NEW array too).
+	if Story.CHAPTER_LIST.has(id):
+		zones = _unlisted_inject(zones, id)
+		zone_count = zones.size()
+		# Q15 pockets: a floating boss arena reached by a portal stone.
+		zones = _pocket_inject(zones, id)
+		zone_count = zones.size()
 
 	if is_instance_valid(world):
 		world.free()  # immediate: everything world-owned dies with it
@@ -246,6 +254,20 @@ func _hub_action(act: String) -> void:
 					Color(1.0, 0.7, 0.5), 3.0)
 			else:
 				call("enter_endgame", "crucible" if act == "portal_crucible" else "depths")
+		"portal_moonfen":
+			# Q13 I2 entry. SOLO only (interludes swap worlds like the endgame),
+			# gated on clearing Act 1 + standing with the Wildfang.
+			if net_online():
+				spawn_text(player.global_position + Vector2(0, -90),
+					"The Moonfen is a road walked alone — leave the party to answer it.",
+					Color(0.8, 0.85, 1.0), 3.0)
+			elif not (get_flag("completed_ch7", false) and has_local_player() \
+					and int(player.faction_standing.get("wildfang", 0)) >= Balance.MOONFEN_UNLOCK_WILDFANG):
+				spawn_text(player.global_position + Vector2(0, -90),
+					"The fen stays shut. (Clear Act 1, and stand with the Wildfang.)",
+					Color(1.0, 0.7, 0.5), 3.5)
+			else:
+				call("enter_interlude", "interlude_moonfen")
 		"vault":
 			menus.open_stash()
 		"wardrobe":
@@ -657,6 +679,120 @@ func _waking_inject(zones_in: Array, chid: String, week: int) -> Array:
 	return out
 
 
+## Q15 Unlisted (DYNAMIC_WORLD §5) — extend a chapter's zone list with rare
+## HIDDEN-boss rooms, seeded per RUN off wander_seed. Never ch1. Each eligible
+## Unlisted rolls independently; a hit appends one exploration-only boss room
+## (side-attached like the Waking breaches). The room is ALWAYS injected once
+## rolled (deterministic per seed, like _waking_inject) — re-spawn/re-reward are
+## gated later by boss_done + unlisted_banked, so this never reads run state.
+## Reuses an existing boss KIND at the chapter finale's level + a bespoke name.
+func _unlisted_inject(zones_in: Array, chid: String) -> Array:
+	if chid == "ch1":
+		return zones_in   # never in the first chapter's authored experience
+	var target := int(Story.ALL_ENEMIES.get(String(Story.chapter(chid).get("final_boss", "")), {})
+		.get("level", 10)) + Balance.UNLISTED_LEVEL_BONUS
+	var host_terrain := "village"
+	if not zones_in.is_empty():
+		host_terrain = String(zones_in[0].get("terrain", "village"))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = wander_seed * 131 + chid.hash() % 100003 + 977
+	var out: Array = zones_in.duplicate()
+	for id in Unlisted.for_chapter(chid):
+		var e: Dictionary = Unlisted.entry(id)
+		var kind := String(e.get("kind", ""))
+		# roll EVERY eligible id (advance the rng identically regardless) so the
+		# stream stays stable if the roster grows; skip on miss / bad kind.
+		var hit := rng.randf() < float(Balance.UNLISTED_CHANCE.get(id, 0.1))
+		if not hit or not Story.ALL_ENEMIES.has(kind):
+			continue
+		var native := int(Story.ALL_ENEMIES[kind].get("level", 1))
+		out.append({"name": String(e.get("name", "The Unlisted")), "type": "combat",
+			"terrain": host_terrain, "enemies": [],
+			"boss": kind, "boss_level": maxi(target, native),
+			"unlisted": id,
+			"obstacle_count": 0, "decor_count": 0})
+	return out
+
+
+## Q15 portal-stone pockets (DYNAMIC_WORLD §6) — roll ONE floating boss-arena
+## room per RUN (seeded, never ch1). It side-steps the side-attach pass (placed
+## FLOATING in _generate_layout) and is reached only by a portal stone's
+## teleport. Sets pocket_room/pocket_id (deterministic per seed, so a reload
+## recomputes them); pocket_done (saved) gates the reward. Reuses a boss kit +
+## affix, at the chapter finale's level.
+func _pocket_inject(zones_in: Array, chid: String) -> Array:
+	pocket_room = -1
+	pocket_id = ""
+	if chid == "ch1":
+		return zones_in
+	var elig: Array = Pockets.for_chapter(chid)
+	if elig.is_empty():
+		return zones_in
+	var rng := RandomNumberGenerator.new()
+	rng.seed = wander_seed * 149 + chid.hash() % 100003 + 613
+	if rng.randf() >= Balance.POCKET_CHANCE:
+		return zones_in
+	var id := String(elig[rng.randi_range(0, elig.size() - 1)])
+	var e: Dictionary = Pockets.entry(id)
+	var kind := String(e.get("kind", ""))
+	if not Story.ALL_ENEMIES.has(kind):
+		return zones_in
+	var target := int(Story.ALL_ENEMIES.get(String(Story.chapter(chid).get("final_boss", "")), {})
+		.get("level", 10))
+	var native := int(Story.ALL_ENEMIES[kind].get("level", 1))
+	var out: Array = zones_in.duplicate()
+	pocket_room = out.size()
+	pocket_id = id
+	out.append({"name": String(e.get("name", "A Pocket")), "type": "combat",
+		"terrain": String(e.get("terrain", "magma")), "enemies": [],
+		"boss": kind, "boss_level": maxi(target, native),
+		"pocket": id,
+		"obstacle_count": 0, "decor_count": 0})
+	return out
+
+
+## Drop the portal stone into the FIRST safe room visited this run (once), if a
+## pocket rolled and isn't cleared. Interacting teleports into the floating arena
+## and remembers where you left, so the boss's fall can return you.
+func _offer_pocket_stone(i: int) -> void:
+	if net_guest() or not is_instance_valid(player) or player.dead:
+		return
+	if pocket_room < 0 or pocket_done or _pocket_stone_placed:
+		return
+	if room_type(i) not in ["social", "dead_end"]:
+		return
+	_pocket_stone_placed = true
+	var e: Dictionary = Pockets.entry(pocket_id)
+	var pos := clamp_to_zone(room_center(i) + Vector2(0, -70), player.global_position)
+	var npc := _make_npc("pillar", pos, "E — A portal stone hums", Callable())
+	npc.modulate = Color(0.7, 0.85, 1.05)
+	burst(pos, Color(0.6, 0.8, 1.0), 12)
+	interactables[-1]["action"] = func() -> void:
+		menus.open_confirm(
+			"A portal stone hums with a cold light — a way into %s, and a way back. Step through?"
+				% String(e.get("name", "a hidden place")),
+			_enter_pocket.bind(i), func() -> void: pass)
+
+func _enter_pocket(origin: int) -> void:
+	if pocket_room < 0 or pocket_room >= zone_count or not is_instance_valid(player):
+		return
+	pocket_origin = origin
+	sfx("blink")
+	player.global_position = room_center(pocket_room)
+	_enter_room(pocket_room)
+	burst(player.global_position, Color(0.6, 0.8, 1.0), 14)
+
+## The pocket boss has fallen (game_flow._pocket_complete) — carry the hero back
+## to the origin room after a beat, so the death plays before the world shifts.
+func _pocket_return() -> void:
+	if pocket_origin < 0 or pocket_origin >= zone_count or not is_instance_valid(player):
+		return
+	sfx("blink")
+	player.global_position = room_center(pocket_origin)
+	_enter_room(pocket_origin)
+	burst(player.global_position, Color(0.6, 0.8, 1.0), 14)
+
+
 # ------------------------------------------------------- the room graph ---
 
 ## Build the runtime graph meta (grid coords, exits, locks, scales)
@@ -764,6 +900,8 @@ func _generate_layout(spine: Array) -> void:
 	for i in zone_count:
 		if coord.has(i):
 			continue
+		if String(zones[i].get("pocket", "")) != "":
+			continue  # Q15 pockets place FLOATING below (teleport-only, no walk edge)
 		var cands: Array = []
 		for pass_same in [true, false]:
 			for p in placed:
@@ -788,8 +926,27 @@ func _generate_layout(spine: Array) -> void:
 		room_exits[i][OPP[host_dir]] = ""
 		placed.append(i)
 
+	# Q15 pockets: floating boss arenas, reached ONLY by the portal stone's
+	# teleport and hidden on the map (no walkable edge). Park each far off the
+	# grid so its coord never collides with a spine/side room.
+	var float_slot := 0
+	for i in zone_count:
+		if coord.has(i):
+			continue
+		if String(zones[i].get("pocket", "")) != "":
+			coord[i] = Vector2i(9000 + float_slot, 9000)
+			room_exits[i] = {}
+			taken[coord[i]] = true
+			placed.append(i)
+			float_slot += 1
 	# --- write the runtime meta (same shape as the authored path) ---
 	for i in zone_count:
+		if not coord.has(i):
+			# An unplaced room (edges exhausted) would crash the meta write; drop
+			# it to a far parking coord so the graph stays whole (rare backstop).
+			coord[i] = Vector2i(9500 + i, 9500)
+			room_exits[i] = {}
+			coord_to_room[coord[i]] = i
 		var meta := {"coord": coord[i], "scale": Vector2.ONE, "exits": room_exits[i],
 			"origin": Vector2(coord[i].x * ROOM_W, coord[i].y * ROOM_H)}
 		rooms.append(meta)
@@ -856,10 +1013,16 @@ func _enter_room(i: int) -> void:
 		# The cursed chest's bargain is offered at the door, once,
 		# while the pack still stands (playtest 2026-07-07).
 		_offer_cursed_chest(i)
+		# The Road Deck draws at the door too — but only in SAFE rooms, so it
+		# never overlaps the cursed chest (combat-only). Diminishing per run.
+		_offer_road_card(i)
+		# The portal stone waits in the first safe room, if a pocket rolled.
+		_offer_pocket_stone(i)
 	elif play_started and prev != i:
 		hud.room_dip()   # a revisit eases in instead of jump-cutting (2026-08-19)
 	refresh_quest()
 	_ensure_quest_quarry(i)  # a KILL-step stays completable after its rooms are cleared
+	_ensure_quest_hunt(i)    # a HUNT-step's named quarry stalks combat rooms until killed
 	_try_spawn_boss(i)
 	# Wave-1 co-op fix: a guest entering an already-cleared boss arena must find
 	# its gate OPEN. The gate-construction guard skips building a gate for a
@@ -928,6 +1091,64 @@ func _ensure_quest_quarry(i: int) -> void:
 				burst(pos, Color(0.75, 0.6, 0.42), 10)
 			spawn_text(player.global_position + Vector2(0, -88),
 				"The quarry answers your hunt", Color(0.9, 0.82, 0.6), 2.0)
+
+
+## HUNT step (Q9): a quest names ONE quarry — a specific NAMED ELITE — and it
+## stalks you. On entering a combat room while a hunt step is unfinished and its
+## quarry isn't already here, spawn it (an elite with the authored display name +
+## optional affix, zero XP/gold like the loose quarry). Its death completes the
+## step (game_flow.on_enemy_died reads hunt_flag). Homeless-despawns on exit and
+## re-spawns on the next combat room, so it can never be permanently missed.
+func _ensure_quest_hunt(i: int) -> void:
+	if net_guest() or not is_instance_valid(player) or player.dead:
+		return
+	if i < 0 or i >= zone_count:
+		return
+	var z: Dictionary = zones[i]
+	if String(z.get("type", "")) != "combat" or String(z.get("boss", "")) != "":
+		return
+	for id in Story.ALL_SIDE_QUESTS:
+		var sid := String(id)
+		if not get_flag("sq_on_" + sid, false) or get_flag("sq_paid_" + sid, false):
+			continue
+		for step in Story.ALL_SIDE_QUESTS[id].get("steps", []):
+			if String(step.get("kind", "flag")) != "hunt":
+				continue
+			var f := String(step["flag"])
+			if get_flag(f, false):
+				continue
+			var already := false  # this quarry already stalking this room?
+			for node in get_tree().get_nodes_in_group("enemies"):
+				var e := node as Enemy
+				if e != null and is_instance_valid(e) and not e.dying and e.zone_idx == i and e.hunt_flag == f:
+					already = true
+					break
+			if already:
+				continue
+			var kind := String(step.get("target", ""))
+			if kind == "" or not Story.ALL_ENEMIES.has(kind):
+				continue
+			var pos := clamp_to_zone(player.global_position + Vector2(
+				randf_range(-260, 260), randf_range(-190, 190)), player.global_position)
+			var q := Enemy.make(self, kind, pos, tiered_level(kind, -1))
+			q.zone_idx = i
+			q.promote_elite()
+			var nm := String(step.get("name", ""))
+			if nm != "":
+				q.display_name = nm
+			var affix := String(step.get("affix", ""))
+			if affix != "" and Balance.AFFIXES.has(affix):
+				Endgame.apply_affix(q, affix)
+				q.affix = String(Balance.AFFIXES[affix].get("name", ""))
+			q.xp_value = 0
+			q.gold_value = 0
+			q.hunt_flag = f
+			q.from_quest = true
+			q.force_aggro = true
+			add_enemy(q)
+			burst(pos, Color(0.85, 0.5, 0.5), 14)
+			spawn_text(player.global_position + Vector2(0, -92),
+				"%s is here" % (nm if nm != "" else "Your quarry"), Color(0.95, 0.62, 0.55), 2.4)
 
 
 ## HOST (empty-room fix 2026-07-10): a room only builds + spawns on its LOCAL
@@ -1008,6 +1229,13 @@ func _build_room(i: int) -> void:
 		# worlds that also rolled the boy who's missing it.
 		if npc_def.has("req_wanderer") \
 				and not _wanderer_rolled(String(npc_def["req_wanderer"])):
+			continue
+		# Flag-gated props (Q9): a quest/chain prop that only exists once (or
+		# only until) a story flag lands — the seam ZONE_PROPS quest hooks,
+		# capital-chain steps and interlude overlays all lean on.
+		if npc_def.has("req_flag") and not get_flag(String(npc_def["req_flag"]), false):
+			continue
+		if npc_def.has("req_not_flag") and get_flag(String(npc_def["req_not_flag"]), false):
 			continue
 		# Placeholder NPCs (extracted art wired for review) only exist in the
 		# dev launcher — a normal playthrough never sees them in the world.
@@ -1474,6 +1702,182 @@ func _spawn_road_smuggler(i: int) -> void:
 	var pos := room_center(i) + Vector2(rng.randf_range(-210.0, 210.0), rng.randf_range(120.0, 200.0))
 	_make_npc("roadside_peddler", pos, "E — A hooded smuggler", func() -> void:
 		menus.open_black_market("smuggler"))
+
+
+## ---------------------------------------------------------------- Road Deck ---
+## Road Deck v1 (Q14, road_deck.gd): offer ONE seeded ENCOUNTER card at the door
+## of a SAFE campaign room on first visit. The chance DIMINISHES per card drawn
+## this run (run_road_cards), so a long run meets ~1-2 cards, not one per room.
+## Cards pay ZERO xp and losing carries no penalty (owner rulings 2026-08-24);
+## the FREQUENCIES (Balance.ROAD_CARD_*) are a first guess flagged for review.
+## Same seeded, withdraw-after-a-window shape as _offer_cursed_chest; the card
+## DATA + resolve behavior split mirrors Terrains/Items (data in road_deck.gd,
+## behavior here). SAFE rooms only — no combat-room / zone_alive interaction.
+func _offer_road_card(i: int) -> void:
+	if net_guest() or not is_instance_valid(player) or player.dead:
+		return
+	if not Story.CHAPTER_LIST.has(chapter_id):        # campaign chapters only (not capital/arenas)
+		return
+	if room_type(i) not in ["social", "dead_end"]:    # SAFE rooms only
+		return
+	if merchant_zones.has(i) or get_flag(_road_flag(i), false):
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = wander_seed * 97 + i * 569 + chapter_id.hash() % 7823
+	var chance: float = Balance.ROAD_CARD_CHANCE * pow(Balance.ROAD_CARD_FALLOFF, run_road_cards)
+	if rng.randf() >= chance:
+		return
+	# Seeded weighted pick among the cards eligible for this room type.
+	var pool: Array = []
+	for id in RoadDeck.DECK:
+		var card: Dictionary = RoadDeck.CARDS[id]
+		if room_type(i) in card.get("room_types", []):
+			for _w in maxi(1, int(card.get("weight", 1))):
+				pool.append(String(id))
+	if pool.is_empty():
+		return
+	_road_card_node(i, String(pool[rng.randi_range(0, pool.size() - 1)]))
+
+
+## Materialize a card's figure at the door with a decision window, then dispatch
+## its resolve on interaction. A card the player walks past withdraws WITHOUT
+## setting the drawn-flag (like the cursed chest), so it can reappear on a
+## re-enter until they actually engage it — only a resolved choice marks it drawn.
+func _road_card_node(i: int, id: String) -> void:
+	var card: Dictionary = RoadDeck.card(id)
+	if card.is_empty() or not is_instance_valid(player):
+		return
+	var room := i
+	var toward: Vector2 = room_center(i) - player.global_position
+	var dir := toward.normalized() if toward.length() > 1.0 else Vector2.RIGHT
+	var pos := clamp_to_zone(player.global_position + dir * 150.0, player.global_position)
+	var npc := _make_npc(String(card["sprite"]), pos,
+		String(card.get("prompt", "E — A stranger")), Callable())
+	burst(pos, Color(0.9, 0.85, 0.6), 10)
+	# Decision window: a CHILD Timer (pauses with the tree, dies with the room).
+	var ticker := Timer.new()
+	ticker.wait_time = Balance.ROAD_CARD_WINDOW
+	ticker.one_shot = true
+	ticker.autostart = true
+	npc.add_child(ticker)
+	ticker.timeout.connect(func() -> void:
+		if is_instance_valid(npc) and not get_flag(_road_flag(room), false):
+			_remove_interactable(npc))
+	interactables[-1]["action"] = func() -> void:
+		match id:
+			"toll": _road_toll(room, npc)
+			"courier": _road_courier(room, npc)
+			"wager": _road_wager(room, npc)
+
+
+## A resolved card: mark it drawn (once per character per room), tick the run
+## counter (drives the diminishing chance + results summary), announce, withdraw.
+func _road_resolve(room: int, npc: Node2D, msg: String, col: Color) -> void:
+	set_flag(_road_flag(room))
+	run_road_cards += 1
+	if is_instance_valid(player):
+		spawn_text(player.global_position + Vector2(0, -84), msg, col, 3.2)
+	sfx("gate", 0.9)
+	_remove_interactable(npc)
+	autosave()  # persist the drawn-flag now, so a reload can't re-draw/scum a card
+
+
+## The Bridgeward's Toll — pay gold for safe passage (+standing, a rest that
+## mends you), or shove past for free at a standing cost (the ditch brigands
+## lift what they can from your purse; no fight — owner ruling #4, no loss tax).
+func _road_toll(room: int, npc: Node2D) -> void:
+	var cost := int(ceil(Balance.ROAD_TOLL_COST_BASE * Balance.daily_gold_mult(player.level)))
+	menus.open_confirm(
+		"A toll-collector bars the road. \"The bridge is the crown's, traveler. %d gold sees you across — safe.\"\n\nPay the toll? (Refuse to push past — it may cost you less, or more.)" % cost,
+		_road_toll_pay.bind(room, npc, cost),
+		_road_toll_refuse.bind(room, npc, cost))
+
+func _road_toll_pay(room: int, npc: Node2D, cost: int) -> void:
+	var paid: int = mini(cost, player.gold)
+	player.gold -= paid
+	add_standing("accord", Balance.ROAD_TOLL_STANDING)
+	if is_instance_valid(player):
+		player.hp = minf(player.max_hp, player.hp + player.max_hp * 0.25)
+	_road_resolve(room, npc,
+		"The toll is paid. He waves you across with a nod, and you catch your breath. (+%d accord)"
+			% Balance.ROAD_TOLL_STANDING, Color(0.75, 0.9, 0.7))
+
+func _road_toll_refuse(room: int, npc: Node2D, cost: int) -> void:
+	var loss := 0
+	if player.gold > 0:
+		loss = mini(player.gold, int(round(cost * randf_range(0.2, 0.7))))
+		player.gold -= loss
+	add_standing("accord", -Balance.ROAD_TOLL_STANDING)
+	var msg := "You push past. Empty pockets earn only a curse at your back. (-%d accord)" % Balance.ROAD_TOLL_STANDING
+	if loss > 0:
+		msg = "You push past — the ditch stirs. They lift %d gold, and the crown's men remember. (-%d accord)" \
+			% [loss, Balance.ROAD_TOLL_STANDING]
+	_road_resolve(room, npc, msg, Color(0.9, 0.65, 0.55))
+
+
+## The Wounded Courier — mend him with a draught (spend gold) for his coin and
+## the crown's goodwill, or cut the strap and take the satchel at a standing cost.
+func _road_courier(room: int, npc: Node2D) -> void:
+	var m := Balance.daily_gold_mult(player.level)
+	var heal := int(ceil(Balance.ROAD_COURIER_HEAL_COST * m))
+	var gift := int(ceil(Balance.ROAD_COURIER_GIFT_GOLD * m))
+	var loot := int(ceil(Balance.ROAD_COURIER_ROB_GOLD * m))
+	menus.open_confirm(
+		"A king's rider slumps against a milestone, an arrow in his side. \"Please... I carry the crown's post. %d gold buys the draught that saves me.\"\n\nMend him? (Refuse to cut the strap and take his satchel.)" % heal,
+		_road_courier_mend.bind(room, npc, heal, gift),
+		_road_courier_rob.bind(room, npc, loot))
+
+func _road_courier_mend(room: int, npc: Node2D, heal: int, gift: int) -> void:
+	if player.gold < heal:
+		if is_instance_valid(player):
+			spawn_text(player.global_position + Vector2(0, -70),
+				"You've not the %d gold to mend him." % heal, Color(0.85, 0.8, 0.7))
+		return  # card stays open; he waits until the window lapses
+	player.gold -= heal
+	player.gain_gold(gift)
+	add_standing("accord", Balance.ROAD_COURIER_STANDING)
+	_road_resolve(room, npc,
+		"He lives. He presses %d gold on you — \"the crown remembers.\" (+%d accord)"
+			% [gift, Balance.ROAD_COURIER_STANDING], Color(0.75, 0.9, 0.7))
+
+func _road_courier_rob(room: int, npc: Node2D, loot: int) -> void:
+	player.gain_gold(loot)
+	add_standing("accord", -Balance.ROAD_COURIER_STANDING)
+	_road_resolve(room, npc,
+		"You cut the strap. +%d gold — but a road-thief's name travels. (-%d accord)"
+			% [loot, Balance.ROAD_COURIER_STANDING], Color(0.9, 0.65, 0.55))
+
+
+## The Stranger's Wager (Q16 minigame): a shell game. Stake gold you can cover;
+## the winning shell is a TRUE loot_rng roll made now (a reload re-rolls it, so
+## it's un-scummable), and the menu is overlay-gated. Nothing is deducted until
+## you PICK, so backing out costs nothing. Win = +stake (a rare gem too); lose =
+## −stake. Once per run (the resolve marks + autosaves the drawn flag).
+func _road_wager(room: int, npc: Node2D) -> void:
+	var stake := int(ceil(Balance.ROAD_WAGER_STAKE_BASE * Balance.daily_gold_mult(player.level)))
+	if player.gold < stake:
+		if is_instance_valid(player):
+			spawn_text(player.global_position + Vector2(0, -70),
+				"You've not the %d gold to sit at his fire." % stake, Color(0.85, 0.8, 0.7))
+		return  # card stays until the window lapses
+	var winning := loot_rng.randi() % 3
+	menus.open_wager(stake, _road_wager_pick.bind(room, npc, stake, winning))
+
+func _road_wager_pick(room: int, npc: Node2D, stake: int, winning: int, pick: int) -> void:
+	if pick == winning:
+		player.gain_gold(stake)          # you kept your stake AND matched it
+		var extra := ""
+		if loot_rng.randf() < Balance.ROAD_WAGER_GEM_CHANCE and Balance.regular_gems_drop(loot_chapter()):
+			var gem := drop_gem(Balance.gem_drop_level(loot_chapter()))
+			give_loot({"kind": "gem", "gem": gem}, player.global_position + Vector2(0, 44))
+			extra = " and %s tumbles out with it" % Items.gem_title(gem)
+		_road_resolve(room, npc,
+			"The pea sits under your shell. +%d gold%s. \"...huh.\"" % [stake, extra], Color(0.75, 0.9, 0.7))
+	else:
+		player.gold = maxi(0, player.gold - stake)
+		_road_resolve(room, npc,
+			"The pea was never where you thought. -%d gold, and a smile you'd like to wipe off." % stake,
+			Color(0.9, 0.65, 0.55))
 
 
 func _spawn_wanderer(i: int) -> void:
@@ -2095,6 +2499,12 @@ func _spawn_scenery(zi: int) -> void:
 			if String(use_spec.get("ref", "")) in ["portal_crucible", "portal_depths"] \
 					and not endgame_gates_open():
 				use_prompt = "Sealed — clear Chapter 7 to open this gate"
+			# Q13 Moonfen interlude gate: sealed until Act 1 is cleared and the
+			# Wildfang trust you (the hub_action enforces it too).
+			if String(use_spec.get("ref", "")) == "portal_moonfen" \
+					and not (get_flag("completed_ch7", false) and has_local_player() \
+					and int(player.faction_standing.get("wildfang", 0)) >= Balance.MOONFEN_UNLOCK_WILDFANG):
+				use_prompt = "Sealed — the Moonfen opens to those who clear Act 1 and stand with the Wildfang"
 			var hotspot := _make_npc("book", use_pos,
 				use_prompt, use_action, "",
 				Balance.PROP_HOTSPOT_REACH)
@@ -3597,8 +4007,9 @@ func _on_boss_trigger(zi: int) -> void:
 	if boss_done.get(kind, false):
 		return
 	boss_spawned[zi] = true
-	if String(zones[zi].get("waking", "")) != "":
-		_spawn_boss(zi, kind)  # a breach echo: no story beat out of its chapter
+	if String(zones[zi].get("waking", "")) != "" or String(zones[zi].get("unlisted", "")) != "" \
+			or String(zones[zi].get("pocket", "")) != "":
+		_spawn_boss(zi, kind)  # breach echo / Unlisted / pocket: rogue path, no story beat
 		return
 	var beat: Array = Story.beat_for("pre_" + kind,
 		Story.res_band(player.resonance), flags)
@@ -3625,9 +4036,12 @@ func _spawn_boss(zi: int, kind: String) -> void:
 		rooms[zi]["origin"] + Vector2(ROOM_W - 420.0, ROOM_H / 2.0),
 		tiered_level(kind, int(zones[zi].get("boss_level", -1))))
 	var waking: bool = String(zones[zi].get("waking", "")) != ""
-	# A breach echo dies down the ROGUE path (rewards only, no story) plus
-	# the weekly bank; a zone boss drives quests/gates as always.
-	current_boss.story_boss = not waking
+	var unlisted_id := String(zones[zi].get("unlisted", ""))
+	var pocket_bid := String(zones[zi].get("pocket", ""))
+	# A breach echo / Unlisted / pocket dies down the ROGUE path (rewards only, no
+	# story); a zone boss drives quests/gates as always. All wear a bespoke name.
+	var named := waking or unlisted_id != "" or pocket_bid != ""
+	current_boss.story_boss = not named
 	if waking:
 		current_boss.waking_boss = true
 		# One week-seeded elite affix — the same exam for everyone this week.
@@ -3639,12 +4053,43 @@ func _spawn_boss(zi: int, kind: String) -> void:
 			current_boss.affix = String(Balance.AFFIXES[akey]["name"])
 		if current_boss.affix != "":
 			current_boss.display_name = current_boss.affix + " " + current_boss.display_name
+	elif unlisted_id != "":
+		# Q15 Unlisted: the roster's fixed affixes + its bespoke name (the kit
+		# is a reused kind; make_boss already set the base display_name).
+		current_boss.unlisted_id = unlisted_id
+		var ue: Dictionary = Unlisted.entry(unlisted_id)
+		var afx: Array = ue.get("affixes", [])
+		for akey in afx:
+			Endgame.apply_affix(current_boss, String(akey))
+		if not afx.is_empty():
+			current_boss.affix = String(Balance.AFFIXES.get(String(afx[0]), {}).get("name", ""))
+		current_boss.display_name = String(ue.get("name", current_boss.display_name))
+	elif pocket_bid != "":
+		# Q15 pocket arena boss: the roster's affixes + bespoke name; its fall
+		# pays the pocket reward and returns you home (game_flow._pocket_complete).
+		current_boss.pocket_boss = true
+		var pe: Dictionary = Pockets.entry(pocket_bid)
+		var pfx: Array = pe.get("affixes", [])
+		for akey in pfx:
+			Endgame.apply_affix(current_boss, String(akey))
+		if not pfx.is_empty():
+			current_boss.affix = String(Balance.AFFIXES.get(String(pfx[0]), {}).get("name", ""))
+		current_boss.display_name = String(pe.get("name", current_boss.display_name))
+	# Q13 band-read boss (The First Howl): the resonance band you carry in picks
+	# how it fights — TEMPTED runs faster, hits harder, and its fall pays more
+	# (owner ruling #2; both bands winnable). Read once, on spawn, from the local hero.
+	if bool(Story.ALL_ENEMIES.get(kind, {}).get("band_read", false)) and is_instance_valid(player) \
+			and Story.res_band(player.resonance) == "tempted":
+		current_boss.speed *= Balance.FIRST_HOWL_TEMPTED_SPEED
+		current_boss.dmg *= Balance.FIRST_HOWL_TEMPTED_DMG
+		current_boss.band_tempted = true
+		current_boss.display_name = current_boss.display_name + ", Unbound"
 	current_boss.zone_idx = zi
 	bosses.append(current_boss)
 	world.add_child(current_boss)
 	current_boss.roar()
-	hud.show_boss_bar(current_boss.display_name if waking else Story.ALL_ENEMIES[kind]["name"])
-	hud.boss_banner(current_boss.display_name if waking else Story.ALL_ENEMIES[kind]["name"])
+	hud.show_boss_bar(current_boss.display_name if named else Story.ALL_ENEMIES[kind]["name"])
+	hud.boss_banner(current_boss.display_name if named else Story.ALL_ENEMIES[kind]["name"])
 	set_music(_boss_music())
 
 func _try_spawn_boss(zi: int, force := false) -> void:
@@ -3664,6 +4109,8 @@ func _try_spawn_boss(zi: int, force := false) -> void:
 		return
 	if String(zones[zi].get("waking", "")) != "" and waking_banked(kind):
 		return  # a banked echo does not rise again this week
+	if String(zones[zi].get("unlisted", "")) != "" and unlisted_banked_has(String(zones[zi]["unlisted"])):
+		return  # a felled Unlisted does not rise again this run
 	_on_boss_trigger(zi)
 
 func add_enemy(e: Enemy) -> void:

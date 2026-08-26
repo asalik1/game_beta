@@ -101,7 +101,7 @@ static func open_letter(m: Menus, mail: Dictionary) -> void:
 					m._bag_slot(grid, Art.gem_icon(Items.gem_color(g), int(g.get("lvl", 1))), "",
 						Items.gem_color(g),
 						func() -> void:
-							m._open_detail_popover(Art.gem_icon(Items.gem_color(g), int(g.get("lvl", 1))),
+							m._open_detail_popover(Art.gem_codex_icon(Items.gem_color(g), int(g.get("lvl", 1))),
 								Items.gem_title(g), Items.gem_color(g), Items.gem_title(g), []))
 				"bag":
 					# A bag mails itself when the pack was full on award (2026-08-17).

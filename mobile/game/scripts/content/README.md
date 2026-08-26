@@ -37,10 +37,19 @@ in the old coordinate space and it Just Works. Optional keys:
     "target": "<enemy_kind>", "count": N` for a combat step — a run-scoped
     counter (`game_base.quest_kills`, host-authoritative) sets the flag at
     the target; the journal shows live `(have / need)`.
+    Or `"kind": "hunt", "target": "<enemy_kind>", "name": "Old Greymantle",
+    "flag": "x"` (optional `"affix": "<key>"`) for a NAMED-elite hunt — the
+    "there is a specific wolf" quest. While the step is unfinished, its quarry
+    (an elite with your display name, zero XP/gold) stalks combat rooms
+    (`game_world._ensure_quest_hunt`); its death sets the flag. It can never
+    be permanently missed (homeless-despawns and re-spawns on the next room).
   - **Reward KEYS** beyond `{"gold", "standing"}`: `"item": true`
     (a chapter-band gear roll for the class, like a chest), `"gem": true`
     (or an int level), `"kept": "sq_kept_<x>"` (a PERSISTENT per-character
-    mark that survives the chapter wipe — a later beat variant can read it).
+    mark that survives the chapter wipe — a later beat variant can read it),
+    and `"keepsake": {"kind": "chroma"|"skin", "id": "<id>", "name": "..."}`
+    (a COSMETIC granted free to the wearer's class — identity, never power or
+    currency; `game_flow.grant_cosmetic`).
   - **The hat template** (why `heron_feather` reads "solid" — the pattern
     to copy for a memorable quest): the OBJECT exists in the world before
     the ASK (accept from either end); two discovery paths with different

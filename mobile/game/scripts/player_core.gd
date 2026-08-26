@@ -28,6 +28,7 @@ var ability_theme := {"a1": "", "a2": "", "a3": "", "ult": ""}
 var themes_known := 0
 var chroma := ""   # active chroma id ("" = base skin, e.g. "obsidian")
 var skin := ""     # active skin id ("" = default, e.g. "dreadknight")
+var equipped_pet := ""  # active cosmetic companion id ("" = none); game_world draws the follower (Q16)
 var _skin_ambient: Node2D = null  # mythic locomotion/idle identity; built by player_combat
 var _skin_ambient_id := ""
 var dev_morph: DevMorph = null  # dev-mode codex TRANSFORM: creature puppet over the hero (dev_morph.gd)
@@ -848,6 +849,17 @@ func set_skin(skin_id: String) -> void:
 	if resolved_id != "":
 		chroma = ""
 	_apply_class_sprite()
+
+
+## Equip (or clear, "") a cosmetic companion (Q16). Validates the id, then asks
+## the world to (re)build its follower sprite. Owning is checked by the caller
+## (the Stable UI) — this just sets the active pet.
+func set_pet(pet_id: String) -> void:
+	if pet_id != "" and Skins.find_pet(pet_id).is_empty():
+		return
+	equipped_pet = pet_id
+	if is_instance_valid(game):
+		game.call("refresh_pet_follower")
 
 
 ## Re-resolve the current skin's sprite (e.g. after a live skin swap by a QA/dev
@@ -2821,6 +2833,54 @@ func auto_synthesize() -> int:
 		recalc()
 		game.sfx("levelup")
 	return upgrades
+
+
+## One click, zero tedium (onboarding + inventory button): fill every empty
+## gear slot from the bag and take STRICT upgrades only — never eject a piece
+## a build might prefer (gems / a unique passive: Items.strictly_better guards
+## that). Mirrors auto_synthesize's shape (loop to a fixed point, one recalc +
+## one sfx) and its silent-refusal pre-checks — we swap inline rather than call
+## equip() so the class-lock and special-gem guards never fire mid-loop and the
+## equip sound plays once, not once per piece. Returns pieces equipped.
+func auto_equip() -> int:
+	var changed := 0
+	while true:
+		var did := false
+		for item in backpack.duplicate():
+			var slot := String(item.get("slot", ""))
+			if slot == "":
+				continue
+			# Class lock — a mage never auto-equips assassin boots (equip() rule).
+			var icls := String(item.get("cls", ""))
+			if icls != "" and icls != cls:
+				continue
+			# One special gem per stat across the loadout: skip an item equip()
+			# would refuse for duplicating a special gem already worn elsewhere.
+			var conflict := false
+			for g in item.get("gems", []):
+				var st := String(g["stat"])
+				if st in Balance.SPECIAL_GEM_STATS and _special_in_other_slots(st, slot):
+					conflict = true
+					break
+			if conflict:
+				continue
+			if not Items.strictly_better(item, equipment.get(slot)):
+				continue
+			# Swap in (equip()'s core, minus the per-call recalc/visual/sfx).
+			backpack.erase(item)
+			if equipment.has(slot):
+				backpack.append(equipment[slot])
+			equipment[slot] = item
+			changed += 1
+			did = true
+			break   # equipment changed — restart the scan so later items re-diff
+		if not did:
+			break
+	if changed > 0:
+		recalc()
+		_update_weapon_visual()
+		game.sfx("equip")
+	return changed
 
 
 ## Level up ONE socketed gem in place (eats two matching bag gems).

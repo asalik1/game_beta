@@ -174,48 +174,72 @@ static func _quests(m: Menus, list: VBoxContainer) -> void:
 
 
 static func _side_quests(m: Menus, list: VBoxContainer) -> void:
+	# Three scoped shelves (Q9): the chapter's own promises (with their
+	# deadline), then persistent CAPITAL work and WIDER-WORLD threads that
+	# survive chapter wipes and show wherever you are.
+	_scoped_quest_section(m, list, "chapter", "SIDE QUESTS",
+		"%d accepted promise%s", GREEN)
+	_scoped_quest_section(m, list, "capital", "CAPITAL WORK",
+		"%d job%s in Crownfall", Color(0.82, 0.86, 0.62))
+	_scoped_quest_section(m, list, "world", "THE WIDER WORLD",
+		"%d thread%s", Color(0.7, 0.85, 0.95))
+
+
+## Render every accepted quest of one scope. Chapter quests filter on the
+## current chapter and carry the deadline line; capital/world quests are
+## visible everywhere and never expire.
+static func _scoped_quest_section(m: Menus, list: VBoxContainer, scope: String,
+		title: String, count_fmt: String, color: Color) -> void:
 	var g := m.game
 	var entries: Array = []
 	for id in Story.ALL_SIDE_QUESTS:
 		var q: Dictionary = Story.ALL_SIDE_QUESTS[id]
-		if String(q.get("chapter", "")) == g.chapter_id \
-				and g.get_flag("sq_on_" + String(id), false):
+		if String(q.get("scope", "chapter")) != scope:
+			continue
+		if scope == "chapter" and String(q.get("chapter", "")) != g.chapter_id:
+			continue
+		if g.get_flag("sq_on_" + String(id), false):
 			entries.append([String(id), q])
 	if entries.is_empty():
 		return
-	_section(m, list, "SIDE QUESTS", "%d accepted promise%s" % [
-		entries.size(), "" if entries.size() == 1 else "s"], GREEN)
+	_section(m, list, title, count_fmt % [
+		entries.size(), "" if entries.size() == 1 else "s"], color)
 	for entry in entries:
-		var id: String = entry[0]
-		var q: Dictionary = entry[1]
-		var paid: bool = g.get_flag("sq_paid_" + id, false)
-		var card := _card(list, GREEN if paid else Color(0.75, 0.9, 0.6))
-		_status_line(m, card, "✓  COMPLETE" if paid else "⚑  ACTIVE",
-			"SIDE QUEST", GREEN if paid else Color(0.9, 0.88, 0.55))
-		var name := m._lbl(card, String(q["name"]), 16, Color(0.84, 1.0, 0.82) if paid else Color.WHITE)
-		_wrap(name)
-		if paid:
-			m._lbl(card, "Promise kept and reward collected.", 12, MUTED)
-			continue
-		var desc := m._lbl(card, String(q.get("desc", "")), 13, BODY)
-		_wrap(desc)
-		var steps: Array = q.get("steps", [])
-		var done_steps := 0
-		for step in steps:
-			if g.get_flag(String(step["flag"]), false):
-				done_steps += 1
-		_meter(m, card, done_steps, steps.size(), GREEN,
-			"OBJECTIVES", "%d / %d" % [done_steps, steps.size()])
-		for step in steps:
-			var sflag := String(step["flag"])
-			var done: bool = g.get_flag(sflag, false)
-			var label := String(step["text"])
-			# KILL steps show live progress (game_base.quest_kills) until done.
-			if not done and String(step.get("kind", "flag")) == "kill":
-				label += "  (%d / %d)" % [int(g.quest_kills.get(sflag, 0)),
-					maxi(1, int(step.get("count", 1)))]
-			m._lbl(card, "%s  %s" % ["✓" if done else "◇", label],
-				13, GREEN if done else Color(0.9, 0.85, 0.7))
+		_quest_card(m, list, entry[0], entry[1], scope == "chapter")
+
+
+static func _quest_card(m: Menus, list: VBoxContainer, id: String, q: Dictionary,
+		show_deadline: bool) -> void:
+	var g := m.game
+	var paid: bool = g.get_flag("sq_paid_" + id, false)
+	var card := _card(list, GREEN if paid else Color(0.75, 0.9, 0.6))
+	_status_line(m, card, "✓  COMPLETE" if paid else "⚑  ACTIVE",
+		"SIDE QUEST", GREEN if paid else Color(0.9, 0.88, 0.55))
+	var name := m._lbl(card, String(q["name"]), 16, Color(0.84, 1.0, 0.82) if paid else Color.WHITE)
+	_wrap(name)
+	if paid:
+		m._lbl(card, "Promise kept and reward collected.", 12, MUTED)
+		return
+	var desc := m._lbl(card, String(q.get("desc", "")), 13, BODY)
+	_wrap(desc)
+	var steps: Array = q.get("steps", [])
+	var done_steps := 0
+	for step in steps:
+		if g.get_flag(String(step["flag"]), false):
+			done_steps += 1
+	_meter(m, card, done_steps, steps.size(), GREEN,
+		"OBJECTIVES", "%d / %d" % [done_steps, steps.size()])
+	for step in steps:
+		var sflag := String(step["flag"])
+		var done: bool = g.get_flag(sflag, false)
+		var label := String(step["text"])
+		# KILL steps show live progress (game_base.quest_kills) until done.
+		if not done and String(step.get("kind", "flag")) == "kill":
+			label += "  (%d / %d)" % [int(g.quest_kills.get(sflag, 0)),
+				maxi(1, int(step.get("count", 1)))]
+		m._lbl(card, "%s  %s" % ["✓" if done else "◇", label],
+			13, GREEN if done else Color(0.9, 0.85, 0.7))
+	if show_deadline:
 		m._lbl(card, "⌛  Chapter deadline  ·  finish before the final boss",
 			12, Color(0.98, 0.7, 0.42))
 
@@ -241,10 +265,52 @@ static func _available_quests(m: Menus, list: VBoxContainer) -> void:
 # ---------------------------------------------------------- ACTIVITIES ---
 
 static func _activities(m: Menus, list: VBoxContainer) -> void:
+	_contracts(m, list)
 	_bounties(m, list)
 	_vault(m, list)
 	_weekly(m, list)
 	_waking(m, list)
+
+
+## Ward contracts (Q11): the capital's daily deed board. Deeds auto-progress off
+## the same events as bounties; the reward is CLAIMED here, capped per day.
+static func _contracts(m: Menus, list: VBoxContainer) -> void:
+	var g := m.game
+	if g.contracts.is_empty():
+		return
+	var cap: int = Balance.WARD_CONTRACT_DAILY_CAP
+	_section(m, list, "WARD CONTRACTS",
+		"The capital's daily deed board · %d/%d claimed today" % [g.contract_claims_day, cap],
+		Color(0.82, 0.86, 0.62))
+	for ward in Balance.WARD_CONTRACT_WARDS:
+		var wname := String(Balance.WARD_CONTRACT_WARD_NAME.get(String(ward), String(ward)))
+		var has_favor: bool = Balance.WARD_CONTRACT_FAVOR_NPC.has(String(ward))
+		for c in g.contracts:
+			if String(c["ward"]) != String(ward):
+				continue
+			var done: bool = bool(c["done"])
+			var claimed: bool = bool(c.get("claimed", false))
+			var card := _card(list, GREEN if claimed else (GOLD if done else Color(0.7, 0.78, 0.6)))
+			_status_line(m, card,
+				"✓  CLAIMED" if claimed else ("◆  READY TO CLAIM" if done else "○  %s CONTRACT" % wname.to_upper()),
+				"WARD", GREEN if claimed else (GOLD if done else BODY))
+			var title := m._lbl(card, String(c["desc"]), 15, Color.WHITE)
+			_wrap(title)
+			_meter(m, card, int(c["progress"]), int(c["target"]),
+				GREEN if done else Color(0.7, 0.78, 0.6),
+				"PROGRESS", "%d / %d" % [int(c["progress"]), int(c["target"])])
+			m._lbl(card, "Reward  ·  %d gold  +  %s standing%s" % [int(c["gold"]), wname,
+				"  + Kesh favor" if has_favor else ""], 12, Color(0.9, 0.82, 0.58))
+			if claimed:
+				continue
+			if done:
+				var cc: Dictionary = c
+				var can_claim: bool = g.contract_claims_day < cap
+				var label := "  ◆  CLAIM  " if can_claim else "  daily cap reached — return tomorrow  "
+				var claim := m._btn(card, label, func() -> void:
+					g.claim_contract(cc)
+					m.open_journal("activities"), GREEN if can_claim else MUTED, can_claim)
+				claim.custom_minimum_size = Vector2(0, 34)
 
 
 static func _bounties(m: Menus, list: VBoxContainer) -> void:

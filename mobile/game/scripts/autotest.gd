@@ -954,6 +954,7 @@ func _run_systems() -> void:
 
 	# 3d8. Bounties + weekly vault: roll, progress reward, vault claim.
 	_test_bounties()
+	_test_ward_contracts()
 
 	# 3d9. Reforge bench: affix reroll, value reroll, add socket + cap.
 	_test_reforge()
@@ -988,6 +989,14 @@ func _run_systems() -> void:
 
 	# 3d15. Equip / unequip: slot empties back to the bag, bag-full guard.
 	_test_equip_unequip()
+
+	# 3d15a. Auto-equip (Q8): fills empty slots + strict upgrades only; never
+	# ejects a gemmed / unique piece; skips class-locked and side-grades.
+	_test_auto_equip()
+
+	# 3d15a2. Onboarding gate (Q8): fresh ch1 hero is taught talents then gear
+	# once; completed/replay/guest/already-taught never re-fire.
+	_test_onboarding()
 
 	# 3d15b. Stacking bags (round 52): sum-capacity, keep-best-5, act-tiered
 	# drops, shop pricing, discard-throw, save round-trip + old-save migration.
@@ -1029,11 +1038,24 @@ func _run_systems() -> void:
 	# weekly supply cache, cache-ledger save round-trip, Wardrobe smoke.
 	await _test_renown()
 
+	# 3d20b. Road Deck v1 (Q14, 2026-08-24): card registry schema, the
+	# diminishing per-run draw math, and the toll/courier resolve deltas
+	# (gold spend/gain, ward standing, heal, drawn-flag, run counter).
+	await _test_road_deck()
+
 	# 3d21. Waking Incursions (2026-07-24): week-seeded cross-domain
 	# roster, pure zone injection, the once-per-week bank (gem/gold per
 	# breach, chest + Renown on the sweep, stale-week refusal), and the
 	# world-week + character-ledger save round-trip.
 	await _test_waking()
+
+	# 3d22. The Unlisted (Q15, 2026-08-24): hidden bosses seeded per run —
+	# roster/eligibility, deterministic injection (never ch1), per-run bank.
+	await _test_unlisted()
+
+	# 3d23. Portal-stone pockets (Q15, 2026-08-24): floating boss-arena inject +
+	# once-per-run completion reward.
+	await _test_pockets()
 
 	# 3e. Kill XP.
 	var xp_probe := _dummy(Vector2(80, 0))
@@ -2499,10 +2521,14 @@ func _run_campaign_ch2() -> void:
 	await _test_ch5_chapter()
 	await _test_ch6_chapter()
 	await _test_ch7_chapter()
+	_test_eggs()
 	await _test_side_quests()
 	await _test_quest_verbs()
 	await _test_quest_quarry()
 	await _test_quest_abandonment()
+	_test_quest_schema()
+	_test_quest_scope()
+	await _test_hunt_and_keepsake()
 	await _test_ch1_quests()
 	await _test_pc_curios()
 	await _test_capital()
@@ -2530,6 +2556,9 @@ func _run_campaign_ch2() -> void:
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
 	await _test_chapter_progression()
+	# Q13 interludes LAST — it ends back in the capital + wipes transient flags,
+	# so nothing downstream inherits its world.
+	await _test_interludes()
 
 	print("AUTOTEST PASS")
 	get_tree().paused = false
@@ -2943,6 +2972,96 @@ func _test_bounties() -> void:
 	game.player.gem_bag = keep_gems
 	game.dropped_loot = keep_dropped
 	print("ok: bounties + weekly vault (deterministic roll, progress reward, vault claim)")
+
+
+# ---- Q11: ward contracts (per-ward daily deed board, claim-capped) ------
+func _test_ward_contracts() -> void:
+	var g := game
+	var snap_c: Array = g.contracts.duplicate(true)
+	var snap_day: int = g.contract_day
+	var snap_claims: int = g.contract_claims_day
+	var gold0: int = g.player.gold
+	var snap_standing: Dictionary = g.player.faction_standing.duplicate(true)
+	var snap_favor: Dictionary = g.player.npc_favor.duplicate(true)
+
+	# Deterministic per-ward roll: same seed -> same board (relog can't reroll).
+	g.contracts = []
+	for wi in Balance.WARD_CONTRACT_WARDS.size():
+		g._roll_contracts(String(Balance.WARD_CONTRACT_WARDS[wi]), Balance.WARD_CONTRACT_PER_WARD, 777 + wi)
+	var first_types: Array = []
+	for c in g.contracts:
+		first_types.append(String(c["ward"]) + ":" + String(c["type"]))
+	var expect := Balance.WARD_CONTRACT_WARDS.size() * Balance.WARD_CONTRACT_PER_WARD
+	g.contracts = []
+	for wi in Balance.WARD_CONTRACT_WARDS.size():
+		g._roll_contracts(String(Balance.WARD_CONTRACT_WARDS[wi]), Balance.WARD_CONTRACT_PER_WARD, 777 + wi)
+	var second_types: Array = []
+	for c in g.contracts:
+		second_types.append(String(c["ward"]) + ":" + String(c["type"]))
+	var deterministic: bool = first_types == second_types and g.contracts.size() == expect
+
+	# contract_progress marks a deed done WITHOUT paying (the claim pays).
+	g.contracts = []
+	g._roll_contracts("accord", 2, 55)
+	var tc: Dictionary = g.contracts[0]
+	var gold_pre: int = g.player.gold
+	g.contract_progress(String(tc["type"]), int(tc["target"]))
+	var progress_only: bool = bool(tc["done"]) and not bool(tc.get("claimed", false)) and g.player.gold == gold_pre
+
+	# Claim pays gold + ward standing (+ favor for Accord). Cap gates the rest.
+	g.contracts = []
+	for wi in Balance.WARD_CONTRACT_WARDS.size():
+		g._roll_contracts(String(Balance.WARD_CONTRACT_WARDS[wi]), 2, 900 + wi)
+	g.contract_claims_day = 0
+	for c in g.contracts:
+		c["done"] = true
+	var gold_before: int = g.player.gold
+	var paid := 0
+	var cap_reason := ""
+	for c in g.contracts:
+		var r: String = g.claim_contract(c)
+		if r == "":
+			paid += 1
+		else:
+			cap_reason = r
+	var cap_ok: bool = paid == Balance.WARD_CONTRACT_DAILY_CAP \
+		and g.contract_claims_day == Balance.WARD_CONTRACT_DAILY_CAP and cap_reason != ""
+	var pay_ok: bool = g.player.gold > gold_before
+	# a re-claim of an already-claimed contract is refused
+	var reclaim_refused := true
+	for c in g.contracts:
+		if bool(c.get("claimed", false)):
+			reclaim_refused = g.claim_contract(c) != ""
+			break
+
+	# An Accord contract also pays Kesh favor (the ward hosts the trainer).
+	g.contracts = []
+	g._roll_contracts("accord", 1, 42)
+	g.contract_claims_day = 0
+	g.contracts[0]["done"] = true
+	var kesh_before: int = int(g.player.npc_favor.get("kesh", 0))
+	g.claim_contract(g.contracts[0])
+	var favor_ok: bool = int(g.player.npc_favor.get("kesh", 0)) > kesh_before
+
+	# Restore.
+	g.contracts = snap_c
+	g.contract_day = snap_day
+	g.contract_claims_day = snap_claims
+	g.player.gold = gold0
+	g.player.faction_standing = snap_standing
+	g.player.npc_favor = snap_favor
+
+	if not deterministic:
+		return _fail("ward contracts: non-deterministic roll or wrong count")
+	if not progress_only:
+		return _fail("ward contracts: contract_progress paid before claim / did not mark done")
+	if not (cap_ok and pay_ok):
+		return _fail("ward contracts: claim/pay/cap wrong (paid %d, claims %d)" % [paid, g.contract_claims_day])
+	if not reclaim_refused:
+		return _fail("ward contracts: an already-claimed contract paid twice")
+	if not favor_ok:
+		return _fail("ward contracts: an Accord contract did not pay Kesh favor")
+	print("ok: ward contracts (deterministic per-ward roll, progress-then-claim, 4/day cap, standing+favor, no double-claim)")
 
 
 # ---- CORE: reforge bench (affix reroll, value reroll, add socket) -------
@@ -3465,6 +3584,135 @@ func _test_equip_unequip() -> void:
 	p.bags = keep_bags
 	p.recalc()
 	print("ok: equip / unequip (slot empties to bag, bag-full guard)")
+
+
+# ---- Q8: Auto-equip (fill empties + strict upgrades only) --------------
+func _test_auto_equip() -> void:
+	var p := game.player
+	var keep_eq: Dictionary = p.equipment
+	var keep_bp: Array = p.backpack
+	var keep_bags: Array = p.bags
+	var keep_cls: String = p.cls
+	p.bags = [Items.make_bag("S")]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 23
+
+	# --- strictly_better unit truths (the shared basis auto_equip uses) ---
+	var mk := func(main: Dictionary, subs: Dictionary, plus: int, extra := {}) -> Dictionary:
+		var it := {"slot": "weapon", "grade": "C", "plus": plus,
+			"main": main, "subs": subs, "gems": [], "cls": "", "name": "T"}
+		for k in extra:
+			it[k] = extra[k]
+		return it
+	var empty_wins := Items.strictly_better(mk.call({"atk": 5.0}, {}, 0), null)
+	var strict_up := Items.strictly_better(mk.call({"atk": 10.0}, {}, 0), mk.call({"atk": 5.0}, {}, 0))
+	var side_grade := Items.strictly_better(mk.call({"atk": 10.0}, {}, 0), mk.call({"atk": 5.0}, {"def": 8.0}, 0))
+	var worse := Items.strictly_better(mk.call({"atk": 3.0}, {}, 0), mk.call({"atk": 5.0}, {}, 0))
+	var equal := Items.strictly_better(mk.call({"atk": 5.0}, {}, 0), mk.call({"atk": 5.0}, {}, 0))
+	var over_gem := Items.strictly_better(mk.call({"atk": 100.0}, {}, 0),
+		mk.call({"atk": 1.0}, {}, 0, {"gems": [{"stat": "atk", "lvl": 1}]}))
+	var over_passive := Items.strictly_better(mk.call({"atk": 100.0}, {}, 0),
+		mk.call({"atk": 1.0}, {}, 0, {"passive": "reprisal"}))
+
+	# --- end-to-end: plus-scaling gives a clean strict-dominance pair ------
+	var base := Items.roll_item_of("weapon", "B", rng, p.cls)
+	var weak := base.duplicate(true); weak["plus"] = 0
+	var strong := base.duplicate(true); strong["plus"] = 3
+
+	# Empty slot fills.
+	p.equipment = {}
+	p.backpack = [weak.duplicate(true)]
+	var n_empty := p.auto_equip()
+	var filled_empty := n_empty == 1 and p.equipment.has("weapon") and p.backpack.is_empty()
+
+	# A strict upgrade in the bag displaces the weaker worn piece (which
+	# returns to the bag); a side-grade / worse piece would not.
+	p.equipment = {"weapon": weak.duplicate(true)}
+	p.backpack = [strong.duplicate(true)]
+	var n_up := p.auto_equip()
+	var took_upgrade := n_up == 1 and int(p.equipment["weapon"]["plus"]) == 3 and p.backpack.size() == 1
+
+	# A gemmed worn piece is NEVER auto-swapped, even by a strict stat win.
+	var gemmed := weak.duplicate(true)
+	gemmed["gems"] = [Items.make_gem("atk", 1)]
+	p.equipment = {"weapon": gemmed}
+	p.backpack = [strong.duplicate(true)]
+	var n_gem := p.auto_equip()
+	var kept_gemmed := n_gem == 0 and (p.equipment["weapon"]["gems"] as Array).size() == 1
+
+	# A class-locked item is skipped (empty slot stays empty).
+	var locked := Items.roll_item_of("helmet", "B", rng, p.cls)
+	locked["cls"] = "warrior" if p.cls != "warrior" else "mage"
+	p.equipment = {}
+	p.backpack = [locked]
+	var n_locked := p.auto_equip()
+	var skipped_locked := n_locked == 0 and not p.equipment.has("helmet")
+
+	# Restore before any assert (failure paths too — CLAUDE.md).
+	p.equipment = keep_eq
+	p.backpack = keep_bp
+	p.bags = keep_bags
+	p.cls = keep_cls
+	p.recalc()
+
+	if not (empty_wins and strict_up and not side_grade and not worse and not equal):
+		return _fail("strictly_better: empty=win, strict-up=win, side-grade/worse/equal=no")
+	if over_gem or over_passive:
+		return _fail("strictly_better must never displace a gemmed / unique-passive piece")
+	if not filled_empty:
+		return _fail("auto_equip did not fill an empty slot")
+	if not took_upgrade:
+		return _fail("auto_equip did not take a strict upgrade (worn piece back to bag)")
+	if not kept_gemmed:
+		return _fail("auto_equip wrongly swapped out a gemmed worn piece")
+	if not skipped_locked:
+		return _fail("auto_equip equipped a class-locked item")
+	print("ok: auto-equip (empties + strict upgrades; gemmed/locked/side-grade left)")
+
+
+# ---- Q8: onboarding gate (teach talents then gear, once per new ch1 hero)
+func _test_onboarding() -> void:
+	var g := game
+	var snap_flags: Dictionary = g.flags.duplicate(true)
+	var ch0: String = g.chapter_id
+	var ns0: bool = g.no_saves
+	var rep0: bool = g.menus.chapter_replay
+	var pt0: String = g.pending_tutorial
+	# A real fresh ch1 solo hero (autotest normally sets no_saves, which the
+	# gate treats as "not real play").
+	g.chapter_id = "ch1"
+	g.no_saves = false
+	g.menus.chapter_replay = false
+	g.flags.erase("completed_ch1")
+	g.flags.erase("tut_talents_done")
+	g.flags.erase("tut_gear_done")
+	var due_fresh: bool = g._onboard_due("talents")
+	g.flags["completed_ch1"] = true
+	var due_completed: bool = g._onboard_due("talents")
+	g.flags.erase("completed_ch1")
+	g.menus.chapter_replay = true
+	var due_replay: bool = g._onboard_due("talents")
+	g.menus.chapter_replay = false
+	g.flags["tut_talents_done"] = true
+	var due_taught: bool = g._onboard_due("talents")
+	var kept: bool = "tut_" in g.KEPT_FLAG_PREFIXES
+	# Restore before any assert.
+	g.flags = snap_flags
+	g.chapter_id = ch0
+	g.no_saves = ns0
+	g.menus.chapter_replay = rep0
+	g.pending_tutorial = pt0
+	if not due_fresh:
+		return _fail("onboarding: a fresh ch1 hero should be due the talents beat")
+	if due_completed:
+		return _fail("onboarding: a completed ch1 must not re-teach")
+	if due_replay:
+		return _fail("onboarding: a chapter replay must not teach")
+	if due_taught:
+		return _fail("onboarding: an already-taught step must not re-fire")
+	if not kept:
+		return _fail("onboarding: tut_ must be a kept prefix so the mark survives the wipe")
+	print("ok: onboarding gate (fresh ch1 due; completed/replay/taught blocked; tut_ kept)")
 
 
 # ---- CORE: stacking bags + discard-throw (round 52) --------------------
@@ -4554,8 +4802,11 @@ func _test_asset_seams() -> void:
 				return _fail("%s regressed to a nested motion overlay" % active_name)
 		active_visual.queue_free()
 	# TERRAIN_ART_FIX_TASK tiers 1-3 are all real high-resolution overrides.
-	# Exact canvases make accidental restoration of the tiny pack art obvious,
-	# while authored world widths stop source resolution changing gameplay.
+	# The sizes below are FLOORS (were exact pins until 2026-08-25): the
+	# fidelity pass stores masters at >=2x render size, growing several of
+	# these canvases, and the guard's real job is catching an accidental
+	# restoration of the tiny pack art — a canvas UNDER its floor. Authored
+	# world widths stop source resolution changing gameplay either way.
 	var tiered_art := {
 		"cottage_a": Vector2i(384, 300), "cottage_a2": Vector2i(384, 320),
 		"cottage_b": Vector2i(384, 260), "stall": Vector2i(320, 252),
@@ -4571,7 +4822,8 @@ func _test_asset_seams() -> void:
 	}
 	for tier_name: String in tiered_art:
 		var actual_size := Vector2i(Art.tex(tier_name).get_size())
-		if actual_size != tiered_art[tier_name]:
+		var floor_size: Vector2i = tiered_art[tier_name]
+		if actual_size.x < floor_size.x and actual_size.y < floor_size.y:
 			return _fail("%s tiered-art canvas %s != %s" %
 				[tier_name, actual_size, tiered_art[tier_name]])
 	for scaled_name in [
@@ -5124,8 +5376,11 @@ func _walk_act1_chapter(chid: String, briefing_prompt: String, gate_flag: String
 	await _frames(10)
 	if game.chapter_id != chid:
 		return "%s did not boot" % chid
-	if game.zone_count != want_zones:
-		return "%s zones did not append (zones=%d, want %d)" % [chid, game.zone_count, want_zones]
+	# >= not ==: a Q15 Unlisted may side-attach an extra hidden-boss room this
+	# run (seeded off replay_chapter's fresh wander_seed). A short count still
+	# means the content module's CHAPTER_ZONES failed to append.
+	if game.zone_count < want_zones:
+		return "%s zones did not append (zones=%d, want >= %d)" % [chid, game.zone_count, want_zones]
 	# Structural integrity: every authored reference must resolve.
 	for zi in game.zone_count:
 		var zone: Dictionary = game.zones[zi]
@@ -5301,6 +5556,87 @@ func _test_side_quests() -> void:
 	game.player.gold = gold0
 	game.flags = snap_flags
 	print("ok: side quests (accept, step tracking, single payout)")
+
+
+## Q9: every authored side quest is well-formed — known step kinds + reward
+## keys + scope, kill steps carry target/count, and an UNSCOPED (capital/world)
+## quest's step flags all ride a kept prefix so they survive the chapter wipe
+## (the invariant the scope persistence leans on). Read-only; no restore needed.
+func _test_quest_schema() -> void:
+	var allowed_kinds := {"flag": true, "kill": true, "hunt": true}
+	var allowed_reward := {"gold": true, "standing": true, "item": true,
+		"gem": true, "kept": true, "keepsake": true}
+	var allowed_scope := {"chapter": true, "capital": true, "world": true}
+	var kept_prefixes: Array = game.KEPT_FLAG_PREFIXES
+	for id in Story.ALL_SIDE_QUESTS:
+		var q: Dictionary = Story.ALL_SIDE_QUESTS[id]
+		var scope := String(q.get("scope", "chapter"))
+		if not allowed_scope.has(scope):
+			return _fail("quest %s: unknown scope '%s'" % [id, scope])
+		var unscoped := scope != "chapter"
+		for step in q.get("steps", []):
+			if not step.has("flag"):
+				return _fail("quest %s: a step has no flag" % id)
+			var kind := String(step.get("kind", "flag"))
+			if not allowed_kinds.has(kind):
+				return _fail("quest %s: step kind '%s' is not a built kind" % [id, kind])
+			if kind == "kill" and (String(step.get("target", "")) == "" \
+					or int(step.get("count", 0)) < 1):
+				return _fail("quest %s: a kill step needs target + count>=1" % id)
+			if kind == "hunt" and String(step.get("target", "")) == "":
+				return _fail("quest %s: a hunt step needs a target enemy kind" % id)
+			if unscoped:
+				var f := String(step["flag"])
+				var kept := false
+				for pre in kept_prefixes:
+					if f.begins_with(String(pre)):
+						kept = true
+						break
+				if not kept:
+					return _fail("quest %s (%s): step flag '%s' must use a kept prefix" % [id, scope, f])
+		for rk in q.get("reward", {}):
+			if not allowed_reward.has(String(rk)):
+				return _fail("quest %s: reward key '%s' is not supported" % [id, rk])
+	print("ok: quest schema (kinds / reward keys / scope; unscoped flags kept)")
+
+
+## Q9: an UNSCOPED (capital/world) quest persists across a chapter wipe and is
+## never charged for abandonment — the property capital/interlude quests need.
+## Injects a throwaway capital quest, drives the two persistence seams, restores.
+func _test_quest_scope() -> void:
+	var g := game
+	var snap_flags: Dictionary = g.flags.duplicate(true)
+	var snap_kills: Dictionary = g.quest_kills.duplicate(true)
+	var snap_cons: Array = g.player.consumables.duplicate(true)
+	var ch0: String = g.chapter_id
+	Story.ALL_SIDE_QUESTS["__scope_test"] = {
+		"name": "Scope Probe", "scope": "capital", "chapter": "capital",
+		"desc": "probe", "steps": [{"flag": "cap_scope_test_done", "text": "x"}],
+		"reward": {"gold": 1},
+	}
+	g.flags["sq_on___scope_test"] = true
+	g.flags["sq_pledge___scope_test"] = 2.0
+	# The wipe must KEEP the unscoped accept marker (its step flag rides cap_).
+	g._wipe_chapter_flags()
+	var survived: bool = g.get_flag("sq_on___scope_test", false)
+	# Expiry (run from a chapter with no chapter-scoped quests) must SKIP it.
+	g.chapter_id = "capital"
+	var broken: Array = g._expire_side_quests()
+	var not_expired := true
+	for line in broken:
+		if String(line).find("Scope Probe") >= 0:
+			not_expired = false
+	# Restore before asserting.
+	Story.ALL_SIDE_QUESTS.erase("__scope_test")
+	g.flags = snap_flags
+	g.quest_kills = snap_kills
+	g.player.consumables = snap_cons
+	g.chapter_id = ch0
+	if not survived:
+		return _fail("scope: an unscoped (capital) quest's accept marker was wiped")
+	if not not_expired:
+		return _fail("scope: an unscoped quest was charged for abandonment")
+	print("ok: quest scope (capital quest survives the wipe, never expiry-charged)")
 
 
 ## Quest-verb pass (2026-08-17, PROPOSALS/DYNAMIC_WORLD.md): the new step KIND
@@ -5814,18 +6150,77 @@ func _test_ch3_quests() -> void:
 ## items resolve, and each chain pays once on its last step. Drives the
 ## flags by hand; SNAPSHOT + RESTORE shared state per the rule.
 func _test_ch2_quests() -> void:
-	# Override nodes must be present in the merged convo table.
+	# Override nodes must be present in the merged convo table (incl. the Q10
+	# slate: Piet's bell hub, the pilgrim's salt hub, the reliquary deposit,
+	# Ivo's straight-answer fork, and the two ZONE_PROPS prop convos).
 	for probe in [["ch2_refugee", "r_accept"], ["ch2_refugee", "r_after"],
 			["ch2_scholar", "s_desk"], ["ch2_scholar", "s_jar"],
-			["ch2_aldric", "p_ash"]]:
+			["ch2_aldric", "p_ash"], ["ch2_sentry", "sp_told"],
+			["ch2_choir_pilgrim", "hp_hub"], ["ch2_lore_reliquary", "l_laid"],
+			["ch2_scholar", "s_fork"], ["ch2_bell", "b2"], ["ch2_bastion_logs", "b2"],
+			["ch2_refugee", "r_ledger_fork"], ["ch2_mill", "d_revisit"],
+			["ch2_beastkin_cage", "wq_report"], ["ch2_lore_ferry", "l_hub"],
+			["ch2_cage_hollow", "c2"], ["ch2_ferry_mark_a", "m2"],
+			["ch2_accord_recruit", "a_arc2"], ["ch2_cinder_recruit", "c_arc2"],
+			["ch2_blight_line", "b2"], ["ch2_seal_assay", "a2"]]:
 		var nodes: Dictionary = Story.ALL_CONVOS[probe[0]]["nodes"]
 		if not nodes.has(probe[1]):
 			_fail("ch2 quests: override node %s/%s missing (module must preload AFTER the ch2 modules)" % [probe[0], probe[1]])
 			await get_tree().create_timer(60.0).timeout
 			return
-	for qiid in ["sera_loaf", "bastion_ash"]:
+	# The Q10 props ride ZONE_PROPS onto existing ch2 zones by NAME — assert
+	# each landed (a zone rename would silently drop them).
+	for zc in [["The Howling Fields", "ch2_bell"], ["The Null Bastion", "ch2_bastion_logs"],
+			["The Sporewood", "ch2_cage_hollow"], ["The Drowned Race", "ch2_ferry_mark_a"],
+			["The Lee of the Stones", "ch2_blight_line"], ["The Echoing Gallery", "ch2_seal_assay"]]:
+		var found_prop := false
+		for zdict in Story.CHAPTER_LIST["ch2"]["zones"]:
+			if String(zdict.get("name", "")) == String(zc[0]):
+				for npc in zdict.get("npcs", []):
+					if String(npc.get("convo", "")) == String(zc[1]):
+						found_prop = true
+		if not found_prop:
+			_fail("ch2 quests: ZONE_PROPS did not attach '%s' to '%s'" % [zc[1], zc[0]])
+			await get_tree().create_timer(60.0).timeout
+			return
+	for qiid in ["sera_loaf", "bastion_ash", "salt_token", "mill_ledger"]:
 		if Items.make_quest_item(String(qiid)).is_empty():
 			_fail("ch2 quest item '%s' does not resolve" % qiid)
+			await get_tree().create_timer(60.0).timeout
+			return
+	# Q10 illustrated turn-ins: each scene convo is cinematic, its cue is
+	# recognized, and its plate is actually installed (a wired scene pointing at
+	# a missing PNG would show a broken cutscene in play).
+	for sc in [["straight_answer_scene", "q_straight_answer"], ["second_bell_scene", "q_second_bell"],
+			["salt_reliquary_scene", "q_salt_reliquary"], ["widows_arithmetic_scene", "q_widows_arithmetic"],
+			["what_cage_holds_scene", "q_what_cage_holds"], ["ferryman_due_scene", "q_ferryman_due"]]:
+		var scv: Dictionary = Story.ALL_CONVOS.get(String(sc[0]), {})
+		if scv.is_empty() or not bool(scv.get("cinematic", false)):
+			_fail("ch2 quests: scene convo '%s' missing or not cinematic" % sc[0])
+			await get_tree().create_timer(60.0).timeout
+			return
+		if not Cutscene.is_known_cue(String(sc[1])):
+			_fail("ch2 quests: quest cue '%s' not recognized" % sc[1])
+			await get_tree().create_timer(60.0).timeout
+			return
+		var plate := "res://assets/sprites/opening/quests/quest_%s.png" % String(sc[1]).substr(2)
+		if not ResourceLoader.exists(plate):
+			_fail("ch2 quests: plate '%s' not installed" % plate)
+			await get_tree().create_timer(60.0).timeout
+			return
+	# The salt_token quest item now carries an "icon" sprite (installed), so the
+	# Curios codex path (Art.tex -> img) must resolve it, not crash on a missing
+	# SPRITES key like it did when the field named a spriteless name. The bell
+	# prop sprite (fallen_bell) must likewise be a real asset.
+	for spr in ["salt_token", "fallen_bell"]:
+		if not ResourceLoader.exists("res://assets/sprites/%s.png" % spr):
+			_fail("ch2 quests: sprite '%s.png' not installed" % spr)
+			await get_tree().create_timer(60.0).timeout
+			return
+	# Faction arc step 2: the HUD objective strings merged over ch2_factions.
+	for qk in ["ch2_accord2", "ch2_cinder2"]:
+		if Story.quest_text(qk) == "":
+			_fail("ch2 quests: arc-2 objective string '%s' missing" % qk)
 			await get_tree().create_timer(60.0).timeout
 			return
 	var snap_flags: Dictionary = game.flags.duplicate(true)
@@ -5837,6 +6232,12 @@ func _test_ch2_quests() -> void:
 		"still_blue": ["mill_road_cleared", "mill_seen", "mill_told"],
 		"bread_for_the_road": ["loaf_taken", "loaf_given"],
 		"ash_for_aldric": ["ash_taken", "ash_given"],
+		"second_bell": ["bell_heard", "bell_told"],
+		"salt_reliquary": ["salt_taken", "salt_laid"],
+		"straight_answer": ["logs_read", "ivo_told"],
+		"widows_arithmetic": ["ledger_taken", "sera_ledger_told"],
+		"what_cage_holds": ["hollow_listened", "cage_told"],
+		"ferryman_due": ["due_drowned", "ferryman_paid"],
 	}
 	for sqid in chains:
 		var sid := String(sqid)
@@ -5871,12 +6272,17 @@ func _test_ch2_quests() -> void:
 		_fail("ch2 quests: bread_for_the_road did not pay its Accord standing")
 		await get_tree().create_timer(60.0).timeout
 		return
+	# The Salt Reliquary's reward carries its Choir standing shift (Q10).
+	if int(game.player.faction_standing.get("choir", 0)) != int(snap_standing.get("choir", 0)) + 2:
+		_fail("ch2 quests: salt_reliquary did not pay its Choir standing")
+		await get_tree().create_timer(60.0).timeout
+		return
 	game.player.gold = gold0
 	game.player.faction_standing = snap_standing
 	game.player.gem_bag = snap_gems
 	game.dropped_loot = snap_drops
 	game.flags = snap_flags
-	print("ok: ch2 side quests (still_blue, bread_for_the_road, ash_for_aldric — single payouts)")
+	print("ok: ch2 side quests (9 chains — still_blue/bread/ash + bell/salt/straight-answer + widow/cage/ferryman, single payouts)")
 
 
 # ---- Q6: Chapter 6 side quests (scripts/content/ch6_quests.gd) ----------
@@ -7407,6 +7813,45 @@ func _test_renown() -> void:
 	if game.buy_cosmetic("skin", "warrior", "dreadknight") or game.renown() != 500:
 		return _fail("double-buy must refuse without charging")
 
+	# --- pets (Q16): Renown-buyable, class-agnostic, equip one at a time ---
+	if Balance.renown_price("pet", "common") >= Balance.renown_price("pet", "rare") \
+			or Balance.renown_price("pet", "rare") >= Balance.RENOWN_PRICE_ELITE:
+		return _fail("pet price ladder should climb common < rare < elite skin")
+	if Skins.pets().is_empty() or not Skins.find_pet("__no_pet__").is_empty():
+		return _fail("pet catalog empty or a bogus pet id resolves")
+	var pet0: Dictionary = Skins.pets()[0]
+	var petid: String = String(pet0["id"])
+	var pet_key := "own_pet_all_" + petid
+	var keep_pet_own = game._meta.get(pet_key)
+	var keep_equipped: String = game.player.equipped_pet
+	game._meta.erase(pet_key)
+	game.player.equipped_pet = ""
+	if game.owns_cosmetic("pet", "all", petid):
+		return _fail("unbought pet reads owned")
+	game._meta["renown"] = Balance.renown_price("pet", String(pet0.get("tier", ""))) - 1
+	if game.buy_cosmetic("pet", "all", petid):
+		return _fail("pet buy while short on Renown must refuse")
+	game._meta["renown"] = Balance.renown_price("pet", String(pet0.get("tier", "")))
+	if not game.buy_cosmetic("pet", "all", petid) or not game.owns_cosmetic("pet", "all", petid) \
+			or game.renown() != 0:
+		return _fail("pet buy should charge full price and record account ownership")
+	game._meta["renown"] = 500
+	if game.buy_cosmetic("pet", "all", petid) or game.renown() != 500:
+		return _fail("pet double-buy must refuse without charging")
+	game.player.set_pet(petid)
+	var equip_ok: bool = game.player.equipped_pet == petid
+	game.player.set_pet("__bogus_pet__")            # invalid id -> no change
+	equip_ok = equip_ok and game.player.equipped_pet == petid
+	game.player.set_pet("")                          # unequip
+	equip_ok = equip_ok and game.player.equipped_pet == ""
+	game.player.equipped_pet = keep_equipped
+	if keep_pet_own == null:
+		game._meta.erase(pet_key)
+	else:
+		game._meta[pet_key] = keep_pet_own
+	if not equip_ok:
+		return _fail("pet equip/unequip/bogus-id handling wrong")
+
 	# --- record faucets pay the PUSH, once. Achievements snapshotted:
 	# record_* re-checks tracks and can unlock tiers mid-test. ---
 	var keep_ach := game.achievements.duplicate()
@@ -7524,6 +7969,225 @@ func _test_renown() -> void:
 	print("ok: renown (prices, wallet, buy/own, PB + tier faucets pay once, weekly cache, save round-trip, wardrobe UI)")
 
 
+## Road Deck v1 (Q14): the card registry is pure data; the draw is seeded +
+## diminishing; the resolve behavior lives in game_world handlers. We assert the
+## schema + the chance math directly, then call each handler and check the
+## gold/standing/heal/flag/counter deltas (gain_gold carries a greed multiplier,
+## so gained-gold paths assert >= the greed-0 value, spends assert exactly).
+func _test_road_deck() -> void:
+	# --- registry schema (pure data) ---
+	if RoadDeck.DECK.is_empty():
+		return _fail("road deck is empty")
+	for id in RoadDeck.DECK:
+		var c: Dictionary = RoadDeck.CARDS.get(id, {})
+		var rts: Array = c.get("room_types", [])
+		if c.is_empty() or String(c.get("title", "")) == "" or String(c.get("sprite", "")) == "" or rts.is_empty():
+			return _fail("road card '%s' missing title/sprite/room_types" % id)
+	if not RoadDeck.card("__nope__").is_empty():
+		return _fail("bogus road card id resolves")
+	# --- the per-run draw chance diminishes and stays bounded in (0,1) ---
+	if not (Balance.ROAD_CARD_FALLOFF > 0.0 and Balance.ROAD_CARD_FALLOFF < 1.0):
+		return _fail("road card falloff must be in (0,1)")
+	if Balance.ROAD_CARD_CHANCE * pow(Balance.ROAD_CARD_FALLOFF, 1.0) >= Balance.ROAD_CARD_CHANCE:
+		return _fail("road card chance should diminish per draw")
+
+	# --- handlers apply the right deltas (called directly, bypassing the menu) ---
+	var keep_gold := game.player.gold
+	var keep_hp := game.player.hp
+	var keep_acc: int = int(game.player.faction_standing.get("accord", 0))
+	var keep_rc := game.run_road_cards
+	var keep_gems: Array = game.player.gem_bag.duplicate(true)   # a wager win may drop a gem
+	var keep_drop: Array = game.dropped_loot.duplicate(true)
+	var rooms_used := [901, 902, 903, 904, 905, 906, 907, 908, 909, 910]
+	var keep_flags := {}
+	for r in rooms_used:
+		keep_flags[r] = game.flags.get(game._road_flag(int(r)))
+
+	# Toll PAY: -min(cost,gold), +standing, heals, marks drawn, ticks counter
+	game.player.gold = 500
+	game.player.faction_standing["accord"] = 0
+	game.player.hp = maxf(1.0, game.player.max_hp * 0.5)
+	game.run_road_cards = 0
+	game._road_toll_pay(901, _road_dummy(), 120)
+	if game.player.gold != 380 or int(game.player.faction_standing["accord"]) != Balance.ROAD_TOLL_STANDING \
+			or game.player.hp <= game.player.max_hp * 0.5 or game.run_road_cards != 1 \
+			or not game.get_flag(game._road_flag(901), false):
+		return _fail("toll pay: wrong gold/standing/heal/counter/flag")
+	game.player.gold = 30
+	game._road_toll_pay(905, _road_dummy(), 120)
+	if game.player.gold != 0:
+		return _fail("toll pay must clamp to held gold (no negative)")
+
+	# Toll REFUSE: -standing, purse-cut inside [0, cost], never negative
+	game.player.gold = 500
+	game.player.faction_standing["accord"] = 0
+	game._road_toll_refuse(902, _road_dummy(), 100)
+	if int(game.player.faction_standing["accord"]) != -Balance.ROAD_TOLL_STANDING \
+			or game.player.gold < 400 or game.player.gold > 500:
+		return _fail("toll refuse: wrong standing or purse-cut out of range")
+	game.player.gold = 0
+	game._road_toll_refuse(906, _road_dummy(), 100)
+	if game.player.gold != 0:
+		return _fail("toll refuse must not drive gold negative")
+
+	# Courier MEND: -heal then +gift (>= net at greed 0), +standing, drawn
+	game.player.gold = 500
+	game.player.faction_standing["accord"] = 0
+	game._road_courier_mend(903, _road_dummy(), 40, 90)
+	if game.player.gold < 550 or int(game.player.faction_standing["accord"]) != Balance.ROAD_COURIER_STANDING \
+			or not game.get_flag(game._road_flag(903), false):
+		return _fail("courier mend: wrong net gold/standing/flag")
+	# too poor to mend: no-op, and the card is NOT marked drawn
+	game.player.gold = 10
+	game.player.faction_standing["accord"] = 5
+	game._road_courier_mend(907, _road_dummy(), 40, 90)
+	if game.player.gold != 10 or int(game.player.faction_standing["accord"]) != 5 \
+			or game.get_flag(game._road_flag(907), false):
+		return _fail("courier mend while short must no-op and not mark drawn")
+
+	# Courier ROB: +loot (>= at greed 0), -standing
+	game.player.gold = 100
+	game.player.faction_standing["accord"] = 0
+	game._road_courier_rob(904, _road_dummy(), 130)
+	if game.player.gold < 230 or int(game.player.faction_standing["accord"]) != -Balance.ROAD_COURIER_STANDING:
+		return _fail("courier rob: wrong gold/standing")
+
+	# Wager (Q16): a right pick pays +stake (>= at greed 0) and marks drawn;
+	# a wrong pick forfeits the stake (never below 0) and marks drawn.
+	game.player.gold = 200
+	game._road_wager_pick(908, _road_dummy(), 100, 1, 1)   # pick == winning -> WIN
+	if game.player.gold < 300 or not game.get_flag(game._road_flag(908), false):
+		return _fail("wager win should pay +stake and mark drawn")
+	game.player.gold = 200
+	game._road_wager_pick(909, _road_dummy(), 100, 1, 0)   # pick != winning -> LOSE
+	if game.player.gold != 100 or not game.get_flag(game._road_flag(909), false):
+		return _fail("wager loss should forfeit the stake and mark drawn")
+	game.player.gold = 30
+	game._road_wager_pick(910, _road_dummy(), 100, 2, 0)   # lose more than held -> clamps to 0
+	if game.player.gold != 0:
+		return _fail("wager loss must not drive gold negative")
+
+	# --- restore ---
+	game.player.gold = keep_gold
+	game.player.hp = keep_hp
+	game.player.faction_standing["accord"] = keep_acc
+	game.run_road_cards = keep_rc
+	game.player.gem_bag = keep_gems
+	game.dropped_loot = keep_drop
+	for r in rooms_used:
+		var k: String = game._road_flag(int(r))
+		if keep_flags[r] == null:
+			game.flags.erase(k)
+		else:
+			game.flags[k] = keep_flags[r]
+	print("ok: road deck (registry schema, diminishing chance, toll/courier/wager resolve deltas)")
+
+
+## Q15 portal-stone pockets: roster/eligibility, the per-run seeded FLOAT
+## injection (deterministic, never ch1, boss-only arena, sets pocket_room), and
+## the once-per-run completion (reward + bank). The stone/teleport/return ride
+## the same materialize + fast-travel paths exercised elsewhere; this stays a
+## pure inject/complete test.
+func _test_pockets() -> void:
+	if Pockets.ids().is_empty():
+		return _fail("pockets roster empty")
+	if not Pockets.for_chapter("ch1").is_empty():
+		return _fail("pockets never roll in ch1")
+	if Pockets.for_chapter("ch4").is_empty():
+		return _fail("ch4 should field a pocket")
+	if not Pockets.entry("__nope__").is_empty():
+		return _fail("bogus pocket id resolves")
+	for id in Pockets.ids():
+		if not Story.ALL_ENEMIES.has(String(Pockets.entry(id).get("kind", ""))):
+			return _fail("pocket '%s' reuses a missing boss kind" % id)
+
+	var keep_seed: int = game.wander_seed
+	var keep_room := game.pocket_room
+	var keep_pid := game.pocket_id
+	var keep_origin := game.pocket_origin
+	var keep_done := game.pocket_done
+
+	# injection: deterministic, floating boss-only arena, fires across a sweep
+	var authored: Array = Story.chapter("ch4")["zones"]
+	var n0: int = authored.size()
+	var any_hit := false
+	for s in range(0, 40):
+		game.wander_seed = s
+		var a: Array = game._pocket_inject(authored, "ch4")
+		if authored.size() != n0:
+			return _fail("pocket injection must not grow the shared Story array")
+		if a.size() == n0 + 1:
+			any_hit = true
+			if game.pocket_room != n0 or game.pocket_id == "":
+				return _fail("a pocket hit must set pocket_room/pocket_id")
+			var z: Dictionary = a[game.pocket_room]
+			if String(z.get("pocket", "")) == "" \
+					or String(z.get("boss", "")) != String(Pockets.entry(game.pocket_id).get("kind", "")):
+				return _fail("pocket zone must carry the id + roster boss kind")
+			if not (z.get("enemies", [null]) as Array).is_empty():
+				return _fail("a pocket arena is boss-only (no packs)")
+		elif a.size() != n0:
+			return _fail("pocket inject appended more than one room")
+		elif game.pocket_room != -1:
+			return _fail("a miss must leave pocket_room -1")
+	if not any_hit:
+		return _fail("no pocket rolled across the seed sweep")
+	game.wander_seed = 5
+	var ch1z: Array = Story.chapter("ch1")["zones"]
+	if game._pocket_inject(ch1z, "ch1").size() != ch1z.size() or game.pocket_room != -1:
+		return _fail("ch1 must never inject a pocket")
+
+	# completion: reward + bank once (origin -1 -> no return teleport in the test)
+	game._load_meta()
+	var keep_ren = game._meta.get("renown")
+	var keep_drop: Array = game.dropped_loot.duplicate(true)
+	var keep_gems: Array = game.player.gem_bag.duplicate(true)
+	game._meta["renown"] = 0
+	game.pocket_done = false
+	game.pocket_origin = -1
+	game._pocket_complete(game.player.global_position)
+	if not game.pocket_done or game.renown() != Balance.RENOWN_POCKET:
+		return _fail("pocket complete should bank done + Renown")
+	game._pocket_complete(game.player.global_position)
+	if game.renown() != Balance.RENOWN_POCKET:
+		return _fail("a cleared pocket must not re-pay")
+
+	# save round-trip
+	game.pocket_done = true
+	game.pocket_origin = 3
+	SaveGame.write(game, SaveGame.MAX_SLOTS)
+	game.pocket_done = false
+	game.pocket_origin = -1
+	var sv := SaveGame.read(SaveGame.MAX_SLOTS)
+	SaveGame.apply(game, sv)
+	await _frames(2)
+	if not game.pocket_done or game.pocket_origin != 3:
+		return _fail("pocket state lost in the save round-trip")
+	SaveGame.delete(SaveGame.MAX_SLOTS)
+
+	# restore
+	if keep_ren == null:
+		game._meta.erase("renown")
+	else:
+		game._meta["renown"] = keep_ren
+	game.dropped_loot = keep_drop
+	game.player.gem_bag = keep_gems
+	game.wander_seed = keep_seed
+	game.pocket_room = keep_room
+	game.pocket_id = keep_pid
+	game.pocket_origin = keep_origin
+	game.pocket_done = keep_done
+	print("ok: pockets (roster/eligibility, deterministic float inject, complete reward+bank, save round-trip)")
+
+
+## Throwaway interactable node for the road-card handler tests: _road_resolve
+## queue_frees the node it's given, so each resolving call gets a fresh one.
+func _road_dummy() -> Node2D:
+	var n := Node2D.new()
+	game.add_child(n)
+	return n
+
+
 func _test_waking() -> void:
 	# --- roster: pure, week-seeded, cross-domain, distinct ---
 	var r1: Array = game._waking_roster("ch3", 1234)
@@ -7635,6 +8299,175 @@ func _test_waking() -> void:
 	game.player.gem_bag = keep_gems
 	game.player.consumables = keep_cons
 	print("ok: waking incursions (cross-domain seeded roster, pure injection, weekly bank + Renown sweep, stale refusal, save round-trip)")
+
+
+## Q15 Unlisted hidden bosses: the roster/eligibility, the per-RUN seeded
+## injection (deterministic, never ch1, correct shape, fires across a sweep),
+## and the once-per-run bank (gem + Renown + Wildfang). Attachment of the
+## coordless injected room rides the same side-attach path as the Waking
+## breaches (proven in _generate_layout), so this stays a pure inject/bank test.
+## Q13 Interludes (I2 Moonfen): the shared standalone engine + the band-read
+## boss + the finale routing. Resolution/registration checks, then a full
+## end-to-end in the TEMPTED band — enter from code, walk the 3-room spine, meet
+## The First Howl (assert it read the band), kill it, and confirm the finale set
+## completed_ and returned to the capital (not the campaign way-gates).
+func _test_interludes() -> void:
+	# --- registration + resolution (pure) ---
+	if not Story.is_interlude("interlude_moonfen") or not Story.is_standalone("interlude_moonfen"):
+		return _fail("interlude_moonfen not registered as a standalone interlude")
+	if Story.CHAPTER_LIST.has("interlude_moonfen"):
+		return _fail("interludes must stay OUT of CHAPTER_LIST (chapter select / advance never see them)")
+	if String(Story.chapter("interlude_moonfen").get("final_boss", "")) != "first_howl":
+		return _fail("interlude chapter() did not resolve its final boss")
+	if not Story.ALL_ENEMIES.has("first_howl") or not bool(Story.ALL_ENEMIES["first_howl"].get("band_read", false)):
+		return _fail("first_howl missing or not band_read")
+
+	# --- snapshot ---
+	var keep_chapter := game.chapter_id
+	var keep_res: float = game.player.resonance
+	var keep_completed = game.flags.get("completed_interlude_moonfen")
+
+	# --- enter (TEMPTED) + walk + band-read + finale ---
+	game.player.resonance = -100.0   # well past -RES_BAND_AT: tempted
+	game.flags.erase("completed_interlude_moonfen")
+	game.enter_interlude("interlude_moonfen")
+	await _frames(10)
+	if game.chapter_id != "interlude_moonfen" or game.zone_count != 3:
+		return _fail("enter_interlude did not build the 3-room Moonfen")
+	if not Story.is_interlude(game.chapter_id):
+		return _fail("in-interlude is_interlude(chapter_id) reads false")
+	_buff()
+	await _goto_room(0)
+	await _kill_room(0)
+	await _goto_room(1)
+	await _kill_room(1)
+	await _goto_room(2)
+	var guard := 0
+	while not is_instance_valid(game.current_boss) and guard < 200:
+		await _frames(5)
+		guard += 5
+		if game.hud.dialogue_active:
+			await _skip_dialogue()
+	if not is_instance_valid(game.current_boss) or game.current_boss.kind != "first_howl":
+		return _fail("The First Howl did not spawn in the Moonfen arena")
+	if not game.current_boss.band_tempted:
+		return _fail("The First Howl did not read the TEMPTED band on spawn")
+	game.current_boss.take_damage(99999999.0)
+	var vguard := 0
+	while game.state != Game.ST_VICTORY and vguard < 200:
+		await _frames(5)
+		vguard += 5
+		if game.hud.dialogue_active:
+			await _skip_dialogue()
+	if game.state != Game.ST_VICTORY:
+		return _fail("killing The First Howl did not reach victory")
+	if not game.get_flag("completed_interlude_moonfen", false):
+		return _fail("interlude finale did not set completed_interlude_moonfen")
+	game.victory_dismiss()
+	await _frames(10)
+	if game.chapter_id != "capital":
+		return _fail("interlude send-off did not return to the capital")
+
+	# --- restore ---
+	game.flags.erase("completed_interlude_moonfen")
+	if keep_completed != null:
+		game.flags["completed_interlude_moonfen"] = keep_completed
+	game.player.resonance = keep_res
+	game.switch_chapter(keep_chapter, true)
+	await _frames(5)
+	print("ok: interludes (Moonfen standalone engine, enter/walk/band-read tempted, finale -> completed + back to capital)")
+
+
+func _test_unlisted() -> void:
+	# --- roster / eligibility (pure data) ---
+	if Unlisted.ids().is_empty():
+		return _fail("unlisted roster empty")
+	if not Unlisted.for_chapter("ch1").is_empty():
+		return _fail("the Unlisted never appear in ch1")
+	if Unlisted.for_chapter("ch3").is_empty():
+		return _fail("ch3 should field at least one Unlisted")
+	if not Unlisted.entry("__nope__").is_empty():
+		return _fail("bogus unlisted id resolves")
+	for id in Unlisted.ids():
+		if not Story.ALL_ENEMIES.has(String(Unlisted.entry(id).get("kind", ""))):
+			return _fail("unlisted '%s' reuses a missing boss kind" % id)
+
+	# --- injection: deterministic per seed, never grows the shared array,
+	# correct shape, fires across a seed sweep, never in ch1 ---
+	var authored: Array = Story.chapter("ch3")["zones"]
+	var n0: int = authored.size()
+	var keep_seed: int = game.wander_seed
+	var fb_lvl: int = int(Story.ALL_ENEMIES[String(Story.chapter("ch3")["final_boss"])].get("level", 10)) \
+		+ Balance.UNLISTED_LEVEL_BONUS
+	var any_hit := false
+	for s in range(0, 60):
+		game.wander_seed = s
+		var a: Array = game._unlisted_inject(authored, "ch3")
+		if authored.size() != n0:
+			return _fail("unlisted injection must never grow the shared Story array")
+		if str(a) != str(game._unlisted_inject(authored, "ch3")):
+			return _fail("unlisted injection must be deterministic per seed")
+		for i in range(n0, a.size()):
+			any_hit = true
+			var z: Dictionary = a[i]
+			var uid := String(z.get("unlisted", ""))
+			if uid == "" or Unlisted.entry(uid).is_empty():
+				return _fail("an unlisted zone must carry a valid unlisted id")
+			if String(z.get("boss", "")) != String(Unlisted.entry(uid).get("kind", "")):
+				return _fail("unlisted zone boss should be the roster kind")
+			var native: int = int(Story.ALL_ENEMIES[String(z["boss"])].get("level", 1))
+			if int(z.get("boss_level", -1)) != maxi(fb_lvl, native):
+				return _fail("unlisted zone should pin max(finale, native) level")
+			if not (z.get("enemies", [null]) as Array).is_empty():
+				return _fail("unlisted rooms are boss-only (no packs)")
+	if not any_hit:
+		return _fail("no Unlisted fired across the seed sweep — chance too low or broken")
+	game.wander_seed = 7
+	var ch1z: Array = Story.chapter("ch1")["zones"]
+	if game._unlisted_inject(ch1z, "ch1").size() != ch1z.size():
+		return _fail("ch1 must never inject an Unlisted")
+	game.wander_seed = keep_seed
+
+	# --- the per-run bank: gem + Renown + Wildfang; once per run ---
+	game._load_meta()
+	var keep_ren = game._meta.get("renown")
+	var keep_bank: Array = game.unlisted_banked.duplicate()
+	var keep_wf: int = int(game.player.faction_standing.get("wildfang", 0))
+	var keep_drop: Array = game.dropped_loot.duplicate(true)
+	var keep_gems: Array = game.player.gem_bag.duplicate(true)
+	game._meta["renown"] = 0
+	game.unlisted_banked = []
+	game.player.faction_standing["wildfang"] = 0
+	var pos: Vector2 = game.player.global_position
+	game._unlisted_bank_kill("greymantle", pos)
+	if not game.unlisted_banked_has("greymantle") or game.renown() != Balance.RENOWN_UNLISTED \
+			or int(game.player.faction_standing["wildfang"]) != Balance.UNLISTED_GREY_WILDFANG:
+		return _fail("greymantle bank: wrong ledger/renown/wildfang")
+	game._unlisted_bank_kill("greymantle", pos)  # once per run
+	if game.unlisted_banked.size() != 1 or game.renown() != Balance.RENOWN_UNLISTED:
+		return _fail("an Unlisted banks once per run")
+
+	# --- save round-trip: the run's banked list is world state ---
+	game.unlisted_banked = ["tithe_collector", "greymantle"]
+	SaveGame.write(game, SaveGame.MAX_SLOTS)
+	game.unlisted_banked = []
+	var sv := SaveGame.read(SaveGame.MAX_SLOTS)
+	SaveGame.apply(game, sv)
+	await _frames(2)
+	if game.unlisted_banked != ["tithe_collector", "greymantle"]:
+		return _fail("unlisted_banked lost in the save round-trip")
+	SaveGame.delete(SaveGame.MAX_SLOTS)
+
+	# --- restore ---
+	if keep_ren == null:
+		game._meta.erase("renown")
+	else:
+		game._meta["renown"] = keep_ren
+	game.unlisted_banked = keep_bank
+	game.player.faction_standing["wildfang"] = keep_wf
+	game.dropped_loot = keep_drop
+	game.player.gem_bag = keep_gems
+	print("ok: unlisted hidden bosses (roster/eligibility, deterministic injection, per-run bank + Renown/Wildfang, save round-trip)")
 
 
 # ---- CORE: capital rework economy — road markup curve + save round-trip ---
@@ -8885,3 +9718,82 @@ func _test_ch2_side_rooms() -> void:
 	await _goto_room(0)
 	await _frames(5)
 	print("ok: ch2 side rooms (10 rooms / mix 3-2-2-2-1, refs resolve, wanderer pool, Font shrine, cache chest, waystation shop)")
+
+
+# ---- Egg module (content/eggs.gd): the boy grows up -------------------------
+func _test_eggs() -> void:
+	# The hat quest leaves the mark the ch7 recruit reads.
+	var hq: Dictionary = Story.ALL_SIDE_QUESTS.get("heron_feather", {})
+	if String(hq.get("reward", {}).get("kept", "")) != "sq_kept_hat":
+		return _fail("egg: heron_feather must leave sq_kept_hat for the ch7 recruit")
+	# The recruit convo merged, and its ZONE_PROPS prop attached to The Wayhouse
+	# gated on sq_kept_hat.
+	if not Story.ALL_CONVOS.has("ch7_heron_recruit"):
+		return _fail("egg: ch7_heron_recruit convo missing")
+	var attached := false
+	for z in Story.CHAPTER_LIST["ch7"]["zones"]:
+		if String(z.get("name", "")) == "The Wayhouse":
+			for n in z.get("npcs", []):
+				if String(n.get("convo", "")) == "ch7_heron_recruit" \
+						and String(n.get("req_flag", "")) == "sq_kept_hat":
+					attached = true
+	if not attached:
+		return _fail("egg: heron recruit not attached to The Wayhouse gated on sq_kept_hat")
+	print("ok: eggs (the boy grows up — sq_kept_hat -> ch7 heron-feather recruit)")
+
+
+# ---- Q9: hunt step kind + keepsake reward -----------------------------------
+func _test_hunt_and_keepsake() -> void:
+	var g := game
+	# --- keepsake: grant_cosmetic (free, once, refuses unknown) ---
+	var bogus: bool = g.grant_cosmetic("chroma", "warrior", "__no_such_id__")
+	var had_dk: bool = g.owns_cosmetic("skin", "warrior", "dreadknight")
+	var granted: bool = true if had_dk else g.grant_cosmetic("skin", "warrior", "dreadknight")
+	var regrant: bool = g.grant_cosmetic("skin", "warrior", "dreadknight")  # already owned -> false
+	if not had_dk:
+		g._meta.erase("own_skin_warrior_dreadknight")  # restore (no_saves: never hit disk)
+
+	# --- hunt: inject a quest, spawn its named quarry in a combat room, and
+	# confirm the quarry's death (via the flag) completes the quest.
+	var snap_flags: Dictionary = g.flags.duplicate(true)
+	var mob := ""
+	for k in Story.ALL_ENEMIES:
+		if not bool(Story.ALL_ENEMIES[k].get("boss", false)):
+			mob = String(k); break
+	Story.ALL_SIDE_QUESTS["__hunt_test"] = {
+		"name": "Hunt Probe", "chapter": g.chapter_id,
+		"steps": [{"kind": "hunt", "target": mob, "name": "The Test Quarry", "flag": "hunt_probe_done"}],
+		"reward": {"gold": 1},
+	}
+	g.set_flag("sq_on___hunt_test")
+	var ci := -1
+	for i in g.zone_count:
+		if String(g.zones[i].get("type", "")) == "combat" and String(g.zones[i].get("boss", "")) == "":
+			ci = i
+			break
+	var spawned := false
+	if ci >= 0 and is_instance_valid(g.player):
+		g._ensure_quest_hunt(ci)
+		for node in g.get_tree().get_nodes_in_group("enemies"):
+			var e := node as Enemy
+			if e != null and is_instance_valid(e) and String(e.hunt_flag) == "hunt_probe_done":
+				spawned = e.display_name == "The Test Quarry" and e.elite and e.from_quest
+				e.hunt_flag = ""   # neutralise before cleanup so it can't set the flag late
+				e.queue_free()
+		await _frames(2)
+	# The step flag completes the chain (the death sets it in on_enemy_died).
+	g.set_flag("hunt_probe_done")
+	var paid: bool = g.get_flag("sq_paid___hunt_test", false)
+
+	Story.ALL_SIDE_QUESTS.erase("__hunt_test")
+	g.flags = snap_flags
+
+	if bogus:
+		return _fail("keepsake: grant_cosmetic accepted an unknown id")
+	if not granted or regrant:
+		return _fail("keepsake: grant_cosmetic free-grant / no-repeat wrong")
+	if ci >= 0 and not spawned:
+		return _fail("hunt: named elite quarry did not spawn (name/elite/from_quest)")
+	if not paid:
+		return _fail("hunt: completing the hunt-step flag did not pay the quest")
+	print("ok: hunt step + keepsake reward (named-elite quarry spawn+flag completion; free cosmetic grant, no repeat)")

@@ -172,6 +172,7 @@ var door_seen := {}              # room idx -> true (its door was visible from
 var last_safe_room := 0          # death returns you here
 
 var elder: Node2D
+var pet_follower: Sprite2D = null  # Q16 cosmetic companion; lags the local player, rebuilt with the world
 var interactables: Array = []    # [{node, prompt, action}]
 var active_facing_interactable: Dictionary = {} # NPC temporarily turned toward the local player
 var interact_in_range := false   # is the player next to any interactable? (touch Act-button gate)
@@ -291,6 +292,7 @@ var _halo_pool: Sprite2D = null  # the hero's additive floor-glow (QA 5)
 # ---------------------------------------------------------- persistence ---
 var save_slot := -1                   # active save file (-1 = none yet)
 var no_saves := false                 # autotest: never touch real save files
+var pending_tutorial := ""            # queued onboarding beat ("talents"/"gear"), drained in game.gd once no overlay is up (transient, not saved)
 ## DEDICATED SERVER (--server, MMO step A): this process is a headless world
 ## authority with NO local player — pure host, peers connect in. Every
 ## "host-personal" path (own loot share, own heals, HUD-driven story beats,
@@ -353,6 +355,9 @@ var boss_records := {}         # boss kind -> {"ttk": best secs, "dps": best, "k
 var bounties: Array = []       # active: {scope,type,target,progress,desc,gold,gems,gem_lvl,done}
 var bounty_day := -1           # trusted-clock day the daily set was rolled
 var bounty_week := -1          # trusted-clock week the weekly was rolled
+var contracts: Array = []      # ward contracts (Q11): {ward,type,target,progress,desc,gold,done,claimed}
+var contract_day := -1         # trusted-clock day the board was rolled
+var contract_claims_day := 0   # claims used today (Balance.WARD_CONTRACT_DAILY_CAP)
 
 # --- weekly vault (great-vault style; persisted) ---
 var vault_week := -1           # trusted-clock week the current progress belongs to
@@ -383,11 +388,29 @@ var waking_kills: Array = []
 func waking_banked(kind: String) -> bool:
 	return waking_kills_week == _week_index() and waking_kills.has(kind)
 
+# Q15 Unlisted: which hidden bosses this RUN has already felled (world state,
+# reset per chapter run, saved so a reload never re-raises a downed Unlisted).
+var unlisted_banked: Array = []
+
+## Has THIS run already downed the Unlisted `id`? (Guards its spawn + re-inject.)
+func unlisted_banked_has(id: String) -> bool:
+	return unlisted_banked.has(id)
+
+# Q15 portal-stone pockets (DYNAMIC_WORLD §6) — an IN-GRAPH floating boss arena
+# reached only by a portal stone's teleport and returned to the origin room on
+# the boss's fall (decision #6: in-graph, co-op-safe, never a world swap).
+var pocket_room := -1        # the injected arena's room index this run (-1 = none rolled)
+var pocket_id := ""          # which pocket rolled (content/pockets.gd id)
+var pocket_origin := -1      # the room to return to (set on entry; saved for a mid-pocket reload)
+var pocket_done := false     # its boss felled this run (banks the reward once)
+var _pocket_stone_placed := false  # transient: the stone has been dropped into a safe room this run
+
 # --- chapter run stats (results card; persisted mid-run, reset per run) ---
 var run_time := 0.0            # seconds in ST_PLAYING this chapter run
 var run_deaths := 0
 var run_elites := 0            # elite kills this run
 var run_secrets := 0           # caches unearthed this run
+var run_road_cards := 0        # Road Deck encounters drawn this run (drives the diminishing chance)
 var run_xp := 0                # XP banked this run (after the replay ceiling)
 var run_levels := 0            # levels gained this run
 var xp_capped_noted := false   # the once-per-run "outgrown this road" note (not saved)
@@ -755,6 +778,16 @@ func favor_price_mult(npc: String) -> float:
 	return 1.0 - Balance.FAVOR_DISCOUNT_PER_TIER * float(favor_tier(npc))
 
 
+## Shift a faction's standing on the LOCAL character (accord / cinderborn /
+## wildfang / choir — the key is `cinderborn`, never `cinder`). One seam so
+## quest rewards, convo forks and ward contracts all move standing the same
+## way. Guarded like every other local-character write (dedicated has none).
+func add_standing(faction: String, delta: int) -> void:
+	if delta == 0 or not has_local_player():
+		return
+	player.faction_standing[faction] = int(player.faction_standing.get(faction, 0)) + delta
+
+
 ## Add favor with the shard read applied; announces tier climbs. Favor is
 ## per-character (rides the save like resonance) and only ever climbs.
 func favor_add(npc: String, points: int) -> void:
@@ -1076,9 +1109,13 @@ func reset_run_stats() -> void:
 	run_deaths = 0
 	run_elites = 0
 	run_secrets = 0
+	run_road_cards = 0
 	run_xp = 0
 	run_levels = 0
 	xp_capped_noted = false
+	unlisted_banked.clear()   # Q15: a fresh run may meet its hidden bosses again
+	pocket_done = false        # Q15: a fresh run may open its pocket again
+	_pocket_stone_placed = false
 	party_stats.clear()   # battle-stats meters restart with the run
 	fight_stats.clear()
 	party_stats_net.clear()
@@ -1106,7 +1143,7 @@ func run_results() -> Dictionary:
 	if get_flag("completed_" + chapter_id, false):
 		xp_reach = Balance.replay_xp_reach(Story.chapter_parity_level(chapter_id))
 	return {"time": run_time, "deaths": run_deaths, "elites": run_elites,
-		"secrets": run_secrets, "explored": explored, "rooms": zone_count,
+		"secrets": run_secrets, "road": run_road_cards, "explored": explored, "rooms": zone_count,
 		"grade": grade, "xp": run_xp, "lv_from": lv_now - run_levels, "lv_to": lv_now,
 		"xp_reach": xp_reach}
 
@@ -1270,6 +1307,110 @@ func _award_bounty(b: Dictionary) -> void:
 	sfx("chest")
 	spawn_text(player.global_position + Vector2(0, -78),
 		"BOUNTY: %s  (+%d gold%s)" % [b["desc"], g, extra], Color(0.6, 1.0, 0.6), 4.0)
+
+
+# ---------------------------------------------------------- ward contracts ---
+# The four capital ward desks' daily deed board (Q11). Rolls per ward per day;
+# deeds auto-progress off the same kill/clear events as bounties; the player
+# claims the reward in the journal, capped account-wide per day.
+
+## Roll the day's board if the trusted-clock day has ticked over (or the board
+## is empty). Seeded per ward per day so a relog can't reroll it (bounty law).
+func refresh_contracts() -> void:
+	if not play_started or no_saves:
+		return
+	var day := daily_day_index()
+	if day == contract_day and not contracts.is_empty():
+		return
+	contract_day = day
+	contract_claims_day = 0
+	contracts = []
+	for wi in Balance.WARD_CONTRACT_WARDS.size():
+		_roll_contracts(String(Balance.WARD_CONTRACT_WARDS[wi]),
+			Balance.WARD_CONTRACT_PER_WARD, day * 4 + wi * 101 + 7)
+	autosave()
+
+
+func _roll_contracts(ward: String, count: int, seed_val: int) -> void:
+	var pool: Array = Balance.WARD_CONTRACT_POOL
+	var idxs: Array = []
+	for i in pool.size():
+		idxs.append(i)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_val
+	for i in range(idxs.size() - 1, 0, -1):  # seeded Fisher-Yates
+		var j := rng.randi_range(0, i)
+		var tmp = idxs[i]; idxs[i] = idxs[j]; idxs[j] = tmp
+	for k in mini(count, pool.size()):
+		var t: Dictionary = pool[idxs[k]]
+		contracts.append({"ward": ward, "type": String(t["type"]), "target": int(t["target"]),
+			"progress": 0, "desc": String(t["desc"]), "gold": int(t.get("gold", 0)),
+			"done": false, "claimed": false})
+
+
+## A deed toward every active, unfinished ward contract of `type`. Marks the
+## contract ready to claim at the target — it does NOT pay (the claim does, so
+## the daily cap can gate WHICH deeds you cash). Host-authoritative like kills.
+func contract_progress(type: String, n := 1) -> void:
+	if net_guest():
+		return
+	var touched := false
+	for c in contracts:
+		if String(c["type"]) == type and not bool(c["done"]):
+			c["progress"] = mini(int(c["progress"]) + n, int(c["target"]))
+			touched = true
+			if int(c["progress"]) >= int(c["target"]):
+				c["done"] = true
+				if is_instance_valid(player):
+					spawn_text(player.global_position + Vector2(0, -84),
+						"%s contract ready — claim it in the journal" %
+						Balance.WARD_CONTRACT_WARD_NAME.get(String(c["ward"]), String(c["ward"])),
+						Color(0.8, 0.9, 0.6), 2.4)
+	if touched:
+		autosave()
+
+
+## Claim a completed contract's reward: gold (level-scaled), the ward faction's
+## standing, and — where the ward hosts a trainer — that trainer's favor. Capped
+## account-wide per day (Balance.WARD_CONTRACT_DAILY_CAP). Returns "" on success
+## or a short failure reason the journal can show.
+func claim_contract(c: Dictionary) -> String:
+	if not has_local_player():
+		return "no character"
+	if not bool(c.get("done", false)):
+		return "not finished"
+	if bool(c.get("claimed", false)):
+		return "already claimed"
+	if contract_claims_day >= Balance.WARD_CONTRACT_DAILY_CAP:
+		return "daily cap reached — come back tomorrow"
+	contract_claims_day += 1
+	c["claimed"] = true
+	var ward := String(c["ward"])
+	var g := int(float(c["gold"]) * Balance.daily_gold_mult(player.level))
+	player.gold += g
+	add_standing(ward, Balance.WARD_CONTRACT_STANDING)
+	var favor_extra := ""
+	var fnpc := String(Balance.WARD_CONTRACT_FAVOR_NPC.get(ward, ""))
+	if fnpc != "":
+		favor_add(fnpc, Balance.WARD_CONTRACT_FAVOR)
+		favor_extra = " + favor"
+	sfx("chest")
+	spawn_text(player.global_position + Vector2(0, -78),
+		"%s CONTRACT  (+%d gold, +%d %s%s)" % [
+			Balance.WARD_CONTRACT_WARD_NAME.get(ward, ward).to_upper(), g,
+			Balance.WARD_CONTRACT_STANDING, ward.capitalize(), favor_extra],
+		Color(0.7, 0.9, 0.6), 4.0)
+	autosave()
+	return ""
+
+
+## Contracts finished and not yet claimed — the journal badge / claim count.
+func contracts_claimable() -> int:
+	var n := 0
+	for c in contracts:
+		if bool(c.get("done", false)) and not bool(c.get("claimed", false)):
+			n += 1
+	return n
 
 
 # ----------------------------------------------------------- weekly vault ---
@@ -1595,6 +1736,14 @@ func _check_side_quests() -> void:
 				var gem := drop_gem(glvl)
 				give_loot({"kind": "gem", "gem": gem}, player.global_position)
 				got_extra += "  + " + Items.gem_title(gem)
+			# A cosmetic KEEPSAKE (identity, never power/currency): a chroma, skin
+			# or title granted free to THIS class. grant_cosmetic is on the derived
+			# layer, so reach it through call() from the base.
+			if reward.has("keepsake"):
+				var ks: Dictionary = reward["keepsake"]
+				if bool(call("grant_cosmetic", String(ks.get("kind", "chroma")),
+						player.cls, String(ks.get("id", "")))):
+					got_extra += "  + " + String(ks.get("name", "a keepsake"))
 		if reward.has("kept"):
 			set_flag(String(reward["kept"]))  # persistent per-character mark
 		sfx("levelup")
@@ -1649,7 +1798,9 @@ func _expire_side_quests() -> Array:
 	for id in Story.ALL_SIDE_QUESTS:
 		var sid := String(id)
 		var q: Dictionary = Story.ALL_SIDE_QUESTS[id]
-		if String(q.get("chapter", "")) != chapter_id:
+		# Unscoped (capital/world) quests are never charged for abandonment —
+		# they have no chapter deadline to break.
+		if not Story.quest_scoped(q) or String(q.get("chapter", "")) != chapter_id:
 			continue
 		if not get_flag("sq_on_" + sid, false) or get_flag("sq_paid_" + sid, false):
 			continue
@@ -1709,7 +1860,11 @@ func any_quest_available() -> bool:
 ## whose giver never rolled (wanderer givers are seeded per run).
 func side_quest_available(sqid: String) -> bool:
 	var q: Dictionary = Story.ALL_SIDE_QUESTS.get(sqid, {})
-	if q.is_empty() or String(q.get("chapter", "")) != chapter_id:
+	if q.is_empty():
+		return false
+	# Chapter quests only offer in their chapter; unscoped ones offer wherever
+	# their giver is reachable (a capital NPC is only reachable in Crownfall).
+	if Story.quest_scoped(q) and String(q.get("chapter", "")) != chapter_id:
 		return false
 	if get_flag("sq_on_" + sqid, false) or get_flag("sq_paid_" + sqid, false):
 		return false
@@ -1853,7 +2008,7 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 				_resonance_reward(res_delta)
 			var fac_shifts: Dictionary = c.get("faction", {})
 			for fac in fac_shifts:
-				player.faction_standing[fac] = int(player.faction_standing.get(fac, 0)) + int(fac_shifts[fac])
+				add_standing(String(fac), int(fac_shifts[fac]))
 			# Side-quest acceptance runs BEFORE the choice's flags land, so
 			# a single choice can accept a quest and complete its first
 			# step (or even the whole chain) in one breath. Quests bind to
@@ -1862,7 +2017,11 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 			if c.has("side_quest"):
 				var sqid := String(c["side_quest"])
 				var sq: Dictionary = Story.ALL_SIDE_QUESTS.get(sqid, {})
-				if not sq.is_empty() and String(sq.get("chapter", chapter_id)) == chapter_id \
+				# Unscoped (capital/world) quests accept anywhere; chapter quests
+				# only in their own chapter (a wanderer repeating his ask later
+				# can't open an uncompletable job).
+				if not sq.is_empty() \
+						and (not Story.quest_scoped(sq) or String(sq.get("chapter", chapter_id)) == chapter_id) \
 						and not get_flag("sq_on_" + sqid, false):
 					set_flag("sq_on_" + sqid)
 					# What saying YES paid (Balance §quest abandonment): the
@@ -2311,6 +2470,11 @@ func _shrine_flag(i: int) -> String:
 
 func _hidden_flag(i: int) -> String:
 	return "hidden_%s_%d" % [chapter_id, i]
+
+## Road Deck (Q14): one card per character per room. Not a kept prefix, so a
+## chapter wipe re-rolls the deck on replay — like cursed_/shrined_/hidden_.
+func _road_flag(i: int) -> String:
+	return "road_%s_%d" % [chapter_id, i]
 
 ## The gamble shrine's ask, scaled with level like the daily gold.
 func shrine_cost() -> int:

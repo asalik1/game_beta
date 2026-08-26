@@ -448,8 +448,12 @@ func _walk_projectiles() -> void:
 	for k in Projectile.GLOWS:
 		if not wanted.has(String(k)):
 			wanted[String(k)] = "projectile"
+	# (choir_censer removed 2026-08-25: it is a MOB sprite — a boss-summoned
+	# add, not a projectile; listing it here fabricated a phantom
+	# "projectiles/choir_censer, shipped" gallery row while its real mob row
+	# read unreferenced.)
 	for extra in ["arrow_base", "arrow_frost", "arrow_void", "arrow_void_eye",
-			"knife", "shuriken", "dart", "choir_censer", "mage_firebolt",
+			"knife", "shuriken", "dart", "mage_firebolt",
 			"mage_void_bullet", "mage_crystal_decree", "warlock_shadowbolt",
 			"hellfire_brand_bolt"]:
 		if not wanted.has(String(extra)):

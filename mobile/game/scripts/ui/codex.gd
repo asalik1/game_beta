@@ -1629,11 +1629,11 @@ static func _gems_page(m: Menus, list: VBoxContainer) -> void:
 		row.add_child(ladder)
 		for lv in [1, 4, 7, 10]:
 			var gi := TextureRect.new()
-			gi.texture = Art.gem_icon(info["color"], lv)
+			gi.texture = Art.gem_codex_icon(info["color"], lv)   # 128px master
 			gi.custom_minimum_size = Vector2(28, 28)
 			gi.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			gi.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			gi.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			gi.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR   # clean 128->28 downscale
 			gi.tooltip_text = "%s Lv %d" % [String(info["name"]), lv]
 			ladder.add_child(gi)
 		var name_l := m._lbl(row, String(info["name"]), 13, info["color"])
@@ -1684,6 +1684,39 @@ static func _notes_elites(m: Menus, list: VBoxContainer) -> void:
 		"And keep your eyes open in dead ends: not everything glints until you're near it."]:
 		var tl := m._lbl(tcard, String(tline), 13, Color(0.78, 0.8, 0.86))
 		tl.custom_minimum_size = Vector2(PAGE_W, 0)
+	# The Road Deck — safe-room encounter cards (Q14).
+	UITheme.header(m._lbl(list, "— ON THE ROAD —", 16, Color(0.7, 0.85, 1.0)))
+	var rcard := VBoxContainer.new()
+	rcard.add_theme_constant_override("separation", 2)
+	_card(list).add_child(rcard)
+	for rline in [
+		"Between the fighting, the road throws people at you. In some quiet rooms a lone figure waits at the door and withdraws after %d seconds if you pass them by — at most a card or two a run, so they stay an event, not a checkpoint." % int(Balance.ROAD_CARD_WINDOW),
+		"THE BRIDGEWARD'S TOLL — a collector bars the way. Pay his gold for safe passage (you catch your breath, and the crown warms to you), or push past for free — the ditch may lift a few coins, and the crown remembers a stiffed toll.",
+		"THE WOUNDED COURIER — a king's rider bleeds by a milestone. Spend gold on the draught that saves him and he presses coin and goodwill on you; cut the strap instead and the satchel is yours, but a road-thief's name travels.",
+		"THE STRANGER'S WAGER — a hooded gambler and three shells. Stake gold, follow the pea: a clean read doubles your money (and now and then shakes a gem loose); a wrong shell keeps your coin at the fire. A fair one-in-three, once per road.",
+		"Road encounters pay NO experience — they are about gold and the crown's regard, not levels. Rolled per character, so a replay meets a different road."]:
+		var rl := m._lbl(rcard, String(rline), 13, Color(0.78, 0.8, 0.86))
+		rl.custom_minimum_size = Vector2(PAGE_W, 0)
+	# The Unlisted — rare hidden bosses (Q15).
+	UITheme.header(m._lbl(list, "— THE UNLISTED —", 16, Color(0.95, 0.55, 0.5)))
+	var ucard := VBoxContainer.new()
+	ucard.add_theme_constant_override("separation", 2)
+	_card(list).add_child(ucard)
+	for uline in [
+		"Some things are not on any bestiary the crown keeps. Rarely — and only past the first chapter — a room holds a boss that shouldn't be there: a foe grown out of an old grudge, wearing the elite marks of a real threat. It is never on the map until you walk in, and something always warns you first if you're listening.",
+		"They fight down the same rules as any boss and give a hidden-boss's due — a bright gem, the crown's regard, and whatever a grudge that size is carrying. Rolled per character; most runs meet none. Kill it or don't; it was never expecting you either."]:
+		var ul := m._lbl(ucard, String(uline), 13, Color(0.78, 0.8, 0.86))
+		ul.custom_minimum_size = Vector2(PAGE_W, 0)
+	# Portal stones -> pockets (Q15).
+	UITheme.header(m._lbl(list, "— PORTAL STONES —", 16, Color(0.7, 0.85, 1.0)))
+	var pcard := VBoxContainer.new()
+	pcard.add_theme_constant_override("separation", 2)
+	_card(list).add_child(pcard)
+	for pline in [
+		"Now and then a stone in a quiet room hums with a cold light — a door into a POCKET, a small sealed place that is not on any map: a lone arena, one boss that shouldn't be anywhere, and a way back to exactly where you were standing.",
+		"Step through if you like. Fell what's inside and the pocket collapses, paying a gem and the crown's regard, then sets you back down where you left. Rolled per character; the door is always open when it appears, and it asks nothing to walk away from."]:
+		var pl := m._lbl(pcard, String(pline), 13, Color(0.78, 0.8, 0.86))
+		pl.custom_minimum_size = Vector2(PAGE_W, 0)
 
 
 ## FIELD NOTES › Gear rules — the shape and unique explainers that used to

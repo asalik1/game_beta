@@ -43,6 +43,8 @@ var force_aggro := false  # pack woken: attack no matter the distance
 var from_quest := false   # loose quest quarry (game_world._ensure_quest_quarry): zero XP/gold
                           # but STILL counts a KILL-step (game_flow.on_enemy_died) so a
                           # kill-quest stays completable even after its rooms are cleared
+var hunt_flag := ""       # HUNT-step named quarry (game_world._ensure_quest_hunt): killing
+                          # it sets this side-quest step flag directly (game_flow.on_enemy_died)
 var alerted := false  # has shown its "!" bubble
 var los_lost_t := 0.0    # seconds since we last had line-of-sight (leash timer)
 var last_seen := Vector2.ZERO  # where the player was last visible (blind-chase point)
@@ -106,7 +108,7 @@ var _face_vx := 0.0        # low-passed velocity.x for jitter-free facing
 var _avoid_turn := 0.0     # committed feeler-steer side (see _avoid_obstacles): keeps a mob rounding a corner instead of stuttering between the two ways past
 var art_scale := 1.0     # GAMEPLAY body scale (collision, avoidance reach) — never rescaled
 var size_var := 1.0      # per-spawn size multiplier (living-world variance; 1.0 for bosses/mirrors-until-set)
-var render_mult := 1.0   # VISUAL-only multiplier (Balance.CHAR_RENDER_SCALE for mobs, 1.0 for bosses)
+var render_mult := 1.0   # VISUAL-only multiplier (Balance.CHAR_RENDER_SCALE for mobs AND bosses — set unconditionally below; a stale "1.0 for bosses" note here mis-led the 2026-08-24 fidelity audit by 1.7x)
 var knock := Vector2.ZERO
 var home := Vector2.ZERO
 var sprite: Sprite2D

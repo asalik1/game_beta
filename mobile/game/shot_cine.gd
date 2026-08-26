@@ -54,6 +54,16 @@ func _begin(clip: String) -> void:
 		for f in d.get_files():
 			if f.begins_with("f_") and (f.ends_with(".jpg") or f.ends_with(".png")):
 				d.remove(f)
+	if flag("movie") and game != null:
+		# Movie-mode audio capture: silence the game's MUSIC (keep the SFX bus) and
+		# log the process frame this clip's frame 0 lands on, so the AVI audio can
+		# be sliced to the exact clip window. --write-movie forces a fixed timestep,
+		# so SFX are captured in lockstep with the frames.
+		game.settings["music"] = 0.0
+		if game.music_player != null:
+			game.music_player.stop()
+			game.music_player.volume_db = -80.0
+		print("MOVIE_CLIP_BEGIN pf=%d clip=%s" % [Engine.get_process_frames(), clip])
 	step("clip " + clip)
 
 
@@ -445,8 +455,8 @@ func _play_record(secs: float) -> void:
 func _ready() -> void:
 	_watch = flag("watch")
 	_play = flag("play")
-	if flag("sound"):
-		AudioServer.set_bus_mute(0, false)   # --sound to hear it; default = muted
+	if flag("sound") or flag("movie"):
+		AudioServer.set_bus_mute(0, false)   # --sound/--movie unmute; default = muted
 	var scene := arg("scene", "hero")
 	var cls := arg("class", "mage")
 	match scene:
@@ -517,19 +527,21 @@ func _scene_hero(cls: String) -> void:
 
 	var swarm_at := func() -> Vector2: return _swarm_centroid()
 	if cls in ["mage", "archer", "warlock"]:
-		# SQUISHY KITE: smart-flee the pack (obstacle-aware) while the basic fires
-		# nonstop back at it; weave the mobility/AoE. No ult (that's for bosses).
+		# RANGED mob beat stays brief + ult-LESS — the ranged ult is showcased on
+		# a boss (compact-showcase split): smart-flee, basic + mobility/AoE.
 		await _kite_smart(3.0, swarm_at, [[0.9, "a2"], [1.9, "a3"]], 0.22)
+		await _record(0.3)
 	elif cls == "assassin":
-		# DASH DANCE: dart around the pack (short-CD dash), fan knives between
-		# dashes, basics stab. No ult here.
-		await _kite_smart(3.0, swarm_at,
-			[[0.15, "a2"], [0.6, "a3"], [1.2, "a2"], [1.7, "a3"], [2.2, "a2"]], 0.38)
+		# ASSASSIN FARMS: dart the pack (short-CD dash), fan knives, then the
+		# death-mark ULT on the swarm (melee-side of the split, no kiting needed).
+		await _kite_smart(2.5, swarm_at,
+			[[0.15, "a2"], [0.6, "a3"], [1.2, "a2"], [1.9, "a3"]], 0.38)
+		_ult_on_swarm(); await _record(1.9)
 	else:
-		# MELEE WADE (warrior/paladin): push INTO the pack — gap-close, cleave,
-		# ground-AoE. Aggressive, not a retreat. No ult here.
-		await _kite_smart(2.8, swarm_at, [[0.3, "a2"], [1.2, "a3"], [2.0, "a2"]], 0.3, true)
-	await _record(0.3)
+		# MELEE FARMS (warrior/paladin): wade INTO the pack — cleave, ground-AoE —
+		# then drop the ULT on the swarm. Power fantasy; no kiting.
+		await _kite_smart(2.3, swarm_at, [[0.3, "a2"], [1.2, "a3"]], 0.3, true)
+		_ult_on_swarm(); await _record(1.9)
 	_clear_mobs()
 
 
@@ -642,16 +654,19 @@ func _scene_bossfight(cls: String, boss_kind: String) -> void:
 
 	var melee := cls in ["warrior", "paladin", "assassin"]
 	if melee:
-		# Melee closes on the boss, weaving in and out; full kit + ult.
+		# Melee closes on the boss, weaving in and out; then the ultimate.
 		await _kite_run(
 			[[KEY_A, 0.55], [KEY_W, 0.4], [KEY_A, 0.5], [KEY_S, 0.4], [KEY_D, 0.4]],
-			[[0.4, "a2"], [1.3, "a3"], [2.1, "a2"], [3.0, "ult"]], 0.28)
+			[[0.4, "a2"], [1.3, "a3"], [2.0, "a2"]], 0.28)
 	else:
-		# Ranged kites RIGHT into the open, basic peppering the boss; full kit + ult.
+		# Ranged kites RIGHT into the open, basic peppering the boss; then the ult.
 		await _kite_run(
 			[[KEY_D, 0.75], [KEY_W, 0.5], [KEY_D, 0.65], [KEY_S, 0.5], [KEY_D, 0.5]],
-			[[1.0, "a2"], [2.1, "a3"], [3.2, "ult"]], 0.24)
-	await _record(2.0)                              # hold the ult on the boss
+			[[1.0, "a2"], [2.1, "a3"]], 0.24)
+	# Ult AFTER the kite so it always fires (scheduling it inside the loop past
+	# the loop's length silently dropped it) — single target, auto-aims the boss.
+	_cast("ult")
+	await _record(2.2)                              # hold the ult on the boss
 	_clear_field()
 
 

@@ -581,6 +581,31 @@ func open_confirm(msg: String, on_yes: Callable, on_cancel := Callable()) -> voi
 	_hint(vbox, "ESC to cancel")
 
 
+## The Stranger's Wager (Q16 minigame): a hooded gambler's shell game. Three
+## shells; one hides the pea (the caller rolls `winning` TRUE-random from
+## loot_rng, so a reload can't scum it). Presented as a menu, so input is
+## OVERLAY-gated — it pauses solo, and online the overlay state gates input,
+## never the tree (co-op §5.4). Not closable: once you're at the fire you pick.
+## on_pick(pick: int) fires with the chosen shell; the caller owns the payout.
+func open_wager(stake: int, on_pick: Callable) -> void:
+	var vbox := _open("The Stranger's Wager", 640, 400, false)
+	current = "wager"
+	var l := _lbl(vbox, "A hooded figure crouches at a low fire, turning three walnut shells over the dirt. \"One hides the pea, traveler. %d gold says your eye isn't quick enough to follow it.\"" % stake, 15, Color(0.9, 0.88, 0.82))
+	l.custom_minimum_size = Vector2(560, 0)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 18)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(row)
+	var labels := ["   Left shell   ", "   Middle shell   ", "   Right shell   "]
+	for s in 3:
+		var pick := s
+		_btn(row, labels[s], func() -> void:
+			close()
+			on_pick.call(pick), Color(0.95, 0.85, 0.5))
+	_hint(vbox, "Pick a shell — the bet is already down")
+
+
 ## Live sound, display, language and input settings.
 var settings_return := "pause"
 func open_settings(from := "pause") -> void:
@@ -2160,6 +2185,16 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		ab.add_theme_font_size_override("font_size", 12)
 		ab.custom_minimum_size.y = 28.0 if not game.touch_mode else 34.0
 		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nIn Crownfall, gems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag); on the road only\nthe bag merges — socketed work waits for the Lapidary."
+	if not p.backpack.is_empty():
+		var equip_all_cb := func() -> void:
+			var n: int = game.local_player.auto_equip()
+			game.spawn_text(game.local_player.global_position + Vector2(0, -60),
+				"%d EQUIPPED" % n if n > 0 else "NOTHING BETTER", Color(0.6, 1.0, 0.6))
+			open_inventory("gear", cat)
+		var eb := _btn(catrow, "⚖ Auto-equip", equip_all_cb, Color(0.6, 1.0, 0.6))
+		eb.add_theme_font_size_override("font_size", 12)
+		eb.custom_minimum_size.y = 28.0 if not game.touch_mode else 34.0
+		eb.tooltip_text = "Fill every empty gear slot and take strict upgrades from the bag.\nNever swaps out a piece you might want — anything holding gems or\na unique passive is left alone, and side-grades are skipped."
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -2305,7 +2340,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 				if can_synth:
 					actions.append(["  ⚒  Synthesize  (3 → 1 Lv%d)  " % (g["lvl"] + 1), Color(0.6, 0.9, 1.0), synth_cb])
 				actions.append(["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb])
-				_open_detail_popover(Art.gem_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g), Items.gem_color(g), info, actions, GearFlavor.of(g))
+				_open_detail_popover(Art.gem_codex_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g), Items.gem_color(g), info, actions, GearFlavor.of(g))
 			var gbtn := _bag_slot(grid, Art.gem_icon(Items.gem_color(g), int(g["lvl"])),
 				("x%d" % count) if count > 1 else "", Items.gem_color(g), gem_cb)
 			# Gem stacks accept gems dragged back out of equipment.
@@ -2628,7 +2663,9 @@ func _popover_header(vbox: VBoxContainer, icon: Texture2D, title: String, title_
 		var ic := TextureRect.new()
 		ic.texture = icon
 		ic.custom_minimum_size = Vector2(40, 40)
+		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ic.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR   # clean downscale of 128px codex icons
 		head.add_child(ic)
 	var tl := UITheme.title(_lbl(head, title, 18, title_color), 19)
 	tl.custom_minimum_size = Vector2(300, 0)
@@ -3570,7 +3607,7 @@ func _open_socketed_gem_popover(item: Dictionary, idx: int, refresh: Callable) -
 	var remove_cb := func() -> void:
 		game.local_player.remove_gem(item, idx)
 		refresh.call()
-	_open_detail_popover(Art.gem_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g),
+	_open_detail_popover(Art.gem_codex_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g),
 		Items.gem_color(g), info, [["  ⇩  Remove  (back to bag)  ", Color(1.0, 0.8, 0.5), remove_cb]])
 
 
@@ -5616,7 +5653,8 @@ const BOSS_KINDS := ["fangmaw", "morwen", "vargoth",
 	"forgemistress", "cinderhide", "ashpriest",  # ch4 Slagfields (BOSSES.md)
 	"whitepelt", "icebound", "sleepkeeper",  # ch5 Long Sleep (BOSSES.md)
 	"auroch", "gardener", "curetwisted",  # ch6 Blooming Deep (BOSSES.md)
-	"stormdrake_veyx", "unnamed_echo", "stormmouth"]  # ch7 Breaking Sky — Act 1 finale (BOSSES.md)
+	"stormdrake_veyx", "unnamed_echo", "stormmouth",  # ch7 Breaking Sky — Act 1 finale (BOSSES.md)
+	"first_howl"]  # (Q13 I2) The Moonfen interlude — the band-read boss
 
 ## Codex screens live in ui/codex.gd. Passing a boss `kind` opens that
 ## boss's focused mechanics detail view instead of the tab list.

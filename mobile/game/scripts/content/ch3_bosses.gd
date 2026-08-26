@@ -77,6 +77,9 @@ const ENEMIES := {
 		"physres": 60.0, "magres": 40.0, "eva": 0.0, "critres": 9.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 22, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,
 		"attrs": {"VIT": 2.0, "STR": 1.5},
+		# Mechanic-summoned adds (never zone-spawned): lets tooling
+		# (fidelity_dump.gd "placed" set) know these kinds ARE seen in game.
+		"summons": ["choir_censer"],
 		"music": "boss_varo", "music_fallback": "boss_nullwarden",
 		"lore": "The Choir's holiest relic is the one thing in Vaelscar the rot refuses. He prays daily that this is not what it means.",
 		"mechanics": [
