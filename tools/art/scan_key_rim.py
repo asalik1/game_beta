@@ -147,6 +147,53 @@ def build_montage(rows: list[dict], out_path: str, cell: int = 128, cols: int = 
     canvas.save(out_path)
 
 
+def _erode(m: np.ndarray, k: int) -> np.ndarray:
+    for _ in range(k):
+        m = m & np.roll(m, 1, 0) & np.roll(m, -1, 0) & np.roll(m, 1, 1) & np.roll(m, -1, 1)
+    return m
+
+
+def pale_halo_score(path: str) -> float:
+    """WHITE/PALE keying-halo score (2026-08-26, snow-tree catch): the ring
+    test — outermost 0-2px of the opaque silhouette vs the 4-6px band inward
+    at the same spots. A keying halo = a thin BRIGHT, DESATURATED skin over
+    darker content (score ~0.3-0.65 on the caught trees; clean assets ~0.0).
+    JUDGED LINT — confirm on a grass composite before fixing: pale-bodied
+    subjects (bone-grey bosses, stone) and thin pale DESIGN strands (hanging
+    moss, frost wisps) score 0.1-0.45 legitimately; solid dark-content sprites
+    with a real halo separate cleanly above ~0.25. Colour-key rims (green/
+    magenta) are the classic scanner's job; this catches the colourless one
+    that BLEED (colour-blind) and the key list structurally miss."""
+    from PIL import ImageFilter
+    im = Image.open(path).convert("RGBA")
+    # strips: score the first cell (square, or static-width for _anim)
+    cw = im.height if im.width % im.height == 0 and im.width // im.height > 1 else im.width
+    base = os.path.basename(path)
+    if base.endswith("_anim.png"):
+        st = os.path.join(os.path.dirname(path), base[:-9] + ".png")
+        if os.path.exists(st):
+            sw, sh = Image.open(st).size
+            if sh == im.height and im.width % sw == 0:
+                cw = sw
+    a = np.asarray(im.crop((0, 0, cw, im.height))).astype(float)
+    al = a[..., 3]
+    core = al > 128
+    if core.sum() < 400:
+        return 0.0
+    e2, e4, e6 = _erode(core, 2), _erode(core, 4), _erode(core, 6)
+    ring_out, ring_in = core & ~e2, e4 & ~e6
+    lum = a[..., :3].mean(2)
+    mx, mn = a[..., :3].max(2), a[..., :3].min(2)
+    blur = lambda x: np.asarray(Image.fromarray(np.clip(x, 0, 255).astype("uint8"))
+                                .filter(ImageFilter.GaussianBlur(5))).astype(float)
+    wm = ring_in.astype(float)
+    wb = blur(wm * 255) / 255
+    inref = blur(lum * wm) / np.maximum(wb, 1e-3)
+    valid = ring_out & (wb > 0.02)
+    halo = valid & (lum > inref + 55) & (lum > 150) & ((mx - mn) < 50)
+    return float(halo.sum()) / max(1, int(valid.sum()))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Folder-wide key-colour rim contamination scanner.")
     ap.add_argument("target", nargs="?", default="game/assets/sprites", help="dir or glob (default game/assets/sprites)")
@@ -163,6 +210,10 @@ def main() -> None:
     ap.add_argument("--show", default="DEFECT,SUSPECT", help="verdicts to print/montage (default DEFECT,SUSPECT)")
     ap.add_argument("--csv", help="write full per-hit results here")
     ap.add_argument("--montage", help="write a labelled contact sheet of shown hits here")
+    ap.add_argument("--pale-halo", action="store_true",
+                    help="ALSO score the colourless WHITE-halo class (ring test); WARNs >= --pale-min")
+    ap.add_argument("--pale-min", type=float, default=0.25,
+                    help="pale_halo_score to WARN at (default 0.25; judged lint — eyeball on grass)")
     args = ap.parse_args()
 
     keys = [k.strip() for k in args.keys.split(",") if k.strip() in KEYS]
@@ -201,6 +252,22 @@ def main() -> None:
     if args.montage:
         build_montage(shown, args.montage)
         print(f"montage -> {args.montage}  ({len(shown)} cells)")
+
+    if args.pale_halo:
+        pale = []
+        for p in files:
+            try:
+                s = pale_halo_score(p)
+            except Exception:
+                continue
+            if s >= args.pale_min:
+                pale.append((s, p))
+        pale.sort(reverse=True)
+        print(f"\npale-halo (>= {args.pale_min}, JUDGED — confirm on grass; pale-bodied/wispy designs false-positive):")
+        for s, p in pale:
+            print(f"  {s:.2f}  {os.path.basename(p)}")
+        if not pale:
+            print("  none")
 
 
 if __name__ == "__main__":
