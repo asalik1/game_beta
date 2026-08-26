@@ -84,6 +84,31 @@ const CHAPTER_ZONES := {
 	],
 }
 
+# Boss encounter beats (played by game_world via Story.beat_for("pre_"/"post_" + kind)).
+# Act 1's two bosses previously fought in silence; Korrag is the broken beast-keeper
+# the storm now speaks through, and the Choir Mother is Act 1's finale in Choir's Hollow
+# (Morwen's echo, matron of the congregation that never buries its dead). Act 1 has no
+# chapter epilogue, so post_choirmother also serves as the act's close.
+const BEATS := {
+	"pre_stormwarden": [
+		["Korrag", "Steady now. Steady. Every beast the warbands ever broke to war, I gentled through the thunder — a low word, a still hand. That was the whole of me, once."],
+		["Korrag", "Now the thunder holds the hand. It gentles ME. Come close, little bearer — I have one word left in me, and it will lay you down quiet as any creature on a storm-night."],
+		["Narrator", "The warband scatters from their own champion. Something iron-shouldered and grieving rises in their place, and the storm, at last, opens his mouth."],
+	],
+	"post_stormwarden": [
+		["Narrator", "The storm goes out of him between one breath and the next, and what falls is only a large, tired man who once knew how to keep frightened things calm. His warband does not cheer — they creep close, the way beasts do, to a keeper finally still."],
+	],
+	"pre_choirmother": [
+		["The Choir Mother", "Hush. You have walked so very far to a hollow that asks its guests one kindness only — that they STAY. My congregation has not buried a single soul in living memory. See how full the pews have grown."],
+		["The Choir Mother", "Morwen cursed what she could not hold. I have only ever SUNG it back. Kneel, bearer — take a mark, take a hymnal, take your place in the long note that never has to end. The choir does so hunger for a strong new voice."],
+		["Narrator", "In the pews, the unburied lift their heads as one and turn them toward you. The hollow draws breath, and begins to hum."],
+	],
+	"post_choirmother": [
+		["Narrator", "The last note frays and will not knit again. One by one the congregation bows its head and does not raise it — the pews, for the first time in memory, go still."],
+		["Narrator", "Behind you Choir's Hollow falls silent, and somewhere past the ridge Morwen's blight feels a verse go missing from the world's long hymn. Act one is yours. The Vale holds a little quiet now — keep it close; you will spend it soon."],
+	],
+}
+
 # New Waking-era monsters. Stats are anchored at each listed level.
 const ENEMIES := {
 	"blightwolf": {"name": "Waking Wolf", "sprite": "blightwolf", "hp": 58.0, "dmg": 11.0, "speed": 165.0, "xp": 18, "gold": 6, "ranged": false, "scale": 3.2,
