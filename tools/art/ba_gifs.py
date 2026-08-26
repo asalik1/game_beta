@@ -49,13 +49,30 @@ def git_show(ref: str, rel: str):
         return None
 
 
-def is_strip(im: Image.Image) -> bool:
-    return im.width % im.height == 0 and im.width // im.height > 1
+def cell_w_of(stem: str, im: Image.Image):
+    """Mirror art.gd's frame rule: a `<base>_anim` strip whose matching static
+    shares its height and divides its width evenly uses STATIC-width cells
+    (prop anims are rectangular: cell = static WxH); else square cells."""
+    if stem.endswith("_anim"):
+        static = SPR / (stem[:-5] + ".png")
+        if static.exists():
+            sw, sh = Image.open(static).size
+            if sh == im.height and im.width % sw == 0 and im.width // sw > 1:
+                return sw
+    if im.width % im.height == 0:
+        return im.height
+    return im.width  # not a strip
 
 
-def frames_of(im: Image.Image):
-    c = im.height
-    return [im.crop((i * c, 0, (i + 1) * c, c)) for i in range(max(1, im.width // c))]
+def is_strip(stem: str, im: Image.Image) -> bool:
+    cw = cell_w_of(stem, im)
+    return cw < im.width
+
+
+def frames_of(im: Image.Image, cell_w=None):
+    c = cell_w or im.height
+    return [im.crop((i * c, 0, (i + 1) * c, im.height))
+            for i in range(max(1, im.width // c))]
 
 
 def scale_to(im: Image.Image, h: int):
@@ -89,13 +106,14 @@ def build(name: str, base_ref: str, out_dir: Path, panel_h: int) -> str:
         return f"deleted  {stem} (skipped)"
     out = out_dir / f"{stem}.gif"
     if old is None:
-        fr = frames_of(new) if is_strip(new) else [new]
+        fr = frames_of(new, cell_w_of(stem, new)) if is_strip(stem, new) else [new]
         pw = max(round(f.width * panel_h / f.height) for f in fr) + 16
         frames = [panel(f, pw, panel_h, "NEW") for f in fr] or [panel(new, pw, panel_h, "NEW")]
         save_gif(out, frames, 180 if len(frames) > 1 else 1200)
         return f"new      {stem}"
-    if is_strip(new) and is_strip(old):
-        of, nf = frames_of(old), frames_of(new)
+    if is_strip(stem, new) and is_strip(stem, old):
+        of = frames_of(old, cell_w_of(stem, old))
+        nf = frames_of(new, cell_w_of(stem, new))
         n = max(len(of), len(nf))
         pw = max(max(round(f.width * panel_h / f.height) for f in of),
                  max(round(f.width * panel_h / f.height) for f in nf)) + 16
@@ -109,8 +127,11 @@ def build(name: str, base_ref: str, out_dir: Path, panel_h: int) -> str:
         return f"loop     {stem}"
     # static (or shape changed): toggle; AFTER plays the anim strip if one ships
     anim_p = SPR / f"{stem}_anim.png"
-    nf = frames_of(Image.open(anim_p).convert("RGBA")) if (anim_p.exists()
-         and not stem.endswith("_anim")) else [new]
+    if anim_p.exists() and not stem.endswith("_anim"):
+        anim = Image.open(anim_p).convert("RGBA")
+        nf = frames_of(anim, cell_w_of(f"{stem}_anim", anim))
+    else:
+        nf = [new]
     pw = max(round(old.width * panel_h / old.height),
              max(round(f.width * panel_h / f.height) for f in nf)) + 16
     frames = [panel(old, pw, panel_h, "BEFORE")]
@@ -147,6 +168,21 @@ def main() -> int:
     if not names:
         print("nothing changed vs", a.base)
         return 0
+    # dedup byte-identical files (direction copies: _ne/_se = _e etc.)
+    import hashlib
+    seen: dict = {}
+    unique = []
+    for n in names:
+        rel = n if n.endswith(".png") else n + ".png"
+        p = SPR / rel
+        if p.exists():
+            hsh = hashlib.md5(p.read_bytes()).hexdigest()
+            if hsh in seen:
+                print(f"dup      {rel[:-4]} == {seen[hsh]} (skipped)")
+                continue
+            seen[hsh] = rel[:-4]
+        unique.append(n)
+    names = unique
     out_dir = Path(a.out)
     ok = 0
     for n in names:
