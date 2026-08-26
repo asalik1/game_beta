@@ -75,7 +75,7 @@ const CHAPTER_ZONES := {
 
 const QUESTS := {
 	"ch2_start": "Report to Elder Maren by the camp fire  (walk up to her and press E)",
-	"ch2_act1":  "Take the east road — scout what the Waking has made of the land",
+	"ch2_act1":  "Take the east road and scout what the Waking's made of the land",
 }
 
 const CONVOS := {
@@ -83,51 +83,51 @@ const CONVOS := {
 	# shard woke. Repeat visits short-circuit to a one-line send-off.
 	"ch2_maren_hub": {"start": "m1", "nodes": {
 		"m1": {"who": "Elder Maren",
-			"text": "So. Another one the shards chose. Sit; the fire doesn't bite. Unlike most of what's left out there.",
+			"text": "So. Another one the shards chose. Sit down, the fire won't bite. That's more than I can say for most of what's left out there.",
 			"variants": [
-				{"flag": "ch2_briefed", "text": "East, shard-bearer. The blight will not scout itself — and the factions' recruiters move faster than you do.", "next": ""},
-				{"flag": "ch2_kept_faith", "text": "So. Another one the shards chose — and one who put the missing hours to honest work. Sit. Anyone who can build around an Ember may yet build past it."},
-				{"flag": "ch2_fed_ember", "text": "Sit. …So the quiet years weren't quiet. The woken who spent them leaning INTO the thing carry the lean ever after — I could see yours from across the fire. We'll work on it, or it will work on you."},
-				{"flag": "ch2_buried_it", "text": "So. Another one the shards chose, and another who tried to answer fire with a locked room. Sit. Buried things have a way of choosing their own hour to surface."},
-				{"flag": "chose_virtue", "text": "So. Another one the shards chose — and this one, they tell me, chose BACK. Good. Sit; you and I may actually get along."},
-				{"flag": "chose_temptation", "text": "So. Another one the shards chose. I heard what the waking cost — and what you told yourself about it. Sit anyway. Better here than out there alone with that voice."},
-				{"flag": "chose_away", "text": "So. Another one the shards chose — the kind that walks away from things. You walked HERE, at least. Sit."},
+				{"flag": "ch2_briefed", "text": "East, shard-bearer. The blight won't scout itself, and the faction recruiters move faster than you do.", "next": ""},
+				{"flag": "ch2_kept_faith", "text": "So. Another one the shards chose, and one who put the missing hours to honest work. Sit. Anyone who can build around an Ember might just build past it."},
+				{"flag": "ch2_fed_ember", "text": "Sit. …So the quiet years weren't so quiet. The woken who spend them leaning into the thing carry that lean ever after. I could see yours from across the fire. We'll work on it, or it'll work on you."},
+				{"flag": "ch2_buried_it", "text": "So. Another one the shards chose. Another who tried to answer fire with a locked room. Sit. Buried things have a way of picking their own hour to come back up."},
+				{"flag": "chose_virtue", "text": "So. Another one the shards chose, and this one, they tell me, chose back. Good. Sit down, you and I might actually get along."},
+				{"flag": "chose_temptation", "text": "So. Another one the shards chose. I heard what the waking cost you, and what you told yourself about it. Sit anyway. Better here than out there alone with that voice."},
+				{"flag": "chose_away", "text": "So. Another one the shards chose. The kind that walks away from things. Well, you walked here, at least. Sit."},
 			],
 			"next": "m2"},
-		"m2": {"who": "Elder Maren", "text": "You've seen the road in — the Waking isn't a rumor, it's a season. What you haven't seen is what circles the newly-woken: the blight never stopped crawling, the beastkin never stopped raiding, and every power in Vaelscar wants shard-bearers on a leash. The leashes are getting polite.", "next": "m3"},
-		"m3": {"who": "Elder Maren", "text": "I find the newly-woken before the factions do. What I ask is small: eyes and honesty. What THEY will ask is everything. Any questions, or do I point you east?",
+		"m2": {"who": "Elder Maren", "text": "You've seen the road in. The Waking isn't a rumor, it's a season. What you haven't seen is what circles the newly-woken. The blight never stopped crawling, the beastkin never stopped raiding, and every power in Vaelscar wants shard-bearers on a leash. And the leashes are getting polite about it.", "next": "m3"},
+		"m3": {"who": "Elder Maren", "text": "I find the newly-woken before the factions do. What I ask is small. Eyes, and honesty. What they'll ask is everything. Any questions, or do I point you east?",
 			"choices": [
 				{"text": "\"Point me east. Whatever's out there, I'd rather meet it than wait for it.\"",
 					"flags": {"ch2_briefed": true}, "quest": "ch2_act1", "next": "m_go"},
 				# Both question paths ALSO brief you (playtest fix: they end
 				# with "the road east" but used to leave the gate shut).
-				{"text": "\"First — what happens to shard-bearers who lose themselves?\"",
+				{"text": "\"First, what happens to shard-bearers who lose themselves?\"",
 					"resonance": 4.0, "flags": {"ch2_briefed": true}, "next": "m_warn"},
 				{"text": "\"Careful how you say 'leash', old woman. The shard listens.\"",
 					"req_band": "tempted", "resonance": -4.0,
 					"flags": {"ch2_briefed": true}, "next": "m_dark"},
 			]},
-		"m_warn": {"who": "Elder Maren", "text": "They stop asking that question. That is the first sign. Keep asking it, and you will likely die yourself — which, for a shard-bearer, is the good ending. Now: east.",
+		"m_warn": {"who": "Elder Maren", "text": "They stop asking that question. That's the first sign. Keep asking it, and you'll probably die yourself. Which, for a shard-bearer, is the good ending. Now. East.",
 			"quest": "ch2_act1",
 			"next": "m_warn2"},
-		"m_warn2": {"who": "Elder Maren", "text": "The road past the palisade. Walk it, note what the Waking has made of the land, and come back breathing. That is the whole of the job.",
+		"m_warn2": {"who": "Elder Maren", "text": "The road past the palisade. Walk it, see what the Waking's made of the land, and come back breathing. That's the whole of the job.",
 			"next": ""},
-		"m_dark": {"who": "Elder Maren", "text": "...It does listen. And it heard an old woman refuse to flinch. Remember how that's done — you will need the trick more than I will. The road east, shard-bearer.",
+		"m_dark": {"who": "Elder Maren", "text": "...It does listen. And it just heard an old woman refuse to flinch. Remember how that's done, you'll need the trick more than I will. The road east, shard-bearer.",
 			"quest": "ch2_act1",
 			"next": "m_dark2"},
-		"m_dark2": {"who": "Elder Maren", "text": "And eat something before you go. Whatever it whispers, you are still a body that marches on bread.",
+		"m_dark2": {"who": "Elder Maren", "text": "And eat something before you go. Whatever it whispers, you're still a body that marches on bread.",
 			"next": ""},
-		"m_go": {"who": "Elder Maren", "text": "East it is. Past the palisade, note what the Waking has made of the land, and come back breathing. That is the whole of the job.",
+		"m_go": {"who": "Elder Maren", "text": "East it is. Past the palisade, see what the Waking's made of the land, and come back breathing. That's the whole of the job.",
 			"next": ""},
 	}},
 
 	# ---- Camp sentry: the palisade watch. Reacts to your Resonance band.
 	"ch2_sentry": {"start": "s1", "nodes": {
 		"s1": {"who": "Sentry Piet",
-			"text": "Quiet shift, thank the flame. The wolves out there sing most nights — real wolves, mind. You learn to tell the difference by the second week.",
+			"text": "Quiet shift, thank the flame. The wolves out there sing most nights. Real wolves, mind you. You learn to tell the difference by the second week.",
 			"variants": [
-				{"band": "tempted", "text": "...You mind standing a bit further off? No offense. We had one of yours through last month with that same look, and I still dream about the fence."},
-				{"band": "steady", "text": "Shard-bearer. Good — with you standing there the night feels half as long. Maren picks the decent ones, whatever the villages say."},
+				{"band": "tempted", "text": "...You mind standing a bit further off? No offense. We had one of yours come through last month with that same look, and I still dream about the fence."},
+				{"band": "steady", "text": "Shard-bearer. Good. With you standing there the night feels half as long. Maren picks the decent ones, whatever the villages say."},
 			],
 			"next": ""},
 	}},
@@ -139,13 +139,13 @@ const CONVOS := {
 			"variants": [
 				# Payoff first (playtest fix): she asked about the blue door —
 				# if you went and looked, she must KNOW you did.
-				{"flag": "mill_told", "text": "Sera nods as you pass, the way people nod at good weather. \"Still blue,\" she says, to herself as much as you. She has stopped saying 'we HAD a mill.'", "next": ""},
-				{"flag": "mill_seen", "text": "\"You went.\" She reads it off your face before you speak. \"...And it stands? The door held?\" She sits down slowly on the cook-bench. \"Twenty years of spring paint. You tell Maren she's right — the land can be cleaned. Some of it is clean ALREADY.\"", "next": "r_told"},
+				{"flag": "mill_told", "text": "Sera nods as you pass, the way people nod at good weather. \"Still blue,\" she says, to herself as much as you. She's stopped saying 'we had a mill.'", "next": ""},
+				{"flag": "mill_seen", "text": "\"You went.\" She reads it off your face before you speak. \"...And it stands? The door held?\" She sits down slowly on the cook-bench. \"Twenty years of spring paint. You tell Maren she's right. The land can be cleaned. Some of it is clean already.\"", "next": "r_told"},
 				{"band": "tempted", "text": "My gran used to say the blight gets in through what you want most. ...Why are you looking at me like that, shard-bearer?"},
-				{"band": "steady", "text": "You have kind eyes for someone carrying a dead king's splinter. If you get as far as the Greyrun... the mill had a blue door. I'd like to know if it's standing."},
+				{"band": "steady", "text": "You've got kind eyes for someone carrying a dead king's splinter. If you get as far as the Greyrun... the mill had a blue door. I'd like to know if it's standing."},
 			],
 			"next": ""},
-		"r_told": {"who": "Widow Sera", "text": "\"Twenty years I painted that door. Tell me true, once more — it stands?\"",
+		"r_told": {"who": "Widow Sera", "text": "\"Twenty years I painted that door. Tell me true, once more. It stands?\"",
 			"next": "",
 			"choices": [
 				{"text": "\"It stands, Sera. The paint is winning.\"",

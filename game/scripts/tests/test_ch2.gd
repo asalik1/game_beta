@@ -31,7 +31,7 @@ func _test_ch2_hub() -> void:
 	await _frames(2)
 	if not game.hud.dialogue_active:
 		return _fail("Maren briefing did not open")
-	if not ("chose BACK" in game.hud.text_label.text):
+	if not ("chose back" in game.hud.text_label.text.to_lower()):
 		return _fail("Maren did not read the opening choice (got '%s')" % game.hud.text_label.text)
 	await _skip_dialogue()  # m1 + m2 -> m3 presents the choices
 	await _frames(2)

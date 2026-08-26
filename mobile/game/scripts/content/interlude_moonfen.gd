@@ -16,7 +16,7 @@ extends Node
 const STANDALONE := {
 	"interlude_moonfen": {
 		"name": "The Moonfen",
-		"sub": "The fen where the first wolf still runs — and still remembers.",
+		"sub": "The fen where the first wolf still runs, and still remembers.",
 		"interlude": true,
 		"zones": [
 			{"name": "The Fen's Edge", "terrain": "marsh", "type": "combat", "lock_next": "clear",
@@ -53,8 +53,8 @@ const ENEMIES := {
 		"attrs": {"STR": 2.0, "AGI": 1.5},
 		"mechanics": [
 			{"name": "The Long Lunge",
-			 "tell": "It coils low, ears flat, and the ground under you dims — then it takes the whole fen in a single leap.",
-			 "counter": "The dim patch marks where it LANDS, not where you stand. Break sideways the instant it crouches."}],
+			 "tell": "It coils low, ears flat, and the ground under you dims. Then it takes the whole fen in a single leap.",
+			 "counter": "The dim patch marks where it lands, not where you stand. Break sideways the instant it crouches."}],
 	},
 }
 
@@ -62,15 +62,15 @@ const BEATS := {
 	"pre_first_howl": [
 		["Narrator", "The water goes flat. Across the fen, something the size of a barn rises out of the reeds without a sound and looks at you the way weather looks at a field."]],
 	"pre_first_howl@steady": [
-		["Narrator", "The water goes flat. Something the size of a barn rises out of the reeds without a sound. It was the first thing that ever hunted, and it has been waiting a long age to see what you would become. It seems, almost, to approve."]],
+		["Narrator", "The water goes flat. Something the size of a barn rises out of the reeds without a sound. It was the first thing that ever hunted, and it's been waiting a long age to see what you'd become. It seems, almost, to approve."]],
 	"pre_first_howl@tempted": [
-		["Narrator", "The water goes flat. The thing rising from the reeds has been watching the shard in you the whole way in — and it likes what the greed left behind. It comes faster for the hungry. GOOD, the flat old eyes seem to say. GOOD."]],
+		["Narrator", "The water goes flat. The thing rising from the reeds has been watching the shard in you the whole way in, and it likes what the greed left behind. It comes faster for the hungry. GOOD, the flat old eyes seem to say. GOOD."]],
 	"epilogue_interlude_moonfen": [
 		["Narrator", "You leave the fen the way you found it, quiet. The oldest hunt is over, and you were the one still standing."]],
 	"epilogue_interlude_moonfen@steady": [
-		["Narrator", "You leave the fen the way you found it — quiet, and only water now. The oldest hunt is over and you were the one still standing. Crownfall will not believe you, and you find you do not need it to."]],
+		["Narrator", "You leave the fen the way you found it, quiet, and only water now. The oldest hunt is over and you were the one still standing. Crownfall won't believe you, and you find you don't need it to."]],
 	"epilogue_interlude_moonfen@tempted": [
-		["Narrator", "You leave the fen heavier than you came, the shard warm and pleased. The oldest hunter is dead, and something in you enjoyed the size of it. Crownfall waits — and so, now, does whatever comes after."]],
+		["Narrator", "You leave the fen heavier than you came, the shard warm and pleased. The oldest hunter is dead, and something in you enjoyed the size of it. Crownfall waits, and so, now, does whatever comes after."]],
 }
 
 

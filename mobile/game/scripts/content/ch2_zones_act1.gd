@@ -91,21 +91,21 @@ const CHAPTER_ZONES := {
 # chapter epilogue, so post_choirmother also serves as the act's close.
 const BEATS := {
 	"pre_stormwarden": [
-		["Korrag", "Steady now. Steady. Every beast the warbands ever broke to war, I gentled through the thunder — a low word, a still hand. That was the whole of me, once."],
-		["Korrag", "Now the thunder holds the hand. It gentles ME. Come close, little bearer — I have one word left in me, and it will lay you down quiet as any creature on a storm-night."],
-		["Narrator", "The warband scatters from their own champion. Something iron-shouldered and grieving rises in their place, and the storm, at last, opens his mouth."],
+		["Korrag", "Steady now. Steady. Every beast the warbands ever broke to war, I gentled through the thunder. A low word, a still hand. That was the whole of me, once."],
+		["Korrag", "Now the thunder holds the hand. It gentles me. Come close, little bearer. I've got one word left in me, and it'll lay you down as quiet as any creature on a storm-night."],
+		["Narrator", "The warband scatters away from their own champion. Something iron-shouldered and grieving rises in their place, and the storm finally opens his mouth."],
 	],
 	"post_stormwarden": [
-		["Narrator", "The storm goes out of him between one breath and the next, and what falls is only a large, tired man who once knew how to keep frightened things calm. His warband does not cheer — they creep close, the way beasts do, to a keeper finally still."],
+		["Narrator", "The storm goes out of him between one breath and the next, and what falls is just a large, tired man who once knew how to keep frightened things calm. His warband doesn't cheer. They creep in close, the way beasts do, toward a keeper who's finally gone still."],
 	],
 	"pre_choirmother": [
-		["The Choir Mother", "Hush. You have walked so very far to a hollow that asks its guests one kindness only — that they STAY. My congregation has not buried a single soul in living memory. See how full the pews have grown."],
-		["The Choir Mother", "Morwen cursed what she could not hold. I have only ever SUNG it back. Kneel, bearer — take a mark, take a hymnal, take your place in the long note that never has to end. The choir does so hunger for a strong new voice."],
-		["Narrator", "In the pews, the unburied lift their heads as one and turn them toward you. The hollow draws breath, and begins to hum."],
+		["The Choir Mother", "Hush. You've walked so very far, to a hollow that asks its guests only one kindness: that they stay. My congregation hasn't buried a single soul in living memory. See how full the pews have grown."],
+		["The Choir Mother", "Morwen cursed what she couldn't hold. I've only ever sung it back. Kneel, bearer. Take a mark, take a hymnal, take your place in the long note that never has to end. The choir does so hunger for a strong new voice."],
+		["Narrator", "In the pews, the unburied lift their heads as one and turn them toward you. The hollow draws breath and begins to hum."],
 	],
 	"post_choirmother": [
-		["Narrator", "The last note frays and will not knit again. One by one the congregation bows its head and does not raise it — the pews, for the first time in memory, go still."],
-		["Narrator", "Behind you Choir's Hollow falls silent, and somewhere past the ridge Morwen's blight feels a verse go missing from the world's long hymn. Act one is yours. The Vale holds a little quiet now — keep it close; you will spend it soon."],
+		["Narrator", "The last note frays and won't knit back together. One by one the congregation bows its head and doesn't raise it, and the pews go still for the first time in memory."],
+		["Narrator", "Behind you Choir's Hollow falls silent, and somewhere past the ridge Morwen's blight feels a verse go missing from the world's long hymn. Act one is yours. The Vale holds a little quiet now, so keep it close. You'll spend it soon."],
 	],
 }
 
@@ -141,39 +141,39 @@ const ENEMIES := {
 }
 
 const QUESTS := {
-	"stormwarden": "Break the beastkin push — bring down the STORMWARDEN",
-	"choirmother": "Silence the hymn at its source — face the CHOIR MOTHER",
-	"done_ch2": "Act 1 pacified. The Waking recedes east — for now. (Act 2 arrives with T3.)",
+	"stormwarden": "Break the beastkin push and bring down the Stormwarden",
+	"choirmother": "Silence the hymn at its source. Face the Choir Mother.",
+	"done_ch2": "Act 1 pacified. The Waking recedes east, for now. (Act 2 arrives with T3.)",
 }
 
 const CONVOS := {
 	# ---- Widow Sera's mill: the blue door (hook planted in the hub).
 	"ch2_mill": {"start": "d1", "nodes": {
 		"d1": {"who": "Narrator",
-			"text": "A mill hunches over the black water of the Greyrun. The wheel is furred with blight-moss and the walls have gone grey — but the door is blue. Still blue. Somebody sanded and repainted it every spring for twenty years, and the rot seems, for now, to be losing the argument with the paint.",
+			"text": "A mill hunches over the black water of the Greyrun. The wheel is furred with blight-moss and the walls have gone grey, but the door is blue. Still blue. Somebody sanded and repainted it every spring for twenty years, and for now the rot seems to be losing its argument with the paint.",
 			"variants": [
 				# Looted state first (first match wins): the door still stands;
 				# the checking-on-it habit didn't survive the third floorboard.
-				{"flag": "mill_looted", "text": "The blue door stands where it stood. You know now what the paint was guarding, and how light a tin of coin rides — and you find you don't check on the door the way you meant to. It watches you pass instead.", "next": ""},
-				{"flag": "mill_seen", "text": "The blue door stands where it stood. You find you check on it now, the way Sera must have — one glance, every pass, to make sure the argument is still being lost.", "next": ""},
+				{"flag": "mill_looted", "text": "The blue door stands where it stood. You know now what the paint was guarding, and how light a tin of coin rides, and you find you don't check on the door the way you meant to. It watches you pass instead.", "next": ""},
+				{"flag": "mill_seen", "text": "The blue door stands where it stood. You find you check on it now, the way Sera must have: one glance, every pass, to make sure the argument is still being lost.", "next": ""},
 			],
 			"next": "d2"},
-		"d2": {"who": "Narrator", "text": "Sera asked one thing: to know whether it still stands. It does. That will matter to exactly one person in the world, which — you begin to suspect — is what mattering usually looks like.",
+		"d2": {"who": "Narrator", "text": "Sera asked one thing: to know whether it still stands. It does. That'll matter to exactly one person in the world, which, you're starting to suspect, is what mattering usually looks like.",
 			"choices": [
 				{"text": "Remember it for her. (The door is standing.)",
 					"flags": {"mill_seen": true}, "resonance": 3.0, "next": "d3"},
-				{"text": "Remember it for her — then work the wheel-side shutter loose. Twenty years of paint guarded SOMETHING worth carrying.",
+				{"text": "Remember it for her, then work the wheel-side shutter loose. Twenty years of paint guarded something worth carrying.",
 					"flags": {"mill_seen": true, "mill_looted": true}, "resonance": -8.0,
 					"gold": 30, "next": "d_loot"},
 			]},
 		"d3": {"who": "Narrator", "text": "You fix the blue in your mind against the grey. Small honest cargo for the road back.", "next": ""},
-		"d_loot": {"who": "Narrator", "text": "The shutter gives the way twenty-year hinges give: apologizing. Inside, the mill keeps house the way she must have kept it — jars labeled, tools oiled, and under the third floorboard a tin of coin against a leaner spring than this one. You take the tin. The door stays blue behind you, and stands a little less for it — though only you would know, and you intend to be the only one who ever does.", "next": ""},
+		"d_loot": {"who": "Narrator", "text": "The shutter gives the way twenty-year hinges give: apologizing. Inside, the mill keeps house the way she must have kept it, jars labeled, tools oiled, and under the third floorboard a tin of coin set aside against a leaner spring than this one. You take the tin. The door stays blue behind you, and stands a little less for it, though only you would know, and you mean to be the only one who ever does.", "next": ""},
 	}},
 
 	# ---- The fallen imperial courier: Vessa's seal (Cinderborn arc).
 	"ch2_courier": {"start": "k1", "nodes": {
 		"k1": {"who": "Narrator",
-			"text": "Bones in a roadside ditch, picked clean and half-swallowed by bog grass. The satchel under them is imperial leather, and inside — untouched by twenty kinds of weather — a seal of office in cold white metal.",
+			"text": "Bones in a roadside ditch, picked clean and half-swallowed by bog grass. The satchel under them is imperial leather, and inside, untouched by twenty kinds of weather, is a seal of office in cold white metal.",
 			"variants": [
 				{"flag": "courier_searched", "text": "The ditch again. Rain has already begun smoothing over what happened here.", "next": "k_revisit"},
 			],
@@ -191,14 +191,14 @@ const CONVOS := {
 					"faction": {"cinderborn": 8}, "next": "k_dig"},
 				{"text": "Leave it be.", "next": ""},
 			]},
-		"k_dig": {"who": "Narrator", "text": "The stones come up easier than they went down — they always do. The seal is exactly where you left it, cold and patient as paperwork. The cairn does not go back together quite right, and you decide not to notice.", "next": ""},
+		"k_dig": {"who": "Narrator", "text": "The stones come up easier than they went down. They always do. The seal is exactly where you left it, cold and patient as paperwork. The cairn doesn't go back together quite right, and you decide not to notice.", "next": ""},
 		"k2": {"who": "Narrator", "text": "History belongs to whoever holds the paperwork, someone told you.",
 			"choices": [
 				{"text": "Take the seal for Envoy Vessa. A commission is a commission.",
 					"req_flag": "joined_cinderborn",
 					"flags": {"relic_recovered": true, "courier_searched": true},
 					"faction": {"cinderborn": 8}, "next": "k_take"},
-				{"text": "Pocket the seal. SOMEONE will pay well for what this unlocks.",
+				{"text": "Pocket the seal. Someone will pay well for what this unlocks.",
 					"req_not_flag": "joined_cinderborn", "resonance": -3.0,
 					"flags": {"relic_recovered": true, "courier_searched": true}, "next": "k_take"},
 				{"text": "Leave him his last duty. Pile a few stones over the bones instead.",
@@ -206,6 +206,6 @@ const CONVOS := {
 					"faction": {"cinderborn": -3}, "next": "k_bury"},
 			]},
 		"k_take": {"who": "Narrator", "text": "The seal is heavier than metal has any right to be. Paperwork usually is.", "next": ""},
-		"k_bury": {"who": "Narrator", "text": "The cairn is small and crooked and will outlast the argument about crowns. Somewhere, an empire's ledger stays unbalanced, and the bog does not care.", "next": ""},
+		"k_bury": {"who": "Narrator", "text": "The cairn is small and crooked, and it'll outlast the argument about crowns. Somewhere an empire's ledger stays unbalanced, and the bog doesn't care.", "next": ""},
 	}},
 }

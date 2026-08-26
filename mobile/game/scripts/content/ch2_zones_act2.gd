@@ -107,8 +107,8 @@ const ENEMIES := {
 }
 
 const QUESTS := {
-	"nullwarden": "Cross the wastes and breach the Null Bastion — end WARDEN NULL",
-	"done_ch2": "The Waking is beaten back. Vaelscar breathes — and the factions start counting. Chapter 2 complete!",
+	"nullwarden": "Cross the wastes and breach the Null Bastion. End Warden Null.",
+	"done_ch2": "The Waking is beaten back. Vaelscar breathes, and the factions start counting. Chapter 2 complete!",
 }
 
 const BEATS := {
@@ -116,8 +116,8 @@ const BEATS := {
 		["Narrator", "The Bastion's pistons wake floor by floor, like a machine remembering a grudge. Something old and iron unfolds at its heart."],
 	],
 	"epilogue_ch2": [
-		["Narrator", "The Warden's grid goes dark. In the silence after, the Waking's edge stops advancing — the blight sulks, the storms wander off, the hymn at the world's rim loses a verse."],
-		["Elder Maren", "Beaten back. Not beaten — the difference matters, so remember it. But tonight the camp sleeps without sentries doubled, and that is YOUR doing, shard-bearer."],
+		["Narrator", "The Warden's grid goes dark. In the quiet after, the Waking's edge stops advancing. The blight sulks, the storms wander off, and the hymn at the world's rim loses a verse."],
+		["Elder Maren", "Beaten back. Not beaten. The difference matters, so remember it. But tonight the camp sleeps without doubling the sentries, and that's your doing, shard-bearer."],
 		["Narrator", "Somewhere east, past the maps, four old fires consider their next bearer. The shards are still choosing."],
 	],
 }
@@ -126,18 +126,18 @@ const CONVOS := {
 	# ---- A chronicler camped among the crystals, counting the Waking.
 	"ch2_scholar": {"start": "s1", "nodes": {
 		"s1": {"who": "Scholar Ivo",
-			"text": "Mind the resonance, shard-bearer — the crystals repeat what they hear, and some of what they heard down here predates manners. Ivo. Chronicler. Unaffiliated, whatever the envoy tells you.",
+			"text": "Mind the resonance, shard-bearer. The crystals repeat what they hear, and some of what they heard down here predates manners. Ivo. Chronicler. Unaffiliated, whatever the envoy tells you.",
 			"variants": [
-				{"flag": "scholar_met", "text": "\"Still standing? Statistically remarkable. The Bastion is ahead — my notes, regrettably, end where they get interesting.\"", "next": ""},
-				{"band": "tempted", "text": "The scholar looks up — then looks HARDER, the way one reads a difficult footnote. \"Fascinating. Yours is further along than most. Do sit AWAY from the crystals, if you please — they repeat things.\""},
-				{"band": "steady", "text": "\"Ah — a quiet one. The crystals barely hum around you. That is the rarest reading I've taken all year, shard-bearer; I intend to write it down twice.\""},
+				{"flag": "scholar_met", "text": "\"Still standing? Statistically remarkable. The Bastion's ahead. My notes, sadly, end right where they get interesting.\"", "next": ""},
+				{"band": "tempted", "text": "The scholar looks up, then looks harder, the way you read a difficult footnote. \"Fascinating. Yours is further along than most. Do sit away from the crystals, if you please. They repeat things.\""},
+				{"band": "steady", "text": "\"Ah, a quiet one. The crystals barely hum around you. That's the rarest reading I've taken all year, shard-bearer, and I intend to write it down twice.\""},
 			],
 			"next": "s2"},
-		"s2": {"who": "Scholar Ivo", "text": "Free knowledge, since you're heading east anyway: the Bastion ahead predates Vargoth — an ARMORY, from the war the Concord ended. What woke inside it is not blighted and not beastkin. It is MAINTENANCE, resumed after six hundred years, and it has decided the whole region is out of specification.",
+		"s2": {"who": "Scholar Ivo", "text": "Free knowledge, since you're heading east anyway: the Bastion ahead predates Vargoth. It's an armory, from the war the Concord ended. What woke up inside it isn't blighted and isn't beastkin. It's maintenance, resumed after six hundred years, and it's decided the whole region is out of specification.",
 			"choices": [
 				{"text": "\"What do your notes say about killing it?\"",
 					"flags": {"scholar_met": true}, "next": "s3"},
 			]},
-		"s3": {"who": "Scholar Ivo", "text": "\"Shed its armor before it sheds yours — it protects the frame, not the function. And when the grid stamps, DON'T be where you were standing. That sentence has cost four lives to write, so do me the courtesy of surviving it.\"", "next": ""},
+		"s3": {"who": "Scholar Ivo", "text": "\"Shed its armor before it sheds yours. It protects the frame, not the function. And when the grid stamps, don't be where you were standing. That sentence has cost four lives to write, so do me the courtesy of surviving it.\"", "next": ""},
 	}},
 }

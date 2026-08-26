@@ -87,15 +87,15 @@ const RELICS := {
 	"garden_fountain": {"name": "The Laughing Water", "sprite": "garden_fountain",
 		"lore": "Dry a century, the basin still carries the sound of falling water on still evenings. The Sanctified Ruins keep it at their heart, and the Choir will not say why."},
 	"garden_statue": {"name": "The Pouring Maid", "sprite": "garden_statue",
-		"lore": "A handmaid of stone tipping an ewer that never empties into a pool that never fills. The village greens grew up around her, and no one recalls whom she served."},
+		"lore": "A handmaid of stone tipping an ewer that never empties into a pool that never fills. The village greens grew up around her, and no one remembers who she served."},
 	"castle_bust": {"name": "Kings Remembered", "sprite": "castle_bust", "placeholder": true,
-		"lore": "Stone faces of men whose names outlived their kingdoms. Placeholder — awaiting a royal gallery."},
+		"lore": "Stone faces of men whose names outlived their kingdoms. Placeholder, awaiting a royal gallery."},
 	"camp_bonfire": {"name": "A Traveler's Rest", "sprite": "camp_bonfire", "placeholder": true,
-		"lore": "A ring of stones, swept clean, wood stacked for the next stranger. Placeholder — awaiting the wayfarer's camp."},
+		"lore": "A ring of stones, swept clean, wood stacked for the next stranger. Placeholder, awaiting the wayfarer's camp."},
 	"station_anvil_t3": {"name": "The Masterwork Anvil", "sprite": "station_anvil_t3", "placeholder": true,
-		"lore": "Three generations of smiths wore the horn to a shine. Placeholder — awaiting the guild forge."},
+		"lore": "Three generations of smiths wore the horn to a shine. Placeholder, awaiting the guild forge."},
 	"library_cabinet": {"name": "The Locked Reliquary", "sprite": "library_cabinet", "placeholder": true,
-		"lore": "Teal lacquer and gold filigree, and no keyhole anywhere. Placeholder — awaiting the great library."},
+		"lore": "Teal lacquer and gold filigree, and no keyhole anywhere. Placeholder, awaiting the great library."},
 	# PLACEHOLDER GALLERY (armory / tools-materials / provisions) removed
 	# 2026-08-20 (owner: not up to par). These 33 gallery relics only ever
 	# rendered in the dev Future>Armory/Supplies/Provisions shelves and were

@@ -226,9 +226,9 @@ const ENEMIES := {
 
 const QUESTS := {
 	"ch3_start": "Report to Cantor Ilse at the Vigil Gate  (walk up to her and press E)",
-	"sexton": "Cross the Misted Fields — put THE SEXTON back in the ground",
-	"vess": "Follow the liturgy east and grant VESS THE UNBURIED her silence",
-	"saint_varo": "Climb to the cathedral — release SAINT VARO",
+	"sexton": "Cross the Misted Fields and put the Sexton back in the ground",
+	"vess": "Follow the liturgy east and grant Vess the Unburied her silence",
+	"saint_varo": "Climb to the cathedral and release Saint Varo",
 	"done_ch3": "The Vale buries its dead. The road south smells of smoke...",
 }
 
@@ -236,29 +236,29 @@ const QUESTS := {
 # a mid-boss dies; epilogue_ch3 before the victory card).
 const BEATS := {
 	"pre_sexton": [
-		["The Sexton", "I dug YOURS the day you crossed the gate. Third row, by the alder. Dry ground — you'll keep."],
+		["The Sexton", "I dug yours the day you crossed the gate. Third row, by the alder. Dry ground, you'll keep."],
 		["Narrator", "The earth between the graves begins to move."],
 	],
 	"post_sexton": [
 		["Narrator", "The Sexton folds into the soil like a man getting into bed at the end of a very long day."],
-		["Narrator", "Behind him, for the first time in sixty years, a grave in the Vale stands CLOSED. The road east sings about it — high, thin, furious."],
+		["Narrator", "Behind him, for the first time in sixty years, a grave in the Vale stands closed. The road east sings about it, high, thin, furious."],
 	],
 	"pre_vess": [
-		["Vess the Unburied", "They sang NO over my husband's grave. Sixty years I have sung it back at them. Do you know what it costs, to be a liturgy?"],
-		["Vess the Unburied", "Stand still, little bearer. The silence in this aisle is MINE, and I decide who gets to rest in it."],
+		["Vess the Unburied", "They sang no over my husband's grave. Sixty years I've sung it back at them. Do you know what it costs, to be a liturgy?"],
+		["Vess the Unburied", "Stand still, little bearer. The silence in this aisle is mine, and I decide who gets to rest in it."],
 	],
 	"post_vess": [
-		["Narrator", "The scream ends. Not fades — ENDS, the way a debt ends. What settles over the aisle afterward is not silence; it is quiet, which the Vale has not heard in sixty years."],
-		["Narrator", "Up the hill, the cathedral bells begin to toll. The congregation knows you are coming."],
+		["Narrator", "The scream ends. It doesn't fade, it ends, the way a debt ends. What settles over the aisle afterward isn't silence, it's quiet, which the Vale hasn't heard in sixty years."],
+		["Narrator", "Up the hill, the cathedral bells begin to toll. The congregation knows you're coming."],
 	],
 	"pre_saint_varo": [
-		["Saint Varo", "Sixty years I have knelt here, asking the rot to take me, and it will not. My flesh REFUSES the one honest thing in Vaelscar."],
-		["Saint Varo", "The Choir built a cathedral around my failure and calls it holiness. I am done asking politely. Come, bearer — be my answer."],
+		["Saint Varo", "Sixty years I've knelt here, asking the rot to take me, and it won't. My flesh refuses the one honest thing in Vaelscar."],
+		["Saint Varo", "The Choir built a cathedral around my failure and calls it holiness. I'm done asking politely. Come, bearer, be my answer."],
 	],
 	"epilogue_ch3": [
-		["Narrator", "Saint Varo does not get up. The rot takes him gently, at last, like a door unlocking from the inside — and his face, at the end, is nothing but grateful."],
-		["Cantor Ilse", "So the saint gets his grave, and the Choir loses its shame and its shrine in one blow. They will not forgive that. Neither will they forget who freed him."],
-		["Narrator", "South of the Vale, the horizon glows the wrong color for sunset. The foundries of the Slagfields are running day and night now — and something under them has started answering the hammers."],
+		["Narrator", "Saint Varo doesn't get up. The rot takes him gently, at last, like a door unlocking from the inside, and his face, at the end, is nothing but grateful."],
+		["Cantor Ilse", "So the saint gets his grave, and the Choir loses its shame and its shrine in one blow. They won't forgive that. And they won't forget who freed him."],
+		["Narrator", "South of the Vale, the horizon glows the wrong color for sunset. The foundries of the Slagfields are running day and night now, and something under them has started answering the hammers."],
 	],
 }
 
@@ -278,46 +278,46 @@ const CONVOS := {
 	# faith calls murder. Reads your Ch2 history; sets the road open.
 	"ch3_briefing": {"start": "b1", "nodes": {
 		"b1": {"who": "Cantor Ilse",
-			"text": "You're the bearer Maren wrote ahead about. Good. I left the Choir the day they voted to keep a dying man alive as furniture — I'll explain on the way to that sentence making sense.",
+			"text": "You're the bearer Maren wrote ahead about. Good. I left the Choir the day they voted to keep a dying man alive as furniture. I'll explain on the walk east, and it'll make sense by the time we get there.",
 			"variants": [
-				{"flag": "ch3_briefed", "text": "The Vale is east, bearer. The Sexton first — no one reaches Vess or the saint while he still has holes to put them in.", "next": ""},
-				{"flag": "joined_accord", "text": "You wear the Accord's trust — Maren's letter said as much. Good. What I'm going to ask for is exactly the kind of mercy her people understand and mine call murder."},
+				{"flag": "ch3_briefed", "text": "The Vale is east, bearer. The Sexton first. Nobody reaches Vess or the saint while he's still got holes to put them in.", "next": ""},
+				{"flag": "joined_accord", "text": "You wear the Accord's trust, like Maren's letter said. Good. What I'm going to ask for is exactly the kind of mercy her people understand and mine call murder."},
 				{"flag": "joined_cinderborn", "text": "Cinderborn colors. Hm. Your factor will tell you the Vale is 'unproductive land under hostile administration.' Listen to me first, then decide what it actually is."},
 			],
 			"next": "b2"},
-		"b2": {"who": "Cantor Ilse", "text": "You walked the grave-road in; I'll spare you the liturgy of it. What the road cannot show you is this: my congregation WORSHIPS what you just saw — Varo's misery is their proof, and they will keep him kneeling until the proof gives out.", "next": "b3"},
-		"b3": {"who": "Cantor Ilse", "text": "Three stand between you and him. The Sexton, who digs and digs and never fills. Vess, the first widow they told 'no' — her scream became our liturgy, and I sang it for thirty years before I heard the words. And Varo himself, who has been BEGGING to die longer than you've been alive.",
+		"b2": {"who": "Cantor Ilse", "text": "You walked the grave-road in, so I'll spare you the liturgy of it. What the road can't show you is this: my congregation worships what you just saw. Varo's misery is their proof, and they'll keep him kneeling until the proof gives out.", "next": "b3"},
+		"b3": {"who": "Cantor Ilse", "text": "Three stand between you and him. The Sexton, who digs and digs and never fills. Vess, the first widow they told 'no': her scream became our liturgy, and I sang it for thirty years before I heard the words. And Varo himself, who's been begging to die longer than you've been alive.",
 			"choices": [
 				{"text": "\"Then I'll give him what he's asking for. Gently, if the fight allows it.\"",
 					"resonance": 8.0, "flags": {"ch3_briefed": true, "chose_varo_mercy": true}, "quest": "sexton", "next": "b_mercy"},
 				{"text": "\"A saint, a widow, a gravedigger. Fine. Point me at whichever drops the best loot.\"",
 					"resonance": -8.0, "flags": {"ch3_briefed": true, "chose_varo_spoils": true}, "quest": "sexton", "next": "b_spoils"},
-				{"text": "\"I'll clear the Vale. What the Choir does about its faith afterward is not my war.\"",
+				{"text": "\"I'll clear the Vale. What the Choir does about its faith afterward isn't my war.\"",
 					"resonance": 0.0, "flags": {"ch3_briefed": true}, "quest": "sexton", "next": "b_neutral"},
 			]},
-		"b_mercy": {"who": "Cantor Ilse", "text": "...Gently. Thirty years in the Choir and I never once heard that word aimed at Varo. Go east, bearer. The Sexton holds the fields — no one reaches the cathedral while he still has holes to offer.", "next": ""},
-		"b_spoils": {"who": "Cantor Ilse", "text": "The shard talking, or you? ...Don't answer. Take the east road; the Sexton's fields first. And bearer — the saint's misery has outlived four looters that I know of. Their gear is still up there, if inventory is what moves you.", "next": ""},
-		"b_neutral": {"who": "Cantor Ilse", "text": "Not your war. Mm. The Vale has heard that from every passer-through for sixty years — it's how the grave count got this high. East, then. The Sexton first.", "next": ""},
+		"b_mercy": {"who": "Cantor Ilse", "text": "...Gently. Thirty years in the Choir and I never once heard that word aimed at Varo. Go east, bearer. The Sexton holds the fields. Nobody reaches the cathedral while he's still got holes to offer.", "next": ""},
+		"b_spoils": {"who": "Cantor Ilse", "text": "The shard talking, or you? ...Don't answer. Take the east road, the Sexton's fields first. And bearer, the saint's misery has outlived four looters that I know of. Their gear's still up there, if inventory is what moves you.", "next": ""},
+		"b_neutral": {"who": "Cantor Ilse", "text": "Not your war. Mm. The Vale's heard that from every passer-through for sixty years, and it's how the grave count got this high. East, then. The Sexton first.", "next": ""},
 	}},
 
 	# ---- Faction presences at the gate: the mid-act pivot. Their pitches
 	# sharpen HERE, over the Vale's ashes.
 	"ch3_accord": {"start": "a1", "nodes": {
 		"a1": {"who": "Warden Corin",
-			"text": "Warden Corin, Ember Accord. Maren has me shadowing the Vale because of what's under it — every unburied corpse out there is a straw drawing blight up from Mórwyn's table. This isn't a graveyard, bearer. It's a WICK.",
+			"text": "Warden Corin, Ember Accord. Maren has me shadowing the Vale because of what's under it. Every unburied corpse out there is a straw drawing blight up from Mórwyn's table. This isn't a graveyard, bearer. It's a wick.",
 			"variants": [
 				{"flag": "ch3_accord_heard", "text": "The offer stands: end the saint, starve the wick. The Accord counts deeds, not banners.", "next": ""},
 				{"flag": "joined_cinderborn", "text": "Warden Corin, Accord. I know whose colors you wear, so I'll be brief: whatever your factor is pricing the Vale at, the thing under it doesn't take coin. When your employers notice that, we'll still be here."},
 			],
 			"next": "a2"},
-		"a2": {"who": "Warden Corin", "text": "The Choir calls the rot honest. Fine — grief IS honest. But the thing their honesty feeds is waking up, and it is not grieving. Break the funeral: the Sexton, the widow, the saint. Do that and the Accord will remember it was you.",
+		"a2": {"who": "Warden Corin", "text": "The Choir calls the rot honest. Fine, grief is honest. But the thing their honesty feeds is waking up, and it isn't grieving. Break the funeral: the Sexton, the widow, the saint. Do that and the Accord will remember it was you.",
 			"choices": [
 				{"text": "\"The Accord can count on me for this one.\"",
 					"faction": {"accord": 4}, "flags": {"ch3_accord_heard": true}, "next": "a_yes"},
 				{"text": "\"I'll break the funeral for my own reasons. Keep your ledger.\"",
 					"flags": {"ch3_accord_heard": true}, "next": "a_own"},
 			]},
-		"a_yes": {"who": "Warden Corin", "text": "Then flame keep you east of here. And bearer — when the congregation begs you to spare their saint, and they will: remember what he's a wick FOR.", "next": ""},
+		"a_yes": {"who": "Warden Corin", "text": "Then flame keep you east of here. And bearer, when the congregation begs you to spare their saint, and they will, remember what he's a wick for.", "next": ""},
 		"a_own": {"who": "Warden Corin", "text": "Your reasons, our outcome. The Accord has made worse bargains. Flame keep you anyway.", "next": ""},
 	}},
 	"ch3_cinder": {"start": "c1", "nodes": {
@@ -325,24 +325,24 @@ const CONVOS := {
 			"text": "Factor Imre, Cinderborn Compact. Before you wrinkle your nose: yes, I'm here to make money off a graveyard. The Vale sits on the best road south to the Slagfields, and sixty years of 'eternal funeral' has it closed to freight. Empires are built from exactly this kind of unglamorous arithmetic.",
 			"variants": [
 				{"flag": "ch3_cinder_heard", "text": "The arithmetic hasn't changed: open road, grateful Compact, standing invoice. Kill things in that order.", "next": ""},
-				{"flag": "joined_accord", "text": "Ah — Maren's newest. Relax, warden-friend, I'm not recruiting today. I'm just the man who'll be selling your Accord its grain when the Vale road opens. Which you are about to do for free. Marvelous system, isn't it?"},
+				{"flag": "joined_accord", "text": "Ah, Maren's newest. Relax, warden-friend, I'm not recruiting today. I'm just the man who'll be selling your Accord its grain when the Vale road opens. Which you're about to do for free. Marvelous system, isn't it?"},
 			],
 			"next": "c2"},
-		"c2": {"who": "Factor Imre", "text": "Under Vargoth — spare me the face, I said it — this road ran two hundred wagons a week and the Vale buried its dead like civilized people. Order is not a dirty word, bearer. Clear the road and the Compact pays its debts. Sentiment optional.",
+		"c2": {"who": "Factor Imre", "text": "Under Vargoth, and spare me the face, I said it, this road ran two hundred wagons a week and the Vale buried its dead like civilized people. Order isn't a dirty word, bearer. Clear the road and the Compact pays its debts. Sentiment optional.",
 			"choices": [
-				{"text": "\"Two hundred wagons a week. Fine — I'll open your road.\"",
+				{"text": "\"Two hundred wagons a week. Fine, I'll open your road.\"",
 					"faction": {"cinderborn": 4}, "flags": {"ch3_cinder_heard": true}, "next": "c_yes"},
 				{"text": "\"People are grieving out there and you brought an invoice.\"",
 					"resonance": 3.0, "faction": {"cinderborn": -2}, "flags": {"ch3_cinder_heard": true}, "next": "c_no"},
 			]},
-		"c_yes": {"who": "Factor Imre", "text": "Excellent. The Compact remembers its friends — it's the whole reason we HAVE a ledger. Mind the widow on your way up; grief with sixty years of interest is the one debt I won't broker.", "next": ""},
-		"c_no": {"who": "Factor Imre", "text": "They've been grieving for sixty YEARS, bearer — the invoice is the only thing here with an end date. ...Go on. You'll open the road anyway, and I'll thank you anyway. That's the marvelous part.", "next": ""},
+		"c_yes": {"who": "Factor Imre", "text": "Excellent. The Compact remembers its friends. It's the whole reason we have a ledger. Mind the widow on your way up. Grief with sixty years of interest is the one debt I won't broker.", "next": ""},
+		"c_no": {"who": "Factor Imre", "text": "They've been grieving for sixty years, bearer. The invoice is the only thing here with an end date. ...Go on. You'll open the road anyway, and I'll thank you anyway. That's the marvelous part.", "next": ""},
 	}},
 	"ch3_refugee": {"start": "r1", "nodes": {
 		"r1": {"who": "Old Fenna",
-			"text": "My son walks the Misted Fields. Fourth from the alder, grey coat. The Choir says that's him honored. I say I sewed that coat for a living boy and I want it BACK on a dead one, in the ground, where coats and sons go.",
+			"text": "My son walks the Misted Fields. Fourth from the alder, grey coat. The Choir says that's him, honored. I say I sewed that coat for a living boy and I want it back on a dead one, in the ground, where coats and sons go.",
 			"variants": [
-				{"band": "tempted", "text": "You've got the look the Choir cantors get before they start explaining why my grief is holy. Don't. Just — if you pass the fourth grave from the alder, grey coat... let him fall facing home."},
+				{"band": "tempted", "text": "You've got the look the Choir cantors get before they start explaining why my grief is holy. Don't. Just... if you pass the fourth grave from the alder, grey coat, let him fall facing home."},
 				{"flag": "ch3_fenna_promised", "text": "Fourth from the alder. Grey coat. Facing home. You remembered. That's more than the flame's given me in sixty years.", "next": ""},
 			],
 			"choices": [
@@ -352,107 +352,107 @@ const CONVOS := {
 					"resonance": -4.0, "next": "r_cold"},
 			]},
 		"r_kind": {"who": "Old Fenna", "text": "Facing home. Yes. ...The Choir sang at me for sixty years and never once said anything that useful.", "next": ""},
-		"r_cold": {"who": "Old Fenna", "text": "Lighter. Aye. You sound like the shard's already teaching you to travel light. Keep the lesson — I'll keep the coat.", "next": ""},
+		"r_cold": {"who": "Old Fenna", "text": "Lighter. Aye. You sound like the shard's already teaching you to travel light. Keep the lesson. I'll keep the coat.", "next": ""},
 	}},
 
 	# ---- Resonance shrines: the chapter's two genuine choices.
 	"ch3_shrine_grave": {"start": "s1", "nodes": {
 		"s1": {"who": "Narrator",
-			"text": "The First Grave — the one the Choir dug and then refused to fill, sixty years ago, the day their faith was born. It has been open so long the sides have gone smooth as a font. The Ember in you leans over the edge, curious. The grave is empty. The grave has never once been empty of OFFERS.",
-			"variants": [{"flag": "first_grave_touched", "text": "The First Grave keeps its smooth sides and its long patience. Whatever passed between you is finished — one of the few finished things in the Vale.", "next": ""}],
+			"text": "The First Grave: the one the Choir dug and then refused to fill, sixty years ago, the day their faith was born. It's been open so long the sides have gone smooth as a font. The Ember in you leans over the edge, curious. The grave is empty. The grave has never once been empty of offers.",
+			"variants": [{"flag": "first_grave_touched", "text": "The First Grave keeps its smooth sides and its long patience. Whatever passed between you is finished, one of the few finished things in the Vale.", "next": ""}],
 			"choices": [
-				{"text": "Give it a grief of your own — name someone you lost, aloud, and let the grave hold the name.",
+				{"text": "Give it a grief of your own. Name someone you lost, aloud, and let the grave hold the name.",
 					"resonance": 8.0, "flags": {"first_grave_touched": true}, "next": "s_give"},
 				{"text": "Reach down. Sixty years of grave-offerings gleam in the soil, and the dead clearly aren't using them.",
 					"resonance": -8.0, "flags": {"first_grave_touched": true}, "next": "s_take"},
-				{"text": "Leave the first grave its emptiness. It has waited sixty years; it can wait out you too.",
+				{"text": "Leave the first grave its emptiness. It's waited sixty years, it can wait you out too.",
 					"resonance": 0.0, "flags": {"first_grave_touched": true}, "next": "s_leave"},
 			]},
-		"s_give": {"who": "Narrator", "text": "You say the name once, quietly. The grave takes it the way dry ground takes rain — and the Ember in you goes still, the way it only does when something is PAID rather than taken. You walk away lighter by exactly one name's weight. You can still remember them. You checked.", "next": ""},
-		"s_take": {"who": "Narrator", "text": "Rings, clasps, a child's silver whistle. They come up easily — sixty years of grief, pocketed in under a minute. The Ember purrs its approval, and somewhere behind your ribs a small voice notes how EASY that was, and files the note where you keep things you'd rather not have learned about yourself.", "next": ""},
-		"s_leave": {"who": "Narrator", "text": "You step back from the edge. The grave neither thanks you nor curses you — but the wind through it changes note, briefly, like a jar someone stopped blowing across. Some invitations expire simply by being declined.", "next": ""},
+		"s_give": {"who": "Narrator", "text": "You say the name once, quietly. The grave takes it the way dry ground takes rain, and the Ember in you goes still, the way it only does when something is paid rather than taken. You walk away lighter by exactly one name's weight. You can still remember them. You checked.", "next": ""},
+		"s_take": {"who": "Narrator", "text": "Rings, clasps, a child's silver whistle. They come up easily, sixty years of grief pocketed in under a minute. The Ember purrs its approval, and somewhere behind your ribs a small voice notes how easy that was, and files the note where you keep things you'd rather not have learned about yourself.", "next": ""},
+		"s_leave": {"who": "Narrator", "text": "You step back from the edge. The grave neither thanks you nor curses you, but the wind through it changes note, briefly, like a jar someone stopped blowing across. Some invitations expire simply by being declined.", "next": ""},
 	}},
 	"ch3_shrine_kneeling": {"start": "k1", "nodes": {
 		"k1": {"who": "Narrator",
-			"text": "A field of kneeling Choir faithful, unarmed, between you and the cathedral doors. They do not attack. They do not move. An old cantor rises from the front row, hands open: \"You've come to take our saint. We know. We heard the bells count you up the hill. Please — he is all the proof we have that the rot CHOOSES. Without him, our sixty years of grief were just... grief.\"",
-			"variants": [{"flag": "kneeling_answered", "text": "The congregation still kneels, but a lane stands open through them now — they made it themselves, after your answer. Whatever you told them, they are still deciding what it meant.", "next": ""}],
+			"text": "A field of kneeling Choir faithful, unarmed, between you and the cathedral doors. They don't attack. They don't move. An old cantor rises from the front row, hands open: \"You've come to take our saint. We know. We heard the bells count you up the hill. Please. He's all the proof we have that the rot chooses. Without him, our sixty years of grief were just... grief.\"",
+			"variants": [{"flag": "kneeling_answered", "text": "The congregation still kneels, but a lane stands open through them now. They made it themselves, after your answer. Whatever you told them, they're still deciding what it meant.", "next": ""}],
 			"choices": [
-				{"text": "\"Your saint has begged sixty years to die. I'm not taking him from you — I'm returning him to himself.\"",
+				{"text": "\"Your saint has begged sixty years to die. I'm not taking him from you. I'm returning him to himself.\"",
 					"resonance": 8.0, "flags": {"kneeling_answered": true, "chose_told_congregation": true}, "faction": {"choir": 2}, "next": "k_truth"},
-				{"text": "\"Proof? He's a wick feeding the thing that will eat you all. Kneel to THAT if you need something holy.\"",
+				{"text": "\"Proof? He's a wick feeding the thing that will eat you all. Kneel to that, if you need something holy.\"",
 					"resonance": -6.0, "flags": {"kneeling_answered": true}, "faction": {"choir": -4, "accord": 2}, "next": "k_scorn"},
-				{"text": "Walk through them without a word. Their faith is not yours to argue with, and the saint is waiting.",
+				{"text": "Walk through them without a word. Their faith isn't yours to argue with, and the saint is waiting.",
 					"resonance": -2.0, "flags": {"kneeling_answered": true}, "next": "k_silent"},
 			]},
-		"k_truth": {"who": "Narrator", "text": "The old cantor's mouth works. \"Returning him—\" He stops. Somewhere in the rows behind him, one voice — young, cracked — says: \"...he does scream at night. We all hear it. We SING over it.\" The kneeling field is very quiet as it opens you a lane. Grief, you understand suddenly, has been waiting sixty years for permission to just be grief.", "next": ""},
-		"k_scorn": {"who": "Narrator", "text": "The word WICK moves through the kneeling rows like cold water. Some flinch. Some harden — you have just handed the Choir's next generation its favorite story about the day the unbeliever spat on their proof. The lane they open you is wide, and no one in it will meet your eyes.", "next": ""},
-		"k_silent": {"who": "Narrator", "text": "You walk, and they lean out of your path like grass. No argument, no absolution — just a bearer with a job, wading through sixty years of other people's meaning. The Ember approves of the efficiency. That is precisely what bothers you about it.", "next": ""},
+		"k_truth": {"who": "Narrator", "text": "The old cantor's mouth works. \"Returning him...\" He stops. Somewhere in the rows behind him, one voice, young and cracked, says: \"...he does scream at night. We all hear it. We sing over it.\" The kneeling field goes very quiet as it opens you a lane. Grief, you understand suddenly, has been waiting sixty years for permission to just be grief.", "next": ""},
+		"k_scorn": {"who": "Narrator", "text": "The word wick moves through the kneeling rows like cold water. Some flinch. Some harden. You've just handed the Choir's next generation its favorite story about the day the unbeliever spat on their proof. The lane they open you is wide, and nobody in it will meet your eyes.", "next": ""},
+		"k_silent": {"who": "Narrator", "text": "You walk, and they lean out of your path like grass. No argument, no absolution, just a bearer with a job, wading through sixty years of other people's meaning. The Ember approves of the efficiency. That's exactly what bothers you about it.", "next": ""},
 	}},
 
 	# ---- Dead-end lore props.
 	"ch3_lore_chapel": {"start": "l1", "nodes": {
-		"l1": {"who": "Narrator", "text": "A chapel from before the Choir, roof long gone. The headstone by the door reads: HERE LIES BRAM TALLOW, BURIED PROPER, 61 YEARS AGO — the last person in the Vale anyone put in the ground. Someone still weeds the plot. Someone has ALWAYS still weeded the plot, sixty-one years running, and the Choir has never caught them at it.", "next": ""},
+		"l1": {"who": "Narrator", "text": "A chapel from before the Choir, roof long gone. The headstone by the door reads: HERE LIES BRAM TALLOW, BURIED PROPER, 61 YEARS AGO. The last person in the Vale anyone put in the ground. Someone still weeds the plot. Someone has always still weeded the plot, sixty-one years running, and the Choir has never caught them at it.", "next": ""},
 	}},
 	"ch3_lore_reliquary": {"start": "l1", "nodes": {
-		"l1": {"who": "Narrator", "text": "The cathedral's reliquary — every case stands empty. Placards remain: A SAINT'S FINGERBONE. A SAINT'S TOOTH. A SAINT'S TEAR, PRESERVED IN WAX. The Choir venerates decay, but its saint cannot rot, so there were never relics to fill the cases with. They built the room anyway, and dusted it daily, and hoped. Sixty years of dusted hope, and upstairs a man on his knees begging to become what these cases wanted.", "next": ""},
+		"l1": {"who": "Narrator", "text": "The cathedral's reliquary, every case stands empty. Placards remain: A SAINT'S FINGERBONE. A SAINT'S TOOTH. A SAINT'S TEAR, PRESERVED IN WAX. The Choir venerates decay, but its saint can't rot, so there were never relics to fill the cases with. They built the room anyway, and dusted it daily, and hoped. Sixty years of dusted hope, and upstairs a man on his knees begging to become what these cases wanted.", "next": ""},
 	}},
 
 	# ---- Social wanderers.
 	"ch3_wander_digger": {"start": "d1", "nodes": {
 		"d1": {"who": "Old Digger Haim",
-			"text": "Forty years I dug for the villages — honest holes, filled the same day. Then the Choir came and digging became LITURGY and filling became sin. I kept the spade. A man should keep the tools of the thing he was before everyone went mad.",
-			"variants": [{"flag": "ch3_haim_met", "text": "Still got the spade. Still oiled. The day this chapter of madness ends, the Vale will want a man who remembers how the OTHER half of the job goes.", "next": ""}],
+			"text": "Forty years I dug for the villages, honest holes, filled the same day. Then the Choir came and digging became liturgy and filling became sin. I kept the spade. A man should keep the tools of the thing he was before everyone went mad.",
+			"variants": [{"flag": "ch3_haim_met", "text": "Still got the spade. Still oiled. The day this chapter of madness ends, the Vale will want a man who remembers how the other half of the job goes.", "next": ""}],
 			"choices": [
 				{"text": "\"Keep it oiled, digger. The Vale's going to need you by week's end.\"",
 					"resonance": 3.0, "flags": {"ch3_haim_met": true}, "next": "d_hope"},
-				{"text": "\"Forty years of holes and you never once asked what they were FOR?\"",
+				{"text": "\"Forty years of holes and you never once asked what they were for?\"",
 					"resonance": -3.0, "flags": {"ch3_haim_met": true}, "next": "d_barb"},
 			]},
 		"d_hope": {"who": "Old Digger Haim", "text": "Week's end. Ha. You know, that's the first deadline anyone's given the Vale in sixty years? I'll sharpen the edge tonight. Deadlines deserve a sharp spade.", "next": ""},
-		"d_barb": {"who": "Old Digger Haim", "text": "...They were for GRIEF, stranger. A hole is where you put grief so it doesn't follow you home. The Choir's whole madness is just sixty years of nobody being allowed to put it down. Ask your shard where IT puts yours.", "next": ""},
+		"d_barb": {"who": "Old Digger Haim", "text": "...They were for grief, stranger. A hole is where you put grief so it doesn't follow you home. The Choir's whole madness is just sixty years of nobody being allowed to put it down. Ask your shard where it puts yours.", "next": ""},
 	}},
 	"ch3_wander_mute": {"start": "m1", "nodes": {
 		"m1": {"who": "The Mute Mourner",
-			"text": "A woman sits on a fallen headstone, hands folded. The locals say she asked the Choir to bury her daughter, was sung 'no', and has not spoken since — nineteen years. She looks up at you. She looks at your sword hand. Very slowly, very clearly, she nods toward the east road.",
-			"variants": [{"flag": "ch3_mute_met", "text": "She is there again, hands folded. When she sees you she touches two fingers to her lips — whatever you did out east, word of it reached her, and this is what her thanks looks like.", "next": ""}],
+			"text": "A woman sits on a fallen headstone, hands folded. The locals say she asked the Choir to bury her daughter, was sung 'no', and hasn't spoken since. Nineteen years. She looks up at you. She looks at your sword hand. Very slowly, very clearly, she nods toward the east road.",
+			"variants": [{"flag": "ch3_mute_met", "text": "She's there again, hands folded. When she sees you she touches two fingers to her lips. Whatever you did out east, word of it reached her, and this is what her thanks looks like.", "next": ""}],
 			"choices": [
 				{"text": "Nod back. Once. A contract needs no words.",
 					"resonance": 3.0, "flags": {"ch3_mute_met": true}, "next": "m_nod"},
 			]},
-		"m_nod": {"who": "The Mute Mourner", "text": "Something in her shoulders lets go — a knot nineteen years old, loosening one turn. She resumes her vigil. You resume your road. Between you, wordless and binding as anything ever signed: someone is finally going to MAKE the singing stop.", "next": ""},
+		"m_nod": {"who": "The Mute Mourner", "text": "Something in her shoulders lets go, a knot nineteen years old, loosening one turn. She resumes her vigil. You resume your road. Between you, wordless and binding as anything ever signed: someone is finally going to make the singing stop.", "next": ""},
 	}},
 	"ch3_wander_defector": {"start": "f1", "nodes": {
 		"f1": {"who": "Brother Osk (formerly)",
-			"text": "I keep the count. Fourteen thousand, two hundred and six unburied, gate to cathedral. The Choir never counted — counting implies you might one day FINISH. I left over the counting. It seemed a small thing to leave a faith over, until I understood it was the whole faith.",
-			"variants": [{"band": "tempted", "text": "Fourteen thousand two hundred six. ...You carry something that likes big numbers, bearer. I can hear it liking mine. Walk on, please — and don't let it do the counting for you."},
-				{"flag": "ch3_osk_met", "text": "The count stands. It will go DOWN soon, for the first time — I find I don't know how to write a number getting smaller. Good problem. Sixty years since the Vale had a good problem.", "next": ""}],
+			"text": "I keep the count. Fourteen thousand, two hundred and six unburied, gate to cathedral. The Choir never counted, since counting implies you might one day finish. I left over the counting. It seemed a small thing to leave a faith over, until I understood it was the whole faith.",
+			"variants": [{"band": "tempted", "text": "Fourteen thousand two hundred six. ...You carry something that likes big numbers, bearer. I can hear it liking mine. Walk on, please, and don't let it do the counting for you."},
+				{"flag": "ch3_osk_met", "text": "The count stands. It'll go down soon, for the first time, and I find I don't know how to write a number getting smaller. Good problem. Sixty years since the Vale had a good problem.", "next": ""}],
 			"choices": [
 				{"text": "\"Keep counting, brother. Every one of them is going to need a number when the burying starts.\"",
 					"resonance": 3.0, "flags": {"ch3_osk_met": true}, "next": "f_keep"},
 			]},
-		"f_keep": {"who": "Brother Osk (formerly)", "text": "When the burying starts. You say it like weather — like it's simply COMING. ...I believe I'll keep the ledger open at today's page. It deserves to see this.", "next": ""},
+		"f_keep": {"who": "Brother Osk (formerly)", "text": "When the burying starts. You say it like weather, like it's simply coming. ...I believe I'll keep the ledger open at today's page. It deserves to see this.", "next": ""},
 	}},
 	"ch3_wander_archivist": {"start": "a1", "nodes": {
 		"a1": {"who": "Archivist Lene (Accord)",
-			"text": "Don't mind me — I'm cataloguing headstones for the Accord. Sixty-one years ago the inscriptions change: before, 'REST WELL'. After, 'WALK WELL'. One stonecutter's hand, same chisel, both eras. He cut the old faith and the new one at the same bench and history came down to which order the wagons arrived in.",
+			"text": "Don't mind me, I'm cataloguing headstones for the Accord. Sixty-one years ago the inscriptions change: before, 'REST WELL'. After, 'WALK WELL'. One stonecutter's hand, same chisel, both eras. He cut the old faith and the new one at the same bench, and history came down to which order the wagons arrived in.",
 			"variants": [{"flag": "ch3_lene_met", "text": "Found the stonecutter's own grave this morning, by the way. Blank stone. He couldn't decide. Sixty years of everyone else's certainty, and the one man who carved it all hedged.", "next": ""}],
 			"choices": [
-				{"text": "\"And which does the Accord believe — rest or walk?\"", "flags": {"ch3_lene_met": true}, "next": "a_ans"},
+				{"text": "\"And which does the Accord believe, rest or walk?\"", "flags": {"ch3_lene_met": true}, "next": "a_ans"},
 				{"text": "\"I've walked rows your catalogue hasn't reached, archivist. The Accord can pay for its history like anyone else.\"",
 					"resonance": -5.0, "flags": {"ch3_lene_met": true}, "gold": 40, "next": "a_paid"},
 			]},
-		"a_ans": {"who": "Archivist Lene (Accord)", "text": "The Accord believes in whichever one starves the thing underneath. That's the difference between us and everyone else in the Vale, bearer — we're the only ones here reading the stones for TACTICS.", "next": ""},
-		"a_paid": {"who": "Archivist Lene (Accord)", "text": "She pays — field rate, counted twice, no haggling — and takes your rows down in a hand quicker than her talk. \"There. The Accord settles its invoices.\" A beat, pen still. \"Sixty years of people TAKING from these graves, bearer. You're the first to sell them. I haven't decided which the stones would mind more.\"", "next": ""},
+		"a_ans": {"who": "Archivist Lene (Accord)", "text": "The Accord believes in whichever one starves the thing underneath. That's the difference between us and everyone else in the Vale, bearer. We're the only ones here reading the stones for tactics.", "next": ""},
+		"a_paid": {"who": "Archivist Lene (Accord)", "text": "She pays, field rate, counted twice, no haggling, and takes your rows down in a hand quicker than her talk. \"There. The Accord settles its invoices.\" A beat, pen still. \"Sixty years of people taking from these graves, bearer. You're the first to sell them. I haven't decided which the stones would mind more.\"", "next": ""},
 	}},
 	"ch3_wander_peddler": {"start": "p1", "nodes": {
 		"p1": {"who": "Grave-Goods Peddler",
-			"text": "Lanterns, spade-heads, mourning veils — and before you ask, NO, none of it's dug up. I sell TO the graves, not from them. Sixty years of funerals that never end is, commercially speaking, the best market in Vaelscar. I'm not proud of the thought. I'm just the only one who says it out loud.",
-			"variants": [{"flag": "ch3_peddler_met", "text": "Back again! Business is... troubled, actually. Word's spreading the funerals might END. Ruinous. Wonderful. I haven't decided which, and my ledger's no help.", "next": ""}],
+			"text": "Lanterns, spade-heads, mourning veils. And before you ask, no, none of it's dug up. I sell to the graves, not from them. Sixty years of funerals that never end is, commercially speaking, the best market in Vaelscar. I'm not proud of the thought. I'm just the only one who says it out loud.",
+			"variants": [{"flag": "ch3_peddler_met", "text": "Back again! Business is... troubled, actually. Word's spreading the funerals might end. Ruinous. Wonderful. I haven't decided which, and my ledger's no help.", "next": ""}],
 			"choices": [
 				{"text": "\"What happens to you when the funerals end, peddler?\"", "flags": {"ch3_peddler_met": true}, "next": "p_end"},
 				{"text": "\"'Best market in Vaelscar.' The rot's in more than the ground here.\"", "resonance": -2.0, "flags": {"ch3_peddler_met": true}, "next": "p_barb"},
 			]},
-		"p_end": {"who": "Grave-Goods Peddler", "text": "Weddings, I suppose. People who stop mourning eventually start marrying — it's the same veil business with better catering. ...Flame's honest truth, bearer? I'd retrain tomorrow. Nobody builds a life on grief because they WANT to.", "next": ""},
+		"p_end": {"who": "Grave-Goods Peddler", "text": "Weddings, I suppose. People who stop mourning eventually start marrying, and it's the same veil business with better catering. ...Flame's honest truth, bearer? I'd retrain tomorrow. Nobody builds a life on grief because they want to.", "next": ""},
 		"p_barb": {"who": "Grave-Goods Peddler", "text": "Aye, maybe. But I never sang 'no' over anyone's husband, and my prices are honest. In the Vale, that makes me clergy.", "next": ""},
 	}},
 }

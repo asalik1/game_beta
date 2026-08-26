@@ -261,7 +261,7 @@ func _run_systems() -> void:
 	if not game.hud.dialogue_active:
 		return _fail("elder dialogue did not open")
 	# Maren's greeting must READ the road choice (flag-gated variant).
-	if not ("KNELT" in game.hud.text_label.text):
+	if not ("knelt" in game.hud.text_label.text.to_lower()):
 		return _fail("Maren did not react to the opening choice (got '%s')" % game.hud.text_label.text)
 	await _skip_dialogue()
 	await _frames(2)

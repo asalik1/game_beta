@@ -9,26 +9,26 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "shatter",
-				"text": "Thirty years ago, Ser Aldric's blade found the Hollow King, and the Ember Crown shattered — not into metal, but into PEOPLE. You know this the way you know your own scar: one of those pieces has been in your chest since before you had a name for it. Vargoth told you so himself, at the end.",
+				"text": "Thirty years ago, Ser Aldric's blade found the Hollow King, and the Ember Crown shattered. Not into metal. Into people. You know it the way you know your own scar: one of those pieces has been in your chest since before you had a name for it. Vargoth told you as much himself, at the end.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Then came the second fall — yours. The years since have not healed the kingdom; they have WOKEN it. All across Vaelscar the old scatter is stirring: shards that slept thirty years in farmhands and deserters are opening their eyes, the factions count the newly-woken like a harvest, and an old woman keeps a fire at the crossroads to reach them first.",
+				"text": "Then came the second fall, yours. The years since haven't healed the kingdom. They've woken it. All across Vaelscar the old scatter is stirring: shards that slept thirty years in farmhands and deserters are opening their eyes, the factions count the newly-woken like a harvest, and an old woman keeps a fire at the crossroads to reach them first.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "shatter_warrior",
-				"text": "Years of careful. You took work that tired the body honest — fences, wells, timber — and never once finished a job with the same memory you started it. The neighbors called you tireless. You kept count of the gaps.",
+				"text": "Years of careful. You took work that tired the body honest: fences, wells, timber. You never once finished a job with the same memory you started it. The neighbors called you tireless. You kept count of the gaps.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
+				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it. It has an account of its own, ready.",
 				"choices": [
 					{
-						"text": "Point it at work. Every gap ended with something BUILT — you made the blackout a carpenter.",
+						"text": "Point it at work. Every gap ended with something built. You turned the blackout into a carpenter.",
 						"resonance": 6.0,
 						"flags": {
 							"ch2_kept_faith": true,
@@ -36,7 +36,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the shard answer. YOU PICKED THE NIGHTS. YOU WALKED PAST THE TREE LINE AND LET ME SWING UNTIL I WAS TIRED — AND YOU SLEPT SOUND, AFTER. SAY IT WAS US.",
+						"text": "Let the shard answer. YOU PICKED THE NIGHTS. YOU WALKED PAST THE TREE LINE AND LET ME SWING UNTIL I WAS TIRED, AND YOU SLEPT SOUND, AFTER. SAY IT WAS US.",
 						"resonance": -6.0,
 						"flags": {
 							"ch2_fed_ember": true,
@@ -55,17 +55,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The fire spits. Across it, the stranger nods slowly, as if you had answered a harder question than the one they asked.",
+				"text": "The fire spits. Across it, the stranger nods slowly, like you'd answered a harder question than the one they asked.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The shard settles, satisfied — a ledger initialed. Across the fire, the stranger looks away first.",
+				"text": "The shard settles, satisfied. A ledger initialed. Across the fire, the stranger looks away first.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The shard says nothing. It has waited years; it can wait one chapter more.",
+				"text": "The shard says nothing. It's waited years; it can wait one chapter more.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -81,26 +81,26 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "shatter",
-				"text": "Thirty years ago, Ser Aldric's blade found the Hollow King, and the Ember Crown shattered — not into metal, but into PEOPLE. You know this the way you know your own scar: one of those pieces has been in your chest since before you had a name for it. Vargoth told you so himself, at the end.",
+				"text": "Thirty years ago, Ser Aldric's blade found the Hollow King, and the Ember Crown shattered. Not into metal. Into people. You know it the way you know your own scar: one of those pieces has been in your chest since before you had a name for it. Vargoth told you as much himself, at the end.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Then came the second fall — yours. The years since have not healed the kingdom; they have WOKEN it. All across Vaelscar the old scatter is stirring: shards that slept thirty years in farmhands and deserters are opening their eyes, the factions count the newly-woken like a harvest, and an old woman keeps a fire at the crossroads to reach them first.",
+				"text": "Then came the second fall, yours. The years since haven't healed the kingdom. They've woken it. All across Vaelscar the old scatter is stirring: shards that slept thirty years in farmhands and deserters are opening their eyes, the factions count the newly-woken like a harvest, and an old woman keeps a fire at the crossroads to reach them first.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "shatter_assassin",
-				"text": "Years of arithmetic. The Ember takes to keep you alive — so the years were a ledger question: what it took, from whom, and what you did about the bill. In every market you crossed, the candle-flames leaned at you like debt collectors who already knew the address.",
+				"text": "Years of arithmetic. The Ember takes to keep you alive, so the years were a ledger question: what it took, from whom, and what you did about the bill. In every market you crossed, the candle-flames leaned at you like debt collectors who already knew the address.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
+				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it. It has an account of its own, ready.",
 				"choices": [
 					{
-						"text": "Pay forward. Every winter you found the freezing and sat with them — let it take from YOU for a change.",
+						"text": "Pay forward. Every winter you found the freezing and sat with them. Let it take from you for a change.",
 						"resonance": 6.0,
 						"flags": {
 							"ch2_kept_faith": true,
@@ -108,7 +108,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the shard answer. A LITTLE FROM MANY, NONE THE WISER, BOTH OF US FED. WE MADE THE THEFT A TAX — AND THE TAX WAS FAIR.",
+						"text": "Let the shard answer. A LITTLE FROM MANY, NONE THE WISER, BOTH OF US FED. WE MADE THE THEFT A TAX, AND THE TAX WAS FAIR.",
 						"resonance": -6.0,
 						"flags": {
 							"ch2_fed_ember": true,
@@ -116,7 +116,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Starve it. Sleep cold, eat thin, touch no one. It waited. It is very good at waiting.",
+						"text": "Starve it. Sleep cold, eat thin, touch no one. It waited. It's very good at waiting.",
 						"resonance": 0.0,
 						"flags": {
 							"ch2_buried_it": true,
@@ -127,17 +127,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The fire spits. Across it, the stranger nods slowly, as if you had answered a harder question than the one they asked.",
+				"text": "The fire spits. Across it, the stranger nods slowly, like you'd answered a harder question than the one they asked.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The shard settles, satisfied — a ledger initialed. Across the fire, the stranger looks away first.",
+				"text": "The shard settles, satisfied. A ledger initialed. Across the fire, the stranger looks away first.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The shard says nothing. It has waited years; it can wait one chapter more.",
+				"text": "The shard says nothing. It's waited years; it can wait one chapter more.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -153,26 +153,26 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "shatter",
-				"text": "Thirty years ago, Ser Aldric's blade found the Hollow King, and the Ember Crown shattered — not into metal, but into PEOPLE. You know this the way you know your own scar: one of those pieces has been in your chest since before you had a name for it. Vargoth told you so himself, at the end.",
+				"text": "Thirty years ago, Ser Aldric's blade found the Hollow King, and the Ember Crown shattered. Not into metal. Into people. You know it the way you know your own scar: one of those pieces has been in your chest since before you had a name for it. Vargoth told you as much himself, at the end.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Then came the second fall — yours. The years since have not healed the kingdom; they have WOKEN it. All across Vaelscar the old scatter is stirring: shards that slept thirty years in farmhands and deserters are opening their eyes, the factions count the newly-woken like a harvest, and an old woman keeps a fire at the crossroads to reach them first.",
+				"text": "Then came the second fall, yours. The years since haven't healed the kingdom. They've woken it. All across Vaelscar the old scatter is stirring: shards that slept thirty years in farmhands and deserters are opening their eyes, the factions count the newly-woken like a harvest, and an old woman keeps a fire at the crossroads to reach them first.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "shatter_mage",
-				"text": "Years of the promise. The ferrier's boy grew up; the mark grew with him, slow as a shadow at noon. You filled three journals learning what your green light was NOT.",
+				"text": "Years of the promise. The ferrier's boy grew up; the mark grew with him, slow as a shadow at noon. You filled three journals learning what your green light was not.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
+				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it. It has an account of its own, ready.",
 				"choices": [
 					{
-						"text": "Keep it burning. Every remedy, every archive, every road that rumored a cure — the promise aged better than you did.",
+						"text": "Keep it burning. Every remedy, every archive, every road that rumored a cure. The promise aged better than you did.",
 						"resonance": 6.0,
 						"flags": {
 							"ch2_kept_faith": true,
@@ -180,7 +180,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the shard answer. WE CAST IT AGAIN. SMALLER. CONTROLLED. ON THINGS THAT COULD NOT SAY NO — HOW ELSE DOES ANYONE LEARN?",
+						"text": "Let the shard answer. WE CAST IT AGAIN. SMALLER. CONTROLLED. ON THINGS THAT COULD NOT SAY NO. HOW ELSE DOES ANYONE LEARN?",
 						"resonance": -6.0,
 						"flags": {
 							"ch2_fed_ember": true,
@@ -199,17 +199,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The fire spits. Across it, the stranger nods slowly, as if you had answered a harder question than the one they asked.",
+				"text": "The fire spits. Across it, the stranger nods slowly, like you'd answered a harder question than the one they asked.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The shard settles, satisfied — a ledger initialed. Across the fire, the stranger looks away first.",
+				"text": "The shard settles, satisfied. A ledger initialed. Across the fire, the stranger looks away first.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The shard says nothing. It has waited years; it can wait one chapter more.",
+				"text": "The shard says nothing. It's waited years; it can wait one chapter more.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -225,33 +225,33 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "shatter",
-				"text": "Thirty years ago, Ser Aldric's blade found the Hollow King, and the Ember Crown shattered — not into metal, but into PEOPLE. You know this the way you know your own scar: one of those pieces has been in your chest since before you had a name for it. Vargoth told you so himself, at the end.",
+				"text": "Thirty years ago, Ser Aldric's blade found the Hollow King, and the Ember Crown shattered. Not into metal. Into people. You know it the way you know your own scar: one of those pieces has been in your chest since before you had a name for it. Vargoth told you as much himself, at the end.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Then came the second fall — yours. The years since have not healed the kingdom; they have WOKEN it. All across Vaelscar the old scatter is stirring: shards that slept thirty years in farmhands and deserters are opening their eyes, the factions count the newly-woken like a harvest, and an old woman keeps a fire at the crossroads to reach them first.",
+				"text": "Then came the second fall, yours. The years since haven't healed the kingdom. They've woken it. All across Vaelscar the old scatter is stirring: shards that slept thirty years in farmhands and deserters are opening their eyes, the factions count the newly-woken like a harvest, and an old woman keeps a fire at the crossroads to reach them first.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "shatter_archer",
-				"text": "Years in sight of the fence. You never crossed it — but twice a year you took the ridge road, counted the chimney smoke, and left before the dogs knew you. The gate stayed unlatched. You checked.",
+				"text": "Years in sight of the fence. You never crossed it, but twice a year you took the ridge road, counted the chimney smoke, and left before the dogs knew you. The gate stayed unlatched. You checked.",
 				"next": "n4",
 				"variants": [
 					{
 						"flag": "cut_clean",
-						"text": "You stopped taking the ridge road the day you cut it. You still know, to the week, how many springs it has been.",
+						"text": "You stopped taking the ridge road the day you cut it. You still know, to the week, how many springs it's been.",
 					},
 					{
 						"flag": "walked_silent",
-						"text": "Twice a year, the ridge, the smoke-count — and every visit ends on the same small remembered sound. The latch.",
+						"text": "Twice a year, the ridge, the smoke-count, and every visit ends on the same small remembered sound. The latch.",
 					},
 				],
 			},
 			"n4": {
 				"who": "You",
-				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
+				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it. It has an account of its own, ready.",
 				"choices": [
 					{
 						"text": "Answer it. Walk down, sit at Ren's table, and let the stranger-distance be a thing you both work at.",
@@ -281,17 +281,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The fire spits. Across it, the stranger nods slowly, as if you had answered a harder question than the one they asked.",
+				"text": "The fire spits. Across it, the stranger nods slowly, like you'd answered a harder question than the one they asked.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The shard settles, satisfied — a ledger initialed. Across the fire, the stranger looks away first.",
+				"text": "The shard settles, satisfied. A ledger initialed. Across the fire, the stranger looks away first.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The shard says nothing. It has waited years; it can wait one chapter more.",
+				"text": "The shard says nothing. It's waited years; it can wait one chapter more.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -307,26 +307,26 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "shatter",
-				"text": "Thirty years ago, Ser Aldric's blade found the Hollow King, and the Ember Crown shattered — not into metal, but into PEOPLE. You know this the way you know your own scar: one of those pieces has been in your chest since before you had a name for it. Vargoth told you so himself, at the end.",
+				"text": "Thirty years ago, Ser Aldric's blade found the Hollow King, and the Ember Crown shattered. Not into metal. Into people. You know it the way you know your own scar: one of those pieces has been in your chest since before you had a name for it. Vargoth told you as much himself, at the end.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Then came the second fall — yours. The years since have not healed the kingdom; they have WOKEN it. All across Vaelscar the old scatter is stirring: shards that slept thirty years in farmhands and deserters are opening their eyes, the factions count the newly-woken like a harvest, and an old woman keeps a fire at the crossroads to reach them first.",
+				"text": "Then came the second fall, yours. The years since haven't healed the kingdom. They've woken it. All across Vaelscar the old scatter is stirring: shards that slept thirty years in farmhands and deserters are opening their eyes, the factions count the newly-woken like a harvest, and an old woman keeps a fire at the crossroads to reach them first.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "shatter_paladin",
-				"text": "Years without a bench. Villages learn what you were; they bring you their disputes anyway. And every time you open your mouth to rule, the chain clears its throat FIRST.",
+				"text": "Years without a bench. Villages learn what you were; they bring you their disputes anyway. And every time you open your mouth to rule, the chain clears its throat first.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
+				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it. It has an account of its own, ready.",
 				"choices": [
 					{
-						"text": "Rule anyway — slowly. You heard every case twice: once as yourself, once listening for which verdict the chain leaned on. You ruled against the lean.",
+						"text": "Rule anyway, slowly. You heard every case twice: once as yourself, once listening for which verdict the chain leaned on. You ruled against the lean.",
 						"resonance": 6.0,
 						"flags": {
 							"ch2_kept_faith": true,
@@ -334,7 +334,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the chain answer. MY VERDICTS WERE FAST, CLEAN, AND LOVED. YOU READ THEM ALOUD UNEDITED — AND NOT ONE VILLAGE APPEALED.",
+						"text": "Let the chain answer. MY VERDICTS WERE FAST, CLEAN, AND LOVED. YOU READ THEM ALOUD UNEDITED, AND NOT ONE VILLAGE APPEALED.",
 						"resonance": -6.0,
 						"flags": {
 							"ch2_fed_ember": true,
@@ -353,17 +353,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The fire spits. Across it, the stranger nods slowly, as if you had answered a harder question than the one they asked.",
+				"text": "The fire spits. Across it, the stranger nods slowly, like you'd answered a harder question than the one they asked.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The shard settles, satisfied — a ledger initialed. Across the fire, the stranger looks away first.",
+				"text": "The shard settles, satisfied. A ledger initialed. Across the fire, the stranger looks away first.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The shard says nothing. It has waited years; it can wait one chapter more.",
+				"text": "The shard says nothing. It's waited years; it can wait one chapter more.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -379,23 +379,23 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "shatter",
-				"text": "Thirty years ago, Ser Aldric's blade found the Hollow King, and the Ember Crown shattered — not into metal, but into PEOPLE. You know this the way you know your own scar: one of those pieces has been in your chest since before you had a name for it. Vargoth told you so himself, at the end.",
+				"text": "Thirty years ago, Ser Aldric's blade found the Hollow King, and the Ember Crown shattered. Not into metal. Into people. You know it the way you know your own scar: one of those pieces has been in your chest since before you had a name for it. Vargoth told you as much himself, at the end.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Then came the second fall — yours. The years since have not healed the kingdom; they have WOKEN it. All across Vaelscar the old scatter is stirring: shards that slept thirty years in farmhands and deserters are opening their eyes, the factions count the newly-woken like a harvest, and an old woman keeps a fire at the crossroads to reach them first.",
+				"text": "Then came the second fall, yours. The years since haven't healed the kingdom. They've woken it. All across Vaelscar the old scatter is stirring: shards that slept thirty years in farmhands and deserters are opening their eyes, the factions count the newly-woken like a harvest, and an old woman keeps a fire at the crossroads to reach them first.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "shatter_warlock",
-				"text": "Years of the ledger. Whatever you did about the debt — the tome kept perfect books on it, in a hand that got a little more like yours each year. And in all that time it never once mentioned the interest. That is what frightened you.",
+				"text": "Years of the ledger. Whatever you did about the debt, the tome kept perfect books on it, in a hand that got a little more like yours each year. And in all that time it never once mentioned the interest. That's what frightened you.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it — and it has an account of its own, ready.",
+				"text": "\"I got mine in the spring,\" says the stranger across the fire, shard-glow still fresh under their wrist. \"You've had yours a while, haven't you. …How did you carry it?\" You look into the fire instead of answering. The shard was there for all of it. It has an account of its own, ready.",
 				"choices": [
 					{
 						"text": "Audit it. You learned its grammar, listed every asset 'what you traded' could mean, and crossed off what you could prove still yours.",
@@ -406,7 +406,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the tome answer. A CANDLE HERE, A CANDLE THERE — FOR GOOD CAUSES, MOSTLY. THE DEBT IS DEEPER AND YOUR REASONS WERE EXCELLENT. *(The tome's account. In your handwriting.)*",
+						"text": "Let the tome answer. A CANDLE HERE, A CANDLE THERE, FOR GOOD CAUSES, MOSTLY. THE DEBT IS DEEPER AND YOUR REASONS WERE EXCELLENT. *(The tome's account. In your handwriting.)*",
 						"resonance": -6.0,
 						"flags": {
 							"ch2_fed_ember": true,
@@ -425,17 +425,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The fire spits. Across it, the stranger nods slowly, as if you had answered a harder question than the one they asked.",
+				"text": "The fire spits. Across it, the stranger nods slowly, like you'd answered a harder question than the one they asked.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The shard settles, satisfied — a ledger initialed. Across the fire, the stranger looks away first.",
+				"text": "The shard settles, satisfied. A ledger initialed. Across the fire, the stranger looks away first.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The shard says nothing. It has waited years; it can wait one chapter more.",
+				"text": "The shard says nothing. It's waited years; it can wait one chapter more.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -451,18 +451,18 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "vale",
-				"text": "East of the camps lies the Choir's heartland, and the Choir does not bury its dead. Rot is the land's honest truth, they teach — so the dead walk their own funerals. They have been walking for sixty years.",
+				"text": "East of the camps lies the Choir's heartland, and the Choir doesn't bury its dead. Rot is the land's honest truth, they teach, so the dead walk their own funerals. They've been walking for sixty years.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The procession never arrives. That is the point. And at the top of it all kneels Saint Varo — the one man the rot refuses, worshipped for the refusing, asking the one mercy the Vale no longer stocks.",
+				"text": "The procession never arrives. That's the point. And at the top of it all kneels Saint Varo, the one man the rot refuses, worshipped for the refusing, asking the one mercy the Vale no longer stocks.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "vale_warrior",
-				"text": "Every dead thing here is an aftermath still on its feet. You know aftermaths — you wake up in them. The Vale is a blackout that never ends, walking in grave-clothes, and nobody here will even flinch if you swing.",
+				"text": "Every dead thing here is an aftermath still on its feet. You know aftermaths. You wake up in them. The Vale is a blackout that never ends, walking in grave-clothes, and nobody here will even flinch if you swing.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -470,7 +470,7 @@ const CONVOS := {
 				"text": "State your business with the unburied, pilgrim.",
 				"choices": [
 					{
-						"text": "Endings are owed. You finish what you start — time somebody finished THESE.",
+						"text": "Endings are owed. You finish what you start. Time somebody finished these.",
 						"resonance": 6.0,
 						"flags": {
 							"ch3_vowed_rest": true,
@@ -478,7 +478,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Swing free. Nothing here stays down and nothing here counts — the one place your gaps can feast without a bill.",
+						"text": "Swing free. Nothing here stays down and nothing here counts. The one place your gaps can feast without a bill.",
 						"resonance": -6.0,
 						"flags": {
 							"ch3_covets_rot": true,
@@ -502,17 +502,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The cantor holds your gaze a moment, then inks a mark that is not a number in her ledger.",
+				"text": "The cantor holds your gaze a moment, then inks a mark that isn't a number in her ledger.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it is not a compliment.",
+				"text": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it isn't a compliment.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The cantor waves you through. The procession does not look up.",
+				"text": "The cantor waves you through. The procession doesn't look up.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -528,18 +528,18 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "vale",
-				"text": "East of the camps lies the Choir's heartland, and the Choir does not bury its dead. Rot is the land's honest truth, they teach — so the dead walk their own funerals. They have been walking for sixty years.",
+				"text": "East of the camps lies the Choir's heartland, and the Choir doesn't bury its dead. Rot is the land's honest truth, they teach, so the dead walk their own funerals. They've been walking for sixty years.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The procession never arrives. That is the point. And at the top of it all kneels Saint Varo — the one man the rot refuses, worshipped for the refusing, asking the one mercy the Vale no longer stocks.",
+				"text": "The procession never arrives. That's the point. And at the top of it all kneels Saint Varo, the one man the rot refuses, worshipped for the refusing, asking the one mercy the Vale no longer stocks.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "vale_assassin",
-				"text": "Sixty years and the rot has not taken ONE thing from Varo. You, who cannot keep a fire lit near a stranger, are walking toward the single most refused man alive. The Ember is curious. You can feel it leaning.",
+				"text": "Sixty years and the rot hasn't taken one thing from Varo. You, who can't keep a fire lit near a stranger, are walking toward the single most refused man alive. The Ember is curious. You can feel it leaning.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -555,7 +555,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Learn the refusal. Whatever keeps the rot's hands off him could keep YOUR Ember's hands off everyone else — take the technique.",
+						"text": "Learn the refusal. Whatever keeps the rot's hands off him could keep your Ember's hands off everyone else. Take the technique.",
 						"resonance": -6.0,
 						"flags": {
 							"ch3_covets_rot": true,
@@ -563,7 +563,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "No gifts, no studies. If the saint must fall, let it be clean stranger's work — in, through, gone.",
+						"text": "No gifts, no studies. If the saint must fall, let it be clean stranger's work: in, through, gone.",
 						"resonance": 0.0,
 						"flags": {
 							"ch3_eyes_forward": true,
@@ -579,17 +579,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The cantor holds your gaze a moment, then inks a mark that is not a number in her ledger.",
+				"text": "The cantor holds your gaze a moment, then inks a mark that isn't a number in her ledger.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it is not a compliment.",
+				"text": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it isn't a compliment.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The cantor waves you through. The procession does not look up.",
+				"text": "The cantor waves you through. The procession doesn't look up.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -605,18 +605,18 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "vale",
-				"text": "East of the camps lies the Choir's heartland, and the Choir does not bury its dead. Rot is the land's honest truth, they teach — so the dead walk their own funerals. They have been walking for sixty years.",
+				"text": "East of the camps lies the Choir's heartland, and the Choir doesn't bury its dead. Rot is the land's honest truth, they teach, so the dead walk their own funerals. They've been walking for sixty years.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The procession never arrives. That is the point. And at the top of it all kneels Saint Varo — the one man the rot refuses, worshipped for the refusing, asking the one mercy the Vale no longer stocks.",
+				"text": "The procession never arrives. That's the point. And at the top of it all kneels Saint Varo, the one man the rot refuses, worshipped for the refusing, asking the one mercy the Vale no longer stocks.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "vale_mage",
-				"text": "The grey on the ferrier's boy — cold, spreading, unwashable. You have carried its likeness for years. The Vale is ACRES of it. Somewhere between the gate and the saint, this place knows what your green light did.",
+				"text": "The grey on the ferrier's boy: cold, spreading, unwashable. You've carried its likeness for years. The Vale is acres of it. Somewhere between the gate and the saint, this place knows what your green light did.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -624,7 +624,7 @@ const CONVOS := {
 				"text": "State your business with the unburied, pilgrim.",
 				"choices": [
 					{
-						"text": "The promise walks in with you. If the Vale can teach you what the mark IS, the boy finally gets his answer.",
+						"text": "The promise walks in with you. If the Vale can teach you what the mark is, the boy finally gets his answer.",
 						"resonance": 6.0,
 						"flags": {
 							"ch3_vowed_rest": true,
@@ -632,7 +632,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Varo first. The rot refuses him — refusal is a mechanism, and mechanisms can be extracted. The boy would understand the methods.",
+						"text": "Varo first. The rot refuses him. Refusal is a mechanism, and mechanisms can be extracted. The boy would understand the methods.",
 						"resonance": -6.0,
 						"flags": {
 							"ch3_covets_rot": true,
@@ -640,7 +640,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Research later. Chart it, sample nothing, promise nothing new. You have enough unkept already.",
+						"text": "Research later. Chart it, sample nothing, promise nothing new. You've got enough unkept already.",
 						"resonance": 0.0,
 						"flags": {
 							"ch3_eyes_forward": true,
@@ -656,17 +656,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The cantor holds your gaze a moment, then inks a mark that is not a number in her ledger.",
+				"text": "The cantor holds your gaze a moment, then inks a mark that isn't a number in her ledger.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it is not a compliment.",
+				"text": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it isn't a compliment.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The cantor waves you through. The procession does not look up.",
+				"text": "The cantor waves you through. The procession doesn't look up.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -682,18 +682,18 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "vale",
-				"text": "East of the camps lies the Choir's heartland, and the Choir does not bury its dead. Rot is the land's honest truth, they teach — so the dead walk their own funerals. They have been walking for sixty years.",
+				"text": "East of the camps lies the Choir's heartland, and the Choir doesn't bury its dead. Rot is the land's honest truth, they teach, so the dead walk their own funerals. They've been walking for sixty years.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The procession never arrives. That is the point. And at the top of it all kneels Saint Varo — the one man the rot refuses, worshipped for the refusing, asking the one mercy the Vale no longer stocks.",
+				"text": "The procession never arrives. That's the point. And at the top of it all kneels Saint Varo, the one man the rot refuses, worshipped for the refusing, asking the one mercy the Vale no longer stocks.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "vale_archer",
-				"text": "You can see the threads here. That is the horror of it — every walking corpse trails a hundred, held from the OTHER end. The Vale is not full of dead who won't leave. It is full of mourners who won't let go.",
+				"text": "You can see the threads here. That's the horror of it: every walking corpse trails a hundred, held from the other end. The Vale isn't full of dead who won't leave. It's full of mourners who won't let go.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -701,7 +701,7 @@ const CONVOS := {
 				"text": "State your business with the unburied, pilgrim.",
 				"choices": [
 					{
-						"text": "Release is a mercy you know the price of. Untie them — gently, one funeral at a time, all the way up the hill.",
+						"text": "Release is a mercy you know the price of. Untie them, gently, one funeral at a time, all the way up the hill.",
 						"resonance": 6.0,
 						"flags": {
 							"ch3_vowed_rest": true,
@@ -709,7 +709,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Cut the lot. One arrow through a held thread hurts less than sixty years of holding — and you'd barely feel it anymore.",
+						"text": "Cut the lot. One arrow through a held thread hurts less than sixty years of holding, and you'd barely feel it anymore.",
 						"resonance": -6.0,
 						"flags": {
 							"ch3_covets_rot": true,
@@ -733,17 +733,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The cantor holds your gaze a moment, then inks a mark that is not a number in her ledger.",
+				"text": "The cantor holds your gaze a moment, then inks a mark that isn't a number in her ledger.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it is not a compliment.",
+				"text": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it isn't a compliment.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The cantor waves you through. The procession does not look up.",
+				"text": "The cantor waves you through. The procession doesn't look up.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -759,18 +759,18 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "vale",
-				"text": "East of the camps lies the Choir's heartland, and the Choir does not bury its dead. Rot is the land's honest truth, they teach — so the dead walk their own funerals. They have been walking for sixty years.",
+				"text": "East of the camps lies the Choir's heartland, and the Choir doesn't bury its dead. Rot is the land's honest truth, they teach, so the dead walk their own funerals. They've been walking for sixty years.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The procession never arrives. That is the point. And at the top of it all kneels Saint Varo — the one man the rot refuses, worshipped for the refusing, asking the one mercy the Vale no longer stocks.",
+				"text": "The procession never arrives. That's the point. And at the top of it all kneels Saint Varo, the one man the rot refuses, worshipped for the refusing, asking the one mercy the Vale no longer stocks.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "vale_paladin",
-				"text": "Sixty years, one petitioner, no verdict. Varo begs for death and the Choir calls the begging liturgy. The chain has read the case already and — for the first time since the granary — it is NOT SURE. You felt it hesitate. That frightened you more than its certainty ever has.",
+				"text": "Sixty years, one petitioner, no verdict. Varo begs for death and the Choir calls the begging liturgy. The chain has read the case already, and for the first time since the granary, it isn't sure. You felt it hesitate. That frightened you more than its certainty ever has.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -786,7 +786,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Preserve the miracle. The chain steadies: a man the rot refuses is EVIDENCE, and evidence is not released — it is kept.",
+						"text": "Preserve the miracle. The chain steadies: a man the rot refuses is evidence, and evidence isn't released. It's kept.",
 						"resonance": -6.0,
 						"flags": {
 							"ch3_covets_rot": true,
@@ -810,17 +810,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The cantor holds your gaze a moment, then inks a mark that is not a number in her ledger.",
+				"text": "The cantor holds your gaze a moment, then inks a mark that isn't a number in her ledger.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it is not a compliment.",
+				"text": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it isn't a compliment.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The cantor waves you through. The procession does not look up.",
+				"text": "The cantor waves you through. The procession doesn't look up.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -836,18 +836,18 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "vale",
-				"text": "East of the camps lies the Choir's heartland, and the Choir does not bury its dead. Rot is the land's honest truth, they teach — so the dead walk their own funerals. They have been walking for sixty years.",
+				"text": "East of the camps lies the Choir's heartland, and the Choir doesn't bury its dead. Rot is the land's honest truth, they teach, so the dead walk their own funerals. They've been walking for sixty years.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The procession never arrives. That is the point. And at the top of it all kneels Saint Varo — the one man the rot refuses, worshipped for the refusing, asking the one mercy the Vale no longer stocks.",
+				"text": "The procession never arrives. That's the point. And at the top of it all kneels Saint Varo, the one man the rot refuses, worshipped for the refusing, asking the one mercy the Vale no longer stocks.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "vale_warlock",
-				"text": "You know these books. Death deferred, grief compounding, the principal never touched — the Vale is a loan sixty years past due and still accruing. The tome, in your pack, is purring. It thinks it is HOME.",
+				"text": "You know these books. Death deferred, grief compounding, the principal never touched: the Vale is a loan sixty years past due and still accruing. The tome, in your pack, is purring. It thinks it's home.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -855,7 +855,7 @@ const CONVOS := {
 				"text": "State your business with the unburied, pilgrim.",
 				"choices": [
 					{
-						"text": "Close the accounts. Every walker is a debt someone refuses to settle — settle them, paid in full, starting at the gate.",
+						"text": "Close the accounts. Every walker is a debt someone refuses to settle. Settle them, paid in full, starting at the gate.",
 						"resonance": 6.0,
 						"flags": {
 							"ch3_vowed_rest": true,
@@ -863,7 +863,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Study the instrument. Whatever contract keeps the Vale's books open has terms the tome has never dared offer YOU. Read it.",
+						"text": "Study the instrument. Whatever contract keeps the Vale's books open has terms the tome has never dared offer you. Read it.",
 						"resonance": -6.0,
 						"flags": {
 							"ch3_covets_rot": true,
@@ -887,17 +887,17 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The cantor holds your gaze a moment, then inks a mark that is not a number in her ledger.",
+				"text": "The cantor holds your gaze a moment, then inks a mark that isn't a number in her ledger.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it is not a compliment.",
+				"text": "The cantor's pen pauses. \"The saint draws your kind,\" she says, and it isn't a compliment.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The cantor waves you through. The procession does not look up.",
+				"text": "The cantor waves you through. The procession doesn't look up.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -913,18 +913,18 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "foundry",
-				"text": "South, the Compact reopened the old foundries. Best ore vein in Vaelscar, and heats the coal cannot explain. The blades stopped breaking two years ago. Nobody asked why loudly enough.",
+				"text": "South, the Compact reopened the old foundries. Best ore vein in Vaelscar, and heats the coal can't explain. The blades stopped breaking two years ago. Nobody asked why loudly enough.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Workers walk into the furnaces now. Most come out — straighter, longer-working, unblinking at the fire. Improved, the overseers say. And in the sermon-hall, the smiths have begun to notice that when the chaplain says GUILTY, the fire leans in.",
+				"text": "Workers walk into the furnaces now. Most come out straighter, longer-working, unblinking at the fire. Improved, the overseers say. And in the sermon-hall, the smiths have begun to notice that when the chaplain says 'guilty,' the fire leans in.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "foundry_warrior",
-				"text": "The improved stand straighter, hit harder, and stop blinking at the fire. Nobody says what got smelted out. You have wondered your whole life what you'd give to be certain of your own hands. The furnace is CERTAIN.",
+				"text": "The improved stand straighter, hit harder, and stop blinking at the fire. Nobody says what got smelted out. You've wondered your whole life what you'd give to be certain of your own hands. The furnace is certain.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -940,7 +940,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Ask the fire. One door, one walk-through — maybe the gaps come out annealed shut.",
+						"text": "Ask the fire. One door, one walk-through. Maybe the gaps come out annealed shut.",
 						"resonance": -6.0,
 						"flags": {
 							"ch4_heard_verdict": true,
@@ -964,12 +964,12 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she is testing with her teeth.",
+				"text": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she's testing with her teeth.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "\"Then you'll fit right in below,\" the crew-boss says, and does not smile.",
+				"text": "\"Then you'll fit right in below,\" the crew-boss says, and doesn't smile.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -980,7 +980,7 @@ const CONVOS := {
 			"n_end": {
 				"who": "Narrator",
 				"cue": "fade",
-				"text": "South: the Cinder Gate. The foundries do not bank their fires.",
+				"text": "South: the Cinder Gate. The foundries don't bank their fires.",
 			},
 		},
 	},
@@ -990,18 +990,18 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "foundry",
-				"text": "South, the Compact reopened the old foundries. Best ore vein in Vaelscar, and heats the coal cannot explain. The blades stopped breaking two years ago. Nobody asked why loudly enough.",
+				"text": "South, the Compact reopened the old foundries. Best ore vein in Vaelscar, and heats the coal can't explain. The blades stopped breaking two years ago. Nobody asked why loudly enough.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Workers walk into the furnaces now. Most come out — straighter, longer-working, unblinking at the fire. Improved, the overseers say. And in the sermon-hall, the smiths have begun to notice that when the chaplain says GUILTY, the fire leans in.",
+				"text": "Workers walk into the furnaces now. Most come out straighter, longer-working, unblinking at the fire. Improved, the overseers say. And in the sermon-hall, the smiths have begun to notice that when the chaplain says 'guilty,' the fire leans in.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "foundry_assassin",
-				"text": "Your Ember takes and leaves nothing but grey lips. The furnace takes and hands back improvements, itemized. It is the same theft with better paperwork — and half this city is GRATEFUL. That is the part that itches.",
+				"text": "Your Ember takes and leaves nothing but grey lips. The furnace takes and hands back improvements, itemized. It's the same theft with better paperwork, and half this city is grateful. That's the part that itches.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -1009,7 +1009,7 @@ const CONVOS := {
 				"text": "You're not signed. So what's a foundry to you, stranger?",
 				"choices": [
 					{
-						"text": "Gratitude isn't consent. Get them out before the bill comes due — you know how these ledgers end.",
+						"text": "Gratitude isn't consent. Get them out before the bill comes due. You know how these ledgers end.",
 						"resonance": 6.0,
 						"flags": {
 							"ch4_people_first": true,
@@ -1017,7 +1017,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Compare terms. If a fire can take cleanly and pay back, yours can learn the trick — negotiate.",
+						"text": "Compare terms. If a fire can take cleanly and pay back, yours can learn the trick. Negotiate.",
 						"resonance": -6.0,
 						"flags": {
 							"ch4_heard_verdict": true,
@@ -1041,12 +1041,12 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she is testing with her teeth.",
+				"text": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she's testing with her teeth.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "\"Then you'll fit right in below,\" the crew-boss says, and does not smile.",
+				"text": "\"Then you'll fit right in below,\" the crew-boss says, and doesn't smile.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -1057,7 +1057,7 @@ const CONVOS := {
 			"n_end": {
 				"who": "Narrator",
 				"cue": "fade",
-				"text": "South: the Cinder Gate. The foundries do not bank their fires.",
+				"text": "South: the Cinder Gate. The foundries don't bank their fires.",
 			},
 		},
 	},
@@ -1067,18 +1067,18 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "foundry",
-				"text": "South, the Compact reopened the old foundries. Best ore vein in Vaelscar, and heats the coal cannot explain. The blades stopped breaking two years ago. Nobody asked why loudly enough.",
+				"text": "South, the Compact reopened the old foundries. Best ore vein in Vaelscar, and heats the coal can't explain. The blades stopped breaking two years ago. Nobody asked why loudly enough.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Workers walk into the furnaces now. Most come out — straighter, longer-working, unblinking at the fire. Improved, the overseers say. And in the sermon-hall, the smiths have begun to notice that when the chaplain says GUILTY, the fire leans in.",
+				"text": "Workers walk into the furnaces now. Most come out straighter, longer-working, unblinking at the fire. Improved, the overseers say. And in the sermon-hall, the smiths have begun to notice that when the chaplain says 'guilty,' the fire leans in.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "foundry_mage",
-				"text": "The blades stopped breaking. Say it plainly: somewhere below, a technique exists that does not FAIL. You cast one heal, once, and it is still failing years later. Mórwyn would have loved this place. That sentence should be the whole warning.",
+				"text": "The blades stopped breaking. Say it plainly: somewhere below, a technique exists that doesn't fail. You cast one heal, once, and it's still failing years later. Mórwyn would have loved this place. That sentence should be the whole warning.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -1086,7 +1086,7 @@ const CONVOS := {
 				"text": "You're not signed. So what's a foundry to you, stranger?",
 				"choices": [
 					{
-						"text": "Perfect isn't the promise — UNDONE is. Take nothing from this place the boy wouldn't thank you for.",
+						"text": "Perfect isn't the promise. Undone is. Take nothing from this place the boy wouldn't thank you for.",
 						"resonance": 6.0,
 						"flags": {
 							"ch4_people_first": true,
@@ -1118,12 +1118,12 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she is testing with her teeth.",
+				"text": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she's testing with her teeth.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "\"Then you'll fit right in below,\" the crew-boss says, and does not smile.",
+				"text": "\"Then you'll fit right in below,\" the crew-boss says, and doesn't smile.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -1134,7 +1134,7 @@ const CONVOS := {
 			"n_end": {
 				"who": "Narrator",
 				"cue": "fade",
-				"text": "South: the Cinder Gate. The foundries do not bank their fires.",
+				"text": "South: the Cinder Gate. The foundries don't bank their fires.",
 			},
 		},
 	},
@@ -1144,18 +1144,18 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "foundry",
-				"text": "South, the Compact reopened the old foundries. Best ore vein in Vaelscar, and heats the coal cannot explain. The blades stopped breaking two years ago. Nobody asked why loudly enough.",
+				"text": "South, the Compact reopened the old foundries. Best ore vein in Vaelscar, and heats the coal can't explain. The blades stopped breaking two years ago. Nobody asked why loudly enough.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Workers walk into the furnaces now. Most come out — straighter, longer-working, unblinking at the fire. Improved, the overseers say. And in the sermon-hall, the smiths have begun to notice that when the chaplain says GUILTY, the fire leans in.",
+				"text": "Workers walk into the furnaces now. Most come out straighter, longer-working, unblinking at the fire. Improved, the overseers say. And in the sermon-hall, the smiths have begun to notice that when the chaplain says 'guilty,' the fire leans in.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "foundry_archer",
-				"text": "You see the freight lines the way you see threads — and every thread in this city runs DOWNHILL. Crews roped together walking in; ore, verdicts, prayers, all one direction. Nothing in the Slagfields leads out.",
+				"text": "You see the freight lines the way you see threads, and every thread in this city runs downhill. Crews roped together walking in; ore, verdicts, prayers, all one direction. Nothing in the Slagfields leads out.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -1171,7 +1171,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Follow the pull. Threads that strong lead to whatever's holding them — and you'd like to see the hand.",
+						"text": "Follow the pull. Threads that strong lead to whatever's holding them, and you'd like to see the hand.",
 						"resonance": -6.0,
 						"flags": {
 							"ch4_heard_verdict": true,
@@ -1195,12 +1195,12 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she is testing with her teeth.",
+				"text": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she's testing with her teeth.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "\"Then you'll fit right in below,\" the crew-boss says, and does not smile.",
+				"text": "\"Then you'll fit right in below,\" the crew-boss says, and doesn't smile.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -1211,7 +1211,7 @@ const CONVOS := {
 			"n_end": {
 				"who": "Narrator",
 				"cue": "fade",
-				"text": "South: the Cinder Gate. The foundries do not bank their fires.",
+				"text": "South: the Cinder Gate. The foundries don't bank their fires.",
 			},
 		},
 	},
@@ -1221,18 +1221,18 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "foundry",
-				"text": "South, the Compact reopened the old foundries. Best ore vein in Vaelscar, and heats the coal cannot explain. The blades stopped breaking two years ago. Nobody asked why loudly enough.",
+				"text": "South, the Compact reopened the old foundries. Best ore vein in Vaelscar, and heats the coal can't explain. The blades stopped breaking two years ago. Nobody asked why loudly enough.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Workers walk into the furnaces now. Most come out — straighter, longer-working, unblinking at the fire. Improved, the overseers say. And in the sermon-hall, the smiths have begun to notice that when the chaplain says GUILTY, the fire leans in.",
+				"text": "Workers walk into the furnaces now. Most come out straighter, longer-working, unblinking at the fire. Improved, the overseers say. And in the sermon-hall, the smiths have begun to notice that when the chaplain says 'guilty,' the fire leans in.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "foundry_paladin",
-				"text": "Three rooms past the gate and the chain went QUIET — the quiet of a junior arbiter when the high judge enters. Something under this rock hands down verdicts, and the thing around your heart wants to clerk for it.",
+				"text": "Three rooms past the gate and the chain went quiet, the quiet of a junior arbiter when the high judge enters. Something under this rock hands down verdicts, and the thing around your heart wants to clerk for it.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -1248,7 +1248,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Sit in. Hear how a fire argues, learn what your chain's superior sounds like — then rule on it.",
+						"text": "Sit in. Hear how a fire argues, learn what your chain's superior sounds like, then rule on it.",
 						"resonance": -6.0,
 						"flags": {
 							"ch4_heard_verdict": true,
@@ -1272,12 +1272,12 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she is testing with her teeth.",
+				"text": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she's testing with her teeth.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "\"Then you'll fit right in below,\" the crew-boss says, and does not smile.",
+				"text": "\"Then you'll fit right in below,\" the crew-boss says, and doesn't smile.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -1288,7 +1288,7 @@ const CONVOS := {
 			"n_end": {
 				"who": "Narrator",
 				"cue": "fade",
-				"text": "South: the Cinder Gate. The foundries do not bank their fires.",
+				"text": "South: the Cinder Gate. The foundries don't bank their fires.",
 			},
 		},
 	},
@@ -1298,18 +1298,18 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "foundry",
-				"text": "South, the Compact reopened the old foundries. Best ore vein in Vaelscar, and heats the coal cannot explain. The blades stopped breaking two years ago. Nobody asked why loudly enough.",
+				"text": "South, the Compact reopened the old foundries. Best ore vein in Vaelscar, and heats the coal can't explain. The blades stopped breaking two years ago. Nobody asked why loudly enough.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Workers walk into the furnaces now. Most come out — straighter, longer-working, unblinking at the fire. Improved, the overseers say. And in the sermon-hall, the smiths have begun to notice that when the chaplain says GUILTY, the fire leans in.",
+				"text": "Workers walk into the furnaces now. Most come out straighter, longer-working, unblinking at the fire. Improved, the overseers say. And in the sermon-hall, the smiths have begun to notice that when the chaplain says 'guilty,' the fire leans in.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "foundry_warlock",
-				"text": "The tome has not said one word since you crossed the Cinder Gate. You know that silence — a small creditor in a large bank's lobby. The thing beneath the foundries writes contracts in fire and signs them with verdicts, and your book is AFRAID of it.",
+				"text": "The tome hasn't said one word since you crossed the Cinder Gate. You know that silence: a small creditor in a large bank's lobby. The thing beneath the foundries writes contracts in fire and signs them with verdicts, and your book is afraid of it.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -1325,7 +1325,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Read the fine print. A bigger lender means better terms — or a way to refinance what you owe the tome.",
+						"text": "Read the fine print. A bigger lender means better terms, or a way to refinance what you owe the tome.",
 						"resonance": -6.0,
 						"flags": {
 							"ch4_heard_verdict": true,
@@ -1349,12 +1349,12 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she is testing with her teeth.",
+				"text": "The crew-boss studies you, then steps aside. \"Crews first,\" she repeats, like a coin she's testing with her teeth.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "\"Then you'll fit right in below,\" the crew-boss says, and does not smile.",
+				"text": "\"Then you'll fit right in below,\" the crew-boss says, and doesn't smile.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -1365,7 +1365,7 @@ const CONVOS := {
 			"n_end": {
 				"who": "Narrator",
 				"cue": "fade",
-				"text": "South: the Cinder Gate. The foundries do not bank their fires.",
+				"text": "South: the Cinder Gate. The foundries don't bank their fires.",
 			},
 		},
 	},
@@ -1375,26 +1375,26 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "sledge",
-				"text": "North, the Long Sleep hauls its faithful onto the ice. Freely given, every one — they sign their names, lie down smiling, and wait for the Queen's morning. The cult keeps the ledgers beautifully.",
+				"text": "North, the Long Sleep hauls its faithful onto the ice. Freely given, every one. They sign their names, lie down smiling, and wait for the Queen's morning. The cult keeps the ledgers beautifully.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. Count the children at the clan line — watching the sacks, not the sleepers. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time — and there is always an empty bed.",
+				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. Count the children at the clan line, watching the sacks, not the sleepers. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time, and there's always an empty bed.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "sledge_warrior",
-				"text": "You have tied yourself to bedposts, walked off swords, chained the thing nightly for years — and every leash held until it didn't. The ice does not slip. Under the shelf, nobody's hands do anything at ALL, forever. It is the only guarantee you have ever been offered.",
+				"text": "You've tied yourself to bedposts, walked off swords, chained the thing nightly for years, and every leash held until it didn't. The ice doesn't slip. Under the shelf, nobody's hands do anything at all, forever. It's the only guarantee you've ever been offered.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours — and the shard gets a word in.",
+				"text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours, and the shard gets a word in.",
 				"choices": [
 					{
-						"text": "Mornings over guarantees. Wake them, and keep waking — a held sword beats a buried one.",
+						"text": "Mornings over guarantees. Wake them, and keep waking. A held sword beats a buried one.",
 						"resonance": 6.0,
 						"flags": {
 							"ch5_vowed_morning": true,
@@ -1402,7 +1402,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Price the bed — not for the peace, for the containment. Think it quietly, so the shard doesn't hear: one sleeper down there never hurts a miller again.",
+						"text": "Price the bed, not for the peace, for the containment. Think it quietly, so the shard doesn't hear: one sleeper down there never hurts a miller again.",
 						"resonance": -6.0,
 						"flags": {
 							"ch5_felt_pull": true,
@@ -1421,7 +1421,7 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "You hand back the pen. The sister's face does not change — but she writes nothing, and that is its own entry.",
+				"text": "You hand back the pen. The sister's face doesn't change, but she writes nothing, and that's its own entry.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
@@ -1437,7 +1437,7 @@ const CONVOS := {
 			"n_end": {
 				"who": "Narrator",
 				"cue": "fade",
-				"text": "North: the Last Fire, where the ice keeps what the living cannot.",
+				"text": "North: the Last Fire, where the ice keeps what the living can't.",
 			},
 		},
 	},
@@ -1447,26 +1447,26 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "sledge",
-				"text": "North, the Long Sleep hauls its faithful onto the ice. Freely given, every one — they sign their names, lie down smiling, and wait for the Queen's morning. The cult keeps the ledgers beautifully.",
+				"text": "North, the Long Sleep hauls its faithful onto the ice. Freely given, every one. They sign their names, lie down smiling, and wait for the Queen's morning. The cult keeps the ledgers beautifully.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. Count the children at the clan line — watching the sacks, not the sleepers. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time — and there is always an empty bed.",
+				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. Count the children at the clan line, watching the sacks, not the sleepers. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time, and there's always an empty bed.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "sledge_assassin",
-				"text": "The vault under the ice is the one room in the world where your Ember has nothing to take. Nobody warm, nobody spending, everyone perfectly KEPT. Three days poisoned on a winter road, you'd have crawled to a bed like that. There is an empty one.",
+				"text": "The vault under the ice is the one room in the world where your Ember has nothing to take. Nobody warm, nobody spending, everyone perfectly kept. Three days poisoned on a winter road, you'd have crawled to a bed like that. There's an empty one.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours — and the shard gets a word in.",
+				"text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours, and the shard gets a word in.",
 				"choices": [
 					{
-						"text": "Wake them. You know what 'kept' costs from the taking side — nobody down there agreed to the real price.",
+						"text": "Wake them. You know what 'kept' costs from the taking side. Nobody down there agreed to the real price.",
 						"resonance": 6.0,
 						"flags": {
 							"ch5_vowed_morning": true,
@@ -1474,7 +1474,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the shard answer. LIE DOWN. ONE TENCOUNT IN THE EMPTY BED. WHAT THE ICE HOLDS STILL I CANNOT SPEND — AND YOU ARE SO TIRED OF MY SPENDING.",
+						"text": "Let the shard answer. LIE DOWN. ONE TENCOUNT IN THE EMPTY BED. WHAT THE ICE HOLDS STILL I CANNOT SPEND, AND YOU ARE SO TIRED OF MY SPENDING.",
 						"resonance": -6.0,
 						"flags": {
 							"ch5_felt_pull": true,
@@ -1493,7 +1493,7 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "You hand back the pen. The sister's face does not change — but she writes nothing, and that is its own entry.",
+				"text": "You hand back the pen. The sister's face doesn't change, but she writes nothing, and that's its own entry.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
@@ -1509,7 +1509,7 @@ const CONVOS := {
 			"n_end": {
 				"who": "Narrator",
 				"cue": "fade",
-				"text": "North: the Last Fire, where the ice keeps what the living cannot.",
+				"text": "North: the Last Fire, where the ice keeps what the living can't.",
 			},
 		},
 	},
@@ -1519,23 +1519,23 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "sledge",
-				"text": "North, the Long Sleep hauls its faithful onto the ice. Freely given, every one — they sign their names, lie down smiling, and wait for the Queen's morning. The cult keeps the ledgers beautifully.",
+				"text": "North, the Long Sleep hauls its faithful onto the ice. Freely given, every one. They sign their names, lie down smiling, and wait for the Queen's morning. The cult keeps the ledgers beautifully.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. Count the children at the clan line — watching the sacks, not the sleepers. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time — and there is always an empty bed.",
+				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. Count the children at the clan line, watching the sacks, not the sleepers. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time, and there's always an empty bed.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "sledge_mage",
-				"text": "The ice keeps perfectly and heals NOTHING. Fevers paused mid-burn, wounds held mid-bleed — a hospital of unfinished sentences. You have a mark that spreads a shadow's width a year. Cold enough, still enough… it would stop. Stopping is not undoing. You know that. You KNOW that.",
+				"text": "The ice keeps perfectly and heals nothing. Fevers paused mid-burn, wounds held mid-bleed: a hospital of unfinished sentences. You have a mark that spreads a shadow's width a year. Cold enough, still enough… it would stop. Stopping isn't undoing. You know that. You know that.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours — and the shard gets a word in.",
+				"text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours, and the shard gets a word in.",
 				"choices": [
 					{
 						"text": "The promise says undone, not paused. Wake them into cures, however long cures take.",
@@ -1546,7 +1546,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the shard answer. ONE BLOOM OF GREY UNDER HER COLD. IF THE MARK HALTS, THE BOY SLEEPS A WINTER AND WAKES CLEAN. YOU HAVE CAST ON WORSE ODDS — WE BOTH REMEMBER.",
+						"text": "Let the shard answer. ONE BLOOM OF GREY UNDER HER COLD. IF THE MARK HALTS, THE BOY SLEEPS A WINTER AND WAKES CLEAN. YOU HAVE CAST ON WORSE ODDS. WE BOTH REMEMBER.",
 						"resonance": -6.0,
 						"flags": {
 							"ch5_felt_pull": true,
@@ -1565,7 +1565,7 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "You hand back the pen. The sister's face does not change — but she writes nothing, and that is its own entry.",
+				"text": "You hand back the pen. The sister's face doesn't change, but she writes nothing, and that's its own entry.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
@@ -1581,7 +1581,7 @@ const CONVOS := {
 			"n_end": {
 				"who": "Narrator",
 				"cue": "fade",
-				"text": "North: the Last Fire, where the ice keeps what the living cannot.",
+				"text": "North: the Last Fire, where the ice keeps what the living can't.",
 			},
 		},
 	},
@@ -1591,23 +1591,23 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "sledge",
-				"text": "North, the Long Sleep hauls its faithful onto the ice. Freely given, every one — they sign their names, lie down smiling, and wait for the Queen's morning. The cult keeps the ledgers beautifully.",
+				"text": "North, the Long Sleep hauls its faithful onto the ice. Freely given, every one. They sign their names, lie down smiling, and wait for the Queen's morning. The cult keeps the ledgers beautifully.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. Count the children at the clan line — watching the sacks, not the sleepers. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time — and there is always an empty bed.",
+				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. Count the children at the clan line, watching the sacks, not the sleepers. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time, and there's always an empty bed.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "sledge_archer",
-				"text": "Every sleeper cut all their threads at once and called it peace. You did it one thread at a time and called it the road. The difference is smaller than you'd like, and the ice knows it — the vault glows like a farmhouse window from the ridge.",
+				"text": "Every sleeper cut all their threads at once and called it peace. You did it one thread at a time and called it the road. The difference is smaller than you'd like, and the ice knows it. The vault glows like a farmhouse window from the ridge.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours — and the shard gets a word in.",
+				"text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours, and the shard gets a word in.",
 				"choices": [
 					{
 						"text": "Threads are for holding. Wake them into their own winters and stand there while they re-tie.",
@@ -1626,7 +1626,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Neither wake nor join. Count the beds like chimney smoke — near enough to know — and move on.",
+						"text": "Neither wake nor join. Count the beds like chimney smoke, near enough to know, and move on.",
 						"resonance": 0.0,
 						"flags": {
 							"ch5_kept_ledger": true,
@@ -1637,7 +1637,7 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "You hand back the pen. The sister's face does not change — but she writes nothing, and that is its own entry.",
+				"text": "You hand back the pen. The sister's face doesn't change, but she writes nothing, and that's its own entry.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
@@ -1653,7 +1653,7 @@ const CONVOS := {
 			"n_end": {
 				"who": "Narrator",
 				"cue": "fade",
-				"text": "North: the Last Fire, where the ice keeps what the living cannot.",
+				"text": "North: the Last Fire, where the ice keeps what the living can't.",
 			},
 		},
 	},
@@ -1663,26 +1663,26 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "sledge",
-				"text": "North, the Long Sleep hauls its faithful onto the ice. Freely given, every one — they sign their names, lie down smiling, and wait for the Queen's morning. The cult keeps the ledgers beautifully.",
+				"text": "North, the Long Sleep hauls its faithful onto the ice. Freely given, every one. They sign their names, lie down smiling, and wait for the Queen's morning. The cult keeps the ledgers beautifully.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. Count the children at the clan line — watching the sacks, not the sleepers. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time — and there is always an empty bed.",
+				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. Count the children at the clan line, watching the sacks, not the sleepers. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time, and there's always an empty bed.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "sledge_paladin",
-				"text": "Signed ledgers, freely given — the cult's paperwork is immaculate and the chain finds NO fault in it. Grain for passage, sleep for grief: contracts all round. But you have judged mills in famine years. You know what a signature is worth when the alternative is watching your children thin.",
+				"text": "Signed ledgers, freely given: the cult's paperwork is immaculate and the chain finds no fault in it. Grain for passage, sleep for grief: contracts all round. But you've judged mills in famine years. You know what a signature is worth when the alternative is watching your children thin.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours — and the shard gets a word in.",
+				"text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours, and the shard gets a word in.",
 				"choices": [
 					{
-						"text": "Coercion doesn't need a knife. Void the winter's terms: grain stays, sleepers wake, and the cult renegotiates with ME.",
+						"text": "Coercion doesn't need a knife. Void the winter's terms: grain stays, sleepers wake, and the cult renegotiates with me.",
 						"resonance": 6.0,
 						"flags": {
 							"ch5_vowed_morning": true,
@@ -1690,7 +1690,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the chain answer. CONSENT GIVEN IS CONSENT KEPT. THE LEDGERS ARE LAWFUL. ENFORCE THEM AS WRITTEN — OR ADMIT YOUR MERCY OUTRANKS THE LAW.",
+						"text": "Let the chain answer. CONSENT GIVEN IS CONSENT KEPT. THE LEDGERS ARE LAWFUL. ENFORCE THEM AS WRITTEN, OR ADMIT YOUR MERCY OUTRANKS THE LAW.",
 						"resonance": -6.0,
 						"flags": {
 							"ch5_felt_pull": true,
@@ -1709,7 +1709,7 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "You hand back the pen. The sister's face does not change — but she writes nothing, and that is its own entry.",
+				"text": "You hand back the pen. The sister's face doesn't change, but she writes nothing, and that's its own entry.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
@@ -1725,7 +1725,7 @@ const CONVOS := {
 			"n_end": {
 				"who": "Narrator",
 				"cue": "fade",
-				"text": "North: the Last Fire, where the ice keeps what the living cannot.",
+				"text": "North: the Last Fire, where the ice keeps what the living can't.",
 			},
 		},
 	},
@@ -1735,23 +1735,23 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "sledge",
-				"text": "North, the Long Sleep hauls its faithful onto the ice. Freely given, every one — they sign their names, lie down smiling, and wait for the Queen's morning. The cult keeps the ledgers beautifully.",
+				"text": "North, the Long Sleep hauls its faithful onto the ice. Freely given, every one. They sign their names, lie down smiling, and wait for the Queen's morning. The cult keeps the ledgers beautifully.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. Count the children at the clan line — watching the sacks, not the sleepers. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time — and there is always an empty bed.",
+				"text": "The winter clans let the sledges pass because the cult pays in grain, and this is a famine winter. Count the children at the clan line, watching the sacks, not the sleepers. Every bundle on those sledges is somebody's supper. Under the shelf, the vault grows a row at a time, and there's always an empty bed.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "sledge_warlock",
-				"text": "Sleep now, morning later — the Queen's whole faith is a deferral scheme, and the tome respects the CRAFT of it. No interest visible, principal frozen, payout scheduled for a date the lender controls. You have read this instrument before. You are STANDING in one.",
+				"text": "Sleep now, morning later: the Queen's whole faith is a deferral scheme, and the tome respects the craft of it. No interest visible, principal frozen, payout scheduled for a date the lender controls. You've read this instrument before. You're standing in one.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours — and the shard gets a word in.",
+				"text": "At the sledge line a Long Sleep sister offers the open ledger and the pen, and says nothing at all. The pen hangs there. The deliberation is yours, and the shard gets a word in.",
 				"choices": [
 					{
 						"text": "Call the loan early. Wake them before the Queen's 'morning' names its real price.",
@@ -1781,7 +1781,7 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "You hand back the pen. The sister's face does not change — but she writes nothing, and that is its own entry.",
+				"text": "You hand back the pen. The sister's face doesn't change, but she writes nothing, and that's its own entry.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
@@ -1797,7 +1797,7 @@ const CONVOS := {
 			"n_end": {
 				"who": "Narrator",
 				"cue": "fade",
-				"text": "North: the Last Fire, where the ice keeps what the living cannot.",
+				"text": "North: the Last Fire, where the ice keeps what the living can't.",
 			},
 		},
 	},
@@ -1812,13 +1812,13 @@ const CONVOS := {
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Growth without death. Bloom without wilt. A garden that only ADDS — the most beautiful thing in Vaelscar, and wrong the way a sentence with no ending is wrong. The column that found it walked in preaching and came out half its size — the rest stayed, knee-down in the moss. Somewhere at the heart of the green, a shaman went looking for a cure and found a congregation.",
+				"text": "Growth without death. Bloom without wilt. A garden that only adds, the most beautiful thing in Vaelscar, and wrong the way a sentence with no ending is wrong. The column that found it walked in preaching and came out half its size; the rest stayed, knee-down in the moss. Somewhere at the heart of the green, a shaman went looking for a cure and found a congregation.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "bloom_warrior",
-				"text": "You broke a sapling at the gate — habit, checking your hands. By the time the column passed, it had straightened. A place where NOTHING you break stays broken. You have wanted absolution your whole bearing life. This is the counterfeit, and it is very good.",
+				"text": "You broke a sapling at the gate, habit, checking your hands. By the time the column passed, it had straightened. A place where nothing you break stays broken. You've wanted absolution your whole bearing life. This is the counterfeit, and it's very good.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -1834,7 +1834,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Test it properly. If the Deep unmakes damage, then in the green the blackout is FREE — let it off the leash where nothing can die.",
+						"text": "Test it properly. If the Deep unmakes damage, then in the green the blackout is free. Let it off the leash where nothing can die.",
 						"resonance": -6.0,
 						"flags": {
 							"ch6_answered_green": true,
@@ -1853,7 +1853,7 @@ const CONVOS := {
 			},
 			"n4s": {
 				"who": "Narrator",
-				"text": "At the gate a kneeler catches your sleeve — glad-eyed, mud to the knees, utterly at peace.",
+				"text": "At the gate a kneeler catches your sleeve, glad-eyed, mud to the knees, utterly at peace.",
 				"next": "n4",
 			},
 			"reply_virtue": {
@@ -1889,13 +1889,13 @@ const CONVOS := {
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Growth without death. Bloom without wilt. A garden that only ADDS — the most beautiful thing in Vaelscar, and wrong the way a sentence with no ending is wrong. The column that found it walked in preaching and came out half its size — the rest stayed, knee-down in the moss. Somewhere at the heart of the green, a shaman went looking for a cure and found a congregation.",
+				"text": "Growth without death. Bloom without wilt. A garden that only adds, the most beautiful thing in Vaelscar, and wrong the way a sentence with no ending is wrong. The column that found it walked in preaching and came out half its size; the rest stayed, knee-down in the moss. Somewhere at the heart of the green, a shaman went looking for a cure and found a congregation.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "bloom_assassin",
-				"text": "It gives. No fee, no flask, no grey lips after — fruit for the walking, shade for the tired, never once reaching into the pilgrims' pockets. Your Ember has been leaning at it since the gate like a cat at a fishmonger's. Nothing gives like this. Nothing gives like this WITHOUT A REASON.",
+				"text": "It gives. No fee, no flask, no grey lips after: fruit for the walking, shade for the tired, never once reaching into the pilgrims' pockets. Your Ember has been leaning at it since the gate like a cat at a fishmonger's. Nothing gives like this. Nothing gives like this without a reason.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -1903,7 +1903,7 @@ const CONVOS := {
 				"text": "It gives, stranger. It only ever gives. Will you not take?",
 				"choices": [
 					{
-						"text": "Find the reason. Kaethra knows what the green charges and when — get the truth before the bill lands.",
+						"text": "Find the reason. Kaethra knows what the green charges and when. Get the truth before the bill lands.",
 						"resonance": 6.0,
 						"flags": {
 							"ch6_seeks_truth": true,
@@ -1930,7 +1930,7 @@ const CONVOS := {
 			},
 			"n4s": {
 				"who": "Narrator",
-				"text": "At the gate a kneeler catches your sleeve — glad-eyed, mud to the knees, utterly at peace.",
+				"text": "At the gate a kneeler catches your sleeve, glad-eyed, mud to the knees, utterly at peace.",
 				"next": "n4",
 			},
 			"reply_virtue": {
@@ -1966,13 +1966,13 @@ const CONVOS := {
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Growth without death. Bloom without wilt. A garden that only ADDS — the most beautiful thing in Vaelscar, and wrong the way a sentence with no ending is wrong. The column that found it walked in preaching and came out half its size — the rest stayed, knee-down in the moss. Somewhere at the heart of the green, a shaman went looking for a cure and found a congregation.",
+				"text": "Growth without death. Bloom without wilt. A garden that only adds, the most beautiful thing in Vaelscar, and wrong the way a sentence with no ending is wrong. The column that found it walked in preaching and came out half its size; the rest stayed, knee-down in the moss. Somewhere at the heart of the green, a shaman went looking for a cure and found a congregation.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "bloom_mage",
-				"text": "The light standing on the waterline is the color your heal came out. Not similar. THE color. The green said yes to Kaethra too — and you would give both journals to know whether it finished the sentence.",
+				"text": "The light standing on the waterline is the color your heal came out. Not similar. The color. The green said yes to Kaethra too, and you'd give both journals to know whether it finished the sentence.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -1980,7 +1980,7 @@ const CONVOS := {
 				"text": "It gives, stranger. It only ever gives. Will you not take?",
 				"choices": [
 					{
-						"text": "Find Kaethra. Two people the green answered; between you, maybe one truth — and the boy's cure at the end of it.",
+						"text": "Find Kaethra. Two people the green answered; between you, maybe one truth, and the boy's cure at the end of it.",
 						"resonance": 6.0,
 						"flags": {
 							"ch6_seeks_truth": true,
@@ -1988,7 +1988,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Take a cutting. Growth-without-death, pressed in a journal, carried to the boy's mark. You'd be careful. You're always careful. You were careful the FIRST time.",
+						"text": "Take a cutting. Growth-without-death, pressed in a journal, carried to the boy's mark. You'd be careful. You're always careful. You were careful the first time.",
 						"resonance": -6.0,
 						"flags": {
 							"ch6_answered_green": true,
@@ -2007,7 +2007,7 @@ const CONVOS := {
 			},
 			"n4s": {
 				"who": "Narrator",
-				"text": "At the gate a kneeler catches your sleeve — glad-eyed, mud to the knees, utterly at peace.",
+				"text": "At the gate a kneeler catches your sleeve, glad-eyed, mud to the knees, utterly at peace.",
 				"next": "n4",
 			},
 			"reply_virtue": {
@@ -2043,13 +2043,13 @@ const CONVOS := {
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Growth without death. Bloom without wilt. A garden that only ADDS — the most beautiful thing in Vaelscar, and wrong the way a sentence with no ending is wrong. The column that found it walked in preaching and came out half its size — the rest stayed, knee-down in the moss. Somewhere at the heart of the green, a shaman went looking for a cure and found a congregation.",
+				"text": "Growth without death. Bloom without wilt. A garden that only adds, the most beautiful thing in Vaelscar, and wrong the way a sentence with no ending is wrong. The column that found it walked in preaching and came out half its size; the rest stayed, knee-down in the moss. Somewhere at the heart of the green, a shaman went looking for a cure and found a congregation.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "bloom_archer",
-				"text": "Nothing here stays cut. Vines close behind the column; a cleared path heals by morning. You watched a pilgrim snap a stem and it FOUND ITSELF again by dusk. You have exactly one severed thing you never stopped carrying, and the Deep is very quietly offering.",
+				"text": "Nothing here stays cut. Vines close behind the column; a cleared path heals by morning. You watched a pilgrim snap a stem and it found itself again by dusk. You have exactly one severed thing you never stopped carrying, and the Deep is very quietly offering.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -2057,7 +2057,7 @@ const CONVOS := {
 				"text": "It gives, stranger. It only ever gives. Will you not take?",
 				"choices": [
 					{
-						"text": "Some cuts should hold — the Ember's included. Find what the green wants before deciding what it gives.",
+						"text": "Some cuts should hold, the Ember's included. Find what the green wants before deciding what it gives.",
 						"resonance": 6.0,
 						"flags": {
 							"ch6_seeks_truth": true,
@@ -2065,7 +2065,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Ask it. One thread, regrown — a farm, a brother, a gate that stays unlatched, restored like the stem. Whatever it costs.",
+						"text": "Ask it. One thread, regrown: a farm, a brother, a gate that stays unlatched, restored like the stem. Whatever it costs.",
 						"resonance": -6.0,
 						"flags": {
 							"ch6_answered_green": true,
@@ -2073,7 +2073,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Trust the scar. What regrows here isn't what was cut — it's what the Deep remembers of it. Keep walking.",
+						"text": "Trust the scar. What regrows here isn't what was cut. It's what the Deep remembers of it. Keep walking.",
 						"resonance": 0.0,
 						"flags": {
 							"ch6_would_burn": true,
@@ -2084,7 +2084,7 @@ const CONVOS := {
 			},
 			"n4s": {
 				"who": "Narrator",
-				"text": "At the gate a kneeler catches your sleeve — glad-eyed, mud to the knees, utterly at peace.",
+				"text": "At the gate a kneeler catches your sleeve, glad-eyed, mud to the knees, utterly at peace.",
 				"next": "n4",
 			},
 			"reply_virtue": {
@@ -2120,13 +2120,13 @@ const CONVOS := {
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Growth without death. Bloom without wilt. A garden that only ADDS — the most beautiful thing in Vaelscar, and wrong the way a sentence with no ending is wrong. The column that found it walked in preaching and came out half its size — the rest stayed, knee-down in the moss. Somewhere at the heart of the green, a shaman went looking for a cure and found a congregation.",
+				"text": "Growth without death. Bloom without wilt. A garden that only adds, the most beautiful thing in Vaelscar, and wrong the way a sentence with no ending is wrong. The column that found it walked in preaching and came out half its size; the rest stayed, knee-down in the moss. Somewhere at the heart of the green, a shaman went looking for a cure and found a congregation.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "bloom_paladin",
-				"text": "The Deep acquits EVERYONE. No case heard, no sentence weighed — the sick walk in guilty of nothing and come out green and glad. The flock knelt in HALVES, and the chain, for the second time in your life, has gone quiet. Not respectful-quiet. OUTNUMBERED-quiet.",
+				"text": "The Deep acquits everyone. No case heard, no sentence weighed: the sick walk in guilty of nothing and come out green and glad. The flock knelt in halves, and the chain, for the second time in your life, has gone quiet. Not respectful-quiet. Outnumbered-quiet.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -2142,7 +2142,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Bottle the amnesty. A mercy that skips the bench entirely — the chain whispers that some verdicts could use one. Take a cutting for the court.",
+						"text": "Bottle the amnesty. A mercy that skips the bench entirely. The chain whispers that some verdicts could use one. Take a cutting for the court.",
 						"resonance": -6.0,
 						"flags": {
 							"ch6_answered_green": true,
@@ -2161,7 +2161,7 @@ const CONVOS := {
 			},
 			"n4s": {
 				"who": "Narrator",
-				"text": "At the gate a kneeler catches your sleeve — glad-eyed, mud to the knees, utterly at peace.",
+				"text": "At the gate a kneeler catches your sleeve, glad-eyed, mud to the knees, utterly at peace.",
 				"next": "n4",
 			},
 			"reply_virtue": {
@@ -2197,13 +2197,13 @@ const CONVOS := {
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Growth without death. Bloom without wilt. A garden that only ADDS — the most beautiful thing in Vaelscar, and wrong the way a sentence with no ending is wrong. The column that found it walked in preaching and came out half its size — the rest stayed, knee-down in the moss. Somewhere at the heart of the green, a shaman went looking for a cure and found a congregation.",
+				"text": "Growth without death. Bloom without wilt. A garden that only adds, the most beautiful thing in Vaelscar, and wrong the way a sentence with no ending is wrong. The column that found it walked in preaching and came out half its size; the rest stayed, knee-down in the moss. Somewhere at the heart of the green, a shaman went looking for a cure and found a congregation.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "bloom_warlock",
-				"text": "The tome went RIGID at the gate. Growth that only adds, credit that never calls, compounding without repayment — the Deep runs the tome's own scheme at landscape scale and undercuts it on rates. You have never felt your creditor jealous before. It is almost worth the trip.",
+				"text": "The tome went rigid at the gate. Growth that only adds, credit that never calls, compounding without repayment: the Deep runs the tome's own scheme at landscape scale and undercuts it on rates. You've never felt your creditor jealous before. It's almost worth the trip.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -2219,7 +2219,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Open an account. A cutting is a signing bonus — and leverage: let the tome and the Deep bid against each other for you.",
+						"text": "Open an account. A cutting is a signing bonus, and leverage: let the tome and the Deep bid against each other for you.",
 						"resonance": -6.0,
 						"flags": {
 							"ch6_answered_green": true,
@@ -2238,7 +2238,7 @@ const CONVOS := {
 			},
 			"n4s": {
 				"who": "Narrator",
-				"text": "At the gate a kneeler catches your sleeve — glad-eyed, mud to the knees, utterly at peace.",
+				"text": "At the gate a kneeler catches your sleeve, glad-eyed, mud to the knees, utterly at peace.",
 				"next": "n4",
 			},
 			"reply_virtue": {
@@ -2269,26 +2269,26 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "relay",
-				"text": "The Storm Tongue's seal was never stone. It was a SENTENCE — begun six hundred years ago and never allowed to finish, passed mouth to mouth by Korrag's order like a torch that must not gutter. For six hundred years, it WORKED.",
+				"text": "The Storm Tongue's seal was never stone. It was a sentence, begun six hundred years ago and never allowed to finish, passed mouth to mouth by Korrag's order like a torch that must not gutter. For six hundred years, it worked.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The last speaker has stopped speaking. He stands on the ridge with his mouth closed, and he is not resting — he is LISTENING. And the sky has begun, very quietly, to finish his sentences for him.",
+				"text": "The last speaker has stopped speaking. He stands on the ridge with his mouth closed, and he's not resting. He's listening. And the sky has begun, very quietly, to finish his sentences for him.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "relay_warrior",
-				"text": "You know Cyrraeth's stillness. It is the stillness before your own gaps — the body quiet, the tenant leaning forward. He is not resting up there. He is doing what you do at night: listening to something on the far side of himself, deciding whether to open the door. Nobody ever warned HIM about bedposts.",
+				"text": "You know Cyrraeth's stillness. It's the stillness before your own gaps: the body quiet, the tenant leaning forward. He's not resting up there. He's doing what you do at night: listening to something on the far side of himself, deciding whether to open the door. Nobody ever warned him about bedposts.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Apprentice Sorrel",
-				"text": "Everyone up there asks about the drake. Nobody asks about the SENTENCE. What are words, to you?",
+				"text": "Everyone up there asks about the drake. Nobody asks about the sentence. What are words, to you?",
 				"choices": [
 					{
-						"text": "Nobody stood with you in the quiet either. Learn the words — stand the next watch so his door stays shut.",
+						"text": "Nobody stood with you in the quiet either. Learn the words. Stand the next watch so his door stays shut.",
 						"resonance": 6.0,
 						"flags": {
 							"ch7_would_speak": true,
@@ -2320,12 +2320,12 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "Sorrel nods hard, twice — a girl keeping a tally she has been keeping alone too long.",
+				"text": "Sorrel nods hard, twice, a girl keeping a tally she's been keeping alone too long.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "Sorrel stops walking. You are three steps gone before she follows, further behind than before.",
+				"text": "Sorrel stops walking. You're three steps gone before she follows, further behind than before.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -2346,23 +2346,23 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "relay",
-				"text": "The Storm Tongue's seal was never stone. It was a SENTENCE — begun six hundred years ago and never allowed to finish, passed mouth to mouth by Korrag's order like a torch that must not gutter. For six hundred years, it WORKED.",
+				"text": "The Storm Tongue's seal was never stone. It was a sentence, begun six hundred years ago and never allowed to finish, passed mouth to mouth by Korrag's order like a torch that must not gutter. For six hundred years, it worked.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The last speaker has stopped speaking. He stands on the ridge with his mouth closed, and he is not resting — he is LISTENING. And the sky has begun, very quietly, to finish his sentences for him.",
+				"text": "The last speaker has stopped speaking. He stands on the ridge with his mouth closed, and he's not resting. He's listening. And the sky has begun, very quietly, to finish his sentences for him.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "relay_assassin",
-				"text": "Every seal you have met was a lock. This one is held shut by what the speakers GIVE it: breath, years, a life apiece, freely, forever. Nothing taken anywhere. Your Ember circles the idea like it circles a warm room, finding no way in. A power sustained by paying. You didn't know that was allowed.",
+				"text": "Every seal you've met was a lock. This one is held shut by what the speakers give it: breath, years, a life apiece, freely, forever. Nothing taken anywhere. Your Ember circles the idea like it circles a warm room, finding no way in. A power sustained by paying. You didn't know that was allowed.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Apprentice Sorrel",
-				"text": "Everyone up there asks about the drake. Nobody asks about the SENTENCE. What are words, to you?",
+				"text": "Everyone up there asks about the drake. Nobody asks about the sentence. What are words, to you?",
 				"choices": [
 					{
 						"text": "Learn the words. Just once, be the one who gives the warmth instead of the one who wakes holding the flask.",
@@ -2373,7 +2373,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Giving that total is the richest vein there is. When the sentence breaks, EVERYTHING they paid in comes loose — be standing where it lands.",
+						"text": "Giving that total is the richest vein there is. When the sentence breaks, everything they paid in comes loose. Be standing where it lands.",
 						"resonance": -6.0,
 						"flags": {
 							"ch7_let_it_end": true,
@@ -2397,12 +2397,12 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "Sorrel nods hard, twice — a girl keeping a tally she has been keeping alone too long.",
+				"text": "Sorrel nods hard, twice, a girl keeping a tally she's been keeping alone too long.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "Sorrel stops walking. You are three steps gone before she follows, further behind than before.",
+				"text": "Sorrel stops walking. You're three steps gone before she follows, further behind than before.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -2423,12 +2423,12 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "relay",
-				"text": "The Storm Tongue's seal was never stone. It was a SENTENCE — begun six hundred years ago and never allowed to finish, passed mouth to mouth by Korrag's order like a torch that must not gutter. For six hundred years, it WORKED.",
+				"text": "The Storm Tongue's seal was never stone. It was a sentence, begun six hundred years ago and never allowed to finish, passed mouth to mouth by Korrag's order like a torch that must not gutter. For six hundred years, it worked.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The last speaker has stopped speaking. He stands on the ridge with his mouth closed, and he is not resting — he is LISTENING. And the sky has begun, very quietly, to finish his sentences for him.",
+				"text": "The last speaker has stopped speaking. He stands on the ridge with his mouth closed, and he's not resting. He's listening. And the sky has begun, very quietly, to finish his sentences for him.",
 				"next": "n3",
 			},
 			"n3": {
@@ -2439,10 +2439,10 @@ const CONVOS := {
 			},
 			"n4": {
 				"who": "Apprentice Sorrel",
-				"text": "Everyone up there asks about the drake. Nobody asks about the SENTENCE. What are words, to you?",
+				"text": "Everyone up there asks about the drake. Nobody asks about the sentence. What are words, to you?",
 				"choices": [
 					{
-						"text": "Work that good is finished by hand, not dropped. Learn the words — errorless, this time, if it kills you.",
+						"text": "Work that good is finished by hand, not dropped. Learn the words, errorless this time, if it kills you.",
 						"resonance": 6.0,
 						"flags": {
 							"ch7_would_speak": true,
@@ -2450,7 +2450,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Every long spell teaches more falling than standing. Let it fall, and read the failure closely — Mórwyn's mistakes built your whole art.",
+						"text": "Every long spell teaches more falling than standing. Let it fall, and read the failure closely. Mórwyn's mistakes built your whole art.",
 						"resonance": -6.0,
 						"flags": {
 							"ch7_let_it_end": true,
@@ -2458,7 +2458,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "You don't touch another caster's live working. Especially not one holding a GOD. The drake, then.",
+						"text": "You don't touch another caster's live working. Especially not one holding a god. The drake, then.",
 						"resonance": 0.0,
 						"flags": {
 							"ch7_hears_wind": true,
@@ -2474,12 +2474,12 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "Sorrel nods hard, twice — a girl keeping a tally she has been keeping alone too long.",
+				"text": "Sorrel nods hard, twice, a girl keeping a tally she's been keeping alone too long.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "Sorrel stops walking. You are three steps gone before she follows, further behind than before.",
+				"text": "Sorrel stops walking. You're three steps gone before she follows, further behind than before.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -2500,26 +2500,26 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "relay",
-				"text": "The Storm Tongue's seal was never stone. It was a SENTENCE — begun six hundred years ago and never allowed to finish, passed mouth to mouth by Korrag's order like a torch that must not gutter. For six hundred years, it WORKED.",
+				"text": "The Storm Tongue's seal was never stone. It was a sentence, begun six hundred years ago and never allowed to finish, passed mouth to mouth by Korrag's order like a torch that must not gutter. For six hundred years, it worked.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The last speaker has stopped speaking. He stands on the ridge with his mouth closed, and he is not resting — he is LISTENING. And the sky has begun, very quietly, to finish his sentences for him.",
+				"text": "The last speaker has stopped speaking. He stands on the ridge with his mouth closed, and he's not resting. He's listening. And the sky has begun, very quietly, to finish his sentences for him.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "relay_archer",
-				"text": "The relay is a thread — the longest you have ever seen. Six hundred years of voices tied breath to breath, taut as a bowstring, one end fraying in a silent man's mouth. You know exactly what it sounds like when a thread like that lets go: a small sound, and it carries further than the howl after it.",
+				"text": "The relay is a thread, the longest you've ever seen. Six hundred years of voices tied breath to breath, taut as a bowstring, one end fraying in a silent man's mouth. You know exactly what it sounds like when a thread like that lets go: a small sound, and it carries further than the howl after it.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Apprentice Sorrel",
-				"text": "Everyone up there asks about the drake. Nobody asks about the SENTENCE. What are words, to you?",
+				"text": "Everyone up there asks about the drake. Nobody asks about the sentence. What are words, to you?",
 				"choices": [
 					{
-						"text": "Hold the line. Learn the words and splice yourself in — some threads are worth being tied by.",
+						"text": "Hold the line. Learn the words and splice yourself in. Some threads are worth being tied by.",
 						"resonance": 6.0,
 						"flags": {
 							"ch7_would_speak": true,
@@ -2527,7 +2527,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "A thread that old isn't holding the god — it's holding EVERYONE ELSE. Cut it clean and see who was leaning on whom.",
+						"text": "A thread that old isn't holding the god. It's holding everyone else. Cut it clean and see who was leaning on whom.",
 						"resonance": -6.0,
 						"flags": {
 							"ch7_let_it_end": true,
@@ -2551,12 +2551,12 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "Sorrel nods hard, twice — a girl keeping a tally she has been keeping alone too long.",
+				"text": "Sorrel nods hard, twice, a girl keeping a tally she's been keeping alone too long.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "Sorrel stops walking. You are three steps gone before she follows, further behind than before.",
+				"text": "Sorrel stops walking. You're three steps gone before she follows, further behind than before.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -2577,26 +2577,26 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "relay",
-				"text": "The Storm Tongue's seal was never stone. It was a SENTENCE — begun six hundred years ago and never allowed to finish, passed mouth to mouth by Korrag's order like a torch that must not gutter. For six hundred years, it WORKED.",
+				"text": "The Storm Tongue's seal was never stone. It was a sentence, begun six hundred years ago and never allowed to finish, passed mouth to mouth by Korrag's order like a torch that must not gutter. For six hundred years, it worked.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The last speaker has stopped speaking. He stands on the ridge with his mouth closed, and he is not resting — he is LISTENING. And the sky has begun, very quietly, to finish his sentences for him.",
+				"text": "The last speaker has stopped speaking. He stands on the ridge with his mouth closed, and he's not resting. He's listening. And the sky has begun, very quietly, to finish his sentences for him.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "relay_paladin",
-				"text": "The relay is older than the chain, older than benches — a sentence served not ON the guilty but BY the innocent, six hundred years of speakers doing time for a god's crime. The chain reads it and, for once, asks YOU what it means.",
+				"text": "The relay is older than the chain, older than benches: a sentence served not on the guilty but by the innocent, six hundred years of speakers doing time for a god's crime. The chain reads it and, for once, asks you what it means.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Apprentice Sorrel",
-				"text": "Everyone up there asks about the drake. Nobody asks about the SENTENCE. What are words, to you?",
+				"text": "Everyone up there asks about the drake. Nobody asks about the sentence. What are words, to you?",
 				"choices": [
 					{
-						"text": "It means somebody has to serve. Learn the words — a sentence this old ends properly or not at all.",
+						"text": "It means somebody has to serve. Learn the words. A sentence this old ends properly or not at all.",
 						"resonance": 6.0,
 						"flags": {
 							"ch7_would_speak": true,
@@ -2604,7 +2604,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "It means the court failed. Six centuries of gag-order isn't a verdict, it's a filibuster — strike it down and hear the case at last.",
+						"text": "It means the court failed. Six centuries of gag-order isn't a verdict, it's a filibuster. Strike it down and hear the case at last.",
 						"resonance": -6.0,
 						"flags": {
 							"ch7_let_it_end": true,
@@ -2628,12 +2628,12 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "Sorrel nods hard, twice — a girl keeping a tally she has been keeping alone too long.",
+				"text": "Sorrel nods hard, twice, a girl keeping a tally she's been keeping alone too long.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "Sorrel stops walking. You are three steps gone before she follows, further behind than before.",
+				"text": "Sorrel stops walking. You're three steps gone before she follows, further behind than before.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -2654,23 +2654,23 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "relay",
-				"text": "The Storm Tongue's seal was never stone. It was a SENTENCE — begun six hundred years ago and never allowed to finish, passed mouth to mouth by Korrag's order like a torch that must not gutter. For six hundred years, it WORKED.",
+				"text": "The Storm Tongue's seal was never stone. It was a sentence, begun six hundred years ago and never allowed to finish, passed mouth to mouth by Korrag's order like a torch that must not gutter. For six hundred years, it worked.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The last speaker has stopped speaking. He stands on the ridge with his mouth closed, and he is not resting — he is LISTENING. And the sky has begun, very quietly, to finish his sentences for him.",
+				"text": "The last speaker has stopped speaking. He stands on the ridge with his mouth closed, and he's not resting. He's listening. And the sky has begun, very quietly, to finish his sentences for him.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "relay_warlock",
-				"text": "Six hundred years of enforceable SPEECH. No parchment, no seal — just breath handed mouth to mouth, and a god bound by the unbroken saying of it. The greatest contract ever executed, and the counterparty has found the flaw: outlive the signatories. The tome takes notes. So do you.",
+				"text": "Six hundred years of enforceable speech. No parchment, no seal, just breath handed mouth to mouth, and a god bound by the unbroken saying of it. The greatest contract ever executed, and the counterparty has found the flaw: outlive the signatories. The tome takes notes. So do you.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Apprentice Sorrel",
-				"text": "Everyone up there asks about the drake. Nobody asks about the SENTENCE. What are words, to you?",
+				"text": "Everyone up there asks about the drake. Nobody asks about the sentence. What are words, to you?",
 				"choices": [
 					{
 						"text": "Contracts this good deserve performance. Learn the words; be the next mouth if no better one stands.",
@@ -2681,7 +2681,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let it lapse. When the sentence fails, the storm owes NOBODY — and an unowed god is a god that might deal fresh.",
+						"text": "Let it lapse. When the sentence fails, the storm owes nobody, and an unowed god is a god that might deal fresh.",
 						"resonance": -6.0,
 						"flags": {
 							"ch7_let_it_end": true,
@@ -2705,12 +2705,12 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "Sorrel nods hard, twice — a girl keeping a tally she has been keeping alone too long.",
+				"text": "Sorrel nods hard, twice, a girl keeping a tally she's been keeping alone too long.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "Sorrel stops walking. You are three steps gone before she follows, further behind than before.",
+				"text": "Sorrel stops walking. You're three steps gone before she follows, further behind than before.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -2731,36 +2731,36 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "ashfall",
-				"text": "The Cinderborn built their heart on the Molten Judge's seal and called the whispering a technique. Act One let them make that pitch. This is the invoice: the forges have not banked in three years, the verdicts no longer wait for sermons, and under the central works the seal has developed a crack the foremen ROUTE THE CARTS AROUND.",
+				"text": "The Cinderborn built their heart on the Molten Judge's seal and called the whispering a technique. Act One let them make that pitch. This is the invoice: the forges haven't banked in three years, the verdicts no longer wait for sermons, and under the central works the seal has developed a crack the foremen route the carts around.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore.",
+				"text": "And outside the walls sit the first defectors: master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They'll tell you: the fire started signing the work. And the signature wasn't theirs anymore.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "joined_cinderborn",
-						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. These are YOUR people's fires. That is either a reason to look away or the only reason to look closely.",
+						"text": "And outside the walls sit the first defectors: master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They'll tell you: the fire started signing the work. And the signature wasn't theirs anymore. These are your people's fires. That's either a reason to look away or the only reason to look closely.",
 					},
 					{
 						"flag": "joined_accord",
-						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. Your writ says infiltrate. The ash does not care whose seal is on your papers.",
+						"text": "And outside the walls sit the first defectors: master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They'll tell you: the fire started signing the work. And the signature wasn't theirs anymore. Your writ says infiltrate. The ash doesn't care whose seal is on your papers.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "ashfall_warrior",
-				"text": "There is one improved man in the defectors' camp. He had a thing like yours once — gaps, a tenant, wreckage he didn't remember making. The furnace took it. He is certain now, and steady, and he sits outside the walls because he cannot stop MISSING it. You walked in ready to envy this city. Nobody warned you about the cured man grieving his disease.",
+				"text": "There's one improved man in the defectors' camp. He had a thing like yours once: gaps, a tenant, wreckage he didn't remember making. The furnace took it. He's certain now, and steady, and he sits outside the walls because he can't stop missing it. You walked in ready to envy this city. Nobody warned you about the cured man grieving his disease.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Journeyman Smith",
-				"text": "Going in, then. To cool it, to copy it, or just to kill it — which?",
+				"text": "Going in, then. To cool it, to copy it, or just to kill it. Which is it?",
 				"choices": [
 					{
-						"text": "Believe him. The cure is a taking with better manners — cool the forges before it collects everyone still deciding.",
+						"text": "Believe him. The cure is a taking with better manners. Cool the forges before it collects everyone still deciding.",
 						"resonance": 6.0,
 						"flags": {
 							"ch8_cool_the_forge": true,
@@ -2768,7 +2768,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "His grief is his. The technique is REAL — learn how the binding holds the fire before ruling that nobody gets to be certain.",
+						"text": "His grief is his. The technique is real. Learn how the binding holds the fire before ruling that nobody gets to be certain.",
 						"resonance": -6.0,
 						"flags": {
 							"ch8_studied_binding": true,
@@ -2776,7 +2776,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Certainty, grief, philosophy — it all keeps. The vessel doesn't. Down, done, out.",
+						"text": "Certainty, grief, philosophy: it all keeps. The vessel doesn't. Down, done, out.",
 						"resonance": 0.0,
 						"flags": {
 							"ch8_here_for_vessel": true,
@@ -2802,7 +2802,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "\"Kill it, then.\" The journeyman turns back to the cold fire — one job's honest, at least.",
+				"text": "\"Kill it, then.\" The journeyman turns back to the cold fire. One job's honest, at least.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -2818,33 +2818,33 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "ashfall",
-				"text": "The Cinderborn built their heart on the Molten Judge's seal and called the whispering a technique. Act One let them make that pitch. This is the invoice: the forges have not banked in three years, the verdicts no longer wait for sermons, and under the central works the seal has developed a crack the foremen ROUTE THE CARTS AROUND.",
+				"text": "The Cinderborn built their heart on the Molten Judge's seal and called the whispering a technique. Act One let them make that pitch. This is the invoice: the forges haven't banked in three years, the verdicts no longer wait for sermons, and under the central works the seal has developed a crack the foremen route the carts around.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore.",
+				"text": "And outside the walls sit the first defectors: master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They'll tell you: the fire started signing the work. And the signature wasn't theirs anymore.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "joined_cinderborn",
-						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. These are YOUR people's fires. That is either a reason to look away or the only reason to look closely.",
+						"text": "And outside the walls sit the first defectors: master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They'll tell you: the fire started signing the work. And the signature wasn't theirs anymore. These are your people's fires. That's either a reason to look away or the only reason to look closely.",
 					},
 					{
 						"flag": "joined_accord",
-						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. Your writ says infiltrate. The ash does not care whose seal is on your papers.",
+						"text": "And outside the walls sit the first defectors: master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They'll tell you: the fire started signing the work. And the signature wasn't theirs anymore. Your writ says infiltrate. The ash doesn't care whose seal is on your papers.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "ashfall_assassin",
-				"text": "Every door in this city stands open to you, and that is what has your neck prickling: the Judge's city does not guard against takers — it RECRUITS them. Walk in, take anything; the fire adds it to your account and starts improving you toward repayment. The first vault you've met that WANTS the thief inside. The Ember thinks it is home.",
+				"text": "Every door in this city stands open to you, and that's what has your neck prickling: the Judge's city doesn't guard against takers. It recruits them. Walk in, take anything; the fire adds it to your account and starts improving you toward repayment. The first vault you've met that wants the thief inside. The Ember thinks it's home.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Journeyman Smith",
-				"text": "Going in, then. To cool it, to copy it, or just to kill it — which?",
+				"text": "Going in, then. To cool it, to copy it, or just to kill it. Which is it?",
 				"choices": [
 					{
 						"text": "Take nothing but people. Crews out, account empty, forges cooling behind you.",
@@ -2855,7 +2855,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Open the one door they DO watch: the binding texts. A vault this confident keeps its real valuables legible — read how the grip works.",
+						"text": "Open the one door they do watch: the binding texts. A vault this confident keeps its real valuables legible. Read how the grip works.",
 						"resonance": -6.0,
 						"flags": {
 							"ch8_studied_binding": true,
@@ -2863,7 +2863,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "In, vessel, out — hands in pockets the whole way down.",
+						"text": "In, vessel, out, hands in pockets the whole way down.",
 						"resonance": 0.0,
 						"flags": {
 							"ch8_here_for_vessel": true,
@@ -2889,7 +2889,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "\"Kill it, then.\" The journeyman turns back to the cold fire — one job's honest, at least.",
+				"text": "\"Kill it, then.\" The journeyman turns back to the cold fire. One job's honest, at least.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -2905,36 +2905,36 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "ashfall",
-				"text": "The Cinderborn built their heart on the Molten Judge's seal and called the whispering a technique. Act One let them make that pitch. This is the invoice: the forges have not banked in three years, the verdicts no longer wait for sermons, and under the central works the seal has developed a crack the foremen ROUTE THE CARTS AROUND.",
+				"text": "The Cinderborn built their heart on the Molten Judge's seal and called the whispering a technique. Act One let them make that pitch. This is the invoice: the forges haven't banked in three years, the verdicts no longer wait for sermons, and under the central works the seal has developed a crack the foremen route the carts around.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore.",
+				"text": "And outside the walls sit the first defectors: master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They'll tell you: the fire started signing the work. And the signature wasn't theirs anymore.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "joined_cinderborn",
-						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. These are YOUR people's fires. That is either a reason to look away or the only reason to look closely.",
+						"text": "And outside the walls sit the first defectors: master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They'll tell you: the fire started signing the work. And the signature wasn't theirs anymore. These are your people's fires. That's either a reason to look away or the only reason to look closely.",
 					},
 					{
 						"flag": "joined_accord",
-						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. Your writ says infiltrate. The ash does not care whose seal is on your papers.",
+						"text": "And outside the walls sit the first defectors: master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They'll tell you: the fire started signing the work. And the signature wasn't theirs anymore. Your writ says infiltrate. The ash doesn't care whose seal is on your papers.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "ashfall_mage",
-				"text": "You grieved one great working on the summit — six hundred years, ended clean. This one is ending UGLY: the Concord's seal, patched by forge-lords who mistake the prisoner's patience for their own skill. Every 'improvement' in this city is the working failing a little further, and production calling it yield. You are watching the second-oldest spell in Vaelscar die of mismanagement.",
+				"text": "You grieved one great working on the summit: six hundred years, ended clean. This one is ending ugly: the Concord's seal, patched by forge-lords who mistake the prisoner's patience for their own skill. Every 'improvement' in this city is the working failing a little further, and production calling it yield. You're watching the second-oldest spell in Vaelscar die of mismanagement.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Journeyman Smith",
-				"text": "Going in, then. To cool it, to copy it, or just to kill it — which?",
+				"text": "Going in, then. To cool it, to copy it, or just to kill it. Which is it?",
 				"choices": [
 					{
-						"text": "Workings deserve better deaths. Cool the forges and give the seal an honest keeper — or an honest end.",
+						"text": "Workings deserve better deaths. Cool the forges and give the seal an honest keeper, or an honest end.",
 						"resonance": 6.0,
 						"flags": {
 							"ch8_cool_the_forge": true,
@@ -2942,7 +2942,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "The binding texts are the seal's own grammar. Copy them — a caster who can read THIS containment could contain anything. Anything at all.",
+						"text": "The binding texts are the seal's own grammar. Copy them. A caster who can read this containment could contain anything. Anything at all.",
 						"resonance": -6.0,
 						"flags": {
 							"ch8_studied_binding": true,
@@ -2976,7 +2976,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "\"Kill it, then.\" The journeyman turns back to the cold fire — one job's honest, at least.",
+				"text": "\"Kill it, then.\" The journeyman turns back to the cold fire. One job's honest, at least.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -2992,33 +2992,33 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "ashfall",
-				"text": "The Cinderborn built their heart on the Molten Judge's seal and called the whispering a technique. Act One let them make that pitch. This is the invoice: the forges have not banked in three years, the verdicts no longer wait for sermons, and under the central works the seal has developed a crack the foremen ROUTE THE CARTS AROUND.",
+				"text": "The Cinderborn built their heart on the Molten Judge's seal and called the whispering a technique. Act One let them make that pitch. This is the invoice: the forges haven't banked in three years, the verdicts no longer wait for sermons, and under the central works the seal has developed a crack the foremen route the carts around.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore.",
+				"text": "And outside the walls sit the first defectors: master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They'll tell you: the fire started signing the work. And the signature wasn't theirs anymore.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "joined_cinderborn",
-						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. These are YOUR people's fires. That is either a reason to look away or the only reason to look closely.",
+						"text": "And outside the walls sit the first defectors: master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They'll tell you: the fire started signing the work. And the signature wasn't theirs anymore. These are your people's fires. That's either a reason to look away or the only reason to look closely.",
 					},
 					{
 						"flag": "joined_accord",
-						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. Your writ says infiltrate. The ash does not care whose seal is on your papers.",
+						"text": "And outside the walls sit the first defectors: master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They'll tell you: the fire started signing the work. And the signature wasn't theirs anymore. Your writ says infiltrate. The ash doesn't care whose seal is on your papers.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "ashfall_archer",
-				"text": "Two acts of reading threads people would not drop, and here is something new: threads CUT WELL. Masters who loved the work, watched the signature change, and walked out with the ends cauterized. You know what that walk costs down to the copper. You are the only person at their fire who has made it on purpose.",
+				"text": "Two acts of reading threads people wouldn't drop, and here's something new: threads cut well. Masters who loved the work, watched the signature change, and walked out with the ends cauterized. You know what that walk costs down to the copper. You're the only person at their fire who has made it on purpose.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Journeyman Smith",
-				"text": "Going in, then. To cool it, to copy it, or just to kill it — which?",
+				"text": "Going in, then. To cool it, to copy it, or just to kill it. Which is it?",
 				"choices": [
 					{
 						"text": "Every smith still inside is mid-decision. Cool the forges before the furnace closes the question for them.",
@@ -3029,7 +3029,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "The defectors carried out the masters' knowledge. Sit at their fire and learn the binding from the hands that held it — knowledge travels lighter than loyalty.",
+						"text": "The defectors carried out the masters' knowledge. Sit at their fire and learn the binding from the hands that held it. Knowledge travels lighter than loyalty.",
 						"resonance": -6.0,
 						"flags": {
 							"ch8_studied_binding": true,
@@ -3063,7 +3063,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "\"Kill it, then.\" The journeyman turns back to the cold fire — one job's honest, at least.",
+				"text": "\"Kill it, then.\" The journeyman turns back to the cold fire. One job's honest, at least.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3079,33 +3079,33 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "ashfall",
-				"text": "The Cinderborn built their heart on the Molten Judge's seal and called the whispering a technique. Act One let them make that pitch. This is the invoice: the forges have not banked in three years, the verdicts no longer wait for sermons, and under the central works the seal has developed a crack the foremen ROUTE THE CARTS AROUND.",
+				"text": "The Cinderborn built their heart on the Molten Judge's seal and called the whispering a technique. Act One let them make that pitch. This is the invoice: the forges haven't banked in three years, the verdicts no longer wait for sermons, and under the central works the seal has developed a crack the foremen route the carts around.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore.",
+				"text": "And outside the walls sit the first defectors: master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They'll tell you: the fire started signing the work. And the signature wasn't theirs anymore.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "joined_cinderborn",
-						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. These are YOUR people's fires. That is either a reason to look away or the only reason to look closely.",
+						"text": "And outside the walls sit the first defectors: master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They'll tell you: the fire started signing the work. And the signature wasn't theirs anymore. These are your people's fires. That's either a reason to look away or the only reason to look closely.",
 					},
 					{
 						"flag": "joined_accord",
-						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. Your writ says infiltrate. The ash does not care whose seal is on your papers.",
+						"text": "And outside the walls sit the first defectors: master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They'll tell you: the fire started signing the work. And the signature wasn't theirs anymore. Your writ says infiltrate. The ash doesn't care whose seal is on your papers.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "ashfall_paladin",
-				"text": "The chain does not go quiet here. It RECITES — case law you never learned, precedents in a dead tongue, rising through the links like heat through a floor. And on the city's oldest gate: a maker's-mark you have run your thumb over a thousand times without reading — the one on the cheek of YOUR hammer. The hammer that carries your Ember was poured in these foundries. Start asking what else of yours was.",
+				"text": "The chain doesn't go quiet here. It recites: case law you never learned, precedents in a dead tongue, rising through the links like heat through a floor. And on the city's oldest gate: a maker's-mark you've run your thumb over a thousand times without reading, the one on the cheek of your hammer. The hammer that carries your Ember was poured in these foundries. Start asking what else of yours was.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Journeyman Smith",
-				"text": "Going in, then. To cool it, to copy it, or just to kill it — which?",
+				"text": "Going in, then. To cool it, to copy it, or just to kill it. Which is it?",
 				"choices": [
 					{
 						"text": "Whatever poured it doesn't own it. Cool this city, crews first, and let the chain watch you overrule the foundry that cast your hammer.",
@@ -3116,7 +3116,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Read the precedents. The binding texts hold the Judge's whole jurisprudence — and your hammer's provenance. Study before you smash.",
+						"text": "Read the precedents. The binding texts hold the Judge's whole jurisprudence, and your hammer's provenance. Study before you smash.",
 						"resonance": -6.0,
 						"flags": {
 							"ch8_studied_binding": true,
@@ -3150,7 +3150,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "\"Kill it, then.\" The journeyman turns back to the cold fire — one job's honest, at least.",
+				"text": "\"Kill it, then.\" The journeyman turns back to the cold fire. One job's honest, at least.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3166,36 +3166,36 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "ashfall",
-				"text": "The Cinderborn built their heart on the Molten Judge's seal and called the whispering a technique. Act One let them make that pitch. This is the invoice: the forges have not banked in three years, the verdicts no longer wait for sermons, and under the central works the seal has developed a crack the foremen ROUTE THE CARTS AROUND.",
+				"text": "The Cinderborn built their heart on the Molten Judge's seal and called the whispering a technique. Act One let them make that pitch. This is the invoice: the forges haven't banked in three years, the verdicts no longer wait for sermons, and under the central works the seal has developed a crack the foremen route the carts around.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore.",
+				"text": "And outside the walls sit the first defectors: master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They'll tell you: the fire started signing the work. And the signature wasn't theirs anymore.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "joined_cinderborn",
-						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. These are YOUR people's fires. That is either a reason to look away or the only reason to look closely.",
+						"text": "And outside the walls sit the first defectors: master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They'll tell you: the fire started signing the work. And the signature wasn't theirs anymore. These are your people's fires. That's either a reason to look away or the only reason to look closely.",
 					},
 					{
 						"flag": "joined_accord",
-						"text": "And outside the walls sit the first defectors — master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They will tell you: the fire started signing the work. And the signature was not theirs anymore. Your writ says infiltrate. The ash does not care whose seal is on your papers.",
+						"text": "And outside the walls sit the first defectors: master smiths who signed the pitch, worked the heats, and one shift put their tools down and walked. Ask them what changed. They'll tell you: the fire started signing the work. And the signature wasn't theirs anymore. Your writ says infiltrate. The ash doesn't care whose seal is on your papers.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "ashfall_warlock",
-				"text": "The binding texts are the only known instrument that made a god-king countersign — mortal paper, divine signatory, terms ENFORCED for six centuries. Your book has spent two acts refusing to name what you traded. Somewhere below is the grammar that could COMPEL it — and the tome knows, and has pressed itself flat against your back like a debtor at a summons.",
+				"text": "The binding texts are the only known instrument that made a god-king countersign: mortal paper, divine signatory, terms enforced for six centuries. Your book has spent two acts refusing to name what you traded. Somewhere below is the grammar that could compel it, and the tome knows, and has pressed itself flat against your back like a debtor at a summons.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Journeyman Smith",
-				"text": "Going in, then. To cool it, to copy it, or just to kill it — which?",
+				"text": "Going in, then. To cool it, to copy it, or just to kill it. Which is it?",
 				"choices": [
 					{
-						"text": "Compel it for everyone. Cool the forges, free the collateral — this city's people first, your clause after.",
+						"text": "Compel it for everyone. Cool the forges, free the collateral: this city's people first, your clause after.",
 						"resonance": 6.0,
 						"flags": {
 							"ch8_cool_the_forge": true,
@@ -3203,7 +3203,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "The texts. Before anything burns, the texts — one binding grammar, applied at home, and the tome finally answers questions.",
+						"text": "The texts. Before anything burns, the texts: one binding grammar, applied at home, and the tome finally answers questions.",
 						"resonance": -6.0,
 						"flags": {
 							"ch8_studied_binding": true,
@@ -3237,7 +3237,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "\"Kill it, then.\" The journeyman turns back to the cold fire — one job's honest, at least.",
+				"text": "\"Kill it, then.\" The journeyman turns back to the cold fire. One job's honest, at least.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3253,30 +3253,30 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "drowned",
-				"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it — a god of growth does not dig when it can inherit.",
+				"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it. A god of growth doesn't dig when it can inherit.",
 				"next": "n2",
 				"variants": [
 					{
 						"flag": "ch6_answered_green",
-						"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it — a god of growth does not dig when it can inherit. What you loosed in the green has been restless all night. It knows this city.",
+						"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it. A god of growth doesn't dig when it can inherit. What you loosed in the green has been restless all night. It knows this city.",
 					},
 				],
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "At the heart of the flood, the Root grew a new gardener from what it remembered of the last one. It remembered the shape. It did not bother with the face.",
+				"text": "At the heart of the flood, the Root grew a new gardener from what it remembered of the last one. It remembered the shape. It didn't bother with the face.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "chose_kaethra_sheathed",
-						"text": "At the heart of the flood: Kaethra. Alive. Lucid. GROWING. The Root speaks through her the way a voice speaks through a horn — and she hears every word it makes her say.",
+						"text": "At the heart of the flood: Kaethra. Alive. Lucid. Growing. The Root speaks through her the way a voice speaks through a horn, and she hears every word it makes her say.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "drowned_warrior",
-				"text": "The wire-people move when the Root moves them — hands tying, hauling, holding, and behind every motion NOBODY DECIDING. It is your blackout, distributed: a whole undercity of borrowed hands. You have woken in wreckage enough times to know exactly what they'll feel when the wire goes slack.",
+				"text": "The wire-people move when the Root moves them: hands tying, hauling, holding, and behind every motion nobody deciding. It's your blackout, distributed: a whole undercity of borrowed hands. You've woken in wreckage enough times to know exactly what they'll feel when the wire goes slack.",
 				"next": "n4",
 			},
 			"n4": {
@@ -3292,7 +3292,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the shard answer. IT BORROWS HANDS. IT COULD BORROW ME. OFFER IT THE TRADE — AND WAKE UP INNOCENT FOREVER.",
+						"text": "Let the shard answer. IT BORROWS HANDS. IT COULD BORROW ME. OFFER IT THE TRADE, AND WAKE UP INNOCENT FOREVER.",
 						"resonance": -6.0,
 						"flags": {
 							"ch9_would_bargain": true,
@@ -3321,7 +3321,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "You leave the map on a piling for the next fool. The water is already correcting it.",
+				"text": "You leave the map on a piling for the next fool. The water's already correcting it.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3337,30 +3337,30 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "drowned",
-				"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it — a god of growth does not dig when it can inherit.",
+				"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it. A god of growth doesn't dig when it can inherit.",
 				"next": "n2",
 				"variants": [
 					{
 						"flag": "ch6_answered_green",
-						"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it — a god of growth does not dig when it can inherit. The cutting in your pack turned over in the night. It is pointing at the city like a compass needle.",
+						"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it. A god of growth doesn't dig when it can inherit. The cutting in your pack turned over in the night. It's pointing at the city like a compass needle.",
 					},
 				],
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "At the heart of the flood, the Root grew a new gardener from what it remembered of the last one. It remembered the shape. It did not bother with the face.",
+				"text": "At the heart of the flood, the Root grew a new gardener from what it remembered of the last one. It remembered the shape. It didn't bother with the face.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "chose_kaethra_sheathed",
-						"text": "At the heart of the flood: Kaethra. Alive. Lucid. GROWING. The Root speaks through her the way a voice speaks through a horn — and she hears every word it makes her say.",
+						"text": "At the heart of the flood: Kaethra. Alive. Lucid. Growing. The Root speaks through her the way a voice speaks through a horn, and she hears every word it makes her say.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "drowned_assassin",
-				"text": "Everything down here was TAKEN without being stolen — the Root just grew where the ownership was thin. And unlike your Ember, it will TALK. The first power you've met with a negotiating table. The flask-cold carter never got to negotiate. That's the memory that surfaces, wading in.",
+				"text": "Everything down here was taken without being stolen. The Root just grew where the ownership was thin. And unlike your Ember, it will talk. The first power you've met with a negotiating table. The flask-cold carter never got to negotiate. That's the memory that surfaces, wading in.",
 				"next": "n4",
 			},
 			"n4": {
@@ -3368,7 +3368,7 @@ const CONVOS := {
 				"text": "The cure-seekers' map-runner shows you a chart the city corrected overnight, then wades off to re-survey. You stand at the waterline holding the wrong map. Below is a god that talks. The shard has opinions about gods that talk.",
 				"choices": [
 					{
-						"text": "You never got to bargain either — the Ember just took. Spare the wire the courtesy nobody spared you: get them out un-negotiated.",
+						"text": "You never got to bargain either. The Ember just took. Spare the wire the courtesy nobody spared you: get them out un-negotiated.",
 						"resonance": 6.0,
 						"flags": {
 							"ch9_spares_the_wire": true,
@@ -3376,7 +3376,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the shard answer. IT DEALS. I NEVER LEARNED HOW. SIT US AT THE TABLE AND OPEN WITH MY APPETITE — SEE WHAT A GOD BIDS FOR A HUNGER LIKE MINE.",
+						"text": "Let the shard answer. IT DEALS. I NEVER LEARNED HOW. SIT US AT THE TABLE AND OPEN WITH MY APPETITE. SEE WHAT A GOD BIDS FOR A HUNGER LIKE MINE.",
 						"resonance": -6.0,
 						"flags": {
 							"ch9_would_bargain": true,
@@ -3405,7 +3405,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "You leave the map on a piling for the next fool. The water is already correcting it.",
+				"text": "You leave the map on a piling for the next fool. The water's already correcting it.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3421,30 +3421,30 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "drowned",
-				"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it — a god of growth does not dig when it can inherit.",
+				"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it. A god of growth doesn't dig when it can inherit.",
 				"next": "n2",
 				"variants": [
 					{
 						"flag": "ch6_answered_green",
-						"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it — a god of growth does not dig when it can inherit. The cutting in your pack turned over in the night. It is pointing at the city like a compass needle.",
+						"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it. A god of growth doesn't dig when it can inherit. The cutting in your pack turned over in the night. It's pointing at the city like a compass needle.",
 					},
 				],
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "At the heart of the flood, the Root grew a new gardener from what it remembered of the last one. It remembered the shape. It did not bother with the face.",
+				"text": "At the heart of the flood, the Root grew a new gardener from what it remembered of the last one. It remembered the shape. It didn't bother with the face.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "chose_kaethra_sheathed",
-						"text": "At the heart of the flood: Kaethra. Alive. Lucid. GROWING. The Root speaks through her the way a voice speaks through a horn — and she hears every word it makes her say.",
+						"text": "At the heart of the flood: Kaethra. Alive. Lucid. Growing. The Root speaks through her the way a voice speaks through a horn, and she hears every word it makes her say.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "drowned_mage",
-				"text": "Kaethra asked the green for a cure and it said yes — you have carried the twin of that yes for years. Every cure-seeker map in this camp is a version of your journals. This chapter is your promise with the ending still wet.",
+				"text": "Kaethra asked the green for a cure and it said yes. You've carried the twin of that yes for years. Every cure-seeker map in this camp is a version of your journals. This chapter is your promise with the ending still wet.",
 				"next": "n4",
 			},
 			"n4": {
@@ -3452,7 +3452,7 @@ const CONVOS := {
 				"text": "The cure-seekers' map-runner shows you a chart the city corrected overnight, then wades off to re-survey. You stand at the waterline holding the wrong map. Below is a god that talks. The shard has opinions about gods that talk.",
 				"choices": [
 					{
-						"text": "She is what the boy could become. Cut tethers, never wire — and take the truth home whole this time.",
+						"text": "She is what the boy could become. Cut tethers, never wire, and take the truth home whole this time.",
 						"resonance": 6.0,
 						"flags": {
 							"ch9_spares_the_wire": true,
@@ -3460,7 +3460,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the shard answer. IT ANSWERED HER. IT WILL ANSWER YOU. GET CLOSE TO THE RELAY AND ASK ABOUT GREY MARKS — ASKING IS NOT TAKING.",
+						"text": "Let the shard answer. IT ANSWERED HER. IT WILL ANSWER YOU. GET CLOSE TO THE RELAY AND ASK ABOUT GREY MARKS. ASKING IS NOT TAKING.",
 						"resonance": -6.0,
 						"flags": {
 							"ch9_would_bargain": true,
@@ -3468,7 +3468,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Let the water keep the answers. Some questions cost more asked than unasked — pass through, and open nothing.",
+						"text": "Let the water keep the answers. Some questions cost more asked than unasked. Pass through, and open nothing.",
 						"resonance": 0.0,
 						"flags": {
 							"ch9_seals_behind": true,
@@ -3489,7 +3489,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "You leave the map on a piling for the next fool. The water is already correcting it.",
+				"text": "You leave the map on a piling for the next fool. The water's already correcting it.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3505,30 +3505,30 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "drowned",
-				"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it — a god of growth does not dig when it can inherit.",
+				"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it. A god of growth doesn't dig when it can inherit.",
 				"next": "n2",
 				"variants": [
 					{
 						"flag": "ch6_answered_green",
-						"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it — a god of growth does not dig when it can inherit. What you asked the green has been growing an answer. It is ahead of you now.",
+						"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it. A god of growth doesn't dig when it can inherit. What you asked the green has been growing an answer. It's ahead of you now.",
 					},
 				],
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "At the heart of the flood, the Root grew a new gardener from what it remembered of the last one. It remembered the shape. It did not bother with the face.",
+				"text": "At the heart of the flood, the Root grew a new gardener from what it remembered of the last one. It remembered the shape. It didn't bother with the face.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "chose_kaethra_sheathed",
-						"text": "At the heart of the flood: Kaethra. Alive. Lucid. GROWING. The Root speaks through her the way a voice speaks through a horn — and she hears every word it makes her say.",
+						"text": "At the heart of the flood: Kaethra. Alive. Lucid. Growing. The Root speaks through her the way a voice speaks through a horn, and she hears every word it makes her say.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "drowned_archer",
-				"text": "You have seen threads all your bearing life — but the Root's are the first strung THROUGH people, in one wrist and out the collarbone, taut to a green horizon. The cure-seekers can't see what they're wading through. You can't stop.",
+				"text": "You've seen threads all your bearing life, but the Root's are the first strung through people, in one wrist and out the collarbone, taut to a green horizon. The cure-seekers can't see what they're wading through. You can't stop.",
 				"next": "n4",
 			},
 			"n4": {
@@ -3552,7 +3552,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Close every door you pass. What the water holds it can keep — it just catches no one NEW.",
+						"text": "Close every door you pass. What the water holds it can keep. It just catches no one new.",
 						"resonance": 0.0,
 						"flags": {
 							"ch9_seals_behind": true,
@@ -3573,7 +3573,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "You leave the map on a piling for the next fool. The water is already correcting it.",
+				"text": "You leave the map on a piling for the next fool. The water's already correcting it.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3589,30 +3589,30 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "drowned",
-				"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it — a god of growth does not dig when it can inherit.",
+				"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it. A god of growth doesn't dig when it can inherit.",
 				"next": "n2",
 				"variants": [
 					{
 						"flag": "ch6_answered_green",
-						"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it — a god of growth does not dig when it can inherit. The cutting in your pack turned over in the night. It is pointing at the city like a compass needle.",
+						"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it. A god of growth doesn't dig when it can inherit. The cutting in your pack turned over in the night. It's pointing at the city like a compass needle.",
 					},
 				],
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "At the heart of the flood, the Root grew a new gardener from what it remembered of the last one. It remembered the shape. It did not bother with the face.",
+				"text": "At the heart of the flood, the Root grew a new gardener from what it remembered of the last one. It remembered the shape. It didn't bother with the face.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "chose_kaethra_sheathed",
-						"text": "At the heart of the flood: Kaethra. Alive. Lucid. GROWING. The Root speaks through her the way a voice speaks through a horn — and she hears every word it makes her say.",
+						"text": "At the heart of the flood: Kaethra. Alive. Lucid. Growing. The Root speaks through her the way a voice speaks through a horn, and she hears every word it makes her say.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "drowned_paladin",
-				"text": "The chain wants someone to CHARGE, and the Root won't hold still for an indictment — it is the crime, the accomplice, the witness, and the estate, all growing through each other. Every wire-person is evidence being actively tampered with. You cannot try a flood. You can only decide who drowns in it.",
+				"text": "The chain wants someone to charge, and the Root won't hold still for an indictment. It's the crime, the accomplice, the witness, and the estate, all growing through each other. Every wire-person is evidence being actively tampered with. You can't try a flood. You can only decide who drowns in it.",
 				"next": "n4",
 			},
 			"n4": {
@@ -3657,7 +3657,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "You leave the map on a piling for the next fool. The water is already correcting it.",
+				"text": "You leave the map on a piling for the next fool. The water's already correcting it.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3673,30 +3673,30 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "drowned",
-				"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it — a god of growth does not dig when it can inherit.",
+				"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it. A god of growth doesn't dig when it can inherit.",
 				"next": "n2",
 				"variants": [
 					{
 						"flag": "ch6_answered_green",
-						"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it — a god of growth does not dig when it can inherit. The cutting in your pack turned over in the night. It is pointing at the city like a compass needle.",
+						"text": "Below the old empire's southern gate, an undercity drowned in green. The Pale Root found the empire's plumbing and liked it. A god of growth doesn't dig when it can inherit. The cutting in your pack turned over in the night. It's pointing at the city like a compass needle.",
 					},
 				],
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "At the heart of the flood, the Root grew a new gardener from what it remembered of the last one. It remembered the shape. It did not bother with the face.",
+				"text": "At the heart of the flood, the Root grew a new gardener from what it remembered of the last one. It remembered the shape. It didn't bother with the face.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "chose_kaethra_sheathed",
-						"text": "At the heart of the flood: Kaethra. Alive. Lucid. GROWING. The Root speaks through her the way a voice speaks through a horn — and she hears every word it makes her say.",
+						"text": "At the heart of the flood: Kaethra. Alive. Lucid. Growing. The Root speaks through her the way a voice speaks through a horn, and she hears every word it makes her say.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "drowned_warlock",
-				"text": "The Root does not lend. It INHERITS — plumbing, cities, bodies, whole estates absorbed the moment the will is weak. The tome is offended to its spine: inheritance skips the signature entirely. No consent, no clause, no debt. Even your creditor thinks it's cheating.",
+				"text": "The Root doesn't lend. It inherits: plumbing, cities, bodies, whole estates absorbed the moment the will is weak. The tome is offended to its spine: inheritance skips the signature entirely. No consent, no clause, no debt. Even your creditor thinks it's cheating.",
 				"next": "n4",
 			},
 			"n4": {
@@ -3712,7 +3712,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Ask the Root, through the relay, what it takes to eat a contract. *(The tome pressed itself shut ON YOUR HAND as you thought it. You are still thinking it.)*",
+						"text": "Ask the Root, through the relay, what it takes to eat a contract. *(The tome pressed itself shut on your hand as you thought it. You're still thinking it.)*",
 						"resonance": -6.0,
 						"flags": {
 							"ch9_would_bargain": true,
@@ -3741,7 +3741,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "You leave the map on a piling for the next fool. The water is already correcting it.",
+				"text": "You leave the map on a piling for the next fool. The water's already correcting it.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3757,33 +3757,33 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "singing_ice",
-				"text": "The Frozen Expanse has learned to sing. Below the shelf, the crystal caverns ring like struck glass, and the Long Sleep cult calls it the Queen's morning hymn. They are not entirely wrong. That is the problem.",
+				"text": "The Frozen Expanse has learned to sing. Below the shelf, the crystal caverns ring like struck glass, and the Long Sleep cult calls it the Queen's morning hymn. They're not entirely wrong. That's the problem.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear.",
+				"text": "Her name is Elara. The blacksmith's daughter, the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to keep something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "ch5_vowed_morning",
-						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. You promised the north a real morning once. She is what the promise looks like now.",
+						"text": "Her name is Elara. The blacksmith's daughter, the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to keep something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. You promised the north a real morning once. She is what the promise looks like now.",
 					},
 					{
 						"flag": "ch5_felt_pull",
-						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. The hush you leaned toward under the ice — it has a name now, and the name is a child's.",
+						"text": "Her name is Elara. The blacksmith's daughter, the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to keep something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. The hush you leaned toward under the ice has a name now, and the name is a child's.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "singing_ice_warrior",
-				"text": "Somewhere under the shelf there is a fight where the sword-line runs THROUGH a sleeping fifteen-year-old. You have spent a lifetime learning to aim the thing that doesn't aim. This is the exam: the blackout does not distinguish cocoon from Queen. You would have to stay yourself the whole way down.",
+				"text": "Somewhere under the shelf there's a fight where the sword-line runs through a sleeping fifteen-year-old. You've spent a lifetime learning to aim the thing that doesn't aim. This is the exam: the blackout doesn't distinguish cocoon from Queen. You'd have to stay yourself the whole way down.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her — go down carrying WHAT?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
+				"text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her, go down carrying what?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
 				"choices": [
 					{
 						"text": "Stay yourself. Carry warmth, swing late, and be the first blade she sees that waited.",
@@ -3813,7 +3813,7 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn — a note higher, as if relieved.",
+				"text": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn, a note higher, as if relieved.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
@@ -3823,7 +3823,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "Above you the hymn falters, then holds. The cult will keep. The ice will not.",
+				"text": "Above you the hymn falters, then holds. The cult will keep. The ice won't.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3839,33 +3839,33 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "singing_ice",
-				"text": "The Frozen Expanse has learned to sing. Below the shelf, the crystal caverns ring like struck glass, and the Long Sleep cult calls it the Queen's morning hymn. They are not entirely wrong. That is the problem.",
+				"text": "The Frozen Expanse has learned to sing. Below the shelf, the crystal caverns ring like struck glass, and the Long Sleep cult calls it the Queen's morning hymn. They're not entirely wrong. That's the problem.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear.",
+				"text": "Her name is Elara. The blacksmith's daughter, the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to keep something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "ch5_vowed_morning",
-						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. You promised the north a real morning once. She is what the promise looks like now.",
+						"text": "Her name is Elara. The blacksmith's daughter, the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to keep something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. You promised the north a real morning once. She is what the promise looks like now.",
 					},
 					{
 						"flag": "ch5_felt_pull",
-						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. The hush you leaned toward under the ice — it has a name now, and the name is a child's.",
+						"text": "Her name is Elara. The blacksmith's daughter, the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to keep something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. The hush you leaned toward under the ice has a name now, and the name is a child's.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "singing_ice_assassin",
-				"text": "Everything warm was TAKEN from her — you have been on the other end of that sentence, holding the flask. So she gave the last of it to the one vault that promised keeping. Now the Queen holds a child's warmth in trust and calls the interest 'winter'. You know this contract. You've BEEN this contract.",
+				"text": "Everything warm was taken from her. You've been on the other end of that sentence, holding the flask. So she gave the last of it to the one vault that promised keeping. Now the Queen holds a child's warmth in trust and calls the interest 'winter'. You know this contract. You've been this contract.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her — go down carrying WHAT?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
+				"text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her, go down carrying what?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
 				"choices": [
 					{
 						"text": "Break it the way nobody broke yours: warmth returned, no charge, and stay till dawn.",
@@ -3876,7 +3876,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the shard answer. TRUST FUNDS CAN BE RAIDED. STRIKE THE TRUSTEE WHILE THE ASSETS RUN LIQUID — AND WHAT THE VAULT SPILLS, I WILL CATCH.",
+						"text": "Let the shard answer. TRUST FUNDS CAN BE RAIDED. STRIKE THE TRUSTEE WHILE THE ASSETS RUN LIQUID, AND WHAT THE VAULT SPILLS, I WILL CATCH.",
 						"resonance": -6.0,
 						"flags": {
 							"ch10_strikes_through": true,
@@ -3895,7 +3895,7 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn — a note higher, as if relieved.",
+				"text": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn, a note higher, as if relieved.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
@@ -3905,7 +3905,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "Above you the hymn falters, then holds. The cult will keep. The ice will not.",
+				"text": "Above you the hymn falters, then holds. The cult will keep. The ice won't.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -3921,33 +3921,33 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "singing_ice",
-				"text": "The Frozen Expanse has learned to sing. Below the shelf, the crystal caverns ring like struck glass, and the Long Sleep cult calls it the Queen's morning hymn. They are not entirely wrong. That is the problem.",
+				"text": "The Frozen Expanse has learned to sing. Below the shelf, the crystal caverns ring like struck glass, and the Long Sleep cult calls it the Queen's morning hymn. They're not entirely wrong. That's the problem.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear.",
+				"text": "Her name is Elara. The blacksmith's daughter, the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to keep something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "ch5_vowed_morning",
-						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. You promised the north a real morning once. She is what the promise looks like now.",
+						"text": "Her name is Elara. The blacksmith's daughter, the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to keep something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. You promised the north a real morning once. She is what the promise looks like now.",
 					},
 					{
 						"flag": "ch5_felt_pull",
-						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. The hush you leaned toward under the ice — it has a name now, and the name is a child's.",
+						"text": "Her name is Elara. The blacksmith's daughter, the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to keep something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. The hush you leaned toward under the ice has a name now, and the name is a child's.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "singing_ice_mage",
-				"text": "Elara's father died of the blight — Mórwyn's domain, the same waking world that woke YOUR green light. Do the arithmetic you've been avoiding since the shelf came into view: her orphaning and your art are two receipts from the same age. The girl in the ice is what your power's era costs the people it doesn't choose.",
+				"text": "Elara's father died of the blight, Mórwyn's domain, the same waking world that woke your green light. Do the arithmetic you've been avoiding since the shelf came into view: her orphaning and your art are two receipts from the same age. The girl in the ice is what your power's era costs the people it doesn't choose.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her — go down carrying WHAT?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
+				"text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her, go down carrying what?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
 				"choices": [
 					{
 						"text": "Then owe her. Carry the warm thing down, hold the door open, and pay the founding debt in person.",
@@ -3958,7 +3958,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the shard answer. A GOD FILTERED THROUGH A CHILD IS THE WEAKEST IT WILL EVER BE. YOU NEED TO HAVE STUDIED ONE BEFORE THE HOLLOW FLAME. STRIKE THROUGH — I WILL HOLD YOUR HAND STEADY.",
+						"text": "Let the shard answer. A GOD FILTERED THROUGH A CHILD IS THE WEAKEST IT WILL EVER BE. YOU NEED TO HAVE STUDIED ONE BEFORE THE HOLLOW FLAME. STRIKE THROUGH. I WILL HOLD YOUR HAND STEADY.",
 						"resonance": -6.0,
 						"flags": {
 							"ch10_strikes_through": true,
@@ -3977,7 +3977,7 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn — a note higher, as if relieved.",
+				"text": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn, a note higher, as if relieved.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
@@ -3987,7 +3987,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "Above you the hymn falters, then holds. The cult will keep. The ice will not.",
+				"text": "Above you the hymn falters, then holds. The cult will keep. The ice won't.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4003,36 +4003,36 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "singing_ice",
-				"text": "The Frozen Expanse has learned to sing. Below the shelf, the crystal caverns ring like struck glass, and the Long Sleep cult calls it the Queen's morning hymn. They are not entirely wrong. That is the problem.",
+				"text": "The Frozen Expanse has learned to sing. Below the shelf, the crystal caverns ring like struck glass, and the Long Sleep cult calls it the Queen's morning hymn. They're not entirely wrong. That's the problem.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear.",
+				"text": "Her name is Elara. The blacksmith's daughter, the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to keep something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "ch5_vowed_morning",
-						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. You promised the north a real morning once. She is what the promise looks like now.",
+						"text": "Her name is Elara. The blacksmith's daughter, the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to keep something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. You promised the north a real morning once. She is what the promise looks like now.",
 					},
 					{
 						"flag": "ch5_felt_pull",
-						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. The hush you leaned toward under the ice — it has a name now, and the name is a child's.",
+						"text": "Her name is Elara. The blacksmith's daughter, the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to keep something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. The hush you leaned toward under the ice has a name now, and the name is a child's.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "singing_ice_archer",
-				"text": "You read people by their threads, and the girl in the cocoon has NONE. Not cut ends, not scars — nothing. She unpicked herself so completely walking into the ice that the Queen has to dream threads around her, a borrowed web where a person's ties should be. You have met one other blank like that. In mirrors. On the bad mornings.",
+				"text": "You read people by their threads, and the girl in the cocoon has none. Not cut ends, not scars, nothing. She unpicked herself so completely walking into the ice that the Queen has to dream threads around her, a borrowed web where a person's ties should be. You've met one other blank like that. In mirrors. On the bad mornings.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her — go down carrying WHAT?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
+				"text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her, go down carrying what?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
 				"choices": [
 					{
-						"text": "Bring her a real one. One thread that doesn't pull, offered beside the Queen's fakes — held out until she takes it, or doesn't.",
+						"text": "Bring her a real one. One thread that doesn't pull, offered beside the Queen's fakes, held out until she takes it, or doesn't.",
 						"resonance": 6.0,
 						"flags": {
 							"ch10_carries_warmth": true,
@@ -4040,7 +4040,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the shard answer. NOTHING ANCHORS HER. THE QUEEN GRIPS A GIRL WITH NO HANDLES — ONE SHOT AND THE GRIP CLOSES ON NOTHING. IT WOULD EVEN BE CLEAN. I CUT CLEANER.",
+						"text": "Let the shard answer. NOTHING ANCHORS HER. THE QUEEN GRIPS A GIRL WITH NO HANDLES. ONE SHOT AND THE GRIP CLOSES ON NOTHING. IT WOULD EVEN BE CLEAN. I CUT CLEANER.",
 						"resonance": -6.0,
 						"flags": {
 							"ch10_strikes_through": true,
@@ -4059,7 +4059,7 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn — a note higher, as if relieved.",
+				"text": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn, a note higher, as if relieved.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
@@ -4069,7 +4069,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "Above you the hymn falters, then holds. The cult will keep. The ice will not.",
+				"text": "Above you the hymn falters, then holds. The cult will keep. The ice won't.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4085,36 +4085,36 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "singing_ice",
-				"text": "The Frozen Expanse has learned to sing. Below the shelf, the crystal caverns ring like struck glass, and the Long Sleep cult calls it the Queen's morning hymn. They are not entirely wrong. That is the problem.",
+				"text": "The Frozen Expanse has learned to sing. Below the shelf, the crystal caverns ring like struck glass, and the Long Sleep cult calls it the Queen's morning hymn. They're not entirely wrong. That's the problem.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear.",
+				"text": "Her name is Elara. The blacksmith's daughter, the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to keep something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "ch5_vowed_morning",
-						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. You promised the north a real morning once. She is what the promise looks like now.",
+						"text": "Her name is Elara. The blacksmith's daughter, the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to keep something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. You promised the north a real morning once. She is what the promise looks like now.",
 					},
 					{
 						"flag": "ch5_felt_pull",
-						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. The hush you leaned toward under the ice — it has a name now, and the name is a child's.",
+						"text": "Her name is Elara. The blacksmith's daughter, the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to keep something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. The hush you leaned toward under the ice has a name now, and the name is a child's.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "singing_ice_paladin",
-				"text": "The chain has met every kind of guilt. This is its first crime with no criminal: the cult believed, the god is a god, and the girl consented as much as a gutted fifteen-year-old can. Harm everywhere; a hand nowhere. The chain circles the cocoon like a bailiff with a warrant nobody will sign — and it has begun, very quietly, to suggest the VESSEL will do.",
+				"text": "The chain has met every kind of guilt. This is its first crime with no criminal: the cult believed, the god is a god, and the girl consented as much as a gutted fifteen-year-old can. Harm everywhere; a hand nowhere. The chain circles the cocoon like a bailiff with a warrant nobody will sign, and it has begun, very quietly, to suggest the vessel will do.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her — go down carrying WHAT?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
+				"text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her, go down carrying what?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
 				"choices": [
 					{
-						"text": "When there is no one to punish, there is still someone to protect. Warm the plaintiff; let the charge stay empty.",
+						"text": "When there's no one to punish, there's still someone to protect. Warm the plaintiff; let the charge stay empty.",
 						"resonance": 6.0,
 						"flags": {
 							"ch10_carries_warmth": true,
@@ -4130,7 +4130,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "There IS a hand: the ones who sang her down. Charge the cult, and let precedent sort the god.",
+						"text": "There is a hand: the ones who sang her down. Charge the cult, and let precedent sort the god.",
 						"resonance": 0.0,
 						"flags": {
 							"ch10_blames_cult": true,
@@ -4141,7 +4141,7 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn — a note higher, as if relieved.",
+				"text": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn, a note higher, as if relieved.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
@@ -4151,7 +4151,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "Above you the hymn falters, then holds. The cult will keep. The ice will not.",
+				"text": "Above you the hymn falters, then holds. The cult will keep. The ice won't.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4167,36 +4167,36 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "singing_ice",
-				"text": "The Frozen Expanse has learned to sing. Below the shelf, the crystal caverns ring like struck glass, and the Long Sleep cult calls it the Queen's morning hymn. They are not entirely wrong. That is the problem.",
+				"text": "The Frozen Expanse has learned to sing. Below the shelf, the crystal caverns ring like struck glass, and the Long Sleep cult calls it the Queen's morning hymn. They're not entirely wrong. That's the problem.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear.",
+				"text": "Her name is Elara. The blacksmith's daughter, the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to keep something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "ch5_vowed_morning",
-						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. You promised the north a real morning once. She is what the promise looks like now.",
+						"text": "Her name is Elara. The blacksmith's daughter, the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to keep something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. You promised the north a real morning once. She is what the promise looks like now.",
 					},
 					{
 						"flag": "ch5_felt_pull",
-						"text": "Her name is Elara. The blacksmith's daughter — the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to KEEP something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. The hush you leaned toward under the ice — it has a name now, and the name is a child's.",
+						"text": "Her name is Elara. The blacksmith's daughter, the one Mórwyn's awakening orphaned. She walked into the ice because the ice was the only thing left that promised to keep something. She sleeps, and the ice grows, and nobody in either camp says the word 'vessel' where the cult can hear. The hush you leaned toward under the ice has a name now, and the name is a child's.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "singing_ice_warlock",
-				"text": "The tome appraises everything — it priced your soul mid-sentence once, unasked. It has been open at the cocoon for an hour, and the page is still BLANK. A girl who gave everything away before the god arrived: no equity, no lien, nothing to secure a debt against. The Queen is squatting in an empty deed. The tome finds this horrifying. You find it almost hopeful.",
+				"text": "The tome appraises everything: it priced your soul mid-sentence once, unasked. It has been open at the cocoon for an hour, and the page is still blank. A girl who gave everything away before the god arrived: no equity, no lien, nothing to secure a debt against. The Queen is squatting in an empty deed. The tome finds this horrifying. You find it almost hopeful.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her — go down carrying WHAT?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
+				"text": "The singer barring the shaft mouth breaks off mid-hymn: \"If you go down to her, go down carrying what?\" You push past without answering. The answer happens on the long climb down, in the blue dark, where the shard's voice carries best.",
 				"choices": [
 					{
-						"text": "An empty deed can't be foreclosed — but it can be lived in again. Carry the warm thing down and help her repossess herself.",
+						"text": "An empty deed can't be foreclosed, but it can be lived in again. Carry the warm thing down and help her repossess herself.",
 						"resonance": 6.0,
 						"flags": {
 							"ch10_carries_warmth": true,
@@ -4204,7 +4204,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the tome answer. A TRUSTEE WITH NO SECURITY HAS NO CLAIM. STRIKE WHILE THE QUEEN HOLDS NOTHING — THE CHEAPEST GOD-KILL THERE WILL EVER BE. I HAVE RUN THE NUMBERS TWICE.",
+						"text": "Let the tome answer. A TRUSTEE WITH NO SECURITY HAS NO CLAIM. STRIKE WHILE THE QUEEN HOLDS NOTHING. THE CHEAPEST GOD-KILL THERE WILL EVER BE. I HAVE RUN THE NUMBERS TWICE.",
 						"resonance": -6.0,
 						"flags": {
 							"ch10_strikes_through": true,
@@ -4223,7 +4223,7 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn — a note higher, as if relieved.",
+				"text": "The climb feels shorter with your answer decided. Behind you, the singer resumes the hymn, a note higher, as if relieved.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
@@ -4233,7 +4233,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "Above you the hymn falters, then holds. The cult will keep. The ice will not.",
+				"text": "Above you the hymn falters, then holds. The cult will keep. The ice won't.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4249,18 +4249,18 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "two_fires",
-				"text": "It has come to banners. The Accord will rebind the seals — which costs bearers their Embers, burned willingly into new locks. The Cinderborn will bind the god-kings to harness — which costs only everything, eventually. Both of them are right about the other.",
+				"text": "It has come to banners. The Accord will rebind the seals, which costs bearers their Embers, burned willingly into new locks. The Cinderborn will bind the god-kings to harness, which costs only everything, eventually. Both of them are right about the other.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The old Ember Guard fortress sits between them, sanctified, ruined, suddenly the most valuable ground in the world. The people who lived in its shadow are leaving with their doors on their backs. They have seen righteous fires before. And on the wall above the whole board stands Aldric — the grey knight who shared Maren's fire in the refugee years, the Guard's last, no fire left in him at all — not choosing a side. GRADING them.",
+				"text": "The old Ember Guard fortress sits between them, sanctified, ruined, suddenly the most valuable ground in the world. The people who lived in its shadow are leaving with their doors on their backs. They've seen righteous fires before. And on the wall above the whole board stands Aldric, the grey knight who shared Maren's fire in the refugee years, the Guard's last, no fire left in him at all, not choosing a side. Grading them.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "two_fires_warrior",
-				"text": "A war is the one place the blackout comes PRE-FORGIVEN — every gap in memory covered in advance by somebody's righteous cause. Two of them, even, bidding. You have never been offered absolution wholesale before, and it smells exactly like the furnace city did.",
+				"text": "A war is the one place the blackout comes pre-forgiven: every gap in memory covered in advance by somebody's righteous cause. Two of them, even, bidding. You've never been offered absolution wholesale before, and it smells exactly like the furnace city did.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -4300,7 +4300,7 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The refugee does not stop — but he shifts the door on his back, as if making room on the road beside him.",
+				"text": "The refugee doesn't stop, but he shifts the door on his back, as if making room on the road beside him.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
@@ -4310,7 +4310,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The refugee nods once — the tired nod of a man who has heard every answer and carried his door through all of them.",
+				"text": "The refugee nods once, the tired nod of a man who's heard every answer and carried his door through all of them.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4326,18 +4326,18 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "two_fires",
-				"text": "It has come to banners. The Accord will rebind the seals — which costs bearers their Embers, burned willingly into new locks. The Cinderborn will bind the god-kings to harness — which costs only everything, eventually. Both of them are right about the other.",
+				"text": "It has come to banners. The Accord will rebind the seals, which costs bearers their Embers, burned willingly into new locks. The Cinderborn will bind the god-kings to harness, which costs only everything, eventually. Both of them are right about the other.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The old Ember Guard fortress sits between them, sanctified, ruined, suddenly the most valuable ground in the world. The people who lived in its shadow are leaving with their doors on their backs. They have seen righteous fires before. And on the wall above the whole board stands Aldric — the grey knight who shared Maren's fire in the refugee years, the Guard's last, no fire left in him at all — not choosing a side. GRADING them.",
+				"text": "The old Ember Guard fortress sits between them, sanctified, ruined, suddenly the most valuable ground in the world. The people who lived in its shadow are leaving with their doors on their backs. They've seen righteous fires before. And on the wall above the whole board stands Aldric, the grey knight who shared Maren's fire in the refugee years, the Guard's last, no fire left in him at all, not choosing a side. Grading them.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "two_fires_assassin",
-				"text": "War is the taking with a UNIFORM — requisition, forage, spoils, all signed for in advance. Your Ember has never been so relaxed; everything it wants to do here is POLICY somewhere. That, precisely, is what has your hackles up: you have spent years learning to refuse yourself. Nobody else on this field is even trying.",
+				"text": "War is the taking with a uniform: requisition, forage, spoils, all signed for in advance. Your Ember has never been so relaxed; everything it wants to do here is policy somewhere. That, precisely, is what has your hackles up: you've spent years learning to refuse yourself. Nobody else on this field is even trying.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -4353,7 +4353,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Go professional. Two armies, one discreet contractor, receipts from both — the taking finally salaried.",
+						"text": "Go professional. Two armies, one discreet contractor, receipts from both, the taking finally salaried.",
 						"resonance": -6.0,
 						"flags": {
 							"ch11_holds_receipts": true,
@@ -4377,7 +4377,7 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The refugee does not stop — but he shifts the door on his back, as if making room on the road beside him.",
+				"text": "The refugee doesn't stop, but he shifts the door on his back, as if making room on the road beside him.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
@@ -4387,7 +4387,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The refugee nods once — the tired nod of a man who has heard every answer and carried his door through all of them.",
+				"text": "The refugee nods once, the tired nod of a man who's heard every answer and carried his door through all of them.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4403,18 +4403,18 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "two_fires",
-				"text": "It has come to banners. The Accord will rebind the seals — which costs bearers their Embers, burned willingly into new locks. The Cinderborn will bind the god-kings to harness — which costs only everything, eventually. Both of them are right about the other.",
+				"text": "It has come to banners. The Accord will rebind the seals, which costs bearers their Embers, burned willingly into new locks. The Cinderborn will bind the god-kings to harness, which costs only everything, eventually. Both of them are right about the other.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The old Ember Guard fortress sits between them, sanctified, ruined, suddenly the most valuable ground in the world. The people who lived in its shadow are leaving with their doors on their backs. They have seen righteous fires before. And on the wall above the whole board stands Aldric — the grey knight who shared Maren's fire in the refugee years, the Guard's last, no fire left in him at all — not choosing a side. GRADING them.",
+				"text": "The old Ember Guard fortress sits between them, sanctified, ruined, suddenly the most valuable ground in the world. The people who lived in its shadow are leaving with their doors on their backs. They've seen righteous fires before. And on the wall above the whole board stands Aldric, the grey knight who shared Maren's fire in the refugee years, the Guard's last, no fire left in him at all, not choosing a side. Grading them.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "two_fires_mage",
-				"text": "Both armies brought ARTIFACTS — Accord seal-lattices, Cinderborn bound-fire engines, the best applied work of the age rolling toward mutual disassembly. It is a symposium with casualties. And every device on both manifests descends from someone's 'just once'.",
+				"text": "Both armies brought artifacts: Accord seal-lattices, Cinderborn bound-fire engines, the best applied work of the age rolling toward mutual disassembly. It's a symposium with casualties. And every device on both manifests descends from someone's 'just once'.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -4430,7 +4430,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Battlefield salvage is peer review. Collect the receipts — and the prototypes — from both sides while they spend.",
+						"text": "Battlefield salvage is peer review. Collect the receipts, and the prototypes, from both sides while they spend.",
 						"resonance": -6.0,
 						"flags": {
 							"ch11_holds_receipts": true,
@@ -4454,7 +4454,7 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The refugee does not stop — but he shifts the door on his back, as if making room on the road beside him.",
+				"text": "The refugee doesn't stop, but he shifts the door on his back, as if making room on the road beside him.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
@@ -4464,7 +4464,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The refugee nods once — the tired nod of a man who has heard every answer and carried his door through all of them.",
+				"text": "The refugee nods once, the tired nod of a man who's heard every answer and carried his door through all of them.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4480,18 +4480,18 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "two_fires",
-				"text": "It has come to banners. The Accord will rebind the seals — which costs bearers their Embers, burned willingly into new locks. The Cinderborn will bind the god-kings to harness — which costs only everything, eventually. Both of them are right about the other.",
+				"text": "It has come to banners. The Accord will rebind the seals, which costs bearers their Embers, burned willingly into new locks. The Cinderborn will bind the god-kings to harness, which costs only everything, eventually. Both of them are right about the other.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The old Ember Guard fortress sits between them, sanctified, ruined, suddenly the most valuable ground in the world. The people who lived in its shadow are leaving with their doors on their backs. They have seen righteous fires before. And on the wall above the whole board stands Aldric — the grey knight who shared Maren's fire in the refugee years, the Guard's last, no fire left in him at all — not choosing a side. GRADING them.",
+				"text": "The old Ember Guard fortress sits between them, sanctified, ruined, suddenly the most valuable ground in the world. The people who lived in its shadow are leaving with their doors on their backs. They've seen righteous fires before. And on the wall above the whole board stands Aldric, the grey knight who shared Maren's fire in the refugee years, the Guard's last, no fire left in him at all, not choosing a side. Grading them.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "two_fires_archer",
-				"text": "A banner is a thread you tie ON PURPOSE — the first ones you've seen chosen freely since the Ember cut yours. Whole camps belonging, loudly, in matching colors. And between the camps, the refugees: every one trailing threads to houses both armies plan to be RIGHT on top of.",
+				"text": "A banner is a thread you tie on purpose, the first ones you've seen chosen freely since the Ember cut yours. Whole camps belonging, loudly, in matching colors. And between the camps, the refugees: every one trailing threads to houses both armies plan to be right on top of.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -4531,7 +4531,7 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The refugee does not stop — but he shifts the door on his back, as if making room on the road beside him.",
+				"text": "The refugee doesn't stop, but he shifts the door on his back, as if making room on the road beside him.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
@@ -4541,7 +4541,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The refugee nods once — the tired nod of a man who has heard every answer and carried his door through all of them.",
+				"text": "The refugee nods once, the tired nod of a man who's heard every answer and carried his door through all of them.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4557,18 +4557,18 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "two_fires",
-				"text": "It has come to banners. The Accord will rebind the seals — which costs bearers their Embers, burned willingly into new locks. The Cinderborn will bind the god-kings to harness — which costs only everything, eventually. Both of them are right about the other.",
+				"text": "It has come to banners. The Accord will rebind the seals, which costs bearers their Embers, burned willingly into new locks. The Cinderborn will bind the god-kings to harness, which costs only everything, eventually. Both of them are right about the other.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The old Ember Guard fortress sits between them, sanctified, ruined, suddenly the most valuable ground in the world. The people who lived in its shadow are leaving with their doors on their backs. They have seen righteous fires before. And on the wall above the whole board stands Aldric — the grey knight who shared Maren's fire in the refugee years, the Guard's last, no fire left in him at all — not choosing a side. GRADING them.",
+				"text": "The old Ember Guard fortress sits between them, sanctified, ruined, suddenly the most valuable ground in the world. The people who lived in its shadow are leaving with their doors on their backs. They've seen righteous fires before. And on the wall above the whole board stands Aldric, the grey knight who shared Maren's fire in the refugee years, the Guard's last, no fire left in him at all, not choosing a side. Grading them.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "two_fires_paladin",
-				"text": "The chain has read both briefs and finds for BOTH — which it has never done, and it is not enjoying the experience. The Accord's math is sacrifice; the Cinderborn's is hubris; and Aldric on the wall has stopped grading the armies and started watching YOU.",
+				"text": "The chain has read both briefs and finds for both, which it has never done, and it's not enjoying the experience. The Accord's math is sacrifice; the Cinderborn's is hubris; and Aldric on the wall has stopped grading the armies and started watching you.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -4584,7 +4584,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "A hung court pays whoever holds the evidence. Collect from both — receipts are neutral.",
+						"text": "A hung court pays whoever holds the evidence. Collect from both. Receipts are neutral.",
 						"resonance": -6.0,
 						"flags": {
 							"ch11_holds_receipts": true,
@@ -4608,7 +4608,7 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The refugee does not stop — but he shifts the door on his back, as if making room on the road beside him.",
+				"text": "The refugee doesn't stop, but he shifts the door on his back, as if making room on the road beside him.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
@@ -4618,7 +4618,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The refugee nods once — the tired nod of a man who has heard every answer and carried his door through all of them.",
+				"text": "The refugee nods once, the tired nod of a man who's heard every answer and carried his door through all of them.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4634,18 +4634,18 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "two_fires",
-				"text": "It has come to banners. The Accord will rebind the seals — which costs bearers their Embers, burned willingly into new locks. The Cinderborn will bind the god-kings to harness — which costs only everything, eventually. Both of them are right about the other.",
+				"text": "It has come to banners. The Accord will rebind the seals, which costs bearers their Embers, burned willingly into new locks. The Cinderborn will bind the god-kings to harness, which costs only everything, eventually. Both of them are right about the other.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The old Ember Guard fortress sits between them, sanctified, ruined, suddenly the most valuable ground in the world. The people who lived in its shadow are leaving with their doors on their backs. They have seen righteous fires before. And on the wall above the whole board stands Aldric — the grey knight who shared Maren's fire in the refugee years, the Guard's last, no fire left in him at all — not choosing a side. GRADING them.",
+				"text": "The old Ember Guard fortress sits between them, sanctified, ruined, suddenly the most valuable ground in the world. The people who lived in its shadow are leaving with their doors on their backs. They've seen righteous fires before. And on the wall above the whole board stands Aldric, the grey knight who shared Maren's fire in the refugee years, the Guard's last, no fire left in him at all, not choosing a side. Grading them.",
 				"next": "n3",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "two_fires_warlock",
-				"text": "The tome cannot stop looking at the man on the wall. Aldric BURNED his Ember — principal, interest, the whole instrument, discharged in one payment, thirty years ago, on the first fall's field. The only closed ledger in Vaelscar, walking around, breathing. The tome finds him obscene. You find him… instructive.",
+				"text": "The tome can't stop looking at the man on the wall. Aldric burned his Ember: principal, interest, the whole instrument, discharged in one payment, thirty years ago, on the first fall's field. The only closed ledger in Vaelscar, walking around, breathing. The tome finds him obscene. You find him… instructive.",
 				"next": "n4s",
 			},
 			"n4": {
@@ -4661,7 +4661,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Study the discharge. If an Ember can be burned to settle, YOUR debt has an exit clause — collect both sides' receipts while you work out the terms.",
+						"text": "Study the discharge. If an Ember can be burned to settle, your debt has an exit clause. Collect both sides' receipts while you work out the terms.",
 						"resonance": -6.0,
 						"flags": {
 							"ch11_holds_receipts": true,
@@ -4685,7 +4685,7 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The refugee does not stop — but he shifts the door on his back, as if making room on the road beside him.",
+				"text": "The refugee doesn't stop, but he shifts the door on his back, as if making room on the road beside him.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
@@ -4695,7 +4695,7 @@ const CONVOS := {
 			},
 			"reply_deflection": {
 				"who": "Narrator",
-				"text": "The refugee nods once — the tired nod of a man who has heard every answer and carried his door through all of them.",
+				"text": "The refugee nods once, the tired nod of a man who's heard every answer and carried his door through all of them.",
 				"next": "n_end",
 			},
 			"n_end": {
@@ -4711,29 +4711,29 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "roothold",
-				"text": "The Deep did not spread. Spreading is what fires do. The Deep GREW — and what it grew into is a country. The maps of this region are redrawn weekly, and lately the maps lose the argument.",
+				"text": "The Deep didn't spread. Spreading is what fires do. The Deep grew, and what it grew into is a country. The maps of this region are redrawn weekly, and lately the maps lose the argument.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat.",
+				"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule, through people, only through people, and grew around it the way a root grows around a law. The land is the vessel. You're not walking to the boss. You're walking on it. It has five hearts, and every living thing in the green leans toward them slightly on the beat.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "ch6_answered_green",
-						"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat. What you loosed in the Deep went quiet a day's march out. The Roothold heard you coming.",
+						"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule, through people, only through people, and grew around it the way a root grows around a law. The land is the vessel. You're not walking to the boss. You're walking on it. It has five hearts, and every living thing in the green leans toward them slightly on the beat. What you loosed in the Deep went quiet a day's march out. The Roothold heard you coming.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "roothold_warrior",
-				"text": "You hit it, it heals. You burn it, it blooms. A COUNTRY where the arm means nothing — every swing absorbed like rain into loam. The blackout took one look at the regrowing green and, for the first time in your life, went back to sleep. You cannot decide if that is peace or insult.",
+				"text": "You hit it, it heals. You burn it, it blooms. A country where the arm means nothing, every swing absorbed like rain into loam. The blackout took one look at the regrowing green and, for the first time in your life, went back to sleep. You can't decide if that's peace or insult.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Wildfang Scout",
-				"text": "Signs don't hold it. What is YOUR answer to a land that will not die?",
+				"text": "Signs don't hold it. What is your answer to a land that won't die?",
 				"choices": [
 					{
 						"text": "If the arm means nothing here, bring what does: an ending, delivered deliberately, heart by heart.",
@@ -4744,7 +4744,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Ask the Root to KEEP the arm asleep. It quiets what it grows through — a gardener's hands never black out.",
+						"text": "Ask the Root to keep the arm asleep. It quiets what it grows through. A gardener's hands never black out.",
 						"resonance": -6.0,
 						"flags": {
 							"ch12_would_garden": true,
@@ -4752,7 +4752,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Cut the five hearts because they must fall — not because it means anything. Then draw the border, and hold it.",
+						"text": "Cut the five hearts because they must fall, not because it means anything. Then draw the border, and hold it.",
 						"resonance": 0.0,
 						"flags": {
 							"ch12_draws_borders": true,
@@ -4763,7 +4763,7 @@ const CONVOS := {
 			},
 			"n4s": {
 				"who": "Narrator",
-				"text": "At the treeline a Wildfang scout hammers in a warning-post — the third replacement this month.",
+				"text": "At the treeline a Wildfang scout hammers in a warning-post, the third replacement this month.",
 				"next": "n4",
 			},
 			"reply_virtue": {
@@ -4794,29 +4794,29 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "roothold",
-				"text": "The Deep did not spread. Spreading is what fires do. The Deep GREW — and what it grew into is a country. The maps of this region are redrawn weekly, and lately the maps lose the argument.",
+				"text": "The Deep didn't spread. Spreading is what fires do. The Deep grew, and what it grew into is a country. The maps of this region are redrawn weekly, and lately the maps lose the argument.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat.",
+				"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule, through people, only through people, and grew around it the way a root grows around a law. The land is the vessel. You're not walking to the boss. You're walking on it. It has five hearts, and every living thing in the green leans toward them slightly on the beat.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "ch6_answered_green",
-						"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat. The cutting you took in the Deep is heavier every day now. It is not growing. It is REPORTING.",
+						"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule, through people, only through people, and grew around it the way a root grows around a law. The land is the vessel. You're not walking to the boss. You're walking on it. It has five hearts, and every living thing in the green leans toward them slightly on the beat. The cutting you took in the Deep is heavier every day now. It's not growing. It's reporting.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "roothold_assassin",
-				"text": "It has stopped inheriting and started COMPOSING — a whole country now, self-owned, self-feeding, needing nothing from anyone. Even the relay lived on what its speakers paid in; this doesn't even RECEIVE. The first power you've ever met with no appetite at all. Your Ember stands at the treeline like a pickpocket at a monastery: professionally offended, personally unnerved.",
+				"text": "It has stopped inheriting and started composing: a whole country now, self-owned, self-feeding, needing nothing from anyone. Even the relay lived on what its speakers paid in; this doesn't even receive. The first power you've ever met with no appetite at all. Your Ember stands at the treeline like a pickpocket at a monastery: professionally offended, personally unnerved.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Wildfang Scout",
-				"text": "Signs don't hold it. What is YOUR answer to a land that will not die?",
+				"text": "Signs don't hold it. What is your answer to a land that won't die?",
 				"choices": [
 					{
 						"text": "No appetite means no mercy either. Give it the ending it can't want for itself.",
@@ -4835,7 +4835,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Nothing to steal, nothing to save — just five hearts between you and out. Do the job, fence the border, walk away.",
+						"text": "Nothing to steal, nothing to save, just five hearts between you and out. Do the job, fence the border, walk away.",
 						"resonance": 0.0,
 						"flags": {
 							"ch12_draws_borders": true,
@@ -4846,7 +4846,7 @@ const CONVOS := {
 			},
 			"n4s": {
 				"who": "Narrator",
-				"text": "At the treeline a Wildfang scout hammers in a warning-post — the third replacement this month.",
+				"text": "At the treeline a Wildfang scout hammers in a warning-post, the third replacement this month.",
 				"next": "n4",
 			},
 			"reply_virtue": {
@@ -4877,32 +4877,32 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "roothold",
-				"text": "The Deep did not spread. Spreading is what fires do. The Deep GREW — and what it grew into is a country. The maps of this region are redrawn weekly, and lately the maps lose the argument.",
+				"text": "The Deep didn't spread. Spreading is what fires do. The Deep grew, and what it grew into is a country. The maps of this region are redrawn weekly, and lately the maps lose the argument.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat.",
+				"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule, through people, only through people, and grew around it the way a root grows around a law. The land is the vessel. You're not walking to the boss. You're walking on it. It has five hearts, and every living thing in the green leans toward them slightly on the beat.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "ch6_answered_green",
-						"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat. The cutting you took in the Deep is heavier every day now. It is not growing. It is REPORTING.",
+						"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule, through people, only through people, and grew around it the way a root grows around a law. The land is the vessel. You're not walking to the boss. You're walking on it. It has five hearts, and every living thing in the green leans toward them slightly on the beat. The cutting you took in the Deep is heavier every day now. It's not growing. It's reporting.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "roothold_mage",
-				"text": "Five hearts, one working, no caster. It maintains ITSELF — the dream every archmage chased and the nightmare every apprentice is warned with, running at country scale on nobody's mana. Your green light needed you for one breath and failed. This needed no one, ever, and cannot stop succeeding.",
+				"text": "Five hearts, one working, no caster. It maintains itself: the dream every archmage chased and the nightmare every apprentice is warned with, running at country scale on nobody's mana. Your green light needed you for one breath and failed. This needed no one, ever, and can't stop succeeding.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Wildfang Scout",
-				"text": "Signs don't hold it. What is YOUR answer to a land that will not die?",
+				"text": "Signs don't hold it. What is your answer to a land that won't die?",
 				"choices": [
 					{
-						"text": "A working that can't stop isn't finished — it's abandoned mid-cast. End it properly, heart by heart, the way its author should have.",
+						"text": "A working that can't stop isn't finished. It's abandoned mid-cast. End it properly, heart by heart, the way its author should have.",
 						"resonance": 6.0,
 						"flags": {
 							"ch12_brings_ending": true,
@@ -4910,7 +4910,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Take the maintainer's chair. A working needs no caster, but it will accept a GARDENER — and a gardener could grow one small grey-marked cure on the side.",
+						"text": "Take the maintainer's chair. A working needs no caster, but it will accept a gardener, and a gardener could grow one small grey-marked cure on the side.",
 						"resonance": -6.0,
 						"flags": {
 							"ch12_would_garden": true,
@@ -4918,7 +4918,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Edit nothing you don't have to. The hearts fall — that is surgery, not authorship — then ward the perimeter and go.",
+						"text": "Edit nothing you don't have to. The hearts fall (that's surgery, not authorship), then ward the perimeter and go.",
 						"resonance": 0.0,
 						"flags": {
 							"ch12_draws_borders": true,
@@ -4929,7 +4929,7 @@ const CONVOS := {
 			},
 			"n4s": {
 				"who": "Narrator",
-				"text": "At the treeline a Wildfang scout hammers in a warning-post — the third replacement this month.",
+				"text": "At the treeline a Wildfang scout hammers in a warning-post, the third replacement this month.",
 				"next": "n4",
 			},
 			"reply_virtue": {
@@ -4960,32 +4960,32 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "roothold",
-				"text": "The Deep did not spread. Spreading is what fires do. The Deep GREW — and what it grew into is a country. The maps of this region are redrawn weekly, and lately the maps lose the argument.",
+				"text": "The Deep didn't spread. Spreading is what fires do. The Deep grew, and what it grew into is a country. The maps of this region are redrawn weekly, and lately the maps lose the argument.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat.",
+				"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule, through people, only through people, and grew around it the way a root grows around a law. The land is the vessel. You're not walking to the boss. You're walking on it. It has five hearts, and every living thing in the green leans toward them slightly on the beat.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "ch6_answered_green",
-						"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat. What you asked the green in the Deep — the Roothold has been growing the answer ever since. It is the size of a country now.",
+						"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule, through people, only through people, and grew around it the way a root grows around a law. The land is the vessel. You're not walking to the boss. You're walking on it. It has five hearts, and every living thing in the green leans toward them slightly on the beat. What you asked the green in the Deep, the Roothold has been growing the answer ever since. It's the size of a country now.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "roothold_archer",
-				"text": "The whole horizon is weave. Not threads THROUGH things — thread AS things: hills of it, weather of it, five slow knots at the center glowing like hearts because they ARE hearts. You have read rooms by their threads all your life. You have never had to read a nation.",
+				"text": "The whole horizon is weave. Not threads through things, thread as things: hills of it, weather of it, five slow knots at the center glowing like hearts because they are hearts. You've read rooms by their threads all your life. You've never had to read a nation.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Wildfang Scout",
-				"text": "Signs don't hold it. What is YOUR answer to a land that will not die?",
+				"text": "Signs don't hold it. What is your answer to a land that won't die?",
 				"choices": [
 					{
-						"text": "Read it to the end. Every weave has a selvage — find the Root's, and give the country a hem.",
+						"text": "Read it to the end. Every weave has a selvage. Find the Root's, and give the country a hem.",
 						"resonance": 6.0,
 						"flags": {
 							"ch12_brings_ending": true,
@@ -4993,7 +4993,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "A weaver this size could re-string ANYTHING — walk to the hearts and show it the cut end you carry.",
+						"text": "A weaver this size could re-string anything. Walk to the hearts and show it the cut end you carry.",
 						"resonance": -6.0,
 						"flags": {
 							"ch12_would_garden": true,
@@ -5001,7 +5001,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Unpick exactly what the road demands — five knots, no flourishes — then hem the border behind you and post the warnings.",
+						"text": "Unpick exactly what the road demands, five knots, no flourishes, then hem the border behind you and post the warnings.",
 						"resonance": 0.0,
 						"flags": {
 							"ch12_draws_borders": true,
@@ -5012,7 +5012,7 @@ const CONVOS := {
 			},
 			"n4s": {
 				"who": "Narrator",
-				"text": "At the treeline a Wildfang scout hammers in a warning-post — the third replacement this month.",
+				"text": "At the treeline a Wildfang scout hammers in a warning-post, the third replacement this month.",
 				"next": "n4",
 			},
 			"reply_virtue": {
@@ -5043,32 +5043,32 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "roothold",
-				"text": "The Deep did not spread. Spreading is what fires do. The Deep GREW — and what it grew into is a country. The maps of this region are redrawn weekly, and lately the maps lose the argument.",
+				"text": "The Deep didn't spread. Spreading is what fires do. The Deep grew, and what it grew into is a country. The maps of this region are redrawn weekly, and lately the maps lose the argument.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat.",
+				"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule, through people, only through people, and grew around it the way a root grows around a law. The land is the vessel. You're not walking to the boss. You're walking on it. It has five hearts, and every living thing in the green leans toward them slightly on the beat.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "ch6_answered_green",
-						"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat. The cutting you took in the Deep is heavier every day now. It is not growing. It is REPORTING.",
+						"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule, through people, only through people, and grew around it the way a root grows around a law. The land is the vessel. You're not walking to the boss. You're walking on it. It has five hearts, and every living thing in the green leans toward them slightly on the beat. The cutting you took in the Deep is heavier every day now. It's not growing. It's reporting.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "roothold_paladin",
-				"text": "The trial you postponed in the Drowned Reaches convenes here, and the defendant has grown into its own jurisdiction — courts need borders, and the Root IS one. Five hearts, five counts. The chain has stopped reciting and started PREPARING. It has never sentenced a landscape before. Neither have you.",
+				"text": "The trial you postponed in the Drowned Reaches convenes here, and the defendant has grown into its own jurisdiction: courts need borders, and the Root is one. Five hearts, five counts. The chain has stopped reciting and started preparing. It has never sentenced a landscape before. Neither have you.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Wildfang Scout",
-				"text": "Signs don't hold it. What is YOUR answer to a land that will not die?",
+				"text": "Signs don't hold it. What is your answer to a land that won't die?",
 				"choices": [
 					{
-						"text": "Five counts, five verdicts, executed in person. A land that can't die gets due process and an ENDING.",
+						"text": "Five counts, five verdicts, executed in person. A land that can't die gets due process and an ending.",
 						"resonance": 6.0,
 						"flags": {
 							"ch12_brings_ending": true,
@@ -5095,7 +5095,7 @@ const CONVOS := {
 			},
 			"n4s": {
 				"who": "Narrator",
-				"text": "At the treeline a Wildfang scout hammers in a warning-post — the third replacement this month.",
+				"text": "At the treeline a Wildfang scout hammers in a warning-post, the third replacement this month.",
 				"next": "n4",
 			},
 			"reply_virtue": {
@@ -5126,32 +5126,32 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "roothold",
-				"text": "The Deep did not spread. Spreading is what fires do. The Deep GREW — and what it grew into is a country. The maps of this region are redrawn weekly, and lately the maps lose the argument.",
+				"text": "The Deep didn't spread. Spreading is what fires do. The Deep grew, and what it grew into is a country. The maps of this region are redrawn weekly, and lately the maps lose the argument.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat.",
+				"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule, through people, only through people, and grew around it the way a root grows around a law. The land is the vessel. You're not walking to the boss. You're walking on it. It has five hearts, and every living thing in the green leans toward them slightly on the beat.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "ch6_answered_green",
-						"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule — THROUGH people, only through people — and grew around it the way a root grows around a law. The land is the vessel. You are not walking to the boss. You are walking ON it. It has five hearts, and every living thing in the green leans toward them slightly on the beat. The cutting you took in the Deep is heavier every day now. It is not growing. It is REPORTING.",
+						"text": "Every other god-king needed a mortal door. The Pale Root looked at the Concord's rule, through people, only through people, and grew around it the way a root grows around a law. The land is the vessel. You're not walking to the boss. You're walking on it. It has five hearts, and every living thing in the green leans toward them slightly on the beat. The cutting you took in the Deep is heavier every day now. It's not growing. It's reporting.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "roothold_warlock",
-				"text": "The tome ran the numbers three times: the Root owes NOTHING. No pacts, no interest, no counterparty — a god that simply grew until owning and being were the same act. Your whole life is denominated in what you owe. You are standing inside the only solvent thing you have ever met, and it is beautiful, and the tome wants it BURNED.",
+				"text": "The tome ran the numbers three times: the Root owes nothing. No pacts, no interest, no counterparty, a god that simply grew until owning and being were the same act. Your whole life is denominated in what you owe. You're standing inside the only solvent thing you've ever met, and it's beautiful, and the tome wants it burned.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Wildfang Scout",
-				"text": "Signs don't hold it. What is YOUR answer to a land that will not die?",
+				"text": "Signs don't hold it. What is your answer to a land that won't die?",
 				"choices": [
 					{
-						"text": "Solvency isn't innocence. Close the estate cleanly — five hearts, five settlements, no heirs.",
+						"text": "Solvency isn't innocence. Close the estate cleanly: five hearts, five settlements, no heirs.",
 						"resonance": 6.0,
 						"flags": {
 							"ch12_brings_ending": true,
@@ -5159,7 +5159,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Apply for residency. A gardener inside a debtless estate is beyond every creditor's reach — including the one in your pack.",
+						"text": "Apply for residency. A gardener inside a debtless estate is beyond every creditor's reach, including the one in your pack.",
 						"resonance": -6.0,
 						"flags": {
 							"ch12_would_garden": true,
@@ -5167,7 +5167,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Settle only what blocks the road — five hearts, itemized, no interest taken — then draw the border at the treeline and keep your liabilities OUT of its assets.",
+						"text": "Settle only what blocks the road, five hearts, itemized, no interest taken, then draw the border at the treeline and keep your liabilities out of its assets.",
 						"resonance": 0.0,
 						"flags": {
 							"ch12_draws_borders": true,
@@ -5178,7 +5178,7 @@ const CONVOS := {
 			},
 			"n4s": {
 				"who": "Narrator",
-				"text": "At the treeline a Wildfang scout hammers in a warning-post — the third replacement this month.",
+				"text": "At the treeline a Wildfang scout hammers in a warning-post, the third replacement this month.",
 				"next": "n4",
 			},
 			"reply_virtue": {
@@ -5209,36 +5209,36 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "storm_scar",
-				"text": "The seal you heard crack at the end of Act One has torn. The Thunder Plains are a wound now — a place where the weather is a membrane and the void leans on it from the far side, testing the give.",
+				"text": "The seal you heard crack at the end of Act One has torn. The Thunder Plains are a wound now, a place where the weather is a membrane and the void leans on it from the far side, testing the give.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do.",
+				"text": "The Storm Tongue never needed a vessel. It's a voice. It speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "ch7_would_speak",
-						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it.",
+						"text": "The Storm Tongue never needed a vessel. It's a voice. It speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it.",
 					},
 					{
 						"flag": "ch7_let_it_end",
-						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You wanted to hear the world unmuzzled. Listen, then. It is saying something.",
+						"text": "The Storm Tongue never needed a vessel. It's a voice. It speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You wanted to hear the world unmuzzled. Listen, then. It's saying something.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "storm_scar_warrior",
-				"text": "The storm speaks and things BREAK — force with a vocabulary, damage that MEANS. It is your blackout with a diploma, and it is winning arguments against three old men and an anchor line. You have spent your life wishing the arm could explain itself. Here is what the explanation costs.",
+				"text": "The storm speaks and things break: force with a vocabulary, damage that means something. It's your blackout with a diploma, and it's winning arguments against three old men and an anchor line. You've spent your life wishing the arm could explain itself. Here's what the explanation costs.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer — and realize you have been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
+				"text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer and realize you've been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
 				"choices": [
 					{
-						"text": "Finish the vow. If force can learn to speak, it can learn to stop mid-sentence — hold the line and learn the words that hold.",
+						"text": "Finish the vow. If force can learn to speak, it can learn to stop mid-sentence. Hold the line and learn the words that hold.",
 						"resonance": 6.0,
 						"flags": {
 							"ch13_finishes_the_vow": true,
@@ -5246,7 +5246,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the shard answer. TAKE DICTATION. LET THE STORM TEACH ME GRAMMAR — IF I COULD SPEAK, YOU COULD FINALLY NEGOTIATE. WOULDN'T YOU LIKE TERMS?",
+						"text": "Let the shard answer. TAKE DICTATION. LET THE STORM TEACH ME GRAMMAR. IF I COULD SPEAK, YOU COULD FINALLY NEGOTIATE. WOULDN'T YOU LIKE TERMS?",
 						"resonance": -6.0,
 						"flags": {
 							"ch13_holds_the_leash": true,
@@ -5265,12 +5265,12 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The young speaker exhales — half the weight of a god-sized sentence sliding onto readier shoulders.",
+				"text": "The young speaker exhales, half the weight of a god-sized sentence sliding onto readier shoulders.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The wind drops. Out on the plain, one loose word changes direction — toward you.",
+				"text": "The wind drops. Out on the plain, one loose word changes direction, toward you.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -5291,36 +5291,36 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "storm_scar",
-				"text": "The seal you heard crack at the end of Act One has torn. The Thunder Plains are a wound now — a place where the weather is a membrane and the void leans on it from the far side, testing the give.",
+				"text": "The seal you heard crack at the end of Act One has torn. The Thunder Plains are a wound now, a place where the weather is a membrane and the void leans on it from the far side, testing the give.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do.",
+				"text": "The Storm Tongue never needed a vessel. It's a voice. It speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "ch7_would_speak",
-						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it.",
+						"text": "The Storm Tongue never needed a vessel. It's a voice. It speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it.",
 					},
 					{
 						"flag": "ch7_let_it_end",
-						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You wanted to hear the world unmuzzled. Listen, then. It is saying something.",
+						"text": "The Storm Tongue never needed a vessel. It's a voice. It speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You wanted to hear the world unmuzzled. Listen, then. It's saying something.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "storm_scar_assassin",
-				"text": "The heist of the age is lying scattered on a battlefield: a god's TRUE NAME, blown loose one word at a time, guarded only by weather. Take it and you own the leash on the loudest thing alive. Your Ember has already started collecting — you caught yourself mouthing a word you never chose to learn. It went down warm. Like the flask did.",
+				"text": "The heist of the age is lying scattered on a battlefield: a god's true name, blown loose one word at a time, guarded only by weather. Take it and you own the leash on the loudest thing alive. Your Ember has already started collecting; you caught yourself mouthing a word you never chose to learn. It went down warm. Like the flask did.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer — and realize you have been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
+				"text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer and realize you've been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
 				"choices": [
 					{
-						"text": "Steal it FOR them. Assemble the name and hand it to the speakers whole — the one theft in your life with a return address.",
+						"text": "Steal it for them. Assemble the name and hand it to the speakers whole, the one theft in your life with a return address.",
 						"resonance": 6.0,
 						"flags": {
 							"ch13_finishes_the_vow": true,
@@ -5328,7 +5328,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the shard answer. FINDERS KEEPERS. A LEASH ON A GOD, HELD QUIETLY — THE FIRST THING I EVER TOOK THAT COULD TAKE BACK. LET ME HAVE IT. LET US HAVE IT.",
+						"text": "Let the shard answer. FINDERS KEEPERS. A LEASH ON A GOD, HELD QUIETLY. THE FIRST THING I EVER TOOK THAT COULD TAKE BACK. LET ME HAVE IT. LET US HAVE IT.",
 						"resonance": -6.0,
 						"flags": {
 							"ch13_holds_the_leash": true,
@@ -5347,12 +5347,12 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The young speaker exhales — half the weight of a god-sized sentence sliding onto readier shoulders.",
+				"text": "The young speaker exhales, half the weight of a god-sized sentence sliding onto readier shoulders.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The wind drops. Out on the plain, one loose word changes direction — toward you.",
+				"text": "The wind drops. Out on the plain, one loose word changes direction, toward you.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -5373,36 +5373,36 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "storm_scar",
-				"text": "The seal you heard crack at the end of Act One has torn. The Thunder Plains are a wound now — a place where the weather is a membrane and the void leans on it from the far side, testing the give.",
+				"text": "The seal you heard crack at the end of Act One has torn. The Thunder Plains are a wound now, a place where the weather is a membrane and the void leans on it from the far side, testing the give.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do.",
+				"text": "The Storm Tongue never needed a vessel. It's a voice. It speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "ch7_would_speak",
-						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it.",
+						"text": "The Storm Tongue never needed a vessel. It's a voice. It speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it.",
 					},
 					{
 						"flag": "ch7_let_it_end",
-						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You wanted to hear the world unmuzzled. Listen, then. It is saying something.",
+						"text": "The Storm Tongue never needed a vessel. It's a voice. It speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You wanted to hear the world unmuzzled. Listen, then. It's saying something.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "storm_scar_mage",
-				"text": "Every incantation you have ever fumbled descends from THIS: language that does not describe the world but INSTRUCTS it. The storm-words are syntax you can dodge and read in the same breath — the most dangerous curriculum ever offered, tuition payable in silence. You have been sounding them out since the scar came into view. Of course you have.",
+				"text": "Every incantation you've ever fumbled descends from this: language that doesn't describe the world but instructs it. The storm-words are syntax you can dodge and read in the same breath, the most dangerous curriculum ever offered, tuition payable in silence. You've been sounding them out since the scar came into view. Of course you have.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer — and realize you have been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
+				"text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer and realize you've been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
 				"choices": [
 					{
-						"text": "Learn the whole sentence and speak it as MEANT — the first perfect work of your life, borrowed from six hundred years of imperfect mouths.",
+						"text": "Learn the whole sentence and speak it as meant, the first perfect work of your life, borrowed from six hundred years of imperfect mouths.",
 						"resonance": 6.0,
 						"flags": {
 							"ch13_finishes_the_vow": true,
@@ -5410,7 +5410,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the shard answer. KEEP THE GRAMMAR. A NAME THAT INSTRUCTS THE WORLD, HELD PRIVATELY. THE BOY'S MARK IS ALSO, TECHNICALLY, AN INSTRUCTION — AND INSTRUCTIONS CAN BE REVOKED.",
+						"text": "Let the shard answer. KEEP THE GRAMMAR. A NAME THAT INSTRUCTS THE WORLD, HELD PRIVATELY. THE BOY'S MARK IS ALSO, TECHNICALLY, AN INSTRUCTION, AND INSTRUCTIONS CAN BE REVOKED.",
 						"resonance": -6.0,
 						"flags": {
 							"ch13_holds_the_leash": true,
@@ -5429,12 +5429,12 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The young speaker exhales — half the weight of a god-sized sentence sliding onto readier shoulders.",
+				"text": "The young speaker exhales, half the weight of a god-sized sentence sliding onto readier shoulders.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The wind drops. Out on the plain, one loose word changes direction — toward you.",
+				"text": "The wind drops. Out on the plain, one loose word changes direction, toward you.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -5455,36 +5455,36 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "storm_scar",
-				"text": "The seal you heard crack at the end of Act One has torn. The Thunder Plains are a wound now — a place where the weather is a membrane and the void leans on it from the far side, testing the give.",
+				"text": "The seal you heard crack at the end of Act One has torn. The Thunder Plains are a wound now, a place where the weather is a membrane and the void leans on it from the far side, testing the give.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do.",
+				"text": "The Storm Tongue never needed a vessel. It's a voice. It speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "ch7_would_speak",
-						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it.",
+						"text": "The Storm Tongue never needed a vessel. It's a voice. It speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it.",
 					},
 					{
 						"flag": "ch7_let_it_end",
-						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You wanted to hear the world unmuzzled. Listen, then. It is saying something.",
+						"text": "The Storm Tongue never needed a vessel. It's a voice. It speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You wanted to hear the world unmuzzled. Listen, then. It's saying something.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "storm_scar_archer",
-				"text": "Three speakers left of a six-hundred-year thread, holding a tear the size of the sky. You watched this line from the Summit Camp once and called it the longest thread you'd ever seen. It is shorter now. Every word you dodge on the plain is a strand of it, blown loose, looking for a mouth to land in.",
+				"text": "Three speakers left of a six-hundred-year thread, holding a tear the size of the sky. You watched this line from the Summit Camp once and called it the longest thread you'd ever seen. It's shorter now. Every word you dodge on the plain is a strand of it, blown loose, looking for a mouth to land in.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer — and realize you have been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
+				"text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer and realize you've been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
 				"choices": [
 					{
-						"text": "Catch the strands. Learn the words as they were tied and splice the line back to strength — a thread of breath deserves one archer who holds.",
+						"text": "Catch the strands. Learn the words as they were tied and splice the line back to strength. A thread of breath deserves one archer who holds.",
 						"resonance": 6.0,
 						"flags": {
 							"ch13_finishes_the_vow": true,
@@ -5511,12 +5511,12 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The young speaker exhales — half the weight of a god-sized sentence sliding onto readier shoulders.",
+				"text": "The young speaker exhales, half the weight of a god-sized sentence sliding onto readier shoulders.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The wind drops. Out on the plain, one loose word changes direction — toward you.",
+				"text": "The wind drops. Out on the plain, one loose word changes direction, toward you.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -5537,36 +5537,36 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "storm_scar",
-				"text": "The seal you heard crack at the end of Act One has torn. The Thunder Plains are a wound now — a place where the weather is a membrane and the void leans on it from the far side, testing the give.",
+				"text": "The seal you heard crack at the end of Act One has torn. The Thunder Plains are a wound now, a place where the weather is a membrane and the void leans on it from the far side, testing the give.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do.",
+				"text": "The Storm Tongue never needed a vessel. It's a voice. It speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "ch7_would_speak",
-						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it.",
+						"text": "The Storm Tongue never needed a vessel. It's a voice. It speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it.",
 					},
 					{
 						"flag": "ch7_let_it_end",
-						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You wanted to hear the world unmuzzled. Listen, then. It is saying something.",
+						"text": "The Storm Tongue never needed a vessel. It's a voice. It speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You wanted to hear the world unmuzzled. Listen, then. It's saying something.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "storm_scar_paladin",
-				"text": "The chain has waited two acts for this pun to stop being one: the seal is a SENTENCE, imposed and served, and the prisoner has learned the law. Every storm-word on the plain is case citation. The god is filing motions in weather. And the awful thing — the thing you'd never say at a bench — is that some of its arguments are GOOD.",
+				"text": "The chain has waited two acts for this pun to stop being one: the seal is a sentence, imposed and served, and the prisoner has learned the law. Every storm-word on the plain is case citation. The god is filing motions in weather. And the awful thing, the thing you'd never say at a bench, is that some of its arguments are good.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer — and realize you have been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
+				"text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer and realize you've been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
 				"choices": [
 					{
-						"text": "Good arguments deserve a real hearing: finish the vow, learn the name, and retry the case with the sentence INTACT.",
+						"text": "Good arguments deserve a real hearing: finish the vow, learn the name, and retry the case with the sentence intact.",
 						"resonance": 6.0,
 						"flags": {
 							"ch13_finishes_the_vow": true,
@@ -5574,7 +5574,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the chain answer. HOLD THE NAME. LEVERAGE OVER PRISONER AND COURT ALIKE — A JUDGE WHO OWNS THE SENTENCE ANSWERS TO NEITHER. NOT EVEN TO ME.",
+						"text": "Let the chain answer. HOLD THE NAME. LEVERAGE OVER PRISONER AND COURT ALIKE. A JUDGE WHO OWNS THE SENTENCE ANSWERS TO NEITHER. NOT EVEN TO ME.",
 						"resonance": -6.0,
 						"flags": {
 							"ch13_holds_the_leash": true,
@@ -5593,12 +5593,12 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The young speaker exhales — half the weight of a god-sized sentence sliding onto readier shoulders.",
+				"text": "The young speaker exhales, half the weight of a god-sized sentence sliding onto readier shoulders.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The wind drops. Out on the plain, one loose word changes direction — toward you.",
+				"text": "The wind drops. Out on the plain, one loose word changes direction, toward you.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -5619,36 +5619,36 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "storm_scar",
-				"text": "The seal you heard crack at the end of Act One has torn. The Thunder Plains are a wound now — a place where the weather is a membrane and the void leans on it from the far side, testing the give.",
+				"text": "The seal you heard crack at the end of Act One has torn. The Thunder Plains are a wound now, a place where the weather is a membrane and the void leans on it from the far side, testing the give.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do.",
+				"text": "The Storm Tongue never needed a vessel. It's a voice. It speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do.",
 				"next": "n3",
 				"variants": [
 					{
 						"flag": "ch7_would_speak",
-						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it.",
+						"text": "The Storm Tongue never needed a vessel. It's a voice. It speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You said once that some sentences deserve finishing. The plain ahead is where you find out if you meant it.",
 					},
 					{
 						"flag": "ch7_let_it_end",
-						"text": "The Storm Tongue never needed a vessel. It is a VOICE — it speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You wanted to hear the world unmuzzled. Listen, then. It is saying something.",
+						"text": "The Storm Tongue never needed a vessel. It's a voice. It speaks in weather, and lately it has been practicing sentences: short ones, grammatical, aimed. Korrag's last survivors hold the tear's corners with the old recitation, three mouths doing the work of six hundred years. The storm knows their words rather better than they do. You wanted to hear the world unmuzzled. Listen, then. It's saying something.",
 					},
 				],
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "storm_scar_warlock",
-				"text": "The tome writes in words. THIS is what words are descended from — speech that binds weather, sentences with casualties, grammar older than debt. The Storm Tongue is not a god that uses language. It is language, that got worshipped. The tome, for the first time in your acquaintance, is taking dictation.",
+				"text": "The tome writes in words. This is what words are descended from: speech that binds weather, sentences with casualties, grammar older than debt. The Storm Tongue isn't a god that uses language. It is language, that got worshipped. The tome, for the first time in your acquaintance, is taking dictation.",
 				"next": "n4",
 			},
 			"n4": {
 				"who": "You",
-				"text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer — and realize you have been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
+				"text": "The youngest of the three speakers, hoarse between recitations, asks what a name is in your hands. You open your mouth to answer and realize you've been mouthing storm-words all morning without choosing to. Some of the voice below is yours. Some is not.",
 				"choices": [
 					{
-						"text": "Finish the vow. A recitation held six hundred years deserves speakers, not creditors — learn it whole and hand it on.",
+						"text": "Finish the vow. A recitation held six hundred years deserves speakers, not creditors. Learn it whole and hand it on.",
 						"resonance": 6.0,
 						"flags": {
 							"ch13_finishes_the_vow": true,
@@ -5656,7 +5656,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Let the tome answer. HOLD THE NAME. UNSHARED, IT IS THE ONLY COLLATERAL A TALKING GOD RESPECTS — AND I WOULD RESPECT IT TOO. I WOULD HAVE NO CHOICE.",
+						"text": "Let the tome answer. HOLD THE NAME. UNSHARED, IT IS THE ONLY COLLATERAL A TALKING GOD RESPECTS, AND I WOULD RESPECT IT TOO. I WOULD HAVE NO CHOICE.",
 						"resonance": -6.0,
 						"flags": {
 							"ch13_holds_the_leash": true,
@@ -5675,12 +5675,12 @@ const CONVOS := {
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "The young speaker exhales — half the weight of a god-sized sentence sliding onto readier shoulders.",
+				"text": "The young speaker exhales, half the weight of a god-sized sentence sliding onto readier shoulders.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "The wind drops. Out on the plain, one loose word changes direction — toward you.",
+				"text": "The wind drops. Out on the plain, one loose word changes direction, toward you.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -5701,27 +5701,27 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "convergence",
-				"text": "Every seal you have touched, every vessel you have freed or felled, has led here: the old capital, under a sky that cannot decide what season it is breaking. The Waking has stopped creeping. It is CONVERGING. Mórwyn walks the causeway at the pace of someone who has already won, and the armies part for her. Nobody orders them to.",
+				"text": "Every seal you've touched, every vessel you've freed or felled, has led here: the old capital, under a sky that can't decide what season it's breaking. The Waking has stopped creeping. It's converging. Mórwyn walks the causeway at the pace of someone who has already won, and the armies part for her. Nobody orders them to.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "You have seen this throne before — in the first breath of your story, when the crown was stolen and the world went quiet. Here it is again. The crown it wants is hollow now. And somewhere inside the god walking toward it, a blacksmith who loved perfect work is still holding a hammer she cannot put down. You know her forge. It is the one that burned behind a barefoot girl on her way into the ice — the Queen took the daughter; the Flame took the mother. Two god-kings, one family's grief. You are the only one on this field who has met both halves.",
+				"text": "You've seen this throne before, in the first breath of your story, when the crown was stolen and the world went quiet. Here it is again. The crown it wants is hollow now. And somewhere inside the god walking toward it, a blacksmith who loved perfect work is still holding a hammer she can't put down. You know her forge. It's the one that burned behind a barefoot girl on her way into the ice: the Queen took the daughter; the Flame took the mother. Two god-kings, one family's grief. You're the only one on this field who has met both halves.",
 				"next": "n3",
 				"cue": "crown_hollow",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "convergence_warrior",
-				"text": "Something has been trying you on for years — that is what the blackout is, on its worst nights: a fitting. You never let yourself finish the thought of what FOR. Now you watch the armies part for Mórwyn without an order given, and you finally recognize the gait. That is a body being WORN WELL. That is the finished version of your bad nights.",
+				"text": "Something has been trying you on for years. That's what the blackout is, on its worst nights: a fitting. You never let yourself finish the thought of what for. Now you watch the armies part for Mórwyn without an order given, and you finally recognize the gait. That's a body being worn well. That's the finished version of your bad nights.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Elara",
-				"text": "That is my mother's walk it is wearing. When you reach the throne — what did you come for?",
+				"text": "That's my mother's walk it's wearing. When you reach the throne, what did you come for?",
 				"choices": [
 					{
-						"text": "Come for the wearer, not the worn. Somewhere in there is a smith who never asked — swing for HER captor, and remember every second of it.",
+						"text": "Come for the wearer, not the worn. Somewhere in there is a smith who never asked. Swing for her captor, and remember every second of it.",
 						"resonance": 8.0,
 						"flags": {
 							"ch14_remembers_forge": true,
@@ -5729,7 +5729,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Stop resisting the fit. The crown wants a body that can carry it, and the blackout has been TAILORING you for years.",
+						"text": "Stop resisting the fit. The crown wants a body that can carry it, and the blackout has been tailoring you for years.",
 						"resonance": -8.0,
 						"flags": {
 							"ch14_eyes_the_crown": true,
@@ -5748,17 +5748,17 @@ const CONVOS := {
 			},
 			"n4s": {
 				"who": "Narrator",
-				"text": "At the causeway's foot a girl of fifteen stands her ground — awake, steady, watching the god pass.",
+				"text": "At the causeway's foot a girl of fifteen stands her ground, awake, steady, watching the god pass.",
 				"next": "n4",
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "Elara steps out of your way. \"Then bring her back out,\" she says — an order, from a girl of fifteen, and you take it.",
+				"text": "Elara steps out of your way. \"Then bring her back out,\" she says, an order, from a girl of fifteen, and you take it.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "Elara does not move. You walk around her. Her eyes follow you the way ice follows heat.",
+				"text": "Elara doesn't move. You walk around her. Her eyes follow you the way ice follows heat.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -5779,27 +5779,27 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "convergence",
-				"text": "Every seal you have touched, every vessel you have freed or felled, has led here: the old capital, under a sky that cannot decide what season it is breaking. The Waking has stopped creeping. It is CONVERGING. Mórwyn walks the causeway at the pace of someone who has already won, and the armies part for her. Nobody orders them to.",
+				"text": "Every seal you've touched, every vessel you've freed or felled, has led here: the old capital, under a sky that can't decide what season it's breaking. The Waking has stopped creeping. It's converging. Mórwyn walks the causeway at the pace of someone who has already won, and the armies part for her. Nobody orders them to.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "You have seen this throne before — in the first breath of your story, when the crown was stolen and the world went quiet. Here it is again. The crown it wants is hollow now. And somewhere inside the god walking toward it, a blacksmith who loved perfect work is still holding a hammer she cannot put down. You know her forge. It is the one that burned behind a barefoot girl on her way into the ice — the Queen took the daughter; the Flame took the mother. Two god-kings, one family's grief. You are the only one on this field who has met both halves.",
+				"text": "You've seen this throne before, in the first breath of your story, when the crown was stolen and the world went quiet. Here it is again. The crown it wants is hollow now. And somewhere inside the god walking toward it, a blacksmith who loved perfect work is still holding a hammer she can't put down. You know her forge. It's the one that burned behind a barefoot girl on her way into the ice: the Queen took the daughter; the Flame took the mother. Two god-kings, one family's grief. You're the only one on this field who has met both halves.",
 				"next": "n3",
 				"cue": "crown_hollow",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "convergence_assassin",
-				"text": "Six hundred years ago something did to Mórwyn what your Ember does retail: took a person and kept the receipts. What walks the causeway is the takings, compounded past humanity, coming to collect the crown — the final acquisition. You have been small-time your whole cursed life. Here is the career criminal. And under all of it, the first victim.",
+				"text": "Six hundred years ago something did to Mórwyn what your Ember does retail: took a person and kept the receipts. What walks the causeway is the takings, compounded past humanity, coming to collect the crown, the final acquisition. You've been small-time your whole cursed life. Here's the career criminal. And under all of it, the first victim.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Elara",
-				"text": "That is my mother's walk it is wearing. When you reach the throne — what did you come for?",
+				"text": "That's my mother's walk it's wearing. When you reach the throne, what did you come for?",
 				"choices": [
 					{
-						"text": "Come for the victim. Whatever the god kept of the blacksmith, steal it BACK — the one heist your Ember was born for.",
+						"text": "Come for the victim. Whatever the god kept of the blacksmith, steal it back, the one heist your Ember was born for.",
 						"resonance": 8.0,
 						"flags": {
 							"ch14_remembers_forge": true,
@@ -5826,17 +5826,17 @@ const CONVOS := {
 			},
 			"n4s": {
 				"who": "Narrator",
-				"text": "At the causeway's foot a girl of fifteen stands her ground — awake, steady, watching the god pass.",
+				"text": "At the causeway's foot a girl of fifteen stands her ground, awake, steady, watching the god pass.",
 				"next": "n4",
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "Elara steps out of your way. \"Then bring her back out,\" she says — an order, from a girl of fifteen, and you take it.",
+				"text": "Elara steps out of your way. \"Then bring her back out,\" she says, an order, from a girl of fifteen, and you take it.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "Elara does not move. You walk around her. Her eyes follow you the way ice follows heat.",
+				"text": "Elara doesn't move. You walk around her. Her eyes follow you the way ice follows heat.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -5857,27 +5857,27 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "convergence",
-				"text": "Every seal you have touched, every vessel you have freed or felled, has led here: the old capital, under a sky that cannot decide what season it is breaking. The Waking has stopped creeping. It is CONVERGING. Mórwyn walks the causeway at the pace of someone who has already won, and the armies part for her. Nobody orders them to.",
+				"text": "Every seal you've touched, every vessel you've freed or felled, has led here: the old capital, under a sky that can't decide what season it's breaking. The Waking has stopped creeping. It's converging. Mórwyn walks the causeway at the pace of someone who has already won, and the armies part for her. Nobody orders them to.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "You have seen this throne before — in the first breath of your story, when the crown was stolen and the world went quiet. Here it is again. The crown it wants is hollow now. And somewhere inside the god walking toward it, a blacksmith who loved perfect work is still holding a hammer she cannot put down. You know her forge. It is the one that burned behind a barefoot girl on her way into the ice — the Queen took the daughter; the Flame took the mother. Two god-kings, one family's grief. You are the only one on this field who has met both halves.",
+				"text": "You've seen this throne before, in the first breath of your story, when the crown was stolen and the world went quiet. Here it is again. The crown it wants is hollow now. And somewhere inside the god walking toward it, a blacksmith who loved perfect work is still holding a hammer she can't put down. You know her forge. It's the one that burned behind a barefoot girl on her way into the ice: the Queen took the daughter; the Flame took the mother. Two god-kings, one family's grief. You're the only one on this field who has met both halves.",
 				"next": "n3",
 				"cue": "crown_hollow",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "convergence_mage",
-				"text": "'You know exactly what I mean, spellwright.' She hasn't said it yet — she will — and the terrible thing is she's right. Battle-healer. Perfect work. A green yes that didn't finish its sentence. Mórwyn is your art's founding error walking to collect its throne, and every step of her causeway is paved with your own reasons.",
+				"text": "'You know exactly what I mean, spellwright.' She hasn't said it yet, but she will, and the terrible thing is she's right. Battle-healer. Perfect work. A green yes that didn't finish its sentence. Mórwyn is your art's founding error walking to collect its throne, and every step of her causeway is paved with your own reasons.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Elara",
-				"text": "That is my mother's walk it is wearing. When you reach the throne — what did you come for?",
+				"text": "That's my mother's walk it's wearing. When you reach the throne, what did you come for?",
 				"choices": [
 					{
-						"text": "Come for the blacksmith inside her — the one who loved the work before the work loved back. Someone should reach the forge-memory FIRST.",
+						"text": "Come for the blacksmith inside her, the one who loved the work before the work loved back. Someone should reach the forge-memory first.",
 						"resonance": 8.0,
 						"flags": {
 							"ch14_remembers_forge": true,
@@ -5885,7 +5885,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "The crown answers your open promise: undoing at LAST, at scale, WORN. The Ember has held your candidacy under your tongue since the sickbed.",
+						"text": "The crown answers your open promise: undoing at last, at scale, worn. The Ember has held your candidacy under your tongue since the sickbed.",
 						"resonance": -8.0,
 						"flags": {
 							"ch14_eyes_the_crown": true,
@@ -5893,7 +5893,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "No more perfect work — hers or anyone's. Break her, break the throne. CROWNLESS.",
+						"text": "No more perfect work, hers or anyone's. Break her, break the throne. CROWNLESS.",
 						"resonance": 0.0,
 						"flags": {
 							"ch14_no_crowns": true,
@@ -5904,17 +5904,17 @@ const CONVOS := {
 			},
 			"n4s": {
 				"who": "Narrator",
-				"text": "At the causeway's foot a girl of fifteen stands her ground — awake, steady, watching the god pass.",
+				"text": "At the causeway's foot a girl of fifteen stands her ground, awake, steady, watching the god pass.",
 				"next": "n4",
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "Elara steps out of your way. \"Then bring her back out,\" she says — an order, from a girl of fifteen, and you take it.",
+				"text": "Elara steps out of your way. \"Then bring her back out,\" she says, an order, from a girl of fifteen, and you take it.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "Elara does not move. You walk around her. Her eyes follow you the way ice follows heat.",
+				"text": "Elara doesn't move. You walk around her. Her eyes follow you the way ice follows heat.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -5935,27 +5935,27 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "convergence",
-				"text": "Every seal you have touched, every vessel you have freed or felled, has led here: the old capital, under a sky that cannot decide what season it is breaking. The Waking has stopped creeping. It is CONVERGING. Mórwyn walks the causeway at the pace of someone who has already won, and the armies part for her. Nobody orders them to.",
+				"text": "Every seal you've touched, every vessel you've freed or felled, has led here: the old capital, under a sky that can't decide what season it's breaking. The Waking has stopped creeping. It's converging. Mórwyn walks the causeway at the pace of someone who has already won, and the armies part for her. Nobody orders them to.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "You have seen this throne before — in the first breath of your story, when the crown was stolen and the world went quiet. Here it is again. The crown it wants is hollow now. And somewhere inside the god walking toward it, a blacksmith who loved perfect work is still holding a hammer she cannot put down. You know her forge. It is the one that burned behind a barefoot girl on her way into the ice — the Queen took the daughter; the Flame took the mother. Two god-kings, one family's grief. You are the only one on this field who has met both halves.",
+				"text": "You've seen this throne before, in the first breath of your story, when the crown was stolen and the world went quiet. Here it is again. The crown it wants is hollow now. And somewhere inside the god walking toward it, a blacksmith who loved perfect work is still holding a hammer she can't put down. You know her forge. It's the one that burned behind a barefoot girl on her way into the ice: the Queen took the daughter; the Flame took the mother. Two god-kings, one family's grief. You're the only one on this field who has met both halves.",
 				"next": "n3",
 				"cue": "crown_hollow",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "convergence_archer",
-				"text": "Even from the causeway you can see it: one thread left on her, running back through six centuries to a forge that no longer exists. Everything else the god burned through. It is the last thread in Vaelscar you have any business cutting — and the only one that, cut, sets a dead woman free.",
+				"text": "Even from the causeway you can see it: one thread left on her, running back through six centuries to a forge that no longer exists. Everything else the god burned through. It's the last thread in Vaelscar you have any business cutting, and the only one that, cut, sets a dead woman free.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Elara",
-				"text": "That is my mother's walk it is wearing. When you reach the throne — what did you come for?",
+				"text": "That's my mother's walk it's wearing. When you reach the throne, what did you come for?",
 				"choices": [
 					{
-						"text": "Follow it in. Reach the forge-end of her before the god does, and hold it taut so she can find her way back down it — once, at the end.",
+						"text": "Follow it in. Reach the forge-end of her before the god does, and hold it taut so she can find her way back down it, once, at the end.",
 						"resonance": 8.0,
 						"flags": {
 							"ch14_remembers_forge": true,
@@ -5963,7 +5963,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "A thread that old, into a power that vast — take the smoke-thin end and you hold HER. The crown always needs a falconer.",
+						"text": "A thread that old, into a power that vast: take the smoke-thin end and you hold her. The crown always needs a falconer.",
 						"resonance": -8.0,
 						"flags": {
 							"ch14_eyes_the_crown": true,
@@ -5982,17 +5982,17 @@ const CONVOS := {
 			},
 			"n4s": {
 				"who": "Narrator",
-				"text": "At the causeway's foot a girl of fifteen stands her ground — awake, steady, watching the god pass.",
+				"text": "At the causeway's foot a girl of fifteen stands her ground, awake, steady, watching the god pass.",
 				"next": "n4",
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "Elara steps out of your way. \"Then bring her back out,\" she says — an order, from a girl of fifteen, and you take it.",
+				"text": "Elara steps out of your way. \"Then bring her back out,\" she says, an order, from a girl of fifteen, and you take it.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "Elara does not move. You walk around her. Her eyes follow you the way ice follows heat.",
+				"text": "Elara doesn't move. You walk around her. Her eyes follow you the way ice follows heat.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -6013,24 +6013,24 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "convergence",
-				"text": "Every seal you have touched, every vessel you have freed or felled, has led here: the old capital, under a sky that cannot decide what season it is breaking. The Waking has stopped creeping. It is CONVERGING. Mórwyn walks the causeway at the pace of someone who has already won, and the armies part for her. Nobody orders them to.",
+				"text": "Every seal you've touched, every vessel you've freed or felled, has led here: the old capital, under a sky that can't decide what season it's breaking. The Waking has stopped creeping. It's converging. Mórwyn walks the causeway at the pace of someone who has already won, and the armies part for her. Nobody orders them to.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "You have seen this throne before — in the first breath of your story, when the crown was stolen and the world went quiet. Here it is again. The crown it wants is hollow now. And somewhere inside the god walking toward it, a blacksmith who loved perfect work is still holding a hammer she cannot put down. You know her forge. It is the one that burned behind a barefoot girl on her way into the ice — the Queen took the daughter; the Flame took the mother. Two god-kings, one family's grief. You are the only one on this field who has met both halves.",
+				"text": "You've seen this throne before, in the first breath of your story, when the crown was stolen and the world went quiet. Here it is again. The crown it wants is hollow now. And somewhere inside the god walking toward it, a blacksmith who loved perfect work is still holding a hammer she can't put down. You know her forge. It's the one that burned behind a barefoot girl on her way into the ice: the Queen took the daughter; the Flame took the mother. Two god-kings, one family's grief. You're the only one on this field who has met both halves.",
 				"next": "n3",
 				"cue": "crown_hollow",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "convergence_paladin",
-				"text": "The chain has argued every verdict of your life — and on the causeway it falls SILENT, the silence of counsel resting. This is the case it was forged for. Mórwyn is defendant, victim, and precedent in one body; the crown behind her is the court that corrupted the law itself. Whatever you rule at the throne, you rule alone. It is, at last, watching its arbiter.",
+				"text": "The chain has argued every verdict of your life, and on the causeway it falls silent, the silence of counsel resting. This is the case it was forged for. Mórwyn is defendant, victim, and precedent in one body; the crown behind her is the court that corrupted the law itself. Whatever you rule at the throne, you rule alone. It is, at last, watching its arbiter.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Elara",
-				"text": "That is my mother's walk it is wearing. When you reach the throne — what did you come for?",
+				"text": "That's my mother's walk it's wearing. When you reach the throne, what did you come for?",
 				"choices": [
 					{
 						"text": "Find for the victim. The blacksmith gets remembered into the record before any sentence touches the god.",
@@ -6041,7 +6041,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Claim the bench ENTIRE. A crown is only a gavel that stopped pretending — and no one alive is better qualified to hold it.",
+						"text": "Claim the bench entire. A crown is only a gavel that stopped pretending, and no one alive is better qualified to hold it.",
 						"resonance": -8.0,
 						"flags": {
 							"ch14_eyes_the_crown": true,
@@ -6049,7 +6049,7 @@ const CONVOS := {
 						"next": "reply_temptation",
 					},
 					{
-						"text": "Dissolve the court. Break her, break the throne — no gavels, no crowns. CROWNLESS.",
+						"text": "Dissolve the court. Break her, break the throne. No gavels, no crowns. CROWNLESS.",
 						"resonance": 0.0,
 						"flags": {
 							"ch14_no_crowns": true,
@@ -6060,17 +6060,17 @@ const CONVOS := {
 			},
 			"n4s": {
 				"who": "Narrator",
-				"text": "At the causeway's foot a girl of fifteen stands her ground — awake, steady, watching the god pass.",
+				"text": "At the causeway's foot a girl of fifteen stands her ground, awake, steady, watching the god pass.",
 				"next": "n4",
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "Elara steps out of your way. \"Then bring her back out,\" she says — an order, from a girl of fifteen, and you take it.",
+				"text": "Elara steps out of your way. \"Then bring her back out,\" she says, an order, from a girl of fifteen, and you take it.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "Elara does not move. You walk around her. Her eyes follow you the way ice follows heat.",
+				"text": "Elara doesn't move. You walk around her. Her eyes follow you the way ice follows heat.",
 				"next": "n_end",
 			},
 			"reply_deflection": {
@@ -6091,27 +6091,27 @@ const CONVOS := {
 			"n1": {
 				"who": "Narrator",
 				"cue": "convergence",
-				"text": "Every seal you have touched, every vessel you have freed or felled, has led here: the old capital, under a sky that cannot decide what season it is breaking. The Waking has stopped creeping. It is CONVERGING. Mórwyn walks the causeway at the pace of someone who has already won, and the armies part for her. Nobody orders them to.",
+				"text": "Every seal you've touched, every vessel you've freed or felled, has led here: the old capital, under a sky that can't decide what season it's breaking. The Waking has stopped creeping. It's converging. Mórwyn walks the causeway at the pace of someone who has already won, and the armies part for her. Nobody orders them to.",
 				"next": "n2",
 			},
 			"n2": {
 				"who": "Narrator",
-				"text": "You have seen this throne before — in the first breath of your story, when the crown was stolen and the world went quiet. Here it is again. The crown it wants is hollow now. And somewhere inside the god walking toward it, a blacksmith who loved perfect work is still holding a hammer she cannot put down. You know her forge. It is the one that burned behind a barefoot girl on her way into the ice — the Queen took the daughter; the Flame took the mother. Two god-kings, one family's grief. You are the only one on this field who has met both halves.",
+				"text": "You've seen this throne before, in the first breath of your story, when the crown was stolen and the world went quiet. Here it is again. The crown it wants is hollow now. And somewhere inside the god walking toward it, a blacksmith who loved perfect work is still holding a hammer she can't put down. You know her forge. It's the one that burned behind a barefoot girl on her way into the ice: the Queen took the daughter; the Flame took the mother. Two god-kings, one family's grief. You're the only one on this field who has met both halves.",
 				"next": "n3",
 				"cue": "crown_hollow",
 			},
 			"n3": {
 				"who": "Narrator",
 				"cue": "convergence_warlock",
-				"text": "The tome has gone reverent, which is worse than afraid. Mórwyn is the oldest open position in the world — six hundred years compounding, walking to the throne to close itself out. And your own unnamed debt, the thing you traded and never lost YET? On the causeway, for the first time, the tome offers to TELL you. Free. Which means the price is ahead.",
+				"text": "The tome has gone reverent, which is worse than afraid. Mórwyn is the oldest open position in the world: six hundred years compounding, walking to the throne to close itself out. And your own unnamed debt, the thing you traded and never lost yet? On the causeway, for the first time, the tome offers to tell you. Free. Which means the price is ahead.",
 				"next": "n4s",
 			},
 			"n4": {
 				"who": "Elara",
-				"text": "That is my mother's walk it is wearing. When you reach the throne — what did you come for?",
+				"text": "That's my mother's walk it's wearing. When you reach the throne, what did you come for?",
 				"choices": [
 					{
-						"text": "Refuse the reveal one last time and come for the blacksmith — some debts end by remembering the debtor, not the amount.",
+						"text": "Refuse the reveal one last time and come for the blacksmith. Some debts end by remembering the debtor, not the amount.",
 						"resonance": 8.0,
 						"flags": {
 							"ch14_remembers_forge": true,
@@ -6119,7 +6119,7 @@ const CONVOS := {
 						"next": "reply_virtue",
 					},
 					{
-						"text": "Hear it at the throne, where all instruments settle. The crown clears EVERY ledger — hers, yours — for the one who wears it.",
+						"text": "Hear it at the throne, where all instruments settle. The crown clears every ledger, hers, yours, for the one who wears it.",
 						"resonance": -8.0,
 						"flags": {
 							"ch14_eyes_the_crown": true,
@@ -6138,17 +6138,17 @@ const CONVOS := {
 			},
 			"n4s": {
 				"who": "Narrator",
-				"text": "At the causeway's foot a girl of fifteen stands her ground — awake, steady, watching the god pass.",
+				"text": "At the causeway's foot a girl of fifteen stands her ground, awake, steady, watching the god pass.",
 				"next": "n4",
 			},
 			"reply_virtue": {
 				"who": "Narrator",
-				"text": "Elara steps out of your way. \"Then bring her back out,\" she says — an order, from a girl of fifteen, and you take it.",
+				"text": "Elara steps out of your way. \"Then bring her back out,\" she says, an order, from a girl of fifteen, and you take it.",
 				"next": "n_end",
 			},
 			"reply_temptation": {
 				"who": "Narrator",
-				"text": "Elara does not move. You walk around her. Her eyes follow you the way ice follows heat.",
+				"text": "Elara doesn't move. You walk around her. Her eyes follow you the way ice follows heat.",
 				"next": "n_end",
 			},
 			"reply_deflection": {

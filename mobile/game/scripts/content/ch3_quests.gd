@@ -18,7 +18,7 @@ const SIDE_QUESTS := {
 	"ch3_unfilled_row": {
 		"name": "The Unfilled Row",
 		"chapter": "ch3",
-		"desc": "Cantor Ilse wants the Vale's old markers copied word for word — what the stones said when graves still closed, and what the Choir's empty relic cases still promise. Evidence, for when the burying starts. But the dead here do not hold still to be read.",
+		"desc": "Cantor Ilse wants the Vale's old markers copied word for word: what the stones said back when graves still closed, and what the Choir's empty relic cases still promise. Evidence, for when the burying starts. But the dead here don't hold still to be read.",
 		"steps": [
 			{"flag": "row_copied_chapel", "text": "Copy Bram Tallow's headstone at the Hollow Chapel"},
 			{"flag": "row_copied_reliquary", "text": "Copy the empty placards in the Reliquary of Rot"},
@@ -40,7 +40,7 @@ const SIDE_QUESTS := {
 	"ch3_sexton_stone": {
 		"name": "A Stone for the Sexton",
 		"chapter": "ch3",
-		"desc": "Old Digger Haim cut a headstone — blank, edges true — for the first grave the Vale closes in sixty years. The Sexton's, most like. It should wait where graves still mean something: beside Bram Tallow's plot.",
+		"desc": "Old Digger Haim cut a headstone, blank, edges true, for the first grave the Vale closes in sixty years. The Sexton's, most likely. It should wait where graves still mean something, beside Bram Tallow's plot.",
 		"steps": [
 			{"flag": "sexton_stone_left", "text": "Set Haim's stone beside the last proper grave, in the Hollow Chapel"},
 		],
@@ -52,7 +52,7 @@ const QUEST_ITEMS := {
 	"vale_bread": {"name": "Fenna's Loaf", "icon": "vale_bread", "grade": "C",
 		"desc": "Dense, dark, still warm at the middle. Baked by a woman the Choir sang 'no' at, for the people still kneeling to the singing."},
 	"sexton_stone": {"name": "The Digger's Stone", "icon": "sexton_stone", "grade": "C",
-		"desc": "A headstone no bigger than a loaf, blank, edges cut true. Forty years of craft and no name yet — Haim says the Vale will provide one."},
+		"desc": "A headstone no bigger than a loaf, blank, edges cut true. Forty years of craft and no name yet. Haim says the Vale will provide one."},
 }
 
 const CONVOS := {
@@ -61,7 +61,7 @@ const CONVOS := {
 	# kneeling congregation in the misted field (generic — no single face).
 	"kneeling_scene": {"cinematic": true, "start": "kn1", "nodes": {
 		"kn1": {"who": "Narrator", "cue": "q_kneeling",
-			"text": "A whole field of them below the cathedral, kneeling in the mist while the Choir sings over their bowed heads and calls it feeding. You set Old Fenna's loaf down among them — the first thing anyone has handed them that they could actually eat. Nobody kneels well hungry.",
+			"text": "A whole field of them below the cathedral, kneeling in the mist while the Choir sings over their bowed heads and calls it feeding. You set Old Fenna's loaf down among them, the first thing anyone's handed them that they could actually eat. Nobody kneels well hungry.",
 			"next": "kn_fade"},
 		"kn_fade": {"who": "Narrator", "cue": "fade",
 			"text": "Grief is grief. Even theirs. You leave them the bread and the singing.", "next": ""},
@@ -73,48 +73,48 @@ const CONVOS := {
 	# and is untouched). q_hub's index-0 choice is a harmless exit.
 	"ch3_briefing": {"start": "b1", "nodes": {
 		"b1": {"who": "Cantor Ilse",
-			"text": "You're the bearer Maren wrote ahead about. Good. I left the Choir the day they voted to keep a dying man alive as furniture — I'll explain on the way to that sentence making sense.",
+			"text": "You're the bearer Maren wrote ahead about. Good. I left the Choir the day they voted to keep a dying man alive as furniture. I'll explain on the walk east, and it'll make sense by the time we get there.",
 			"variants": [
-				{"flag": "ch3_briefed", "text": "The Vale is east, bearer. The Sexton first — no one reaches Vess or the saint while he still has holes to put them in.", "next": "q_hub"},
-				{"flag": "ch3_vowed_rest", "text": "You came into the Vale promising rest before you'd seen what refuses it. Good. Keep that promise where the Choir can hear it; they have mistaken endurance for holiness long enough."},
-				{"flag": "ch3_covets_rot", "text": "I left the Choir because they looked at a dying man and saw furniture. You're looking at him and seeing a RECIPE. Watch that, bearer — that's how cantors start."},
+				{"flag": "ch3_briefed", "text": "The Vale is east, bearer. The Sexton first. Nobody reaches Vess or the saint while he's still got holes to put them in.", "next": "q_hub"},
+				{"flag": "ch3_vowed_rest", "text": "You came into the Vale promising rest before you'd even seen what refuses it. Good. Keep that promise where the Choir can hear it. They've mistaken endurance for holiness long enough."},
+				{"flag": "ch3_covets_rot", "text": "I left the Choir because they looked at a dying man and saw furniture. You're looking at him and seeing a recipe. Watch that, bearer. That's how cantors start."},
 				{"flag": "ch3_eyes_forward", "text": "Eyes forward, is it? Sensible. Just remember: everyone who left the Vale to its own business used those exact words while the graves learned to walk."},
-				{"flag": "joined_accord", "text": "You wear the Accord's trust — Maren's letter said as much. Good. What I'm going to ask for is exactly the kind of mercy her people understand and mine call murder."},
+				{"flag": "joined_accord", "text": "You wear the Accord's trust, like Maren's letter said. Good. What I'm going to ask for is exactly the kind of mercy her people understand and mine call murder."},
 				{"flag": "joined_cinderborn", "text": "Cinderborn colors. Hm. Your factor will tell you the Vale is 'unproductive land under hostile administration.' Listen to me first, then decide what it actually is."},
 			],
 			"next": "b2"},
-		"b2": {"who": "Cantor Ilse", "text": "The Choir does not bury its dead — rot is the land's honest truth, so the dead WALK their own funerals, forever. Sixty years of forever, now. The Vale is one open grave from gate to cathedral, and at the top of it kneels Saint Varo — the one man in Vaelscar the rot refuses. My congregation worships his misery and calls it proof.", "next": "b3"},
-		"b3": {"who": "Cantor Ilse", "text": "Three stand between you and him. The Sexton, who digs and digs and never fills. Vess, the first widow they told 'no' — her scream became our liturgy, and I sang it for thirty years before I heard the words. And Varo himself, who has been BEGGING to die longer than you've been alive.",
+		"b2": {"who": "Cantor Ilse", "text": "The Choir doesn't bury its dead. Rot is the land's honest truth, they say, so the dead walk their own funerals, forever. Sixty years of forever, now. The Vale is one open grave from gate to cathedral, and at the top of it kneels Saint Varo, the one man in Vaelscar the rot refuses. My congregation worships his misery and calls it proof.", "next": "b3"},
+		"b3": {"who": "Cantor Ilse", "text": "Three stand between you and him. The Sexton, who digs and digs and never fills. Vess, the first widow they told 'no': her scream became our liturgy, and I sang it for thirty years before I heard the words. And Varo himself, who's been begging to die longer than you've been alive.",
 			"choices": [
 				{"text": "\"Then I'll give him what he's asking for. Gently, if the fight allows it.\"",
 					"resonance": 8.0, "flags": {"ch3_briefed": true, "chose_varo_mercy": true}, "quest": "sexton", "next": "b_mercy"},
 				{"text": "\"A saint, a widow, a gravedigger. Fine. Point me at whichever drops the best loot.\"",
 					"resonance": -8.0, "flags": {"ch3_briefed": true, "chose_varo_spoils": true}, "quest": "sexton", "next": "b_spoils"},
-				{"text": "\"I'll clear the Vale. What the Choir does about its faith afterward is not my war.\"",
+				{"text": "\"I'll clear the Vale. What the Choir does about its faith afterward isn't my war.\"",
 					"resonance": 0.0, "flags": {"ch3_briefed": true}, "quest": "sexton", "next": "b_neutral"},
 			]},
-		"b_mercy": {"who": "Cantor Ilse", "text": "...Gently. Thirty years in the Choir and I never once heard that word aimed at Varo. Go east, bearer. The Sexton holds the fields — no one reaches the cathedral while he still has holes to offer.", "next": ""},
-		"b_spoils": {"who": "Cantor Ilse", "text": "The shard talking, or you? ...Don't answer. Take the east road; the Sexton's fields first. And bearer — the saint's misery has outlived four looters that I know of. Their gear is still up there, if inventory is what moves you.", "next": ""},
-		"b_neutral": {"who": "Cantor Ilse", "text": "Not your war. Mm. The Vale has heard that from every passer-through for sixty years — it's how the grave count got this high. East, then. The Sexton first.", "next": ""},
+		"b_mercy": {"who": "Cantor Ilse", "text": "...Gently. Thirty years in the Choir and I never once heard that word aimed at Varo. Go east, bearer. The Sexton holds the fields. Nobody reaches the cathedral while he's still got holes to offer.", "next": ""},
+		"b_spoils": {"who": "Cantor Ilse", "text": "The shard talking, or you? ...Don't answer. Take the east road, the Sexton's fields first. And bearer, the saint's misery has outlived four looters that I know of. Their gear's still up there, if inventory is what moves you.", "next": ""},
+		"b_neutral": {"who": "Cantor Ilse", "text": "Not your war. Mm. The Vale's heard that from every passer-through for sixty years, and it's how the grave count got this high. East, then. The Sexton first.", "next": ""},
 		# ---- The Unfilled Row (side quest): ask, accept, report.
 		"q_hub": {"who": "Cantor Ilse", "text": "Something more, bearer? The road east won't clear itself, but I can spare the breath.",
 			"choices": [
 				{"text": "\"Nothing, Cantor. Just passing.\"", "next": ""},
 				{"text": "\"You keep glancing at the old stones when you think no one's watching. Out with it.\"",
 					"req_not_flag": "sq_on_ch3_unfilled_row", "next": "q_ask"},
-				{"text": "Hand over the copies — Bram Tallow's stone, and the reliquary's empty placards, word for word.",
+				{"text": "Hand over the copies: Bram Tallow's stone, and the reliquary's empty placards, word for word.",
 					"req_flag": "row_copied_reliquary", "req_not_flag": "row_reported",
 					"resonance": 2.0, "flags": {"row_reported": true}, "next": "q_row_done"},
 			]},
-		"q_ask": {"who": "Cantor Ilse", "text": "The Choir teaches that the Vale was always theirs — sixty years old, and 'always' already. But the stones remember otherwise. Bram Tallow's marker at the Hollow Chapel, cut when graves still CLOSED. And the cathedral's reliquary — every case empty, every placard a promise they never once filled. Copy me both, word for word. When the burying starts again, someone will need proof of what this place was. And of what the Choir only claimed it was.",
+		"q_ask": {"who": "Cantor Ilse", "text": "The Choir teaches that the Vale was always theirs. Sixty years old, and 'always' already. But the stones remember otherwise. Bram Tallow's marker at the Hollow Chapel, cut back when graves still closed. And the cathedral's reliquary, every case empty, every placard a promise they never once filled. Copy me both, word for word. When the burying starts again, someone will need proof of what this place was. And of what the Choir only claimed it was.",
 			"choices": [
 				{"text": "\"I'll copy your stones, Cantor. Word for word.\"",
 					"resonance": 2.0, "side_quest": "ch3_unfilled_row", "next": "q_accept"},
 				{"text": "\"I'm here to put three things in the ground, not to take dictation.\"", "next": "q_refuse"},
 			]},
-		"q_accept": {"who": "Cantor Ilse", "text": "The chapel first — it's the nearer walk, and Bram's stone is the oldest true thing left standing here. The reliquary after; it sits high, near the cathedral, so mind yourself. And bearer... thank you. The Choir burned its records the day it decided forever needed no ledger.", "next": ""},
+		"q_accept": {"who": "Cantor Ilse", "text": "The chapel first. It's the nearer walk, and Bram's stone is the oldest true thing left standing here. The reliquary after, it sits high, near the cathedral, so mind yourself. And bearer... thank you. The Choir burned its records the day it decided forever needed no ledger.", "next": ""},
 		"q_refuse": {"who": "Cantor Ilse", "text": "Then put them in the ground well. The stones have waited sixty years; they'll outwait one more errand-shy bearer.", "next": ""},
-		"q_row_done": {"who": "Cantor Ilse", "text": "'BRAM TALLOW, BURIED PROPER.' And placards for relics a rotless saint could never leave behind. ...There it is, on one page: the faith, and the fraud it kneels on. When Varo rests and the digging starts, this goes to whoever writes the Vale's next chapter. You have my thanks — and the Choir's, though they'd choke to hear it.", "next": ""},
+		"q_row_done": {"who": "Cantor Ilse", "text": "'BRAM TALLOW, BURIED PROPER.' And placards for relics a rotless saint could never leave behind. ...There it is, on one page: the faith, and the fraud it kneels on. When Varo rests and the digging starts, this goes to whoever writes the Vale's next chapter. You have my thanks, and the Choir's too, though they'd choke to hear it.", "next": ""},
 	}},
 
 	# OVERRIDES ch3_zones.gd's "ch3_refugee" — the ch3_fenna_promised
@@ -123,9 +123,9 @@ const CONVOS := {
 	# never see the offer; that is Fenna keeping her own accounts.
 	"ch3_refugee": {"start": "r1", "nodes": {
 		"r1": {"who": "Old Fenna",
-			"text": "My son walks the Misted Fields. Fourth from the alder, grey coat. The Choir says that's him honored. I say I sewed that coat for a living boy and I want it BACK on a dead one, in the ground, where coats and sons go.",
+			"text": "My son walks the Misted Fields. Fourth from the alder, grey coat. The Choir says that's him, honored. I say I sewed that coat for a living boy and I want it back on a dead one, in the ground, where coats and sons go.",
 			"variants": [
-				{"band": "tempted", "text": "You've got the look the Choir cantors get before they start explaining why my grief is holy. Don't. Just — if you pass the fourth grave from the alder, grey coat... let him fall facing home."},
+				{"band": "tempted", "text": "You've got the look the Choir cantors get before they start explaining why my grief is holy. Don't. Just... if you pass the fourth grave from the alder, grey coat, let him fall facing home."},
 				{"flag": "ch3_fenna_promised", "text": "Fourth from the alder. Grey coat. Facing home. You remembered. That's more than the flame's given me in sixty years.", "next": "r_bread"},
 			],
 			"choices": [
@@ -135,18 +135,18 @@ const CONVOS := {
 					"resonance": -4.0, "next": "r_cold"},
 			]},
 		"r_kind": {"who": "Old Fenna", "text": "Facing home. Yes. ...The Choir sang at me for sixty years and never once said anything that useful.", "next": ""},
-		"r_cold": {"who": "Old Fenna", "text": "Lighter. Aye. You sound like the shard's already teaching you to travel light. Keep the lesson — I'll keep the coat.", "next": ""},
+		"r_cold": {"who": "Old Fenna", "text": "Lighter. Aye. You sound like the shard's already teaching you to travel light. Keep the lesson. I'll keep the coat.", "next": ""},
 		# ---- Bread for the Kneeling (side quest): the offer.
 		"r_bread": {"who": "Old Fenna",
-			"text": "There's a field of them below the cathedral, you know. Kneeling. The Choir sings over their heads and calls it feeding them. I've buried nothing in sixty years but I've baked every day of it — take them a loaf, if your road goes up. Grief is grief. Even theirs.",
-			"variants": [{"flag": "vale_bread_left", "text": "You gave them the loaf? Good. Kneeling fools, the lot of them — but nobody kneels well hungry, and the Choir was never going to feed anything but the singing.", "next": ""}],
+			"text": "There's a field of them below the cathedral, you know. Kneeling. The Choir sings over their heads and calls it feeding them. I've buried nothing in sixty years but I've baked every day of it. Take them a loaf, if your road goes up. Grief is grief. Even theirs.",
+			"variants": [{"flag": "vale_bread_left", "text": "You gave them the loaf? Good. Kneeling fools, the lot of them, but nobody kneels well hungry, and the Choir was never going to feed anything but the singing.", "next": ""}],
 			"choices": [
 				{"text": "\"Another time, Fenna.\"", "next": ""},
 				{"text": "\"I'll carry it up. No sermon with it.\"",
 					"req_not_flag": "sq_on_ch3_bread_kneeling", "resonance": 2.0,
 					"side_quest": "ch3_bread_kneeling", "gain_item": "vale_bread", "next": "r_loaf"},
 			]},
-		"r_loaf": {"who": "Old Fenna", "text": "No sermon. Ha — you're learning the Vale faster than most. It's the dark loaf, keeps a week. Mind the middle: still warm. Some things I can't send my son. Doesn't mean the oven goes cold.", "next": ""},
+		"r_loaf": {"who": "Old Fenna", "text": "No sermon. Ha, you're learning the Vale faster than most. It's the dark loaf, keeps a week. Mind the middle, still warm. Some things I can't send my son. Doesn't mean the oven goes cold.", "next": ""},
 	}},
 
 	# OVERRIDES ch3_zones.gd's "ch3_shrine_kneeling" — delivery choices
@@ -156,14 +156,14 @@ const CONVOS := {
 	# has been answered (k_after's index-0 choice is a harmless exit).
 	"ch3_shrine_kneeling": {"start": "k1", "nodes": {
 		"k1": {"who": "Narrator",
-			"text": "A field of kneeling Choir faithful, unarmed, between you and the cathedral doors. They do not attack. They do not move. An old cantor rises from the front row, hands open: \"You've come to take our saint. We know. We heard the bells count you up the hill. Please — he is all the proof we have that the rot CHOOSES. Without him, our sixty years of grief were just... grief.\"",
-			"variants": [{"flag": "kneeling_answered", "text": "The congregation still kneels, but a lane stands open through them now — they made it themselves, after your answer. Whatever you told them, they are still deciding what it meant.", "next": "k_after"}],
+			"text": "A field of kneeling Choir faithful, unarmed, between you and the cathedral doors. They don't attack. They don't move. An old cantor rises from the front row, hands open: \"You've come to take our saint. We know. We heard the bells count you up the hill. Please. He's all the proof we have that the rot chooses. Without him, our sixty years of grief were just... grief.\"",
+			"variants": [{"flag": "kneeling_answered", "text": "The congregation still kneels, but a lane stands open through them now. They made it themselves, after your answer. Whatever you told them, they're still deciding what it meant.", "next": "k_after"}],
 			"choices": [
-				{"text": "\"Your saint has begged sixty years to die. I'm not taking him from you — I'm returning him to himself.\"",
+				{"text": "\"Your saint has begged sixty years to die. I'm not taking him from you. I'm returning him to himself.\"",
 					"resonance": 8.0, "flags": {"kneeling_answered": true, "chose_told_congregation": true}, "faction": {"choir": 2}, "next": "k_truth"},
-				{"text": "\"Proof? He's a wick feeding the thing that will eat you all. Kneel to THAT if you need something holy.\"",
+				{"text": "\"Proof? He's a wick feeding the thing that will eat you all. Kneel to that, if you need something holy.\"",
 					"resonance": -6.0, "flags": {"kneeling_answered": true}, "faction": {"choir": -4, "accord": 2}, "next": "k_scorn"},
-				{"text": "Walk through them without a word. Their faith is not yours to argue with, and the saint is waiting.",
+				{"text": "Walk through them without a word. Their faith isn't yours to argue with, and the saint is waiting.",
 					"resonance": -2.0, "flags": {"kneeling_answered": true}, "next": "k_silent"},
 				{"text": "Set Fenna's loaf down before the front row. \"From one who grieves as you do. No sermon with it.\"",
 					"req_flag": "sq_on_ch3_bread_kneeling", "req_not_flag": "vale_bread_left",
@@ -174,11 +174,11 @@ const CONVOS := {
 					"resonance": -2.0, "faction": {"choir": -2}, "lose_item": "vale_bread",
 					"flags": {"vale_bread_left": true}, "scene": "kneeling_scene", "next": "k_bread_cold"},
 			]},
-		"k_truth": {"who": "Narrator", "text": "The old cantor's mouth works. \"Returning him—\" He stops. Somewhere in the rows behind him, one voice — young, cracked — says: \"...he does scream at night. We all hear it. We SING over it.\" The kneeling field is very quiet as it opens you a lane. Grief, you understand suddenly, has been waiting sixty years for permission to just be grief.", "next": ""},
-		"k_scorn": {"who": "Narrator", "text": "The word WICK moves through the kneeling rows like cold water. Some flinch. Some harden — you have just handed the Choir's next generation its favorite story about the day the unbeliever spat on their proof. The lane they open you is wide, and no one in it will meet your eyes.", "next": ""},
-		"k_silent": {"who": "Narrator", "text": "You walk, and they lean out of your path like grass. No argument, no absolution — just a bearer with a job, wading through sixty years of other people's meaning. The Ember approves of the efficiency. That is precisely what bothers you about it.", "next": ""},
+		"k_truth": {"who": "Narrator", "text": "The old cantor's mouth works. \"Returning him...\" He stops. Somewhere in the rows behind him, one voice, young and cracked, says: \"...he does scream at night. We all hear it. We sing over it.\" The kneeling field goes very quiet as it opens you a lane. Grief, you understand suddenly, has been waiting sixty years for permission to just be grief.", "next": ""},
+		"k_scorn": {"who": "Narrator", "text": "The word wick moves through the kneeling rows like cold water. Some flinch. Some harden. You've just handed the Choir's next generation its favorite story about the day the unbeliever spat on their proof. The lane they open you is wide, and nobody in it will meet your eyes.", "next": ""},
+		"k_silent": {"who": "Narrator", "text": "You walk, and they lean out of your path like grass. No argument, no absolution, just a bearer with a job, wading through sixty years of other people's meaning. The Ember approves of the efficiency. That's exactly what bothers you about it.", "next": ""},
 		# ---- Bread for the Kneeling (side quest): delivery + revisits.
-		"k_after": {"who": "Narrator", "text": "The lane through the congregation holds. Heads stay bowed as you pass — but they know your step now, and the kneeling field breathes around it.",
+		"k_after": {"who": "Narrator", "text": "The lane through the congregation holds. Heads stay bowed as you pass, but they know your step now, and the kneeling field breathes around it.",
 			"choices": [
 				{"text": "Pass on through the lane.", "next": ""},
 				{"text": "Set Fenna's loaf down before the front row. \"From one who grieves as you do. No sermon with it.\"",
@@ -190,8 +190,8 @@ const CONVOS := {
 					"resonance": -2.0, "faction": {"choir": -2}, "lose_item": "vale_bread",
 					"flags": {"vale_bread_left": true}, "scene": "kneeling_scene", "next": "k_bread_cold"},
 			]},
-		"k_bread_kind": {"who": "Narrator", "text": "The old cantor looks at the loaf a long moment — dark bread, still warm at the middle, from an oven the Choir sang 'no' at sixty years ago. \"...From WHOM?\" You tell him. Hands come up out of the rows, one by one, and the loaf goes back through the kneeling field the way rain goes into dry ground. Nobody sings over it. That, you suspect, is the part Fenna wanted.", "next": ""},
-		"k_bread_cold": {"who": "Narrator", "text": "The loaf lands in the grass. For a long moment nobody moves — then a boy in the third row, too young to have buried anyone properly, takes it and tears it and passes it down, eyes on you the whole time like a dare. They eat. You said the singing feeds nobody, and they eat while the old cantor's mouth sets in a line. You were right, which is not the same as being welcome.", "next": ""},
+		"k_bread_kind": {"who": "Narrator", "text": "The old cantor looks at the loaf a long moment: dark bread, still warm at the middle, from an oven the Choir sang 'no' at sixty years ago. \"...From whom?\" You tell him. Hands come up out of the rows, one by one, and the loaf goes back through the kneeling field the way rain goes into dry ground. Nobody sings over it. That, you suspect, is the part Fenna wanted.", "next": ""},
+		"k_bread_cold": {"who": "Narrator", "text": "The loaf lands in the grass. For a long moment nobody moves. Then a boy in the third row, too young to have buried anyone properly, takes it and tears it and passes it down, eyes on you the whole time like a dare. They eat. You said the singing feeds nobody, and they eat while the old cantor's mouth sets in a line. You were right, which isn't the same as being welcome.", "next": ""},
 	}},
 
 	# OVERRIDES ch3_zones.gd's "ch3_lore_chapel" — quest choices append
@@ -199,9 +199,9 @@ const CONVOS := {
 	# gated exit so the prop never forces an action). Both ch3 hooks on
 	# this prop live HERE, in one override — no conflict.
 	"ch3_lore_chapel": {"start": "l1", "nodes": {
-		"l1": {"who": "Narrator", "text": "A chapel from before the Choir, roof long gone. The headstone by the door reads: HERE LIES BRAM TALLOW, BURIED PROPER, 61 YEARS AGO — the last person in the Vale anyone put in the ground. Someone still weeds the plot. Someone has ALWAYS still weeded the plot, sixty-one years running, and the Choir has never caught them at it.",
+		"l1": {"who": "Narrator", "text": "A chapel from before the Choir, roof long gone. The headstone by the door reads: HERE LIES BRAM TALLOW, BURIED PROPER, 61 YEARS AGO. The last person in the Vale anyone put in the ground. Someone still weeds the plot. Someone has always still weeded the plot, sixty-one years running, and the Choir has never caught them at it.",
 			"choices": [
-				{"text": "Copy the stone for Cantor Ilse — name, date, BURIED PROPER, word for word.",
+				{"text": "Copy the stone for Cantor Ilse: name, date, BURIED PROPER, word for word.",
 					"req_flag": "sq_on_ch3_unfilled_row", "req_not_flag": "row_copied_chapel",
 					"flags": {"row_copied_chapel": true}, "next": "l_copy"},
 				{"text": "Leave the stone to its weeder.",
@@ -214,17 +214,17 @@ const CONVOS := {
 					"req_flag": "sq_on_ch3_sexton_stone", "req_not_flag": "sexton_stone_left", "next": ""},
 			],
 			"next": ""},
-		"l_copy": {"who": "Narrator", "text": "Name, date, BURIED PROPER — four words and sixty-one years of contradiction, copied in the time it takes the mist to cross the yard. The weeded plot watches you work. On the way out you find yourself stepping around it, careful of the edges, the way you would around something still owned.", "next": ""},
-		"l_stone": {"who": "Narrator", "text": "It stands true on the first try — forty years of craft will do that. Blank stone beside a named one: the last grave the Vale closed, and the first one it's promised to. When the Sexton finally goes in the ground, the marker will already be waiting, the way Haim has been. Somewhere behind you the mist moves through the roofless chapel like a congregation finding its seats.", "next": ""},
+		"l_copy": {"who": "Narrator", "text": "Name, date, BURIED PROPER: four words and sixty-one years of contradiction, copied in the time it takes the mist to cross the yard. The weeded plot watches you work. On the way out you find yourself stepping around it, careful of the edges, the way you would around something still owned.", "next": ""},
+		"l_stone": {"who": "Narrator", "text": "It stands true on the first try. Forty years of craft will do that. Blank stone beside a named one: the last grave the Vale closed, and the first one it's promised to. When the Sexton finally goes in the ground, the marker will already be waiting, the way Haim has been. Somewhere behind you the mist moves through the roofless chapel like a congregation finding its seats.", "next": ""},
 	}},
 
 	# OVERRIDES ch3_zones.gd's "ch3_lore_reliquary" — the Unfilled Row's
 	# second copy, gated behind the chapel's (Ilse asked for them in
 	# order; the sq_on flag alone can't express the AND).
 	"ch3_lore_reliquary": {"start": "l1", "nodes": {
-		"l1": {"who": "Narrator", "text": "The cathedral's reliquary — every case stands empty. Placards remain: A SAINT'S FINGERBONE. A SAINT'S TOOTH. A SAINT'S TEAR, PRESERVED IN WAX. The Choir venerates decay, but its saint cannot rot, so there were never relics to fill the cases with. They built the room anyway, and dusted it daily, and hoped. Sixty years of dusted hope, and upstairs a man on his knees begging to become what these cases wanted.",
+		"l1": {"who": "Narrator", "text": "The cathedral's reliquary, every case stands empty. Placards remain: A SAINT'S FINGERBONE. A SAINT'S TOOTH. A SAINT'S TEAR, PRESERVED IN WAX. The Choir venerates decay, but its saint can't rot, so there were never relics to fill the cases with. They built the room anyway, and dusted it daily, and hoped. Sixty years of dusted hope, and upstairs a man on his knees begging to become what these cases wanted.",
 			"choices": [
-				{"text": "Copy the placards for Cantor Ilse — every empty promise, word for word.",
+				{"text": "Copy the placards for Cantor Ilse: every empty promise, word for word.",
 					"req_flag": "row_copied_chapel", "req_not_flag": "row_copied_reliquary",
 					"flags": {"row_copied_reliquary": true}, "next": "l_copy"},
 				{"text": "Leave the cases to their dusting.",
@@ -240,26 +240,26 @@ const CONVOS := {
 	# same as the pilot (rolls in ~half of runs).
 	"ch3_wander_digger": {"start": "d1", "nodes": {
 		"d1": {"who": "Old Digger Haim",
-			"text": "Forty years I dug for the villages — honest holes, filled the same day. Then the Choir came and digging became LITURGY and filling became sin. I kept the spade. A man should keep the tools of the thing he was before everyone went mad.",
-			"variants": [{"flag": "ch3_haim_met", "text": "Still got the spade. Still oiled. The day this chapter of madness ends, the Vale will want a man who remembers how the OTHER half of the job goes.", "next": "d_more"}],
+			"text": "Forty years I dug for the villages, honest holes, filled the same day. Then the Choir came and digging became liturgy and filling became sin. I kept the spade. A man should keep the tools of the thing he was before everyone went mad.",
+			"variants": [{"flag": "ch3_haim_met", "text": "Still got the spade. Still oiled. The day this chapter of madness ends, the Vale will want a man who remembers how the other half of the job goes.", "next": "d_more"}],
 			"choices": [
 				{"text": "\"Keep it oiled, digger. The Vale's going to need you by week's end.\"",
 					"resonance": 3.0, "flags": {"ch3_haim_met": true}, "next": "d_hope"},
-				{"text": "\"Forty years of holes and you never once asked what they were FOR?\"",
+				{"text": "\"Forty years of holes and you never once asked what they were for?\"",
 					"resonance": -3.0, "flags": {"ch3_haim_met": true}, "next": "d_barb"},
 			]},
 		"d_hope": {"who": "Old Digger Haim", "text": "Week's end. Ha. You know, that's the first deadline anyone's given the Vale in sixty years? I'll sharpen the edge tonight. Deadlines deserve a sharp spade.", "next": ""},
-		"d_barb": {"who": "Old Digger Haim", "text": "...They were for GRIEF, stranger. A hole is where you put grief so it doesn't follow you home. The Choir's whole madness is just sixty years of nobody being allowed to put it down. Ask your shard where IT puts yours.", "next": ""},
+		"d_barb": {"who": "Old Digger Haim", "text": "...They were for grief, stranger. A hole is where you put grief so it doesn't follow you home. The Choir's whole madness is just sixty years of nobody being allowed to put it down. Ask your shard where it puts yours.", "next": ""},
 		# ---- A Stone for the Sexton (side quest): the offer.
 		"d_more": {"who": "Old Digger Haim",
-			"text": "One more thing, since your road goes where mine can't. Forty years I cut stones to go with the holes — and I've cut one more. Blank. Edges true. For the FIRST grave this Vale closes, whenever that mercy lands — the Sexton's, most like, poor mad thing. It should wait somewhere graves still mean what they meant. Bram Tallow's plot, at the old chapel. Last man anyone buried proper. Set my stone beside his.",
+			"text": "One more thing, since your road goes where mine can't. Forty years I cut stones to go with the holes, and I've cut one more. Blank. Edges true. For the first grave this Vale closes, whenever that mercy lands. The Sexton's, most likely, poor mad thing. It should wait somewhere graves still mean what they meant. Bram Tallow's plot, at the old chapel. Last man anyone buried proper. Set my stone beside his.",
 			"variants": [{"flag": "sexton_stone_left", "text": "You set it by Bram's plot? Square to his? ...Then it's done right, and the first grave this Vale closes won't go unmarked. Forty years I waited to be back in the business. Turns out the business waited too.", "next": ""}],
 			"choices": [
 				{"text": "\"Keep your stone a while yet, digger.\"", "next": ""},
-				{"text": "\"Give it here. It'll wait beside the last proper grave — and it won't wait long.\"",
+				{"text": "\"Give it here. It'll wait beside the last proper grave, and it won't wait long.\"",
 					"req_not_flag": "sq_on_ch3_sexton_stone", "resonance": 2.0,
 					"side_quest": "ch3_sexton_stone", "gain_item": "sexton_stone", "next": "d_stone"},
 			]},
-		"d_stone": {"who": "Old Digger Haim", "text": "Heavier than it looks. Good — a stone should cost something to carry, else the grave under it was a lie. Square it to Bram's, mind. He was particular, and dead men's opinions are the only ones in this Vale that kept their sense.", "next": ""},
+		"d_stone": {"who": "Old Digger Haim", "text": "Heavier than it looks. Good. A stone should cost something to carry, else the grave under it was a lie. Square it to Bram's, mind. He was particular, and dead men's opinions are the only ones in this Vale that kept their sense.", "next": ""},
 	}},
 }

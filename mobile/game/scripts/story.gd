@@ -84,107 +84,107 @@ const CONVOS := {
 	# The fight already happened — the SCENE is the aftermath, and the
 	# first real choice moves Resonance before Maren ever appears.
 	"open_warrior": {"start": "n1", "nodes": {
-		"n1": {"who": "Narrator", "cue": "crown", "text": "The kingdom of Emberfall has fallen quiet. The Ember Crown has been stolen, and Vargoth — the hollow king — walks again.", "next": "n2"},
-		"n2": {"who": "Narrator", "cue": "road", "text": "On the road to Emberfall Village: a scream. A blight-mad wolf, lunging at a miller. You remember drawing your sword. You do not remember the rest.", "next": "n3"},
-		"n3": {"who": "Narrator", "cue": "aftermath", "text": "You wake on your feet. The wolf is dead — so is the fence, the cart, and half the well. Your knuckles are split. Bren the miller cradles a bleeding arm, staring at your hands.", "next": "n4"},
-		"n4": {"who": "Bren", "text": "You didn't stop, ser. After it died... you kept swinging. What ARE you?",
+		"n1": {"who": "Narrator", "cue": "crown", "text": "The kingdom of Emberfall has gone quiet. The Ember Crown is stolen, and Vargoth, the hollow king, walks again.", "next": "n2"},
+		"n2": {"who": "Narrator", "cue": "road", "text": "On the road to Emberfall Village: a scream. A blight-mad wolf lunging at a miller. You remember drawing your sword. You don't remember the rest.", "next": "n3"},
+		"n3": {"who": "Narrator", "cue": "aftermath", "text": "You wake on your feet. The wolf is dead. So is the fence, the cart, and half the well. Your knuckles are split. Bren the miller cradles a bleeding arm and stares at your hands.", "next": "n4"},
+		"n4": {"who": "Bren", "text": "You didn't stop, ser. After it died... you kept swinging. What are you?",
 			"choices": [
-				{"text": "Kneel. \"I'm sorry, Bren. Show me the arm — I did this, and it's mine to mend.\"",
+				{"text": "Kneel. \"I'm sorry, Bren. Show me the arm. I did this, and it's mine to mend.\"",
 					"resonance": 12.0, "flags": {"owned_the_harm": true, "chose_virtue": true}, "next": "b_owned"},
-				{"text": "\"You're alive. The wolf isn't. That is what matters.\"",
+				{"text": "\"You're alive. The wolf isn't. That's what matters.\"",
 					"resonance": -12.0, "flags": {"excused_the_harm": true, "chose_temptation": true}, "next": "b_excused"},
 				{"text": "Say nothing. Sheathe the sword and walk on.",
 					"resonance": -4.0, "flags": {"walked_away": true, "chose_away": true}, "next": "b_walked"},
 			]},
-		"b_owned": {"who": "Bren", "text": "...It's not deep, ser. Just — whatever that was? Point it at the dead king. Not at us.", "next": "n_end"},
+		"b_owned": {"who": "Bren", "text": "...It's not deep, ser. Just... whatever that was? Point it at the dead king. Not at us.", "next": "n_end"},
 		"b_excused": {"who": "Bren", "text": "Aye. Alive. ...The old king used to talk like that too, my gran said. Near those exact words.", "next": "n_end"},
 		"b_walked": {"who": "Narrator", "text": "You leave him with the wreckage. Behind you, quiet as a prayer: \"Flame keep whoever meets you next.\"", "next": "n_end"},
-		"n_end": {"who": "Narrator", "cue": "fade", "text": "Emberfall Village lies ahead. Word of the road travels faster than you walk — the elder is already waiting."},
+		"n_end": {"who": "Narrator", "cue": "fade", "text": "Emberfall Village lies ahead. Word of the road travels faster than you walk, and the elder is already waiting."},
 	}},
 	# ---- Maren's recruitment: her greeting reads what you did on the road.
 	"maren_warrior": {"start": "m1", "nodes": {
 		"m1": {"who": "Elder Maren",
 			"text": "Bearer! Thank the flame you came.",
 			"variants": [
-				{"flag": "owned_the_harm", "text": "Bearer. Bren showed me the arm — and told me you KNELT. Those who carry what you carry rarely kneel. Keep that, whatever else you lose."},
-				{"flag": "excused_the_harm", "text": "Bearer. 'The wolf isn't — that's what matters.' Bren repeated it, still shaking. I have heard those words before... from the man you have come to kill. Mind yourself."},
+				{"flag": "owned_the_harm", "text": "Bearer. Bren showed me the arm, and told me you knelt. People who carry what you carry rarely kneel. Keep that, whatever else you lose."},
+				{"flag": "excused_the_harm", "text": "Bearer. 'The wolf isn't. That's what matters.' Bren repeated it, still shaking. I've heard those words before... from the man you've come to kill. Watch yourself."},
 				{"flag": "walked_away", "text": "Bearer. You walked past Bren's wreckage without a word. It follows you anyway. Better to face a thing than be trailed by it."},
 			],
 			"next": "m2"},
-		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood grow bold — something twists them from within. A beast they call FANGMAW leads the pack. Slay it, and the road east is safe again.", "next": "m3"},
-		"m3": {"who": "Elder Maren", "text": "Take these potions — press Q when your wounds are grave. And keep moving: a still knight is a dead knight."},
+		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood are getting bold, and something twists them from the inside. A beast they call Fangmaw leads the pack. Kill it, and the road east is safe again.", "next": "m3"},
+		"m3": {"who": "Elder Maren", "text": "Take these potions. Press Q when your wounds are grave. And keep moving: a still knight is a dead knight."},
 	}},
 
 	# ---- Assassin opening: the theft that kept you alive.
 	"open_assassin": {"start": "n1", "nodes": {
-		"n1": {"who": "Narrator", "cue": "crown", "text": "The kingdom of Emberfall has fallen quiet. The Ember Crown has been stolen, and Vargoth — the hollow king — walks again.", "next": "n2"},
-		"n2": {"who": "Narrator", "cue": "camp", "text": "Winter on the Pilgrim's Road. You are three days poisoned — blight in a scratch — and dying quietly. A carter sleeps warm beside his fire, a flask of physick at his belt.", "next": "n3"},
-		"n3": {"who": "Narrator", "cue": "camp_cold", "text": "You remember deciding NOT to take it. Then the Ember decided otherwise. You wake with the flask empty in your hand — the fire is dead, and the carter's lips are grey. It did not only take the medicine.", "next": "n4"},
+		"n1": {"who": "Narrator", "cue": "crown", "text": "The kingdom of Emberfall has gone quiet. The Ember Crown is stolen, and Vargoth, the hollow king, walks again.", "next": "n2"},
+		"n2": {"who": "Narrator", "cue": "camp", "text": "Winter on the Pilgrim's Road. You're three days poisoned, blight in a scratch, and dying quietly. A carter sleeps warm beside his fire, a flask of physick at his belt.", "next": "n3"},
+		"n3": {"who": "Narrator", "cue": "camp_cold", "text": "You remember deciding not to take it. Then the Ember decided otherwise. You wake with the flask empty in your hand. The fire is dead, and the carter's lips are grey. It didn't only take the medicine.", "next": "n4"},
 		"n4": {"who": "Carter", "text": "S-so cold... traveler. What... what did you do to my fire?",
 			"choices": [
 				{"text": "Kneel. Wrap him in your cloak. \"Take my warmth back. I'll stay until dawn.\"",
 					"resonance": 12.0, "flags": {"gave_back": true, "chose_virtue": true}, "next": "b_gave"},
 				{"text": "\"Your fire fed something greater than either of us. You'll live.\"",
 					"resonance": -12.0, "flags": {"kept_taking": true, "chose_temptation": true}, "next": "b_kept"},
-				{"text": "Drop the flask and back away from him — before it takes more.",
+				{"text": "Drop the flask and back away from him, before it takes more.",
 					"resonance": -4.0, "flags": {"fled_theft": true, "chose_away": true}, "next": "b_fled"},
 			]},
-		"b_gave": {"who": "Carter", "text": "...Your hands are like coals, stranger. Whatever is in you — it gives as fierce as it takes.", "next": "n_end"},
-		"b_kept": {"who": "Narrator", "text": "He watches you leave with the flask still in your hand. His warmth sits in your blood, and it feels EARNED. That is the frightening part.", "next": "n_end"},
-		"b_fled": {"who": "Narrator", "text": "The flask lands in the snow between you. Behind you: flint striking, again and again, against wood that will not catch.", "next": "n_end"},
-		"n_end": {"who": "Narrator", "cue": "fade", "text": "By dawn you can walk. By dusk you reach Emberfall Village — and the elder is already watching you count what you owe."},
+		"b_gave": {"who": "Carter", "text": "...Your hands are like coals, stranger. Whatever is in you, it gives as fierce as it takes.", "next": "n_end"},
+		"b_kept": {"who": "Narrator", "text": "He watches you leave with the flask still in your hand. His warmth sits in your blood, and it feels earned. That's the frightening part.", "next": "n_end"},
+		"b_fled": {"who": "Narrator", "text": "The flask lands in the snow between you. Behind you: flint striking, again and again, against wood that won't catch.", "next": "n_end"},
+		"n_end": {"who": "Narrator", "cue": "fade", "text": "By dawn you can walk. By dusk you reach Emberfall Village, and the elder is already watching you count what you owe."},
 	}},
 	"maren_assassin": {"start": "m1", "nodes": {
 		"m1": {"who": "Elder Maren",
 			"text": "Bearer! Thank the flame you came.",
 			"variants": [
-				{"flag": "gave_back", "text": "Bearer. The carter came through at first light — telling anyone who'd listen about the stranger who took his fire, then sat in the snow all night giving it back. Your bloodline usually only takes. Interesting."},
-				{"flag": "kept_taking", "text": "Bearer. A carter stumbled in this morning, grey to the elbows, saying the road stole his fire. You look... well-rested. We won't speak of it again. But I will remember it."},
-				{"flag": "fled_theft", "text": "Bearer. You came the long way, and cold. Running from what your hands did doesn't starve it — it only teaches it patience."},
+				{"flag": "gave_back", "text": "Bearer. The carter came through at first light, telling anyone who'd listen about the stranger who took his fire, then sat in the snow all night giving it back. Your bloodline usually only takes. Interesting."},
+				{"flag": "kept_taking", "text": "Bearer. A carter stumbled in this morning, grey to the elbows, saying the road stole his fire. You look... well-rested. We won't speak of it again. But I'll remember it."},
+				{"flag": "fled_theft", "text": "Bearer. You came the long way, and cold. Running from what your hands did doesn't starve it. It only teaches it patience."},
 			],
 			"next": "m2"},
-		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood grow bold — something twists them from within. A beast they call FANGMAW leads the pack. Slay it, and the road east is safe again.", "next": "m3"},
-		"m3": {"who": "Elder Maren", "text": "Take these potions — press Q when your wounds are grave. And keep moving: a still blade is a caught blade."},
+		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood are getting bold, and something twists them from the inside. A beast they call Fangmaw leads the pack. Kill it, and the road east is safe again.", "next": "m3"},
+		"m3": {"who": "Elder Maren", "text": "Take these potions. Press Q when your wounds are grave. And keep moving: a still blade is a caught blade."},
 	}},
 
 	# ---- Mage opening: the heal that went wrong.
 	"open_mage": {"start": "n1", "nodes": {
-		"n1": {"who": "Narrator", "cue": "crown", "text": "The kingdom of Emberfall has fallen quiet. The Ember Crown has been stolen, and Vargoth — the hollow king — walks again.", "next": "n2"},
-		"n2": {"who": "Narrator", "cue": "sickbed", "text": "Mill row, past midnight. The ferrier's boy is burning with marsh-fever, and his mother knows what you are. \"Please,\" she says. You lay your hands on him. You have done this before.", "next": "n3"},
-		"n3": {"who": "Narrator", "cue": "sickbed_wrong", "text": "The light comes GREEN. The fever breaks — and where it broke, a mark spreads: a bloom of grey, cold to the touch. It is not fever. It is not anything you have a name for. It does not wash off.", "next": "n4"},
-		"n4": {"who": "The Mother", "text": "He's cool... thank the flame, he's cool. But — what is THAT? What did you DO?",
+		"n1": {"who": "Narrator", "cue": "crown", "text": "The kingdom of Emberfall has gone quiet. The Ember Crown is stolen, and Vargoth, the hollow king, walks again.", "next": "n2"},
+		"n2": {"who": "Narrator", "cue": "sickbed", "text": "Mill row, past midnight. The ferrier's boy is burning with marsh-fever, and his mother knows what you are. \"Please,\" she says. You lay your hands on him. You've done this before.", "next": "n3"},
+		"n3": {"who": "Narrator", "cue": "sickbed_wrong", "text": "The light comes out green. The fever breaks, and where it broke, a mark spreads: a bloom of grey, cold to the touch. It's not fever. It's not anything you have a name for. It doesn't wash off.", "next": "n4"},
+		"n4": {"who": "The Mother", "text": "He's cool... thank the flame, he's cool. But... what is that? What did you do?",
 			"choices": [
-				{"text": "\"My spell did this. I don't know how. But I will find how, and I will undo it — that is a promise.\"",
+				{"text": "\"My spell did this. I don't know how. But I'll find how, and I'll undo it. That's a promise.\"",
 					"resonance": 12.0, "flags": {"told_truth": true, "chose_virtue": true}, "next": "b_truth"},
 				{"text": "\"The sickness ran deeper than it looked. I did everything that could be done.\"",
 					"resonance": -12.0, "flags": {"hid_truth": true, "chose_temptation": true}, "next": "b_hid"},
 				{"text": "Leave your coin purse on the table for a real healer, and go before she asks again.",
 					"resonance": -4.0, "flags": {"left_silent": true, "chose_away": true}, "next": "b_left"},
 			]},
-		"b_truth": {"who": "The Mother", "text": "...You could have lied. I would have believed you. Find how, wizard. I'll hold the promise.", "next": "n_end"},
-		"b_hid": {"who": "Narrator", "text": "She thanks you. She THANKS you. The lie fits so well it frightens you — Mórwyn's spells were perfect too, at first.", "next": "n_end"},
-		"b_left": {"who": "Narrator", "text": "The door closes on her question. The coin will not answer it either.", "next": "n_end"},
+		"b_truth": {"who": "The Mother", "text": "...You could've lied. I would've believed you. Find how, wizard. I'll hold the promise.", "next": "n_end"},
+		"b_hid": {"who": "Narrator", "text": "She thanks you. She thanks you. The lie fits so well it frightens you. Mórwyn's spells were perfect too, at first.", "next": "n_end"},
+		"b_left": {"who": "Narrator", "text": "The door closes on her question. The coin won't answer it either.", "next": "n_end"},
 		"n_end": {"who": "Narrator", "cue": "fade", "text": "By morning the whole row knows a spellwright is in the village. The elder sends for you first."},
 	}},
 	"maren_mage": {"start": "m1", "nodes": {
 		"m1": {"who": "Elder Maren",
 			"text": "Bearer! Thank the flame you came.",
 			"variants": [
-				{"flag": "told_truth", "text": "Bearer. The ferrier's wife says you promised to UNDO what your magic did — to her face, with the mark still spreading. Mórwyn never once said 'I don't know how.' Hold on to those words."},
-				{"flag": "hid_truth", "text": "Bearer. The boy is cool, and his mother sings your praises... and yet the mark on his ribs tells a different spell than the one you described. Careful. That is precisely how it started with HER."},
-				{"flag": "left_silent", "text": "Bearer. Coin on the table and a closed door. Half the row thinks you modest; the other half found the mark. Questions do not rot away, spellwright — they ferment."},
+				{"flag": "told_truth", "text": "Bearer. The ferrier's wife says you promised to undo what your magic did, to her face, with the mark still spreading. Mórwyn never once said 'I don't know how.' Hold on to those words."},
+				{"flag": "hid_truth", "text": "Bearer. The boy is cool, and his mother sings your praises... and yet the mark on his ribs tells a different spell than the one you described. Careful. That's exactly how it started with her."},
+				{"flag": "left_silent", "text": "Bearer. Coin on the table and a closed door. Half the row thinks you modest; the other half found the mark. Questions don't rot away, spellwright. They ferment."},
 			],
 			"next": "m2"},
-		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood grow bold — something twists them from within. A beast they call FANGMAW leads the pack. Slay it, and the road east is safe again.", "next": "m3"},
-		"m3": {"who": "Elder Maren", "text": "Take these potions — press Q when your wounds are grave. And keep moving: a still spellwright is a spent one."},
+		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood are getting bold, and something twists them from the inside. A beast they call Fangmaw leads the pack. Kill it, and the road east is safe again.", "next": "m3"},
+		"m3": {"who": "Elder Maren", "text": "Take these potions. Press Q when your wounds are grave. And keep moving: a still spellwright is a spent one."},
 	}},
 
 	# ---- Archer opening: the severed bond.
 	"open_archer": {"start": "n1", "nodes": {
-		"n1": {"who": "Narrator", "cue": "crown", "text": "The kingdom of Emberfall has fallen quiet. The Ember Crown has been stolen, and Vargoth — the hollow king — walks again.", "next": "n2"},
-		"n2": {"who": "Narrator", "cue": "homestead", "text": "The night before the road: your brother Ren waits at the boundary fence of the farm that raised you both. Twenty years of unspoken thread run between you and this place. Tonight, for the first time, you can SEE it — thin, bright, humming.", "next": "n3"},
-		"n3": {"who": "Narrator", "cue": "severed", "text": "The Ember wakes. And chooses. The thread snaps like a bowstring — and Ren flinches as if he felt it too. When he looks at you again, it is the way you look at a stranger on the road: measuring the distance.", "next": "n4"},
-		"n4": {"who": "Ren", "text": "You're just going, then. Whatever that was — you're just... going?",
+		"n1": {"who": "Narrator", "cue": "crown", "text": "The kingdom of Emberfall has gone quiet. The Ember Crown is stolen, and Vargoth, the hollow king, walks again.", "next": "n2"},
+		"n2": {"who": "Narrator", "cue": "homestead", "text": "The night before the road: your brother Ren waits at the boundary fence of the farm that raised you both. Twenty years of unspoken thread run between you and this place. Tonight, for the first time, you can see it: thin, bright, humming.", "next": "n3"},
+		"n3": {"who": "Narrator", "cue": "severed", "text": "The Ember wakes. And chooses. The thread snaps like a bowstring, and Ren flinches like he felt it too. When he looks at you again, it's the way you look at a stranger on the road: measuring the distance.", "next": "n4"},
+		"n4": {"who": "Ren", "text": "You're just going, then. Whatever that was... you're just... going?",
 			"choices": [
 				{"text": "Turn back one last time. \"The thread broke, not the memory. Keep the farm. I'll keep the aim it taught me.\"",
 					"resonance": 12.0, "flags": {"said_farewell": true, "chose_virtue": true}, "next": "b_fare"},
@@ -193,7 +193,7 @@ const CONVOS := {
 				{"text": "Raise a hand without turning around. Some goodbyes only bleed if you look at them.",
 					"resonance": -4.0, "flags": {"walked_silent": true, "chose_away": true}, "next": "b_silent"},
 			]},
-		"b_fare": {"who": "Ren", "text": "...Then shoot straight, little hawk. The gate stays unlatched. That's MY choice — whatever your ember says.", "next": "n_end"},
+		"b_fare": {"who": "Ren", "text": "...Then shoot straight, little hawk. The gate stays unlatched. That's my choice, whatever your ember says.", "next": "n_end"},
 		"b_cut": {"who": "Narrator", "text": "The road is lighter with every step. That lightness should worry you more than it does.", "next": "n_end"},
 		"b_silent": {"who": "Narrator", "text": "You hear the gate latch click behind you. A small sound. It follows you further than the howling will.", "next": "n_end"},
 		"n_end": {"who": "Narrator", "cue": "fade", "text": "Three days east: Emberfall Village. Word of a hawk-eyed drifter travels ahead of you."},
@@ -202,84 +202,84 @@ const CONVOS := {
 		"m1": {"who": "Elder Maren",
 			"text": "Bearer! Thank the flame you came.",
 			"variants": [
-				{"flag": "said_farewell", "text": "Bearer. A farmer named Ren sent a letter ahead of you. Four words: 'The gate stays unlatched.' Severed bloodlines rarely leave anything standing behind them — you left a DOOR. Keep leaving them."},
-				{"flag": "cut_clean", "text": "Bearer. You came in light, drifter — no letters, no ties, nothing to carry. Fangmaw's kin walked that same weightless road all the way to its end. Have a care how light you get."},
+				{"flag": "said_farewell", "text": "Bearer. A farmer named Ren sent a letter ahead of you. Four words: 'The gate stays unlatched.' Severed bloodlines rarely leave anything standing behind them. You left a door. Keep leaving them."},
+				{"flag": "cut_clean", "text": "Bearer. You came in light, drifter: no letters, no ties, nothing to carry. Fangmaw's kin walked that same weightless road all the way to its end. Be careful how light you get."},
 				{"flag": "walked_silent", "text": "Bearer. You didn't look back, they say. It follows anyway. The ones who walk from a thing always pack it by accident."},
 			],
 			"next": "m2"},
-		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood grow bold — something twists them from within. A beast they call FANGMAW leads the pack. Slay it, and the road east is safe again.", "next": "m3"},
-		"m3": {"who": "Elder Maren", "text": "Take these potions — press Q when your wounds are grave. And keep moving: a still hawk is just a target."},
+		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood are getting bold, and something twists them from the inside. A beast they call Fangmaw leads the pack. Kill it, and the road east is safe again.", "next": "m3"},
+		"m3": {"who": "Elder Maren", "text": "Take these potions. Press Q when your wounds are grave. And keep moving: a still hawk is just a target."},
 	}},
 
 	# ---- Paladin opening: the verdict (fight first, then the harder part).
 	"open_paladin": {"start": "n1", "nodes": {
-		"n1": {"who": "Narrator", "cue": "crown", "text": "The kingdom of Emberfall has fallen quiet. The Ember Crown has been stolen, and Vargoth — the hollow king — walks again.", "next": "n2"},
-		"n2": {"who": "Narrator", "cue": "hearing", "text": "You are three hours into a grain-hoarding hearing — miller Osric, guilty as the ledgers are long — when blight-raiders hit the granary. A guard falls at your feet. His hammer is in your hand before you decide anything. The Ember inside it IGNITES.", "next": "n3"},
-		"n3": {"who": "Narrator", "cue": "verdict", "text": "The raiders flee from what you became in that doorway. Osric is alive because you stood over him. And now you are back at the bench, and the chain around your heart pulls one way: HE IS YOURS. YOU SHIELDED HIM. SHIELD HIM. The ledgers have not changed.", "next": "n4"},
+		"n1": {"who": "Narrator", "cue": "crown", "text": "The kingdom of Emberfall has gone quiet. The Ember Crown is stolen, and Vargoth, the hollow king, walks again.", "next": "n2"},
+		"n2": {"who": "Narrator", "cue": "hearing", "text": "You're three hours into a grain-hoarding hearing, miller Osric guilty as the ledgers are long, when blight-raiders hit the granary. A guard falls at your feet. His hammer is in your hand before you decide anything. The Ember inside it ignites.", "next": "n3"},
+		"n3": {"who": "Narrator", "cue": "verdict", "text": "The raiders flee from what you became in that doorway. Osric is alive because you stood over him. And now you're back at the bench, and the chain around your heart pulls one way: he is yours. You shielded him. Shield him. The ledgers haven't changed.", "next": "n4"},
 		"n4": {"who": "Osric", "text": "You saved my life, arbiter. Surely... surely that counts for the sentence?",
 			"choices": [
-				{"text": "\"Guilty. Restitution in full.\" The chain does not get to choose your justice for you.",
+				{"text": "\"Guilty. Restitution in full.\" The chain doesn't get to choose your justice for you.",
 					"resonance": 12.0, "flags": {"delivered_verdict": true, "chose_virtue": true}, "next": "b_verdict"},
-				{"text": "Spare him. A shield does not put down what it carried.",
+				{"text": "Spare him. A shield doesn't put down what it carried.",
 					"resonance": -12.0, "flags": {"spared_guilty": true, "chose_temptation": true}, "next": "b_spared"},
 				{"text": "Adjourn. An arbiter who fought for the accused can no longer judge him.",
 					"resonance": -4.0, "flags": {"recused": true, "chose_away": true}, "next": "b_recused"},
 			]},
-		"b_verdict": {"who": "Narrator", "text": "The word lands like the hammer did. Somewhere inside, the chain goes QUIET — not defeated. Respectful.", "next": "n_end"},
-		"b_spared": {"who": "Narrator", "text": "Osric weeps his thanks. The chain purrs its approval. It is already deciding what ELSE you know better than the law does.", "next": "n_end"},
-		"b_recused": {"who": "Narrator", "text": "Clean hands, empty bench. The next arbiter will not know the ledgers like you do — and the chain counts that as a win too.", "next": "n_end"},
+		"b_verdict": {"who": "Narrator", "text": "The word lands like the hammer did. Somewhere inside, the chain goes quiet. Not defeated. Respectful.", "next": "n_end"},
+		"b_spared": {"who": "Narrator", "text": "Osric weeps his thanks. The chain purrs its approval. It's already deciding what else you know better than the law does.", "next": "n_end"},
+		"b_recused": {"who": "Narrator", "text": "Clean hands, empty bench. The next arbiter won't know the ledgers like you do, and the chain counts that as a win too.", "next": "n_end"},
 		"n_end": {"who": "Narrator", "cue": "fade", "text": "Word of the arbiter with the burning hammer reaches Emberfall Village before you do."},
 	}},
 	"maren_paladin": {"start": "m1", "nodes": {
 		"m1": {"who": "Elder Maren",
 			"text": "Bearer! Thank the flame you came.",
 			"variants": [
-				{"flag": "delivered_verdict", "text": "Bearer. An arbiter who guts a raid, then walks back inside and convicts the man he saved? The chain you carry was FORGED to bind — and you just showed it who holds it. I have waited a long time to meet one of you."},
-				{"flag": "spared_guilty", "text": "Bearer. Osric the miller — alive, pardoned, and already hoarding again, they say. The chain told you 'mercy' and you called it your own idea. Learn the difference quickly."},
-				{"flag": "recused", "text": "Bearer. You stepped away from the bench rather than test the chain. Prudent. But the chain is patient, arbiter — one day there will be no other judge in the room."},
+				{"flag": "delivered_verdict", "text": "Bearer. An arbiter who guts a raid, then walks back inside and convicts the man he saved? The chain you carry was forged to bind, and you just showed it who holds it. I've waited a long time to meet one of you."},
+				{"flag": "spared_guilty", "text": "Bearer. Osric the miller: alive, pardoned, and already hoarding again, they say. The chain told you 'mercy' and you called it your own idea. Learn the difference quickly."},
+				{"flag": "recused", "text": "Bearer. You stepped away from the bench rather than test the chain. Smart. But the chain is patient, arbiter. One day there'll be no other judge in the room."},
 			],
 			"next": "m2"},
-		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood grow bold — something twists them from within. A beast they call FANGMAW leads the pack. Slay it, and the road east is safe again.", "next": "m3"},
-		"m3": {"who": "Elder Maren", "text": "Take these potions — press Q when your wounds are grave. And keep moving: a still shield shelters no one."},
+		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood are getting bold, and something twists them from the inside. A beast they call Fangmaw leads the pack. Kill it, and the road east is safe again.", "next": "m3"},
+		"m3": {"who": "Elder Maren", "text": "Take these potions. Press Q when your wounds are grave. And keep moving: a still shield shelters no one."},
 	}},
 
 	# ---- Warlock opening: the pact you don't remember making.
 	"open_warlock": {"start": "n1", "nodes": {
-		"n1": {"who": "Narrator", "cue": "crown", "text": "The kingdom of Emberfall has fallen quiet. The Ember Crown has been stolen, and Vargoth — the hollow king — walks again.", "next": "n2"},
-		"n2": {"who": "Narrator", "cue": "tome", "text": "You wake at a cold desk in a room you rent by the week. There is a tome under your hand that was not there when you slept — and your own handwriting in a journal you do not remember keeping: 'IT SAID YES. I HADN'T FINISHED ASKING.'", "next": "n3"},
-		"n3": {"who": "Narrator", "cue": "tome_open", "text": "The pages agree on three things. You made a pact. You traded something you have not lost YET. And the tome will tell you what — for one more small borrowing. The interest, it promises, is negligible.", "next": "n4"},
-		"n4": {"who": "The Tome", "text": "ONE PAGE'S WORTH. A CANDLE OF KNOWING. YOU OWE SO MUCH ALREADY — WHAT IS A CANDLE?",
+		"n1": {"who": "Narrator", "cue": "crown", "text": "The kingdom of Emberfall has gone quiet. The Ember Crown is stolen, and Vargoth, the hollow king, walks again.", "next": "n2"},
+		"n2": {"who": "Narrator", "cue": "tome", "text": "You wake at a cold desk in a room you rent by the week. There's a tome under your hand that wasn't there when you slept, and your own handwriting in a journal you don't remember keeping: 'It said yes. I hadn't finished asking.'", "next": "n3"},
+		"n3": {"who": "Narrator", "cue": "tome_open", "text": "The pages agree on three things. You made a pact. You traded something you haven't lost yet. And the tome will tell you what, for one more small borrowing. The interest, it promises, is tiny.", "next": "n4"},
+		"n4": {"who": "The Tome", "text": "ONE PAGE'S WORTH. A CANDLE OF KNOWING. YOU ALREADY OWE SO MUCH. WHAT IS ONE CANDLE?",
 			"choices": [
-				{"text": "Close it. \"I'll pay what I owe as myself — and not a candle more.\"",
+				{"text": "Close it. \"I'll pay what I owe as myself, and not a candle more.\"",
 					"resonance": 12.0, "flags": {"closed_tome": true, "chose_virtue": true}, "next": "b_closed"},
-				{"text": "Ask. Knowing the price is only sensible — borrow the candle.",
+				{"text": "Ask. Knowing the price is only sensible. Borrow the candle.",
 					"resonance": -12.0, "flags": {"borrowed_more": true, "chose_temptation": true}, "next": "b_borrowed"},
 				{"text": "Burn the journal. If a stranger made this deal, let a stranger owe it.",
 					"resonance": -4.0, "flags": {"burned_pages": true, "chose_away": true}, "next": "b_burned"},
 			]},
 		"b_closed": {"who": "Narrator", "text": "The tome shuts with the sound of a ledger balancing. Somewhere beyond the edge of things, something makes a small, patient note.", "next": "n_end"},
-		"b_borrowed": {"who": "Narrator", "text": "The knowledge arrives, and it is TRUE, and it is useful, and the debt is a little deeper — exactly as sensible as the last time you told yourself this.", "next": "n_end"},
-		"b_burned": {"who": "Narrator", "text": "The pages burn green. The debt does not. Under the ash, the first line of the ledger rewrites itself — in your own fresh hand.", "next": "n_end"},
-		"n_end": {"who": "Narrator", "cue": "fade", "text": "The tome rides in your pack to Emberfall Village like it has always known the way."},
+		"b_borrowed": {"who": "Narrator", "text": "The knowledge arrives, and it's true, and it's useful, and the debt is a little deeper, exactly as sensible as the last time you told yourself this.", "next": "n_end"},
+		"b_burned": {"who": "Narrator", "text": "The pages burn green. The debt doesn't. Under the ash, the first line of the ledger rewrites itself, in your own fresh hand.", "next": "n_end"},
+		"n_end": {"who": "Narrator", "cue": "fade", "text": "The tome rides in your pack to Emberfall Village like it's always known the way."},
 	}},
 	"maren_warlock": {"start": "m1", "nodes": {
 		"m1": {"who": "Elder Maren",
 			"text": "Bearer! Thank the flame you came.",
 			"variants": [
-				{"flag": "closed_tome", "text": "Bearer. I can smell the loan on you from the gate. And yet — it's QUIET. You told it no, didn't you? Keep telling it no. I'll help where I can, and I'll be watching where I can't."},
-				{"flag": "borrowed_more", "text": "Bearer. The thing about candles of knowing: they light the room and burn the house. You borrowed again on the road here — don't trouble to deny it, your shadow leans wrong. I'll take your help, warlock. I won't take my eyes off you."},
-				{"flag": "burned_pages", "text": "Bearer. Burnt pages, fresh ink. You cannot fire a debt, only the record of it — and the creditor keeps better books than you do. Stay where I can see you."},
+				{"flag": "closed_tome", "text": "Bearer. I can smell the loan on you from the gate. And yet... it's quiet. You told it no, didn't you? Keep telling it no. I'll help where I can, and I'll be watching where I can't."},
+				{"flag": "borrowed_more", "text": "Bearer. The thing about candles of knowing: they light the room and burn the house. You borrowed again on the road here, don't bother denying it, your shadow leans wrong. I'll take your help, warlock. I won't take my eyes off you."},
+				{"flag": "burned_pages", "text": "Bearer. Burnt pages, fresh ink. You can't burn a debt, only the record of it, and the creditor keeps better books than you do. Stay where I can see you."},
 			],
 			"next": "m2"},
-		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood grow bold — something twists them from within. A beast they call FANGMAW leads the pack. Slay it, and the road east is safe again.", "next": "m3"},
-		"m3": {"who": "Elder Maren", "text": "Take these potions — press Q when your wounds are grave. And keep moving: still things are what the creditor collects first."},
+		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood are getting bold, and something twists them from the inside. A beast they call Fangmaw leads the pack. Kill it, and the road east is safe again.", "next": "m3"},
+		"m3": {"who": "Elder Maren", "text": "Take these potions. Press Q when your wounds are grave. And keep moving: still things are what the creditor collects first."},
 	}},
 
 	# ================================================= Chapter 1 room content
 	# Social wanderers (rolled per character into social rooms).
 	"wander_tinker": {"start": "t1", "nodes": {
 		"t1": {"who": "Tinker Osla",
-			"text": "Axle's cracked. Third one this season — the roads got worse when the wolves got bold. You wouldn't hold the cart steady a moment?",
+			"text": "Axle's cracked. Third one this season. The roads got worse when the wolves got bold. You wouldn't hold the cart steady a moment?",
 			"variants": [{"flag": "helped_tinker", "text": "The cart rolls straight now, thanks to you. If you pass a smith, tell them Osla still owes for the axle.", "next": ""}],
 			"choices": [
 				{"text": "Set your shoulder against the cart. \"Take your time.\"",
@@ -287,21 +287,21 @@ const CONVOS := {
 				{"text": "\"Roads are dangerous. Pay someone to guard you next time.\"",
 					"resonance": -2.0, "next": "t_no"},
 			]},
-		"t_help": {"who": "Tinker Osla", "text": "There — seated. You've an honest shoulder for someone armed to the teeth. Flame keep you down the road.", "next": ""},
+		"t_help": {"who": "Tinker Osla", "text": "There, seated. You've got an honest shoulder for someone armed to the teeth. Flame keep you down the road.", "next": ""},
 		"t_no": {"who": "Tinker Osla", "text": "Aye, and eat what, while I pay them? ...Safe travels anyway, stranger.", "next": ""},
 	}},
 	"wander_deserter": {"start": "d1", "nodes": {
 		"d1": {"who": "Ragged Soldier",
-			"text": "Before you say it: yes, that's a keep tabard under the mud. I walked. You stand a night watch hearing THAT thing sing through the stones and see how long your oath holds.",
+			"text": "Before you say it: yes, that's a keep tabard under the mud. I walked. You stand a night watch hearing that thing sing through the stones and see how long your oath holds.",
 			"variants": [{"flag": "heard_deserter", "text": "Still here. Still walking nowhere in particular. It's quieter out here, at least.", "next": ""}],
 			"choices": [
-				{"text": "\"Sit. Tell me what you heard in there — all of it.\"",
+				{"text": "\"Sit. Tell me what you heard in there. All of it.\"",
 					"resonance": 3.0, "flags": {"heard_deserter": true}, "next": "d_hear"},
 				{"text": "\"You left your post. Whatever sang to you, others still hear it.\"",
 					"resonance": -3.0, "flags": {"heard_deserter": true}, "next": "d_shame"},
 			]},
-		"d_hear": {"who": "Ragged Soldier", "text": "It hums through the floor at night. Old words. And the worst part — some mornings you wake up HUMMING ALONG. Kill it at the source, if that's where you're headed. Don't listen long.", "next": ""},
-		"d_shame": {"who": "Ragged Soldier", "text": "...Aye. They do. And I'll carry that longer than I carried the spear. Go on, then — be braver than me. Someone has to be.", "next": ""},
+		"d_hear": {"who": "Ragged Soldier", "text": "It hums through the floor at night. Old words. And the worst part? Some mornings you wake up humming along. Kill it at the source, if that's where you're headed. Don't listen long.", "next": ""},
+		"d_shame": {"who": "Ragged Soldier", "text": "...Aye. They do. And I'll carry that longer than I carried the spear. Go on, then. Be braver than me. Someone has to be.", "next": ""},
 	}},
 	"wander_pilgrim": {"start": "p1", "nodes": {
 		"p1": {"who": "Pilgrim of the Flame",
@@ -314,35 +314,35 @@ const CONVOS := {
 	}},
 	"wander_hunter": {"start": "h1", "nodes": {
 		"h1": {"who": "Old Hunter",
-			"text": "Word of advice, since you're kitted for trouble: the packs out here move TOGETHER now. Wound one and its whole family answers. Pick your ground before you pick a fight.",
+			"text": "Word of advice, since you're kitted for trouble: the packs out here move together now. Wound one and its whole family answers. Pick your ground before you pick a fight.",
 			"variants": [{"flag": "met_hunter", "text": "Still breathing? Good. Told you the ground matters more than the blade.", "next": ""}],
 			"next": "h2"},
-		"h2": {"who": "Old Hunter", "text": "And if you find a still pool deep in the wood — the one that holds the moon wrong — don't drink before you've decided who you are. That's free too.",
+		"h2": {"who": "Old Hunter", "text": "And if you find a still pool deep in the wood, the one that holds the moon wrong, don't drink before you've decided who you are. That's free too.",
 			"choices": [
 				{"text": "\"Thanks for the warning, hunter.\"", "flags": {"met_hunter": true}, "next": ""},
 				{"text": "\"Save the ghost stories. Wolves die like anything else.\"",
 					"resonance": -2.0, "flags": {"met_hunter": true}, "next": "h_scoff"},
 			]},
-		"h_scoff": {"who": "Old Hunter", "text": "Aye, they do. So do hunters who knew everything. The wood buries both kinds the same depth — but suit yourself. The advice keeps better than you will.", "next": ""},
+		"h_scoff": {"who": "Old Hunter", "text": "Aye, they do. So do hunters who knew everything. The wood buries both kinds the same depth, but suit yourself. The advice keeps better than you will.", "next": ""},
 	}},
 	"wander_peddler": {"start": "w1", "nodes": {
 		"w1": {"who": "Roadside Peddler",
-			"text": "No stock left worth your coin — the camps bought me clean. But gossip's free: the marsh witch pays her spiders in something, and the stilt-camp merchant swears it's TEETH. Make of that what you will.",
+			"text": "No stock left worth your coin, the camps bought me clean. But gossip's free: the marsh witch pays her spiders in something, and the stilt-camp merchant swears it's teeth. Make of that what you will.",
 			"variants": [{"flag": "met_peddler", "text": "Still no stock. Still full of gossip. The teeth thing? I stand by it.", "next": ""}],
 			"choices": [
 				{"text": "\"...Teeth.\"", "flags": {"met_peddler": true}, "next": "w2"},
-				{"text": "\"Your gossip's worth what your stock is — nothing. Move along, peddler.\"",
+				{"text": "\"Your gossip's worth what your stock is: nothing. Move along, peddler.\"",
 					"resonance": -3.0, "flags": {"met_peddler": true}, "next": "w_scorn"},
 			]},
-		"w2": {"who": "Roadside Peddler", "text": "TEETH. Ask her yourself if you don't believe me. Actually — don't.", "next": ""},
-		"w_scorn": {"who": "Roadside Peddler", "text": "Free and worthless are different words, friend — a peddler learns that before the first cart breaks. When the spiders find you, do remember I mentioned the teeth for nothing.", "next": ""},
+		"w2": {"who": "Roadside Peddler", "text": "Teeth. Ask her yourself if you don't believe me. Actually... don't.", "next": ""},
+		"w_scorn": {"who": "Roadside Peddler", "text": "Free and worthless are different words, friend. A peddler learns that before the first cart breaks. When the spiders find you, do remember I mentioned the teeth for nothing.", "next": ""},
 	}},
 	"wander_orphan": {"start": "o1", "nodes": {
 		"o1": {"who": "Miller's Boy",
-			"text": "You're going TOWARD the howling? On purpose? ...My da went toward the howling. If you see a wide-brim hat out there — brown, with a heron feather — it's his.",
+			"text": "You're going toward the howling? On purpose? ...My da went toward the howling. If you see a wide-brim hat out there, brown, with a heron feather, it's his.",
 			"variants": [
-				{"flag": "hat_given", "text": "The hat rides low over the boy's ears — he's pinned the brim up with a wolf tooth. Nobody at the mill teases him about the size. Nobody would dare.", "next": ""},
-				{"flag": "hat_taken", "text": "You're— that's. Behind your back. That's a HAT.", "next": "o_hat"},
+				{"flag": "hat_given", "text": "The hat rides low over the boy's ears. He's pinned the brim up with a wolf tooth. Nobody at the mill teases him about the size. Nobody would dare.", "next": ""},
+				{"flag": "hat_taken", "text": "You're... that's. Behind your back. That's a hat.", "next": "o_hat"},
 				{"flag": "boy_answered", "text": "You'll watch for the hat? Brown, heron feather. I'll be here.", "next": ""},
 			],
 			"choices": [
@@ -353,10 +353,10 @@ const CONVOS := {
 					"resonance": -3.0, "flags": {"boy_answered": true}, "next": "o_cold"},
 			]},
 		"o_kind": {"who": "Miller's Boy", "text": "That's more than anyone else promised. The feather's blue at the tip. You'll know it.", "next": ""},
-		"o_cold": {"who": "Narrator", "text": "He doesn't cry. He just looks at you the way you look at weather — and heads home. It was probably the truth. It didn't need to be yours to say.", "next": ""},
+		"o_cold": {"who": "Narrator", "text": "He doesn't cry. He just looks at you the way you look at weather, and heads home. It was probably the truth. It didn't need to be yours to say.", "next": ""},
 		"o_hat": {"who": "Miller's Boy", "text": "Show me. Please. Is the feather blue at the tip?",
 			"choices": [
-				{"text": "Hold it out. \"Brown, wide-brim, heron feather — blue at the tip. I watched for it, like I said.\"",
+				{"text": "Hold it out. \"Brown, wide-brim, heron feather, blue at the tip. I watched for it, like I said.\"",
 					"req_flag": "boy_answered", "resonance": 3.0,
 					"flags": {"hat_given": true}, "lose_item": "millers_hat", "scene": "hat_returned_scene", "next": "o_hat2"},
 				{"text": "Hold it out. \"Found it by the ravine, in the thorns. I think... I think it's his.\"",
@@ -364,7 +364,7 @@ const CONVOS := {
 					"flags": {"hat_given": true, "boy_answered": true}, "lose_item": "millers_hat", "scene": "hat_returned_scene", "next": "o_hat2"},
 				{"text": "\"...Another time.\" Keep the pack shut.", "next": ""},
 			]},
-		"o_hat2": {"who": "Narrator", "text": "He doesn't cry this time either. He puts it on — it swallows him to the eyebrows — and stands straighter under it than the size should allow. \"He got far?\" \"The ravine. He saw the whole wood.\" The boy nods, slow, like a man watching a debt settle. \"That's a good place to stop walking,\" he decides. So do you.", "next": ""},
+		"o_hat2": {"who": "Narrator", "text": "He doesn't cry this time either. He puts it on, it swallows him to the eyebrows, and stands straighter under it than the size should allow. \"He got far?\" \"The ravine. He saw the whole wood.\" The boy nods, slow, like a man watching a debt settle. \"That's a good place to stop walking,\" he decides. So do you.", "next": ""},
 	}},
 
 	# The Heron Feather's illustrated coda (2026-08-17 quest-illustration pass):
@@ -376,7 +376,7 @@ const CONVOS := {
 	# boy's moment is class-agnostic, so one shared plate serves every bearer).
 	"hat_returned_scene": {"cinematic": true, "start": "hs1", "nodes": {
 		"hs1": {"who": "Narrator", "cue": "q_hat",
-			"text": "The mill road, gone gold with evening. The boy stands where his father used to, the wide brim swallowing him to the eyebrows, and the heron feather catches the last of the light, blue at the tip, exactly as promised. He faces the howling the way you face weather you have decided to outlast.",
+			"text": "The mill road, gone gold with evening. The boy stands where his father used to, the wide brim swallowing him to the eyebrows, and the heron feather catches the last of the light, blue at the tip, exactly as promised. He faces the howling the way you face weather you've decided to outlast.",
 			"next": "hs_fade"},
 		"hs_fade": {"who": "Narrator", "cue": "fade",
 			"text": "You leave him to his watch. The wood is a little less empty for it.", "next": ""},
@@ -385,24 +385,24 @@ const CONVOS := {
 	# Resonance shrines: a genuine band-shifting choice between story beats.
 	"shrine_moonwell": {"start": "s1", "nodes": {
 		"s1": {"who": "Narrator",
-			"text": "A still pool in a ring of silver birches. The moon sits in the water — full, though the sky above holds only a sliver. The Ember in you leans toward it like a plant toward light. The water would give. It always gives. The question is what it takes.",
-			"variants": [{"flag": "moonwell_touched", "text": "The pool is only a pool now — the moon in it matches the sky. Whatever it wanted to know about you, it knows.", "next": ""}],
+			"text": "A still pool in a ring of silver birches. The moon sits in the water, full, though the sky above holds only a sliver. The Ember in you leans toward it like a plant toward light. The water would give. It always gives. The question is what it takes.",
+			"variants": [{"flag": "moonwell_touched", "text": "The pool is only a pool now, the moon in it matches the sky. Whatever it wanted to know about you, it knows.", "next": ""}],
 			"choices": [
-				{"text": "Kneel and give the water a memory freely — let it take, and take nothing back.",
+				{"text": "Kneel and give the water a memory freely. Let it take, and take nothing back.",
 					"resonance": 8.0, "flags": {"moonwell_touched": true, "chose_moonwell_gave": true}, "next": "s_give"},
 				{"text": "Drink. Power is there for the taking, and you have a king to kill.",
 					"resonance": -8.0, "flags": {"moonwell_touched": true, "chose_moonwell_drank": true}, "next": "s_drink"},
 				{"text": "Step back from the edge. Not every offered thing must be answered.",
 					"resonance": 0.0, "flags": {"moonwell_touched": true}, "next": "s_leave"},
 			]},
-		"s_give": {"who": "Narrator", "text": "You give it a small warm morning from years ago. The water goes dark, satisfied — and the Ember in you sits QUIETER, like a debt paid down. You will not miss the morning. That is the strange part.", "next": ""},
-		"s_drink": {"who": "Narrator", "text": "Cold light down the throat. Strength floods in — and underneath it, faint as a hook in a fish, something now runs the other way. The Ember purrs. You choose not to wonder what swims up a line like that.", "next": ""},
-		"s_leave": {"who": "Narrator", "text": "The moon in the water watches you go. Neither of you owes the other anything. It is the rarest way an encounter with power ends.", "next": ""},
+		"s_give": {"who": "Narrator", "text": "You give it a small warm morning from years ago. The water goes dark, satisfied, and the Ember in you sits quieter, like a debt paid down. You won't miss the morning. That's the strange part.", "next": ""},
+		"s_drink": {"who": "Narrator", "text": "Cold light down the throat. Strength floods in, and underneath it, faint as a hook in a fish, something now runs the other way. The Ember purrs. You choose not to wonder what swims up a line like that.", "next": ""},
+		"s_leave": {"who": "Narrator", "text": "The moon in the water watches you go. Neither of you owes the other anything. It's the rarest way an encounter with power ends.", "next": ""},
 	}},
 	"shrine_reliquary": {"start": "r1", "nodes": {
 		"r1": {"who": "Narrator",
-			"text": "A vault the looters somehow missed: the Ember Guard's reliquary. On a dusty plinth, the padded stand where the CROWN once rested — empty sixty years. Around it, the small honest relics of four founders. The Ember in you knows this room. It was BUILT here.",
-			"variants": [{"flag": "reliquary_touched", "text": "The reliquary keeps its dust and its dead. The empty stand no longer pulls at you — or you no longer answer.", "next": ""}],
+			"text": "A vault the looters somehow missed: the Ember Guard's reliquary. On a dusty plinth, the padded stand where the Crown once rested, empty sixty years. Around it, the small honest relics of four founders. The Ember in you knows this room. It was built here.",
+			"variants": [{"flag": "reliquary_touched", "text": "The reliquary keeps its dust and its dead. The empty stand no longer pulls at you, or you no longer answer.", "next": ""}],
 			"choices": [
 				{"text": "Kneel to the founders and renew their oath in your own words.",
 					"resonance": 8.0, "flags": {"reliquary_touched": true, "chose_reliquary_oath": true}, "next": "r_oath"},
@@ -411,27 +411,27 @@ const CONVOS := {
 				{"text": "Touch nothing. Some rooms are graves; act like it.",
 					"resonance": 0.0, "flags": {"reliquary_touched": true}, "next": "r_leave"},
 			]},
-		"r_oath": {"who": "Narrator", "text": "The words come out plain and unheroic, which is how the true ones sound. The Ember steadies — not tamed, but ENLISTED. Somewhere in its long memory, four dead founders note the signature.", "next": ""},
-		"r_hand": {"who": "Narrator", "text": "It would feel like THIS: right. Fitted. Overdue. You take your hand back — you can still do that, this time — and the Ember spends the rest of the hour showing you the room from a throne's height.", "next": ""},
-		"r_leave": {"who": "Narrator", "text": "You leave the dust its shapes. On the way out, the Ember tests the lock on you, once, quietly — and finds it holds.", "next": ""},
+		"r_oath": {"who": "Narrator", "text": "The words come out plain and unheroic, which is how the true ones sound. The Ember steadies, not tamed, but enlisted. Somewhere in its long memory, four dead founders note the signature.", "next": ""},
+		"r_hand": {"who": "Narrator", "text": "It would feel like this: right. Fitted. Overdue. You take your hand back. You can still do that, this time. And the Ember spends the rest of the hour showing you the room from a throne's height.", "next": ""},
+		"r_leave": {"who": "Narrator", "text": "You leave the dust its shapes. On the way out, the Ember tests the lock on you, once, quietly, and finds it holds.", "next": ""},
 	}},
 
 	# Dead-end lore props.
 	"lore_hollow_oak": {"start": "l1", "nodes": {
-		"l1": {"who": "Narrator", "text": "A grandfather oak, split open and hollow. Inside, wax stubs and a child's carved wolf — someone hid offerings here for the wood's old spirits, long before the blight gave the wood new ones. The candle wax is recent.", "next": ""},
+		"l1": {"who": "Narrator", "text": "A grandfather oak, split open and hollow. Inside, wax stubs and a child's carved wolf. Someone hid offerings here for the wood's old spirits, long before the blight gave the wood new ones. The candle wax is recent.", "next": ""},
 	}},
 	"lore_ravine": {"start": "l1", "nodes": {
-		"l1": {"who": "Narrator", "text": "The ravine has nothing for you. No monsters, no treasure, no secret door. The view, though — the whole Darkwood rolling east under the mist, and the keep's towers far off, patient as tombstones. You allow yourself one long minute of it.", "next": ""},
+		"l1": {"who": "Narrator", "text": "The ravine has nothing for you. No monsters, no treasure, no secret door. The view, though: the whole Darkwood rolling east under the mist, and the keep's towers far off, patient as tombstones. You allow yourself one long minute of it.", "next": ""},
 	}},
 	"lore_drowned_chapel": {"start": "l1", "nodes": {
-		"l1": {"who": "Narrator", "text": "A flooded chapel of the Flame, sunk to its windows. The altar stone stands just above the waterline, and someone has kept ONE candle burning on it — the wax runs down in years, not hours. Morwen's blight circles this place and does not enter. Interesting, that it can't. Or won't.",
+		"l1": {"who": "Narrator", "text": "A flooded chapel of the Flame, sunk to its windows. The altar stone stands just above the waterline, and someone has kept one candle burning on it. The wax runs down in years, not hours. Morwen's blight circles this place and doesn't enter. Interesting, that it can't. Or won't.",
 			"variants": [
-				{"flag": "chapel_cupped", "text": "The candle burns on the altar stone, steady over the black water. The flame leans toward you when you enter now — barely. But it does.", "next": ""},
-				{"flag": "chapel_snuffed", "text": "The candle burns — relit, grudging, a shade smaller than it was. The blight circles a half-step closer than you remember. Neither of you mentions it.", "next": ""},
+				{"flag": "chapel_cupped", "text": "The candle burns on the altar stone, steady over the black water. The flame leans toward you when you enter now, barely. But it does.", "next": ""},
+				{"flag": "chapel_snuffed", "text": "The candle burns, relit, grudging, a shade smaller than it was. The blight circles a half-step closer than you remember. Neither of you mentions it.", "next": ""},
 				{"flag": "chapel_faced", "text": "The candle burns on, sixty years and one more night. The watch was never yours. It minds the door all the same.", "next": ""},
 			],
 			"next": "c_watch"},
-		"c_watch": {"who": "Narrator", "text": "The wind comes off the water and the flame bends, recovers, bends. Whoever keeps this candle is not here. Right now, the watch is anyone's.",
+		"c_watch": {"who": "Narrator", "text": "The wind comes off the water and the flame bends, recovers, bends. Whoever keeps this candle isn't here. Right now, the watch is anyone's.",
 			"choices": [
 				{"text": "Cup your hand around the flame until the gust passes. Stand a stranger's watch.",
 					"resonance": 3.0, "flags": {"chapel_faced": true, "chapel_cupped": true}, "next": "c_cup"},
@@ -440,26 +440,26 @@ const CONVOS := {
 				{"text": "Leave it to its work. It has managed this long without your opinion.",
 					"resonance": 0.0, "flags": {"chapel_faced": true}, "next": "c_leave"},
 			]},
-		"c_cup": {"who": "Narrator", "text": "The gust breaks on your knuckles and the flame steadies, and for one held breath the chapel is exactly what it was built to be: a lit room in the dark, with someone minding the door. Out on the water, the blight's slow circling falters — a half-step, no more. It is enough to have been seen doing it.", "next": ""},
-		"c_snuff": {"who": "Narrator", "text": "Dark comes down like a lid — and the marsh LEANS: reeds, water, the far unseen singing, all of it, toward the altar, the way a crowd leans at a scaffold. You relight it. You TRY. The wick takes on the third strike, grudging, smaller. Some watches you do not get to end on someone else's behalf. The Ember, you notice, enjoyed the dark just fine.", "next": ""},
-		"c_leave": {"who": "Narrator", "text": "It has burned sixty years of nights exactly like this one. You leave it to the work, and the flame stands a little taller in the still air behind you — or you tell yourself it does. Either way, the door was minded tonight.", "next": ""},
+		"c_cup": {"who": "Narrator", "text": "The gust breaks on your knuckles and the flame steadies, and for one held breath the chapel is exactly what it was built to be: a lit room in the dark, with someone minding the door. Out on the water, the blight's slow circling falters, a half-step, no more. It's enough to have been seen doing it.", "next": ""},
+		"c_snuff": {"who": "Narrator", "text": "Dark comes down like a lid, and the marsh leans: reeds, water, the far unseen singing, all of it, toward the altar, the way a crowd leans at a scaffold. You relight it. You try. The wick takes on the third strike, grudging, smaller. Some watches you don't get to end on someone else's behalf. The Ember, you notice, enjoyed the dark just fine.", "next": ""},
+		"c_leave": {"who": "Narrator", "text": "It's burned sixty years of nights exactly like this one. You leave it to the work, and the flame stands a little taller in the still air behind you, or you tell yourself it does. Either way, the door was minded tonight.", "next": ""},
 	}},
 	"lore_collapsed_tower": {"start": "l1", "nodes": {
-		"l1": {"who": "Narrator", "text": "The watchtower fell the night Vargoth rose — the masonry still shows the burn-shadow of the guard who stood here when it came down. Under the rubble: a rusted signal-horn, mouthpiece worn bright from use. He was CALLING someone, at the end. The record does not say if anyone came.",
+		"l1": {"who": "Narrator", "text": "The watchtower fell the night Vargoth rose. The masonry still shows the burn-shadow of the guard who stood here when it came down. Under the rubble: a rusted signal-horn, mouthpiece worn bright from use. He was calling someone, at the end. The record doesn't say if anyone came.",
 			"variants": [
-				{"flag": "horn_blown", "text": "The signal-horn rests on the rubble where you set it. The horizon has kept its answer to itself since — but you know what you heard, and the storm knows you heard it.", "next": ""},
+				{"flag": "horn_blown", "text": "The signal-horn rests on the rubble where you set it. The horizon has kept its answer to itself since, but you know what you heard, and the storm knows you heard it.", "next": ""},
 				{"flag": "horn_rested", "text": "The horn stands on the rubble, mouthpiece up, aimed at the horizon. Still ready. Still his.", "next": ""},
 			],
 			"next": "t_horn"},
 		"t_horn": {"who": "Narrator", "text": "The horn has waited under the rubble for sixty years, mouthpiece worn bright, call unfinished.",
 			"choices": [
-				{"text": "Raise it and sound the call — finish what the guard started.",
+				{"text": "Raise it and sound the call. Finish what the guard started.",
 					"resonance": 3.0, "flags": {"horn_blown": true}, "next": "t_blow"},
 				{"text": "Set it upright on the rubble, mouthpiece up, the way a signalman stands his post. Leave the silence his.",
 					"resonance": 0.0, "flags": {"horn_rested": true}, "next": "t_rest"},
 			]},
-		"t_blow": {"who": "Narrator", "text": "The note comes out cracked, then enormous — it rolls east over the marsh and the wastes and takes sixty years of waiting with it. Silence. Then, from far past the keep, where the storm never quite leaves the horizon: one long note back. The same call. An answer six decades late — or an acknowledgment. Somewhere, a watch that never ended has changed hands.", "next": ""},
-		"t_rest": {"who": "Narrator", "text": "You set it ready, pointed at the horizon. Some calls are not yours to finish. The burn-shadow on the masonry keeps its silence, and you leave the tower feeling watched — not unkindly.", "next": ""},
+		"t_blow": {"who": "Narrator", "text": "The note comes out cracked, then enormous. It rolls east over the marsh and the wastes and takes sixty years of waiting with it. Silence. Then, from far past the keep, where the storm never quite leaves the horizon: one long note back. The same call. An answer six decades late, or an acknowledgment. Somewhere, a watch that never ended has changed hands.", "next": ""},
+		"t_rest": {"who": "Narrator", "text": "You set it ready, pointed at the horizon. Some calls aren't yours to finish. The burn-shadow on the masonry keeps its silence, and you leave the tower feeling watched, not unkindly.", "next": ""},
 	}},
 	# The miller's hat (payoff for the boy's ask — see wander_orphan).
 	# The prop spawns only in worlds that rolled the boy (req_wanderer);
@@ -467,10 +467,10 @@ const CONVOS := {
 	# boy collects ("lose_item") — and which does not outlive the run.
 	"lore_millers_hat": {"start": "l1", "nodes": {
 		"l1": {"who": "Narrator",
-			"text": "Snagged in the thorns at the ravine's lip: a wide-brim hat, brown once, rain-stiffened to the color of bark. A heron feather still rides the band — blue at the tip. Whoever walked this far came for the view, or was past wanting anything. The wood keeps its own accounts.",
+			"text": "Snagged in the thorns at the ravine's lip: a wide-brim hat, brown once, rain-stiffened to the color of bark. A heron feather still rides the band, blue at the tip. Whoever walked this far came for the view, or was past wanting anything. The wood keeps its own accounts.",
 			"variants": [
 				{"flag": "hat_taken", "text": "The thornbush keeps the hat's shape, empty. You check it every pass anyway. Habit, now.", "next": ""},
-				{"flag": "boy_answered", "text": "Snagged in the thorns at the ravine's lip: a wide-brim hat. Brown. Heron feather. You know before you turn it over — blue at the tip. The miller made it exactly this far, and the view from here is the whole Darkwood.", "next": "h_know"},
+				{"flag": "boy_answered", "text": "Snagged in the thorns at the ravine's lip: a wide-brim hat. Brown. Heron feather. You know before you turn it over: blue at the tip. The miller made it exactly this far, and the view from here is the whole Darkwood.", "next": "h_know"},
 			],
 			"next": "h_found"},
 		# You made the boy a promise — the hat is the other half of it.
@@ -482,7 +482,7 @@ const CONVOS := {
 				{"text": "Leave it where the wind put it. For now, or for good.", "next": ""},
 			]},
 		# Found cold, before (or without) ever meeting the boy.
-		"h_found": {"who": "Narrator", "text": "Somebody's da wore this toward the howling and did not come back for it. It would cost nothing to carry.",
+		"h_found": {"who": "Narrator", "text": "Somebody's da wore this toward the howling and didn't come back for it. It would cost nothing to carry.",
 			"choices": [
 				{"text": "Take it. Somebody, somewhere, is short one hat and one answer.",
 					"resonance": 1.0, "flags": {"hat_taken": true}, "gain_item": "millers_hat",
@@ -573,24 +573,24 @@ const ENEMIES := {
 		"mechanics": [
 			{"name": "Pounce",
 			 "tell": "He crouches and a danger circle paints the ground under you, then he leaps and crashes down on it.",
-			 "counter": "The circle marks where he lands, not where you stand now — step clear of it before he hits."},
+			 "counter": "The circle marks where he lands, not where you stand now, so step clear of it before he hits."},
 			{"name": "Telegraphed Charge",
 			 "tell": "He freezes and flashes bright red for a beat, locking onto your position, then bolts in a straight line and bites at the end.",
-			 "counter": "The red flash is your cue — sidestep once he commits; he charges a fixed line and can't correct mid-run."},
+			 "counter": "The red flash is your cue: sidestep once he commits. He charges a fixed line and can't correct mid-run."},
 			{"name": "Calls the Pack (50%)",
 			 "tell": "At half health he howls and two wolves spawn at his flanks.",
-			 "counter": "The wolves drop zero XP and gold — don't farm them. Keep damage on Fangmaw and kite the pack rather than chasing it."}]},
+			 "counter": "The wolves drop zero XP and gold, so don't farm them. Keep damage on Fangmaw and kite the pack rather than chasing it."}]},
 	"morwen":   {"name": "Morwen the Blightcaller", "sprite": "morwen",   "hp": 14300.0,  "dmg": 26.0, "speed": 120.0, "xp": 110, "gold": 90,  "ranged": true,  "scale": 9.0,
 		"physres": 10.0, "magres": 35.0, "eva": 0.10, "critres": 3.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 7, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"INT": 2.0, "VIT": 1.0},
 		"mechanics": [
 			{"name": "Blight Rain",
-			 "tell": "She raises her staff and four green poison pools bloom in sequence — one right under you, the rest scattered around.",
+			 "tell": "She raises her staff and four green poison pools bloom in sequence: one right under you, the rest scattered around.",
 			 "counter": "The pools land staggered, not all at once. Walk out of the first as the next telegraphs and keep drifting through the gaps."},
 			{"name": "Blink Away",
 			 "tell": "Close inside melee range and she vanishes, reappearing a long way off.",
-			 "counter": "Expect her to teleport the moment you get near — save gap-closers and dashes for right after she blinks, not before."},
+			 "counter": "Expect her to teleport the moment you get near, so save gap-closers and dashes for right after she blinks, not before."},
 			{"name": "Bolt Volleys & Ring",
 			 "tell": "She fires a three-bolt fan at you on a fast cadence, and periodically rings out a full circle of twelve bolts.",
 			 "counter": "Strafe across the fan rather than backing straight up. For the ring, slip out through a gap between bolts instead of tanking it."}]},
@@ -601,13 +601,13 @@ const ENEMIES := {
 		"mechanics": [
 			{"name": "Blade Storm",
 			 "tell": "He calls down a run of greatswords from the sky, each marking your current position a beat before it falls.",
-			 "counter": "The blades chase where you are, so never stand still — keep moving and each one lands on ground you've already left."},
+			 "counter": "The blades chase where you are, so never stand still. Keep moving and each one lands on ground you've already left."},
 			{"name": "Shockwave Slam",
 			 "tell": "He slams the ground with a screen shake and a wide ring of slow bolts rolls outward in every direction.",
-			 "counter": "The bolts are slow and evenly spaced — don't fight from point-blank; give yourself room and weave out between them."},
+			 "counter": "The bolts are slow and evenly spaced, so don't fight from point-blank. Give yourself room and weave out between them."},
 			{"name": "The Hollow King Enrages (30%)",
 			 "tell": "Below 30% he flares red, roars, and moves half again as fast.",
-			 "counter": "His blade storm and slam come far more often now — burn him down fast and expect a tighter dodge cadence on everything."}]},
+			 "counter": "His blade storm and slam come far more often now, so burn him down fast and expect a tighter dodge cadence on everything."}]},
 }
 
 
@@ -1035,7 +1035,7 @@ const ENDGAME_ARENAS := {
 const CHAPTERS := {
 	"ch1": {
 		"name": "Chapter 1: The Hollow King",
-		"sub": "A bearer's story — the second fall of Vargoth",
+		"sub": "A bearer's story: the second fall of Vargoth",
 		"zones": ZONES,
 		# Seeded procedural layout (playtest round 3: "every run is the
 		# same map"). The SPINE lists the boss path in story order; each
@@ -1050,7 +1050,7 @@ const CHAPTERS := {
 	},
 	"ch2": {
 		"name": "Chapter 2: The Waking",
-		"sub": "Years later — the scattered shards choose their bearers",
+		"sub": "Years later: the scattered shards choose their bearers",
 		"zones": CH2_ZONES,
 		# Graph retrofit (CH2_RETROFIT_TASKS, DESIGN open item #1): ch2 was
 		# the last LEGACY STRIP — no spine, so it laid out as a fixed
@@ -1065,7 +1065,7 @@ const CHAPTERS := {
 		"start_quest": "ch2_start",
 		"final_boss": "nullwarden",
 		# (The end-screen appends the "journey on" prompt now that ch3+ exist.)
-		"victory_text": "The Null Bastion falls silent. The Waking is beaten back — but the shards are still choosing, and the factions are still counting.\nEast of the camps, the Choir's heartland has gone quiet in the wrong way.",
+		"victory_text": "The Null Bastion falls silent. The Waking is beaten back, but the shards are still choosing, and the factions are still counting.\nEast of the camps, the Choir's heartland has gone quiet in the wrong way.",
 		"start_pos": [180, 360],
 	},
 	# ---- Act 1 back half (BOSSES.md): zones arrive via content modules
@@ -1075,13 +1075,13 @@ const CHAPTERS := {
 	# endgame (Act 2+) loot everywhere in Act 1.
 	"ch3": {
 		"name": "Chapter 3: The Unburied Vale",
-		"sub": "The Choir's heartland — a funeral that never ends",
+		"sub": "The Choir's heartland: a funeral that never ends",
 		"zones": [],
 		"spine": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
 		"loot_cap": "B",  # round 51: Act-1 chest/bag/spoils cap B (A only from ch7 bosses)
 		"start_quest": "ch3_start",
 		"final_boss": "saint_varo",
-		"victory_text": "Saint Varo lies still, and for the first time in sixty years the Vale is quiet enough to bury someone.\nThe Choir scatters — but far south, the foundry fires are answering something under the rock.",
+		"victory_text": "Saint Varo lies still, and for the first time in sixty years the Vale is quiet enough to bury someone.\nThe Choir scatters, but far south, the foundry fires are answering something under the rock.",
 		"start_pos": [340, 624],
 	},
 	"ch4": {
@@ -1092,7 +1092,7 @@ const CHAPTERS := {
 		"loot_cap": "B",  # round 51: Act-1 chest/bag/spoils cap B (A only from ch7 bosses)
 		"start_quest": "ch4_start",
 		"final_boss": "ashpriest",
-		"victory_text": "The sermon ends unfinished. The foundries cool — but the verdicts were never Ordo's, and the court beneath the rock is still in session.\nNorth, they say, whole villages have stopped waking up.",
+		"victory_text": "The sermon ends unfinished. The foundries cool, but the verdicts were never Ordo's, and the court beneath the rock is still in session.\nNorth, they say, whole villages have stopped waking up.",
 		"start_pos": [340, 624],
 	},
 	"ch5": {
@@ -1103,7 +1103,7 @@ const CHAPTERS := {
 		"loot_cap": "B",  # round 51: Act-1 chest/bag/spoils cap B (A only from ch7 bosses)
 		"start_quest": "ch5_start",
 		"final_boss": "sleepkeeper",
-		"victory_text": "Halla's hymn fades. The sleepers she gathered will wake or they won't — the ice keeps its own counsel, and the Queen has not stopped dreaming.\nEast, in the deep bog, something has started to GROW.",
+		"victory_text": "Halla's hymn fades. The sleepers she gathered will wake or they won't. The ice keeps its own counsel, and the Queen hasn't stopped dreaming.\nEast, in the deep bog, something has started to grow.",
 		"start_pos": [340, 624],
 	},
 	"ch6": {
@@ -1114,18 +1114,18 @@ const CHAPTERS := {
 		"loot_cap": "B",  # round 51: Act-1 chest/bag/spoils cap B (A only from ch7 bosses)
 		"start_quest": "ch6_start",
 		"final_boss": "curetwisted",
-		"victory_text": "The Deep goes still. Whatever the Pale Root wanted with Kaethra, it is looking for a new gardener now.\nOver the Thunder Plains, the sky has begun to tear at the edges.",
+		"victory_text": "The Deep goes still. Whatever the Pale Root wanted with Kaethra, it's looking for a new gardener now.\nOver the Thunder Plains, the sky has begun to tear at the edges.",
 		"start_pos": [340, 624],
 	},
 	"ch7": {
 		"name": "Chapter 7: The Breaking Sky",
-		"sub": "The last vow-keeper stops mid-sentence — Act 1 finale",
+		"sub": "The last vow-keeper stops mid-sentence: Act 1 finale",
 		"zones": [],
 		"spine": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
 		"loot_cap": "B",  # round 51: Act-1 chest/bag/spoils cap B (A only from ch7 bosses)
 		"start_quest": "ch7_start",
 		"final_boss": "stormmouth",
-		"victory_text": "The recitation ends, six hundred years late — and the sky answers with a sound like the world clearing its throat.\nThe seal is CRACKED. Not open. Cracked. Every power in Vaelscar heard it, and the age you grew up in is over.\n\nACT 1 COMPLETE — the mid game begins.",
+		"victory_text": "The recitation ends, six hundred years late, and the sky answers with a sound like the world clearing its throat.\nThe seal is cracked. Not open. Cracked. Every power in Vaelscar heard it, and the age you grew up in is over.\n\nACT 1 COMPLETE. Now the mid game begins.",
 		"start_pos": [340, 624],
 	},
 }
@@ -1433,14 +1433,14 @@ const BEATS := {
 	# (game.gd). All six author one, so this is a safety net — but it still
 	# has to speak current canon: the player is a SHARD-BEARER, not Aldric.
 	"intro": [
-		["Narrator", "The kingdom of Emberfall has fallen quiet. Vargoth, once a just king, was buried with honor sixty years ago — then walked again, hollow-eyed, and wore the Ember Crown for sixty more."],
-		["Narrator", "Thirty years ago Ser Aldric put a blade through him, and the Crown shattered. It did not scatter into nothing. It scattered into PEOPLE."],
-		["You", "And now the blight is climbing out of his keep a second time — and the thing in my chest has started listening."],
+		["Narrator", "The kingdom of Emberfall has gone quiet. Vargoth, once a just king, was buried with honor sixty years ago, then walked again, hollow-eyed, and wore the Ember Crown for sixty more."],
+		["Narrator", "Thirty years ago Ser Aldric put a blade through him, and the Crown shattered. It didn't scatter into nothing. It scattered into people."],
+		["You", "And now the blight is climbing out of his keep a second time, and the thing in my chest has started listening."],
 	],
 	"elder": [
-		["Elder Maren", "Bearer! Thank the flame you came. The wolves of the Darkwood grow bold - something twists them from within."],
-		["Elder Maren", "A beast they call FANGMAW leads the pack. Slay it, and the road east will be safe again."],
-		["Elder Maren", "Take these potions - press Q when your wounds are grave. And remember: keep moving. A still flame is a snuffed one."],
+		["Elder Maren", "Bearer! Thank the flame you came. The wolves of the Darkwood are getting bold, and something twists them from the inside."],
+		["Elder Maren", "A beast they call Fangmaw leads the pack. Kill it, and the road east will be safe again."],
+		["Elder Maren", "Take these potions. Press Q when your wounds are grave. And remember: keep moving. A still flame is a snuffed one."],
 		["You", "I'll return with its pelt, Elder."],
 	],
 	"elder_repeat": [
@@ -1453,10 +1453,10 @@ const BEATS := {
 		["Narrator", "A monstrous howl shakes the trees. Fangmaw has caught your scent."],
 	],
 	"pre_fangmaw@tempted": [
-		["Narrator", "A monstrous howl shakes the trees. Fangmaw has caught your scent — and the Ember in you rises to answer it, gleeful, like calling to like. You are hunting each other. It would be dishonest to say which of you is happier about it."],
+		["Narrator", "A monstrous howl shakes the trees. Fangmaw has caught your scent, and the Ember in you rises to answer it, gleeful, like calling to like. You're hunting each other. It would be dishonest to say which of you is happier about it."],
 	],
 	"pre_fangmaw@steady": [
-		["Narrator", "A monstrous howl shakes the trees. Fangmaw has caught your scent. The Ember in your chest holds low and even — a lantern, not a wildfire. The howl breaks off mid-note. It noticed."],
+		["Narrator", "A monstrous howl shakes the trees. Fangmaw has caught your scent. The Ember in your chest holds low and even, a lantern, not a wildfire. The howl breaks off mid-note. It noticed."],
 	],
 	"post_fangmaw": [
 		["Narrator", "Fangmaw falls. The wolves scatter into the trees, their eyes clear for the first time in months."],
@@ -1468,49 +1468,49 @@ const BEATS := {
 		["You", "Talk less, witch."],
 	],
 	"pre_morwen@tempted": [
-		["Morwen", "Another little candle, come to gutter out in my marsh? ...No. Look at you. Not guttering — LEANING. I know that lean, candle. Mine began exactly so: just a little, toward the warm."],
+		["Morwen", "Another little candle, come to gutter out in my marsh? ...No. Look at you. Not guttering. Leaning. I know that lean, candle. Mine began exactly so: just a little, toward the warm."],
 		["You", "Talk less, witch."],
 	],
 	"pre_morwen@steady": [
-		["Morwen", "A candle that keeps its flame in MY wind? How it must cost you, all that holding. Set it down, candle — the rot asks nothing of anyone. That is its whole mercy."],
+		["Morwen", "A candle that keeps its flame in my wind? How it must cost you, all that holding. Set it down, candle. The rot asks nothing of anyone. That's its whole mercy."],
 		["You", "Talk less, witch."],
 	],
 	"post_morwen": [
-		["Morwen", "You... cannot stop... what has already begun. The Hollow King... rises..."],
+		["Morwen", "You... can't stop... what's already begun. The Hollow King... rises..."],
 		["You", "Then I'll put him back in the ground myself. Again, if that's what it takes."],
 		["Narrator", "The witch crumbles to ash. Beyond the marsh, the towers of Vargoth's Keep pierce the grey sky. You feel restored."],
 	],
 	"pre_vargoth": [
 		["King Vargoth", "A piece of me, walking about in someone else's chest... You come for the Crown, little flame?"],
-		["King Vargoth", "I wore it for sixty years. It is MINE. Come - kneel before your king."],
+		["King Vargoth", "I wore it for sixty years. It's mine. Come, kneel before your king."],
 		["You", "My king died sixty years ago. You're just what's left."],
 	],
 	# He FELT the hand on the crown-stand (shrine_reliquary r_hand).
 	"pre_vargoth@flag:chose_reliquary_hand": [
 		["King Vargoth", "A piece of me, walking about in someone else's chest... You come for the Crown, little flame?"],
-		["King Vargoth", "I felt your hand on the stand where it rested. One breath of wanting — but oh, the FIT of you. Sixty years I wore it; you wore it for a heartbeat, and you already know how to kneel. Spare us both the pretending."],
+		["King Vargoth", "I felt your hand on the stand where it rested. One breath of wanting, but oh, the fit of you. Sixty years I wore it; you wore it for a heartbeat, and you already know how to kneel. Spare us both the pretending."],
 		["You", "My king died sixty years ago. You're just what's left."],
 	],
 	"pre_vargoth@tempted": [
 		["King Vargoth", "A piece of me, walking about in someone else's chest... You come for the Crown, little flame?"],
-		["King Vargoth", "I can hear yours whispering from HERE. It promised you small things first, didn't it? Mine did too. Kneel, little flame — and skip the wasted years of telling yourself you don't want the rest."],
+		["King Vargoth", "I can hear yours whispering from here. It promised you small things first, didn't it? Mine did too. Kneel, little flame, and skip the wasted years of telling yourself you don't want the rest."],
 		["You", "My king died sixty years ago. You're just what's left."],
 	],
 	"pre_vargoth@steady": [
 		["King Vargoth", "A piece of me, walking about in someone else's chest... You come for the Crown, little flame?"],
-		["King Vargoth", "You hold it the way the founders held it. Steady. They knelt in the end, bearer — to me, or to time; it hardly matters which. Everything steady breaks. Come and break."],
+		["King Vargoth", "You hold it the way the founders held it. Steady. They knelt in the end, bearer, to me, or to time; it hardly matters which. Everything steady breaks. Come and break."],
 		["You", "My king died sixty years ago. You're just what's left."],
 	],
 	"epilogue": [
-		["Narrator", "The Hollow King shatters like old porcelain. The Ember Crown clatters to the stones - still warm to the touch."],
+		["Narrator", "The Hollow King shatters like old porcelain. The Ember Crown clatters to the stones, still warm to the touch."],
 		["You", "It's over. The flame returns to Emberfall."],
 		["Narrator", "...But deep beneath the keep, something older stirs in its sleep. TO BE CONTINUED IN CHAPTER 2."],
 	],
 	# The deserter's loop closes (wander_deserter: "be braver than me").
 	"epilogue@flag:heard_deserter": [
-		["Narrator", "The Hollow King shatters like old porcelain. The Ember Crown clatters to the stones - still warm to the touch."],
+		["Narrator", "The Hollow King shatters like old porcelain. The Ember Crown clatters to the stones, still warm to the touch."],
 		["You", "It's over. The flame returns to Emberfall."],
-		["Narrator", "Miles west, on a road going nowhere in particular, a ragged soldier stops mid-stride. The stones have gone quiet. He stands a long moment — then turns, at last, toward home."],
+		["Narrator", "Miles west, on a road going nowhere in particular, a ragged soldier stops mid-stride. The stones have gone quiet. He stands a long moment, then turns, at last, toward home."],
 		["Narrator", "...But deep beneath the keep, something older stirs in its sleep. TO BE CONTINUED IN CHAPTER 2."],
 	],
 }
@@ -1527,7 +1527,7 @@ const SIDE_QUESTS := {
 	"heron_feather": {
 		"name": "The Heron Feather",
 		"chapter": "ch1",
-		"desc": "A miller's boy watches the road for a wide-brim hat — brown, heron feather, blue at the tip. His father wore it toward the howling.",
+		"desc": "A miller's boy watches the road for a wide-brim hat: brown, heron feather, blue at the tip. His father wore it toward the howling.",
 		"steps": [
 			{"flag": "hat_taken", "text": "Find the miller's hat, somewhere in the Darkwood"},
 			{"flag": "hat_given", "text": "Bring it to the boy at the village edge"},
@@ -1540,9 +1540,9 @@ const SIDE_QUESTS := {
 
 const QUESTS := {
 	"talk":     "Speak with Elder Maren in the village  (walk up to her and press E)",
-	"fangmaw":  "Clear the Darkwood, then slay FANGMAW",
-	"morwen":   "Purge the Blightmarsh, then destroy MORWEN",
-	"vargoth":  "Cleanse the keep, then face KING VARGOTH",
+	"fangmaw":  "Clear the Darkwood, then slay Fangmaw",
+	"morwen":   "Purge the Blightmarsh, then destroy Morwen",
+	"vargoth":  "Cleanse the keep, then face King Vargoth",
 	"done":     "Chapter 1 complete!",
-	"ch2_start": "The camp is quiet — for now. (Chapter 2 content is on its way.)",
+	"ch2_start": "The camp is quiet, for now. (Chapter 2 content is on its way.)",
 }
