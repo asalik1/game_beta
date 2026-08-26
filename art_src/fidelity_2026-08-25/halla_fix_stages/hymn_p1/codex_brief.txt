@@ -1,0 +1,16 @@
+Create TWO CONSECUTIVE FRAMES of a NEW animation for an existing game boss, side by side.
+The character design is LOCKED — reproduce her exactly from the references.
+
+Reference image 1 is Halla at rest: moth wings with eye-spots, hood, layered robe, the pale
+blue moth swarm, and a small CANDLE on a holder HELD in one hand. She has exactly TWO arms;
+the candle stays properly held in one hand throughout — NEVER floating, NEVER on a third hand.
+
+This is her HYMN — a slow mournful sung pulse (she is planted in place, restrained):
+- Left figure (frame 1): wind-up: head bowing, her FREE hand rising toward her chest, a soft pale glow starting at her throat; the candle stays held LOW and steady in the other hand
+- Right figure (frame 2): sing: head lifting, mouth opening in song, pale concentric rings of sound-glow beginning to pulse outward from her mouth and chest
+
+Same body scale and ground position in both figures, matching the reference's proportions and
+palette. Generate ONE image in LANDSCAPE orientation: the two figures side by side, clearly
+separated, on a flat solid #00ff00 GREEN background (it will be keyed out).
+
+Save the image to disk at the exact path C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\halla_fix_stages\hymn_p1\hymn_p1_master.png and stop.

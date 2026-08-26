@@ -1,0 +1,15 @@
+Create a NEW 4-frame animation for an existing game boss as a 2x2 grid.
+The character design is LOCKED — reproduce the boss from reference image 1 exactly (same
+creature, gear, palette, proportions, facing south/front).
+
+The animation — SPLIT (the Unnaming — dividing into mirror copies):
+- top-left (frame 1): the figure in its rest pose, a thin seam of void-light opening down its centre
+- top-right (frame 2): the body pulling apart into two overlapping half-transparent copies leaning to either side
+- bottom-left (frame 3): two near-complete mirrored copies side by side with a bright void-flash between them, both fully inside the cell
+- bottom-right (frame 4): the two copies sliding back together toward the single solid figure
+
+Each cell contains the COMPLETE figure at the same size, feet on the same baseline, with clear
+gutters between cells, on a flat solid #00ff00 GREEN background (it will be keyed out).
+Signature energy color: cold violet void-light.
+
+Save the single 2x2 image to disk at the exact path C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\dupe_fix_stages\echo_split\echo_split_master.png and stop.

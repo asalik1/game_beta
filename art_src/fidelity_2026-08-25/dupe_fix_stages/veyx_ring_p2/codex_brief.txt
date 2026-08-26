@@ -1,0 +1,12 @@
+Create TWO CONSECUTIVE FRAMES of a NEW animation for an existing game boss, side by side.
+The design is LOCKED — reproduce the storm elemental from reference image 1 exactly (cloud
+body, glowing grin-face, lightning, funnel tail; it floats — no legs).
+
+This is his RING attack (a shockwave pushed outward, distinct from his sky-storm call):
+- Left figure (frame 3): both arms flung fully out in a wide T, a clear compact lightning ring expanding outward at waist height, drawn as a horizontal ellipse passing in front of the lower funnel and behind the torso
+- Right figure (frame 4): arms easing back in, the ring dissolving into sparks
+
+Same body scale and position in both figures. Generate ONE image in LANDSCAPE orientation, the
+two figures clearly separated, on a flat solid #00ff00 GREEN background.
+
+Save the image to disk at the exact path C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\dupe_fix_stages\veyx_ring_p2\veyx_ring_p2_master.png and stop.
