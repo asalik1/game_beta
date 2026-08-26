@@ -2553,6 +2553,7 @@ func _run_campaign_ch2() -> void:
 	await _test_synthesis()
 	await _test_pvp_arena()
 	await _test_dev_morph()
+	await _test_fangmoot()
 	# -----------------------------------------------------------------------
 	await _test_ch2_bosses()
 	await _test_chapter_progression()
@@ -9797,3 +9798,152 @@ func _test_hunt_and_keepsake() -> void:
 	if not paid:
 		return _fail("hunt: completing the hunt-step flag did not pay the quest")
 	print("ok: hunt step + keepsake reward (named-elite quarry spawn+flag completion; free cosmetic grant, no repeat)")
+
+
+# --- Fangmoot (PROPOSALS/FANGMOOT.md §14). The heavy sweeps live in the
+# standalone gate (fangmoot_selftest.gd) and the bench; this is the CI subset:
+# determinism, no-stall, the named-rule fixtures, a completed moot per table,
+# codes, data lint and seam lint. Pure sim/moot with a stub host — no shared
+# game state is touched, so no snapshot is needed.
+func _test_fangmoot() -> void:
+	var rng := RandomNumberGenerator.new()
+	# 1. determinism
+	rng.seed = 424242
+	for i in 60:
+		var a := _fm_rand_band(rng)
+		var b := _fm_rand_band(rng)
+		var s := rng.randi()
+		var r1 := FangmootSim.fight(a, b, s)
+		var r2 := FangmootSim.fight(a, b, s)
+		if String(r1["result"]) != String(r2["result"]) or int(r1["strikes"]) != int(r2["strikes"]):
+			return _fail("fangmoot: non-deterministic result on replay")
+		if JSON.stringify(r1["log"]) != JSON.stringify(r2["log"]):
+			return _fail("fangmoot: non-deterministic log on replay")
+
+	# 2. no stall — every fight must terminate (the cap guarantees it); the cap
+	# firing on a random pathological band is fine, but a flood signals a bug.
+	rng.seed = 99
+	var capped := 0
+	for i in 800:
+		var r := FangmootSim.fight(_fm_rand_band(rng), _fm_rand_band(rng), rng.randi(), "", false)
+		if int(r["strikes"]) >= FangmootSim.STRIKE_CAP:
+			capped += 1
+	if capped * 10 > 800:  # >10% of random-band fights capping = something is broken
+		return _fail("fangmoot: %d/800 random-band fights capped — possible stall" % capped)
+
+	# 3. named-rule fixtures
+	var rf := FangmootSim.fight([_fm_bare(5, 20)], [_fm_spec("spider")], 1)
+	if _fm_first_strike(rf["log"], 1) != 0:
+		return _fail("fangmoot: frost did not zero the first strike")
+	var rw := FangmootSim.fight([_fm_spec("blightwolf")], [_fm_spec("sun_bleached")], 1)
+	if not _fm_log_has(rw["log"], "status_use", "st", "ward"):
+		return _fail("fangmoot: ward did not absorb ability damage")
+	var ra := FangmootSim.fight([_fm_bare(10, 5, "amber")], [_fm_bare(10, 3)], 1)
+	if String(ra["result"]) != "a" or _fm_log_has(ra["log"], "dmg", "uid", 1):
+		return _fail("fangmoot: amber first-strike did not stop the return blow")
+	var rp := FangmootSim.fight([_fm_bare(0, 5, "tenacity")], [_fm_bare(10, 30)], 1)
+	if not _fm_log_has(rp["log"], "status_use", "st", "preserved") or String(rp["result"]) != "b":
+		return _fail("fangmoot: Preserved did not save exactly once")
+	# thorns ignores ability damage: B sets thorns then A nukes it at muster; if
+	# thorns wrongly hit the ability damage, A dies too and it's a draw, not a win.
+	var rt := FangmootSim.fight(
+		[_fm_ab(0, 5, {"trig": "muster", "name": "Nuke", "ops": [{"fx": "dmg", "tgt": "enemy_front", "val": 100}]})],
+		[_fm_ab(5, 8, {"trig": "muster", "name": "Spikes", "ops": [{"fx": "status", "st": "thorns", "tgt": "self", "amt": 10}]})], 1)
+	if String(rt["result"]) != "a":
+		return _fail("fangmoot: thorns wrongly retaliated on ability damage")
+
+	# 4. bot completes a moot per table
+	var host := FangmootHost.new()
+	var personas: Array = FangmootData.CALLERS.values()
+	for table in ["copper", "silver", "gold"]:
+		var m := FangmootMoot.new(table, 777, host)
+		var brng := RandomNumberGenerator.new()
+		brng.seed = 555
+		var guard := 40
+		while not m.done and guard > 0:
+			guard -= 1
+			m.begin_turn()
+			FangmootBot.take_turn(m, personas[0], brng)
+			m.call_moot(FangmootBot.build_warband(personas[1], m.turn, 42 + m.turn, host))
+		if not m.done:
+			return _fail("fangmoot: %s bot moot never finished" % table)
+
+	# 5. codes
+	var band := [{"kind": "wolf", "copies": 3, "charm": "ruby"}, {"kind": "fangmaw", "copies": 1, "charm": ""}]
+	var dec := FangmootCodes.decode(FangmootCodes.encode(band, 8, 123456))
+	if dec.is_empty() or int(dec.get("turn", -1)) != 8 or (dec.get("band", []) as Array).size() != 2:
+		return _fail("fangmoot: warband code did not round-trip")
+	if not FangmootCodes.decode("FM1-@@@garbage").is_empty():
+		return _fail("fangmoot: a tampered code was not rejected")
+
+	# 6. data lint
+	for kind in FangmootData.TOKENS:
+		if not Story.ALL_ENEMIES.has(kind):
+			return _fail("fangmoot: token id '%s' is not a real enemy kind" % kind)
+	for kind in FangmootData.NAMED:
+		if not Story.ALL_ENEMIES.has(kind):
+			return _fail("fangmoot: Named id '%s' is not a real enemy kind" % kind)
+		if not (kind in Menus.BOSS_KINDS):
+			return _fail("fangmoot: Named id '%s' is not in Menus.BOSS_KINDS" % kind)
+	var terrains: Array = Terrains.catalog_ids(false)
+	for kind in FangmootData.TOKENS:
+		var h := String(FangmootData.TOKENS[kind].get("home", ""))
+		if h != "" and not (h in terrains):
+			return _fail("fangmoot: token '%s' home '%s' is not a real terrain" % [kind, h])
+	for tid in terrains:
+		if String(tid).begins_with("ph_"):
+			continue  # placeholder terrains are Act-2 grounds-in-waiting (§17)
+		if not FangmootData.GROUNDS.has(tid):
+			return _fail("fangmoot: terrain '%s' has no GROUNDS row" % tid)
+
+	# 7. seam lint: only the crownless host may touch the engine
+	var forbidden := ["GameBase", "game_base", "add_renown", "SaveGame", "kill_counts", "boss_done"]
+	for f in ["fangmoot_data", "fangmoot_sim", "fangmoot_moot", "fangmoot_bot", "fangmoot_codes", "fangmoot_host"]:
+		var fa := FileAccess.open("res://scripts/fangmoot/%s.gd" % f, FileAccess.READ)
+		if fa == null:
+			return _fail("fangmoot: seam file %s unreadable" % f)
+		var text := fa.get_as_text()
+		fa.close()
+		for tok in forbidden:
+			if text.contains(tok):
+				return _fail("fangmoot: seam violation — %s references %s" % [f, tok])
+
+	print("ok: fangmoot sim/moot/bot/codes/data/seam (%d/800 stress fights capped)" % capped)
+
+
+func _fm_spec(kind: String, level := 1, charm := "") -> Dictionary:
+	var r := FangmootData.row(kind)
+	var st := FangmootData.base_stats(kind)
+	return {"kind": kind, "name": String(r.get("name", kind)), "tribe": String(r.get("tribe", "")),
+		"tier": FangmootData.tier_of(kind), "bite": st.x + level - 1, "hide": st.y + level - 1,
+		"level": level, "ability": r.get("ability", {}), "charm": charm, "home_ground": String(r.get("home", ""))}
+
+func _fm_bare(bite: int, hide: int, charm := "") -> Dictionary:
+	return {"kind": "wolf", "name": "dummy", "tribe": "wild", "tier": 1, "bite": bite, "hide": hide,
+		"level": 1, "ability": {}, "charm": charm, "home_ground": ""}
+
+func _fm_ab(bite: int, hide: int, ability: Dictionary) -> Dictionary:
+	return {"kind": "wolf", "name": "dummy", "tribe": "wild", "tier": 1, "bite": bite, "hide": hide,
+		"level": 1, "ability": ability, "charm": "", "home_ground": ""}
+
+func _fm_rand_band(rng: RandomNumberGenerator) -> Array:
+	var ids: Array = FangmootData.TOKENS.keys() + FangmootData.NAMED.keys()
+	var band: Array = []
+	for i in 1 + rng.randi() % 5:
+		var charm := ""
+		if rng.randf() < 0.25:
+			charm = String(FangmootData.CHARM_ORDER[rng.randi() % FangmootData.CHARM_ORDER.size()])
+		band.append(_fm_spec(String(ids[rng.randi() % ids.size()]), 1 + rng.randi() % 3, charm))
+	return band
+
+func _fm_log_has(log: Array, t: String, key: String, val) -> bool:
+	for e in log:
+		if String(e.get("t", "")) == t and e.get(key) == val:
+			return true
+	return false
+
+func _fm_first_strike(log: Array, uid: int) -> int:
+	for e in log:
+		if String(e.get("t", "")) == "strike" and int(e.get("atk", -1)) == uid:
+			return int(e.get("dmg", -1))
+	return -999

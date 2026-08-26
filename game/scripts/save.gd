@@ -217,6 +217,7 @@ static func _character_section(game: Game) -> Dictionary:
 		# (codex lore thresholds) — are this hero's story, not this world's.
 		"achievements": game.achievements.keys(), "boss_records": game.boss_records,
 		"kill_counts": game.kill_counts, "player_title": game.player_title,
+		"fangmoot": game.fangmoot,
 		# Gallery portraits met + the story-so-far archive (journal): this
 		# hero's memory of faces and conversations, so it travels with them.
 		"splashes_seen": game.splashes_seen.keys(),
@@ -412,7 +413,7 @@ const _V2_CHARACTER_FIELDS := ["name", "cls", "level", "xp", "skill_points", "tr
 	"consumables", "materials", "potion_rotation", "active_potion", "depths_checkpoint", "hp", "mp",
 	"profession", "mastery", "blueprints", "swap_cost_step", "swap_week", "knows_alkahest",
 	"mailbox", "dropped_loot", "clock_anchor", "daily_last_day", "daily_streak",
-	"achievements", "boss_records", "kill_counts", "player_title",
+	"achievements", "boss_records", "kill_counts", "player_title", "fangmoot",
 	"bounties", "bounty_day", "bounty_week",
 	"contracts", "contract_day", "contract_claims_day",
 	"vault_week", "vault_progress", "vault_claimed_week", "weekly_claimed_week",
@@ -797,6 +798,8 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	var kc := _as_dict(c.get("kill_counts", {}))
 	for k in kc:
 		game.kill_counts[String(k)] = _as_int(kc[k], 0)
+	var fm = c.get("fangmoot", {})
+	game.fangmoot = fm if fm is Dictionary else {}
 	game.player_title = String(c.get("player_title", ""))
 	if game.player_title != "" and not Achievements.TITLES.has(game.player_title):
 		game.player_title = ""  # a retired title never wedges a save

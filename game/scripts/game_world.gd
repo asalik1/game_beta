@@ -312,6 +312,11 @@ func _hub_action(act: String) -> void:
 			# then fuse a clean S + a laced A into a Grand potion. Kesh's alembic;
 			# capital-is-the-shop gated inside the panel. Fired by her gossip choice.
 			menus.open_synthesis()
+		"fangmoot":
+			# Fangmoot — the Wildfang tavern autobattler (PROPOSALS/FANGMOOT.md).
+			# Carver Tove's table in Fangmoot Circle. Buy tokens of the beasts you
+			# have faced, line five up, and call the moot.
+			menus.open_fangmoot()
 		"blackmarket":
 			# The Sable Court fence (CONSUMABLE_GRADES §10): the ONLY reliable laced
 			# source, in Crownfall's Cinderborn ward. First press plays the street-

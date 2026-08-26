@@ -46,6 +46,9 @@ HUB_ACTIONS = {
     # (Cinderborn ward); game_world._cap_fence plays her greet once then opens
     # menus.open_black_market. The occasional road smuggler shares that shelf.
     "blackmarket",
+    # Fangmoot — the Wildfang tavern autobattler (PROPOSALS/FANGMOOT.md). Carver
+    # Tove's table in Fangmoot Circle; game_world opens menus.open_fangmoot().
+    "fangmoot",
 }
 ROOMS = [
   # --- CROWN PLAZA: the whole town ritual in one grand room ---
@@ -209,7 +212,7 @@ LANDMARK_USES = {
     # Wayfinder's Story Gate (the ONE way onto the road). The Emberward Gate is
     # the MUSTER POINT instead — companies gather at the gate before marching.
     ("gate", 0): [ACTION("E — Muster your party  (Play Together)", "guild", y=80)],
-    ("wf_moot", 0): [ACTION("E — Review Wildfang contracts", "journal", y=95)],
+    ("wf_moot", 0): [ACTION("E — Call a moot", "fangmoot", y=95)],
     ("ch_chapel", 0): [ACTION("E — Review Choir contracts", "journal", y=90)],
     ("acc_commons", 0): [ACTION("E — Review Accord contracts", "journal", y=95)],
     ("cin_court", 0): [ACTION("E — Review Cinderborn contracts", "journal", y=95)],

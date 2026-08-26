@@ -14,6 +14,12 @@ var detail_return := ""             # screen the popover overlays (restored on c
 var _popover_box: PanelContainer = null  # the current popover's panel (for re-anchoring)
 var _shell_rect := Rect2()          # the open panel's frame — popovers stay inside it
 var current := ""
+var fm_moot: FangmootMoot = null            # the active Fangmoot moot (session-lived)
+var fm_host: FangmootHost = null            # its seam (Crownless in-game, or standalone)
+var fm_standalone := false                  # true when launched via --fangmoot (§18)
+var fm_opp: Array = []                      # the previewed/fought opponent warband
+var fm_opp_turn := -1                       # the turn fm_opp was built for
+var fm_speed := 1.0                         # fight replay speed (1x / 2x)
 var _closable_now := false        # does the open panel have a ✕ / click-outside exit?
 var listening_action := ""        # keybind screen: waiting for a key press
 var shop_zone := -1
@@ -93,6 +99,26 @@ func close() -> void:
 
 
 # ------------------------------------------------------------ scaffolding ---
+
+## Open a FULL-SCREEN shell (no centered panel) — for immersive screens like the
+## Fangmoot moot that fill the frame edge to edge. Returns the root Control to
+## build into; the caller owns the whole 1280x720 canvas.
+func _open_full() -> Control:
+	if root:
+		root.queue_free()
+	game.request_pause(true)
+	_closable_now = false
+	if game._touch_hud != null:
+		game._touch_hud._release_everything()
+	if game and game.hud:
+		game.hud.visible = false
+	root = Control.new()
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(root)
+	detail_popover = null
+	UITheme.apply(root)
+	return root
+
 
 ## Open the shared modal shell. Closable screens expose ✕ and click-outside.
 func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxContainer:
@@ -5715,6 +5741,12 @@ func open_professions() -> void:
 ## Opened from Herbalist Kesh's gossip hub in Crownfall (game_world hub action).
 func open_synthesis() -> void:
 	UISynthesis.open(self)
+
+
+## Fangmoot — the tavern autobattler (ui/fangmoot.gd). Opened from Carver Tove's
+## table in Fangmoot Circle (game_world hub action "fangmoot").
+func open_fangmoot() -> void:
+	UIFangmoot.open(self)
 
 
 ## Debug panel (F1, only when launched via dev_mode.bat) — ui/dev_panel.gd.

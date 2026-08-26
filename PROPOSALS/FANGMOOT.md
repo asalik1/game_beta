@@ -1,11 +1,42 @@
 # Fangmoot — the tavern autobattler inside Crownless (design, 2026-08-17)
 
 **Status:** design accepted by the owner 2026-08-17 (the five open questions
-in §16 are decided; a sixth, the live showdown, was added by the owner). No
-code yet. This doc is the single source of truth for the Fangmoot minigame;
+in §16 are decided; a sixth, the live showdown, was added by the owner). This
+doc is the single source of truth for the Fangmoot minigame;
 `PROPOSALS/SPINOFF_GAMES.md` §6 is where the decision to build it inside
 Crownless (the "Gwent route") was made, and this doc does not repeat that
 argument.
+
+**Build progress (2026-08-18, branch `fangmoot`).** Phase 1 (the sim) and a
+Phase 2 vertical slice are BUILT and green — owner in-game review pending.
+- Phase 1 — DONE and self-tested (`fangmoot_selftest.gd`, mirrored into
+  `autotest._test_fangmoot()`): the pure deterministic sim (§6, full ability
+  vocabulary), the 39+21+4+10+6 data set (§7, every id verified real), the moot
+  state machine (§4-§5), the persona bot (§8), warband codes (§11), the
+  `FangmootHost` seam + Crownless impl (§18), and the balance bench
+  (`fangmoot_bench.bat`, §14). Gates met: determinism (0/200), no-stall (real
+  bands cap 0.36% < 0.5%), the five named-rule fixtures, bot completes every
+  table, codes round-trip, data + seam lint. Files under `game/scripts/fangmoot/`.
+- Phase 2 — SLICE built (`ui/fangmoot.gd`): the Circle hub, the shop screen
+  (board + tray, direct-manipulation — click a card to buy, drag onto a slot to
+  place/bond/attach, drag a token to reorder or onto the sell bowl; the gem→socket
+  `set_drag_forwarding` template), and an animated arena that replays the fight log
+  (sprite chips, damage floats, fades on fall, result banner). BITE/HIDE use the
+  codex stat-tile component; no emoji glyphs (owner UI/UX pass, CODING_GUIDELINES
+  §39). Wired into Crownfall (Carver's table → `open_fangmoot`), Renown table-first
+  reward, save persistence (`game.fangmoot`), and a codex Field-notes page.
+  Verified via `shot.bat fangmoot`.
+- STANDALONE built (§18 re-shell): `game.gd --fangmoot` boots straight into the
+  Circle with `FangmootHostStandalone` (own save file, full roster, no campaign;
+  `portrait`/`clip` moved to the base `FangmootHost` since they're engine-static).
+  Launcher `play_fangmoot.bat` + `make_fangmoot_shortcut.bat/.ps1` (desktop `.lnk`
+  with a game-icon `.ico`). Boot verified error-free. NOT a separate exported .exe
+  yet — it runs the dev project in Fangmoot mode; a true standalone export
+  (own project.godot / capsule / online ghost store) is the later §18 packaging.
+- NOT yet done (follow-ups): balance tuning (the bench flags Named too strong +
+  a few outliers — the owner's tuning loop), Carver Tove's NPC body+splash art,
+  per-monster/boss "Token" codex lines (§10), the collection shelf UI, mid-moot
+  resume, the daily-capped per-win Renown, Moot Legends lore, live versus (§11).
 
 **One paragraph.** Fangmoot is a game the Wildfang play with carved tokens of
 beasts, in the galleries of Fangmoot Circle in Crownfall. You buy tokens from

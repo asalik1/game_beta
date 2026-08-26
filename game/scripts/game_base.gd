@@ -429,6 +429,7 @@ var world_run_tier := 0
 # --- codex completion + titles (persisted) ---
 var kill_counts := {}          # enemy kind -> lifetime kills (this character)
 var player_title := ""         # equipped title id ("" = none)
+var fangmoot := {}             # Fangmoot state (tables_won, saved moot); FangmootHostCrownless owns the shape
 
 # --- codex gallery + story archive (persisted) ---
 var splashes_seen := {}        # splash sprite name -> true (gallery unlocks)

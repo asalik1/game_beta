@@ -50,7 +50,7 @@ const SECTIONS := [
 
 ## Field notes pages (chips) — the prose that used to head the monster and
 ## gear shelves, plus the old Gems/Bags/Rules gear sub-tabs.
-const NOTE_PAGES := [["elites", "Elites & Temptations"], ["gear", "Gear rules"], ["gems", "Gem rules"], ["bags", "Bags & consumables"]]
+const NOTE_PAGES := [["elites", "Elites & Temptations"], ["gear", "Gear rules"], ["gems", "Gem rules"], ["bags", "Bags & consumables"], ["fangmoot", "Fangmoot"]]
 ## Gallery shelves (chips) — Heroes / Monsters / Bosses / Folk of the Vale
 ## (mirrors the Bestiary rail's Monsters-before-Bosses order).
 const GALLERY_SHELVES := [["heroes", "Heroes"], ["monsters", "Monsters"], ["bosses", "Bosses"], ["npcs", "Folk"]]
@@ -1591,6 +1591,8 @@ static func _build_page(m: Menus, split: HBoxContainer) -> void:
 					_notes_gems(m, list)
 				"bags":
 					_gear_bags(m, list)
+				"fangmoot":
+					_notes_fangmoot(m, list)
 				_:
 					_notes_elites(m, list)
 		"future":
@@ -1717,6 +1719,32 @@ static func _notes_elites(m: Menus, list: VBoxContainer) -> void:
 		"Step through if you like. Fell what's inside and the pocket collapses, paying a gem and the crown's regard, then sets you back down where you left. Rolled per character; the door is always open when it appears, and it asks nothing to walk away from."]:
 		var pl := m._lbl(pcard, String(pline), 13, Color(0.78, 0.8, 0.86))
 		pl.custom_minimum_size = Vector2(PAGE_W, 0)
+
+
+## FIELD NOTES › Fangmoot — the tavern autobattler's rules in plain words.
+## Reached from Carver Tove's table in Fangmoot Circle (Crownfall).
+static func _notes_fangmoot(m: Menus, list: VBoxContainer) -> void:
+	list.add_theme_constant_override("separation", 8)
+	UITheme.header(m._lbl(list, "— THE MOOT —", 16, Color(1.0, 0.85, 0.4)))
+	var mc := VBoxContainer.new()
+	mc.add_theme_constant_override("separation", 2)
+	_card(list).add_child(mc)
+	for line in [
+		"A Wildfang game of carved tokens, played at Carver Tove's table. Each turn you spend %d fangs at the tray: a token costs %d, a charm %d, a brew %d, a reroll %d. Unspent fangs vanish." % [int(Balance.FANGMOOT_FANGS), int(Balance.FANGMOOT_COST_TOKEN), int(Balance.FANGMOOT_COST_CHARM), int(Balance.FANGMOOT_COST_BREW), int(Balance.FANGMOOT_COST_ROLL)],
+		"Line up to five tokens and call the moot; the fight plays itself, front against front. Win %d crests and the moot is yours; take %d scars and it ends. Turns 1 and 2 are sparring — a loss there leaves no scar." % [int(Balance.FANGMOOT_CRESTS_WIN), int(Balance.FANGMOOT_SCARS_OUT)],
+		"You may only field what you have FACED. Common pieces are always on the tray; a beast's token unlocks the first time you kill it, and a Named (boss) piece the first time you fell it.",
+		"Buy a second copy of a token to bond it — stronger, and it levels at 3 and 6 copies. A charm (a gem) is a permanent held item; a brew is a one-shot. Named pieces cost %d and only one may stand in a warband." % int(Balance.FANGMOOT_COST_NAMED)]:
+		var el := m._lbl(mc, String(line), 13, Color(0.8, 0.82, 0.88))
+		el.custom_minimum_size = Vector2(PAGE_W, 0)
+	UITheme.header(m._lbl(list, "— THE STAKES —", 16, Color(0.85, 0.6, 1.0)))
+	var sc := VBoxContainer.new()
+	sc.add_theme_constant_override("separation", 2)
+	_card(list).add_child(sc)
+	for line in [
+		"Two stats, plain as bone: BITE is what a token deals, HIDE is how much it can take. Seven tribes — Wild, Hollow, Choir, Molten, Still, Root, Storm — and each token's trick is its trait in the world: bloat, martyr, frost, ward, rot, and the rest.",
+		"Nothing you win at the moot is power — no gold, no gear, ever. The table pays Renown (daily-capped), titles, and a shelf of trophies. It is played for the game of it."]:
+		var sl := m._lbl(sc, String(line), 13, Color(0.8, 0.82, 0.88))
+		sl.custom_minimum_size = Vector2(PAGE_W, 0)
 
 
 ## FIELD NOTES › Gear rules — the shape and unique explainers that used to
