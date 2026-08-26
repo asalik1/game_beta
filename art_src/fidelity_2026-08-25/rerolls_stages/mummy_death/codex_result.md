@@ -1,0 +1,1 @@
+Saved the completed 4-frame death animation to [mummy_death_master.png](C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\rerolls_stages\mummy_death\mummy_death_master.png).

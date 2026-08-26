@@ -1,0 +1,14 @@
+Repaint an EXISTING game prop at high resolution. This is a FIDELITY UPGRADE, not a redesign.
+
+Reference image 2 (subject) is the CURRENT in-game campfire: reproduce its exact log
+arrangement, silhouette, proportions and palette. Reference image 1 shows the game's painterly
+house style: soft-shaded, NO black outlines, muted palette, top-down three-quarter view.
+
+Generate ONE image: a 2x2 grid of EXACTLY 4 cells on a TRANSPARENT background (real alpha),
+each cell the COMPLETE campfire at the same position and size:
+- Cell 1: the campfire exactly as the reference (this becomes the rest frame).
+- Cells 2-4: ONLY the flames and embers change (natural fire flicker loop); the LOGS and
+  stones stay PIXEL-IDENTICAL across all 4 cells, on the same baseline.
+NO background, NO ground patch, NO smoke column leaving the canvas.
+
+Save the single 2x2 image to disk at the exact path C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\prop_stages\camp_bonfire\camp_bonfire_master.png and stop.

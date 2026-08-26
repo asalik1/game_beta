@@ -1,0 +1,730 @@
+﻿codex.exe : Reading prompt from stdin...
+At line:7 char:14
++ ...    $brief | & $codex exec -C $d -s workspace-write --skip-git-repo-ch ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Reading prompt from stdin...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+OpenAI Codex v0.148.0-alpha.15
+--------
+workdir: C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scra
+tchpad\fidelity\rerolls_stages\mummy_death
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: danger-full-access
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a03afa-11b6-7d91-b5ac-80db6746b7ff
+--------
+user
+Repaint an EXISTING game monster's 4-frame DEATH animation at high resolution.
+This is a FIDELITY UPGRADE, not a redesign.
+
+Reference image 1 is the creature's CURRENT hi-res idle strip: the authority for its design,
+gear, colors and level of detail. Reference image 2 is the CURRENT low-res death strip (4
+frames left to right): the authority for the death MOTION ??? reproduce the same 4-stage
+collapse (same direction of fall, same final resting pose) with the creature from reference 1.
+
+Generate ONE image: a 2x2 grid of EXACTLY 4 complete figures on a flat solid #00ff00 green
+background with clear gutters (no figure touches a cell edge), reading in order top-left,
+top-right, bottom-left, bottom-right = death frames 1-4. Same creature and gear in every cell,
+same scale; the ground line stays constant so the body falls TO the same baseline. Crisp
+dark-fantasy detail matching reference 1. NO shadow. ABSOLUTELY NO BLOOD, NO gore, NO red pixels anywhere ??? the 
+creature is ancient DRY
+wrappings and bone; it collapses into dusty cloth exactly as reference 2 shows.
+
+Save the single image to disk at the exact path C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cc
+e95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\rerolls_stages\mummy_death\mummy_death_master.png and stop.
+
+
+codex
+IΓÇÖm using the image-generation skill because this is a reference-guided raster repaint. IΓÇÖll inspect its 
+instructions and both supplied strips, then generate and save the single 2├ù2 master at the exact path.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'" in C:\Users\asali\AppData\Local\Temp\claude\C--Users-a
+sali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\rerolls_stages\mummy_death
+ succeeded in 436ms:
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, 
+illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new 
+image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset 
+rather than repo-native code or vector. Do not use when the task is better handled by editing existing 
+SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in 
+HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product 
+mockups, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for image generation, editing, and 
+transparent-image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for or confirms the 
+CLI/API/model path. Requires `OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- For transparent images, ask built-in `image_gen` for a transparent background and preserve the generated alpha.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`; ask the user first 
+unless they explicitly requested `gpt-image-1.5`.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate 
+assets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per 
+requested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires 
+`OPENAI_API_KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK 
+runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific 
+location is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before 
+finishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the 
+default `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling 
+versioned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, 
+compositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request 
+as **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images 
+generated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool 
+so the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit 
+CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or 
+variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and 
+needs many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; 
+distinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including transparent-output requests; fallback CLI only if 
+explicitly requested or confirmed.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with 
+`view_image` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, 
+use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic 
+that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative 
+requirements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, ask built-in `image_gen` for a transparent background and preserve the generated 
+alpha channel.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default 
+`$CODEX_HOME/generated_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or 
+references. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user 
+explicitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, 
+size, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and 
+whether the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Ask built-in `image_gen` for a genuinely transparent background and preserve its alpha.
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, 
+but do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra 
+labeled line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural ├óΓé¼ΓÇ¥ candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup ├óΓé¼ΓÇ¥ product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup ├óΓé¼ΓÇ¥ app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram ├óΓé¼ΓÇ¥ diagrams/infographics with structured layout and text.
+- scientific-educational ├óΓé¼ΓÇ¥ classroom explainers, scientific diagrams, and learning visuals with required labels 
+and accuracy constraints.
+- ads-marketing ├óΓé¼ΓÇ¥ campaign concepts and ad creatives with audience, brand position, scene, and exact 
+tagline/copy.
+- productivity-visual ├óΓé¼ΓÇ¥ slide, chart, workflow, and data-heavy business visuals.
+- logo-brand ├óΓé¼ΓÇ¥ logo/mark exploration, vector-friendly.
+- illustration-story ├óΓé¼ΓÇ¥ comics, children├óΓé¼Γäós book art, narrative scenes.
+- stylized-concept ├óΓé¼ΓÇ¥ style-driven concept art, 3D/stylized renders.
+- historical-scene ├óΓé¼ΓÇ¥ period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization ├óΓé¼ΓÇ¥ translate/replace in-image text, preserve layout.
+- identity-preserve ├óΓé¼ΓÇ¥ try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit ├óΓé¼ΓÇ¥ remove/replace a specific element (including interior swaps).
+- lighting-weather ├óΓé¼ΓÇ¥ time-of-day/season/atmosphere changes only.
+- background-extraction ├óΓé¼ΓÇ¥ transparent background / clean cutout. Ask built-in `image_gen` for actual 
+transparency.
+- style-transfer ├óΓé¼ΓÇ¥ apply reference style while changing subject/scene.
+- compositing ├óΓé¼ΓÇ¥ multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render ├óΓé¼ΓÇ¥ drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D/etc>
+Composition/framing: <wide/close/top-down; placement>
+Lighting/mood: <lighting + mood>
+Color palette: <palette notes>
+Materials/textures: <surface details>
+Text (verbatim): "<exact text>"
+Constraints: <must keep/must avoid>
+Avoid: <negative constraints>
+```
+
+Notes:
+- `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
+- `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which 
+controls output transparency behavior.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong 
+in the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+
+Augmentation rules:
+- Keep it short.
+- Add only the details needed to improve the prompt materially.
+- For edits, explicitly list invariants (`change only X; keep Y unchanged`).
+- If any critical detail is missing and blocks success, ask a question; otherwise proceed.
+
+## Examples
+
+### Generation example (hero image)
+```text
+Use case: product-mockup
+Asset type: landing page hero
+Primary request: a minimal hero image of a ceramic coffee mug
+Style/medium: clean product photography
+Composition/framing: wide composition with usable negative space for page copy if needed
+Lighting/mood: soft studio lighting
+Constraints: no logos, no text, no watermark
+```
+
+### Edit example (invariants)
+```text
+Use case: precise-object-edit
+Asset type: product photo background replacement
+Primary request: replace only the background with a warm sunset gradient
+Constraints: change only the background; keep the product and its edges unchanged; no text; no watermark
+```
+
+## Prompting best practices
+- Structure prompt as scene/backdrop -> subject -> details -> constraints.
+- Include intended use (ad, UI mock, infographic) to set the mode and polish level.
+- Use camera/composition language for photorealism.
+- Only use SVG/vector stand-ins when the user explicitly asked for vector output or a non-image placeholder.
+- Quote exact text and specify typography + placement.
+- For tricky words, spell them letter-by-letter and require verbatim rendering.
+- For multi-image inputs, reference images by index and describe how they should be used.
+- For edits, repeat invariants every iteration to reduce drift.
+- Iterate with single-change follow-ups.
+- If the prompt is generic, add only the extra detail that will materially help.
+- If the prompt is already detailed, normalize it instead of expanding it.
+- For CLI fallback only, see `references/cli.md` and `references/image-api.md` for model, `quality`, `input_fidelity`, 
+masks, output format, and output-path guidance.
+- For transparent images, ask built-in `image_gen` for actual transparency and preserve its alpha.
+
+More principles shared by both modes: `references/prompting.md`.
+Copy/paste specs shared by both modes: `references/sample-prompts.md`.
+
+## Guidance by asset type
+Asset-type templates (website assets, game assets, wireframes, logo) are consolidated in 
+`references/sample-prompts.md`.
+
+## gpt-image-2 guidance for CLI fallback
+
+The fallback CLI defaults to `gpt-image-2`.
+
+- Use `gpt-image-2` for new CLI/API workflows unless the user confirms a different model.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user 
+explicitly requested that model.
+- `gpt-image-2` always uses high fidelity for image inputs; do not set `input_fidelity` with this model.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- Use `quality low` for fast drafts, thumbnails, and quick iterations. Use `medium`, `high`, or `auto` for final 
+assets, dense text, diagrams, identity-sensitive edits, or high-resolution outputs.
+- Square images are typically fastest to generate. Use `1024x1024` for fast square drafts.
+- If the user asks for 4K-style output, use `3840x2160` for landscape or `2160x3840` for portrait.
+- `gpt-image-2` size may be `auto` or `WIDTHxHEIGHT` if all constraints hold: max edge `<= 3840px`, both edges 
+multiples of `16px`, long-to-short ratio `<= 3:1`, total pixels between `655,360` and `8,294,400`.
+
+Popular `gpt-image-2` sizes:
+- `1024x1024` square
+- `1536x1024` landscape
+- `1024x1536` portrait
+- `2048x2048` 2K square
+- `2048x1152` 2K landscape
+- `3840x2160` 4K landscape
+- `2160x3840` 4K portrait
+- `auto`
+
+## Fallback CLI mode only
+
+### Temp and output conventions
+These conventions apply only to the CLI fallback. They do not describe built-in `image_gen` output behavior.
+- Use `tmp/imagegen/` for intermediate files (for example JSONL batches); delete them when done.
+- Write final artifacts under `output/imagegen/`.
+- Use `--out` or `--out-dir` to control output paths; keep filenames stable and descriptive.
+
+### Dependencies
+Prefer `uv` for dependency management in this repo.
+
+Required Python package:
+```bash
+uv pip install openai
+```
+
+Optional for image inspection and downscaling:
+```bash
+uv pip install pillow
+```
+
+Portability note:
+- If you are using the installed skill outside this repo, install dependencies into that environment with its package 
+manager.
+- In uv-managed environments, `uv pip install ...` remains the preferred path.
+
+### Environment
+- `OPENAI_API_KEY` must be set for live API calls.
+- Do not ask the user for `OPENAI_API_KEY` when using the built-in `image_gen` tool.
+- Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
+
+If the key is missing, give the user these steps:
+1. Create an API key in the OpenAI platform UI: https://platform.openai.com/api-keys
+2. Set `OPENAI_API_KEY` as an environment variable in their system.
+3. Offer to guide them through setting the environment variable for their OS/shell if needed.
+
+If installation is not possible in this environment, tell the user which dependency is missing and how to install it 
+into their active environment.
+
+### Script-mode notes
+- CLI commands + examples: `references/cli.md`
+- API parameter quick reference: `references/image-api.md`
+- Network approvals / sandbox settings for CLI mode: `references/codex-network.md`
+
+## Reference map
+- `references/prompting.md`: shared prompting principles for both modes.
+- `references/sample-prompts.md`: shared copy/paste prompt recipes for both modes.
+- `references/cli.md`: fallback-only CLI usage via `scripts/image_gen.py`.
+- `references/image-api.md`: fallback-only API/CLI parameter reference.
+- `references/codex-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
+- `scripts/image_gen.py`: fallback-only CLI implementation. Use only when the user explicitly chooses or confirms CLI 
+mode.
+
+
+codex
+The two inputs have distinct roles: image 1 locks the mummyΓÇÖs identity, equipment, palette, and rendering fidelity; 
+image 2 locks the four collapse poses and left-to-right timing. IΓÇÖm checking their exact framing before generation 
+so the output keeps one scale and baseline across all cells.
+codex
+The generated sheet has the required four stages, complete figures, clear gutters, and a consistent 
+dry-bone/neutral-leather look. IΓÇÖm now placing it at the requested filename and running a pixel-level check for 
+dimensions, exact chroma background, edge clearance, and forbidden red hues.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$src = '"'C:\\Users\\asali\\.codex\\generate
+d_images\\01a03afa-11b6-7d91-b5ac-80db6746b7ff\\exec-5b7e336d-b1f1-4326-86b0-dec4d2161f6a.png'
+"'$dst = '"'C:\\Users\\asali\\AppData\\Local\\Temp\\claude\\C--Users-asali-Projects-MMO\\cce95e43-f314-4a33-affa-de9619
+12a161\\scratchpad\\fidelity\\rerolls_stages\\mummy_death\\mummy_death_master.png'
+Copy-Item -LiteralPath "'$src -Destination $dst -Force
+Get-Item -LiteralPath $dst | Select-Object FullName, Length
+Get-Command magick -ErrorAction SilentlyContinue | Select-Object Source' in C:\Users\asali\AppData\Local\Temp\claude\C-
+-Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\rerolls_stages\mummy_death
+2026-08-25T22:12:38.204680Z ERROR codex_core::tools::router: error=Exit code: 1
+Wall time: 0.7 seconds
+Output:
+
+FullName                                                                                                               
+--------                                                                                                               
+C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad...
+
+
+
+ exited 1 in 730ms:
+
+FullName                                                                                                               
+--------                                                                                                               
+C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad...
+
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$path = '"'C:\\Users\\asali\\AppData\\Local\
+\Temp\\claude\\C--Users-asali-Projects-MMO\\cce95e43-f314-4a33-affa-de961912a161\\scratchpad\\fidelity\\rerolls_stages\
+\mummy_death\\mummy_death_master.png'
+Add-Type -AssemblyName System.Drawing
+"'$bmp = [System.Drawing.Bitmap]::new($path)
+$counts = @{}
+$exactGreen = 0L
+$redHue = 0L
+$edgeNonGreen = 0L
+for ($y = 0; $y -lt $bmp.Height; $y++) {
+  for ($x = 0; $x -lt $bmp.Width; $x++) {
+    $c = $bmp.GetPixel($x,$y)
+    $key = ('"'{0:X2}{1:X2}{2:X2}' -f "'$c.R,$c.G,$c.B)
+    if ($counts.ContainsKey($key)) { $counts[$key]++ } else { $counts[$key] = 1L }
+    if ($c.R -eq 0 -and $c.G -eq 255 -and $c.B -eq 0) { $exactGreen++ }
+    if (($x -eq 0 -or $y -eq 0 -or $x -eq ($bmp.Width-1) -or $y -eq ($bmp.Height-1)) -and -not ($c.R -eq 0 -and $c.G 
+-eq 255 -and $c.B -eq 0)) { $edgeNonGreen++ }
+    $max = [Math]::Max($c.R,[Math]::Max($c.G,$c.B)); $min = [Math]::Min($c.R,[Math]::Min($c.G,$c.B)); $d = $max-$min
+    if ($max -gt 0 -and $d -gt 0) {
+      $sat = $d / [double]$max
+      if ($max -eq $c.R) { $h = 60.0 * ((($c.G-$c.B)/[double]$d) % 6) } elseif ($max -eq $c.G) { $h = 60.0 * 
+((($c.B-$c.R)/[double]$d) + 2) } else { $h = 60.0 * ((($c.R-$c.G)/[double]$d) + 4) }
+      if ($h -lt 0) { $h += 360.0 }
+      if (($h -le 12 -or $h -ge 348) -and $sat -ge 0.55 -and $max -ge 64) { $redHue++ }
+    }
+  }
+}
+$top = $counts.GetEnumerator() | Sort-Object Value -Descending | Select-Object -First 8
+[pscustomobject]@{Width=$bmp.Width;Height=$bmp.Height;Pixels=($bmp.Width*$bmp.Height);ExactGreen=$exactGreen;EdgeNonGre
+en=$edgeNonGreen;ForbiddenRedHuePixels=$redHue}
+$top | ForEach-Object { [pscustomobject]@{RGB=$_.Key;Count=$_.Value} }
+$bmp.Dispose()' in C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de96191
+2a161\scratchpad\fidelity\rerolls_stages\mummy_death
+ succeeded in 62634ms:
+
+
+Width                 : 1254
+Height                : 1254
+Pixels                : 1572516
+ExactGreen            : 0
+EdgeNonGreen          : 5012
+ForbiddenRedHuePixels : 546
+
+RGB   : 0CF710
+Count : 114683
+
+RGB   : 0CF810
+Count : 96075
+
+RGB   : 0BF70F
+Count : 90443
+
+RGB   : 0CF711
+Count : 83779
+
+RGB   : 0BF710
+Count : 81180
+
+RGB   : 0CF70F
+Count : 58501
+
+RGB   : 0CF80F
+Count : 55817
+
+RGB   : 0CF811
+Count : 48965
+
+
+
+
+codex
+The pixel check caught a generation artifact: the backdrop was visually green but not mathematically uniform 
+`#00ff00`. IΓÇÖm applying a deterministic finalization pass to key every green/background pixel to the exact requested 
+value, neutralize the few red-hued antialias pixels, center each figure in its cell, and align all four poses to one 
+identical local baseline.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$path = '"'C:\\Users\\asali\\AppData\\Local\
+\Temp\\claude\\C--Users-asali-Projects-MMO\\cce95e43-f314-4a33-affa-de961912a161\\scratchpad\\fidelity\\rerolls_stages\
+\mummy_death\\mummy_death_master.png'
+"'$tmp = '"'C:\\Users\\asali\\AppData\\Local\\Temp\\claude\\C--Users-asali-Projects-MMO\\cce95e43-f314-4a33-affa-de9619
+12a161\\scratchpad\\fidelity\\rerolls_stages\\mummy_death\\mummy_death_master.finalizing.png'
+Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition @'
+using System;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
+using System.Collections.Generic;
+public static class SpriteFinalizer {
+  static void Hsv(byte r, byte g, byte b, out double h, out double s, out double v) {
+    double rd=r/255.0, gd=g/255.0, bd=b/255.0;
+    double max=Math.Max(rd,Math.Max(gd,bd)), min=Math.Min(rd,Math.Min(gd,bd)), d=max-min;
+    v=max; s=max==0?0:d/max;
+    if(d==0) h=0;
+    else if(max==rd) h=60.0*(((gd-bd)/d)%6.0);
+    else if(max==gd) h=60.0*(((bd-rd)/d)+2.0);
+    else h=60.0*(((rd-gd)/d)+4.0);
+    if(h<0) h+=360.0;
+  }
+  static bool IsGreen(byte r, byte g, byte b) {
+    double h,s,v; Hsv(r,g,b,out h,out s,out v);
+    return g>=60 && g>=r+20 && g>=b+20 && h>=65 && h<=170 && s>=0.25;
+  }
+  static bool IsExactGreen(byte[] p, int i) { return p[i]==0 && p[i+1]==255 && p[i+2]==0; }
+  public static string Run(string input, string output) {
+    using(var original=new Bitmap(input))
+    using(var src=new Bitmap(original.Width, original.Height, PixelFormat.Format32bppArgb)) {
+      using(var gr=Graphics.FromImage(src)) gr.DrawImageUnscaled(original,0,0);
+      int w=src.Width,h=src.Height;
+      var rect=new Rectangle(0,0,w,h);
+      var sd=src.LockBits(rect,ImageLockMode.ReadWrite,PixelFormat.Format32bppArgb);
+      int stride=sd.Stride; byte[] p=new byte[stride*h]; Marshal.Copy(sd.Scan0,p,0,p.Length);
+      long keyed=0, scrubbed=0;
+      for(int y=0;y<h;y++) for(int x=0;x<w;x++) {
+        int i=y*stride+x*4; byte b=p[i],g=p[i+1],r=p[i+2];
+        if(IsGreen(r,g,b)) { p[i]=0;p[i+1]=255;p[i+2]=0;p[i+3]=255;keyed++; }
+        else {
+          double hh,ss,vv; Hsv(r,g,b,out hh,out ss,out vv);
+          if((hh<18 || hh>342) && ss>=0.35 && Math.Max(r,Math.Max(g,b))>=24) {
+            int ng=(int)Math.Round(b+0.48*(r-b));
+            if(ng<g) ng=g; if(ng>255) ng=255;
+            p[i+1]=(byte)ng; scrubbed++;
+          }
+          p[i+3]=255;
+        }
+      }
+      src.UnlockBits(sd);
+      using(var dst=new Bitmap(w,h,PixelFormat.Format32bppArgb)) {
+        var dd=dst.LockBits(rect,ImageLockMode.WriteOnly,PixelFormat.Format32bppArgb);
+        int ds=dd.Stride; byte[] q=new byte[ds*h];
+        for(int y=0;y<h;y++) for(int x=0;x<w;x++){int i=y*ds+x*4;q[i]=0;q[i+1]=255;q[i+2]=0;q[i+3]=255;}
+        int cw=w/2,ch=h/2,targetBase=Math.Min(ch-92,535); var notes=new List<string>();
+        for(int cell=0;cell<4;cell++) {
+          int cx=(cell%2)*cw, cy=(cell/2)*ch, x1=cx+cw, y1=cy+ch;
+          int minx=x1,miny=y1,maxx=-1,maxy=-1;
+          for(int y=cy;y<y1;y++) for(int x=cx;x<x1;x++) {int 
+i=y*stride+x*4;if("'!IsExactGreen(p,i)){if(x<minx)minx=x;if(x>maxx)maxx=x;if(y<miny)miny=y;if(y>maxy)maxy=y;}}
+          if(maxx<0) throw new Exception("Empty sprite cell "+cell);
+          int targetCenterX=cx+cw/2, dx=targetCenterX-((minx+maxx)/2), dy=(cy+targetBase)-maxy;
+          for(int y=miny;y<=maxy;y++) for(int x=minx;x<=maxx;x++) {
+            int si=y*stride+x*4; if(IsExactGreen(p,si)) continue;
+            int nx=x+dx,ny=y+dy; if(nx<=cx || nx>=x1-1 || ny<=cy || ny>=y1-1) throw new Exception("Shift crossed cell 
+edge");
+            int di=ny*ds+nx*4; q[di]=p[si];q[di+1]=p[si+1];q[di+2]=p[si+2];q[di+3]=255;
+          }
+          notes.Add(String.Format("cell{0}: source=({1},{2})-({3},{4}) shift=({5},{6}) 
+finalBaselineLocal={7}",cell+1,minx,miny,maxx,maxy,dx,dy,targetBase));
+        }
+        Marshal.Copy(q,0,dd.Scan0,q.Length); dst.UnlockBits(dd); dst.Save(output,ImageFormat.Png);
+        return String.Format("keyed={0}; redHueNeutralized={1}; {2}",keyed,scrubbed,String.Join("; ",notes));
+      }
+    }
+  }
+}
+'"'@
+[SpriteFinalizer]::Run("'$path,$tmp)
+Move-Item -LiteralPath $tmp -Destination $path -Force
+Get-Item -LiteralPath $path | Select-Object FullName,Length,LastWriteTime' in C:\Users\asali\AppData\Local\Temp\claude\
+C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\rerolls_stages\mummy_death
+ succeeded in 1278ms:
+keyed=1371664; redHueNeutralized=29759; cell1: source=(181,132)-(479,513) shift=(-17,22) finalBaselineLocal=535; 
+cell2: source=(685,239)-(1006,527) shift=(95,8) finalBaselineLocal=535; cell3: source=(102,844)-(523,1048) 
+shift=(1,114) finalBaselineLocal=535; cell4: source=(676,904)-(1161,1055) shift=(22,107) finalBaselineLocal=535
+
+FullName                                                                                                               
+--------                                                                                                               
+C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad...
+
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$path = '"'C:\\Users\\asali\\AppData\\Local\
+\Temp\\claude\\C--Users-asali-Projects-MMO\\cce95e43-f314-4a33-affa-de961912a161\\scratchpad\\fidelity\\rerolls_stages\
+\mummy_death\\mummy_death_master.png'
+Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition @'
+using System; using System.Drawing; using System.Drawing.Imaging; using System.Runtime.InteropServices;
+public static class SpriteValidator {
+ static void Hsv(byte r,byte g,byte b,out double h,out double s){double rd=r/255.0,gd=g/255.0,bd=b/255.0,max=Math.Max(r
+d,Math.Max(gd,bd)),min=Math.Min(rd,Math.Min(gd,bd)),d=max-min;s=max==0?0:d/max;if(d==0)h=0;else 
+if(max==rd)h=60*(((gd-bd)/d)%6);else if(max==gd)h=60*(((bd-rd)/d)+2);else h=60*(((rd-gd)/d)+4);if(h<0)h+=360;}
+ public static string Check(string path){using(var b=new Bitmap(path)){int w=b.Width,h=b.Height;var d=b.LockBits(new 
+Rectangle(0,0,w,h),ImageLockMode.ReadOnly,PixelFormat.Format32bppArgb);int s=d.Stride;byte[] p=new 
+byte[s*h];Marshal.Copy(d.Scan0,p,0,p.Length);b.UnlockBits(d);long green=0,borderBad=0,red=0,pureRed=0;string 
+cells=\"\";for(int y=0;y<h;y++)for(int x=0;x<w;x++){int i=y*s+x*4;byte bb=p[i],g=p[i+1],r=p[i+2];bool 
+eg=r==0&&g==255&&bb==0;if(eg)green++;if((x==0||y==0||x==w-1||y==h-1)&&"'!eg)borderBad++;double hh,ss;Hsv(r,g,bb,out 
+hh,out ss);if((hh<18||hh>342)&&ss>=0.35&&Math.Max(r,Math.Max(g,bb))>=24)red++;if(r>0&&g==0&&bb==0)pureRed++;}int 
+cw=w/2,ch=h/2;for(int c=0;c<4;c++){int x0=(c%2)*cw,y0=(c/2)*ch,minx=x0+cw,miny=y0+ch,maxx=-1,maxy=-1;for(int 
+y=y0;y<y0+ch;y++)for(int x=x0;x<x0+cw;x++){int i=y*s+x*4;if(!(p[i+2]==0&&p[i+1]==255&&p[i]==0)){if(x<minx)minx=x;if(x>m
+axx)maxx=x;if(y<miny)miny=y;if(y>maxy)maxy=y;}}cells+=String.Format(" 
+cell{0}bboxLocal=({1},{2})-({3},{4})",c+1,minx-x0,miny-y0,maxx-x0,maxy-y0);}return String.Format("{0}x{1}; 
+exactGreen={2}; borderNonGreen={3}; forbiddenRedHue={4}; pureRed={5};{6}",w,h,green,borderBad,red,pureRed,cells);}}
+}
+'"'@
+[SpriteValidator]::Check("'$path)
+Get-FileHash -Algorithm SHA256 -LiteralPath $path | Select-Object Algorithm,Hash
+Get-Item -LiteralPath $path | Select-Object Length' in C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects
+-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\rerolls_stages\mummy_death
+ succeeded in 1119ms:
+1254x1254; exactGreen=1371664; borderNonGreen=0; forbiddenRedHue=0; pureRed=1813; cell1bboxLocal=(164,154)-(462,535) 
+cell2bboxLocal=(153,247)-(474,535) cell3bboxLocal=(103,331)-(524,535) cell4bboxLocal=(71,384)-(556,535)
+
+Algorithm Hash                                                            
+--------- ----                                                            
+SHA256    2C6F9B62F3991DAB88C0B7D8E5CC4A45F08AFEC316BF5E50548A51301A1346DC
+                                                                          
+
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$path = '"'C:\\Users\\asali\\AppData\\Local\
+\Temp\\claude\\C--Users-asali-Projects-MMO\\cce95e43-f314-4a33-affa-de961912a161\\scratchpad\\fidelity\\rerolls_stages\
+\mummy_death\\mummy_death_master.png'
+"'$tmp = '"'C:\\Users\\asali\\AppData\\Local\\Temp\\claude\\C--Users-asali-Projects-MMO\\cce95e43-f314-4a33-affa-de9619
+12a161\\scratchpad\\fidelity\\rerolls_stages\\mummy_death\\mummy_death_master.redcheck.png'
+Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition @'
+using System; using System.Drawing; using System.Drawing.Imaging; using System.Runtime.InteropServices;
+public static class RemoveAllRedHue {
+ static double Hue(byte r,byte g,byte b){double rd=r/255.0,gd=g/255.0,bd=b/255.0,max=Math.Max(rd,Math.Max(gd,bd)),min=M
+ath.Min(rd,Math.Min(gd,bd)),d=max-min;if(d==0)return -1;double h;if(max==rd)h=60*(((gd-bd)/d)%6);else 
+if(max==gd)h=60*(((bd-rd)/d)+2);else h=60*(((rd-gd)/d)+4);return h<0?h+360:h;}
+ public static long Run(string input,string output){using(var src=new Bitmap(input)){int 
+w=src.Width,h=src.Height;using(var dst=new Bitmap(w,h,PixelFormat.Format32bppArgb)){using(var 
+gr=Graphics.FromImage(dst))gr.DrawImageUnscaled(src,0,0);var d=dst.LockBits(new 
+Rectangle(0,0,w,h),ImageLockMode.ReadWrite,PixelFormat.Format32bppArgb);int st=d.Stride;byte[] p=new 
+byte[st*h];Marshal.Copy(d.Scan0,p,0,p.Length);long n=0;for(int y=0;y<h;y++)for(int x=0;x<w;x++){int i=y*st+x*4;byte 
+b=p[i],g=p[i+1],r=p[i+2];double hh=Hue(r,g,b);if(hh>=0&&(hh<20||hh>340)){int ng=b+(int)Math.Ceiling(0.5*(r-b));if(ng<g)
+ng=g;if(ng>255)ng=255;p[i+1]=(byte)ng;n++;}}Marshal.Copy(p,0,d.Scan0,p.Length);dst.UnlockBits(d);dst.Save(output,ImageF
+ormat.Png);return n;}}}
+}
+'@
+[RemoveAllRedHue]::Run("'$path,$tmp)
+Move-Item -LiteralPath $tmp -Destination $path -Force
+Get-FileHash -Algorithm SHA256 -LiteralPath $path | Select-Object Algorithm,Hash' in C:\Users\asali\AppData\Local\Temp\
+claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\rerolls_stages\mummy_death
+ succeeded in 1139ms:
+28002
+
+Algorithm Hash                                                            
+--------- ----                                                            
+SHA256    ED15CAF1C7F722682E459C2B8A1434F76259DA11A3E339467C9A98C5FACFF2F4
+
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$path = '"'C:\\Users\\asali\\AppData\\Local\
+\Temp\\claude\\C--Users-asali-Projects-MMO\\cce95e43-f314-4a33-affa-de961912a161\\scratchpad\\fidelity\\rerolls_stages\
+\mummy_death\\mummy_death_master.png'
+Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition @'
+using System;using System.Drawing;using System.Drawing.Imaging;using System.Runtime.InteropServices;public static 
+class FinalCheck{static double H(byte r,byte g,byte b){double 
+R=r/255.0,G=g/255.0,B=b/255.0,M=Math.Max(R,Math.Max(G,B)),m=Math.Min(R,Math.Min(G,B)),d=M-m;if(d==0)return -1;double 
+h;if(M==R)h=60*(((G-B)/d)%6);else if(M==G)h=60*(((B-R)/d)+2);else h=60*(((R-G)/d)+4);return h<0?h+360:h;}public static 
+string Run(string f){using(var b=new Bitmap(f)){int w=b.Width,h=b.Height;var d=b.LockBits(new 
+Rectangle(0,0,w,h),ImageLockMode.ReadOnly,PixelFormat.Format32bppArgb);byte[] p=new 
+byte[d.Stride*h];Marshal.Copy(d.Scan0,p,0,p.Length);b.UnlockBits(d);long eg=0,bad=0,red=0,pure=0;for(int 
+y=0;y<h;y++)for(int x=0;x<w;x++){int i=y*d.Stride+x*4;byte B=p[i],G=p[i+1],R=p[i+2];bool 
+q=R==0&&G==255&&B==0;if(q)eg++;if((x==0||y==0||x==w-1||y==h-1)&&"'!q)bad++;double 
+hh=H(R,G,B);if(hh>=0&&(hh<20||hh>340))red++;if(R>0&&G==0&&B==0)pure++;}return String.Format("dimensions={0}x{1}; 
+exactGreen={2}; borderNonGreen={3}; redHuePixels={4}; pureRedPixels={5}",w,h,eg,bad,red,pure);}}}
+'"'@
+[FinalCheck]::Run("'$path)
+Get-Item -LiteralPath $path | Select-Object Length,LastWriteTime' in C:\Users\asali\AppData\Local\Temp\claude\C--Users-
+asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\rerolls_stages\mummy_death
+ succeeded in 888ms:
+dimensions=1254x1254; exactGreen=1371664; borderNonGreen=0; redHuePixels=0; pureRedPixels=0
+
+Length LastWriteTime       
+------ -------------       
+679938 8/25/2026 6:16:28 PM
+
+
+
+codex
+Saved the completed 4-frame death animation to [mummy_death_master.png](C:\Users\asali\AppData\Local\Temp\claude\C--Use
+rs-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\rerolls_stages\mummy_death\mummy_death_m
+aster.png).
+tokens used
+52,540
+Saved the completed 4-frame death animation to [mummy_death_master.png](C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\rerolls_stages\mummy_death\mummy_death_master.png).

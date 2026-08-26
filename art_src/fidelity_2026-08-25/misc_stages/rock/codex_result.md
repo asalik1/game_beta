@@ -1,0 +1,3 @@
+Saved the 1254×1254 RGBA repaint with verified transparency to [rock_master.png](C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\misc_stages\rock\rock_master.png).
+
+Built-in ImageGen prompt: strict high-resolution painterly fidelity upgrade preserving the rock’s silhouette, facets, muted palette, view, and top-left lighting.

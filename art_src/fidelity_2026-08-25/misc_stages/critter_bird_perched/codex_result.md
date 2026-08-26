@@ -1,0 +1,3 @@
+Saved the fidelity-upgraded four-frame strip to [critter_bird_perched_master.png](C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\misc_stages\critter_bird_perched\critter_bird_perched_master.png).
+
+Built-in image generation; final prompt preserved the bird, palette, poses, ordering, gutters, and exact `#00ff00` background.

@@ -1,0 +1,3 @@
+Saved [ice_sled_master.png](C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\prop_stages\ice_sled\ice_sled_master.png) as a 1254×1254 RGBA PNG with real transparency.
+
+Built-in ImageGen prompt: fidelity-upgraded ice sled preserving the original design, painterly reference style, full silhouette, and transparent background.

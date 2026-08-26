@@ -1,0 +1,12 @@
+Redraw ONE FRAME of a game boss's animation at high resolution.
+This is a FIDELITY UPGRADE of existing approved art — absolutely NOT a redesign.
+
+Reference image 1 is the frame to redraw: reproduce this EXACT image — same pose, silhouette,
+proportions, palette, lighting, FX shapes, facing — repainted with crisp detail. Reference
+image 2 is frame 1 of the already-remastered idle: match ITS rendering style, FX treatment and
+brightness EXACTLY so this frame fits seamlessly into the same animation.
+
+HARD CONSTRAINTS: lightning bolts must have bright white-hot CORES exactly like the anchor frame — never flat cyan; NO rim-light.
+
+Generate ONE image: the single figure on a TRANSPARENT background (real alpha). NO background,
+NO ground shadow. Save the image to disk at the exact path C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\rerolls_stages\veyx_idle_f4_v2\veyx_idle_f4_v2_master.png and stop.

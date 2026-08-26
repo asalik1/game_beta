@@ -1,0 +1,3 @@
+Saved the 1536×1024 RGBA sprite sheet to [fangmaw_walk_master.png](C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\waved_stages\fangmaw_walk\fangmaw_walk_master.png).
+
+Built-in ImageGen prompt: faithful high-resolution repaint preserving Fangmaw’s design and four original poses, arranged 2×2 with real transparency and no shadows.

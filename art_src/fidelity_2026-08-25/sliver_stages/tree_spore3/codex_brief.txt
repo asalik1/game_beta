@@ -1,0 +1,11 @@
+Repaint an EXISTING game tree at high resolution. This is a FIDELITY UPGRADE, not a redesign.
+
+The reference image is the CURRENT in-game tree: reproduce its exact silhouette, species,
+proportions and palette — a TALL, NARROW tree. House style: painterly, soft-shaded, NO black
+outlines, muted palette, top-down three-quarter view, light from the top-left.
+
+Generate ONE image in PORTRAIT orientation (taller than wide): the single tree, centered,
+filling nearly the FULL canvas HEIGHT (the bigger the tree is drawn, the better), on a
+TRANSPARENT background (real alpha). NO ground patch, NO shadow, NO background.
+
+Save the image to disk at the exact path sliver_stages\tree_spore3\tree_spore3_master.png and stop.

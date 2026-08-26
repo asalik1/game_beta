@@ -1,0 +1,1 @@
+Saved [halla_walk_codex_w_p1_master.png](C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\waved_stages\halla_walk_codex_w_p1\halla_walk_codex_w_p1_master.png) as a verified 1791×878 RGBA PNG with real transparency. Built-in ImageGen; fidelity-preserving repaint and background extraction only.

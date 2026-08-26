@@ -1,0 +1,15 @@
+Repaint an EXISTING game prop at high resolution. This is a FIDELITY UPGRADE, not a redesign.
+
+Reference image 2 (subject) is the CURRENT in-game asset: reproduce its exact silhouette,
+proportions, design, materials and palette. Reference image 1 shows the game's painterly house
+style: soft-shaded, NO black outlines, muted palette, top-down three-quarter view, light from
+the top-left.
+
+Generate ONE image: a 2x2 grid of EXACTLY 4 cells on a TRANSPARENT background (real alpha),
+each cell the COMPLETE prop at the same position and size:
+- Cell 1: the prop exactly as the reference (this becomes the rest frame).
+- Cells 2-4: ONLY the fire and embers under the grill change (natural fire flicker loop).
+- Everything else — the grill frame, grate, stones and every prop on it — stays PIXEL-IDENTICAL across all 4 cells, on the same baseline.
+NO background, NO ground patch, NO characters.
+
+Save the single 2x2 image to disk at the exact path prop_stages\cook_grill\cook_grill_master.png and stop.

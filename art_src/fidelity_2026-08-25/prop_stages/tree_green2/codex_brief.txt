@@ -1,0 +1,19 @@
+Repaint an EXISTING game prop at high resolution. This is a FIDELITY UPGRADE, not a redesign.
+
+Reference image 2 (subject) is the CURRENT in-game tree: reproduce its exact silhouette, canopy
+shape, species, proportions and palette. Reference image 1 shows the game's painterly house
+style: soft-shaded, NO black outlines, muted palette, top-down three-quarter view, light from
+the top-left.
+
+Generate ONE image: a 2x2 grid of EXACTLY 4 cells on a TRANSPARENT background (real alpha),
+each cell containing the COMPLETE tree, same size, centered at the same position in its cell:
+- Cell 1 (top-left): the tree at REST — this exact tree, faithfully repainted at high detail.
+- Cells 2, 3, 4: the SAME tree with ONLY the leaf canopy stirred by a gentle breeze — leaf
+  clusters shift subtly (a few percent of canopy width), canopy edges rustle. Motion order:
+  cell 2 = slight stir right, cell 3 = settled (near rest, different leaf detail), cell 4 =
+  slight stir left, so cells 1-2-3-4 LOOP smoothly.
+- The TRUNK and every visible branch stay PIXEL-IDENTICAL across all 4 cells: same position,
+  same outline, same shading. The base of the trunk sits on the SAME baseline in every cell.
+- NO whole-tree lean, NO trunk sway, NO moving shadow, NO background, NO ground patch.
+
+Save the single 2x2 image to disk at the exact path C:\Users\asali\AppData\Local\Temp\claude\C--Users-asali-Projects-MMO\cce95e43-f314-4a33-affa-de961912a161\scratchpad\fidelity\prop_stages\tree_green2\tree_green2_master.png and stop.
