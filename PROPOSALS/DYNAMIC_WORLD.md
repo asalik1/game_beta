@@ -154,6 +154,8 @@ design, not the state of the code.
 | D. Portal stones | "mini dungeon, special rewards, returns him" | pocket injection (the `_waking_inject` hook) | 6 pockets, 2 in slice 1 |
 | E. Pets + minigames | "tic-tac-toe against a slime pet" | MiniGame overlay contract; pet stable + follower | 3 games, 4 pets |
 | F. Easter eggs | "the world remembers" | none (reads existing flags/meta) | ~10 eggs |
+| G. Reactive props | "hit a crystal and it bounces / a prop explodes" | prop state model + the projectile-impact meta hook | ~6 prop types, destructibles + 1 bounce crystal |
+| H. Enterable buildings | "walk into the cottage, one room inside" | live room-append helper (or standalone route) | tiny interiors on select buildings |
 
 ---
 
@@ -469,6 +471,125 @@ may pay a title/keepsake; every one is in-fiction)
    about who else drinks this late.
 10. **The merchant's mustache** — inspect the merchant 20 times across a
     character's life → title "Admirer". Zero code beyond a counter.
+
+---
+
+## G+H. The living world — reactive props, destructibles, enterable buildings (added 2026-08-22)
+
+From a full audit of the prop / scenery / structure / room systems
+(`game_world.gd`, `projectile.gd`, `ambience.gd`, room graph). **Finding:**
+the world is built entirely in code from data tables, and props / buildings /
+critters are inert sprites with at most a collider. Nothing is destructible or
+combat-reactive (the only attackable thing is the training `Dummy`, which is an
+`Enemy` subclass, `dummy.gd:1`); no building is enterable (no interior concept
+exists). But the primitives to change that already exist — this is the prop
+side of the same complaint the rest of this doc answers: the world is set
+dressing that was never made into a system.
+
+**The unifying seam.** Projectiles ALREADY collide with every prop — props sit
+on `collision_layer=1` and projectile masks include layer 1 — but the impact
+handler treats them all as an anonymous wall (`elif body is StaticBody2D:` →
+burst + `queue_free`, no damage, no lookup) at a single choke point
+(`projectile.gd:927`). Every prop is already tagged `set_meta("prop"/
+"structure"/"building", name)` (`game_world.gd:2555, 2904, 2469`). So a
+prop-reaction is a `body.get_meta(...)` branch at that one line — no new
+plumbing to detect the hit.
+
+### G1 — Combat-reactive props (owner: "hit a crystal and it bounces", "a prop explodes if attacked")
+Cheapest lane, biggest instant "alive" payoff. All three reuse existing recipes:
+- **Exploding props** (keg, urn, brazier): a `destructible` meta + small HP;
+  on lethal hit, reuse the gate's exact "remove collider + fade + free"
+  sequence (`open_edge`, `game_world.gd:3536-3548`), then `_add_hazard`
+  (`game_world.gd:4210`) a fire/void pool at the spot. Positioning becomes a
+  weapon. Nearly all from existing calls.
+- **Bounce / reflect crystals** (the owner's crystal): projectile ricochet
+  infra already exists (`_spawn_ricochet.call_deferred`, `projectile.gd:967`).
+  A crystal that redirects a shot on impact lets the player bank attacks around
+  cover; enemy shots bounce too (emergent). Or it reflects an incoming bolt
+  back as a hazard.
+- **Shootable switches**: hit a prop → open a gate / drop a cache / kill a
+  hazard. Generalizes something already in the Act 2 design — Ch8 specs
+  "forge machinery activatable by the player" (`ACT2_DESIGN.md` §Ch8) — into a
+  game-wide verb.
+- **Melee reach**: player attacks only scan `group("enemies")`
+  (`player_combat.gd:994`), so props are untouchable by melee/AoE today. Two
+  clean options: gate v1 to **projectiles + explosions only** (zero melee-scan
+  work), or reskin the **`Dummy` template** (`dummy.gd`, already attackable
+  with HP + damage numbers) for a "crystal you can melee."
+
+### G2 — Enterable buildings (owner: "enter them, one room inside, maybe loot or an easter egg")
+A room is one grid cell built lazily (`game_world.gd:975`); the interact
+hotspot system (`_make_npc` → `interactables[]`, `game_world.gd:1619`) is the
+door template; `Chest.drop` with an `on_open` lambda is the contents — so
+"empty / loot / easter egg" is a **weighted roll on the chest**. Cheapest ship
+that preserves the walk-in/walk-out feel: a tiny authored interior (the capital
+ward-room recipe: `room_scale` + `landmarks` + a chest) + one hotspot + **one
+small live-append-cell helper** (append to the graph, place a door, call
+`_build_room`) so entering/exiting is the normal walk-across-boundary
+transition with position preserved. Zero-engine-change alternative: the
+standalone-mini-world route (like `enter_capital`), but it tears down the
+outdoor world and needs custom "return here" logic. **Gap:** no mid-session
+room injection or position-restore exists today; both are small helpers, not a
+rework. Shares the `_waking_inject` pocket hook with Layer D.
+
+### G3 — Living critters + the joke-weapon secret (the bird loop — combines Layers C + E + F + G)
+The owner's "bird killer" idea, grounded: critters already exist
+(`ambience.gd`) and already **flee the player** (`ambience.gd:274`) — so a
+cursed joke weapon that flips them targetable gets the *hunt* for free (they
+run, you chase). The loop:
+1. **The joke weapon** (Layer F easter egg) — a hidden, absurdly over-serious
+   cursed "bird killer" that only lets you kill critters. The comedy is the
+   contrast, so it stays gated behind a secret and is never default-visible
+   (default-visible critter-murder makes the somber world goofy — tone rule).
+2. **A kill-count secret** (curve, with a tell: "the birds have begun to avoid
+   you") summons a hidden boss — Layer C infra, `Boss.make_boss` reuse, a
+   proper joke-serious fight (a vengeful Featherking), not a gag mob.
+3. **Reward** — a guaranteed cosmetic + a rare **pet** (Layer E discovery-lane
+   pet: cosmetic, never power, never sold — the MT4 rule). The one net-new
+   system the loop needs is the pet follower/stable itself (Layer E).
+
+This is the flagship proof of the whole thesis: set dressing (a bird) becomes a
+secret hunt becomes a boss becomes a collectible.
+
+### Shared plumbing (build once, all three reuse)
+- **Prop state / damage model** — HP + a react hook (or the `Dummy` route);
+  props have none today. Feeds G1 and the G3 hunt.
+- **Destroyed-state persistence** — real gotcha: `zone_scenery` is fully
+  rebuilt on every room entry (`game_world.gd:998, 1948`), so a smashed prop
+  respawns unless flagged. Reuse `get_flag/set_flag` (`game_flow.gd`).
+- **The `projectile.gd:927` meta branch** — the one hook that lights up G1.
+- **The live room-append helper** — for G2 interiors and Layer D pockets.
+- **Pet follower + stable** — for G3, the Layer E build.
+- **MP** — prop destruction needs its own net event (impact/hazard net
+  patterns exist to copy, `projectile.gd:826`, `game_flow.gd:1993`).
+
+### Readability + contract rules (so this doesn't become noise)
+- **A consistent visual language is mandatory.** A barrel must read as hittable
+  and a statue as solid, or the world becomes untrustworthy noise. This is the
+  prop counterpart to the "tells before surprises" rule (§1.5). No random prop
+  explosions.
+- **The prop motion contract still applies** (`CLAUDE.md` §World props): an
+  interactive prop still animates in place, dims-not-strobes, and enters the
+  `full_prop_anims` autotest.
+
+### Build order (this addendum)
+1. **G1 probe** — the prop state model + the `projectile.gd:927` hook + ONE
+   exploding prop + ONE bounce crystal + the destroyed-state flag + a visual
+   tell. The cheapest slice with the widest "alive" reach.
+2. **G3 bird loop** — reuses Layer C (hidden boss) + Layer E (pet, build it
+   here) + the joke weapon; the flagship secret.
+3. **G2 enterable buildings** — the live room-append helper + 2-3 tiny
+   interiors; most authoring-heavy, deepest payoff.
+
+### Open questions (this addendum)
+1. **Destructible scope** — projectiles + explosions only (cheap), or full
+   melee/AoE via the `Dummy` route (richer, more work)?
+2. **Prop readability language** — a subtle rim/shape convention, or an
+   explicit tell (crack, glint) on hittable props?
+3. **Interior route** — the in-graph live-append helper (recommended: seamless,
+   position-preserving) vs the zero-engine standalone-world route (load-feel)?
+4. **Bird-loop tone** — is the joke weapon in scope at all, and how hidden
+   (a Road Deck find, a secret vendor, a specific easter-egg room)?
 
 ---
 

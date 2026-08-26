@@ -215,25 +215,41 @@ scale.
 
 ---
 
-## III. S-Weapon Awakening Quests
+## III. Class-Identity Quests (was "S-Weapon Awakening Quests")
 
-The dormant flag already exists (round 51b) — a dropped S-weapon sleeps until
-`s_awakened_<cls>` is set. The quests set it.
+> **STATUS: reframed 2026-08-22 (owner correction).** The original design gated
+> these behind the S-weapon *awakening* mechanic: a dropped S-weapon stayed
+> dormant (`s_awakened_<cls>`) until a per-class quest unlocked its passive.
+> **That mechanic was RETIRED 2026-07-27 (owner call).** The whole
+> legendary/awakening tier is gone, S-weapons now drop as rare S gear with
+> their passives LIVE on pickup, the `s_awakened` flag and hook were removed,
+> and autotest enforces its absence (`items.gd:598`, `bench_build.gd:218`,
+> `game_base.gd:1521`, `autotest.gd:1234`). The loot gate is dead. What
+> survives, and what this section now describes, is the narrative shell: a
+> per-class **identity quest** fully decoupled from loot. The founder trial and
+> the revelation never needed the weapon gate; they only ever needed the class.
+> This is the campaign's answer to the owner's own note that every class runs
+> the same journey.
 
-Each class meets the **ghost of their Ember Guard founder** — the first time
-the player sees the person whose power they carry. The ghost appears at a
-shrine in any chapter after the S-weapon drops (not gated to a specific
-chapter — the weapon IS the trigger).
+Each class meets the **ghost of their Ember Guard founder**, the first time the
+player sees the person whose power they carry. The founder appears at a
+resonance-shrine variant. The quest is offered on class-identity progression (a
+level or act gate); the trigger is no longer a weapon drop, since there is
+nothing left to awaken.
 
 **Structure (shared scaffold, like class openings):**
 
 1. **The Shrine** — a resonance room variant. The founder's ghost
-   materializes when carrying a dormant S-weapon. Opening dialogue reads
-   resonance band (three variants).
+   materializes on class-identity progression (no weapon required). Opening
+   dialogue reads the resonance band (three variants).
 2. **The Trial** — a solo combat encounter testing the class's IDENTITY
    mechanic. Not a DPS check — a mastery check. Failure resets the trial.
 3. **The Revelation** — the founder tells you one thing about the god-kings.
-   Seeds Act 3 lore. The weapon awakens.
+   Seeds Act 3 lore. The reward is IDENTITY, never power (owner rule): a
+   keepsake / title / cosmetic plus the lore itself. The assassin's arc is the
+   natural home for the "learns his true name" beat (see Founder Revelations).
+   The exact per-class reward is an OPEN owner call now that there is no weapon
+   passive to unlock.
 
 ### Per-Class Trials
 
@@ -879,7 +895,8 @@ Debuts Ch12 (Thornfather Grael), standard tool thereafter.
 1. **Boss Rush (The Crucible)** — cheapest mode, reuses boss.gd + one arena
 2. **Waking Depths** — procedural rooms, rising difficulty, checkpoint bosses
 3. **Difficulty Tiers** — Normal/Nightmare/Torment scaling, per-chapter unlock
-4. **S-Weapon Awakening Quests** — per-class trials, founder ghosts
+4. **Class-Identity Quests** — per-class trials, founder ghosts (decoupled
+   from the retired S-weapon awakening; see §III)
 5. **Waking Incursions** — weekly chapter overlay, cross-domain mini-bosses
 6. **Ch8 vertical slice** — full chapter, faction rooms, mob mechanics, rune drops
 7. **Healing reduction system** — Blight debuff, per-class sources (before Ch12)
