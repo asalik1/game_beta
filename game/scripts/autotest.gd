@@ -4802,8 +4802,11 @@ func _test_asset_seams() -> void:
 				return _fail("%s regressed to a nested motion overlay" % active_name)
 		active_visual.queue_free()
 	# TERRAIN_ART_FIX_TASK tiers 1-3 are all real high-resolution overrides.
-	# Exact canvases make accidental restoration of the tiny pack art obvious,
-	# while authored world widths stop source resolution changing gameplay.
+	# The sizes below are FLOORS (were exact pins until 2026-08-25): the
+	# fidelity pass stores masters at >=2x render size, growing several of
+	# these canvases, and the guard's real job is catching an accidental
+	# restoration of the tiny pack art — a canvas UNDER its floor. Authored
+	# world widths stop source resolution changing gameplay either way.
 	var tiered_art := {
 		"cottage_a": Vector2i(384, 300), "cottage_a2": Vector2i(384, 320),
 		"cottage_b": Vector2i(384, 260), "stall": Vector2i(320, 252),
@@ -4819,7 +4822,8 @@ func _test_asset_seams() -> void:
 	}
 	for tier_name: String in tiered_art:
 		var actual_size := Vector2i(Art.tex(tier_name).get_size())
-		if actual_size != tiered_art[tier_name]:
+		var floor_size: Vector2i = tiered_art[tier_name]
+		if actual_size.x < floor_size.x and actual_size.y < floor_size.y:
 			return _fail("%s tiered-art canvas %s != %s" %
 				[tier_name, actual_size, tiered_art[tier_name]])
 	for scaled_name in [

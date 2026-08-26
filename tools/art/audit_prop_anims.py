@@ -70,6 +70,23 @@ PULSE_MAX_FIRE = 25.0
 # shell is byte-locked (RIGID_MASK) and only the plasma swings.
 ENERGY_PROPS = {"void_rift"}
 PULSE_MAX_ENERGY = 18.0
+# FOLIAGE (2026-08-25, tree fidelity+wind pass): authored canopy-rustle strips.
+# The canopy MAY change silhouette (CLAUDE.md: "only fire, cloth and foliage");
+# the rigid contract is the TRUNK BASE, so the band narrows to the bottom 12%
+# of the silhouette (the default 30% window reaches low canopy and would flag
+# legitimate leaf motion). --fix NEVER realigns/band-locks these: scaling
+# frames by canopy width would mangle an authored sway — a flagged foliage
+# strip is fixed by regen only. Mirrors autotest's silhouette_motion_anims.
+FOLIAGE_PROPS = {
+    "tree_green", "tree_green2", "tree_green3", "tree_green4",
+    "tree_autumn", "tree_autumn2", "tree_autumn3",
+    "tree_teal", "tree_teal2", "tree_teal3",
+    "tree_snow", "tree_snow2", "tree_snow3",
+    "tree_winter", "tree_winter2", "tree_winter3",
+    "tree_spore", "tree_spore2", "tree_spore3",
+    "topiary", "bush", "bush2", "bush3",
+}
+FOLIAGE_BAND = 0.12
 
 
 def frame_w(strip_path, base):
@@ -93,7 +110,9 @@ def measure(strip_path, fw):
     "shifts position" is about the outline (2026-08-18)."""
     a = np.asarray(Image.open(strip_path).convert("RGBA")).astype(float)
     n = a.shape[1] // fw
-    top_anchor = os.path.basename(strip_path)[:-9] in TOP_ANCHOR
+    base_name = os.path.basename(strip_path)[:-9]
+    top_anchor = base_name in TOP_ANCHOR
+    band_frac = FOLIAGE_BAND if base_name in FOLIAGE_PROPS else 0.3
     cents, bases, lums = [], [], []
     band_rows = None   # the band is FRAME 0's rows, reused for every frame (a
     # taller water jet in frame 3 must not move the window up the basin)
@@ -109,7 +128,7 @@ def measure(strip_path, fw):
             if top_anchor:
                 band_rows = (0, ys.min() + int(0.3 * span))
             else:
-                band_rows = (ys.max() - int(0.3 * span), a.shape[0])
+                band_rows = (ys.max() - int(band_frac * span), a.shape[0])
         mb = m.copy()
         mb[:band_rows[0], :] = False
         mb[band_rows[1]:, :] = False
@@ -284,6 +303,9 @@ def main():
     for r in flagged:
         base, n, fw, drift, bdrift, pulse, _, has_static = r
         p = os.path.join(SPR, base + "_anim.png")
+        if base in FOLIAGE_PROPS and not (has_static and is_derived(p, fw)):
+            print("foliage  ", base, "— authored canopy sway: never realigned/band-locked; fix by regen only")
+            continue
         if has_static and is_derived(p, fw):
             motion = MOTION.get(base, "pulse")
             cmd = [sys.executable, os.path.join(REPO, "tools", "art", "derive_prop_anim.py"), base,

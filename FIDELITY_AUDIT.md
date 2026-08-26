@@ -1,67 +1,121 @@
 # Fidelity audit — authored resolution vs on-screen render
 
-**Owner rule (2026-08-24):** a master sprite should be **≥ 2× the size it renders at in game**. Below that it looks soft/mushy at its render size. Benchmark: the base classes render ~100px on-screen from ~235px art (~2.35×).
+**Owner rule (2026-08-24):** a master sprite should be **≥ 2× the size it renders at in game**.
+**Tolerance ruling (2026-08-25): strict 5%.** ≥1.90× is acceptable drift — document, don't fix
+(archer at 1.95× was the canonical call). **Below 1.90× is a MUST-FIX.** Explicit per-asset
+owner rulings override in both directions. Benchmark: base classes ~2.1–2.35×.
 
 **Tooling** — re-run any time (formulas + method in `tools/INDEX.md`):
 ```bash
 # 1. dump live entity scale/placement (a quick Godot boot; run OFF the Codex box)
 tools/Godot_v4.4.1-stable_win64_console.exe --headless --path game --script res://fidelity_dump.gd -- entities.json
-# 2. audit (skips enemies never placed in a zone; --include-unplaced to override)
+# 2. audit (summoned adds count as placed via boss-def "summons" keys)
 python tools/art/fidelity_audit.py --entities entities.json --csv fidelity.csv
 ```
-`ratio = authored_px / rendered_screen_px`, flag `< 2.0`. Render formulas (× camera base zoom **1.12**): hero body `52·1.7`; mob cell `scale·1.7·16`; boss cell `scale·1.0·16` (bosses skip the 1.7); npc body `~46·1.7·nsize`; critter `cell·_scale` (direct texture scale); prop width = `Balance.SCENERY_RENDER_WIDTH`.
+`ratio = authored_px / rendered_screen_px`, flag `< 2.0`, must-fix `< 1.90`. Render formulas
+(× camera base zoom **1.12**): hero body `52·1.7`; mob cell `scale·1.7·16`; **boss cell
+`scale·1.7·16`** (corrected 2026-08-25 — enemy.gd:312 applies CHAR_RENDER_SCALE to mobs AND
+bosses; the old "bosses skip the 1.7" was a stale var comment that understated every boss
+render 1.7×, hiding 9 under-bar bosses); npc body `body_target·1.7·nsize` (legacy no-target
+NPCs render frame WIDTH at `3.0·1.7·nsize·16`; the old dump hardcoded body_target 46 for
+everyone and mis-scored every non-46 NPC); critter `cell·_scale`; prop width =
+`Balance.SCENERY_RENDER_WIDTH` (**variants render at the FAMILY width and are audited too** —
+the tall `*3` slivers at 0.51–0.91× hid behind base-only auditing).
+
+**The strip-metric rule** (matters for any regen): a mob/boss's strips share one body metric —
+if the idle cell changes, every ACTION strip (attack/death/boss abilities) must scale by the
+same factor (enemy.gd renders actions at the idle cell's scale); WALK strips are normalized by
+their own cell (only the body/cell fraction matters) and never need to move.
 
 ---
 
-## Verdict by category (placed assets only, 232 total)
+## 2026-08-25/26 remediation — RESULTS
 
-| Category | n | median | worst | under 2× | read |
+The full work list (everything except the 18 legacy skins) was executed autonomously on
+2026-08-25/26; masters/briefs/reproduce scripts archived in `art_src/fidelity_2026-08-25/`.
+Corrected-formula baseline was **119 / 263 under 2.0×**; after the pass: **see the table
+below** (re-run stamped at the bottom).
+
+### What was fixed (all vetted old-vs-new + independent drift review)
+- **Mobs — the 192px batch (18/18)**: rebuilt at 256-cell. 7 robe mobs deterministically from
+  the archived 2026-08-08 masters; 11 via identity-anchored idle regens (refs = current strip
+  + own hi-res walk/attack master); attacks rebuilt from masters at the new metric; **all 17
+  deaths regenerated** (2x2 collapse masters, new idle as identity authority) + banshee's
+  attack (its baked scream FX removed — the game spawns it). `stone_broken`'s keep-legacy
+  ruling was **rescinded by the owner mid-session** and fixed via a design-LOCKED re-roll
+  (flat vent-grill head + restrained core preserved). Body/cell fractions preserved ≤3%.
+- **Props (54 rows incl. variants)**: root cause was `install_prop_hires.py`'s min(320)/384
+  clamps storing every big prop at ~1× (slivers at 0.5–0.9×) — clamps fixed (2.5× render_w,
+  never-upscale guard), all 54 regenerated as faithful repaints and stored at ~2.2–2.5×.
+  **All 21 leafy trees now carry authored 4-frame canopy-rustle `_anim` strips** (trunk
+  pixel-locked — one 2x2 gen yields static + anim; trunk-band drift 0 on the audit). Dead/bare
+  trees stay static by design. Fire/glow props kept their motion (2x2 motion masters for the
+  authored ones, re-derives for the rest). Tall slivers re-rolled as portrait statics
+  (1.95–2.23×; they keep the runtime wind-shear lean). `audit_prop_anims.py` gained a
+  FOLIAGE_PROPS band (trunk-base 12%, `--fix` never realigns authored foliage);
+  `build_terrain_art_fix.py` boxes doubled; autotest's tiered-art pins became floors.
+- **Critters (7/7)**: re-authored at 2–4× cells (hawk 256, most 128, butterfly 96) with
+  `ambience.gd _scale()` divided by the same factors — on-screen sizes unchanged. All ≥2.38×.
+- **NPC/misc**: `pilgrims_schism` rebuilt from its own 1536px master (0.56×→~2.5×;
+  `art_src/schism_tableau/build_runtime.py` now defaults to the hi-res build); `fallen_bell`
+  keyed from its 1254px source; `mill` 640w; `bones`/`rock` regenerated at 256w;
+  `choir_censer` 256 + a new 4-frame smoulder anim (and its `asset_dump.gd` phantom
+  "player projectile" row removed).
+- **Bosses (6)** — per-frame ~1024px remasters (idle + walks; the only lane past the 627px
+  multi-frame gen ceiling), actions metric-aligned ×k:
+  | boss | before | after |
+  |---|---|---|
+  | veyx | **0.94×** (art smaller than render) | **1.53×** — its ImageGen ceiling, owner-accepted (below) |
+  | stormmouth | 1.37× | **2.01×** |
+  | vargoth | 1.58× | **2.02×** |
+  | auroch_minotaur | 1.79× | **2.06×** |
+  | halla | 1.87× | **2.09×** |
+  | fangmaw | 1.89× | **2.42×** |
+  Dead legacy `_ability` families (veyx/stormmouth/vargoth/halla/fangmaw, 204–258px cells,
+  unreachable via BOSS_FLAT_ANIMATION_LOCOMOTION) purged from both trees.
+- **Drift review** (independent second pass per `tools/art/DRIFT_AUDIT.md`) caught and fixed:
+  orc_rogue death gore (despotted), orc/skeleton_warrior weapon pop-in/out (re-rolled with
+  continuity locks), veyx FX inconsistency frames (re-rolled), stormmouth tabard flicker
+  (deterministic brightness match), royal_knight great-helm / vow_sentinel tabard identity
+  drift (re-rolled with attire locks + chained deaths). Accepted as design pushes: warm-shift
+  convergence toward each mob's hi-res attack palette, elf_druid's extra blooms, softer death
+  Laplacians.
+
+### Documented remainder (intentional — owner rulings + 5% tolerance)
+- **Skins 18** — excluded from this pass; the planned full skin regen covers them (CLAUDE.md).
+- **veyx ~1.53×** — owner-accepted 2026-08-25. A true 2× needs 1340px cells; ImageGen's
+  per-frame ceiling is ~1024. **A PixelLab /v2/resize pass (needs owner authorization) could
+  close the gap** — the `pixellab_resize_soft_clips.py` lane is the template.
+- **archer 1.95×** (benchmark class; "we wont fix a 2.5 percent drift"), **ashpriest /
+  cinderhide / kaethra / saint_varo 1.96×**, **suli 1.97×**, **warden_corin 1.99×** — all
+  inside the 5% tolerance.
+- **elder 1.89× / caged_beastkin 1.87×** — owner-confirmed TO-DO (2026-08-25): both ship
+  owner-accepted **8-direction idle sets**, so an honest fix is an 8-dir regen (8 stills per
+  NPC, no walk cycles — cheap; group suli + warden_corin into the same pass). South-facing
+  masters already generated + archived in `art_src/fidelity_2026-08-25/misc_stages/`.
+- **Boss/mob ACTION strips** at their pre-existing authored resolutions (metric-aligned
+  upscales, no new detail): veyx arc/summon/enrage, stormmouth bolt/cast/enrage, auroch's
+  four action families, halla's bolt/enrage/freeze/summon — a future per-frame or PixelLab
+  pass can lift them; idle+walk (what a player stares at) carry real detail now.
+- **Judged-lint warns inherited from shipped geometry**: veyx_walk_s ANCHOR (the funnel
+  sways by design), auroch melee / fangmaw leap FEETSLIDE (genuine lunges), fangmaw attack
+  EDGECUT (arc extreme). Boss-strip BLEED = painterly soft-alpha FX (benign class).
+
+### Final numbers (re-run 2026-08-26, corrected formulas)
+
+| Category | n | median | min | under 2.0× | under 1.90× (must-fix bar) |
 |---|---|---|---|---|---|
-| **Boss** | 21 | **3.43×** | 1.59× | 1 | healthiest — the Codex regen at 627–648px paid off |
-| NPC | 42 | 2.55× | 0.71× | 6 | mostly fine; low ones are props-wired-as-npc + one real upscale |
-| **Class** (benchmark) | 6 | 2.12× | 1.95× | 1 | render 99px; the reference bar |
-| Mob | 39 | 2.03× | 1.75× | 18 | a uniform 192px batch sits ~10% under bar (borderline) |
-| Prop | 94 | 2.21× | 1.07× | 37 | trees worst; many structures borderline |
-| **Skin** | 23 | 1.22× | 1.17× | **18** | the OLD skins — half base-class fidelity |
-| Critter | 7 | 1.05× | 0.60× | 7 | ambient; small — likely out of scope |
+| Class | 6 | 2.12× | 1.95× | 1 (archer — tolerance, owner-ruled) | 0 |
+| Skin | 23 | 1.22× | 1.17× | 18 (EXCLUDED — planned skin regen) | 18 (excluded) |
+| **Mob** | 41 | **2.63×** | **2.03×** | **0** | 0 |
+| Boss | 21 | 2.06× | 1.53× | 5 (veyx accepted ceiling + 4 at 1.96×) | 1 (veyx — owner-accepted) |
+| NPC | 42 | 2.29× | 1.87× | 4 (2 to-do + 2 tolerance) | 2 (elder/caged_beastkin — confirmed to-do) |
+| **Critter** | 7 | **2.80×** | **2.38×** | **0** | 0 |
+| Prop | 123 | 2.23× | 1.95× | 1 (tree_winter3 — tolerance) | 0 |
+| **TOTAL** | 263 | | | **29** (was 119 at the corrected baseline) | |
 
-**Excluded by design:** 9 enemies DEFINED but never placed (never spawned, never summoned) are skipped so they can't post phantom fails. `bat`/`direbat` were the two worst (0.59×/0.62× — art smaller than its render) and were **dropped from the codebase 2026-08-24** (commit `5a1610a`).
+Every remaining under-bar row is excluded (skins), owner-ruled (veyx, archer), inside the 5%
+tolerance, or the confirmed elder/caged_beastkin 8-dir to-do. **No unaccounted must-fixes.**
 
----
-
-## The real priorities (things a player sees, worst first)
-
-### 1. Skins — the biggest, most systemic gap (18 of 23)
-The **5 enhanced-base variants are DONE RIGHT and PASS at 2.37×** (authored at the full 235px base body): `emberbound_heir`, `erased_name`, `severed_thread`, `ledgerbound`, `blighted_healer`. **They are NOT in this list.**
-
-The failures are the **OLD skins** — authored at ~120px = ~1.2×, exactly the set CLAUDE.md marks off-limits pending the **planned full skin regen**. This audit quantifies why that regen matters:
-- **~1.17–1.23× (14):** `mage_void_weaver`, `assassin_phantom` (+awakened), `paladin_fallen_arbiter` (+awakened), `mage_crystal_archmage` (+awakened), `archer_frostfall_ranger`, `archer_voidwraith` (+awakened), `warlock_eldritch_herald` (+awakened), `warrior_stormforged` (+awakened)
-- **1.82× (4):** `assassin_blade_dancer`, `paladin_eclipse_knight`, `warlock_hellfire_inquisitor`, `warrior_dreadknight`
-
-### 2. Genuine upscales (art SMALLER than its render)
-- **`pilgrims_schism` 0.71×** (npc) — 62px art rendering at 88px
-- Critters: `hawk` 0.60×, `crow` 0.89×
-
-### 3. Trees / large scatter props (LOW, <1.5×)
-`tree_snow` 1.07×, `tree_teal` 1.12×, `deadtree` 1.25×, `tree_gnarled` 1.33×, `tree_winter` 1.34×, `grave_deadtree` 1.37×, `garden_statue` 1.42×, `tree_spore` 1.43×, `storm_conductor` 1.45×
-
-### 4. Used-but-low-fi, hidden by the placed filter
-- **`choir_censer` 1.15×** — SUMMONED by the ch3 boss (so it's seen), but not a zone spawn, so the default audit skips it. A real re-art candidate. (`echo_clone`, the ch7 summon, is fine at 3.5×.) The filter counts "zone spawn OR boss," not mechanic summons — the one known blind spot.
-
-### 5. Borderline (1.5–1.99×, THIN — nice-to-have)
-- **Mobs (18):** the 192px batch — `skeleton_mage` 1.75×, `mummy`/`orc`/`vow_sentinel`/`fungus_*` ~1.8–1.85×, up to `elf_ranger` 1.97×. Authored at a uniform 192px; renders ~100–110px.
-- **Props (~28):** `tree_green`/`tree_autumn` 1.5×, `crypt`, pillars, statues, forge stations… up to `ice_sled` 1.98×.
-- **`veyx` 1.59×** — the only boss under bar (scale-22 giant renders 394px; needs a >788px master).
-- **`archer` 1.95×** — the one base class fractionally under (193px body).
-
-### Out of scope (owner to decide)
-- **Critters** (7, all <2×) — ambient/tiny; `bat` critter 1.28×, `butterfly` 1.49×.
-- **Props-wired-as-npc:** `bones` 1.30×, `fallen_bell` 1.38× (interactables, not characters).
-
----
-
-## Notes
-- **Excluded correctly:** unplaced enemies (`bat`/`direbat` dropped; 7 `pc_extra_mobs` reserve spared per owner; mostly ≥1.8× anyway).
-- **Known filter blind spot:** boss-*summoned* adds read as "unplaced" (only `choir_censer` matters — low-fi and used).
-- **Bag icons intentionally 32px** (gear + gems both) — this audit is about world/character/codex art, not the bag-slot tier.
-- Full sortable data: the `--csv` output. Re-run after any resize/regen to confirm an asset crossed 2×.
+- Full sortable data: the `--csv` output (session CSVs archived beside the masters).
+- Re-run after any resize/regen to confirm an asset crossed 2×.

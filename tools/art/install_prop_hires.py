@@ -78,12 +78,20 @@ def install(name, src, render_w, g=0.88):
     if bb:
         im = im.crop(bb)
     w, h = im.size
-    tw = max(128, min(320, round(render_w * 2.5)))
+    # Store at ~2.5x the render width (crisp downscale headroom). The old
+    # min(320,...) width clamp + 384 height refit silently crushed every big
+    # prop to ~1x its render size (and tall props to 0.5-0.9x slivers) — the
+    # 2026-08-25 fidelity audit's root cause for the prop category. Never
+    # upscale past the source's real detail: a stretched master only inflates
+    # the audit number without adding fidelity.
+    tw = min(1024, max(128, round(render_w * 2.5)))
+    if tw > w:
+        tw = w
     nh = max(1, round(h * tw / w))
     nw = tw
-    if nh > 384:  # very tall prop: fit by height instead
-        nw = max(1, round(w * 384 / h))
-        nh = 384
+    if nh > 1024:  # extreme tall prop: fit by height instead
+        nw = max(1, round(w * 1024 / h))
+        nh = 1024
     im = im.resize((nw, nh), Image.LANCZOS)
     im = despill(im)
     im = gamma(im, g)

@@ -61,6 +61,7 @@ const ENEMIES := {
 		"physres": 25.0, "magres": 45.0, "eva": 0.05, "critres": 8.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 35, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"INT": 2.0, "VIT": 1.0},
+		"summons": ["choir_censer"],  # bloom-pods reuse the censer add (tooling: seen in game)
 		"music": "boss_gardener", "music_fallback": "boss_morwen",
 		"lore": "He still keeps Choir vows. He just tends a different congregation, and waters it with pilgrims.",
 		"mechanics": [
@@ -91,6 +92,7 @@ const ENEMIES := {
 		"physres": 30.0, "magres": 35.0, "eva": 0.05, "critres": 9.0, "crit": 0.05, "dmg_type": "phys",
 		"level": 37, "hp_g": 0.15, "dmg_g": 0.14, "boss": true,
 		"attrs": {"AGI": 1.5, "INT": 1.5},
+		"summons": ["choir_censer"],  # Bloom-form roots reuse the censer add (tooling: seen in game)
 		"music": "boss_kaethra", "music_fallback": "boss_nullwarden",
 		"lore": "She cured the beast. Read that sentence again, carefully, and ask what's left.",
 		"mechanics": [

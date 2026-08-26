@@ -12,10 +12,19 @@ Render formulas reverse-engineered from the engine (all x camera base zoom
 1.12; SCREEN px = world px x zoom):
   hero/class : body renders at HERO_TARGET_BODY(52) * CHAR_RENDER_SCALE(1.7)
   mob        : cell renders at  scale * CHAR_RENDER_SCALE(1.7) * 16
-  boss       : cell renders at  scale * 1.0 * 16         (bosses skip 1.7)
-  npc        : body renders at  NPC body_target * 1.7 * nsize
+  boss       : cell renders at  scale * CHAR_RENDER_SCALE(1.7) * 16
+               (CORRECTED 2026-08-25: enemy.gd:312 applies CHAR_RENDER_SCALE
+               unconditionally — "mobs AND bosses". The old "bosses skip 1.7"
+               came from a stale var comment and understated every boss's
+               render size by 1.7x. The veyx def's own sizing comment
+               confirms the 1.7: 22*1.7*16*0.556 = the documented ~332px.)
+  npc        : body_target>0: body renders at body_target * 1.7 * nsize
+               body_target=0 (legacy): frame WIDTH renders at
+               NPC_RENDER_SCALE(3.0) * 1.7 * nsize * 16
   critter    : cell renders at  cell * _scale()          (direct texture scale)
-  prop       : width renders at SCENERY_RENDER_WIDTH[family]  (width-normalized)
+  prop       : width renders at SCENERY_RENDER_WIDTH[family]  (width-normalized;
+               every VARIANT in the family renders at the family width, so
+               variants are audited too — the tall "*3" slivers hid here)
 
 classes/props/critters need no runtime data. mobs/bosses/npcs need each
 entity's `scale`/sprite -> pass --entities <json> from tools/fidelity_dump.gd.
@@ -42,12 +51,14 @@ BALANCE = (GAME / "scripts" / "balance.gd").read_text(errors="replace")
 ZOOM = 1.12          # game.gd camera.zoom base
 CHAR = 1.7           # Balance.CHAR_RENDER_SCALE
 HERO_BODY = 52.0     # player_core HERO_TARGET_BODY
-MOB_MULT, BOSS_MULT = CHAR, 1.0
+NPC_RENDER = 3.0     # Balance.NPC_RENDER_SCALE (legacy no-body-target NPCs)
+MOB_MULT, BOSS_MULT = CHAR, CHAR   # enemy.gd:312: 1.7 for mobs AND bosses
 CLASSES = ["warrior", "archer", "mage", "assassin", "paladin", "warlock"]
 DIR8 = ["n", "ne", "e", "se", "s", "sw", "w", "nw"]
-CRITTER_SCALE = {"butterfly": 0.6, "dragonfly": 0.5, "bat": 0.7, "hawk": 1.5,
-                 "crow": 1.0, "wisp": 1.1, "fog": 11.0, "debris": 1.3,
-                 "bird": 0.85, "dove": 0.85}
+# mirrors ambience.gd Critter._scale() (2026-08-25 hi-res critter cells)
+CRITTER_SCALE = {"butterfly": 0.3, "dragonfly": 0.25, "bat": 0.2625, "hawk": 0.375,
+                 "crow": 0.375, "wisp": 1.1, "fog": 11.0, "debris": 1.3,
+                 "bird": 0.31875, "dove": 0.31875, "bird_perched": 0.31875}
 
 
 def _num_dict(name: str) -> dict[str, float]:
@@ -59,6 +70,22 @@ def _num_dict(name: str) -> dict[str, float]:
 
 SCENERY_W = _num_dict("const SCENERY_RENDER_WIDTH")
 NPC_H = _num_dict("const NPC_HEIGHT_BY_SPRITE")
+
+
+def _prop_families() -> dict[str, list[str]]:
+    """terrains.gd PROP_VARIANT_GROUPS: family base -> [base, variant2, ...]."""
+    src = (GAME / "scripts" / "terrains.gd").read_text(errors="replace")
+    m = re.search(r"const PROP_VARIANT_GROUPS := \[(.*?)\n\]", src, re.S)
+    fams: dict[str, list[str]] = {}
+    if m:
+        for row in re.findall(r"\[([^\]]+)\]", m.group(1)):
+            names = re.findall(r'"([\w]+)"', row)
+            if names:
+                fams[names[0]] = names
+    return fams
+
+
+PROP_FAMILIES = _prop_families()
 
 
 def cell_and_body(png: Path) -> tuple[int, int]:
@@ -142,12 +169,23 @@ def audit(entities: dict | None, mn: float, only: set[str] | None, include_unpla
                 p = _idle_png(spr)
                 if not p:
                     continue
-                _, body = cell_and_body(p)
+                bt = float(npc.get("body_target", 0.0))
                 nsize = float(NPC_H.get(spr, 1.0)) or 1.0
-                bt = float(npc.get("body_target", 46.0))
-                rendered = bt * CHAR * nsize * ZOOM
-                rows.append(("npc", spr, body, round(rendered, 1), round(body / rendered, 2),
-                             verdict(body / rendered, mn), f"nsize {nsize:.2f}"))
+                if bt > 0.0:
+                    # authored-body path: alpha body height -> body_target world px
+                    _, body = cell_and_body(p)
+                    rendered = bt * CHAR * nsize * ZOOM
+                    rows.append(("npc", spr, body, round(rendered, 1), round(body / rendered, 2),
+                                 verdict(body / rendered, mn), f"nsize {nsize:.2f} body"))
+                else:
+                    # legacy path (no NPC_BODY_TARGETS entry): frame WIDTH
+                    # renders at NPC_RENDER_SCALE * CHAR * nsize * 16 world px
+                    im = Image.open(p)
+                    w, h = im.size
+                    fw = w // max(1, round(w / h)) if w >= h else w
+                    rendered = NPC_RENDER * CHAR * nsize * 16.0 * ZOOM
+                    rows.append(("npc", spr, fw, round(rendered, 1), round(fw / rendered, 2),
+                                 verdict(fw / rendered, mn), f"nsize {nsize:.2f} legacy-w"))
 
     # ---- critters ----
     if want("critters"):
@@ -160,17 +198,26 @@ def audit(entities: dict | None, mn: float, only: set[str] | None, include_unpla
                          verdict(cell / rendered, mn), f"scale {sc}"))
 
     # ---- props / landmarks / accents (width-normalized) ----
+    # Every VARIANT in a PROP_VARIANT_GROUPS family renders at the FAMILY's
+    # width (game_world resolves prop_base() before _scenery_render_scale), so
+    # each variant file is audited against the family width too — the tall
+    # "*3" tree slivers (tree_autumn3 at 0.51x) hid behind base-only auditing.
     if want("props"):
         seen = set()
         for fam, rw in sorted(SCENERY_W.items()):
-            p = SPRITES / f"{fam}.png"
-            if not p.exists() or fam in seen:
+            if fam in seen:
                 continue
             seen.add(fam)
-            native_w = Image.open(p).size[0]
             rendered = rw * ZOOM
-            rows.append(("prop", fam, native_w, round(rendered, 1), round(native_w / rendered, 2),
-                         verdict(native_w / rendered, mn), f"render_w {rw:.0f}"))
+            for member in PROP_FAMILIES.get(fam, [fam]):
+                p = SPRITES / f"{member}.png"
+                if not p.exists():
+                    continue
+                native_w = Image.open(p).size[0]
+                label = member if member == fam else f"{member} ({fam})"
+                rows.append(("prop", label, native_w, round(rendered, 1),
+                             round(native_w / rendered, 2),
+                             verdict(native_w / rendered, mn), f"render_w {rw:.0f}"))
 
     audit.skipped_unplaced = skipped_unplaced
     return rows

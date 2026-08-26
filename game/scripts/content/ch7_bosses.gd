@@ -34,6 +34,7 @@ const ENEMIES := {
 		"physres": 20.0, "magres": 45.0, "eva": 0.05, "critres": 9.0, "crit": 0.05, "dmg_type": "magic",
 		"level": 38, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"INT": 2.0, "AGI": 1.0},
+		"summons": ["choir_censer"],  # conductor rods reuse the censer add (tooling: seen in game)
 		"music": "boss_veyx", "music_fallback": "boss_stormwarden",
 		"lore": "It isn't angry. It's a syllable of something that hasn't finished speaking for six hundred years, and it's HAPPY.",
 		"mechanics": [
@@ -66,6 +67,7 @@ const ENEMIES := {
 		"physres": 25.0, "magres": 25.0, "eva": 0.15, "critres": 6.0, "crit": 0.15, "dmg_type": "phys",
 		"level": 39, "hp_g": 0.14, "dmg_g": 0.13, "boss": true,
 		"attrs": {"AGI": 2.0, "STR": 1.0},
+		"summons": ["echo_clone"],  # Unnaming mirror copies (tooling: seen in game)
 		"music": "boss_echo", "music_fallback": "boss_vargoth",
 		"lore": "The Guard erased one name from every record. The void returns everything we throw away.",
 		"mechanics": [

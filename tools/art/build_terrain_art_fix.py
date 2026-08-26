@@ -28,30 +28,34 @@ class Spec:
     animated: bool = False
 
 
+# Target boxes DOUBLED 2026-08-25 (fidelity audit): the original boxes matched
+# ~1x the on-screen render width, pinning these props under the >=2x master
+# rule (FIDELITY_AUDIT.md). A re-run now stores at the 2x-bar sizes; sources
+# are ~1024px masters so the detail is real, not upscaled.
 SPECS: dict[str, Spec] = {
     # Tier 1
-    "cottage_a": Spec((384, 300)),
-    "cottage_a2": Spec((384, 320)),
-    "cottage_b": Spec((384, 260)),
-    "stall": Spec((320, 252)),
-    "rock3": Spec((256, 320)),
-    "crypt": Spec((256, 300)),
-    "signpost": Spec((112, 192)),
+    "cottage_a": Spec((768, 600)),
+    "cottage_a2": Spec((768, 640)),
+    "cottage_b": Spec((768, 520)),
+    "stall": Spec((640, 504)),
+    "rock3": Spec((512, 640)),
+    "crypt": Spec((512, 600)),
+    "signpost": Spec((224, 384)),
     # Tier 2
-    "keep_arch": Spec((320, 240)),
-    "camp_workbench": Spec((288, 240)),
-    "cook_grill": Spec((256, 224), animated=True),
-    "camp_bonfire": Spec((192, 128), animated=True),
-    "pillar": Spec((160, 256)),
+    "keep_arch": Spec((640, 480)),
+    "camp_workbench": Spec((576, 480)),
+    "cook_grill": Spec((512, 448), animated=True),
+    "camp_bonfire": Spec((384, 256), animated=True),
+    "pillar": Spec((320, 512)),
     # Tier 3
-    "banner_blue": Spec((96, 192), animated=True),
-    "banner_green": Spec((96, 192), animated=True),
-    "banner_red": Spec((96, 192), animated=True),
-    "hideout_poster": Spec((96, 144)),
-    "hideout_table": Spec((256, 224)),
-    "amphora": Spec((112, 192)),
-    "station_alchemy_t3": Spec((320, 256), animated=True),
-    "station_anvil_t3": Spec((320, 288)),
+    "banner_blue": Spec((192, 384), animated=True),
+    "banner_green": Spec((192, 384), animated=True),
+    "banner_red": Spec((192, 384), animated=True),
+    "hideout_poster": Spec((192, 288)),
+    "hideout_table": Spec((512, 448)),
+    "amphora": Spec((224, 384)),
+    "station_alchemy_t3": Spec((640, 512), animated=True),
+    "station_anvil_t3": Spec((640, 576)),
 }
 
 

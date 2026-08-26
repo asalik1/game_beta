@@ -26,6 +26,14 @@ func _init() -> void:
 			for e in zone.get("enemies", []):
 				if e is Array and e.size() > 0:
 					placed[String(e[0])] = true
+	# Mechanic-SUMMONED adds (censers/rods/clones) never appear in a zone's
+	# enemies array, so the walk above misses them — the choir_censer blind
+	# spot (FIDELITY_AUDIT.md). Boss defs now declare them via a "summons"
+	# key; a summon of a placed boss is seen in game, so it counts as placed.
+	for kind in Story.ALL_ENEMIES:
+		if placed.has(String(kind)):
+			for s in Story.ALL_ENEMIES[kind].get("summons", []):
+				placed[String(s)] = true
 	for kind in Story.ALL_ENEMIES:
 		var st: Dictionary = Story.ALL_ENEMIES[kind]
 		if st.get("placeholder", false):
@@ -44,7 +52,13 @@ func _init() -> void:
 					continue
 				var spr := String(npc.get("sprite", ""))
 				if spr != "" and not out["npcs"].has(spr):
-					out["npcs"][spr] = {"body_target": 46.0}
+					# Real per-sprite body target (the old dump hardcoded 46.0
+					# for everyone, mis-auditing every non-46 NPC). 0.0 = no
+					# entry -> the LEGACY path: game_world scales the sprite so
+					# its frame WIDTH renders at NPC_RENDER_SCALE*CHAR*nsize*16
+					# world px (width-normalized, so bigger art = more detail).
+					out["npcs"][spr] = {"body_target":
+						float(Balance.NPC_BODY_TARGETS.get(spr, 0.0))}
 	var args := OS.get_cmdline_user_args()
 	var path: String = args[0] if args.size() > 0 else "user://fidelity_entities.json"
 	var f := FileAccess.open(path, FileAccess.WRITE)

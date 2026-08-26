@@ -1,5 +1,13 @@
-"""Build the production Pilgrims' Schism interaction tableau."""
+"""Build the production Pilgrims' Schism interaction tableau.
 
+2026-08-25 (fidelity audit): the SHIPPED runtime asset is now the HI-RES build
+(`main_hires()`, default): master bbox-cropped and resized to a ~280px alpha
+body (NPC path renders the body at 58*1.7 world px, so 280 stores ~2.5x the
+render — the >=2x master rule), painterly alpha kept (no 24-colour quantize,
+no 1px outline — those were for the legacy 80x64 cell, which `main_legacy()`
+still reproduces)."""
+
+import sys
 from pathlib import Path
 
 from PIL import Image
@@ -10,6 +18,26 @@ CANVAS = (80, 64)
 SUBJECT_LIMIT = (76, 60)
 ALPHA_CUTOFF = 128
 OUTLINE = (24, 16, 12, 255)
+HIRES_BODY_H = 280
+
+
+def main_hires() -> None:
+    source = Image.open(ROOT / "pilgrims_schism_master.png").convert("RGBA")
+    alpha = source.getchannel("A").point(lambda v: 255 if v >= 24 else 0)
+    bbox = alpha.getbbox()
+    if bbox is None:
+        raise RuntimeError("generated tableau has no visible subject")
+    sub = source.crop(bbox)
+    scale = HIRES_BODY_H / sub.height
+    spr = sub.resize((round(sub.width * scale), round(sub.height * scale)),
+                     Image.Resampling.LANCZOS)
+    cleaned = spr.getchannel("A").point(lambda v: 0 if v < 24 else v)
+    spr.putalpha(cleaned)
+    frame = Image.new("RGBA", (spr.width + 4, spr.height + 4), (0, 0, 0, 0))
+    frame.alpha_composite(spr, (2, 2))
+    output = ROOT / "runtime" / "pilgrims_schism.png"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    frame.save(output, optimize=True)
 
 
 def _outline(frame: Image.Image) -> Image.Image:
@@ -32,7 +60,7 @@ def _outline(frame: Image.Image) -> Image.Image:
     return output
 
 
-def main() -> None:
+def main_legacy() -> None:
     source = Image.open(ROOT / "pilgrims_schism_master.png").convert("RGBA")
     alpha = source.getchannel("A").point(lambda value: 255 if value >= 24 else 0)
     bbox = alpha.getbbox()
@@ -69,4 +97,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main_legacy() if "--legacy" in sys.argv else main_hires()

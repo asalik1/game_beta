@@ -124,16 +124,21 @@ class Critter extends Node2D:
 			_: _flit()
 
 	func _scale() -> float:
+		# 2026-08-25 fidelity pass: every critter strip re-authored at 2-4x its
+		# old cell (hawk 64->256, crow/bird/bat 48->128, butterfly 48->96,
+		# dragonfly 64->128); each scale divided by the same factor so the
+		# ON-SCREEN size is unchanged (world px = cell * scale). Mirror any
+		# change into tools/art/fidelity_audit.py CRITTER_SCALE.
 		match kind:
-			"butterfly": return 0.6
-			"dragonfly": return 0.5   # 64px strip (thin body needs the resolution)
-			"bat": return 0.7
-			"hawk": return 1.5
-			"crow": return 1.0
+			"butterfly": return 0.3
+			"dragonfly": return 0.25
+			"bat": return 0.2625
+			"hawk": return 0.375
+			"crow": return 0.375
 			"wisp": return 1.1
 			"fog": return 11.0
 			"debris": return 1.3
-			_: return 0.85            # bird / dove
+			_: return 0.31875         # bird / dove
 
 	func _fps() -> float:
 		match kind:
