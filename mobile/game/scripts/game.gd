@@ -14,6 +14,7 @@ var mp_host := false        # --mp-host[=ip:port]: host while playing normally
 var mp_host_code := ""      # optional listen override (default 127.0.0.1:9999)
 var mp_join_code := ""      # --mp-join=<code>: skip the title flow, join + handshake
 var mp_cls := "warrior"     # --mp-cls=<class>: the joiner's dev character class
+var fangmoot_mode := false  # --fangmoot: boot straight into the standalone Fangmoot (§18)
 # --- DEDICATED server boot (MMO step A; `dedicated` itself lives in
 # game_base — cross-layer code gates on it). Layer-local: boot flow only.
 var server_code := ""       # --server[=port|ip:port]: listen address
@@ -79,6 +80,8 @@ func _ready() -> void:
 			server_chapter = s.get_slice("=", 1)
 		elif s == "--fresh":
 			server_fresh = true
+		elif s == "--fangmoot":
+			fangmoot_mode = true
 	# Hand the session bridge its game: net_session.gd (a child of the
 	# NetworkManager autoload) owns the join handshake + movement sync.
 	var net_session: Node = get_node_or_null("/root/NetworkManager/Session")
@@ -257,12 +260,26 @@ func _start_flow() -> void:
 		return
 	if mp_host:
 		_mp_host_boot()  # host: start listening, then play normally below
+	if fangmoot_mode:
+		_fangmoot_boot()  # §18 standalone: straight into the Carver's Circle
+		return
 	if no_saves:
 		menus.open_chapter_select()  # autotest: straight to the pick
 	else:
 		# Real players always land on the cover, saves or none:
 		# cover -> character roster -> (new hero) chapter + class select.
 		menus.open_title()
+
+
+## --fangmoot (§18): the STANDALONE Fangmoot shell — the same tavern autobattler
+## reached without playing Crownfall. Boots straight into the Carver's Circle
+## with a self-contained host; the per-frame guard in _process keeps the Circle
+## up (closing a moot returns here rather than exposing the campaign underneath).
+func _fangmoot_boot() -> void:
+	menus.fm_standalone = true
+	menus.fm_host = FangmootHostStandalone.new()
+	menus.open_fangmoot()
+	print("FANGMOOT STANDALONE: the Carver's Circle is open")
 
 
 ## --mp-host: listen on ENET_DIRECT (dev default 127.0.0.1:9999) while
@@ -605,6 +622,12 @@ func _restore_interactable_rest_pose() -> void:
 func _process(delta: float) -> void:
 	if dedicated:
 		_server_process(delta)
+		return
+	if fangmoot_mode:
+		# The standalone is nothing but the Circle: if a moot/panel was closed,
+		# bring it back rather than reveal the dormant campaign behind it.
+		if menus != null and not menus.is_open():
+			menus.open_fangmoot()
 		return
 	talk_cd = maxf(0.0, talk_cd - delta)
 	_dev_review_input(delta)   # dev_mode: slow-mo (\) + zoom (=/-)

@@ -2854,6 +2854,39 @@ const FIRST_HOWL_TEMPTED_SPEED := 1.15  # tempted-band First Howl runs faster...
 const FIRST_HOWL_TEMPTED_DMG := 1.15    # ...and hits harder
 const FIRST_HOWL_TEMPTED_GOLD := 1.10   # ...and its fall pays +10% gold
 
+# ------------------------------------------------------------ fangmoot ---
+# The tavern autobattler (PROPOSALS/FANGMOOT.md). First-pass numbers; the
+# bench (fangmoot_bench.bat) exists to move them. Rules live in
+# scripts/fangmoot/; these are the only tuning knobs.
+const FANGMOOT_FANGS := 10            # shop income per turn (flat; no carry-over)
+const FANGMOOT_COST_TOKEN := 3
+const FANGMOOT_COST_CHARM := 3
+const FANGMOOT_COST_BREW := 2
+const FANGMOOT_COST_ROLL := 1
+const FANGMOOT_COST_NAMED := 5        # a Named piece; one per warband
+const FANGMOOT_CRESTS_WIN := 10       # crests to win the moot
+const FANGMOOT_SCARS_OUT := 4         # scars to end it
+const FANGMOOT_SPARRING_TURNS := 2    # turns 1-2 losses do not scar
+const FANGMOOT_MAX_TURNS := 15
+const FANGMOOT_BOARD := 5             # warband slots
+const FANGMOOT_TRAY_TOKENS_EARLY := 3 # tray token cards, turns 1-2
+const FANGMOOT_TRAY_TOKENS_MID := 4   # turns 3-6
+const FANGMOOT_TRAY_TOKENS_LATE := 5  # turns 7+
+const FANGMOOT_TRAY_SUPPLY_EARLY := 1 # charm/brew cards, turns 1-2
+const FANGMOOT_TRAY_SUPPLY_LATE := 2  # turns 3+
+const FANGMOOT_NAMED_TURN := 7        # a Named tray slot may appear from this turn
+const FANGMOOT_NAMED_ODDS := 0.3      # per-turn odds turns 7-9
+const FANGMOOT_NAMED_GUARANTEE_TURN := 10  # guaranteed from this turn
+const FANGMOOT_TIER_W_NEW := 3        # tray weight for the just-unlocked tier
+const FANGMOOT_TIER_W_BELOW := 2      # one tier below
+const FANGMOOT_TIER_W_OLD := 1        # older tiers
+# Rewards (§9): Renown only, daily-capped; never gold/gear/power.
+const RENOWN_FANGMOOT_WIN := 3                # a 10-crest moot
+const RENOWN_FANGMOOT_DAILY_CAP := 9          # per trusted-clock day
+const RENOWN_FANGMOOT_CALLER_FIRST := 5       # a caller beaten for the first time
+const RENOWN_FANGMOOT_TABLE_FIRST := {"copper": 10, "silver": 15, "gold": 25}
+const RENOWN_FANGMOOT_COLLECTION := {25: 10, 50: 15, 75: 20, 100: 30}  # % fieldable milestones
+
 static func renown_price(kind: String, tier := "") -> int:
 	if kind == "chroma":
 		return RENOWN_PRICE_CHROMA

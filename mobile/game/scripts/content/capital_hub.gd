@@ -93,7 +93,7 @@ const CHAPTER := {
 		"district": "wild", "mark": "●",
 		"obstacles": [], "obstacle_count": 0,
 		"decor": [], "decor_count": 0, "accents": [], "structures": [],
-		"landmarks": [{"name": "capital_wildfang_fangmoot", "x": 1056, "y": 570, "clearance": 285, "uses": [{"type": "action", "prompt": "E — Review Wildfang contracts", "x": 0, "y": 95, "ref": "journal"}]}],
+		"landmarks": [{"name": "capital_wildfang_fangmoot", "x": 1056, "y": 570, "clearance": 285, "uses": [{"type": "action", "prompt": "E — Call a moot", "x": 0, "y": 95, "ref": "fangmoot"}]}],
 		"furnishings": [{"name": "capital_city_bench", "x": 760, "y": 815, "clearance": 110}],
 		"backdrops": [],
 		"npcs": [
@@ -173,7 +173,7 @@ static func selftest(_game: Node2D) -> String:
 	if ch.get("zones", []).size() != 9:
 		return "capital: expected 9 zones, got %d" % ch.get("zones", []).size()
 	var coords := {}
-	var known_actions := ["blackmarket", "codex", "daily", "drill", "forge", "guild", "journal", "lapidary", "mail", "map", "portal_crucible", "portal_depths", "portal_moonfen", "portal_story", "potions", "professions", "records", "synthesis", "vault", "wardrobe"]
+	var known_actions := ["blackmarket", "codex", "daily", "drill", "fangmoot", "forge", "guild", "journal", "lapidary", "mail", "map", "portal_crucible", "portal_depths", "portal_moonfen", "portal_story", "potions", "professions", "records", "synthesis", "vault", "wardrobe"]
 	for z in ch["zones"]:
 		if z.get("type", "") != "safe":
 			return "capital: zone %s is not safe" % z.get("name", "?")
