@@ -412,14 +412,14 @@ const CONVOS := {
 		"d_barb": {"who": "Old Digger Haim", "text": "...They were for GRIEF, stranger. A hole is where you put grief so it doesn't follow you home. The Choir's whole madness is just sixty years of nobody being allowed to put it down. Ask your shard where IT puts yours.", "next": ""},
 	}},
 	"ch3_wander_mute": {"start": "m1", "nodes": {
-		"m1": {"who": "Narrator",
+		"m1": {"who": "The Mute Mourner",
 			"text": "A woman sits on a fallen headstone, hands folded. The locals say she asked the Choir to bury her daughter, was sung 'no', and has not spoken since — nineteen years. She looks up at you. She looks at your sword hand. Very slowly, very clearly, she nods toward the east road.",
 			"variants": [{"flag": "ch3_mute_met", "text": "She is there again, hands folded. When she sees you she touches two fingers to her lips — whatever you did out east, word of it reached her, and this is what her thanks looks like.", "next": ""}],
 			"choices": [
 				{"text": "Nod back. Once. A contract needs no words.",
 					"resonance": 3.0, "flags": {"ch3_mute_met": true}, "next": "m_nod"},
 			]},
-		"m_nod": {"who": "Narrator", "text": "Something in her shoulders lets go — a knot nineteen years old, loosening one turn. She resumes her vigil. You resume your road. Between you, wordless and binding as anything ever signed: someone is finally going to MAKE the singing stop.", "next": ""},
+		"m_nod": {"who": "The Mute Mourner", "text": "Something in her shoulders lets go — a knot nineteen years old, loosening one turn. She resumes her vigil. You resume your road. Between you, wordless and binding as anything ever signed: someone is finally going to MAKE the singing stop.", "next": ""},
 	}},
 	"ch3_wander_defector": {"start": "f1", "nodes": {
 		"f1": {"who": "Brother Osk (formerly)",

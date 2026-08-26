@@ -175,7 +175,7 @@ const CONVOS := {
 	# thanks variant now waits on the deed (Vess actually dead — the
 	# Silent Aisle's new clear_flag) instead of firing on any re-talk.
 	"ch3_wander_mute": {"start": "m1", "nodes": {
-		"m1": {"who": "Narrator",
+		"m1": {"who": "The Mute Mourner",
 			"text": "A woman sits on a fallen headstone, hands folded. The locals say she asked the Choir to bury her daughter, was sung 'no', and has not spoken since — nineteen years. She looks up at you. She looks at your sword hand. Very slowly, very clearly, she nods toward the east road.",
 			"variants": [
 				{"flag": "vess_dead", "text": "She is there, hands folded — but the folded hands are different now: loose, done. The Silent Aisle has gone quiet, and word of whose hand ended the liturgy reached her before you did. When she sees you she touches two fingers to her lips, holds them out, and bows her head — nineteen years of vigil, discharged. It is the loudest thank-you you have ever been paid.", "next": ""},
@@ -190,7 +190,7 @@ const CONVOS := {
 				{"text": "Look away and walk on. Every silence in this Vale wants a sword, and yours is already spoken for.",
 					"resonance": -4.0, "flags": {"ch3_mute_passed": true}, "next": "m_pass"},
 			]},
-		"m_nod": {"who": "Narrator", "text": "Something in her shoulders lets go — a knot nineteen years old, loosening one turn. She resumes her vigil. You resume your road. Between you, wordless and binding as anything ever signed: someone is finally going to MAKE the singing stop.", "next": ""},
+		"m_nod": {"who": "The Mute Mourner", "text": "Something in her shoulders lets go — a knot nineteen years old, loosening one turn. She resumes her vigil. You resume your road. Between you, wordless and binding as anything ever signed: someone is finally going to MAKE the singing stop.", "next": ""},
 		"m_pass": {"who": "Narrator", "text": "You give the east road your eyes and keep them there until she is behind you. She does not gesture again — nineteen years have taught her exactly how much asking is worth — and the not-looking costs more effort than a nod would have. The Ember finds that funny. You walk faster than you need to.", "next": ""},
 	}},
 
