@@ -89,10 +89,11 @@ below** (re-run stamped at the bottom).
 - **archer 1.95×** (benchmark class; "we wont fix a 2.5 percent drift"), **ashpriest /
   cinderhide / kaethra / saint_varo 1.96×**, **suli 1.97×**, **warden_corin 1.99×** — all
   inside the 5% tolerance.
-- **elder 1.89× / caged_beastkin 1.87×** — owner-confirmed TO-DO (2026-08-25): both ship
-  owner-accepted **8-direction idle sets**, so an honest fix is an 8-dir regen (8 stills per
-  NPC, no walk cycles — cheap; group suli + warden_corin into the same pass). South-facing
-  masters already generated + archived in `art_src/fidelity_2026-08-25/misc_stages/`.
+- ~~elder 1.89× / caged_beastkin 1.87×~~ — **FIXED 2026-08-26** (owner promoted the to-do):
+  full 8-direction regen per NPC (each facing anchored to its current pose still + the
+  remastered south master; beastkin's symmetric w/nw/sw as exact mirrors), built at the
+  roster recipe (256² canvas, 223px body → 2.35×). suli 1.97× / warden_corin 1.99× remain
+  the same-shape candidates if ever wanted (inside tolerance).
 - **Boss/mob ACTION strips** at their pre-existing authored resolutions (metric-aligned
   upscales, no new detail): veyx arc/summon/enrage, stormmouth bolt/cast/enrage, auroch's
   four action families, halla's bolt/enrage/freeze/summon — a future per-frame or PixelLab
@@ -109,10 +110,10 @@ below** (re-run stamped at the bottom).
 | Skin | 23 | 1.22× | 1.17× | 18 (EXCLUDED — planned skin regen) | 18 (excluded) |
 | **Mob** | 41 | **2.63×** | **2.03×** | **0** | 0 |
 | Boss | 21 | 2.06× | 1.53× | 5 (veyx accepted ceiling + 4 at 1.96×) | 1 (veyx — owner-accepted) |
-| NPC | 42 | 2.29× | 1.87× | 4 (2 to-do + 2 tolerance) | 2 (elder/caged_beastkin — confirmed to-do) |
+| NPC | 42 | 2.31× | 1.97× | 2 (suli/warden_corin — tolerance) | 0 (elder + caged_beastkin fixed 08-26 via the 8-dir pass) |
 | **Critter** | 7 | **2.80×** | **2.38×** | **0** | 0 |
 | Prop | 123 | 2.23× | 1.95× | 1 (tree_winter3 — tolerance) | 0 |
-| **TOTAL** | 263 | | | **29** (was 119 at the corrected baseline) | |
+| **TOTAL** | 263 | | | **27** (was 119 at the corrected baseline) | |
 
 Every remaining under-bar row is excluded (skins), owner-ruled (veyx, archer), inside the 5%
 tolerance, or the confirmed elder/caged_beastkin 8-dir to-do. **No unaccounted must-fixes.**
