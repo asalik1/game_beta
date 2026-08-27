@@ -86,7 +86,11 @@ below** (re-run stamped at the bottom).
 - **veyx ~1.53×** — owner-accepted 2026-08-25. A true 2× needs 1340px cells; ImageGen's
   per-frame ceiling is ~1024. **A PixelLab /v2/resize pass (needs owner authorization) could
   close the gap** — the `pixellab_resize_soft_clips.py` lane is the template.
-- **archer 1.95×** (benchmark class; "we wont fix a 2.5 percent drift"), **ashpriest /
+- **archer 1.95×** (benchmark class; "we wont fix a 2.5 percent drift"). SEPARATE finding
+  2026-08-26: the archer set shipped FACELESS (hair drawn over the face in every front
+  clip, vs her clear-faced splash) — the IDLE was face-restored (portrait-locked per-frame
+  regen); **walk/attack/cast still faceless + per-frame gear drift — scope for the future
+  full archer pass** (masters in art_src/fidelity_2026-08-25/archer_face_stages/). **ashpriest /
   cinderhide / kaethra / saint_varo 1.96×**, **suli 1.97×**, **warden_corin 1.99×** — all
   inside the 5% tolerance.
 - ~~elder 1.89× / caged_beastkin 1.87×~~ — **FIXED 2026-08-26** (owner promoted the to-do):
