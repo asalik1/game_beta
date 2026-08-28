@@ -1,0 +1,26 @@
+﻿codex = C:\Users\asali\AppData\Local\OpenAI\Codex\bin\d0097be4feba73d0\codex.exe
+launch: C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_dash_s (3 refs)
+wait: free RAM 0.74GB < 1GB gate (1 running)
+wait: free RAM 0.65GB < 1GB gate (1 running)
+wait: free RAM 0.96GB < 1GB gate (1 running)
+wait: free RAM 0.72GB < 1GB gate (1 running)
+wait: free RAM 0.5GB < 1GB gate (1 running)
+wait: free RAM 0.63GB < 1GB gate (1 running)
+wait: free RAM 0.52GB < 1GB gate (1 running)
+wait: free RAM 0.94GB < 1GB gate (1 running)
+wait: free RAM 0.72GB < 1GB gate (1 running)
+wait: free RAM 0.65GB < 1GB gate (1 running)
+wait: free RAM 0.48GB < 1GB gate (1 running)
+wait: free RAM 0.82GB < 1GB gate (1 running)
+wait: free RAM 0.58GB < 1GB gate (1 running)
+wait: free RAM 0.91GB < 1GB gate (1 running)
+wait: free RAM 0.84GB < 1GB gate (1 running)
+wait: free RAM 0.83GB < 1GB gate (1 running)
+launch: C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_dash_e (3 refs)
+watchdog: stopping job past 540s
+launch: C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_dash_n (3 refs)
+launched 3 codex jobs
+OK   C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_dash_s  (result 554 bytes)
+FAIL C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_dash_e  (no codex_result.md -- read codex_log.txt)
+OK   C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_dash_n  (result 567 bytes)
+batch complete

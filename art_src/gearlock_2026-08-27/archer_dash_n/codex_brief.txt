@@ -1,0 +1,39 @@
+Redraw a game hero's 6-frame DASH animation to fix identity inconsistency. This is a
+faithful reproduction of the motion -- NOT a redesign of the character.
+
+Reference image 1 is the CURRENT 6-frame dash strip. Its motion progression (the crouch,
+drive and lunge poses, the sense of speed) is the MOTION GUIDE -- reproduce that
+progression frame by frame. Its DEFECTS: her hair changes STYLE mid-clip (a bob in early
+frames becomes a ponytail in later ones), her face is a different drawing in every frame
+(or missing), and outfit pieces morph (skull emblems, straps and leg wraps appear and
+disappear).
+
+Reference image 2 is the character's official class art -- THE IDENTITY AUTHORITY. In
+EVERY frame she is THE SAME WOMAN: fair-skinned, the SAME shoulder-length parted brown
+hair in every frame (it may stream and whip with the dash wind, but it is the same hair
+-- same length, same color, same style -- reacting to speed, NEVER a ponytail or a
+different cut), the same face, and the SAME outfit as reference 2 in every frame: green
+cloak with white fur ruff, brown laced leather bodice, belt with hip pouch, bracers,
+quiver of green-fletched arrows, bow in hand, fur-topped boots. NO skull emblems, NO
+extra straps, NO leg wraps, NO feathers -- if it is not on reference 2, it is not in any
+frame. The cloak may billow with the dash, but it is the same cloak.
+
+
+COLOR AND FABRIC (reference image 3 is her CURRENT in-game walk strip -- THE COLOR
+AUTHORITY): her hair is the SAME warm mid-brown as reference 3 in every frame -- the
+current dash draws it too dark; match reference 3's hair color exactly. The cloak keeps
+its painterly FOLD TEXTURE exactly as reference 3 -- crease lines and tonal variation
+in the fabric, a shaded ragged hem -- NEVER a flat featureless fill, in every frame,
+even while it billows.
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, equal-width cells, all feet on
+one shared ground line, constant body height across all 6.
+
+Facing: NORTH (dashing away from the viewer, back view) in every frame. No face
+visible. Her back matches reference 2's gear from behind: same hair from behind (may
+stream with speed), fur ruff, green cape with painterly fold texture (crease lines and
+tonal variation -- never a flat fill), quiver, bow.
+
+Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE image and SAVE it to disk at the exact path C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_dash_n\archer_dash_n_row.png, then stop. Green margins on all sides -- no figure
+touching any image edge.
+In your final message, report frame by frame: is the back gear identical across frames and the cape textured.

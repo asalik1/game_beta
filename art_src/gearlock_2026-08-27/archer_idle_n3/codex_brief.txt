@@ -1,0 +1,15 @@
+Redraw ONE back-view game figure, fixing a flat untextured cape. This is a surgical
+edit -- NOT a redesign.
+
+Reference image 1 is the current north-facing (back view) idle. Its pose, proportions,
+scale, hair, white fur ruff, quiver, bow placement and boots are all CORRECT --
+reproduce them exactly. Its ONE defect: the green cape is a FLAT, featureless fill.
+
+Reference image 2 shows the correct cape rendering: painterly FOLD CREASES running
+down the fabric, soft tonal variation between the folds, a shaded ragged hem --
+real cloth. Repaint the cape with that fold texture and shading. Change nothing else.
+
+Produce ONE image containing ONE figure.
+
+Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE image and SAVE it to disk at the exact path C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_idle_n3\archer_idle_n3_fig.png, then stop.
+In your final message: describe the cape's fold texture.

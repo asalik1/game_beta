@@ -289,6 +289,10 @@ def main() -> int:
         bak = Path(args.backup_dir) / dp.name if args.backup_dir else None
         if bak and dp.exists() and not bak.exists():  # never clobber the first backup
             shutil.copy(dp, bak)
+        if dp.exists():
+            dp.unlink()  # PIL save() over the exact existing name can throw Errno 22
+            # on this box (CODEX_HEADLESS.md section 9) -- delete AFTER backing up;
+            # callers must NOT rm targets themselves or the backup never happens.
         Image.fromarray(data).save(dp)
         print(f"wrote {dest}")
     return 0

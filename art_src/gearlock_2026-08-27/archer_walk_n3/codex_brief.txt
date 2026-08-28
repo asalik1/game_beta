@@ -1,0 +1,20 @@
+Reproduce a 6-frame back-view walk EXACTLY, fixing a flat untextured cape. This is a
+surgical edit -- NOT a redesign.
+
+Reference image 1 is the CURRENT 6-frame north-facing walk strip. Its leg cycle, pose,
+hair, fur ruff, quiver, bow and the fact that the cape holds one stable shape are all
+CORRECT -- reproduce every frame as-is. Its ONE defect: the green cape is a FLAT,
+featureless fill with no fabric detail.
+
+Reference image 2 shows the correct cape rendering: painterly FOLD CREASES running down
+the fabric, soft tonal variation between folds, a shaded ragged hem. Repaint the cape
+with that fold texture in EVERY frame -- and keep the SAME crease pattern in all 6
+frames, as if traced once: textured cloth, rigid folds. Only the legs and boots below
+the hem move between frames. Change nothing else.
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, equal-width cells, all feet
+on one shared ground line, constant body height, green margins on all sides -- no
+figure touching any image edge.
+
+Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE image and SAVE it to disk at the exact path C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_n3\archer_walk_n3_row.png, then stop.
+In your final message, report frame by frame: does the cape carry the fold texture and the same crease pattern.
