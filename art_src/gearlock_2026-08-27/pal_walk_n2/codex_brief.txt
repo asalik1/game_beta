@@ -1,0 +1,21 @@
+Reproduce an 8-frame back-view (north-facing, walking away) walk EXACTLY, fixing its
+unstable back. This is a surgical edit of approved art -- NOT a redesign.
+
+Reference image 1 is the CURRENT 8-frame walk strip. Its leg cycle and stride are
+CORRECT -- reproduce the leg motion frame by frame. Its DEFECTS: the back keeps
+re-arranging between frames (frames 1-3 drape blue cloth over the shoulders and LOSE
+the shield entirely; frames 4-8 show the steel backplate and the shield), and cloth
+details wander.
+
+Reference image 2 (the idle, back view) is THE BACK AUTHORITY. In EVERY one of the 8
+frames, his back is EXACTLY as reference 2 and IDENTICAL from frame to frame, as if
+traced once: steel backplate at the shoulders, X-crossed gold chain harness, blue robe
+below with its gold-trimmed ragged hem, and the kite shield with the gold cross on his
+arm, visible from behind -- INCLUDING frames 1, 2 and 3. The ONLY things that change
+between frames are the legs and the subtle arm swing.
+
+Produce ONE image: a horizontal row of EXACTLY 8 figures, equal-width cells, all feet on
+one shared ground line, constant body height.
+
+Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE image and SAVE it to disk at the exact path C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_n2\pal_walk_n2_row.png, then stop.
+In your final message, report frame by frame: is the shield visible, and is the back identical to the previous frame.

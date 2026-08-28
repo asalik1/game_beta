@@ -253,12 +253,23 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 	# Foot dust (life pass 2026-08-19): a running hero kicks a tiny puff of
-	# floor-coloured dust at the feet every FOOT_DUST_PERIOD — never headless.
+	# floor-coloured dust at the feet — never headless. With a walk clip
+	# driving, the puff lands on the FOOTFALLS (lane 1, 2026-08-27: the stride
+	# clock crosses a contact twice per cycle — the same contacts the bounce
+	# presses on); sheetless bodies keep the old timer.
 	if Balance.FOOT_DUST_PERIOD > 0.0 and dir != Vector2.ZERO and DisplayServer.get_name() != "headless":
-		_foot_dust_t += delta
-		if _foot_dust_t >= Balance.FOOT_DUST_PERIOD:
-			_foot_dust_t = 0.0
-			game.foot_dust(global_position + Vector2(-dir.x * 6.0, 18.0))
+		if _clip == "walk" and strip_frames > 0:
+			var steps_now := strip_t * strip_fps * 2.0 / float(strip_frames)
+			if steps_now < _foot_steps:
+				_foot_steps = steps_now  # clip clock restarted; re-arm
+			elif int(steps_now) > int(_foot_steps):
+				game.foot_dust(global_position + Vector2(-dir.x * 6.0, 18.0))
+			_foot_steps = maxf(_foot_steps, steps_now)
+		else:
+			_foot_dust_t += delta
+			if _foot_dust_t >= Balance.FOOT_DUST_PERIOD:
+				_foot_dust_t = 0.0
+				game.foot_dust(global_position + Vector2(-dir.x * 6.0, 18.0))
 	else:
 		_foot_dust_t = 0.0
 
@@ -287,11 +298,7 @@ func _physics_process(delta: float) -> void:
 		sprite.position.y = 0.0
 		sprite.scale.y = sprite.scale.x   # clear any residual breath squash
 	elif dir != Vector2.ZERO:
-		# Walk bob (up/down hop) removed — old artifact, no class needs it.
-		sprite.position.y = 0.0
-		sprite.scale.y = sprite.scale.x   # clear any residual breath squash
-		# Phantom (assassin mythic) additionally GLIDES — no side-to-side sway.
-		sprite.rotation = 0.0 if skin in ["phantom", "crystal_archmage"] else sin(anim_t * 11.0) * 0.06
+		_walk_juice(delta)
 	else:
 		# Idle BREATH (2026-08-18, owner: "a modern game breathes") — reworked
 		# 2026-08-21 (owner: the whole-sprite vertical bob read as FLOATING):
@@ -311,7 +318,9 @@ func _physics_process(delta: float) -> void:
 		else:
 			sprite.scale.y = s0
 			sprite.position.y = 0.0
-		sprite.rotation = 0.0
+		# Settle the walk lean out instead of snapping (same ease as the lean-in).
+		sprite.rotation = lerpf(sprite.rotation, 0.0,
+			minf(1.0, delta * Balance.WALK_LEAN_EASE))
 
 	# Held weapon follows the facing side, with a light idle sway.
 	if weapon_spr and weapon_spr.visible:
@@ -471,13 +480,17 @@ func _remote_present(delta: float) -> void:
 		_advance_clip(delta)  # _loco_clip reads the synced velocity: walk vs idle
 		if not _dir_pose_active and not _loco_dir_on and not _action_dir_on:
 			sprite.flip_h = (look_sign > 0.0) if face_left else (look_sign < 0.0)
+		# Shells bounce/lean too (lane 1): velocity + clip clock are synced,
+		# and the gate inside self-neutralizes whenever walk isn't driving.
+		_walk_juice(delta)
 	else:
 		# Static class art: mirror the local walk bob so a moving remote
 		# doesn't glide like a statue.
 		sprite.flip_h = (look_sign > 0.0) if face_left else (look_sign < 0.0)
 		if velocity.length() > 20.0:
 			sprite.position.y = 0.0   # walk bob removed (old artifact)
-			sprite.rotation = sin(anim_t * 11.0) * 0.06
+			sprite.rotation = sin(anim_t * Balance.STATIC_WALK_SWAY_RATE) \
+				* Balance.STATIC_WALK_SWAY_AMP
 		else:
 			sprite.position.y = 0.0
 			sprite.rotation = 0.0
@@ -533,11 +546,73 @@ func apply_chill(mult: float, dur := 0.35) -> void:
 
 # ================================================================= abilities
 
+## Stride-locked walk juice (lane 1, 2026-08-27): the transform choreography
+## "clean"-walking games layer over simple cycles — keyed to the WALK CLIP'S
+## OWN CLOCK so it lands on the same frames every cycle and reads as weight,
+## never a free-running sine (the old bop's mistake: a wobble that beat
+## against the stride). Bounce reuses the idle-breath mechanism (vertical
+## scale pinned at the feet) so the boots never leave the shadow; lean is a
+## steady bank into horizontal travel, eased in and settled out. Shells run
+## this too — their velocity and clip clock are synced.
+func _walk_juice(delta: float) -> void:
+	var s0: float = sprite.scale.x
+	if _clip == "walk" and strip_frames > 0 and Balance.WALK_BOUNCE_PX > 0.0 \
+			and sprite.texture != null and s0 > 0.0:
+		# Stride phase from the SAME clock that picks the frames; one rise per
+		# STEP (two per cycle), grounded at the contacts — the same crossings
+		# the footfall dust fires on.
+		var ph := fposmod(strip_t * strip_fps, float(strip_frames)) / float(strip_frames)
+		var step: float = 0.5 - 0.5 * cos(ph * TAU * 2.0)
+		var cell_h: float = float(sprite.texture.get_height())
+		var e: float = step * Balance.WALK_BOUNCE_PX * _gait_bounce / maxf(1.0, cell_h * s0)
+		sprite.scale.y = s0 * (1.0 + e)
+		sprite.position.y = -(cell_h / 2.0 + sprite.offset.y) * s0 * e  # pin the feet line
+	else:
+		sprite.scale.y = s0
+		sprite.position.y = 0.0
+	if _clips.is_empty() and not skin in ["phantom", "crystal_archmage"]:
+		# Sheetless static art keeps the legacy sway so it doesn't glide like a
+		# statue (clip bodies never sway — the authored gait carries the walk).
+		sprite.rotation = sin(anim_t * Balance.STATIC_WALK_SWAY_RATE) \
+			* Balance.STATIC_WALK_SWAY_AMP
+	elif Balance.WALK_LEAN_RAD > 0.0 and speed > 0.0:
+		var lean: float = clampf(velocity.x / speed, -1.0, 1.0) * Balance.WALK_LEAN_RAD
+		sprite.rotation = lerpf(sprite.rotation, lean,
+			minf(1.0, delta * Balance.WALK_LEAN_EASE))
+	else:
+		sprite.rotation = 0.0
+
+
 # -------------------------------------------------- clip state machine ---
 # Locomotion (idle/walk) loops; a one-shot action clip plays through once
 # then hands back to locomotion; death latches the final frame. Called every
 # physics frame whenever a class sheet is installed (strip_frames > 0).
 func _advance_clip(delta: float) -> void:
+	# Stride↔ground coupling (robotic-walk fix 2026-08-27): the walk clip's
+	# fps is tuned at the class's unmodified base `speed`, but real velocity
+	# drifts with analog tilt, chill/damp/laced slows, hazard ice and speed
+	# buffs — a fixed-rate stride then skates over the floor. Advance the walk
+	# at the live ratio instead. Walk ONLY: one-shots keep authored pace (their
+	# contact frames are FX/damage-synced — swing_delay), idle breathes in real
+	# time, and a dev morph paces itself off the creature's table (player.gd).
+	if _clip == "walk" and speed > 0.0 and dev_morph == null:
+		delta *= clampf(velocity.length() / speed,
+			Balance.STRIDE_RATE_MIN, Balance.STRIDE_RATE_MAX)
+		# Humanize the clock (lane 1b): hold the contacts / snap the swing
+		# (warp averages 1.0 per cycle, so cadence holds), and roll each STEP
+		# a hair fast or slow + a hair higher or lower on the bounce — rolled
+		# at the footfall crossing, eased between. Purely cosmetic; shells
+		# roll their own (mirrors are approximate by design).
+		var ph := fposmod(strip_t * strip_fps, float(strip_frames)) / float(strip_frames)
+		var steps := strip_t * strip_fps * 2.0 / float(strip_frames)
+		if steps < _gait_step:
+			_gait_step = steps  # clip clock restarted; re-arm
+		elif int(steps) > int(_gait_step):
+			_gait_rate_target = 1.0 + randf_range(-Balance.GAIT_STEP_JITTER, Balance.GAIT_STEP_JITTER)
+			_gait_bounce = 1.0 + randf_range(-Balance.GAIT_BOUNCE_JITTER, Balance.GAIT_BOUNCE_JITTER)
+		_gait_step = maxf(_gait_step, steps)
+		_gait_rate = lerpf(_gait_rate, _gait_rate_target, minf(1.0, delta * Balance.GAIT_EASE))
+		delta *= (1.0 - Balance.WALK_TIMING_WARP * cos(ph * TAU * 2.0)) * _gait_rate
 	if _clip_locked:
 		strip_t += delta
 		sprite.frame = mini(strip_frames - 1, int(strip_t * strip_fps))
@@ -697,6 +772,13 @@ func use_ability(slot: String) -> void:
 				action_clip = "attack_walk_b" if (_walkfire_swing % 2 == 0 \
 					and _clips.has("attack_walk_b")) else "attack_walk"
 				play_action(action_clip)
+			# Pace the cycle to the recast window: spamming faster than the
+			# authored cycle fired knives with no visible throw (owner
+			# 2026-08-27: "5 knives but only 2 cycles finish" -- the carried-on
+			# stride never sped up). Speed-up only, ACTION_CLIP_MAX_HASTE cap;
+			# fit is idempotent so the mid-cycle re-fit doesn't compound. A slow
+			# caster keeps the authored pace.
+			fit_action_clip(cds[slot])
 		else:
 			play_action(action_clip)
 		_strike_clip = action_clip  # skin FX-sync: swing_delay() reads this

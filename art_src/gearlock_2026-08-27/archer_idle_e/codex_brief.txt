@@ -1,0 +1,27 @@
+Redraw a game hero's 4-frame idle animation to fix face and outfit inconsistency. This is a
+faithful reproduction of existing approved art -- NOT a redesign.
+
+Reference image 1 is the CURRENT 4-frame idle strip (4 square cells, left to right). Its
+stance, body proportions, scale, palette and the subtle breathing/cloak motion between frames
+are CORRECT -- reproduce those four poses EXACTLY, in order.
+
+Reference image 2 is the character's official class art -- THE FACE AND OUTFIT AUTHORITY.
+All four output figures are THE SAME DRAWING of the same woman, differing ONLY by reference
+1's subtle breathing motion:
+- SAME outfit in all 4 figures, exactly as reference 2: green cloak with white fur ruff over
+  both shoulders, brown laced leather bodice, wide belt with the hip pouch, arm bracers,
+  quiver of green-fletched arrows on her back, bow held exactly as reference 1 holds it
+- do NOT invent or remove gear between frames: NO skull ornament, NO chest bedroll or rolled
+  pouch, NO neck scarf, NO extra gauntlets -- if it is not on reference 2, it is not in any frame
+- identical hair and identical face shape in all 4 figures
+
+Produce ONE image: a horizontal row of EXACTLY 4 figures, equal-width cells, all feet on one
+shared ground line, constant body height across all 4.
+
+This is the EAST-facing idle (side profile, facing right). Known defect in reference 1 you
+are fixing: the head reads as a faceless hair mop and gear details wobble between frames.
+Every output figure shows her profile with the visible edge of her face (cheek, nose, eye)
+consistent with reference 2's face, same hair, same outfit in all 4 frames.
+
+Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE image and SAVE it to disk at the exact path C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_idle_e\archer_idle_e_row.png, then stop.
+In your final message, report frame by frame: is the profile face consistent across frames, and is the outfit identical across frames.

@@ -90,6 +90,7 @@ var _status_mute := false
 var anim_frames := 0
 var anim_fps := 6.0
 var anim_t := 0.0
+var _gait_rate := 1.0  # per-instance stride-rate personality (lane 1b; set with stats)
 # Walk/idle split: swap strips on movement when a _walk strip exists.
 var _strip_idle := {}
 var _strip_walk := {}
@@ -270,6 +271,11 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1,
 	hp = max_hp
 	dmg = scaled["dmg"] * (1.0 + sdev * Balance.MOB_SIZE_DMG_COUPLE)
 	speed = stats["speed"] * (1.0 - sdev * Balance.MOB_SIZE_SPEED_COUPLE)
+	# Gait humanization (lane 1b): a per-instance stride-rate personality and a
+	# random anim-phase seed, so a pack spawned together doesn't march in
+	# lockstep like a drill line. Cosmetic only — movement speed is unchanged.
+	_gait_rate = 1.0 + randf_range(-Balance.MOB_GAIT_VAR, Balance.MOB_GAIT_VAR)
+	anim_t = randf() * 4.0
 	xp_value = scaled["xp"]
 	gold_value = scaled["gold"]
 	ranged = stats["ranged"]
@@ -356,6 +362,10 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1,
 		atw.tween_property(aura, "modulate:a", (aura_col as Color).a, 1.2).set_trans(Tween.TRANS_SINE)
 
 	sprite = Sprite2D.new()
+	# Same fractional-downscale-through-NEAREST shimmer as the hero body
+	# (player_core; robotic-walk fix 2026-08-27) — mobs/bosses are painterly
+	# art, not pixel art: sample bilinearly.
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	art_scale = float(stats["scale"]) * size_var
 	_sprite_key = stats["sprite"]
 	var anim := Art.anim_info(stats["sprite"])
@@ -911,6 +921,17 @@ func _physics_process(delta: float) -> void:
 		_moving_anim = false
 	elif not _moving_anim and spd > 34.0:
 		_moving_anim = true
+	# Stride↔ground coupling (robotic-walk fix 2026-08-27): walk fps is tuned
+	# at the species' cruise `speed` — advance the walk clock at the live
+	# ratio so slows, hazard ice, frenzy/swift and half-pace wander stop
+	# skating the feet over the floor. 1.0 at full chase, so tuned looks hold.
+	var stride_dt := delta if speed <= 0.0 else delta * clampf(spd / speed,
+		Balance.STRIDE_RATE_MIN, Balance.STRIDE_RATE_MAX)
+	# Humanize (lane 1b): per-instance rate personality + in-cycle rhythm (hold
+	# the contacts, snap the swing). The warp averages 1.0 over a cycle.
+	if anim_frames > 1:
+		var gph := fposmod(anim_t * anim_fps, float(anim_frames)) / float(anim_frames)
+		stride_dt *= (1.0 - Balance.WALK_TIMING_WARP * cos(gph * TAU * 2.0)) * _gait_rate
 	if not _strip_action.is_empty():
 		# One-shot ability strip: play frames 0..N-1 once, then revert.
 		_advance_action_anim(delta)
@@ -934,7 +955,7 @@ func _physics_process(delta: float) -> void:
 				_cur_dir = ""  # clear the directional latch; a later walk re-picks
 				_apply_strip(_strip_walk if want_walk else _strip_idle)
 			if _moving_anim:
-				anim_t += delta
+				anim_t += stride_dt
 			sprite.frame = int(anim_t * anim_fps) % anim_frames
 		else:
 			# Pick the strip for facing + walk state; swap only when one
@@ -947,7 +968,7 @@ func _physics_process(delta: float) -> void:
 				_strip_walking = _moving_anim
 				_apply_strip(dset[nd])
 			if _moving_anim:
-				anim_t += delta
+				anim_t += stride_dt
 			sprite.frame = int(anim_t * anim_fps) % anim_frames
 			sprite.flip_h = false
 	# ORIENTATION mirrors the hero's target-first logic (player.gd): an

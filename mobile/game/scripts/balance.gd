@@ -61,6 +61,39 @@ const HIT_STOP_HEAVY := 0.06
 # amplitude in world px and rate in Hz. 0 = the old frozen idle.
 const IDLE_BREATH_PX := 1.6
 const IDLE_BREATH_HZ := 0.75
+# Stride↔ground coupling (robotic-walk fix 2026-08-27): locomotion clips are
+# tuned at base/cruise speed; playback advances at the live speed ratio
+# (slows, hazard ice, buffs, analog tilt, mob wander pace) so feet stop
+# skating. The band keeps a knock/gust spike from strobing the stride and a
+# near-stop from freezing mid-pose (walk swaps to idle below it anyway).
+const STRIDE_RATE_MIN := 0.35
+const STRIDE_RATE_MAX := 1.6
+# Static-art walk sway (legacy fallback: bodies WITHOUT clip sheets only) —
+# whole-sprite rock rate (rad/s) + amplitude (rad). Bodies with authored walk
+# clips hold rotation 0: the clip carries the gait, and this rock's ~1.75 Hz
+# beat against the 9 fps stride was the "cardboard cutout" robotic read.
+const STATIC_WALK_SWAY_RATE := 11.0
+const STATIC_WALK_SWAY_AMP := 0.06
+# Stride-locked walk juice (lane 1, 2026-08-27): transform choreography KEYED
+# TO THE WALK CLIP'S OWN CLOCK — never a free-running sine (that was the old
+# robotic bop). Bounce = feet-pinned vertical scale (the idle-breath mechanism,
+# so boots stay on the shadow) rising once per STEP (twice per cycle); lean =
+# a steady bank into horizontal travel, eased. 0 disables either.
+const WALK_BOUNCE_PX := 1.6     # chest rise per step, world px (feet pinned)
+const WALK_LEAN_RAD := 0.05     # max lean into horizontal travel (~3°)
+const WALK_LEAN_EASE := 10.0    # 1/s approach to the target lean (and settle-out)
+# Gait humanization (lane 1b, 2026-08-27, owner: "people don't walk perfectly
+# uniformly"). Three uniformities broken, all cosmetic clock/transform work:
+# in-cycle rhythm (hold the contacts, snap the swing — frames stop being
+# isochronous), per-step variation (each footfall rolls a hair fast/slow and
+# a hair higher/lower), and per-mob personality + a random phase seed so a
+# pack stops marching in lockstep. The warp averages 1.0 over a cycle, so
+# cadence and the stride↔speed coupling are preserved.
+const WALK_TIMING_WARP := 0.18    # in-cycle rate swing (0 = metronome frames)
+const GAIT_STEP_JITTER := 0.04    # heroes: per-step rate wobble (±, rolled each footfall)
+const GAIT_BOUNCE_JITTER := 0.18  # heroes: per-step bounce-height wobble (±)
+const GAIT_EASE := 6.0            # 1/s blend toward the freshly rolled step rate
+const MOB_GAIT_VAR := 0.06        # mobs: per-instance stride-rate personality (±)
 # Camera feel (2026-08-18): look-ahead in the move direction (px at full
 # speed, eased) and the combat zoom-in (multiplier on the base zoom while
 # enemies are aggro'd within CAMERA_COMBAT_RANGE px, eased in/out).

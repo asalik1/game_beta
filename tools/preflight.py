@@ -56,6 +56,10 @@ IMPORT_CMD = r"tools\Godot_v4.4.1-stable_win64_console.exe --headless --path gam
 # Content files that are legitimately NOT in Story.CONTENT_MODULES.
 MODULE_ALLOWLIST = {
     "capital_hub.gd": "resolved directly via Story.chapter() as CapitalHub, not a merge module",
+    # Q15 static DATA tables (their headers say so): class_name globals consumed
+    # by the Game chain (game_base/game_flow), never merged as Story content.
+    "pockets.gd": "class_name Pockets data table -- consumed by the Game chain, not a merge module",
+    "unlisted.gd": "class_name Unlisted data table -- consumed by the Game chain, not a merge module",
 }
 
 # Logic files where a bare numeric literal is probably a tuning knob.

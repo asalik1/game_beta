@@ -1,0 +1,18 @@
+Reproduce a 6-frame walk animation EXACTLY, with ONE correction: the FACING. This is a
+surgical edit of otherwise-approved art -- NOT a redesign.
+
+Reference image 1 is a 6-figure walk row. Its leg cycle, stride, outfit, face design,
+palette and proportions are all CORRECT -- reproduce every frame's pose and gait as-is.
+Its ONE defect: the body and head are turned three-quarters toward the viewer.
+
+Reference image 2 is the character's east-facing IDLE -- THE FACING AUTHORITY. Redraw
+every walk frame in this exact EAST SIDE PROFILE: body side-on walking right, head in
+profile showing the visible edge of her face (cheek, nose, one eye) exactly as reference
+2, quiver on the far shoulder as reference 2 shows, bow held low in front. Same outfit as
+both references, identical in all 6 frames, same face in all 6 frames.
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, equal-width cells, all feet on
+one shared ground line, constant body height across all 6.
+
+Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE image and SAVE it to disk at the exact path C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_e2\archer_walk_e2_row.png, then stop.
+In your final message, report frame by frame: is the body a true east profile matching the idle.

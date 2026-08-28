@@ -212,7 +212,13 @@ LANDMARK_USES = {
     # Wayfinder's Story Gate (the ONE way onto the road). The Emberward Gate is
     # the MUSTER POINT instead — companies gather at the gate before marching.
     ("gate", 0): [ACTION("E — Muster your party  (Play Together)", "guild", y=80)],
-    ("wf_moot", 0): [ACTION("E — Call a moot", "fangmoot", y=95)],
+    # BOTH uses: the fangmoot rebase (8688e49) replaced the Wildfang contracts
+    # action with the moot call, silently dropping the wild district's daily-
+    # contract point — the ● mark contract (autotest capital section: every
+    # ●-zone opens the journal, count == 4) went red on main. The board carries
+    # the moot AND the contracts, offset so the prompts don't stack (2026-08-27).
+    ("wf_moot", 0): [ACTION("E — Call a moot", "fangmoot", y=95),
+                     ACTION("E — Review Wildfang contracts", "journal", x=-160, y=95)],
     ("ch_chapel", 0): [ACTION("E — Review Choir contracts", "journal", y=90)],
     ("acc_commons", 0): [ACTION("E — Review Accord contracts", "journal", y=95)],
     ("cin_court", 0): [ACTION("E — Review Cinderborn contracts", "journal", y=95)],

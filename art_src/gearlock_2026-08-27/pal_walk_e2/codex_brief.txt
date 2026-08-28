@@ -1,0 +1,19 @@
+Reproduce an 8-frame walk animation EXACTLY, with ONE correction. This is a surgical
+edit of approved art -- NOT a redesign.
+
+Reference image 1 is the CURRENT 8-frame east-facing walk strip (8 square cells). Its
+leg cycle, stride, arm swing, shield with the gold cross, hammer, chains, palette and
+proportions are all CORRECT and APPROVED -- reproduce every frame as-is.
+
+THE ONE CORRECTION, in every frame: the blue cloth. Reference 1 wrongly wraps a blue
+cloth panel around the FRONT of his hip and thigh. Reference image 2 (the idle) shows
+the correct design: the blue drape hangs ONLY BEHIND his legs, trailing at his back;
+the front leg and hip are fully ARMORED STEEL with no blue over them. Remove the front
+blue wrap; keep the behind-the-legs blue drape exactly as reference 2, identical in
+every frame. Change NOTHING else.
+
+Produce ONE image: a horizontal row of EXACTLY 8 figures, equal-width cells, all feet
+on one shared ground line, constant body height.
+
+Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE image and SAVE it to disk at the exact path C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2\pal_walk_e2_row.png, then stop.
+In your final message, report frame by frame: is the front hip/thigh clean armored steel with the blue drape only behind the legs.

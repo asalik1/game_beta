@@ -1,0 +1,30 @@
+Redraw a game hero's 8-frame walk animation to fix gear inconsistency. This is a faithful
+reproduction of existing approved art -- NOT a redesign.
+
+Reference image 1 is the CURRENT 8-frame walk strip (8 square cells, left to right). Its leg
+cycle, stride, arm swing, body proportions, palette and facing are CORRECT -- reproduce that
+motion EXACTLY, frame by frame, in the same order: same legs, same weight, same silhouette
+per frame.
+
+Reference image 2 is the character's idle strip -- THE GEAR AND OUTFIT AUTHORITY. Every walk
+frame must wear EXACTLY this gear, identical in EVERY frame:
+- the steel kite shield with its embossed GOLD CROSS fully drawn and clearly visible in EVERY
+  single frame (never blank, never missing, never a plain bar mark, never half-faded)
+- exactly ONE shield -- NOTHING slung on his back, no second shield, no back-board
+- ONE cube-headed warhammer in the other hand in every frame, gold cross mark on its head
+- the SAME gold chain drape as the idle, following the same path over the armor in every frame
+- the SAME blue tabard with the SAME gold-trimmed ragged hem length in every frame
+The ONLY thing that changes between frames is the walking pose from reference 1.
+
+Produce ONE image: a horizontal row of EXACTLY 8 figures, equal-width cells, all feet on one
+shared ground line, constant body height across all 8.
+
+This is the NORTH-facing walk (walking away from the viewer, back view). Known defects in
+reference 1 you are fixing: the idle's X-crossed gold chain harness across his back was
+replaced by a hanging necklace loop in the walk, and the hem trim changes between frames.
+Every output frame shows his back EXACTLY as reference 2: the same X-crossed chain harness,
+the same hem and trim, the shield on his arm seen from behind with the gold cross visible
+as in reference 2.
+
+Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE image and SAVE it to disk at the exact path C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_n\pal_walk_n_row.png, then stop.
+In your final message, report frame by frame: which leg leads, and does the back gear match the idle exactly.

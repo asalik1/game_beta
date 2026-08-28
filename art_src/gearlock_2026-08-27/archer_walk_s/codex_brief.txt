@@ -1,0 +1,27 @@
+Redraw a game hero's 6-frame walk animation to fix face and outfit inconsistency. This is
+a faithful reproduction of existing approved art -- NOT a redesign.
+
+Reference image 1 is the CURRENT 6-frame walk strip (6 square cells, left to right). Its
+leg cycle, stride, body proportions, scale and palette are CORRECT -- reproduce that
+motion EXACTLY, frame by frame, in the same order: same legs, same weight, same stride.
+
+Reference image 2 is the character's official class art -- THE FACE AND OUTFIT AUTHORITY.
+Every walk frame is THE SAME WOMAN in THE SAME outfit:
+- green cloak with white fur ruff over both shoulders, brown laced leather bodice, wide
+  belt with the hip pouch, arm bracers, quiver of green-fletched arrows on her back, bow
+  held exactly as reference 1 holds it, fur-topped brown boots
+- do NOT invent or remove gear between frames: no clasps, pendants, pouches or straps
+  that appear in one frame and vanish in the next -- if it is not on reference 2, it is
+  not in any frame
+- identical hair and identical face in all 6 frames
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, equal-width cells, all feet on
+one shared ground line, constant body height across all 6.
+
+This is the SOUTH-facing walk (walking toward the viewer). Known defect in reference 1
+you are fixing: her hair is combed down over the whole face and the outfit morphs
+between frames. Every output frame shows her FACE exactly as reference 2: fair-skinned,
+brown hair parted to frame the face, calm focused eyes -- the SAME face in all 6 frames.
+
+Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE image and SAVE it to disk at the exact path C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_s\archer_walk_s_row.png, then stop.
+In your final message, report frame by frame: which leg leads, and is the face and outfit identical across frames.

@@ -1,0 +1,29 @@
+Redraw a game hero's 8-frame walk animation to fix gear inconsistency. This is a faithful
+reproduction of existing approved art -- NOT a redesign.
+
+Reference image 1 is the CURRENT 8-frame walk strip (8 square cells, left to right). Its leg
+cycle, stride, arm swing, body proportions, palette and facing are CORRECT -- reproduce that
+motion EXACTLY, frame by frame, in the same order: same legs, same weight, same silhouette
+per frame.
+
+Reference image 2 is the character's idle strip -- THE GEAR AND OUTFIT AUTHORITY. Every walk
+frame must wear EXACTLY this gear, identical in EVERY frame:
+- the steel kite shield with its embossed GOLD CROSS fully drawn and clearly visible in EVERY
+  single frame (never blank, never missing, never a plain bar mark, never half-faded)
+- exactly ONE shield -- NOTHING slung on his back, no second shield, no back-board
+- ONE cube-headed warhammer in the other hand in every frame, gold cross mark on its head
+- the SAME gold chain drape as the idle, following the same path over the armor in every frame
+- the SAME blue tabard with the SAME gold-trimmed ragged hem length in every frame
+The ONLY thing that changes between frames is the walking pose from reference 1.
+
+Produce ONE image: a horizontal row of EXACTLY 8 figures, equal-width cells, all feet on one
+shared ground line, constant body height across all 8.
+
+This is the EAST-facing walk (walking to the right, side profile). Known defects in
+reference 1 you are fixing: the shield is hidden behind the body in most frames and its
+cross is missing; the chain drape and robe hem redraw differently per frame. In every
+output frame hold the shield the way reference 2 (the idle) holds it: visible in front of
+his body with the gold cross showing, while walking.
+
+Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE image and SAVE it to disk at the exact path C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e\pal_walk_e_row.png, then stop.
+In your final message, report frame by frame: which leg leads, and is the gold cross fully visible on the shield.

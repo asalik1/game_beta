@@ -1,0 +1,12 @@
+﻿codex = C:\Users\asali\AppData\Local\OpenAI\Codex\bin\d0097be4feba73d0\codex.exe
+launch: C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2 (2 refs)
+launch: C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_s (2 refs)
+launch: C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_e (2 refs)
+launch: C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_n (2 refs)
+launched 4 codex jobs
+TIMEOUT: stopping 1 job(s) still running after 540s
+OK   C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2  (result 600 bytes)
+OK   C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_s  (result 446 bytes)
+OK   C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_e  (result 796 bytes)
+FAIL C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_n  (no codex_result.md -- read codex_log.txt)
+batch complete

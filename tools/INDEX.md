@@ -92,6 +92,7 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 | `tools/art/pixellab_repair_assassin_attack_daggers.py` | authorized candidate-only PixelLab temporal edit for restoring exactly two short daggers in a selected one-to-four-frame Assassin attack segment. |
 | `tools/art/install_char_anims.py` | PixelLab character download zip → installed 8-dir clip strips. |
 | `tools/art/install_clip.py` | surgical per-clip strip installer (drift regens: replace ONE clip, touch nothing else). |
+| `tools/art/install_row_strip.py` | (2026-08-27, gearlock lane) Codex ROW master (N figures on green, one image per clip so gear/face identity holds across frames) → engine strip: key+despill, tone-match to the OLD strip's palette, re-seat every frame to the old frame's body-height/feet/centroid (halla pattern), `--out` strips + `--mirror-out` flipped W-family (quadrant scheme), backups. Built for the paladin walk / archer idle coherence fixes (`art_src/gearlock_2026-08-27/`). |
 | `tools/art/install_dirset.py` | assemble PixelLab per-direction exports into `<base>_<dir>.png` sets. |
 | `tools/art/install_death_flat.py` | assemble a grounded single-facing death strip (the L/R-flip death convention). |
 | `tools/art/install_ability.py` | add a boss's `<key>_ability` one-shot strip in the same format. |

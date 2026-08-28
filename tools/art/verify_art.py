@@ -53,6 +53,13 @@ all defects INSIDE the cells, invisible to the tiling check):
              scales it (actions + MOB_BODY_SCALE_WALK walks ride the idle
              cell, plain locomotion its own cell), vs the idle strip's.
              Catches "turns smaller in walk/attack".            -> WARN
+  SIGPART    declared signature part (SIG_PARTS, e.g. the paladin's
+             kite-shield gold cross) present in every locomotion frame:
+             score = largest contiguous gold blob on a low-chroma plate,
+             judged vs the idle family. Catches the part VANISHING in a
+             frame and the emblem FLICKERING across frames (2026-08-27
+             owner catch). Costume drift that keeps the part visible
+             stays eyes-only (DRIFT_AUDIT.md).                  -> FAIL
 
 Content gates are judged lints, WARN by design: squash-stretch blobs,
 fliers/hoppers and flame-type creatures trip ANCHOR/GHOST legitimately,
@@ -190,6 +197,40 @@ FRAMEDEV = 0.22
 # single-target basic swings. attack2/cast/dash/ult legitimately bake AoE/FX
 # (base-hero casts carry 2-3k px of authored effect), so gating them floods; their
 # baked-projectile strays are an eyes-only review item (despur before install).
+# SIGPART -- signature-part presence (2026-08-27, built from the owner's
+# paladin-walk catch: the kite shield's gold cross was drawn in walk_s f1+f8
+# and BLANK in f2-f7, and walk_w f6 dropped the shield entirely -- geometric
+# gates can't see it because a paladin minus a shield is still a perfectly
+# anchored paladin). Score per frame = the largest CONTIGUOUS gold blob
+# sitting on a large low-chroma plate (the cross+trim on the shield face;
+# chains fragment into small links and score low). Two deterministic FAILs,
+# judged against the idle family (the owner-accepted look):
+#   GONE     a frame's score collapses below gone_frac * idle-median -- the
+#            part vanished (the walk_w f6 blink: 4 vs ~150).
+#   FLICKER  in-clip max/min ratio above `flicker` -- the emblem comes and
+#            goes across frames (walk_s: 227 vs 37 = 6.1x).
+# Costume drift that keeps the part visible (chain re-routing, hem changes)
+# stays an eyes-only check (DRIFT_AUDIT.md) -- a colour proxy can't judge it.
+# Declared per base; only locomotion clips, where the part must always show
+# (attack swings may legitimately occlude it).
+# KNOWN HOLE (measured 2026-08-27): the NORTH facing. On the back view the
+# X-crossed gold chain harness lies on the steel backplate and scores exactly
+# like the shield cross (walk_n f1-f3 scored 194-237 with NO shield drawn),
+# and whole-frame plate mass can't see the shield either (armor dominates;
+# the shieldless frames sat within 9% of shielded ones). N-facing shield
+# presence stays an EYES check on the contact sheet / GIF.
+SIG_PARTS = {
+    "paladin": {
+        "clips": ("anim", "walk"),
+        "ref_clip": "anim",
+        "label": "kite-shield gold cross",
+        "gone_frac": 0.25,
+        "gone_floor": 15,
+        "flicker": 3.5,
+    },
+}
+SIGPART_PLATE_MIN = 250   # smallest low-chroma component that can be the shield face
+
 STRAY_CLIPS = ("anim", "walk", "attack", "attackb", "attackc")
 # PARTIAL (butchered / projectile-only frame) is safe on the FX clips too -- it
 # measures the FIGURE shrinking, not the effect.
@@ -345,6 +386,127 @@ def _frame_components(reg: np.ndarray) -> tuple[int, int, list[int]]:
     if not comps:
         return 0, 0, []
     return comps[0][0], comps[0][1], [c[0] for c in comps[1:]]
+
+
+def _label_mask(mask: np.ndarray) -> tuple[np.ndarray, dict[int, int]]:
+    """4-connected component labelling of a boolean mask (the _frame_components
+    row-run union-find, but returning the painted label image + sizes) for the
+    SIGPART gate."""
+    h, w = mask.shape
+    labels = np.zeros((h, w), dtype=np.int32)
+    parent = [0]
+
+    def find(a: int) -> int:
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    prev: list[tuple[int, int, int]] = []
+    run_rows: list[tuple[int, int, int, int]] = []
+    for y in range(h):
+        row = mask[y]
+        if not row.any():
+            prev = []
+            continue
+        d = np.diff(np.concatenate(([0], row.view(np.int8), [0])))
+        starts = np.flatnonzero(d == 1)
+        ends = np.flatnonzero(d == -1)
+        runs: list[tuple[int, int, int]] = []
+        for x0, x1 in zip(starts, ends):
+            lab = len(parent)
+            parent.append(lab)
+            root = lab
+            for px0, px1, proot in prev:
+                if px0 < x1 and px1 > x0:
+                    ra, rb = find(root), find(proot)
+                    if ra != rb:
+                        parent[rb] = ra
+                    root = find(ra)
+            runs.append((int(x0), int(x1), root))
+            run_rows.append((y, int(x0), int(x1), lab))
+        prev = runs
+    sizes: dict[int, int] = {}
+    for y, x0, x1, lab in run_rows:
+        r = find(lab)
+        labels[y, x0:x1] = r
+        sizes[r] = sizes.get(r, 0) + (x1 - x0)
+    return labels, sizes
+
+
+def _dilate(mask: np.ndarray, iterations: int = 2) -> np.ndarray:
+    out = mask
+    for _ in range(iterations):
+        p = np.pad(out, 1)
+        out = p[1:-1, 1:-1] | p[:-2, 1:-1] | p[2:, 1:-1] | p[1:-1, :-2] | p[1:-1, 2:]
+    return out
+
+
+def _sig_part_score(frame: np.ndarray) -> int:
+    """Largest contiguous gold blob on a large low-chroma plate (SIG_PARTS)."""
+    r = frame[..., 0].astype(np.int32)
+    g = frame[..., 1].astype(np.int32)
+    b = frame[..., 2].astype(np.int32)
+    solid = frame[..., 3] >= 200
+    mx = np.maximum(np.maximum(r, g), b)
+    mn = np.minimum(np.minimum(r, g), b)
+    plate = solid & (mn >= 45) & (mx - mn <= 55)
+    gold = solid & (r >= 120) & (r > b + 50) & (g > b + 15)
+    if not plate.any() or not gold.any():
+        return 0
+    plab, psizes = _label_mask(plate)
+    glab, gsizes = _label_mask(gold)
+    best = 0
+    for pid, parea in psizes.items():
+        if parea < SIGPART_PLATE_MIN:
+            continue
+        pd = _dilate(plab == pid, 2)
+        for gid in np.unique(glab[pd & gold]):
+            if gid == 0:
+                continue
+            on_plate = int(((glab == gid) & pd).sum())
+            best = max(best, min(gsizes[gid], on_plate))
+    return best
+
+
+def check_sig_parts(files: list[Path]) -> None:
+    """SIGPART: a declared signature part (SIG_PARTS) must be visible in every
+    locomotion frame, judged against the idle family's score (module docstring)."""
+    for base, cfg in SIG_PARTS.items():
+        clip_scores: dict[Path, list[int]] = {}
+        ref_scores: list[int] = []
+        for png in files:
+            parts = png.stem.split("_")
+            d = parts[-1] if parts[-1] in DIR8 else None
+            core = parts[:-1] if d else parts
+            if len(core) < 2 or "_".join(core[:-1]) != base or core[-1] not in cfg["clips"]:
+                continue
+            img = Image.open(png).convert("RGBA")
+            w, h = img.size
+            if h <= 0 or w % h != 0:
+                continue
+            arr = np.asarray(img)
+            scores = [_sig_part_score(arr[:, i * h:(i + 1) * h]) for i in range(w // h)]
+            clip_scores[png] = scores
+            if core[-1] == cfg["ref_clip"]:
+                ref_scores.extend(scores)
+        if not ref_scores:
+            continue
+        ref_med = float(np.median(ref_scores))
+        gone_lim = max(float(cfg["gone_floor"]), cfg["gone_frac"] * ref_med)
+        for png, scores in sorted(clip_scores.items()):
+            gone = [i + 1 for i, s in enumerate(scores) if s < gone_lim]
+            if gone:
+                FAIL.append(
+                    f"[SIGPART] {png.relative_to(SPRITES)}: {cfg['label']} missing in "
+                    f"f{'/f'.join(str(i) for i in gone)} (score {min(scores)} vs idle "
+                    f"median {ref_med:.0f}) -- the part vanishes mid-clip")
+            elif max(scores) / max(min(scores), 1) > cfg["flicker"]:
+                FAIL.append(
+                    f"[SIGPART] {png.relative_to(SPRITES)}: {cfg['label']} flickers "
+                    f"across frames (scores {min(scores)}..{max(scores)}, ratio "
+                    f"{max(scores) / max(min(scores), 1):.1f}x > {cfg['flicker']}) -- "
+                    "the emblem is drawn in some frames and not others")
 
 
 def belongs(stem: str, base: str) -> bool:
@@ -735,6 +897,7 @@ def main() -> int:
         check_clip_scale(mine)
         check_hero_body_scale(mine)
         check_dir_sets(mine)
+        check_sig_parts(mine)
 
     for f in FAIL:
         print("FAIL " + f)

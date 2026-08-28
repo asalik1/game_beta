@@ -1,0 +1,18 @@
+Reproduce an 8-figure walk row EXACTLY, with ONE correction: the SHIELD FACE COLOR. This
+is a surgical edit of approved art -- NOT a redesign.
+
+Reference image 1 is the walk row. Its leg cycle, stride, hand assignment (shield gripped
+by the near arm, hammer in the far hand), blue drape behind the legs, chains and
+proportions are all CORRECT -- reproduce every frame as-is.
+
+THE ONE CORRECTION, in every frame: reference 1 paints the shield face DARK CHARCOAL
+STEEL. Reference image 2 (the idle) shows the correct shield: a PALE IVORY-WHITE kite
+face, weathered off-white like aged bone, with the embossed GOLD CROSS on it and a steel
+rim. Repaint the shield face that pale ivory-white in EVERY frame, keeping the gold cross
+and the same lighting. Change NOTHING else.
+
+Produce ONE image: a horizontal row of EXACTLY 8 figures, equal-width cells, all feet on
+one shared ground line, constant body height.
+
+Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE image and SAVE it to disk at the exact path C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e4\pal_walk_e4_row.png, then stop.
+In your final message, report frame by frame: is the shield face pale ivory matching the idle.

@@ -2039,6 +2039,9 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	shadow.position = Vector2(0, 20)
 	npc.add_child(shadow)
 	var spr := Sprite2D.new()
+	# NPC bodies share the cast's painterly-downscale pipeline — bilinear,
+	# not the project's pixel-art NEAREST (robotic-walk fix 2026-08-27).
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	var anim := Art.anim_info(sprite_name)
 	# Directional idle art is optional. On interaction an eight-way NPC selects
 	# the visitor-facing strip; a single-facing body mirrors horizontally.

@@ -93,7 +93,7 @@ const CHAPTER := {
 		"district": "wild", "mark": "●",
 		"obstacles": [], "obstacle_count": 0,
 		"decor": [], "decor_count": 0, "accents": [], "structures": [],
-		"landmarks": [{"name": "capital_wildfang_fangmoot", "x": 1056, "y": 570, "clearance": 285, "uses": [{"type": "action", "prompt": "E — Call a moot", "x": 0, "y": 95, "ref": "fangmoot"}]}],
+		"landmarks": [{"name": "capital_wildfang_fangmoot", "x": 1056, "y": 570, "clearance": 285, "uses": [{"type": "action", "prompt": "E — Call a moot", "x": 0, "y": 95, "ref": "fangmoot"}, {"type": "action", "prompt": "E — Review Wildfang contracts", "x": -160, "y": 95, "ref": "journal"}]}],
 		"furnishings": [{"name": "capital_city_bench", "x": 760, "y": 815, "clearance": 110}],
 		"backdrops": [],
 		"npcs": [

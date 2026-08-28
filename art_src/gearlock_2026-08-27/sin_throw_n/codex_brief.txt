@@ -1,0 +1,39 @@
+Redraw a game hero's 8-frame STANDING knife-throw animation (Fan of Knives). The current
+clip is being replaced because its motion is wrong: the arms just spread into a stiff
+T-pose and hold it, and the feet jump from a narrow stance to a wide stance mid-clip.
+
+Reference image 1 is the character's idle strip -- THE IDENTITY, OUTFIT AND STANCE
+AUTHORITY: hooded assassin, glowing pale-blue eyes in a dark cowl, layered dark grey
+cloak and leathers with red X-strap harness, two short daggers. Reference image 2 is the
+CURRENT throw strip -- use it ONLY for palette, body proportions and canvas scale; do NOT
+copy its poses.
+
+Choreograph a real two-handed fan-throw, all in the torso and arms -- the FEET STAY
+PLANTED in the idle stance in EVERY frame (same foot positions, same stance width; only
+weight shifts). A short dagger stays visibly IN EACH HAND in every frame -- the game
+spawns the flying knives itself, so NO knives leaving the hands, NO knives in the air.
+
+The 8 frames:
+1. rest: arms low at his sides, daggers held reversed, idle stance
+2. wind-up: both arms cross tight over the chest, daggers up by the opposite shoulders,
+   shoulders hunching
+3. coil peak: slight crouch of the torso, blades crossed high, cloak gathering
+4. RELEASE: both arms whip outward and FORWARD in an arc, torso opening
+5. full extension: arms forward-and-out at chest height (NOT a shoulder-high T-pose),
+   wrists snapped, cloak flaring
+6. follow-through: arms carry on down and out, torso recoiling slightly
+7. recover: arms swing back toward the hips, cloak settling
+8. settle: back to near-rest, matching frame 1
+Frames 2, 4 and 5 must have clearly different arm silhouettes -- no two near-identical
+spread poses.
+
+Produce ONE image: a horizontal row of EXACTLY 8 figures, equal-width cells, all feet on
+one shared ground line, constant body height across all 8, identical outfit in all 8.
+
+Facing: NORTH (back view, facing away) in every frame. The throw happens away from the
+camera: wind-up reads as shoulders hunching and elbows rising behind the silhouette,
+release as both arms flinging forward away from us (mostly hidden by the body), the
+cloak swirling with the motion. No face visible.
+
+Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE image and SAVE it to disk at the exact path C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\sin_throw_n\sin_throw_n_row.png, then stop.
+In your final message, report frame by frame: are the feet planted in the same spot, and does the arm motion read as wind-up, release, follow-through.

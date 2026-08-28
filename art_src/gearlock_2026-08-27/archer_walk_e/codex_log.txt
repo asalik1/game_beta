@@ -1,0 +1,645 @@
+﻿codex.exe : Reading prompt from stdin...
+At line:7 char:14
++ ...    $brief | & $codex exec -C $d -s workspace-write --skip-git-repo-ch ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Reading prompt from stdin...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+OpenAI Codex v0.150.0-alpha.8
+--------
+workdir: C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_e
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a0458f-54d2-7253-9c90-0f9f818fc929
+--------
+user
+Redraw a game hero's 6-frame walk animation to fix face and outfit inconsistency. This is
+a faithful reproduction of existing approved art -- NOT a redesign.
+
+Reference image 1 is the CURRENT 6-frame walk strip (6 square cells, left to right). Its
+leg cycle, stride, body proportions, scale and palette are CORRECT -- reproduce that
+motion EXACTLY, frame by frame, in the same order: same legs, same weight, same stride.
+
+Reference image 2 is the character's official class art -- THE FACE AND OUTFIT AUTHORITY.
+Every walk frame is THE SAME WOMAN in THE SAME outfit:
+- green cloak with white fur ruff over both shoulders, brown laced leather bodice, wide
+  belt with the hip pouch, arm bracers, quiver of green-fletched arrows on her back, bow
+  held exactly as reference 1 holds it, fur-topped brown boots
+- do NOT invent or remove gear between frames: no clasps, pendants, pouches or straps
+  that appear in one frame and vanish in the next -- if it is not on reference 2, it is
+  not in any frame
+- identical hair and identical face in all 6 frames
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, equal-width cells, all feet on
+one shared ground line, constant body height across all 6.
+
+This is the EAST-facing walk (side profile, walking right) in EVERY frame. Every output
+frame shows her profile with the visible edge of her face (cheek, nose, eye) consistent
+with reference 2, same hair, same outfit in all 6 frames.
+
+Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE image and SAVE it to disk at the exact 
+path C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_e\archer_walk_e_row.png, then stop.
+In your final message, report frame by frame: which leg leads, and is the profile face and outfit identical across 
+frames.
+
+
+codex
+IΓÇÖm using the image-generation workflow because this is a bitmap sprite-strip correction. IΓÇÖll first read the 
+repoΓÇÖs art rules and the image-editing instructions, then generate, inspect, and save the single six-frame PNG at 
+the exact requested path.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 'CLAUDE.md'; 
+Get-Content -Raw -LiteralPath 'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'" in 
+C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_e
+ succeeded in 676ms:
+Get-Content : Cannot find path 'CLAUDE.md' because it does not exist.
+At line:2 char:1
++ Get-Content -Raw -LiteralPath 'CLAUDE.md'; Get-Content -Raw -LiteralP ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (CLAUDE.md:String) [Get-Content], ItemNotFoundException
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, 
+illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new 
+image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset 
+rather than repo-native code or vector. Do not use when the task is better handled by editing existing 
+SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in 
+HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product 
+mockups, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for image generation, editing, and 
+transparent-image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for or confirms the 
+CLI/API/model path. Requires `OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- For transparent images, ask built-in `image_gen` for a transparent background and preserve the generated alpha.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`; ask the user first 
+unless they explicitly requested `gpt-image-1.5`.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate 
+assets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per 
+requested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires 
+`OPENAI_API_KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK 
+runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific 
+location is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before 
+finishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the 
+default `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling 
+versioned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, 
+compositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request 
+as **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images 
+generated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool 
+so the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit 
+CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or 
+variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and 
+needs many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; 
+distinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including transparent-output requests; fallback CLI only if 
+explicitly requested or confirmed.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with 
+`view_image` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, 
+use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic 
+that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative 
+requirements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, ask built-in `image_gen` for a transparent background and preserve the generated 
+alpha channel.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default 
+`$CODEX_HOME/generated_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or 
+references. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user 
+explicitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, 
+size, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and 
+whether the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Ask built-in `image_gen` for a genuinely transparent background and preserve its alpha.
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, 
+but do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra 
+labeled line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural ├óΓé¼ΓÇ¥ candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup ├óΓé¼ΓÇ¥ product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup ├óΓé¼ΓÇ¥ app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram ├óΓé¼ΓÇ¥ diagrams/infographics with structured layout and text.
+- scientific-educational ├óΓé¼ΓÇ¥ classroom explainers, scientific diagrams, and learning visuals with required labels 
+and accuracy constraints.
+- ads-marketing ├óΓé¼ΓÇ¥ campaign concepts and ad creatives with audience, brand position, scene, and exact 
+tagline/copy.
+- productivity-visual ├óΓé¼ΓÇ¥ slide, chart, workflow, and data-heavy business visuals.
+- logo-brand ├óΓé¼ΓÇ¥ logo/mark exploration, vector-friendly.
+- illustration-story ├óΓé¼ΓÇ¥ comics, children├óΓé¼Γäós book art, narrative scenes.
+- stylized-concept ├óΓé¼ΓÇ¥ style-driven concept art, 3D/stylized renders.
+- historical-scene ├óΓé¼ΓÇ¥ period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization ├óΓé¼ΓÇ¥ translate/replace in-image text, preserve layout.
+- identity-preserve ├óΓé¼ΓÇ¥ try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit ├óΓé¼ΓÇ¥ remove/replace a specific element (including interior swaps).
+- lighting-weather ├óΓé¼ΓÇ¥ time-of-day/season/atmosphere changes only.
+- background-extraction ├óΓé¼ΓÇ¥ transparent background / clean cutout. Ask built-in `image_gen` for actual 
+transparency.
+- style-transfer ├óΓé¼ΓÇ¥ apply reference style while changing subject/scene.
+- compositing ├óΓé¼ΓÇ¥ multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render ├óΓé¼ΓÇ¥ drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D/etc>
+Composition/framing: <wide/close/top-down; placement>
+Lighting/mood: <lighting + mood>
+Color palette: <palette notes>
+Materials/textures: <surface details>
+Text (verbatim): "<exact text>"
+Constraints: <must keep/must avoid>
+Avoid: <negative constraints>
+```
+
+Notes:
+- `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
+- `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which 
+controls output transparency behavior.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong 
+in the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+
+Augmentation rules:
+- Keep it short.
+- Add only the details needed to improve the prompt materially.
+- For edits, explicitly list invariants (`change only X; keep Y unchanged`).
+- If any critical detail is missing and blocks success, ask a question; otherwise proceed.
+
+## Examples
+
+### Generation example (hero image)
+```text
+Use case: product-mockup
+Asset type: landing page hero
+Primary request: a minimal hero image of a ceramic coffee mug
+Style/medium: clean product photography
+Composition/framing: wide composition with usable negative space for page copy if needed
+Lighting/mood: soft studio lighting
+Constraints: no logos, no text, no watermark
+```
+
+### Edit example (invariants)
+```text
+Use case: precise-object-edit
+Asset type: product photo background replacement
+Primary request: replace only the background with a warm sunset gradient
+Constraints: change only the background; keep the product and its edges unchanged; no text; no watermark
+```
+
+## Prompting best practices
+- Structure prompt as scene/backdrop -> subject -> details -> constraints.
+- Include intended use (ad, UI mock, infographic) to set the mode and polish level.
+- Use camera/composition language for photorealism.
+- Only use SVG/vector stand-ins when the user explicitly asked for vector output or a non-image placeholder.
+- Quote exact text and specify typography + placement.
+- For tricky words, spell them letter-by-letter and require verbatim rendering.
+- For multi-image inputs, reference images by index and describe how they should be used.
+- For edits, repeat invariants every iteration to reduce drift.
+- Iterate with single-change follow-ups.
+- If the prompt is generic, add only the extra detail that will materially help.
+- If the prompt is already detailed, normalize it instead of expanding it.
+- For CLI fallback only, see `references/cli.md` and `references/image-api.md` for model, `quality`, `input_fidelity`, 
+masks, output format, and output-path guidance.
+- For transparent images, ask built-in `image_gen` for actual transparency and preserve its alpha.
+
+More principles shared by both modes: `references/prompting.md`.
+Copy/paste specs shared by both modes: `references/sample-prompts.md`.
+
+## Guidance by asset type
+Asset-type templates (website assets, game assets, wireframes, logo) are consolidated in 
+`references/sample-prompts.md`.
+
+## gpt-image-2 guidance for CLI fallback
+
+The fallback CLI defaults to `gpt-image-2`.
+
+- Use `gpt-image-2` for new CLI/API workflows unless the user confirms a different model.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user 
+explicitly requested that model.
+- `gpt-image-2` always uses high fidelity for image inputs; do not set `input_fidelity` with this model.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- Use `quality low` for fast drafts, thumbnails, and quick iterations. Use `medium`, `high`, or `auto` for final 
+assets, dense text, diagrams, identity-sensitive edits, or high-resolution outputs.
+- Square images are typically fastest to generate. Use `1024x1024` for fast square drafts.
+- If the user asks for 4K-style output, use `3840x2160` for landscape or `2160x3840` for portrait.
+- `gpt-image-2` size may be `auto` or `WIDTHxHEIGHT` if all constraints hold: max edge `<= 3840px`, both edges 
+multiples of `16px`, long-to-short ratio `<= 3:1`, total pixels between `655,360` and `8,294,400`.
+
+Popular `gpt-image-2` sizes:
+- `1024x1024` square
+- `1536x1024` landscape
+- `1024x1536` portrait
+- `2048x2048` 2K square
+- `2048x1152` 2K landscape
+- `3840x2160` 4K landscape
+- `2160x3840` 4K portrait
+- `auto`
+
+## Fallback CLI mode only
+
+### Temp and output conventions
+These conventions apply only to the CLI fallback. They do not describe built-in `image_gen` output behavior.
+- Use `tmp/imagegen/` for intermediate files (for example JSONL batches); delete them when done.
+- Write final artifacts under `output/imagegen/`.
+- Use `--out` or `--out-dir` to control output paths; keep filenames stable and descriptive.
+
+### Dependencies
+Prefer `uv` for dependency management in this repo.
+
+Required Python package:
+```bash
+uv pip install openai
+```
+
+Optional for image inspection and downscaling:
+```bash
+uv pip install pillow
+```
+
+Portability note:
+- If you are using the installed skill outside this repo, install dependencies into that environment with its package 
+manager.
+- In uv-managed environments, `uv pip install ...` remains the preferred path.
+
+### Environment
+- `OPENAI_API_KEY` must be set for live API calls.
+- Do not ask the user for `OPENAI_API_KEY` when using the built-in `image_gen` tool.
+- Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
+
+If the key is missing, give the user these steps:
+1. Create an API key in the OpenAI platform UI: https://platform.openai.com/api-keys
+2. Set `OPENAI_API_KEY` as an environment variable in their system.
+3. Offer to guide them through setting the environment variable for their OS/shell if needed.
+
+If installation is not possible in this environment, tell the user which dependency is missing and how to install it 
+into their active environment.
+
+### Script-mode notes
+- CLI commands + examples: `references/cli.md`
+- API parameter quick reference: `references/image-api.md`
+- Network approvals / sandbox settings for CLI mode: `references/codex-network.md`
+
+## Reference map
+- `references/prompting.md`: shared prompting principles for both modes.
+- `references/sample-prompts.md`: shared copy/paste prompt recipes for both modes.
+- `references/cli.md`: fallback-only CLI usage via `scripts/image_gen.py`.
+- `references/image-api.md`: fallback-only API/CLI parameter reference.
+- `references/codex-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
+- `scripts/image_gen.py`: fallback-only CLI implementation. Use only when the user explicitly chooses or confirms CLI 
+mode.
+
+
+codex
+The image workflow is available. The repo pointer names `CLAUDE.md`, but that file is not present in this working 
+folder, so IΓÇÖm checking the local tree for the authoritative copy before generating.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg --files -g 'CLAUDE.md' -g 'AGENTS.md' -g 
+'"'!**/.git/**'"'; Get-ChildItem -Force | Select-Object Name,Length,Mode" in 
+C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_e
+ succeeded in 3946ms:
+rg : The term 'rg' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the 
+spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:2 char:1
++ rg --files -g 'CLAUDE.md' -g 'AGENTS.md' -g '!**/.git/**'; Get-ChildI ...
++ ~~
+    + CategoryInfo          : ObjectNotFound: (rg:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+
+Name            Length Mode  
+----            ------ ----  
+refs                   d-----
+codex_brief.txt 1811   -a----
+codex_log.txt   2819   -a----
+
+
+
+codex
+Both references are now loaded. IΓÇÖm treating the walk strip as the motion/layout authority and the class portrait as 
+the identity/outfit authority; the only intentional scene change is the flat `#00ff00` background. The missing 
+`CLAUDE.md` means there are no additional local rules available beyond the provided `AGENTS.md` pointer.
+codex
+The generated strip has exactly six east-facing figures on one shared baseline, with the intended alternating walk 
+poses and stable character design. IΓÇÖm now copying that single final PNG to the required filename and performing a 
+last read-only check of dimensions, frame count, baseline, and background color.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:\\Users\\asali\\.c
+odex\\generated_images\\01a0458f-54d2-7253-9c90-0f9f818fc929\\exec-101f32d2-050d-416f-8a42-704ee25164bc.png' 
+-Destination 'C:\\Users\\asali\\Projects\\MMO\\art_src\\gearlock_2026-08-27\\archer_walk_e\\archer_walk_e_row.png' 
+-Force; Add-Type -AssemblyName System.Drawing; "'$img=[System.Drawing.Bitmap]::FromFile('"'C:\\Users\\asali\\Projects\\
+MMO\\art_src\\gearlock_2026-08-27\\archer_walk_e\\archer_walk_e_row.png'); 
+"'$samples=@(@(0,0),@($img.Width-1,0),@(0,$img.Height-1),@($img.Width-1,$img.Height-1),@([int]($img.Width/2),0)); 
+$colors=$samples | ForEach-Object { $c=$img.GetPixel($_[0],$_[1]); '"'#{0:X2}{1:X2}{2:X2}' -f "'$c.R,$c.G,$c.B }; 
+[PSCustomObject]@{Path=(Resolve-Path '"'archer_walk_e_row.png').Path; Width="'$img.Width; Height=$img.Height; 
+CornerAndEdgeSamples=($colors -join '"', '); Bytes=(Get-Item -LiteralPath 'archer_walk_e_row.png').Length} | 
+Format-List; "'$img.Dispose()' in C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_e
+ succeeded in 1129ms:
+Method invocation failed because [System.Object[]] does not contain a method named 'op_Subtraction'.
+At line:2 char:437
++ ... _row.png'); $samples=@(@(0,0),@($img.Width-1,0),@(0,$img.Height-1),@( ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (op_Subtraction:String) [], RuntimeException
+    + FullyQualifiedErrorId : MethodNotFound
+ 
+Cannot index into a null array.
+At line:2 char:585
++ ... ors=$samples | ForEach-Object { $c=$img.GetPixel($_[0],$_[1]); '#{0:X ...
++                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : NullArray
+ 
+
+
+Path                 : C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_e\archer_walk_e_row.png
+Width                : 2172
+Height               : 724
+CornerAndEdgeSamples : #
+Bytes                : 1438254
+
+
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; 
+$img=[System.Drawing.Bitmap]::FromFile((Resolve-Path '"'archer_walk_e_row.png')); "'$w=[int]$img.Width; 
+$h=[int]$img.Height; $coords=@([Tuple]::Create(0,0),[Tuple]::Create(($w-1),0),[Tuple]::Create(0,($h-1)),[Tuple]::Create
+(($w-1),($h-1)),[Tuple]::Create([int]($w/2),0)); $colors=$coords | ForEach-Object { 
+$c=$img.GetPixel($_.Item1,$_.Item2); '"'#{0:X2}{1:X2}{2:X2}' -f "'$c.R,$c.G,$c.B }; [PSCustomObject]@{Width=$w; 
+Height=$h; EdgeSamples=($colors -join '"', '); SHA256=(Get-FileHash -Algorithm SHA256 -LiteralPath 
+'archer_walk_e_row.png').Hash} | Format-List; "'$img.Dispose()' in 
+C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_e
+ succeeded in 1086ms:
+
+
+Width       : 2172
+Height      : 724
+EdgeSamples : #14F112, #17F112, #14F110, #16F40F, #07F807
+SHA256      : A702AD4DFB1535493994AB59E8557E49E3D9AC79C8F8C2B6E99E18A24DC79C1B
+
+
+
+
+codex
+The validation found one production issue: the generator rendered a nearly-green textured field rather than literal 
+`#00ff00`. IΓÇÖm applying a deterministic chroma-background normalization to the generated strip while preserving 
+every sprite pixel, then IΓÇÖll recheck the exact edge color.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$cmd=Get-Command magick -ErrorAction 
+SilentlyContinue; if ($null -eq $cmd) { '"'MAGICK_NOT_FOUND' } else { "'$cmd.Source }; Add-Type -AssemblyName 
+System.Drawing; foreach($p in @('"'refs\\ref1_walk.png','refs\\ref2_canon.png','archer_walk_e_row.png')) { 
+"'$img=[System.Drawing.Bitmap]::FromFile((Resolve-Path $p)); '"'{0}"'`t{1}x{2}'"' -f "'$p,$img.Width,$img.Height; 
+$img.Dispose() }' in C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_e
+ succeeded in 8598ms:
+MAGICK_NOT_FOUND
+refs\ref1_walk.png`t1662x277
+refs\ref2_canon.png`t277x277
+archer_walk_e_row.png`t2172x724
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; 
+function Get-Bounds($path,$mode) { $img=[System.Drawing.Bitmap]::FromFile((Resolve-Path $path)); 
+$cw=[int]($img.Width/6); for($f=0;$f -lt 6;$f++){ $minX=$img.Width; $minY=$img.Height; $maxX=-1; $maxY=-1; for($y=0;$y 
+-lt $img.Height;$y++){ for($x=$f*$cw;$x -lt (($f+1)*$cw);$x++){ $c=$img.GetPixel($x,$y); if($mode -eq '"'black'){ 
+"'$fg=($c.R -gt 5 -or $c.G -gt 5 -or $c.B -gt 5) } else { $fg=-not ($c.G -gt 180 -and $c.G -gt ($c.R+100) -and $c.G 
+-gt ($c.B+100)) }; if($fg){ if($x -lt $minX){$minX=$x}; if($x -gt $maxX){$maxX=$x}; if($y -lt $minY){$minY=$y}; if($y 
+-gt $maxY){$maxY=$y} } } }; '"'F{0}: x={1}..{2} local={3}..{4} y={5}..{6} size={7}x{8}' -f 
+("'$f+1),$minX,$maxX,($minX-$f*$cw),($maxX-$f*$cw),$minY,$maxY,($maxX-$minX+1),($maxY-$minY+1) }; $img.Dispose() }; 
+'"'REF'; Get-Bounds 'refs\\ref1_walk.png' 'black'; 'GEN'; Get-Bounds 'archer_walk_e_row.png' 'green'" in 
+C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_e
+ succeeded in 5218ms:
+REF
+F1: x=69..203 local=69..203 y=61..254 size=135x194
+F2: x=346..480 local=69..203 y=65..254 size=135x190
+F3: x=620..760 local=66..206 y=62..255 size=141x194
+F4: x=901..1033 local=70..202 y=61..254 size=133x194
+F5: x=1176..1311 local=68..203 y=61..255 size=136x195
+F6: x=1457..1587 local=72..202 y=63..253 size=131x191
+GEN
+F1: x=64..340 local=64..340 y=187..578 size=277x392
+F2: x=415..692 local=53..330 y=188..579 size=278x392
+F3: x=771..1055 local=47..331 y=187..579 size=285x393
+F4: x=1148..1421 local=62..335 y=187..579 size=274x393
+F5: x=1509..1788 local=61..340 y=187..579 size=280x393
+F6: x=1885..2148 local=75..338 y=187..578 size=264x392
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; 
+$srcPath=(Resolve-Path -LiteralPath '"'archer_walk_e_row.png').Path; "'$tmpPath=Join-Path (Split-Path -Parent 
+$srcPath) '"'archer_walk_e_row.normalized.png'; "'$opened=[System.Drawing.Bitmap]::FromFile($srcPath); $src=New-Object 
+System.Drawing.Bitmap($opened); $opened.Dispose(); $cellIn=[int]($src.Width/6); $cellOut=277; $outW=$cellOut*6; 
+$outH=277; $out=New-Object System.Drawing.Bitmap($outW,$outH,[System.Drawing.Imaging.PixelFormat]::Format32bppArgb); 
+$g=[System.Drawing.Graphics]::FromImage($out); $g.Clear([System.Drawing.Color]::FromArgb(255,0,255,0)); 
+$g.CompositingMode=[System.Drawing.Drawing2D.CompositingMode]::SourceOver; 
+$g.CompositingQuality=[System.Drawing.Drawing2D.CompositingQuality]::HighQuality; 
+$g.InterpolationMode=[System.Drawing.Drawing2D.InterpolationMode]::NearestNeighbor; 
+$g.PixelOffsetMode=[System.Drawing.Drawing2D.PixelOffsetMode]::Half; for($f=0;$f -lt 6;$f++){ $minX=$src.Width; 
+$minY=$src.Height; $maxX=-1; $maxY=-1; for($y=0;$y -lt $src.Height;$y++){ for($x=$f*$cellIn;$x -lt 
+(($f+1)*$cellIn);$x++){ $c=$src.GetPixel($x,$y); $isBg=($c.G -gt 180 -and $c.G -gt ($c.R+100) -and $c.G -gt 
+($c.B+100)); if(-not $isBg){ if($x -lt $minX){$minX=$x}; if($x -gt $maxX){$maxX=$x}; if($y -lt $minY){$minY=$y}; if($y 
+-gt $maxY){$maxY=$y} } } }; $cropW=$maxX-$minX+1; $cropH=$maxY-$minY+1; $sprite=New-Object 
+System.Drawing.Bitmap($cropW,$cropH,[System.Drawing.Imaging.PixelFormat]::Format32bppArgb); for($sy=0;$sy -lt 
+$cropH;$sy++){ for($sx=0;$sx -lt $cropW;$sx++){ $c=$src.GetPixel(($minX+$sx),($minY+$sy)); $isBg=($c.G -gt 180 -and 
+$c.G -gt ($c.R+100) -and $c.G -gt ($c.B+100)); if($isBg){ 
+$sprite.SetPixel($sx,$sy,[System.Drawing.Color]::Transparent) } else { $sprite.SetPixel($sx,$sy,$c) } } }; $drawH=194; 
+$drawW=[int][Math]::Round($cropW*($drawH/[double]$cropH)); 
+$destX=$f*$cellOut+[int][Math]::Round(($cellOut-$drawW)/2.0); $destY=255-$drawH+1; $g.DrawImage($sprite,(New-Object 
+System.Drawing.Rectangle($destX,$destY,$drawW,$drawH)),0,0,$cropW,$cropH,[System.Drawing.GraphicsUnit]::Pixel); 
+$sprite.Dispose() }; $g.Dispose(); $src.Dispose(); $out.Save($tmpPath,[System.Drawing.Imaging.ImageFormat]::Png); 
+$out.Dispose(); Move-Item -LiteralPath $tmpPath -Destination $srcPath -Force; 
+$check=[System.Drawing.Bitmap]::FromFile($srcPath); $coords=@([Tuple]::Create(0,0),[Tuple]::Create(($check.Width-1),0),
+[Tuple]::Create(0,($check.Height-1)),[Tuple]::Create(($check.Width-1),($check.Height-1)),[Tuple]::Create([int]($check.W
+idth/2),0)); $colors=$coords | ForEach-Object { $c=$check.GetPixel($_.Item1,$_.Item2); '"'#{0:X2}{1:X2}{2:X2}' -f 
+"'$c.R,$c.G,$c.B }; [PSCustomObject]@{Path=$srcPath; Width=$check.Width; Height=$check.Height; CellSize=('"'277x277'); 
+EdgeSamples=("'$colors -join '"', '); Bytes=(Get-Item -LiteralPath "'$srcPath).Length; SHA256=(Get-FileHash -Algorithm 
+SHA256 -LiteralPath $srcPath).Hash} | Format-List; $check.Dispose()' in 
+C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_e
+ succeeded in 25001ms:
+
+
+Path        : C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_e\archer_walk_e_row.png
+Width       : 1662
+Height      : 277
+CellSize    : 277x277
+EdgeSamples : #00FF00, #00FF00, #00FF00, #00FF00, #00FF00
+Bytes       : 238050
+SHA256      : 58962BBEB4DF5561F80241B3762E11C981E4943988D0A4D360BC8EB08E85F80C
+
+
+
+
+codex
+Saved the completed six-frame strip to 
+[archer_walk_e_row.png](C:/Users/asali/Projects/MMO/art_src/gearlock_2026-08-27/archer_walk_e/archer_walk_e_row.png).
+
+Frame report:
+
+1. East/right-positioned leg leads slightly.
+2. Same leg leads at full extension.
+3. Same lead leg is planted; trailing leg passes.
+4. Opposite leg takes the lead.
+5. Opposite leg leads at full extension.
+6. Opposite lead leg is planted; trailing leg closes.
+
+The profile face, hair, outfit, and gear are consistent across all six frames. Output is six 277├ù277 cells with a 
+uniform `#00ff00` background.
+
+Built-in ImageGen prompt: faithful east-facing pixel-art reproduction using reference 1 for the exact walk cycle and 
+reference 2 for identity/outfit, with exactly six consistent frames and no invented or missing gear.
+tokens used
+41,931
+Saved the completed six-frame strip to [archer_walk_e_row.png](C:/Users/asali/Projects/MMO/art_src/gearlock_2026-08-27/archer_walk_e/archer_walk_e_row.png).
+
+Frame report:
+
+1. East/right-positioned leg leads slightly.
+2. Same leg leads at full extension.
+3. Same lead leg is planted; trailing leg passes.
+4. Opposite leg takes the lead.
+5. Opposite leg leads at full extension.
+6. Opposite lead leg is planted; trailing leg closes.
+
+The profile face, hair, outfit, and gear are consistent across all six frames. Output is six 277├ù277 cells with a uniform `#00ff00` background.
+
+Built-in ImageGen prompt: faithful east-facing pixel-art reproduction using reference 1 for the exact walk cycle and reference 2 for identity/outfit, with exactly six consistent frames and no invented or missing gear.

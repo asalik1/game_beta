@@ -493,6 +493,13 @@ var theme_speed_amt := 0.0
 var damp_time := 0.0     # Damp debuff: while > 0, move speed x Balance.DAMP_SLOW_MULT (river wading)
 var wind_fx_t := 0.0     # throttle for the faint speed-buff wind trail
 var _foot_dust_t := 0.0  # throttle for the running foot-dust puffs (life pass 2026-08-19)
+var _foot_steps := 0.0   # stride-step counter for footfall-synced dust (lane 1 2026-08-27)
+# Gait humanization state (lane 1b): per-step wobble targets, re-rolled at each
+# footfall crossing and eased between, so no two steps play identically.
+var _gait_step := 0.0         # footfall counter (the roll trigger)
+var _gait_rate := 1.0         # eased playback-rate wobble applied to the walk clock
+var _gait_rate_target := 1.0
+var _gait_bounce := 1.0       # this step's bounce-height multiplier
 var elixir_time := 0.0   # Elixir of Might: +elixir_atk damage while > 0
 var elixir_atk := 0.0
 var goldrush_time := 0.0  # Gold Rush coin: greed surges while > 0 (run state, not saved)
@@ -1016,7 +1023,11 @@ func play_action(name: String) -> void:
 func fit_action_clip(window: float) -> void:
 	if _clip_loop or strip_frames <= 0 or window <= 0.0:
 		return
-	var natural := strip_fps
+	# Derive the AUTHORED pace from the current (possibly already-fitted) fps so
+	# a repeat call is idempotent -- the walk-fire mid-cycle re-cast re-fits the
+	# clip that is still playing, and compounding off the fitted fps would
+	# ratchet to the cap in a few casts.
+	var natural: float = strip_fps / maxf(_clip_haste, 0.001)
 	if natural <= 0.0:
 		return
 	var fitted: float = clampf(float(strip_frames) / window, natural,
@@ -1221,6 +1232,12 @@ func _ready() -> void:
 	add_child(aura)
 
 	sprite = Sprite2D.new()
+	# Painterly masters render at a fractional DOWNSCALE (~0.46× world), but
+	# the project default filter is NEAREST (pixel-art era) — point sampling
+	# the shrink drops a different texel set every frame swap, so edges crawl
+	# and detail shimmers in motion (robotic-walk fix 2026-08-27). The cast is
+	# not pixel art; sample it bilinearly.
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	_apply_class_sprite()
 	sprite.flip_h = face_left  # start facing right regardless of art
 	# The hero's CAST shadow (figure on the floor, lower-right) — added BEFORE
@@ -1247,6 +1264,7 @@ func _ready() -> void:
 	add_child(halo)
 
 	weapon_spr = Sprite2D.new()
+	weapon_spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR  # authored art, same shrink as the body
 	weapon_spr.scale = Vector2(2.4, 2.4) * Balance.CHAR_RENDER_SCALE
 	weapon_spr.visible = false
 	weapon_spr.z_index = 1
@@ -1291,6 +1309,7 @@ func _refresh_occlusion_outline() -> void:
 		var outline: Sprite2D = _occlusion_clips.get(key)
 		if outline == null:
 			outline = Sprite2D.new()
+			outline.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR  # clone of the body's pixels
 			outline.material = _occlusion_outline_mat
 			outline.add_to_group("occlusion_clip_outlines")
 			(occluder as CanvasItem).clip_children = CanvasItem.CLIP_CHILDREN_AND_DRAW

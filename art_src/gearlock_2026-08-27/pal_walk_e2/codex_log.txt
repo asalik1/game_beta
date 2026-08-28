@@ -1,0 +1,1603 @@
+﻿codex.exe : Reading prompt from stdin...
+At line:7 char:14
++ ...    $brief | & $codex exec -C $d -s workspace-write --skip-git-repo-ch ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Reading prompt from stdin...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+OpenAI Codex v0.150.0-alpha.8
+--------
+workdir: C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: xhigh
+reasoning summaries: none
+session id: 01a04583-8815-7691-8ba7-6057843a2d6c
+--------
+user
+Reproduce an 8-frame walk animation EXACTLY, with ONE correction. This is a surgical
+edit of approved art -- NOT a redesign.
+
+Reference image 1 is the CURRENT 8-frame east-facing walk strip (8 square cells). Its
+leg cycle, stride, arm swing, shield with the gold cross, hammer, chains, palette and
+proportions are all CORRECT and APPROVED -- reproduce every frame as-is.
+
+THE ONE CORRECTION, in every frame: the blue cloth. Reference 1 wrongly wraps a blue
+cloth panel around the FRONT of his hip and thigh. Reference image 2 (the idle) shows
+the correct design: the blue drape hangs ONLY BEHIND his legs, trailing at his back;
+the front leg and hip are fully ARMORED STEEL with no blue over them. Remove the front
+blue wrap; keep the behind-the-legs blue drape exactly as reference 2, identical in
+every frame. Change NOTHING else.
+
+Produce ONE image: a horizontal row of EXACTLY 8 figures, equal-width cells, all feet
+on one shared ground line, constant body height.
+
+Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE image and SAVE it to disk at the exact 
+path C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2\pal_walk_e2_row.png, then stop.
+In your final message, report frame by frame: is the front hip/thigh clean armored steel with the blue drape only 
+behind the legs.
+
+
+codex
+IΓÇÖm using the image-generation skill for this surgical sprite-strip edit. IΓÇÖll first apply the repositoryΓÇÖs 
+`CLAUDE.md` practices, then inspect and edit the supplied references, save the single 8-frame result at the exact 
+requested path, and verify every frameΓÇÖs cloth placement.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 'CLAUDE.md'; 
+Get-Content -Raw -LiteralPath 'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'" in 
+C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2
+ succeeded in 657ms:
+Get-Content : Cannot find path 'CLAUDE.md' because it does not exist.
+At line:2 char:1
++ Get-Content -Raw -LiteralPath 'CLAUDE.md'; Get-Content -Raw -LiteralP ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (CLAUDE.md:String) [Get-Content], ItemNotFoundException
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, 
+illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new 
+image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset 
+rather than repo-native code or vector. Do not use when the task is better handled by editing existing 
+SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in 
+HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product 
+mockups, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for image generation, editing, and 
+transparent-image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for or confirms the 
+CLI/API/model path. Requires `OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- For transparent images, ask built-in `image_gen` for a transparent background and preserve the generated alpha.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`; ask the user first 
+unless they explicitly requested `gpt-image-1.5`.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate 
+assets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per 
+requested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires 
+`OPENAI_API_KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK 
+runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific 
+location is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before 
+finishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the 
+default `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling 
+versioned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, 
+compositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request 
+as **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images 
+generated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool 
+so the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit 
+CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or 
+variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and 
+needs many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; 
+distinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including transparent-output requests; fallback CLI only if 
+explicitly requested or confirmed.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with 
+`view_image` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, 
+use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic 
+that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative 
+requirements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, ask built-in `image_gen` for a transparent background and preserve the generated 
+alpha channel.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default 
+`$CODEX_HOME/generated_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or 
+references. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user 
+explicitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, 
+size, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and 
+whether the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Ask built-in `image_gen` for a genuinely transparent background and preserve its alpha.
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, 
+but do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra 
+labeled line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural ├óΓé¼ΓÇ¥ candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup ├óΓé¼ΓÇ¥ product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup ├óΓé¼ΓÇ¥ app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram ├óΓé¼ΓÇ¥ diagrams/infographics with structured layout and text.
+- scientific-educational ├óΓé¼ΓÇ¥ classroom explainers, scientific diagrams, and learning visuals with required labels 
+and accuracy constraints.
+- ads-marketing ├óΓé¼ΓÇ¥ campaign concepts and ad creatives with audience, brand position, scene, and exact 
+tagline/copy.
+- productivity-visual ├óΓé¼ΓÇ¥ slide, chart, workflow, and data-heavy business visuals.
+- logo-brand ├óΓé¼ΓÇ¥ logo/mark exploration, vector-friendly.
+- illustration-story ├óΓé¼ΓÇ¥ comics, children├óΓé¼Γäós book art, narrative scenes.
+- stylized-concept ├óΓé¼ΓÇ¥ style-driven concept art, 3D/stylized renders.
+- historical-scene ├óΓé¼ΓÇ¥ period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization ├óΓé¼ΓÇ¥ translate/replace in-image text, preserve layout.
+- identity-preserve ├óΓé¼ΓÇ¥ try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit ├óΓé¼ΓÇ¥ remove/replace a specific element (including interior swaps).
+- lighting-weather ├óΓé¼ΓÇ¥ time-of-day/season/atmosphere changes only.
+- background-extraction ├óΓé¼ΓÇ¥ transparent background / clean cutout. Ask built-in `image_gen` for actual 
+transparency.
+- style-transfer ├óΓé¼ΓÇ¥ apply reference style while changing subject/scene.
+- compositing ├óΓé¼ΓÇ¥ multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render ├óΓé¼ΓÇ¥ drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D/etc>
+Composition/framing: <wide/close/top-down; placement>
+Lighting/mood: <lighting + mood>
+Color palette: <palette notes>
+Materials/textures: <surface details>
+Text (verbatim): "<exact text>"
+Constraints: <must keep/must avoid>
+Avoid: <negative constraints>
+```
+
+Notes:
+- `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
+- `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which 
+controls output transparency behavior.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong 
+in the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+
+Augmentation rules:
+- Keep it short.
+- Add only the details needed to improve the prompt materially.
+- For edits, explicitly list invariants (`change only X; keep Y unchanged`).
+- If any critical detail is missing and blocks success, ask a question; otherwise proceed.
+
+## Examples
+
+### Generation example (hero image)
+```text
+Use case: product-mockup
+Asset type: landing page hero
+Primary request: a minimal hero image of a ceramic coffee mug
+Style/medium: clean product photography
+Composition/framing: wide composition with usable negative space for page copy if needed
+Lighting/mood: soft studio lighting
+Constraints: no logos, no text, no watermark
+```
+
+### Edit example (invariants)
+```text
+Use case: precise-object-edit
+Asset type: product photo background replacement
+Primary request: replace only the background with a warm sunset gradient
+Constraints: change only the background; keep the product and its edges unchanged; no text; no watermark
+```
+
+## Prompting best practices
+- Structure prompt as scene/backdrop -> subject -> details -> constraints.
+- Include intended use (ad, UI mock, infographic) to set the mode and polish level.
+- Use camera/composition language for photorealism.
+- Only use SVG/vector stand-ins when the user explicitly asked for vector output or a non-image placeholder.
+- Quote exact text and specify typography + placement.
+- For tricky words, spell them letter-by-letter and require verbatim rendering.
+- For multi-image inputs, reference images by index and describe how they should be used.
+- For edits, repeat invariants every iteration to reduce drift.
+- Iterate with single-change follow-ups.
+- If the prompt is generic, add only the extra detail that will materially help.
+- If the prompt is already detailed, normalize it instead of expanding it.
+- For CLI fallback only, see `references/cli.md` and `references/image-api.md` for model, `quality`, `input_fidelity`, 
+masks, output format, and output-path guidance.
+- For transparent images, ask built-in `image_gen` for actual transparency and preserve its alpha.
+
+More principles shared by both modes: `references/prompting.md`.
+Copy/paste specs shared by both modes: `references/sample-prompts.md`.
+
+## Guidance by asset type
+Asset-type templates (website assets, game assets, wireframes, logo) are consolidated in 
+`references/sample-prompts.md`.
+
+## gpt-image-2 guidance for CLI fallback
+
+The fallback CLI defaults to `gpt-image-2`.
+
+- Use `gpt-image-2` for new CLI/API workflows unless the user confirms a different model.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user 
+explicitly requested that model.
+- `gpt-image-2` always uses high fidelity for image inputs; do not set `input_fidelity` with this model.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- Use `quality low` for fast drafts, thumbnails, and quick iterations. Use `medium`, `high`, or `auto` for final 
+assets, dense text, diagrams, identity-sensitive edits, or high-resolution outputs.
+- Square images are typically fastest to generate. Use `1024x1024` for fast square drafts.
+- If the user asks for 4K-style output, use `3840x2160` for landscape or `2160x3840` for portrait.
+- `gpt-image-2` size may be `auto` or `WIDTHxHEIGHT` if all constraints hold: max edge `<= 3840px`, both edges 
+multiples of `16px`, long-to-short ratio `<= 3:1`, total pixels between `655,360` and `8,294,400`.
+
+Popular `gpt-image-2` sizes:
+- `1024x1024` square
+- `1536x1024` landscape
+- `1024x1536` portrait
+- `2048x2048` 2K square
+- `2048x1152` 2K landscape
+- `3840x2160` 4K landscape
+- `2160x3840` 4K portrait
+- `auto`
+
+## Fallback CLI mode only
+
+### Temp and output conventions
+These conventions apply only to the CLI fallback. They do not describe built-in `image_gen` output behavior.
+- Use `tmp/imagegen/` for intermediate files (for example JSONL batches); delete them when done.
+- Write final artifacts under `output/imagegen/`.
+- Use `--out` or `--out-dir` to control output paths; keep filenames stable and descriptive.
+
+### Dependencies
+Prefer `uv` for dependency management in this repo.
+
+Required Python package:
+```bash
+uv pip install openai
+```
+
+Optional for image inspection and downscaling:
+```bash
+uv pip install pillow
+```
+
+Portability note:
+- If you are using the installed skill outside this repo, install dependencies into that environment with its package 
+manager.
+- In uv-managed environments, `uv pip install ...` remains the preferred path.
+
+### Environment
+- `OPENAI_API_KEY` must be set for live API calls.
+- Do not ask the user for `OPENAI_API_KEY` when using the built-in `image_gen` tool.
+- Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
+
+If the key is missing, give the user these steps:
+1. Create an API key in the OpenAI platform UI: https://platform.openai.com/api-keys
+2. Set `OPENAI_API_KEY` as an environment variable in their system.
+3. Offer to guide them through setting the environment variable for their OS/shell if needed.
+
+If installation is not possible in this environment, tell the user which dependency is missing and how to install it 
+into their active environment.
+
+### Script-mode notes
+- CLI commands + examples: `references/cli.md`
+- API parameter quick reference: `references/image-api.md`
+- Network approvals / sandbox settings for CLI mode: `references/codex-network.md`
+
+## Reference map
+- `references/prompting.md`: shared prompting principles for both modes.
+- `references/sample-prompts.md`: shared copy/paste prompt recipes for both modes.
+- `references/cli.md`: fallback-only CLI usage via `scripts/image_gen.py`.
+- `references/image-api.md`: fallback-only API/CLI parameter reference.
+- `references/codex-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
+- `scripts/image_gen.py`: fallback-only CLI implementation. Use only when the user explicitly chooses or confirms CLI 
+mode.
+
+
+codex
+The repository pointer targets `CLAUDE.md`, but that file is not present in this workspace. IΓÇÖll continue with the 
+explicit task and the image skillΓÇÖs preservation rules; no project practice file is available to apply.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\references\\prompting.md'; Get-Content -Raw -LiteralPath 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\references\\sample-prompts.md'; Get-ChildItem -LiteralPath 
+'refs' | Select-Object Name,Length" in C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2
+ succeeded in 690ms:
+# Prompting best practices
+
+These prompting principles are shared by both top-level modes of the skill:
+- built-in `image_gen` tool (default)
+- explicit `scripts/image_gen.py` CLI fallback
+
+This file is about prompt structure, specificity, and iteration. Fallback-only execution controls such as `quality`, 
+`input_fidelity`, masks, output format, and output paths live in the fallback docs.
+
+## Contents
+- [Structure](#structure)
+- [Specificity policy](#specificity-policy)
+- [Allowed and disallowed augmentation](#allowed-and-disallowed-augmentation)
+- [Composition and layout](#composition-and-layout)
+- [Constraints and invariants](#constraints-and-invariants)
+- [Text in images](#text-in-images)
+- [Input images and references](#input-images-and-references)
+- [Iterate deliberately](#iterate-deliberately)
+- [Transparent images](#transparent-images)
+- [Fallback-only execution controls](#fallback-only-execution-controls)
+- [Use-case tips](#use-case-tips)
+- [Where to find copy/paste recipes](#where-to-find-copypaste-recipes)
+
+## Structure
+- Use a consistent order: scene/backdrop -> subject -> key details -> constraints -> output intent.
+- Include intended use (ad, UI mock, infographic) to set the level of polish.
+- For complex requests, use short labeled lines instead of one long paragraph.
+
+## Specificity policy
+- If the user prompt is already specific and detailed, normalize it into a clean spec without adding creative 
+requirements.
+- If the prompt is generic, you may add tasteful detail when it materially improves the output.
+- Treat examples in `sample-prompts.md` as fully-authored recipes, not as the default amount of augmentation to add to 
+every request.
+- For photorealism, include `photorealistic` directly when that is the goal, plus concrete real-world texture such as 
+pores, wrinkles, fabric wear, material grain, or imperfect everyday detail.
+
+## Allowed and disallowed augmentation
+
+Allowed augmentation for generic prompts:
+- composition and framing cues
+- intended-use or polish-level hints
+- practical layout guidance
+- reasonable scene concreteness that supports the request
+
+Do not add:
+- extra characters, props, or objects that are not implied
+- brand palettes, slogans, or story beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Composition and layout
+- Specify framing and viewpoint (close-up, wide, top-down) and placement only when it materially helps.
+- Call out negative space if the asset clearly needs room for UI or copy.
+- Avoid making left/right layout decisions unless the user or surrounding layout supports them.
+- For people, describe body framing, scale, gaze, and object interactions when they matter (`full body visible`, 
+`looking down at the book`, `hands naturally gripping the handlebars`).
+
+## Constraints and invariants
+- State what must not change (`keep background unchanged`).
+- For edits, say `change only X; keep Y unchanged` and repeat invariants on every iteration to reduce drift.
+
+## Text in images
+- Put literal text in quotes or ALL CAPS and specify typography (font style, size, color, placement).
+- Spell uncommon words letter-by-letter if accuracy matters.
+- For in-image copy, require verbatim rendering and no extra characters.
+- In CLI fallback mode, use `medium` or `high` quality for small text, dense infographics, data-heavy slides, 
+multi-font layouts, legends, axes, and footnotes.
+
+## Input images and references
+- Do not assume that every provided image is an edit target.
+- Label each image by index and role (`Image 1: edit target`, `Image 2: style reference`).
+- If the user provides images for style, composition, or mood guidance and does not ask to modify them, treat the 
+request as generation with references.
+- If the user asks to preserve an existing image while changing specific parts, treat the request as an edit.
+- For compositing, describe how the images interact (`place the subject from Image 2 into Image 1`).
+
+## Iterate deliberately
+- Start with a clean base prompt, then make small single-change edits.
+- Re-specify critical constraints when you iterate.
+- Prefer one targeted follow-up at a time over rewriting the whole prompt.
+
+## Transparent images
+- Ask built-in `image_gen` for a genuinely transparent background and preserve its alpha.
+
+## Fallback-only execution controls
+- `quality`, `input_fidelity`, explicit masks, output format, and output paths are fallback-only execution controls.
+- Do not assume they are built-in `image_gen` tool arguments.
+- If the user explicitly chooses CLI fallback, see `references/cli.md` and `references/image-api.md` for those 
+controls.
+- In CLI fallback mode, `gpt-image-2` is the default. It supports `quality=low|medium|high|auto`; use `low` for fast 
+drafts and thumbnails, and move to `medium`, `high`, or `auto` for final assets.
+- `gpt-image-2` always uses high fidelity for image inputs, so do not set `input_fidelity` with that model.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user 
+explicitly requested that model.
+- If the user asks for 4K-style output with `gpt-image-2`, use `3840x2160` for landscape or `2160x3840` for portrait.
+
+## Use-case tips
+Generate:
+- photorealistic-natural: Prompt as if a real photo is captured in the moment; use photography language (lens, 
+lighting, framing); call for real texture; avoid over-stylized polish unless requested.
+- product-mockup: Describe the product/packaging and materials; ensure clean silhouette and label clarity; if in-image 
+text is needed, require verbatim rendering and specify typography.
+- ui-mockup: Describe the target fidelity first (shippable mockup or low-fi wireframe), then focus on layout, 
+hierarchy, and practical UI elements; avoid concept-art language.
+- infographic-diagram: Define the audience and layout flow; label parts explicitly; require verbatim text; prefer 
+higher quality in CLI mode for dense labels.
+- logo-brand: Keep it simple and scalable; ask for a strong silhouette and balanced negative space; avoid decorative 
+flourishes unless requested.
+- ads-marketing: Write like a creative brief; include brand positioning, audience, desired vibe, scene, and exact 
+tagline if text must appear.
+- productivity-visual: Name the exact artifact (slide, chart, workflow diagram), define the canvas and hierarchy, 
+provide real labels/data, and ask for readable typography and polished spacing.
+- scientific-educational: Define audience, lesson objective, required labels, scientific constraints, arrows, and 
+scan-friendly whitespace.
+- illustration-story: Define panels or scene beats; keep each action concrete.
+- stylized-concept: Specify style cues, material finish, and rendering approach (3D, painterly, clay) without 
+inventing new story elements.
+- historical-scene: State the location/date and required period accuracy; constrain clothing, props, and environment 
+to match the era.
+
+Edit:
+- text-localization: Change only the text; preserve layout, typography, spacing, and hierarchy; no extra words or 
+reflow unless needed.
+- identity-preserve: Lock identity (face, body, pose, hair, expression); change only the specified elements; match 
+lighting and shadows.
+- precise-object-edit: Specify exactly what to remove/replace; preserve surrounding texture and lighting; keep 
+everything else unchanged.
+- lighting-weather: Change only environmental conditions (light, shadows, atmosphere, precipitation); keep geometry, 
+framing, and subject identity.
+- background-extraction: Request a clean cutout on a genuinely transparent background; preserve fine edges and label 
+text; no halos or restyling.
+- style-transfer: Specify style cues to preserve (palette, texture, brushwork) and what must change; add `no extra 
+elements` to prevent drift.
+- compositing: Reference inputs by index; specify what moves where; match lighting, perspective, and scale; keep the 
+base framing unchanged.
+- sketch-to-render: Preserve layout, proportions, and perspective; choose materials and lighting that support the 
+supplied sketch without adding new elements.
+
+## Where to find copy/paste recipes
+For copy/paste prompt specs (examples only), see `references/sample-prompts.md`. This file focuses on principles, 
+specificity, and iteration patterns.
+
+# Sample prompts (copy/paste)
+
+These prompt recipes are shared across both top-level modes of the skill:
+- built-in `image_gen` tool (default)
+- `scripts/image_gen.py` CLI fallback for explicit or user-confirmed CLI/API/model requests
+
+Use these as starting points. They are intentionally complete prompt recipes, not the default amount of augmentation 
+to add to every user request.
+
+When adapting a user's prompt:
+- keep user-provided requirements
+- only add detail according to the specificity policy in `SKILL.md`
+- do not treat every example below as permission to invent extra story elements
+
+The labeled lines are prompt scaffolding, not a closed schema. `Asset type` and `Input images` are prompt-only 
+scaffolding; the CLI does not expose them as dedicated flags.
+
+Execution details such as explicit CLI flags, `quality`, `input_fidelity`, masks, output formats, and local output 
+paths depend on mode. Use built-in `image_gen` by default, request transparent backgrounds directly, and preserve the 
+generated alpha; apply CLI-specific controls only when the user chooses or confirms that fallback.
+
+CLI model notes:
+- `gpt-image-2` is the fallback CLI default for new workflows.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- For 4K-style `gpt-image-2` output, use `3840x2160` or `2160x3840`.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user 
+explicitly requested that model.
+- Do not set `input_fidelity` with `gpt-image-2`; image inputs already use high fidelity.
+
+For prompting principles (structure, specificity, invariants, iteration), see `references/prompting.md`.
+
+## Generate
+
+### photorealistic-natural
+```
+Use case: photorealistic-natural
+Primary request: candid photo of an elderly sailor on a small fishing boat adjusting a net
+Scene/backdrop: coastal water with soft haze
+Subject: weathered skin with wrinkles and sun texture
+Style/medium: photorealistic candid photo
+Composition/framing: medium close-up, eye-level
+Lighting/mood: soft coastal daylight, shallow depth of field, subtle film grain
+Materials/textures: real skin texture, worn fabric, salt-worn wood
+Constraints: natural color balance; no heavy retouching; no glamorization; no watermark
+Avoid: studio polish; staged look
+```
+
+### product-mockup
+```
+Use case: product-mockup
+Primary request: premium product photo of a matte black shampoo bottle with a minimal label
+Scene/backdrop: clean studio gradient from light gray to white
+Subject: single bottle centered with subtle reflection
+Style/medium: premium product photography
+Composition/framing: centered, slight three-quarter angle, generous padding
+Lighting/mood: softbox lighting, clean highlights, controlled shadows
+Materials/textures: matte plastic, crisp label printing
+Constraints: no logos or trademarks; no watermark
+```
+
+### ui-mockup
+```
+Use case: ui-mockup
+Primary request: mobile app home screen for a local farmers market with vendors and daily specials
+Asset type: mobile app screen
+Style/medium: realistic product UI, not concept art
+Composition/framing: clean vertical mobile layout with clear hierarchy
+Constraints: practical layout, clear typography, no logos or trademarks, no watermark
+```
+
+### infographic-diagram
+```
+Use case: infographic-diagram
+Primary request: detailed infographic of an automatic coffee machine flow
+Scene/backdrop: clean, light neutral background
+Subject: bean hopper -> grinder -> brew group -> boiler -> water tank -> drip tray
+Style/medium: clean vector-like infographic with clear callouts and arrows
+Composition/framing: vertical poster layout, top-to-bottom flow
+Text (verbatim): "Bean Hopper", "Grinder", "Brew Group", "Boiler", "Water Tank", "Drip Tray"
+Constraints: clear labels, strong contrast, no logos or trademarks, no watermark
+```
+
+### scientific-educational
+```
+Use case: scientific-educational
+Primary request: biology diagram titled "Cellular Respiration at a Glance" for high school students
+Scene/backdrop: clean white classroom handout background
+Subject: glucose turns into energy inside a cell; include glycolysis, Krebs cycle, and electron transport chain
+Style/medium: flat scientific diagram with consistent icons, arrows, and readable labels
+Composition/framing: landscape slide-style layout with clear hierarchy and generous whitespace
+Text (verbatim): "Cellular Respiration at a Glance", "Glucose", "Pyruvate", "ATP", "NADH", "FADH2", "CO2", "O2", "H2O"
+Constraints: scientifically plausible; avoid tiny text; no extra decoration; no watermark
+```
+
+### logo-brand
+```
+Use case: logo-brand
+Primary request: original logo for "Field & Flour", a local bakery
+Style/medium: vector logo mark; flat colors; minimal
+Composition/framing: single centered logo on a plain background with generous padding
+Constraints: strong silhouette, balanced negative space; original design only; no gradients unless essential; no 
+trademarks; no watermark
+```
+
+### illustration-story
+```
+Use case: illustration-story
+Primary request: 4-panel comic about a pet left alone at home
+Scene/backdrop: cozy living room across panels
+Subject: pet reacting to the owner leaving, then relaxing, then returning to a composed pose
+Style/medium: comic illustration with clear panels
+Composition/framing: 4 equal-sized vertical panels, readable actions per panel
+Constraints: no text; no logos or trademarks; no watermark
+```
+
+### stylized-concept
+```
+Use case: stylized-concept
+Primary request: cavernous hangar interior with tall support beams and drifting fog
+Scene/backdrop: industrial hangar interior, deep scale, light haze
+Subject: compact shuttle parked near the center
+Style/medium: cinematic concept art, industrial realism
+Composition/framing: wide-angle, low-angle
+Lighting/mood: volumetric light rays cutting through fog
+Constraints: no logos or trademarks; no watermark
+```
+
+### ads-marketing
+```
+Use case: ads-marketing
+Primary request: campaign image for a streetwear brand called Thread
+Subject: group of friends hanging out together in a stylish urban setting
+Style/medium: polished youth streetwear campaign photography
+Composition/framing: vertical ad layout with natural poses and integrated headline space
+Lighting/mood: contemporary, energetic, tasteful
+Text (verbatim): "Yours to Create."
+Constraints: render the tagline exactly once; clean legible typography; no extra text; no watermarks; no unrelated 
+logos
+```
+
+### productivity-visual
+```
+Use case: productivity-visual
+Primary request: one pitch-deck slide titled "Market Opportunity"
+Asset type: fundraising slide image
+Style/medium: clean modern deck slide, white background, crisp sans-serif typography
+Subject: TAM/SAM/SOM concentric-circle diagram plus a small growth bar chart from 2021 to 2026
+Composition/framing: 16:9 landscape slide, clear data hierarchy, polished spacing
+Text (verbatim): "Market Opportunity", "TAM: $42B", "SAM: $8.7B", "SOM: $340M", "AGI Research, 2024", "Internal 
+analysis"
+Constraints: readable labels, no clip art, no stock photography, no decorative clutter, no watermark
+```
+
+### historical-scene
+```
+Use case: historical-scene
+Primary request: outdoor crowd scene in Bethel, New York on August 16, 1969
+Scene/backdrop: open field with period-appropriate staging
+Subject: crowd in period-accurate clothing, authentic environment
+Style/medium: photorealistic photo
+Composition/framing: wide shot, eye-level
+Constraints: period-accurate details; no modern objects; no logos or trademarks; no watermark
+```
+
+## Asset type templates (taxonomy-aligned)
+
+### Website assets template
+```
+Use case: <photorealistic-natural|stylized-concept|product-mockup|infographic-diagram|ui-mockup>
+Asset type: <hero image / section illustration / blog header>
+Primary request: <short description>
+Scene/backdrop: <environment or abstract backdrop>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D>
+Composition/framing: <wide/centered; note usable negative space only if needed>
+Lighting/mood: <soft/bright/neutral>
+Color palette: <brand colors or neutral>
+Constraints: <no text; no logos; no watermark; leave room for UI if needed>
+```
+
+### Website assets example: minimal hero background
+```
+Use case: stylized-concept
+Asset type: landing page hero background
+Primary request: minimal abstract background with a soft gradient and subtle texture
+Style/medium: matte illustration / soft-rendered abstract background
+Composition/framing: wide composition with usable negative space for page copy
+Lighting/mood: gentle studio glow
+Color palette: restrained neutral palette
+Constraints: no text; no logos; no watermark
+```
+
+### Website assets example: feature section illustration
+```
+Use case: stylized-concept
+Asset type: feature section illustration
+Primary request: simple abstract shapes suggesting connection and flow
+Scene/backdrop: subtle light-gray backdrop with faint texture
+Style/medium: flat illustration; soft shadows; restrained contrast
+Composition/framing: centered cluster; open margins for UI
+Color palette: muted neutral palette
+Constraints: no text; no logos; no watermark
+```
+
+### Website assets example: blog header image
+```
+Use case: photorealistic-natural
+Asset type: blog header image
+Primary request: overhead desk scene with notebook, pen, and coffee cup
+Scene/backdrop: warm wooden tabletop
+Style/medium: photorealistic photo
+Composition/framing: wide crop with clean room for page copy
+Lighting/mood: soft morning light
+Constraints: no text; no logos; no watermark
+```
+
+### Game assets template
+```
+Use case: stylized-concept
+Asset type: <game environment concept art / game character concept / game UI icon / tileable game texture>
+Primary request: <biome/scene/character/icon/material>
+Scene/backdrop: <location + set dressing> (if applicable)
+Subject: <main focal element(s)>
+Style/medium: <realistic/stylized>; <concept art / character render / UI icon / texture>
+Composition/framing: <wide/establishing/top-down>; <camera angle>; <focal point placement>
+Lighting/mood: <time of day>; <mood>; <volumetric/fog/etc>
+Constraints: no logos or trademarks; no watermark
+```
+
+### Game assets example: environment concept art
+```
+Use case: stylized-concept
+Asset type: game environment concept art
+Primary request: cavernous hangar interior with tall support beams and drifting fog
+Scene/backdrop: industrial hangar interior, deep scale, light haze
+Subject: compact shuttle parked near the center
+Style/medium: cinematic concept art, industrial realism
+Composition/framing: wide-angle, low-angle
+Lighting/mood: volumetric light rays cutting through fog
+Constraints: no logos or trademarks; no watermark
+```
+
+### Game assets example: character concept
+```
+Use case: stylized-concept
+Asset type: game character concept
+Primary request: desert scout character with layered travel gear
+Subject: long coat, satchel, practical travel clothing
+Style/medium: character render; stylized realism
+Composition/framing: neutral hero pose on a simple backdrop
+Constraints: no logos or trademarks; no watermark
+```
+
+### Game assets example: UI icon
+```
+Use case: stylized-concept
+Asset type: game UI icon
+Primary request: round shield icon with a subtle rune pattern
+Style/medium: painted game UI icon
+Composition/framing: centered icon; generous padding; clear silhouette
+Constraints: no text; no background scene elements; no logos or trademarks; no watermark
+```
+
+### Game assets example: tileable texture
+```
+Use case: stylized-concept
+Asset type: tileable game texture
+Primary request: worn sandstone blocks
+Style/medium: seamless tileable texture; PBR-ish look
+Scene/backdrop: neutral lighting reference only
+Constraints: seamless edges; no obvious focal elements; no text; no logos or trademarks; no watermark
+```
+
+### Wireframe template
+```
+Use case: ui-mockup
+Asset type: website wireframe
+Primary request: <page or flow to sketch>
+Style/medium: low-fi grayscale wireframe
+Composition/framing: <landscape or portrait to match expected device>
+Subject: <sections in order; grid/columns; key labels>
+Constraints: no color; no logos; no real photos; no watermark
+```
+
+### Wireframe example: homepage (desktop)
+```
+Use case: ui-mockup
+Asset type: website wireframe
+Primary request: SaaS homepage layout with clear hierarchy
+Style/medium: low-fi grayscale wireframe
+Subject: top nav; hero with headline and CTA; three feature cards; testimonial strip; pricing preview; footer
+Composition/framing: landscape desktop layout
+Constraints: label major blocks; no color; no logos; no real photos; no watermark
+```
+
+### Wireframe example: pricing page
+```
+Use case: ui-mockup
+Asset type: website wireframe
+Primary request: pricing page layout with comparison table
+Style/medium: low-fi grayscale wireframe
+Subject: header; plan toggle; 3 pricing cards; comparison table; FAQ accordion; footer
+Composition/framing: desktop or tablet layout
+Constraints: label key areas; no color; no logos; no real photos; no watermark
+```
+
+### Wireframe example: mobile onboarding flow
+```
+Use case: ui-mockup
+Asset type: mobile onboarding wireframe
+Primary request: three-screen mobile onboarding flow
+Style/medium: low-fi grayscale wireframe
+Subject: screen 1 headline and CTA; screen 2 feature bullets; screen 3 form fields and CTA
+Composition/framing: portrait mobile layout
+Constraints: label screens and blocks; no color; no logos; no real photos; no watermark
+```
+
+### Logo template
+```
+Use case: logo-brand
+Asset type: logo concept
+Primary request: <brand idea or symbol concept>
+Style/medium: vector logo mark; flat colors; minimal
+Composition/framing: centered mark; clear silhouette; generous margin
+Color palette: <1-2 colors; high contrast>
+Text (verbatim): "<exact name>" (only if needed)
+Constraints: no gradients; no mockups; no 3D; no watermark
+```
+
+### Logo example: abstract symbol mark
+```
+Use case: logo-brand
+Asset type: logo concept
+Primary request: geometric leaf symbol suggesting sustainability and growth
+Style/medium: vector logo mark; flat colors; minimal
+Composition/framing: centered mark; clear silhouette
+Color palette: deep green and off-white
+Constraints: no text unless requested; no gradients; no mockups; no 3D; no watermark
+```
+
+### Logo example: monogram mark
+```
+Use case: logo-brand
+Asset type: logo concept
+Primary request: interlocking monogram of the letters "AV"
+Style/medium: vector logo mark; flat colors; minimal
+Composition/framing: centered mark; balanced spacing
+Color palette: black on white
+Constraints: no gradients; no mockups; no 3D; no watermark
+```
+
+### Logo example: wordmark
+```
+Use case: logo-brand
+Asset type: logo concept
+Primary request: clean wordmark for a modern studio
+Style/medium: vector wordmark; flat colors; minimal
+Text (verbatim): "Studio North"
+Composition/framing: centered text; even letter spacing
+Constraints: no gradients; no mockups; no 3D; no watermark
+```
+
+## Edit
+
+### text-localization
+```
+Use case: text-localization
+Input images: Image 1: original infographic
+Primary request: replace "Bean Hopper", "Grinder", "Brew Group", "Boiler", "Water Tank", and "Drip Tray" with "Tolva", 
+"Molino", "Grupo de infusi├â┬│n", "Caldera", "Dep├â┬│sito de agua", and "Bandeja de goteo"
+Constraints: change only the text; preserve layout, typography, spacing, and hierarchy; no extra words; do not alter 
+logos or imagery
+```
+
+### identity-preserve
+```
+Use case: identity-preserve
+Input images: Image 1: person photo; Image 2..N: clothing references
+Primary request: replace only the clothing with the provided garments
+Constraints: preserve face, body shape, pose, hair, expression, and identity; match lighting and shadows; keep the 
+background unchanged; no accessories or text
+```
+
+### precise-object-edit
+```
+Use case: precise-object-edit
+Input images: Image 1: room photo
+Primary request: replace only the white chairs with wooden chairs
+Constraints: preserve camera angle, room lighting, floor shadows, and surrounding objects; keep all other aspects 
+unchanged
+```
+
+### lighting-weather
+```
+Use case: lighting-weather
+Input images: Image 1: original photo
+Primary request: make it look like a winter evening with gentle snowfall
+Constraints: preserve subject identity, geometry, camera angle, and composition; change only lighting, atmosphere, and 
+weather
+```
+
+### style-transfer
+```
+Use case: style-transfer
+Input images: Image 1: style reference
+Primary request: apply Image 1's visual style to a man riding a motorcycle on a plain white backdrop
+Constraints: preserve palette, texture, and brushwork; no extra elements
+```
+
+### compositing
+```
+Use case: compositing
+Input images: Image 1: base scene; Image 2: subject to insert
+Primary request: place the subject from Image 2 next to the person in Image 1
+Constraints: match lighting, perspective, and scale; keep the base framing unchanged; no extra elements
+```
+
+### character consistency workflow
+```
+Use case: identity-preserve
+Input images: Image 1: previous character anchor illustration
+Primary request: continue the story with the same character in a new scene and action
+Scene/backdrop: snowy forest after a winter storm
+Subject: same young forest hero gently helping a frightened squirrel out of a fallen tree
+Style/medium: same children's book watercolor illustration style as Image 1
+Constraints: do not redesign the character; preserve facial features, proportions, outfit, color palette, and 
+personality; no text; no watermark
+```
+
+### sketch-to-render
+```
+Use case: sketch-to-render
+Input images: Image 1: drawing
+Primary request: turn the drawing into a photorealistic image
+Constraints: preserve layout, proportions, and perspective; choose realistic materials and lighting; do not add new 
+elements or text
+```
+
+
+Name          Length
+----          ------
+ref1_walk.png 370980
+ref2_idle.png 179504
+
+
+
+codex
+IΓÇÖve inspected both source strips. The edit is locked to one garment correction plus the requested uniform green 
+backdrop: all eight approved walk poses, equipment, proportions, spacing, and ground alignment remain invariant.
+codex
+The generated strip has the correct count and corrected armor/cloth relationship, but its canvas is taller than a 
+square-cell sprite row and the green is slightly shaded. IΓÇÖm normalizing those two output-format requirements 
+onlyΓÇöcropping to eight equal square cells and forcing all background pixels to exact `#00ff00`ΓÇöwithout touching 
+the figures.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$img = '"'C:\\Users\\asali\\.codex\\generate
+d_images\\01a04583-8815-7691-8ba7-6057843a2d6c\\exec-757e74cd-fcb2-489d-9ce8-9f47bb2d0a07.png'; Copy-Item -LiteralPath 
+"'$img -Destination 
+'"'C:\\Users\\asali\\Projects\\MMO\\art_src\\gearlock_2026-08-27\\pal_walk_e2\\pal_walk_e2_row.png' -Force; 
+Get-Command magick -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source; Add-Type -AssemblyName 
+System.Drawing; "'$b=[System.Drawing.Bitmap]::FromFile('"'C:\\Users\\asali\\Projects\\MMO\\art_src\\gearlock_2026-08-27
+\\pal_walk_e2\\pal_walk_e2_row.png'); \"SIZE="'$($b.Width)x$($b.Height)"; $b.Dispose()' in 
+C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2
+ succeeded in 6852ms:
+SIZE=2172x724
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; 
+$p='"'C:\\Users\\asali\\Projects\\MMO\\art_src\\gearlock_2026-08-27\\pal_walk_e2\\pal_walk_e2_row.png'; 
+"'$b=[System.Drawing.Bitmap]::FromFile($p); $minX=$b.Width; $maxX=-1; $minY=$b.Height; $maxY=-1; $rows=New-Object 
+int[] $b.Height; for($y=0;$y -lt $b.Height;$y++){ for($x=0;$x -lt $b.Width;$x++){ $c=$b.GetPixel($x,$y); 
+$isGreen=($c.G -gt 110 -and $c.G -gt ($c.R*1.35) -and $c.G -gt ($c.B*1.35)); if(-not $isGreen){ if($x -lt 
+$minX){$minX=$x}; if($x -gt $maxX){$maxX=$x}; if($y -lt $minY){$minY=$y}; if($y -gt $maxY){$maxY=$y}; $rows[$y]++ } } 
+}; "BBOX=$minX,$minY to $maxX,$maxY"; for($y=0;$y -lt $b.Height;$y++){if($rows[$y] -gt 0){"ROW $y $($rows[$y])"}}; 
+$b.Dispose()' in C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2
+ succeeded in 16734ms:
+BBOX=66,221 to 2100,501
+ROW 221 7
+ROW 222 19
+ROW 223 30
+ROW 224 46
+ROW 225 68
+ROW 226 81
+ROW 227 104
+ROW 228 142
+ROW 229 175
+ROW 230 198
+ROW 231 217
+ROW 232 236
+ROW 233 248
+ROW 234 258
+ROW 235 264
+ROW 236 271
+ROW 237 275
+ROW 238 277
+ROW 239 282
+ROW 240 283
+ROW 241 285
+ROW 242 288
+ROW 243 289
+ROW 244 291
+ROW 245 291
+ROW 246 292
+ROW 247 292
+ROW 248 291
+ROW 249 290
+ROW 250 290
+ROW 251 288
+ROW 252 295
+ROW 253 304
+ROW 254 303
+ROW 255 307
+ROW 256 312
+ROW 257 320
+ROW 258 320
+ROW 259 329
+ROW 260 341
+ROW 261 346
+ROW 262 350
+ROW 263 354
+ROW 264 365
+ROW 265 367
+ROW 266 374
+ROW 267 381
+ROW 268 386
+ROW 269 389
+ROW 270 396
+ROW 271 402
+ROW 272 413
+ROW 273 425
+ROW 274 432
+ROW 275 438
+ROW 276 446
+ROW 277 454
+ROW 278 462
+ROW 279 464
+ROW 280 475
+ROW 281 477
+ROW 282 481
+ROW 283 487
+ROW 284 490
+ROW 285 492
+ROW 286 495
+ROW 287 498
+ROW 288 499
+ROW 289 502
+ROW 290 502
+ROW 291 505
+ROW 292 508
+ROW 293 510
+ROW 294 513
+ROW 295 517
+ROW 296 517
+ROW 297 521
+ROW 298 521
+ROW 299 522
+ROW 300 524
+ROW 301 549
+ROW 302 567
+ROW 303 581
+ROW 304 595
+ROW 305 611
+ROW 306 630
+ROW 307 654
+ROW 308 689
+ROW 309 708
+ROW 310 721
+ROW 311 730
+ROW 312 734
+ROW 313 737
+ROW 314 739
+ROW 315 741
+ROW 316 743
+ROW 317 747
+ROW 318 754
+ROW 319 756
+ROW 320 758
+ROW 321 761
+ROW 322 763
+ROW 323 764
+ROW 324 764
+ROW 325 766
+ROW 326 769
+ROW 327 769
+ROW 328 768
+ROW 329 768
+ROW 330 767
+ROW 331 766
+ROW 332 764
+ROW 333 763
+ROW 334 761
+ROW 335 759
+ROW 336 759
+ROW 337 760
+ROW 338 759
+ROW 339 758
+ROW 340 758
+ROW 341 758
+ROW 342 759
+ROW 343 758
+ROW 344 758
+ROW 345 758
+ROW 346 757
+ROW 347 755
+ROW 348 754
+ROW 349 753
+ROW 350 754
+ROW 351 752
+ROW 352 748
+ROW 353 746
+ROW 354 752
+ROW 355 767
+ROW 356 772
+ROW 357 773
+ROW 358 778
+ROW 359 787
+ROW 360 795
+ROW 361 800
+ROW 362 807
+ROW 363 813
+ROW 364 814
+ROW 365 815
+ROW 366 810
+ROW 367 806
+ROW 368 804
+ROW 369 800
+ROW 370 792
+ROW 371 786
+ROW 372 779
+ROW 373 776
+ROW 374 775
+ROW 375 770
+ROW 376 769
+ROW 377 771
+ROW 378 772
+ROW 379 772
+ROW 380 770
+ROW 381 771
+ROW 382 773
+ROW 383 774
+ROW 384 771
+ROW 385 771
+ROW 386 771
+ROW 387 773
+ROW 388 769
+ROW 389 772
+ROW 390 773
+ROW 391 771
+ROW 392 771
+ROW 393 769
+ROW 394 769
+ROW 395 774
+ROW 396 770
+ROW 397 771
+ROW 398 770
+ROW 399 773
+ROW 400 770
+ROW 401 770
+ROW 402 768
+ROW 403 769
+ROW 404 765
+ROW 405 767
+ROW 406 765
+ROW 407 763
+ROW 408 763
+ROW 409 764
+ROW 410 762
+ROW 411 761
+ROW 412 765
+ROW 413 769
+ROW 414 770
+ROW 415 774
+ROW 416 779
+ROW 417 780
+ROW 418 783
+ROW 419 784
+ROW 420 789
+ROW 421 793
+ROW 422 795
+ROW 423 798
+ROW 424 799
+ROW 425 807
+ROW 426 807
+ROW 427 813
+ROW 428 815
+ROW 429 819
+ROW 430 824
+ROW 431 830
+ROW 432 834
+ROW 433 840
+ROW 434 841
+ROW 435 846
+ROW 436 849
+ROW 437 856
+ROW 438 859
+ROW 439 865
+ROW 440 870
+ROW 441 876
+ROW 442 883
+ROW 443 887
+ROW 444 892
+ROW 445 893
+ROW 446 891
+ROW 447 893
+ROW 448 893
+ROW 449 898
+ROW 450 897
+ROW 451 897
+ROW 452 895
+ROW 453 881
+ROW 454 869
+ROW 455 850
+ROW 456 833
+ROW 457 823
+ROW 458 798
+ROW 459 768
+ROW 460 735
+ROW 461 704
+ROW 462 667
+ROW 463 642
+ROW 464 614
+ROW 465 579
+ROW 466 531
+ROW 467 501
+ROW 468 486
+ROW 469 456
+ROW 470 435
+ROW 471 414
+ROW 472 394
+ROW 473 379
+ROW 474 361
+ROW 475 354
+ROW 476 356
+ROW 477 368
+ROW 478 366
+ROW 479 360
+ROW 480 365
+ROW 481 367
+ROW 482 378
+ROW 483 380
+ROW 484 399
+ROW 485 406
+ROW 486 423
+ROW 487 450
+ROW 488 467
+ROW 489 477
+ROW 490 484
+ROW 491 488
+ROW 492 492
+ROW 493 479
+ROW 494 447
+ROW 495 417
+ROW 496 403
+ROW 497 390
+ROW 498 353
+ROW 499 253
+ROW 500 50
+ROW 501 4
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; 
+foreach($p in @('"'refs\\ref1_walk.png','refs\\ref2_idle.png')){"'$b=[System.Drawing.Bitmap]::FromFile((Resolve-Path 
+$p)); "$p=$($b.Width)x$($b.Height)"; $b.Dispose()}' in 
+C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2
+ succeeded in 689ms:
+refs\ref1_walk.png=2216x277
+refs\ref2_idle.png=1108x277
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; 
+function Get-Bounds($path,$segments,$mode){$b=[System.Drawing.Bitmap]::FromFile($path); for($i=0;$i -lt 
+$segments;$i++){ $x0=[math]::Floor($i*$b.Width/$segments); $x1=[math]::Floor(($i+1)*$b.Width/$segments)-1; $minX=$x1; 
+$maxX=$x0; $minY=$b.Height; $maxY=-1; for($y=0;$y -lt $b.Height;$y++){for($x=$x0;$x -le $x1;$x++){ 
+$c=$b.GetPixel($x,$y); $black=($c.R -lt 16 -and $c.G -lt 16 -and $c.B -lt 16); $green=($c.G -gt 110 -and $c.G -gt 
+($c.R*1.35) -and $c.G -gt ($c.B*1.35)); if(-not ($black -or $green)){if($x -lt $minX){$minX=$x};if($x -gt 
+$maxX){$maxX=$x};if($y -lt $minY){$minY=$y};if($y -gt $maxY){$maxY=$y}} }}; "${mode} frame$($i+1): cell=$x0..$x1 
+bbox=$minX,$minY..$maxX,$maxY size=$($maxX-$minX+1)x$($maxY-$minY+1)" }; $b.Dispose() }; Get-Bounds (Resolve-Path 
+'"'refs\\ref1_walk.png') 8 'ref'; Get-Bounds (Resolve-Path 'pal_walk_e2_row.png') 8 'gen'" in 
+C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2
+ succeeded in 9469ms:
+ref frame1: cell=0..276 bbox=74,14..198,254 size=125x241
+ref frame2: cell=277..553 bbox=359,17..497,254 size=139x238
+ref frame3: cell=554..830 bbox=623,23..742,253 size=120x231
+ref frame4: cell=831..1107 bbox=919,21..1019,254 size=101x234
+ref frame5: cell=1108..1384 bbox=1184,27..1293,253 size=110x227
+ref frame6: cell=1385..1661 bbox=1459,24..1572,254 size=114x231
+ref frame7: cell=1662..1938 bbox=1732,24..1846,254 size=115x231
+ref frame8: cell=1939..2215 bbox=2013,23..2134,254 size=122x232
+gen frame1: cell=0..270 bbox=66,224..211,500 size=146x277
+gen frame2: cell=271..542 bbox=345,221..478,499 size=134x279
+gen frame3: cell=543..813 bbox=609,227..754,499 size=146x273
+gen frame4: cell=814..1085 bbox=907,222..1030,500 size=124x279
+gen frame5: cell=1086..1356 bbox=1167,229..1295,500 size=129x272
+gen frame6: cell=1357..1628 bbox=1425,225..1561,501 size=137x277
+gen frame7: cell=1629..1899 bbox=1700,228..1834,500 size=135x273
+gen frame8: cell=1900..2171 bbox=1955,228..2100,500 size=146x273
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; 
+Add-Type -AssemblyName System.Drawing.Common -ErrorAction SilentlyContinue; $srcPath='"'C:\\Users\\asali\\.codex\\gener
+ated_images\\01a04583-8815-7691-8ba7-6057843a2d6c\\exec-757e74cd-fcb2-489d-9ce8-9f47bb2d0a07.png'; 
+"'$refPath=(Resolve-Path '"'refs\\ref1_walk.png').Path; "'$outPath=(Join-Path (Get-Location) '"'pal_walk_e2_row.png'); 
+"'$src=[System.Drawing.Bitmap]::FromFile($srcPath); $ref=[System.Drawing.Bitmap]::FromFile($refPath); $cell=277; 
+$out=New-Object System.Drawing.Bitmap 2216,277,[System.Drawing.Imaging.PixelFormat]::Format32bppArgb; 
+$g=[System.Drawing.Graphics]::FromImage($out); $g.Clear([System.Drawing.Color]::FromArgb(255,0,255,0)); 
+$g.CompositingMode=[System.Drawing.Drawing2D.CompositingMode]::SourceOver; 
+$g.CompositingQuality=[System.Drawing.Drawing2D.CompositingQuality]::HighQuality; 
+$g.InterpolationMode=[System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic; 
+$g.PixelOffsetMode=[System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality; $scale=0.85; for($i=0;$i -lt 8;$i++){ 
+$sx0=[math]::Floor($i*$src.Width/8); $sx1=[math]::Floor(($i+1)*$src.Width/8)-1; $minX=$sx1; $maxX=$sx0; 
+$minY=$src.Height; $maxY=-1; for($y=0;$y -lt $src.Height;$y++){for($x=$sx0;$x -le $sx1;$x++){ $c=$src.GetPixel($x,$y); 
+$isGreen=($c.G -gt 20 -and $c.G -gt ($c.R*1.25) -and $c.G -gt ($c.B*1.25)); if(-not $isGreen){if($x -lt 
+$minX){$minX=$x};if($x -gt $maxX){$maxX=$x};if($y -lt $minY){$minY=$y};if($y -gt $maxY){$maxY=$y}} }}; $pad=2; 
+$minX=[math]::Max($sx0,$minX-$pad); $maxX=[math]::Min($sx1,$maxX+$pad); $minY=[math]::Max(0,$minY-$pad); 
+$maxY=[math]::Min($src.Height-1,$maxY+$pad); $w=$maxX-$minX+1; $h=$maxY-$minY+1; $cut=New-Object System.Drawing.Bitmap 
+$w,$h,[System.Drawing.Imaging.PixelFormat]::Format32bppArgb; for($yy=0;$yy -lt $h;$yy++){for($xx=0;$xx -lt $w;$xx++){ 
+$c=$src.GetPixel($minX+$xx,$minY+$yy); $isGreen=($c.G -gt 20 -and $c.G -gt ($c.R*1.25) -and $c.G -gt ($c.B*1.25)); 
+if($isGreen){$cut.SetPixel($xx,$yy,[System.Drawing.Color]::Transparent)}else{$cut.SetPixel($xx,$yy,$c)} }}; 
+$rw0=$i*$cell; $rw1=$rw0+$cell-1; $rmin=$rw1; $rmax=$rw0; for($ry=0;$ry -lt $ref.Height;$ry++){for($rx=$rw0;$rx -le 
+$rw1;$rx++){ $rc=$ref.GetPixel($rx,$ry); $black=($rc.R -lt 16 -and $rc.G -lt 16 -and $rc.B -lt 16); $green=($rc.G -gt 
+20 -and $rc.G -gt ($rc.R*1.25) -and $rc.G -gt ($rc.B*1.25)); if(-not ($black -or $green)){if($rx -lt 
+$rmin){$rmin=$rx};if($rx -gt $rmax){$rmax=$rx}} }}; $targetCenter=($rmin+$rmax)/2.0; 
+$dw=[math]::Max(1,[math]::Round($w*$scale)); $dh=[math]::Max(1,[math]::Round($h*$scale)); 
+$dx=[math]::Round($targetCenter-$dw/2.0); $dy=255-$dh; $dest=New-Object System.Drawing.Rectangle $dx,$dy,$dw,$dh; 
+$g.DrawImage($cut,$dest,0,0,$w,$h,[System.Drawing.GraphicsUnit]::Pixel); $cut.Dispose(); "frame$($i+1): source=$w x $h 
+target=$dw x $dh at $dx,$dy" }; $g.Dispose(); $ref.Dispose(); $src.Dispose(); 
+$out.Save($outPath,[System.Drawing.Imaging.ImageFormat]::Png); $out.Dispose(); 
+$check=[System.Drawing.Bitmap]::FromFile($outPath); "SAVED=$outPath SIZE=$($check.Width)x$($check.Height)"; 
+$check.Dispose()' in C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2
+codex
+The first normalization pass hit a Windows image-library constructor error before saving, so the requested file is 
+still the untouched generated copy. IΓÇÖm correcting that tooling issue now and will verify the saved PNG visually and 
+by dimensions afterward.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$ErrorActionPreference='"'Stop'; Add-Type 
+-AssemblyName System.Drawing; "'$t=[System.Drawing.Bitmap]::new(10,10); "OK=$($t.Width)x$($t.Height)"; $t.Dispose()' 
+in C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2
+ succeeded in 579ms:
+OK=10x10
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$ErrorActionPreference='"'Stop'; Add-Type 
+-AssemblyName System.Drawing; "'$srcPath='"'C:\\Users\\asali\\.codex\\generated_images\\01a04583-8815-7691-8ba7-6057843
+a2d6c\\exec-757e74cd-fcb2-489d-9ce8-9f47bb2d0a07.png'; "'$refPath=(Resolve-Path '"'refs\\ref1_walk.png').Path; 
+"'$outPath=(Join-Path (Get-Location) '"'pal_walk_e2_row.png'); "'$src=[System.Drawing.Bitmap]::FromFile($srcPath); 
+$ref=[System.Drawing.Bitmap]::FromFile($refPath); $cell=277; $out=[System.Drawing.Bitmap]::new(2216,277); 
+$g=[System.Drawing.Graphics]::FromImage($out); $g.Clear([System.Drawing.Color]::FromArgb(255,0,255,0)); 
+$g.CompositingMode=[System.Drawing.Drawing2D.CompositingMode]::SourceOver; 
+$g.CompositingQuality=[System.Drawing.Drawing2D.CompositingQuality]::HighQuality; 
+$g.InterpolationMode=[System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic; 
+$g.PixelOffsetMode=[System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality; $scale=0.85; for($i=0;$i -lt 8;$i++){ 
+$sx0=[math]::Floor($i*$src.Width/8); $sx1=[math]::Floor(($i+1)*$src.Width/8)-1; $minX=$sx1; $maxX=$sx0; 
+$minY=$src.Height; $maxY=-1; for($y=0;$y -lt $src.Height;$y++){for($x=$sx0;$x -le $sx1;$x++){ $c=$src.GetPixel($x,$y); 
+$isGreen=($c.G -gt 20 -and $c.G -gt ($c.R*1.25) -and $c.G -gt ($c.B*1.25)); if(-not $isGreen){if($x -lt 
+$minX){$minX=$x};if($x -gt $maxX){$maxX=$x};if($y -lt $minY){$minY=$y};if($y -gt $maxY){$maxY=$y}} }}; $pad=2; 
+$minX=[math]::Max($sx0,$minX-$pad); $maxX=[math]::Min($sx1,$maxX+$pad); $minY=[math]::Max(0,$minY-$pad); 
+$maxY=[math]::Min($src.Height-1,$maxY+$pad); $w=$maxX-$minX+1; $h=$maxY-$minY+1; 
+$cut=[System.Drawing.Bitmap]::new($w,$h); for($yy=0;$yy -lt $h;$yy++){for($xx=0;$xx -lt $w;$xx++){ 
+$c=$src.GetPixel($minX+$xx,$minY+$yy); $isGreen=($c.G -gt 20 -and $c.G -gt ($c.R*1.25) -and $c.G -gt ($c.B*1.25)); 
+if($isGreen){$cut.SetPixel($xx,$yy,[System.Drawing.Color]::Transparent)}else{$cut.SetPixel($xx,$yy,$c)} }}; 
+$rw0=$i*$cell; $rw1=$rw0+$cell-1; $rmin=$rw1; $rmax=$rw0; for($ry=0;$ry -lt $ref.Height;$ry++){for($rx=$rw0;$rx -le 
+$rw1;$rx++){ $rc=$ref.GetPixel($rx,$ry); $black=($rc.R -lt 16 -and $rc.G -lt 16 -and $rc.B -lt 16); $green=($rc.G -gt 
+20 -and $rc.G -gt ($rc.R*1.25) -and $rc.G -gt ($rc.B*1.25)); if(-not ($black -or $green)){if($rx -lt 
+$rmin){$rmin=$rx};if($rx -gt $rmax){$rmax=$rx}} }}; $targetCenter=($rmin+$rmax)/2.0; 
+$dw=[math]::Max(1,[math]::Round($w*$scale)); $dh=[math]::Max(1,[math]::Round($h*$scale)); 
+$dx=[math]::Round($targetCenter-$dw/2.0); $dy=255-$dh; $dest=[System.Drawing.Rectangle]::new($dx,$dy,$dw,$dh); 
+$g.DrawImage($cut,$dest); $cut.Dispose(); "frame$($i+1): ${dw}x${dh} at ${dx},${dy}" }; $g.Dispose(); $ref.Dispose(); 
+$src.Dispose(); $out.Save($outPath,[System.Drawing.Imaging.ImageFormat]::Png); $out.Dispose(); 
+$check=[System.Drawing.Bitmap]::FromFile($outPath); "SAVED=$outPath SIZE=$($check.Width)x$($check.Height)"; 
+$check.Dispose()' in C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2
+ exited 1 in 3626ms:
+Exception calling ".ctor" with "2" argument(s): "Parameter is not valid."
+At line:2 char:1557
++ ... 1; $h=$maxY-$minY+1; $cut=[System.Drawing.Bitmap]::new($w,$h); for($y ...
++                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : ArgumentException
+ 
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$ErrorActionPreference='"'Stop'; Add-Type 
+-AssemblyName System.Drawing; "'$src=[System.Drawing.Bitmap]::FromFile('"'C:\\Users\\asali\\.codex\\generated_images\\0
+1a04583-8815-7691-8ba7-6057843a2d6c\\exec-757e74cd-fcb2-489d-9ce8-9f47bb2d0a07.png'); "'$sx0=0; 
+$sx1=[math]::Floor($src.Width/8)-1; $minX=$sx1; $maxX=$sx0; $minY=$src.Height; $maxY=-1; for($y=0;$y -lt 
+$src.Height;$y++){for($x=$sx0;$x -le $sx1;$x++){ $c=$src.GetPixel($x,$y); $isGreen=($c.G -gt 20 -and $c.G -gt 
+($c.R*1.25) -and $c.G -gt ($c.B*1.25)); if(-not $isGreen){if($x -lt $minX){$minX=$x};if($x -gt $maxX){$maxX=$x};if($y 
+-lt $minY){$minY=$y};if($y -gt $maxY){$maxY=$y}} }}; "bbox=$minX,$minY,$maxX,$maxY"; 
+$minX=[int][math]::Max($sx0,$minX-2); $maxX=[int][math]::Min($sx1,$maxX+2); $minY=[int][math]::Max(0,$minY-2); 
+$maxY=[int][math]::Min($src.Height-1,$maxY+2); $w=[int]($maxX-$minX+1); $h=[int]($maxY-$minY+1); "w=$w $($w.GetType()) 
+h=$h $($h.GetType())"; $cut=[System.Drawing.Bitmap]::new($w,$h); "created=$($cut.Width)x$($cut.Height)"; 
+$cut.Dispose();$src.Dispose()' in C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2
+ succeeded in 2622ms:
+bbox=66,225,211,499
+w=150 int h=279 int
+created=150x279
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$ErrorActionPreference='"'Stop'; Add-Type 
+-AssemblyName System.Drawing; "'$src=[System.Drawing.Bitmap]::FromFile('"'C:\\Users\\asali\\.codex\\generated_images\\0
+1a04583-8815-7691-8ba7-6057843a2d6c\\exec-757e74cd-fcb2-489d-9ce8-9f47bb2d0a07.png'); for("'$i=0;$i -lt 8;$i++){ 
+$sx0=[int][math]::Floor($i*$src.Width/8); $sx1=[int]([math]::Floor(($i+1)*$src.Width/8)-1); $minX=$sx1; $maxX=$sx0; 
+$minY=$src.Height; $maxY=-1; for($y=0;$y -lt $src.Height;$y++){for($x=$sx0;$x -le $sx1;$x++){ $c=$src.GetPixel($x,$y); 
+$isGreen=($c.G -gt 20 -and $c.G -gt ($c.R*1.25) -and $c.G -gt ($c.B*1.25)); if(-not $isGreen){if($x -lt 
+$minX){$minX=$x};if($x -gt $maxX){$maxX=$x};if($y -lt $minY){$minY=$y};if($y -gt $maxY){$maxY=$y}} }}; "$i 
+bbox=$minX,$minY..$maxX,$maxY w=$($maxX-$minX+5) h=$($maxY-$minY+5)" }; $src.Dispose()' in 
+C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2
+ succeeded in 15549ms:
+0 bbox=66,225..211,499 w=150 h=279
+1 bbox=345,222..477,499 w=137 h=282
+2 bbox=609,228..754,498 w=150 h=275
+3 bbox=907,223..1030,499 w=128 h=281
+4 bbox=1167,229..1294,499 w=132 h=275
+5 bbox=1425,226..1561,500 w=141 h=279
+6 bbox=1702,229..1834,499 w=137 h=275
+7 bbox=1955,229..2099,499 w=149 h=275
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$ErrorActionPreference='"'Stop'; Add-Type 
+-AssemblyName System.Drawing; "'$srcPath='"'C:\\Users\\asali\\.codex\\generated_images\\01a04583-8815-7691-8ba7-6057843
+a2d6c\\exec-757e74cd-fcb2-489d-9ce8-9f47bb2d0a07.png'; "'$refPath=(Resolve-Path '"'refs\\ref1_walk.png').Path; 
+"'$outPath=(Join-Path (Get-Location) '"'pal_walk_e2_row.png'); "'$src=[System.Drawing.Bitmap]::FromFile($srcPath); 
+$ref=[System.Drawing.Bitmap]::FromFile($refPath); $cell=277; $out=[System.Drawing.Bitmap]::new(2216,277); 
+$g=[System.Drawing.Graphics]::FromImage($out); $g.Clear([System.Drawing.Color]::FromArgb(255,0,255,0)); 
+$g.CompositingMode=[System.Drawing.Drawing2D.CompositingMode]::SourceOver; 
+$g.CompositingQuality=[System.Drawing.Drawing2D.CompositingQuality]::HighQuality; 
+$g.InterpolationMode=[System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic; 
+$g.PixelOffsetMode=[System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality; $scale=0.85; for($i=0;$i -lt 8;$i++){ 
+$sx0=[int][math]::Floor($i*$src.Width/8); $sx1=[int]([math]::Floor(($i+1)*$src.Width/8)-1); $minX=$sx1; $maxX=$sx0; 
+$minY=$src.Height; $maxY=-1; for($y=0;$y -lt $src.Height;$y++){for($x=$sx0;$x -le $sx1;$x++){ $c=$src.GetPixel($x,$y); 
+$isGreen=($c.G -gt 20 -and $c.G -gt ($c.R*1.25) -and $c.G -gt ($c.B*1.25)); if(-not $isGreen){if($x -lt 
+$minX){$minX=$x};if($x -gt $maxX){$maxX=$x};if($y -lt $minY){$minY=$y};if($y -gt $maxY){$maxY=$y}} }}; 
+$minX=[int][math]::Max($sx0,$minX-2); $maxX=[int][math]::Min($sx1,$maxX+2); $minY=[int][math]::Max(0,$minY-2); 
+$maxY=[int][math]::Min($src.Height-1,$maxY+2); $w=[int]($maxX-$minX+1); $h=[int]($maxY-$minY+1); 
+$cut=[System.Drawing.Bitmap]::new($w,$h); for($yy=0;$yy -lt $h;$yy++){for($xx=0;$xx -lt $w;$xx++){ 
+$c=$src.GetPixel($minX+$xx,$minY+$yy); $isGreen=($c.G -gt 20 -and $c.G -gt ($c.R*1.25) -and $c.G -gt ($c.B*1.25)); 
+if($isGreen){$cut.SetPixel($xx,$yy,[System.Drawing.Color]::Transparent)}else{$cut.SetPixel($xx,$yy,$c)} }}; 
+$rw0=$i*$cell; $rw1=$rw0+$cell-1; $rmin=$rw1; $rmax=$rw0; for($ry=0;$ry -lt $ref.Height;$ry++){for($rx=$rw0;$rx -le 
+$rw1;$rx++){ $rc=$ref.GetPixel($rx,$ry); $black=($rc.R -lt 16 -and $rc.G -lt 16 -and $rc.B -lt 16); $green=($rc.G -gt 
+20 -and $rc.G -gt ($rc.R*1.25) -and $rc.G -gt ($rc.B*1.25)); if(-not ($black -or $green)){if($rx -lt 
+$rmin){$rmin=$rx};if($rx -gt $rmax){$rmax=$rx}} }}; $targetCenter=($rmin+$rmax)/2.0; 
+$dw=[int][math]::Max(1,[math]::Round($w*$scale)); $dh=[int][math]::Max(1,[math]::Round($h*$scale)); 
+$dx=[int][math]::Round($targetCenter-$dw/2.0); $dy=[int](255-$dh); 
+$dest=[System.Drawing.Rectangle]::new($dx,$dy,$dw,$dh); $g.DrawImage($cut,$dest); $cut.Dispose(); "frame$($i+1): 
+${dw}x${dh} at ${dx},${dy}" }; $g.Dispose(); $ref.Dispose(); $src.Dispose(); 
+$out.Save($outPath,[System.Drawing.Imaging.ImageFormat]::Png); $out.Dispose(); 
+$check=[System.Drawing.Bitmap]::FromFile($outPath); "SAVED=$outPath SIZE=$($check.Width)x$($check.Height)"; 
+$check.Dispose()' in C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2
+ succeeded in 25763ms:
+frame1: 128x237 at 72,18
+frame2: 116x240 at 370,15
+frame3: 128x234 at 618,21
+frame4: 109x239 at 914,16
+frame5: 112x234 at 1182,21
+frame6: 120x237 at 1456,18
+frame7: 116x234 at 1731,21
+frame8: 127x234 at 2010,21
+SAVED=C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2\pal_walk_e2_row.png SIZE=2216x277
+
+codex
+The final strip now has 8├ù277 px square cells (2216├ù277 total), exact green fill, one shared foot line, and the 
+corrected rear-only blue drape. IΓÇÖm doing the last per-cell pixel and visual checks before handing it off.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$ErrorActionPreference='"'Stop'; Add-Type 
+-AssemblyName System.Drawing; "'$p=(Resolve-Path '"'pal_walk_e2_row.png').Path; 
+"'$b=[System.Drawing.Bitmap]::FromFile($p); $transparent=0; $exactGreen=0; for($i=0;$i -lt 8;$i++){ $x0=$i*277; 
+$x1=$x0+276; $minX=$x1; $maxX=$x0; $minY=276; $maxY=-1; $nonGreen=0; for($y=0;$y -lt 277;$y++){for($x=$x0;$x -le 
+$x1;$x++){ $c=$b.GetPixel($x,$y); if($c.A -ne 255){$transparent++}; if($c.R -eq 0 -and $c.G -eq 255 -and $c.B -eq 
+0){$exactGreen++}else{$nonGreen++;if($x -lt $minX){$minX=$x};if($x -gt $maxX){$maxX=$x};if($y -lt 
+$minY){$minY=$y};if($y -gt $maxY){$maxY=$y}} }}; "frame$($i+1): cell=277x277 nonGreen=$nonGreen 
+bbox=$minX,$minY..$maxX,$maxY bottom=$maxY" }; "image=$($b.Width)x$($b.Height) exactGreen=$exactGreen 
+alphaNot255=$transparent"; $b.Dispose(); Get-Item -LiteralPath $p | Select-Object FullName,Length,LastWriteTime; 
+Get-FileHash -Algorithm SHA256 -LiteralPath $p | Select-Object Hash' in 
+C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2
+ succeeded in 6243ms:
+frame1: cell=277x277 nonGreen=16894 bbox=73,19..198,253 bottom=253
+frame2: cell=277x277 nonGreen=16101 bbox=371,16..484,253 bottom=253
+frame3: cell=277x277 nonGreen=15448 bbox=619,22..744,253 bottom=253
+frame4: cell=277x277 nonGreen=15591 bbox=915,17..1021,253 bottom=253
+frame5: cell=277x277 nonGreen=14905 bbox=1183,22..1292,253 bottom=253
+frame6: cell=277x277 nonGreen=15249 bbox=1457,19..1574,253 bottom=253
+frame7: cell=277x277 nonGreen=14467 bbox=1732,22..1845,253 bottom=253
+frame8: cell=277x277 nonGreen=15381 bbox=2011,22..2135,253 bottom=253
+image=2216x277 exactGreen=489796 alphaNot255=0
+
+FullName                                                                                Length LastWriteTime       
+--------                                                                                ------ -------------       
+C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2\pal_walk_e2_row.png 413099 8/27/2026 7:24:15 PM
+                                                                                                                   
+
+
+
+codex
+Saved [pal_walk_e2_row.png](C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2\pal_walk_e2_row.png).
+
+- Frame 1: Yes
+- Frame 2: Yes
+- Frame 3: Yes
+- Frame 4: Yes
+- Frame 5: Yes
+- Frame 6: Yes
+- Frame 7: Yes
+- Frame 8: Yes
+
+Each frame has an armored-steel front hip/thigh with blue drapery only behind the legs. Output is 2216├ù277, 
+comprising eight 277├ù277 cells on opaque `#00ff00`, with feet sharing one ground line.
+
+Mode: built-in image edit. Final prompt preserved Reference 1 while applying only Reference 2ΓÇÖs rear-only drape 
+construction and the specified green background.
+2026-08-27T23:25:09.550873Z ERROR codex_core::session: failed to record rollout items: thread 
+01a04583-8815-7691-8ba7-6057843a2d6c not found
+tokens used
+63,839
+Saved [pal_walk_e2_row.png](C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\pal_walk_e2\pal_walk_e2_row.png).
+
+- Frame 1: Yes
+- Frame 2: Yes
+- Frame 3: Yes
+- Frame 4: Yes
+- Frame 5: Yes
+- Frame 6: Yes
+- Frame 7: Yes
+- Frame 8: Yes
+
+Each frame has an armored-steel front hip/thigh with blue drapery only behind the legs. Output is 2216├ù277, comprising eight 277├ù277 cells on opaque `#00ff00`, with feet sharing one ground line.
+
+Mode: built-in image edit. Final prompt preserved Reference 1 while applying only Reference 2ΓÇÖs rear-only drape construction and the specified green background.

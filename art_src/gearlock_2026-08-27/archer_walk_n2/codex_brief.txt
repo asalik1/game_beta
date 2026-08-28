@@ -1,0 +1,18 @@
+Reproduce a 6-frame back-view (north-facing, walking away) walk EXACTLY, fixing its
+unstable cape. This is a surgical edit of approved art -- NOT a redesign.
+
+Reference image 1 is the CURRENT 6-frame walk strip. Its leg cycle and stride are
+CORRECT -- reproduce the leg motion frame by frame. Its DEFECT: the cape's folds and
+hem redraw slightly differently in every frame, so the cape shimmers in game.
+
+Reference image 2 (the idle, back view) is THE BACK AUTHORITY. In EVERY one of the 6
+frames her back is EXACTLY as reference 2 and IDENTICAL from frame to frame, as if
+traced once: same hair, same white fur ruff, same green cape with the SAME fold lines
+and the SAME ragged hem shape, same quiver and bow placement. The ONLY things that
+change between frames are her legs and boots below the cape hem.
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, equal-width cells, all feet on
+one shared ground line, constant body height.
+
+Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE image and SAVE it to disk at the exact path C:\Users\asali\Projects\MMO\art_src\gearlock_2026-08-27\archer_walk_n2\archer_walk_n2_row.png, then stop.
+In your final message, report frame by frame: is the cape identical to the previous frame.
