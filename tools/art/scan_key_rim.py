@@ -191,7 +191,19 @@ def pale_halo_score(path: str) -> float:
     inref = blur(lum * wm) / np.maximum(wb, 1e-3)
     valid = ring_out & (wb > 0.02)
     halo = valid & (lum > inref + 55) & (lum > 150) & ((mx - mn) < 50)
-    return float(halo.sum()) / max(1, int(valid.sum()))
+    ring_score = float(halo.sum()) / max(1, int(valid.sum()))
+    # SEMI-ALPHA variant (2026-08-28, autumn-tree miss): the same matte can sit
+    # almost entirely in the 0<a<=128 fringe — invisible to the opaque ring —
+    # and be warm-TINTED, so the desat cap spared its opaque remnant too.
+    # Score the fringe band with its own (slightly looser) tests and take the
+    # worst of the two. Clean soft edges score ~0.0 (their fringe carries the
+    # interior colour, so lum stays near inref); measured 2026-08-28:
+    # autumn 0.38-0.94 vs clean tree_green2 0.01.
+    semi = (al > 0) & (al <= 128) & (wb > 0.02)
+    fringe = semi & (lum > inref + 40) & (lum > 150) & ((mx - mn) < 60)
+    semi_score = float(fringe.sum()) / max(1, int(semi.sum())) \
+        if int(semi.sum()) >= 200 else 0.0
+    return max(ring_score, semi_score)
 
 
 def main() -> None:

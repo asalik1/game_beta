@@ -66,6 +66,19 @@ const UNIQUE_PROP_NAMES := {
 	"void_rift": true,
 }
 
+# Decor names with real VOLUME (a domed cap, a stump, a post): the scatter
+# spawns these as small OBSTACLES (collider + y-sort + shadow) instead of
+# walk-over stickers — a hero standing ON a toadstool cap reads wrong (owner
+# 2026-08-28), and the same mushroom already collided wherever a terrain listed
+# it as an accent. Flat clutter (grass, flowers, pebbles, cracks, webs, bones)
+# stays decor. Keyed by prop_base; radii live in Balance.SCENERY_COLLIDER_RADIUS.
+const SOLID_DECOR := {
+	"mushroom": true,
+	"toadstool": true,
+	"tree_stump": true,
+	"signpost": true,
+}
+
 
 static func prop_family(name: String) -> Array:
 	for family in PROP_VARIANT_GROUPS:
