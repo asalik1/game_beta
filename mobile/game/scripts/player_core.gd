@@ -500,6 +500,23 @@ var _gait_step := 0.0         # footfall counter (the roll trigger)
 var _gait_rate := 1.0         # eased playback-rate wobble applied to the walk clock
 var _gait_rate_target := 1.0
 var _gait_bounce := 1.0       # this step's bounce-height multiplier
+## The walk-family clip names: the loco walk loop and its alternate cycle
+## (walk_b, 2026-08-29). Speed coupling, stride-phase continuity, step jitter,
+## bounce and footfall dust all treat these identically.
+const WALK_CLIPS := ["walk", "walk_b"]
+## Alternate-cycle state: flips when the stride phase WRAPS (a completed
+## cycle, player.gd) so the loco loop alternates walk <-> walk_b when the _b
+## strips ship. Cosmetic and per-node (shells flip on their own clocks).
+var _walk_variant := false
+## Persistent stride phase [0,1) across clip swaps (stitch fix 2026-08-27,
+## owner: "she's locked in a step frame but still moving"). _play_clip has
+## always reset the clock to frame 0, so every re-entry into the walk loop —
+## after a fire-on-move volley, a swing, a dash — snapped the legs back to the
+## strip's first stride pose mid-translation. Walk-family clips (walk /
+## attack_walk[_b]) are each ONE full gait cycle, so the normalized phase
+## carries 1:1: the walk resumes where the legs actually were. One-shots still
+## start at 0 (their fire/contact choreography and FX sync depend on it).
+var _stride_ph := 0.0
 var elixir_time := 0.0   # Elixir of Might: +elixir_atk damage while > 0
 var elixir_atk := 0.0
 var goldrush_time := 0.0  # Gold Rush coin: greed surges while > 0 (run state, not saved)
@@ -768,6 +785,7 @@ func _apply_class_sprite() -> void:
 	sprite.frame = 0
 	_dir_clips = Art.hero_dir_clips(art_name)
 	_a1_swing = 0  # a fresh body opens on its primary swing
+	_stride_ph = 0.0  # fresh body starts its gait from the top
 	# 8-direction locomotion sets (idle/walk/... = <class>_<file>_<dir>).
 	# Empty for every current class; lights up when directional art lands.
 	_dir_loco = {}
@@ -961,6 +979,13 @@ func _play_clip(name: String, loop: bool) -> void:
 	sprite.texture = info["tex"]
 	sprite.hframes = strip_frames
 	sprite.frame = 0
+	if loop and name in WALK_CLIPS and strip_fps > 0.0:
+		# Stitch fix (2026-08-27): resume the stride where the legs actually
+		# were instead of snapping to frame 0 — the walk loop re-enters
+		# constantly mid-motion (after a volley / swing / dash), and the frame-0
+		# reset read as "locked in a step pose but still moving" (owner catch).
+		strip_t = _stride_ph * float(strip_frames) / strip_fps
+		sprite.frame = int(strip_t * strip_fps) % strip_frames
 	# 8-direction ONE-SHOT (attack/dash/ult/cast/death): lock facing now and
 	# play that direction's strip. Locomotion clips get their facing per-frame
 	# in _loco_dir_frame instead. No-op when the clip has no directional art.

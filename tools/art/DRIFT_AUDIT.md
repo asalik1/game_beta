@@ -68,6 +68,22 @@ dirs are unique), and the idle reference. Then:
 - **Mechanical/borderline** (NOT this audit's target, but surfaced): per-clip feet-anchor lift
   (attack/cast "pop"), per-direction canvas padding (size pop). These are `verify_art`/HEROBODY
   territory or an in-game check — flag, don't lump with attire drift.
+- **TONE/BRIGHTNESS SHIFT between clips (owner catch 2026-08-29, paladin walk regen).** A regen
+  comes back tonally off its siblings (~10% brighter, higher contrast on the paladin) and passes
+  every PER-STRIP review — the shift only shows at clip TRANSITIONS and cycle ALTERNATION
+  (walk↔walk_b flip, walk↔idle stop), where the whole body "flashes". Measurable, unlike most of
+  this catalogue: per-channel mean/std of opaque pixels vs the base's idle or the strip being
+  replaced (the paladin read scale ≈0.9 per channel). Fix = deterministic tone-match to the old
+  strip's palette (mean/std per channel) — `install_gait_walk.py` now applies it automatically
+  against the strip it replaces; for other lanes run the same match before install.
+- **EQUIPMENT-PLACEMENT SHIFT between clips (owner catch 2026-08-29, archer walk_n quiver).** A
+  clip seats a worn item differently from its siblings/idle (quiver slung low-diagonal in the old
+  walk_n vs vertical-high in the idle + new walk) — invisible per-strip because each looks
+  plausible alone; at clip transitions or alternation flips the gear TELEPORTS. Check every
+  worn/held item (quiver, sheath, shield, pouches, held weapon side) against the IDLE of the same
+  facing — the idle is placement canon (every clip transitions through it). Fix taxonomy: surgical
+  regen "reproduce this strip exactly, reposition ONLY the <item> to the idle's placement"
+  (see art_src/stride_pilot_2026-08-27/archer_bn_quiverfix).
 
 ## Fix taxonomy — cheapest that fixes it
 1. **Despill** (deterministic, no gen): off-palette FX residue, stray specks, green rim.

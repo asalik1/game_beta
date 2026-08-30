@@ -153,6 +153,13 @@ const SKINS := {
 			"sprite": "skins/elite/archer_severed_thread"},
 		{"id": "frostfall_ranger", "name": "Frostfall Ranger", "tier": "elite",
 			"sprite": "skins/elite/archer_frostfall_ranger"},
+		# G2D Pilot (2026-08-30, owner-commissioned): the severed_thread body
+		# with its WALK baked from a Godot cutout BONE RIG instead of generated
+		# frames — the 2D-skeletal pipeline pilot (rig → bake-to-strips; the
+		# engine consumes ordinary strips, nothing runtime changes). Art set =
+		# severed_thread copies except the rig-baked walk facings.
+		{"id": "g2d_pilot", "name": "Archer G2D Pilot", "tier": "elite",
+			"sprite": "skins/elite/archer_g2d_pilot"},
 		# Awakened: the void deepens — the grey cloak drinks dusk-violet and
 		# every purple accent surges toward glowing magenta.
 		{"id": "voidwraith", "name": "Voidwraith", "tier": "mythic",

@@ -927,11 +927,10 @@ func _physics_process(delta: float) -> void:
 	# skating the feet over the floor. 1.0 at full chase, so tuned looks hold.
 	var stride_dt := delta if speed <= 0.0 else delta * clampf(spd / speed,
 		Balance.STRIDE_RATE_MIN, Balance.STRIDE_RATE_MAX)
-	# Humanize (lane 1b): per-instance rate personality + in-cycle rhythm (hold
-	# the contacts, snap the swing). The warp averages 1.0 over a cycle.
-	if anim_frames > 1:
-		var gph := fposmod(anim_t * anim_fps, float(anim_frames)) / float(anim_frames)
-		stride_dt *= (1.0 - Balance.WALK_TIMING_WARP * cos(gph * TAU * 2.0)) * _gait_rate
+	# Humanize (lane 1b): per-instance rate personality — constant per mob, so
+	# no in-cycle unevenness (a timing warp was tried and removed 2026-08-27:
+	# held frames over constant translation read as locked-but-moving).
+	stride_dt *= _gait_rate
 	if not _strip_action.is_empty():
 		# One-shot ability strip: play frames 0..N-1 once, then revert.
 		_advance_action_anim(delta)

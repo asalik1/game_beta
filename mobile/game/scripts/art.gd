@@ -3455,17 +3455,32 @@ const HERO_CLIP_FILES := {
 	# attack_walk <-> attack_walk_b each fresh moving-basic cycle (owner 2026-08-23),
 	# like the melee attack<->attackb. Absent = attack_walk plays every cycle.
 	"attack_walk_b": "attack_walk_b",
+	# "walk_b" = the ALTERNATE WALK CYCLE (owner 2026-08-29, the three gait-
+	# transfer classes): the loco loop alternates walk <-> walk_b each fresh
+	# stride cycle (player.gd _loco_clip / _advance_clip flip) so a long walk
+	# doesn't replay one identical loop — same legs frame-for-frame, only the
+	# upper-body dressing (arm swing / cloth beat) differs. Art-driven like
+	# attackb: no _b strip = the primary plays every cycle.
+	"walk_b": "walk_b",
 }
 const HERO_CLIP_FPS := {
 	# Action clips run FAST so a ~7-frame swing/throw/dash lands in ~0.3s and
 	# doesn't trail an arm-swing after the hit. (Directional clips only pick
 	# these up via the _dir_loco fps stamp in player_core — dir_set defaults 6.)
-	"idle": 6.0, "walk": 9.0, "attack": 22.0, "attack2": 22.0,
+	# walk 9→14 (stride round 2026-08-27/28, owner-picked off the 9/12/14
+	# travel-GIF ladder): travel-per-cycle drops ~36%, so the same authored
+	# stride covers more of the ground it moves over — the free fraction of
+	# the skate fix. The treadmill-stride REGEN was tried and visually
+	# REJECTED the same day (owner: "looks bad") — the original walks at
+	# 14 fps ARE the walk resolution; bounce/dust/stride-coupling are
+	# phase-keyed and follow the clock automatically.
+	"idle": 6.0, "walk": 14.0, "attack": 22.0, "attack2": 22.0,
 	"cast": 10.0, "dash": 26.0, "ult": 11.0, "ultidle": 6.0, "death": 9.0,
 	"attackb": 22.0, "attackc": 22.0,
 	# A full 8-frame fire-on-the-move cycle in ~0.67 s — a brisk stride with one
 	# draw-and-loose per cycle; re-casts mid-cycle let it finish (no restart).
 	"attack_walk": 12.0, "attack_walk_b": 12.0,
+	"walk_b": 14.0,  # tracks "walk" — the alternate cycle plays at the same clock
 }
 
 ## Every installed animation clip for a hero class, keyed by clip name.

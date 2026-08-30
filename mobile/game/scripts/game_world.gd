@@ -2239,7 +2239,11 @@ func _front_of(body: Node2D, local_pos: Vector2) -> Dictionary:
 		if (c is Sprite2D or c is AnimatedSprite2D) and c.has_meta("wpx"):
 			var w := float(c.get_meta("wpx"))
 			var h := float(c.get_meta("hpx"))
-			var cp: Vector2 = (c as Node2D).position
+			# Structure sprites keep their origin on the sort baseline and draw
+			# the art through `offset` (texture px, pre-scale) — fold it back in
+			# so the front rect covers the pixels, not the anchor.
+			var cp: Vector2 = (c as Node2D).position \
+				+ Vector2(c.get("offset")) * (c as Node2D).scale
 			return {"pos": local_pos, "rect": Rect2(local_pos.x + cp.x - w * 0.5,
 				local_pos.y + cp.y - h * 0.5, w, h)}
 	return {"pos": local_pos, "rect": Rect2(local_pos, Vector2.ZERO)}
@@ -2582,6 +2586,21 @@ func _spawn_scenery(zi: int) -> void:
 				dpos.x = clampf(dpos.x, origin.x + 70.0, origin.x + pw - 70.0)
 				dpos.y = clampf(dpos.y, origin.y + 80.0, origin.y + ph - 80.0)
 			var decor_base := Terrains.prop_base(decor_name)
+			# Decor with real VOLUME (a domed cap, a stump, a post) spawns as a
+			# small OBSTACLE — collider + y-sort + shadow — instead of a
+			# walk-over sticker (owner 2026-08-28: a hero standing ON a
+			# toadstool cap; the same mushroom already collided when a terrain
+			# listed it as an accent). Patch/clump placement is unchanged.
+			if Terrains.SOLID_DECOR.has(decor_base):
+				var dlocal := dpos - origin
+				# Stickers could squat the road band and door lane; a collider
+				# there blocks the path (same margins as the accent placer).
+				if absf(dlocal.y - lane.y) < 90.0 or absf(dlocal.x - lane.x) < 130.0:
+					continue
+				zone_scenery[zi].append(_add_obstacle(decor_name, dpos,
+					rng.randf_range(Balance.SCENERY_SCALE_JITTER.x,
+						Balance.SCENERY_SCALE_JITTER.y)))
+				continue
 			var decor_visual := Terrains.prop_variant(
 				decor_name, int(dpos.x * 31.0 + dpos.y * 17.0))
 			var spr := _prop_visual(decor_visual)  # animates if a _anim strip ships
@@ -2976,6 +2995,12 @@ func _add_obstacle(sprite_name: String, pos: Vector2, visual_variation := 1.0) -
 	var shadow := Sprite2D.new()
 	shadow.texture = Art.tex("shadow")
 	shadow.scale = Vector2(4, 2.4) if is_tree else Vector2(3, 2)
+	if not is_tree:
+		# The fixed 3x2 ellipse was tuned for 64px+ props; the solid-decor
+		# smalls (toadstool 39, stump 42) shrink it to their footprint.
+		var shadow_w := float(Balance.SCENERY_RENDER_WIDTH.get(family_base, 64.0))
+		if shadow_w < 64.0:
+			shadow.scale *= clampf(shadow_w / 64.0, 0.55, 1.0)
 	shadow.position = Vector2(0, 38 if is_tree else 22)
 	body.add_child(shadow)
 	# Static Sprite2D, or a self-animating AnimatedSprite2D when the prop ships
@@ -3040,6 +3065,10 @@ func _prop_cast_shadow(body: Node2D, spr: Node2D, base_y_override := NAN) -> voi
 	var hpx: float = vsz.y * vscale
 	if hpx < Balance.CAST_SHADOW_HUG_MIN_H:
 		return
+	# Structure sprites hold their origin on the sort baseline and draw the art
+	# through `offset` — the ART centre (not the origin) is what the shadow
+	# copies must track. Plain props carry offset (0,0), so this is a no-op.
+	var art_c: Vector2 = spr.position + Vector2(spr.get("offset")) * spr.scale
 	var projected: bool = hpx >= Balance.CAST_SHADOW_MIN_H \
 		and _shadow_bottom_ratio(spr) < Balance.CAST_SHADOW_STAND_RATIO
 	var cast: Node2D
@@ -3074,8 +3103,8 @@ func _prop_cast_shadow(body: Node2D, spr: Node2D, base_y_override := NAN) -> voi
 		# point maps to (-hs/2·sin k, -hs/2·cos k) — place the node so it lands
 		# on the base line, and the head lands hs·(sin k, cos k) away.
 		var hs := vsz.y * absf(cast.scale.y)
-		var base_y: float = base_y_override if not is_nan(base_y_override) else spr.position.y + vsz.y * vscale * 0.5
-		var base := Vector2(spr.position.x, base_y)
+		var base_y: float = base_y_override if not is_nan(base_y_override) else art_c.y + vsz.y * vscale * 0.5
+		var base := Vector2(art_c.x, base_y)
 		cast.position = base + Vector2(hs * 0.5 * sin(k), hs * 0.5 * cos(k))
 	else:
 		# hug: same footprint, nudged toward the light's far side; most of it
@@ -3083,7 +3112,7 @@ func _prop_cast_shadow(body: Node2D, spr: Node2D, base_y_override := NAN) -> voi
 		cast.modulate = Color(0, 0, 0, Balance.CAST_SHADOW_A * 0.9)
 		cast.scale = spr.scale
 		var off: float = clampf(hpx * 0.07, 5.0, 24.0)
-		cast.position = spr.position + Vector2(off, off * 0.75)
+		cast.position = art_c + Vector2(off, off * 0.75)
 	cast.z_index = -1   # under every body at z 0, over the floor layers
 	cast.set_meta("cast_shadow", true)   # autotest's "one animated part" counts skip it
 	body.add_child(cast)
@@ -3312,6 +3341,12 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 	var def: Dictionary = Terrains.STRUCTURES.get(name, {})
 	var body := StaticBody2D.new()
 	body.position = pos  # the base line is the y-sort anchor
+	# Children join the world's y-sort INDIVIDUALLY (nested y-sort merges into
+	# the parent's space), so a composited part can sort against the hero on its
+	# own baseline instead of z-ranking over them everywhere (2026-08-28: the
+	# mausoleum statues' z=1 buried a hero standing plainly in FRONT of them —
+	# z_index beats y-sort, so no position ever won).
+	body.y_sort_enabled = true
 	body.set_meta("structure", name)
 	body.collision_layer = 1
 	body.collision_mask = 0
@@ -3347,6 +3382,14 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 	if probe_tex != null:
 		base_spr.position.y += float(_art_pad_bottom(probe_tex, base_key)) \
 			* (bh / maxf(1.0, float(probe_tex.get_height())))
+	# With the body y-sorting its children, each child sorts on its OWN origin.
+	# The base keeps the old whole-structure sort position (the body baseline)
+	# by holding origin y at 0 and drawing the art through `offset` (texture px,
+	# pre-scale) — pixels land exactly where they did; the occlusion probe and
+	# outline both read `offset` (player_core._visual_alpha_at).
+	base_spr.set("offset", Vector2(0.0,
+		base_spr.position.y / maxf(0.001, absf(base_spr.scale.y))))
+	base_spr.position.y = 0.0
 	base_spr.set_meta("occlusion_sort_y", pos.y)
 	base_spr.set_meta("occlusion_radius", Vector2(bw, bh).length() * 0.5)
 	base_spr.add_to_group("structure_occluders")
@@ -3364,15 +3407,29 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 	for part in def.get("parts", []):
 		var ps := _structure_sprite(String(part["sprite"]),
 			target_w * float(part.get("scale", 1.0)), part.get("wind", false))
-		ps.position = part.get("off", Vector2.ZERO)
-		ps.z_index = int(part.get("z", 0))
-		# Sunken parts (z<0) render beneath the hero and can never hide them;
-		# every other part covers like the base sprite, so it probes too.
-		if ps.z_index >= 0:
-			ps.set_meta("occlusion_sort_y", pos.y)
+		var poff: Vector2 = part.get("off", Vector2.ZERO)
+		var pz := int(part.get("z", 0))
+		if pz >= 0:
+			# Covering part: origin at its painted BASELINE minus the shared
+			# 22px anchor (the scatter-prop/hero feet convention), art held in
+			# place via `offset` — so it y-sorts against the hero like any
+			# free-standing prop. The old z rank ordered part-vs-part; baseline
+			# sort gives the same read (ties resolve in tree order: parts are
+			# added after the base, so they still win the facade).
+			var ph_px: float = float(ps.get_meta("hpx"))
+			var anchor_y: float = poff.y + ph_px * 0.5 - 22.0
+			ps.position = Vector2(poff.x, anchor_y)
+			ps.set("offset", Vector2(0.0,
+				(poff.y - anchor_y) / maxf(0.001, absf(ps.scale.y))))
+			ps.set_meta("occlusion_sort_y", pos.y + anchor_y)
 			ps.set_meta("occlusion_radius", Vector2(float(ps.get_meta("wpx")),
-				float(ps.get_meta("hpx"))).length() * 0.5)
+				ph_px).length() * 0.5)
 			ps.add_to_group("structure_occluders")
+		else:
+			# Sunken parts (z<0) render beneath the hero and can never hide
+			# them — no occlusion probe, and z keeps them under every actor.
+			ps.position = poff
+			ps.z_index = pz
 		body.add_child(ps)
 
 	# Footprint collider(s): a composite of rects/circles. Default = one rect

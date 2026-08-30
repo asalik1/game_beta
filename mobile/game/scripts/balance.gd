@@ -83,13 +83,12 @@ const WALK_BOUNCE_PX := 1.6     # chest rise per step, world px (feet pinned)
 const WALK_LEAN_RAD := 0.05     # max lean into horizontal travel (~3°)
 const WALK_LEAN_EASE := 10.0    # 1/s approach to the target lean (and settle-out)
 # Gait humanization (lane 1b, 2026-08-27, owner: "people don't walk perfectly
-# uniformly"). Three uniformities broken, all cosmetic clock/transform work:
-# in-cycle rhythm (hold the contacts, snap the swing — frames stop being
-# isochronous), per-step variation (each footfall rolls a hair fast/slow and
-# a hair higher/lower), and per-mob personality + a random phase seed so a
-# pack stops marching in lockstep. The warp averages 1.0 over a cycle, so
-# cadence and the stride↔speed coupling are preserved.
-const WALK_TIMING_WARP := 0.18    # in-cycle rate swing (0 = metronome frames)
+# uniformly"): per-step variation (each footfall rolls a hair fast/slow and a
+# hair higher/lower) and per-mob personality + a random phase seed so a pack
+# stops marching in lockstep. All variation is CONSTANT WITHIN a step — an
+# in-cycle timing warp (hold contacts / snap swings) was tried and REMOVED
+# same day: over constant ground translation, any frame held longer than its
+# stride share reads as "locked mid-step but still moving" (owner catch).
 const GAIT_STEP_JITTER := 0.04    # heroes: per-step rate wobble (±, rolled each footfall)
 const GAIT_BOUNCE_JITTER := 0.18  # heroes: per-step bounce-height wobble (±)
 const GAIT_EASE := 6.0            # 1/s blend toward the freshly rolled step rate
@@ -3207,7 +3206,7 @@ const SCENERY_COLLIDER_RADIUS := {
 	"rock_volcanic": 42.0, "forge_statue": 32.0, "magma_furnace": 44.0,
 	"magma_chainrig": 44.0, "cactus": 23.0, "sandstone": 37.0,
 	"rock": 23.0, "boulder": 29.0,
-	"bush3": 30.0, "mushroom": 13.0,
+	"bush3": 30.0, "mushroom": 13.0, "toadstool": 10.0, "tree_stump": 13.0,
 	"castle_statue": 27.0, "garden_statue": 27.0, "ruin_pillar": 29.0,
 	"garden_fountain": 68.0, "topiary": 31.0, "keep_brazier": 32.0,
 	"crypt": 45.0, "keep_arch": 48.0, "signpost": 15.0,

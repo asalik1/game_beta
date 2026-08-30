@@ -258,7 +258,7 @@ func _physics_process(delta: float) -> void:
 	# clock crosses a contact twice per cycle — the same contacts the bounce
 	# presses on); sheetless bodies keep the old timer.
 	if Balance.FOOT_DUST_PERIOD > 0.0 and dir != Vector2.ZERO and DisplayServer.get_name() != "headless":
-		if _clip == "walk" and strip_frames > 0:
+		if _clip in WALK_CLIPS and strip_frames > 0:
 			var steps_now := strip_t * strip_fps * 2.0 / float(strip_frames)
 			if steps_now < _foot_steps:
 				_foot_steps = steps_now  # clip clock restarted; re-arm
@@ -556,7 +556,7 @@ func apply_chill(mult: float, dur := 0.35) -> void:
 ## this too — their velocity and clip clock are synced.
 func _walk_juice(delta: float) -> void:
 	var s0: float = sprite.scale.x
-	if _clip == "walk" and strip_frames > 0 and Balance.WALK_BOUNCE_PX > 0.0 \
+	if _clip in WALK_CLIPS and strip_frames > 0 and Balance.WALK_BOUNCE_PX > 0.0 \
 			and sprite.texture != null and s0 > 0.0:
 		# Stride phase from the SAME clock that picks the frames; one rise per
 		# STEP (two per cycle), grounded at the contacts — the same crossings
@@ -595,15 +595,15 @@ func _advance_clip(delta: float) -> void:
 	# at the live ratio instead. Walk ONLY: one-shots keep authored pace (their
 	# contact frames are FX/damage-synced — swing_delay), idle breathes in real
 	# time, and a dev morph paces itself off the creature's table (player.gd).
-	if _clip == "walk" and speed > 0.0 and dev_morph == null:
+	if _clip in WALK_CLIPS and speed > 0.0 and dev_morph == null:
 		delta *= clampf(velocity.length() / speed,
 			Balance.STRIDE_RATE_MIN, Balance.STRIDE_RATE_MAX)
-		# Humanize the clock (lane 1b): hold the contacts / snap the swing
-		# (warp averages 1.0 per cycle, so cadence holds), and roll each STEP
-		# a hair fast or slow + a hair higher or lower on the bounce — rolled
-		# at the footfall crossing, eased between. Purely cosmetic; shells
-		# roll their own (mirrors are approximate by design).
-		var ph := fposmod(strip_t * strip_fps, float(strip_frames)) / float(strip_frames)
+		# Humanize the clock (lane 1b): roll each STEP a hair fast or slow +
+		# a hair higher or lower on the bounce — rolled at the footfall
+		# crossing, eased between, CONSTANT within the step. (An in-cycle
+		# timing warp was tried and removed 2026-08-27: over constant ground
+		# translation a longer-held frame reads as "locked mid-step but still
+		# moving" — owner catch.) Cosmetic; shells roll their own.
 		var steps := strip_t * strip_fps * 2.0 / float(strip_frames)
 		if steps < _gait_step:
 			_gait_step = steps  # clip clock restarted; re-arm
@@ -612,7 +612,7 @@ func _advance_clip(delta: float) -> void:
 			_gait_bounce = 1.0 + randf_range(-Balance.GAIT_BOUNCE_JITTER, Balance.GAIT_BOUNCE_JITTER)
 		_gait_step = maxf(_gait_step, steps)
 		_gait_rate = lerpf(_gait_rate, _gait_rate_target, minf(1.0, delta * Balance.GAIT_EASE))
-		delta *= (1.0 - Balance.WALK_TIMING_WARP * cos(ph * TAU * 2.0)) * _gait_rate
+		delta *= _gait_rate
 	if _clip_locked:
 		strip_t += delta
 		sprite.frame = mini(strip_frames - 1, int(strip_t * strip_fps))
@@ -635,6 +635,10 @@ func _advance_clip(delta: float) -> void:
 		var f := int(strip_t * strip_fps)
 		if f < strip_frames:
 			sprite.frame = f
+			if _clip in ["attack_walk", "attack_walk_b"]:
+				# The fire-cycle IS a gait cycle: bank its phase so the walk
+				# loop resumes the legs where the volley left them.
+				_stride_ph = fposmod(strip_t * strip_fps / float(strip_frames), 1.0)
 			return
 	var loco := _loco_clip()
 	if loco != _clip or not _clip_loop:
@@ -642,6 +646,19 @@ func _advance_clip(delta: float) -> void:
 	_loco_dir_frame()   # swap to the facing strip when 8-dir art exists
 	strip_t += delta
 	sprite.frame = int(strip_t * strip_fps) % strip_frames
+	if _clip in WALK_CLIPS:
+		var ph := fposmod(strip_t * strip_fps / float(strip_frames), 1.0)
+		# Alternate cycle (2026-08-29, reworked 08-30 after the owner caught a
+		# per-cycle FLICKER): flip walk <-> walk_b exactly when the phase WRAPS
+		# (a completed cycle). The first version flipped on an integer-crossing
+		# step counter — but the stride-phase seed re-enters the new clip just
+		# BEFORE the boundary (~0.98), so the counter crossed again one frame
+		# later and flipped straight back: a 1-2 frame flash of the other
+		# cycle's art every cycle. Wrap detection is seed-proof: it fires once,
+		# only on a real 0.99 -> 0.0 rollover.
+		if ph < _stride_ph - 0.5:
+			_walk_variant = not _walk_variant
+		_stride_ph = ph
 
 
 ## 8-direction locomotion: while the current loop clip has directional art,
@@ -684,6 +701,11 @@ func _loco_clip() -> String:
 	# (run clip removed 2026-08-21, owner: no run anywhere — walk covers all
 	# movement, including speed-theme/berserk hustle.)
 	if _clips.has("walk"):
+		# Alternate cycle (2026-08-29): every other stride cycle plays the
+		# walk_b dressing variant when its strips ship (art-driven — absent
+		# strip means the primary loops as before).
+		if _walk_variant and _clips.has("walk_b"):
+			return "walk_b"
 		return "walk"
 	return "idle"
 

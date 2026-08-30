@@ -224,7 +224,13 @@ SIG_PARTS = {
         "clips": ("anim", "walk"),
         "ref_clip": "anim",
         "label": "kite-shield gold cross",
-        "gone_frac": 0.25,
+        # 0.25→0.20 (2026-08-29): the gait-transfer paladin walk draws a
+        # finer, walk-scale cross (uniform 37-63 blob px vs the idle median
+        # 158; within-clip ratio 1.7x — clearly present, nothing blinks) and
+        # 0.25 read its dimmest frame as "vanished". A real vanish still
+        # fails via gone_floor (near-zero blob) and a real blink via the
+        # 3.5x flicker ratio.
+        "gone_frac": 0.20,
         "gone_floor": 15,
         "flicker": 3.5,
     },
@@ -857,6 +863,140 @@ def check_hero_body_scale(files: list[Path]) -> None:
                         f"so the whole clip plays small (player_core locks scale to frame 0)")
 
 
+# ---- STRIDE (2026-08-27, owner catch: "one foot planted but she's still
+# traveling"): a correct game walk is a TREADMILL cycle — the planted foot
+# sweeps BACKWARD through the cell while in contact, so under node translation
+# it reads ground-fixed. The whole legacy hero corpus was instead authored as
+# poses-in-place (contact points near-static: ~25 source px of stride vs ~364
+# px of actual travel per cycle at hero speed — feet cover ~15%, the rest is
+# skate, concentrated in single-support frames). Static loops (ba_gifs,
+# contact sheets) CANNOT show this — the defect only exists under translation
+# (use tools/art/travel_gif.py for the eye check). Metric: sum spans of
+# monotonic contact-centroid runs (>=3 consecutive contact frames, matched
+# frame-to-frame within STRIDE_MATCH px, one direction) over the cycle, take
+# the dominant direction; coverage = sweep / expected travel. Side views only
+# (flat + _e/_w) — front/back walks encode stride vertically. WARN below
+# STRIDE_WARN_COVER (documents the legacy pile); --stride-min N promotes the
+# gate to FAIL for treadmill-regen installs (the severed_thread pilot lane).
+HERO_SPEED = 250.0            # player_core base `speed` (walk covers all movement)
+HERO_WALK_FPS = 14.0          # Art.HERO_CLIP_FPS["walk"] (9→14, owner-picked 2026-08-28)
+HERO_BODY_TARGET = 52.0 * 1.7  # HERO_TARGET_BODY x CHAR_RENDER_SCALE, on-screen body px
+STRIDE_WARN_COVER = 0.35
+STRIDE_MATCH = 45.0           # base max px a tracked contact may move between frames
+                              # (scaled to 0.30x body height when larger — a real
+                              # treadmill stance legitimately steps ~0.15-0.2 body
+                              # per frame; roll-2 of the stride pilot under-scored
+                              # 0.73 as 0.18 before this scaled, 2026-08-28)
+
+
+def _contact_centroids(cell_a: np.ndarray, ground_y: int, band: int = 6) -> list[float]:
+    ys, xs = np.nonzero(cell_a > 40)
+    if len(ys) == 0:
+        return []
+    sel = ys >= ground_y - band
+    bx = np.sort(xs[sel])
+    if len(bx) == 0:
+        return []
+    out, start = [], 0
+    for i in range(1, len(bx)):
+        if bx[i] - bx[i - 1] > 12:
+            out.append(float(bx[start:i].mean()))
+            start = i
+    out.append(float(bx[start:].mean()))
+    return out
+
+
+def _stride_sweep(cents: list[list[float]], n: int, match_px: float = STRIDE_MATCH) -> float:
+    """Dominant-direction sum of monotonic contact-centroid runs (>=3
+    consecutive contact frames, matched within STRIDE_MATCH px) over the
+    cyclic frame sequence — the authored stride length in source px.
+    Shared by check_stride and tools/art/stride_scan.py (the boss/mob sweep)."""
+    sweep_neg, sweep_pos = 0.0, 0.0
+    used: set[tuple[int, int]] = set()
+    for f0 in range(n):
+        for i0 in range(len(cents[f0])):
+            if (f0, i0) in used:
+                continue
+            f, i = f0, i0
+            sgn, span, steps = 0, 0.0, 0
+            while True:
+                nf = (f + 1) % n
+                nxt = cents[nf]
+                if not nxt:
+                    break
+                j = min(range(len(nxt)), key=lambda k: abs(nxt[k] - cents[f][i]))
+                delta = nxt[j] - cents[f][i]
+                if abs(delta) > match_px or abs(delta) < 1.0:
+                    break
+                s = 1 if delta > 0 else -1
+                if sgn == 0:
+                    sgn = s
+                elif s != sgn:
+                    break
+                span += abs(delta)
+                steps += 1
+                used.add((f, i))
+                f, i = nf, j
+                if steps >= n:  # one full lap is plenty
+                    break
+            if steps >= 2:  # >=3 consecutive contact frames, one direction
+                if sgn < 0:
+                    sweep_neg += span
+                else:
+                    sweep_pos += span
+    return max(sweep_neg, sweep_pos)
+
+
+def check_stride(files: list[Path], stride_min: float | None) -> None:
+    for png in files:
+        parts = png.stem.split("_")
+        if parts[0] not in HERO_CLASSES:
+            continue
+        d = parts[-1] if parts[-1] in DIR8 else None
+        core = parts[:-1] if d else parts
+        if len(core) < 2 or core[-1] != "walk" or d not in (None, "e", "w"):
+            continue
+        if d is None and (png.parent / (png.stem + "_e.png")).exists():
+            # FLAT next to a dir set: its facing follows the family's own
+            # convention (severed_thread's flat is a copy of S — front-facing),
+            # and the metric only reads side views. The dir set drives the
+            # engine anyway; gate the real _e/_w instead (2026-08-28).
+            continue
+        img = Image.open(png).convert("RGBA")
+        a = np.asarray(img)[:, :, 3]
+        fw = img.height
+        n = img.width // fw
+        if n < 3:
+            continue
+        cells = [a[:, f * fw:(f + 1) * fw] for f in range(n)]
+        grounds = [np.nonzero(c > 40)[0].max() for c in cells if (c > 40).any()]
+        if not grounds:
+            continue
+        ground_y = int(max(grounds))
+        cents = [_contact_centroids(c, ground_y) for c in cells]
+        body_h = _frame0_body_content(a, fw)[0]
+        sweep = _stride_sweep(cents, n, max(STRIDE_MATCH, 0.30 * max(0, body_h)))
+        # Expected travel per cycle, in SOURCE px: on-screen travel over one
+        # cycle divided by the strip's render scale (body target / body px).
+        body0 = body_h
+        if body0 <= 0:
+            continue
+        scale = HERO_BODY_TARGET / float(body0)
+        # attack_walk matches the walk filter (its stem ends in "walk") but
+        # runs at its own clock -- use the right cycle time per family.
+        fps = 12.0 if len(core) >= 2 and core[-2] == "attack" else HERO_WALK_FPS
+        travel = HERO_SPEED * (float(n) / fps) / scale
+        cover = sweep / travel if travel > 0 else 0.0
+        msg = (f"[STRIDE] {png.relative_to(SPRITES)}: contact sweep {sweep:.0f}px/cycle "
+               f"vs ~{travel:.0f}px travel (coverage {cover * 100:.0f}%) -- "
+               f"marching-in-place walk skates underfoot; regen as a traveling "
+               f"treadmill stride (planted foot sweeps back through the cell)")
+        if stride_min is not None and cover < stride_min:
+            FAIL.append(msg + f" [gate --stride-min {stride_min}]")
+        elif cover < STRIDE_WARN_COVER:
+            WARN.append(msg)
+
+
 def check_dir_sets(files: list[Path]) -> None:
     groups: dict[str, set[str]] = {}
     for f in files:
@@ -874,6 +1014,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="post-install sprite checks")
     ap.add_argument("bases", nargs="*", help="sprite base names (subpaths ok: skins/elite/...)")
     ap.add_argument("--all", action="store_true", help="IMPORT + DIR8 across the whole sprites dir")
+    ap.add_argument("--stride-min", type=float, default=None,
+                    help="promote STRIDE coverage below this fraction to FAIL "
+                         "(treadmill-regen install gate; e.g. 0.45)")
     args = ap.parse_args()
     if not args.bases and not args.all:
         ap.error("give one or more base names, or --all")
@@ -898,6 +1041,7 @@ def main() -> int:
         check_hero_body_scale(mine)
         check_dir_sets(mine)
         check_sig_parts(mine)
+        check_stride(mine, args.stride_min)
 
     for f in FAIL:
         print("FAIL " + f)
