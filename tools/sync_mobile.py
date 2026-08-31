@@ -240,20 +240,56 @@ def main() -> int:
         return 0
 
     print("\n--gate: importing (close the Godot editor if it's open -- --import contends) ...")
-    subprocess.run([str(GODOT), "--headless", "--import", "--quit", "--path", str(DST)],
-                   capture_output=True, text=True, timeout=600)
-    r = subprocess.run([str(GODOT), "--headless", "--path", str(DST),
-                        "--script", "res://check_compile.gd"],
-                       capture_output=True, text=True, timeout=300)
-    print((r.stdout or "").strip())
-    if "COMPILE OK" not in (r.stdout or ""):
-        print("GATE FAIL: mobile compile gate did not pass")
+    try:
+        imp = subprocess.run([str(GODOT), "--headless", "--import", "--quit", "--path", str(DST)],
+                             capture_output=True, text=True, timeout=600)
+    except subprocess.TimeoutExpired:
+        print("GATE FAIL: --import did not finish in 600s (fresh .godot? churning disk? "
+              "run it by hand once, then re-run --gate)")
+        return 1
+    if imp.returncode != 0:
+        # Nonzero/crash exits happen after SUCCESSFUL imports on this box (exit 1
+        # is routine, crash-on-exit is known) -- the compile gate is the verdict.
+        # But SAY it: a gate log with a weird downstream failure needs this line.
+        print("NOTE    --import exited %d (often benign; the compile gate decides)" % imp.returncode)
+    for attempt in (1, 2):
+        r = subprocess.run([str(GODOT), "--headless", "--path", str(DST),
+                            "--script", "res://check_compile.gd"],
+                           capture_output=True, text=True, timeout=300)
+        print((r.stdout or "").strip())
+        if "COMPILE OK" in (r.stdout or ""):
+            break
+        if attempt == 1:
+            # The importer can die MID-RUN on this RAM-tight box, leaving a
+            # half-settled cache whose parse errors blame innocent scripts.
+            # This used to flow silently into a bogus compile verdict: re-import
+            # once (idempotent) and re-check -- a genuinely broken tree fails
+            # again identically.
+            print("NOTE    compile gate failed right after import; re-importing once "
+                  "(a crashed import leaves a half-settled cache) ...")
+            try:
+                imp = subprocess.run([str(GODOT), "--headless", "--import", "--quit",
+                                      "--path", str(DST)],
+                                     capture_output=True, text=True, timeout=600)
+            except subprocess.TimeoutExpired:
+                print("GATE FAIL: --import retry did not finish in 600s")
+                return 1
+            if imp.returncode != 0:
+                print("NOTE    --import retry exited %d (the re-check decides)" % imp.returncode)
+    else:
+        print("GATE FAIL: mobile compile gate did not pass (twice, with a fresh "
+              "import between -- the tree itself is broken, not the cache)")
         return 1
     env = dict(os.environ)
     env["APPDATA"] = tempfile.mkdtemp(prefix="crownless_mobile_gate_")  # isolate user:// like test_quick.bat
-    r = subprocess.run([str(GODOT), "--headless", "--path", str(DST),
-                        "res://scenes/test.tscn", "--", "--quick"],
-                       capture_output=True, text=True, timeout=600, env=env)
+    try:
+        r = subprocess.run([str(GODOT), "--headless", "--path", str(DST),
+                            "res://scenes/test.tscn", "--", "--quick"],
+                           capture_output=True, text=True, timeout=600, env=env)
+    except subprocess.TimeoutExpired:
+        shutil.rmtree(env["APPDATA"], ignore_errors=True)
+        print("GATE FAIL: quick suite still running after 600s (engine hang -- killed)")
+        return 1
     out = (r.stdout or "") + (r.stderr or "")
     shutil.rmtree(env["APPDATA"], ignore_errors=True)
     if "AUTOTEST QUICK PASS" in out:

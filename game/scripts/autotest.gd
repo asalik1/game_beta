@@ -1664,9 +1664,19 @@ func _run_systems() -> void:
 	if int(loaded.get("version", 0)) != SaveGame.VERSION:
 		return _fail("save version wrong")
 	SaveGame.apply(game, loaded)
-	await _frames(2)
+	# Assert BEFORE yielding any frames: apply is fully synchronous, and a frame
+	# gap here is a mutation window, not a wait. On a stalled machine (the mobile
+	# gate right after a big sync + re-import) 2 frames can span SECONDS of wall
+	# clock -- long enough for an earlier section's wall-clock timer or a live-
+	# world tick to land in the gap and masquerade as a save bug. The deferred
+	# spawns apply queued (ground loot, physics registrations) settle in the
+	# _frames(2) AFTER the asserts instead.
 	if p.gold != 4321 or p.resonance != -37.0 or p.faction_standing["cinderborn"] != 12:
-		return _fail("save did not restore gold/resonance/faction")
+		var rt_c := SaveGame.character_of(loaded)
+		var rt_fs: Dictionary = rt_c.get("faction_standing", {})
+		return _fail("save did not restore gold/resonance/faction (now %d/%s/%s, in file %s/%s/%s)"
+			% [p.gold, p.resonance, str(p.faction_standing.get("cinderborn")),
+			str(rt_c.get("gold")), str(rt_c.get("resonance")), str(rt_fs.get("cinderborn"))])
 	if p.char_name != "Rowan":
 		return _fail("save did not restore character name (got '%s')" % p.char_name)
 	if p.talent_loadouts.size() != Player.TALENT_LOADOUT_COUNT \
@@ -1688,6 +1698,7 @@ func _run_systems() -> void:
 		return _fail("visited rooms did not survive the roundtrip")
 	if game.cur_room != 0:
 		return _fail("cur_room did not survive the roundtrip (got %d)" % game.cur_room)
+	await _frames(2)  # NOW flush apply's deferred spawns (loot pickups register vs physics)
 	# Rename in place: rewrite ONLY the name on the on-disk save (the roster
 	# ✎), leaving the rest of the character block untouched; blank clears it.
 	SaveGame.rename_character(SaveGame.MAX_SLOTS, "Renamed")
