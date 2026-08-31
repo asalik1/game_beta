@@ -1,0 +1,45 @@
+Reference 1 shows an armored king from BEHIND (back to camera, two standing/walking
+poses): smooth rounded BACK of his great-helm (solid dark steel dome, NO visor, NO eye
+slit, NO face opening), a tall spiked black crown seen from behind, flames rising from
+both shoulder pauldrons, a long ragged layered cape covering his back, armored boots
+visible below the cape hem, and his massive flame-wreathed greatsword held low in his
+right hand at the lower RIGHT of the figure. This is the character's correct BACK view:
+reproduce this figure exactly (same armor, same cape, same colors, same flames).
+
+Reference 2 is a 4-frame attack animation of the SAME king drawn from the FRONT. Use it
+ONLY for the action: the sword path, the pose timing, the flame coverage and the spark
+burst. Redraw that exact 4-frame attack with the king seen from BEHIND (as in reference
+1) in every frame:
+
+- Frame 1: at rest, exactly the stance of reference 1: sword held low in his right
+  hand, blade angled down toward the lower right.
+- Frame 2: the sword raised high above his head in a two-handed windup, blade diagonal,
+  matching reference 2 frame 2's sword angle.
+- Frame 3: the swing landed: sword swept down to the lower right, blade roughly level,
+  with the same golden impact-spark burst at the tip as reference 2 frame 3.
+- Frame 4: back at rest, same pose as frame 1.
+
+The king's BODY (helm to boots) keeps the same height and stays in the same place in
+every frame; both boots stay planted on the ground line; only the arms, the sword, its
+flames and a slight upper-body lean change between frames. Flame coverage on the crown,
+shoulders and blade stays consistent across all 4 frames -- no frame dimmer or brighter
+than the others.
+
+FORBIDDEN (the exact defects being fixed -- this is a BACK view):
+- NO visor, NO eye slit, NO face opening, NO nasal bar on the helmet in ANY frame; only
+  the smooth dark dome with a faint orange ember seam.
+- NO X-shaped ember emblem anywhere (that emblem is on his chest, which is NOT visible
+  from behind); the back shows the cape and backplate as in reference 1.
+- No frame where the sword or its flames cross into another figure's space.
+
+Produce ONE image: a horizontal row of EXACTLY 4 figures, equal-width cells, all feet on
+one shared ground line, constant body height, each figure and its sword fully inside its
+own cell with green margins on all sides -- nothing touching any image edge. Flat solid
+#00ff00 GREEN background, nothing else in the image. Generate ONE image and SAVE it to
+disk at the exact path
+C:\Users\asali\Projects\MMO\.claude\worktrees\optimistic-haibt-9f71f5\art_src\vargoth_ability_n_2026-08-31\attack_n\vargoth_attack_n_row.png,
+then stop.
+
+In your final message, for each frame 1-4 confirm: the helmet shows NO visor or eye
+slit, NO X emblem is visible anywhere, the sword position matches the same frame of
+reference 2, and the flame coverage matches the other frames.
