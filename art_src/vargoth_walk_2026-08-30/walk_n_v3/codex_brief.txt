@@ -1,0 +1,27 @@
+Reference 1 is a 6-frame walk cycle of an armored king walking AWAY from the viewer
+(back to camera). The body, cape, legs, sword and flames are all CORRECT and
+approved. It has exactly ONE defect: every figure's HELMET was drawn as the FRONT
+view (it shows a T-shaped visor with a nasal bar and eye-slit), which is impossible
+on a back view.
+
+Reproduce reference 1 EXACTLY -- same six figures, same poses, same leg positions,
+same cape shapes, same sword, same flames, same palette, same sizes, same
+positions -- changing ONLY the helmet on each figure to the BACK view:
+- the smooth rounded BACK of the great-helm: solid dark steel dome, NO visor, NO
+  eye slit, NO face opening, NO nasal bar. A faint orange ember seam may trace the
+  dome edge, matching the armor's ember seams.
+- the tall spiked black crown stays exactly as it is, seen from behind.
+- the helmet's size, position and angle per figure stay identical; only its face
+  side is replaced by the featureless back of the helm.
+
+Change NOTHING else. Every pixel below the neck should match reference 1 as closely
+as possible.
+
+Produce ONE image: the same horizontal row of EXACTLY 6 figures on the same flat
+solid #00ff00 GREEN background, same layout and margins as reference 1. Generate ONE
+image and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\art_src\vargoth_walk_2026-08-30\walk_n_v3\vargoth_walk_n_row.png,
+then stop.
+
+In your final message, for each frame 1-6 confirm: helmet shows NO visor or eye
+slit, and the body below the neck matches reference 1.

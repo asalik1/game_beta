@@ -1,0 +1,58 @@
+Redraw a 6-frame walk cycle of THIS armored king walking AWAY from the viewer (back
+to the camera, walking upscreen), with EXACTLY the leg choreography of reference 2.
+Reference 1 shows the character from the front (for his design and palette);
+reference 3 shows him from BEHIND, which is the view to draw. One character's body,
+the other character's walk.
+
+THE CHARACTER (design from references 1 and 3 -- reproduce this exact figure, his
+design must not change): a towering knight-king in full plate armor of blackened
+iron, a tall black crown of vertical spikes on his great-helm, a long ragged black
+cape covering most of his back (as in reference 3), armored legs and boots visible
+below the cape hem, and a massive flame-wreathed greatsword visible at his side.
+Painterly, soft-shaded, muted dark palette, no black outlines.
+
+THE SWORD AND CAPE ARE STABLE: the greatsword stays in the IDENTICAL position and
+angle relative to his body in all 6 frames, exactly where reference 3 shows it. The
+cape keeps the same overall silhouette in every frame, swaying only slightly with
+the stride. Flame coverage on the sword, crown and shoulders stays the SAME in every
+frame -- no frame brighter or dimmer than the others, no frame where the flames
+shrink or vanish.
+
+THE WALK (reference 2 -- a DIFFERENT character, a lean man in a dark coat, also
+walking away from the viewer; use him ONLY for how the legs move): copy his 6-frame
+leg choreography frame-for-frame onto the king. What every frame must carry:
+- The stepping leg lifts with a bent knee, boot sole showing toward the camera as
+  it pushes off; the planted leg takes the weight.
+- LEFT AND RIGHT ALTERNATE: frames 1-3 are one leg's step, frames 4-6 are the OTHER
+  leg's step. The two halves of the cycle must have opposite legs stepping.
+- The body stays the same height and width in every frame; only the legs and the
+  gentle cape sway change.
+Match his frame count and phase exactly, but make the stride HEAVY and deliberate --
+a giant in plate, planted with weight, not a light quick step.
+
+Do NOT copy anything else from reference 2: no daggers, no coat, no lean build.
+
+FORBIDDEN (defects seen in the previous attempt -- do not repeat them):
+- NO rectangular patches or visible straight seams anywhere. The previous attempt
+  had straight-edged rectangles of mismatched shading across the lower cape and
+  legs, like a badly blended patch. Cape texture and shading must be CONTINUOUS
+  with no straight edges inside the figure.
+- The sword's flames must be at FULL coverage from frame 1: the previous attempt
+  started with a weak flame that grew over the first frames.
+- EXACTLY TWO legs and two boots in every frame. Never draw both strides at once,
+  no ghost legs, no duplicated boots.
+- No frame where the flames dim or disappear (the old strip's last frame lost its
+  flames -- do not repeat that).
+- No frame where the sword jumps to a different position or angle.
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, equal-width cells, all feet
+on one shared ground line, constant body height, torso near each cell's horizontal
+center, green margins on all sides -- no figure touching any image edge. Flat solid
+#00ff00 GREEN background, nothing else in the image. Generate ONE image and SAVE it
+to disk at the exact path
+C:\Users\asali\Projects\MMO\art_src\vargoth_walk_2026-08-30\walk_n\vargoth_walk_n_row.png,
+then stop.
+
+In your final message report, for each frame 1-6: which leg is stepping, and confirm
+the frame has exactly two legs, the sword position matches reference 3, and the flame
+coverage matches the other frames. Report any frame that violates any of these.

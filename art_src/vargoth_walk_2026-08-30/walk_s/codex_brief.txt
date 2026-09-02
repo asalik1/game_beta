@@ -1,0 +1,49 @@
+Redraw a 6-frame walk cycle of THIS armored king (reference 1) walking TOWARD the
+viewer (facing the camera, walking downscreen), with EXACTLY the leg choreography of
+reference 2. One character's body, the other character's walk.
+
+THE CHARACTER (reference 1 -- reproduce this exact figure, his design must not
+change): a towering knight-king in full plate armor of blackened iron, a tall black
+crown of vertical spikes fused to his closed great-helm, a glowing orange X-shaped
+ember sigil across his chestplate, faint orange ember seams between the armor plates,
+a long ragged black cape visible behind his shoulders, and a massive two-handed
+greatsword wreathed in orange flame. Painterly, soft-shaded, muted dark palette, no
+black outlines.
+
+THE SWORD IS LOCKED: he carries the flaming greatsword low across his front exactly
+as in reference 1, and it stays in the IDENTICAL position and angle relative to his
+body in all 6 frames. It never lifts, never swings, never changes side. Only the
+flames flicker slightly. Flame coverage on the sword, crown and shoulders stays the
+SAME in every frame -- no frame brighter or dimmer than the others.
+
+THE WALK (reference 2 -- a DIFFERENT character, a lean man in a dark coat, also
+walking toward the viewer; use him ONLY for how the legs move): copy his 6-frame leg
+choreography frame-for-frame onto the king. What every frame must carry:
+- KNEES BEND: the stepping leg lifts with a clearly bent knee, boot raised toward
+  the camera; the planted leg takes the weight.
+- LEFT AND RIGHT ALTERNATE: frames 1-3 are one leg's step, frames 4-6 are the OTHER
+  leg's step. The two halves of the cycle must have opposite legs stepping.
+- The body stays the same height and width in every frame; only the legs change.
+Match his frame count and phase exactly, but make the stride HEAVY and deliberate --
+a giant in plate, planted with weight, not a light quick step.
+
+Do NOT copy anything else from reference 2: no daggers, no coat, no lean build.
+
+FORBIDDEN (the exact defects of the strip being replaced):
+- EXACTLY TWO legs and two boots in every frame. Never draw both strides at once,
+  no ghost legs, no duplicated or extra boots. This strip is being replaced because
+  two of its frames show FOUR legs.
+- No frame where he stands at attention with legs straight and feet together.
+- No frame noticeably wider, shorter, brighter or dimmer than the others.
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, equal-width cells, all feet
+on one shared ground line, constant body height, torso near each cell's horizontal
+center, green margins on all sides -- no figure touching any image edge. Flat solid
+#00ff00 GREEN background, nothing else in the image. Generate ONE image and SAVE it
+to disk at the exact path
+C:\Users\asali\Projects\MMO\art_src\vargoth_walk_2026-08-30\walk_s\vargoth_walk_s_row.png,
+then stop.
+
+In your final message report, for each frame 1-6: which leg is stepping, and confirm
+the frame has exactly two legs and the sword is in the locked carry position. Report
+any frame that violates any of these.

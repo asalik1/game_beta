@@ -85,6 +85,20 @@ dirs are unique), and the idle reference. Then:
   regen "reproduce this strip exactly, reposition ONLY the <item> to the idle's placement"
   (see art_src/stride_pilot_2026-08-27/archer_bn_quiverfix).
 
+- **WRONG-FACING PART / VIEW TRANSPLANT (owner catch 2026-08-31, vargoth walk_n).** A directional
+  strip carries a component drawn from ANOTHER viewpoint — a back-view body wearing the FRONT of
+  the helmet (visor/eye-slit toward camera), or an entire "N" ability strip that is front-view art
+  (vargoth_attack_n/blade_n show the chest sigil while he faces away). Two roots: (a) the gen's
+  identity ref only exists for one facing, so the model transplants its most distinctive features
+  (the visor IS the character's face to the model); (b) legacy waves simply reused front art under
+  directional names. Geometric gates can't see it and per-strip review normalizes it — audit
+  N/NE/NW strips by asking "which of these features are impossible from behind?" (face, visor,
+  chest emblem, buckle). Ref hygiene at gen time: for a back view, crop identity refs to
+  below-the-neck or explicitly name the defective part, or the ref re-seeds the defect (the
+  2026-08-31 walk_n v2 copied the old strip's front helm faithfully). Fix taxonomy: surgical
+  edit-in-place regen — "reproduce this row exactly, replace ONLY the helmet with its back view"
+  (art_src/vargoth_walk_2026-08-30/walk_n_v3).
+
 ## Fix taxonomy — cheapest that fixes it
 1. **Despill** (deterministic, no gen): off-palette FX residue, stray specks, green rim.
 2. **Frame-level edit** (frame swap/reorder, despur): a single bad frame or a projectile-only cell.
