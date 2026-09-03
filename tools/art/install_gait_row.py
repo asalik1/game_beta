@@ -52,6 +52,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from install_gait_walk import key_and_despill, tone_match, mirror_strip  # noqa: E402
 
 A_SOLID = 40
+WIDTH_FIT_FLOOR = 0.95   # never give up more than 5% of the body to fit the cell
 
 
 def _bbox(alpha: np.ndarray) -> tuple[int, int, int, int] | None:
@@ -190,13 +191,37 @@ def build(row: Path, cell: int, body_target: int, feet_y: int, frames: int | Non
     if orphans:
         zone = max(6, int(cells[0].shape[1] * 0.14))
         cells = [sweep_orphans(c, zone) for c in cells]
-    bodies = []
-    for c in cells:
+    bodies, reach = [], []
+    for i, c in enumerate(cells):
         bb = _bbox(c[:, :, 3])
         if bb is None:
             raise SystemExit("a sliced cell is empty -- wrong --frames or gutters?")
-        bodies.append(bb[3] - bb[1] + 1)
+        h = bb[3] - bb[1] + 1
+        w = bb[2] - bb[0] + 1
+        # A gutter split can hand back a SPECK as its own cell (a stray fleck
+        # between two figures), which would ship as a near-empty frame that
+        # blinks in game. Refuse rather than install it.
+        if h < 0.35 * max(bodies or [h]):
+            raise SystemExit(f"sliced cell {i} is a {w}x{h} speck, not a figure "
+                             f"-- pass --frames N (or drop --gutters)")
+        bodies.append(h)
+        # How far the figure reaches from its ANCHOR (the point that lands on
+        # the cell centre) -- not its bbox width. A hound's tail streams to one
+        # side of the torso, so the bbox fits the cell while the tail still
+        # runs off the edge once the torso is centred.
+        ax = anchor_x(c[:, :, 3], anchor)
+        reach.append(max(ax - bb[0], bb[2] - ax))
     S = body_target / float(np.median(bodies))
+    need = 2.0 * max(reach) * S
+    if need > cell - 10:
+        # Give up at most WIDTH_FIT_FLOOR of the body to fit the cell. Shrinking
+        # further would trade a clipped tail tip for a body that visibly pops
+        # smaller the moment the creature moves (the enemy renderer normalises a
+        # locomotion strip by its own cell) -- a worse defect than a cropped
+        # tail, which the outgoing strips carried anyway.
+        S *= max(WIDTH_FIT_FLOOR, (cell - 10) / need)
+        if report:
+            print(f"  width-fit: reach needs {need:.0f}px of a {cell}px cell, scale -> {S:.3f}")
     n = len(cells)
     out = Image.new("RGBA", (cell * n, cell), (0, 0, 0, 0))
     for f, c in enumerate(cells):
