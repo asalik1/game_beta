@@ -1,0 +1,37 @@
+Redraw a 8-frame walk cycle of THIS character (reference 1), walking LEFT,
+with EXACTLY the leg choreography of reference 2. One character's body, the other
+character's walk.
+
+THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not
+change): a crystal-plated cave spider: a low broad body armored in pale blue-white crystal shards over dark chitin, eight jointed dark legs with pale crystal tips, glowing blue eyes
+crisp hi-res dark-fantasy game sprite, muted palette, no black outlines. Every piece of equipment stays exactly where reference 1 shows it in every
+frame -- nothing swaps sides, changes shape or disappears. Same height, same width,
+same palette in every frame.
+
+THE WALK (reference 2 -- a DIFFERENT creature drawn from this same viewing angle; use
+it ONLY for how the legs move): copy its 8-frame leg choreography frame-for-frame
+onto this character, matching the frame count and phase exactly (frame 1 = its frame
+1's leg positions, and so on).
+What every frame must carry (copy reference 2's gait frame-for-frame):
+- A real eight-legged crawl: alternating leg groups -- one tetrapod set reaches while
+  the other set pushes, swapping each half of the row.
+- Leg joints BEND; legs are never all splayed identically in two frames.
+- The abdomen stays at one height and the body stays at one x position in its cell.
+FORBIDDEN: identical leg splay in two frames; a body that bobs up and down; extra
+or missing legs.
+Do NOT copy anything else from reference 2: not its clothing, weapons, build, colours or
+species -- only the legs' motion, redrawn as THIS character's legs.
+Reference 3 is the CURRENT walk being replaced -- use it only to see the character from this angle and its equipment; its leg motion is the defect (the same two leg spreads repeating, legs sliding instead of stepping).
+
+Produce ONE image: a horizontal row of EXACTLY 8 figures, equal-width cells, all
+feet on one shared ground line, constant body height, the body near each cell's
+horizontal centre (no drifting across the cells), green margins on all sides -- no
+figure touching any image edge or its neighbour. Flat solid #00ff00 GREEN background,
+nothing else in the image. Generate ONE image and SAVE it to disk at the exact path
+art_src\mob_gait_2026-09-03\deep_stalker__flat\deep_stalker_walk_flat_row.png
+then stop.
+
+In your final message report, for each frame 1-8: which leg leads / which joints are
+bent and roughly how much (slight / clear / deep), and whether the frame matches reference 2's same frame.
+Report any frame with all legs straight, any repeated pose, and whether the body stayed
+cell-centred and at constant height.

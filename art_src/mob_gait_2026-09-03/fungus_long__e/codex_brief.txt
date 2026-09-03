@@ -1,0 +1,43 @@
+Redraw a 6-frame walk cycle of THIS character (reference 1), walking RIGHT,
+with EXACTLY the leg choreography of reference 2. One character's body, the other
+character's walk.
+
+THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not
+change): a root shambler: a tall gaunt figure of twisted dark-brown roots and bark, a cluster of red-brown mushroom caps for a head with a hollow dark face, long root arms with clawed root fingers, legs made of bundled roots ending in root feet
+crisp hi-res dark-fantasy game sprite, muted palette, no black outlines. Every piece of equipment stays exactly where reference 1 shows it in every
+frame -- nothing swaps sides, changes shape or disappears. Same height, same width,
+same palette in every frame.
+
+THE WALK (reference 2 -- a DIFFERENT creature drawn from this same viewing angle; use
+it ONLY for how the legs move): copy its 6-frame leg choreography frame-for-frame
+onto this character, matching the frame count and phase exactly (frame 1 = its frame
+1's leg positions, and so on).
+What every frame must carry (copy reference 2 frame-for-frame):
+- KNEES BEND. The swinging leg folds at the knee as it lifts and drives forward; the
+  planted leg flexes as the body passes over it. No frame has two straight legs.
+- A real PASSING moment: in the middle frames the legs come close together and
+  overlap, one shin in front of the other, before the stride opens again.
+- FEET ROLL: the rear heel peels off the ground while the toe still touches; the
+  landing foot touches heel-first.
+- LEFT AND RIGHT ALTERNATE: the first half of the row is one leg's stride, the second
+  half is the OTHER leg's stride -- opposite legs leading in the two halves.
+FORBIDDEN (the exact defects of the strip being replaced): straight-legged scissor
+poses (both knees locked, legs like open compass blades); the same leg leading in
+both halves; two or more frames with an identical lower body; feet together at
+attention; more than two legs or boots in a frame.
+Do NOT copy anything else from reference 2: not its clothing, weapons, build, colours or
+species -- only the legs' motion, redrawn as THIS character's legs.
+Reference 3 is the CURRENT walk being replaced -- use it only to see the character from this angle and its equipment; its leg motion is the defect (a two-pose ping-pong and a body drawn 12% too big).
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, equal-width cells, all
+feet on one shared ground line, constant body height, the body near each cell's
+horizontal centre (no drifting across the cells), green margins on all sides -- no
+figure touching any image edge or its neighbour. Flat solid #00ff00 GREEN background,
+nothing else in the image. Generate ONE image and SAVE it to disk at the exact path
+art_src\mob_gait_2026-09-03\fungus_long__e\fungus_long_walk_e_row.png
+then stop.
+
+In your final message report, for each frame 1-6: which leg leads / which joints are
+bent and roughly how much (slight / clear / deep), and whether the frame matches reference 2's same frame.
+Report any frame with all legs straight, any repeated pose, and whether the body stayed
+cell-centred and at constant height.

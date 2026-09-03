@@ -1,0 +1,14 @@
+{
+ "base": "royal_knight",
+ "facing": "flat",
+ "arch": "biped_heavy",
+ "old": "royal_knight_walk.png",
+ "frames": 6,
+ "heavy": true,
+ "desc": "a frozen royal guard in full dark-steel plate armor rimed with pale ice crystals, a closed great-helm with ice spikes, a round shield with a silver crest strapped to one arm, a longsword held low in the other hand",
+ "defect": "the same leg leading every step",
+ "idle_ref": "royal_knight_anim",
+ "donor": "skins/elite/warrior_emberbound_heir_walk_e",
+ "donor_flipped": true,
+ "refs": 3
+}

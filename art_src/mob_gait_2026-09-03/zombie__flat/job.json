@@ -1,0 +1,14 @@
+{
+ "base": "zombie",
+ "facing": "flat",
+ "arch": "biped",
+ "old": "zombie_walk.png",
+ "frames": 6,
+ "desc": "a risen corpse: a shambling grey-green-skinned zombie in rotted rag clothing (a torn shirt and ragged trousers), bare feet, one arm hanging limp, the head lolling forward",
+ "defect": "only two real poses, one frame a byte-copy of another",
+ "extra": "It is a SHAMBLE: the knees still bend and the legs still alternate and pass, but the steps are short and dragging, the shoulders slumped, the head lolling -- a corpse walk, not a march.",
+ "idle_ref": "zombie_anim",
+ "donor": "assassin_walk_e",
+ "donor_flipped": true,
+ "refs": 3
+}

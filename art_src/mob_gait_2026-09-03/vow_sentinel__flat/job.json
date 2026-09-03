@@ -1,0 +1,14 @@
+{
+ "base": "vow_sentinel",
+ "facing": "flat",
+ "arch": "biped_heavy",
+ "old": "vow_sentinel_walk.png",
+ "frames": 6,
+ "heavy": true,
+ "desc": "a vow sentinel: a heavily armored knight in dark blackened plate with a glowing pale-blue slit visor, a large two-handed warhammer held in one hand with the head resting low, a faded pale cloth banner streaming from the shoulder",
+ "defect": "the same leg leading twice and only three distinct poses",
+ "idle_ref": "vow_sentinel_anim",
+ "donor": "skins/elite/warrior_emberbound_heir_walk_e",
+ "donor_flipped": true,
+ "refs": 3
+}

@@ -1,0 +1,15 @@
+{
+ "base": "stone_broken",
+ "facing": "flat",
+ "arch": "biped_heavy",
+ "old": "stone_broken_walk.png",
+ "frames": 6,
+ "heavy": true,
+ "desc": "a slag-bound golem: a hulking humanoid of stacked dark stone blocks with a glowing molten-orange core in its chest and glowing orange cracks between the blocks, thick block arms hanging at the sides, thick block legs, no neck",
+ "defect": "every frame is the standing idle pose -- it has no walk at all",
+ "extra": "A slow ponderous golem STOMP: each step lifts a whole block leg, the body rocks slightly onto the planted leg, arms swing a little; the molten core and cracks keep the SAME brightness in every frame.",
+ "idle_ref": "stone_broken_anim",
+ "donor": "skins/elite/warrior_emberbound_heir_walk_e",
+ "donor_flipped": true,
+ "refs": 3
+}

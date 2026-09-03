@@ -1,0 +1,12 @@
+{
+ "base": "wolf",
+ "facing": "flat",
+ "arch": "quadruped",
+ "old": "wolf_walk.png",
+ "frames": 6,
+ "desc": "a gaunt blight-touched grey wolf with matted dark fur, a pale skull-like face with hollow glowing eyes, ribs and spine showing through the fur, a lowered stalking head and a ragged tail",
+ "idle_ref": "wolf_anim",
+ "donor": null,
+ "donor_flipped": false,
+ "refs": 2
+}

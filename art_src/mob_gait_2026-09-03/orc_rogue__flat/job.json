@@ -1,0 +1,13 @@
+{
+ "base": "orc_rogue",
+ "facing": "flat",
+ "arch": "biped",
+ "old": "orc_rogue_walk.png",
+ "frames": 6,
+ "desc": "a beastkin howler: a lean hairy wolf-headed beastman with a dark shaggy mane, bare muscled torso, a fur loincloth, bare clawed feet, holding a curved bone war-horn in one hand",
+ "defect": "straight column legs with flat feet, no knee bend",
+ "idle_ref": "orc_rogue_anim",
+ "donor": "assassin_walk_e",
+ "donor_flipped": true,
+ "refs": 3
+}

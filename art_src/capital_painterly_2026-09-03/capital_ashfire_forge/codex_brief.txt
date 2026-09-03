@@ -1,0 +1,10 @@
+Repaint a game BUILDING / STRUCTURE in the rendering style of a reference. This is for a top-down dark-fantasy action RPG. All of the world's buildings, props and characters are PAINTERLY; this one still reads as hard-outlined pixel-art with saturated trim, so it must be brought in line with its siblings.
+
+Reference image 1_style_cottage_b.png (STYLE): a finished structure from this game — painterly, softly shaded, fine natural detail, NO black outlines, muted somber palette, weathered stone and wood, light from the top-left, top-down three-quarter view. Match this rendering style exactly (brushwork, edge softness, material shading, saturation level).
+
+Reference image 2_subject_capital_ashfire_forge.png (SUBJECT): the current pixel-art version to replace — "a smithy: a squat stone workshop with an open front showing a glowing forge hearth, an anvil, hanging tongs and chains, a stone chimney, dark-red banners on the corner posts". Keep ITS silhouette, footprint, proportions, view angle, every architectural part in the same place (doors, windows, arches, stairs, banners, fires, towers), and its colour identity, but desaturate the reds/golds to the muted palette of reference 1. Only the rendering style changes: from outlined pixel-art to the painterly style of reference 1. Keep any open arch or doorway OPEN (it is walked through). Fire, embers and water may glow softly, nothing else glows; no neon, no cyan/magenta lights.
+
+Generate ONE image: the SUBJECT repainted in the STYLE of reference 1. Same object, same shape and orientation, filling most of the canvas, centred, on a flat solid pure-green (#00FF00) background. No cast shadow on the ground, no ground plane, no people, no other objects, no text, no frame. Square 1024x1024. Painterly, no cartoon outlines.
+
+Save the PNG to exactly this path: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\capital_painterly_2026-09-03\capital_ashfire_forge/capital_ashfire_forge.png
+Then reply with one line: which reference you matched the style to, and any way the silhouette or part placement differs from the subject.

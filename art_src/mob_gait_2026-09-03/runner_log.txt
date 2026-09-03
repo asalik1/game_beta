@@ -1,0 +1,9 @@
+codex = C:\Users\asali\AppData\Local\OpenAI\Codex\bin\7537f22ba194f7c1\codex.exe
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_2026-09-03\cultist__flat (3 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_2026-09-03\elf_druid__flat (3 refs)
+wait: free RAM 1.15GB < 1.3GB gate (1 running)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_2026-09-03\elf_ranger__flat (3 refs)
+wait: free RAM 1.2GB < 1.3GB gate (1 running)
+wait: free RAM 1.26GB < 1.3GB gate (1 running)
+wait: free RAM 1.17GB < 1.3GB gate (1 running)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_2026-09-03\royal_knight__flat (3 refs)

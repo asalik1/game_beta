@@ -1,0 +1,13 @@
+{
+ "base": "deep_stalker",
+ "facing": "flat",
+ "arch": "arachnid",
+ "old": "deep_stalker_walk.png",
+ "frames": 8,
+ "desc": "a crystal-plated cave spider: a low broad body armored in pale blue-white crystal shards over dark chitin, eight jointed dark legs with pale crystal tips, glowing blue eyes",
+ "defect": "the same two leg spreads repeating, legs sliding instead of stepping",
+ "idle_ref": "deep_stalker_anim",
+ "donor": "spider_walk",
+ "donor_flipped": false,
+ "refs": 3
+}

@@ -1,0 +1,12 @@
+{
+ "base": "winterfang",
+ "facing": "flat",
+ "arch": "quadruped",
+ "old": "winterfang_walk.png",
+ "frames": 6,
+ "desc": "a white frost wolf with thick pale fur tipped in ice-blue, crystal-blue eyes, four legs, a bushy white tail",
+ "idle_ref": "winterfang_anim",
+ "donor": null,
+ "donor_flipped": false,
+ "refs": 2
+}

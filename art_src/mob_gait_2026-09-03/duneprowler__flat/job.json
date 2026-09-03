@@ -1,0 +1,13 @@
+{
+ "base": "duneprowler",
+ "facing": "flat",
+ "arch": "quadruped",
+ "old": "duneprowler_walk.png",
+ "frames": 6,
+ "desc": "a lean sand-coloured hyena-like desert prowler with a ridged crest of scaly plates down its back, long pointed ears, a long thin tail, four clawed legs",
+ "defect": "a bound with all four legs bunched, the same legs never alternating",
+ "idle_ref": "duneprowler_anim",
+ "donor": null,
+ "donor_flipped": false,
+ "refs": 2
+}

@@ -1,0 +1,13 @@
+{
+ "base": "stone_base",
+ "facing": "s",
+ "arch": "quadruped",
+ "old": "stone_base_walk_s.png",
+ "frames": 6,
+ "desc": "a cinder whelp walking toward the viewer: a low stocky four-legged stone beast with a rocky ridged back, glowing orange ember cracks, a blunt stone head with glowing eyes. Body drawn at the SAME size and grain as reference 1",
+ "defect": "a different, smaller drawing",
+ "idle_ref": "stone_base_anim",
+ "donor": null,
+ "donor_flipped": false,
+ "refs": 2
+}

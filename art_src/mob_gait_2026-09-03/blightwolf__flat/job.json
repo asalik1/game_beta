@@ -1,0 +1,12 @@
+{
+ "base": "blightwolf",
+ "facing": "flat",
+ "arch": "quadruped",
+ "old": "blightwolf_walk.png",
+ "frames": 6,
+ "desc": "a blight-cursed wolf with mottled dark grey-green fur cracked by glowing green veins, glowing green eyes, a lean body, four legs, a ragged tail",
+ "idle_ref": "blightwolf_anim",
+ "donor": null,
+ "donor_flipped": false,
+ "refs": 2
+}

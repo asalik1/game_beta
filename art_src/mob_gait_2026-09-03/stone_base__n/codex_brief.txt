@@ -1,0 +1,41 @@
+Redraw a 6-frame walk cycle of THIS creature (reference 1), walking AWAY from the viewer (back to camera), with the gait storyboarded below.
+
+THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not
+change): a cinder whelp walking away from the viewer (rump and ridged back toward the camera, head hidden beyond the body): a low stocky four-legged stone beast with a rocky ridged back and glowing orange ember cracks. Body drawn at the SAME size and grain as reference 1
+crisp hi-res dark-fantasy game sprite, muted palette, no black outlines. Every piece of equipment stays exactly where reference 1 shows it in every
+frame -- nothing swaps sides, changes shape or disappears. Same height, same width,
+same palette in every frame.
+
+THE WALK:
+A real four-legged TROT, storyboarded per frame (the diagonal pairs alternate):
+- frame 1: the NEAR foreleg and the FAR hind leg reach forward, off the ground, knees
+  and hocks clearly bent; the other diagonal pair is planted under the body and
+  angled back, pushing.
+- frame 2: the reaching pair lands, the body passes over it; all four legs are
+  briefly under the body, the two planted legs close together (the passing moment).
+- frame 3: the FAR foreleg and the NEAR hind leg reach forward, off the ground with
+  bent joints, while the first pair now trails and pushes back -- the mirror of
+  frame 1 with the OTHER legs.
+- frame 4: that pair lands and the body passes over it (the mirror of frame 2).
+(with 6 frames: insert a mid-swing frame after 1 and after 3 -- legs half-extended,
+joints bending; with 8: also a full-extension frame in each half.)
+- Legs BEND at every joint as they swing; the planted legs are angled under the body,
+  never stiff vertical posts. The spine flexes a little with the stride, the head
+  dips slightly on landing, the tail sways.
+- The paws sit on ONE shared ground line; the body's height stays constant.
+FORBIDDEN: all four legs straight and vertical; the same legs leading in both halves
+of the row; two frames with identical legs; the body sliding up/down; extra legs.
+Reference 2 is the CURRENT walk being replaced -- use it only to see the character from this angle and its equipment; its leg motion is the defect (a different, smaller drawing).
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, equal-width cells, all
+feet on one shared ground line, constant body height, the body near each cell's
+horizontal centre (no drifting across the cells), green margins on all sides -- no
+figure touching any image edge or its neighbour. Flat solid #00ff00 GREEN background,
+nothing else in the image. Generate ONE image and SAVE it to disk at the exact path
+art_src\mob_gait_2026-09-03\stone_base__n\stone_base_walk_n_row.png
+then stop.
+
+In your final message report, for each frame 1-6: which leg leads / which joints are
+bent and roughly how much (slight / clear / deep).
+Report any frame with all legs straight, any repeated pose, and whether the body stayed
+cell-centred and at constant height.

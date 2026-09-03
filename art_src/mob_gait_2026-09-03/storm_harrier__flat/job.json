@@ -1,0 +1,13 @@
+{
+ "base": "storm_harrier",
+ "facing": "flat",
+ "arch": "quadruped",
+ "old": "storm_harrier_walk.png",
+ "frames": 6,
+ "desc": "a storm harrier: a lean dark-furred hound crackling with pale-blue lightning along its back and legs, glowing blue eyes, four legs, a long tail. Body drawn at the SAME size as reference 1 (the current walk is drawn too small)",
+ "defect": "the body drawn 20% too small and off-centre",
+ "idle_ref": "storm_harrier_anim",
+ "donor": null,
+ "donor_flipped": false,
+ "refs": 2
+}

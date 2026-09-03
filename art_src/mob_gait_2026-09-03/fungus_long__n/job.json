@@ -1,0 +1,13 @@
+{
+ "base": "fungus_long",
+ "facing": "n",
+ "arch": "biped",
+ "old": "fungus_long_walk_n.png",
+ "frames": 6,
+ "desc": "a root shambler seen from behind: a tall gaunt figure of twisted dark-brown roots and bark, a cluster of red-brown mushroom caps for a head (no face visible from behind), long root arms, legs made of bundled roots ending in root feet",
+ "defect": "a two-pose ping-pong",
+ "idle_ref": "fungus_long_anim",
+ "donor": "assassin_walk_n",
+ "donor_flipped": false,
+ "refs": 3
+}

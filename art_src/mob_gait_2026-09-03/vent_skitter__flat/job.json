@@ -1,0 +1,13 @@
+{
+ "base": "vent_skitter",
+ "facing": "flat",
+ "arch": "arachnid",
+ "old": "vent_skitter_walk.png",
+ "frames": 8,
+ "desc": "a magma spider: a dark chitin spider with a bulbous abdomen cracked with glowing orange-red lava seams, eight jointed dark legs with glowing orange joints, red eyes. Body drawn at the SAME size as reference 1 (the current walk is drawn too small)",
+ "defect": "a two-pose cycle and a body drawn too small",
+ "idle_ref": "vent_skitter_anim",
+ "donor": "spider_walk",
+ "donor_flipped": false,
+ "refs": 3
+}

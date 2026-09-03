@@ -1,0 +1,13 @@
+{
+ "base": "skeleton_rogue",
+ "facing": "flat",
+ "arch": "biped",
+ "old": "skeleton_rogue_walk.png",
+ "frames": 6,
+ "desc": "a barrow wight: a gaunt undead warrior in mossy green-brown rotted mail and a rusted skullcap helm, a long thin sword held low in one hand, tattered dark cloth hanging from the belt",
+ "defect": "near-duplicate passing poses and a sideways shimmy",
+ "idle_ref": "skeleton_rogue_anim",
+ "donor": "assassin_walk_e",
+ "donor_flipped": true,
+ "refs": 3
+}
