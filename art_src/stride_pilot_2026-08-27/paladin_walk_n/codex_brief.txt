@@ -1,0 +1,32 @@
+Redraw a 6-frame walk cycle: THIS character (reference 1), seen from BEHIND, walking away from the camera, walking
+with EXACTLY the leg choreography of reference 2. One character's body, the other
+character's walk.
+
+THE CHARACTER (reference image 1, his idle from this same viewing angle -- reproduce
+this exact person, his design must not change): an older knight with grey hair and a short grey beard (face visible), POLISHED SILVER full plate armor, a gold chain across the chest, a blue tabard and blue cloth skirt with gold trim, a kite shield bearing a gold cross on his left arm, and a square warhammer with a gold cross emblem in his right hand. Painterly, soft-shaded, muted palette, no outlines. Brisk purposeful walk with a
+slight forward lean. His equipment stays exactly where the idle shows it in every
+frame -- nothing swaps hands or disappears.
+
+THE WALK (reference image 2 -- a DIFFERENT character, a lean man in a dark coat,
+drawn from this same viewing angle; use him ONLY for how the legs move):
+Copy his 6-frame back-view leg choreography frame-for-frame: the boots alternate with bent knees as each leg swings, the legs pass close in depth at mid-stride, trailing heels lift toward the camera.
+KNEES BEND -- no frame has two straight legs, even in plate armor (the greaves
+articulate at the knee).
+
+Do NOT copy anything else from reference 2: no daggers, no coat, no lean build. The
+upper body moves naturally with the walk but stays THIS character's design.
+
+FORBIDDEN: straight-legged scissor poses (both knees locked, legs like open compass
+blades) -- the defect being replaced. Also forbidden: the figure drifting across the
+cells -- the torso stays on each cell's horizontal center in ALL six frames.
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, equal-width cells, all feet
+on one shared ground line, constant body height, green margins on all sides -- no
+figure touching any image edge. Flat solid #00ff00 GREEN background, nothing else in
+the image. Generate ONE image and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\art_src\stride_pilot_2026-08-27\paladin_walk_n\paladin_walk_n_row.png,
+then stop.
+
+In your final message report, for each frame 1-6: which knee is bent (slight / clear
+/ deep), and whether the frame matches reference 2's same frame. Report any frame
+with both legs straight, and whether the torso stayed cell-centered.

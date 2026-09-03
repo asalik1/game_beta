@@ -1,0 +1,31 @@
+Redraw a 6-frame walk cycle: THIS knight (reference 1), seen from BEHIND and
+walking away from the camera, with EXACTLY the leg choreography of reference 2.
+
+THE CHARACTER (reference image 1, his idle from this same back view -- reproduce
+this exact person): an older knight in POLISHED SILVER full plate seen from behind,
+dark grey hair, a blue tabard and blue cloth skirt with gold trim covering his back,
+gold chain details, a square warhammer with a gold cross hanging in his right hand.
+THE KITE SHIELD IS ON HIS LEFT ARM AND MUST BE VISIBLE IN EVERY FRAME, exactly as
+the idle shows it: peeking out on his left side, silver-grey face with the GOLD
+CROSS clearly visible. It never disappears behind his body and never changes color.
+MATCH THE EXACT PALETTE AND BRIGHTNESS of reference 1 -- no brighter.
+
+THE WALK (reference image 2 -- a different, lean character from the same back view;
+use him ONLY for how the legs move): copy his 6-frame leg choreography
+frame-for-frame -- boots alternate below the skirt hem with bent knees, legs pass
+close in depth at mid-stride, trailing heels lift toward the camera. KNEES BEND --
+no frame has two straight legs.
+
+FORBIDDEN: any frame without the visible silver-and-gold-cross shield on his left;
+straight-legged poses; the figure drifting off cell center.
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, equal-width cells, all
+feet on one shared ground line, constant body height, torso near each cell's
+horizontal center, green margins on all sides -- no figure touching any image edge.
+Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE image
+and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\art_src\stride_pilot_2026-08-27\paladin_n_v2\paladin_n_v2_row.png,
+then stop.
+
+In your final message report, frame by frame: is the shield visible on his left with
+the gold cross, and which knee is bent.

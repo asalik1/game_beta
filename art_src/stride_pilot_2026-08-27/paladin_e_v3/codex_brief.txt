@@ -1,0 +1,37 @@
+Redraw a 6-frame right-facing side-view walk cycle: THIS knight (reference 1),
+walking with EXACTLY the leg choreography of reference 2. Three things were wrong
+in the last attempt and each is now a hard requirement.
+
+THE CHARACTER (reference image 1, his idle -- reproduce this exact person):
+an older knight, DARK GREY hair (same darkness as reference 1 -- NOT light, NOT
+white) and a short grey beard, POLISHED SILVER full plate armor, a gold chain
+across the chest, a blue tabard and blue cloth skirt with gold trim, a square
+warhammer with a gold cross in his right hand. THE KITE SHIELD on his left arm:
+its FACE is BRIGHT POLISHED SILVER-GREY metal with the gold cross on it -- the
+silver face must read clearly in EVERY frame; never dark, never black, never in
+shadow. MATCH THE EXACT PALETTE AND BRIGHTNESS of reference 1 everywhere.
+
+THE WALK (reference image 2 -- a different, lean character; use him ONLY for how
+the legs move): copy his 6-frame leg choreography frame-for-frame. THE LEGS MUST
+VISIBLY CROSS: in the passing frames (3 and 4), the swinging leg is drawn IN
+FRONT OF and partly COVERING the planted leg -- shin crossing over shin like
+scissors closing, exactly as reference 2's frames 3 and 4 show. If frames 3-4
+show two side-by-side legs with a gap between them, the image is wrong. Knees
+bend on every swing (the plate greaves articulate); rear heel peels off the
+ground; landing foot touches heel-first.
+
+FORBIDDEN: a dark or blackened shield face; lightened hair; legs that scissor
+open-closed on their own sides without crossing; straight-leg compass poses;
+the figure drifting off each cell's horizontal center.
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, equal-width cells, all
+feet on one shared ground line, constant body height, green margins on all sides
+-- no figure touching any image edge. Flat solid #00ff00 GREEN background,
+nothing else in the image. Generate ONE image and SAVE it to disk at the exact
+path
+C:\Users\asali\Projects\MMO\art_src\stride_pilot_2026-08-27\paladin_e_v3\paladin_e_v3_row.png,
+then stop.
+
+In your final message report: for frames 3 and 4, which shin is drawn in front
+and whether it covers part of the other leg; and for every frame, whether the
+shield face is bright silver with the gold cross.

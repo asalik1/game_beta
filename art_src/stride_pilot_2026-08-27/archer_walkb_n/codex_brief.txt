@@ -1,0 +1,24 @@
+Reproduce this 6-frame walk cycle EXACTLY, as a SECOND VARIANT that differs only in
+the upper-body dressing. This is a surgical variation -- NOT a redesign and NOT a new
+walk.
+
+Reference image 1 is the character's CURRENT 6-frame walk (back view (walking away from the camera)). Its LEG
+CHOREOGRAPHY IS CORRECT AND MUST BE COPIED FRAME-FOR-FRAME: every frame's leg
+positions, knee bends, foot placement and ground contact are reproduced exactly as
+drawn. The character's entire design (armor, colors, equipment, hair, proportions)
+also stays exactly as drawn.
+
+The ONLY change, in every frame: her bow arm swings a touch more freely with the stride, her head sits a touch more forward, and the cape's folds sway on the opposite beat of the step (the cape keeps its same overall shape). Keep the changes SUBTLE -- at a glance
+the two walks should read as the same walk; only side by side should the arm/cloth
+timing differ.
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, equal-width cells, all
+feet on one shared ground line, constant body height, torso near each cell's
+horizontal center, green margins on all sides -- no figure touching any image edge.
+Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE image
+and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\art_src\stride_pilot_2026-08-27\archer_walkb_n\archer_walkb_n_row.png,
+then stop.
+
+In your final message report, frame by frame: do the legs match reference 1 exactly,
+and what changed in the upper body.

@@ -41,3 +41,6 @@ test_full_run.log
 
 # Companion webnovel (kept local; not part of the game project)
 webnovel/
+
+# 3D pilot source models (huge binaries; kept on disk only — owner ruling 2026-09-03)
+art_src/**/*.fbx

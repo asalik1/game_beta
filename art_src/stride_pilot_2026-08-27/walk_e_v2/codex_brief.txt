@@ -1,0 +1,45 @@
+Draw a woman WALKING ON A TREADMILL, seen exactly from the side, as an 8-frame
+animation row. Because the camera is locked to the treadmill, her body stays in place
+while her planted foot SLIDES STEADILY BACKWARD beneath her, and the other leg swings
+forward through the air. That backward-sliding planted foot is the entire point of
+this image.
+
+THE CHARACTER (reference image 1, her idle -- reproduce this exact person): young
+woman, auburn hair, pale face, grey fur ruff at the shoulders, weathered green-grey
+hooded cape hanging behind her in one stable shape with textured folds, dark leather
+armor with straps, muted olive trousers, brown fur-cuffed boots, quiver of arrows on
+her back, wooden recurve bow held low in her right hand. Painterly, soft-shaded,
+muted palette, no outlines. She faces RIGHT and walks briskly with a slight forward
+lean.
+
+THE FOOT POSITIONS (reference image 2, the marker sheet -- follow it EXACTLY): each
+of the 8 cells shows a ground line, a faint vertical line for her torso axis, and a
+RED BOX on the ground. In every frame, the sole of her PLANTED, flat, weight-bearing
+boot sits exactly inside that frame's red box. The R/L letter says which foot is
+planted. Read the red boxes across the row: the planted boot starts ahead of her
+torso axis and slides backward past it, farther back every frame -- frames 1-4 the
+RIGHT boot sweeps ahead -> under -> behind -> far behind, frames 5-8 the LEFT boot
+does the same while the right leg lifts and swings forward. The swinging leg is in
+the air (bent knee driving forward in the first half of its swing, shin reaching
+forward in the second half); it never rests on the ground.
+
+Hard rules:
+- Torso and head stay on the faint center axis of every cell. Only the legs and boots
+  change position; the body never drifts across the cell.
+- All 8 frames have VISIBLY DIFFERENT leg silhouettes. No two frames may repeat a
+  pose. If two frames look alike, the image is wrong.
+- Constant body height. The planted sole flat ON the ground line. Bow, quiver, cape
+  and hair identical in every frame -- no redesign, no palette drift.
+
+Produce ONE image: a horizontal row of EXACTLY 8 figures, equal-width cells matching
+the marker sheet's cells, green margins on all sides -- no figure touching any image
+edge. Flat solid #00ff00 GREEN background, nothing else in the image (do NOT draw the
+markers, ground line or letters -- they are guides only). Generate ONE image and SAVE
+it to disk at the exact path
+C:\Users\asali\Projects\MMO\art_src\stride_pilot_2026-08-27\walk_e_v2\walk_e_v2_row.png,
+then stop.
+
+In your final message report, for each frame 1-8: which foot is planted, and the
+planted boot's horizontal offset from the torso axis as a NUMBER of pixels (positive
+= ahead of her, negative = behind her). The numbers must decrease steadily within
+frames 1-4 and again within frames 5-8.

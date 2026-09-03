@@ -1,0 +1,52 @@
+Regenerate an 8-frame RIGHT-FACING walk cycle for this ranger with a real TRAVELING
+stride. This fixes ONE mechanical defect; the character design must not change.
+
+Reference image 1 is the CURRENT right-facing walk strip. Its character is CORRECT and
+must be reproduced exactly: same young woman, same auburn hair, pale face, grey fur
+ruff at the shoulders, weathered green-grey hooded cape hanging behind (one stable
+shape, textured folds), dark leather armor with straps, muted olive trousers, brown
+fur-cuffed boots, quiver with arrows on her back, wooden recurve bow held low in her
+right hand. Painterly, soft-shaded, muted palette, no outlines. Reference image 2 is
+her idle for extra identity anchoring.
+
+The DEFECT in reference 1: her feet stay pinned UNDER her body in every frame -- she
+marches in place. In the game the world scrolls beneath her, so a foot that stays under
+the body glides across the ground. A correct game walk works like walking on a
+TREADMILL: the camera travels with her, so while a foot is planted it must SLIDE
+BACKWARD beneath the body, frame to frame, from ahead of the hip to under it to behind
+it, while the other leg swings forward through the air.
+
+The 8 frames, in order (she faces RIGHT; "ahead" = to the right of her hip,
+"behind" = to the left):
+
+Frame 1: RIGHT foot planted FLAT on the ground about half a leg-length AHEAD of her
+hip. LEFT foot far behind on its toes, finishing its push. Body slightly lowered.
+Frame 2: RIGHT foot flat, now directly UNDER her hip -- it has moved back beneath her.
+LEFT leg airborne, knee driving forward past the right leg. Body at its tallest.
+Frame 3: RIGHT foot BEHIND her hip, heel peeling off the ground. LEFT leg reaching
+forward, shin extended, foot still in the air ahead of her.
+Frame 4: RIGHT toes far behind her, pushing off. LEFT foot lands FLAT about half a
+leg-length AHEAD of her hip. Body slightly lowered again.
+Frames 5-8: the exact mirror -- LEFT foot planted and sweeping ahead -> under ->
+behind -> toe-off, while the RIGHT leg lifts and swings forward.
+
+Hard rules: the TORSO AND HEAD stay near the horizontal center of every cell (the feet
+move relative to the body, never the body across the cell). The planted foot's sole is
+ON the shared ground line whenever it is flat. Constant body height across all 8
+frames. Brisk purposeful pace with a slight forward lean. The two crossover frames
+(2 and 6) must show one same-colored leg clearly passing the other. Bow, quiver, cape
+and hair identical in every frame -- no redesign, no new equipment, no palette drift.
+
+Produce ONE image: a horizontal row of EXACTLY 8 figures, equal-width cells, all feet
+on one shared ground line, constant body height, green margins on all sides -- no
+figure touching any image edge.
+
+Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE image and
+SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\art_src\stride_pilot_2026-08-27\walk_e\walk_e_row.png,
+then stop.
+
+In your final message, report frame by frame (1-8): which foot is planted, and where
+that planted foot sits relative to her hip (ahead / under / behind). The sequence for
+each stance must read ahead -> under -> behind. Also report whether the torso stayed
+cell-centered in every frame.

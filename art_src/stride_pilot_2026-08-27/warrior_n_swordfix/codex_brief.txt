@@ -1,0 +1,25 @@
+Reproduce this 6-frame back-view walk EXACTLY, removing ONE out-of-place element.
+This is a surgical edit -- NOT a redesign and NOT a new walk.
+
+Reference image 1 is the CURRENT 6-frame back-view walk strip of an armored knight
+in blackened plate with a closed helm and a long dark tattered cloak. Its leg
+cycle, body, cloak and everything else are CORRECT -- reproduce every frame as
+drawn. Its ONE defect: a glowing ember-orange sword blade is visible at his left
+side.
+
+Reference image 2 is his idle from the same back view and shows the CORRECT look:
+NO sword visible -- from behind, his body and cloak hide the weapon completely.
+In EVERY frame, remove the glowing sword blade entirely (and any orange glow it
+casts). Change nothing else -- same legs, same cloak motion, same palette, same
+brightness.
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, equal-width cells, all
+feet on one shared ground line, constant body height, torso near each cell's
+horizontal center, green margins on all sides -- no figure touching any image
+edge. Flat solid #00ff00 GREEN background, nothing else in the image. Generate ONE
+image and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\art_src\stride_pilot_2026-08-27\warrior_n_swordfix\warrior_n_swordfix_row.png,
+then stop.
+
+In your final message report, frame by frame: is any sword or orange glow still
+visible, and does everything else match reference 1 exactly.

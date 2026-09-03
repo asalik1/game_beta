@@ -1,0 +1,14 @@
+Meshy TEXT-TO-3D prompt (rig-ready version -- use this one):
+
+A young woman ranger, game character, STRICT T-POSE: both arms straight out
+horizontally to the sides, palms down, legs straight and slightly apart,
+EMPTY HANDS, NO weapon, NO bow. Auburn short hair, pale face. Grey fur ruff
+around the shoulders. A SHORT weathered green-grey hooded cape reaching only
+the waist, hanging cleanly behind the back, NOT wrapping the arms or legs.
+Dark brown leather armor with straps over a muted olive tunic and trousers.
+Brown fur-cuffed boots. Quiver of arrows on her back. Stylized realistic
+proportions (not chibi), clean separated silhouette, painterly muted fantasy
+palette.
+
+(Why: the auto-rigger needs T-pose, separated limbs, no props. The bow gets
+added back digitally after rigging -- it will be in her hand in the game.)

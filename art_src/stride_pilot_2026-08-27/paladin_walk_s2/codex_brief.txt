@@ -1,0 +1,26 @@
+Redraw a 6-frame walk cycle: THIS character (reference 1), facing the VIEWER and
+walking toward the camera, with EXACTLY the leg choreography of reference 2.
+
+THE CHARACTER (reference image 1, his idle from this same front view -- reproduce
+this exact person, his design must not change): an older knight with grey hair and a short grey beard, POLISHED SILVER full plate armor, a gold chain across the chest, a blue tabard and blue cloth skirt with gold trim, a kite shield bearing a gold cross on his left arm, and a square warhammer with a gold cross emblem in his right hand. MATCH THE EXACT PALETTE AND BRIGHTNESS of reference 1 -- no brighter. Painterly, soft-shaded, no
+outlines. His equipment stays exactly where the idle shows it in every frame.
+
+THE WALK (reference image 2 -- a different, lean character from the same front view;
+use him ONLY for how the legs move): copy his 6-frame leg choreography
+frame-for-frame. His knees lift and BEND toward the camera as each leg swings
+through; the legs pass close together in depth at mid-stride, one boot briefly in
+front of the other; each landing foot plants flat, each trailing foot rolls to the
+toe. Subtle alternating hip sway. KNEES BEND -- no frame has two straight legs.
+
+FORBIDDEN: straight-legged poses in every frame, identical repeated frames, and the
+figure drifting off each cell's horizontal center.
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, equal-width cells, all
+feet on one shared ground line, constant body height, green margins on all sides --
+no figure touching any image edge. Flat solid #00ff00 GREEN background, nothing
+else in the image. Generate ONE image and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\art_src\stride_pilot_2026-08-27\paladin_walk_s2\paladin_walk_s2_row.png,
+then stop.
+
+In your final message report, frame by frame: which knee is bent (slight / clear /
+deep), and whether the frame matches reference 2's same frame.

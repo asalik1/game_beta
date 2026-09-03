@@ -1,0 +1,36 @@
+Draw this exact character DISASSEMBLED into a cutout-puppet parts kit, for 2D
+skeletal rigging. Reference image 1 is the assembled character: a young woman
+ranger seen from her right side, auburn hair, pale face, grey fur ruff, weathered
+green-grey cape, dark leather armor, muted olive trousers, brown fur-cuffed boots,
+quiver on her back, wooden recurve bow held low in her right hand. Painterly,
+soft-shaded, muted palette, no outlines.
+
+Produce ONE image: her body split into EXACTLY 10 separate parts, laid out
+left-to-right in ONE ROW in THIS exact order, each part complete and isolated
+with clear green space between parts:
+
+1. HEAD with hair and neck, facing right, exactly as the reference.
+2. TORSO: chest, waist and hips including the fur ruff and the quiver on the
+   back -- NO arms, NO legs, NO head, NO cape.
+3. CAPE: the full hanging cape alone, its complete shape including the area
+   normally hidden behind her body.
+4. NEAR UPPER ARM: her right upper arm from shoulder to elbow.
+5. NEAR FOREARM: her right forearm and hand GRIPPING THE BOW -- the whole bow
+   comes with this part.
+6. FAR ARM: her left arm as one simple piece (mostly hidden in the reference).
+7. NEAR THIGH: right thigh, hip to knee, in the olive trouser.
+8. NEAR SHIN: right shin and brown fur-cuffed boot, knee to sole.
+9. FAR THIGH: left thigh, hip to knee.
+10. FAR SHIN: left shin and boot.
+
+Every part at the SAME SCALE as the reference figure so they reassemble 1:1.
+Where a part is normally covered by another (top of the thigh under the tunic,
+shoulder under the ruff), draw it COMPLETE with a little extra length for the
+joint overlap. Same palette, same soft painterly shading, no outlines, no labels,
+no text, nothing else in the image. Flat solid #00ff00 GREEN background.
+Generate ONE image and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\art_src\stride_pilot_2026-08-27\g2d_parts_e\g2d_parts_e_row.png,
+then stop.
+
+In your final message, report the 10 parts in order and confirm each is complete
+and at reference scale.
