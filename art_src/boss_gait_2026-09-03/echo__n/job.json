@@ -1,0 +1,13 @@
+{
+ "base": "echo",
+ "facing": "n",
+ "arch": "biped",
+ "old": "echo_walk_codex_n.png",
+ "frames": 6,
+ "desc": "a shrouded echo walking AWAY from the viewer: the back of a slender hooded figure in a grey-violet shroud, the back of the hood with no face visible, a single dagger held low in the RIGHT hand (the hand on the viewer's left in a back view), tattered hem",
+ "defect": "the dagger swaps hands between frames",
+ "idle_ref": "echo_anim_codex",
+ "donor": "assassin_walk_n",
+ "donor_flipped": false,
+ "refs": 2
+}

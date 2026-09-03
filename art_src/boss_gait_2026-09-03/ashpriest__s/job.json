@@ -1,0 +1,13 @@
+{
+ "base": "ashpriest",
+ "facing": "s",
+ "arch": "glide",
+ "old": "ashpriest_walk_codex_s.png",
+ "frames": 6,
+ "desc": "an ash priest drifting toward the viewer: a tall figure in heavy layered charcoal-grey funeral robes with an orange-lit inner trim, a bronze mask under a deep hood, one hand raised holding a small orange flame, the other holding a burning lantern-censer on a chain, the robe hem reaching the ground",
+ "defect": "the robe snaps between two shapes",
+ "idle_ref": "ashpriest_anim_codex",
+ "donor": null,
+ "donor_flipped": false,
+ "refs": 2
+}

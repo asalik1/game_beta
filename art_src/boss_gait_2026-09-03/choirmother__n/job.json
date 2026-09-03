@@ -1,0 +1,13 @@
+{
+ "base": "choirmother",
+ "facing": "n",
+ "arch": "glide",
+ "old": "choirmother_walk_codex_n.png",
+ "frames": 6,
+ "desc": "a choir matriarch drifting AWAY from the viewer: the back of a tall figure in a deep-blue floor-length gown with gold trim, a raised blue hood, wide sleeves with pale hands spread out to either side, the back of the gown falling in heavy folds to the ground",
+ "defect": "the current strip shows the front of the hood and the gown's front trim under the north name",
+ "idle_ref": "choirmother_anim_codex",
+ "donor": null,
+ "donor_flipped": false,
+ "refs": 2
+}

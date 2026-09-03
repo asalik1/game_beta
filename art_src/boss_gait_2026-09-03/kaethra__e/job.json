@@ -1,0 +1,13 @@
+{
+ "base": "kaethra",
+ "facing": "e",
+ "arch": "biped",
+ "old": "kaethra_walk_codex_e.png",
+ "frames": 6,
+ "desc": "a bone-masked blade dancer in profile: a lean bare-armed figure in a white skull mask with red markings, wrapped chest bindings, a red loincloth over dark trousers, many bone-handled knives sheathed across the body and two held in the hands, bare feet",
+ "defect": "a two-pose cycle",
+ "idle_ref": "kaethra_anim_codex",
+ "donor": "assassin_walk_e",
+ "donor_flipped": false,
+ "refs": 3
+}

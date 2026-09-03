@@ -110,6 +110,20 @@ joints bending; with 8: also a full-extension frame in each half.)
 - The paws sit on ONE shared ground line; the body's height stays constant.
 FORBIDDEN: all four legs straight and vertical; the same legs leading in both halves
 of the row; two frames with identical legs; the body sliding up/down; extra legs.""",
+    "glide": """This character does NOT take visible steps -- a floor-length robe/gown hides the
+feet, or the body floats. The motion is CLOTH and DRIFT, storyboarded per frame:
+- The hem and sleeves sway: frame 1 hem trailing back, frame 2 hem settling under
+  the body, frame 3 hem swinging forward, then back through the same shapes --
+  a smooth loop, never a snap.
+- The body rises and falls a little through the cycle (highest around the middle
+  frames), and leans very slightly into the direction of travel.
+- Anything hanging (a censer on a chain, beads, a stole, long sleeves, hair)
+  swings with a lag: it is still catching up when the body has already moved.
+- The head, shoulders and every held object keep their exact shape and position
+  relative to the body in every frame.
+FORBIDDEN: legs or feet appearing from under the hem; the robe splitting open; the
+body translating sideways across its cell; two frames with an identical silhouette;
+the hem snapping between two poses instead of flowing.""",
     "arachnid": """What every frame must carry (copy reference 2's gait frame-for-frame):
 - A real eight-legged crawl: alternating leg groups -- one tetrapod set reaches while
   the other set pushes, swapping each half of the row.
@@ -193,7 +207,7 @@ def make_brief(job: dict, stage: Path) -> None:
     # corpus has no fluent quadruped donor (thorn_howler = 4 stiff poses).
     donor_key = {"side": "e", "front": "s", "back": "n"}[view]
     want_right = (facing == "e") or (facing in ("flat", "w") and not faces_left)
-    storyboard = arch == "quadruped" or job.get("storyboard", False)
+    storyboard = arch in ("quadruped", "glide") or job.get("storyboard", False)
     if storyboard:
         donor, flip_donor, dn = None, False, frames
     else:
@@ -205,6 +219,12 @@ def make_brief(job: dict, stage: Path) -> None:
     old = job.get("old")
     old_line = ""
     old_idx = 2 if storyboard else 3
+    # A back-view regen NEVER gets the outgoing strip as a reference: when the
+    # defect IS the view (front art wearing the N name), handing it back re-seeds
+    # exactly what the regen exists to remove -- Vargoth's walk_n took three
+    # rounds to learn this (DRIFT_AUDIT.md, WRONG-FACING PART / VIEW TRANSPLANT).
+    if view == "back" and not job.get("keep_old_ref"):
+        old = None
     if old and (SPR / old).exists():
         strip_to_row(old[:-4], False, refs / f"{old_idx}_current_walk.png")
         old_line = (f"\nReference {old_idx} is the CURRENT walk being replaced -- use it only to see the "
@@ -216,13 +236,27 @@ def make_brief(job: dict, stage: Path) -> None:
     lang_key = {"biped": {"side": "biped", "front": "biped_front", "back": "biped_back"},
                 "biped_heavy": {"side": "biped", "front": "biped_front", "back": "biped_back"},
                 "quadruped": {"side": "quadruped", "front": "quadruped", "back": "quadruped"},
-                "arachnid": {"side": "arachnid", "front": "arachnid", "back": "arachnid"}}[arch][view]
+                "arachnid": {"side": "arachnid", "front": "arachnid", "back": "arachnid"},
+                "glide": {"side": "glide", "front": "glide", "back": "glide"}}[arch][view]
     heavy = "\nMake the stride HEAVY and deliberate -- weight planted, not a light quick step." \
         if job.get("heavy") else ""
+    if view == "back":
+        # The VIEW-TRANSPLANT trap (Vargoth, twice): a FRONT-view identity ref
+        # re-seeds the face/front trim onto a back view, and the defect the
+        # regen exists to fix comes back. Name the parts that cannot appear.
+        heavy += ("\nThis is a BACK view. Reference 1 shows the character from the FRONT: use it "
+                  "for the design, palette and equipment ONLY. Nothing that exists only on the "
+                  "front may appear -- no face, eyes, mask, visor opening, hood opening, chest "
+                  "emblem or belt buckle. Draw the BACK of the head/helm/hood, the back of the "
+                  "shoulders, and the back of the garment.")
     if job.get("extra"):
         heavy += "\n" + job["extra"]
+    report_ask = ("how the hem and sleeves sit and which way they swing"
+                  if arch == "glide" else
+                  "which leg (or leg pair) leads and which joints are bent, and how much "
+                  "(slight / clear / deep)")
     style = job.get("style", "crisp hi-res dark-fantasy game sprite, muted palette, no black outlines")
-    save_path = stage / f"{base}_walk_{facing}_row.png"
+    save_path = (stage / f"{base}_walk_{facing}_row.png").resolve()
     if storyboard:
         head = (f"Redraw a {frames}-frame walk cycle of THIS creature (reference 1), walking "
                 f"{facing_word}, with the gait storyboarded below.")
@@ -256,10 +290,8 @@ nothing else in the image. Generate ONE image and SAVE it to disk at the exact p
 {save_path}
 then stop.
 
-In your final message report, for each frame 1-{frames}: which leg leads / which joints are
-bent and roughly how much (slight / clear / deep){'' if storyboard else ", and whether the frame matches reference 2's same frame"}.
-Report any frame with all legs straight, any repeated pose, and whether the body stayed
-cell-centred and at constant height.
+In your final message report, for each frame 1-{frames}: {report_ask}
+Report any repeated pose, and whether the body stayed cell-centred and at constant height.
 """
     (stage / "codex_brief.txt").write_text(brief, encoding="utf-8")
     (stage / "job.json").write_text(json.dumps({**job, "idle_ref": idle_used, "donor": donor,

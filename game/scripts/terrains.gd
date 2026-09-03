@@ -1109,6 +1109,7 @@ const STRUCTURES := {
 	# A great hearth: a hall fireplace — a brazier base with a tall licking
 	# flame (flame ANIMATES), a smoke column, firelight and crackle.
 	"great_hearth": {"sprite": "capital_great_hearth", "w": 244.1602,
+		"lights": [{"off": Vector2(1, -118), "color": Color(1.0, 0.64, 0.3, 0.9), "energy": 1.0, "scale": 1.15}],
 		"visual_x": -0.2637,
 		"colliders": [{"shape": "rect", "size": Vector2(180, 42), "off": Vector2(0, -8)}],
 		"fire": true},
@@ -1177,6 +1178,7 @@ const STRUCTURES := {
 	# tolerance); the outer edges are unchanged. The room's 144-px door lane
 	# (±72) still passes with the hero's 13-px radius to spare.
 	"capital_crown_spire_gate": {"sprite": "capital_crown_spire_gate", "w": 878.9062,
+		"lights": [{"off": Vector2(164, -129), "color": Color(1.0, 0.64, 0.3, 0.9), "energy": 0.55, "scale": 1.15}, {"off": Vector2(-157, -67), "color": Color(1.0, 0.64, 0.3, 0.9), "energy": 0.55, "scale": 1.15}, {"off": Vector2(234, -275), "color": Color(1.0, 0.64, 0.3, 0.9), "energy": 0.55, "scale": 1.15}, {"off": Vector2(-302, -53), "color": Color(1.0, 0.64, 0.3, 0.9), "energy": 0.55, "scale": 1.15}],
 		"colliders": [
 			{"shape": "rect", "size": Vector2(355, 50), "off": Vector2(-257.5, -24)},
 			{"shape": "rect", "size": Vector2(355, 50), "off": Vector2(257.5, -24)}],
@@ -1201,12 +1203,14 @@ const STRUCTURES := {
 	"capital_crown_fountain": {"sprite": "capital_crown_fountain", "w": 271.6406,
 		"colliders": [{"shape": "rect", "size": Vector2(300, 130), "off": Vector2(0, -65)}]},
 	"capital_emberward_gate": {"sprite": "capital_emberward_gate", "w": 404.4141,
+		"lights": [{"off": Vector2(120, -56), "color": Color(1.0, 0.64, 0.3, 0.9), "energy": 0.55, "scale": 1.15}, {"off": Vector2(-143, -51), "color": Color(1.0, 0.64, 0.3, 0.9), "energy": 0.55, "scale": 1.15}],
 		"visual_x": 1.2305,
 		"colliders": [
 			{"shape": "rect", "size": Vector2(88, 46), "off": Vector2(-142, -34)},
 			{"shape": "rect", "size": Vector2(88, 46), "off": Vector2(142, -34)}],
 		"fire": true},
 	"capital_market_stall": {"sprite": "capital_market_stall", "w": 243.3594,
+		"lights": [{"off": Vector2(-110, -133), "color": Color(1.0, 0.64, 0.3, 0.9), "energy": 0.55, "scale": 0.45}, {"off": Vector2(93, -210), "color": Color(1.0, 0.64, 0.3, 0.9), "energy": 0.55, "scale": 1.15}],
 		"visual_x": 0.2734,
 		"colliders": [{"shape": "rect", "size": Vector2(178, 42), "off": Vector2(0, -18)}]},
 	# Portal piers are PILLAR FOOTPRINTS, not dots (owner 2026-07-25: the r22
@@ -1225,6 +1229,7 @@ const STRUCTURES := {
 			{"shape": "rect", "size": Vector2(56, 54), "off": Vector2(-64, -46)},
 			{"shape": "rect", "size": Vector2(56, 54), "off": Vector2(64, -46)}]},
 	"capital_portal_crucible": {"sprite": "capital_portal_crucible", "w": 254.8438,
+		"lights": [{"off": Vector2(94, -30), "color": Color(1.0, 0.64, 0.3, 0.9), "energy": 0.55, "scale": 0.67}, {"off": Vector2(-95, -30), "color": Color(1.0, 0.64, 0.3, 0.9), "energy": 0.55, "scale": 0.67}],
 		"visual_x": 0.5469,
 		"colliders": [
 			{"shape": "rect", "size": Vector2(58, 44), "off": Vector2(-88, -13)},
@@ -1240,6 +1245,7 @@ const STRUCTURES := {
 	"capital_chartered_hall": {"sprite": "capital_chartered_hall", "w": 309.375,
 		"colliders": [{"shape": "rect", "size": Vector2(275, 170), "off": Vector2(0, -90)}]},
 	"capital_ashfire_forge": {"sprite": "capital_ashfire_forge", "w": 335.3906,
+		"lights": [{"off": Vector2(36, -94), "color": Color(1.0, 0.64, 0.3, 0.9), "energy": 0.55, "scale": 0.68}],
 		"visual_x": 1.0547,
 		"colliders": [{"shape": "rect", "size": Vector2(300, 170), "off": Vector2(0, -76)}],
 		"fire": true},
@@ -1247,6 +1253,7 @@ const STRUCTURES := {
 		"visual_x": 1.3281,
 		"colliders": [{"shape": "rect", "size": Vector2(285, 175), "off": Vector2(0, -93)}]},
 	"capital_ashen_tankard": {"sprite": "capital_ashen_tankard", "w": 344.5312,
+		"lights": [{"off": Vector2(-32, -81), "color": Color(1.0, 0.64, 0.3, 0.9), "energy": 0.55, "scale": 0.51}, {"off": Vector2(-40, -188), "color": Color(1.0, 0.64, 0.3, 0.9), "energy": 0.55, "scale": 0.59}],
 		"visual_x": 2.8125,
 		"colliders": [{"shape": "rect", "size": Vector2(300, 190), "off": Vector2(0, -100)}],
 		"fire": true},
@@ -1261,6 +1268,7 @@ const STRUCTURES := {
 		"colliders": [{"shape": "rect", "size": Vector2(350, 170), "off": Vector2(0, -76)}],
 		"fire": true},
 	"capital_sable_hall": {"sprite": "capital_sable_hall", "w": 401.1328,
+		"lights": [{"off": Vector2(-91, -61), "color": Color(1.0, 0.64, 0.3, 0.9), "energy": 0.55, "scale": 0.95}, {"off": Vector2(88, -70), "color": Color(1.0, 0.64, 0.3, 0.9), "energy": 0.55, "scale": 1.15}],
 		"visual_x": 0.4102,
 		"colliders": [{"shape": "rect", "size": Vector2(350, 200), "off": Vector2(0, -105)}],
 		"fire": true},
@@ -1278,6 +1286,7 @@ const STRUCTURES := {
 			{"shape": "rect", "size": Vector2(68, 40), "off": Vector2(-118, -8)},
 			{"shape": "rect", "size": Vector2(68, 40), "off": Vector2(118, -8)}]},
 	"capital_proving_gate": {"sprite": "capital_proving_gate", "w": 387.5,
+		"lights": [{"off": Vector2(-129, -46), "color": Color(1.0, 0.64, 0.3, 0.9), "energy": 0.55, "scale": 1.15}, {"off": Vector2(128, -48), "color": Color(1.0, 0.64, 0.3, 0.9), "energy": 0.55, "scale": 1.15}],
 		"visual_x": 1.5625,
 		"colliders": [
 			{"shape": "rect", "size": Vector2(82, 44), "off": Vector2(-132, -8)},

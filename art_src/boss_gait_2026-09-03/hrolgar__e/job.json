@@ -1,0 +1,14 @@
+{
+ "base": "hrolgar",
+ "facing": "e",
+ "arch": "biped_heavy",
+ "old": "hrolgar_walk_codex_e.png",
+ "frames": 6,
+ "heavy": true,
+ "desc": "a frost-jarl berserker in profile: a huge pale-blue-skinned humanoid with a white fur mantle and shaggy white hair and beard, a bare muscled chest with blue frost markings, a fur kilt and wrapped boots, a great two-handed axe carried in one hand, a bone-and-skull ornament at the belt",
+ "defect": "straight-leg scissor poses with no knee bend",
+ "idle_ref": "hrolgar_anim_codex",
+ "donor": "skins/elite/warrior_emberbound_heir_walk_e",
+ "donor_flipped": false,
+ "refs": 3
+}

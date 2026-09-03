@@ -1,0 +1,14 @@
+{
+ "base": "fungus_heavy",
+ "facing": "s",
+ "arch": "biped_heavy",
+ "old": "fungus_heavy_walk_s.png",
+ "frames": 6,
+ "heavy": true,
+ "desc": "a sporeshambler walking toward the viewer: a squat heavy fungus creature, a thick trunk-like body crusted with pale layered bracket mushrooms and a cap of overlapping shelves, stubby thick legs, no visible face",
+ "defect": "a two-pose shuffle with no weight shift",
+ "idle_ref": "fungus_heavy_anim",
+ "donor": "skins/elite/warrior_emberbound_heir_walk_s",
+ "donor_flipped": false,
+ "refs": 3
+}

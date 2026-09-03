@@ -2,3 +2,5 @@ codex = C:\Users\asali\AppData\Local\OpenAI\Codex\bin\7537f22ba194f7c1\codex.exe
 launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_2026-09-03\blightwolf__flat (2 refs)
 launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_2026-09-03\casket_creeper__flat (3 refs)
 launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_2026-09-03\deep_stalker__flat (3 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_2026-09-03\duneprowler__flat (2 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_2026-09-03\fungus_long__e (3 refs)

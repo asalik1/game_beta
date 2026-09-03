@@ -1,0 +1,15 @@
+{
+ "base": "auroch_minotaur",
+ "facing": "s",
+ "arch": "biped_heavy",
+ "old": "auroch_minotaur_walk_codex_s.png",
+ "frames": 6,
+ "heavy": true,
+ "desc": "a huge minotaur warlord walking toward the viewer: a massive bull-headed humanoid with long curved horns and a bleached bull skull over its face, heavy blackened plate armor on the shoulders and chest, a ragged green kilt, one hand gripping a huge two-headed war axe, thick hoofed legs",
+ "defect": "a stiff two-pose stomp",
+ "style": "crisp hi-res dark-fantasy game sprite, muted palette, no black outlines",
+ "idle_ref": "auroch_minotaur_anim_codex",
+ "donor": "skins/elite/warrior_emberbound_heir_walk_s",
+ "donor_flipped": false,
+ "refs": 3
+}

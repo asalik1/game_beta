@@ -1,0 +1,14 @@
+{
+ "base": "skeleton",
+ "facing": "flat",
+ "arch": "biped",
+ "old": "skeleton_walk.png",
+ "frames": 6,
+ "desc": "a hollow soldier: an animated skeleton in a rusted iron skullcap helm and a tattered dark cape with an orange crown sigil, a bronze round shield strapped to one arm, a short iron sword held low in the other hand, bare bone legs and bone feet",
+ "defect": "the same leg leading in both halves and only two real poses",
+ "style": "crisp hi-res dark-fantasy game sprite, muted palette, no black outlines",
+ "idle_ref": "skeleton_anim",
+ "donor": "assassin_walk_e",
+ "donor_flipped": true,
+ "refs": 3
+}

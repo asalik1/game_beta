@@ -1,0 +1,13 @@
+{
+ "base": "bandit_scout",
+ "facing": "flat",
+ "arch": "biped",
+ "old": "bandit_scout_walk.png",
+ "frames": 6,
+ "desc": "a void-touched scout: a lean figure in a dark hooded cloak over black leather armor with a knee plate on one leg, a short curved blade held low, faint violet edge-light on the cloak",
+ "defect": "the plated leg leads in every frame and the plain leg never passes it",
+ "idle_ref": "bandit_scout_anim",
+ "donor": "assassin_walk_e",
+ "donor_flipped": true,
+ "refs": 3
+}

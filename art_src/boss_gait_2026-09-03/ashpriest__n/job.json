@@ -1,0 +1,13 @@
+{
+ "base": "ashpriest",
+ "facing": "n",
+ "arch": "glide",
+ "old": "ashpriest_walk_codex_n.png",
+ "frames": 6,
+ "desc": "an ash priest drifting AWAY from the viewer: the back of a tall figure in heavy layered charcoal-grey funeral robes, the back of a deep hood, an orange-lit trim down the back of the robe, the burning lantern-censer swinging on its chain out to one side, the robe hem reaching the ground",
+ "defect": "the current strip shows the mask and the front of the robe under the north name",
+ "idle_ref": "ashpriest_anim_codex",
+ "donor": null,
+ "donor_flipped": false,
+ "refs": 2
+}

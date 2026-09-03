@@ -1,0 +1,13 @@
+{
+ "base": "kaethra",
+ "facing": "n",
+ "arch": "biped",
+ "old": "kaethra_walk_codex_s.png",
+ "frames": 6,
+ "desc": "a bone-masked blade dancer walking AWAY from the viewer: the back of a lean bare-armed figure, the back of a white skull mask and dark tied-back hair, wrapped chest bindings crossing the back, a red loincloth over dark trousers, bone-handled knives sheathed across the back, bare feet",
+ "defect": "there is no north strip at all - it currently falls back to the south (front) view",
+ "idle_ref": "kaethra_anim_codex",
+ "donor": "assassin_walk_n",
+ "donor_flipped": false,
+ "refs": 2
+}
