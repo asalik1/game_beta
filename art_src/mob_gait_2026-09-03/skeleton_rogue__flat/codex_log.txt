@@ -1272,3 +1272,24 @@ C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gai
  succeeded in 1561ms:
 reanchored six frames to head/body x center and baseline 542
 
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; import 
+numpy as np; p=r'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\mob_gait_2026-09-03\
+\skeleton_rogue__flat\\skeleton_rogue_walk_flat_row.png'; a=np.array(Image.open(p).convert('RGB')); h,w,_=a.shape; 
+bg=np.all(a==[0,255,0],2); cw=w//6; 
+print('size',w,h,'cell_width',cw,'pure_green_pct',round(bg.mean()*100,3),'all_border_green',bool(bg[0].all() and 
+bg[-1].all() and bg[:,0].all() and bg[:,-1].all()));
+for i in range(6):
+ l=i*cw; m=~bg[:,l:l+cw]; ys,xs=np.where(m); y0,y1=int(ys.min()),int(ys.max()); x0,x1=int(xs.min()),int(xs.max()); 
+band=m[y0:y0+65]; _,hx=np.where(band); hc=(hx.min()+hx.max())/2; 
+print(i+1,'bbox_local',[x0,y0,x1,y1],'head_dx',round(hc-(cw-1)/2,1),'baseline',y1,'margins',[x0,cw-1-x1,h-1-y1])\"" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_2026-09-03\skeleton_rogue__flat
+ succeeded in 1124ms:
+size 2196 715 cell_width 366 pure_green_pct 83.249 all_border_green True
+1 bbox_local [38, 158, 334, 542] head_dx 0.0 baseline 542 margins [38, 31, 172]
+2 bbox_local [47, 151, 318, 542] head_dx 0.0 baseline 542 margins [47, 47, 172]
+3 bbox_local [85, 160, 303, 542] head_dx -0.5 baseline 542 margins [85, 62, 172]
+4 bbox_local [95, 150, 329, 542] head_dx 0.0 baseline 542 margins [95, 36, 172]
+5 bbox_local [36, 154, 323, 542] head_dx 0.5 baseline 542 margins [36, 42, 172]
+6 bbox_local [51, 154, 315, 542] head_dx -0.5 baseline 542 margins [51, 50, 172]
+

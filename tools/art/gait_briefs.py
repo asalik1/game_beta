@@ -282,10 +282,14 @@ same palette in every frame.
 
 {walk_para}{old_line}
 
-Produce ONE image: a horizontal row of EXACTLY {frames} figures, equal-width cells, all
-feet on one shared ground line, constant body height, the body near each cell's
-horizontal centre (no drifting across the cells), green margins on all sides -- no
-figure touching any image edge or its neighbour. Flat solid #00ff00 GREEN background,
+Produce ONE image: a horizontal row of EXACTLY {frames} figures, evenly spaced, all
+feet on one shared ground line, the body near each cell's horizontal centre (no
+drifting across the row), green margins on all sides -- no figure touching any
+image edge or its neighbour.
+EVERY FIGURE IS THE SAME SIZE. Draw all {frames} at one identical scale, filling the
+same share of the row's height; do not shrink some of them to fit, do not crowd
+two small figures into the space of one, and do not add a smaller inset version
+anywhere. If {frames} figures will not fit at full size, make the image WIDER. Flat solid #00ff00 GREEN background,
 nothing else in the image. Generate ONE image and SAVE it to disk at the exact path
 {save_path}
 then stop.

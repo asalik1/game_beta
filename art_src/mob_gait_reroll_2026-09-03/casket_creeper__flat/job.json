@@ -1,0 +1,14 @@
+{
+ "base": "casket_creeper",
+ "facing": "flat",
+ "arch": "arachnid",
+ "old": "casket_creeper_walk.png",
+ "frames": 8,
+ "desc": "a casket creeper: an ornate dark iron-banded coffin with glowing green trim and chains, carried on eight pale bony spider legs, a small skull-faced head peeking from one end. The coffin body stays rigid and level in every frame; only the legs move",
+ "defect": "legs cut off mid-air and the coffin drawn 30% smaller than it should be",
+ "extra": "Draw the coffin LARGE -- it fills most of each figure's height, exactly as big as reference 1 shows it.",
+ "idle_ref": "casket_creeper_anim",
+ "donor": "spider_walk",
+ "donor_flipped": false,
+ "refs": 3
+}

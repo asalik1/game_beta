@@ -1,0 +1,14 @@
+{
+ "base": "cultist",
+ "facing": "flat",
+ "arch": "biped",
+ "old": "cultist_walk.png",
+ "frames": 6,
+ "desc": "a gaunt blight cultist in a tattered dark-brown hooded robe and layered rag coat, an antlered deer-skull mask with glowing eye sockets, a gnarled wooden staff held in one hand, thin bony legs and wrapped feet showing below the ragged hem",
+ "defect": "only two distinct leg poses, the same leg leading every step",
+ "extra": "Keep the staff head EXACTLY as reference 1 shows it in every frame.",
+ "idle_ref": "cultist_anim",
+ "donor": "assassin_walk_e",
+ "donor_flipped": true,
+ "refs": 3
+}
