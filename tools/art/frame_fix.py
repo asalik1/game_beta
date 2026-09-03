@@ -17,8 +17,8 @@ regen, tools/art/DRIFT_AUDIT.md), for defects a regen would be overkill for:
     python tools/art/frame_fix.py <strip.png> --scale 0.93 --feet-pin
     python tools/art/frame_fix.py <strip.png> --shift-cell 3=25,0
 
-Always writes a backup beside the file the first time (`<name>.pre_fix.png`)
-unless --no-backup, and writes atomically. Re-run verify_art afterwards.
+Always writes a backup into art_src/_backups/ the first time unless
+--no-backup, and writes atomically. Re-run verify_art afterwards.
 """
 from __future__ import annotations
 
@@ -30,7 +30,17 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
+ROOT = Path(__file__).resolve().parents[2]
 A = 40
+
+
+def _backup_path(path: Path, tag: str) -> Path:
+    """Backups live in art_src/_backups, never beside the sprite: a stray
+    <name>.pre_*.png inside game/assets/sprites ships with the game, rides
+    every mobile sync and turns up in asset scans as a phantom sprite."""
+    d = ROOT / "art_src" / "_backups"
+    d.mkdir(parents=True, exist_ok=True)
+    return d / f"{path.stem}.{tag}.png"
 
 
 def cells_of(im: Image.Image) -> tuple[int, int]:
@@ -169,7 +179,7 @@ def main() -> int:
     if args.dry:
         print("  DRY (nothing written)")
         return 0
-    bak = p.with_name(p.stem + ".pre_fix.png")
+    bak = _backup_path(p, "pre_fix")
     if not args.no_backup and not bak.exists():
         shutil.copy2(p, bak)
     tmp = p.with_name(f".{p.stem}.fix.tmp.png")
