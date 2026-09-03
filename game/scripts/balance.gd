@@ -143,6 +143,49 @@ const MOB_DEATH_HOLD := 0.25
 const MOB_DEATH_FADE := 0.35
 const MOB_DEATH_COLLAPSE_T := 0.4
 const MOB_SPAWN_IN_T := 0.28
+# BOSS TELL STYLE (visual overhaul 2026-09-03) — the answer to "boss attacks all
+# look visually similar". All 47 telegraph sites in boss.gd funnel through
+# `_boss_telegraph`, which merges this table exactly the way it already merges
+# `impact_sfx`: one HUE and one ground SHAPE per boss, so a tell is identifiable
+# before you read its size. Seven bosses previously shared one pale blue and
+# every single tell was the same rimmed disc.
+#   shape: disc | ring | cone | line | cross | square  (game_base._tell_figure;
+#          the hit test follows the same figure, so a tell never lies)
+#   arc:   cone half-angle in radians;  width: line/cross bar width in px
+# The table OWNS the hue (that is the point) but keeps each call site's ALPHA,
+# which encodes intensity; a site that needs its own colour passes
+# `"color_locked": true`. Shape/arc/width are defaults a call site may override.
+const BOSS_TELL := {
+	# --- ch1-2 ---
+	"fangmaw":        {"color": Color(0.95, 0.45, 0.18), "shape": "cone", "arc": 0.70},
+	"morwen":         {"color": Color(0.55, 1.00, 0.25), "shape": "ring"},
+	"vargoth":        {"color": Color(1.00, 0.32, 0.10), "shape": "cross"},
+	"stormwarden":    {"color": Color(1.00, 0.95, 0.40), "shape": "line"},
+	"choirmother":    {"color": Color(0.92, 0.90, 0.78), "shape": "ring"},
+	"nullwarden":     {"color": Color(0.45, 0.85, 1.00), "shape": "square"},
+	# --- ch3 Unburied Vale ---
+	"sexton":         {"color": Color(0.85, 0.70, 0.40), "shape": "square"},
+	"vess":           {"color": Color(0.72, 0.40, 1.00), "shape": "ring"},
+	"saint_varo":     {"color": Color(1.00, 0.85, 0.45), "shape": "disc"},
+	# --- ch4 Slagfields ---
+	"forgemistress":  {"color": Color(1.00, 0.55, 0.15), "shape": "line"},
+	"cinderhide":     {"color": Color(0.95, 0.25, 0.15), "shape": "cone", "arc": 0.62},
+	"ashpriest":      {"color": Color(0.90, 0.62, 0.35), "shape": "ring"},
+	# --- ch5 The Long Sleep ---
+	"whitepelt":      {"color": Color(0.65, 0.90, 1.00), "shape": "cone", "arc": 0.66},
+	"icebound":       {"color": Color(0.35, 0.62, 1.00), "shape": "square"},
+	"sleepkeeper":    {"color": Color(0.70, 0.72, 1.00), "shape": "ring"},
+	# --- ch6 The Blooming Deep ---
+	"auroch":         {"color": Color(0.85, 0.42, 0.30), "shape": "line"},
+	"gardener":       {"color": Color(0.45, 0.85, 0.35), "shape": "square"},   # garden plots
+	"curetwisted":    {"color": Color(0.80, 0.90, 0.30), "shape": "disc"},
+	# --- ch7 Breaking Sky ---
+	"stormdrake_veyx": {"color": Color(0.40, 0.95, 1.00), "shape": "line"},
+	"unnamed_echo":   {"color": Color(0.80, 0.75, 1.00), "shape": "ring"},
+	"stormmouth":     {"color": Color(0.90, 0.60, 1.00), "shape": "cone", "arc": 0.72},
+	# --- Moonfen interlude ---
+	"first_howl":     {"color": Color(0.70, 0.80, 0.95), "shape": "cone", "arc": 0.68},
+}
 # Camera feel (2026-08-18): look-ahead in the move direction (px at full
 # speed, eased) and the combat zoom-in (multiplier on the base zoom while
 # enemies are aggro'd within CAMERA_COMBAT_RANGE px, eased in/out).

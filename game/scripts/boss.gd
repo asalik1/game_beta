@@ -273,7 +273,42 @@ func _boss_telegraph(pos: Vector2, radius: float, delay: float, damage: float,
 	var audio_opts: Dictionary = opts.duplicate()
 	if not audio_opts.has("impact_sfx"):
 		audio_opts["impact_sfx"] = _boss_impact_sfx()
+	_apply_tell_style(audio_opts, pos)
 	game.telegraph(pos, radius, delay, damage, audio_opts)
+
+
+## Merge this boss's Balance.BOSS_TELL row into a tell's opts — the same choke
+## point (and the same merge shape) `impact_sfx` above already rides, so every
+## one of the 47 call sites and the codex Transform preview get it for free.
+## The table owns the HUE (seven bosses shared one pale blue; that is the
+## defect) but keeps the call site's alpha, which encodes intensity; shape/arc/
+## width are defaults a call site may override, and "color_locked" opts out.
+func _apply_tell_style(o: Dictionary, pos: Vector2) -> void:
+	var style: Dictionary = Balance.BOSS_TELL.get(kind, {})
+	if style.is_empty():
+		return
+	for k: String in style:
+		if k == "color":
+			if bool(o.get("color_locked", false)):
+				continue
+			var c: Color = style["color"]
+			var prev: Variant = o.get("color", null)
+			var a: float = (prev as Color).a if prev is Color else 0.55
+			o["color"] = Color(c.r, c.g, c.b, a)
+		elif not o.has(k):
+			o[k] = style[k]
+	# A wedge or a bar needs an aim. Nothing passes one today, and a fixed
+	# default would point every cone due east, so derive it: the boss is
+	# aiming from itself at the tell, and a tell centred ON the boss (a nova
+	# it grew a shape for) aims at its prey instead.
+	if String(o.get("shape", "disc")) in ["cone", "line", "cross"] and not o.has("dir"):
+		var d := pos - global_position
+		if d.length() < 8.0:
+			var prey: Player = _get_target()
+			d = (prey.global_position - global_position) if is_instance_valid(prey) \
+				else Vector2(-1.0 if sprite != null and sprite.flip_h else 1.0, 0.0)
+		if d.is_finite() and d != Vector2.ZERO:
+			o["dir"] = d.normalized()
 
 
 ## DEV-MORPH preview fire (dev_morph.gd only): spawn this action's REAL
