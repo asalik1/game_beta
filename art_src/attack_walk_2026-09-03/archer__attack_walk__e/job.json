@@ -1,0 +1,6 @@
+{
+ "base": "archer",
+ "clip": "attack_walk",
+ "facing": "e",
+ "frames": 6
+}

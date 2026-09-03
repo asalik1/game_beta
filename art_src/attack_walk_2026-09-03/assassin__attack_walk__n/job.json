@@ -1,0 +1,6 @@
+{
+ "base": "assassin",
+ "clip": "attack_walk",
+ "facing": "n",
+ "frames": 6
+}
