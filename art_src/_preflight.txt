@@ -1,0 +1,4 @@
+FAIL [IMPORT] 90 asset(s) changed since last import: assets\sprites\blightwolf_walk.png, assets\sprites\bog_lurker_walk.png, assets\sprites\bridge.png, assets\sprites\cactus2.png, assets\sprites\capital_portal_depths_anim.png, assets\sprites\capital_portal_story_anim.png, assets\sprites\casket_creeper_walk.png, assets\sprites\cold_pilgrim_anim.png ...
+         fix: run: tools\Godot_v4.4.1-stable_win64_console.exe --headless --path game --import  (close the editor first -- --import contends with it)
+
+PREFLIGHT: 1 fail, 0 warn  (IMPORT MODULES BALANCE PHYSICS RIGS ARTQA)
