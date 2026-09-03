@@ -998,6 +998,8 @@ func _physics_process(delta: float) -> void:
 			# walk-state flip OR whenever we're arriving from the directional path.
 			var want_walk := _moving_anim and not _strip_walk.is_empty()
 			if want_walk != _strip_walking or _cur_dir != "":
+				if want_walk and not _strip_walking:
+					_enter_walk_on_contact()
 				_strip_walking = want_walk
 				_cur_dir = ""  # clear the directional latch; a later walk re-picks
 				_apply_strip(_strip_walk if want_walk else _strip_idle)
@@ -1011,6 +1013,8 @@ func _physics_process(delta: float) -> void:
 			var nd := _dir8_stable(delta)
 			var dset: Dictionary = _dir_walk if (_moving_anim and not _dir_walk.is_empty()) else _dir_idle
 			if nd != _cur_dir or _moving_anim != _strip_walking:
+				if _moving_anim and not _strip_walking:
+					_enter_walk_on_contact()
 				_cur_dir = nd
 				_strip_walking = _moving_anim
 				_apply_strip(dset[nd])
@@ -1125,6 +1129,20 @@ func _render_tail(delta: float, moving: bool) -> void:
 		elif int(steps_now) > int(_steps):
 			_footfall(cell_h * _scale_base.y)
 		_steps = maxf(_steps, steps_now)
+
+
+## Start a walk on a PLANTED frame. The clock runs continuously, so a body that
+## begins moving picks up mid-stride at whatever phase the idle happened to
+## reach -- it pops into a swing pose with nothing under it. Rounding the clock
+## up to the next whole cycle starts the walk on frame 0 (a contact) and lets
+## _render_tail's first rise begin from the ground. Cheap, and the per-instance
+## phase seeds/gait rates keep a pack from stepping off in unison.
+func _enter_walk_on_contact() -> void:
+	if anim_frames <= 1 or anim_fps <= 0.0:
+		return
+	var cycle: float = float(anim_frames) / anim_fps
+	anim_t = ceil(anim_t / cycle) * cycle
+	_steps = 0.0
 
 
 ## One footfall: a puff of floor dust, and for a heavy body a whisper of
