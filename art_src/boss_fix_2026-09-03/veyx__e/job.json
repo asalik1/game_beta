@@ -1,0 +1,12 @@
+{
+ "base": "veyx",
+ "facing": "e",
+ "arch": "glide",
+ "frames": 6,
+ "desc": "a storm elemental in profile: a BROAD, heavy-shouldered humanoid of dark storm-cloud stone with a smooth featureless helm-like head glowing pale blue at the eye slit, thick shoulders and arms wreathed in crackling pale-blue lightning arcs, and a coiling smoke tail instead of legs. Its upper body is BULKY and wide -- as wide as reference 1 shows it",
+ "defect": "the current side strip draws a slim body that loses the heavy shoulder mass",
+ "idle_ref": "veyx_anim_codex",
+ "donor": null,
+ "donor_flipped": false,
+ "refs": 2
+}

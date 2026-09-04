@@ -1,0 +1,1 @@
+Matched style to `1_style_hideout_table.png`; silhouette and part placement are preserved with no intentional structural differences.

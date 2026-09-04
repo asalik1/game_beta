@@ -1,0 +1,11 @@
+codex = C:\Users\asali\AppData\Local\OpenAI\Codex\bin\7537f22ba194f7c1\codex.exe
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_reroll_2026-09-03\cultist__flat (3 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_reroll_2026-09-03\casket_creeper__flat (3 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix_2026-09-03\rotmaw__e (2 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix_2026-09-03\veyx__e (1 refs)
+launched 4 codex jobs
+OK   C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_reroll_2026-09-03\cultist__flat  (result 1071 bytes)
+OK   C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_reroll_2026-09-03\casket_creeper__flat  (result 1562 bytes)
+FAIL C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix_2026-09-03\rotmaw__e  (no codex_result.md -- read codex_log.txt)
+FAIL C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix_2026-09-03\veyx__e  (no codex_result.md -- read codex_log.txt)
+batch complete

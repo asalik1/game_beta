@@ -1,0 +1,1 @@
+Matched `1_style_cottage_b.png`; placement is preserved, though the chimney/posts are slightly bulkier and the right chain sits farther outward.

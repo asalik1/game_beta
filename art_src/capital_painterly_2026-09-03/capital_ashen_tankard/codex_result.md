@@ -1,0 +1,1 @@
+Matched style to 1_style_cottage_a.png; silhouette and part placement are preserved, though the hanging tankard sign is slightly enlarged.

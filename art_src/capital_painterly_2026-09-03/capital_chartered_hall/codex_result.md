@@ -1,0 +1,1 @@
+Matched style to 1_style_cottage_b.png; silhouette and placement are preserved, with only slightly fuller stonework and a broader central banner.

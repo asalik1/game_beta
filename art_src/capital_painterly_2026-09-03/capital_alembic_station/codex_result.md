@@ -1,0 +1,1 @@
+Matched style to `1_style_camp_workbench.png`; silhouette and major part placement are preserved, with only minor painterly detail simplification.

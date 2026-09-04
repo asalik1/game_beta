@@ -1,0 +1,42 @@
+Redraw a 6-frame walk cycle of THIS character (reference 1), walking AWAY from the viewer (back to camera),
+with EXACTLY the leg choreography of reference 2. One character's body, the other
+character's walk.
+
+THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not
+change): the unnamed echo walking AWAY from the viewer: a dark armored warrior with a blazing FLAMING SKULL for a head (orange fire licking upward from the skull), two large tattered dark-feathered WINGS spread from the back and filling most of the figure's width, dark plate armor, a dagger held low, seen from behind so the wings' backs face the camera
+crisp hi-res dark-fantasy game sprite, muted palette, no black outlines. Every piece of equipment stays exactly where reference 1 shows it in every
+frame -- nothing swaps sides, changes shape or disappears. Same height, same width,
+same palette in every frame.
+
+THE WALK (reference 2 -- a DIFFERENT creature drawn from this same viewing angle; use
+it ONLY for how the legs move): copy its 6-frame leg choreography frame-for-frame
+onto this character, matching the frame count and phase exactly (frame 1 = its frame
+1's leg positions, and so on).
+What every frame must carry (copy reference 2 frame-for-frame):
+- KNEES BEND: the trailing leg lifts with a bent knee, sole of the boot showing as it
+  pushes off; the planted leg takes the weight.
+- LEFT AND RIGHT ALTERNATE: the first half of the row is one leg's step, the second
+  half is the OTHER leg's step.
+- This is a BACK view: nothing that only exists on the front (face, visor, eyes,
+  chest emblem, belt buckle) may appear -- only the back of the head/helm, the
+  shoulders, the back of the garment.
+FORBIDDEN: any front-of-body feature; feet together at attention; two frames with an
+identical lower body; extra legs or feet.
+This is a BACK view. Reference 1 shows the character from the FRONT: use it for the design, palette and equipment ONLY. Nothing that exists only on the front may appear -- no face, eyes, mask, visor opening, hood opening, chest emblem or belt buckle. Draw the BACK of the head/helm/hood, the back of the shoulders, and the back of the garment.
+Do NOT copy anything else from reference 2: not its clothing, weapons, build, colours or
+species -- only the legs' motion, redrawn as THIS character's legs.
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, evenly spaced, all
+feet on one shared ground line, the body near each cell's horizontal centre (no
+drifting across the row), green margins on all sides -- no figure touching any
+image edge or its neighbour.
+EVERY FIGURE IS THE SAME SIZE. Draw all 6 at one identical scale, filling the
+same share of the row's height; do not shrink some of them to fit, do not crowd
+two small figures into the space of one, and do not add a smaller inset version
+anywhere. If 6 figures will not fit at full size, make the image WIDER. Flat solid #00ff00 GREEN background,
+nothing else in the image. Generate ONE image and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix2_2026-09-03\echo__n\echo_walk_n_row.png
+then stop.
+
+In your final message report, for each frame 1-6: which leg (or leg pair) leads and which joints are bent, and how much (slight / clear / deep)
+Report any repeated pose, and whether the body stayed cell-centred and at constant height.

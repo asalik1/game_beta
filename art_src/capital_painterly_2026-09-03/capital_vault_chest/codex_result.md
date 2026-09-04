@@ -1,0 +1,1 @@
+Matched style to 1_style_hideout_barrel.png; silhouette and part placement are preserved, with only slight painterly thickening of the steel bands and crown lock.

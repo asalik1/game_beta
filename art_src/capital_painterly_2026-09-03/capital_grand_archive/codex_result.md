@@ -1,0 +1,1 @@
+Matched style reference 1_style_cottage_b.png; silhouette is slightly fuller/taller, but all principal parts remain in their subject positions.

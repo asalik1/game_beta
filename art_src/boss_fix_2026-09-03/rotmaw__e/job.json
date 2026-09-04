@@ -1,0 +1,13 @@
+{
+ "base": "rotmaw",
+ "facing": "e",
+ "arch": "biped_heavy",
+ "frames": 6,
+ "heavy": true,
+ "desc": "a rotmaw plague-hulk in profile: a HULKING, BROAD, hunched undead giant with heavy thick arms hanging low, a wide barrel chest, a bald grey corpse head with sunken eyes, three large pale mushroom caps growing from its shoulders and skull, ragged brown loincloth, thick tree-root legs, and a small bundle of dried flowers clutched in one fist. Its build is MASSIVE and stooped -- broad shoulders far wider than the hips",
+ "defect": "the current side strip draws a SLENDER, upright, thin-limbed figure instead of this bulky hunched hulk",
+ "idle_ref": "rotmaw_anim_codex",
+ "donor": "skins/elite/warrior_emberbound_heir_walk_e",
+ "donor_flipped": false,
+ "refs": 2
+}

@@ -1,0 +1,1 @@
+Matched style to 1_style_cottage_b.png; no intentional silhouette or part-placement differences from the subject.

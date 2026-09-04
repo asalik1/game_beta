@@ -1,0 +1,1 @@
+Matched style to 1_style_keep_arch.png; the central crown is broader/stone-heavier, the arch slightly wider/lower, and some banners/braziers are modestly repositioned.

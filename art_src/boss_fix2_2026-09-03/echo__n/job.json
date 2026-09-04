@@ -1,0 +1,12 @@
+{
+ "base": "echo",
+ "facing": "n",
+ "arch": "biped",
+ "frames": 6,
+ "desc": "the unnamed echo walking AWAY from the viewer: a dark armored warrior with a blazing FLAMING SKULL for a head (orange fire licking upward from the skull), two large tattered dark-feathered WINGS spread from the back and filling most of the figure's width, dark plate armor, a dagger held low, seen from behind so the wings' backs face the camera",
+ "defect": "the dagger swaps hands between frames",
+ "idle_ref": "echo_anim_codex",
+ "donor": "assassin_walk_n",
+ "donor_flipped": false,
+ "refs": 2
+}

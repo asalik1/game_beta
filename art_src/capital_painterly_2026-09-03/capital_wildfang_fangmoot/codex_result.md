@@ -1,0 +1,1 @@
+Matched style to Reference 1; overall silhouette and part placement are preserved, with only slight painterly thickening of the skull-topped posts and horn details.

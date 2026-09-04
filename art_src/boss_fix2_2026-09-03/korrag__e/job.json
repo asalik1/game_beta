@@ -1,0 +1,14 @@
+{
+ "base": "korrag",
+ "facing": "e",
+ "arch": "biped_heavy",
+ "old": "korrag_walk_codex_e.png",
+ "frames": 6,
+ "heavy": true,
+ "desc": "a hulking armored champion in profile: a broad humanoid in dented blue-steel plate with a horned helm and a shaggy fur mantle, pale-blue LIGHTNING ARCS crackling around the shoulders and helm in every frame, a heavy spiked flail carried in one hand with the chain hanging, a torn red tabard, heavy sabatons",
+ "defect": "a two-pose stomp with no knee bend",
+ "idle_ref": "korrag_anim_codex",
+ "donor": "skins/elite/warrior_emberbound_heir_walk_e",
+ "donor_flipped": false,
+ "refs": 3
+}

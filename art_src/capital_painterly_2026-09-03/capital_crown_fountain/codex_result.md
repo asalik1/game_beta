@@ -1,0 +1,1 @@
+Matched style to Reference 1; the crown finial is slightly taller and more crenellated than the subject, while the remaining silhouette and part placement are preserved.

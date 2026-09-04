@@ -1,0 +1,1 @@
+Matched style to 1_style_keep_arch.png; silhouette is slightly broader, with a larger gate and crown, but all major parts retain their subject placement.

@@ -1,0 +1,1 @@
+Matched `1_style_keep_brazier.png`; silhouette and placement are preserved, aside from a slightly broader crown and minor hook-spacing shifts.

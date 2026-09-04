@@ -1,0 +1,1 @@
+Matched style to `1_style_cottage_a.png`; silhouette and architectural placement are preserved, with only minor painterly variation in small bench accessories and carved-beam thickness.

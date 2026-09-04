@@ -1,0 +1,1 @@
+Matched style reference 1_style_keep_arch.png; silhouette and part placement are preserved, with only slight painterly widening and rounding of masonry details.

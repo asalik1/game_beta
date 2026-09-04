@@ -1,0 +1,1 @@
+Matched style reference 1_style_stall.png; silhouette is preserved, but the right lantern shifted inward and minor merchandise placement differs.

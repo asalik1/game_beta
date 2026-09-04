@@ -1,0 +1,1 @@
+Matched 1_style_keep_arch.png; overall silhouette and part placement are preserved, with only slight painterly stone-edge irregularity and a marginally broader arch/crown.

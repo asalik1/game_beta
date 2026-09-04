@@ -1,0 +1,1 @@
+Matched style to Reference 1; overall silhouette and placement are preserved, though the central crest and far-right stable tool are slightly more pronounced.

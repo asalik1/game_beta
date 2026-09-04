@@ -1,0 +1,1 @@
+Matched style to 1_style_old_well.png; part placement is preserved, though the crown and canopy silhouette are slightly taller and more elaborate than the subject.

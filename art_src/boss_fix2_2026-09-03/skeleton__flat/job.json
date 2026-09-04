@@ -1,0 +1,13 @@
+{
+ "base": "skeleton",
+ "facing": "flat",
+ "arch": "biped",
+ "old": "skeleton_walk.png",
+ "frames": 6,
+ "desc": "a hollow soldier: an animated skeleton in a rusted iron skullcap helm and a tattered dark cape with an orange crown sigil on the chest, a short iron sword held low in one hand, the OTHER hand EMPTY (it carries NO shield and no second weapon), bare bone legs and bone feet",
+ "defect": "the same leg leading in both halves and only two real poses",
+ "idle_ref": "skeleton_anim",
+ "donor": "assassin_walk_e",
+ "donor_flipped": true,
+ "refs": 3
+}

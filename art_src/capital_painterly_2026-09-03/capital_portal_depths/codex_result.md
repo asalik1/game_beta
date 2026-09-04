@@ -1,0 +1,1 @@
+Matched style reference 1_style_keep_arch.png; silhouette is slightly broader at the base, with denser masonry and minor trim-placement differences from the subject.

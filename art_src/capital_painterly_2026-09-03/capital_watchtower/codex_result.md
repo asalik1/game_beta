@@ -1,0 +1,1 @@
+Matched style to `1_style_keep_arch.png`; part placement is preserved, with the base arch opened and slightly widened instead of barred.

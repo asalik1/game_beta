@@ -1,0 +1,1 @@
+Matched style to Reference 1; the roof/gable is taller, side spires and forecourt slightly broader, and the central doorway reads more like a projecting altar.

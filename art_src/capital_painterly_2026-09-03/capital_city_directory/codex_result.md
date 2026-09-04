@@ -1,0 +1,1 @@
+Matched `1_style_signpost.png`; silhouette and part placement are preserved, aside from a slightly taller, more angular crown crest and minor parchment-spacing differences.

@@ -1,0 +1,1 @@
+Matched style to Reference 1; silhouette and part placement match Reference 2, aside from slightly fuller footings and naturally irregular crown/crenellation contours.

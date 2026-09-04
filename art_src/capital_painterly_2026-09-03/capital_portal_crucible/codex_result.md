@@ -1,0 +1,1 @@
+Matched style to 1_style_keep_arch.png; silhouette is slightly bulkier, with an enlarged central crest/banner and more prominent portcullis, while core part placement remains aligned.

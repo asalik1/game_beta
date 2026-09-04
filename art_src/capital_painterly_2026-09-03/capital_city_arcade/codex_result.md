@@ -1,0 +1,1 @@
+Matched 1_style_keep_arch.png; silhouette and major part placement are preserved, with minor masonry, window, and banner-detail shifts.
