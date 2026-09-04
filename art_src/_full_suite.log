@@ -100,3 +100,22 @@ ok: endgame modes (Crucible affixed boss / HP-carry / reward / cash-out; Depths 
 ok: touch HUD overlay gate (menu/dialogue/choice kill the controls with the world unpaused — co-op)
 ok: overlay intent gate (stale keyboard intents die under dialogue + choice overlays, world unpaused — co-op)
 ok: two-regime growth (native band -> boss dial far-field; no L100 inversion; overcap blocks)
+ok: all 46 terrains applied + events fired
+ok: hot room locks the exit (no walking out mid-fight)
+ok: darkwood road (lazy build, per-pack aggro, door seals, clear)
+ok: doorway walk-through (E door is passable, not painted shut)
+ok: dead-end cache (guarded, once per character)
+ok: social room (pool wanderer talks)
+ok: resonance shrine (+8, once)
+ok: fog of war (visited-only map state)
+ok: room cleared -> fangmaw spawned (Lv 5)
+[fight] fangmaw Lv5 | warrior Lv9 | ttk 0:01 | pool 8755 | dps 6237.0 | taken 51 | potions 0 | wipes 0
+ok: fangmaw killed + loot (gate opened)
+ok: fast travel (village <-> stilt camp; combat rooms excluded)
+ok: death -> last safe room + death room reset
+ok: morwen killed (Lv 8, gate opened)
+ok: vargoth enrage
+ok: death, respawn at nearest cleared/safe room, boss reset
+[fight] vargoth Lv12 | warrior Lv11 | ttk 0:02 | pool 24561 | dps 8442.4 | taken 0 | potions 0 | wipes 1
+ok: vargoth killed + victory screen
+ok: victory way-gates (card dismisses, gates rise, world live)

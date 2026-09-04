@@ -1,0 +1,13 @@
+{
+ "base": "nullwarden",
+ "facing": "n",
+ "arch": "biped_heavy",
+ "frames": 6,
+ "heavy": true,
+ "desc": "a hulking null-armoured warden walking AWAY from the viewer: the back of a broad squat humanoid in dark blue-grey plate with pale cyan rune glints on the pauldrons and back plate, a horned helm seen from BEHIND (the horns curving away from the camera, no faceplate, no visor, no eye glints), a huge greatsword carried on the back or in one hand, thick armoured legs",
+ "defect": "the current north strip shows the FRONT of the helm (faceplate, visor band, eye glints, horns toward the camera)",
+ "idle_ref": "nullwarden_anim_codex",
+ "donor": "skins/elite/warrior_emberbound_heir_walk_n",
+ "donor_flipped": false,
+ "refs": 2
+}

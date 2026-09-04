@@ -843,3 +843,87 @@ original prompt, not writing a new banshee description.
 codex
 The references are clear: this is a five-frame idle, not a walk. IΓÇÖll preserve the planted boots and use only tiny 
 breathing/weight-shift changes while enforcing the same right-facing side silhouette in all five cells.
+codex
+The generated strip has exactly five complete figures, all facing right in strict profile, with planted feet and no 
+attack or spell effect. IΓÇÖm now checking the fileΓÇÖs dimensions and background color before placing it at the 
+required path.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:\\Users\\asali\\.c
+odex\\generated_images\\01a06ad0-d687-79a1-9730-2ecc29bcc795\\exec-44926773-5444-47a2-9322-0fdb7b6b1b0b.png' 
+-Destination 'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\mage_profile_2026-09-03
+\\mage__anim__e\\mage_anim_e_row.png' -Force; Add-Type -AssemblyName System.Drawing; "'$bmp = [System.Drawing.Bitmap]::
+new('"'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\mage_profile_2026-09-03\\mage_
+_anim__e\\mage_anim_e_row.png'); Write-Output (\"{0}x{1}\" -f "'$bmp.Width,$bmp.Height); $points = 
+@(@(0,0),@($bmp.Width-1,0),@(0,$bmp.Height-1),@($bmp.Width-1,$bmp.Height-1),@(10,10)); foreach($pt in 
+$points){$c=$bmp.GetPixel($pt[0],$pt[1]); Write-Output ("{0},{1}: #{2:X2}{3:X2}{4:X2}" -f 
+$pt[0],$pt[1],$c.R,$c.G,$c.B)}; $bmp.Dispose(); Get-Item -LiteralPath '"'C:\\Users\\asali\\Projects\\MMO\\.claude\\work
+trees\\epic-panini-3fd8fd\\art_src\\mage_profile_2026-09-03\\mage__anim__e\\mage_anim_e_row.png' | Select-Object 
+FullName,Length" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__anim__e
+ succeeded in 889ms:
+1778x885
+Method invocation failed because [System.Object[]] does not contain a method named 'op_Subtraction'.
+At line:2 char:564
++ ... mp.Height); $points = @(@(0,0),@($bmp.Width-1,0),@(0,$bmp.Height-1),@ ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (op_Subtraction:String) [], RuntimeException
+    + FullyQualifiedErrorId : MethodNotFound
+ 
+
+FullName                                                                                                               
+--------                                                                                                               
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__anim__e\mage_...
+
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; $path
+='"'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\mage_profile_2026-09-03\\mage__an
+im__e\\mage_anim_e_row.png'; "'$bmp=[System.Drawing.Bitmap]::new($path); $w=[int]$bmp.Width; $h=[int]$bmp.Height; $coor
+ds=@([Tuple]::Create(0,0),[Tuple]::Create($w-1,0),[Tuple]::Create(0,$h-1),[Tuple]::Create($w-1,$h-1),[Tuple]::Create(10
+,10),[Tuple]::Create([int]($w/2),10)); foreach($pt in $coords){$c=$bmp.GetPixel($pt.Item1,$pt.Item2); Write-Output 
+("{0},{1}: #{2:X2}{3:X2}{4:X2} A={5}" -f $pt.Item1,$pt.Item2,$c.R,$c.G,$c.B,$c.A)}; $bmp.Dispose(); (Get-FileHash 
+-Algorithm SHA256 -LiteralPath $path).Hash' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__anim__e
+ succeeded in 872ms:
+0,0: #10F10E A=255
+1777,0: #0EF10A A=255
+0,884: #0DF10E A=255
+1777,884: #10F30C A=255
+10,10: #03F803 A=255
+889,10: #04F905 A=255
+43A8F00CAC01E5DD5F0F10DED12A9C4218CDBFDA4813A72BA76F0C2383E6427F
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'magick -version' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__anim__e
+ exited 1 in 1252ms:
+magick : The term 'magick' is not recognized as the name of a cmdlet, function, script file, or operable program. 
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:2 char:1
++ magick -version
++ ~~~~~~
+    + CategoryInfo          : ObjectNotFound: (magick:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; $path
+='"'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\mage_profile_2026-09-03\\mage__an
+im__e\\mage_anim_e_row.png'; "'$tmp='"'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src
+\\mage_profile_2026-09-03\\mage__anim__e\\mage_anim_e_row.__tmp.png'; "'$bmp=[System.Drawing.Bitmap]::new($path); 
+$rect=[System.Drawing.Rectangle]::new(0,0,$bmp.Width,$bmp.Height); $data=$bmp.LockBits($rect,[System.Drawing.Imaging.Im
+ageLockMode]::ReadWrite,[System.Drawing.Imaging.PixelFormat]::Format32bppArgb); 
+$len=[Math]::Abs($data.Stride)*$data.Height; $bytes=New-Object byte[] $len; 
+[System.Runtime.InteropServices.Marshal]::Copy($data.Scan0,$bytes,0,$len); $changed=0; for($y=0;$y -lt 
+$data.Height;$y++){ $row=$y*$data.Stride; for($x=0;$x -lt $data.Width;$x++){ $i=$row+($x*4); $b=[int]$bytes[$i]; 
+$g=[int]$bytes[$i+1]; $r=[int]$bytes[$i+2]; if($g -ge 190 -and $r -le 90 -and $b -le 90 -and $g -ge ($r+100) -and $g 
+-ge ($b+100)){ $bytes[$i]=0; $bytes[$i+1]=255; $bytes[$i+2]=0; $bytes[$i+3]=255; $changed++ } } }; 
+[System.Runtime.InteropServices.Marshal]::Copy($bytes,0,$data.Scan0,$len); $bmp.UnlockBits($data); 
+$bmp.Save($tmp,[System.Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose(); Move-Item -LiteralPath $tmp -Destination 
+$path -Force; Write-Output ("normalized_pixels={0}" -f $changed); $check=[System.Drawing.Bitmap]::new($path); 
+foreach($xy in @(@(0,0),@($check.Width-1,0),@(0,$check.Height-1),@($check.Width-1,$check.Height-1),@(10,10))){ 
+$c=$check.GetPixel([int]$xy[0],[int]$xy[1]); Write-Output ("#{0:X2}{1:X2}{2:X2}" -f $c.R,$c.G,$c.B) }; Write-Output 
+("size={0}x{1}" -f $check.Width,$check.Height); $check.Dispose(); Get-Item -LiteralPath $path | Select-Object 
+FullName,Length' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__anim__e

@@ -1,0 +1,12 @@
+{
+ "base": "serane",
+ "facing": "s",
+ "arch": "glide",
+ "frames": 6,
+ "desc": "a frost sorceress drifting toward the viewer: a tall pale woman in a flowing ice-blue and white gown with a crystalline spiked crown and ice shards floating around her shoulders, long white hair, the gown's hem reaching the ground, pale hands held slightly out",
+ "defect": "the current south strip is a byte copy of the idle -- she has no south locomotion at all",
+ "idle_ref": "serane_anim_codex",
+ "donor": null,
+ "donor_flipped": false,
+ "refs": 2
+}
