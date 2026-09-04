@@ -104,15 +104,19 @@ generated with the documented walk-plus-firing-arm technique and installed
 - Base warlock walk E/W: hood turns to camera vs the profile idle (P1) — not addressed.
 - attack_walk_b variants (mage/warlock/assassin) — not generated; the primary
   plays every cycle (art-driven, no defect).
-- Rejected/not done from the audits: assassin walk_e cloak balloon, archer
-  walk_n cape green-on-content, warlock_ledgerbound duplicated frames,
-  stormmouth N (= E), serane S (= idle), saint_varo_blade fidelity,
-  nullwarden N front helm.
+- Queued regens (chain_fix3): stormmouth N (its N was a byte copy of E),
+  serane S (was a byte copy of the idle), nullwarden N (front helm on a back
+  view) — install with `install_gait_row.py` if the rows landed after hand-off.
+- Not addressed from the audits: assassin walk_e cloak balloon + walk_s
+  bootless frames, archer walk_n cape green-on-content, saint_varo_blade
+  fidelity (192px cell beside 627px siblings), greyrun_lurker attack 0.86x.
+- Done since first draft: warlock_ledgerbound duplicated frames (trimmed),
+  elf_ranger_attack f2's baked in-flight arrow (erased; the game spawns it).
 - Mobile re-sync (`python tools/sync_mobile.py --apply --gate`) — run at merge.
 
 ## Gates
 
 - Every commit: compile gate + `test_quick` green.
-- Full suite: (recorded below when run)
-- preflight: (recorded below)
+- Full suite: **AUTOTEST PASS, 172 sections, exit 0** (2026-09-04, on the tree at 252547e: all motion/tell code + the art up to that point).
+- preflight --fast: **0 fail apart from the pending --import** (MODULES BALANCE PHYSICS RIGS ARTQA all clean).
 - Mobile: (recorded below)

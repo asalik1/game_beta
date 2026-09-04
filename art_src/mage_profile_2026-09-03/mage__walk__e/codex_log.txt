@@ -7,14 +7,14 @@ At line:7 char:14
  
 OpenAI Codex v0.152.0
 --------
-workdir: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__anim__e
+workdir: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__walk__e
 model: gpt-5.6-sol
 provider: openai
 approval: never
 sandbox: danger-full-access
 reasoning effort: high
 reasoning summaries: none
-session id: 01a06ad0-d687-79a1-9730-2ecc29bcc795
+session id: 01a06ad5-05bb-7b43-b8ae-69ec1fca0ba2
 --------
 user
 Redraw this animation clip as a TRUE RIGHT-SIDE PROFILE.
@@ -26,9 +26,9 @@ Reference 2 shows a similar character drawn in a REAL side profile: the viewer
 sees the RIGHT side of the body only, one shoulder in front of the other, the
 face in profile with one eye visible, the near arm in front of the torso. Draw
 reference 1's character from THIS angle.
-Reference 3 is the current clip, 5 frames, which was drawn front-on by mistake.
-Keep its frame count and its per-frame ACTION exactly: a standing IDLE: the character breathes and shifts weight very 
-slightly; feet planted, no step. Frame 1 of the
+Reference 3 is the current clip, 7 frames, which was drawn front-on by mistake.
+Keep its frame count and its per-frame ACTION exactly: a WALK cycle: the legs alternate through a real stride with 
+bent knees and a passing frame; the hem sways and the boots show alternately below it. Frame 1 of the
 new row does what frame 1 of reference 3 does, and so on -- only the viewing
 angle changes.
 
@@ -46,13 +46,13 @@ Hard requirements:
 - Draw NO projectile, bolt, flame, spark, glow or magic effect anywhere -- the
   game spawns those; anything drawn here would double it.
 
-Produce ONE image: a horizontal row of EXACTLY 5 figures, evenly spaced, all the
+Produce ONE image: a horizontal row of EXACTLY 7 figures, evenly spaced, all the
 same size (if they will not fit at full size, make the image WIDER), green margins
 all round, no figure touching an edge or its neighbour. Flat solid #00ff00 GREEN
 background, nothing else in the image.
 Generate ONE image and SAVE it to disk at the exact path
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__anim__e\mage_ani
-m_e_row.png
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__walk__e\mage_wal
+k_e_row.png
 then stop.
 
 In your final message report, per frame, what the character is doing and confirm
@@ -60,13 +60,14 @@ every frame is a profile with no projectile or effect drawn.
 
 
 codex
-IΓÇÖm using the image-generation skill to redraw the five-frame sprite row, then IΓÇÖll verify the saved file against 
-the framing and effect constraints.
+IΓÇÖm using the image-generation skill because this is a reference-guided sprite redraw. IΓÇÖll first inspect its 
+instructions and the repoΓÇÖs working practices, then generate and verify the single seven-frame output at the exact 
+requested path.
 exec
 "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw 
-'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'; Get-Content -Raw 'CLAUDE.md'" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__anim__e
- exited 1 in 434ms:
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'; Get-Content -Raw '..\\..\\..\\..\\..\\CLAUDE.md'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__walk__e
+ exited 1 in 524ms:
 ---
 name: "imagegen"
 description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, 
@@ -434,24 +435,24 @@ into their active environment.
 - `scripts/image_gen.py`: fallback-only CLI implementation. Use only when the user explicitly chooses or confirms CLI 
 mode.
 
-Get-Content : Cannot find path 'C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2
-026-09-03\mage__anim__e\CLAUDE.md' because it does not exist.
+Get-Content : Cannot find path 'C:\Users\asali\Projects\MMO\.claude\CLAUDE.md' because it does not exist.
 At line:2 char:76
-+ ... codex\skills\.system\imagegen\SKILL.md'; Get-Content -Raw 'CLAUDE.md'
-+                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : ObjectNotFound: (C:\Users\asali\...im__e\CLAUDE.md:String) [Get-Content], ItemNotFoundEx 
++ ... ystem\imagegen\SKILL.md'; Get-Content -Raw '..\..\..\..\..\CLAUDE.md'
++                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\asali\...laude\CLAUDE.md:String) [Get-Content], ItemNotFoundEx 
    ception
     + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
  
 
+codex
+The repository pointer resolves within the worktree, so IΓÇÖm correcting that path before making the asset. The key 
+image constraints are already complete; IΓÇÖm treating the three supplied files as identity, side-angle, and 
+frame-action references respectively.
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$p = (Get-Location).Path; while ($true) { 
-$candidate = Join-Path $p '"'CLAUDE.md'; if (Test-Path -LiteralPath "'$candidate) { Write-Output $candidate; 
-Get-Content -Raw -LiteralPath $candidate; break }; $parent = Split-Path -Parent $p; if ($parent -eq $p -or 
-[string]::IsNullOrEmpty($parent)) { break }; $p = $parent }' in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__anim__e
- succeeded in 446ms:
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\CLAUDE.md
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw '..\\..\\..\\CLAUDE.md'; 
+Get-Content -Raw 'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\references\\prompting.md'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__walk__e
+ succeeded in 290ms:
 # Crownless ├óΓé¼ΓÇ¥ working practices (all agents)
 
 ## Mobile version ├óΓé¼ΓÇ¥ kept in sync (unfrozen 2026-07-15)
@@ -839,151 +840,598 @@ description. Only useful for testing color palette and design elements.
 contained `faint blue-white keening light at the mouth` ├óΓé¼ΓÇ¥ the fix was deleting that one clause from the 
 original prompt, not writing a new banshee description.
 
+# Prompting best practices
+
+These prompting principles are shared by both top-level modes of the skill:
+- built-in `image_gen` tool (default)
+- explicit `scripts/image_gen.py` CLI fallback
+
+This file is about prompt structure, specificity, and iteration. Fallback-only execution controls such as `quality`, 
+`input_fidelity`, masks, output format, and output paths live in the fallback docs.
+
+## Contents
+- [Structure](#structure)
+- [Specificity policy](#specificity-policy)
+- [Allowed and disallowed augmentation](#allowed-and-disallowed-augmentation)
+- [Composition and layout](#composition-and-layout)
+- [Constraints and invariants](#constraints-and-invariants)
+- [Text in images](#text-in-images)
+- [Input images and references](#input-images-and-references)
+- [Iterate deliberately](#iterate-deliberately)
+- [Transparent images](#transparent-images)
+- [Fallback-only execution controls](#fallback-only-execution-controls)
+- [Use-case tips](#use-case-tips)
+- [Where to find copy/paste recipes](#where-to-find-copypaste-recipes)
+
+## Structure
+- Use a consistent order: scene/backdrop -> subject -> key details -> constraints -> output intent.
+- Include intended use (ad, UI mock, infographic) to set the level of polish.
+- For complex requests, use short labeled lines instead of one long paragraph.
+
+## Specificity policy
+- If the user prompt is already specific and detailed, normalize it into a clean spec without adding creative 
+requirements.
+- If the prompt is generic, you may add tasteful detail when it materially improves the output.
+- Treat examples in `sample-prompts.md` as fully-authored recipes, not as the default amount of augmentation to add to 
+every request.
+- For photorealism, include `photorealistic` directly when that is the goal, plus concrete real-world texture such as 
+pores, wrinkles, fabric wear, material grain, or imperfect everyday detail.
+
+## Allowed and disallowed augmentation
+
+Allowed augmentation for generic prompts:
+- composition and framing cues
+- intended-use or polish-level hints
+- practical layout guidance
+- reasonable scene concreteness that supports the request
+
+Do not add:
+- extra characters, props, or objects that are not implied
+- brand palettes, slogans, or story beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Composition and layout
+- Specify framing and viewpoint (close-up, wide, top-down) and placement only when it materially helps.
+- Call out negative space if the asset clearly needs room for UI or copy.
+- Avoid making left/right layout decisions unless the user or surrounding layout supports them.
+- For people, describe body framing, scale, gaze, and object interactions when they matter (`full body visible`, 
+`looking down at the book`, `hands naturally gripping the handlebars`).
+
+## Constraints and invariants
+- State what must not change (`keep background unchanged`).
+- For edits, say `change only X; keep Y unchanged` and repeat invariants on every iteration to reduce drift.
+
+## Text in images
+- Put literal text in quotes or ALL CAPS and specify typography (font style, size, color, placement).
+- Spell uncommon words letter-by-letter if accuracy matters.
+- For in-image copy, require verbatim rendering and no extra characters.
+- In CLI fallback mode, use `medium` or `high` quality for small text, dense infographics, data-heavy slides, 
+multi-font layouts, legends, axes, and footnotes.
+
+## Input images and references
+- Do not assume that every provided image is an edit target.
+- Label each image by index and role (`Image 1: edit target`, `Image 2: style reference`).
+- If the user provides images for style, composition, or mood guidance and does not ask to modify them, treat the 
+request as generation with references.
+- If the user asks to preserve an existing image while changing specific parts, treat the request as an edit.
+- For compositing, describe how the images interact (`place the subject from Image 2 into Image 1`).
+
+## Iterate deliberately
+- Start with a clean base prompt, then make small single-change edits.
+- Re-specify critical constraints when you iterate.
+- Prefer one targeted follow-up at a time over rewriting the whole prompt.
+
+## Transparent images
+- Ask built-in `image_gen` for a genuinely transparent background and preserve its alpha.
+
+## Fallback-only execution controls
+- `quality`, `input_fidelity`, explicit masks, output format, and output paths are fallback-only execution controls.
+- Do not assume they are built-in `image_gen` tool arguments.
+- If the user explicitly chooses CLI fallback, see `references/cli.md` and `references/image-api.md` for those 
+controls.
+- In CLI fallback mode, `gpt-image-2` is the default. It supports `quality=low|medium|high|auto`; use `low` for fast 
+drafts and thumbnails, and move to `medium`, `high`, or `auto` for final assets.
+- `gpt-image-2` always uses high fidelity for image inputs, so do not set `input_fidelity` with that model.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user 
+explicitly requested that model.
+- If the user asks for 4K-style output with `gpt-image-2`, use `3840x2160` for landscape or `2160x3840` for portrait.
+
+## Use-case tips
+Generate:
+- photorealistic-natural: Prompt as if a real photo is captured in the moment; use photography language (lens, 
+lighting, framing); call for real texture; avoid over-stylized polish unless requested.
+- product-mockup: Describe the product/packaging and materials; ensure clean silhouette and label clarity; if in-image 
+text is needed, require verbatim rendering and specify typography.
+- ui-mockup: Describe the target fidelity first (shippable mockup or low-fi wireframe), then focus on layout, 
+hierarchy, and practical UI elements; avoid concept-art language.
+- infographic-diagram: Define the audience and layout flow; label parts explicitly; require verbatim text; prefer 
+higher quality in CLI mode for dense labels.
+- logo-brand: Keep it simple and scalable; ask for a strong silhouette and balanced negative space; avoid decorative 
+flourishes unless requested.
+- ads-marketing: Write like a creative brief; include brand positioning, audience, desired vibe, scene, and exact 
+tagline if text must appear.
+- productivity-visual: Name the exact artifact (slide, chart, workflow diagram), define the canvas and hierarchy, 
+provide real labels/data, and ask for readable typography and polished spacing.
+- scientific-educational: Define audience, lesson objective, required labels, scientific constraints, arrows, and 
+scan-friendly whitespace.
+- illustration-story: Define panels or scene beats; keep each action concrete.
+- stylized-concept: Specify style cues, material finish, and rendering approach (3D, painterly, clay) without 
+inventing new story elements.
+- historical-scene: State the location/date and required period accuracy; constrain clothing, props, and environment 
+to match the era.
+
+Edit:
+- text-localization: Change only the text; preserve layout, typography, spacing, and hierarchy; no extra words or 
+reflow unless needed.
+- identity-preserve: Lock identity (face, body, pose, hair, expression); change only the specified elements; match 
+lighting and shadows.
+- precise-object-edit: Specify exactly what to remove/replace; preserve surrounding texture and lighting; keep 
+everything else unchanged.
+- lighting-weather: Change only environmental conditions (light, shadows, atmosphere, precipitation); keep geometry, 
+framing, and subject identity.
+- background-extraction: Request a clean cutout on a genuinely transparent background; preserve fine edges and label 
+text; no halos or restyling.
+- style-transfer: Specify style cues to preserve (palette, texture, brushwork) and what must change; add `no extra 
+elements` to prevent drift.
+- compositing: Reference inputs by index; specify what moves where; match lighting, perspective, and scale; keep the 
+base framing unchanged.
+- sketch-to-render: Preserve layout, proportions, and perspective; choose materials and lighting that support the 
+supplied sketch without adding new elements.
+
+## Where to find copy/paste recipes
+For copy/paste prompt specs (examples only), see `references/sample-prompts.md`. This file focuses on principles, 
+specificity, and iteration patterns.
+
 
 codex
-The references are clear: this is a five-frame idle, not a walk. IΓÇÖll preserve the planted boots and use only tiny 
-breathing/weight-shift changes while enforcing the same right-facing side silhouette in all five cells.
+IΓÇÖm now generating one project asset from the three references. The prompt locks the seven cell-by-cell gait phases, 
+shared baseline/scale, closed robe, right-side profile, right-hand staff grip, and the total absence of magic effects.
 codex
-The generated strip has exactly five complete figures, all facing right in strict profile, with planted feet and no 
-attack or spell effect. IΓÇÖm now checking the fileΓÇÖs dimensions and background color before placing it at the 
-required path.
+The first render has exactly seven clean profile figures and no effects. IΓÇÖm saving it to the requested filename 
+now, then IΓÇÖll inspect the actual file for canvas count/layout and confirm the green key is truly solid rather than 
+relying only on the preview.
 exec
 "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:\\Users\\asali\\.c
-odex\\generated_images\\01a06ad0-d687-79a1-9730-2ecc29bcc795\\exec-44926773-5444-47a2-9322-0fdb7b6b1b0b.png' 
+odex\\generated_images\\01a06ad5-05bb-7b43-b8ae-69ec1fca0ba2\\exec-2a0e6edc-a74c-4d23-a159-b2be48198097.png' 
 -Destination 'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\mage_profile_2026-09-03
-\\mage__anim__e\\mage_anim_e_row.png' -Force; Add-Type -AssemblyName System.Drawing; "'$bmp = [System.Drawing.Bitmap]::
-new('"'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\mage_profile_2026-09-03\\mage_
-_anim__e\\mage_anim_e_row.png'); Write-Output (\"{0}x{1}\" -f "'$bmp.Width,$bmp.Height); $points = 
-@(@(0,0),@($bmp.Width-1,0),@(0,$bmp.Height-1),@($bmp.Width-1,$bmp.Height-1),@(10,10)); foreach($pt in 
-$points){$c=$bmp.GetPixel($pt[0],$pt[1]); Write-Output ("{0},{1}: #{2:X2}{3:X2}{4:X2}" -f 
-$pt[0],$pt[1],$c.R,$c.G,$c.B)}; $bmp.Dispose(); Get-Item -LiteralPath '"'C:\\Users\\asali\\Projects\\MMO\\.claude\\work
-trees\\epic-panini-3fd8fd\\art_src\\mage_profile_2026-09-03\\mage__anim__e\\mage_anim_e_row.png' | Select-Object 
-FullName,Length" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__anim__e
- succeeded in 889ms:
-1778x885
+\\mage__walk__e\\mage_walk_e_row.png' -Force; Add-Type -AssemblyName System.Drawing; "'$img = [System.Drawing.Bitmap]::
+FromFile('"'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\mage_profile_2026-09-03\\
+mage__walk__e\\mage_walk_e_row.png'); "'$pts = @(@(0,0), @($img.Width-1,0), @(0,$img.Height-1), 
+@($img.Width-1,$img.Height-1), @([int]($img.Width/2),0), @([int]($img.Width/2),$img.Height-1)); $samples = foreach ($p 
+in $pts) { $c=$img.GetPixel($p[0],$p[1]); "{0},{1}=#{2:X2}{3:X2}{4:X2}" -f $p[0],$p[1],$c.R,$c.G,$c.B }; 
+"SIZE=$($img.Width)x$($img.Height)"; $samples; $img.Dispose(); Get-Item -LiteralPath '"'C:\\Users\\asali\\Projects\\MMO
+\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\mage_profile_2026-09-03\\mage__walk__e\\mage_walk_e_row.png' | 
+Select-Object FullName,Length" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__walk__e
+ succeeded in 690ms:
 Method invocation failed because [System.Object[]] does not contain a method named 'op_Subtraction'.
-At line:2 char:564
-+ ... mp.Height); $points = @(@(0,0),@($bmp.Width-1,0),@(0,$bmp.Height-1),@ ...
+At line:2 char:517
++ ... _row.png'); $pts = @(@(0,0), @($img.Width-1,0), @(0,$img.Height-1), @ ...
 +                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     + CategoryInfo          : InvalidOperation: (op_Subtraction:String) [], RuntimeException
     + FullyQualifiedErrorId : MethodNotFound
  
+SIZE=2172x724
 
 FullName                                                                                                               
 --------                                                                                                               
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__anim__e\mage_...
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__walk__e\mage_...
 
 
 
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; $path
-='"'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\mage_profile_2026-09-03\\mage__an
-im__e\\mage_anim_e_row.png'; "'$bmp=[System.Drawing.Bitmap]::new($path); $w=[int]$bmp.Width; $h=[int]$bmp.Height; $coor
-ds=@([Tuple]::Create(0,0),[Tuple]::Create($w-1,0),[Tuple]::Create(0,$h-1),[Tuple]::Create($w-1,$h-1),[Tuple]::Create(10
-,10),[Tuple]::Create([int]($w/2),10)); foreach($pt in $coords){$c=$bmp.GetPixel($pt.Item1,$pt.Item2); Write-Output 
-("{0},{1}: #{2:X2}{3:X2}{4:X2} A={5}" -f $pt.Item1,$pt.Item2,$c.R,$c.G,$c.B,$c.A)}; $bmp.Dispose(); (Get-FileHash 
--Algorithm SHA256 -LiteralPath $path).Hash' in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__anim__e
- succeeded in 872ms:
-0,0: #10F10E A=255
-1777,0: #0EF10A A=255
-0,884: #0DF10E A=255
-1777,884: #10F30C A=255
-10,10: #03F803 A=255
-889,10: #04F905 A=255
-43A8F00CAC01E5DD5F0F10DED12A9C4218CDBFDA4813A72BA76F0C2383E6427F
-
-exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'magick -version' in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__anim__e
- exited 1 in 1252ms:
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "magick identify -verbose 
+'mage_walk_e_row.png' | Select-String 'Geometry:|Colorspace:|Alpha:|Type:|mean:|minimum:|maximum:'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__walk__e
+ exited 1 in 1115ms:
 magick : The term 'magick' is not recognized as the name of a cmdlet, function, script file, or operable program. 
 Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
 At line:2 char:1
-+ magick -version
++ magick identify -verbose 'mage_walk_e_row.png' | Select-String 'Geome ...
 + ~~~~~~
     + CategoryInfo          : ObjectNotFound: (magick:String) [], CommandNotFoundException
     + FullyQualifiedErrorId : CommandNotFoundException
  
 
+codex
+Visual QA passes: seven figures, all facing right in genuine profile, one visible eye per face, overlapping shoulders, 
+consistent right-hand staff grip, separate figures, shared ground line, and no projectile/halo/particles. IΓÇÖm doing 
+the last file-level check on dimensions and edge/margin color before handing it off.
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; $path
-='"'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\mage_profile_2026-09-03\\mage__an
-im__e\\mage_anim_e_row.png'; "'$tmp='"'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src
-\\mage_profile_2026-09-03\\mage__anim__e\\mage_anim_e_row.__tmp.png'; "'$bmp=[System.Drawing.Bitmap]::new($path); 
-$rect=[System.Drawing.Rectangle]::new(0,0,$bmp.Width,$bmp.Height); $data=$bmp.LockBits($rect,[System.Drawing.Imaging.Im
-ageLockMode]::ReadWrite,[System.Drawing.Imaging.PixelFormat]::Format32bppArgb); 
-$len=[Math]::Abs($data.Stride)*$data.Height; $bytes=New-Object byte[] $len; 
-[System.Runtime.InteropServices.Marshal]::Copy($data.Scan0,$bytes,0,$len); $changed=0; for($y=0;$y -lt 
-$data.Height;$y++){ $row=$y*$data.Stride; for($x=0;$x -lt $data.Width;$x++){ $i=$row+($x*4); $b=[int]$bytes[$i]; 
-$g=[int]$bytes[$i+1]; $r=[int]$bytes[$i+2]; if($g -ge 190 -and $r -le 90 -and $b -le 90 -and $g -ge ($r+100) -and $g 
--ge ($b+100)){ $bytes[$i]=0; $bytes[$i+1]=255; $bytes[$i+2]=0; $bytes[$i+3]=255; $changed++ } } }; 
-[System.Runtime.InteropServices.Marshal]::Copy($bytes,0,$data.Scan0,$len); $bmp.UnlockBits($data); 
-$bmp.Save($tmp,[System.Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose(); Move-Item -LiteralPath $tmp -Destination 
-$path -Force; Write-Output ("normalized_pixels={0}" -f $changed); $check=[System.Drawing.Bitmap]::new($path); 
-foreach($xy in @(@(0,0),@($check.Width-1,0),@(0,$check.Height-1),@($check.Width-1,$check.Height-1),@(10,10))){ 
-$c=$check.GetPixel([int]$xy[0],[int]$xy[1]); Write-Output ("#{0:X2}{1:X2}{2:X2}" -f $c.R,$c.G,$c.B) }; Write-Output 
-("size={0}x{1}" -f $check.Width,$check.Height); $check.Dispose(); Get-Item -LiteralPath $path | Select-Object 
-FullName,Length' in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__anim__e
- succeeded in 30714ms:
-normalized_pixels=1133670
-Method invocation failed because [System.Object[]] does not contain a method named 'op_Subtraction'.
-At line:2 char:1414
-+ ... each($xy in @(@(0,0),@($check.Width-1,0),@(0,$check.Height-1),@($chec ...
-+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : InvalidOperation: (op_Subtraction:String) [], RuntimeException
-    + FullyQualifiedErrorId : MethodNotFound
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; 
+$path = (Resolve-Path -LiteralPath '"'.\\mage_walk_e_row.png').Path; "'$img = 
+[System.Drawing.Bitmap]::FromFile($path); $w = $img.Width; $h = $img.Height; $right = $w - 1; $bottom = $h - 1; $midX 
+= [int]($w / 2); $midY = [int]($h / 2); $coords = @([pscustomobject]@{X=0;Y=0},[pscustomobject]@{X=$right;Y=0},[pscusto
+mobject]@{X=0;Y=$bottom},[pscustomobject]@{X=$right;Y=$bottom},[pscustomobject]@{X=$midX;Y=0},[pscustomobject]@{X=$midX
+;Y=$bottom},[pscustomobject]@{X=0;Y=$midY},[pscustomobject]@{X=$right;Y=$midY}); "SIZE=${w}x${h}"; foreach ($p in 
+$coords) { $c = $img.GetPixel($p.X,$p.Y); "EDGE $($p.X),$($p.Y) = #{0:X2}{1:X2}{2:X2}" -f $c.R,$c.G,$c.B }; 
+$img.Dispose(); Get-FileHash -Algorithm SHA256 -LiteralPath $path | Select-Object Path,Hash' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__walk__e
+ succeeded in 651ms:
+SIZE=2172x724
+EDGE 0,0 = #10F10D
+EDGE 2171,0 = #11F00A
+EDGE 0,723 = #0EF00B
+EDGE 2171,723 = #11F40B
+EDGE 1086,0 = #06F705
+EDGE 1086,723 = #05F804
+EDGE 0,362 = #06F805
+EDGE 2171,362 = #08F704
+
+Path                                                                                                                   
+----                                                                                                                   
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__walk__e\mage_...
+
+
+
+codex
+The file-level check caught a subtle generator issue: the previewΓÇÖs green looked flat, but edge pixels were 
+near-green rather than literal `#00ff00`. IΓÇÖm normalizing only chroma-green pixels to the exact required key color; 
+the character contains no green design elements, so this preserves the sprite while making the background 
+deterministic.
+apply patch
+patch: completed
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__walk__e\normaliz
+e_green.ps1
+diff --git a/art_src/mage_profile_2026-09-03/mage__walk__e/normalize_green.ps1 
+b/art_src/mage_profile_2026-09-03/mage__walk__e/normalize_green.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..803f4a55bdc5cac155910515aa58a6df6a144dce
+--- /dev/null
++++ b/art_src/mage_profile_2026-09-03/mage__walk__e/normalize_green.ps1
+@@ -0,0 +1,31 @@
++Add-Type -AssemblyName System.Drawing
++
++$sourcePath = Join-Path $PSScriptRoot "mage_walk_e_row.png"
++$tempPath = Join-Path $PSScriptRoot "mage_walk_e_row.normalized.png"
++
++if (Test-Path -LiteralPath $tempPath) {
++    throw "Temporary output already exists: $tempPath"
++}
++
++$bitmap = [System.Drawing.Bitmap]::FromFile($sourcePath)
++$changed = 0
++try {
++    for ($y = 0; $y -lt $bitmap.Height; $y++) {
++        for ($x = 0; $x -lt $bitmap.Width; $x++) {
++            $color = $bitmap.GetPixel($x, $y)
++            if ($color.G -gt 120 -and $color.G -gt (1.5 * $color.R) -and $color.G -gt (1.5 * $color.B)) {
++                if ($color.R -ne 0 -or $color.G -ne 255 -or $color.B -ne 0) {
++                    $bitmap.SetPixel($x, $y, [System.Drawing.Color]::FromArgb($color.A, 0, 255, 0))
++                    $changed++
++                }
++            }
++        }
++    }
++    $bitmap.Save($tempPath, [System.Drawing.Imaging.ImageFormat]::Png)
++}
++finally {
++    $bitmap.Dispose()
++}
++
++Move-Item -LiteralPath $tempPath -Destination $sourcePath -Force
++Write-Output "Normalized $changed chroma-background pixels."
+
+diff --git a/art_src/mage_profile_2026-09-03/mage__walk__e/normalize_green.ps1 
+b/art_src/mage_profile_2026-09-03/mage__walk__e/normalize_green.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..803f4a55bdc5cac155910515aa58a6df6a144dce
+--- /dev/null
++++ b/art_src/mage_profile_2026-09-03/mage__walk__e/normalize_green.ps1
+@@ -0,0 +1,31 @@
++Add-Type -AssemblyName System.Drawing
++
++$sourcePath = Join-Path $PSScriptRoot "mage_walk_e_row.png"
++$tempPath = Join-Path $PSScriptRoot "mage_walk_e_row.normalized.png"
++
++if (Test-Path -LiteralPath $tempPath) {
++    throw "Temporary output already exists: $tempPath"
++}
++
++$bitmap = [System.Drawing.Bitmap]::FromFile($sourcePath)
++$changed = 0
++try {
++    for ($y = 0; $y -lt $bitmap.Height; $y++) {
++        for ($x = 0; $x -lt $bitmap.Width; $x++) {
++            $color = $bitmap.GetPixel($x, $y)
++            if ($color.G -gt 120 -and $color.G -gt (1.5 * $color.R) -and $color.G -gt (1.5 * $color.B)) {
++                if ($color.R -ne 0 -or $color.G -ne 255 -or $color.B -ne 0) {
++                    $bitmap.SetPixel($x, $y, [System.Drawing.Color]::FromArgb($color.A, 0, 255, 0))
++                    $changed++
++                }
++            }
++        }
++    }
++    $bitmap.Save($tempPath, [System.Drawing.Imaging.ImageFormat]::Png)
++}
++finally {
++    $bitmap.Dispose()
++}
++
++Move-Item -LiteralPath $tempPath -Destination $sourcePath -Force
++Write-Output "Normalized $changed chroma-background pixels."
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "& '.\\normalize_green.ps1'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__walk__e
+ succeeded in 6556ms:
+Normalized 1231841 chroma-background pixels.
+
+diff --git a/art_src/mage_profile_2026-09-03/mage__walk__e/normalize_green.ps1 
+b/art_src/mage_profile_2026-09-03/mage__walk__e/normalize_green.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..803f4a55bdc5cac155910515aa58a6df6a144dce
+--- /dev/null
++++ b/art_src/mage_profile_2026-09-03/mage__walk__e/normalize_green.ps1
+@@ -0,0 +1,31 @@
++Add-Type -AssemblyName System.Drawing
++
++$sourcePath = Join-Path $PSScriptRoot "mage_walk_e_row.png"
++$tempPath = Join-Path $PSScriptRoot "mage_walk_e_row.normalized.png"
++
++if (Test-Path -LiteralPath $tempPath) {
++    throw "Temporary output already exists: $tempPath"
++}
++
++$bitmap = [System.Drawing.Bitmap]::FromFile($sourcePath)
++$changed = 0
++try {
++    for ($y = 0; $y -lt $bitmap.Height; $y++) {
++        for ($x = 0; $x -lt $bitmap.Width; $x++) {
++            $color = $bitmap.GetPixel($x, $y)
++            if ($color.G -gt 120 -and $color.G -gt (1.5 * $color.R) -and $color.G -gt (1.5 * $color.B)) {
++                if ($color.R -ne 0 -or $color.G -ne 255 -or $color.B -ne 0) {
++                    $bitmap.SetPixel($x, $y, [System.Drawing.Color]::FromArgb($color.A, 0, 255, 0))
++                    $changed++
++                }
++            }
++        }
++    }
++    $bitmap.Save($tempPath, [System.Drawing.Imaging.ImageFormat]::Png)
++}
++finally {
++    $bitmap.Dispose()
++}
++
++Move-Item -LiteralPath $tempPath -Destination $sourcePath -Force
++Write-Output "Normalized $changed chroma-background pixels."
+
+apply patch
+patch: completed
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__walk__e\normaliz
+e_green.ps1
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; 
+$path=(Resolve-Path -LiteralPath '"'.\\mage_walk_e_row.png').Path; "'$img=[System.Drawing.Bitmap]::FromFile($path); 
+$w=$img.Width; $h=$img.Height; $offKey=0; $keyCount=0; $boxes=@(); for($i=0;$i -lt 7;$i++){ $boxes += 
+[pscustomobject]@{MinX=$w;MinY=$h;MaxX=-1;MaxY=-1} }; for($y=0;$y -lt $h;$y++){ for($x=0;$x -lt $w;$x++){ 
+$c=$img.GetPixel($x,$y); $isKey=($c.R -eq 0 -and $c.G -eq 255 -and $c.B -eq 0); if($isKey){$keyCount++} else { if($c.G 
+-gt 120 -and $c.G -gt (1.5*$c.R) -and $c.G -gt (1.5*$c.B)){$offKey++}; 
+$cell=[Math]::Min(6,[int][Math]::Floor((7.0*$x)/$w)); $b=$boxes[$cell]; if($x -lt $b.MinX){$b.MinX=$x}; if($x -gt 
+$b.MaxX){$b.MaxX=$x}; if($y -lt $b.MinY){$b.MinY=$y}; if($y -gt $b.MaxY){$b.MaxY=$y} } } }; "SIZE=${w}x${h} 
+EXACT_KEY_PIXELS=$keyCount OFF_KEY_CHROMA_PIXELS=$offKey"; for($i=0;$i -lt 7;$i++){ $b=$boxes[$i]; "FRAME $($i+1) 
+BBOX=$($b.MinX),$($b.MinY)-$($b.MaxX),$($b.MaxY) SIZE=$(($b.MaxX-$b.MinX)+1)x$(($b.MaxY-$b.MinY)+1)" }; 
+$img.Dispose(); Get-ChildItem -LiteralPath . -Filter '"'normalize_green.ps1','mage_walk_e_row.normalized.png' 
+-ErrorAction SilentlyContinue; Get-FileHash -Algorithm SHA256 -LiteralPath "'$path | Format-List Path,Hash' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__walk__e
+ succeeded in 18766ms:
+SIZE=2172x724 EXACT_KEY_PIXELS=1231850 OFF_KEY_CHROMA_PIXELS=0
+FRAME 1 BBOX=60,151-288,558 SIZE=229x408
+FRAME 2 BBOX=361,149-618,558 SIZE=258x410
+FRAME 3 BBOX=690,151-881,557 SIZE=192x407
+FRAME 4 BBOX=970,151-1208,557 SIZE=239x407
+FRAME 5 BBOX=1258,151-1464,558 SIZE=207x408
+FRAME 6 BBOX=1569,151-1770,558 SIZE=202x408
+FRAME 7 BBOX=1863,151-2079,557 SIZE=217x407
+Get-ChildItem : Cannot convert 'System.Object[]' to the type 'System.String' required by parameter 'Filter'. Specified 
+method is not supported.
+At line:2 char:1042
++ ... h . -Filter 'normalize_green.ps1','mage_walk_e_row.normalized.png' -E ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Get-ChildItem], ParameterBindingException
+    + FullyQualifiedErrorId : CannotConvertArgument,Microsoft.PowerShell.Commands.GetChildItemCommand
  
-size=1778x885
 
-FullName                                                                                                               
---------                                                                                                               
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__anim__e\mage_...
+
+Path : C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__walk__e\m
+       age_walk_e_row.png
+Hash : 33F69AA0B603B16E66842B69D2DF5B64636DD84941AA797EF3DC821199ECC6CC
+
 
 
 
 codex
-The generatorΓÇÖs green was visually correct but not numerically flat `#00ff00`ΓÇöits corner pixels varied slightly. 
-IΓÇÖm normalizing only the green-screen field (the character has no green design elements), leaving the sprite artwork 
-intact.
+The geometry scan confirms seven occupied cells, generous margins, and no residual off-key greens. Three toe-off 
+frames sit one pixel above the common baseline, so IΓÇÖm making that tiny alignment correction to satisfy the 
+shared-ground-line requirement exactly; no pose or design pixels are being redrawn.
+apply patch
+patch: completed
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__walk__e\align_gr
+ound.ps1
+diff --git a/art_src/mage_profile_2026-09-03/mage__walk__e/align_ground.ps1 
+b/art_src/mage_profile_2026-09-03/mage__walk__e/align_ground.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..de22938ee9248b660587f72da84260d476f8e745
+--- /dev/null
++++ b/art_src/mage_profile_2026-09-03/mage__walk__e/align_ground.ps1
+@@ -0,0 +1,40 @@
++Add-Type -AssemblyName System.Drawing
++
++$sourcePath = Join-Path $PSScriptRoot "mage_walk_e_row.png"
++$tempPath = Join-Path $PSScriptRoot "mage_walk_e_row.aligned.png"
++
++if (Test-Path -LiteralPath $tempPath) {
++    throw "Temporary output already exists: $tempPath"
++}
++
++$source = [System.Drawing.Bitmap]::FromFile($sourcePath)
++$output = New-Object System.Drawing.Bitmap($source.Width, $source.Height, 
+[System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
++$green = [System.Drawing.Color]::FromArgb(255, 0, 255, 0)
++try {
++    $graphics = [System.Drawing.Graphics]::FromImage($output)
++    try {
++        $graphics.Clear($green)
++    }
++    finally {
++        $graphics.Dispose()
++    }
++
++    for ($y = 0; $y -lt $source.Height; $y++) {
++        for ($x = 0; $x -lt $source.Width; $x++) {
++            $color = $source.GetPixel($x, $y)
++            if ($color.R -eq 0 -and $color.G -eq 255 -and $color.B -eq 0) {
++                continue
++            }
++            $cell = [Math]::Min(6, [int][Math]::Floor((7.0 * $x) / $source.Width))
++            $offsetY = if ($cell -in @(2, 3, 6)) { 1 } else { 0 }
++            $output.SetPixel($x, $y + $offsetY, $color)
++        }
++    }
++    $output.Save($tempPath, [System.Drawing.Imaging.ImageFormat]::Png)
++}
++finally {
++    $source.Dispose()
++    $output.Dispose()
++}
++
++Move-Item -LiteralPath $tempPath -Destination $sourcePath -Force
+
+diff --git a/art_src/mage_profile_2026-09-03/mage__walk__e/align_ground.ps1 
+b/art_src/mage_profile_2026-09-03/mage__walk__e/align_ground.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..de22938ee9248b660587f72da84260d476f8e745
+--- /dev/null
++++ b/art_src/mage_profile_2026-09-03/mage__walk__e/align_ground.ps1
+@@ -0,0 +1,40 @@
++Add-Type -AssemblyName System.Drawing
++
++$sourcePath = Join-Path $PSScriptRoot "mage_walk_e_row.png"
++$tempPath = Join-Path $PSScriptRoot "mage_walk_e_row.aligned.png"
++
++if (Test-Path -LiteralPath $tempPath) {
++    throw "Temporary output already exists: $tempPath"
++}
++
++$source = [System.Drawing.Bitmap]::FromFile($sourcePath)
++$output = New-Object System.Drawing.Bitmap($source.Width, $source.Height, 
+[System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
++$green = [System.Drawing.Color]::FromArgb(255, 0, 255, 0)
++try {
++    $graphics = [System.Drawing.Graphics]::FromImage($output)
++    try {
++        $graphics.Clear($green)
++    }
++    finally {
++        $graphics.Dispose()
++    }
++
++    for ($y = 0; $y -lt $source.Height; $y++) {
++        for ($x = 0; $x -lt $source.Width; $x++) {
++            $color = $source.GetPixel($x, $y)
++            if ($color.R -eq 0 -and $color.G -eq 255 -and $color.B -eq 0) {
++                continue
++            }
++            $cell = [Math]::Min(6, [int][Math]::Floor((7.0 * $x) / $source.Width))
++            $offsetY = if ($cell -in @(2, 3, 6)) { 1 } else { 0 }
++            $output.SetPixel($x, $y + $offsetY, $color)
++        }
++    }
++    $output.Save($tempPath, [System.Drawing.Imaging.ImageFormat]::Png)
++}
++finally {
++    $source.Dispose()
++    $output.Dispose()
++}
++
++Move-Item -LiteralPath $tempPath -Destination $sourcePath -Force
+
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath . -Filter 
-'mage_anim_e_row*' | Select-Object Name,Length,LastWriteTime; Add-Type -AssemblyName System.Drawing; "'$path='"'C:\\Use
-rs\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\mage_profile_2026-09-03\\mage__anim__e\\mage
-_anim_e_row.png'; "'$bmp=[System.Drawing.Bitmap]::new($path); $c=$bmp.GetPixel(0,0); Write-Output 
-("corner=#{0:X2}{1:X2}{2:X2}; size={3}x{4}" -f $c.R,$c.G,$c.B,$bmp.Width,$bmp.Height); $bmp.Dispose()' in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__anim__e
- succeeded in 667ms:
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "& '.\\align_ground.ps1'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__walk__e
+ succeeded in 4282ms:
+diff --git a/art_src/mage_profile_2026-09-03/mage__walk__e/align_ground.ps1 
+b/art_src/mage_profile_2026-09-03/mage__walk__e/align_ground.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..de22938ee9248b660587f72da84260d476f8e745
+--- /dev/null
++++ b/art_src/mage_profile_2026-09-03/mage__walk__e/align_ground.ps1
+@@ -0,0 +1,40 @@
++Add-Type -AssemblyName System.Drawing
++
++$sourcePath = Join-Path $PSScriptRoot "mage_walk_e_row.png"
++$tempPath = Join-Path $PSScriptRoot "mage_walk_e_row.aligned.png"
++
++if (Test-Path -LiteralPath $tempPath) {
++    throw "Temporary output already exists: $tempPath"
++}
++
++$source = [System.Drawing.Bitmap]::FromFile($sourcePath)
++$output = New-Object System.Drawing.Bitmap($source.Width, $source.Height, 
+[System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
++$green = [System.Drawing.Color]::FromArgb(255, 0, 255, 0)
++try {
++    $graphics = [System.Drawing.Graphics]::FromImage($output)
++    try {
++        $graphics.Clear($green)
++    }
++    finally {
++        $graphics.Dispose()
++    }
++
++    for ($y = 0; $y -lt $source.Height; $y++) {
++        for ($x = 0; $x -lt $source.Width; $x++) {
++            $color = $source.GetPixel($x, $y)
++            if ($color.R -eq 0 -and $color.G -eq 255 -and $color.B -eq 0) {
++                continue
++            }
++            $cell = [Math]::Min(6, [int][Math]::Floor((7.0 * $x) / $source.Width))
++            $offsetY = if ($cell -in @(2, 3, 6)) { 1 } else { 0 }
++            $output.SetPixel($x, $y + $offsetY, $color)
++        }
++    }
++    $output.Save($tempPath, [System.Drawing.Imaging.ImageFormat]::Png)
++}
++finally {
++    $source.Dispose()
++    $output.Dispose()
++}
++
++Move-Item -LiteralPath $tempPath -Destination $sourcePath -Force
 
-Name                 Length LastWriteTime      
-----                 ------ -------------      
-mage_anim_e_row.png 1241130 9/4/2026 1:10:10 AM
-corner=#00FF00; size=1778x885
-
-
-
+apply patch
+patch: completed
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__walk__e\align_gr
+ound.ps1
 codex
-Saved [mage_anim_e_row.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-
-09-03\mage__anim__e\mage_anim_e_row.png).
+Saved [mage_walk_e_row.png](C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/mage_profile_2026-
+09-03/mage__walk__e/mage_walk_e_row.png).
 
-- Frame 1: neutral planted idle.
-- Frame 2: subtle inhale.
-- Frame 3: gentle exhale.
-- Frame 4: slight weight shift; boots remain planted.
-- Frame 5: eases toward neutral.
+- Frame 1: right boot forward heel-contact stride.
+- Frame 2: right leg loading; left boot lifting behind.
+- Frame 3: left leg passing with bent knees.
+- Frame 4: left boot reaching forward; right boot pushing back.
+- Frame 5: left boot planted and loading.
+- Frame 6: right leg passing in a compact crossover.
+- Frame 7: right boot reaching forward, returning toward frame 1.
 
-All five frames are genuine right-facing profiles. No projectile, spark, aura, glow, or other magic effect is drawn. 
-The built-in image generator used the three supplied references; the background was normalized to solid `#00ff00`.
+All seven frames are strict right-facing profiles. The robe remains floor-length with boots visible below the hem, and 
+no projectile, spark, aura, glow, or other magic effect is drawn. The background was normalized to exact `#00ff00`.
+
+Generated with built-in ImageGen using the three supplied images as identity, profile-angle, and animation-action 
+references.
 tokens used
-38,621
-Saved [mage_anim_e_row.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__anim__e\mage_anim_e_row.png).
+48,005
+Saved [mage_walk_e_row.png](C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/mage_profile_2026-09-03/mage__walk__e/mage_walk_e_row.png).
 
-- Frame 1: neutral planted idle.
-- Frame 2: subtle inhale.
-- Frame 3: gentle exhale.
-- Frame 4: slight weight shift; boots remain planted.
-- Frame 5: eases toward neutral.
+- Frame 1: right boot forward heel-contact stride.
+- Frame 2: right leg loading; left boot lifting behind.
+- Frame 3: left leg passing with bent knees.
+- Frame 4: left boot reaching forward; right boot pushing back.
+- Frame 5: left boot planted and loading.
+- Frame 6: right leg passing in a compact crossover.
+- Frame 7: right boot reaching forward, returning toward frame 1.
 
-All five frames are genuine right-facing profiles. No projectile, spark, aura, glow, or other magic effect is drawn. The built-in image generator used the three supplied references; the background was normalized to solid `#00ff00`.
+All seven frames are strict right-facing profiles. The robe remains floor-length with boots visible below the hem, and no projectile, spark, aura, glow, or other magic effect is drawn. The background was normalized to exact `#00ff00`.
+
+Generated with built-in ImageGen using the three supplied images as identity, profile-angle, and animation-action references.

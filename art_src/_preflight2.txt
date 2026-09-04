@@ -1,0 +1,4 @@
+FAIL [IMPORT] 36 asset(s) changed since last import: assets\sprites\echo_walk_codex_n.png, assets\sprites\korrag_walk_codex_e.png, assets\sprites\korrag_walk_codex_ne.png, assets\sprites\korrag_walk_codex_nw.png, assets\sprites\korrag_walk_codex_se.png, assets\sprites\korrag_walk_codex_sw.png, assets\sprites\korrag_walk_codex_w.png, assets\sprites\paladin_walk_b_n.png ...
+         fix: run: tools\Godot_v4.4.1-stable_win64_console.exe --headless --path game --import  (close the editor first -- --import contends with it)
+
+PREFLIGHT: 1 fail, 0 warn  (IMPORT MODULES BALANCE PHYSICS RIGS ARTQA)
