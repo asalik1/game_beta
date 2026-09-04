@@ -105,13 +105,17 @@ generated with the documented walk-plus-firing-arm technique and installed
   `~/Downloads/travel_gifs_visual_overhaul/mage_walk_e_old_vs_new_travel.gif`.
   Her `attack_walk_e` was built from the OLD front-facing walk — regen from the
   new profile walk queued (`art_src/mage_aw_2026-09-04`, chain_aw.sh).
-- **Paladin north walk**: main's strip was an 8-figure row saved 6 cells wide
-  (every cell showed 1⅓ paladins). Fixed by re-slicing main's own row at its
-  real gutters into 8 cells (the owner's OLD-cycle ruling kept — no regen
-  installed; `walk_b_n` = byte copy). Two frames swing the shield out from the
-  body; that is authored, not a tear. A gait-transfer regen row was also
-  produced (`art_src/paladin_n_2026-09-03/paladin__n`) as a spare — owner's
-  call whether to prefer it.
+- **Paladin north walk — OWNER CALL**: main's strip was an 8-figure row saved
+  6 cells wide (every cell showed 1⅓ paladins), so the north walk he ruled
+  "old cycle only" was never actually playable. Two candidates, both built:
+  (a) main's own row re-sliced at its real gutters into 8 cells
+  (`art_src/paladin_n_2026-09-03/old_cycle_resliced/paladin_walk_n.png`) —
+  faithful to the ruling, but two of its frames swing the shield ~40px off the
+  body (the placement-jump class he flagged in the E/W rounds);
+  (b) a gait-transfer regen (`paladin__n/paladin_walk_n_row.png`): back view,
+  shield held on the arm in every frame, silver face + gold cross visible from
+  behind per the idle. **(b) is INSTALLED** as walk_n (+ walk_b_n byte copy);
+  swapping to (a) is one copy.
 - Base warrior walk E/W: the flaming blade degenerates frame to frame
   (classwalk P1) — not addressed.
 - Base warlock walk E/W: hood turns to camera vs the profile idle (P1) — not addressed.

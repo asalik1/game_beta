@@ -74,8 +74,8 @@ def single(path: Path, out: Path, size: int = 520) -> None:
 BRIEF = """Redraw this animation clip as a TRUE RIGHT-SIDE PROFILE.
 
 Reference 1 is the character (front view): reproduce this exact design -- face,
-hair, garment, palette, the staff and which hand holds it. Nothing about the
-design changes.
+hair, garment, palette, every held or floating item and which hand holds it.
+Nothing about the design changes.
 Reference 2 shows a similar character drawn in a REAL side profile: the viewer
 sees the RIGHT side of the body only, one shoulder in front of the other, the
 face in profile with one eye visible, the near arm in front of the torso. Draw
@@ -94,8 +94,7 @@ Hard requirements:
   the body near each cell's horizontal centre (no drift across the row).
 - The robe stays CLOSED and floor-length: no slit, no bare legs; the walk reads
   through the boots below the hem and the hem's sway.
-- Draw NO projectile, bolt, flame, spark, glow or magic effect anywhere -- the
-  game spawns those; anything drawn here would double it.
+{fx_rule}
 
 Produce ONE image: a horizontal row of EXACTLY {n} figures, evenly spaced, all the
 same size (if they will not fit at full size, make the image WIDER), green margins
@@ -118,7 +117,16 @@ def main() -> int:
     ap.add_argument("--identity", default=None, help="front idle to use as identity (default <base>_anim_s)")
     ap.add_argument("--clips", default="anim,walk,attack,cast")
     ap.add_argument("--desc", default="", help="identity words for the brief")
+    ap.add_argument("--keep", default="", help="signature FX that ARE the design and must stay "
+                    "(the warlock's floating flaming skull + glowing grimoire); default = draw no FX at all")
     args = ap.parse_args()
+    if args.keep:
+        fx_rule = (f"- Keep {args.keep} exactly as in reference 1, in EVERY frame -- they are part of\n"
+                   "  the character. Apart from those, draw NO projectile, bolt, spark or spell\n"
+                   "  effect -- the game spawns those; anything drawn here would double it.")
+    else:
+        fx_rule = ("- Draw NO projectile, bolt, flame, spark, glow or magic effect anywhere -- the\n"
+                   "  game spawns those; anything drawn here would double it.")
     root = Path(args.stage_root)
     root.mkdir(parents=True, exist_ok=True)
     ident_sprite = args.identity or f"{args.base}_anim_s"
@@ -138,7 +146,7 @@ def main() -> int:
         ident = f"THE CHARACTER: {args.desc}" if args.desc else ""
         (stage / "codex_brief.txt").write_text(
             BRIEF.format(n=n, action=ACTION.get(clip, "the same action as reference 3"),
-                         ident=ident, out=out), encoding="utf-8")
+                         ident=ident, fx_rule=fx_rule, out=out), encoding="utf-8")
         (stage / "job.json").write_text(json.dumps(
             {"base": args.base, "clip": clip, "facing": "e", "frames": n,
              "old": old.name}, indent=1), encoding="utf-8")

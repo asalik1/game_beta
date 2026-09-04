@@ -1,0 +1,7 @@
+{
+ "base": "warlock",
+ "clip": "walk",
+ "facing": "e",
+ "frames": 6,
+ "old": "warlock_walk_e.png"
+}
