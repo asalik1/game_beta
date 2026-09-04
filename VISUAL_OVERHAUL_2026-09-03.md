@@ -132,20 +132,20 @@ generated with the documented walk-plus-firing-arm technique and installed
   orb on its back and lost its pauldrons, nullwarden gained a slung greatsword
   its idle/E walk never carry (my briefs described both from memory, not the
   idle — the CLAUDE.md rule, re-learned). Re-rolls with the front-only parts
-  named landed clean and are INSTALLED (stormmouth v2: gunmetal plate, plain
-  back, wide pauldrons; nullwarden v2: empty fists, no sword). Caveat: a
-  6-figure row comes back ~2100px wide, so at their 920/1032px cells the
-  figures were upscaled 1.4×/2.2× at install — the N facing is softer than E
-  (effective ~1.5× render vs the 2× bar). A two-row (3+3) re-request is queued
-  (`stages_hires.txt`, `grid_to_row.py` flattens it) — install over these if
-  it landed after hand-off. Stormmouth's back view also reads slimmer than his
-  E strip's massive pauldrons; owner's eye on the turn.
+  named landed clean; then, because a 6-figure row comes back ~2100px wide
+  (≈400px figures against their 920/1084px cells), both were re-requested as a
+  TWO-ROW grid (3+3, `grid_to_row.py` flattens it) — ~870px figures, installed
+  at 0.65×/1.07×, no upscale. **Both INSTALLED from the hi-res grids**
+  (stormmouth: gunmetal plate, plain back, wide pauldrons; nullwarden: empty
+  fists, no sword). Stormmouth's back view still reads a little slimmer than
+  his E strip's massive pauldrons; owner's eye on the turn. Lane rule learned:
+  for cells ≥ 900px request the grid, not the row.
 - Not addressed from the audits: assassin walk_e cloak balloon + walk_s
   bootless frames, archer walk_n cape green-on-content, saint_varo_blade
   fidelity (192px cell beside 627px siblings), greyrun_lurker attack 0.86x.
 - Done since first draft: warlock_ledgerbound duplicated frames (trimmed),
   elf_ranger_attack f2's baked in-flight arrow (erased; the game spawns it).
-- Mobile re-sync (`python tools/sync_mobile.py --apply --gate`) — run at merge.
+- Mobile re-sync: see Gates.
 
 ## Gates
 
