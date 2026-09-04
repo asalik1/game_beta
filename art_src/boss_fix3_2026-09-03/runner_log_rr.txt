@@ -1,0 +1,6 @@
+codex = C:\Users\asali\AppData\Local\OpenAI\Codex\bin\7537f22ba194f7c1\codex.exe
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\stormmouth__n (2 refs)
+wait: free RAM 1.29GB < 1.3GB gate (1 running)
+wait: free RAM 1.24GB < 1.3GB gate (1 running)
+watchdog: stopping job past 900s
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n (2 refs)
