@@ -3,7 +3,13 @@ with EXACTLY the leg choreography of reference 2. One character's body, the othe
 character's walk.
 
 THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not
-change): a hulking null-armoured warden walking AWAY from the viewer: the back of a broad squat humanoid in dark blue-grey plate with pale cyan rune glints on the pauldrons and back plate, a horned helm seen from BEHIND (the horns curving away from the camera, no faceplate, no visor, no eye glints), a huge greatsword carried on the back or in one hand, thick armoured legs
+change): a hulking warden seen from BEHIND in heavy blackened plate armour laced with thin
+glowing CYAN cracks, huge layered pauldrons (as wide as in reference 1), a horned helm seen from
+behind, a brown leather tabard hanging from the belt over the back of the thighs, thick armoured
+legs and sabatons. HIS HANDS ARE EMPTY gauntleted fists swinging at his sides, exactly as in
+reference 1: he carries NO weapon -- draw NO sword, blade, hilt, shield or anything slung across
+the back or hanging from the belt. The rune emblem on his chest is on the FRONT ONLY; the back is
+plain plate with the cyan cracks.
 crisp hi-res dark-fantasy game sprite, muted palette, no black outlines. Every piece of equipment stays exactly where reference 1 shows it in every
 frame -- nothing swaps sides, changes shape or disappears. Same height, same width,
 same palette in every frame.

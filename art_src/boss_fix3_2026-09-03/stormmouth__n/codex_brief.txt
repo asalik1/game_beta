@@ -3,7 +3,13 @@ with EXACTLY the leg choreography of reference 2. One character's body, the othe
 character's walk.
 
 THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not
-change): a storm-armoured juggernaut walking AWAY from the viewer: the back of a massive humanoid in heavy dark-blue plate armour with pale-blue lightning veins along the plates and a glowing blue core, a smooth rounded helm seen from behind (no face), huge shoulder pauldrons, thick armoured legs and sabatons
+change): a massive storm-armoured juggernaut seen from BEHIND: heavy GUNMETAL dark-steel plate
+(not bright blue) with pale-blue lightning veins crackling along the plates; ENORMOUS layered
+shoulder pauldrons exactly as wide as in reference 1 (at the shoulders the silhouette is far wider
+than the hips); a rounded spiked helm seen from behind; a BROWN LEATHER tabard hanging from the
+belt over the back of the thighs; thick armoured legs and sabatons. The glowing blue lightning
+MAW on his chest is on the FRONT ONLY -- from behind the back is plain dark plate: draw NO glowing
+orb, core, gem, light or opening anywhere on the back.
 crisp hi-res dark-fantasy game sprite, muted palette, no black outlines. Every piece of equipment stays exactly where reference 1 shows it in every
 frame -- nothing swaps sides, changes shape or disappears. Same height, same width,
 same palette in every frame.

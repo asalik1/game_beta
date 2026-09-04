@@ -121,9 +121,17 @@ generated with the documented walk-plus-firing-arm technique and installed
 - Base warlock walk E/W: hood turns to camera vs the profile idle (P1) — not addressed.
 - attack_walk_b variants (mage/warlock/assassin) — not generated; the primary
   plays every cycle (art-driven, no defect).
-- Queued regens (chain_fix3): stormmouth N (its N was a byte copy of E),
-  serane S (was a byte copy of the idle), nullwarden N (front helm on a back
-  view) — install with `install_gait_row.py` if the rows landed after hand-off.
+- Boss facings round 3: **serane S** installed (was a byte copy of the idle;
+  now a 4-frame glide with hem flutter — the row's first cell crammed two
+  undersized figures, dropped; a clean re-roll is queued and replaces it if
+  it lands). **stormmouth N** (byte copy of E) and **nullwarden N** (front helm
+  on a back view) first rolls REJECTED on identity — stormmouth grew a glowing
+  orb on its back and lost its pauldrons, nullwarden gained a slung greatsword
+  its idle/E walk never carry (my briefs described both from memory, not the
+  idle — the CLAUDE.md rule, re-learned). Re-rolls with the front-only parts
+  named are queued (`art_src/boss_fix3_2026-09-03/stages_rr.txt`); install
+  with `install_gait_row.py` if they landed after hand-off, else both keep
+  their old strips.
 - Not addressed from the audits: assassin walk_e cloak balloon + walk_s
   bootless frames, archer walk_n cape green-on-content, saint_varo_blade
   fidelity (192px cell beside 627px siblings), greyrun_lurker attack 0.86x.

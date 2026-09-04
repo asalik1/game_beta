@@ -26,7 +26,7 @@ Produce ONE image: a horizontal row of EXACTLY 6 figures, evenly spaced, all
 feet on one shared ground line, the body near each cell's horizontal centre (no
 drifting across the row), green margins on all sides -- no figure touching any
 image edge or its neighbour.
-EVERY FIGURE IS THE SAME SIZE. Draw all 6 at one identical scale, filling the
+EVERY FIGURE IS THE SAME SIZE -- the previous attempt drew the first two figures at 60% size squeezed into one cell, which is WRONG: all 6 must be identical in height, each in its own cell, evenly spaced. Draw all 6 at one identical scale, filling the
 same share of the row's height; do not shrink some of them to fit, do not crowd
 two small figures into the space of one, and do not add a smaller inset version
 anywhere. If 6 figures will not fit at full size, make the image WIDER. Flat solid #00ff00 GREEN background,
