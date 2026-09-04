@@ -103,8 +103,8 @@ generated with the documented walk-plus-firing-arm technique and installed
   marching-in-place family as every hero walk (assassin 0.22, archer 0.22),
   which the owner ruled to keep at 14 fps; travel GIF old-vs-new in
   `~/Downloads/travel_gifs_visual_overhaul/mage_walk_e_old_vs_new_travel.gif`.
-  Her `attack_walk_e` was built from the OLD front-facing walk — regen from the
-  new profile walk queued (`art_src/mage_aw_2026-09-04`, chain_aw.sh).
+  Her `attack_walk_e` family (built from the OLD front-facing walk) was
+  regenerated from the new profile walk and installed (E/SE/NE + W mirrors).
 - **Paladin north walk — OWNER CALL**: main's strip was an 8-figure row saved
   6 cells wide (every cell showed 1⅓ paladins), so the north walk he ruled
   "old cycle only" was never actually playable. Two candidates, both built:
@@ -118,7 +118,10 @@ generated with the documented walk-plus-firing-arm technique and installed
   swapping to (a) is one copy.
 - Base warrior walk E/W: the flaming blade degenerates frame to frame
   (classwalk P1) — not addressed.
-- Base warlock walk E/W: hood turns to camera vs the profile idle (P1) — not addressed.
+- **Base warlock walk E/W DONE**: was a 3/4 front view against his full-profile
+  side idle (hood snapped to camera on the first step); regenerated as a true
+  profile with the same lane as the mage (stride 0.50 → 0.61). His
+  `attack_walk_e` (built on the old walk) regen queued (`art_src/warlock_aw_2026-09-04`).
 - attack_walk_b variants (mage/warlock/assassin) — not generated; the primary
   plays every cycle (art-driven, no defect).
 - Boss facings round 3: **serane S** installed (was a byte copy of the idle;
@@ -129,9 +132,14 @@ generated with the documented walk-plus-firing-arm technique and installed
   orb on its back and lost its pauldrons, nullwarden gained a slung greatsword
   its idle/E walk never carry (my briefs described both from memory, not the
   idle — the CLAUDE.md rule, re-learned). Re-rolls with the front-only parts
-  named are queued (`art_src/boss_fix3_2026-09-03/stages_rr.txt`); install
-  with `install_gait_row.py` if they landed after hand-off, else both keep
-  their old strips.
+  named landed clean and are INSTALLED (stormmouth v2: gunmetal plate, plain
+  back, wide pauldrons; nullwarden v2: empty fists, no sword). Caveat: a
+  6-figure row comes back ~2100px wide, so at their 920/1032px cells the
+  figures were upscaled 1.4×/2.2× at install — the N facing is softer than E
+  (effective ~1.5× render vs the 2× bar). A two-row (3+3) re-request is queued
+  (`stages_hires.txt`, `grid_to_row.py` flattens it) — install over these if
+  it landed after hand-off. Stormmouth's back view also reads slimmer than his
+  E strip's massive pauldrons; owner's eye on the turn.
 - Not addressed from the audits: assassin walk_e cloak balloon + walk_s
   bootless frames, archer walk_n cape green-on-content, saint_varo_blade
   fidelity (192px cell beside 627px siblings), greyrun_lurker attack 0.86x.

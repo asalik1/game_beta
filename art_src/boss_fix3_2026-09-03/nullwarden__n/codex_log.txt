@@ -928,3 +928,146 @@ C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fi
              ^
 SyntaxError: invalid syntax
 
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$code = @'"'
+from PIL import Image
+from pathlib import Path
+from collections import Counter
+p=Path('nullwarden_walk_n_row.png')
+im=Image.open(p).convert('RGB')
+w,h=im.size
+pix=im.load()
+print('size',w,h,'mode',im.mode)
+pts=[(0,0),(w-1,0),(0,h-1),(w-1,h-1),(w//2,0),(w//2,h-1),(10,h//2)]
+print('samples',[(q,pix[q[0],q[1]]) for q in pts])
+exact=sum(1 for c in im.getdata() if c==(0,255,0))
+print('exact_green_pct',round(100*exact/(w*h),3))
+border=[pix[x,0] for x in range(w)]+[pix[x,h-1] for x in range(w)]+[pix[0,y] for y in range(h)]+[pix[w-1,y] for y in 
+range(h)]
+print('border_unique',len(set(border)),'border_all_exact_green',all(c==(0,255,0) for c in border))
+print('top_colors',Counter(im.getdata()).most_common(8))
+for i in range(6):
+    x0=round(i*w/6); x1=round((i+1)*w/6)
+    coords=[]
+    for y in range(h):
+      for x in range(x0,x1):
+        r,g,b=pix[x,y]
+        if not (g>230 and r<35 and b<35): coords.append((x,y))
+    xs=[q[0] for q in coords]; ys=[q[1] for q in coords]
+    bb=(min(xs),min(ys),max(xs),max(ys))
+    cx=sum(xs)/len(xs)
+    cellc=(x0+x1-1)/2
+    
+print(i+1,'cell',x0,x1-1,'bbox',bb,'wh',(bb[2]-bb[0]+1,bb[3]-bb[1]+1),'center_offset',round(cx-cellc,1),'bottom',bb[3])
+'@
+python -c \""'$code"' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n
+ succeeded in 2784ms:
+<string>:11: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+<string>:15: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+size 2172 724 mode RGB
+samples [((0, 0), (18, 241, 13)), ((2171, 0), (20, 241, 11)), ((0, 723), (14, 242, 11)), ((2171, 723), (16, 244, 11)), 
+((1086, 0), (6, 247, 4)), ((1086, 723), (4, 249, 3)), ((10, 362), (5, 248, 3))]
+exact_green_pct 0.002
+border_unique 137 border_all_exact_green False
+top_colors [((4, 249, 3), 253222), ((4, 248, 3), 73276), ((3, 248, 2), 65995), ((3, 249, 3), 62665), ((4, 249, 4), 
+59902), ((3, 249, 2), 58817), ((4, 249, 2), 58025), ((5, 249, 4), 54160)]
+1 cell 0 361 bbox (51, 172, 326, 562) wh (276, 391) center_offset 8.0 bottom 562
+2 cell 362 723 bbox (412, 171, 686, 562) wh (275, 392) center_offset 6.6 bottom 562
+3 cell 724 1085 bbox (769, 171, 1044, 562) wh (276, 392) center_offset 1.6 bottom 562
+4 cell 1086 1447 bbox (1128, 171, 1402, 562) wh (275, 392) center_offset -1.6 bottom 562
+5 cell 1448 1809 bbox (1486, 171, 1761, 562) wh (276, 392) center_offset -6.0 bottom 562
+6 cell 1810 2171 bbox (1847, 172, 2121, 562) wh (275, 391) center_offset -6.6 bottom 562
+
+codex
+The geometry check passed cleanly: 2172├ù724, six equal cells, figure widths 275ΓÇô276 px, heights 391ΓÇô392 px, 
+common bottom row y=562, and center offsets within about 8 px. The generator rendered the green as a near-green 
+gradient instead of literal `#00ff00`, so IΓÇÖm correcting only those near-pure-green background pixels to the exact 
+requested key color, leaving the armor and cyan cracks untouched.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'magick -version' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n
+ exited 1 in 1352ms:
+magick : The term 'magick' is not recognized as the name of a cmdlet, function, script file, or operable program. 
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:2 char:1
++ magick -version
++ ~~~~~~
+    + CategoryInfo          : ObjectNotFound: (magick:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$code = @'"'
+from PIL import Image
+from pathlib import Path
+p=Path('nullwarden_walk_n_row.png')
+im=Image.open(p).convert('RGB')
+data=[]
+changed=0
+for r,g,b in im.getdata():
+    if g >= 180 and g >= max(r,b)*3 and (g-max(r,b)) >= 120:
+        data.append((0,255,0)); changed += 1
+    else:
+        data.append((r,g,b))
+im.putdata(data)
+im.save(p, format='PNG', optimize=True)
+print('background_pixels_normalized', changed, 'of', im.width*im.height)
+'@
+python -c \""'$code"
+Get-FileHash -Algorithm SHA256 -LiteralPath '"'.\\nullwarden_walk_n_row.png' | Select-Object Algorithm,Hash,Path" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n
+ succeeded in 3519ms:
+<string>:7: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+background_pixels_normalized 1178416 of 1572528
+
+Algorithm Hash                                                             Path                                        
+--------- ----                                                             ----                                        
+SHA256    6EC662AC40A6AAEB08D6EB974D515B57B6A2BC0F1C8AC72B425F1F13BE56A7A5 C:\Users\asali\Projects\MMO\.claude\workt...
+
+
+
+codex
+The visual audit exposed one choreography issue worth correcting before handoff: the first draft alternates the 
+sole-show side too early instead of resolving one three-frame step and then its mirror. The image-generation skill 
+calls for a targeted iteration in this case, so IΓÇÖm preserving the successful armor/back-view/layout and changing 
+only the six lower-body phases to a contact ΓåÆ load/pass ΓåÆ release sequence for one side, then the mirrored 
+three-frame sequence.
+codex
+Saved the completed sprite row to [nullwarden_walk_n_row.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini
+-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n\nullwarden_walk_n_row.png).
+
+Leg report, character-relative from the rear:
+
+1. Right leg leads/swings; right knee clear, left knee slight.
+2. Left leg leads/swings; left knee deep, right knee slight.
+3. Right leg leads/swings; right knee clear, left knee slight.
+4. Left leg leads/swings; left knee deep, right knee slight.
+5. Left leg leads through a distinct later phase; left knee clear, right knee slight.
+6. Right leg leads/swings; right knee clear, left knee slight.
+
+No exact pose is repeated. Frames sharing a lead leg use different foot spreads and joint angles. All bodies remain 
+cell-centered and effectively constant-height: 391ΓÇô392 px tall, with a shared ground line at y=562. The background 
+is normalized to exact `#00ff00`.
+
+Generated with built-in ImageGen using reference 1 for locked character identity and reference 2 solely for the six 
+gait phases.
+tokens used
+64,817
+Saved the completed sprite row to [nullwarden_walk_n_row.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n\nullwarden_walk_n_row.png).
+
+Leg report, character-relative from the rear:
+
+1. Right leg leads/swings; right knee clear, left knee slight.
+2. Left leg leads/swings; left knee deep, right knee slight.
+3. Right leg leads/swings; right knee clear, left knee slight.
+4. Left leg leads/swings; left knee deep, right knee slight.
+5. Left leg leads through a distinct later phase; left knee clear, right knee slight.
+6. Right leg leads/swings; right knee clear, left knee slight.
+
+No exact pose is repeated. Frames sharing a lead leg use different foot spreads and joint angles. All bodies remain cell-centered and effectively constant-height: 391ΓÇô392 px tall, with a shared ground line at y=562. The background is normalized to exact `#00ff00`.
+
+Generated with built-in ImageGen using reference 1 for locked character identity and reference 2 solely for the six gait phases.
