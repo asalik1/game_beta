@@ -1,0 +1,35 @@
+Redraw this EXACT walk cycle (reference 1) with one change: the character fires
+its basic attack once during the stride.
+
+Reference 1 is the character's own 6-frame walk, in profile, facing RIGHT, frame by frame. Reproduce
+it EXACTLY: the same 6 frames, the same leg cycle and stride, the same crossing,
+the same garment, the same held equipment in the same hand, the same body height
+and width, the same palette. The legs are already correct -- do not redesign them.
+
+THE ONLY CHANGE: the FREE hand thrusts forward at chest height, palm open and fingers splayed. Spread the motion across the 6 frames so it starts,
+peaks around the middle and returns by the end, while the legs keep walking
+through their unchanged cycle.
+
+THE CHARACTER (unchanged from reference 1): a gaunt man in a heavy black hooded robe with a gold-edged collar and a red gem clasp, a small floating flaming skull companion beside his shoulder, dark boots below a CLOSED floor-length hem.
+
+Hard requirements:
+- The feet stay PLANTED on the shared ground line exactly as reference 1 has them;
+  the body does not slide sideways within its cell.
+- The robe stays CLOSED and floor-length: no slit, no exposed legs, no bare
+  skin. The walk reads through the BOOTS alternating below the hem and the
+  hem swaying -- exactly as reference 1 shows it.
+- Draw NO projectile, arrow, knife, flame, bolt, spark or muzzle flash anywhere.
+  The game spawns the projectile itself; anything drawn here would double it.
+- Same body height and width in every frame; no frame is a copy of another.
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, evenly spaced, all feet
+on one shared ground line, each body near its cell's horizontal centre, green
+margins all round -- no figure touching an image edge or its neighbour. EVERY FIGURE
+IS THE SAME SIZE; if they will not fit at full size, make the image WIDER. Flat solid
+#00ff00 GREEN background, nothing else in the image.
+Generate ONE image and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\warlock_aw_2026-09-04\warlock__attack_walk__e\warlock_attack_walk_e_row.png
+then stop.
+
+In your final message, report for each frame: which leg leads, and where the firing
+hand is. Confirm no projectile was drawn and the hem stayed closed.
