@@ -1445,3 +1445,161 @@ C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_aw
 generated=1852x849
 reference=1804x255
 
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; $src=
+'"'C:\\Users\\asali\\.codex\\generated_images\\01a06afa-f3d2-7f83-acbb-529fb02414b0\\exec-45e75b7f-ca1d-494f-903f-f1693
+6dca4ba.png'; "'$dst=Join-Path (Get-Location) '"'mage_attack_walk_e_row.png'; 
+"'$input=[System.Drawing.Bitmap]::FromFile($src); $top=$null; $bottom=$null; for($y=0;$y -lt $input.Height;$y++){ 
+$c=$input.GetPixel(0,$y); if($c.G -gt 160 -and $c.G -gt ($c.R*1.5) -and $c.G -gt ($c.B*1.5)){ if($null -eq 
+$top){$top=$y}; $bottom=$y } }; if($null -eq $top){ throw '"'Could not locate green strip' }; "'$cropH=$bottom-$top+1; 
+$output=New-Object System.Drawing.Bitmap 1804,255,[System.Drawing.Imaging.PixelFormat]::Format32bppArgb; 
+$g=[System.Drawing.Graphics]::FromImage($output); $g.Clear([System.Drawing.Color]::FromArgb(255,0,255,0)); 
+$g.CompositingMode=[System.Drawing.Drawing2D.CompositingMode]::SourceCopy; 
+$g.CompositingQuality=[System.Drawing.Drawing2D.CompositingQuality]::HighQuality; 
+$g.InterpolationMode=[System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic; 
+$g.PixelOffsetMode=[System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality; $srcRect=New-Object 
+System.Drawing.Rectangle 0,$top,$input.Width,$cropH; $dstRect=New-Object System.Drawing.Rectangle 0,0,1804,255; 
+$g.DrawImage($input,$dstRect,$srcRect,[System.Drawing.GraphicsUnit]::Pixel); $g.Dispose(); for($y=0;$y -lt 255;$y++){ 
+for($x=0;$x -lt 1804;$x++){ $c=$output.GetPixel($x,$y); if($c.G -gt 165 -and $c.G -gt ($c.R*1.55) -and $c.G -gt 
+($c.B*1.55)){ $output.SetPixel($x,$y,[System.Drawing.Color]::FromArgb(255,0,255,0)) } } }; 
+$output.Save($dst,[System.Drawing.Imaging.ImageFormat]::Png); $output.Dispose(); $input.Dispose(); Write-Output 
+('"'crop_rows=' + "'$top + '"'..' + "'$bottom + '"' crop_height=' + "'$cropH); Write-Output $dst' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_aw_2026-09-04\mage__attack_walk__e
+codex
+The first normalization command hit a PowerShell constructor mismatch before writing the output. No project file was 
+produced or overwritten; IΓÇÖm rerunning the same crop/background cleanup with the corrected bitmap constructor.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$ErrorActionPreference='"'Stop'; Add-Type 
+-AssemblyName System.Drawing; "'$src='"'C:\\Users\\asali\\.codex\\generated_images\\01a06afa-f3d2-7f83-acbb-529fb02414b
+0\\exec-45e75b7f-ca1d-494f-903f-f16936dca4ba.png'; "'$dst=Join-Path (Get-Location) '"'mage_attack_walk_e_row.png'; 
+"'$input=[System.Drawing.Bitmap]::FromFile($src); $top=$null; $bottom=$null; for($y=0;$y -lt $input.Height;$y++){ 
+$c=$input.GetPixel(0,$y); if($c.G -gt 160 -and $c.G -gt ($c.R*1.5) -and $c.G -gt ($c.B*1.5)){ if($null -eq 
+$top){$top=$y}; $bottom=$y } }; if($null -eq $top){ throw '"'Could not locate green strip' }; "'$cropH=$bottom-$top+1; 
+$output=[System.Drawing.Bitmap]::new(1804,255); $g=[System.Drawing.Graphics]::FromImage($output); 
+$g.Clear([System.Drawing.Color]::FromArgb(255,0,255,0)); 
+$g.CompositingMode=[System.Drawing.Drawing2D.CompositingMode]::SourceCopy; 
+$g.CompositingQuality=[System.Drawing.Drawing2D.CompositingQuality]::HighQuality; 
+$g.InterpolationMode=[System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic; 
+$g.PixelOffsetMode=[System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality; 
+$srcRect=[System.Drawing.Rectangle]::new(0,$top,$input.Width,$cropH); 
+$dstRect=[System.Drawing.Rectangle]::new(0,0,1804,255); 
+$g.DrawImage($input,$dstRect,$srcRect,[System.Drawing.GraphicsUnit]::Pixel); $g.Dispose(); 
+$key=[System.Drawing.Color]::FromArgb(255,0,255,0); for($y=0;$y -lt 255;$y++){ for($x=0;$x -lt 1804;$x++){ 
+$c=$output.GetPixel($x,$y); if($c.G -gt 165 -and $c.G -gt ($c.R*1.55) -and $c.G -gt ($c.B*1.55)){ 
+$output.SetPixel($x,$y,$key) } } }; $output.Save($dst,[System.Drawing.Imaging.ImageFormat]::Png); $output.Dispose(); 
+$input.Dispose(); Write-Output ('"'crop_rows=' + "'$top + '"'..' + "'$bottom + '"' crop_height=' + "'$cropH); 
+Write-Output $dst' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_aw_2026-09-04\mage__attack_walk__e
+ succeeded in 5348ms:
+crop_rows=244..536 crop_height=293
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_aw_2026-09-04\mage__attack_walk__e\mage_a
+ttack_walk_e_row.png
+
+codex
+The normalized strip is now at the requested path and visually has seven isolated figures on a pure green field, with 
+the attack peaking in frame 4 and no baked effect. IΓÇÖm doing a final pixel-level QA pass for dimensions, green 
+margins, per-frame bounds, and shared foot baseline before reporting the frame breakdown.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$ErrorActionPreference='"'Stop'; Add-Type 
+-AssemblyName System.Drawing; "'$p=Join-Path (Get-Location) '"'mage_attack_walk_e_row.png'; 
+"'$b=[System.Drawing.Bitmap]::FromFile($p); Write-Output ('"'size=' + "'$b.Width + '"'x' + "'$b.Height); $keyCount=0L; 
+$nonKey=0L; $frames=@(); for($i=0;$i -lt 7;$i++){ $x0=[math]::Floor($i*$b.Width/7); 
+$x1=[math]::Floor(($i+1)*$b.Width/7)-1; $minx=$b.Width; $maxx=-1; $miny=$b.Height; $maxy=-1; for($y=0;$y -lt 
+$b.Height;$y++){ for($x=$x0;$x -le $x1;$x++){ $c=$b.GetPixel($x,$y); if($c.R -eq 0 -and $c.G -eq 255 -and $c.B -eq 
+0){$keyCount++}else{$nonKey++; if($x -lt $minx){$minx=$x}; if($x -gt $maxx){$maxx=$x}; if($y -lt $miny){$miny=$y}; 
+if($y -gt $maxy){$maxy=$y}} } }; $frames += ('"'f'+("'$i+1)+'"': 
+bbox='+"'$minx+'"','+"'$miny+'"'..'+"'$maxx+'"','+"'$maxy+'"' size='+("'$maxx-$minx+1)+'"'x'+("'$maxy-$miny+1)+'"' 
+marginsL/R='+("'$minx-$x0)+'"'/'+("'$x1-$maxx)) }; 
+$corner=@($b.GetPixel(0,0),$b.GetPixel($b.Width-1,0),$b.GetPixel(0,$b.Height-1),$b.GetPixel($b.Width-1,$b.Height-1)); 
+$cornersOk=($corner | Where-Object { $_.R -eq 0 -and $_.G -eq 255 -and $_.B -eq 0 }).Count -eq 4; $b.Dispose(); 
+Write-Output ('"'pure_green_pixels='+"'$keyCount+'"' non_green_figure_pixels='+"'$nonKey+'"' 
+corners_green='+"'$cornersOk); $frames' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_aw_2026-09-04\mage__attack_walk__e
+ succeeded in 4998ms:
+size=1804x255
+pure_green_pixels=365648 non_green_figure_pixels=94372 corners_green=True
+f1: bbox=67,28..184,222 size=118x195 marginsL/R=67/72
+f2: bbox=308,27..458,222 size=151x196 marginsL/R=51/56
+f3: bbox=562,28..721,222 size=160x195 marginsL/R=47/51
+f4: bbox=816,28..989,222 size=174x195 marginsL/R=43/40
+f5: bbox=1090,28..1225,222 size=136x195 marginsL/R=60/62
+f6: bbox=1339,28..1468,222 size=130x195 marginsL/R=51/77
+f7: bbox=1584,28..1701,222 size=118x195 marginsL/R=38/102
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$ErrorActionPreference='"'Stop'; Add-Type 
+-AssemblyName System.Drawing; "'$src=[System.Drawing.Bitmap]::FromFile((Resolve-Path '"'mage_attack_walk_e_row.png')); 
+"'$dst='"'C:\\Users\\asali\\.codex\\generated_images\\mage_attack_walk_e_boots_qa.png'; 
+"'$qa=[System.Drawing.Bitmap]::new(774,840); $g=[System.Drawing.Graphics]::FromImage($qa); 
+$g.Clear([System.Drawing.Color]::Black); 
+$g.InterpolationMode=[System.Drawing.Drawing2D.InterpolationMode]::NearestNeighbor; 
+$g.PixelOffsetMode=[System.Drawing.Drawing2D.PixelOffsetMode]::Half; for($i=0;$i -lt 7;$i++){ 
+$x0=[math]::Floor($i*$src.Width/7); $x1=[math]::Floor(($i+1)*$src.Width/7)-1; $w=$x1-$x0+1; 
+$sr=[System.Drawing.Rectangle]::new($x0,145,$w,90); $dr=[System.Drawing.Rectangle]::new(0,$i*120,$w*3,270); 
+$g.DrawImage($src,$dr,$sr,[System.Drawing.GraphicsUnit]::Pixel) }; $g.Dispose(); 
+$qa.Save($dst,[System.Drawing.Imaging.ImageFormat]::Png); $qa.Dispose(); $src.Dispose(); Write-Output $dst' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_aw_2026-09-04\mage__attack_walk__e
+ succeeded in 715ms:
+C:\Users\asali\.codex\generated_images\mage_attack_walk_e_boots_qa.png
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$ErrorActionPreference='"'Stop'; Add-Type 
+-AssemblyName System.Drawing; "'$src=[System.Drawing.Bitmap]::FromFile((Resolve-Path '"'mage_attack_walk_e_row.png')); 
+"'$dst='"'C:\\Users\\asali\\.codex\\generated_images\\mage_attack_walk_e_boots_qa.png'; 
+"'$qa=[System.Drawing.Bitmap]::new(774,1890); $g=[System.Drawing.Graphics]::FromImage($qa); 
+$g.Clear([System.Drawing.Color]::Black); 
+$g.InterpolationMode=[System.Drawing.Drawing2D.InterpolationMode]::NearestNeighbor; 
+$g.PixelOffsetMode=[System.Drawing.Drawing2D.PixelOffsetMode]::Half; for($i=0;$i -lt 7;$i++){ 
+$x0=[math]::Floor($i*$src.Width/7); $x1=[math]::Floor(($i+1)*$src.Width/7)-1; $w=$x1-$x0+1; 
+$sr=[System.Drawing.Rectangle]::new($x0,145,$w,90); $dr=[System.Drawing.Rectangle]::new(0,$i*270,$w*3,270); 
+$g.DrawImage($src,$dr,$sr,[System.Drawing.GraphicsUnit]::Pixel) }; $g.Dispose(); 
+$qa.Save($dst,[System.Drawing.Imaging.ImageFormat]::Png); $qa.Dispose(); $src.Dispose()' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_aw_2026-09-04\mage__attack_walk__e
+ succeeded in 621ms:
+2026-09-04T05:58:55.209596Z ERROR codex_core::tools::router: error=exec_command failed for 
+`"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 
+'$qa='"'C:\\Users\\asali\\.codex\\generated_images\\mage_attack_walk_e_boots_qa.png'; if(Test-Path -LiteralPath 
+"'$qa){ Remove-Item -LiteralPath $qa -Force }; Get-Item -LiteralPath '"'mage_attack_walk_e_row.png' | Select-Object 
+FullName,Length,LastWriteTime; Get-FileHash -Algorithm SHA256 -LiteralPath 'mage_attack_walk_e_row.png' | 
+Select-Object Hash"`: CreateProcess { message: 
+"Rejected(\"`\\\"C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\WindowsPowerShell\\\\\\\\v1.0\\\\\\\\powershell.exe\\\" 
+-Command 
+'$qa='\\\"'C:\\\\\\\\Users\\\\\\\\asali\\\\\\\\.codex\\\\\\\\generated_images\\\\\\\\mage_attack_walk_e_boots_qa.png'; 
+if(Test-Path -LiteralPath \\\"'$qa){ Remove-Item -LiteralPath $qa -Force }; Get-Item -LiteralPath 
+'\\\"'mage_attack_walk_e_row.png' | Select-Object FullName,Length,LastWriteTime; Get-FileHash -Algorithm SHA256 
+-LiteralPath 'mage_attack_walk_e_row.png' | Select-Object Hash\\\"` rejected: blocked by policy\")" }
+codex
+Saved [mage_attack_walk_e_row.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_aw_202
+6-09-04\mage__attack_walk__e\mage_attack_walk_e_row.png) at 1804├ù255.
+
+Using the visible-side convention:
+
+1. Right/staff-side leg leads; hand resting near torso.
+2. Right/staff-side leg leads; hand reaching forward.
+3. Right/staff-side leg leads; arm nearly extended, palm opening.
+4. Right/staff-side leg leads; full open-palm attack peak.
+5. Left/opposite leg takes the lead; hand retracting.
+6. Left/opposite leg leads through the crossover; hand near chest.
+7. Left/opposite leg leads; hand returned near rest.
+
+No projectile or attack effect was drawn. The floor-length hem remains closed in every frame. Created with the 
+built-in image editor using a reference-locked, free-arm-only attack-motion prompt.
+2026-09-04T05:59:06.688360Z ERROR codex_core::session: failed to record rollout items: thread 
+01a06afa-f3d2-7f83-acbb-529fb02414b0 not found
+2026-09-04T05:59:06.693914Z ERROR codex_core::session: failed to record rollout items: thread 
+01a06afa-f3d2-7f83-acbb-529fb02414b0 not found
+tokens used
+53,879
+Saved [mage_attack_walk_e_row.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_aw_2026-09-04\mage__attack_walk__e\mage_attack_walk_e_row.png) at 1804├ù255.
+
+Using the visible-side convention:
+
+1. Right/staff-side leg leads; hand resting near torso.
+2. Right/staff-side leg leads; hand reaching forward.
+3. Right/staff-side leg leads; arm nearly extended, palm opening.
+4. Right/staff-side leg leads; full open-palm attack peak.
+5. Left/opposite leg takes the lead; hand retracting.
+6. Left/opposite leg leads through the crossover; hand near chest.
+7. Left/opposite leg leads; hand returned near rest.
+
+No projectile or attack effect was drawn. The floor-length hem remains closed in every frame. Created with the built-in image editor using a reference-locked, free-arm-only attack-motion prompt.

@@ -1,0 +1,1257 @@
+﻿codex.exe : Reading prompt from stdin...
+At line:7 char:14
++ ...    $brief | & $codex exec -C $d -s workspace-write --skip-git-repo-ch ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Reading prompt from stdin...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+OpenAI Codex v0.152.0
+--------
+workdir: 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n_hires
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: danger-full-access
+reasoning effort: high
+reasoning summaries: none
+session id: 01a06b26-5374-7692-830a-5b020445581b
+--------
+user
+Redraw a 6-frame walk cycle of THIS character (reference 1), walking AWAY from the viewer (back to camera),
+with EXACTLY the leg choreography of reference 2. One character's body, the other
+character's walk.
+
+THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not
+change): a hulking warden seen from BEHIND in heavy blackened plate armour laced with thin
+glowing CYAN cracks, huge layered pauldrons (as wide as in reference 1), a horned helm seen from
+behind, a brown leather tabard hanging from the belt over the back of the thighs, thick armoured
+legs and sabatons. HIS HANDS ARE EMPTY gauntleted fists swinging at his sides, exactly as in
+reference 1: he carries NO weapon -- draw NO sword, blade, hilt, shield or anything slung across
+the back or hanging from the belt. The rune emblem on his chest is on the FRONT ONLY; the back is
+plain plate with the cyan cracks.
+crisp hi-res dark-fantasy game sprite, muted palette, no black outlines. Every piece of equipment stays exactly where 
+reference 1 shows it in every
+frame -- nothing swaps sides, changes shape or disappears. Same height, same width,
+same palette in every frame.
+
+THE WALK (reference 2 -- a DIFFERENT creature drawn from this same viewing angle; use
+it ONLY for how the legs move): copy its 6-frame leg choreography frame-for-frame
+onto this character, matching the frame count and phase exactly (frame 1 = its frame
+1's leg positions, and so on).
+What every frame must carry (copy reference 2 frame-for-frame):
+- KNEES BEND: the trailing leg lifts with a bent knee, sole of the boot showing as it
+  pushes off; the planted leg takes the weight.
+- LEFT AND RIGHT ALTERNATE: the first half of the row is one leg's step, the second
+  half is the OTHER leg's step.
+- This is a BACK view: nothing that only exists on the front (face, visor, eyes,
+  chest emblem, belt buckle) may appear -- only the back of the head/helm, the
+  shoulders, the back of the garment.
+FORBIDDEN: any front-of-body feature; feet together at attention; two frames with an
+identical lower body; extra legs or feet.
+Make the stride HEAVY and deliberate -- weight planted, not a light quick step.
+This is a BACK view. Reference 1 shows the character from the FRONT: use it for the design, palette and equipment 
+ONLY. Nothing that exists only on the front may appear -- no face, eyes, mask, visor opening, hood opening, chest 
+emblem or belt buckle. Draw the BACK of the head/helm/hood, the back of the shoulders, and the back of the garment.
+Do NOT copy anything else from reference 2: not its clothing, weapons, build, colours or
+species -- only the legs' motion, redrawn as THIS character's legs.
+
+Produce ONE image laid out as TWO ROWS of THREE figures each: frames 1-3 left to right on the
+top row, frames 4-6 left to right on the bottom row. Make every figure as LARGE as the image allows
+(each figure roughly 900 pixels tall), all six at one identical scale, all feet in a row on one
+shared ground line per row, the body centred in its cell, generous green margins between figures
+and around the image edges -- no figure touching another figure or an edge. Flat solid #00ff00 GREEN background,
+nothing else in the image. Generate ONE image and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n_hires\nullw
+arden_walk_n_grid.png
+then stop.
+
+In your final message report, for each frame 1-6: which leg (or leg pair) leads and which joints are bent, and how 
+much (slight / clear / deep)
+Report any repeated pose, and whether the body stayed cell-centred and at constant height.
+
+
+codex
+IΓÇÖm using the image-generation skill because this is a reference-driven sprite redraw. IΓÇÖll first read the 
+projectΓÇÖs art workflow, then generate the six-frame grid directly to the exact requested path and inspect the saved 
+result.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 'CLAUDE.md'; 
+Get-Content -Raw -LiteralPath 'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n_hires
+ succeeded in 349ms:
+Get-Content : Cannot find path 'CLAUDE.md' because it does not exist.
+At line:2 char:1
++ Get-Content -Raw -LiteralPath 'CLAUDE.md'; Get-Content -Raw -LiteralP ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (CLAUDE.md:String) [Get-Content], ItemNotFoundException
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, 
+illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new 
+image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset 
+rather than repo-native code or vector. Do not use when the task is better handled by editing existing 
+SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in 
+HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product 
+mockups, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for image generation, editing, and 
+transparent-image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for or confirms the 
+CLI/API/model path. Requires `OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- For transparent images, ask built-in `image_gen` for a transparent background and preserve the generated alpha.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`; ask the user first 
+unless they explicitly requested `gpt-image-1.5`.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate 
+assets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per 
+requested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires 
+`OPENAI_API_KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK 
+runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific 
+location is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before 
+finishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the 
+default `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling 
+versioned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, 
+compositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request 
+as **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images 
+generated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool 
+so the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit 
+CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or 
+variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and 
+needs many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; 
+distinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including transparent-output requests; fallback CLI only if 
+explicitly requested or confirmed.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with 
+`view_image` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, 
+use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic 
+that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative 
+requirements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, ask built-in `image_gen` for a transparent background and preserve the generated 
+alpha channel.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default 
+`$CODEX_HOME/generated_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or 
+references. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user 
+explicitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, 
+size, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and 
+whether the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Ask built-in `image_gen` for a genuinely transparent background and preserve its alpha.
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, 
+but do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra 
+labeled line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural ├óΓé¼ΓÇ¥ candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup ├óΓé¼ΓÇ¥ product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup ├óΓé¼ΓÇ¥ app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram ├óΓé¼ΓÇ¥ diagrams/infographics with structured layout and text.
+- scientific-educational ├óΓé¼ΓÇ¥ classroom explainers, scientific diagrams, and learning visuals with required labels 
+and accuracy constraints.
+- ads-marketing ├óΓé¼ΓÇ¥ campaign concepts and ad creatives with audience, brand position, scene, and exact 
+tagline/copy.
+- productivity-visual ├óΓé¼ΓÇ¥ slide, chart, workflow, and data-heavy business visuals.
+- logo-brand ├óΓé¼ΓÇ¥ logo/mark exploration, vector-friendly.
+- illustration-story ├óΓé¼ΓÇ¥ comics, children├óΓé¼Γäós book art, narrative scenes.
+- stylized-concept ├óΓé¼ΓÇ¥ style-driven concept art, 3D/stylized renders.
+- historical-scene ├óΓé¼ΓÇ¥ period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization ├óΓé¼ΓÇ¥ translate/replace in-image text, preserve layout.
+- identity-preserve ├óΓé¼ΓÇ¥ try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit ├óΓé¼ΓÇ¥ remove/replace a specific element (including interior swaps).
+- lighting-weather ├óΓé¼ΓÇ¥ time-of-day/season/atmosphere changes only.
+- background-extraction ├óΓé¼ΓÇ¥ transparent background / clean cutout. Ask built-in `image_gen` for actual 
+transparency.
+- style-transfer ├óΓé¼ΓÇ¥ apply reference style while changing subject/scene.
+- compositing ├óΓé¼ΓÇ¥ multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render ├óΓé¼ΓÇ¥ drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D/etc>
+Composition/framing: <wide/close/top-down; placement>
+Lighting/mood: <lighting + mood>
+Color palette: <palette notes>
+Materials/textures: <surface details>
+Text (verbatim): "<exact text>"
+Constraints: <must keep/must avoid>
+Avoid: <negative constraints>
+```
+
+Notes:
+- `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
+- `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which 
+controls output transparency behavior.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong 
+in the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+
+Augmentation rules:
+- Keep it short.
+- Add only the details needed to improve the prompt materially.
+- For edits, explicitly list invariants (`change only X; keep Y unchanged`).
+- If any critical detail is missing and blocks success, ask a question; otherwise proceed.
+
+## Examples
+
+### Generation example (hero image)
+```text
+Use case: product-mockup
+Asset type: landing page hero
+Primary request: a minimal hero image of a ceramic coffee mug
+Style/medium: clean product photography
+Composition/framing: wide composition with usable negative space for page copy if needed
+Lighting/mood: soft studio lighting
+Constraints: no logos, no text, no watermark
+```
+
+### Edit example (invariants)
+```text
+Use case: precise-object-edit
+Asset type: product photo background replacement
+Primary request: replace only the background with a warm sunset gradient
+Constraints: change only the background; keep the product and its edges unchanged; no text; no watermark
+```
+
+## Prompting best practices
+- Structure prompt as scene/backdrop -> subject -> details -> constraints.
+- Include intended use (ad, UI mock, infographic) to set the mode and polish level.
+- Use camera/composition language for photorealism.
+- Only use SVG/vector stand-ins when the user explicitly asked for vector output or a non-image placeholder.
+- Quote exact text and specify typography + placement.
+- For tricky words, spell them letter-by-letter and require verbatim rendering.
+- For multi-image inputs, reference images by index and describe how they should be used.
+- For edits, repeat invariants every iteration to reduce drift.
+- Iterate with single-change follow-ups.
+- If the prompt is generic, add only the extra detail that will materially help.
+- If the prompt is already detailed, normalize it instead of expanding it.
+- For CLI fallback only, see `references/cli.md` and `references/image-api.md` for model, `quality`, `input_fidelity`, 
+masks, output format, and output-path guidance.
+- For transparent images, ask built-in `image_gen` for actual transparency and preserve its alpha.
+
+More principles shared by both modes: `references/prompting.md`.
+Copy/paste specs shared by both modes: `references/sample-prompts.md`.
+
+## Guidance by asset type
+Asset-type templates (website assets, game assets, wireframes, logo) are consolidated in 
+`references/sample-prompts.md`.
+
+## gpt-image-2 guidance for CLI fallback
+
+The fallback CLI defaults to `gpt-image-2`.
+
+- Use `gpt-image-2` for new CLI/API workflows unless the user confirms a different model.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user 
+explicitly requested that model.
+- `gpt-image-2` always uses high fidelity for image inputs; do not set `input_fidelity` with this model.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- Use `quality low` for fast drafts, thumbnails, and quick iterations. Use `medium`, `high`, or `auto` for final 
+assets, dense text, diagrams, identity-sensitive edits, or high-resolution outputs.
+- Square images are typically fastest to generate. Use `1024x1024` for fast square drafts.
+- If the user asks for 4K-style output, use `3840x2160` for landscape or `2160x3840` for portrait.
+- `gpt-image-2` size may be `auto` or `WIDTHxHEIGHT` if all constraints hold: max edge `<= 3840px`, both edges 
+multiples of `16px`, long-to-short ratio `<= 3:1`, total pixels between `655,360` and `8,294,400`.
+
+Popular `gpt-image-2` sizes:
+- `1024x1024` square
+- `1536x1024` landscape
+- `1024x1536` portrait
+- `2048x2048` 2K square
+- `2048x1152` 2K landscape
+- `3840x2160` 4K landscape
+- `2160x3840` 4K portrait
+- `auto`
+
+## Fallback CLI mode only
+
+### Temp and output conventions
+These conventions apply only to the CLI fallback. They do not describe built-in `image_gen` output behavior.
+- Use `tmp/imagegen/` for intermediate files (for example JSONL batches); delete them when done.
+- Write final artifacts under `output/imagegen/`.
+- Use `--out` or `--out-dir` to control output paths; keep filenames stable and descriptive.
+
+### Dependencies
+Prefer `uv` for dependency management in this repo.
+
+Required Python package:
+```bash
+uv pip install openai
+```
+
+Optional for image inspection and downscaling:
+```bash
+uv pip install pillow
+```
+
+Portability note:
+- If you are using the installed skill outside this repo, install dependencies into that environment with its package 
+manager.
+- In uv-managed environments, `uv pip install ...` remains the preferred path.
+
+### Environment
+- `OPENAI_API_KEY` must be set for live API calls.
+- Do not ask the user for `OPENAI_API_KEY` when using the built-in `image_gen` tool.
+- Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
+
+If the key is missing, give the user these steps:
+1. Create an API key in the OpenAI platform UI: https://platform.openai.com/api-keys
+2. Set `OPENAI_API_KEY` as an environment variable in their system.
+3. Offer to guide them through setting the environment variable for their OS/shell if needed.
+
+If installation is not possible in this environment, tell the user which dependency is missing and how to install it 
+into their active environment.
+
+### Script-mode notes
+- CLI commands + examples: `references/cli.md`
+- API parameter quick reference: `references/image-api.md`
+- Network approvals / sandbox settings for CLI mode: `references/codex-network.md`
+
+## Reference map
+- `references/prompting.md`: shared prompting principles for both modes.
+- `references/sample-prompts.md`: shared copy/paste prompt recipes for both modes.
+- `references/cli.md`: fallback-only CLI usage via `scripts/image_gen.py`.
+- `references/image-api.md`: fallback-only API/CLI parameter reference.
+- `references/codex-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
+- `scripts/image_gen.py`: fallback-only CLI implementation. Use only when the user explicitly chooses or confirms CLI 
+mode.
+
+
+codex
+The pointer fileΓÇÖs target isnΓÇÖt in this asset folder, so IΓÇÖm locating the repository-level `CLAUDE.md` before 
+generating. The two references are otherwise complete: identity/design comes only from image 1, while image 2 
+contributes only the six gait phases.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$p = (Get-Location).Path; while ($p) { 
+$candidate = Join-Path $p '"'CLAUDE.md'; if (Test-Path -LiteralPath "'$candidate) { $candidate }; $parent = Split-Path 
+-Parent $p; if ($parent -eq $p) { break }; $p = $parent }' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n_hires
+ succeeded in 267ms:
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\CLAUDE.md
+C:\Users\asali\Projects\MMO\CLAUDE.md
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\CLAUDE.md'; Get-Content -Raw -LiteralPath 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\references\\prompting.md'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n_hires
+ succeeded in 246ms:
+# Crownless ├óΓé¼ΓÇ¥ working practices (all agents)
+
+## Mobile version ├óΓé¼ΓÇ¥ kept in sync (unfrozen 2026-07-15)
+- `mobile/` (repo root) holds the iOS/Android version: a snapshot fork of `game/` plus a small, fixed set of mobile 
+deltas (Mobile renderer, touch HUD, export presets ├óΓé¼ΓÇ¥ the exact list lives in `mobile/README.md`). Deployment is 
+proven end to end ├óΓé¼ΓÇ¥ GitHub Actions **"Mobile builds"** produces a signed-debug APK and an unsigned iOS `.ipa`; 
+both install/run on-device (sideload).
+- **Policy change (was "frozen, do not touch"):** keep `mobile/game/` in sync with `game/`. `game/` is still the 
+**source of truth** ├óΓé¼ΓÇ¥ never edit `mobile/` to fix a desktop issue; fix it in `game/` and re-sync. To re-sync: 
+re-copy `game/` over `mobile/game/`, re-apply the mobile deltas from `mobile/README.md`, then run the compile gate + 
+`test_quick` against `mobile/game` before committing. Keep the delta list small and current.
+
+## Code layout (see CODING_GUIDELINES.md ├é┬º38)
+- Tuning knobs ├óΓÇáΓÇÖ `balance.gd`; data tables stay in domain files (classes/items/story). Never inline a bare 
+tuning number.
+- Docs split (2026-07-06): balance/pacing round narratives go in `BALANCE_HISTORY.md` (newest at TOP of the tuning 
+list); `DESIGN.md` holds only current decisions + distilled standing rules ├óΓé¼ΓÇ¥ never append round-by-round 
+history there.
+- Big node classes are inheritance CHAINS (verbatim moves, calls flow derived├óΓÇáΓÇÖbase, all vars in the base layer):
+  - Game: `game_base` (state/flags/convo/lookups/fx) ├óΓÇá┬É `game_world` (graph/rooms/walls/spawning/gates) ├óΓÇá┬É 
+`game_flow` (deaths/loot/chapters/settings/terrain events) ├óΓÇá┬É `game.gd` (boot + per-frame).
+  - Player: `player_core` (state/stats/gear/progression) ├óΓÇá┬É `player_combat` (targeting/hit/shared juice + shared 
+primitives) ├óΓÇá┬É `player_kit_{warrior,archer,mage,assassin,paladin,warlock}` (one file per class: `_use_<class>` 
+dispatch + its abilities) ├óΓÇá┬É `player.gd` (dispatch/survival/per-frame). Primitives shared by several kits 
+(`_dash_strike`, `_melee_arc`, `_mist`, `_beam_fx`, `_grant_stab_surge`) stay in `player_combat` ├óΓé¼ΓÇ¥ calls only 
+flow derived├óΓÇáΓÇÖbase.
+  - Tests: `tests/test_base` (helpers) ├óΓÇá┬É `tests/test_ch1` ├óΓÇá┬É `tests/test_ch2` ├óΓÇá┬É `autotest.gd` (entry 
++ systems tier).
+- Self-contained UI screens = static modules in `scripts/ui/` (dev_panel, codex) taking the Menus instance.
+- New `class_name` script ├óΓÇáΓÇÖ run `--import` before any headless run.
+- The in-game **codex** (`scripts/ui/codex.gd`) is the player-facing reference for monsters/bosses/terrains/gear 
+├óΓé¼ΓÇ¥ it goes stale silently. Whenever you add player-facing content or a feature, ask whether the codex should 
+reflect it, and if so update it in the same change. It reads `Story.ALL_ENEMIES`/data tables directly, but a few 
+hand-maintained parallel lists still gate it (e.g. `menus.gd` `BOSS_KINDS` decides monster-vs-boss bucketing) ├óΓé¼ΓÇ¥ 
+update those too, or a new boss lands in the wrong bucket. Layout since 2026-08-15 = rail of sections 
+(`UICodex.SECTIONS`) + filter chips + ledger/detail; a new section is one SECTIONS row + a `_rows`/`_detail` (or page) 
+builder, and every legacy `open_codex("<tab>")` id routes through `_resolve()` ├óΓé¼ΓÇ¥ extend that, never fork the 
+panel. Reference prose lives under Field notes (`NOTE_PAGES`), not above a shelf.
+
+## Testing ├óΓé¼ΓÇ¥ ALWAYS in this order
+1. Compile gate first, every time (`test_quick.bat`/`test.bat` run `check_compile.gd` first). Never invoke the test 
+scene directly: one parse error anywhere makes the suite script fail to compile and the headless engine idles FOREVER 
+(a zombie that looks like a slow run). The gate catches it in ~3s with the real error.
+2. Iterate with `test_quick.bat` (~15s): gate ├óΓÇáΓÇÖ boot ├óΓÇáΓÇÖ one class kit ├óΓÇáΓÇÖ systems ├óΓÇáΓÇÖ UI smoke 
+├óΓÇáΓÇÖ pause menu.
+3. `test.bat` (full suite, minutes; plays both chapters end to end) must be green before staging.
+
+## Agent toolkit (the map: `tools/INDEX.md` ├óΓé¼ΓÇ¥ check it before writing a helper script)
+- `preflight.bat` ├óΓé¼ΓÇ¥ the traps below, mechanized: stale/forgotten `--import`, codex/BOSS_KINDS staleness, 
+unregistered content modules, diff-scoped balance-number + CONNECT_DEFERRED lints, new shot rig not `extends ShotRig`. 
+Run it before staging; every finding prints its one-line fix.
+- `python tools/safe_commit.py -m "msg" <your paths>` ├óΓé¼ΓÇ¥ the serialized-commit etiquette as a guardrail: 
+path-scoped commit that lists sibling-staged work instead of swallowing it.
+- `python tools/sync_mobile.py` ├óΓé¼ΓÇ¥ mobile drift report; `--apply [--gate]` performs the re-sync ritual from 
+`mobile/README.md`.
+- **Headless Codex (`codex exec`, the default generated-art lane): calling guide = 
+`C:\Users\asali\Projects\CODEX_HEADLESS.md` (Projects root, shared by every project on this box: binary, call, all 
+flags, machine limits) + `tools/CODEX_HEADLESS.md` (the MMO layer: runner, drivers, vet/install).** The binary's 
+install dir is re-hashed on every app update ├óΓé¼ΓÇ¥ resolve it (`python tools/codex_bin.py` / `Resolve-Codex` in 
+`run_codex_batch.ps1`), never hard-code it; prompt goes on STDIN; on this shared box run image batches serial + 
+RAM-gated (`run_codex_batch.ps1 -MaxParallel 1 -MinFreeGB 1.3`), never beside a Godot suite (a parallel batch + suite 
+OOM-crashed the host 2026-08-17).
+- `python tools/art/verify_art.py <base>` ├óΓé¼ΓÇ¥ post-install sprite checks (strip geometry, 8-dir completeness, 
+green-bleed, stale import, and in-cell content gates: anchor drift/ghost chunks/edge cuts/clip-vs-idle body scale + 
+**HEROBODY** hero frame-0 scale-lock shrink).
+  - **HEROBODY vs CLIPSCALE (added 2026-08-23):** CLIPSCALE models the ENEMY renderer (median body / cell). HEROES 
+render differently ├óΓé¼ΓÇ¥ `player_core._measure_hero_frame` locks a clip's on-screen scale to FRAME 0's CONTENT bbox 
+and plays the whole clip at it, so a clip whose REST pose already raises a weapon (frame-0 content > body) renders the 
+body small for the entire clip (the archer-multishot 0.85├âΓÇö shrink CLIPSCALE structurally cannot see). HEROBODY 
+flags a hero action clip whose frame-0 body renders <0.90├âΓÇö the idle's. A neutral rest frame reads ~1.0 and a legit 
+crouch/lunge still starts neutral, so both are spared (0 FP across the 6 base classes + 5 skins).
+  - **The eyes-only drift class has NO geometric gate ├óΓé¼ΓÇ¥ the net is a VISUAL QA artifact + agent review.** 
+Face-fidelity drift (a fatter/blurrier face in action frames), a shield/armor detail that morphs frame-to-frame, a 
+cape that flips sides ├óΓé¼ΓÇ¥ all pass every geometric check; the *drawing* is inconsistent. verify_art cannot catch 
+these and a sharpness/consistency proxy false-positives on real motion. So a skin/class regen MUST emit a per-clip 
+contact sheet (idle + action peak frames, feet-aligned + face crops) and an AGENT must review it before install. An AI 
+reviewer catches "her face got fatter"; a number can't. Don't rely on the owner's eyes as the first line. **The full 
+reusable workflow ├óΓé¼ΓÇ¥ dedup-scope ├óΓÇáΓÇÖ one review agent per subject over EVERY clip├âΓÇödir├âΓÇöframe 
+├óΓÇáΓÇÖ orchestrator verifies each flag ├óΓé¼ΓÇ¥ is `tools/art/DRIFT_AUDIT.md` (covers heroes/skins AND the boss/mob 
+adaptation: enemy render path = CLIPSCALE not HEROBODY).** Established 2026-08-24; the known drift catalogue 
+(fire-on-move clips are the systemic weak point; un-regenerated clips carry the face-softening family; 
+single-direction off-model art) lives there.
+  - **WARN triage ├óΓé¼ΓÇ¥ FAIL is the bar, not WARN (investigated 2026-08-23).** The six BASE heroes throw a large, 
+standing pile of WARNs that are NOT defects ├óΓé¼ΓÇ¥ the gate has no way to whitelist intentional content, so it flags 
+it every run. All three benign categories, confirmed by rendering the flagged pixels on grass + overlaying them on the 
+sprite:
+    - **BLEED** on base heroes ├óΓÇ░┬á green keying rim. It's soft-alpha FX (the archer's cast/ult IS green 
+Arrow-Storm magic; every class's ult/cast auras + glows) plus green-CLOTHING edges (the archer's green cloak). The 
+BLEED counter is colour-blind (any `0<a<255` pixel), so green *content* inflates it; a band-normalize/upscale 
+multiplies the same FX/cloak edge pixels and the raw count rises with zero new bleed. The real-bug discriminator is a 
+green RIM hugging the silhouette (`G>max(R,B)+20` massed on the body outline) ├óΓé¼ΓÇ¥ on the base heroes that rim is 
+absent; the green sits on the FX cloud and the cloak, and on a grass background there's no halo.
+    - **STRAY** on base heroes = FX props the game does NOT re-spawn: the warlock's floating flaming SKULL (his 
+signature, every frame), the warrior's flaming-sword blade/trail, the archer's green cast-motes. Distinct from a baked 
+*projectile* (which the STRAY rule is really aimed at) ├óΓé¼ΓÇ¥ leave these.
+    - **EDGECUT** on melee swings (`attack2`/`attackb`/`attackc` for warrior/assassin/paladin) = the weapon reaching 
+the cell edge at the extreme of the arc, not a clipped body.
+    - Baseline as of 2026-08-23: base heroes = **0 FAIL, ~261 WARN** (208 BLEED / 28 STRAY / 25 EDGECUT); the 5 
+in-scope elite skins = clean `VERIFY OK`. Don't re-investigate or "fix" these WARN categories on the base heroes 
+├óΓé¼ΓÇ¥ only act on a NEW **FAIL**, or a WARN that leaves these three buckets (e.g. a real body green-rim, a 
+butchered/PARTIAL frame, an anchor/scale/FEETSLIDE hit).
+    - **CORRECTION (2026-09-03): the "no green rim on base heroes" finding was scoped to cast/ult.** A corpus scan 
+(`tools/art/despill_rim.py --scan`, rim-band green with an EMPTY interior = halo, not design) found a real #00FF00 
+keying ring on all 19 `warlock_attack*`/`attack2*` strips ├óΓé¼ΓÇ¥ a design with no green in it at all ├óΓé¼ΓÇ¥ plus 
+44 mobs/NPCs/props. All despilled; the scan now returns 0. Re-run the scan after any keyed install; the fixer is 
+rim-band-only so it cannot dull green garments, and it refuses a sprite whose green is mostly interior.
+- **Screenshot rigs: never write a standalone one (2026-08-15).** Twenty-three `game/shot_*.gd` files are copies of 
+the same 25-line boot/`_shot`/quit boilerplate, none with a watchdog, muted only by convention. New rig = `extends 
+ShotRig` (`scripts/dev/shot_rig.gd`: `boot()`, `shot()`, sim-clock waits, `arg()`/`flag()`, Master-bus mute, 
+`--timeout=N` watchdog) + `_ready()` of steps + `finish()`; run it ├óΓé¼ΓÇ¥ and every legacy rig ├óΓé¼ΓÇ¥ through 
+`shot.bat <rig> [--timeout=N] [rig args]`, which injects `--audio-driver Dummy`, compile-gates the rig script 
+(check_compile's default walk skips `game/` root: a parse error there = a window that idles forever), and hard-kills a 
+hung engine. `preflight` FAILs a new rig that doesn't extend it and WARNs on an edited legacy one (convert on touch). 
+Worked example: `shot_fx_series.gd`; the map: `tools/INDEX.md` "In-engine shot rigs".
+- **Windowed shot rigs (`shot_*.tscn`, `qa_skins`, anything not `--headless`) run MUTED: always pass `--audio-driver 
+Dummy`.** They boot the real game with music + SFX on the owner's shared machine; an unmuted rig blares through his 
+speakers mid-session (owner ruling 2026-08-15). Headless suites are already silent.
+
+## GDScript traps (each has bitten us) ├óΓé¼ΓÇ¥ review-time deep list: `CODING_GUIDELINES.md` ├é┬º38
+- `var x := obj.method()` on a loosely-typed obj (or any Variant expression, e.g. `Dictionary.get`) = PARSE ERROR 
+"cannot infer type". Annotate: `var x: float = ...`.
+- New `class_name` ├óΓÇáΓÇÖ `--import` first or headless silently hangs.
+- Labels inside HBoxContainer collapse to one char per line without `custom_minimum_size`.
+- Multiline lambda: following call args must sit on the SAME line as the lambda's last statement.
+- Tests waiting on timed effects must poll wall-clock (`await create_timer(0.2)`) ├óΓé¼ΓÇ¥ frames race ahead headless.
+- Autotest sections SNAPSHOT + RESTORE shared state (flags, resonance, standings); never `.clear()`. Two corollaries, 
+both learned from one flaky capital run (2026-07-26):
+  - **Restore on the FAILURE paths too.** `_fail` only QUEUES `quit(1)` ├óΓé¼ΓÇ¥ the suite keeps running to the end of 
+the frame, so the next section still executes and reads whatever the failed one left behind. A mid-city failure 
+stranded `chapter_id == "capital"`, where `shop_markup` answers a flat 1.0, and the road-markup section then reported 
+a second, entirely bogus failure. Put the assertions in a helper and the restore in its caller, so all ~40 exits pass 
+through it.
+  - **Never assert against state an earlier section accumulated.** A content-tier section inherits a whole campaign of 
+loot, gold, resonance and bag capacity ├óΓé¼ΓÇ¥ all of it loot-luck. The capital's lapidary quest asserted its kit 
+landed in the bag, and a full bag legally mails the kit instead: pass or fail came down to whether a bag DROPPED that 
+run. Control the precondition (lend a bag, pin the shard) or the assert is a coin flip.
+- canvas_item shader `fragment()`: `COLOR` arrives PREMULTIPLIED (modulate ├âΓÇö TEXTURE sample). Writing `COLOR = 
+result * COLOR` multiplies the texture in twice ├óΓé¼ΓÇ¥ everything darkens and "brighten" shaders read as darken 
+(phantom_charge was bitten; owner saw "only gets darker"). Reuse ONLY `COLOR.a` (silhouette.gdshader convention).
+- `Environment.adjustment_contrast` with `viewport/hdr_2d` runs in LINEAR light: it pivots on 0.5, and a dark floor 
+sits near 0 there ├óΓé¼ΓÇ¥ contrast 1.06 HALVED the keep floor's brightness (gameplay-polish rig 2026-08-18). Leave 
+contrast at 1.0; use saturation/brightness only, and judge any whole-frame grade in-game, never from the numbers.
+- Spawning an Area2D + CollisionShape2D (Chest/Pickup/Projectile) from inside a `body_entered`/`area_entered` handler 
+= non-fatal "Can't change this state while flushing queries" engine error (`area_set_shape_disabled`) ├óΓé¼ΓÇ¥ the new 
+shape's enter-tree hits the physics-flush guard. Connect physics signals with `CONNECT_DEFERRED` or `call_deferred` 
+the spawn (chest open + projectile ricochet were bitten).
+- `draw_colored_polygon` on a SLIVER (near-collinear points) = random non-fatal "Invalid polygon data, triangulation 
+failed" spam: the triangulator picks winding from a float32 shoelace over RAW coords, so a sliver's sign is rounding 
+noise at world-scale coordinates ├óΓé¼ΓÇ¥ coordinate-dependent coin flip, NOT deterministic per shape (knife-trail 
+fold-back miters were bitten). Pre-check `Geometry2D.triangulate_polygon(p).is_empty()` and skip ├óΓé¼ΓÇ¥ the exact 
+C++ path behind the error, and everything it rejects is sub-pixel (the `_poly` guard in player_combat.gd).
+- **In co-op, the tree pause is NOT an input gate.** `request_pause(true)` NO-OPS online (`game_base.gd`, ├é┬º5.4 
+├óΓé¼ΓÇ¥ a shared world never pauses), so anything leaning on the pause to stop input/processing keeps running in a 
+session. Menus, dialogue and choice prompts all pause solo and none of them pause online. Gate on the OVERLAY STATE 
+instead ├óΓé¼ΓÇ¥ `menus.is_open()` / `hud.dialogue_active` / `hud.choices_active`, the guard `game.gd`'s tap-to-talk 
+already uses. The touch HUD had no `process_mode` override and only checked `state == ST_PLAYING` (there is no 
+`ST_MENU`), so its joystick ├óΓé¼ΓÇ¥ the whole left half of the screen ├óΓé¼ΓÇ¥ stayed live UNDER every menu and a 
+drag walked your hero mid-fight. Note the shape of the miss: it was invisible in BOTH cheap tests (solo-on-phone 
+pauses; co-op-on-desktop has no touch HUD) and only existed in the mobile ├âΓÇö co-op cross-product. When a feature is 
+platform- or session-conditional, ask what its gate is in the OTHER combination.
+
+## Machine RAM is tight (~10GB) ├óΓé¼ΓÇ¥ tool-process hygiene (2026-08-23)
+- This box has ~9.8GB physical RAM and the BASELINE load already fills it: Claude Code + its MCP servers ├óΓÇ░╦å 3GB 
+(22 procs ├óΓé¼ΓÇ¥ MCP servers orphan on restart; 3 duplicate `pixelforge-mcp` copies seen), browser ├óΓÇ░╦å 1.2GB, 
+Windows (svchost + Defender + compression) ├óΓÇ░╦å 1.4GB. That leaves ~1GB free ├óΓé¼ΓÇ¥ nothing has headroom. This is 
+WHY image batches run serial + RAM-gated and never beside a Godot suite. But be precise about WHAT is heavy: **a 
+single `codex exec` image gen is API-side and costs only ~250MB local (measured 2026-08-24) ├óΓé¼ΓÇ¥ it is NOT a 
+machine-killer and a single serial job runs safely even at ~1GB free.** The RAM risk is PARALLELISM (several gens at 
+once) ├âΓÇö a co-resident **Godot suite** (each Godot instance is the real GB-scale hog). So `-MaxParallel 1 
+-MinFreeGB 1.3` guards against *stacking* jobs and firing next to a suite ├óΓé¼ΓÇ¥ don't read it as "Codex is a spike" 
+and refuse a single gated gen. (PixelLab local footprint unmeasured; don't assume it's the same.) A Claude restart 
+clears orphaned MCP servers; closing browser tabs frees ~1GB.
+- **Prefer the Bash tool over PowerShell.** PowerShell tool calls can leave lingering `powershell.exe` processes (7 
+orphans spanning 2 days seen, ├óΓÇ░╦å0.45GB). Use Bash for process/file ops (`taskkill //F //PID <n>` cleans strays); 
+reserve PowerShell for genuine cmdlet needs, and consolidate into ONE call rather than many.
+
+## Multi-agent etiquette
+- Task boards (`CH2_TASKS.md` pattern): one owner per task, claim before starting; content lands as NEW modules under 
+`game/scripts/content/` (format: `scripts/content/README.md`) + one registration line in `Story.CONTENT_MODULES`.
+- Stage with `git add` after a green full suite. No commits unless the user asks.
+- **Commits are SERIALIZED (2026-07-07):** a commit sweeps the WHOLE index, and sibling agents stage concurrently 
+├óΓé¼ΓÇ¥ so immediately before committing, run `git status` and look at what's actually staged. If the index holds 
+another agent's work, either fold it into an accurate combined message or stop and say so ├óΓé¼ΓÇ¥ never commit a 
+message that describes only your slice. (Trigger: an itemization pass got swallowed into a commit labeled "cover + 
+boot flow" by exactly this race.)
+- Commit messages: NO author/co-author trailers (no `Co-Authored-By`, no attribution lines) ├óΓé¼ΓÇ¥ this project 
+keeps commits authorless; credit lives in a separate credits file.
+- Autotest additions: content modules use the marked CONTENT-MODULE TEST HOOK (one func at file end + one call line); 
+never edit existing sections.
+
+## Asset sourcing
+- **Allowed ├óΓé¼ΓÇ¥ and that's the whole list:** ONLY these two, or anything we generate ourselves (must be up to 
+par: semantic fit + reads clean in-game).
+  1. **CC0 / public domain** ├óΓé¼ΓÇ¥ zero obligations, ideal.
+  2. **CC-BY / MIT / Apache / OFL** ├óΓé¼ΓÇ¥ fine; ship the attribution file (we already do, in 
+`assets/*/CREDITS.txt`).
+  No pre-approval needed for these. Source from anywhere ├óΓé¼ΓÇ¥ OpenGameArt, Kenney, itch.io, the Dungeon Crawl 
+tileset (CC0), etc.
+- **Everything else is off-limits** ├óΓé¼ΓÇ¥ do not use, don't even ask: share-alike (CC-BY-SA, GPL), non-commercial 
+(CC-NC), proprietary/paid asset-store packs, and anything with no stated license (default = all rights reserved). This 
+game ships commercially on Steam; these licenses either forbid selling it or can force us to open-source the whole 
+project.
+- Install flow: probe/download, and LOOK at the image (or listen to the audio) before installing; overrides drop into 
+`assets/sounds|music|sprites/` by name (a PNG/wav there overrides the procedural version of the same name).
+- Audio taste: semantic fit over quality; no melodic-jingle chiptunes for ults/terrains; never human grunts on casts; 
+never touch `ult_mage.wav` or the village/story/boss synth tracks.
+
+## Icon fidelity ├óΓé¼ΓÇ¥ authored resolution ├óΓÇ░┬á render size (owner ruling 2026-08-21; agents keep tripping on 
+this)
+- Player-facing icon families are **DUAL-RES**: a high-fidelity master for the codex/detail views + a downscaled 
+gameplay copy for the bag. The **128px painterly master is the FIDELITY BAR** ├óΓé¼ΓÇ¥ match it, not a flat/pixel 
+style, unless the owner says otherwise. Reference tiers: **gear** = `assets/icons/codex/<shape>_<grade>.png` @128px 
+(codex, via `Art.codex_item_icon`) + `assets/icons/<name>.png` @32px (bag); **class splashes** ~235px authored 
+├óΓÇáΓÇÖ render ~100px in-game (~2.35├âΓÇö ├óΓé¼ΓÇ¥ the owner's "renders nicely" benchmark).
+- **THE TRAP:** authoring a family at **32px only**. It looks fine in a 32px bag slot, so it passes a quick check 
+├óΓé¼ΓÇ¥ but every larger surface (codex ~28├óΓé¼ΓÇ£128px, the detail popover header 40px) UPSCALES it to mush, and it 
+reads as low-fidelity beside the 128px gear. **Gems shipped 32px-only (2026-07-30) and were the 2026-08-20 
+visual-review's one solid asset catch for exactly this.** When you regen an icon family: author at the 128px gear bar, 
+store dual-res, and load the 128 in large contexts. Verify the fidelity numbers (stored res vs on-screen render px) 
+BEFORE designing ├óΓé¼ΓÇ¥ the owner asks for this by name.
+- **This generalises past icons to ALL world/character/codex art (owner ruling 2026-08-24): a master should be 
+├óΓÇ░┬Ñ2├âΓÇö its on-screen render size.** The auditor is `tools/art/fidelity_audit.py` + `game/fidelity_dump.gd`; the 
+current findings + prioritised re-art list live in **`FIDELITY_AUDIT.md`** (root). Bar = the base classes (render 99px 
+from 235px = 2.35├âΓÇö). Standing findings: the **5 enhanced-base skins PASS (2.37├âΓÇö)** but the **18 legacy skins 
+are ~1.2├âΓÇö** (the planned regen quantified); trees/large props + one npc (`pilgrims_schism`) + `choir_censer` (a 
+boss-summoned add) are the other real re-art targets. Unplaced+low-fi mobs get DROPPED, not re-arted (`bat`/`direbat` 
+gone 2026-08-24).
+
+## World props ├óΓé¼ΓÇ¥ style + motion contract (owner ruling 2026-08-18, after a day of "shifts / dims / cartoonish" 
+flags from play; review-time checklist: `CODING_GUIDELINES.md` ├é┬º40; the polish effort's board = `POLISH_TASKS.md`, 
+its generation lane = `tools/art/style_unify/`)
+- **One style.** Every world prop matches the cast: painterly, soft-shaded, NO black outlines, muted palette, top-down 
+three-quarter, light top-left. A hi-res canvas is NOT a pass ├óΓé¼ΓÇ¥ a 1024px cartoon is still a cartoon (cactus2, 
+tree_teal2, grave_cross all passed the resolution audit). Regen briefs name a painterly SIBLING as the style ref and 
+the old asset only as the SUBJECT (silhouette/footprint/colour identity); judge the result on a contact sheet BESIDE 
+its siblings (`scratchpad`-style sheet, or `tools/art/asset_gallery.py`), never against the asset it replaces.
+- **Animate in place.** Frames never translate the object. Rigid props (furnaces, wells, shrines, rigs, pools) keep a 
+byte-stable silhouette ├óΓé¼ΓÇ¥ colour-only motion (glow pulse, ember flicker), bbox/baseline/centre drift 0; only 
+fire, cloth and foliage may change silhouette, and then anchored on frame 0's baseline. Wind sway is an ALLOW-list of 
+vegetation (`_wind_scenery`), never "everything that isn't a building". Hazard pools stay put 
+(`Balance.HAZARD_POOLS_DRIFT`). Anything that swings/pendulums needs authored frames with proper easing or no 
+animation at all ├óΓé¼ΓÇ¥ a 4-frame swing reads as fake.
+- **Dim, don't strobe.** A prop should look STILL at a glance and alive on a second look. Luminance swing ├óΓÇ░┬ñ 
+10-12% for glows/pulses (`derive_prop_anim.py --amp 0.10`), ├óΓÇ░┬ñ 25% for open fire, never on the whole sprite 
+(bright/warm pixels only). The 0.35 default that looked "visible" on a contact sheet strobes in-game.
+- **Gate every strip you touch:** `tools/art/audit_prop_anims.py` (frames/canvas/per-frame drift + amp) + 
+`verify_art.py`; a NEW rigid animated prop goes into autotest's `full_prop_anims` contract (frame == static canvas, 
+baseline ├óΓÇ░┬ñ1 / centre ├óΓÇ░┬ñ2). Contact sheets and metrics do not replace watching the loop: run it in a shot 
+rig at 1x (`shot.bat polish --gif`) before calling it done ├óΓé¼ΓÇ¥ a subtle loop that looks static on a sheet is 
+correct.
+
+## Hero skins ├óΓé¼ΓÇ¥ what is in scope vs OFF-LIMITS (owner ruling 2026-08-22)
+- **In scope for polish: ONLY the 5 ENHANCED-BASE designs**, wired as elite skins purely for in-game preview: warrior 
+`emberbound_heir`, assassin `erased_name`, archer `severed_thread`, warlock `ledgerbound`, mage `blighted_healer`. 
+These are the enhanced base-class designs ├óΓé¼ΓÇ¥ fix/re-anchor/despur/frame-edit them freely.
+- **OFF-LIMITS ├óΓé¼ΓÇ¥ do NOT touch, regen, re-anchor, despur, frame-edit, or "fix":** every OTHER hero skin. That is 
+all of `game/assets/sprites/skins/mythic/` (dreadknight, stormforged, eclipse_knight, fallen_arbiter, blade_dancer, 
+phantom/phantom_awakened, voidwraith, eldritch_herald, ├óΓé¼┬ª) **and** the real skins that live in `skins/elite/` 
+alongside the enhanced-base five (dreadknight, frostfall_ranger, void_weaver, hellfire_inquisitor, eclipse_knight, 
+blade_dancer, ├óΓé¼┬ª). A blanket art-sweep must EXCLUDE these ├óΓé¼ΓÇ¥ an auto-scan of `assets/sprites/` will hit 
+them; scope it to the five, or to bosses/mobs, explicitly.
+- **Why:** a full REGEN pass over all the real skins is planned (owner 2026-08-22, "for later"). Until that pass, 
+leave them exactly as committed ├óΓé¼ΓÇ¥ a piecemeal fix now is wasted work the regen overwrites, and it drifts the 
+design.
+- **Known-defect note:** the real skins carry the same feet-slide artifact the enhanced-base + bosses/mobs were fixed 
+for (2026-08-22), so `verify_art` will emit `FEETSLIDE` WARNs on them. That is EXPECTED and intentionally left for the 
+regen pass ├óΓé¼ΓÇ¥ do not "fix" it.
+
+## Required per-class animation clips beyond the standard set (so a regen knows what to produce) ├óΓé¼ΓÇ¥ 2026-08-23
+Some abilities need EXTRA clips on top of anim/walk/attack/attack2/dash/cast/ult/death. A class or skin regen MUST 
+produce these or the ability silently falls back to a worse pose. Both are art-driven (no strip = the fallback), so 
+they're easy to forget ├óΓé¼ΓÇ¥ hence this manifest.
+
+- **Fire-on-move (`<base>_attack_walk[_<dir>]`)** ├óΓé¼ΓÇ¥ a walk cycle that fires the basic mid-stride, so spamming a 
+low-cd RANGED basic WHILE MOVING doesn't lock the standing pose sliding over the floor (`player.gd` `walk_fire`; a 
+mid-cycle re-cast lets the stride finish). Needed by the ranged spammables ONLY:
+  - mage **Firebolt** (a1=attack), warlock **Shadowbolt** (a1=attack), archer **Quick Shot** (a1=attack), assassin 
+**Fan of Knives** (a3=attack2).
+  - NOT the melee 3-way basic ├óΓé¼ΓÇ¥ the assassin STAB keeps its attack/attackb/attackc alternation while moving 
+(gated by `slot=="a1" and _clips.has("attackb")`, which only excludes the assassin).
+  - **HOW TO GENERATE (the technique that finally worked, owner 2026-08-23): it's the WALK clip + a firing arm 
+├óΓé¼ΓÇ¥ do NOT author a walk from scratch.** Give the character's EXISTING `<base>_walk_<dir>` strip as the image ref 
+and instruct: "reproduce this exact walk ├óΓé¼ΓÇ¥ same leg cycle/stride/crossing, same garment ├óΓé¼ΓÇ¥ change ONLY 
+the free hand to fire the basic once." A from-scratch walk brief (however detailed the per-frame boot storyboard) kept 
+gliding or failing to cross the legs; referencing the real walk carries its crossing gait for free. Keep the brief 
+SHORT ├óΓé¼ΓÇ¥ the walk ref IS the leg spec.
+  - Contract: 8-frame walk+fire; feet PLANTED (no in-cell slide ├óΓÇáΓÇÖ FEETSLIDE); the garment stays CLOSED and 
+design-accurate (NO slit, NO exposed legs/bare skin ├óΓé¼ΓÇ¥ the walk reads through the BOOTS alternating below the 
+hem + the hem swaying, exactly as the walk clip does); NO baked projectile/flame on the sprite (the game spawns it 
+├óΓé¼ΓÇ¥ a small warm spark shares the mage's skin/gold palette and is un-maskable by colour except the bright-yellow 
+core, so keep it out at gen time). Author S/E/N; E├óΓÇáΓÇÖSE/NE; **left MIRRORS right** (W/NW/SW = mirror of E); flat 
+= S. Build lane: `scratchpad/attack_walk_codex.py`.
+  - **`attack_walk_b` ├óΓé¼ΓÇ¥ the alternate variant (owner 2026-08-23).** Fire-on-move ALTERNATES `attack_walk 
+├óΓÇáΓÇ¥ attack_walk_b` each fresh moving-basic cycle (player.gd `_walkfire_swing`), like the melee 
+attack├óΓÇáΓÇ¥attackb, so spamming while moving doesn't replay one clip. Produce it with the SAME walk reference 
+├óΓé¼ΓÇ¥ only the FIRE motion differs from the primary (warlock: two-hand shove vs one-hand thrust; mage: free-hand 
+rising flick vs level thrust, staff hand kept clearly separate; assassin: sidearm flick vs overhand throw). **NOT the 
+archer** (owner 2026-08-23): a bow draw has ONE proper form, so the archer has no `_b` ├óΓé¼ΓÇ¥ it plays the primary 
+every cycle. When a `_b` would confuse the silhouette (e.g. the mage's casting hand reading as the staff hand), keep 
+the two hands clearly separate or skip the variant. Build lane: `attack_walk_codex.py ├óΓé¼┬ª --b`. Art-driven: no 
+`_b` strip = the primary plays every cycle.
+
+- **Melee swing alternation (`attackb`, and `attackc` for enhanced variants)** ├óΓé¼ΓÇ¥ melee basics cycle multiple 
+authored swings per cast (`player_core.gd` `_alt_basic_clip`: attack├óΓÇáΓÇÖattackb├óΓÇáΓÇÖattackc) so Cleave / Smite 
+/ Stab don't replay one motion. Which classes ship which:
+  - **warrior, paladin, assassin** carry `attackb` (2-way minimum). Ranged classes (mage/archer/warlock) have only 
+`attack`.
+  - **3-way (`attackc`)**: base **paladin**, warrior **emberbound_heir**, assassin **erased_name** (owner 2026-08-22 
+├óΓé¼ΓÇ¥ the enhanced variants). `attackc` is a DISTINCT 3rd motion (a rising uppercut), not a recolor of 
+attack/attackb. autotest `_test_swing_alternation` expects 3-way when a body ships an attackc.
+
+## Generated art tool authorization
+- **NEVER assume PixelLab is authorized. PixelLab may be used only when the owner explicitly authorizes PixelLab for 
+the specific task.** Existing PixelLab assets, PixelLab helper scripts, character metadata, or a matching PixelLab 
+workflow elsewhere in the repo do not grant permission for a new generation.
+- When an agent has a built-in image-generation/editing tool (for example, ChatGPT/Codex image generation), that 
+built-in tool is the default for generated art unless the owner explicitly requests or authorizes another generator.
+- This rule applies even when another generator appears technically better suited. If the built-in tool cannot meet 
+the requirement, stop and ask the owner; do not silently switch tools or spend external generation credits.
+
+### Codex built-in ImageGen walk-animation observations
+- For bipedal characters, the built-in ImageGen tool often fails to preserve a fluid left/right leg cycle. A real 
+same-colored leg crossing over the other in one passing frame can create a convincing walking illusion; keep that 
+crossing to one or at most two frames rather than making every frame crossed.
+- If ImageGen repeats nearly identical crossed poses, give each cell an explicit foot-position storyboard instead of 
+only asking for "alternating legs": use a wide split, a tight crossover, a second crossover with a different spread 
+and the opposite leg emerging, then the opposite wide split or a subtle toe-off. State that frames 1, 3, and 4 must 
+have visibly different lower-body silhouettes. (Tried on the Wild Fang Raider 2026-08-14 and again 08-15: the 4-cell 
+2x2 kept coming back with the SAME leg leading in both stride cells and the body ~11% short ├óΓé¼ΓÇ¥ the owner still 
+called the walk bad.)
+- **What actually fixed the Wild Fang Raider walk (2026-08-15): ONE ROW of EIGHT figures, each frame labelled with its 
+gait phase** (near-foot contact / load / far leg passes / reach, then the same four for the other leg ├óΓé¼ΓÇ¥ the 
+pipeline doc's "legs do not alternate" remedy). The row came back with 8 distinct poses, constant body height and one 
+ground line; installed as an 8-frame strip (the engine's strip reader is frame-count agnostic ├óΓé¼ΓÇ¥ width/height 
+├óΓé¼ΓÇ¥ so 8 is fine; at the 2x walk clock the loop runs 0.67 s). Prefer this over 4-cell 2x2 for any bipedal walk. 
+Ask Codex to report leg-lead per frame in its final message; it is a candid critic of its own output.
+- **Write every identity description FROM the idle sheet, never from memory or an audit's paraphrase (2026-09-03).** 
+Three of fifteen boss/mob regen rows drifted for exactly this: a skeleton got a shield the idle never carried (twice 
+├óΓé¼ΓÇ¥ the pilot and the batch), the winged flame-skull echo came back as a plain hooded shroud, korrag lost his 
+lightning arcs. The generator reproduced the prose faithfully; the prose was wrong. Look at `<base>_anim` frame 0 and 
+list what is actually there (what is in each hand, what is NOT there) before writing the brief.
+- **A BACK-view regen never gets the outgoing strip as a reference** when the defect IS the view (front art wearing 
+the N name): handing it back re-seeds it. `gait_briefs.py` drops it automatically on `facing: n`; the identity ref 
+stays the front idle with the front-only parts NAMED as forbidden.
+- **Row briefs must say every figure is the SAME size** ("do not crowd two small figures into one cell; make the image 
+wider"). Three rows came back with undersized figures crammed into one cell before the brief said so; 
+`install_gait_row` refuses a speck cell rather than ship a blinking near-empty frame.
+- Every ImageGen-keyed strip carried a dark-green antialias rim (`build_mob_walk_repairs.remove_green` now despills 
+the 2px edge band); a strip that "looks fine" on a dark contact sheet can still ring green over grass ├óΓé¼ΓÇ¥ check 
+`G > max(R,B)+20` counts on the rim, not just the semi-alpha BLEED gate.
+- The tool is generally more reliable for non-bipedal walks (for example, spiders and wolves), and for characters 
+whose locomotion does not expose a conventional leg cycle: robes can communicate motion through cloth flutter, and 
+floating characters can use body/cloth drift.
+- For bipedal sheets, prompt for fixed torso/pelvis anchors, a shared foot baseline, compact stride, 
+held-weapon/upper-body continuity, and explicit negative constraints against recoloring legs, detached feet, 
+duplicated frames, and high-knee marching. Inspect the generated sheet before installation and run 
+`tools/art/verify_art.py <base>` afterward; anchor drift can still remain even when the sheet looks visually centered.
+
+## PixelLab characters ├óΓé¼ΓÇ¥ regenerating an EXISTING one (deep dive: `tools/art/PIXELLAB_BOSS_EDITS.md`)
+- **Authorization gate:** this section applies only after the owner has explicitly authorized PixelLab for the current 
+task. It is not permission to choose PixelLab.
+- **RULE: before you regenerate, re-roll, or tweak an existing PixelLab character (boss/hero/skin), ALWAYS read its 
+export metadata FIRST.** Download the zip (`curl -H "Authorization: Bearer $PIXELLAB_SECRET" 
+https://api.pixellab.ai/mcp/characters/<id>/download -o out.zip`) and read `metadata.json` ├óΓé¼ΓÇ¥ it stores the 
+ORIGINAL creation `prompt` (plus size, `template_id`, view). Regenerate from that EXACT prompt and change ONLY the 
+clause the owner flagged.
+- **Never invent a fresh description from a screenshot or memory** ├óΓé¼ΓÇ¥ it silently drifts the design 
+(proportions, palette, silhouette) even when the fix was one word. `get_character` does NOT return the creation 
+prompt; the zip's `metadata.json` is the only source of truth.
+
+## PixelLab characters ├óΓé¼ΓÇ¥ new generation workflow (prompt-craft cases: `tools/art/PIXELLAB_PROMPT_LESSONS.md`)
+- **CHECK ALL 8 ROTATIONS before generating animations.** After a character body is created, visually inspect every 
+direction (S, SE, E, NE, N, NW, W, SW) for consistency ├óΓé¼ΓÇ¥ same proportions, same gear, same silhouette. v3 mode 
+frequently produces inconsistent north/west directions (wrong body shape, missing equipment, different outfit). If any 
+direction is broken, re-roll the body first. Generating animations on a broken body wastes hundreds of generations.
+- **Heroes use v3 mode (NOT pro).** The gold-standard assassin and warlock were both v3. Pro mode produces stocky 
+proportions for visible-face characters. The `style: -, -, -` field in `get_character` appears in BOTH v3 and pro 
+├óΓé¼ΓÇ¥ it cannot distinguish modes.
+- **Standard mode is useless for proportions testing.** Its template skeleton produces chibi proportions regardless of 
+description. Only useful for testing color palette and design elements.
+- **Description formula (proven on assassin):** archetype first ├óΓÇáΓÇÖ every piece of gear described precisely 
+├óΓÇáΓÇÖ body type ("lean and gaunt" / "lean and tall") ├óΓÇáΓÇÖ art mood ("muted dark palette, somber dark fantasy") 
+├óΓÇáΓÇÖ explicit negatives ("no hood", "no smoke"). Leave no room for the model to improvise.
+- Worked example (2026-07-12): owner said Vess should have "no smoke from mouth". The metadata prompt literally 
+contained `faint blue-white keening light at the mouth` ├óΓé¼ΓÇ¥ the fix was deleting that one clause from the 
+original prompt, not writing a new banshee description.
+
+# Prompting best practices
+
+These prompting principles are shared by both top-level modes of the skill:
+- built-in `image_gen` tool (default)
+- explicit `scripts/image_gen.py` CLI fallback
+
+This file is about prompt structure, specificity, and iteration. Fallback-only execution controls such as `quality`, 
+`input_fidelity`, masks, output format, and output paths live in the fallback docs.
+
+## Contents
+- [Structure](#structure)
+- [Specificity policy](#specificity-policy)
+- [Allowed and disallowed augmentation](#allowed-and-disallowed-augmentation)
+- [Composition and layout](#composition-and-layout)
+- [Constraints and invariants](#constraints-and-invariants)
+- [Text in images](#text-in-images)
+- [Input images and references](#input-images-and-references)
+- [Iterate deliberately](#iterate-deliberately)
+- [Transparent images](#transparent-images)
+- [Fallback-only execution controls](#fallback-only-execution-controls)
+- [Use-case tips](#use-case-tips)
+- [Where to find copy/paste recipes](#where-to-find-copypaste-recipes)
+
+## Structure
+- Use a consistent order: scene/backdrop -> subject -> key details -> constraints -> output intent.
+- Include intended use (ad, UI mock, infographic) to set the level of polish.
+- For complex requests, use short labeled lines instead of one long paragraph.
+
+## Specificity policy
+- If the user prompt is already specific and detailed, normalize it into a clean spec without adding creative 
+requirements.
+- If the prompt is generic, you may add tasteful detail when it materially improves the output.
+- Treat examples in `sample-prompts.md` as fully-authored recipes, not as the default amount of augmentation to add to 
+every request.
+- For photorealism, include `photorealistic` directly when that is the goal, plus concrete real-world texture such as 
+pores, wrinkles, fabric wear, material grain, or imperfect everyday detail.
+
+## Allowed and disallowed augmentation
+
+Allowed augmentation for generic prompts:
+- composition and framing cues
+- intended-use or polish-level hints
+- practical layout guidance
+- reasonable scene concreteness that supports the request
+
+Do not add:
+- extra characters, props, or objects that are not implied
+- brand palettes, slogans, or story beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Composition and layout
+- Specify framing and viewpoint (close-up, wide, top-down) and placement only when it materially helps.
+- Call out negative space if the asset clearly needs room for UI or copy.
+- Avoid making left/right layout decisions unless the user or surrounding layout supports them.
+- For people, describe body framing, scale, gaze, and object interactions when they matter (`full body visible`, 
+`looking down at the book`, `hands naturally gripping the handlebars`).
+
+## Constraints and invariants
+- State what must not change (`keep background unchanged`).
+- For edits, say `change only X; keep Y unchanged` and repeat invariants on every iteration to reduce drift.
+
+## Text in images
+- Put literal text in quotes or ALL CAPS and specify typography (font style, size, color, placement).
+- Spell uncommon words letter-by-letter if accuracy matters.
+- For in-image copy, require verbatim rendering and no extra characters.
+- In CLI fallback mode, use `medium` or `high` quality for small text, dense infographics, data-heavy slides, 
+multi-font layouts, legends, axes, and footnotes.
+
+## Input images and references
+- Do not assume that every provided image is an edit target.
+- Label each image by index and role (`Image 1: edit target`, `Image 2: style reference`).
+- If the user provides images for style, composition, or mood guidance and does not ask to modify them, treat the 
+request as generation with references.
+- If the user asks to preserve an existing image while changing specific parts, treat the request as an edit.
+- For compositing, describe how the images interact (`place the subject from Image 2 into Image 1`).
+
+## Iterate deliberately
+- Start with a clean base prompt, then make small single-change edits.
+- Re-specify critical constraints when you iterate.
+- Prefer one targeted follow-up at a time over rewriting the whole prompt.
+
+## Transparent images
+- Ask built-in `image_gen` for a genuinely transparent background and preserve its alpha.
+
+## Fallback-only execution controls
+- `quality`, `input_fidelity`, explicit masks, output format, and output paths are fallback-only execution controls.
+- Do not assume they are built-in `image_gen` tool arguments.
+- If the user explicitly chooses CLI fallback, see `references/cli.md` and `references/image-api.md` for those 
+controls.
+- In CLI fallback mode, `gpt-image-2` is the default. It supports `quality=low|medium|high|auto`; use `low` for fast 
+drafts and thumbnails, and move to `medium`, `high`, or `auto` for final assets.
+- `gpt-image-2` always uses high fidelity for image inputs, so do not set `input_fidelity` with that model.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user 
+explicitly requested that model.
+- If the user asks for 4K-style output with `gpt-image-2`, use `3840x2160` for landscape or `2160x3840` for portrait.
+
+## Use-case tips
+Generate:
+- photorealistic-natural: Prompt as if a real photo is captured in the moment; use photography language (lens, 
+lighting, framing); call for real texture; avoid over-stylized polish unless requested.
+- product-mockup: Describe the product/packaging and materials; ensure clean silhouette and label clarity; if in-image 
+text is needed, require verbatim rendering and specify typography.
+- ui-mockup: Describe the target fidelity first (shippable mockup or low-fi wireframe), then focus on layout, 
+hierarchy, and practical UI elements; avoid concept-art language.
+- infographic-diagram: Define the audience and layout flow; label parts explicitly; require verbatim text; prefer 
+higher quality in CLI mode for dense labels.
+- logo-brand: Keep it simple and scalable; ask for a strong silhouette and balanced negative space; avoid decorative 
+flourishes unless requested.
+- ads-marketing: Write like a creative brief; include brand positioning, audience, desired vibe, scene, and exact 
+tagline if text must appear.
+- productivity-visual: Name the exact artifact (slide, chart, workflow diagram), define the canvas and hierarchy, 
+provide real labels/data, and ask for readable typography and polished spacing.
+- scientific-educational: Define audience, lesson objective, required labels, scientific constraints, arrows, and 
+scan-friendly whitespace.
+- illustration-story: Define panels or scene beats; keep each action concrete.
+- stylized-concept: Specify style cues, material finish, and rendering approach (3D, painterly, clay) without 
+inventing new story elements.
+- historical-scene: State the location/date and required period accuracy; constrain clothing, props, and environment 
+to match the era.
+
+Edit:
+- text-localization: Change only the text; preserve layout, typography, spacing, and hierarchy; no extra words or 
+reflow unless needed.
+- identity-preserve: Lock identity (face, body, pose, hair, expression); change only the specified elements; match 
+lighting and shadows.
+- precise-object-edit: Specify exactly what to remove/replace; preserve surrounding texture and lighting; keep 
+everything else unchanged.
+- lighting-weather: Change only environmental conditions (light, shadows, atmosphere, precipitation); keep geometry, 
+framing, and subject identity.
+- background-extraction: Request a clean cutout on a genuinely transparent background; preserve fine edges and label 
+text; no halos or restyling.
+- style-transfer: Specify style cues to preserve (palette, texture, brushwork) and what must change; add `no extra 
+elements` to prevent drift.
+- compositing: Reference inputs by index; specify what moves where; match lighting, perspective, and scale; keep the 
+base framing unchanged.
+- sketch-to-render: Preserve layout, proportions, and perspective; choose materials and lighting that support the 
+supplied sketch without adding new elements.
+
+## Where to find copy/paste recipes
+For copy/paste prompt specs (examples only), see `references/sample-prompts.md`. This file focuses on principles, 
+specificity, and iteration patterns.
+
+
+codex
+The project guidance specifically warns that north-facing (back-view) regenerations must not use an existing faulty 
+north strip; this request follows that rule. IΓÇÖm now generating one 3├ù2 sheet with fixed torso/pelvis anchors, 
+explicit per-cell gait phases, a shared baseline in each row, and strict bans on front-only features and weapons.
+codex
+The generated sheet has the correct rear view, empty hands, six cells, and alternating leg lifts. It was returned at 
+1536├ù1024, so IΓÇÖm preserving the artwork while enlarging it 2├ù to the requested production scale (about 900 pixels 
+per figure), then IΓÇÖll verify the final fileΓÇÖs dimensions, background color, pose distinctness, and alignment.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'magick -version' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n_hires
+ exited 1 in 965ms:
+magick : The term 'magick' is not recognized as the name of a cmdlet, function, script file, or operable program. 
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:2 char:1
++ magick -version
++ ~~~~~~
+    + CategoryInfo          : ObjectNotFound: (magick:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; p=r'C:\\U
+sers\\asali\\.codex\\generated_images\\01a06b26-5374-7692-830a-5b020445581b\\exec-0e125d09-c491-4b45-95c4-49e7c55f95dc.
+png'; im=Image.open(p).convert('RGB'); print('size',im.size); pts=[im.getpixel((0,0)),im.getpixel((im.width//2,0)),im.g
+etpixel((0,im.height//2)),im.getpixel((im.width-1,im.height-1)),im.getpixel((im.width//2,im.height//2))]; 
+print('samples',pts); bg=[px for px in im.getdata() if px[1]>200 and px[1]>px[0]*2 and px[1]>px[2]*2]; 
+print('green_pixels',len(bg),'unique',len(set(bg)),'ranges',tuple((min(x[i] for x in bg),max(x[i] for x in bg)) for i 
+in range(3)))\"" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n_hires
+ succeeded in 2563ms:
+<string>:1: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
+get_flattened_data instead.
+size (1536, 1024)
+samples [(17, 239, 15), (7, 247, 7), (4, 247, 4), (19, 243, 12), (5, 247, 4)]
+green_pixels 1148684 unique 8861 ranges ((0, 107), (201, 255), (0, 92))
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; im=Image.
+open(r'C:\\Users\\asali\\.codex\\generated_images\\01a06b26-5374-7692-830a-5b020445581b\\exec-0e125d09-c491-4b45-95c4-4
+9e7c55f95dc.png').convert('RGB'); w,h=im.size; import numpy as np; a=np.asarray(im); 
+bg=(a[:,:,1]>150)&(a[:,:,1]>a[:,:,0]+70)&(a[:,:,1]>a[:,:,2]+70); fg=~bg; [(lambda ys,xs,i: print(i+1,(int(xs.min()),int
+(ys.min()),int(xs.max()+1),int(ys.max()+1)),'wh',(int(xs.max()-xs.min()+1),int(ys.max()-ys.min()+1))))(*np.where(fg[(i/
+/3)*h//2:(i//3+1)*h//2,(i%3)*w//3:(i%3+1)*w//3]),i) for i in range(6)]\"" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n_hires
+ succeeded in 1044ms:
+1 (157, 30, 425, 459) wh (268, 429)
+2 (99, 32, 368, 451) wh (269, 419)
+3 (46, 30, 315, 458) wh (269, 428)
+4 (158, 27, 427, 449) wh (269, 422)
+5 (99, 27, 369, 456) wh (270, 429)
+6 (47, 27, 315, 457) wh (268, 430)
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$code = @'"'
+from PIL import Image
+import numpy as np
+src = r'C:\\Users\\asali\\.codex\\generated_images\\01a06b26-5374-7692-830a-5b020445581b\\exec-0e125d09-c491-4b45-95c4-
+49e7c55f95dc.png'
+dst = r'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\boss_fix3_2026-09-03\\nullwar
+den__n_hires\\nullwarden_walk_n_grid.png'
+im = Image.open(src).convert('RGB')
+w, h = im.size
+cell_w, cell_h = w // 3, h // 2
+sheet = Image.new('RGB', (w, h), (0, 255, 0))
+for i in range(6):
+    col, row = i % 3, i // 3
+    cell = im.crop((col * cell_w, row * cell_h, (col + 1) * cell_w, (row + 1) * cell_h))
+    a = np.array(cell)
+    peak = np.maximum(a[:, :, 0], a[:, :, 2]).astype(np.float32)
+    bg = (a[:, :, 1] > 70) & (a[:, :, 1].astype(np.float32) > peak * 1.45)
+    a[bg] = (0, 255, 0)
+    mask_arr = (~bg).astype(np.uint8) * 255
+    ys, xs = np.where(mask_arr > 0)
+    box = (int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1)
+    art = Image.fromarray(a, 'RGB').crop(box)
+    mask = Image.fromarray(mask_arr, 'L').crop(box)
+    x = col * cell_w + (cell_w - art.width) // 2
+    y = row * cell_h + 470 - art.height
+    sheet.paste(art, (x, y), mask)
+final = sheet.resize((w * 2, h * 2), Image.Resampling.NEAREST)
+final.save(dst, format='PNG', optimize=True)
+print(dst)
+print(final.size)
+'@
+python -c "'$code' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n_hires
+ succeeded in 3390ms:
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n_hires\nullw
+arden_walk_n_grid.png
+(3072, 2048)
+
+codex
+Visual inspection shows the six lower bodies are distinct, but IΓÇÖm checking the tiny donor at enlarged scale before 
+I write the frame-by-frame joint report, because ΓÇ£leftΓÇ¥ and ΓÇ£rightΓÇ¥ must be anatomical sides from the back 
+viewΓÇönot screen-relative guesses.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$code = @'"'
+from PIL import Image, ImageDraw
+src=r'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\boss_fix3_2026-09-03\\nullwarde
+n__n_hires\\refs\\2_gait_donor.png'
+dst=r'C:\\Users\\asali\\.codex\\generated_images\\donor_gait_review.png'
+im=Image.open(src).convert('RGB')
+w,h=im.size
+cw=w//6
+out=Image.new('RGB',(1536,1024),(0,255,0))
+for i in range(6):
+    x0=i*cw
+    x1=(i+1)*cw if i<5 else w
+    c=im.crop((x0,0,x1,h))
+    # crop the central figure region while retaining feet
+    c=c.crop((max(0,c.width//2-70),5,min(c.width,c.width//2+70),185))
+    c=c.resize((280,360),Image.Resampling.NEAREST)
+    col,row=i%3,i//3
+    out.paste(c,(col*512+116,row*512+90))
+out.save(dst)
+print(dst)
+'@
+python -c "'$code' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n_hires
+ succeeded in 811ms:
+C:\Users\asali\.codex\generated_images\donor_gait_review.png
+
+codex
+The first renderΓÇÖs armor and layout are strong, but the leg lead repeats on the same side across the row break, 
+which violates the required left/right half-cycle. The image-generation workflow calls for a targeted correction here, 
+so IΓÇÖm preserving the rear-view armor and changing only the lower-body choreography to make frames 1ΓÇô3 one legΓÇÖs 
+step and frames 4ΓÇô6 its exact opposite.
+codex
+The correction produced the needed opposite-side poses but returned them in alternating cells. IΓÇÖm doing a 
+layout-only phase reorderΓÇöwithout redrawing or mirroring any equipmentΓÇöso the top row contains the three right-leg 
+phases and the bottom row the three left-leg phases. Then IΓÇÖll lock every cell to its center and shared baseline, 
+flatten the key color to exact `#00ff00`, and save the final 3072├ù2048 PNG.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$code = @'"'
+from PIL import Image
+import numpy as np
+src = r'C:\\Users\\asali\\.codex\\generated_images\\01a06b26-5374-7692-830a-5b020445581b\\exec-d5210b95-934f-432e-875b-
+5d08c66049fb.png'
+dst = r'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\boss_fix3_2026-09-03\\nullwar
+den__n_hires\\nullwarden_walk_n_grid.png'
+im = Image.open(src).convert('RGB')
+w, h = im.size
+cell_w, cell_h = w // 3, h // 2
+# Source frames reordered into coherent half-cycles: right-leg phases, then left-leg phases.
+order = [2, 0, 4, 3, 1, 5]
+sheet = Image.new('RGB', (w, h), (0, 255, 0))
+for target_i, source_i in enumerate(order):
+    scol, srow = source_i % 3, source_i // 3
+    cell = im.crop((scol * cell_w, srow * cell_h, (scol + 1) * cell_w, (srow + 1) * cell_h))
+    a = np.array(cell)
+    peak = np.maximum(a[:, :, 0], a[:, :, 2]).astype(np.float32)
+    bg = (a[:, :, 1] > 70) & (a[:, :, 1].astype(np.float32) > peak * 1.45)
+    a[bg] = (0, 255, 0)
+    mask_arr = (~bg).astype(np.uint8) * 255
+    ys, xs = np.where(mask_arr > 0)
+    box = (int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1)
+    art = Image.fromarray(a, 'RGB').crop(box)
+    mask = Image.fromarray(mask_arr, 'L').crop(box)
+    tcol, trow = target_i % 3, target_i // 3
+    x = tcol * cell_w + (cell_w - art.width) // 2
+    y = trow * cell_h + 470 - art.height
+    sheet.paste(art, (x, y), mask)
+final = sheet.resize((w * 2, h * 2), Image.Resampling.NEAREST)
+final.save(dst, format='PNG', optimize=True)
+print(dst)
+print('size', final.size)
+'@
+python -c "'$code' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n_hires
+ succeeded in 3120ms:
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n_hires\nullw
+arden_walk_n_grid.png
+size (3072, 2048)
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$code = @'"'
+from PIL import Image
+import numpy as np, hashlib, os
+p=r'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\boss_fix3_2026-09-03\\nullwarden_
+_n_hires\\nullwarden_walk_n_grid.png'
+im=Image.open(p).convert('RGB')
+a=np.array(im)
+w,h=im.size
+print('file_bytes',os.path.getsize(p),'size',im.size,'mode',im.mode)
+print('sha256',hashlib.sha256(open(p,'rb').read()).hexdigest())
+print('corner_colors',a[0,0].tolist(),a[0,-1].tolist(),a[-1,0].tolist(),a[-1,-1].tolist())
+print('exact_green_pixels',int(np.all(a==[0,255,0],axis=2).sum()),'total',w*h)
+for i in range(6):
+    col,row=i%3,i//3
+    c=a[row*h//2:(row+1)*h//2,col*w//3:(col+1)*w//3]
+    fg=~np.all(c==[0,255,0],axis=2)
+    ys,xs=np.where(fg)
+    bbox=(int(xs.min()),int(ys.min()),int(xs.max()+1),int(ys.max()+1))
+    print('frame',i+1,'bbox',bbox,'center_x',(bbox[0]+bbox[2])/2,'bottom',bbox[3],'height',bbox[3]-bbox[1])
+'@
+python -c "'$code' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n_hires
+ succeeded in 2326ms:
+file_bytes 1149659 size (3072, 2048) mode RGB
+sha256 9e09f3b46733435d4ee85d61633bb71b245ffae278fec4b94672d985b0e55f30
+corner_colors [0, 255, 0] [0, 255, 0] [0, 255, 0] [0, 255, 0]
+exact_green_pixels 4625420 total 6291456
+frame 1 bbox (244, 86, 778, 940) center_x 511.0 bottom 940 height 854
+frame 2 bbox (244, 86, 780, 940) center_x 512.0 bottom 940 height 854
+frame 3 bbox (244, 96, 778, 940) center_x 511.0 bottom 940 height 844
+frame 4 bbox (242, 84, 780, 940) center_x 511.0 bottom 940 height 856
+frame 5 bbox (248, 102, 774, 940) center_x 511.0 bottom 940 height 838
+frame 6 bbox (244, 84, 780, 940) center_x 512.0 bottom 940 height 856
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; import 
+numpy as np; a=np.array(Image.open(r'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\
+boss_fix3_2026-09-03\\nullwarden__n_hires\\nullwarden_walk_n_grid.png').convert('RGB')); 
+peak=np.maximum(a[:,:,0],a[:,:,2]).astype(float); gd=(a[:,:,1]>70)&(a[:,:,1].astype(float)>peak*1.45); 
+exact=np.all(a==[0,255,0],axis=2); print('green_dominant_nonexact',int((gd&~exact).sum()))\"" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n_hires
+ succeeded in 1545ms:
+green_dominant_nonexact 0
+
+codex
+Saved [nullwarden_walk_n_grid.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2
+026-09-03\nullwarden__n_hires\nullwarden_walk_n_grid.png) at 3072├ù2048 with an exact `#00ff00` background.
+
+- Frame 1: left leg leads/plants; left knee slight. Right trails; right knee clear, ankle clear.
+- Frame 2: left leg bears weight; left knee clear. Right passes; right knee deep, ankle clear.
+- Frame 3: right leg swings toward the next lead; right knee clear. Left remains planted with slight knee bend.
+- Frame 4: right leg leads/plants; right knee slight. Left trails; left knee clear, ankle clear.
+- Frame 5: right leg bears weight; right knee clear. Left passes; left knee deep, ankle clear.
+- Frame 6: left leg swings toward the next lead; left knee clear. Right remains planted with slight knee bend.
+
+No repeated lower-body pose; frames 2 and 5 are intentional opposite-leg counterparts. All figures are cell-centred 
+within 1 pixel and share the same baseline. Scale is constant; visible height varies slightly from 838ΓÇô856 pixels 
+due to knee compression.
+
+Generated with built-in ImageGen using reference 1 strictly for identity/equipment and reference 2 strictly for gait 
+choreography.
+tokens used
+67,980
+Saved [nullwarden_walk_n_grid.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\nullwarden__n_hires\nullwarden_walk_n_grid.png) at 3072├ù2048 with an exact `#00ff00` background.
+
+- Frame 1: left leg leads/plants; left knee slight. Right trails; right knee clear, ankle clear.
+- Frame 2: left leg bears weight; left knee clear. Right passes; right knee deep, ankle clear.
+- Frame 3: right leg swings toward the next lead; right knee clear. Left remains planted with slight knee bend.
+- Frame 4: right leg leads/plants; right knee slight. Left trails; left knee clear, ankle clear.
+- Frame 5: right leg bears weight; right knee clear. Left passes; left knee deep, ankle clear.
+- Frame 6: left leg swings toward the next lead; left knee clear. Right remains planted with slight knee bend.
+
+No repeated lower-body pose; frames 2 and 5 are intentional opposite-leg counterparts. All figures are cell-centred within 1 pixel and share the same baseline. Scale is constant; visible height varies slightly from 838ΓÇô856 pixels due to knee compression.
+
+Generated with built-in ImageGen using reference 1 strictly for identity/equipment and reference 2 strictly for gait choreography.
