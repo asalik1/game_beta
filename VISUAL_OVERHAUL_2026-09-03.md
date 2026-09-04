@@ -96,9 +96,22 @@ generated with the documented walk-plus-firing-arm technique and installed
 
 ## Open / not done
 
-- **Mage E column** (anim/walk/attack/cast) is a FRONT view wearing the E
-  name — regen queued (`tools/art/profile_clip_briefs.py`).
-- Paladin north walk regen queued (see above).
+- **Mage E column DONE**: anim/walk/attack/cast E regenerated as a true right
+  profile (`tools/art/profile_clip_briefs.py`; identity = her front idle, view
+  ref = blighted_healer's profile idle, action = the old clip frame by frame),
+  W = per-cell mirror. Her walk_e reads at stride 0.14 bodies/cycle — the same
+  marching-in-place family as every hero walk (assassin 0.22, archer 0.22),
+  which the owner ruled to keep at 14 fps; travel GIF old-vs-new in
+  `~/Downloads/travel_gifs_visual_overhaul/mage_walk_e_old_vs_new_travel.gif`.
+  Her `attack_walk_e` was built from the OLD front-facing walk — regen from the
+  new profile walk queued (`art_src/mage_aw_2026-09-04`, chain_aw.sh).
+- **Paladin north walk**: main's strip was an 8-figure row saved 6 cells wide
+  (every cell showed 1⅓ paladins). Fixed by re-slicing main's own row at its
+  real gutters into 8 cells (the owner's OLD-cycle ruling kept — no regen
+  installed; `walk_b_n` = byte copy). Two frames swing the shield out from the
+  body; that is authored, not a tear. A gait-transfer regen row was also
+  produced (`art_src/paladin_n_2026-09-03/paladin__n`) as a spare — owner's
+  call whether to prefer it.
 - Base warrior walk E/W: the flaming blade degenerates frame to frame
   (classwalk P1) — not addressed.
 - Base warlock walk E/W: hood turns to camera vs the profile idle (P1) — not addressed.
