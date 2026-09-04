@@ -1,0 +1,7 @@
+{
+ "base": "mage",
+ "clip": "attack",
+ "facing": "e",
+ "frames": 7,
+ "old": "mage_attack_e.png"
+}

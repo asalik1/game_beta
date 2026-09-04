@@ -1,0 +1,7 @@
+{
+ "base": "mage",
+ "clip": "anim",
+ "facing": "e",
+ "frames": 5,
+ "old": "mage_anim_e.png"
+}

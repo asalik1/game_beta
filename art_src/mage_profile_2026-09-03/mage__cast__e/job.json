@@ -1,0 +1,7 @@
+{
+ "base": "mage",
+ "clip": "cast",
+ "facing": "e",
+ "frames": 7,
+ "old": "mage_cast_e.png"
+}

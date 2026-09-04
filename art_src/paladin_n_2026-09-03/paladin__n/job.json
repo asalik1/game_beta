@@ -1,0 +1,15 @@
+{
+ "base": "paladin",
+ "facing": "n",
+ "arch": "biped_heavy",
+ "frames": 8,
+ "heavy": true,
+ "faces_left": false,
+ "desc": "a paladin walking AWAY from the viewer: a broad man in full silver plate armour with gold trim, seen from behind -- the back of a dark-haired head (no face), wide pauldrons, a blue tabard with gold edging hanging down the back over the armoured legs, a round shield with a gold cross strapped to the LEFT arm (on the viewer's RIGHT in this back view) and hanging at his side, a mace in the right hand (viewer's left), heavy plate boots",
+ "defect": "the current strip is mis-sliced -- every frame holds one and a third figures",
+ "style": "painterly, soft-shaded, no black outlines, muted palette (the hero house style)",
+ "idle_ref": "paladin_anim_n",
+ "donor": "skins/elite/warrior_emberbound_heir_walk_n",
+ "donor_flipped": false,
+ "refs": 2
+}

@@ -1,0 +1,7 @@
+{
+ "base": "mage",
+ "clip": "walk",
+ "facing": "e",
+ "frames": 7,
+ "old": "mage_walk_e.png"
+}
