@@ -85,7 +85,7 @@ def old_geometry(old: Path) -> tuple[int, int, int]:
     return cell, int(np.median(bodies)), int(feet0)
 
 
-def slice_row(rgba: np.ndarray, frames: int | None, gutters: bool) -> list[np.ndarray]:
+def slice_row(rgba: np.ndarray, frames: int | None, gutters: bool, gap: int = 4) -> list[np.ndarray]:
     a = rgba[:, :, 3] > A_SOLID
     cols = a.any(axis=0)
     if gutters:
@@ -100,7 +100,7 @@ def slice_row(rgba: np.ndarray, frames: int | None, gutters: bool) -> list[np.nd
             runs.append([start, len(cols) - 1])
         merged = []
         for r in runs:
-            if merged and r[0] - merged[-1][1] <= 4:
+            if merged and r[0] - merged[-1][1] <= gap:
                 merged[-1][1] = r[1]
             else:
                 merged.append(r)
@@ -182,12 +182,12 @@ def sweep_orphans(cell_rgba: np.ndarray, edge_zone: int) -> np.ndarray:
 
 def build(row: Path, cell: int, body_target: int, feet_y: int, frames: int | None,
           gutters: bool, anchor: str, flip: bool, orphans: bool,
-          report: bool) -> Image.Image:
+          report: bool, gap: int = 4) -> Image.Image:
     im = Image.open(row)
     if flip:
         im = im.transpose(Image.FLIP_LEFT_RIGHT)
     rgba = key_and_despill(im)
-    cells = slice_row(rgba, frames, gutters)
+    cells = slice_row(rgba, frames, gutters, gap)
     if orphans:
         zone = max(6, int(cells[0].shape[1] * 0.14))
         cells = [sweep_orphans(c, zone) for c in cells]
@@ -258,6 +258,7 @@ def main() -> int:
     ap.add_argument("--copy-out", action="append", default=[], help="byte-copy destination(s)")
     ap.add_argument("--frames", type=int, default=None)
     ap.add_argument("--gutters", action="store_true", help="slice at real gutters, not equal width")
+    ap.add_argument("--gutter-gap", type=int, default=4, help="content runs closer than this merge into one figure (a shield held off the body)")
     ap.add_argument("--anchor", choices=["torso", "centroid", "bbox"], default="torso")
     ap.add_argument("--flip", action="store_true", help="mirror the row before install")
     ap.add_argument("--no-tone", action="store_true")
@@ -271,7 +272,7 @@ def main() -> int:
     cell, body, feet = old_geometry(old)
     print(f"old {old.name}: cell {cell} body {body} feet {feet}")
     strip = build(Path(args.row), cell, body, feet, args.frames, args.gutters, args.anchor,
-                  args.flip, not args.no_orphans, args.report)
+                  args.flip, not args.no_orphans, args.report, args.gutter_gap)
     if not args.no_tone:
         strip = tone_match(strip, old)
     mirrored = mirror_strip(strip, cell)

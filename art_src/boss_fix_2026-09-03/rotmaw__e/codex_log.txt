@@ -1319,3 +1319,220 @@ $bmp.Save($temp,[System.Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose(); Copy
 $target -Force; Remove-Item -LiteralPath $temp; Write-Output "Saved and normalized bright backdrop pixels: $changed"; 
 Get-Item -LiteralPath $target | Select-Object FullName,Length' in 
 C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix_2026-09-03\rotmaw__e
+ succeeded in 27852ms:
+Saved and normalized bright backdrop pixels: 1228680
+
+FullName                                                                                                               
+--------                                                                                                               
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix_2026-09-03\rotmaw__e\rotmaw_walk_e...
+
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; 
+$img=[System.Drawing.Bitmap]::FromFile((Resolve-Path '"'.\\rotmaw_walk_e_row.png')); 
+"'$rect=[System.Drawing.Rectangle]::new(0,0,$img.Width,$img.Height); $data=$img.LockBits($rect,[System.Drawing.Imaging.
+ImageLockMode]::ReadOnly,[System.Drawing.Imaging.PixelFormat]::Format32bppArgb); $stride=[Math]::Abs($data.Stride); 
+[byte[]]$bytes=New-Object byte[] ($stride*$img.Height); 
+[Runtime.InteropServices.Marshal]::Copy($data.Scan0,$bytes,0,$bytes.Length); $img.UnlockBits($data); $out=@(); 
+for($f=0;$f-lt6;$f++){ $x0=[int][Math]::Floor($f*$img.Width/6);$x1=[int][Math]::Floor(($f+1)*$img.Width/6)-1;$minx=$img
+.Width;$maxx=-1;$miny=$img.Height;$maxy=-1;$n=0; for($y=0;$y-lt$img.Height;$y++){ $row=$y*$stride; 
+for($x=$x0;$x-le$x1;$x++){ $i=$row+4*$x; 
+if(-not($bytes[$i]-eq0-and$bytes[$i+1]-eq255-and$bytes[$i+2]-eq0-and$bytes[$i+3]-eq255)){ 
+$n++;if($x-lt$minx){$minx=$x};if($x-gt$maxx){$maxx=$x};if($y-lt$miny){$miny=$y};if($y-gt$maxy){$maxy=$y} } } }; $out+=[
+pscustomobject]@{Frame=$f+1;BBox="$minx,$miny-$maxx,$maxy";Width=$maxx-$minx+1;Height=$maxy-$miny+1;Baseline=$maxy;Cent
+erOffset=[Math]::Round((($minx+$maxx)/2.0)-(($x0+$x1)/2.0),1);ForegroundPx=$n} }; $borderNonGreen=0; 
+for($y=0;$y-lt100;$y++){for($x=0;$x-lt$img.Width;$x++){ $i=$y*$stride+4*$x;if(-not($bytes[$i]-eq0-and$bytes[$i+1]-eq255
+-and$bytes[$i+2]-eq0-and$bytes[$i+3]-eq255)){$borderNonGreen++}}}; 
+[pscustomobject]@{Image="$($img.Width)x$($img.Height)";TopMarginNonGreen=$borderNonGreen}; $out|Format-Table 
+-AutoSize; $img.Dispose()' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix_2026-09-03\rotmaw__e
+ succeeded in 17086ms:
+
+Image    TopMarginNonGreen
+-----    -----------------
+2172x724                 0
+
+
+
+Frame BBox              Width Height Baseline CenterOffset ForegroundPx
+----- ----              ----- ------ -------- ------------ ------------
+    1 47,168-348,573      302    406      573           17        63021
+    2 469,168-708,573     240    406      573           46        55776
+    3 824,168-1041,573    218    406      573           28        52632
+    4 1137,168-1414,573   278    406      573            9        60703
+    5 1512,168-1754,576   243    409      576          4.5        56432
+    6 1857,171-2097,575   241    405      575        -13.5        55251
+
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; 
+$img=[System.Drawing.Bitmap]::FromFile((Resolve-Path '"'.\\rotmaw_walk_e_row.png')); 
+"'$rect=[System.Drawing.Rectangle]::new(0,0,$img.Width,$img.Height); $data=$img.LockBits($rect,[System.Drawing.Imaging.
+ImageLockMode]::ReadOnly,[System.Drawing.Imaging.PixelFormat]::Format32bppArgb);$stride=[Math]::Abs($data.Stride);[byte
+[]]$b=New-Object byte[]($stride*$img.Height);[Runtime.InteropServices.Marshal]::Copy($data.Scan0,$b,0,$b.Length);$img.U
+nlockBits($data);for($f=0;$f-lt6;$f++){ $x0=[int][Math]::Floor($f*$img.Width/6);$x1=[int][Math]::Floor(($f+1)*$img.Widt
+h/6)-1;$sum=0.0;$n=0;for($y=168;$y-le380;$y++){for($x=$x0;$x-le$x1;$x++){ $i=$y*$stride+4*$x;if(-not($b[$i]-eq0-and$b[$
+i+1]-eq255-and$b[$i+2]-eq0-and$b[$i+3]-eq255)){$sum+=$x;$n++}}};$center=($x0+$x1)/2.0;[pscustomobject]@{Frame=$f+1;Uppe
+rBodyCentroid=[Math]::Round($sum/$n,1);CellCenter=$center;Offset=[Math]::Round($sum/$n-$center,1)}};$img.Dispose()' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix_2026-09-03\rotmaw__e
+ succeeded in 4832ms:
+
+Frame UpperBodyCentroid CellCenter Offset
+----- ----------------- ---------- ------
+    1               188      180.5    7.5
+    2               563      542.5   20.5
+    3             914.3      904.5    9.8
+    4              1262     1266.5   -4.5
+    5            1609.5     1628.5    -19
+    6            1948.8     1990.5  -41.7
+
+
+
+codex
+The revised art now has the intended wide/contact and passing phases, but measurement caught residual placement drift 
+across the row. IΓÇÖm applying lossless whole-frame pixel translations onlyΓÇöno redrawΓÇöto center each upper body 
+and put every foot baseline at exactly y=573.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; 
+$target=(Resolve-Path '"'.\\rotmaw_walk_e_row.png').Path; "'$temp=Join-Path (Split-Path -Parent $target) 
+'"'rotmaw_walk_e_row.__align.png'; "'$src=[System.Drawing.Bitmap]::FromFile($target); 
+$rect=[System.Drawing.Rectangle]::new(0,0,$src.Width,$src.Height); $sd=$src.LockBits($rect,[System.Drawing.Imaging.Imag
+eLockMode]::ReadOnly,[System.Drawing.Imaging.PixelFormat]::Format32bppArgb); $stride=[Math]::Abs($sd.Stride); 
+[byte[]]$in=New-Object byte[]($stride*$src.Height); 
+[Runtime.InteropServices.Marshal]::Copy($sd.Scan0,$in,0,$in.Length); $src.UnlockBits($sd); [byte[]]$out=New-Object 
+byte[]($stride*$src.Height); for($y=0;$y-lt$src.Height;$y++){for($x=0;$x-lt$src.Width;$x++){ 
+$i=$y*$stride+4*$x;$out[$i]=0;$out[$i+1]=255;$out[$i+2]=0;$out[$i+3]=255 }}; 
+$dx=@(-8,-21,-10,5,19,42);$dy=@(0,0,0,0,-3,-2);for($f=0;$f-lt6;$f++){ $x0=[int][Math]::Floor($f*$src.Width/6);$x1=[int]
+[Math]::Floor(($f+1)*$src.Width/6)-1;for($y=0;$y-lt$src.Height;$y++){for($x=$x0;$x-le$x1;$x++){ 
+$i=$y*$stride+4*$x;if(-not($in[$i]-eq0-and$in[$i+1]-eq255-and$in[$i+2]-eq0-and$in[$i+3]-eq255)){ $nx=$x+$dx[$f];$ny=$y+
+$dy[$f];if($nx-ge$x0-and$nx-le$x1-and$ny-ge0-and$ny-lt$src.Height){$j=$ny*$stride+4*$nx;$out[$j]=$in[$i];$out[$j+1]=$in
+[$i+1];$out[$j+2]=$in[$i+2];$out[$j+3]=$in[$i+3]}}}}}; $dst=[System.Drawing.Bitmap]::new($src.Width,$src.Height,[System
+.Drawing.Imaging.PixelFormat]::Format32bppArgb);$dd=$dst.LockBits($rect,[System.Drawing.Imaging.ImageLockMode]::WriteOn
+ly,[System.Drawing.Imaging.PixelFormat]::Format32bppArgb);[Runtime.InteropServices.Marshal]::Copy($out,0,$dd.Scan0,$out
+.Length);$dst.UnlockBits($dd);$dst.Save($temp,[System.Drawing.Imaging.ImageFormat]::Png);$dst.Dispose();$src.Dispose();
+Copy-Item -LiteralPath $temp -Destination $target -Force;Remove-Item -LiteralPath $temp;Write-Output '"'Aligned 
+frames: dx=-8,-21,-10,+5,+19,+42; dy=0,0,0,0,-3,-2'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix_2026-09-03\rotmaw__e
+ succeeded in 36546ms:
+Aligned frames: dx=-8,-21,-10,+5,+19,+42; dy=0,0,0,0,-3,-2
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Item -LiteralPath 
+'.\\rotmaw_walk_e_row.png' | Select-Object FullName,Length,LastWriteTime; Test-Path -LiteralPath 
+'.\\rotmaw_walk_e_row.__align.png'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix_2026-09-03\rotmaw__e
+ succeeded in 519ms:
+
+FullName                                                                                                               
+--------                                                                                                               
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix_2026-09-03\rotmaw__e\rotmaw_walk_e...
+False
+
+
+
+codex
+The final strip is now visually centered and all six characters remain intact at the same scale. IΓÇÖm doing the last 
+read-only verification pass for exact frame count, margins, baseline, bounds, and duplicate lower-body silhouettes, 
+then IΓÇÖll report the six gait phases.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; 
+$path=(Resolve-Path '"'.\\rotmaw_walk_e_row.png').Path;"'$img=[System.Drawing.Bitmap]::FromFile($path);$rect=[System.Dr
+awing.Rectangle]::new(0,0,$img.Width,$img.Height);$d=$img.LockBits($rect,[System.Drawing.Imaging.ImageLockMode]::ReadOn
+ly,[System.Drawing.Imaging.PixelFormat]::Format32bppArgb);$stride=[Math]::Abs($d.Stride);[byte[]]$b=New-Object byte[]($
+stride*$img.Height);[Runtime.InteropServices.Marshal]::Copy($d.Scan0,$b,0,$b.Length);$img.UnlockBits($d);$minx=@($img.W
+idth)*6;$maxx=@(-1)*6;$miny=@($img.Height)*6;$maxy=@(-1)*6;$count=@(0)*6;$sumx=@(0.0)*6;$uppern=@(0)*6;$topMargin=0;for
+($y=0;$y-lt$img.Height;$y++){for($x=0;$x-lt$img.Width;$x++){ $i=$y*$stride+4*$x;$fg=-not($b[$i]-eq0-and$b[$i+1]-eq255-a
+nd$b[$i+2]-eq0-and$b[$i+3]-eq255);if($fg){if($y-lt100){$topMargin++};$f=[Math]::Min(5,[int][Math]::Floor($x*6/$img.Widt
+h));$count[$f]++;if($x-lt$minx[$f]){$minx[$f]=$x};if($x-gt$maxx[$f]){$maxx[$f]=$x};if($y-lt$miny[$f]){$miny[$f]=$y};if(
+$y-gt$maxy[$f]){$maxy[$f]=$y};if($y-ge150-and$y-le380){$sumx[$f]+=$x;$uppern[$f]++}}}};Write-Output "File: 
+$path";Write-Output "Canvas: $($img.Width)x$($img.Height); equal cells: $([Math]::Round($img.Width/6,0)) px; top 100px 
+non-green: $topMargin";for($f=0;$f-lt6;$f++){ $x0=[int][Math]::Floor($f*$img.Width/6);$x1=[int][Math]::Floor(($f+1)*$im
+g.Width/6)-1;$cc=($x0+$x1)/2.0;$uc=$sumx[$f]/$uppern[$f];[pscustomobject]@{Frame=$f+1;BBox="$($minx[$f]),$($miny[$f])-$
+($maxx[$f]),$($maxy[$f])";Size="$(($maxx[$f]-$minx[$f]+1))x$(($maxy[$f]-$miny[$f]+1))";Baseline=$maxy[$f];UpperBodyOffs
+et=[Math]::Round($uc-$cc,1);Pixels=$count[$f]}};$sha=(Get-FileHash -Algorithm SHA256 -LiteralPath 
+$path).Hash;Write-Output "SHA256: $sha";$img.Dispose()' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix_2026-09-03\rotmaw__e
+ succeeded in 20892ms:
+File: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix_2026-09-03\rotmaw__e\rotmaw_wal
+k_e_row.png
+Canvas: 2172x724; equal cells: 362 px; top 100px non-green: 0
+
+
+Frame           : 1
+BBox            : 39,168-340,573
+Size            : 302x406
+Baseline        : 573
+UpperBodyOffset : -0.5
+Pixels          : 63021
+
+Frame           : 2
+BBox            : 448,168-687,573
+Size            : 240x406
+Baseline        : 573
+UpperBodyOffset : -0.5
+Pixels          : 55776
+
+Frame           : 3
+BBox            : 814,168-1031,573
+Size            : 218x406
+Baseline        : 573
+UpperBodyOffset : -0.2
+Pixels          : 52632
+
+Frame           : 4
+BBox            : 1142,168-1419,573
+Size            : 278x406
+Baseline        : 573
+UpperBodyOffset : 0.5
+Pixels          : 60703
+
+Frame           : 5
+BBox            : 1531,165-1773,573
+Size            : 243x409
+Baseline        : 573
+UpperBodyOffset : -0.1
+Pixels          : 56432
+
+Frame           : 6
+BBox            : 1899,169-2139,573
+Size            : 241x405
+Baseline        : 573
+UpperBodyOffset : 0.4
+Pixels          : 55251
+
+SHA256: D84FAACF1B664BF4BA4994265E07EAE14BCECC5979C742DC4B5DB22CF32CD79F
+
+
+
+codex
+Saved [rotmaw_walk_e_row.png](C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/boss_fix_2026-09
+-03/rotmaw__e/rotmaw_walk_e_row.png).
+
+- Frame 1: near leg leads heel-first; both knees clearly bent, rear ankle deeply bent at toe-off.
+- Frame 2: near leg leads under load; near knee deeply bent, far swing knee clearly bent.
+- Frame 3: far leg passes in front; far knee deeply bent, near supporting knee clearly bent.
+- Frame 4: far leg leads heel-first; both knees clearly bent, near rear ankle deeply bent at toe-off.
+- Frame 5: far leg carries the load; far knee deeply bent, near swing knee deeply bent.
+- Frame 6: near leg passes in front; near knee deeply bent, far supporting knee clearly bent with clear toe-off.
+
+No repeated lower-body pose. Every baseline is exactly y=573. Upper bodies are cell-centred within 0.5 px and retain 
+constant scale; total silhouette height varies only 4 px from articulation.
+
+Generated with built-in ImageGen using the identity-preserving prompt, followed by the targeted frame-mapped gait 
+correction and exact `#00ff00` background normalization.
+tokens used
+81,772
+Saved [rotmaw_walk_e_row.png](C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/boss_fix_2026-09-03/rotmaw__e/rotmaw_walk_e_row.png).
+
+- Frame 1: near leg leads heel-first; both knees clearly bent, rear ankle deeply bent at toe-off.
+- Frame 2: near leg leads under load; near knee deeply bent, far swing knee clearly bent.
+- Frame 3: far leg passes in front; far knee deeply bent, near supporting knee clearly bent.
+- Frame 4: far leg leads heel-first; both knees clearly bent, near rear ankle deeply bent at toe-off.
+- Frame 5: far leg carries the load; far knee deeply bent, near swing knee deeply bent.
+- Frame 6: near leg passes in front; near knee deeply bent, far supporting knee clearly bent with clear toe-off.
+
+No repeated lower-body pose. Every baseline is exactly y=573. Upper bodies are cell-centred within 0.5 px and retain constant scale; total silhouette height varies only 4 px from articulation.
+
+Generated with built-in ImageGen using the identity-preserving prompt, followed by the targeted frame-mapped gait correction and exact `#00ff00` background normalization.
