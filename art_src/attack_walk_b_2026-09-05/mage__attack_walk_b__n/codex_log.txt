@@ -1,0 +1,2696 @@
+﻿codex.exe : Reading prompt from stdin...
+At line:7 char:14
++ ...    $brief | & $codex exec -C $d -s workspace-write --skip-git-repo-ch ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Reading prompt from stdin...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+OpenAI Codex v0.153.0
+--------
+workdir: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack
+_walk_b__n
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: danger-full-access
+reasoning effort: high
+reasoning summaries: none
+session id: 01a07110-df2f-7c41-b28f-754d95883ed7
+--------
+user
+Redraw this EXACT walk cycle (reference 1) with one change: the character fires
+its basic attack once during the stride.
+
+Reference 1 is the character's own 7-frame walk, away from the viewer (back to camera), frame by frame. Reproduce
+it EXACTLY: the same 7 frames, the same leg cycle and stride, the same crossing,
+the same garment, the same held equipment in the same hand, the same body height
+and width, the same palette. The legs are already correct -- do not redesign them.
+
+THE ONLY CHANGE: the FREE hand sweeps upward in a rising flick, fingers spread, ending above the shoulder -- keep it 
+clearly separate from the staff hand so the two never read as one. Spread the motion across the 7 frames so it starts,
+peaks around the middle and returns by the end, while the legs keep walking
+through their unchanged cycle.
+
+THE CHARACTER (unchanged from reference 1): a slender woman in a deep-blue hooded mage's robe with gold trim and a 
+gold sash, a long dark staff with a glowing blue-white crystal head held in one hand, dark boots below a CLOSED 
+floor-length hem.
+
+Hard requirements:
+- The feet stay PLANTED on the shared ground line exactly as reference 1 has them;
+  the body does not slide sideways within its cell.
+- The robe stays CLOSED and floor-length: no slit, no exposed legs, no bare
+  skin. The walk reads through the BOOTS alternating below the hem and the
+  hem swaying -- exactly as reference 1 shows it.
+- Draw NO projectile, arrow, knife, flame, bolt, spark or muzzle flash anywhere.
+  The game spawns the projectile itself; anything drawn here would double it.
+- Same body height and width in every frame; no frame is a copy of another.
+
+Produce ONE image: a horizontal row of EXACTLY 7 figures, evenly spaced, all feet
+on one shared ground line, each body near its cell's horizontal centre, green
+margins all round -- no figure touching an image edge or its neighbour. EVERY FIGURE
+IS THE SAME SIZE; if they will not fit at full size, make the image WIDER. Flat solid
+#00ff00 GREEN background, nothing else in the image.
+Generate ONE image and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__
+n\mage_attack_walk_b_n_row.png
+then stop.
+
+In your final message, report for each frame: which leg leads, and where the firing
+hand is. Confirm no projectile was drawn and the hem stayed closed.
+
+
+codex
+IΓÇÖm using the image-generation workflow to preserve the supplied seven-frame walk while changing only the free-hand 
+attack gesture. IΓÇÖll first load the repositoryΓÇÖs art rules and the image-editing instructions, then generate and 
+verify the saved sprite row.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 'CLAUDE.md'; 
+Get-Content -Raw -LiteralPath 'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'" in C:\Users\asali\Projec
+ts\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__n
+ succeeded in 403ms:
+Get-Content : Cannot find path 'CLAUDE.md' because it does not exist.
+At line:2 char:1
++ Get-Content -Raw -LiteralPath 'CLAUDE.md'; Get-Content -Raw -LiteralP ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (CLAUDE.md:String) [Get-Content], ItemNotFoundException
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, 
+illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new 
+image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset 
+rather than repo-native code or vector. Do not use when the task is better handled by editing existing 
+SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in 
+HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product 
+mockups, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for image generation, editing, and 
+transparent-image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for or confirms the 
+CLI/API/model path. Requires `OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- For transparent images, ask built-in `image_gen` for a transparent background and preserve the generated alpha.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`; ask the user first 
+unless they explicitly requested `gpt-image-1.5`.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate 
+assets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per 
+requested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires 
+`OPENAI_API_KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK 
+runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific 
+location is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before 
+finishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the 
+default `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling 
+versioned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, 
+compositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request 
+as **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images 
+generated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool 
+so the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit 
+CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or 
+variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and 
+needs many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; 
+distinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including transparent-output requests; fallback CLI only if 
+explicitly requested or confirmed.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with 
+`view_image` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, 
+use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic 
+that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative 
+requirements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, ask built-in `image_gen` for a transparent background and preserve the generated 
+alpha channel.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default 
+`$CODEX_HOME/generated_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or 
+references. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user 
+explicitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, 
+size, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and 
+whether the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Ask built-in `image_gen` for a genuinely transparent background and preserve its alpha.
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, 
+but do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra 
+labeled line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural ├óΓé¼ΓÇ¥ candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup ├óΓé¼ΓÇ¥ product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup ├óΓé¼ΓÇ¥ app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram ├óΓé¼ΓÇ¥ diagrams/infographics with structured layout and text.
+- scientific-educational ├óΓé¼ΓÇ¥ classroom explainers, scientific diagrams, and learning visuals with required labels 
+and accuracy constraints.
+- ads-marketing ├óΓé¼ΓÇ¥ campaign concepts and ad creatives with audience, brand position, scene, and exact 
+tagline/copy.
+- productivity-visual ├óΓé¼ΓÇ¥ slide, chart, workflow, and data-heavy business visuals.
+- logo-brand ├óΓé¼ΓÇ¥ logo/mark exploration, vector-friendly.
+- illustration-story ├óΓé¼ΓÇ¥ comics, children├óΓé¼Γäós book art, narrative scenes.
+- stylized-concept ├óΓé¼ΓÇ¥ style-driven concept art, 3D/stylized renders.
+- historical-scene ├óΓé¼ΓÇ¥ period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization ├óΓé¼ΓÇ¥ translate/replace in-image text, preserve layout.
+- identity-preserve ├óΓé¼ΓÇ¥ try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit ├óΓé¼ΓÇ¥ remove/replace a specific element (including interior swaps).
+- lighting-weather ├óΓé¼ΓÇ¥ time-of-day/season/atmosphere changes only.
+- background-extraction ├óΓé¼ΓÇ¥ transparent background / clean cutout. Ask built-in `image_gen` for actual 
+transparency.
+- style-transfer ├óΓé¼ΓÇ¥ apply reference style while changing subject/scene.
+- compositing ├óΓé¼ΓÇ¥ multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render ├óΓé¼ΓÇ¥ drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D/etc>
+Composition/framing: <wide/close/top-down; placement>
+Lighting/mood: <lighting + mood>
+Color palette: <palette notes>
+Materials/textures: <surface details>
+Text (verbatim): "<exact text>"
+Constraints: <must keep/must avoid>
+Avoid: <negative constraints>
+```
+
+Notes:
+- `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
+- `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which 
+controls output transparency behavior.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong 
+in the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+
+Augmentation rules:
+- Keep it short.
+- Add only the details needed to improve the prompt materially.
+- For edits, explicitly list invariants (`change only X; keep Y unchanged`).
+- If any critical detail is missing and blocks success, ask a question; otherwise proceed.
+
+## Examples
+
+### Generation example (hero image)
+```text
+Use case: product-mockup
+Asset type: landing page hero
+Primary request: a minimal hero image of a ceramic coffee mug
+Style/medium: clean product photography
+Composition/framing: wide composition with usable negative space for page copy if needed
+Lighting/mood: soft studio lighting
+Constraints: no logos, no text, no watermark
+```
+
+### Edit example (invariants)
+```text
+Use case: precise-object-edit
+Asset type: product photo background replacement
+Primary request: replace only the background with a warm sunset gradient
+Constraints: change only the background; keep the product and its edges unchanged; no text; no watermark
+```
+
+## Prompting best practices
+- Structure prompt as scene/backdrop -> subject -> details -> constraints.
+- Include intended use (ad, UI mock, infographic) to set the mode and polish level.
+- Use camera/composition language for photorealism.
+- Only use SVG/vector stand-ins when the user explicitly asked for vector output or a non-image placeholder.
+- Quote exact text and specify typography + placement.
+- For tricky words, spell them letter-by-letter and require verbatim rendering.
+- For multi-image inputs, reference images by index and describe how they should be used.
+- For edits, repeat invariants every iteration to reduce drift.
+- Iterate with single-change follow-ups.
+- If the prompt is generic, add only the extra detail that will materially help.
+- If the prompt is already detailed, normalize it instead of expanding it.
+- For CLI fallback only, see `references/cli.md` and `references/image-api.md` for model, `quality`, `input_fidelity`, 
+masks, output format, and output-path guidance.
+- For transparent images, ask built-in `image_gen` for actual transparency and preserve its alpha.
+
+More principles shared by both modes: `references/prompting.md`.
+Copy/paste specs shared by both modes: `references/sample-prompts.md`.
+
+## Guidance by asset type
+Asset-type templates (website assets, game assets, wireframes, logo) are consolidated in 
+`references/sample-prompts.md`.
+
+## gpt-image-2 guidance for CLI fallback
+
+The fallback CLI defaults to `gpt-image-2`.
+
+- Use `gpt-image-2` for new CLI/API workflows unless the user confirms a different model.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user 
+explicitly requested that model.
+- `gpt-image-2` always uses high fidelity for image inputs; do not set `input_fidelity` with this model.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- Use `quality low` for fast drafts, thumbnails, and quick iterations. Use `medium`, `high`, or `auto` for final 
+assets, dense text, diagrams, identity-sensitive edits, or high-resolution outputs.
+- Square images are typically fastest to generate. Use `1024x1024` for fast square drafts.
+- If the user asks for 4K-style output, use `3840x2160` for landscape or `2160x3840` for portrait.
+- `gpt-image-2` size may be `auto` or `WIDTHxHEIGHT` if all constraints hold: max edge `<= 3840px`, both edges 
+multiples of `16px`, long-to-short ratio `<= 3:1`, total pixels between `655,360` and `8,294,400`.
+
+Popular `gpt-image-2` sizes:
+- `1024x1024` square
+- `1536x1024` landscape
+- `1024x1536` portrait
+- `2048x2048` 2K square
+- `2048x1152` 2K landscape
+- `3840x2160` 4K landscape
+- `2160x3840` 4K portrait
+- `auto`
+
+## Fallback CLI mode only
+
+### Temp and output conventions
+These conventions apply only to the CLI fallback. They do not describe built-in `image_gen` output behavior.
+- Use `tmp/imagegen/` for intermediate files (for example JSONL batches); delete them when done.
+- Write final artifacts under `output/imagegen/`.
+- Use `--out` or `--out-dir` to control output paths; keep filenames stable and descriptive.
+
+### Dependencies
+Prefer `uv` for dependency management in this repo.
+
+Required Python package:
+```bash
+uv pip install openai
+```
+
+Optional for image inspection and downscaling:
+```bash
+uv pip install pillow
+```
+
+Portability note:
+- If you are using the installed skill outside this repo, install dependencies into that environment with its package 
+manager.
+- In uv-managed environments, `uv pip install ...` remains the preferred path.
+
+### Environment
+- `OPENAI_API_KEY` must be set for live API calls.
+- Do not ask the user for `OPENAI_API_KEY` when using the built-in `image_gen` tool.
+- Never ask the user to paste the full key in chat. Ask them to set it locally and confirm when ready.
+
+If the key is missing, give the user these steps:
+1. Create an API key in the OpenAI platform UI: https://platform.openai.com/api-keys
+2. Set `OPENAI_API_KEY` as an environment variable in their system.
+3. Offer to guide them through setting the environment variable for their OS/shell if needed.
+
+If installation is not possible in this environment, tell the user which dependency is missing and how to install it 
+into their active environment.
+
+### Script-mode notes
+- CLI commands + examples: `references/cli.md`
+- API parameter quick reference: `references/image-api.md`
+- Network approvals / sandbox settings for CLI mode: `references/codex-network.md`
+
+## Reference map
+- `references/prompting.md`: shared prompting principles for both modes.
+- `references/sample-prompts.md`: shared copy/paste prompt recipes for both modes.
+- `references/cli.md`: fallback-only CLI usage via `scripts/image_gen.py`.
+- `references/image-api.md`: fallback-only API/CLI parameter reference.
+- `references/codex-network.md`: fallback-only network/sandbox troubleshooting for CLI mode.
+- `scripts/image_gen.py`: fallback-only CLI implementation. Use only when the user explicitly chooses or confirms CLI 
+mode.
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$p = Resolve-Path -LiteralPath '"'.'; while 
+("'$null -ne $p) { $candidate = Join-Path $p.Path '"'CLAUDE.md'; if (Test-Path -LiteralPath "'$candidate) { 
+Write-Output $candidate }; $parent = Split-Path -Parent $p.Path; if ([string]::IsNullOrEmpty($parent) -or $parent -eq 
+$p.Path) { break }; $p = Get-Item -LiteralPath $parent }' in C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-
+3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__n
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\CLAUDE.md'" in C:\Users\asali\Projects\MMO\.c
+laude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__n
+ succeeded in 313ms:
+# Crownless ├óΓé¼ΓÇ¥ working practices (all agents)
+
+## Mobile version ├óΓé¼ΓÇ¥ kept in sync (unfrozen 2026-07-15)
+- `mobile/` (repo root) holds the iOS/Android version: a snapshot fork of `game/` plus a small, fixed set of mobile 
+deltas (Mobile renderer, touch HUD, export presets ├óΓé¼ΓÇ¥ the exact list lives in `mobile/README.md`). Deployment is 
+proven end to end ├óΓé¼ΓÇ¥ GitHub Actions **"Mobile builds"** produces a signed-debug APK and an unsigned iOS `.ipa`; 
+both install/run on-device (sideload).
+- **Policy change (was "frozen, do not touch"):** keep `mobile/game/` in sync with `game/`. `game/` is still the 
+**source of truth** ├óΓé¼ΓÇ¥ never edit `mobile/` to fix a desktop issue; fix it in `game/` and re-sync. To re-sync: 
+re-copy `game/` over `mobile/game/`, re-apply the mobile deltas from `mobile/README.md`, then run the compile gate + 
+`test_quick` against `mobile/game` before committing. Keep the delta list small and current.
+
+## Code layout (see CODING_GUIDELINES.md ├é┬º38)
+- Tuning knobs ├óΓÇáΓÇÖ `balance.gd`; data tables stay in domain files (classes/items/story). Never inline a bare 
+tuning number.
+- Docs split (2026-07-06): balance/pacing round narratives go in `BALANCE_HISTORY.md` (newest at TOP of the tuning 
+list); `DESIGN.md` holds only current decisions + distilled standing rules ├óΓé¼ΓÇ¥ never append round-by-round 
+history there.
+- Big node classes are inheritance CHAINS (verbatim moves, calls flow derived├óΓÇáΓÇÖbase, all vars in the base layer):
+  - Game: `game_base` (state/flags/convo/lookups/fx) ├óΓÇá┬É `game_world` (graph/rooms/walls/spawning/gates) ├óΓÇá┬É 
+`game_flow` (deaths/loot/chapters/settings/terrain events) ├óΓÇá┬É `game.gd` (boot + per-frame).
+  - Player: `player_core` (state/stats/gear/progression) ├óΓÇá┬É `player_combat` (targeting/hit/shared juice + shared 
+primitives) ├óΓÇá┬É `player_kit_{warrior,archer,mage,assassin,paladin,warlock}` (one file per class: `_use_<class>` 
+dispatch + its abilities) ├óΓÇá┬É `player.gd` (dispatch/survival/per-frame). Primitives shared by several kits 
+(`_dash_strike`, `_melee_arc`, `_mist`, `_beam_fx`, `_grant_stab_surge`) stay in `player_combat` ├óΓé¼ΓÇ¥ calls only 
+flow derived├óΓÇáΓÇÖbase.
+  - Tests: `tests/test_base` (helpers) ├óΓÇá┬É `tests/test_ch1` ├óΓÇá┬É `tests/test_ch2` ├óΓÇá┬É `autotest.gd` (entry 
++ systems tier).
+- Self-contained UI screens = static modules in `scripts/ui/` (dev_panel, codex) taking the Menus instance.
+- New `class_name` script ├óΓÇáΓÇÖ run `--import` before any headless run.
+- The in-game **codex** (`scripts/ui/codex.gd`) is the player-facing reference for monsters/bosses/terrains/gear 
+├óΓé¼ΓÇ¥ it goes stale silently. Whenever you add player-facing content or a feature, ask whether the codex should 
+reflect it, and if so update it in the same change. It reads `Story.ALL_ENEMIES`/data tables directly, but a few 
+hand-maintained parallel lists still gate it (e.g. `menus.gd` `BOSS_KINDS` decides monster-vs-boss bucketing) ├óΓé¼ΓÇ¥ 
+update those too, or a new boss lands in the wrong bucket. Layout since 2026-08-15 = rail of sections 
+(`UICodex.SECTIONS`) + filter chips + ledger/detail; a new section is one SECTIONS row + a `_rows`/`_detail` (or page) 
+builder, and every legacy `open_codex("<tab>")` id routes through `_resolve()` ├óΓé¼ΓÇ¥ extend that, never fork the 
+panel. Reference prose lives under Field notes (`NOTE_PAGES`), not above a shelf.
+
+## Testing ├óΓé¼ΓÇ¥ ALWAYS in this order
+1. Compile gate first, every time (`test_quick.bat`/`test.bat` run `check_compile.gd` first). Never invoke the test 
+scene directly: one parse error anywhere makes the suite script fail to compile and the headless engine idles FOREVER 
+(a zombie that looks like a slow run). The gate catches it in ~3s with the real error.
+2. Iterate with `test_quick.bat` (~15s): gate ├óΓÇáΓÇÖ boot ├óΓÇáΓÇÖ one class kit ├óΓÇáΓÇÖ systems ├óΓÇáΓÇÖ UI smoke 
+├óΓÇáΓÇÖ pause menu.
+3. `test.bat` (full suite, minutes; plays both chapters end to end) must be green before staging.
+
+## Agent toolkit (the map: `tools/INDEX.md` ├óΓé¼ΓÇ¥ check it before writing a helper script)
+- `preflight.bat` ├óΓé¼ΓÇ¥ the traps below, mechanized: stale/forgotten `--import`, codex/BOSS_KINDS staleness, 
+unregistered content modules, diff-scoped balance-number + CONNECT_DEFERRED lints, new shot rig not `extends ShotRig`. 
+Run it before staging; every finding prints its one-line fix.
+- `python tools/safe_commit.py -m "msg" <your paths>` ├óΓé¼ΓÇ¥ the serialized-commit etiquette as a guardrail: 
+path-scoped commit that lists sibling-staged work instead of swallowing it.
+- `python tools/sync_mobile.py` ├óΓé¼ΓÇ¥ mobile drift report; `--apply [--gate]` performs the re-sync ritual from 
+`mobile/README.md`.
+- **Headless Codex (`codex exec`, the default generated-art lane): calling guide = 
+`C:\Users\asali\Projects\CODEX_HEADLESS.md` (Projects root, shared by every project on this box: binary, call, all 
+flags, machine limits) + `tools/CODEX_HEADLESS.md` (the MMO layer: runner, drivers, vet/install).** The binary's 
+install dir is re-hashed on every app update ├óΓé¼ΓÇ¥ resolve it (`python tools/codex_bin.py` / `Resolve-Codex` in 
+`run_codex_batch.ps1`), never hard-code it; prompt goes on STDIN; on this shared box run image batches serial + 
+RAM-gated (`run_codex_batch.ps1 -MaxParallel 1 -MinFreeGB 1.3`), never beside a Godot suite (a parallel batch + suite 
+OOM-crashed the host 2026-08-17).
+- `python tools/art/verify_art.py <base>` ├óΓé¼ΓÇ¥ post-install sprite checks (strip geometry, 8-dir completeness, 
+green-bleed, stale import, and in-cell content gates: anchor drift/ghost chunks/edge cuts/clip-vs-idle body scale + 
+**HEROBODY** hero frame-0 scale-lock shrink).
+  - **HEROBODY vs CLIPSCALE (added 2026-08-23):** CLIPSCALE models the ENEMY renderer (median body / cell). HEROES 
+render differently ├óΓé¼ΓÇ¥ `player_core._measure_hero_frame` locks a clip's on-screen scale to FRAME 0's CONTENT bbox 
+and plays the whole clip at it, so a clip whose REST pose already raises a weapon (frame-0 content > body) renders the 
+body small for the entire clip (the archer-multishot 0.85├âΓÇö shrink CLIPSCALE structurally cannot see). HEROBODY 
+flags a hero action clip whose frame-0 body renders <0.90├âΓÇö the idle's. A neutral rest frame reads ~1.0 and a legit 
+crouch/lunge still starts neutral, so both are spared (0 FP across the 6 base classes + 5 skins).
+  - **The eyes-only drift class has NO geometric gate ├óΓé¼ΓÇ¥ the net is a VISUAL QA artifact + agent review.** 
+Face-fidelity drift (a fatter/blurrier face in action frames), a shield/armor detail that morphs frame-to-frame, a 
+cape that flips sides ├óΓé¼ΓÇ¥ all pass every geometric check; the *drawing* is inconsistent. verify_art cannot catch 
+these and a sharpness/consistency proxy false-positives on real motion. So a skin/class regen MUST emit a per-clip 
+contact sheet (idle + action peak frames, feet-aligned + face crops) and an AGENT must review it before install. An AI 
+reviewer catches "her face got fatter"; a number can't. Don't rely on the owner's eyes as the first line. **The full 
+reusable workflow ├óΓé¼ΓÇ¥ dedup-scope ├óΓÇáΓÇÖ one review agent per subject over EVERY clip├âΓÇödir├âΓÇöframe 
+├óΓÇáΓÇÖ orchestrator verifies each flag ├óΓé¼ΓÇ¥ is `tools/art/DRIFT_AUDIT.md` (covers heroes/skins AND the boss/mob 
+adaptation: enemy render path = CLIPSCALE not HEROBODY).** Established 2026-08-24; the known drift catalogue 
+(fire-on-move clips are the systemic weak point; un-regenerated clips carry the face-softening family; 
+single-direction off-model art) lives there.
+  - **WARN triage ├óΓé¼ΓÇ¥ FAIL is the bar, not WARN (investigated 2026-08-23).** The six BASE heroes throw a large, 
+standing pile of WARNs that are NOT defects ├óΓé¼ΓÇ¥ the gate has no way to whitelist intentional content, so it flags 
+it every run. All three benign categories, confirmed by rendering the flagged pixels on grass + overlaying them on the 
+sprite:
+    - **BLEED** on base heroes ├óΓÇ░┬á green keying rim. It's soft-alpha FX (the archer's cast/ult IS green 
+Arrow-Storm magic; every class's ult/cast auras + glows) plus green-CLOTHING edges (the archer's green cloak). The 
+BLEED counter is colour-blind (any `0<a<255` pixel), so green *content* inflates it; a band-normalize/upscale 
+multiplies the same FX/cloak edge pixels and the raw count rises with zero new bleed. The real-bug discriminator is a 
+green RIM hugging the silhouette (`G>max(R,B)+20` massed on the body outline) ├óΓé¼ΓÇ¥ on the base heroes that rim is 
+absent; the green sits on the FX cloud and the cloak, and on a grass background there's no halo.
+    - **STRAY** on base heroes = FX props the game does NOT re-spawn: the warlock's floating flaming SKULL (his 
+signature, every frame), the warrior's flaming-sword blade/trail, the archer's green cast-motes. Distinct from a baked 
+*projectile* (which the STRAY rule is really aimed at) ├óΓé¼ΓÇ¥ leave these.
+    - **EDGECUT** on melee swings (`attack2`/`attackb`/`attackc` for warrior/assassin/paladin) = the weapon reaching 
+the cell edge at the extreme of the arc, not a clipped body.
+    - Baseline as of 2026-08-23: base heroes = **0 FAIL, ~261 WARN** (208 BLEED / 28 STRAY / 25 EDGECUT); the 5 
+in-scope elite skins = clean `VERIFY OK`. Don't re-investigate or "fix" these WARN categories on the base heroes 
+├óΓé¼ΓÇ¥ only act on a NEW **FAIL**, or a WARN that leaves these three buckets (e.g. a real body green-rim, a 
+butchered/PARTIAL frame, an anchor/scale/FEETSLIDE hit).
+    - **CORRECTION (2026-09-03): the "no green rim on base heroes" finding was scoped to cast/ult.** A corpus scan 
+(`tools/art/despill_rim.py --scan`, rim-band green with an EMPTY interior = halo, not design) found a real #00FF00 
+keying ring on all 19 `warlock_attack*`/`attack2*` strips ├óΓé¼ΓÇ¥ a design with no green in it at all ├óΓé¼ΓÇ¥ plus 
+44 mobs/NPCs/props. All despilled; the scan now returns 0. Re-run the scan after any keyed install; the fixer is 
+rim-band-only so it cannot dull green garments, and it refuses a sprite whose green is mostly interior.
+- **Screenshot rigs: never write a standalone one (2026-08-15).** Twenty-three `game/shot_*.gd` files are copies of 
+the same 25-line boot/`_shot`/quit boilerplate, none with a watchdog, muted only by convention. New rig = `extends 
+ShotRig` (`scripts/dev/shot_rig.gd`: `boot()`, `shot()`, sim-clock waits, `arg()`/`flag()`, Master-bus mute, 
+`--timeout=N` watchdog) + `_ready()` of steps + `finish()`; run it ├óΓé¼ΓÇ¥ and every legacy rig ├óΓé¼ΓÇ¥ through 
+`shot.bat <rig> [--timeout=N] [rig args]`, which injects `--audio-driver Dummy`, compile-gates the rig script 
+(check_compile's default walk skips `game/` root: a parse error there = a window that idles forever), and hard-kills a 
+hung engine. `preflight` FAILs a new rig that doesn't extend it and WARNs on an edited legacy one (convert on touch). 
+Worked example: `shot_fx_series.gd`; the map: `tools/INDEX.md` "In-engine shot rigs".
+- **Windowed shot rigs (`shot_*.tscn`, `qa_skins`, anything not `--headless`) run MUTED: always pass `--audio-driver 
+Dummy`.** They boot the real game with music + SFX on the owner's shared machine; an unmuted rig blares through his 
+speakers mid-session (owner ruling 2026-08-15). Headless suites are already silent.
+
+## GDScript traps (each has bitten us) ├óΓé¼ΓÇ¥ review-time deep list: `CODING_GUIDELINES.md` ├é┬º38
+- `var x := obj.method()` on a loosely-typed obj (or any Variant expression, e.g. `Dictionary.get`) = PARSE ERROR 
+"cannot infer type". Annotate: `var x: float = ...`.
+- New `class_name` ├óΓÇáΓÇÖ `--import` first or headless silently hangs.
+- Labels inside HBoxContainer collapse to one char per line without `custom_minimum_size`.
+- Multiline lambda: following call args must sit on the SAME line as the lambda's last statement.
+- Tests waiting on timed effects must poll wall-clock (`await create_timer(0.2)`) ├óΓé¼ΓÇ¥ frames race ahead headless.
+- Autotest sections SNAPSHOT + RESTORE shared state (flags, resonance, standings); never `.clear()`. Two corollaries, 
+both learned from one flaky capital run (2026-07-26):
+  - **Restore on the FAILURE paths too.** `_fail` only QUEUES `quit(1)` ├óΓé¼ΓÇ¥ the suite keeps running to the end of 
+the frame, so the next section still executes and reads whatever the failed one left behind. A mid-city failure 
+stranded `chapter_id == "capital"`, where `shop_markup` answers a flat 1.0, and the road-markup section then reported 
+a second, entirely bogus failure. Put the assertions in a helper and the restore in its caller, so all ~40 exits pass 
+through it.
+  - **Never assert against state an earlier section accumulated.** A content-tier section inherits a whole campaign of 
+loot, gold, resonance and bag capacity ├óΓé¼ΓÇ¥ all of it loot-luck. The capital's lapidary quest asserted its kit 
+landed in the bag, and a full bag legally mails the kit instead: pass or fail came down to whether a bag DROPPED that 
+run. Control the precondition (lend a bag, pin the shard) or the assert is a coin flip.
+- canvas_item shader `fragment()`: `COLOR` arrives PREMULTIPLIED (modulate ├âΓÇö TEXTURE sample). Writing `COLOR = 
+result * COLOR` multiplies the texture in twice ├óΓé¼ΓÇ¥ everything darkens and "brighten" shaders read as darken 
+(phantom_charge was bitten; owner saw "only gets darker"). Reuse ONLY `COLOR.a` (silhouette.gdshader convention).
+- `Environment.adjustment_contrast` with `viewport/hdr_2d` runs in LINEAR light: it pivots on 0.5, and a dark floor 
+sits near 0 there ├óΓé¼ΓÇ¥ contrast 1.06 HALVED the keep floor's brightness (gameplay-polish rig 2026-08-18). Leave 
+contrast at 1.0; use saturation/brightness only, and judge any whole-frame grade in-game, never from the numbers.
+- Spawning an Area2D + CollisionShape2D (Chest/Pickup/Projectile) from inside a `body_entered`/`area_entered` handler 
+= non-fatal "Can't change this state while flushing queries" engine error (`area_set_shape_disabled`) ├óΓé¼ΓÇ¥ the new 
+shape's enter-tree hits the physics-flush guard. Connect physics signals with `CONNECT_DEFERRED` or `call_deferred` 
+the spawn (chest open + projectile ricochet were bitten).
+- `draw_colored_polygon` on a SLIVER (near-collinear points) = random non-fatal "Invalid polygon data, triangulation 
+failed" spam: the triangulator picks winding from a float32 shoelace over RAW coords, so a sliver's sign is rounding 
+noise at world-scale coordinates ├óΓé¼ΓÇ¥ coordinate-dependent coin flip, NOT deterministic per shape (knife-trail 
+fold-back miters were bitten). Pre-check `Geometry2D.triangulate_polygon(p).is_empty()` and skip ├óΓé¼ΓÇ¥ the exact 
+C++ path behind the error, and everything it rejects is sub-pixel (the `_poly` guard in player_combat.gd).
+- **In co-op, the tree pause is NOT an input gate.** `request_pause(true)` NO-OPS online (`game_base.gd`, ├é┬º5.4 
+├óΓé¼ΓÇ¥ a shared world never pauses), so anything leaning on the pause to stop input/processing keeps running in a 
+session. Menus, dialogue and choice prompts all pause solo and none of them pause online. Gate on the OVERLAY STATE 
+instead ├óΓé¼ΓÇ¥ `menus.is_open()` / `hud.dialogue_active` / `hud.choices_active`, the guard `game.gd`'s tap-to-talk 
+already uses. The touch HUD had no `process_mode` override and only checked `state == ST_PLAYING` (there is no 
+`ST_MENU`), so its joystick ├óΓé¼ΓÇ¥ the whole left half of the screen ├óΓé¼ΓÇ¥ stayed live UNDER every menu and a 
+drag walked your hero mid-fight. Note the shape of the miss: it was invisible in BOTH cheap tests (solo-on-phone 
+pauses; co-op-on-desktop has no touch HUD) and only existed in the mobile ├âΓÇö co-op cross-product. When a feature is 
+platform- or session-conditional, ask what its gate is in the OTHER combination.
+
+## Machine RAM is tight (~10GB) ├óΓé¼ΓÇ¥ tool-process hygiene (2026-08-23)
+- This box has ~9.8GB physical RAM and the BASELINE load already fills it: Claude Code + its MCP servers ├óΓÇ░╦å 3GB 
+(22 procs ├óΓé¼ΓÇ¥ MCP servers orphan on restart; 3 duplicate `pixelforge-mcp` copies seen), browser ├óΓÇ░╦å 1.2GB, 
+Windows (svchost + Defender + compression) ├óΓÇ░╦å 1.4GB. That leaves ~1GB free ├óΓé¼ΓÇ¥ nothing has headroom. This is 
+WHY image batches run serial + RAM-gated and never beside a Godot suite. But be precise about WHAT is heavy: **a 
+single `codex exec` image gen is API-side and costs only ~250MB local (measured 2026-08-24) ├óΓé¼ΓÇ¥ it is NOT a 
+machine-killer and a single serial job runs safely even at ~1GB free.** The RAM risk is PARALLELISM (several gens at 
+once) ├âΓÇö a co-resident **Godot suite** (each Godot instance is the real GB-scale hog). So `-MaxParallel 1 
+-MinFreeGB 1.3` guards against *stacking* jobs and firing next to a suite ├óΓé¼ΓÇ¥ don't read it as "Codex is a spike" 
+and refuse a single gated gen. (PixelLab local footprint unmeasured; don't assume it's the same.) A Claude restart 
+clears orphaned MCP servers; closing browser tabs frees ~1GB.
+- **Prefer the Bash tool over PowerShell.** PowerShell tool calls can leave lingering `powershell.exe` processes (7 
+orphans spanning 2 days seen, ├óΓÇ░╦å0.45GB). Use Bash for process/file ops (`taskkill //F //PID <n>` cleans strays); 
+reserve PowerShell for genuine cmdlet needs, and consolidate into ONE call rather than many.
+
+## Multi-agent etiquette
+- Task boards (`CH2_TASKS.md` pattern): one owner per task, claim before starting; content lands as NEW modules under 
+`game/scripts/content/` (format: `scripts/content/README.md`) + one registration line in `Story.CONTENT_MODULES`.
+- Stage with `git add` after a green full suite. No commits unless the user asks.
+- **Commits are SERIALIZED (2026-07-07):** a commit sweeps the WHOLE index, and sibling agents stage concurrently 
+├óΓé¼ΓÇ¥ so immediately before committing, run `git status` and look at what's actually staged. If the index holds 
+another agent's work, either fold it into an accurate combined message or stop and say so ├óΓé¼ΓÇ¥ never commit a 
+message that describes only your slice. (Trigger: an itemization pass got swallowed into a commit labeled "cover + 
+boot flow" by exactly this race.)
+- Commit messages: NO author/co-author trailers (no `Co-Authored-By`, no attribution lines) ├óΓé¼ΓÇ¥ this project 
+keeps commits authorless; credit lives in a separate credits file.
+- Autotest additions: content modules use the marked CONTENT-MODULE TEST HOOK (one func at file end + one call line); 
+never edit existing sections.
+
+## Asset sourcing
+- **Allowed ├óΓé¼ΓÇ¥ and that's the whole list:** ONLY these two, or anything we generate ourselves (must be up to 
+par: semantic fit + reads clean in-game).
+  1. **CC0 / public domain** ├óΓé¼ΓÇ¥ zero obligations, ideal.
+  2. **CC-BY / MIT / Apache / OFL** ├óΓé¼ΓÇ¥ fine; ship the attribution file (we already do, in 
+`assets/*/CREDITS.txt`).
+  No pre-approval needed for these. Source from anywhere ├óΓé¼ΓÇ¥ OpenGameArt, Kenney, itch.io, the Dungeon Crawl 
+tileset (CC0), etc.
+- **Everything else is off-limits** ├óΓé¼ΓÇ¥ do not use, don't even ask: share-alike (CC-BY-SA, GPL), non-commercial 
+(CC-NC), proprietary/paid asset-store packs, and anything with no stated license (default = all rights reserved). This 
+game ships commercially on Steam; these licenses either forbid selling it or can force us to open-source the whole 
+project.
+- Install flow: probe/download, and LOOK at the image (or listen to the audio) before installing; overrides drop into 
+`assets/sounds|music|sprites/` by name (a PNG/wav there overrides the procedural version of the same name).
+- Audio taste: semantic fit over quality; no melodic-jingle chiptunes for ults/terrains; never human grunts on casts; 
+never touch `ult_mage.wav` or the village/story/boss synth tracks.
+
+## Icon fidelity ├óΓé¼ΓÇ¥ authored resolution ├óΓÇ░┬á render size (owner ruling 2026-08-21; agents keep tripping on 
+this)
+- Player-facing icon families are **DUAL-RES**: a high-fidelity master for the codex/detail views + a downscaled 
+gameplay copy for the bag. The **128px painterly master is the FIDELITY BAR** ├óΓé¼ΓÇ¥ match it, not a flat/pixel 
+style, unless the owner says otherwise. Reference tiers: **gear** = `assets/icons/codex/<shape>_<grade>.png` @128px 
+(codex, via `Art.codex_item_icon`) + `assets/icons/<name>.png` @32px (bag); **class splashes** ~235px authored 
+├óΓÇáΓÇÖ render ~100px in-game (~2.35├âΓÇö ├óΓé¼ΓÇ¥ the owner's "renders nicely" benchmark).
+- **THE TRAP:** authoring a family at **32px only**. It looks fine in a 32px bag slot, so it passes a quick check 
+├óΓé¼ΓÇ¥ but every larger surface (codex ~28├óΓé¼ΓÇ£128px, the detail popover header 40px) UPSCALES it to mush, and it 
+reads as low-fidelity beside the 128px gear. **Gems shipped 32px-only (2026-07-30) and were the 2026-08-20 
+visual-review's one solid asset catch for exactly this.** When you regen an icon family: author at the 128px gear bar, 
+store dual-res, and load the 128 in large contexts. Verify the fidelity numbers (stored res vs on-screen render px) 
+BEFORE designing ├óΓé¼ΓÇ¥ the owner asks for this by name.
+- **This generalises past icons to ALL world/character/codex art (owner ruling 2026-08-24): a master should be 
+├óΓÇ░┬Ñ2├âΓÇö its on-screen render size.** The auditor is `tools/art/fidelity_audit.py` + `game/fidelity_dump.gd`; the 
+current findings + prioritised re-art list live in **`FIDELITY_AUDIT.md`** (root). Bar = the base classes (render 99px 
+from 235px = 2.35├âΓÇö). Standing findings: the **5 enhanced-base skins PASS (2.37├âΓÇö)** but the **18 legacy skins 
+are ~1.2├âΓÇö** (the planned regen quantified); trees/large props + one npc (`pilgrims_schism`) + `choir_censer` (a 
+boss-summoned add) are the other real re-art targets. Unplaced+low-fi mobs get DROPPED, not re-arted (`bat`/`direbat` 
+gone 2026-08-24).
+
+## World props ├óΓé¼ΓÇ¥ style + motion contract (owner ruling 2026-08-18, after a day of "shifts / dims / cartoonish" 
+flags from play; review-time checklist: `CODING_GUIDELINES.md` ├é┬º40; the polish effort's board = `POLISH_TASKS.md`, 
+its generation lane = `tools/art/style_unify/`)
+- **One style.** Every world prop matches the cast: painterly, soft-shaded, NO black outlines, muted palette, top-down 
+three-quarter, light top-left. A hi-res canvas is NOT a pass ├óΓé¼ΓÇ¥ a 1024px cartoon is still a cartoon (cactus2, 
+tree_teal2, grave_cross all passed the resolution audit). Regen briefs name a painterly SIBLING as the style ref and 
+the old asset only as the SUBJECT (silhouette/footprint/colour identity); judge the result on a contact sheet BESIDE 
+its siblings (`scratchpad`-style sheet, or `tools/art/asset_gallery.py`), never against the asset it replaces.
+- **Animate in place.** Frames never translate the object. Rigid props (furnaces, wells, shrines, rigs, pools) keep a 
+byte-stable silhouette ├óΓé¼ΓÇ¥ colour-only motion (glow pulse, ember flicker), bbox/baseline/centre drift 0; only 
+fire, cloth and foliage may change silhouette, and then anchored on frame 0's baseline. Wind sway is an ALLOW-list of 
+vegetation (`_wind_scenery`), never "everything that isn't a building". Hazard pools stay put 
+(`Balance.HAZARD_POOLS_DRIFT`). Anything that swings/pendulums needs authored frames with proper easing or no 
+animation at all ├óΓé¼ΓÇ¥ a 4-frame swing reads as fake.
+- **Dim, don't strobe.** A prop should look STILL at a glance and alive on a second look. Luminance swing ├óΓÇ░┬ñ 
+10-12% for glows/pulses (`derive_prop_anim.py --amp 0.10`), ├óΓÇ░┬ñ 25% for open fire, never on the whole sprite 
+(bright/warm pixels only). The 0.35 default that looked "visible" on a contact sheet strobes in-game.
+- **Gate every strip you touch:** `tools/art/audit_prop_anims.py` (frames/canvas/per-frame drift + amp) + 
+`verify_art.py`; a NEW rigid animated prop goes into autotest's `full_prop_anims` contract (frame == static canvas, 
+baseline ├óΓÇ░┬ñ1 / centre ├óΓÇ░┬ñ2). Contact sheets and metrics do not replace watching the loop: run it in a shot 
+rig at 1x (`shot.bat polish --gif`) before calling it done ├óΓé¼ΓÇ¥ a subtle loop that looks static on a sheet is 
+correct.
+
+## Hero skins ├óΓé¼ΓÇ¥ what is in scope vs OFF-LIMITS (owner ruling 2026-08-22)
+- **In scope for polish: ONLY the 5 ENHANCED-BASE designs**, wired as elite skins purely for in-game preview: warrior 
+`emberbound_heir`, assassin `erased_name`, archer `severed_thread`, warlock `ledgerbound`, mage `blighted_healer`. 
+These are the enhanced base-class designs ├óΓé¼ΓÇ¥ fix/re-anchor/despur/frame-edit them freely.
+- **OFF-LIMITS ├óΓé¼ΓÇ¥ do NOT touch, regen, re-anchor, despur, frame-edit, or "fix":** every OTHER hero skin. That is 
+all of `game/assets/sprites/skins/mythic/` (dreadknight, stormforged, eclipse_knight, fallen_arbiter, blade_dancer, 
+phantom/phantom_awakened, voidwraith, eldritch_herald, ├óΓé¼┬ª) **and** the real skins that live in `skins/elite/` 
+alongside the enhanced-base five (dreadknight, frostfall_ranger, void_weaver, hellfire_inquisitor, eclipse_knight, 
+blade_dancer, ├óΓé¼┬ª). A blanket art-sweep must EXCLUDE these ├óΓé¼ΓÇ¥ an auto-scan of `assets/sprites/` will hit 
+them; scope it to the five, or to bosses/mobs, explicitly.
+- **Why:** a full REGEN pass over all the real skins is planned (owner 2026-08-22, "for later"). Until that pass, 
+leave them exactly as committed ├óΓé¼ΓÇ¥ a piecemeal fix now is wasted work the regen overwrites, and it drifts the 
+design.
+- **Known-defect note:** the real skins carry the same feet-slide artifact the enhanced-base + bosses/mobs were fixed 
+for (2026-08-22), so `verify_art` will emit `FEETSLIDE` WARNs on them. That is EXPECTED and intentionally left for the 
+regen pass ├óΓé¼ΓÇ¥ do not "fix" it.
+
+## Required per-class animation clips beyond the standard set (so a regen knows what to produce) ├óΓé¼ΓÇ¥ 2026-08-23
+Some abilities need EXTRA clips on top of anim/walk/attack/attack2/dash/cast/ult/death. A class or skin regen MUST 
+produce these or the ability silently falls back to a worse pose. Both are art-driven (no strip = the fallback), so 
+they're easy to forget ├óΓé¼ΓÇ¥ hence this manifest.
+
+- **Fire-on-move (`<base>_attack_walk[_<dir>]`)** ├óΓé¼ΓÇ¥ a walk cycle that fires the basic mid-stride, so spamming a 
+low-cd RANGED basic WHILE MOVING doesn't lock the standing pose sliding over the floor (`player.gd` `walk_fire`; a 
+mid-cycle re-cast lets the stride finish). Needed by the ranged spammables ONLY:
+  - mage **Firebolt** (a1=attack), warlock **Shadowbolt** (a1=attack), archer **Quick Shot** (a1=attack), assassin 
+**Fan of Knives** (a3=attack2).
+  - NOT the melee 3-way basic ├óΓé¼ΓÇ¥ the assassin STAB keeps its attack/attackb/attackc alternation while moving 
+(gated by `slot=="a1" and _clips.has("attackb")`, which only excludes the assassin).
+  - **HOW TO GENERATE (the technique that finally worked, owner 2026-08-23): it's the WALK clip + a firing arm 
+├óΓé¼ΓÇ¥ do NOT author a walk from scratch.** Give the character's EXISTING `<base>_walk_<dir>` strip as the image ref 
+and instruct: "reproduce this exact walk ├óΓé¼ΓÇ¥ same leg cycle/stride/crossing, same garment ├óΓé¼ΓÇ¥ change ONLY 
+the free hand to fire the basic once." A from-scratch walk brief (however detailed the per-frame boot storyboard) kept 
+gliding or failing to cross the legs; referencing the real walk carries its crossing gait for free. Keep the brief 
+SHORT ├óΓé¼ΓÇ¥ the walk ref IS the leg spec.
+  - Contract: 8-frame walk+fire; feet PLANTED (no in-cell slide ├óΓÇáΓÇÖ FEETSLIDE); the garment stays CLOSED and 
+design-accurate (NO slit, NO exposed legs/bare skin ├óΓé¼ΓÇ¥ the walk reads through the BOOTS alternating below the 
+hem + the hem swaying, exactly as the walk clip does); NO baked projectile/flame on the sprite (the game spawns it 
+├óΓé¼ΓÇ¥ a small warm spark shares the mage's skin/gold palette and is un-maskable by colour except the bright-yellow 
+core, so keep it out at gen time). Author S/E/N; E├óΓÇáΓÇÖSE/NE; **left MIRRORS right** (W/NW/SW = mirror of E); flat 
+= S. Build lane: `scratchpad/attack_walk_codex.py`.
+  - **`attack_walk_b` ├óΓé¼ΓÇ¥ the alternate variant (owner 2026-08-23).** Fire-on-move ALTERNATES `attack_walk 
+├óΓÇáΓÇ¥ attack_walk_b` each fresh moving-basic cycle (player.gd `_walkfire_swing`), like the melee 
+attack├óΓÇáΓÇ¥attackb, so spamming while moving doesn't replay one clip. Produce it with the SAME walk reference 
+├óΓé¼ΓÇ¥ only the FIRE motion differs from the primary (warlock: two-hand shove vs one-hand thrust; mage: free-hand 
+rising flick vs level thrust, staff hand kept clearly separate; assassin: sidearm flick vs overhand throw). **NOT the 
+archer** (owner 2026-08-23): a bow draw has ONE proper form, so the archer has no `_b` ├óΓé¼ΓÇ¥ it plays the primary 
+every cycle. When a `_b` would confuse the silhouette (e.g. the mage's casting hand reading as the staff hand), keep 
+the two hands clearly separate or skip the variant. Build lane: `attack_walk_codex.py ├óΓé¼┬ª --b`. Art-driven: no 
+`_b` strip = the primary plays every cycle.
+
+- **Melee swing alternation (`attackb`, and `attackc` for enhanced variants)** ├óΓé¼ΓÇ¥ melee basics cycle multiple 
+authored swings per cast (`player_core.gd` `_alt_basic_clip`: attack├óΓÇáΓÇÖattackb├óΓÇáΓÇÖattackc) so Cleave / Smite 
+/ Stab don't replay one motion. Which classes ship which:
+  - **warrior, paladin, assassin** carry `attackb` (2-way minimum). Ranged classes (mage/archer/warlock) have only 
+`attack`.
+  - **3-way (`attackc`)**: base **paladin**, warrior **emberbound_heir**, assassin **erased_name** (owner 2026-08-22 
+├óΓé¼ΓÇ¥ the enhanced variants). `attackc` is a DISTINCT 3rd motion (a rising uppercut), not a recolor of 
+attack/attackb. autotest `_test_swing_alternation` expects 3-way when a body ships an attackc.
+
+## Generated art tool authorization
+- **NEVER assume PixelLab is authorized. PixelLab may be used only when the owner explicitly authorizes PixelLab for 
+the specific task.** Existing PixelLab assets, PixelLab helper scripts, character metadata, or a matching PixelLab 
+workflow elsewhere in the repo do not grant permission for a new generation.
+- When an agent has a built-in image-generation/editing tool (for example, ChatGPT/Codex image generation), that 
+built-in tool is the default for generated art unless the owner explicitly requests or authorizes another generator.
+- This rule applies even when another generator appears technically better suited. If the built-in tool cannot meet 
+the requirement, stop and ask the owner; do not silently switch tools or spend external generation credits.
+
+### Codex built-in ImageGen walk-animation observations
+- For bipedal characters, the built-in ImageGen tool often fails to preserve a fluid left/right leg cycle. A real 
+same-colored leg crossing over the other in one passing frame can create a convincing walking illusion; keep that 
+crossing to one or at most two frames rather than making every frame crossed.
+- If ImageGen repeats nearly identical crossed poses, give each cell an explicit foot-position storyboard instead of 
+only asking for "alternating legs": use a wide split, a tight crossover, a second crossover with a different spread 
+and the opposite leg emerging, then the opposite wide split or a subtle toe-off. State that frames 1, 3, and 4 must 
+have visibly different lower-body silhouettes. (Tried on the Wild Fang Raider 2026-08-14 and again 08-15: the 4-cell 
+2x2 kept coming back with the SAME leg leading in both stride cells and the body ~11% short ├óΓé¼ΓÇ¥ the owner still 
+called the walk bad.)
+- **What actually fixed the Wild Fang Raider walk (2026-08-15): ONE ROW of EIGHT figures, each frame labelled with its 
+gait phase** (near-foot contact / load / far leg passes / reach, then the same four for the other leg ├óΓé¼ΓÇ¥ the 
+pipeline doc's "legs do not alternate" remedy). The row came back with 8 distinct poses, constant body height and one 
+ground line; installed as an 8-frame strip (the engine's strip reader is frame-count agnostic ├óΓé¼ΓÇ¥ width/height 
+├óΓé¼ΓÇ¥ so 8 is fine; at the 2x walk clock the loop runs 0.67 s). Prefer this over 4-cell 2x2 for any bipedal walk. 
+Ask Codex to report leg-lead per frame in its final message; it is a candid critic of its own output.
+- **Write every identity description FROM the idle sheet, never from memory or an audit's paraphrase (2026-09-03).** 
+Three of fifteen boss/mob regen rows drifted for exactly this: a skeleton got a shield the idle never carried (twice 
+├óΓé¼ΓÇ¥ the pilot and the batch), the winged flame-skull echo came back as a plain hooded shroud, korrag lost his 
+lightning arcs. The generator reproduced the prose faithfully; the prose was wrong. Look at `<base>_anim` frame 0 and 
+list what is actually there (what is in each hand, what is NOT there) before writing the brief.
+- **A BACK-view regen never gets the outgoing strip as a reference** when the defect IS the view (front art wearing 
+the N name): handing it back re-seeds it. `gait_briefs.py` drops it automatically on `facing: n`; the identity ref 
+stays the front idle with the front-only parts NAMED as forbidden.
+- **Row briefs must say every figure is the SAME size** ("do not crowd two small figures into one cell; make the image 
+wider"). Three rows came back with undersized figures crammed into one cell before the brief said so; 
+`install_gait_row` refuses a speck cell rather than ship a blinking near-empty frame.
+- **Cells ├óΓÇ░┬Ñ 900px: request a two-row GRID, not a row (2026-09-04).** A 6-figure row comes back ~2100px wide 
+(~400px figures), so a 920/1084px boss cell forces a 1.4-2.2├âΓÇö upscale at install (stormmouth/nullwarden N shipped 
+soft the first time). Ask for TWO ROWS of THREE ("each figure roughly 900px tall") and flatten with 
+`tools/art/grid_to_row.py`; the same rows landed at ~870px, installed at 0.65-1.07├âΓÇö.
+- **A facing column authored FRONT-ON (the base mage's whole E column, the warlock's 3/4-front walk E) is fixed with 
+`tools/art/profile_clip_briefs.py`** (identity = front idle, view = a real profile sibling, action = the old clip). 
+When a base WALK is regenerated, its `attack_walk_<dir>` was built ON the old walk (the walk-plus-firing-arm 
+technique) and must be regenerated from the new one, or fire-on-move snaps to a different view mid-stride.
+- Every ImageGen-keyed strip carried a dark-green antialias rim (`build_mob_walk_repairs.remove_green` now despills 
+the 2px edge band); a strip that "looks fine" on a dark contact sheet can still ring green over grass ├óΓé¼ΓÇ¥ check 
+`G > max(R,B)+20` counts on the rim, not just the semi-alpha BLEED gate.
+- The tool is generally more reliable for non-bipedal walks (for example, spiders and wolves), and for characters 
+whose locomotion does not expose a conventional leg cycle: robes can communicate motion through cloth flutter, and 
+floating characters can use body/cloth drift.
+- For bipedal sheets, prompt for fixed torso/pelvis anchors, a shared foot baseline, compact stride, 
+held-weapon/upper-body continuity, and explicit negative constraints against recoloring legs, detached feet, 
+duplicated frames, and high-knee marching. Inspect the generated sheet before installation and run 
+`tools/art/verify_art.py <base>` afterward; anchor drift can still remain even when the sheet looks visually centered.
+
+## PixelLab characters ├óΓé¼ΓÇ¥ regenerating an EXISTING one (deep dive: `tools/art/PIXELLAB_BOSS_EDITS.md`)
+- **Authorization gate:** this section applies only after the owner has explicitly authorized PixelLab for the current 
+task. It is not permission to choose PixelLab.
+- **RULE: before you regenerate, re-roll, or tweak an existing PixelLab character (boss/hero/skin), ALWAYS read its 
+export metadata FIRST.** Download the zip (`curl -H "Authorization: Bearer $PIXELLAB_SECRET" 
+https://api.pixellab.ai/mcp/characters/<id>/download -o out.zip`) and read `metadata.json` ├óΓé¼ΓÇ¥ it stores the 
+ORIGINAL creation `prompt` (plus size, `template_id`, view). Regenerate from that EXACT prompt and change ONLY the 
+clause the owner flagged.
+- **Never invent a fresh description from a screenshot or memory** ├óΓé¼ΓÇ¥ it silently drifts the design 
+(proportions, palette, silhouette) even when the fix was one word. `get_character` does NOT return the creation 
+prompt; the zip's `metadata.json` is the only source of truth.
+
+## PixelLab characters ├óΓé¼ΓÇ¥ new generation workflow (prompt-craft cases: `tools/art/PIXELLAB_PROMPT_LESSONS.md`)
+- **CHECK ALL 8 ROTATIONS before generating animations.** After a character body is created, visually inspect every 
+direction (S, SE, E, NE, N, NW, W, SW) for consistency ├óΓé¼ΓÇ¥ same proportions, same gear, same silhouette. v3 mode 
+frequently produces inconsistent north/west directions (wrong body shape, missing equipment, different outfit). If any 
+direction is broken, re-roll the body first. Generating animations on a broken body wastes hundreds of generations.
+- **Heroes use v3 mode (NOT pro).** The gold-standard assassin and warlock were both v3. Pro mode produces stocky 
+proportions for visible-face characters. The `style: -, -, -` field in `get_character` appears in BOTH v3 and pro 
+├óΓé¼ΓÇ¥ it cannot distinguish modes.
+- **Standard mode is useless for proportions testing.** Its template skeleton produces chibi proportions regardless of 
+description. Only useful for testing color palette and design elements.
+- **Description formula (proven on assassin):** archetype first ├óΓÇáΓÇÖ every piece of gear described precisely 
+├óΓÇáΓÇÖ body type ("lean and gaunt" / "lean and tall") ├óΓÇáΓÇÖ art mood ("muted dark palette, somber dark fantasy") 
+├óΓÇáΓÇÖ explicit negatives ("no hood", "no smoke"). Leave no room for the model to improvise.
+- Worked example (2026-07-12): owner said Vess should have "no smoke from mouth". The metadata prompt literally 
+contained `faint blue-white keening light at the mouth` ├óΓé¼ΓÇ¥ the fix was deleting that one clause from the 
+original prompt, not writing a new banshee description.
+
+
+codex
+The reference confirms a fixed back-facing staff hand and a seven-pose crossing gait on one baseline. IΓÇÖm treating 
+the supplied strip as the edit target: frames 1ΓÇô7 keep those lower-body silhouettes and spacing, while the separate 
+free hand rises from low/rest through a shoulder-high peak near frame 4 and returns.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$roots = 
+@('"'C:\\Users\\asali\\.codex\\generated_images','C:\\Users\\asali\\.codex'); foreach ("'$root in $roots) { if 
+(Test-Path -LiteralPath $root) { Get-ChildItem -LiteralPath $root -Recurse -File -Filter '"'*.png' -ErrorAction 
+SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 8 FullName,Length,LastWriteTime } }" 
+in C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_
+b__n
+ succeeded in 11029ms:
+
+FullName                                                                                                               
+--------                                                                                                               
+C:\Users\asali\.codex\generated_images\01a07110-df2f-7c41-b28f-754d95883ed7\exec-586dc318-663b-4fb8-8b33-ceb6536a460...
+C:\Users\asali\.codex\generated_images\mage_walk_feet_qa.png                                                           
+C:\Users\asali\.codex\generated_images\01a07108-15e6-7c82-8d40-ad33da99bf21\exec-225d42f5-1aa5-48ba-94cf-7846ecd4b04...
+C:\Users\asali\.codex\generated_images\01a07108-15e6-7c82-8d40-ad33da99bf21\exec-d8b35e26-a2b5-4722-bc59-95cbc9745b6...
+C:\Users\asali\.codex\generated_images\01a07100-aed1-7b83-be6c-39c1ea4d1247\exec-eaf296c9-0199-464a-8509-6b55fe49be5...
+C:\Users\asali\.codex\generated_images\01a07100-aed1-7b83-be6c-39c1ea4d1247\exec-bfeb3f06-2754-4ab5-8631-3983db6e11d...
+C:\Users\asali\.codex\generated_images\01a070c2-ab99-7d00-9ecb-c65724f7f194\exec-aaefc372-1025-4a8c-a815-148b63e81da...
+C:\Users\asali\.codex\generated_images\01a070c2-ab99-7d00-9ecb-c65724f7f194\exec-c2699762-108b-4e14-99cb-1f3cf342968...
+C:\Users\asali\.codex\generated_images\01a07110-df2f-7c41-b28f-754d95883ed7\exec-586dc318-663b-4fb8-8b33-ceb6536a460...
+C:\Users\asali\.codex\generated_images\mage_walk_feet_qa.png                                                           
+C:\Users\asali\.codex\generated_images\01a07108-15e6-7c82-8d40-ad33da99bf21\exec-225d42f5-1aa5-48ba-94cf-7846ecd4b04...
+C:\Users\asali\.codex\generated_images\01a07108-15e6-7c82-8d40-ad33da99bf21\exec-d8b35e26-a2b5-4722-bc59-95cbc9745b6...
+C:\Users\asali\.codex\generated_images\01a07100-aed1-7b83-be6c-39c1ea4d1247\exec-eaf296c9-0199-464a-8509-6b55fe49be5...
+C:\Users\asali\.codex\generated_images\01a07100-aed1-7b83-be6c-39c1ea4d1247\exec-bfeb3f06-2754-4ab5-8631-3983db6e11d...
+C:\Users\asali\.codex\generated_images\01a070c2-ab99-7d00-9ecb-c65724f7f194\exec-aaefc372-1025-4a8c-a815-148b63e81da...
+C:\Users\asali\.codex\generated_images\01a070c2-ab99-7d00-9ecb-c65724f7f194\exec-c2699762-108b-4e14-99cb-1f3cf342968...
+
+
+
+codex
+The first generation did not return a usable artifact handle, so IΓÇÖm rerunning the same single-asset edit with the 
+reference attached and capturing the generated file directly for saving.
+codex
+The first usable candidate has the seven-stage arm arc, but it drifted the original gait and enlarged the figures, so 
+it does not satisfy the ΓÇ£exact walkΓÇ¥ constraint. IΓÇÖm correcting that specific failure by locking the source 
+silhouettes and asking for a pixel-local arm-only edit.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath . -Force | 
+Select-Object Name,Length,LastWriteTime; Get-ChildItem -LiteralPath .. -Recurse -File -Filter 
+'mage_attack_walk_b*.png' -ErrorAction SilentlyContinue | Select-Object FullName,Length" in C:\Users\asali\Projects\MMO
+\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__n
+ succeeded in 523ms:
+
+Name            Length LastWriteTime      
+----            ------ -------------      
+refs                   9/5/2026 5:57:38 AM
+codex_brief.txt 2453   9/5/2026 5:57:38 AM
+codex_log.txt   0      9/5/2026 6:15:25 AM
+job.json        80     9/5/2026 5:57:38 AM
+                269084                    
+                911963                    
+
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath '..' -Directory 
+| Select-Object -ExpandProperty FullName" in C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\a
+ttack_walk_b_2026-09-05\mage__attack_walk_b__n
+ succeeded in 382ms:
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\assassin__attack_walk
+_b__e
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\assassin__attack_walk
+_b__n
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\assassin__attack_walk
+_b__s
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__
+e
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__
+n
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__
+s
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\warlock__attack_walk_
+b__e
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\warlock__attack_walk_
+b__n
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\warlock__attack_walk_
+b__s
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath 
+'..\\mage__attack_walk_b__e','..\\mage__attack_walk_b__s' -Recurse -File | Select-Object -ExpandProperty FullName" in C
+:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__n
+ succeeded in 466ms:
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__
+e\codex_brief.txt
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__
+e\codex_log.txt
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__
+e\codex_result.md
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__
+e\job.json
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__
+e\mage_attack_walk_b_e_row.png
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__
+e\refs\1_walk.png
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__
+s\codex_brief.txt
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__
+s\codex_log.txt
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__
+s\codex_result.md
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__
+s\job.json
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__
+s\mage_attack_walk_b_s_row.png
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__
+s\refs\1_walk.png
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 
+'..\\mage__attack_walk_b__e\\codex_result.md'; Get-Content -Raw -LiteralPath 
+'..\\mage__attack_walk_b__e\\codex_brief.txt'" in C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_
+src\attack_walk_b_2026-09-05\mage__attack_walk_b__n
+ succeeded in 393ms:
+Saved the 7-frame strip to [mage_attack_walk_b_e_row.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd
+8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__e\mage_attack_walk_b_e_row.png).
+
+Frame report:
+
+1. Screen-right leg leads; firing hand rests low/tucked.
+2. Screen-right leg leads; hand begins rising forward.
+3. Screen-right leg leads; hand reaches shoulder height.
+4. Screen-right leg leads; hand peaks above the shoulder, fingers spread.
+5. Crossing stride, screen-right boot slightly ahead; hand descends.
+6. Compact crossing stride; hand returns low/tucked.
+7. Screen-right leg leads; hand returns to rest.
+
+The original lower body and foot placements remain unchanged. No projectile or attack effect was drawn, and the 
+floor-length hem stays closed throughout. Background is solid `#00ff00`. Built-in ImageGen was used with the supplied 
+walk as the exact reference.
+Redraw this EXACT walk cycle (reference 1) with one change: the character fires
+its basic attack once during the stride.
+
+Reference 1 is the character's own 7-frame walk, in profile, facing RIGHT, frame by frame. Reproduce
+it EXACTLY: the same 7 frames, the same leg cycle and stride, the same crossing,
+the same garment, the same held equipment in the same hand, the same body height
+and width, the same palette. The legs are already correct -- do not redesign them.
+
+THE ONLY CHANGE: the FREE hand sweeps upward in a rising flick, fingers spread, ending above the shoulder -- keep it 
+clearly separate from the staff hand so the two never read as one. Spread the motion across the 7 frames so it starts,
+peaks around the middle and returns by the end, while the legs keep walking
+through their unchanged cycle.
+
+THE CHARACTER (unchanged from reference 1): a slender woman in a deep-blue hooded mage's robe with gold trim and a 
+gold sash, a long dark staff with a glowing blue-white crystal head held in one hand, dark boots below a CLOSED 
+floor-length hem.
+
+Hard requirements:
+- The feet stay PLANTED on the shared ground line exactly as reference 1 has them;
+  the body does not slide sideways within its cell.
+- The robe stays CLOSED and floor-length: no slit, no exposed legs, no bare
+  skin. The walk reads through the BOOTS alternating below the hem and the
+  hem swaying -- exactly as reference 1 shows it.
+- Draw NO projectile, arrow, knife, flame, bolt, spark or muzzle flash anywhere.
+  The game spawns the projectile itself; anything drawn here would double it.
+- Same body height and width in every frame; no frame is a copy of another.
+
+Produce ONE image: a horizontal row of EXACTLY 7 figures, evenly spaced, all feet
+on one shared ground line, each body near its cell's horizontal centre, green
+margins all round -- no figure touching an image edge or its neighbour. EVERY FIGURE
+IS THE SAME SIZE; if they will not fit at full size, make the image WIDER. Flat solid
+#00ff00 GREEN background, nothing else in the image.
+Generate ONE image and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__
+e\mage_attack_walk_b_e_row.png
+then stop.
+
+In your final message, report for each frame: which leg leads, and where the firing
+hand is. Confirm no projectile was drawn and the hem stayed closed.
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg --files 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd' | rg 'mage_attack_walk_b_n.*\\.png"'$'"'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__
+n
+ exited 1 in 1203ms:
+rg : The term 'rg' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the 
+spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:2 char:1
++ rg --files 'C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini ...
++ ~~
+    + CategoryInfo          : ObjectNotFound: (rg:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd' -Recurse -File -Filter 
+'mage_attack_walk_b_n*.png' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName" in C:\Users\asali\P
+rojects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__n
+ succeeded in 13135ms:
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\game\assets\sprites\mage_attack_walk_b_ne.png
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\game\assets\sprites\mage_attack_walk_b_nw.png
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\game\\assets\\sprites' -File -Filter 
+'mage_attack_walk*n*.png' | Select-Object Name,FullName,Length" in C:\Users\asali\Projects\MMO\.claude\worktrees\epic-p
+anini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__n
+ succeeded in 442ms:
+
+Name                      FullName                                                                                     
+----                      --------                                                                                     
+mage_attack_walk_b_ne.png C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\game\assets\sprites\mage_...
+mage_attack_walk_b_nw.png C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\game\assets\sprites\mage_...
+mage_attack_walk_n.png    C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\game\assets\sprites\mage_...
+mage_attack_walk_ne.png   C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\game\assets\sprites\mage_...
+mage_attack_walk_nw.png   C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\game\assets\sprites\mage_...
+
+
+
+codex
+There is an existing north-facing primary fire-on-move strip in the project that shows the correct back-view arm side 
+and hand separation. IΓÇÖm using it only as an anatomy/gesture reference while keeping the supplied walk strip 
+authoritative for every leg and hem pose.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "magick -version; magick identify -verbose 'C
+:\\Users\\asali\\.codex\\generated_images\\01a07110-df2f-7c41-b28f-754d95883ed7\\exec-d3c75127-8ce5-4e44-ba32-52ba37284
+f25.png' | Select-String 'Geometry|Colors:'" in C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_sr
+c\attack_walk_b_2026-09-05\mage__attack_walk_b__n
+ exited 1 in 1278ms:
+magick : The term 'magick' is not recognized as the name of a cmdlet, function, script file, or operable program. 
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:2 char:1
++ magick -version; magick identify -verbose 'C:\Users\asali\.codex\gene ...
++ ~~~~~~
+    + CategoryInfo          : ObjectNotFound: (magick:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+magick : The term 'magick' is not recognized as the name of a cmdlet, function, script file, or operable program. 
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:2 char:18
++ magick -version; magick identify -verbose 'C:\Users\asali\.codex\gene ...
++                  ~~~~~~
+    + CategoryInfo          : ObjectNotFound: (magick:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd' -Recurse -File -Filter 
+'attack_walk_codex.py' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName" in C:\Users\asali\Projec
+ts\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__n
+ succeeded in 5835ms:
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\tools\\art' -File | Select-Object 
+-ExpandProperty Name" in C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09
+-05\mage__attack_walk_b__n
+ succeeded in 444ms:
+act1_brief_lib.py
+alt_swing_pipeline.py
+anim_sheet.py
+assemble_generated_walk_frames.py
+asset_gallery.py
+asset_ratings.csv
+attack_walk_briefs.py
+audit_mob_strip_consistency.py
+audit_prop_anims.py
+batch_health.sh
+ba_gifs.py
+build_act1_boss.py
+build_act1_directional_walks.py
+build_act1_dirset.py
+build_act2_sprites.py
+build_assassin_fan_of_knives_direction_set.py
+build_assassin_fan_of_knives_reference_candidate.py
+build_assassin_motion_preserved_walks.py
+build_assassin_stab_direction_set.py
+build_assassin_stab_highres_mirrors.py
+build_attack_regen_review.py
+build_auroch_minotaur.py
+build_blighted_mage.py
+build_capital_monumental.py
+build_capital_polish.py
+build_capital_water_anim.py
+build_class_quality_benchmark.py
+build_codex_2x2_strip.py
+build_corrective_remaining_walks.py
+build_corrective_warlock_walk.py
+build_csdemo.py
+build_erased_name_assassin.py
+build_fx_strip.py
+build_gear_codex_icons.py
+build_gem_icons.py
+build_gem_single.py
+build_imagegen_attack_candidate.py
+build_ledgerbound_warlock.py
+build_loot.py
+build_material_icons.py
+build_mob_projectiles.py
+build_mob_redesigns.py
+build_mob_walk_repairs.py
+build_moonstone.py
+build_oathbound_paladin.py
+build_pc_extra_mobs.py
+build_pixellab_assassin_attack_review.py
+build_preservation_walk_candidate.py
+build_preservation_warrior_east_mirror.py
+build_severed_thread_archer.py
+build_skin_family.py
+build_sprites.py
+build_talent_icons.py
+build_terrain_art_fix.py
+build_terrain_prop_anims.py
+build_visual_cleanup.py
+build_walk8.py
+build_walk_v3_candidates.py
+build_warlock_unify.py
+clean_sprite.py
+correct_assassin_walk_hood_palette.py
+derive_light_sockets.py
+derive_prop_anim.py
+despill_keyed.py
+despill_pale_halo.py
+despill_rim.py
+dip_check.py
+DRIFT_AUDIT.md
+drift_sheets.py
+edit_in_place_brief.py
+enforce_act1_gait_alternation.py
+extract_sheet.py
+fidelity_audit.py
+fix_sexton_surface.py
+fix_warlock_ult_e_frames.py
+floorgen_prompts.py
+flux_draft.py
+frame_fix.py
+g2d_slice_parts.py
+gait_briefs.py
+gait_row_sheet.py
+gif_from_frames.py
+grid_to_row.py
+IMAGEGEN_SPRITE_PIPELINE.md
+install_ability.py
+install_act1_boss.py
+install_assassin_approved_east_walk_mapping.py
+install_assassin_idle_regen.py
+install_assassin_pixellab_attacks.py
+install_attack_regen.py
+install_capital_stage.py
+install_char_anims.py
+install_clip.py
+install_corrective_class_walks.py
+install_critter.py
+install_death_flat.py
+install_dirset.py
+install_elite_skin_upscales.py
+install_env_asset.py
+install_gait_row.py
+install_gait_walk.py
+install_ground_field.py
+install_preservation_archer_walk_mirrors.py
+install_preservation_class_idle_walks.py
+install_preservation_owner_walk_copies.py
+install_preservation_warrior_attacks.py
+install_preservation_warrior_east_v09.py
+install_preservation_warrior_east_v10_mirror.py
+install_preservation_warrior_idles.py
+install_preservation_warrior_states.py
+install_preservation_warrior_walks.py
+install_prop_anim.py
+install_prop_hires.py
+install_row_strip.py
+make_legacy_walk_reference.py
+make_walk_motion_guide.py
+mirror_cycle_master.py
+mobqa_filmstrip.py
+normalize_row.py
+palette_grade.py
+pixellab_add_assassin_second_dagger.py
+PIXELLAB_BOSS_EDITS.md
+PIXELLAB_PROMPT_LESSONS.md
+pixellab_repair_assassin_attack_daggers.py
+pixellab_resize_assassin_attack.py
+pixellab_resize_assassin_east.py
+pixellab_resize_band.py
+pixellab_resize_soft_clips.py
+pixellab_upscale_elite_skins.py
+pl_anim_ids.py
+polligen.py
+profile_clip_briefs.py
+qa_anim.py
+qa_blighted_mage.py
+README.md
+rebuild_preservation_archer_alpha.py
+recenter_strip.py
+relabel_class_idle_orientations.py
+replace_preservation_walk_transitions.py
+reseat_strip.py
+revert_other_classes_to_old_strips.py
+run_codex_batch.ps1
+scan_drift.py
+scan_key_rim.py
+SKIN_GEN_QA.md
+skin_install.py
+split_legacy_walk_targets.py
+stabilize_attack_anchors.py
+stride_scan.py
+tight_crop.py
+transplant_assassin_walk_hoods.py
+travel_gif.py
+update_terrain_asset_report_v4.py
+update_terrain_asset_report_v5.py
+upscale_hero.py
+verify_art.py
+verify_assassin_attack_candidates.py
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\tools\\art\\normalize_row.py'; Get-Content 
+-Raw -LiteralPath 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\tools\\art\\install_gait_row.py'" in C:\Users
+\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__n
+ succeeded in 285ms:
+#!/usr/bin/env python
+"""Equalise figure heights in a Codex row (the "two small figures crammed into
+one cell" defect): gutter-slice the green row, scale every figure to the
+median figure height, re-lay them evenly on fresh green. Feed the result to
+install_gait_row.
+
+    python tools/art/normalize_row.py <row.png> <out.png> [--gap N]
+"""
+import argparse
+import numpy as np
+from PIL import Image
+
+GREEN = (0, 255, 0, 255)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("row")
+    ap.add_argument("out")
+    ap.add_argument("--gap", type=int, default=6, help="content runs closer than this merge")
+    ap.add_argument("--pad", type=int, default=40)
+    a = ap.parse_args()
+    im = Image.open(a.row).convert("RGBA")
+    arr = np.array(im)
+    g = (arr[:, :, 1] > 180) & (arr[:, :, 0] < 110) & (arr[:, :, 2] < 110)
+    fg = ~g & (arr[:, :, 3] > 0)
+    cols = fg.any(axis=0)
+    runs, on, s = [], False, 0
+    for x, c in enumerate(cols):
+        if c and not on:
+            on, s = True, x
+        elif not c and on:
+            on = False
+            runs.append([s, x])
+    if on:
+        runs.append([s, len(cols)])
+    merged = []
+    for r in runs:
+        if merged and r[0] - merged[-1][1] < a.gap:
+            merged[-1][1] = r[1]
+        else:
+            merged.append(r)
+    merged = [r for r in merged if r[1] - r[0] > 12]
+    figs = []
+    for x0, x1 in merged:
+        ys = np.nonzero(fg[:, x0:x1].any(axis=1))[0]
+        figs.append(im.crop((x0, int(ys.min()), x1, int(ys.max()) + 1)))
+    hs = sorted(f.height for f in figs)
+    target = hs[len(hs) // 2]
+    scaled = []
+    for f in figs:
+        k = target / f.height
+        scaled.append(f.resize((max(1, round(f.width * k)), target), Image.LANCZOS) if abs(k - 1) > 0.02 else f)
+    cell = max(f.width for f in scaled) + a.pad
+    out = Image.new("RGBA", (cell * len(scaled) + a.pad, target + 2 * a.pad), GREEN)
+    for i, f in enumerate(scaled):
+        out.alpha_composite(f, (a.pad + i * cell + (cell - a.pad - f.width) // 2, a.pad))
+    out.save(a.out)
+    print(f"{len(figs)} figures, heights {[f.height for f in figs]} -> {target}; wrote {a.out} {out.size}")
+
+
+if __name__ == "__main__":
+    main()
+
+#!/usr/bin/env python
+"""Install a Codex gait ROW (N figures on flat #00ff00) as an engine walk strip
+at the OUTGOING strip's geometry -- generic over heroes, mobs and bosses, and
+frame-count agnostic (the row's N need not match the old strip's N; the
+engine reads frames = width // height).
+
+Generalizes install_gait_walk.py (heroes, 6 frames, measures walk_s) and the
+Vargoth boss installer (art_src/vargoth_walk_2026-08-30/install_vargoth_walk.py)
+into one tool for the 2026-09 mob/boss walk regen batch:
+
+  1. key the green + despill the 2 px rim band (install_gait_walk.key_and_despill)
+  2. slice the row: equal-width cells (default) or at REAL gutters (--gutters:
+     the N-1 widest empty column bands; --frames N when a row is not obviously
+     N figures)
+  3. ONE scale for the whole row = old median body height / row median body
+     height (never per frame -- per-frame scaling breathes)
+  4. anchor each frame's x: torso band (upper 40 % of the body -- gait-donor
+     gens bake canvas travel), whole-body centroid, or bbox centre (--anchor)
+  5. pin each frame's lowest opaque row to the old strip's feet line
+  6. sweep slice-edge orphans (a limb/blade tip cut off into the neighbour
+     cell by equal-width slicing; --no-orphans to skip)
+  7. tone-match to the outgoing strip (install_gait_walk.tone_match, the
+     3-regime luma/chroma match; --no-tone to skip)
+  8. write --out (+ per-cell mirrored --mirror-out, byte copies --copy-out);
+     back the outgoing files up into --backup-dir first.
+
+    python tools/art/install_gait_row.py --old game/assets/sprites/wolf_walk.png \
+        --row art_src/mob_gait_2026-09-03/wolf/wolf_walk_row.png \
+        --out game/assets/sprites/wolf_walk.png --backup-dir art_src/.../old_backup
+    python tools/art/install_gait_row.py --old game/assets/sprites/korrag_walk_codex_e.png \
+        --row .../korrag_walk_e_row.png --out .../korrag_walk_codex_e.png \
+        --copy-out .../korrag_walk_codex_se.png --copy-out .../korrag_walk_codex_ne.png \
+        --mirror-out .../korrag_walk_codex_w.png ... [--dry] [--report]
+
+--flip mirrors the ROW before install (a gen that came back facing the wrong
+way). --old may also be an idle strip when no walk exists yet (geometry =
+cell / median body / feet of that strip). After install: --import, then
+tools/art/verify_art.py <base>, ba_gifs / travel_gif review, gates.
+"""
+from __future__ import annotations
+
+import argparse
+import shutil
+import sys
+from pathlib import Path
+
+import numpy as np
+from PIL import Image
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from install_gait_walk import key_and_despill, tone_match, mirror_strip  # noqa: E402
+
+A_SOLID = 40
+WIDTH_FIT_FLOOR = 0.95   # never give up more than 5% of the body to fit the cell
+
+
+def _bbox(alpha: np.ndarray) -> tuple[int, int, int, int] | None:
+    ys, xs = np.nonzero(alpha > A_SOLID)
+    if len(ys) == 0:
+        return None
+    return int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())
+
+
+def old_geometry(old: Path) -> tuple[int, int, int]:
+    """(cell, median body height, feet row) of the outgoing strip.
+
+    Feet = frame 0's lowest opaque row -- the exact row enemy.gd's
+    _strip_feet_y reads for idle<->walk alignment. Body = median over frames
+    (one frame with a raised weapon must not set the target)."""
+    im = Image.open(old).convert("RGBA")
+    a = np.array(im)[:, :, 3]
+    cell = im.height
+    n = max(1, im.width // cell)
+    bodies, feet0 = [], None
+    for f in range(n):
+        bb = _bbox(a[:, f * cell:(f + 1) * cell])
+        if bb is None:
+            continue
+        bodies.append(bb[3] - bb[1] + 1)
+        if feet0 is None:
+            feet0 = bb[3]
+    if not bodies:
+        raise SystemExit(f"{old} has no opaque content")
+    return cell, int(np.median(bodies)), int(feet0)
+
+
+def slice_row(rgba: np.ndarray, frames: int | None, gutters: bool, gap: int = 4) -> list[np.ndarray]:
+    a = rgba[:, :, 3] > A_SOLID
+    cols = a.any(axis=0)
+    if gutters:
+        # figures = runs of content columns; merge runs separated by < 4 px
+        runs, start = [], None
+        for x, c in enumerate(cols):
+            if c and start is None:
+                start = x
+            elif not c and start is not None:
+                runs.append([start, x - 1]); start = None
+        if start is not None:
+            runs.append([start, len(cols) - 1])
+        merged = []
+        for r in runs:
+            if merged and r[0] - merged[-1][1] <= gap:
+                merged[-1][1] = r[1]
+            else:
+                merged.append(r)
+        if frames and len(merged) != frames:
+            # keep the N widest runs, drop specks
+            merged = sorted(sorted(merged, key=lambda r: r[1] - r[0], reverse=True)[:frames])
+        if not merged:
+            raise SystemExit("row has no content")
+        # cell boundaries = midpoints of the gaps
+        bounds = [0]
+        for i in range(len(merged) - 1):
+            bounds.append((merged[i][1] + merged[i + 1][0]) // 2)
+        bounds.append(rgba.shape[1])
+        return [rgba[:, bounds[i]:bounds[i + 1]] for i in range(len(merged))]
+    n = frames or _count_figures(cols)
+    fw = rgba.shape[1] // n
+    return [rgba[:, f * fw:(f + 1) * fw] for f in range(n)]
+
+
+def _count_figures(cols: np.ndarray) -> int:
+    runs, start = 0, None
+    for x, c in enumerate(cols):
+        if c and start is None:
+            start = x
+        elif not c and start is not None:
+            if x - start > 8:
+                runs += 1
+            start = None
+    if start is not None:
+        runs += 1
+    return max(1, runs)
+
+
+def anchor_x(alpha: np.ndarray, mode: str) -> float:
+    ys, xs = np.nonzero(alpha > A_SOLID)
+    if len(ys) == 0:
+        return alpha.shape[1] / 2.0
+    if mode == "bbox":
+        return (xs.min() + xs.max()) / 2.0
+    if mode == "centroid":
+        return float(xs.mean())
+    top, bot = ys.min(), ys.max()
+    band = ys <= top + int((bot - top) * 0.40)
+    return float(xs[band].mean())
+
+
+def sweep_orphans(cell_rgba: np.ndarray, edge_zone: int) -> np.ndarray:
+    """Drop connected components that sit entirely inside a slice-edge zone and
+    are not the largest component (sliced-off limb/blade tips from the
+    neighbouring figure). Everything else -- detached FX, cloth tatters,
+    projectiles the brief allowed -- is kept."""
+    try:
+        from scipy import ndimage
+    except Exception:
+        return cell_rgba
+    a = cell_rgba[:, :, 3] > A_SOLID
+    labels, count = ndimage.label(a)
+    if count <= 1:
+        return cell_rgba
+    sizes = ndimage.sum(a, labels, range(1, count + 1))
+    main = int(np.argmax(sizes)) + 1
+    main_size = float(sizes[main - 1])
+    w = a.shape[1]
+    out = cell_rgba.copy()
+    for lab in range(1, count + 1):
+        if lab == main or sizes[lab - 1] < 12:
+            continue
+        m = labels == lab
+        xs = np.nonzero(m)[1]
+        # a sliced-off neighbour fragment: small (< 15 % of the body) and
+        # touching a slice edge zone; a big detached part (a thrown weapon the
+        # brief allowed, a long tail) is left alone
+        small = sizes[lab - 1] < 0.15 * main_size
+        at_edge = xs.min() < edge_zone or xs.max() > w - edge_zone
+        if small and at_edge:
+            out[:, :, 3] = np.where(m, 0, out[:, :, 3])
+    return out
+
+
+def build(row: Path, cell: int, body_target: int, feet_y: int, frames: int | None,
+          gutters: bool, anchor: str, flip: bool, orphans: bool,
+          report: bool, gap: int = 4) -> Image.Image:
+    im = Image.open(row)
+    if flip:
+        im = im.transpose(Image.FLIP_LEFT_RIGHT)
+    rgba = key_and_despill(im)
+    cells = slice_row(rgba, frames, gutters, gap)
+    if orphans:
+        zone = max(6, int(cells[0].shape[1] * 0.14))
+        cells = [sweep_orphans(c, zone) for c in cells]
+    bodies, reach = [], []
+    for i, c in enumerate(cells):
+        bb = _bbox(c[:, :, 3])
+        if bb is None:
+            raise SystemExit("a sliced cell is empty -- wrong --frames or gutters?")
+        h = bb[3] - bb[1] + 1
+        w = bb[2] - bb[0] + 1
+        # A gutter split can hand back a SPECK as its own cell (a stray fleck
+        # between two figures), which would ship as a near-empty frame that
+        # blinks in game. Refuse rather than install it.
+        if h < 0.35 * max(bodies or [h]):
+            raise SystemExit(f"sliced cell {i} is a {w}x{h} speck, not a figure "
+                             f"-- pass --frames N (or drop --gutters)")
+        bodies.append(h)
+        # How far the figure reaches from its ANCHOR (the point that lands on
+        # the cell centre) -- not its bbox width. A hound's tail streams to one
+        # side of the torso, so the bbox fits the cell while the tail still
+        # runs off the edge once the torso is centred.
+        ax = anchor_x(c[:, :, 3], anchor)
+        reach.append(max(ax - bb[0], bb[2] - ax))
+    S = body_target / float(np.median(bodies))
+    need = 2.0 * max(reach) * S
+    if need > cell - 10:
+        # Give up at most WIDTH_FIT_FLOOR of the body to fit the cell. Shrinking
+        # further would trade a clipped tail tip for a body that visibly pops
+        # smaller the moment the creature moves (the enemy renderer normalises a
+        # locomotion strip by its own cell) -- a worse defect than a cropped
+        # tail, which the outgoing strips carried anyway.
+        S *= max(WIDTH_FIT_FLOOR, (cell - 10) / need)
+        if report:
+            print(f"  width-fit: reach needs {need:.0f}px of a {cell}px cell, scale -> {S:.3f}")
+    n = len(cells)
+    out = Image.new("RGBA", (cell * n, cell), (0, 0, 0, 0))
+    for f, c in enumerate(cells):
+        img = Image.fromarray(c)
+        sw, sh = max(1, int(round(c.shape[1] * S))), max(1, int(round(c.shape[0] * S)))
+        img = img.resize((sw, sh), Image.LANCZOS)
+        a = np.array(img)[:, :, 3]
+        bb = _bbox(a)
+        bottom = bb[3] if bb else sh - 1
+        cx = anchor_x(a, anchor)
+        px, py = int(round(f * cell + cell / 2 - cx)), feet_y - bottom
+        out.alpha_composite(img, (px, py)) if px >= f * cell - sw and py > -sh else None
+        if report:
+            print(f"  f{f}: body {bodies[f]}->{int(bodies[f]*S)} px, feet {bottom}->{feet_y}, "
+                  f"anchor x {cx:.1f} -> cell centre")
+    # post-resize fringe despill (LANCZOS re-blends key green into the new edge)
+    arr = np.array(out).astype(int)
+    r, g, b, a = arr[:, :, 0], arr[:, :, 1], arr[:, :, 2], arr[:, :, 3]
+    hot = (a > 0) & (a < 255) & (g > np.maximum(r, b))
+    arr[:, :, 1] = np.where(hot, np.maximum(r, b), g)
+    # clip anything that ran past the cell (a wide row figure at a small cell)
+    strip = Image.fromarray(arr.clip(0, 255).astype(np.uint8))
+    if report:
+        print(f"  row frames {n}, scale {S:.3f}, cell {cell}, body target {body_target}, feet {feet_y}")
+    return strip
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("--old", required=True, help="outgoing strip (geometry + tone source)")
+    ap.add_argument("--row", required=True, help="Codex row master on flat green")
+    ap.add_argument("--out", action="append", default=[], help="strip destination(s)")
+    ap.add_argument("--mirror-out", action="append", default=[], help="per-cell mirrored destination(s)")
+    ap.add_argument("--copy-out", action="append", default=[], help="byte-copy destination(s)")
+    ap.add_argument("--frames", type=int, default=None)
+    ap.add_argument("--cell", type=int, default=None, help="override the cell size (a taller cell for a clip whose 
+raised weapon overflows the old one); the feet keep the old bottom margin")
+    ap.add_argument("--gutters", action="store_true", help="slice at real gutters, not equal width")
+    ap.add_argument("--gutter-gap", type=int, default=4, help="content runs closer than this merge into one figure (a 
+shield held off the body)")
+    ap.add_argument("--anchor", choices=["torso", "centroid", "bbox"], default="torso")
+    ap.add_argument("--flip", action="store_true", help="mirror the row before install")
+    ap.add_argument("--no-tone", action="store_true")
+    ap.add_argument("--no-orphans", action="store_true")
+    ap.add_argument("--backup-dir", default=None)
+    ap.add_argument("--dry", action="store_true")
+    ap.add_argument("--report", action="store_true")
+    args = ap.parse_args()
+
+    old = Path(args.old)
+    cell, body, feet = old_geometry(old)
+    if args.cell:
+        feet = args.cell - (cell - feet)
+        cell = args.cell
+    print(f"old {old.name}: cell {cell} body {body} feet {feet}")
+    strip = build(Path(args.row), cell, body, feet, args.frames, args.gutters, args.anchor,
+                  args.flip, not args.no_orphans, args.report, args.gutter_gap)
+    if not args.no_tone:
+        strip = tone_match(strip, old)
+    mirrored = mirror_strip(strip, cell)
+    outs = [(Path(p), strip) for p in args.out] + [(Path(p), mirrored) for p in args.mirror_out] \
+        + [(Path(p), strip) for p in args.copy_out]
+    if not outs:
+        outs = [(old, strip)]
+    for dest, img in outs:
+        if args.dry:
+            print(f"DRY would write {dest} {img.size}")
+            continue
+        if args.backup_dir and dest.exists():
+            bd = Path(args.backup_dir)
+            bd.mkdir(parents=True, exist_ok=True)
+            if not (bd / dest.name).exists():
+                shutil.copy2(dest, bd / dest.name)
+        tmp = dest.with_name(f".{dest.stem}.tmp{dest.suffix}")
+        img.save(tmp)
+        tmp.replace(dest)
+        print(f"wrote {dest} {img.size}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 'C:\\Users\\as
+ali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\tools\\art\\build_imagegen_attack_candidate.py'; 
+Get-Content -Raw -LiteralPath 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\tools\\art\\despill_keyed.py'" in C:\Users\as
+ali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__n
+ succeeded in 340ms:
+"""Build one unwired ImageGen attack row and its QA proofs.
+
+The generated source may use any flat chroma field.  Border-connected keying
+protects intended costume colors, source gutters are validated losslessly,
+and one frame-1-derived scale preserves authored recoil/crouch motion.
+"""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+import numpy as np
+from PIL import Image
+
+from build_ledgerbound_warlock import _hard_alpha
+from build_preservation_walk_candidate import (
+    _crop_frames,
+    _infer_columns,
+    _normalize,
+    _write_cut_overlay,
+    _write_qa,
+)
+from rebuild_preservation_archer_alpha import _connected_key
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("source", type=Path)
+    parser.add_argument("output_dir", type=Path)
+    parser.add_argument("--stem", required=True)
+    parser.add_argument("--label", required=True)
+    parser.add_argument("--frames", type=int, required=True)
+    parser.add_argument("--fps", type=float, default=22.0)
+    parser.add_argument("--body", type=int, default=180)
+    parser.add_argument("--peak", type=int, required=True)
+    args = parser.parse_args()
+
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    source = Image.open(args.source).convert("RGBA")
+    keyed, key, removed = _connected_key(source)
+    keyed = _hard_alpha(keyed)
+    keyed.save(args.output_dir / f"{args.stem}_keyed.png")
+
+    alpha = np.asarray(keyed.getchannel("A"), dtype=np.uint8) > 0
+    detected = _infer_columns(alpha)
+    if detected != args.frames:
+        raise ValueError(
+            f"expected {args.frames} authored figures but detected {detected}"
+        )
+    frames, edges, gutters = _crop_frames(keyed, detected)
+    _write_cut_overlay(
+        args.output_dir / f"{args.stem}_cuts.png", keyed, edges, gutters
+    )
+    normalized = _normalize(frames, args.body)
+
+    strip = Image.new("RGBA", (277 * detected, 277), (0, 0, 0, 0))
+    for index, frame in enumerate(normalized):
+        strip.alpha_composite(frame, (index * 277, 0))
+    strip.save(args.output_dir / f"{args.stem}_candidate.png", optimize=True)
+    _write_qa(
+        args.output_dir,
+        args.stem,
+        args.label,
+        normalized,
+        args.fps,
+        args.peak,
+    )
+
+    semi_alpha = int(
+        ((np.asarray(strip.getchannel("A")) > 0) & (np.asarray(strip.getchannel("A")) < 255)).sum()
+    )
+    if semi_alpha:
+        raise ValueError(f"candidate contains {semi_alpha} semi-transparent pixels")
+    if any(strip.getpixel(point)[3] != 0 for point in ((0, 0), (strip.width - 1, 0), (0, 276), (strip.width - 1, 
+276))):
+        raise ValueError("candidate corners are not transparent")
+    heights = [frame.getbbox()[3] - frame.getbbox()[1] for frame in normalized]
+    print(
+        f"{args.stem}: key={key}, removed={removed}, frames={detected}, "
+        f"gutters={gutters}, heights={heights}, cell=277, body={args.body}, "
+        f"fps={args.fps:g}"
+    )
+
+
+if __name__ == "__main__":
+    main()
+
+#!/usr/bin/env python
+"""Despill the dark/neon-green chroma rim that remove_chroma_key leaves on some
+Codex masters, IN PLACE, before build_act1_dirset / build_codex_2x2_strip slice
+them (those trust an already-keyed master and don't re-despill; a LANCZOS resize
+would only spread the fringe). CLAUDE.md rule: clamp any visible pixel whose
+green dominates toward max(R,B), and drop the faint green edge crumbs.
+
+  python tools/art/despill_keyed.py <keyed.png> [<keyed.png> ...]
+
+Reports the green-dominant pixel count before/after per file.
+"""
+import sys
+import numpy as np
+from PIL import Image
+
+THR = 18          # green-dominance over max(r,b) to treat as spill
+EDGE_A = 40       # alpha at/below this on a green-dominant pixel -> cut
+
+
+def despill(path: str) -> None:
+    im = Image.open(path).convert("RGBA")
+    a = np.asarray(im).copy()
+    r = a[..., 0].astype(np.int16)
+    g = a[..., 1].astype(np.int16)
+    b = a[..., 2].astype(np.int16)
+    al = a[..., 3]
+    dom = g - np.maximum(r, b)
+    before = int(((dom > THR) & (al > 0)).sum())
+    # clamp green on visible pixels
+    spill = (dom > THR) & (al > 0)
+    a[..., 1][spill] = np.maximum(r, b)[spill].astype(np.uint8)
+    # cut faint green edge crumbs entirely
+    crumbs = (dom > THR) & (al > 0) & (al <= EDGE_A)
+    a[..., 3][crumbs] = 0
+    im2 = Image.fromarray(a, "RGBA")
+    a2 = np.asarray(im2)
+    dom2 = a2[..., 1].astype(np.int16) - np.maximum(a2[..., 0], a2[..., 2]).astype(np.int16)
+    after = int(((dom2 > THR) & (a2[..., 3] > 0)).sum())
+    im2.save(path)
+    print(f"  {path.split(chr(92))[-1]}: green {before} -> {after}")
+
+
+if __name__ == "__main__":
+    for p in sys.argv[1:]:
+        despill(p)
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\tools\\art\\gait_row_sheet.py'; Get-Content 
+-Raw -LiteralPath 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\tools\\art\\tight_crop.py'" in C:\Users\asali
+\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__n
+ succeeded in 318ms:
+#!/usr/bin/env python
+"""OLD-vs-NEW review sheet for gait-transfer walk ROWS, before install.
+
+The vet step of the mob/boss walk lane (tools/art/gait_briefs.py ->
+run_codex_batch -> THIS -> install_gait_row.py). For each generated row it
+lays the OUTGOING strip's frames above the NEW row's figures at a shared
+scale, feet on one line, so the two gaits can be compared pose for pose ├óΓé¼ΓÇ¥
+the knee-articulation / passing-frame / leg-alternation read that decides
+whether a row installs (CLAUDE.md: judge on a sheet, and the eyes are the
+only gate for this defect class).
+
+    python tools/art/gait_row_sheet.py <out.png> <row.png> [row.png ...]
+    python tools/art/gait_row_sheet.py <out.png> --all <stage_root>
+
+Rows are the raw Codex masters on flat #00FF00 (keyed here for display only).
+The old strip is resolved from the row's stage name: <base>_walk[_<dir>].png.
+"""
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+import numpy as np
+from PIL import Image, ImageDraw
+
+ROOT = Path(__file__).resolve().parents[2]
+SPR = ROOT / "game" / "assets" / "sprites"
+CELL = 190
+
+
+def key_green(im: Image.Image) -> Image.Image:
+    a = np.array(im.convert("RGBA")).astype(int)
+    r, g, b = a[:, :, 0], a[:, :, 1], a[:, :, 2]
+    bg = (g >= 150) & (r <= 140) & (b <= 140) & (g > r + 50) & (g > b + 50)
+    a[:, :, 3] = np.where(bg, 0, a[:, :, 3])
+    return Image.fromarray(a.clip(0, 255).astype("uint8"), "RGBA")
+
+
+def row_figures(path: Path) -> list[Image.Image]:
+    """Split a generated row at its real gutters, cropped to a shared baseline."""
+    im = key_green(Image.open(path))
+    a = np.array(im)[:, :, 3] > 40
+    cols = a.any(axis=0)
+    runs, st = [], None
+    for x, c in enumerate(cols):
+        if c and st is None:
+            st = x
+        elif not c and st is not None:
+            if x - st > 8:
+                runs.append([st, x - 1])
+            st = None
+    if st is not None:
+        runs.append([st, len(cols) - 1])
+    merged: list[list[int]] = []
+    for r in runs:
+        if merged and r[0] - merged[-1][1] <= 4:
+            merged[-1][1] = r[1]
+        else:
+            merged.append(r)
+    ys = np.nonzero(a)[0]
+    if not len(ys):
+        return []
+    top, bot = int(ys.min()), int(ys.max())
+    return [im.crop((x0, top, x1 + 1, bot + 1)) for x0, x1 in merged]
+
+
+def strip_frames(path: Path) -> list[Image.Image]:
+    im = Image.open(path).convert("RGBA")
+    c = im.height
+    out = [im.crop((f * c, 0, (f + 1) * c, c)) for f in range(max(1, im.width // c))]
+    # crop the family to one shared baseline so the feet line up with the row
+    a = np.array(im)[:, :, 3] > 40
+    ys = np.nonzero(a)[0]
+    if len(ys):
+        top, bot = int(ys.min()), int(ys.max())
+        out = [f.crop((0, top, c, bot + 1)) for f in out]
+    return out
+
+
+def old_for(row: Path) -> Path | None:
+    """<stage>/<base>_walk_<facing>_row.png -> the strip it replaces."""
+    stem = row.stem[: -len("_row")] if row.stem.endswith("_row") else row.stem
+    cand = [stem.replace("_flat", ""), stem]
+    for c in cand:
+        p = SPR / f"{c}.png"
+        if p.exists():
+            return p
+    base = stem.split("_walk")[0]
+    p = SPR / f"{base}_walk.png"
+    return p if p.exists() else None
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("out")
+    ap.add_argument("rows", nargs="*")
+    ap.add_argument("--all", dest="stage_root")
+    args = ap.parse_args()
+    rows = [Path(r) for r in args.rows]
+    if args.stage_root:
+        rows += sorted(Path(args.stage_root).glob("*/*_row.png"))
+    if not rows:
+        print("no rows")
+        return 1
+    blocks = []
+    for r in rows:
+        old = old_for(r)
+        blocks.append((r.stem[: -len("_row")], strip_frames(old) if old else [], row_figures(r)))
+    w = max(max(len(o), len(n)) for _, o, n in blocks)
+    sheet = Image.new("RGBA", (w * CELL + 190, len(blocks) * 2 * CELL + 20), (58, 66, 52, 255))
+    d = ImageDraw.Draw(sheet)
+    y = 10
+    for name, oldf, newf in blocks:
+        for label, frames in (("OLD", oldf), ("NEW", newf)):
+            d.text((6, y + CELL // 2), f"{name}\n{label} {len(frames)}f", fill=(255, 255, 255, 255))
+            for i, c in enumerate(frames):
+                if c.width < 1 or c.height < 1:
+                    continue
+                s = min((CELL - 14) / c.width, (CELL - 14) / c.height)
+                t = c.resize((max(1, int(c.width * s)), max(1, int(c.height * s))), Image.LANCZOS)
+                sheet.paste(t, (190 + i * CELL + (CELL - t.width) // 2, y + (CELL - t.height)), t)
+            d.line([(190, y + CELL - 1), (sheet.width, y + CELL - 1)], fill=(120, 130, 110, 255))
+            y += CELL
+    sheet.save(args.out)
+    print("wrote", args.out, sheet.size)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+
+"""Tight-crop transparent sprite sources without disturbing animation frames.
+
+For each positional static PNG, this tool crops the static image and its
+optional ``<stem>_anim.png`` sibling to one shared alpha rectangle.  Animation
+strips are rebuilt frame by frame, so every frame keeps identical dimensions
+and alignment.  The static image's original dimensions determine the strip's
+frame grid.
+
+Use ``--static-only`` for redundant portrait/reference sprites whose animation
+strip is already independently normalized.
+"""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+from PIL import Image
+
+
+def save_png(image: Image.Image, output: Path) -> None:
+    """Atomically replace a PNG so importers never observe a partial strip."""
+    temporary = output.with_name(f".{output.stem}.tight-crop.tmp.png")
+    image.save(temporary, optimize=True)
+    temporary.replace(output)
+
+
+def _visible_bbox(image: Image.Image, threshold: int) -> tuple[int, int, int, int]:
+    alpha = image.convert("RGBA").getchannel("A")
+    if threshold > 0:
+        alpha = alpha.point(lambda value: 255 if value > threshold else 0)
+    bbox = alpha.getbbox()
+    if bbox is None:
+        raise ValueError("image contains no visible pixels")
+    return bbox
+
+
+def _union(
+    left: tuple[int, int, int, int],
+    right: tuple[int, int, int, int],
+) -> tuple[int, int, int, int]:
+    return (
+        min(left[0], right[0]),
+        min(left[1], right[1]),
+        max(left[2], right[2]),
+        max(left[3], right[3]),
+    )
+
+
+def _strip_frames(strip: Image.Image, frame_size: tuple[int, int]) -> list[Image.Image]:
+    frame_width, frame_height = frame_size
+    if strip.height != frame_height or strip.width % frame_width != 0:
+        raise ValueError(
+            f"strip {strip.width}x{strip.height} is not a horizontal grid of "
+            f"{frame_width}x{frame_height} frames"
+        )
+    return [
+        strip.crop((x, 0, x + frame_width, frame_height))
+        for x in range(0, strip.width, frame_width)
+    ]
+
+
+def crop_family(
+    static_path: Path,
+    *,
+    threshold: int = 0,
+    include_strip: bool = True,
+) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
+    """Crop one static sprite and its animation strip; return old/new/origin."""
+    static = Image.open(static_path).convert("RGBA")
+    old_size = static.size
+    strip_path = static_path.with_name(f"{static_path.stem}_anim.png")
+    frames: list[Image.Image] = []
+    if include_strip and strip_path.exists():
+        strip = Image.open(strip_path).convert("RGBA")
+        frames = _strip_frames(strip, old_size)
+
+    bbox = _visible_bbox(static, threshold)
+    for frame in frames:
+        bbox = _union(bbox, _visible_bbox(frame, threshold))
+
+    cropped_static = static.crop(bbox)
+    save_png(cropped_static, static_path)
+    if frames:
+        cropped_frames = [frame.crop(bbox) for frame in frames]
+        strip_out = Image.new(
+            "RGBA",
+            (cropped_static.width * len(cropped_frames), cropped_static.height),
+            (0, 0, 0, 0),
+        )
+        for index, frame in enumerate(cropped_frames):
+            strip_out.alpha_composite(frame, (index * cropped_static.width, 0))
+        save_png(strip_out, strip_path)
+
+    return old_size, cropped_static.size, (bbox[0], bbox[1])
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("images", nargs="+", type=Path, help="static PNG sources")
+    parser.add_argument(
+        "--threshold",
+        type=int,
+        default=0,
+        help="discard pixels whose alpha is at or below this 0..255 value",
+    )
+    parser.add_argument(
+        "--static-only",
+        action="store_true",
+        help="do not crop a matching _anim.png strip",
+    )
+    args = parser.parse_args()
+    if not 0 <= args.threshold <= 254:
+        parser.error("--threshold must be between 0 and 254")
+
+    for path in args.images:
+        old_size, new_size, origin = crop_family(
+            path,
+            threshold=args.threshold,
+            include_strip=not args.static_only,
+        )
+        print(
+            f"{path}: {old_size[0]}x{old_size[1]} -> "
+            f"{new_size[0]}x{new_size[1]} (origin {origin[0]},{origin[1]})"
+        )
+
+
+if __name__ == "__main__":
+    main()
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Select-String -LiteralPath 'C:\\Users\\asali
+\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\tools\\art\\build_preservation_walk_candidate.py' -Pattern 
+'"'^def _normalize'"' -Context 0,90" in C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack
+_walk_b_2026-09-05\mage__attack_walk_b__n
+ succeeded in 518ms:
+
+> C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:134:d
+ef _normalize(frames: list[Image.Image], body: int) -> list[Image.Image]:
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:135: 
+   boxes = [frame.getbbox() for frame in frames]
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:136: 
+   if any(box is None for box in boxes):
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:137: 
+       raise ValueError("empty frame")
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:138: 
+   first = boxes[0]
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:139: 
+   assert first is not None
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:140: 
+   reference_height = first[3] - first[1]
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:141: 
+   scale = body / float(reference_height)
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:142: 
+   cell, baseline = 277, 255
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:143: 
+   normalized: list[Image.Image] = []
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:144: 
+   for index, (frame, box) in enumerate(zip(frames, boxes, strict=True)):
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:145: 
+       assert box is not None
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:146: 
+       figure = frame.crop(box)
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:147: 
+       size = (
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:148: 
+           max(1, round(figure.width * scale)),
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:149: 
+           max(1, round(figure.height * scale)),
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:150: 
+       )
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:151: 
+       figure = _hard_alpha(figure.resize(size, Image.Resampling.LANCZOS))
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:152: 
+       if figure.width > cell - 8 or figure.height > baseline - 4:
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:153: 
+           raise ValueError(f"normalized f{index + 1} exceeds staging cell: {figure.size}")
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:154: 
+       canvas = Image.new("RGBA", (cell, cell), (0, 0, 0, 0))
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:155: 
+       canvas.alpha_composite(figure, ((cell - figure.width) // 2, baseline - figure.height))
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:156: 
+       normalized.append(canvas)
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:157: 
+   return normalized
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:158:
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:159:
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:160:d
+ef _shown(frame: Image.Image, body: int, cell: int) -> Image.Image:
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:161: 
+   box = frame.getbbox()
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:162: 
+   if box is None:
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:163: 
+       raise ValueError("empty normalized frame")
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:164: 
+   figure = frame.crop(box)
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:165: 
+   scale = body / float(figure.height)
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:166: 
+   figure = figure.resize(
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:167: 
+       (max(1, round(figure.width * scale)), body), Image.Resampling.LANCZOS
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:168: 
+   )
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:169: 
+   canvas = Image.new("RGBA", (cell, cell), (25, 28, 34, 255))
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:170: 
+   canvas.alpha_composite(figure, ((cell - figure.width) // 2, cell - figure.height - 10))
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:171: 
+   return canvas
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:172:
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:173:
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:174:d
+ef _write_cut_overlay(
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:175: 
+   path: Path, keyed: Image.Image, edges: list[int], gutters: list[int]
+  
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:176:) 
+-> None:
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:177: 
+   canvas = Image.new("RGBA", keyed.size, (25, 28, 34, 255))
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:178: 
+   canvas.alpha_composite(keyed)
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:179: 
+   draw = ImageDraw.Draw(canvas)
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:180: 
+   for index, edge in enumerate(edges[1:-1], start=1):
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:181: 
+       draw.line((edge, 0, edge, keyed.height - 1), fill=(255, 72, 72, 255), width=2)
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:182: 
+       draw.text(
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:183: 
+           (max(2, edge - 32), 5),
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:184: 
+           f"{index}|{index + 1} g{gutters[index - 1]}",
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:185: 
+           font=_font(14),
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:186: 
+           fill=(255, 230, 120, 255),
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:187: 
+       )
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:188: 
+   canvas.save(path)
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:189:
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:190:
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:191:d
+ef _write_qa(
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:192: 
+   output_dir: Path,
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:193: 
+   stem: str,
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:194: 
+   label: str,
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:195: 
+   frames: list[Image.Image],
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:196: 
+   fps: float,
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:197: 
+   opposite_contact: int,
+  
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:198:) 
+-> None:
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:199: 
+   source_cell, header = 220, 42
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:200: 
+   contact = Image.new(
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:201: 
+       "RGBA", (source_cell * len(frames), source_cell + header), (25, 28, 34, 255)
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:202: 
+   )
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:203: 
+   draw = ImageDraw.Draw(contact)
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:204: 
+   draw.text((10, 8), label, font=_font(18), fill=(255, 224, 126, 255))
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:205: 
+   source_pages: list[Image.Image] = []
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:206: 
+   actual_pages: list[Image.Image] = []
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:207: 
+   for index, frame in enumerate(frames):
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:208: 
+       shown = _shown(frame, 180, source_cell)
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:209: 
+       contact.alpha_composite(shown, (index * source_cell, header))
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:210: 
+       draw.text(
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:211: 
+           (index * source_cell + 7, header + 5),
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:212: 
+           f"f{index + 1}",
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:213: 
+           font=_font(14),
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:214: 
+           fill=(255, 224, 126, 255),
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:215: 
+       )
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:216: 
+       if index in (0, opposite_contact - 1):
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:217: 
+           color = (88, 220, 142, 255) if index == 0 else (90, 170, 255, 255)
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:218: 
+           draw.rectangle(
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:219: 
+               (
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:220: 
+                   index * source_cell + 2,
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:221: 
+                   header + 2,
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:222: 
+                   (index + 1) * source_cell - 3,
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:223: 
+                   header + source_cell - 3,
+  C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\art\build_preservation_walk_candidate.py:224: 
+               ),
+
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\tools\\art\\clean_sprite.py'; Get-Content 
+-Raw -LiteralPath 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\tools\\art\\make_legacy_walk_reference.py'" 
+in C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_
+b__n
+ succeeded in 340ms:
+"""clean_sprite ├óΓé¼ΓÇ¥ turn a FLUX/Pollinations render into a clean pixel sprite.
+
+The naive corner flood-fill in polligen leaves an un-keyed halo of
+background pixels around the silhouette (and fails outright when the
+render's background is close in value to the subject). This does it
+properly:
+
+  1. sample the background colour from the border ring
+  2. key by COLOUR DISTANCE (not connectivity), so interior-adjacent
+     fringe pixels die too
+  3. drop stray components, keep the largest blob
+  4. downscale with LANCZOS, then hard-threshold alpha -> crisp edges
+  5. quantize to a small palette (the chunky-pixel medium)
+  6. draw a 1px dark outline around the silhouette (house style)
+  7. gamma pre-brighten for the Forward+ tonemap
+
+Usage: import and call clean(src_png, out_png, size=32, colors=12)
+"""
+from PIL import Image, ImageFilter
+from collections import Counter
+
+
+def _bg_color(im):
+    w, h = im.size
+    px = im.load()
+    ring = []
+    for x in range(w):
+        ring += [px[x, 0][:3], px[x, h - 1][:3]]
+    for y in range(h):
+        ring += [px[0, y][:3], px[w - 1, y][:3]]
+    return Counter(ring).most_common(1)[0][0]
+
+
+def _dist(a, b):
+    return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2) ** 0.5
+
+
+def _key_bg(im, thresh=78, key=None):
+    """Key the background out.
+
+    Pass `key` (e.g. magenta) when the render used a chroma-key backdrop ├óΓé¼ΓÇ¥
+    then it is safe to remove EVERY pixel near that colour, halo included.
+    Otherwise fall back to a border FLOOD limited by colour distance: a
+    dark subject on a dark backdrop must never be keyed globally, or the
+    subject's own shadows get eaten (learned the hard way on the chests).
+    """
+    px = im.load()
+    w, h = im.size
+    if key is not None:
+        for y in range(h):
+            for x in range(w):
+                if _dist(px[x, y][:3], key) < thresh:
+                    px[x, y] = (0, 0, 0, 0)
+        return im
+    bg = _bg_color(im)
+    stack = [(x, 0) for x in range(w)] + [(x, h - 1) for x in range(w)] \
+        + [(0, y) for y in range(h)] + [(w - 1, y) for y in range(h)]
+    seen = set()
+    while stack:
+        x, y = stack.pop()
+        if (x, y) in seen or not (0 <= x < w and 0 <= y < h):
+            continue
+        seen.add((x, y))
+        if px[x, y][3] and _dist(px[x, y][:3], bg) < thresh:
+            px[x, y] = (0, 0, 0, 0)
+            stack += [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+    return im
+
+
+def _largest_blob(im, min_size=12):
+    px = im.load()
+    w, h = im.size
+    seen = set()
+    blobs = []
+    for y in range(h):
+        for x in range(w):
+            if px[x, y][3] > 8 and (x, y) not in seen:
+                stack, cur = [(x, y)], []
+                while stack:
+                    a, b = stack.pop()
+                    if (a, b) in seen or not (0 <= a < w and 0 <= b < h):
+                        continue
+                    if px[a, b][3] <= 8:
+                        continue
+                    seen.add((a, b))
+                    cur.append((a, b))
+                    stack += [(a + 1, b), (a - 1, b), (a, b + 1), (a, b - 1)]
+                blobs.append(cur)
+    if not blobs:
+        return im
+    blobs.sort(key=len, reverse=True)
+    keep = set(blobs[0])
+    for blob in blobs[1:]:
+        if len(blob) < min_size:
+            for a, b in blob:
+                px[a, b] = (0, 0, 0, 0)
+        else:
+            keep |= set(blob)
+    return im
+
+
+def _despill(im, key="magenta", strength=1.0):
+    """Remove chroma-key colour cast bled onto the subject.
+
+    A magenta screen tints edge and mid pixels toward R+B. Without this,
+    quantization bakes the cast into the palette and greens turn lavender
+    (learned on the conifers). Standard suppression: where the key's two
+    channels exceed the third, pull them down to it.
+    """
+    px = im.load()
+    for y in range(im.size[1]):
+        for x in range(im.size[0]):
+            r, g, b, a = px[x, y]
+            if not a:
+                continue
+            if key == "magenta":
+                lim = (r + b) / 2.0
+                if lim > g:
+                    tgt = g + (lim - g) * (1.0 - strength)
+                    r = int(min(r, max(g, tgt)))
+                    b = int(min(b, max(g, tgt)))
+            elif key == "green":
+                lim = (r + b) / 2.0
+                if g > lim:
+                    g = int(lim + (g - lim) * (1.0 - strength))
+            px[x, y] = (r, g, b, a)
+    return im
+
+
+def _fill_holes(im):
+    """Re-solidify transparent pixels fully enclosed by the subject.
+
+    Chroma spill on bright trim (the A-grade chest's gold) can let the key
+    punch pinholes through the body. Anything transparent that the outside
+    can't reach is a hole: paint it with the median of its solid
+    neighbours so the material reads continuous.
+    """
+    px = im.load()
+    w, h = im.size
+    outside = set()
+    stack = [(x, 0) for x in range(w)] + [(x, h - 1) for x in range(w)] \
+        + [(0, y) for y in range(h)] + [(w - 1, y) for y in range(h)]
+    while stack:
+        x, y = stack.pop()
+        if (x, y) in outside or not (0 <= x < w and 0 <= y < h):
+            continue
+        if px[x, y][3] > 8:
+            continue
+        outside.add((x, y))
+        stack += [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+    holes = [(x, y) for y in range(h) for x in range(w)
+             if px[x, y][3] <= 8 and (x, y) not in outside]
+    for x, y in holes:
+        neigh = []
+        for dx in (-2, -1, 0, 1, 2):
+            for dy in (-2, -1, 0, 1, 2):
+                a, b = x + dx, y + dy
+                if 0 <= a < w and 0 <= b < h and px[a, b][3] > 8:
+                    neigh.append(px[a, b][:3])
+        if neigh:
+            neigh.sort()
+            px[x, y] = neigh[len(neigh) // 2] + (255,)
+    return im
+
+
+def _outline(im, color=(24, 16, 12, 255)):
+    """1px dark rim around the silhouette, grown outward into free alpha."""
+    w, h = im.size
+    out = Image.new("RGBA", (w + 2, h + 2), (0, 0, 0, 0))
+    out.alpha_composite(im, (1, 1))
+    px = out.load()
+    solid = [[px[x, y][3] > 8 for y in range(h + 2)] for x in range(w + 2)]
+    rim = []
+    for x in range(w + 2):
+        for y in range(h + 2):
+            if solid[x][y]:
+                continue
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                a, b = x + dx, y + dy
+                if 0 <= a < w + 2 and 0 <= b < h + 2 and solid[a][b]:
+                    rim.append((x, y))
+                    break
+    for x, y in rim:
+        px[x, y] = color
+    return out
+
+
+def _gamma(im, g=0.78):
+    px = im.load()
+    for y in range(im.size[1]):
+        for x in range(im.size[0]):
+            r, gg, b, a = px[x, y]
+            if a:
+                px[x, y] = (int(255 * (r / 255) ** g), int(255 * (gg / 255) ** g),
+                            int(255 * (b / 255) ** g), a)
+    return im
+
+
+def clean(src, out, size=32, colors=12, thresh=78, gamma=0.78, key=None,
+          despill=None, despill_strength=1.0):
+    im = Image.open(src).convert("RGBA")
+    im = _key_bg(im, thresh, key)
+    if despill:
+        im = _despill(im, despill, despill_strength)
+    im = _largest_blob(im, min_size=max(20, (im.size[0] // 12) ** 2))
+    bb = im.getbbox()
+    if bb:
+        im = im.crop(bb)
+    # fit inside (size-2) so the outline has room
+    inner = size - 2
+    r = min(inner / im.size[0], inner / im.size[1])
+    im = im.resize((max(1, round(im.size[0] * r)), max(1, round(im.size[1] * r))),
+                   Image.LANCZOS)
+    # crisp edges: hard alpha threshold
+    a = im.split()[3].point(lambda v: 255 if v > 140 else 0)
+    im.putalpha(a)
+    im = _largest_blob(im, min_size=4)
+    im = _fill_holes(im)
+    # quantize colour, keep alpha
+    rgb = im.convert("RGB").quantize(colors=colors, method=Image.MEDIANCUT).convert("RGB")
+    rgb.putalpha(im.split()[3])
+    im = _outline(rgb)
+    # AFTER the outline too: the 1px rim seals narrow bays that were still
+    # open to the outside during the first pass, turning them into holes.
+    im = _fill_holes(im)
+    im = _gamma(im, gamma)
+    # square, feet-anchored
+    cell = max(im.size) if max(im.size) >= size else size
+    c = Image.new("RGBA", (cell, cell), (0, 0, 0, 0))
+    c.alpha_composite(im, ((cell - im.size[0]) // 2, cell - im.size[1]))
+    c.save(out)
+    return c.size
+
+"""Enlarge archived runtime walk frames into an ImageGen motion reference."""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+from PIL import Image, ImageDraw, ImageFont
+
+
+def _font(size: int) -> ImageFont.ImageFont:
+    for path in (Path("C:/Windows/Fonts/seguisb.ttf"), Path("C:/Windows/Fonts/arialbd.ttf")):
+        if path.exists():
+            return ImageFont.truetype(str(path), size)
+    return ImageFont.load_default()
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("source", type=Path)
+    parser.add_argument("output", type=Path)
+    parser.add_argument("--label", default="LEGACY WALK MOTION REFERENCE")
+    parser.add_argument(
+        "--start-frame",
+        type=int,
+        default=1,
+        help="first 1-based source frame to include",
+    )
+    parser.add_argument(
+        "--end-frame",
+        type=int,
+        help="last 1-based source frame to include (inclusive)",
+    )
+    parser.add_argument(
+        "--chroma-target",
+        action="store_true",
+        help="write a label-free #00ff00 ImageGen edit target",
+    )
+    args = parser.parse_args()
+
+    strip = Image.open(args.source).convert("RGBA")
+    cell = strip.height
+    if strip.width % cell:
+        raise ValueError(f"strip does not tile square cells: {strip.size}")
+    frame_count = strip.width // cell
+    end_frame = args.end_frame if args.end_frame is not None else frame_count
+    if not 1 <= args.start_frame <= end_frame <= frame_count:
+        raise ValueError(
+            f"invalid frame range {args.start_frame}..{end_frame} for {frame_count} frames"
+        )
+    frames = [
+        strip.crop((i * cell, 0, (i + 1) * cell, cell))
+        for i in range(args.start_frame - 1, end_frame)
+    ]
+    target_h, out_cell = 236, 270
+    header = 0 if args.chroma_target else 62
+    footer = 18 if args.chroma_target else 26
+    background = (0, 255, 0, 255) if args.chroma_target else (245, 242, 233, 255)
+    canvas = Image.new("RGBA", (out_cell * len(frames), target_h + header + footer), background)
+    draw = ImageDraw.Draw(canvas)
+    if not args.chroma_target:
+        draw.text((14, 10), args.label, font=_font(22), fill=(23, 25, 31, 255))
+    for index, frame in enumerate(frames):
+        box = frame.getbbox()
+        if box is None:
+            raise ValueError(f"empty frame {index + 1}")
+        figure = frame.crop(box)
+        scale = target_h / figure.height
+        figure = figure.resize(
+            (max(1, round(figure.width * scale)), target_h),
+            Image.Resampling.NEAREST,
+        )
+        x = index * out_cell + (out_cell - figure.width) // 2
+        y = header
+        canvas.alpha_composite(figure, (x, y))
+        if not args.chroma_target:
+            draw.text((index * out_cell + 10, header + 8), f"f{index + 1}", font=_font(17), fill=(255, 221, 102, 255))
+            draw.line(
+                (index * out_cell + 12, header + target_h, (index + 1) * out_cell - 12, header + target_h),
+                fill=(70, 73, 82, 255),
+                width=3,
+            )
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    canvas.convert("RGB").save(args.output)
+    print(args.output)
+
+
+if __name__ == "__main__":
+    main()
+
+
+codex
+The back-view candidate now has the correct seven-stage rising gesture and no effects. IΓÇÖm applying the 
+repositoryΓÇÖs sprite-row normalizer so the figures share one scale and baseline and the delivered background is 
+genuinely solid `#00ff00` instead of the modelΓÇÖs slight green variation.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python 'C:\\Users\\asali\\Projects\\MMO\\.cl
+aude\\worktrees\\epic-panini-3fd8fd\\tools\\art\\build_imagegen_attack_candidate.py' 'C:\\Users\\asali\\.codex\\generat
+ed_images\\01a07110-df2f-7c41-b28f-754d95883ed7\\exec-d3c75127-8ce5-4e44-ba32-52ba37284f25.png' 
+'C:\\Users\\asali\\.codex\\generated_images\\01a07110-df2f-7c41-b28f-754d95883ed7\\normalized_n' --stem 
+mage_attack_walk_b_n --label 'mage attack walk b north' --frames 7 --body 205 --peak 4" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd
+ succeeded in 7783ms:
+mage_attack_walk_b_n: key=(6, 248, 4), removed=1382648, frames=7, gutters=[122, 135, 81, 119, 83, 129], heights=[205, 
+205, 205, 215, 205, 205, 205], cell=277, body=205, fps=22
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; $src 
+= '"'C:\\Users\\asali\\.codex\\generated_images\\01a07110-df2f-7c41-b28f-754d95883ed7\\normalized_n\\mage_attack_walk_b
+_n_candidate.png'; "'$dst = '"'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\attack
+_walk_b_2026-09-05\\mage__attack_walk_b__n\\mage_attack_walk_b_n_row.png'; "'$im = 
+[System.Drawing.Image]::FromFile($src); try { $out = New-Object System.Drawing.Bitmap($im.Width, $im.Height, 
+[System.Drawing.Imaging.PixelFormat]::Format32bppArgb); try { $g = [System.Drawing.Graphics]::FromImage($out); try { 
+$g.Clear([System.Drawing.Color]::FromArgb(255,0,255,0)); $g.DrawImageUnscaled($im,0,0) } finally { $g.Dispose() }; 
+$out.Save($dst,[System.Drawing.Imaging.ImageFormat]::Png) } finally { $out.Dispose() } } finally { $im.Dispose() }; 
+Get-Item -LiteralPath $dst | Select-Object FullName,Length,LastWriteTime' in C:\Users\asali\Projects\MMO\.claude\worktr
+ees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__n
+ succeeded in 631ms:
+
+FullName                                                                                                               
+--------                                                                                                               
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_...
+
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\tools\\art\\stride_scan.py' --help" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd
+ succeeded in 1235ms:
+usage: stride_scan.py [-h] [--csv CSV] [--min-frames MIN_FRAMES] [names ...]
+
+rank walk strips by stride, in body heights
+
+positional arguments:
+  names                 substring filters (e.g. vargoth)
+
+options:
+  -h, --help            show this help message and exit
+  --csv CSV
+  --min-frames MIN_FRAMES
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; $p = 
+'"'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\attack_walk_b_2026-09-05\\mage__at
+tack_walk_b__n\\mage_attack_walk_b_n_row.png'; "'$im = [System.Drawing.Bitmap]::FromFile($p); try { $pts = 
+@(@(0,0),@($im.Width-1,0),@(0,$im.Height-1),@($im.Width-1,$im.Height-1)); Write-Output ("size={0}x{1}" -f 
+$im.Width,$im.Height); foreach($pt in $pts){ $c=$im.GetPixel($pt[0],$pt[1]); Write-Output ("corner={0},{1},{2},{3}" -f 
+$c.R,$c.G,$c.B,$c.A) } } finally { $im.Dispose() }; Get-Item -LiteralPath $p | ForEach-Object { Write-Output 
+("bytes={0}" -f $_.Length) }' in C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b
+_2026-09-05\mage__attack_walk_b__n
+ succeeded in 735ms:
+Method invocation failed because [System.Object[]] does not contain a method named 'op_Subtraction'.
+At line:2 char:249
++ ... ($p); try { $pts = @(@(0,0),@($im.Width-1,0),@(0,$im.Height-1),@($im. ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (op_Subtraction:String) [], RuntimeException
+    + FullyQualifiedErrorId : MethodNotFound
+ 
+bytes=313610
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; $p = 
+'"'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\attack_walk_b_2026-09-05\\mage__at
+tack_walk_b__n\\mage_attack_walk_b_n_row.png'; "'$im = [System.Drawing.Bitmap]::FromFile($p); try { $right = $im.Width 
+- 1; $bottom = $im.Height - 1; $pts = @(@(0,0),@($right,0),@(0,$bottom),@($right,$bottom)); Write-Output 
+("size={0}x{1}" -f $im.Width,$im.Height); foreach($pt in $pts){ $c=$im.GetPixel($pt[0],$pt[1]); Write-Output 
+("corner={0},{1},{2},{3}" -f $c.R,$c.G,$c.B,$c.A) } } finally { $im.Dispose() }' in C:\Users\asali\Projects\MMO\.claude
+\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__n
+ succeeded in 397ms:
+size=1939x277
+corner=0,255,0,255
+corner=0,255,0,255
+corner=0,255,0,255
+corner=0,255,0,255
+
+codex
+Saved [mage_attack_walk_b_n_row.png](C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/attack_wa
+lk_b_2026-09-05/mage__attack_walk_b__n/mage_attack_walk_b_n_row.png).
+
+- Frame 1: screen-right leg leads; firing hand low.
+- Frame 2: screen-right leg leads; hand begins rising.
+- Frame 3: screen-left leg passes; hand at shoulder height.
+- Frame 4: screen-left leg leads; hand peaks above shoulder, fingers spread.
+- Frame 5: screen-left leg leads; hand descends to shoulder height.
+- Frame 6: screen-right leg passes; hand lowers toward rest.
+- Frame 7: screen-right leg leads; hand returns low.
+
+No projectile or attack effect was drawn. The floor-length hem remains closed throughout. Background is solid 
+`#00ff00`.
+
+Built-in ImageGen was used with the prompt to preserve the referenced walk and animate only the seven-stage rising 
+free-hand flick.
+2026-09-05T10:24:46.848376Z ERROR codex_core::session: failed to record rollout items: thread 
+01a07110-df2f-7c41-b28f-754d95883ed7 not found
+tokens used
+182,236
+Saved [mage_attack_walk_b_n_row.png](C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/attack_walk_b_2026-09-05/mage__attack_walk_b__n/mage_attack_walk_b_n_row.png).
+
+- Frame 1: screen-right leg leads; firing hand low.
+- Frame 2: screen-right leg leads; hand begins rising.
+- Frame 3: screen-left leg passes; hand at shoulder height.
+- Frame 4: screen-left leg leads; hand peaks above shoulder, fingers spread.
+- Frame 5: screen-left leg leads; hand descends to shoulder height.
+- Frame 6: screen-right leg passes; hand lowers toward rest.
+- Frame 7: screen-right leg leads; hand returns low.
+
+No projectile or attack effect was drawn. The floor-length hem remains closed throughout. Background is solid `#00ff00`.
+
+Built-in ImageGen was used with the prompt to preserve the referenced walk and animate only the seven-stage rising free-hand flick.

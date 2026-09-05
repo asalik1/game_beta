@@ -1,0 +1,13 @@
+{
+ "base": "elf_ranger",
+ "facing": "flat",
+ "arch": "biped",
+ "old": "elf_ranger_walk.png",
+ "frames": 6,
+ "desc": "a wildkin ranger: a lean figure in a dark-green hooded cloak of leaves over brown leather armor, a wooden recurve bow held low in one hand with NO arrow nocked, a quiver on the back, brown boots",
+ "defect": "the previous roll came back as a SCISSOR SHUFFLE: the leading boot never lifted and slid forward and back on the ground, and no frame showed the swing leg passing the planted leg. REQUIRED THIS TIME: two PASSING frames per loop, one per leg, in which the swing boot is drawn crossing IN FRONT of the planted leg with the knee clearly bent and the sole showing, lifted well clear of the ground; the planted boot stays put; frames 1/3/4 must have visibly different lower-body silhouettes; two boots side by side flat on the ground in more than one frame = WRONG",
+ "idle_ref": "elf_ranger_anim",
+ "donor": "assassin_walk_e",
+ "donor_flipped": true,
+ "refs": 3
+}

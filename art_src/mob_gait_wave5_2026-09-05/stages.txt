@@ -1,0 +1,7 @@
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_wave5_2026-09-05\elf_ranger__flat
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_wave5_2026-09-05\royal_knight__flat
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_wave5_2026-09-05\skeleton__flat
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_wave5_2026-09-05\zombie__flat
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_wave5_2026-09-05\elf_druid__flat
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_wave5_2026-09-05\skeleton_rogue__flat
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_wave5_2026-09-05\bandit_scout__flat

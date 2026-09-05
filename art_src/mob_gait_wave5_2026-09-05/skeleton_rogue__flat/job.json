@@ -1,0 +1,13 @@
+{
+ "base": "skeleton_rogue",
+ "facing": "flat",
+ "arch": "biped",
+ "old": "skeleton_rogue_walk.png",
+ "frames": 6,
+ "desc": "a barrow wight: a gaunt undead warrior in mossy green-brown rotted mail and a rusted skullcap helm, a long thin sword held low in one hand, tattered dark cloth hanging from the belt",
+ "defect": "the previous roll came back as a SCISSOR SHUFFLE: the leading boot never lifted and slid forward and back on the ground, and no frame showed the swing leg passing the planted leg. REQUIRED THIS TIME: two PASSING frames per loop, one per leg, in which the swing boot is drawn crossing IN FRONT of the planted leg with the knee clearly bent and the sole showing, lifted well clear of the ground; the planted boot stays put; frames 1/3/4 must have visibly different lower-body silhouettes; two boots side by side flat on the ground in more than one frame = WRONG",
+ "idle_ref": "skeleton_rogue_anim",
+ "donor": "assassin_walk_e",
+ "donor_flipped": true,
+ "refs": 3
+}

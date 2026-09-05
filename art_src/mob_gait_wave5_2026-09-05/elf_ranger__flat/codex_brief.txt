@@ -1,0 +1,45 @@
+Redraw a 6-frame walk cycle of THIS character (reference 1), walking LEFT,
+with EXACTLY the leg choreography of reference 2. One character's body, the other
+character's walk.
+
+THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not
+change): a wildkin ranger: a lean figure in a dark-green hooded cloak of leaves over brown leather armor, a wooden recurve bow held low in one hand with NO arrow nocked, a quiver on the back, brown boots
+crisp hi-res dark-fantasy game sprite, muted palette, no black outlines. Every piece of equipment stays exactly where reference 1 shows it in every
+frame -- nothing swaps sides, changes shape or disappears. Same height, same width,
+same palette in every frame.
+
+THE WALK (reference 2 -- a DIFFERENT creature drawn from this same viewing angle; use
+it ONLY for how the legs move): copy its 6-frame leg choreography frame-for-frame
+onto this character, matching the frame count and phase exactly (frame 1 = its frame
+1's leg positions, and so on).
+What every frame must carry (copy reference 2 frame-for-frame):
+- KNEES BEND. The swinging leg folds at the knee as it lifts and drives forward; the
+  planted leg flexes as the body passes over it. No frame has two straight legs.
+- A real PASSING moment: in the middle frames the legs come close together and
+  overlap, one shin in front of the other, before the stride opens again.
+- FEET ROLL: the rear heel peels off the ground while the toe still touches; the
+  landing foot touches heel-first.
+- LEFT AND RIGHT ALTERNATE: the first half of the row is one leg's stride, the second
+  half is the OTHER leg's stride -- opposite legs leading in the two halves.
+FORBIDDEN (the exact defects of the strip being replaced): straight-legged scissor
+poses (both knees locked, legs like open compass blades); the same leg leading in
+both halves; two or more frames with an identical lower body; feet together at
+attention; more than two legs or boots in a frame.
+Do NOT copy anything else from reference 2: not its clothing, weapons, build, colours or
+species -- only the legs' motion, redrawn as THIS character's legs.
+Reference 3 is the CURRENT walk being replaced -- use it only to see the character from this angle and its equipment; its leg motion is the defect (the previous roll came back as a SCISSOR SHUFFLE: the leading boot never lifted and slid forward and back on the ground, and no frame showed the swing leg passing the planted leg. REQUIRED THIS TIME: two PASSING frames per loop, one per leg, in which the swing boot is drawn crossing IN FRONT of the planted leg with the knee clearly bent and the sole showing, lifted well clear of the ground; the planted boot stays put; frames 1/3/4 must have visibly different lower-body silhouettes; two boots side by side flat on the ground in more than one frame = WRONG).
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, evenly spaced, all
+feet on one shared ground line, the body near each cell's horizontal centre (no
+drifting across the row), green margins on all sides -- no figure touching any
+image edge or its neighbour.
+EVERY FIGURE IS THE SAME SIZE. Draw all 6 at one identical scale, filling the
+same share of the row's height; do not shrink some of them to fit, do not crowd
+two small figures into the space of one, and do not add a smaller inset version
+anywhere. If 6 figures will not fit at full size, make the image WIDER. Flat solid #00ff00 GREEN background,
+nothing else in the image. Generate ONE image and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_wave5_2026-09-05\elf_ranger__flat\elf_ranger_walk_flat_row.png
+then stop.
+
+In your final message report, for each frame 1-6: which leg (or leg pair) leads and which joints are bent, and how much (slight / clear / deep)
+Report any repeated pose, and whether the body stayed cell-centred and at constant height.

@@ -2,3 +2,4 @@ codex = C:\Users\asali\AppData\Local\OpenAI\Codex\bin\9ba750cce02d5e5c\codex.exe
 launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__s (1 refs)
 launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__e (1 refs)
 launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\mage__attack_walk_b__n (1 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\warlock__attack_walk_b__s (1 refs)

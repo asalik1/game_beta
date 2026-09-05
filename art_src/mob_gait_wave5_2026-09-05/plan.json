@@ -1,0 +1,67 @@
+[
+ {
+  "base": "elf_ranger",
+  "facing": "flat",
+  "arch": "biped",
+  "old": "elf_ranger_walk.png",
+  "frames": 6,
+  "desc": "a wildkin ranger: a lean figure in a dark-green hooded cloak of leaves over brown leather armor, a wooden recurve bow held low in one hand with NO arrow nocked, a quiver on the back, brown boots",
+  "defect": "the previous roll came back as a SCISSOR SHUFFLE: the leading boot never lifted and slid forward and back on the ground, and no frame showed the swing leg passing the planted leg. REQUIRED THIS TIME: two PASSING frames per loop, one per leg, in which the swing boot is drawn crossing IN FRONT of the planted leg with the knee clearly bent and the sole showing, lifted well clear of the ground; the planted boot stays put; frames 1/3/4 must have visibly different lower-body silhouettes; two boots side by side flat on the ground in more than one frame = WRONG"
+ },
+ {
+  "base": "royal_knight",
+  "facing": "flat",
+  "arch": "biped_heavy",
+  "old": "royal_knight_walk.png",
+  "frames": 6,
+  "heavy": true,
+  "desc": "a frozen royal guard in full dark-steel plate armor rimed with pale ice crystals, a closed great-helm with ice spikes, a round shield with a silver crest strapped to one arm, a longsword held low in the other hand",
+  "defect": "the previous roll came back as a SCISSOR SHUFFLE: the leading boot never lifted and slid forward and back on the ground, and no frame showed the swing leg passing the planted leg. REQUIRED THIS TIME: two PASSING frames per loop, one per leg, in which the swing boot is drawn crossing IN FRONT of the planted leg with the knee clearly bent and the sole showing, lifted well clear of the ground; the planted boot stays put; frames 1/3/4 must have visibly different lower-body silhouettes; two boots side by side flat on the ground in more than one frame = WRONG"
+ },
+ {
+  "base": "skeleton",
+  "facing": "flat",
+  "arch": "biped",
+  "old": "skeleton_walk.png",
+  "frames": 6,
+  "desc": "a hollow soldier: an animated skeleton in a rusted iron skullcap helm and a tattered dark cape with an orange crown sigil on the chest, a short iron sword held low in one hand, the OTHER hand EMPTY (it carries NO shield and no second weapon), bare bone legs and bone feet",
+  "defect": "the previous roll came back as a SCISSOR SHUFFLE: the leading boot never lifted and slid forward and back on the ground, and no frame showed the swing leg passing the planted leg. REQUIRED THIS TIME: two PASSING frames per loop, one per leg, in which the swing boot is drawn crossing IN FRONT of the planted leg with the knee clearly bent and the sole showing, lifted well clear of the ground; the planted boot stays put; frames 1/3/4 must have visibly different lower-body silhouettes; two boots side by side flat on the ground in more than one frame = WRONG"
+ },
+ {
+  "base": "zombie",
+  "facing": "flat",
+  "arch": "biped",
+  "old": "zombie_walk.png",
+  "frames": 6,
+  "desc": "a risen corpse: a shambling grey-green-skinned zombie in rotted rag clothing (a torn shirt and ragged trousers), bare feet, one arm hanging limp, the head lolling forward",
+  "defect": "the previous roll came back as a SCISSOR SHUFFLE: the leading boot never lifted and slid forward and back on the ground, and no frame showed the swing leg passing the planted leg. REQUIRED THIS TIME: two PASSING frames per loop, one per leg, in which the swing boot is drawn crossing IN FRONT of the planted leg with the knee clearly bent and the sole showing, lifted well clear of the ground; the planted boot stays put; frames 1/3/4 must have visibly different lower-body silhouettes; two boots side by side flat on the ground in more than one frame = WRONG",
+  "extra": "It is a SHAMBLE: the knees still bend and the legs still alternate and pass, but the steps are short and dragging, the shoulders slumped, the head lolling -- a corpse walk, not a march."
+ },
+ {
+  "base": "elf_druid",
+  "facing": "flat",
+  "arch": "biped",
+  "old": "elf_druid_walk.png",
+  "frames": 6,
+  "desc": "a blighted forest druid: a thin bark-skinned figure with a bulbous pale-pink fungal head, a ragged skirt of roots and bark hanging to the knees, thin dark bark legs and root feet showing below the skirt, one hand holding a drooping pink bud on a vine. The root skirt STAYS in every frame (the walk reads through the legs below it)",
+  "defect": "the previous roll came back as a SCISSOR SHUFFLE: the leading boot never lifted and slid forward and back on the ground, and no frame showed the swing leg passing the planted leg. REQUIRED THIS TIME: two PASSING frames per loop, one per leg, in which the swing boot is drawn crossing IN FRONT of the planted leg with the knee clearly bent and the sole showing, lifted well clear of the ground; the planted boot stays put; frames 1/3/4 must have visibly different lower-body silhouettes; two boots side by side flat on the ground in more than one frame = WRONG"
+ },
+ {
+  "base": "skeleton_rogue",
+  "facing": "flat",
+  "arch": "biped",
+  "old": "skeleton_rogue_walk.png",
+  "frames": 6,
+  "desc": "a barrow wight: a gaunt undead warrior in mossy green-brown rotted mail and a rusted skullcap helm, a long thin sword held low in one hand, tattered dark cloth hanging from the belt",
+  "defect": "the previous roll came back as a SCISSOR SHUFFLE: the leading boot never lifted and slid forward and back on the ground, and no frame showed the swing leg passing the planted leg. REQUIRED THIS TIME: two PASSING frames per loop, one per leg, in which the swing boot is drawn crossing IN FRONT of the planted leg with the knee clearly bent and the sole showing, lifted well clear of the ground; the planted boot stays put; frames 1/3/4 must have visibly different lower-body silhouettes; two boots side by side flat on the ground in more than one frame = WRONG"
+ },
+ {
+  "base": "bandit_scout",
+  "facing": "flat",
+  "arch": "biped",
+  "old": "bandit_scout_walk.png",
+  "frames": 6,
+  "desc": "a void-touched scout: a lean figure in a dark hooded cloak over black leather armor with a knee plate on one leg, a short curved blade held low, faint violet edge-light on the cloak",
+  "defect": "the previous roll came back as a SCISSOR SHUFFLE: the leading boot never lifted and slid forward and back on the ground, and no frame showed the swing leg passing the planted leg. REQUIRED THIS TIME: two PASSING frames per loop, one per leg, in which the swing boot is drawn crossing IN FRONT of the planted leg with the knee clearly bent and the sole showing, lifted well clear of the ground; the planted boot stays put; frames 1/3/4 must have visibly different lower-body silhouettes; two boots side by side flat on the ground in more than one frame = WRONG"
+ }
+]

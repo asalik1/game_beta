@@ -1,0 +1,13 @@
+{
+ "base": "skeleton",
+ "facing": "flat",
+ "arch": "biped",
+ "old": "skeleton_walk.png",
+ "frames": 6,
+ "desc": "a hollow soldier: an animated skeleton in a rusted iron skullcap helm and a tattered dark cape with an orange crown sigil on the chest, a short iron sword held low in one hand, the OTHER hand EMPTY (it carries NO shield and no second weapon), bare bone legs and bone feet",
+ "defect": "the previous roll came back as a SCISSOR SHUFFLE: the leading boot never lifted and slid forward and back on the ground, and no frame showed the swing leg passing the planted leg. REQUIRED THIS TIME: two PASSING frames per loop, one per leg, in which the swing boot is drawn crossing IN FRONT of the planted leg with the knee clearly bent and the sole showing, lifted well clear of the ground; the planted boot stays put; frames 1/3/4 must have visibly different lower-body silhouettes; two boots side by side flat on the ground in more than one frame = WRONG",
+ "idle_ref": "skeleton_anim",
+ "donor": "assassin_walk_e",
+ "donor_flipped": true,
+ "refs": 3
+}
