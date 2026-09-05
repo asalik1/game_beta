@@ -1,0 +1,7 @@
+{
+ "base": "sexton",
+ "clip": "death",
+ "frames": 6,
+ "idle": "sexton_anim_codex.png",
+ "arch": "biped"
+}

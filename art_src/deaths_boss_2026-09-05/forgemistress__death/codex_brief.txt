@@ -1,0 +1,19 @@
+Draw a 6-frame DEATH animation of THIS character (reference 1), as a horizontal row.
+
+THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not change):
+a fire queen in a black and dark-red gown with a crown of flames, long black hair, both hands wreathed in orange flame held out at her sides, gold ornaments on the bodice, the gown reaching the ground
+crisp hi-res dark-fantasy game sprite, muted palette, no black outlines. Same design, same
+palette, same equipment in every frame; the figure faces the SAME way as reference 1.
+
+THE ACTION, frame by frame: frame 1 the figure recoils from a hit, frame 2 it sags and the robe/cloth collapses, frame 3 it sinks toward the ground, frame 4 it folds down, frame 5 it crumples onto the ground, frame 6 a still heap of cloth and body on the ground -- the FINAL frame is low and wide.
+Each frame is a distinct pose that reads as a continuous fall; the body stays roughly where
+it stood (no sliding across the cell); the last frame is still and final -- it will be held
+on screen. Draw NO blood spray, NO particles, NO ghost, NO effect -- only the body.
+
+Produce ONE image laid out as TWO ROWS: frames 1-3 left to right on the top row, frames 4-6 left to right on the bottom row. Make every figure as LARGE as the image allows (each figure roughly 900 pixels across its longest side), all at one identical scale, all feet on one shared ground line per row, each figure centred in its cell, generous green margins between figures and around the image edges -- no figure touching another figure or an edge. Flat solid #00ff00 GREEN background, nothing else in the image.
+Generate ONE image and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\forgemistress__death\forgemistress_death_grid.png
+then stop.
+
+In your final message report, per frame, the pose, and confirm frame 1 is standing at the
+reference size and the last frame lies on the ground.

@@ -1,0 +1,7 @@
+{
+ "base": "serane",
+ "clip": "death",
+ "frames": 6,
+ "idle": "serane_anim_codex.png",
+ "arch": "glide"
+}

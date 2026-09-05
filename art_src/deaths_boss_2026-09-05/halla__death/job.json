@@ -1,0 +1,7 @@
+{
+ "base": "halla",
+ "clip": "death",
+ "frames": 6,
+ "idle": "halla_anim_codex.png",
+ "arch": "glide"
+}

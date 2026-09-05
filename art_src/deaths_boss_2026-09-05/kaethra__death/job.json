@@ -1,0 +1,7 @@
+{
+ "base": "kaethra",
+ "clip": "death",
+ "frames": 6,
+ "idle": "kaethra_anim_codex.png",
+ "arch": "biped"
+}

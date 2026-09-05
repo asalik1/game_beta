@@ -1,0 +1,19 @@
+Draw a 6-frame DEATH animation of THIS character (reference 1), as a horizontal row.
+
+THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not change):
+a rotmaw plague-hulk in profile: a HULKING, BROAD, hunched undead giant with heavy thick arms hanging low, a wide barrel chest, a bald grey corpse head with sunken eyes, three large pale mushroom caps growing from its shoulders and skull, ragged brown loincloth, thick tree-root legs, and a small bundle of dried flowers clutched in one fist. Its build is MASSIVE and stooped -- broad shoulders far wider than the hips
+crisp hi-res dark-fantasy game sprite, muted palette, no black outlines. Same design, same
+palette, same equipment in every frame; the figure faces the SAME way as reference 1.
+
+THE ACTION, frame by frame: frame 1 the body jolts back from a hit (head snaps, arms fly up), frame 2 it staggers, one knee buckling, frame 3 it drops to its knees, frame 4 it topples sideways/forward, frame 5 it hits the ground, limbs sprawled, frame 6 it lies still, flat on the ground -- the FINAL frame is a lying body, much wider than tall, its feet where the standing feet were.
+Each frame is a distinct pose that reads as a continuous fall; the body stays roughly where
+it stood (no sliding across the cell); the last frame is still and final -- it will be held
+on screen. Draw NO blood spray, NO particles, NO ghost, NO effect -- only the body.
+
+Produce ONE image laid out as TWO ROWS: frames 1-3 left to right on the top row, frames 4-6 left to right on the bottom row. Make every figure as LARGE as the image allows (each figure roughly 900 pixels across its longest side), all at one identical scale, all feet on one shared ground line per row, each figure centred in its cell, generous green margins between figures and around the image edges -- no figure touching another figure or an edge. Flat solid #00ff00 GREEN background, nothing else in the image.
+Generate ONE image and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\rotmaw__death\rotmaw_death_grid.png
+then stop.
+
+In your final message report, per frame, the pose, and confirm frame 1 is standing at the
+reference size and the last frame lies on the ground.

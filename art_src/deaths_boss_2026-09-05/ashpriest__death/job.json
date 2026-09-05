@@ -1,0 +1,7 @@
+{
+ "base": "ashpriest",
+ "clip": "death",
+ "frames": 6,
+ "idle": "ashpriest_anim_codex.png",
+ "arch": "glide"
+}

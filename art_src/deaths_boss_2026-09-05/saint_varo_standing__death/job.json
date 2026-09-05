@@ -1,0 +1,7 @@
+{
+ "base": "saint_varo_standing",
+ "clip": "death",
+ "frames": 6,
+ "idle": "saint_varo_standing_anim_codex.png",
+ "arch": "biped"
+}

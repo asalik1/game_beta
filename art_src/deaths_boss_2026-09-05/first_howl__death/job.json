@@ -1,0 +1,7 @@
+{
+ "base": "first_howl",
+ "clip": "death",
+ "frames": 6,
+ "idle": "first_howl_anim_codex.png",
+ "arch": "quadruped"
+}

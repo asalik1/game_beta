@@ -1,0 +1,7 @@
+{
+ "base": "nullwarden",
+ "clip": "death",
+ "frames": 6,
+ "idle": "nullwarden_anim_codex.png",
+ "arch": "biped"
+}

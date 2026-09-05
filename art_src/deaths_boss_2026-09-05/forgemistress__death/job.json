@@ -1,0 +1,7 @@
+{
+ "base": "forgemistress",
+ "clip": "death",
+ "frames": 6,
+ "idle": "forgemistress_anim_codex.png",
+ "arch": "glide"
+}

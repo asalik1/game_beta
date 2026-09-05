@@ -1,0 +1,7 @@
+{
+ "base": "echo",
+ "clip": "death",
+ "frames": 6,
+ "idle": "echo_anim_codex.png",
+ "arch": "biped"
+}

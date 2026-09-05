@@ -1,0 +1,7 @@
+{
+ "base": "auroch_minotaur",
+ "clip": "death",
+ "frames": 6,
+ "idle": "auroch_minotaur_anim_codex.png",
+ "arch": "biped"
+}

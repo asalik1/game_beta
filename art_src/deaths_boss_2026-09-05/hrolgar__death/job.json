@@ -1,0 +1,7 @@
+{
+ "base": "hrolgar",
+ "clip": "death",
+ "frames": 6,
+ "idle": "hrolgar_anim_codex.png",
+ "arch": "biped"
+}

@@ -1,0 +1,7 @@
+{
+ "base": "vargoth",
+ "clip": "death",
+ "frames": 6,
+ "idle": "vargoth_anim_codex.png",
+ "arch": "biped"
+}

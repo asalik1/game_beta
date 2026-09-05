@@ -1,0 +1,7 @@
+{
+ "base": "stormmouth",
+ "clip": "death",
+ "frames": 6,
+ "idle": "stormmouth_anim_codex.png",
+ "arch": "biped"
+}

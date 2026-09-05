@@ -1,0 +1,7 @@
+{
+ "base": "choirmother",
+ "clip": "death",
+ "frames": 6,
+ "idle": "choirmother_anim_codex.png",
+ "arch": "glide"
+}

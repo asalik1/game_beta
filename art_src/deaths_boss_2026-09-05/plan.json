@@ -1,0 +1,102 @@
+[
+ {
+  "base": "ashpriest",
+  "arch": "glide",
+  "desc": "an ash priest drifting toward the viewer: a tall figure in heavy layered charcoal-grey funeral robes with an orange-lit inner trim, a bronze mask under a deep hood, one hand raised holding a small orange flame, the other holding a burning lantern-censer on a chain, the robe hem reaching the ground"
+ },
+ {
+  "base": "auroch_minotaur",
+  "arch": "biped",
+  "desc": "a huge minotaur warlord walking toward the viewer: a massive bull-headed humanoid with long curved horns and a bleached bull skull over its face, heavy blackened plate armor on the shoulders and chest, a ragged green kilt, one hand gripping a huge two-headed war axe, thick hoofed legs"
+ },
+ {
+  "base": "hrolgar",
+  "arch": "biped",
+  "desc": "a frost-jarl berserker in profile: a huge pale-blue-skinned humanoid with a white fur mantle and shaggy white hair and beard, a bare muscled chest with blue frost markings, a fur kilt and wrapped boots, a great two-handed axe carried in one hand, a bone-and-skull ornament at the belt"
+ },
+ {
+  "base": "kaethra",
+  "arch": "biped",
+  "desc": "a bone-masked blade dancer in profile: a lean bare-armed figure in a white skull mask with red markings, wrapped chest bindings, a red loincloth over dark trousers, many bone-handled knives sheathed across the body and two held in the hands, bare feet"
+ },
+ {
+  "base": "korrag",
+  "arch": "biped",
+  "desc": "a hulking armored champion in profile: a broad humanoid in dented blue-steel plate with a horned helm and a shaggy fur mantle, pale-blue LIGHTNING ARCS crackling around the shoulders and helm in every frame, a heavy spiked flail carried in one hand with the chain hanging, a torn red tabard, heavy sabatons"
+ },
+ {
+  "base": "rotmaw",
+  "arch": "biped",
+  "desc": "a rotmaw plague-hulk in profile: a HULKING, BROAD, hunched undead giant with heavy thick arms hanging low, a wide barrel chest, a bald grey corpse head with sunken eyes, three large pale mushroom caps growing from its shoulders and skull, ragged brown loincloth, thick tree-root legs, and a small bundle of dried flowers clutched in one fist. Its build is MASSIVE and stooped -- broad shoulders far wider than the hips"
+ },
+ {
+  "base": "serane",
+  "arch": "glide",
+  "desc": "a frost sorceress drifting toward the viewer: a tall pale woman in a flowing ice-blue and white gown with a crystalline spiked crown and ice shards floating around her shoulders, long white hair, the gown's hem reaching the ground, pale hands held slightly out"
+ },
+ {
+  "base": "veyx",
+  "arch": "biped",
+  "desc": "a storm elemental in profile: a BROAD, heavy-shouldered humanoid of dark storm-cloud stone with a smooth featureless helm-like head glowing pale blue at the eye slit, thick shoulders and arms wreathed in crackling pale-blue lightning arcs, and a coiling smoke tail instead of legs. Its upper body is BULKY and wide -- as wide as reference 1 shows it"
+ },
+ {
+  "base": "choirmother",
+  "arch": "glide",
+  "desc": "a tall choir matriarch in a deep-navy floor-length gown with gold trim and a raised hood hiding the face entirely, SIX pale hands spread out from wide sleeves, gold chains at the chest"
+ },
+ {
+  "base": "echo",
+  "arch": "biped",
+  "desc": "a burned king's echo: a black-armoured knight torso with a flaming skull for a head, huge black feathered wings spread behind, cracked ember-lit plate, a dark cape; as it dies the wings fold and drag on the ground"
+ },
+ {
+  "base": "forgemistress",
+  "arch": "glide",
+  "desc": "a fire queen in a black and dark-red gown with a crown of flames, long black hair, both hands wreathed in orange flame held out at her sides, gold ornaments on the bodice, the gown reaching the ground"
+ },
+ {
+  "base": "halla",
+  "arch": "glide",
+  "desc": "a moth-winged sorceress in a teal-green hooded robe with tan-and-gold moth wings spread behind her, holding a tall lit candle in both hands, a few pale moths floating around her; as she dies the wings droop and fold"
+ },
+ {
+  "base": "morwen",
+  "arch": "glide",
+  "desc": "a ghostly nun in a dark hooded veil with a faint halo, a pale face, a translucent dark gown fading to mist at the hem, arms spread"
+ },
+ {
+  "base": "nullwarden",
+  "arch": "biped",
+  "desc": "a hulking warden in blackened plate laced with thin glowing cyan cracks, huge layered pauldrons, a horned helm, a brown leather tabard, empty gauntleted fists, NO weapon"
+ },
+ {
+  "base": "saint_varo_standing",
+  "arch": "biped",
+  "desc": "a gold-armoured undead knight with a horned helm and a golden skull face, a red and gold tabard, holding a huge glowing golden greatsword point-down in front of him"
+ },
+ {
+  "base": "sexton",
+  "arch": "biped",
+  "desc": "a skeletal gravedigger in a black robe and a wide-brimmed black hat, a long scythe carried over one shoulder, a lit iron lantern hanging from the other hand"
+ },
+ {
+  "base": "stormmouth",
+  "arch": "biped",
+  "desc": "a massive juggernaut in dark blue-steel plate with pale-blue lightning veins, a glowing blue lightning maw on the chest, enormous pauldrons, a brown leather tabard, thick armoured legs and sabatons"
+ },
+ {
+  "base": "vargoth",
+  "arch": "biped",
+  "desc": "a black-armoured knight with a spiked crown helm, fire licking from the shoulders and the visor, a flaming greatsword held low in one hand, a dark cape"
+ },
+ {
+  "base": "vess",
+  "arch": "glide",
+  "desc": "a banshee in a tattered grey-white gown and a dark hooded veil, a pale corpse face with black eye sockets, long thin arms spread out, floating"
+ },
+ {
+  "base": "first_howl",
+  "arch": "quadruped",
+  "desc": "a huge grey dire wolf with shaggy fur, a lean muscular body, four long legs, a long tail, bared teeth"
+ }
+]

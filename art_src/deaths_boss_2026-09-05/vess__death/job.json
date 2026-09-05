@@ -1,0 +1,7 @@
+{
+ "base": "vess",
+ "clip": "death",
+ "frames": 6,
+ "idle": "vess_anim_codex.png",
+ "arch": "glide"
+}

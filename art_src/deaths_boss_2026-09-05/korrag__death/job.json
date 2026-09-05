@@ -1,0 +1,7 @@
+{
+ "base": "korrag",
+ "clip": "death",
+ "frames": 6,
+ "idle": "korrag_anim_codex.png",
+ "arch": "biped"
+}

@@ -1,0 +1,7 @@
+{
+ "base": "rotmaw",
+ "clip": "death",
+ "frames": 6,
+ "idle": "rotmaw_anim_codex.png",
+ "arch": "biped"
+}

@@ -1,0 +1,7 @@
+{
+ "base": "veyx",
+ "clip": "death",
+ "frames": 6,
+ "idle": "veyx_anim_codex.png",
+ "arch": "biped"
+}

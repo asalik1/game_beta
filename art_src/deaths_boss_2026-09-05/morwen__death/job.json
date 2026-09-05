@@ -1,0 +1,7 @@
+{
+ "base": "morwen",
+ "clip": "death",
+ "frames": 6,
+ "idle": "morwen_anim_codex.png",
+ "arch": "glide"
+}
