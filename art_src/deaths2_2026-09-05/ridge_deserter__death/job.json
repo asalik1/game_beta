@@ -1,0 +1,7 @@
+{
+ "base": "ridge_deserter",
+ "clip": "death",
+ "frames": 6,
+ "idle": "ridge_deserter_anim.png",
+ "arch": "biped"
+}

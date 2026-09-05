@@ -1,0 +1,7 @@
+{
+ "base": "ragged_soldier",
+ "clip": "death",
+ "frames": 6,
+ "idle": "ragged_soldier_anim.png",
+ "arch": "biped"
+}

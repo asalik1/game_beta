@@ -1,0 +1,7 @@
+{
+ "base": "blooming_convert",
+ "clip": "death",
+ "frames": 6,
+ "idle": "blooming_convert_anim.png",
+ "arch": "biped"
+}

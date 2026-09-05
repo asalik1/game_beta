@@ -1,0 +1,32 @@
+[
+ {
+  "base": "blooming_convert",
+  "arch": "biped",
+  "desc": "a gaunt man with dark shoulder-length hair and a beard in a long grey-brown coat over a dark shirt, holding a small bunch of pale flowers and herb sprigs in both hands at his chest, brown boots"
+ },
+ {
+  "base": "choir_pilgrim",
+  "arch": "biped",
+  "desc": "a plump older woman in a plum-purple hooded robe with a white wimple headscarf and a cream apron, her hands clasped at her chest holding a string of dark prayer beads, floor-length robe"
+ },
+ {
+  "base": "elf_wild",
+  "arch": "biped",
+  "desc": "a wild elf woman with pale green skin, antler-like twigs woven into long pale hair, a ragged cream tunic with a leaf sash and green wraps on the arms, a long wooden spear with a bone tip held in one hand, bare feet"
+ },
+ {
+  "base": "ragged_soldier",
+  "arch": "biped",
+  "desc": "a bearded soldier in a ragged grey-brown coat with a leather pack on his back, a tattered scarf, a long wooden staff held upright in one hand, worn boots"
+ },
+ {
+  "base": "ridge_deserter",
+  "arch": "biped",
+  "desc": "a bearded man in a grey fur-lined coat with a white fur collar, his arms crossed over his chest, a belt with a sheathed knife, brown trousers and boots"
+ },
+ {
+  "base": "vale_mourner",
+  "arch": "biped",
+  "desc": "a tall figure in a long dark mourning robe with a pale porcelain mask hiding the face, a crossbow held across the chest, chains and small trinkets hanging from the belt, the robe reaching the ground"
+ }
+]

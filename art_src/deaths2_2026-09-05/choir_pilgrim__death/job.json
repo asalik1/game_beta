@@ -1,0 +1,7 @@
+{
+ "base": "choir_pilgrim",
+ "clip": "death",
+ "frames": 6,
+ "idle": "choir_pilgrim_anim.png",
+ "arch": "biped"
+}

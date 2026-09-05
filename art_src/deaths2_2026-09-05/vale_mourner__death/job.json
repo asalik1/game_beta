@@ -1,0 +1,7 @@
+{
+ "base": "vale_mourner",
+ "clip": "death",
+ "frames": 6,
+ "idle": "vale_mourner_anim.png",
+ "arch": "biped"
+}

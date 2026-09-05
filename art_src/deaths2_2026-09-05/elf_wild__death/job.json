@@ -1,0 +1,7 @@
+{
+ "base": "elf_wild",
+ "clip": "death",
+ "frames": 6,
+ "idle": "elf_wild_anim.png",
+ "arch": "biped"
+}
