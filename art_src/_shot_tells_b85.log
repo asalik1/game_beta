@@ -1,0 +1,47 @@
+[shot] rig=shot_tells.tscn timeout=420s (outer kill at 480s) args=[--timeout=420 --bosses --phase=0.85]
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+
+COMPILE OK (123 scripts)
+[shot] C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\tools\Godot_v4.4.1-stable_win64_console.exe --audio-driver Dummy --path C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\game res://shot_tells.tscn -- --timeout=420 --bosses --phase=0.85
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+Vulkan 1.3.260 - Forward+ - Using Device #0: AMD - AMD Radeon(TM) Graphics
+
+RIG START: tells  timeout=420s  master_muted=true  dummy_audio_driver=true
+RIG SHOTS DIR: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells
+STEP: boot_game
+STEP: pick_chapter ch1
+STEP: pick_class warrior
+STEP: skip_dialogue
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_fangmaw.png  paused=false state=0 dialogue=false ts=1.00 pf=157 sim=2.05
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_morwen.png  paused=false state=0 dialogue=false ts=1.00 pf=306 sim=4.51
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_vargoth.png  paused=false state=0 dialogue=false ts=1.00 pf=455 sim=6.96
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_stormwarden.png  paused=false state=0 dialogue=false ts=1.00 pf=596 sim=9.41
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_choirmother.png  paused=false state=0 dialogue=false ts=1.00 pf=737 sim=11.87
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_nullwarden.png  paused=false state=0 dialogue=false ts=1.00 pf=879 sim=14.33
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_sexton.png  paused=false state=0 dialogue=false ts=1.00 pf=1021 sim=16.80
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_vess.png  paused=false state=0 dialogue=false ts=1.00 pf=1171 sim=19.27
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_saint_varo.png  paused=false state=0 dialogue=false ts=1.00 pf=1305 sim=21.72
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_forgemistress.png  paused=false state=0 dialogue=false ts=1.00 pf=1446 sim=24.17
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_cinderhide.png  paused=false state=0 dialogue=false ts=1.00 pf=1588 sim=26.63
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_ashpriest.png  paused=false state=0 dialogue=false ts=1.00 pf=1732 sim=29.08
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_whitepelt.png  paused=false state=0 dialogue=false ts=1.00 pf=1871 sim=31.54
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_icebound.png  paused=false state=0 dialogue=false ts=1.00 pf=2010 sim=33.98
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_sleepkeeper.png  paused=false state=0 dialogue=false ts=1.00 pf=2143 sim=36.42
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_auroch.png  paused=false state=0 dialogue=false ts=1.00 pf=2281 sim=38.87
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_gardener.png  paused=false state=0 dialogue=false ts=1.00 pf=2419 sim=41.32
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_curetwisted.png  paused=false state=0 dialogue=false ts=1.00 pf=2565 sim=43.78
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_stormdrake_veyx.png  paused=false state=0 dialogue=false ts=1.00 pf=2701 sim=46.24
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_unnamed_echo.png  paused=false state=0 dialogue=false ts=1.00 pf=2840 sim=48.68
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_stormmouth.png  paused=false state=0 dialogue=false ts=1.00 pf=2979 sim=51.12
+SHOT: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells/boss_first_howl.png  paused=false state=0 dialogue=false ts=1.00 pf=3118 sim=53.57
+RIG DONE: tells  shots=22  exit=0  dir=C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells
+[shot] --- stderr ---
+ERROR: 2 RID allocations of type 'N10RendererRD14TextureStorage7TextureE' were leaked at exit.
+ERROR: Parameter "RenderingServer::get_singleton()" is null.
+   at: ~ImageTexture (scene/resources/image_texture.cpp:241)
+ERROR: Parameter "RenderingServer::get_singleton()" is null.
+   at: ~ImageTexture (scene/resources/image_texture.cpp:241)
+WARNING: 4 RIDs of type "Texture" were leaked.
+   at: finalize (servers/rendering/rendering_device.cpp:7130)
+[shot] VERDICT: RIG DONE in 94s, exit=0. Log: C:\Users\asali\AppData\Local\Temp\crownless_shots\shot_tells_20260905_171218.out
+[shot] shots: C:/Users/asali/AppData/Roaming/Godot/app_userdata/Crownless/shots/tells (22 png this run)

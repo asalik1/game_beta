@@ -274,6 +274,7 @@ func _boss_telegraph(pos: Vector2, radius: float, delay: float, damage: float,
 	if not audio_opts.has("impact_sfx"):
 		audio_opts["impact_sfx"] = _boss_impact_sfx()
 	_apply_tell_style(audio_opts, pos)
+	_tell_windup(Balance.BOSS_TELL.get(kind, {}), delay, pos)
 	game.telegraph(pos, radius, delay, damage, audio_opts)
 
 
@@ -309,6 +310,60 @@ func _apply_tell_style(o: Dictionary, pos: Vector2) -> void:
 				else Vector2(-1.0 if sprite != null and sprite.flip_h else 1.0, 0.0)
 		if d.is_finite() and d != Vector2.ZERO:
 			o["dir"] = d.normalized()
+
+
+## Per-boss WINDUP posture through a tell's fuse (BOSS_TELL "windup"), released
+## with a snap as the tell lands. Hue and shape tell the player WHAT is coming;
+## this tells them WHO — a brute sinks and widens, a caster draws up, a
+## skirmisher leans into the aim, a serpent coils. Rides the held pose channel
+## (_tell_pose_*/_tell_lean) so the per-frame decay of _pose_* cannot fight it.
+## Visual only: no timing, radius or damage changes; guests do not mirror it.
+var _tell_tw: Tween = null
+
+
+func _tell_windup(style: Dictionary, delay: float, pos: Vector2) -> void:
+	var mode := String(style.get("windup", ""))
+	if mode == "" or delay <= 0.05 or dying or sprite == null or not is_inside_tree():
+		return
+	var k: float = float(style.get("windup_k", Balance.BOSS_WINDUP_K))
+	if _tell_tw != null and _tell_tw.is_valid():
+		_tell_tw.kill()
+	_tell_tw = create_tween()
+	var t_in: float = clampf(delay * 0.8, 0.08, 0.9)
+	match mode:
+		"crouch":
+			_tell_tw.tween_property(self, "_tell_pose_y", -k, t_in).set_ease(Tween.EASE_IN)
+			_tell_tw.parallel().tween_property(self, "_tell_pose_x", k * 0.45, t_in)
+			_tell_tw.tween_property(self, "_tell_pose_y", k * 0.6, 0.09)
+			_tell_tw.parallel().tween_property(self, "_tell_pose_x", -k * 0.3, 0.09)
+			_tell_tw.tween_property(self, "_tell_pose_y", 0.0, 0.18)
+			_tell_tw.parallel().tween_property(self, "_tell_pose_x", 0.0, 0.18)
+		"rise":
+			_tell_tw.tween_property(self, "_tell_pose_y", k, t_in).set_ease(Tween.EASE_OUT)
+			_tell_tw.parallel().tween_property(self, "_tell_pose_x", -k * 0.4, t_in)
+			_tell_tw.tween_property(self, "_tell_pose_y", -k * 0.4, 0.10)
+			_tell_tw.parallel().tween_property(self, "_tell_pose_x", k * 0.25, 0.10)
+			_tell_tw.tween_property(self, "_tell_pose_y", 0.0, 0.22)
+			_tell_tw.parallel().tween_property(self, "_tell_pose_x", 0.0, 0.22)
+		"lean":
+			var d := pos - global_position
+			var sgn: float = -1.0 if d.x < 0.0 else 1.0
+			var lean: float = float(style.get("windup_lean", Balance.BOSS_WINDUP_LEAN))
+			_tell_tw.tween_property(self, "_tell_lean", sgn * lean, t_in).set_ease(Tween.EASE_IN_OUT)
+			_tell_tw.tween_property(self, "_tell_lean", -sgn * lean * 0.5, 0.10)
+			_tell_tw.tween_property(self, "_tell_lean", 0.0, 0.20)
+		"coil":
+			var seg: float = t_in / 6.0
+			for _i in 3:
+				_tell_tw.tween_property(self, "_tell_pose_y", -k * 0.5, seg)
+				_tell_tw.parallel().tween_property(self, "_tell_pose_x", k * 0.3, seg)
+				_tell_tw.tween_property(self, "_tell_pose_y", k * 0.35, seg)
+				_tell_tw.parallel().tween_property(self, "_tell_pose_x", -k * 0.2, seg)
+			_tell_tw.tween_property(self, "_tell_pose_y", 0.0, 0.14)
+			_tell_tw.parallel().tween_property(self, "_tell_pose_x", 0.0, 0.14)
+		_:
+			_tell_tw.kill()
+			_tell_tw = null
 
 
 ## DEV-MORPH preview fire (dev_morph.gd only): spawn this action's REAL

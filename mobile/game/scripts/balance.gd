@@ -136,6 +136,10 @@ const MOB_DUST_RANGE := 700.0
 const BOSS_STEP_SHAKE := 0.8
 const BOSS_STOMP_MIN_CELL := 230.0
 const MOB_WINDUP_CROUCH := 0.06
+#  BOSS_WINDUP_K / BOSS_WINDUP_LEAN — a boss holds a per-kind posture through a tell's fuse
+#  (BOSS_TELL "windup": crouch/rise/lean/coil) and snaps on release; scale.y/x delta and rad.
+const BOSS_WINDUP_K := 0.11
+const BOSS_WINDUP_LEAN := 0.17
 const MOB_POUNCE_STRETCH := 0.08
 const MOB_POUNCE_LEAN_RAD := 0.12
 const MOB_DEATH_FPS := 9.0
@@ -157,34 +161,34 @@ const MOB_SPAWN_IN_T := 0.28
 # `"color_locked": true`. Shape/arc/width are defaults a call site may override.
 const BOSS_TELL := {
 	# --- ch1-2 ---
-	"fangmaw":        {"color": Color(0.95, 0.45, 0.18), "shape": "cone", "arc": 0.70},
-	"morwen":         {"color": Color(0.55, 1.00, 0.25), "shape": "ring"},
-	"vargoth":        {"color": Color(1.00, 0.32, 0.10), "shape": "cross"},
-	"stormwarden":    {"color": Color(1.00, 0.95, 0.40), "shape": "line"},
-	"choirmother":    {"color": Color(0.92, 0.90, 0.78), "shape": "ring"},
-	"nullwarden":     {"color": Color(0.45, 0.85, 1.00), "shape": "square"},
+	"fangmaw":        {"color": Color(0.95, 0.45, 0.18), "shape": "cone", "arc": 0.70, "windup": "crouch"},
+	"morwen":         {"color": Color(0.55, 1.00, 0.25), "shape": "ring", "windup": "rise"},
+	"vargoth":        {"color": Color(1.00, 0.32, 0.10), "shape": "cross", "windup": "crouch"},
+	"stormwarden":    {"color": Color(1.00, 0.95, 0.40), "shape": "line", "windup": "lean"},
+	"choirmother":    {"color": Color(0.92, 0.90, 0.78), "shape": "ring", "windup": "rise"},
+	"nullwarden":     {"color": Color(0.45, 0.85, 1.00), "shape": "square", "windup": "crouch"},
 	# --- ch3 Unburied Vale ---
-	"sexton":         {"color": Color(0.85, 0.70, 0.40), "shape": "square"},
-	"vess":           {"color": Color(0.72, 0.40, 1.00), "shape": "ring"},
-	"saint_varo":     {"color": Color(1.00, 0.85, 0.45), "shape": "disc"},
+	"sexton":         {"color": Color(0.85, 0.70, 0.40), "shape": "square", "windup": "lean"},
+	"vess":           {"color": Color(0.72, 0.40, 1.00), "shape": "ring", "windup": "rise"},
+	"saint_varo":     {"color": Color(1.00, 0.85, 0.45), "shape": "disc", "windup": "crouch"},
 	# --- ch4 Slagfields ---
-	"forgemistress":  {"color": Color(1.00, 0.55, 0.15), "shape": "line"},
-	"cinderhide":     {"color": Color(0.95, 0.25, 0.15), "shape": "cone", "arc": 0.62},
-	"ashpriest":      {"color": Color(0.90, 0.62, 0.35), "shape": "ring"},
+	"forgemistress":  {"color": Color(1.00, 0.55, 0.15), "shape": "line", "windup": "rise"},
+	"cinderhide":     {"color": Color(0.95, 0.25, 0.15), "shape": "cone", "arc": 0.62, "windup": "crouch"},
+	"ashpriest":      {"color": Color(0.90, 0.62, 0.35), "shape": "ring", "windup": "rise"},
 	# --- ch5 The Long Sleep ---
-	"whitepelt":      {"color": Color(0.65, 0.90, 1.00), "shape": "cone", "arc": 0.66},
-	"icebound":       {"color": Color(0.35, 0.62, 1.00), "shape": "square"},
-	"sleepkeeper":    {"color": Color(0.70, 0.72, 1.00), "shape": "ring"},
+	"whitepelt":      {"color": Color(0.65, 0.90, 1.00), "shape": "cone", "arc": 0.66, "windup": "crouch"},
+	"icebound":       {"color": Color(0.35, 0.62, 1.00), "shape": "square", "windup": "crouch"},
+	"sleepkeeper":    {"color": Color(0.70, 0.72, 1.00), "shape": "ring", "windup": "rise"},
 	# --- ch6 The Blooming Deep ---
-	"auroch":         {"color": Color(0.85, 0.42, 0.30), "shape": "line"},
-	"gardener":       {"color": Color(0.45, 0.85, 0.35), "shape": "square"},   # garden plots
-	"curetwisted":    {"color": Color(0.80, 0.90, 0.30), "shape": "disc"},
+	"auroch":         {"color": Color(0.85, 0.42, 0.30), "shape": "line", "windup": "crouch"},
+	"gardener":       {"color": Color(0.45, 0.85, 0.35), "shape": "square", "windup": "rise"},   # garden plots
+	"curetwisted":    {"color": Color(0.80, 0.90, 0.30), "shape": "disc", "windup": "coil"},
 	# --- ch7 Breaking Sky ---
-	"stormdrake_veyx": {"color": Color(0.40, 0.95, 1.00), "shape": "line"},
-	"unnamed_echo":   {"color": Color(0.80, 0.75, 1.00), "shape": "ring"},
-	"stormmouth":     {"color": Color(0.90, 0.60, 1.00), "shape": "cone", "arc": 0.72},
+	"stormdrake_veyx": {"color": Color(0.40, 0.95, 1.00), "shape": "line", "windup": "coil"},
+	"unnamed_echo":   {"color": Color(0.80, 0.75, 1.00), "shape": "ring", "windup": "rise"},
+	"stormmouth":     {"color": Color(0.90, 0.60, 1.00), "shape": "cone", "arc": 0.72, "windup": "crouch"},
 	# --- Moonfen interlude ---
-	"first_howl":     {"color": Color(0.70, 0.80, 0.95), "shape": "cone", "arc": 0.68},
+	"first_howl":     {"color": Color(0.70, 0.80, 0.95), "shape": "cone", "arc": 0.68, "windup": "crouch"},
 }
 # Camera feel (2026-08-18): look-ahead in the move direction (px at full
 # speed, eased) and the combat zoom-in (multiplier on the base zoom while

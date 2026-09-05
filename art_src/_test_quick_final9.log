@@ -1,0 +1,99 @@
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+
+COMPILE OK (121 scripts)
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+
+ok: DEX vs evasion gradient (miss / graze / cancelled tiers)
+ok: stat curves + true damage + TTK retune
+ok: class select + warrior opening (owned the harm)
+ok: room graph (25 rooms, 15 on the boss path, seeded layout, lazy build)
+ok: elder talk reads opening choice + village gate opens
+ok: warrior abilities
+ok: melee passive regen
+ok: archer second wind (untouched -> recovery)
+ok: mage arcane ward (blink DR softens hits, pierced by true) + plate DR
+ok: mage Wind Cuts (wind-only bleed, bites + refreshes)
+ok: assassin stab surge (stab + dash-stab, scales with missing health)
+ok: directional dash (held keys steer it, L/R art spins to match)
+ok: target lock cycling
+ok: themes unlock + assignment (fury on Cleave)
+ok: all-in theme loadout
+ok: per-ability theme variants (quake / berserk tune / venom bloom / lined shot)
+ok: paladin kit (aegis smite, holy mend, chains drag)
+ok: warlock kit (hex detonation, dark pact, void rift)
+ok: combo stat (121/200 resets)
+ok: attributes + combat rating (CR 389 -> 402)
+ok: substat allocation (PhysRes 80 -> 82)
+ok: monster levels + growth scaling
+ok: boss music (every BOSS_KINDS entry resolves to a real fight track)
+ok: elites (no-xp loot pinata) + reset stone + bag tiers + small rooms
+ok: mailbox (ground overflow, flush, claim, 30d expiry, trusted clock)
+ok: daily login reward (new-day claim, streak advance + reset)
+ok: records + achievements (best-time keeping, idempotent unlock)
+ok: battle stats (attribution buckets, fight window, record tracks) + gallery/archive UI
+ok: bounties + weekly vault (deterministic roll, progress reward, vault claim)
+ok: ward contracts (deterministic per-ward roll, progress-then-claim, 4/day cap, standing+favor, no double-claim)
+ok: reforge bench (affix reroll, value reroll, add socket + cap incl. C, pen un-gate, transmute)
+ok: profile sets (membership by VERB family, A/S lanes count, tier stats, no cross-count)
+ok: set coverage (all 30 class x profile sets field all six slots)
+ok: account stash (deposit, withdraw to bag, capacity cap)
+ok: localization (lookup, key fallback, format, language swap)
+ok: consumables (drink gate refusal + budgeted mana/might/renewal, recall scroll)
+ok: resonance band leans (Hunger / Constancy)
+ok: gold rush surge (sourceless baseline, window pay, touch trigger)
+ok: gamble vendor (afford gate, cost deduction, boss-band roll + pricing)
+ok: merchant economy (farm-cost buy, act-gated grades, upgrade curve, bag=1g, sell + quest-item guard, ward+renewal)
+ok: equip / unequip (slot empties to bag, bag-full guard)
+ok: auto-equip (empties + strict upgrades; gemmed/locked/side-grade left)
+ok: onboarding gate (fresh ch1 due; completed/replay/taught blocked; tut_ kept)
+ok: stacking bags (sum-capacity, loose-item pickup/equip/swap/sell — no auto-cash, +5/tier curve, UNIT-counting incl. health potions, grey-out, act drops, shop price, migration) + discard-throw
+ok: typed gem slots (C/B regular-only incl. C's new socket, A = 1 regular + 1 special, one special per stat across gear)
+ok: retention pass (grades + PBs, weekly fx, lore titles, curse, fanfare)
+ok: mob mechanics (presence + pounce/web/channel/warded/bloat... all ch1-7 tagged)
+ok: one-frame idle enters + advances quadruped walk strip
+ok: mob strip body scale + ground anchor persist across idle/walk/attack
+ok: melee swing alternation (attack/attackb 8-dir for warrior/paladin/assassin, parity flips on a1, skin fallback, assassin alt contact 0.18s)
+ok: asset seams (ground tilesets / composite structures + decals / animated props)
+ok: seam showcase (5 authored floors + living water/spores/rifts/storm/fire structures)
+ok: NPC interactions face the visitor (including Citizen/Fenna) + restore rest pose
+[room-clear] reconcile: room 0 'Emberfall Village' counter 2 but 1 living -> 1
+[room-clear] straggler: wolf at (-300.0, -300.0) (alerted=false, in_wall=false, outside_room=true) -> wake, nudge
+ok: room-clear counter reconciles to living monsters; quiet stragglers wake and come home
+ok: canopy-vs-front — 209 trees / 23 fronts across 25 rooms, no tree hides behind a building it overlaps
+ok: corner bites — 3 bitten room(s) of 25; bites clear the lanes, spawns and scenery
+ok: difficulty tiers (offsets, band shift + S table, gates, zero XP, unlock meta, tier PBs, save round-trip)
+ok: renown (prices, wallet, buy/own, PB + tier faucets pay once, weekly cache, save round-trip, wardrobe UI)
+ok: road deck (registry schema, diminishing chance, toll/courier/wager resolve deltas)
+ok: waking incursions (cross-domain seeded roster, pure injection, weekly bank + Renown sweep, stale refusal, save round-trip)
+ok: unlisted hidden bosses (roster/eligibility, deterministic injection, per-run bank + Renown/Wildfang, save round-trip)
+ok: pockets (roster/eligibility, deterministic float inject, complete reward+bank, save round-trip)
+ok: kill xp
+ok: chest loot + equip ([F] Chipped Bloodforged Harness)
+ok: weapon shape identities (budget order, zero granted stats, crit band + pool bias 293/600 vs 224/600)
+ok: class-aware drops (arsenal + S first-roll pen guarantee + B-gated lifesteal/combo)
+ok: legendary tier retired (generic S passive-less, 6 flagship transplants, old saves grandfather live)
+ok: named uniques (420 wired incl. gear verb/beat contracts, live on pickup, slot-generic drop split, worldroot conversion)
+ok: armor passive templates (30 knobbed, lane reader, bulwark/grip/ward effects, CC shorten)
+ok: gems (socket, synthesize, sell-return)
+ok: telegraph + unique boss falling weapons (heavy gate semantics)
+ok: all 11 boss projectile families use authored 64px art
+ok: skill tree rows (caps + gating + dual-key early open)
+ok: named talent loadouts (independent pages, shared 40-point budget)
+ok: auto-synthesize (equipped-first, 5 upgrades)
+ok: save/load roundtrip (name, gold, talent pages, resonance, factions, gear, room state)
+ok: session-local name de-dup (#N on collision, case-insensitive)
+ok: chroma shader (apply, uniforms, clear)
+ok: every skin has an installed splash (Phantom teal-by-default, Umbral keeps blue)
+ok: hero dialogue splash follows the live equipped skin + dev opener class lens
+ok: choice dialogue engine (choices, flags, factions, resonance bands)
+ok: opening convo data integrity (287 convos)
+ok: shop, codex, records, journal, daily, skill tree, theme, stats, map, dev UI
+ok: status icons (18 active ids, all authored PNGs, no procedural fallbacks)
+ok: HUD utility icons all painted, no fallback wiring (8 icons)
+ok: boss tell accents (inside the danger disc, 22 styled bosses) + windup posture held
+ok: endgame modes (Crucible affixed boss / HP-carry / reward / cash-out; Depths camp+merchant / retheme / wave / debuff-cycle / death-settle)
+ok: touch HUD overlay gate (menu/dialogue/choice kill the controls with the world unpaused — co-op)
+ok: overlay intent gate (stale keyboard intents die under dialogue + choice overlays, world unpaused — co-op)
+ok: two-regime growth (native band -> boss dial far-field; no L100 inversion; overcap blocks)
+ok: pause menu (pause/resume, audio settings, chapter replay)
+AUTOTEST QUICK PASS  (core systems only — run the FULL suite before staging)

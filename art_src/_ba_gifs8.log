@@ -1,0 +1,542 @@
+dup      archer_attack_walk_ne == archer_attack_walk_e (skipped)
+dup      archer_attack_walk_s == archer_attack_walk (skipped)
+dup      archer_attack_walk_se == archer_attack_walk_e (skipped)
+dup      archer_attack_walk_sw == archer_attack_walk_nw (skipped)
+dup      archer_attack_walk_w == archer_attack_walk_nw (skipped)
+dup      assassin_attack_walk_b_ne == assassin_attack_walk_b_e (skipped)
+dup      assassin_attack_walk_b_s == assassin_attack_walk_b (skipped)
+dup      assassin_attack_walk_b_se == assassin_attack_walk_b_e (skipped)
+dup      assassin_attack_walk_b_sw == assassin_attack_walk_b_nw (skipped)
+dup      assassin_attack_walk_b_w == assassin_attack_walk_b_nw (skipped)
+dup      assassin_attack_walk_ne == assassin_attack_walk_e (skipped)
+dup      assassin_attack_walk_s == assassin_attack_walk (skipped)
+dup      assassin_attack_walk_se == assassin_attack_walk_e (skipped)
+dup      assassin_attack_walk_sw == assassin_attack_walk_nw (skipped)
+dup      assassin_attack_walk_w == assassin_attack_walk_nw (skipped)
+dup      auroch_minotaur_walk_codex_ne == auroch_minotaur_walk_codex_e (skipped)
+dup      auroch_minotaur_walk_codex_se == auroch_minotaur_walk_codex_e (skipped)
+dup      auroch_minotaur_walk_codex_sw == auroch_minotaur_walk_codex_nw (skipped)
+dup      auroch_minotaur_walk_codex_w == auroch_minotaur_walk_codex_nw (skipped)
+dup      echo_walk_codex_ne == echo_walk_codex_e (skipped)
+dup      echo_walk_codex_se == echo_walk_codex_e (skipped)
+dup      echo_walk_codex_sw == echo_walk_codex_nw (skipped)
+dup      echo_walk_codex_w == echo_walk_codex_nw (skipped)
+dup      fungus_long_walk_ne == fungus_long_walk_e (skipped)
+dup      fungus_long_walk_se == fungus_long_walk_e (skipped)
+dup      fungus_long_walk_sw == fungus_long_walk_nw (skipped)
+dup      fungus_long_walk_w == fungus_long_walk_nw (skipped)
+dup      hrolgar_walk_codex_ne == hrolgar_walk_codex_e (skipped)
+dup      hrolgar_walk_codex_se == hrolgar_walk_codex_e (skipped)
+dup      hrolgar_walk_codex_sw == hrolgar_walk_codex_nw (skipped)
+dup      hrolgar_walk_codex_w == hrolgar_walk_codex_nw (skipped)
+dup      kaethra_walk_codex_ne == kaethra_walk_codex_e (skipped)
+dup      kaethra_walk_codex_se == kaethra_walk_codex_e (skipped)
+dup      kaethra_walk_codex_sw == kaethra_walk_codex_nw (skipped)
+dup      kaethra_walk_codex_w == kaethra_walk_codex_nw (skipped)
+dup      korrag_walk_codex_ne == korrag_walk_codex_e (skipped)
+dup      korrag_walk_codex_se == korrag_walk_codex_e (skipped)
+dup      korrag_walk_codex_sw == korrag_walk_codex_nw (skipped)
+dup      korrag_walk_codex_w == korrag_walk_codex_nw (skipped)
+dup      mage_attack_walk_b_ne == mage_attack_walk_b_e (skipped)
+dup      mage_attack_walk_b_s == mage_attack_walk_b (skipped)
+dup      mage_attack_walk_b_se == mage_attack_walk_b_e (skipped)
+dup      mage_attack_walk_b_sw == mage_attack_walk_b_nw (skipped)
+dup      mage_attack_walk_b_w == mage_attack_walk_b_nw (skipped)
+dup      mage_attack_walk_ne == mage_attack_walk_e (skipped)
+dup      mage_attack_walk_s == mage_attack_walk (skipped)
+dup      mage_attack_walk_se == mage_attack_walk_e (skipped)
+dup      mage_attack_walk_sw == mage_attack_walk_nw (skipped)
+dup      mage_attack_walk_w == mage_attack_walk_nw (skipped)
+dup      mummy_mage_walk_se == mummy_mage_walk_ne (skipped)
+dup      mummy_mage_walk_sw == mummy_mage_walk_nw (skipped)
+dup      mummy_mage_walk_w == mummy_mage_walk_nw (skipped)
+dup      mummy_walk_ne == mummy_walk_e (skipped)
+dup      mummy_walk_s == mummy_walk (skipped)
+dup      mummy_walk_se == mummy_walk_e (skipped)
+dup      mummy_walk_sw == mummy_walk_nw (skipped)
+dup      mummy_walk_w == mummy_walk_nw (skipped)
+dup      npc_bandit_tracker_anim == npc_bandit_tracker (skipped)
+dup      npc_scholar_a_anim == npc_scholar_a (skipped)
+dup      npc_scholar_b_anim == npc_scholar_b (skipped)
+dup      npc_villager_f_anim == npc_villager_f (skipped)
+dup      npc_villager_m_anim == npc_villager_m (skipped)
+dup      nullwarden_walk_codex_ne == nullwarden_walk_codex_e (skipped)
+dup      nullwarden_walk_codex_se == nullwarden_walk_codex_e (skipped)
+dup      nullwarden_walk_codex_sw == nullwarden_walk_codex_nw (skipped)
+dup      nullwarden_walk_codex_w == nullwarden_walk_codex_nw (skipped)
+dup      paladin_walk_n == paladin_walk_b_n (skipped)
+dup      rotmaw_walk_codex_ne == rotmaw_walk_codex_e (skipped)
+dup      rotmaw_walk_codex_se == rotmaw_walk_codex_e (skipped)
+dup      rotmaw_walk_codex_sw == rotmaw_walk_codex_nw (skipped)
+dup      rotmaw_walk_codex_w == rotmaw_walk_codex_nw (skipped)
+dup      saint_varo_standing_walk_codex_ne == saint_varo_standing_walk_codex_e (skipped)
+dup      saint_varo_standing_walk_codex_se == saint_varo_standing_walk_codex_e (skipped)
+dup      saint_varo_standing_walk_codex_sw == saint_varo_standing_walk_codex_nw (skipped)
+dup      saint_varo_standing_walk_codex_w == saint_varo_standing_walk_codex_nw (skipped)
+dup      serane_walk_codex_ne == serane_walk_codex_e (skipped)
+dup      serane_walk_codex_se == serane_walk_codex_e (skipped)
+dup      serane_walk_codex_sw == serane_walk_codex_nw (skipped)
+dup      serane_walk_codex_w == serane_walk_codex_nw (skipped)
+dup      sexton_walk_codex_ne == sexton_walk_codex_e (skipped)
+dup      sexton_walk_codex_se == sexton_walk_codex_e (skipped)
+dup      sexton_walk_codex_sw == sexton_walk_codex_nw (skipped)
+dup      sexton_walk_codex_w == sexton_walk_codex_nw (skipped)
+dup      skeleton_warrior_walk_ne == skeleton_warrior_walk_e (skipped)
+dup      skeleton_warrior_walk_s == skeleton_warrior_walk (skipped)
+dup      skeleton_warrior_walk_se == skeleton_warrior_walk_e (skipped)
+dup      skeleton_warrior_walk_sw == skeleton_warrior_walk_nw (skipped)
+dup      skeleton_warrior_walk_w == skeleton_warrior_walk_nw (skipped)
+dup      stone_base_walk_ne == stone_base_walk_e (skipped)
+dup      stone_base_walk_se == stone_base_walk_e (skipped)
+dup      stone_base_walk_sw == stone_base_walk_nw (skipped)
+dup      stone_base_walk_w == stone_base_walk_nw (skipped)
+dup      stormmouth_walk_codex_ne == stormmouth_walk_codex_e (skipped)
+dup      stormmouth_walk_codex_se == stormmouth_walk_codex_e (skipped)
+dup      stormmouth_walk_codex_sw == stormmouth_walk_codex_nw (skipped)
+dup      stormmouth_walk_codex_w == stormmouth_walk_codex_nw (skipped)
+dup      vargoth_walk_codex_ne == vargoth_walk_codex_e (skipped)
+dup      vargoth_walk_codex_se == vargoth_walk_codex_e (skipped)
+dup      vargoth_walk_codex_sw == vargoth_walk_codex_nw (skipped)
+dup      vargoth_walk_codex_w == vargoth_walk_codex_nw (skipped)
+dup      veyx_walk_codex_ne == veyx_walk_codex_e (skipped)
+dup      veyx_walk_codex_se == veyx_walk_codex_e (skipped)
+dup      veyx_walk_codex_sw == veyx_walk_codex_nw (skipped)
+dup      veyx_walk_codex_w == veyx_walk_codex_nw (skipped)
+dup      villager_anim == villager (skipped)
+dup      warlock_attack_walk_b_ne == warlock_attack_walk_b_e (skipped)
+dup      warlock_attack_walk_b_s == warlock_attack_walk_b (skipped)
+dup      warlock_attack_walk_b_se == warlock_attack_walk_b_e (skipped)
+dup      warlock_attack_walk_b_sw == warlock_attack_walk_b_nw (skipped)
+dup      warlock_attack_walk_b_w == warlock_attack_walk_b_nw (skipped)
+dup      warlock_attack_walk_ne == warlock_attack_walk_e (skipped)
+dup      warlock_attack_walk_s == warlock_attack_walk (skipped)
+dup      warlock_attack_walk_se == warlock_attack_walk_e (skipped)
+dup      warlock_attack_walk_sw == warlock_attack_walk_nw (skipped)
+dup      warlock_attack_walk_w == warlock_attack_walk_nw (skipped)
+dup      warrior_walk_ne == warrior_walk_e (skipped)
+dup      warrior_walk_se == warrior_walk_e (skipped)
+dup      warrior_walk_sw == warrior_walk_nw (skipped)
+dup      warrior_walk_w == warrior_walk_nw (skipped)
+loop     aldric_burned_out_anim
+loop     aldric_burned_out_walk
+loop     anchor_vine_anim
+new      archer_attack_walk
+new      archer_attack_walk_e
+new      archer_attack_walk_n
+new      archer_attack_walk_nw
+loop     archon_vassik_anim
+loop     archon_vassik_walk
+new      ashpriest_death
+loop     ashpriest_walk_codex_n
+loop     ashpriest_walk_codex_s
+new      assassin_attack_walk
+new      assassin_attack_walk_b
+new      assassin_attack_walk_b_e
+new      assassin_attack_walk_b_n
+new      assassin_attack_walk_b_nw
+new      assassin_attack_walk_e
+new      assassin_attack_walk_n
+new      assassin_attack_walk_nw
+new      auroch_minotaur_death
+loop     auroch_minotaur_walk_codex_e
+loop     auroch_minotaur_walk_codex_n
+loop     auroch_minotaur_walk_codex_nw
+loop     auroch_minotaur_walk_codex_s
+loop     bandit_scout_walk
+loop     bannerman_anim
+loop     bannerman_walk
+loop     bellows_imp_anim
+new      blightwolf_death
+loop     blightwolf_walk
+loop     bloat_leech_anim
+loop     bloat_leech_walk
+new      blooming_convert_death
+new      bog_lurker_death
+loop     bog_lurker_walk
+toggle   bridge
+loop     broodmother_yskara_anim
+loop     burned_kings_echo_anim
+loop     burned_kings_echo_walk
+toggle   cactus2
+toggle   capital_accord_longhouse
+toggle   capital_accord_longhouse_anim
+toggle   capital_alembic_station
+toggle   capital_ashen_tankard
+toggle   capital_ashen_tankard_anim
+toggle   capital_ashfire_forge
+toggle   capital_ashfire_forge_anim
+toggle   capital_chartered_hall
+toggle   capital_city_arcade
+toggle   capital_city_bench
+toggle   capital_city_directory
+toggle   capital_crown_fountain
+toggle   capital_crown_fountain_anim
+toggle   capital_crown_spire_gate
+toggle   capital_crown_spire_gate_anim
+toggle   capital_emberward_gate
+toggle   capital_emberward_gate_anim
+toggle   capital_grand_archive
+toggle   capital_great_hearth
+toggle   capital_great_hearth_anim
+toggle   capital_market_stall
+toggle   capital_portal_crucible
+toggle   capital_portal_crucible_anim
+toggle   capital_portal_depths
+toggle   capital_portal_depths_anim
+toggle   capital_portal_story
+toggle   capital_portal_story_anim
+toggle   capital_proving_gate
+toggle   capital_proving_gate_anim
+toggle   capital_rot_chapel
+toggle   capital_sable_hall
+toggle   capital_sable_hall_anim
+toggle   capital_stables
+toggle   capital_undercroft
+toggle   capital_vault_chest
+toggle   capital_watchtower
+toggle   capital_watchtower_anim
+toggle   capital_wellspring
+toggle   capital_wellspring_anim
+toggle   capital_wildfang_fangmoot
+toggle   capital_wildfang_fangmoot_anim
+new      casket_creeper_death
+loop     casket_creeper_walk
+loop     choir_ascendant_anim
+loop     choir_ascendant_walk
+loop     choir_of_frost_anim
+loop     choir_of_frost_walk
+new      choir_pilgrim_death
+loop     choir_radical_anim
+loop     choir_radical_walk
+new      choirmother_death
+loop     choirmother_walk_codex_n
+loop     choirmother_walk_codex_s
+loop     chorister_of_frost_anim
+loop     chorister_of_frost_walk
+loop     cinderhide_attack
+loop     cinderhide_walk
+loop     cindersmith_anim
+loop     cistern_mimic_anim
+loop     cistern_mimic_walk
+loop     cold_pilgrim_anim
+loop     cold_pilgrim_attack
+new      cold_pilgrim_death
+loop     cold_pilgrim_walk
+loop     commander_drayce_anim
+loop     commander_drayce_walk
+loop     conductor_acolyte_anim
+loop     conductor_acolyte_walk
+loop     converted_anim
+loop     converted_walk
+loop     crusade_zealot_anim
+loop     crusade_zealot_walk
+loop     cultist_anim
+new      cultist_death
+loop     cultist_walk
+loop     cure_seeker_heretic_anim
+new      deep_stalker_death
+loop     deep_stalker_walk
+loop     drowned_warden_anim
+loop     drowned_warden_walk
+loop     duneprowler_attack
+new      duneprowler_death
+loop     duneprowler_walk
+new      echo_death
+loop     echo_walk_codex_e
+loop     echo_walk_codex_n
+loop     echo_walk_codex_nw
+loop     elara_vessel_anim
+loop     elara_vessel_walk
+loop     elf_druid_walk
+loop     elf_druid_walk_n
+loop     elf_ranger_attack
+loop     elf_ranger_walk
+new      elf_wild_death
+loop     fangmaw_anim_codex
+loop     fangmaw_walk
+loop     field_chirurgeon_anim
+loop     field_chirurgeon_walk
+new      first_howl_death
+new      flame_pilgrim_death
+loop     flux_hound_anim
+loop     flux_hound_walk
+loop     forge_zealot_anim
+loop     forge_zealot_walk
+new      forgemistress_death
+loop     forgemistress_walk_codex_n
+loop     foundry_thrall_anim
+loop     foundry_thrall_walk
+loop     fungus_heavy_walk_n
+loop     fungus_heavy_walk_s
+new      fungus_immature_death
+loop     fungus_immature_walk
+loop     fungus_long_walk
+loop     fungus_long_walk_e
+loop     fungus_long_walk_n
+loop     fungus_long_walk_nw
+loop     fungus_long_walk_s
+loop     glacius_anim
+loop     glacius_walk
+loop     glasshide_stalker_anim
+loop     glasshide_stalker_walk
+toggle   grass2
+toggle   grass3
+loop     greyrun_lurker_anim
+new      greyrun_lurker_death
+toggle   ground_field_holystone
+loop     grove_horror_anim
+new      grove_horror_death
+loop     grove_horror_walk
+loop     grove_tender_anim
+loop     grove_tender_walk
+loop     halla_anim_codex
+new      halla_death
+loop     heart_of_the_root_anim
+loop     heart_of_the_root_walk
+loop     high_artificer_maeven_anim
+loop     high_artificer_maeven_walk
+loop     hollow_knight_anim
+loop     hollow_knight_walk
+new      hrolgar_death
+loop     hrolgar_walk_codex_e
+loop     hrolgar_walk_codex_n
+loop     hrolgar_walk_codex_nw
+new      kaethra_death
+loop     kaethra_walk_codex_e
+new      kaethra_walk_codex_n
+loop     kaethra_walk_codex_nw
+new      korrag_death
+loop     korrag_reborn_anim
+loop     korrag_reborn_walk
+loop     korrag_walk_codex_e
+loop     korrag_walk_codex_n
+loop     korrag_walk_codex_nw
+loop     korrag_walk_codex_s
+loop     mage_anim_e
+loop     mage_anim_w
+loop     mage_attack_e
+loop     mage_attack_w
+new      mage_attack_walk
+new      mage_attack_walk_b
+new      mage_attack_walk_b_e
+new      mage_attack_walk_b_n
+new      mage_attack_walk_b_nw
+new      mage_attack_walk_e
+new      mage_attack_walk_n
+new      mage_attack_walk_nw
+loop     mage_cast_e
+loop     mage_cast_w
+loop     mage_walk_e
+loop     mage_walk_w
+new      morwen_death
+loop     morwen_walk
+loop     morwyn_hollow_flame_anim
+loop     morwyn_hollow_flame_walk
+loop     mouth_of_the_storm_anim
+loop     mummy_mage_walk
+loop     mummy_mage_walk_e
+loop     mummy_mage_walk_n
+loop     mummy_mage_walk_ne
+loop     mummy_mage_walk_nw
+loop     mummy_mage_walk_s
+new      mummy_rogue_death
+loop     mummy_walk
+loop     mummy_walk_e
+loop     mummy_walk_n
+loop     mummy_walk_nw
+new      mummy_warrior_death
+toggle   mushroom2
+toggle   mushroom3
+toggle   npc_bandit_tracker
+toggle   npc_scholar_a
+toggle   npc_scholar_b
+toggle   npc_villager_f
+toggle   npc_villager_m
+loop     nullwarden_anim_codex
+new      nullwarden_death
+loop     nullwarden_walk_codex_e
+loop     nullwarden_walk_codex_n
+loop     nullwarden_walk_codex_nw
+loop     nullwarden_walk_codex_s
+loop     oathbound_knight_anim
+loop     oathbound_knight_walk
+loop     orc_attack
+loop     orc_rogue_walk
+loop     orc_walk_n
+loop     orc_walk_s
+loop     overgrown_gatewarden_anim
+loop     overgrown_gatewarden_walk
+loop     paladin_walk_b_n
+loop     pale_nursery_anim
+loop     pollen_drifter_anim
+new      ragged_soldier_death
+loop     rat_mage_anim
+loop     rat_mage_walk
+new      rat_rogue_death
+new      rat_warrior_death
+new      ridge_deserter_death
+loop     riftling_anim
+loop     riftling_walk
+loop     rime_wolf_anim
+loop     rime_wolf_walk
+loop     root_spiderling_anim
+loop     root_spiderling_walk
+loop     rootspawn_anim
+loop     rootspawn_walk
+loop     rootweaver_anim
+loop     rootweaver_walk
+new      rotmaw_death
+loop     rotmaw_walk_codex_e
+loop     rotmaw_walk_codex_nw
+loop     rotmaw_walk_codex_s
+loop     royal_knight_walk
+loop     royal_knight_walk_n
+loop     royal_knight_walk_s
+new      saint_varo_standing_death
+loop     saint_varo_standing_walk_codex_e
+loop     saint_varo_standing_walk_codex_nw
+loop     sand_revenant_anim
+loop     sand_revenant_walk
+new      serane_death
+loop     serane_walk_codex_e
+loop     serane_walk_codex_nw
+loop     serane_walk_codex_s
+new      sexton_death
+loop     sexton_walk_codex_e
+loop     sexton_walk_codex_n
+loop     sexton_walk_codex_nw
+loop     shardcaller_anim
+loop     shardcaller_walk
+loop     shattered_vow_anim
+loop     shattered_vow_walk
+loop     skeleton_attack
+loop     skeleton_mage_walk
+loop     skeleton_rogue_walk
+loop     skeleton_rogue_walk_n
+loop     skeleton_walk
+loop     skeleton_warrior_walk
+loop     skeleton_warrior_walk_e
+loop     skeleton_warrior_walk_n
+loop     skeleton_warrior_walk_nw
+loop     slag_hound_anim
+loop     slag_hound_walk
+loop     sleepwalker_anim
+loop     sleepwalker_walk
+loop     sluice_lurker_anim
+loop     sluice_lurker_walk
+loop     smelter_lord_thrain_anim
+loop     smelter_lord_thrain_walk
+loop     spider_attack
+new      spider_death
+loop     spider_walk
+loop     spider_walk_e
+loop     spider_walk_n
+loop     spider_walk_ne
+loop     spider_walk_nw
+loop     spider_walk_s
+loop     spider_walk_se
+loop     spider_walk_sw
+loop     spider_walk_w
+loop     static_caller_walk
+loop     stone_base_walk_e
+loop     stone_base_walk_n
+loop     stone_base_walk_nw
+loop     stone_base_walk_s
+loop     stone_broken_walk
+loop     stone_broken_walk_s
+loop     storm_adept_anim
+loop     storm_adept_walk
+loop     storm_harrier_attack
+loop     storm_harrier_walk
+toggle   stormcult
+loop     stormcult_anim
+loop     stormcult_attack
+new      stormcult_death
+new      stormmouth_death
+loop     stormmouth_walk_codex_e
+loop     stormmouth_walk_codex_n
+loop     stormmouth_walk_codex_nw
+loop     stormmouth_walk_codex_s
+loop     thorn_howler_anim
+loop     thorn_howler_walk
+loop     thornfather_grael_anim
+loop     thornfather_grael_walk
+toggle   toadstool
+toggle   tree_green2
+loop     tree_green2_anim
+toggle   tree_green4
+loop     tree_green4_anim
+loop     unfinished_sentence_anim
+loop     unfinished_sentence_walk
+toggle   vale_mourner
+loop     vale_mourner_anim
+new      vale_mourner_death
+loop     vargoth_anim_codex
+new      vargoth_death
+loop     vargoth_walk_codex_e
+loop     vargoth_walk_codex_n
+loop     vargoth_walk_codex_nw
+new      vent_skitter_death
+loop     vent_skitter_walk
+loop     verdant_anvil_anim
+loop     verdict_drone_anim
+loop     verdict_drone_walk
+new      vess_death
+loop     vess_walk_codex_e
+loop     vess_walk_codex_n
+loop     vess_walk_codex_w
+new      veyx_death
+loop     veyx_walk_codex_e
+loop     veyx_walk_codex_nw
+loop     veyx_walk_codex_s
+toggle   villager
+loop     void_hound_anim
+loop     void_hound_walk
+loop     vow_sentinel_walk
+loop     waking_shard_anim
+loop     waking_shard_walk
+loop     warlock_attack
+loop     warlock_attack2
+loop     warlock_attack2_e
+loop     warlock_attack2_n
+loop     warlock_attack2_ne
+loop     warlock_attack2_nw
+loop     warlock_attack2_s
+loop     warlock_attack2_se
+loop     warlock_attack2_sw
+loop     warlock_attack2_w
+loop     warlock_attack_e
+loop     warlock_attack_n
+loop     warlock_attack_ne
+loop     warlock_attack_nw
+loop     warlock_attack_s
+loop     warlock_attack_se
+loop     warlock_attack_sw
+loop     warlock_attack_w
+new      warlock_attack_walk
+new      warlock_attack_walk_b
+new      warlock_attack_walk_b_e
+new      warlock_attack_walk_b_n
+new      warlock_attack_walk_b_nw
+new      warlock_attack_walk_e
+new      warlock_attack_walk_n
+new      warlock_attack_walk_nw
+deleted  warlock_ledgerbound_walk_e (skipped)
+deleted  warlock_ledgerbound_walk_ne (skipped)
+deleted  warlock_ledgerbound_walk_nw (skipped)
+deleted  warlock_ledgerbound_walk_se (skipped)
+deleted  warlock_ledgerbound_walk_sw (skipped)
+deleted  warlock_ledgerbound_walk_w (skipped)
+loop     warlock_walk_e
+loop     warlock_walk_w
+loop     warrior_walk_e
+loop     warrior_walk_nw
+new      winterfang_death
+loop     winterfang_walk
+new      wolf_death
+loop     wolf_walk
+loop     word_wisp_anim
+loop     zombie_attack
+new      zombie_overweight_death
+loop     zombie_walk
+422/422 GIFs -> C:\Users\asali\Downloads\ba_gifs_visual_overhaul
