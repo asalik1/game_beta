@@ -193,8 +193,10 @@ at the idle's scale with each frame's own extent (the last frame lies flat and i
 fades — the engine path shipped on 09-03). wolf, winterfang, blightwolf, duneprowler,
 deep_stalker, casket_creeper, vent_skitter, bog_lurker, cultist, mummy_rogue, mummy_warrior,
 rat_rogue, rat_warrior, zombie_overweight, greyrun_lurker, grove_horror, fungus_immature,
-spider, cold_pilgrim, stormcult, flame_pilgrim. Every row was eye-checked on a sheet beside
-its idle before install. Bosses keep their own death sequences (untouched).
+spider, cold_pilgrim, stormcult, flame_pilgrim; then blooming_convert, choir_pilgrim,
+elf_wild, ragged_soldier, ridge_deserter, vale_mourner (27 in all). Every row was eye-checked
+on a sheet beside its idle before install. Bosses keep their own death sequences (untouched);
+the tiny legacy placeholders (beastkin, sentry, verdant_*) and the tick critters were skipped.
 
 ## Open / not done
 
