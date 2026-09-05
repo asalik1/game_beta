@@ -144,15 +144,16 @@ Verified but NOT fixed (owner's eye / cheap later):
   mirrors, flat = S): the alternate the owner asked for on 08-23 and the base classes never
   had — mage rising flick, warlock two-hand shove, assassin sidearm flick. Mage + assassin
   installed; the warlock's first rolls dropped his grimoire during the shove and are
-  re-rolled with the book pushed between both hands (fix-up batch).
+  re-rolled with the book pushed between both hands — v2 installed for S/E/N.
 - **Warrior walk E/W**: the flaming greatsword had dimmed to a plain thin blade that changed
   size frame to frame; edit-in-place roll (`tools/art/edit_in_place_brief.py`: reproduce the
   row, change only the sword) — the gait the owner approved is untouched.
 - **Wave-3 gait regens (17 rows)**: mummy S/E/N, mummy_mage S/E/N, skeleton_warrior E/N
-  (S re-rolled in the fix-up batch — its job died), rat_mage, flux_hound, rime_wolf,
-  slag_hound, void_hound, fangmaw, root_spiderling, bog_lurker — 4-frame pose-steps → 6/8-frame
-  strides/trots. fangmaw + bog_lurker were rolled as rows at 560-627px cells and upscaled
-  1.5× at install; two-row grid re-requests are queued and replace them if they land.
+  (S from the re-run fix-up job), rat_mage, flux_hound, rime_wolf, slag_hound,
+  void_hound, fangmaw, root_spiderling, bog_lurker, plus cinderhide (the three-headed lava
+  hound boss) — 4-frame pose-steps → 6/8-frame strides/trots. fangmaw, bog_lurker and
+  cinderhide were rolled as two-row grids (`gridify_brief.py` + `grid_to_row.py`) so their
+  560-627px cells install without an upscale.
 - Remaining 4-frame placed walks are gliders/floaters by design (banshee, word_wisp,
   waking_shard, verdict_drone, pollen_drifter, riftling, elara_vessel, static_caller, vess,
   null_acolyte, skeleton_mage, forgemistress, sexton, morwen) — a drift loop is correct there.
@@ -201,14 +202,12 @@ idle frame was already clipped in the source (a regen would be needed to recover
   shield held on the arm in every frame, silver face + gold cross visible from
   behind per the idle. **(b) is INSTALLED** as walk_n (+ walk_b_n byte copy);
   swapping to (a) is one copy.
-- Base warrior walk E/W: the flaming blade degenerates frame to frame
-  (classwalk P1) — not addressed.
+- Base warrior walk E/W flaming blade — DONE (§7 edit-in-place roll).
 - **Base warlock walk E/W DONE**: was a 3/4 front view against his full-profile
   side idle (hood snapped to camera on the first step); regenerated as a true
   profile with the same lane as the mage (stride 0.50 → 0.61). His
   `attack_walk_e` (built on the old walk) regen queued (`art_src/warlock_aw_2026-09-04`).
-- attack_walk_b variants (mage/warlock/assassin) — not generated; the primary
-  plays every cycle (art-driven, no defect).
+- attack_walk_b variants — DONE (§7).
 - Boss facings round 3: **serane S** installed (was a byte copy of the idle;
   now a 4-frame glide with hem flutter — the row's first cell crammed two
   undersized figures, dropped; a clean re-roll is queued and replaces it if
