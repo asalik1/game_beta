@@ -22,7 +22,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 SPR = ROOT / "game" / "assets" / "sprites"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from install_gait_row import slice_row  # noqa: E402
+from install_gait_row import slice_row, sweep_orphans  # noqa: E402
 
 
 def key_green(rgba: np.ndarray) -> np.ndarray:
@@ -79,6 +79,7 @@ def main() -> int:
     ap.add_argument("--row", required=True)
     ap.add_argument("--frames", type=int, default=None)
     ap.add_argument("--no-tone", action="store_true")
+    ap.add_argument("--equal", action="store_true", help="slice at equal widths (lying bodies that touch defeat the gutter split)")
     args = ap.parse_args()
     idle = next((SPR / f"{args.base}_{k}.png" for k in ("anim", "anim_codex") if (SPR / f"{args.base}_{k}.png").exists()), None)
     if idle is None:
@@ -90,9 +91,22 @@ def main() -> int:
     idle_body, feet_y = ib - it + 1, ib
     row = np.array(Image.open(args.row).convert("RGBA"))
     row = key_green(row)
-    cells = slice_row(row, args.frames, True, 4)
-    f0t, f0b, _, _ = body_box(cells[0])
-    S = idle_body / float(f0b - f0t + 1)
+    cells = slice_row(row, args.frames, not args.equal, 4)
+    cells = [sweep_orphans(c, max(6, int(c.shape[1] * 0.14))) for c in cells]   # neighbour slivers at the cell edges
+    f0t, f0b, f0l, f0r = body_box(cells[0])
+    arch = "biped"
+    job = Path(args.row).parent / "job.json"
+    if job.exists():
+        import json
+        arch = json.loads(job.read_text(encoding="utf-8")).get("arch", "biped")
+    if arch in ("quadruped", "arachnid"):
+        # a howl / rear-up in frame 0 changes the height, not the length: scale by nose-to-tail
+        _, _, il, ir = body_box(ia)
+        sw = (ir - il + 1) / float(f0r - f0l + 1)
+        sh = idle_body / float(f0b - f0t + 1)
+        S = (sw * sh) ** 0.5   # geometric mean: neither the raised head nor the stretched body wins
+    else:
+        S = idle_body / float(f0b - f0t + 1)
     scaled = []
     for c in cells:
         im = Image.fromarray(c)
