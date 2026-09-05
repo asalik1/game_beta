@@ -67,6 +67,66 @@ def tone_match(rgba: np.ndarray, ref: np.ndarray, max_gain: float = 1.25) -> np.
     return a.astype(np.uint8)
 
 
+def slice_components(rgba: np.ndarray, n: int) -> list[np.ndarray]:
+    """Group 2-D alpha components into n figures by x-overlap (a dropped weapon beside
+    its owner joins it), largest-first, then cut each group's own pixels into a cell."""
+    from scipy import ndimage
+    al = rgba[:, :, 3] > 30
+    lab, k = ndimage.label(al)
+    objs = ndimage.find_objects(lab)
+    comps = []
+    for i, sl in enumerate(objs, 1):
+        area = int((lab[sl] == i).sum())
+        comps.append({"id": i, "x0": sl[1].start, "x1": sl[1].stop, "area": area})
+    comps.sort(key=lambda c: -c["area"])
+    big = comps[0]["area"] if comps else 1
+    comps = [c for c in comps if c["area"] >= big * 0.004]   # drop specks before seeding
+    # split a seed that is two touching figures: wider than 1.6x the median seed width ->
+    # cut at the thinnest column of its middle 40%
+    med = float(np.median([c["x1"] - c["x0"] for c in comps[:n]])) if comps else 0
+    seeds = []
+    for c in comps:
+        w = c["x1"] - c["x0"]
+        if med and w > 1.6 * med and len(seeds) < n:
+            m = lab[:, c["x0"]:c["x1"]] == c["id"]
+            prof = m.sum(axis=0)
+            lo, hi = int(w * 0.3), int(w * 0.7)
+            cut = lo + int(np.argmin(prof[lo:hi]))
+            lab[:, c["x0"] + cut:c["x1"]][lab[:, c["x0"] + cut:c["x1"]] == c["id"]] = k + 1
+            k += 1
+            seeds.append({"id": c["id"], "x0": c["x0"], "x1": c["x0"] + cut, "area": int(prof[:cut].sum())})
+            seeds.append({"id": k, "x0": c["x0"] + cut, "x1": c["x1"], "area": int(prof[cut:].sum())})
+        else:
+            seeds.append(c)
+    comps = sorted(seeds, key=lambda c: -c["area"])
+    groups = []
+    for c in comps:
+        if len(groups) < n:
+            groups.append({"ids": [c["id"]], "x0": c["x0"], "x1": c["x1"]})
+            continue
+        best, bd = None, None
+        for g in groups:
+            gap = max(g["x0"] - c["x1"], c["x0"] - g["x1"], 0)
+            mid = (c["x0"] + c["x1"]) / 2
+            d = gap if gap > 0 else -1  # inside a group's span wins
+            dist = d if d >= 0 else -(min(mid - g["x0"], g["x1"] - mid))
+            if best is None or dist < bd:
+                best, bd = g, dist
+        best["ids"].append(c["id"]); best["x0"] = min(best["x0"], c["x0"]); best["x1"] = max(best["x1"], c["x1"])
+    groups.sort(key=lambda g: g["x0"])
+    cells = []
+    for g in groups:
+        m = np.isin(lab, g["ids"])
+        ys, xs = np.nonzero(m)
+        cell = np.zeros((ys.max() - ys.min() + 1, xs.max() - xs.min() + 1, 4), np.uint8)
+        sub = rgba[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+        mm = m[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+        cell[mm] = sub[mm]
+        cells.append(cell)
+    print(f"  components: {k} -> {len(cells)} figures, widths {[c.shape[1] for c in cells]}")
+    return cells
+
+
 def body_box(a: np.ndarray):
     al = a[:, :, 3] > 60
     ys, xs = np.nonzero(al)
@@ -80,6 +140,7 @@ def main() -> int:
     ap.add_argument("--frames", type=int, default=None)
     ap.add_argument("--no-tone", action="store_true")
     ap.add_argument("--equal", action="store_true", help="slice at equal widths (lying bodies that touch defeat the gutter split)")
+    ap.add_argument("--components", action="store_true", help="slice by 2-D connected components grouped by x-overlap (figures that touch in column projection but not in pixels)")
     args = ap.parse_args()
     idle = next((SPR / f"{args.base}_{k}.png" for k in ("anim", "anim_codex") if (SPR / f"{args.base}_{k}.png").exists()), None)
     if idle is None:
@@ -91,7 +152,7 @@ def main() -> int:
     idle_body, feet_y = ib - it + 1, ib
     row = np.array(Image.open(args.row).convert("RGBA"))
     row = key_green(row)
-    cells = slice_row(row, args.frames, not args.equal, 4)
+    cells = slice_components(row, args.frames or 6) if args.components else slice_row(row, args.frames, not args.equal, 4)
     cells = [sweep_orphans(c, max(6, int(c.shape[1] * 0.14))) for c in cells]   # neighbour slivers at the cell edges
     f0t, f0b, f0l, f0r = body_box(cells[0])
     arch = "biped"
