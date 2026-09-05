@@ -127,6 +127,19 @@ def slice_components(rgba: np.ndarray, n: int) -> list[np.ndarray]:
     return cells
 
 
+def band_body(a: np.ndarray, band: float = 0.12) -> int:
+    """Body height measured in the central column band (x-centroid +- band of the
+    width): a raised hand or weapon beside the head does not inflate it."""
+    al = a[:, :, 3] > 60
+    ys, xs = np.nonzero(al)
+    w = a.shape[1]
+    cols = al.sum(axis=0)
+    cx = int((np.arange(w) * cols).sum() / max(1, cols.sum()))
+    sub = al[:, max(0, cx - int(w * band)):min(w, cx + int(w * band) + 1)]
+    yy = np.nonzero(sub.any(axis=1))[0]
+    return int(ys.max() - yy.min() + 1) if len(yy) else int(ys.max() - ys.min() + 1)
+
+
 def body_box(a: np.ndarray):
     al = a[:, :, 3] > 60
     ys, xs = np.nonzero(al)
@@ -167,7 +180,7 @@ def main() -> int:
         sh = idle_body / float(f0b - f0t + 1)
         S = (sw * sh) ** 0.5   # geometric mean: neither the raised head nor the stretched body wins
     else:
-        S = idle_body / float(f0b - f0t + 1)
+        S = band_body(ia) / float(band_body(cells[0]))
     scaled = []
     for c in cells:
         im = Image.fromarray(c)
