@@ -157,6 +157,15 @@ Verified but NOT fixed (owner's eye / cheap later):
   waking_shard, verdict_drone, pollen_drifter, riftling, elara_vessel, static_caller, vess,
   null_acolyte, skeleton_mage, forgemistress, sexton, morwen) — a drift loop is correct there.
 
+## 8. Waves 4-5 (2026-09-05): re-rolls of the audited drift/scissor walks
+
+- Wave 4: blightwolf back in the idle's near-black olive with its lime shoulder vein;
+  choirmother N with plain hands and a navy gown; hrolgar N with the skull pauldron.
+- Wave 5 (crossing-hardened briefs): elf_ranger, royal_knight, skeleton, zombie, elf_druid,
+  skeleton_rogue, bandit_scout — each now lifts alternate boots with bent knees where the
+  wave-1 rows slid (per-frame lifted-side metric in `tools/art/gait_metrics.py`; the old
+  rows are in `art_src/mob_gait_wave5_2026-09-05/old_backup/`).
+
 ## Open / not done
 
 - **Mage E column DONE**: anim/walk/attack/cast E regenerated as a true right
