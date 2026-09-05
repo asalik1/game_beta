@@ -7,27 +7,28 @@ At line:7 char:14
  
 OpenAI Codex v0.153.0
 --------
-workdir: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
+workdir: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\rat_warrior__death
 model: gpt-5.6-sol
 provider: openai
 approval: never
 sandbox: danger-full-access
 reasoning effort: high
 reasoning summaries: none
-session id: 01a072b3-19ba-73f0-8e22-d9b573c7ded5
+session id: 01a072c4-e96f-7640-b45e-36dee006f5d7
 --------
 user
 Draw a 6-frame DEATH animation of THIS character (reference 1), as a horizontal row.
 
 THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not change):
-a marsh spider with a moss-grown grassy dome, a pale sac on its back, eight long thin dark-brown stilt legs with a 
-knee bend, a small dark head
+a stocky grey-brown ratman in a ragged tunic and a small iron helmet, a round wooden shield on one arm and a 
+cleaver-axe raised in the other hand, a long pink tail
 crisp hi-res dark-fantasy game sprite, muted palette, no black outlines. Same design, same
 palette, same equipment in every frame; the figure faces the SAME way as reference 1.
 
-THE ACTION, frame by frame: frame 1 the body jolts from a hit, legs splaying, frame 2 the legs curl inward, frame 3 
-the body sinks as the legs fold under it, frame 4 it tips onto its side/back, frame 5 legs curl tight, frame 6 it lies 
-still, curled -- the FINAL frame is a curled body low on the ground.
+THE ACTION, frame by frame: frame 1 the body jolts back from a hit (head snaps, arms fly up), frame 2 it staggers, one 
+knee buckling, frame 3 it drops to its knees, frame 4 it topples sideways/forward, frame 5 it hits the ground, limbs 
+sprawled, frame 6 it lies still, flat on the ground -- the FINAL frame is a lying body, much wider than tall, its feet 
+where the standing feet were.
 Each frame is a distinct pose that reads as a continuous fall; the body stays roughly where
 it stood (no sliding across the cell); the last frame is still and final -- it will be held
 on screen. Draw NO blood spray, NO particles, NO ghost, NO effect -- only the body.
@@ -38,8 +39,8 @@ later frames are the same body, just lower and wider), feet on one shared ground
 generous green margins, no figure touching an edge or its neighbour (make the image WIDER
 if a lying body needs room). Flat solid #00ff00 GREEN background, nothing else in the image.
 Generate ONE image and SAVE it to disk at the exact path
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death\bog_lurker
-_death_row.png
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\rat_warrior__death\rat_warri
+or_death_row.png
 then stop.
 
 In your final message report, per frame, the pose, and confirm frame 1 is standing at the
@@ -47,15 +48,21 @@ reference size and the last frame lies on the ground.
 
 
 codex
-IΓÇÖm using the image-generation skill to preserve the supplied creatureΓÇÖs identity while building the six requested 
-death poses into one sprite row. IΓÇÖll inspect the reference and save the generated result at the exact path you 
-provided.
+IΓÇÖm using the image-generation workflow with the supplied identity reference, and IΓÇÖll save the finished six-frame 
+strip at the exact requested path.
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw 
-'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'; Write-Output \""'`n---CLAUDE---"; Get-Content -Raw 
-'"'CLAUDE.md'" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
- exited 1 in 596ms:
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw ..\\..\\..\\..\\CLAUDE.md; 
+Get-Content -Raw 'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\rat_warrior__death
+ succeeded in 426ms:
+Get-Content : Cannot find path 'C:\Users\asali\Projects\MMO\.claude\worktrees\CLAUDE.md' because it does not exist.
+At line:2 char:1
++ Get-Content -Raw ..\..\..\..\CLAUDE.md; Get-Content -Raw 'C:\Users\as ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\asali\...trees\CLAUDE.md:String) [Get-Content], ItemNotFoundEx 
+   ception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
 ---
 name: "imagegen"
 description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, 
@@ -424,30 +431,601 @@ into their active environment.
 mode.
 
 
----CLAUDE---
-Get-Content : Cannot find path 'C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09
--05\bog_lurker__death\CLAUDE.md' because it does not exist.
-At line:2 char:107
-+ ... KILL.md'; Write-Output "`n---CLAUDE---"; Get-Content -Raw 'CLAUDE.md'
-+                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : ObjectNotFound: (C:\Users\asali\...death\CLAUDE.md:String) [Get-Content], ItemNotFoundEx 
-   ception
-    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
- 
-
-codex
-The local working-practices pointer refers to a `CLAUDE.md` higher in the worktree, so IΓÇÖm locating that 
-authoritative file before generating. The supplied reference itself is clear: the identity-critical features are the 
-domed mossy sac, clustered pale eyes, split mouthparts, and eight jointed stilt legs.
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -Path ..\\..\\..\\..\\..\\.. 
--Filter CLAUDE.md -Recurse -File -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$p=(Get-Location).Path; 
+while($p){$f=Join-Path $p '"'CLAUDE.md'; if(Test-Path -LiteralPath "'$f){Write-Output $f; break}; $parent=Split-Path 
+-Parent $p; if($parent -eq $p){break}; $p=$parent}; Get-Content -Raw 
+'"'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\references\\prompting.md'; Get-Content -Raw 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\references\\sample-prompts.md'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\rat_warrior__death
+ succeeded in 468ms:
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\CLAUDE.md
+# Prompting best practices
+
+These prompting principles are shared by both top-level modes of the skill:
+- built-in `image_gen` tool (default)
+- explicit `scripts/image_gen.py` CLI fallback
+
+This file is about prompt structure, specificity, and iteration. Fallback-only execution controls such as `quality`, 
+`input_fidelity`, masks, output format, and output paths live in the fallback docs.
+
+## Contents
+- [Structure](#structure)
+- [Specificity policy](#specificity-policy)
+- [Allowed and disallowed augmentation](#allowed-and-disallowed-augmentation)
+- [Composition and layout](#composition-and-layout)
+- [Constraints and invariants](#constraints-and-invariants)
+- [Text in images](#text-in-images)
+- [Input images and references](#input-images-and-references)
+- [Iterate deliberately](#iterate-deliberately)
+- [Transparent images](#transparent-images)
+- [Fallback-only execution controls](#fallback-only-execution-controls)
+- [Use-case tips](#use-case-tips)
+- [Where to find copy/paste recipes](#where-to-find-copypaste-recipes)
+
+## Structure
+- Use a consistent order: scene/backdrop -> subject -> key details -> constraints -> output intent.
+- Include intended use (ad, UI mock, infographic) to set the level of polish.
+- For complex requests, use short labeled lines instead of one long paragraph.
+
+## Specificity policy
+- If the user prompt is already specific and detailed, normalize it into a clean spec without adding creative 
+requirements.
+- If the prompt is generic, you may add tasteful detail when it materially improves the output.
+- Treat examples in `sample-prompts.md` as fully-authored recipes, not as the default amount of augmentation to add to 
+every request.
+- For photorealism, include `photorealistic` directly when that is the goal, plus concrete real-world texture such as 
+pores, wrinkles, fabric wear, material grain, or imperfect everyday detail.
+
+## Allowed and disallowed augmentation
+
+Allowed augmentation for generic prompts:
+- composition and framing cues
+- intended-use or polish-level hints
+- practical layout guidance
+- reasonable scene concreteness that supports the request
+
+Do not add:
+- extra characters, props, or objects that are not implied
+- brand palettes, slogans, or story beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Composition and layout
+- Specify framing and viewpoint (close-up, wide, top-down) and placement only when it materially helps.
+- Call out negative space if the asset clearly needs room for UI or copy.
+- Avoid making left/right layout decisions unless the user or surrounding layout supports them.
+- For people, describe body framing, scale, gaze, and object interactions when they matter (`full body visible`, 
+`looking down at the book`, `hands naturally gripping the handlebars`).
+
+## Constraints and invariants
+- State what must not change (`keep background unchanged`).
+- For edits, say `change only X; keep Y unchanged` and repeat invariants on every iteration to reduce drift.
+
+## Text in images
+- Put literal text in quotes or ALL CAPS and specify typography (font style, size, color, placement).
+- Spell uncommon words letter-by-letter if accuracy matters.
+- For in-image copy, require verbatim rendering and no extra characters.
+- In CLI fallback mode, use `medium` or `high` quality for small text, dense infographics, data-heavy slides, 
+multi-font layouts, legends, axes, and footnotes.
+
+## Input images and references
+- Do not assume that every provided image is an edit target.
+- Label each image by index and role (`Image 1: edit target`, `Image 2: style reference`).
+- If the user provides images for style, composition, or mood guidance and does not ask to modify them, treat the 
+request as generation with references.
+- If the user asks to preserve an existing image while changing specific parts, treat the request as an edit.
+- For compositing, describe how the images interact (`place the subject from Image 2 into Image 1`).
+
+## Iterate deliberately
+- Start with a clean base prompt, then make small single-change edits.
+- Re-specify critical constraints when you iterate.
+- Prefer one targeted follow-up at a time over rewriting the whole prompt.
+
+## Transparent images
+- Ask built-in `image_gen` for a genuinely transparent background and preserve its alpha.
+
+## Fallback-only execution controls
+- `quality`, `input_fidelity`, explicit masks, output format, and output paths are fallback-only execution controls.
+- Do not assume they are built-in `image_gen` tool arguments.
+- If the user explicitly chooses CLI fallback, see `references/cli.md` and `references/image-api.md` for those 
+controls.
+- In CLI fallback mode, `gpt-image-2` is the default. It supports `quality=low|medium|high|auto`; use `low` for fast 
+drafts and thumbnails, and move to `medium`, `high`, or `auto` for final assets.
+- `gpt-image-2` always uses high fidelity for image inputs, so do not set `input_fidelity` with that model.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user 
+explicitly requested that model.
+- If the user asks for 4K-style output with `gpt-image-2`, use `3840x2160` for landscape or `2160x3840` for portrait.
+
+## Use-case tips
+Generate:
+- photorealistic-natural: Prompt as if a real photo is captured in the moment; use photography language (lens, 
+lighting, framing); call for real texture; avoid over-stylized polish unless requested.
+- product-mockup: Describe the product/packaging and materials; ensure clean silhouette and label clarity; if in-image 
+text is needed, require verbatim rendering and specify typography.
+- ui-mockup: Describe the target fidelity first (shippable mockup or low-fi wireframe), then focus on layout, 
+hierarchy, and practical UI elements; avoid concept-art language.
+- infographic-diagram: Define the audience and layout flow; label parts explicitly; require verbatim text; prefer 
+higher quality in CLI mode for dense labels.
+- logo-brand: Keep it simple and scalable; ask for a strong silhouette and balanced negative space; avoid decorative 
+flourishes unless requested.
+- ads-marketing: Write like a creative brief; include brand positioning, audience, desired vibe, scene, and exact 
+tagline if text must appear.
+- productivity-visual: Name the exact artifact (slide, chart, workflow diagram), define the canvas and hierarchy, 
+provide real labels/data, and ask for readable typography and polished spacing.
+- scientific-educational: Define audience, lesson objective, required labels, scientific constraints, arrows, and 
+scan-friendly whitespace.
+- illustration-story: Define panels or scene beats; keep each action concrete.
+- stylized-concept: Specify style cues, material finish, and rendering approach (3D, painterly, clay) without 
+inventing new story elements.
+- historical-scene: State the location/date and required period accuracy; constrain clothing, props, and environment 
+to match the era.
+
+Edit:
+- text-localization: Change only the text; preserve layout, typography, spacing, and hierarchy; no extra words or 
+reflow unless needed.
+- identity-preserve: Lock identity (face, body, pose, hair, expression); change only the specified elements; match 
+lighting and shadows.
+- precise-object-edit: Specify exactly what to remove/replace; preserve surrounding texture and lighting; keep 
+everything else unchanged.
+- lighting-weather: Change only environmental conditions (light, shadows, atmosphere, precipitation); keep geometry, 
+framing, and subject identity.
+- background-extraction: Request a clean cutout on a genuinely transparent background; preserve fine edges and label 
+text; no halos or restyling.
+- style-transfer: Specify style cues to preserve (palette, texture, brushwork) and what must change; add `no extra 
+elements` to prevent drift.
+- compositing: Reference inputs by index; specify what moves where; match lighting, perspective, and scale; keep the 
+base framing unchanged.
+- sketch-to-render: Preserve layout, proportions, and perspective; choose materials and lighting that support the 
+supplied sketch without adding new elements.
+
+## Where to find copy/paste recipes
+For copy/paste prompt specs (examples only), see `references/sample-prompts.md`. This file focuses on principles, 
+specificity, and iteration patterns.
+
+# Sample prompts (copy/paste)
+
+These prompt recipes are shared across both top-level modes of the skill:
+- built-in `image_gen` tool (default)
+- `scripts/image_gen.py` CLI fallback for explicit or user-confirmed CLI/API/model requests
+
+Use these as starting points. They are intentionally complete prompt recipes, not the default amount of augmentation 
+to add to every user request.
+
+When adapting a user's prompt:
+- keep user-provided requirements
+- only add detail according to the specificity policy in `SKILL.md`
+- do not treat every example below as permission to invent extra story elements
+
+The labeled lines are prompt scaffolding, not a closed schema. `Asset type` and `Input images` are prompt-only 
+scaffolding; the CLI does not expose them as dedicated flags.
+
+Execution details such as explicit CLI flags, `quality`, `input_fidelity`, masks, output formats, and local output 
+paths depend on mode. Use built-in `image_gen` by default, request transparent backgrounds directly, and preserve the 
+generated alpha; apply CLI-specific controls only when the user chooses or confirms that fallback.
+
+CLI model notes:
+- `gpt-image-2` is the fallback CLI default for new workflows.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- For 4K-style `gpt-image-2` output, use `3840x2160` or `2160x3840`.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user 
+explicitly requested that model.
+- Do not set `input_fidelity` with `gpt-image-2`; image inputs already use high fidelity.
+
+For prompting principles (structure, specificity, invariants, iteration), see `references/prompting.md`.
+
+## Generate
+
+### photorealistic-natural
+```
+Use case: photorealistic-natural
+Primary request: candid photo of an elderly sailor on a small fishing boat adjusting a net
+Scene/backdrop: coastal water with soft haze
+Subject: weathered skin with wrinkles and sun texture
+Style/medium: photorealistic candid photo
+Composition/framing: medium close-up, eye-level
+Lighting/mood: soft coastal daylight, shallow depth of field, subtle film grain
+Materials/textures: real skin texture, worn fabric, salt-worn wood
+Constraints: natural color balance; no heavy retouching; no glamorization; no watermark
+Avoid: studio polish; staged look
+```
+
+### product-mockup
+```
+Use case: product-mockup
+Primary request: premium product photo of a matte black shampoo bottle with a minimal label
+Scene/backdrop: clean studio gradient from light gray to white
+Subject: single bottle centered with subtle reflection
+Style/medium: premium product photography
+Composition/framing: centered, slight three-quarter angle, generous padding
+Lighting/mood: softbox lighting, clean highlights, controlled shadows
+Materials/textures: matte plastic, crisp label printing
+Constraints: no logos or trademarks; no watermark
+```
+
+### ui-mockup
+```
+Use case: ui-mockup
+Primary request: mobile app home screen for a local farmers market with vendors and daily specials
+Asset type: mobile app screen
+Style/medium: realistic product UI, not concept art
+Composition/framing: clean vertical mobile layout with clear hierarchy
+Constraints: practical layout, clear typography, no logos or trademarks, no watermark
+```
+
+### infographic-diagram
+```
+Use case: infographic-diagram
+Primary request: detailed infographic of an automatic coffee machine flow
+Scene/backdrop: clean, light neutral background
+Subject: bean hopper -> grinder -> brew group -> boiler -> water tank -> drip tray
+Style/medium: clean vector-like infographic with clear callouts and arrows
+Composition/framing: vertical poster layout, top-to-bottom flow
+Text (verbatim): "Bean Hopper", "Grinder", "Brew Group", "Boiler", "Water Tank", "Drip Tray"
+Constraints: clear labels, strong contrast, no logos or trademarks, no watermark
+```
+
+### scientific-educational
+```
+Use case: scientific-educational
+Primary request: biology diagram titled "Cellular Respiration at a Glance" for high school students
+Scene/backdrop: clean white classroom handout background
+Subject: glucose turns into energy inside a cell; include glycolysis, Krebs cycle, and electron transport chain
+Style/medium: flat scientific diagram with consistent icons, arrows, and readable labels
+Composition/framing: landscape slide-style layout with clear hierarchy and generous whitespace
+Text (verbatim): "Cellular Respiration at a Glance", "Glucose", "Pyruvate", "ATP", "NADH", "FADH2", "CO2", "O2", "H2O"
+Constraints: scientifically plausible; avoid tiny text; no extra decoration; no watermark
+```
+
+### logo-brand
+```
+Use case: logo-brand
+Primary request: original logo for "Field & Flour", a local bakery
+Style/medium: vector logo mark; flat colors; minimal
+Composition/framing: single centered logo on a plain background with generous padding
+Constraints: strong silhouette, balanced negative space; original design only; no gradients unless essential; no 
+trademarks; no watermark
+```
+
+### illustration-story
+```
+Use case: illustration-story
+Primary request: 4-panel comic about a pet left alone at home
+Scene/backdrop: cozy living room across panels
+Subject: pet reacting to the owner leaving, then relaxing, then returning to a composed pose
+Style/medium: comic illustration with clear panels
+Composition/framing: 4 equal-sized vertical panels, readable actions per panel
+Constraints: no text; no logos or trademarks; no watermark
+```
+
+### stylized-concept
+```
+Use case: stylized-concept
+Primary request: cavernous hangar interior with tall support beams and drifting fog
+Scene/backdrop: industrial hangar interior, deep scale, light haze
+Subject: compact shuttle parked near the center
+Style/medium: cinematic concept art, industrial realism
+Composition/framing: wide-angle, low-angle
+Lighting/mood: volumetric light rays cutting through fog
+Constraints: no logos or trademarks; no watermark
+```
+
+### ads-marketing
+```
+Use case: ads-marketing
+Primary request: campaign image for a streetwear brand called Thread
+Subject: group of friends hanging out together in a stylish urban setting
+Style/medium: polished youth streetwear campaign photography
+Composition/framing: vertical ad layout with natural poses and integrated headline space
+Lighting/mood: contemporary, energetic, tasteful
+Text (verbatim): "Yours to Create."
+Constraints: render the tagline exactly once; clean legible typography; no extra text; no watermarks; no unrelated 
+logos
+```
+
+### productivity-visual
+```
+Use case: productivity-visual
+Primary request: one pitch-deck slide titled "Market Opportunity"
+Asset type: fundraising slide image
+Style/medium: clean modern deck slide, white background, crisp sans-serif typography
+Subject: TAM/SAM/SOM concentric-circle diagram plus a small growth bar chart from 2021 to 2026
+Composition/framing: 16:9 landscape slide, clear data hierarchy, polished spacing
+Text (verbatim): "Market Opportunity", "TAM: $42B", "SAM: $8.7B", "SOM: $340M", "AGI Research, 2024", "Internal 
+analysis"
+Constraints: readable labels, no clip art, no stock photography, no decorative clutter, no watermark
+```
+
+### historical-scene
+```
+Use case: historical-scene
+Primary request: outdoor crowd scene in Bethel, New York on August 16, 1969
+Scene/backdrop: open field with period-appropriate staging
+Subject: crowd in period-accurate clothing, authentic environment
+Style/medium: photorealistic photo
+Composition/framing: wide shot, eye-level
+Constraints: period-accurate details; no modern objects; no logos or trademarks; no watermark
+```
+
+## Asset type templates (taxonomy-aligned)
+
+### Website assets template
+```
+Use case: <photorealistic-natural|stylized-concept|product-mockup|infographic-diagram|ui-mockup>
+Asset type: <hero image / section illustration / blog header>
+Primary request: <short description>
+Scene/backdrop: <environment or abstract backdrop>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D>
+Composition/framing: <wide/centered; note usable negative space only if needed>
+Lighting/mood: <soft/bright/neutral>
+Color palette: <brand colors or neutral>
+Constraints: <no text; no logos; no watermark; leave room for UI if needed>
+```
+
+### Website assets example: minimal hero background
+```
+Use case: stylized-concept
+Asset type: landing page hero background
+Primary request: minimal abstract background with a soft gradient and subtle texture
+Style/medium: matte illustration / soft-rendered abstract background
+Composition/framing: wide composition with usable negative space for page copy
+Lighting/mood: gentle studio glow
+Color palette: restrained neutral palette
+Constraints: no text; no logos; no watermark
+```
+
+### Website assets example: feature section illustration
+```
+Use case: stylized-concept
+Asset type: feature section illustration
+Primary request: simple abstract shapes suggesting connection and flow
+Scene/backdrop: subtle light-gray backdrop with faint texture
+Style/medium: flat illustration; soft shadows; restrained contrast
+Composition/framing: centered cluster; open margins for UI
+Color palette: muted neutral palette
+Constraints: no text; no logos; no watermark
+```
+
+### Website assets example: blog header image
+```
+Use case: photorealistic-natural
+Asset type: blog header image
+Primary request: overhead desk scene with notebook, pen, and coffee cup
+Scene/backdrop: warm wooden tabletop
+Style/medium: photorealistic photo
+Composition/framing: wide crop with clean room for page copy
+Lighting/mood: soft morning light
+Constraints: no text; no logos; no watermark
+```
+
+### Game assets template
+```
+Use case: stylized-concept
+Asset type: <game environment concept art / game character concept / game UI icon / tileable game texture>
+Primary request: <biome/scene/character/icon/material>
+Scene/backdrop: <location + set dressing> (if applicable)
+Subject: <main focal element(s)>
+Style/medium: <realistic/stylized>; <concept art / character render / UI icon / texture>
+Composition/framing: <wide/establishing/top-down>; <camera angle>; <focal point placement>
+Lighting/mood: <time of day>; <mood>; <volumetric/fog/etc>
+Constraints: no logos or trademarks; no watermark
+```
+
+### Game assets example: environment concept art
+```
+Use case: stylized-concept
+Asset type: game environment concept art
+Primary request: cavernous hangar interior with tall support beams and drifting fog
+Scene/backdrop: industrial hangar interior, deep scale, light haze
+Subject: compact shuttle parked near the center
+Style/medium: cinematic concept art, industrial realism
+Composition/framing: wide-angle, low-angle
+Lighting/mood: volumetric light rays cutting through fog
+Constraints: no logos or trademarks; no watermark
+```
+
+### Game assets example: character concept
+```
+Use case: stylized-concept
+Asset type: game character concept
+Primary request: desert scout character with layered travel gear
+Subject: long coat, satchel, practical travel clothing
+Style/medium: character render; stylized realism
+Composition/framing: neutral hero pose on a simple backdrop
+Constraints: no logos or trademarks; no watermark
+```
+
+### Game assets example: UI icon
+```
+Use case: stylized-concept
+Asset type: game UI icon
+Primary request: round shield icon with a subtle rune pattern
+Style/medium: painted game UI icon
+Composition/framing: centered icon; generous padding; clear silhouette
+Constraints: no text; no background scene elements; no logos or trademarks; no watermark
+```
+
+### Game assets example: tileable texture
+```
+Use case: stylized-concept
+Asset type: tileable game texture
+Primary request: worn sandstone blocks
+Style/medium: seamless tileable texture; PBR-ish look
+Scene/backdrop: neutral lighting reference only
+Constraints: seamless edges; no obvious focal elements; no text; no logos or trademarks; no watermark
+```
+
+### Wireframe template
+```
+Use case: ui-mockup
+Asset type: website wireframe
+Primary request: <page or flow to sketch>
+Style/medium: low-fi grayscale wireframe
+Composition/framing: <landscape or portrait to match expected device>
+Subject: <sections in order; grid/columns; key labels>
+Constraints: no color; no logos; no real photos; no watermark
+```
+
+### Wireframe example: homepage (desktop)
+```
+Use case: ui-mockup
+Asset type: website wireframe
+Primary request: SaaS homepage layout with clear hierarchy
+Style/medium: low-fi grayscale wireframe
+Subject: top nav; hero with headline and CTA; three feature cards; testimonial strip; pricing preview; footer
+Composition/framing: landscape desktop layout
+Constraints: label major blocks; no color; no logos; no real photos; no watermark
+```
+
+### Wireframe example: pricing page
+```
+Use case: ui-mockup
+Asset type: website wireframe
+Primary request: pricing page layout with comparison table
+Style/medium: low-fi grayscale wireframe
+Subject: header; plan toggle; 3 pricing cards; comparison table; FAQ accordion; footer
+Composition/framing: desktop or tablet layout
+Constraints: label key areas; no color; no logos; no real photos; no watermark
+```
+
+### Wireframe example: mobile onboarding flow
+```
+Use case: ui-mockup
+Asset type: mobile onboarding wireframe
+Primary request: three-screen mobile onboarding flow
+Style/medium: low-fi grayscale wireframe
+Subject: screen 1 headline and CTA; screen 2 feature bullets; screen 3 form fields and CTA
+Composition/framing: portrait mobile layout
+Constraints: label screens and blocks; no color; no logos; no real photos; no watermark
+```
+
+### Logo template
+```
+Use case: logo-brand
+Asset type: logo concept
+Primary request: <brand idea or symbol concept>
+Style/medium: vector logo mark; flat colors; minimal
+Composition/framing: centered mark; clear silhouette; generous margin
+Color palette: <1-2 colors; high contrast>
+Text (verbatim): "<exact name>" (only if needed)
+Constraints: no gradients; no mockups; no 3D; no watermark
+```
+
+### Logo example: abstract symbol mark
+```
+Use case: logo-brand
+Asset type: logo concept
+Primary request: geometric leaf symbol suggesting sustainability and growth
+Style/medium: vector logo mark; flat colors; minimal
+Composition/framing: centered mark; clear silhouette
+Color palette: deep green and off-white
+Constraints: no text unless requested; no gradients; no mockups; no 3D; no watermark
+```
+
+### Logo example: monogram mark
+```
+Use case: logo-brand
+Asset type: logo concept
+Primary request: interlocking monogram of the letters "AV"
+Style/medium: vector logo mark; flat colors; minimal
+Composition/framing: centered mark; balanced spacing
+Color palette: black on white
+Constraints: no gradients; no mockups; no 3D; no watermark
+```
+
+### Logo example: wordmark
+```
+Use case: logo-brand
+Asset type: logo concept
+Primary request: clean wordmark for a modern studio
+Style/medium: vector wordmark; flat colors; minimal
+Text (verbatim): "Studio North"
+Composition/framing: centered text; even letter spacing
+Constraints: no gradients; no mockups; no 3D; no watermark
+```
+
+## Edit
+
+### text-localization
+```
+Use case: text-localization
+Input images: Image 1: original infographic
+Primary request: replace "Bean Hopper", "Grinder", "Brew Group", "Boiler", "Water Tank", and "Drip Tray" with "Tolva", 
+"Molino", "Grupo de infusi├â┬│n", "Caldera", "Dep├â┬│sito de agua", and "Bandeja de goteo"
+Constraints: change only the text; preserve layout, typography, spacing, and hierarchy; no extra words; do not alter 
+logos or imagery
+```
+
+### identity-preserve
+```
+Use case: identity-preserve
+Input images: Image 1: person photo; Image 2..N: clothing references
+Primary request: replace only the clothing with the provided garments
+Constraints: preserve face, body shape, pose, hair, expression, and identity; match lighting and shadows; keep the 
+background unchanged; no accessories or text
+```
+
+### precise-object-edit
+```
+Use case: precise-object-edit
+Input images: Image 1: room photo
+Primary request: replace only the white chairs with wooden chairs
+Constraints: preserve camera angle, room lighting, floor shadows, and surrounding objects; keep all other aspects 
+unchanged
+```
+
+### lighting-weather
+```
+Use case: lighting-weather
+Input images: Image 1: original photo
+Primary request: make it look like a winter evening with gentle snowfall
+Constraints: preserve subject identity, geometry, camera angle, and composition; change only lighting, atmosphere, and 
+weather
+```
+
+### style-transfer
+```
+Use case: style-transfer
+Input images: Image 1: style reference
+Primary request: apply Image 1's visual style to a man riding a motorcycle on a plain white backdrop
+Constraints: preserve palette, texture, and brushwork; no extra elements
+```
+
+### compositing
+```
+Use case: compositing
+Input images: Image 1: base scene; Image 2: subject to insert
+Primary request: place the subject from Image 2 next to the person in Image 1
+Constraints: match lighting, perspective, and scale; keep the base framing unchanged; no extra elements
+```
+
+### character consistency workflow
+```
+Use case: identity-preserve
+Input images: Image 1: previous character anchor illustration
+Primary request: continue the story with the same character in a new scene and action
+Scene/backdrop: snowy forest after a winter storm
+Subject: same young forest hero gently helping a frightened squirrel out of a fallen tree
+Style/medium: same children's book watercolor illustration style as Image 1
+Constraints: do not redesign the character; preserve facial features, proportions, outfit, color palette, and 
+personality; no text; no watermark
+```
+
+### sketch-to-render
+```
+Use case: sketch-to-render
+Input images: Image 1: drawing
+Primary request: turn the drawing into a photorealistic image
+Constraints: preserve layout, proportions, and perspective; choose realistic materials and lighting; do not add new 
+elements or text
+```
+
+
 exec
 "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw 
-'C:\\Users\\asali\\Projects\\MMO\\CLAUDE.md'" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
- succeeded in 289ms:
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\CLAUDE.md'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\rat_warrior__death
+ succeeded in 302ms:
 # Crownless ├óΓé¼ΓÇ¥ working practices (all agents)
 
 ## Mobile version ├óΓé¼ΓÇ¥ kept in sync (unfrozen 2026-07-15)
@@ -549,6 +1127,11 @@ the cell edge at the extreme of the arc, not a clipped body.
 in-scope elite skins = clean `VERIFY OK`. Don't re-investigate or "fix" these WARN categories on the base heroes 
 ├óΓé¼ΓÇ¥ only act on a NEW **FAIL**, or a WARN that leaves these three buckets (e.g. a real body green-rim, a 
 butchered/PARTIAL frame, an anchor/scale/FEETSLIDE hit).
+    - **CORRECTION (2026-09-03): the "no green rim on base heroes" finding was scoped to cast/ult.** A corpus scan 
+(`tools/art/despill_rim.py --scan`, rim-band green with an EMPTY interior = halo, not design) found a real #00FF00 
+keying ring on all 19 `warlock_attack*`/`attack2*` strips ├óΓé¼ΓÇ¥ a design with no green in it at all ├óΓé¼ΓÇ¥ plus 
+44 mobs/NPCs/props. All despilled; the scan now returns 0. Re-run the scan after any keyed install; the fixer is 
+rim-band-only so it cannot dull green garments, and it refuses a sprite whose green is mostly interior.
 - **Screenshot rigs: never write a standalone one (2026-08-15).** Twenty-three `game/shot_*.gd` files are copies of 
 the same 25-line boot/`_shot`/quit boilerplate, none with a watchdog, muted only by convention. New rig = `extends 
 ShotRig` (`scripts/dev/shot_rig.gd`: `boot()`, `shot()`, sim-clock waits, `arg()`/`flag()`, Master-bus mute, 
@@ -779,6 +1362,25 @@ pipeline doc's "legs do not alternate" remedy). The row came back with 8 distinc
 ground line; installed as an 8-frame strip (the engine's strip reader is frame-count agnostic ├óΓé¼ΓÇ¥ width/height 
 ├óΓé¼ΓÇ¥ so 8 is fine; at the 2x walk clock the loop runs 0.67 s). Prefer this over 4-cell 2x2 for any bipedal walk. 
 Ask Codex to report leg-lead per frame in its final message; it is a candid critic of its own output.
+- **Write every identity description FROM the idle sheet, never from memory or an audit's paraphrase (2026-09-03).** 
+Three of fifteen boss/mob regen rows drifted for exactly this: a skeleton got a shield the idle never carried (twice 
+├óΓé¼ΓÇ¥ the pilot and the batch), the winged flame-skull echo came back as a plain hooded shroud, korrag lost his 
+lightning arcs. The generator reproduced the prose faithfully; the prose was wrong. Look at `<base>_anim` frame 0 and 
+list what is actually there (what is in each hand, what is NOT there) before writing the brief.
+- **A BACK-view regen never gets the outgoing strip as a reference** when the defect IS the view (front art wearing 
+the N name): handing it back re-seeds it. `gait_briefs.py` drops it automatically on `facing: n`; the identity ref 
+stays the front idle with the front-only parts NAMED as forbidden.
+- **Row briefs must say every figure is the SAME size** ("do not crowd two small figures into one cell; make the image 
+wider"). Three rows came back with undersized figures crammed into one cell before the brief said so; 
+`install_gait_row` refuses a speck cell rather than ship a blinking near-empty frame.
+- **Cells ├óΓÇ░┬Ñ 900px: request a two-row GRID, not a row (2026-09-04).** A 6-figure row comes back ~2100px wide 
+(~400px figures), so a 920/1084px boss cell forces a 1.4-2.2├âΓÇö upscale at install (stormmouth/nullwarden N shipped 
+soft the first time). Ask for TWO ROWS of THREE ("each figure roughly 900px tall") and flatten with 
+`tools/art/grid_to_row.py`; the same rows landed at ~870px, installed at 0.65-1.07├âΓÇö.
+- **A facing column authored FRONT-ON (the base mage's whole E column, the warlock's 3/4-front walk E) is fixed with 
+`tools/art/profile_clip_briefs.py`** (identity = front idle, view = a real profile sibling, action = the old clip). 
+When a base WALK is regenerated, its `attack_walk_<dir>` was built ON the old walk (the walk-plus-firing-arm 
+technique) and must be regenerated from the new one, or fire-on-move snaps to a different view mid-stride.
 - Every ImageGen-keyed strip carried a dark-green antialias rim (`build_mob_walk_repairs.remove_green` now despills 
 the 2px edge band); a strip that "looks fine" on a dark contact sheet can still ring green over grass ├óΓé¼ΓÇ¥ check 
 `G > max(R,B)+20` counts on the rim, not just the semi-alpha BLEED gate.
@@ -821,414 +1423,47 @@ original prompt, not writing a new banshee description.
 
 
 codex
-All constraints are now locked in: one six-cell horizontal strip, fixed creature design and facing, continuous 
-in-place collapse, shared baseline, exact chroma-green background, and no added effects. IΓÇÖm generating the single 
-final asset now.
- succeeded in 49873ms:
-C:\Users\asali\Projects\MMO\CLAUDE.md
-C:\Users\asali\Projects\MMO\.claude\worktrees\confident-babbage-361677\CLAUDE.md
-C:\Users\asali\Projects\MMO\.claude\worktrees\distracted-blackwell-e0b5eb\CLAUDE.md
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\CLAUDE.md
-C:\Users\asali\Projects\MMO\.claude\worktrees\lucid-jang-c27265\CLAUDE.md
-C:\Users\asali\Projects\MMO\.claude\worktrees\optimistic-haibt-9f71f5\CLAUDE.md
-
-codex
-The generated strip has exactly six readable poses and the intended progression. IΓÇÖm placing this single output at 
-the requested filename and checking its dimensions and chroma background before stopping.
+The reference shows the key identity cues clearly: grey-brown fur, red eye, ragged purple-brown tunic, wrapped limbs, 
+wood-and-iron round shield, heavy rectangular cleaver-axe, and long pink tail. IΓÇÖm locking those details across all 
+six poses.
 exec
 "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:\\Users\\asali\\.c
-odex\\generated_images\\01a072b3-19ba-73f0-8e22-d9b573c7ded5\\exec-218efc92-39e0-4cb1-aecd-40c1aafdd1c4.png' 
--Destination 'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_2026-09-05\\bog_
-lurker__death\\bog_lurker_death_row.png' -Force
-python -c \"from PIL import Image; p=r'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src
-\\deaths_2026-09-05\\bog_lurker__death\\bog_lurker_death_row.png'; im=Image.open(p).convert('RGB'); print('saved', p); 
-print('size', im.size); print('corners', [im.getpixel(x) for x in 
-[(0,0),(im.width-1,0),(0,im.height-1),(im.width-1,im.height-1)]]); print('exists', 
-__import__('os').path.getsize(p))\"" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
- succeeded in 868ms:
-saved C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death\bog_
-lurker_death_row.png
-size (2172, 724)
-corners [(19, 241, 16), (16, 240, 9), (13, 241, 11), (15, 244, 11)]
-exists 1384987
+odex\\generated_images\\01a072c4-e96f-7640-b45e-36dee006f5d7\\exec-22a514a5-6197-46e9-8d03-be034259e30f.png' 
+-Destination 'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_2026-09-05\\rat_
+warrior__death\\rat_warrior_death_row.png' -Force; Get-Item -LiteralPath 'C:\\Users\\asali\\Projects\\MMO\\.claude\\wor
+ktrees\\epic-panini-3fd8fd\\art_src\\deaths_2026-09-05\\rat_warrior__death\\rat_warrior_death_row.png' | Select-Object 
+FullName,Length,LastWriteTime" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\rat_warrior__death
+ succeeded in 465ms:
 
-exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; from 
-collections import Counter; p=r'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\death
-s_2026-09-05\\bog_lurker__death\\bog_lurker_death_row.png'; im=Image.open(p).convert('RGB'); c=Counter(im.getdata()); 
-print('top',c.most_common(12)); print('vivid green pixels',sum(n for (r,g,b),n in c.items() if g>=180 and g>=r+100 and 
-g>=b+100),'of',im.width*im.height); print('exact',c[(0,255,0)])\"" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
- succeeded in 1233ms:
-<string>:1: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
-get_flattened_data instead.
-top [((3, 249, 2), 208752), ((4, 249, 3), 152398), ((4, 249, 2), 99777), ((3, 248, 2), 95088), ((3, 249, 3), 87931), 
-((4, 250, 3), 84806), ((3, 250, 2), 57782), ((4, 250, 2), 49584), ((4, 248, 3), 40515), ((3, 248, 3), 37315), ((4, 
-248, 2), 35863), ((3, 250, 3), 35688)]
-vivid green pixels 1318347 of 1572528
-exact 38
+FullName                                                                                                               
+--------                                                                                                               
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\rat_warrior__death\rat_wa...
+
+
 
 codex
-The generatorΓÇÖs background was visually green but not numerically `#00ff00` at the corners. IΓÇÖm applying a 
-strictly mechanical chroma normalization to the connected vivid-green field so the delivered PNG meets the exact 
-background requirement without changing the creature artwork or producing another image.
-apply patch
-patch: completed
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death\normalize_
-chroma.py
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-new file mode 100644
-index 0000000000000000000000000000000000000000..e81961b45de8505136a3b3aaad8d2bb5525593e2
---- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-@@ -0,0 +1,16 @@
-+from pathlib import Path
-+
-+from PIL import Image
-+
-+
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+pixels = image.load()
-+
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
-+
-+image.save(path)
+Saved [rat_warrior_death_row.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-
+09-05\rat_warrior__death\rat_warrior_death_row.png).
 
-exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python normalize_chroma.py
-Remove-Item -LiteralPath '.\\normalize_chroma.py'
-python -c \"from PIL import Image; p=r'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src
-\\deaths_2026-09-05\\bog_lurker__death\\bog_lurker_death_row.png'; im=Image.open(p).convert('RGB'); print('size', 
-im.size); print('corners', [im.getpixel(x) for x in [(0,0),(im.width-1,0),(0,im.height-1),(im.width-1,im.height-1)]]); 
-print('exact_green_pixels', sum(1 for px in im.getdata() if px==(0,255,0))); print('bytes', 
-__import__('os').path.getsize(p))\"" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
- succeeded in 3389ms:
-<string>:1: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
-get_flattened_data instead.
-size (2172, 724)
-corners [(0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0)]
-exact_green_pixels 1318347
-bytes 584876
+1. Standing at reference size, jolting backward.
+2. Staggering with one knee buckling.
+3. Dropped onto both knees.
+4. Toppling sideways and forward.
+5. Ground impact, limbs sprawled.
+6. Motionless, lying flat and much wider than tall, with feet at the standing baseline.
 
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-new file mode 100644
-index 0000000000000000000000000000000000000000..e81961b45de8505136a3b3aaad8d2bb5525593e2
---- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-@@ -0,0 +1,16 @@
-+from pathlib import Path
-+
-+from PIL import Image
-+
-+
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+pixels = image.load()
-+
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
-+
-+image.save(path)
-
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-new file mode 100644
-index 0000000000000000000000000000000000000000..e81961b45de8505136a3b3aaad8d2bb5525593e2
---- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-@@ -0,0 +1,16 @@
-+from pathlib import Path
-+
-+from PIL import Image
-+
-+
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+pixels = image.load()
-+
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
-+
-+image.save(path)
-
-exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; 
-im=Image.open('bog_lurker_death_row.png').convert('RGB'); w,h=im.size; cw=w//6; print('cell',cw); [print(i+1, (lambda 
-pts:(min(x for x,y in pts),min(y for x,y in pts),max(x for x,y in pts),max(y for x,y in pts)))([(x,y) for y in 
-range(h) for x in range(i*cw,(i+1)*cw if i<5 else w) if im.getpixel((x,y))"'!=(0,255,0)])) for i in range(6)]"' in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
- succeeded in 3042ms:
-cell 362
-1 (20, 273, 361, 592)
-2 (362, 278, 723, 596)
-3 (724, 317, 1085, 597)
-4 (1086, 356, 1447, 592)
-5 (1448, 424, 1808, 591)
-6 (1861, 451, 2132, 592)
-
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-new file mode 100644
-index 0000000000000000000000000000000000000000..e81961b45de8505136a3b3aaad8d2bb5525593e2
---- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-@@ -0,0 +1,16 @@
-+from pathlib import Path
-+
-+from PIL import Image
-+
-+
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+pixels = image.load()
-+
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
-+
-+image.save(path)
-
-exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; 
-im=Image.open('bog_lurker_death_row.png').convert('RGB'); cols=[sum(im.getpixel((x,y))"'!=(0,255,0) for y in 
-range(im.height)) for x in range(im.width)]; runs=[]; s=None; [(runs.append((s,x-1)) if s is not None and c==0 else 
-None, globals().update()) for x,c in enumerate(cols)]; print([(a,b) for a,b in 
-[(20,418),(439,768),(790,1087),(1110,1396),(1414,1698),(1781,2133)]])"' in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
- succeeded in 2888ms:
-[(20, 418), (439, 768), (790, 1087), (1110, 1396), (1414, 1698), (1781, 2133)]
-
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-new file mode 100644
-index 0000000000000000000000000000000000000000..e81961b45de8505136a3b3aaad8d2bb5525593e2
---- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-@@ -0,0 +1,16 @@
-+from pathlib import Path
-+
-+from PIL import Image
-+
-+
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+pixels = image.load()
-+
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
-+
-+image.save(path)
-
-codex
-The final visual check shows the first pose was packed smaller than the referenceΓÇÖs pixel footprint by the 
-generatorΓÇÖs wide-canvas limit. IΓÇÖm scaling the entire strip uniformlyΓÇöwithout altering any relative frame 
-scaleΓÇöso frame 1 matches the supplied standing figureΓÇÖs authored size while retaining the generous spacing and 
-exact green key.
-apply patch
-patch: completed
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death\finalize_s
-cale.py
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/finalize_scale.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/finalize_scale.py
-new file mode 100644
-index 0000000000000000000000000000000000000000..81f62f6d4d9ab81eb5f542584b18646d568e83f5
---- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/finalize_scale.py
-@@ -0,0 +1,18 @@
-+from pathlib import Path
-+
-+from PIL import Image
-+
-+
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+image = image.resize(
-+    (round(image.width * 1.6), round(image.height * 1.6)),
-+    Image.Resampling.LANCZOS,
-+)
-+pixels = image.load()
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
-+image.save(path)
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-new file mode 100644
-index 0000000000000000000000000000000000000000..e81961b45de8505136a3b3aaad8d2bb5525593e2
---- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-@@ -0,0 +1,16 @@
-+from pathlib import Path
-+
-+from PIL import Image
-+
-+
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+pixels = image.load()
-+
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
-+
-+image.save(path)
-
-exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python finalize_scale.py
-Remove-Item -LiteralPath '.\\finalize_scale.py'
-python -c \"from PIL import Image; from pathlib import Path; p=Path('bog_lurker_death_row.png'); 
-im=Image.open(p).convert('RGB'); print('size', im.size); print('corners', [im.getpixel(x) for x in 
-[(0,0),(im.width-1,0),(0,im.height-1),(im.width-1,im.height-1)]]); print('bytes', p.stat().st_size)\"" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
- succeeded in 5296ms:
-size (3475, 1158)
-corners [(0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0)]
-bytes 1263947
-
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/finalize_scale.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/finalize_scale.py
-new file mode 100644
-index 0000000000000000000000000000000000000000..81f62f6d4d9ab81eb5f542584b18646d568e83f5
---- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/finalize_scale.py
-@@ -0,0 +1,18 @@
-+from pathlib import Path
-+
-+from PIL import Image
-+
-+
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+image = image.resize(
-+    (round(image.width * 1.6), round(image.height * 1.6)),
-+    Image.Resampling.LANCZOS,
-+)
-+pixels = image.load()
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
-+image.save(path)
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-new file mode 100644
-index 0000000000000000000000000000000000000000..e81961b45de8505136a3b3aaad8d2bb5525593e2
---- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-@@ -0,0 +1,16 @@
-+from pathlib import Path
-+
-+from PIL import Image
-+
-+
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+pixels = image.load()
-+
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
-+
-+image.save(path)
-
-codex
-Saved [bog_lurker_death_row.png](C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/deaths_2026-0
-9-05/bog_lurker__death/bog_lurker_death_row.png).
-
-1. Standing at reference size, jolting with legs splayed.
-2. Legs curling inward.
-3. Body sinking as legs fold underneath.
-4. Body tipping onto its side/back.
-5. Fallen body with legs tightly curling.
-6. Still, fully curled body lying low on the ground.
-
-Generated with built-in ImageGen using the supplied identity reference and six-frame death-animation brief. Background 
-is normalized to exact `#00ff00`.
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/finalize_scale.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/finalize_scale.py
-new file mode 100644
-index 0000000000000000000000000000000000000000..81f62f6d4d9ab81eb5f542584b18646d568e83f5
---- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/finalize_scale.py
-@@ -0,0 +1,18 @@
-+from pathlib import Path
-+
-+from PIL import Image
-+
-+
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+image = image.resize(
-+    (round(image.width * 1.6), round(image.height * 1.6)),
-+    Image.Resampling.LANCZOS,
-+)
-+pixels = image.load()
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
-+image.save(path)
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-new file mode 100644
-index 0000000000000000000000000000000000000000..e81961b45de8505136a3b3aaad8d2bb5525593e2
---- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-@@ -0,0 +1,16 @@
-+from pathlib import Path
-+
-+from PIL import Image
-+
-+
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+pixels = image.load()
-+
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
-+
-+image.save(path)
-
+Generated with the built-in image tool using the supplied identity reference and the requested six-frame pose 
+sequence, equipment locks, shared baseline, and solid `#00ff00` background.
 tokens used
-36,739
-Saved [bog_lurker_death_row.png](C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/deaths_2026-09-05/bog_lurker__death/bog_lurker_death_row.png).
+43,615
+Saved [rat_warrior_death_row.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\rat_warrior__death\rat_warrior_death_row.png).
 
-1. Standing at reference size, jolting with legs splayed.
-2. Legs curling inward.
-3. Body sinking as legs fold underneath.
-4. Body tipping onto its side/back.
-5. Fallen body with legs tightly curling.
-6. Still, fully curled body lying low on the ground.
+1. Standing at reference size, jolting backward.
+2. Staggering with one knee buckling.
+3. Dropped onto both knees.
+4. Toppling sideways and forward.
+5. Ground impact, limbs sprawled.
+6. Motionless, lying flat and much wider than tall, with feet at the standing baseline.
 
-Generated with built-in ImageGen using the supplied identity reference and six-frame death-animation brief. Background is normalized to exact `#00ff00`.
+Generated with the built-in image tool using the supplied identity reference and the requested six-frame pose sequence, equipment locks, shared baseline, and solid `#00ff00` background.

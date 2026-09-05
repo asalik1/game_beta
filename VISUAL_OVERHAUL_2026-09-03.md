@@ -185,6 +185,17 @@ idle frame was already clipped in the source (a regen would be needed to recover
   hounds (flux/rime/slag/void) reseated to their idle's body size (they shrank ~25% on the
   first step); seven walks centred on their idle (rat_mage was 19% of the cell off).
 
+## 10. Death clips (2026-09-05): 21 placed mobs that only collapsed procedurally
+
+`tools/art/death_briefs.py` + `install_death_row.py` (see tools/INDEX.md): a 6-frame
+hit → stagger → buckle → fall → ground → still row per mob, identity from its idle, installed
+at the idle's scale with each frame's own extent (the last frame lies flat and is held, then
+fades — the engine path shipped on 09-03). wolf, winterfang, blightwolf, duneprowler,
+deep_stalker, casket_creeper, vent_skitter, bog_lurker, cultist, mummy_rogue, mummy_warrior,
+rat_rogue, rat_warrior, zombie_overweight, greyrun_lurker, grove_horror, fungus_immature,
+spider, cold_pilgrim, stormcult, flame_pilgrim. Every row was eye-checked on a sheet beside
+its idle before install. Bosses keep their own death sequences (untouched).
+
 ## Open / not done
 
 - **Mage E column DONE**: anim/walk/attack/cast E regenerated as a true right

@@ -7,27 +7,27 @@ At line:7 char:14
  
 OpenAI Codex v0.153.0
 --------
-workdir: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
+workdir: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death
 model: gpt-5.6-sol
 provider: openai
 approval: never
 sandbox: danger-full-access
 reasoning effort: high
 reasoning summaries: none
-session id: 01a072b3-19ba-73f0-8e22-d9b573c7ded5
+session id: 01a072e1-24c1-7e01-85de-21d37240250b
 --------
 user
 Draw a 6-frame DEATH animation of THIS character (reference 1), as a horizontal row.
 
 THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not change):
-a marsh spider with a moss-grown grassy dome, a pale sac on its back, eight long thin dark-brown stilt legs with a 
-knee bend, a small dark head
+a cultist in a white-and-gold hooded robe with a tall pointed hood, one hand raised, a hanging brass censer on a chain 
+in the other hand, the robe reaching the ground
 crisp hi-res dark-fantasy game sprite, muted palette, no black outlines. Same design, same
 palette, same equipment in every frame; the figure faces the SAME way as reference 1.
 
-THE ACTION, frame by frame: frame 1 the body jolts from a hit, legs splaying, frame 2 the legs curl inward, frame 3 
-the body sinks as the legs fold under it, frame 4 it tips onto its side/back, frame 5 legs curl tight, frame 6 it lies 
-still, curled -- the FINAL frame is a curled body low on the ground.
+THE ACTION, frame by frame: frame 1 the figure recoils from a hit, frame 2 it sags and the robe/cloth collapses, frame 
+3 it sinks toward the ground, frame 4 it folds down, frame 5 it crumples onto the ground, frame 6 a still heap of 
+cloth and body on the ground -- the FINAL frame is low and wide.
 Each frame is a distinct pose that reads as a continuous fall; the body stays roughly where
 it stood (no sliding across the cell); the last frame is still and final -- it will be held
 on screen. Draw NO blood spray, NO particles, NO ghost, NO effect -- only the body.
@@ -38,8 +38,8 @@ later frames are the same body, just lower and wider), feet on one shared ground
 generous green margins, no figure touching an edge or its neighbour (make the image WIDER
 if a lying body needs room). Flat solid #00ff00 GREEN background, nothing else in the image.
 Generate ONE image and SAVE it to disk at the exact path
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death\bog_lurker
-_death_row.png
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death\stormcult_d
+eath_row.png
 then stop.
 
 In your final message report, per frame, the pose, and confirm frame 1 is standing at the
@@ -47,15 +47,23 @@ reference size and the last frame lies on the ground.
 
 
 codex
-IΓÇÖm using the image-generation skill to preserve the supplied creatureΓÇÖs identity while building the six requested 
-death poses into one sprite row. IΓÇÖll inspect the reference and save the generated result at the exact path you 
-provided.
+IΓÇÖm using the image-generation workflow with the supplied character reference, then IΓÇÖll verify the six-frame 
+strip and save it at the exact requested path.
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw 
-'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'; Write-Output \""'`n---CLAUDE---"; Get-Content -Raw 
-'"'CLAUDE.md'" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
- exited 1 in 596ms:
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 'C:\\Users\\as
+ali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_2026-09-05\\stormcult__death\\CLAUDE.md'; 
+Get-Content -Raw -LiteralPath 'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death
+ succeeded in 426ms:
+Get-Content : Cannot find path 'C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09
+-05\stormcult__death\CLAUDE.md' because it does not exist.
+At line:2 char:1
++ Get-Content -Raw -LiteralPath 'C:\Users\asali\Projects\MMO\.claude\wo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\asali\...death\CLAUDE.md:String) [Get-Content], ItemNotFoundEx 
+   ception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
 ---
 name: "imagegen"
 description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, 
@@ -424,30 +432,25 @@ into their active environment.
 mode.
 
 
----CLAUDE---
-Get-Content : Cannot find path 'C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09
--05\bog_lurker__death\CLAUDE.md' because it does not exist.
-At line:2 char:107
-+ ... KILL.md'; Write-Output "`n---CLAUDE---"; Get-Content -Raw 'CLAUDE.md'
-+                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : ObjectNotFound: (C:\Users\asali\...death\CLAUDE.md:String) [Get-Content], ItemNotFoundEx 
-   ception
-    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "rg --files -g CLAUDE.md 
+..\\..\\..\\..\\..\\..\\.." in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death
+ exited 1 in 994ms:
+rg : The term 'rg' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the 
+spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:2 char:1
++ rg --files -g CLAUDE.md ..\..\..\..\..\..\..
++ ~~
+    + CategoryInfo          : ObjectNotFound: (rg:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
  
 
-codex
-The local working-practices pointer refers to a `CLAUDE.md` higher in the worktree, so IΓÇÖm locating that 
-authoritative file before generating. The supplied reference itself is clear: the identity-critical features are the 
-domed mossy sac, clustered pale eyes, split mouthparts, and eight jointed stilt legs.
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -Path ..\\..\\..\\..\\..\\.. 
--Filter CLAUDE.md -Recurse -File -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
-exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw 
-'C:\\Users\\asali\\Projects\\MMO\\CLAUDE.md'" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
- succeeded in 289ms:
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\CLAUDE.md'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death
+ succeeded in 246ms:
 # Crownless ├óΓé¼ΓÇ¥ working practices (all agents)
 
 ## Mobile version ├óΓé¼ΓÇ¥ kept in sync (unfrozen 2026-07-15)
@@ -549,6 +552,11 @@ the cell edge at the extreme of the arc, not a clipped body.
 in-scope elite skins = clean `VERIFY OK`. Don't re-investigate or "fix" these WARN categories on the base heroes 
 ├óΓé¼ΓÇ¥ only act on a NEW **FAIL**, or a WARN that leaves these three buckets (e.g. a real body green-rim, a 
 butchered/PARTIAL frame, an anchor/scale/FEETSLIDE hit).
+    - **CORRECTION (2026-09-03): the "no green rim on base heroes" finding was scoped to cast/ult.** A corpus scan 
+(`tools/art/despill_rim.py --scan`, rim-band green with an EMPTY interior = halo, not design) found a real #00FF00 
+keying ring on all 19 `warlock_attack*`/`attack2*` strips ├óΓé¼ΓÇ¥ a design with no green in it at all ├óΓé¼ΓÇ¥ plus 
+44 mobs/NPCs/props. All despilled; the scan now returns 0. Re-run the scan after any keyed install; the fixer is 
+rim-band-only so it cannot dull green garments, and it refuses a sprite whose green is mostly interior.
 - **Screenshot rigs: never write a standalone one (2026-08-15).** Twenty-three `game/shot_*.gd` files are copies of 
 the same 25-line boot/`_shot`/quit boilerplate, none with a watchdog, muted only by convention. New rig = `extends 
 ShotRig` (`scripts/dev/shot_rig.gd`: `boot()`, `shot()`, sim-clock waits, `arg()`/`flag()`, Master-bus mute, 
@@ -779,6 +787,25 @@ pipeline doc's "legs do not alternate" remedy). The row came back with 8 distinc
 ground line; installed as an 8-frame strip (the engine's strip reader is frame-count agnostic ├óΓé¼ΓÇ¥ width/height 
 ├óΓé¼ΓÇ¥ so 8 is fine; at the 2x walk clock the loop runs 0.67 s). Prefer this over 4-cell 2x2 for any bipedal walk. 
 Ask Codex to report leg-lead per frame in its final message; it is a candid critic of its own output.
+- **Write every identity description FROM the idle sheet, never from memory or an audit's paraphrase (2026-09-03).** 
+Three of fifteen boss/mob regen rows drifted for exactly this: a skeleton got a shield the idle never carried (twice 
+├óΓé¼ΓÇ¥ the pilot and the batch), the winged flame-skull echo came back as a plain hooded shroud, korrag lost his 
+lightning arcs. The generator reproduced the prose faithfully; the prose was wrong. Look at `<base>_anim` frame 0 and 
+list what is actually there (what is in each hand, what is NOT there) before writing the brief.
+- **A BACK-view regen never gets the outgoing strip as a reference** when the defect IS the view (front art wearing 
+the N name): handing it back re-seeds it. `gait_briefs.py` drops it automatically on `facing: n`; the identity ref 
+stays the front idle with the front-only parts NAMED as forbidden.
+- **Row briefs must say every figure is the SAME size** ("do not crowd two small figures into one cell; make the image 
+wider"). Three rows came back with undersized figures crammed into one cell before the brief said so; 
+`install_gait_row` refuses a speck cell rather than ship a blinking near-empty frame.
+- **Cells ├óΓÇ░┬Ñ 900px: request a two-row GRID, not a row (2026-09-04).** A 6-figure row comes back ~2100px wide 
+(~400px figures), so a 920/1084px boss cell forces a 1.4-2.2├âΓÇö upscale at install (stormmouth/nullwarden N shipped 
+soft the first time). Ask for TWO ROWS of THREE ("each figure roughly 900px tall") and flatten with 
+`tools/art/grid_to_row.py`; the same rows landed at ~870px, installed at 0.65-1.07├âΓÇö.
+- **A facing column authored FRONT-ON (the base mage's whole E column, the warlock's 3/4-front walk E) is fixed with 
+`tools/art/profile_clip_briefs.py`** (identity = front idle, view = a real profile sibling, action = the old clip). 
+When a base WALK is regenerated, its `attack_walk_<dir>` was built ON the old walk (the walk-plus-firing-arm 
+technique) and must be regenerated from the new one, or fire-on-move snaps to a different view mid-stride.
 - Every ImageGen-keyed strip carried a dark-green antialias rim (`build_mob_walk_repairs.remove_green` now despills 
 the 2px edge band); a strip that "looks fine" on a dark contact sheet can still ring green over grass ├óΓé¼ΓÇ¥ check 
 `G > max(R,B)+20` counts on the rim, not just the semi-alpha BLEED gate.
@@ -821,414 +848,579 @@ original prompt, not writing a new banshee description.
 
 
 codex
-All constraints are now locked in: one six-cell horizontal strip, fixed creature design and facing, continuous 
-in-place collapse, shared baseline, exact chroma-green background, and no added effects. IΓÇÖm generating the single 
-final asset now.
- succeeded in 49873ms:
-C:\Users\asali\Projects\MMO\CLAUDE.md
-C:\Users\asali\Projects\MMO\.claude\worktrees\confident-babbage-361677\CLAUDE.md
-C:\Users\asali\Projects\MMO\.claude\worktrees\distracted-blackwell-e0b5eb\CLAUDE.md
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\CLAUDE.md
-C:\Users\asali\Projects\MMO\.claude\worktrees\lucid-jang-c27265\CLAUDE.md
-C:\Users\asali\Projects\MMO\.claude\worktrees\optimistic-haibt-9f71f5\CLAUDE.md
+The reference shows the key identity anchors clearly: split mitre-like hood, black face void, ivory layered robe, gold 
+chest bindings and tabard, raised right hand, and chained censer in the left. IΓÇÖm locking those details across all 
+six poses and keeping the fall in place on one baseline.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath 
+'C:\\Users\\asali\\.codex\\generated_images' -Recurse -File -Filter *.png | Sort-Object LastWriteTime -Descending | 
+Select-Object -First 5 FullName,Length,LastWriteTime" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death
+ succeeded in 3980ms:
+
+FullName                                                                                                               
+--------                                                                                                               
+C:\Users\asali\.codex\generated_images\01a072e1-24c1-7e01-85de-21d37240250b\exec-5c6d978e-2fa2-4f68-8a11-1afde800865...
+C:\Users\asali\.codex\generated_images\01a072da-e632-7253-a049-51375b3691aa\exec-bf4a9dd0-14f0-4f13-846a-a4a8b2ef47c...
+C:\Users\asali\.codex\generated_images\01a072d6-0a0b-7583-bc87-f3fd807e27cd\exec-74ea63a6-064b-4d9c-b155-be672d04d98...
+C:\Users\asali\.codex\generated_images\01a072d6-0a0b-7583-bc87-f3fd807e27cd\exec-207778e3-40d5-4ce9-b4db-79e8909ce60...
+C:\Users\asali\.codex\generated_images\01a072d1-6aa7-7ad1-91ea-b93fa5a0d29d\exec-83e6dedc-842b-4db2-91f7-7b52750d0d3...
+
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath 
+'C:\\Users\\asali\\.codex\\generated_images' -Recurse -File -Filter *.png | Sort-Object LastWriteTime -Descending | 
+Select-Object -First 1 | Format-List FullName,Length,LastWriteTime" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death
+ succeeded in 2947ms:
+
+
+FullName      : C:\Users\asali\.codex\generated_images\01a072e1-24c1-7e01-85de-21d37240250b\exec-5c6d978e-2fa2-4f68-8a1
+                1-1afde8008650.png
+Length        : 1536339
+LastWriteTime : 9/5/2026 2:43:59 PM
+
+
+
 
 codex
-The generated strip has exactly six readable poses and the intended progression. IΓÇÖm placing this single output at 
-the requested filename and checking its dimensions and chroma background before stopping.
+The generated sequence has the right six poses and identity, but its first-pass layout leaves the upright frame 
+slightly above the later framesΓÇÖ baseline. IΓÇÖm correcting only the strip geometryΓÇöuniform scale, equal cells, 
+exact green, and one shared ground lineΓÇöwithout altering the artwork.
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Copy-Item -LiteralPath 'C:\\Users\\asali\\.c
-odex\\generated_images\\01a072b3-19ba-73f0-8e22-d9b573c7ded5\\exec-218efc92-39e0-4cb1-aecd-40c1aafdd1c4.png' 
--Destination 'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_2026-09-05\\bog_
-lurker__death\\bog_lurker_death_row.png' -Force
-python -c \"from PIL import Image; p=r'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src
-\\deaths_2026-09-05\\bog_lurker__death\\bog_lurker_death_row.png'; im=Image.open(p).convert('RGB'); print('saved', p); 
-print('size', im.size); print('corners', [im.getpixel(x) for x in 
-[(0,0),(im.width-1,0),(0,im.height-1),(im.width-1,im.height-1)]]); print('exists', 
-__import__('os').path.getsize(p))\"" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
- succeeded in 868ms:
-saved C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death\bog_
-lurker_death_row.png
-size (2172, 724)
-corners [(19, 241, 16), (16, 240, 9), (13, 241, 11), (15, 244, 11)]
-exists 1384987
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$cmd = Get-Command magick -ErrorAction 
+SilentlyContinue; if ($cmd) { magick -version } else { Write-Output '"'MAGICK_NOT_FOUND' }; python -c \"import PIL; 
+print('PIL', PIL.__version__)\"" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death
+ succeeded in 1427ms:
+MAGICK_NOT_FOUND
+PIL 12.3.0
 
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; from 
-collections import Counter; p=r'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\death
-s_2026-09-05\\bog_lurker__death\\bog_lurker_death_row.png'; im=Image.open(p).convert('RGB'); c=Counter(im.getdata()); 
-print('top',c.most_common(12)); print('vivid green pixels',sum(n for (r,g,b),n in c.items() if g>=180 and g>=r+100 and 
-g>=b+100),'of',im.width*im.height); print('exact',c[(0,255,0)])\"" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
- succeeded in 1233ms:
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; import 
+numpy as np; paths=[r'refs\\1_identity.png',r'C:\\Users\\asali\\.codex\\generated_images\\01a072e1-24c1-7e01-85de-21d37
+240250b\\exec-5c6d978e-2fa2-4f68-8a11-1afde8008650.png'];
+for p in paths:
+ a=np.array(Image.open(p).convert('RGB')); m=np.any(a"'!=[0,255,0],axis=2); ys,xs=np.where(m); print(p, 
+Image.open(p).size, (xs.min(),ys.min(),xs.max()+1,ys.max()+1), '"'bbox',xs.max()+1-xs.min(),ys.max()+1-ys.min())
+ if 'generated_images' in p:
+  w=a.shape[1]
+  for i in range(6):
+   s=a[:,i*w//6:(i+1)*w//6]; mm=np.any(s"'!=[0,255,0],axis=2); yy,xx=np.where(mm); 
+print(i+1,(xx.min()+i*w//6,yy.min(),xx.max()+1+i*w//6,yy.max()+1),'"'bbox',xx.max()+1-xx.min(),yy.max()+1-yy.min())\"" 
+in C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death
+ succeeded in 1426ms:
+refs\1_identity.png (512, 704) (np.int64(32), np.int64(32), np.int64(480), np.int64(672)) bbox 448 640
+C:\Users\asali\.codex\generated_images\01a072e1-24c1-7e01-85de-21d37240250b\exec-5c6d978e-2fa2-4f68-8a11-1afde8008650.p
+ng (2172, 724) (np.int64(0), np.int64(0), np.int64(2172), np.int64(724)) bbox 2172 724
+1 (np.int64(0), np.int64(0), np.int64(362), np.int64(724)) bbox 362 724
+2 (np.int64(362), np.int64(0), np.int64(724), np.int64(724)) bbox 362 724
+3 (np.int64(724), np.int64(0), np.int64(1086), np.int64(724)) bbox 362 724
+4 (np.int64(1086), np.int64(0), np.int64(1448), np.int64(724)) bbox 362 724
+5 (np.int64(1448), np.int64(0), np.int64(1810), np.int64(724)) bbox 362 724
+6 (np.int64(1810), np.int64(0), np.int64(2172), np.int64(724)) bbox 362 724
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; import 
+collections; p=r'C:\\Users\\asali\\.codex\\generated_images\\01a072e1-24c1-7e01-85de-21d37240250b\\exec-5c6d978e-2fa2-4
+f68-8a11-1afde8008650.png'; im=Image.open(p).convert('RGB'); print(im.size, im.getpixel((0,0)), 
+im.getpixel((1000,50)), im.getpixel((2100,100))); print(collections.Counter(im.getdata()).most_common(8))\"" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death
+ succeeded in 1284ms:
 <string>:1: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
 get_flattened_data instead.
-top [((3, 249, 2), 208752), ((4, 249, 3), 152398), ((4, 249, 2), 99777), ((3, 248, 2), 95088), ((3, 249, 3), 87931), 
-((4, 250, 3), 84806), ((3, 250, 2), 57782), ((4, 250, 2), 49584), ((4, 248, 3), 40515), ((3, 248, 3), 37315), ((4, 
-248, 2), 35863), ((3, 250, 3), 35688)]
-vivid green pixels 1318347 of 1572528
-exact 38
+(2172, 724) (21, 240, 21) (5, 247, 8) (5, 247, 9)
+[((6, 248, 9), 100839), ((6, 247, 9), 95191), ((6, 247, 10), 84044), ((6, 248, 10), 60587), ((5, 247, 9), 54143), ((5, 
+247, 8), 42238), ((7, 248, 10), 39658), ((6, 248, 8), 39373)]
 
-codex
-The generatorΓÇÖs background was visually green but not numerically `#00ff00` at the corners. IΓÇÖm applying a 
-strictly mechanical chroma normalization to the connected vivid-green field so the delivered PNG meets the exact 
-background requirement without changing the creature artwork or producing another image.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; import 
+numpy as np; p=r'C:\\Users\\asali\\.codex\\generated_images\\01a072e1-24c1-7e01-85de-21d37240250b\\exec-5c6d978e-2fa2-4
+f68-8a11-1afde8008650.png'; a=np.array(Image.open(p).convert('RGB')); 
+bg=(a[:,:,1]>150)&(a[:,:,1]>a[:,:,0]*1.5)&(a[:,:,1]>a[:,:,2]*1.5); w=a.shape[1];
+for i in range(6):
+ s=~bg[:,i*w//6:(i+1)*w//6]; yy,xx=np.where(s); 
+print(i+1,(xx.min()+i*w//6,yy.min(),xx.max()+1+i*w//6,yy.max()+1),'bbox',xx.max()+1-xx.min(),yy.max()+1-yy.min(), 
+'pixels',s.sum())\"" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death
+ succeeded in 964ms:
+1 (np.int64(26), np.int64(164), np.int64(335), np.int64(611)) bbox 309 447 pixels 81407
+2 (np.int64(375), np.int64(222), np.int64(724), np.int64(629)) bbox 349 407 pixels 75679
+3 (np.int64(724), np.int64(325), np.int64(1065), np.int64(649)) bbox 341 324 pixels 64182
+4 (np.int64(1091), np.int64(408), np.int64(1448), np.int64(646)) bbox 357 238 pixels 45761
+5 (np.int64(1448), np.int64(481), np.int64(1810), np.int64(650)) bbox 362 169 pixels 36481
+6 (np.int64(1810), np.int64(540), np.int64(2154), np.int64(652)) bbox 344 112 pixels 25221
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; import 
+numpy as np; p=r'C:\\Users\\asali\\.codex\\generated_images\\01a072e1-24c1-7e01-85de-21d37240250b\\exec-5c6d978e-2fa2-4
+f68-8a11-1afde8008650.png'; a=np.array(Image.open(p).convert('RGB')); ex=a[:,:,1]-np.maximum(a[:,:,0],a[:,:,2]); 
+bg=(a[:,:,1]>120)&(ex>40); m=~bg; c=m.sum(0); active=np.where(c>4)[0]; runs=[]; s=pr=active[0];
+for x in active[1:]:
+ if x>pr+3: runs.append((s,pr,int(c[s:pr+1].max()))); s=x
+ pr=x
+runs.append((s,pr,int(c[s:pr+1].max()))); print(runs)\"" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death
+ succeeded in 946ms:
+[(np.int64(26), np.int64(334), 369), (np.int64(375), np.int64(692), 263), (np.int64(722), np.int64(722), 5), 
+(np.int64(727), np.int64(1063), 255), (np.int64(1092), np.int64(1092), 5), (np.int64(1096), np.int64(1415), 202), 
+(np.int64(1442), np.int64(1786), 133), (np.int64(1817), np.int64(2153), 75)]
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; import 
+numpy as np; p=r'C:\\Users\\asali\\.codex\\generated_images\\01a072e1-24c1-7e01-85de-21d37240250b\\exec-5c6d978e-2fa2-4
+f68-8a11-1afde8008650.png'; a=np.array(Image.open(p).convert('RGB')); 
+ex=a[:,:,1].astype(int)-np.maximum(a[:,:,0],a[:,:,2]); bg=(a[:,:,1]>120)&(ex>40); m=~bg; c=m.sum(0); 
+active=np.where(c>10)[0]; runs=[]; s=pr=active[0];
+for x in active[1:]:
+ if x>pr+3: runs.append((int(s),int(pr))); s=x
+ pr=x
+runs.append((int(s),int(pr))); print(runs)\"" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death
+ succeeded in 970ms:
+[(27, 334), (376, 691), (734, 1058), (1103, 1412), (1446, 1782), (1822, 2152)]
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; import 
+numpy as np; p=r'C:\\Users\\asali\\.codex\\generated_images\\01a072e1-24c1-7e01-85de-21d37240250b\\exec-5c6d978e-2fa2-4
+f68-8a11-1afde8008650.png'; a=np.array(Image.open(p).convert('RGB')); 
+ex=a[:,:,1].astype(int)-np.maximum(a[:,:,0],a[:,:,2]); m=~((a[:,:,1]>120)&(ex>40)); 
+runs=[(27,334),(376,691),(734,1058),(1103,1412),(1446,1782),(1822,2152)];
+for x0,x1 in runs:
+ s=m[:,x0:x1+1]; rows=np.where(s.sum(1)>10)[0]; print((x0,int(rows.min()),x1+1,int(rows.max()+1)), 
+'bbox',x1+1-x0,int(rows.max()+1-rows.min()))\"" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death
+ succeeded in 1006ms:
+(27, 168, 335, 610) bbox 308 442
+(376, 226, 692, 620) bbox 316 394
+(734, 330, 1059, 647) bbox 325 317
+(1103, 413, 1413, 645) bbox 310 232
+(1446, 482, 1783, 650) bbox 337 168
+(1822, 540, 2153, 652) bbox 331 112
+
 apply patch
 patch: completed
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death\normalize_
-chroma.py
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death\normalize_d
+eath_strip.py
+diff --git a/art_src/deaths_2026-09-05/stormcult__death/normalize_death_strip.py 
+b/art_src/deaths_2026-09-05/stormcult__death/normalize_death_strip.py
 new file mode 100644
-index 0000000000000000000000000000000000000000..e81961b45de8505136a3b3aaad8d2bb5525593e2
+index 0000000000000000000000000000000000000000..d39af8b7f5f4e12947b86e7c5403f661853d83cb
 --- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-@@ -0,0 +1,16 @@
++++ b/art_src/deaths_2026-09-05/stormcult__death/normalize_death_strip.py
+@@ -0,0 +1,65 @@
 +from pathlib import Path
 +
++import numpy as np
 +from PIL import Image
 +
 +
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+pixels = image.load()
++SOURCE = Path(
++    r"C:\Users\asali\.codex\generated_images\01a072e1-24c1-7e01-85de-21d37240250b"
++    r"\exec-5c6d978e-2fa2-4f68-8a11-1afde8008650.png"
++)
++OUTPUT = Path(
++    r"C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd"
++    r"\art_src\deaths_2026-09-05\stormcult__death\stormcult_death_row.png"
++)
 +
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
++GREEN = (0, 255, 0)
++TARGET_STANDING_HEIGHT = 640
++CANVAS_HEIGHT = 704
++GROUND_Y = 672
++CELL_WIDTH = 608
 +
-+image.save(path)
++
++image = Image.open(SOURCE).convert("RGB")
++pixels = np.asarray(image).copy()
++
++# Remove the generator's slightly mottled green backdrop. The character has no
++# green design elements, so a chroma-dominance key cleanly isolates the art.
++green_excess = pixels[:, :, 1].astype(np.int16) - np.maximum(
++    pixels[:, :, 0], pixels[:, :, 2]
++).astype(np.int16)
++background = (pixels[:, :, 1] > 120) & (green_excess > 40)
++pixels[background] = GREEN
++keyed = Image.fromarray(pixels, "RGB")
++
++# Tight bounds for the six generated figures, found from the keyed foreground.
++# They exclude a handful of isolated generation specks between figures.
++bounds = [
++    (27, 168, 335, 610),
++    (376, 226, 692, 620),
++    (734, 330, 1059, 647),
++    (1103, 413, 1413, 645),
++    (1446, 482, 1783, 650),
++    (1822, 540, 2153, 652),
++]
++
++scale = TARGET_STANDING_HEIGHT / (bounds[0][3] - bounds[0][1])
++frames = []
++for box in bounds:
++    frame = keyed.crop(box)
++    size = (
++        round(frame.width * scale),
++        round(frame.height * scale),
++    )
++    frames.append(frame.resize(size, Image.Resampling.LANCZOS))
++
++canvas = Image.new("RGB", (CELL_WIDTH * 6, CANVAS_HEIGHT), GREEN)
++for index, frame in enumerate(frames):
++    x = index * CELL_WIDTH + (CELL_WIDTH - frame.width) // 2
++    y = GROUND_Y - frame.height
++    canvas.paste(frame, (x, y))
++
++canvas.save(OUTPUT, format="PNG", optimize=True)
++print(OUTPUT)
++print(canvas.size)
++print([frame.size for frame in frames])
+
+diff --git a/art_src/deaths_2026-09-05/stormcult__death/normalize_death_strip.py 
+b/art_src/deaths_2026-09-05/stormcult__death/normalize_death_strip.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..d39af8b7f5f4e12947b86e7c5403f661853d83cb
+--- /dev/null
++++ b/art_src/deaths_2026-09-05/stormcult__death/normalize_death_strip.py
+@@ -0,0 +1,65 @@
++from pathlib import Path
++
++import numpy as np
++from PIL import Image
++
++
++SOURCE = Path(
++    r"C:\Users\asali\.codex\generated_images\01a072e1-24c1-7e01-85de-21d37240250b"
++    r"\exec-5c6d978e-2fa2-4f68-8a11-1afde8008650.png"
++)
++OUTPUT = Path(
++    r"C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd"
++    r"\art_src\deaths_2026-09-05\stormcult__death\stormcult_death_row.png"
++)
++
++GREEN = (0, 255, 0)
++TARGET_STANDING_HEIGHT = 640
++CANVAS_HEIGHT = 704
++GROUND_Y = 672
++CELL_WIDTH = 608
++
++
++image = Image.open(SOURCE).convert("RGB")
++pixels = np.asarray(image).copy()
++
++# Remove the generator's slightly mottled green backdrop. The character has no
++# green design elements, so a chroma-dominance key cleanly isolates the art.
++green_excess = pixels[:, :, 1].astype(np.int16) - np.maximum(
++    pixels[:, :, 0], pixels[:, :, 2]
++).astype(np.int16)
++background = (pixels[:, :, 1] > 120) & (green_excess > 40)
++pixels[background] = GREEN
++keyed = Image.fromarray(pixels, "RGB")
++
++# Tight bounds for the six generated figures, found from the keyed foreground.
++# They exclude a handful of isolated generation specks between figures.
++bounds = [
++    (27, 168, 335, 610),
++    (376, 226, 692, 620),
++    (734, 330, 1059, 647),
++    (1103, 413, 1413, 645),
++    (1446, 482, 1783, 650),
++    (1822, 540, 2153, 652),
++]
++
++scale = TARGET_STANDING_HEIGHT / (bounds[0][3] - bounds[0][1])
++frames = []
++for box in bounds:
++    frame = keyed.crop(box)
++    size = (
++        round(frame.width * scale),
++        round(frame.height * scale),
++    )
++    frames.append(frame.resize(size, Image.Resampling.LANCZOS))
++
++canvas = Image.new("RGB", (CELL_WIDTH * 6, CANVAS_HEIGHT), GREEN)
++for index, frame in enumerate(frames):
++    x = index * CELL_WIDTH + (CELL_WIDTH - frame.width) // 2
++    y = GROUND_Y - frame.height
++    canvas.paste(frame, (x, y))
++
++canvas.save(OUTPUT, format="PNG", optimize=True)
++print(OUTPUT)
++print(canvas.size)
++print([frame.size for frame in frames])
 
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python normalize_chroma.py
-Remove-Item -LiteralPath '.\\normalize_chroma.py'
-python -c \"from PIL import Image; p=r'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src
-\\deaths_2026-09-05\\bog_lurker__death\\bog_lurker_death_row.png'; im=Image.open(p).convert('RGB'); print('size', 
-im.size); print('corners', [im.getpixel(x) for x in [(0,0),(im.width-1,0),(0,im.height-1),(im.width-1,im.height-1)]]); 
-print('exact_green_pixels', sum(1 for px in im.getdata() if px==(0,255,0))); print('bytes', 
-__import__('os').path.getsize(p))\"" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
- succeeded in 3389ms:
-<string>:1: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use 
-get_flattened_data instead.
-size (2172, 724)
-corners [(0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0)]
-exact_green_pixels 1318347
-bytes 584876
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python .\\normalize_death_strip.py" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death
+ succeeded in 1702ms:
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death\stormcult_d
+eath_row.png
+(3648, 704)
+[(446, 640), (458, 570), (471, 459), (449, 336), (488, 243), (479, 162)]
 
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
+diff --git a/art_src/deaths_2026-09-05/stormcult__death/normalize_death_strip.py 
+b/art_src/deaths_2026-09-05/stormcult__death/normalize_death_strip.py
 new file mode 100644
-index 0000000000000000000000000000000000000000..e81961b45de8505136a3b3aaad8d2bb5525593e2
+index 0000000000000000000000000000000000000000..d39af8b7f5f4e12947b86e7c5403f661853d83cb
 --- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-@@ -0,0 +1,16 @@
++++ b/art_src/deaths_2026-09-05/stormcult__death/normalize_death_strip.py
+@@ -0,0 +1,65 @@
 +from pathlib import Path
 +
++import numpy as np
 +from PIL import Image
 +
 +
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+pixels = image.load()
++SOURCE = Path(
++    r"C:\Users\asali\.codex\generated_images\01a072e1-24c1-7e01-85de-21d37240250b"
++    r"\exec-5c6d978e-2fa2-4f68-8a11-1afde8008650.png"
++)
++OUTPUT = Path(
++    r"C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd"
++    r"\art_src\deaths_2026-09-05\stormcult__death\stormcult_death_row.png"
++)
 +
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
++GREEN = (0, 255, 0)
++TARGET_STANDING_HEIGHT = 640
++CANVAS_HEIGHT = 704
++GROUND_Y = 672
++CELL_WIDTH = 608
 +
-+image.save(path)
++
++image = Image.open(SOURCE).convert("RGB")
++pixels = np.asarray(image).copy()
++
++# Remove the generator's slightly mottled green backdrop. The character has no
++# green design elements, so a chroma-dominance key cleanly isolates the art.
++green_excess = pixels[:, :, 1].astype(np.int16) - np.maximum(
++    pixels[:, :, 0], pixels[:, :, 2]
++).astype(np.int16)
++background = (pixels[:, :, 1] > 120) & (green_excess > 40)
++pixels[background] = GREEN
++keyed = Image.fromarray(pixels, "RGB")
++
++# Tight bounds for the six generated figures, found from the keyed foreground.
++# They exclude a handful of isolated generation specks between figures.
++bounds = [
++    (27, 168, 335, 610),
++    (376, 226, 692, 620),
++    (734, 330, 1059, 647),
++    (1103, 413, 1413, 645),
++    (1446, 482, 1783, 650),
++    (1822, 540, 2153, 652),
++]
++
++scale = TARGET_STANDING_HEIGHT / (bounds[0][3] - bounds[0][1])
++frames = []
++for box in bounds:
++    frame = keyed.crop(box)
++    size = (
++        round(frame.width * scale),
++        round(frame.height * scale),
++    )
++    frames.append(frame.resize(size, Image.Resampling.LANCZOS))
++
++canvas = Image.new("RGB", (CELL_WIDTH * 6, CANVAS_HEIGHT), GREEN)
++for index, frame in enumerate(frames):
++    x = index * CELL_WIDTH + (CELL_WIDTH - frame.width) // 2
++    y = GROUND_Y - frame.height
++    canvas.paste(frame, (x, y))
++
++canvas.save(OUTPUT, format="PNG", optimize=True)
++print(OUTPUT)
++print(canvas.size)
++print([frame.size for frame in frames])
 
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
+diff --git a/art_src/deaths_2026-09-05/stormcult__death/normalize_death_strip.py 
+b/art_src/deaths_2026-09-05/stormcult__death/normalize_death_strip.py
 new file mode 100644
-index 0000000000000000000000000000000000000000..e81961b45de8505136a3b3aaad8d2bb5525593e2
+index 0000000000000000000000000000000000000000..d39af8b7f5f4e12947b86e7c5403f661853d83cb
 --- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-@@ -0,0 +1,16 @@
++++ b/art_src/deaths_2026-09-05/stormcult__death/normalize_death_strip.py
+@@ -0,0 +1,65 @@
 +from pathlib import Path
 +
++import numpy as np
 +from PIL import Image
 +
 +
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+pixels = image.load()
++SOURCE = Path(
++    r"C:\Users\asali\.codex\generated_images\01a072e1-24c1-7e01-85de-21d37240250b"
++    r"\exec-5c6d978e-2fa2-4f68-8a11-1afde8008650.png"
++)
++OUTPUT = Path(
++    r"C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd"
++    r"\art_src\deaths_2026-09-05\stormcult__death\stormcult_death_row.png"
++)
 +
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
++GREEN = (0, 255, 0)
++TARGET_STANDING_HEIGHT = 640
++CANVAS_HEIGHT = 704
++GROUND_Y = 672
++CELL_WIDTH = 608
 +
-+image.save(path)
++
++image = Image.open(SOURCE).convert("RGB")
++pixels = np.asarray(image).copy()
++
++# Remove the generator's slightly mottled green backdrop. The character has no
++# green design elements, so a chroma-dominance key cleanly isolates the art.
++green_excess = pixels[:, :, 1].astype(np.int16) - np.maximum(
++    pixels[:, :, 0], pixels[:, :, 2]
++).astype(np.int16)
++background = (pixels[:, :, 1] > 120) & (green_excess > 40)
++pixels[background] = GREEN
++keyed = Image.fromarray(pixels, "RGB")
++
++# Tight bounds for the six generated figures, found from the keyed foreground.
++# They exclude a handful of isolated generation specks between figures.
++bounds = [
++    (27, 168, 335, 610),
++    (376, 226, 692, 620),
++    (734, 330, 1059, 647),
++    (1103, 413, 1413, 645),
++    (1446, 482, 1783, 650),
++    (1822, 540, 2153, 652),
++]
++
++scale = TARGET_STANDING_HEIGHT / (bounds[0][3] - bounds[0][1])
++frames = []
++for box in bounds:
++    frame = keyed.crop(box)
++    size = (
++        round(frame.width * scale),
++        round(frame.height * scale),
++    )
++    frames.append(frame.resize(size, Image.Resampling.LANCZOS))
++
++canvas = Image.new("RGB", (CELL_WIDTH * 6, CANVAS_HEIGHT), GREEN)
++for index, frame in enumerate(frames):
++    x = index * CELL_WIDTH + (CELL_WIDTH - frame.width) // 2
++    y = GROUND_Y - frame.height
++    canvas.paste(frame, (x, y))
++
++canvas.save(OUTPUT, format="PNG", optimize=True)
++print(OUTPUT)
++print(canvas.size)
++print([frame.size for frame in frames])
 
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; 
-im=Image.open('bog_lurker_death_row.png').convert('RGB'); w,h=im.size; cw=w//6; print('cell',cw); [print(i+1, (lambda 
-pts:(min(x for x,y in pts),min(y for x,y in pts),max(x for x,y in pts),max(y for x,y in pts)))([(x,y) for y in 
-range(h) for x in range(i*cw,(i+1)*cw if i<5 else w) if im.getpixel((x,y))"'!=(0,255,0)])) for i in range(6)]"' in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
- succeeded in 3042ms:
-cell 362
-1 (20, 273, 361, 592)
-2 (362, 278, 723, 596)
-3 (724, 317, 1085, 597)
-4 (1086, 356, 1447, 592)
-5 (1448, 424, 1808, 591)
-6 (1861, 451, 2132, 592)
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; import 
+numpy as np; p=r'stormcult_death_row.png'; a=np.asarray(Image.open(p).convert('RGB')); 
+print('size',Image.open(p).size,'mode',Image.open(p).mode,'corner',tuple(a[0,0])); w=a.shape[1]; 
+ex=a[:,:,1].astype(int)-np.maximum(a[:,:,0],a[:,:,2]); fg=~((a[:,:,1]>120)&(ex>40));
+for i in range(6):
+ s=fg[:,i*w//6:(i+1)*w//6]; ys,xs=np.where(s); print(i+1,'bbox',(int(xs.min()),int(ys.min()),int(xs.max()+1),int(ys.max
+()+1)),'bottom',int(ys.max()+1),'pixels',int(s.sum()))\"" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death
+ succeeded in 1011ms:
+size (3648, 704) mode RGB corner (np.uint8(0), np.uint8(255), np.uint8(0))
+1 bbox (81, 32, 527, 672) bottom 672 pixels 168164
+2 bbox (75, 102, 533, 672) bottom 672 pixels 156142
+3 bbox (68, 213, 539, 672) bottom 672 pixels 132190
+4 bbox (79, 336, 528, 672) bottom 672 pixels 94279
+5 bbox (60, 429, 548, 672) bottom 672 pixels 75411
+6 bbox (64, 510, 543, 672) bottom 672 pixels 51684
 
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
+diff --git a/art_src/deaths_2026-09-05/stormcult__death/normalize_death_strip.py 
+b/art_src/deaths_2026-09-05/stormcult__death/normalize_death_strip.py
 new file mode 100644
-index 0000000000000000000000000000000000000000..e81961b45de8505136a3b3aaad8d2bb5525593e2
+index 0000000000000000000000000000000000000000..d39af8b7f5f4e12947b86e7c5403f661853d83cb
 --- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-@@ -0,0 +1,16 @@
++++ b/art_src/deaths_2026-09-05/stormcult__death/normalize_death_strip.py
+@@ -0,0 +1,65 @@
 +from pathlib import Path
 +
++import numpy as np
 +from PIL import Image
 +
 +
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+pixels = image.load()
++SOURCE = Path(
++    r"C:\Users\asali\.codex\generated_images\01a072e1-24c1-7e01-85de-21d37240250b"
++    r"\exec-5c6d978e-2fa2-4f68-8a11-1afde8008650.png"
++)
++OUTPUT = Path(
++    r"C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd"
++    r"\art_src\deaths_2026-09-05\stormcult__death\stormcult_death_row.png"
++)
 +
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
++GREEN = (0, 255, 0)
++TARGET_STANDING_HEIGHT = 640
++CANVAS_HEIGHT = 704
++GROUND_Y = 672
++CELL_WIDTH = 608
 +
-+image.save(path)
++
++image = Image.open(SOURCE).convert("RGB")
++pixels = np.asarray(image).copy()
++
++# Remove the generator's slightly mottled green backdrop. The character has no
++# green design elements, so a chroma-dominance key cleanly isolates the art.
++green_excess = pixels[:, :, 1].astype(np.int16) - np.maximum(
++    pixels[:, :, 0], pixels[:, :, 2]
++).astype(np.int16)
++background = (pixels[:, :, 1] > 120) & (green_excess > 40)
++pixels[background] = GREEN
++keyed = Image.fromarray(pixels, "RGB")
++
++# Tight bounds for the six generated figures, found from the keyed foreground.
++# They exclude a handful of isolated generation specks between figures.
++bounds = [
++    (27, 168, 335, 610),
++    (376, 226, 692, 620),
++    (734, 330, 1059, 647),
++    (1103, 413, 1413, 645),
++    (1446, 482, 1783, 650),
++    (1822, 540, 2153, 652),
++]
++
++scale = TARGET_STANDING_HEIGHT / (bounds[0][3] - bounds[0][1])
++frames = []
++for box in bounds:
++    frame = keyed.crop(box)
++    size = (
++        round(frame.width * scale),
++        round(frame.height * scale),
++    )
++    frames.append(frame.resize(size, Image.Resampling.LANCZOS))
++
++canvas = Image.new("RGB", (CELL_WIDTH * 6, CANVAS_HEIGHT), GREEN)
++for index, frame in enumerate(frames):
++    x = index * CELL_WIDTH + (CELL_WIDTH - frame.width) // 2
++    y = GROUND_Y - frame.height
++    canvas.paste(frame, (x, y))
++
++canvas.save(OUTPUT, format="PNG", optimize=True)
++print(OUTPUT)
++print(canvas.size)
++print([frame.size for frame in frames])
 
-exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; 
-im=Image.open('bog_lurker_death_row.png').convert('RGB'); cols=[sum(im.getpixel((x,y))"'!=(0,255,0) for y in 
-range(im.height)) for x in range(im.width)]; runs=[]; s=None; [(runs.append((s,x-1)) if s is not None and c==0 else 
-None, globals().update()) for x,c in enumerate(cols)]; print([(a,b) for a,b in 
-[(20,418),(439,768),(790,1087),(1110,1396),(1414,1698),(1781,2133)]])"' in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
- succeeded in 2888ms:
-[(20, 418), (439, 768), (790, 1087), (1110, 1396), (1414, 1698), (1781, 2133)]
-
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-new file mode 100644
-index 0000000000000000000000000000000000000000..e81961b45de8505136a3b3aaad8d2bb5525593e2
---- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-@@ -0,0 +1,16 @@
-+from pathlib import Path
-+
-+from PIL import Image
-+
-+
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+pixels = image.load()
-+
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
-+
-+image.save(path)
-
-codex
-The final visual check shows the first pose was packed smaller than the referenceΓÇÖs pixel footprint by the 
-generatorΓÇÖs wide-canvas limit. IΓÇÖm scaling the entire strip uniformlyΓÇöwithout altering any relative frame 
-scaleΓÇöso frame 1 matches the supplied standing figureΓÇÖs authored size while retaining the generous spacing and 
-exact green key.
 apply patch
 patch: completed
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death\finalize_s
-cale.py
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/finalize_scale.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/finalize_scale.py
-new file mode 100644
-index 0000000000000000000000000000000000000000..81f62f6d4d9ab81eb5f542584b18646d568e83f5
---- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/finalize_scale.py
-@@ -0,0 +1,18 @@
-+from pathlib import Path
-+
-+from PIL import Image
-+
-+
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+image = image.resize(
-+    (round(image.width * 1.6), round(image.height * 1.6)),
-+    Image.Resampling.LANCZOS,
-+)
-+pixels = image.load()
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
-+image.save(path)
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-new file mode 100644
-index 0000000000000000000000000000000000000000..e81961b45de8505136a3b3aaad8d2bb5525593e2
---- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-@@ -0,0 +1,16 @@
-+from pathlib import Path
-+
-+from PIL import Image
-+
-+
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+pixels = image.load()
-+
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
-+
-+image.save(path)
-
-exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python finalize_scale.py
-Remove-Item -LiteralPath '.\\finalize_scale.py'
-python -c \"from PIL import Image; from pathlib import Path; p=Path('bog_lurker_death_row.png'); 
-im=Image.open(p).convert('RGB'); print('size', im.size); print('corners', [im.getpixel(x) for x in 
-[(0,0),(im.width-1,0),(0,im.height-1),(im.width-1,im.height-1)]]); print('bytes', p.stat().st_size)\"" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\bog_lurker__death
- succeeded in 5296ms:
-size (3475, 1158)
-corners [(0, 255, 0), (0, 255, 0), (0, 255, 0), (0, 255, 0)]
-bytes 1263947
-
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/finalize_scale.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/finalize_scale.py
-new file mode 100644
-index 0000000000000000000000000000000000000000..81f62f6d4d9ab81eb5f542584b18646d568e83f5
---- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/finalize_scale.py
-@@ -0,0 +1,18 @@
-+from pathlib import Path
-+
-+from PIL import Image
-+
-+
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+image = image.resize(
-+    (round(image.width * 1.6), round(image.height * 1.6)),
-+    Image.Resampling.LANCZOS,
-+)
-+pixels = image.load()
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
-+image.save(path)
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-new file mode 100644
-index 0000000000000000000000000000000000000000..e81961b45de8505136a3b3aaad8d2bb5525593e2
---- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-@@ -0,0 +1,16 @@
-+from pathlib import Path
-+
-+from PIL import Image
-+
-+
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+pixels = image.load()
-+
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
-+
-+image.save(path)
-
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death\normalize_d
+eath_strip.py
 codex
-Saved [bog_lurker_death_row.png](C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/deaths_2026-0
-9-05/bog_lurker__death/bog_lurker_death_row.png).
+Saved [stormcult_death_row.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09
+-05\stormcult__death\stormcult_death_row.png).
 
-1. Standing at reference size, jolting with legs splayed.
-2. Legs curling inward.
-3. Body sinking as legs fold underneath.
-4. Body tipping onto its side/back.
-5. Fallen body with legs tightly curling.
-6. Still, fully curled body lying low on the ground.
+1. Standing recoil from impact, at the referenceΓÇÖs 640px figure height.
+2. Sagging upright as the robe begins collapsing.
+3. Sinking toward the ground, hood bowed.
+4. Folding down with cloth and censer settling.
+5. Crumpled low across the ground.
+6. Still, low-and-wide heap of body and cloth on the ground.
 
-Generated with built-in ImageGen using the supplied identity reference and six-frame death-animation brief. Background 
-is normalized to exact `#00ff00`.
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/finalize_scale.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/finalize_scale.py
-new file mode 100644
-index 0000000000000000000000000000000000000000..81f62f6d4d9ab81eb5f542584b18646d568e83f5
---- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/finalize_scale.py
-@@ -0,0 +1,18 @@
-+from pathlib import Path
-+
-+from PIL import Image
-+
-+
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+image = image.resize(
-+    (round(image.width * 1.6), round(image.height * 1.6)),
-+    Image.Resampling.LANCZOS,
-+)
-+pixels = image.load()
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
-+image.save(path)
-diff --git a/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py 
-b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-new file mode 100644
-index 0000000000000000000000000000000000000000..e81961b45de8505136a3b3aaad8d2bb5525593e2
---- /dev/null
-+++ b/art_src/deaths_2026-09-05/bog_lurker__death/normalize_chroma.py
-@@ -0,0 +1,16 @@
-+from pathlib import Path
-+
-+from PIL import Image
-+
-+
-+path = Path(__file__).with_name("bog_lurker_death_row.png")
-+image = Image.open(path).convert("RGB")
-+pixels = image.load()
-+
-+for y in range(image.height):
-+    for x in range(image.width):
-+        red, green, blue = pixels[x, y]
-+        if green >= 180 and green >= red + 100 and green >= blue + 100:
-+            pixels[x, y] = (0, 255, 0)
-+
-+image.save(path)
-
+Exactly six evenly spaced frames share one ground line on solid `#00ff00`. Created with built-in ImageGen using the 
+supplied identity and animation specification.
 tokens used
-36,739
-Saved [bog_lurker_death_row.png](C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/deaths_2026-09-05/bog_lurker__death/bog_lurker_death_row.png).
+69,770
+Saved [stormcult_death_row.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\stormcult__death\stormcult_death_row.png).
 
-1. Standing at reference size, jolting with legs splayed.
-2. Legs curling inward.
-3. Body sinking as legs fold underneath.
-4. Body tipping onto its side/back.
-5. Fallen body with legs tightly curling.
-6. Still, fully curled body lying low on the ground.
+1. Standing recoil from impact, at the referenceΓÇÖs 640px figure height.
+2. Sagging upright as the robe begins collapsing.
+3. Sinking toward the ground, hood bowed.
+4. Folding down with cloth and censer settling.
+5. Crumpled low across the ground.
+6. Still, low-and-wide heap of body and cloth on the ground.
 
-Generated with built-in ImageGen using the supplied identity reference and six-frame death-animation brief. Background is normalized to exact `#00ff00`.
+Exactly six evenly spaced frames share one ground line on solid `#00ff00`. Created with built-in ImageGen using the supplied identity and animation specification.
