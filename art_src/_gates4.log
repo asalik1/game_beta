@@ -1,0 +1,15 @@
+=== desktop import Sat Sep  5 12:42:05 EDT 2026
+import exit 127
+=== test_quick Sat Sep  5 12:53:06 EDT 2026
+test_quick exit 0
+AUTOTEST QUICK PASS  (core systems only — run the FULL suite before staging)
+=== preflight Sat Sep  5 12:55:12 EDT 2026
+PREFLIGHT OK (IMPORT MODULES BALANCE PHYSICS RIGS ARTQA)
+=== mobile import Sat Sep  5 12:59:00 EDT 2026
+art_src/final_gates4.sh: line 6:  1987 Segmentation fault      ./tools/Godot_v4.4.1-stable_win64_console.exe --headless --path mobile/game --import > art_src/_mobile_import3.log 2>&1
+mobile import exit 139
+=== sync_mobile Sat Sep  5 13:02:42 EDT 2026
+sync exit 0
+APPLIED: 29 file(s) synced, 0 pruned.
+GATE OK: mobile quick suite passed
+=== done Sat Sep  5 13:17:21 EDT 2026
