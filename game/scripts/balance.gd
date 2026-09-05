@@ -138,8 +138,8 @@ const BOSS_STOMP_MIN_CELL := 230.0
 const MOB_WINDUP_CROUCH := 0.06
 #  BOSS_WINDUP_K / BOSS_WINDUP_LEAN — a boss holds a per-kind posture through a tell's fuse
 #  (BOSS_TELL "windup": crouch/rise/lean/coil) and snaps on release; scale.y/x delta and rad.
-const BOSS_WINDUP_K := 0.09
-const BOSS_WINDUP_LEAN := 0.13
+const BOSS_WINDUP_K := 0.11
+const BOSS_WINDUP_LEAN := 0.17
 const MOB_POUNCE_STRETCH := 0.08
 const MOB_POUNCE_LEAN_RAD := 0.12
 const MOB_DEATH_FPS := 9.0
