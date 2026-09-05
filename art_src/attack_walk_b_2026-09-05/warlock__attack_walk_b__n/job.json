@@ -1,0 +1,6 @@
+{
+ "base": "warlock",
+ "clip": "attack_walk_b",
+ "facing": "n",
+ "frames": 6
+}

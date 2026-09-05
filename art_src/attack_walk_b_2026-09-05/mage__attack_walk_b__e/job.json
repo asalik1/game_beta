@@ -1,0 +1,6 @@
+{
+ "base": "mage",
+ "clip": "attack_walk_b",
+ "facing": "e",
+ "frames": 7
+}

@@ -1,0 +1,13 @@
+{
+ "base": "slag_hound",
+ "facing": "flat",
+ "arch": "quadruped",
+ "old": "slag_hound_walk.png",
+ "frames": 6,
+ "desc": "a lean black dog of cooled slag with glowing orange lava cracks across the body, glowing orange paws, a spiked dark collar, pointed ears, a thin tail, four long legs",
+ "defect": "4 stiff poses, no trot",
+ "idle_ref": "slag_hound_anim",
+ "donor": null,
+ "donor_flipped": false,
+ "refs": 2
+}

@@ -1,0 +1,13 @@
+{
+ "base": "rime_wolf",
+ "facing": "flat",
+ "arch": "quadruped",
+ "old": "rime_wolf_walk.png",
+ "frames": 6,
+ "desc": "a large white-grey wolf with jagged pale ice-shard fur along the spine and shoulders, a dark leather collar with a hanging blue crystal pendant, pale blue eyes, a bushy tail, four lean legs",
+ "defect": "4 stiff poses, no trot",
+ "idle_ref": "rime_wolf_anim",
+ "donor": null,
+ "donor_flipped": false,
+ "refs": 2
+}

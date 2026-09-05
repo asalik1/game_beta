@@ -1,0 +1,13 @@
+{
+ "base": "skeleton_warrior",
+ "facing": "n",
+ "arch": "biped",
+ "old": "skeleton_warrior_walk_n.png",
+ "frames": 6,
+ "desc": "an armoured skeleton in dark grey plate seen from behind: pale frost-blue ice crystals on the shoulders and the back of the spiked helm, a grey chain looped around the torso, a tattered dark cloak hanging down the back, a long iron spear held upright in one bony hand, bony legs in greaves and boots; NO shield, no face visible",
+ "defect": "4 pose-steps, the same leg leading every step",
+ "idle_ref": "skeleton_warrior_anim",
+ "donor": "assassin_walk_n",
+ "donor_flipped": false,
+ "refs": 2
+}

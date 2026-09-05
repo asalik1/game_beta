@@ -1,0 +1,13 @@
+{
+ "base": "mummy",
+ "facing": "n",
+ "arch": "biped",
+ "old": "mummy_walk_n.png",
+ "frames": 6,
+ "desc": "a hunched mummy wrapped head to toe in ragged cream-tan linen bandages, the back of the bandaged hooded shroud, loose bandage ends trailing from the arms, bony wrapped legs and bare wrapped feet, hands EMPTY (no weapon, no prop)",
+ "defect": "4 pose-steps, the same leg leading every step",
+ "idle_ref": "mummy_anim",
+ "donor": "assassin_walk_n",
+ "donor_flipped": false,
+ "refs": 2
+}

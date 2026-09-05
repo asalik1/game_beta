@@ -1,0 +1,13 @@
+{
+ "base": "root_spiderling",
+ "facing": "flat",
+ "arch": "arachnid",
+ "old": "root_spiderling_walk.png",
+ "frames": 8,
+ "desc": "a stout rounded spider made of dark bark and twisted roots, a mossy green dome and a pale glowing bulb on its back, eight thick root legs with pointed tips, a small dark head with tiny eyes",
+ "defect": "4 stiff poses, legs do not cycle",
+ "idle_ref": "root_spiderling_anim",
+ "donor": "spider_walk",
+ "donor_flipped": false,
+ "refs": 3
+}

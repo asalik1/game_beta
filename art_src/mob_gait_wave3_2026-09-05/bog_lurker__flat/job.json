@@ -1,0 +1,13 @@
+{
+ "base": "bog_lurker",
+ "facing": "flat",
+ "arch": "arachnid",
+ "old": "bog_lurker_walk.png",
+ "frames": 8,
+ "desc": "a marsh spider with a moss-grown grassy dome, a pale sac on its back, eight long thin dark-brown stilt legs with a knee bend, a small dark head",
+ "defect": "4 stiff poses, legs do not cycle; one frame has a floating leg segment",
+ "idle_ref": "bog_lurker_anim",
+ "donor": "spider_walk",
+ "donor_flipped": false,
+ "refs": 3
+}

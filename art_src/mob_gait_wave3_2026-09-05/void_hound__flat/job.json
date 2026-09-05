@@ -1,0 +1,13 @@
+{
+ "base": "void_hound",
+ "facing": "flat",
+ "arch": "quadruped",
+ "old": "void_hound_walk.png",
+ "frames": 6,
+ "desc": "a sleek greyhound-thin black hound with a glowing purple void slit along its flank and a purple-lit open mouth, a long thin tail, long slender legs, no collar",
+ "defect": "4 stiff poses, no trot",
+ "idle_ref": "void_hound_anim",
+ "donor": null,
+ "donor_flipped": false,
+ "refs": 2
+}

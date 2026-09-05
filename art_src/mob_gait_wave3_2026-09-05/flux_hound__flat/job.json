@@ -1,0 +1,13 @@
+{
+ "base": "flux_hound",
+ "facing": "flat",
+ "arch": "quadruped",
+ "old": "flux_hound_walk.png",
+ "frames": 6,
+ "desc": "a heavy four-legged hound of cracked black rock, its seams glowing blue-violet with orange ember veins, a ridge of dark spines along the back, a blunt muzzle, a short thick tail, thick legs with clawed paws",
+ "defect": "4 stiff poses, no trot",
+ "idle_ref": "flux_hound_anim",
+ "donor": null,
+ "donor_flipped": false,
+ "refs": 2
+}

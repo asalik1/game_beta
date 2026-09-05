@@ -1,0 +1,6 @@
+{
+ "strip": "game\\assets\\sprites\\warrior_walk_e.png",
+ "part_ref": "game/assets/sprites/warrior_anim_e.png",
+ "frames": 6,
+ "change": "the SWORD. In the current row it is a thin, dim, plain blade that changes size from frame to frame. It must be the FLAMING GREATSWORD of reference 2 in every frame: the same broad dark blade with orange-gold lava veins, wreathed in orange flame along its whole length, the same length relative to the body as in reference 2, held in the same hand and hanging at the same angle as it does in each frame of reference 1. Same size and same flames in all 6 frames."
+}

@@ -1,0 +1,13 @@
+{
+ "base": "fangmaw",
+ "facing": "flat",
+ "arch": "quadruped",
+ "old": "fangmaw_walk.png",
+ "frames": 6,
+ "desc": "a hulking black boar-hound boss with a ridge of bristling dark spines along the whole back, a broad head with curved pale tusks at the jaw and small red eyes, four thick legs, a short tail, heavy shoulders",
+ "defect": "4 stiff poses, no trot",
+ "idle_ref": "fangmaw_anim_codex",
+ "donor": null,
+ "donor_flipped": false,
+ "refs": 2
+}

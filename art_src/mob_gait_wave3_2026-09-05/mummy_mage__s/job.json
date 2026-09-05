@@ -1,0 +1,13 @@
+{
+ "base": "mummy_mage",
+ "facing": "s",
+ "arch": "biped",
+ "old": "mummy_mage_walk_s.png",
+ "frames": 6,
+ "desc": "a squat mummified priest in a dark-brown bandaged floor-length robe, a flat-topped bandage-wrapped head with a bandaged face showing only dark eye slits, a tall bronze staff with a three-pronged trident head held upright in one hand, a small bronze lantern hanging on a short chain from the other hand, wrapped feet showing below the hem",
+ "defect": "4 pose-steps, the same leg leading every step",
+ "idle_ref": "mummy_mage_anim",
+ "donor": "assassin_walk_s",
+ "donor_flipped": false,
+ "refs": 3
+}

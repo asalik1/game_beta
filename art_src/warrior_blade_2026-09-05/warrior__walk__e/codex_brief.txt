@@ -1,0 +1,21 @@
+Reproduce this animation row EXACTLY, with ONE change.
+
+Reference 1 is the current 6-frame clip, laid out as a row (frame 1 at the left). Every frame's
+pose, the walk/leg positions, the body height, the garment, the palette and the position of
+every figure in the row are CORRECT and must be reproduced as they are -- this is a surgical
+edit, not a redraw. The armour, helm, pauldrons, tabard, boots, palette, and the exact leg positions of each frame stay as they are.
+
+THE ONLY CHANGE: the SWORD. In the current row it is a thin, dim, plain blade that changes size from frame to frame. It must be the FLAMING GREATSWORD of reference 2 in every frame: the same broad dark blade with orange-gold lava veins, wreathed in orange flame along its whole length, the same length relative to the body as in reference 2, held in the same hand and hanging at the same angle as it does in each frame of reference 1. Same size and same flames in all 6 frames.
+Reference 2 shows how that part must look (take its shape, size, colours and glow from there).
+Apply the change consistently in EVERY frame: same size, same detail, same colours, only its
+position/angle following the pose of that frame. Nothing else about any frame changes.
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures in the same order and spacing as
+reference 1, all the same size, green margins all round, no figure touching an edge or its
+neighbour. Flat solid #00ff00 GREEN background, nothing else in the image.
+Generate ONE image and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\warrior_blade_2026-09-05\warrior__walk__e\warrior_walk_e_row.png
+then stop.
+
+In your final message, list per frame what changed (it should be only the part named above) and
+confirm the poses, leg positions and body sizes match reference 1 frame for frame.
