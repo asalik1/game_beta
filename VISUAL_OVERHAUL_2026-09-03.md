@@ -10,7 +10,7 @@ are the merge gates and are recorded at the bottom).
 ## How to review
 
 - **Before/after GIFs** of every changed sprite: `~/Downloads/ba_gifs_visual_overhaul/`
-  (397, built by `tools/art/ba_gifs.py --base 7fd27a4`). Palette-quantized and
+  (417, built by `tools/art/ba_gifs.py --base 7fd27a4`). Palette-quantized and
   above game scale — for CHANGE review, not colour judgement.
 - **Travel GIFs** (old vs new walk over scrolling ground at the mob's real
   speed): `~/Downloads/travel_gifs_visual_overhaul/` (zombie, royal_knight,
