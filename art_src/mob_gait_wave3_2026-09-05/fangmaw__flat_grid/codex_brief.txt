@@ -1,0 +1,36 @@
+Redraw a 6-frame walk cycle of THIS creature (reference 1), walking LEFT, with the gait storyboarded below.
+
+THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not
+change): a hulking black boar-hound boss with a ridge of bristling dark spines along the whole back, a broad head with curved pale tusks at the jaw and small red eyes, four thick legs, a short tail, heavy shoulders
+crisp hi-res dark-fantasy game sprite, muted palette, no black outlines. Every piece of equipment stays exactly where reference 1 shows it in every
+frame -- nothing swaps sides, changes shape or disappears. Same height, same width,
+same palette in every frame.
+
+THE WALK:
+A real four-legged TROT, storyboarded per frame (the diagonal pairs alternate):
+- frame 1: the NEAR foreleg and the FAR hind leg reach forward, off the ground, knees
+  and hocks clearly bent; the other diagonal pair is planted under the body and
+  angled back, pushing.
+- frame 2: the reaching pair lands, the body passes over it; all four legs are
+  briefly under the body, the two planted legs close together (the passing moment).
+- frame 3: the FAR foreleg and the NEAR hind leg reach forward, off the ground with
+  bent joints, while the first pair now trails and pushes back -- the mirror of
+  frame 1 with the OTHER legs.
+- frame 4: that pair lands and the body passes over it (the mirror of frame 2).
+(with 6 frames: insert a mid-swing frame after 1 and after 3 -- legs half-extended,
+joints bending; with 8: also a full-extension frame in each half.)
+- Legs BEND at every joint as they swing; the planted legs are angled under the body,
+  never stiff vertical posts. The spine flexes a little with the stride, the head
+  dips slightly on landing, the tail sways.
+- The paws sit on ONE shared ground line; the body's height stays constant.
+FORBIDDEN: all four legs straight and vertical; the same legs leading in both halves
+of the row; two frames with identical legs; the body sliding up/down; extra legs.
+Reference 2 is the CURRENT walk being replaced -- use it only to see the character from this angle and its equipment; its leg motion is the defect (4 stiff poses, no trot).
+
+Produce ONE image laid out as TWO ROWS of 3 figures each: frames 1-3 left to right on the top row, frames 4-6 left to right on the bottom row. Make every figure as LARGE as the image allows (each figure roughly 900 pixels wide), all 6 at one identical scale, all feet on one shared ground line per row, each figure centred in its cell, generous green margins between figures and around the image edges -- no figure touching another figure or an edge. Flat solid #00ff00 GREEN background,
+nothing else in the image. Generate ONE image and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_wave3_2026-09-05\fangmaw__flat_grid\fangmaw_walk_flat_grid.png
+then stop.
+
+In your final message report, for each frame 1-6: which leg (or leg pair) leads and which joints are bent, and how much (slight / clear / deep)
+Report any repeated pose, and whether the body stayed cell-centred and at constant height.

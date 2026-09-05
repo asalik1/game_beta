@@ -138,6 +138,25 @@ Verified but NOT fixed (owner's eye / cheap later):
 - Left as-is (P3): wolf/rotmaw/veyx/duneprowler/casket hue nits, cultist boot swap,
   fungus_heavy N 8% small, stone_base pebble blink, korrag spiked-ball reinterpretation.
 
+## 7. Wave 3 (2026-09-05): the rest of the placed 4-frame walks + fire-on-move alternates
+
+- **Fire-on-move `attack_walk_b`** for the base mage, warlock and assassin (S/E/N, copies +
+  mirrors, flat = S): the alternate the owner asked for on 08-23 and the base classes never
+  had — mage rising flick, warlock two-hand shove, assassin sidearm flick. Mage + assassin
+  installed; the warlock's first rolls dropped his grimoire during the shove and are
+  re-rolled with the book pushed between both hands (fix-up batch).
+- **Warrior walk E/W**: the flaming greatsword had dimmed to a plain thin blade that changed
+  size frame to frame; edit-in-place roll (`tools/art/edit_in_place_brief.py`: reproduce the
+  row, change only the sword) — the gait the owner approved is untouched.
+- **Wave-3 gait regens (17 rows)**: mummy S/E/N, mummy_mage S/E/N, skeleton_warrior E/N
+  (S re-rolled in the fix-up batch — its job died), rat_mage, flux_hound, rime_wolf,
+  slag_hound, void_hound, fangmaw, root_spiderling, bog_lurker — 4-frame pose-steps → 6/8-frame
+  strides/trots. fangmaw + bog_lurker were rolled as rows at 560-627px cells and upscaled
+  1.5× at install; two-row grid re-requests are queued and replace them if they land.
+- Remaining 4-frame placed walks are gliders/floaters by design (banshee, word_wisp,
+  waking_shard, verdict_drone, pollen_drifter, riftling, elara_vessel, static_caller, vess,
+  null_acolyte, skeleton_mage, forgemistress, sexton, morwen) — a drift loop is correct there.
+
 ## Open / not done
 
 - **Mage E column DONE**: anim/walk/attack/cast E regenerated as a true right
