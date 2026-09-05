@@ -4,3 +4,4 @@ C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/attack_
 C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/mob_gait_wave3_2026-09-05/fangmaw__flat_grid
 C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/mob_gait_wave3_2026-09-05/bog_lurker__flat_grid
 C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/mob_gait_wave3_2026-09-05/skeleton_warrior__s
+C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/mob_gait_wave6_2026-09-05/cinderhide__flat

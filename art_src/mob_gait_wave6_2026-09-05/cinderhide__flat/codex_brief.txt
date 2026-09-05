@@ -1,7 +1,7 @@
 Redraw a 6-frame walk cycle of THIS creature (reference 1), walking LEFT, with the gait storyboarded below.
 
 THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not
-change): an emaciated black hound boss with its pale ribcage and spine exposed through the hide, rusted chains hanging from a collar at its neck, glowing red eyes, a jagged ridge of short spines along the back, a long thin tail, four lean legs with clawed paws
+change): a massive three-headed hound of black volcanic rock cracked all over with glowing orange-red lava veins, three snarling heads side by side (the central one crowned with pale curved horns), glowing red eyes and fanged open jaws on every head, a bulky muscular body, four thick clawed legs, a short spiked tail
 crisp hi-res dark-fantasy game sprite, muted palette, no black outlines. Every piece of equipment stays exactly where reference 1 shows it in every
 frame -- nothing swaps sides, changes shape or disappears. Same height, same width,
 same palette in every frame.
@@ -27,9 +27,9 @@ FORBIDDEN: all four legs straight and vertical; the same legs leading in both ha
 of the row; two frames with identical legs; the body sliding up/down; extra legs.
 Reference 2 is the CURRENT walk being replaced -- use it only to see the character from this angle and its equipment; its leg motion is the defect (4 stiff poses, no trot).
 
-Produce ONE image laid out as TWO ROWS of 3 figures each: frames 1-3 left to right on the top row, frames 4-6 left to right on the bottom row. Make every figure as LARGE as the image allows (each figure roughly 900 pixels wide), all 6 at one identical scale, all feet on one shared ground line per row, each figure centred in its cell, generous green margins between figures and around the image edges -- no figure touching another figure or an edge. Flat solid #00ff00 GREEN background,
+Produce ONE image laid out as TWO ROWS: frames 1-3 left to right on the top row, frames 4-6 left to right on the bottom row. Make every figure as LARGE as the image allows (each figure roughly 900 pixels across its longest side), all at one identical scale, all feet on one shared ground line per row, each figure centred in its cell, generous green margins between figures and around the image edges -- no figure touching another figure or an edge. Flat solid #00ff00 GREEN background,
 nothing else in the image. Generate ONE image and SAVE it to disk at the exact path
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_wave3_2026-09-05\fangmaw__flat_grid\fangmaw_walk_flat_grid.png
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_wave6_2026-09-05\cinderhide__flat\cinderhide_walk_flat_grid.png
 then stop.
 
 In your final message report, for each frame 1-6: which leg (or leg pair) leads and which joints are bent, and how much (slight / clear / deep)

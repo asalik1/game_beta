@@ -1,0 +1,11 @@
+[
+ {
+  "base": "cinderhide",
+  "facing": "flat",
+  "arch": "quadruped",
+  "old": "cinderhide_walk.png",
+  "frames": 6,
+  "desc": "a massive three-headed hound of black volcanic rock cracked all over with glowing orange-red lava veins, three snarling heads side by side (the central one crowned with pale curved horns), glowing red eyes and fanged open jaws on every head, a bulky muscular body, four thick clawed legs, a short spiked tail",
+  "defect": "4 stiff poses, no trot"
+ }
+]
