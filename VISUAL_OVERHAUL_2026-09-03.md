@@ -166,6 +166,19 @@ Verified but NOT fixed (owner's eye / cheap later):
   wave-1 rows slid (per-frame lifted-side metric in `tools/art/gait_metrics.py`; the old
   rows are in `art_src/mob_gait_wave5_2026-09-05/old_backup/`).
 
+## 9. Corpus seam sweep (2026-09-05): off-grid idles and walks
+
+A scan of every enemy's idle-vs-walk seam (centre, feet, luminance, body size, per-frame
+jitter) found a whole class the earlier audits only met once (nullwarden): **older 4-frame
+idles and walks sliced off the frame grid**, so the figure slides 15-30% of the cell across
+the loop (storm_adept, bannerman, drowned_warden, archon_vassik, the choir_* set, ~70
+idles and ~100 legacy walks — mostly Act-2/capital reserve bodies). Fixed with
+`tools/art/recenter_strip.py --apply` on 68 idles + 97 legacy walks (feet-band anchor;
+backups in `art_src/_backups/recenter/`). Walks produced by the gait-transfer lane were
+left torso-anchored (the feet-band anchor would add torso wobble to a real stride).
+Two idles still report a 4-6px residual (grove_horror, nullwarden) and bannerman's 4th
+idle frame was already clipped in the source (a regen would be needed to recover it).
+
 ## Open / not done
 
 - **Mage E column DONE**: anim/walk/attack/cast E regenerated as a true right
