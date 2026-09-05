@@ -1,0 +1,17 @@
+codex = C:\Users\asali\AppData\Local\OpenAI\Codex\bin\9ba750cce02d5e5c\codex.exe
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\warlock__attack_walk_b__s_v2 (1 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\warlock__attack_walk_b__e_v2 (1 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\warlock__attack_walk_b__n_v2 (1 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_wave3_2026-09-05\fangmaw__flat_grid (2 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_wave3_2026-09-05\bog_lurker__flat_grid (3 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_wave3_2026-09-05\skeleton_warrior__s (3 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_wave6_2026-09-05\cinderhide__flat (2 refs)
+launched 7 codex jobs
+OK   C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/attack_walk_b_2026-09-05/warlock__attack_walk_b__s_v2  (result 834 bytes)
+OK   C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/attack_walk_b_2026-09-05/warlock__attack_walk_b__e_v2  (result 707 bytes)
+OK   C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/attack_walk_b_2026-09-05/warlock__attack_walk_b__n_v2  (result 746 bytes)
+OK   C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/mob_gait_wave3_2026-09-05/fangmaw__flat_grid  (result 1515 bytes)
+OK   C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/mob_gait_wave3_2026-09-05/bog_lurker__flat_grid  (result 1251 bytes)
+OK   C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/mob_gait_wave3_2026-09-05/skeleton_warrior__s  (result 1094 bytes)
+OK   C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/mob_gait_wave6_2026-09-05/cinderhide__flat  (result 1211 bytes)
+batch complete

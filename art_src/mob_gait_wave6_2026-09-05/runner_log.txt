@@ -1,0 +1,5 @@
+codex = C:\Users\asali\AppData\Local\OpenAI\Codex\bin\9ba750cce02d5e5c\codex.exe
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mob_gait_wave6_2026-09-05\cinderhide__flat (2 refs)
+launched 1 codex jobs
+OK   C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/mob_gait_wave6_2026-09-05/cinderhide__flat  (result 1211 bytes)
+batch complete
