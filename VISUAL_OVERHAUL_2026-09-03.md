@@ -179,6 +179,6 @@ Verified but NOT fixed (owner's eye / cheap later):
 ## Gates
 
 - Every commit: compile gate + `test_quick` green.
-- Full suite: **AUTOTEST PASS, 172 sections, exit 0** (2026-09-04, on the tree at 252547e: all motion/tell code + the art up to that point).
-- preflight --fast: **0 fail apart from the pending --import** (MODULES BALANCE PHYSICS RIGS ARTQA all clean).
-- Mobile: (recorded below)
+- Full suite: **AUTOTEST PASS, 172 sections, exit 0** (2026-09-04, on the tree at 252547e: all motion/tell code + the art up to that point). Every commit after it changes PNGs, art tools and docs only (no game script changed), each gated by `test_quick`.
+- Final desktop pass (2026-09-05, after the last install): `--import` exit 0, **AUTOTEST QUICK PASS**, **PREFLIGHT OK** (IMPORT MODULES BALANCE PHYSICS RIGS ARTQA).
+- Mobile: `sync_mobile.py --apply --gate` → **APPLIED 312 + 29 files, GATE OK (mobile compile 121 scripts + quick suite passed)** 2026-09-05. Note for the next sync after a big PNG batch: the gate's first `--import` can exceed its 600s watchdog; run the mobile import by hand once, then re-run the gate.

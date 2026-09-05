@@ -273,7 +273,42 @@ func _boss_telegraph(pos: Vector2, radius: float, delay: float, damage: float,
 	var audio_opts: Dictionary = opts.duplicate()
 	if not audio_opts.has("impact_sfx"):
 		audio_opts["impact_sfx"] = _boss_impact_sfx()
+	_apply_tell_style(audio_opts, pos)
 	game.telegraph(pos, radius, delay, damage, audio_opts)
+
+
+## Merge this boss's Balance.BOSS_TELL row into a tell's opts — the same choke
+## point (and the same merge shape) `impact_sfx` above already rides, so every
+## one of the 47 call sites and the codex Transform preview get it for free.
+## The table owns the HUE (seven bosses shared one pale blue; that is the
+## defect) but keeps the call site's alpha, which encodes intensity; shape/arc/
+## width are defaults a call site may override, and "color_locked" opts out.
+func _apply_tell_style(o: Dictionary, pos: Vector2) -> void:
+	var style: Dictionary = Balance.BOSS_TELL.get(kind, {})
+	if style.is_empty():
+		return
+	for k: String in style:
+		if k == "color":
+			if bool(o.get("color_locked", false)):
+				continue
+			var c: Color = style["color"]
+			var prev: Variant = o.get("color", null)
+			var a: float = (prev as Color).a if prev is Color else 0.55
+			o["color"] = Color(c.r, c.g, c.b, a)
+		elif not o.has(k):
+			o[k] = style[k]
+	# A wedge or a bar needs an aim. Nothing passes one today, and a fixed
+	# default would point every cone due east, so derive it: the boss is
+	# aiming from itself at the tell, and a tell centred ON the boss (a nova
+	# it grew a shape for) aims at its prey instead.
+	if String(o.get("shape", "disc")) in ["cone", "line", "cross"] and not o.has("dir"):
+		var d := pos - global_position
+		if d.length() < 8.0:
+			var prey: Player = _get_target()
+			d = (prey.global_position - global_position) if is_instance_valid(prey) \
+				else Vector2(-1.0 if sprite != null and sprite.flip_h else 1.0, 0.0)
+		if d.is_finite() and d != Vector2.ZERO:
+			o["dir"] = d.normalized()
 
 
 ## DEV-MORPH preview fire (dev_morph.gd only): spawn this action's REAL
@@ -457,6 +492,7 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 			add.gold_value = 0  # must not farm the fight
 			add.force_aggro = true
 			game.add_enemy(add)
+			add.spawn_in()
 
 	if ability_cd <= 0.0 and dist < 500.0 and not telegraphing:
 		telegraphing = true
@@ -722,6 +758,7 @@ func _stormwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 			add.gold_value = 0
 			add.force_aggro = true
 			game.add_enemy(add)
+			add.spawn_in()
 
 	if hp <= max_hp * 0.3 and not enraged:
 		enraged = true
@@ -801,6 +838,7 @@ func _choirmother(_player: Player, to_player: Vector2, dist: float) -> Vector2:
 			add.gold_value = 0
 			add.force_aggro = true
 			game.add_enemy(add)
+			add.spawn_in()
 
 	# Signature: REQUIEM — three rings of blight ripple OUT from her.
 	if special_cd <= 0.0:
@@ -990,6 +1028,7 @@ func _sexton(player: Player, to_player: Vector2, dist: float, delta: float) -> V
 			add.gold_value = 0
 			add.force_aggro = true
 			game.add_enemy(add)
+			add.spawn_in()
 			tracked_adds.append(add)
 			game.burst(at, GRAVE, 12)
 
@@ -1310,6 +1349,7 @@ func _spawn_censers() -> void:
 		cens.attack_cd = 1.0e9   # scenery that bleeds: it never swings
 		cens.aggro_range = 0.0   # and never alerts — kill it or don't
 		game.add_enemy(cens)
+		cens.spawn_in()
 		censers.append(cens)
 		game.burst(at, INCENSE, 10)
 
@@ -1840,6 +1880,7 @@ func _spawn_sons() -> void:
 		son.speed = 0.0        # driven manually toward Ordo (not the player)
 		son.aggro_range = 0.0  # they ignore you; you choose to stop them
 		game.add_enemy(son)
+		son.spawn_in()
 		sons.append(son)
 		game.burst(at, VERDICT, 10)
 
@@ -1993,6 +2034,7 @@ func _whitepelt(player: Player, to_player: Vector2, dist: float, delta: float) -
 			add.gold_value = 0
 			add.force_aggro = true
 			game.add_enemy(add)
+			add.spawn_in()
 
 	# Imposed floor (r51 kite answer): a frost stomp cracks the ground under
 	# the prey on a steady beat, whatever the range — his answer to a kiter
@@ -2231,6 +2273,7 @@ func _spawn_dreamers() -> void:
 		dr.speed = 0.0        # driven manually toward Halla (not the player)
 		dr.aggro_range = 0.0
 		game.add_enemy(dr)
+		dr.spawn_in()
 		dreamers.append(dr)
 		game.burst(at, FROST, 8)
 
@@ -2385,6 +2428,7 @@ func _submerge(_player: Player) -> void:
 		add.gold_value = 0
 		add.force_aggro = true
 		game.add_enemy(add)
+		add.spawn_in()
 	await get_tree().create_timer(2.2).timeout
 	if dying or not burrowed:
 		return
@@ -2466,6 +2510,7 @@ func _sprout_blooms() -> void:
 		bloom.attack_cd = 1.0e9
 		bloom.aggro_range = 0.0
 		game.add_enemy(bloom)
+		bloom.spawn_in()
 		blooms.append(bloom)
 		game.burst(at, ROOTC, 8)
 
@@ -2620,6 +2665,7 @@ func _spawn_roots() -> void:
 		r.attack_cd = 1.0e9
 		r.aggro_range = 0.0
 		game.add_enemy(r)
+		r.spawn_in()
 		roots.append(r)
 		game.burst(at, ROOTC, 8)
 
@@ -2774,6 +2820,7 @@ func _spawn_rods() -> void:
 		rod.attack_cd = 1.0e9
 		rod.aggro_range = 0.0
 		game.add_enemy(rod)
+		rod.spawn_in()
 		rods.append(rod)
 		game.burst(at, STORMC, 8)
 
@@ -2846,6 +2893,7 @@ func _unnaming(player: Player) -> void:
 		var c := Enemy.make(game, "echo_clone", at, level)
 		c.force_aggro = true
 		game.add_enemy(c)
+		c.spawn_in()
 		clones.append(c)
 		game.burst(at, VOIDC, 8)
 
@@ -2975,6 +3023,7 @@ func _spawn_vowkeepers() -> void:
 		v.speed = 0.0        # driven manually toward Cyrraeth (LET them through)
 		v.aggro_range = 0.0
 		game.add_enemy(v)
+		v.spawn_in()
 		vowkeepers.append(v)
 		game.burst(at, STORMC, 8)
 

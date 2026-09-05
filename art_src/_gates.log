@@ -1,0 +1,18 @@
+=== import done Fri Sep  4 02:59:19 EDT 2026
+ERROR: Parameter "p_ptr" is null.
+   at: free_static (core/os/memory.cpp:179)
+=== test_quick Fri Sep  4 02:59:20 EDT 2026
+test_quick exit 0
+=== preflight Fri Sep  4 03:01:28 EDT 2026
+PREFLIGHT OK (IMPORT MODULES BALANCE PHYSICS RIGS ARTQA)
+=== sync_mobile Fri Sep  4 03:05:13 EDT 2026
+sync exit 1
+kept    assets\sprites\auroch_anim_nw.png.import  (re-run with --prune to delete; git-recoverable)
+kept    assets\sprites\auroch_anim_s.png.import  (re-run with --prune to delete; git-recoverable)
+kept    assets\sprites\auroch_anim_se.png.import  (re-run with --prune to delete; git-recoverable)
+kept    assets\sprites\auroch_anim_sw.png.import  (re-run with --prune to delete; git-recoverable)
+kept    assets\sprites\auroch_anim_w.png.import  (re-run with --prune to delete; git-recoverable)
+kept    assets\sprites\tree_tall_autumn.png.import  (re-run with --prune to delete; git-recoverable)
+--gate: importing (close the Godot editor if it's open -- --import contends) ...
+GATE FAIL: --import did not finish in 600s (fresh .godot? churning disk? run it by hand once, then re-run --gate)
+=== done Fri Sep  4 03:20:05 EDT 2026

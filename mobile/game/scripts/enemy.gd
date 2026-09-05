@@ -91,6 +91,27 @@ var anim_frames := 0
 var anim_fps := 6.0
 var anim_t := 0.0
 var _gait_rate := 1.0  # per-instance stride-rate personality (lane 1b; set with stats)
+# Stride-locked juice + COMPOSED transforms (visual overhaul 2026-09-03): every
+# per-frame write to sprite.scale / position / rotation goes through
+# _render_tail as multipliers over _scale_base (the strip's normalized scale
+# from _apply_strip), so the hit squash, a windup crouch, the walk bounce, a
+# spawn-in and the death collapse never stomp each other or a strip swap —
+# and a persistent visual rescale (elite, weakling spawn) survives swaps.
+var _scale_base := Vector2.ONE
+var _squash_k := 0.0        # hit squash amount (tweened float, feet pinned)
+var _pose_y := 0.0          # transient crouch (-) / stretch (+) on scale.y, decays
+var _pose_x := 0.0          # ... and on scale.x
+var _spawn_k := 0.0         # spawn-in growth 1 -> 0 (mid-fight summons only)
+var _death_k := 0.0         # sheetless death collapse 0 -> 1
+var _lean := 0.0            # eased travel lean (rad)
+var _gait_shape := "biped"  # Art.gait_shape(sprite key): biped | quad | glide
+var _steps := 0.0           # contact counter (footfall dust / boss stomp)
+var _dir_t := 0.0           # seconds since the last 8-direction strip swap
+var _face_lp := Vector2.ZERO  # low-passed aim for the 8-direction pick
+var _action_hold := false   # one-shot strip latches its last frame (death)
+static var _dust_tick := -1  # footfall-dust budget: physics frame + puffs so far
+static var _dust_n := 0
+static var _headless_cached := -1
 # Walk/idle split: swap strips on movement when a _walk strip exists.
 var _strip_idle := {}
 var _strip_walk := {}
@@ -368,10 +389,12 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1,
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	art_scale = float(stats["scale"]) * size_var
 	_sprite_key = stats["sprite"]
+	_gait_shape = Art.gait_shape(_sprite_key)
 	var anim := Art.anim_info(stats["sprite"])
 	if anim.is_empty():
 		sprite.texture = Art.tex(stats["sprite"])
 		sprite.scale = Art.scale_for(sprite.texture, art_scale * render_mult)
+		_scale_base = sprite.scale
 	else:
 		# Animated override strip (Track C seam): same Sprite2D, hframes on.
 		_strip_idle = anim
@@ -507,7 +530,6 @@ func _facing_vec() -> Vector2:
 
 ## Point the Sprite2D at an idle/walk strip (hframes + normalized scale).
 func _apply_strip(info: Dictionary, is_action := false) -> void:
-	_end_squash()   # a strip swap rewrites the scale below; never over a live squash
 	sprite.texture = info["tex"]
 	var frames := int(info["frames"])
 	sprite.hframes = frames
@@ -535,7 +557,10 @@ func _apply_strip(info: Dictionary, is_action := false) -> void:
 	# below keeps the ground point fixed.
 	var ref := _body_cell if body_scaled and cell >= _body_cell else cell
 	var s := art_scale * render_mult * 16.0 / ref
-	sprite.scale = Vector2(s, s)
+	# The base the render tail composes its multipliers over (squash / bounce /
+	# crouch ride on top next tick; a swap no longer has to kill a live squash).
+	_scale_base = Vector2(s, s)
+	sprite.scale = _scale_base
 	# Re-anchor an oversized ability cell onto the idle body. The naive
 	# center-align (-(cell-ref)/2) keeps the feet put ONLY when the ability's
 	# feet sit at the same distance from the cell bottom as the idle's — true
@@ -689,8 +714,10 @@ func swap_sprite(new_key: String) -> void:
 		return
 	_end_squash()
 	_sprite_key = new_key
+	_gait_shape = Art.gait_shape(new_key)
 	_strip_action = {}
 	_action_dir = {}
+	_action_hold = false
 	_strip_walking = false
 	_cur_dir = "s"
 	_body_cell = 0.0
@@ -702,6 +729,7 @@ func swap_sprite(new_key: String) -> void:
 		_dir_walk = {}
 		sprite.texture = Art.tex(new_key)
 		sprite.scale = Art.scale_for(sprite.texture, art_scale * render_mult)
+		_scale_base = sprite.scale
 	else:
 		_strip_idle = anim
 		_strip_walk = {} if Art.mob_idle_only_locomotion(new_key) \
@@ -772,13 +800,17 @@ func _advance_action_anim(delta: float) -> void:
 	_action_t += delta
 	var idx := int(_action_t * anim_fps)
 	if idx >= anim_frames:
-		_end_action()
+		if _action_hold:
+			sprite.frame = anim_frames - 1   # death strips latch their last frame
+		else:
+			_end_action()
 	else:
 		sprite.frame = idx
 
 
 func _physics_process(delta: float) -> void:
 	if dying:
+		_tick_dying(delta)   # death clip + collapse keep composing until the fade frees us
 		return
 	# Only occupied rooms simulate: monsters elsewhere stand frozen
 	# (zone_idx -1 — test dummies, boss adds, event spawns — always runs).
@@ -797,7 +829,12 @@ func _physics_process(delta: float) -> void:
 	if net_mirror:
 		_net_mirror_tick(delta)
 		return
-	anim_t += delta
+	# The idle breathes in real time; the WALK clock lives in _loco_tick and
+	# rides the live speed ratio in full (visual overhaul 2026-09-03 — this
+	# base tick used to run under the stride tick too, so a 0.35 slow only
+	# slowed the legs to 67 %).
+	if not _moving_anim:
+		anim_t += delta
 	attack_cd = maxf(0.0, attack_cd - delta)
 	knock = knock.move_toward(Vector2.ZERO, 900.0 * delta)
 	# NaN scrub (owner, wolves stranded at (nan,nan), 2026-08-19). A single
@@ -887,6 +924,7 @@ func _physics_process(delta: float) -> void:
 		sprite.modulate = base_mod
 		velocity = knock
 		move_and_slide()
+		_render_tail(delta, false)
 		return
 
 	# Bite wind-up: the monster flashes yellow, then snaps. Gives the
@@ -894,13 +932,19 @@ func _physics_process(delta: float) -> void:
 	if windup > 0.0:
 		_advance_action_anim(delta)
 		windup -= delta
+		# Art-free body reaction (visual overhaul 2026-09-03): a feet-pinned
+		# crouch under the yellow tell that SNAPS tall on the bite — most
+		# melee mobs have no attack strip and used to freeze on a walk frame.
+		_pose_y = -Balance.MOB_WINDUP_CROUCH
 		if windup <= 0.0:
+			_pose_y = Balance.MOB_WINDUP_CROUCH
 			sprite.modulate = base_mod
 			var player: Player = _get_target()
 			if player and not player.dead and global_position.distance_to(player.global_position) < 64.0:
 				player.take_damage(_hit_dmg(), dmg_type, self)
 		velocity = knock
 		move_and_slide()
+		_render_tail(delta, false)
 		return
 
 	var move := _think(delta)
@@ -921,12 +965,16 @@ func _physics_process(delta: float) -> void:
 		_moving_anim = false
 	elif not _moving_anim and spd > 34.0:
 		_moving_anim = true
-	# Stride↔ground coupling (robotic-walk fix 2026-08-27): walk fps is tuned
-	# at the species' cruise `speed` — advance the walk clock at the live
-	# ratio so slows, hazard ice, frenzy/swift and half-pace wander stop
-	# skating the feet over the floor. 1.0 at full chase, so tuned looks hold.
-	var stride_dt := delta if speed <= 0.0 else delta * clampf(spd / speed,
-		Balance.STRIDE_RATE_MIN, Balance.STRIDE_RATE_MAX)
+	# Stride↔ground coupling (robotic-walk fix 2026-08-27, completed
+	# 2026-09-03): walk fps is tuned at the species' cruise `speed` — advance
+	# the walk clock at the live ratio so slows, hazard ice, frenzy/swift and
+	# half-pace wander stop skating the feet over the floor. The WHOLE walk
+	# clock now rides the ratio (MOB_WALK_CLOCK is the cruise multiplier the
+	# base tick used to contribute, so cruise looks identical while a 0.35
+	# slow finally plays at 35 % instead of 67 %).
+	var stride_dt := delta * Balance.MOB_WALK_CLOCK
+	if speed > 0.0:
+		stride_dt *= clampf(spd / speed, Balance.STRIDE_RATE_MIN, Balance.STRIDE_RATE_MAX)
 	# Humanize (lane 1b): per-instance rate personality — constant per mob, so
 	# no in-cycle unevenness (a timing warp was tried and removed 2026-08-27:
 	# held frames over constant translation read as locked-but-moving).
@@ -950,6 +998,8 @@ func _physics_process(delta: float) -> void:
 			# walk-state flip OR whenever we're arriving from the directional path.
 			var want_walk := _moving_anim and not _strip_walk.is_empty()
 			if want_walk != _strip_walking or _cur_dir != "":
+				if want_walk and not _strip_walking:
+					_enter_walk_on_contact()
 				_strip_walking = want_walk
 				_cur_dir = ""  # clear the directional latch; a later walk re-picks
 				_apply_strip(_strip_walk if want_walk else _strip_idle)
@@ -960,9 +1010,11 @@ func _physics_process(delta: float) -> void:
 			# Pick the strip for facing + walk state; swap only when one
 			# changes (the frame clock keeps running — _apply_strip's frame=0
 			# is overwritten on the next line).
-			var nd := Art.dir8_suffix(_facing_vec())
+			var nd := _dir8_stable(delta)
 			var dset: Dictionary = _dir_walk if (_moving_anim and not _dir_walk.is_empty()) else _dir_idle
 			if nd != _cur_dir or _moving_anim != _strip_walking:
+				if _moving_anim and not _strip_walking:
+					_enter_walk_on_contact()
 				_cur_dir = nd
 				_strip_walking = _moving_anim
 				_apply_strip(dset[nd])
@@ -995,11 +1047,245 @@ func _physics_process(delta: float) -> void:
 		or (not _moving_anim and not _dir_idle.is_empty())
 	if os != 0.0 and _action_dir.is_empty() and (not directional_loco or not _strip_action.is_empty()):
 		sprite.flip_h = (os > 0.0) if face_left else (os < 0.0)
-	# Walk bob removed (old artifact); hover_amp>0 still levitates (Varo throne).
+	_render_tail(delta, _moving_anim)
+
+
+## ------------------------------------------------------- render tail ---
+## THE one place a mob/boss body writes sprite.scale / position / rotation
+## per frame (visual overhaul 2026-09-03). Everything transient — the walk
+## bounce, a travel lean, the hit squash, a windup crouch, a pounce stretch,
+## the spawn-in, the death collapse — is a MULTIPLIER over `_scale_base`
+## (the strip's normalized scale, rewritten by every _apply_strip), so:
+##   * a strip swap mid-squash can no longer strand a stale scale (the old
+##     _apply_strip had to kill the tween),
+##   * a persistent visual rescale (elite, weakling spawn) survives swaps
+##     because it lives in `art_scale`, not in a one-off sprite.scale write,
+##   * two effects at once compose instead of stomping each other.
+## The gait phase comes from the SAME expression that picks the frame
+## (anim_t * anim_fps), so a rise always lands on the same frames — never a
+## free-running sine (balance.gd's rule, learned on the hero lane).
+func _render_tail(delta: float, moving: bool) -> void:
+	if sprite == null or sprite.texture == null:
+		return
+	var mx := 1.0
+	var my := 1.0
+	var rot := 0.0
+	var cell_h := float(sprite.texture.get_height())
+	# --- stride-locked juice, per body archetype -------------------------
+	if moving and anim_frames > 0 and Balance.MOB_WALK_BOUNCE_FRAC > 0.0 \
+			and _gait_shape != "glide":
+		var ph: float = fposmod(anim_t * anim_fps, float(anim_frames)) / float(anim_frames)
+		if _gait_shape == "quad":
+			# A lope: ONE rise per cycle, plus a nose pitch — a four-legged
+			# body does not bob twice per stride like a walking biped.
+			my += (0.5 - 0.5 * cos(ph * TAU)) * Balance.MOB_QUAD_BOB_FRAC
+			var face_sign := -1.0 if sprite.flip_h else 1.0
+			rot += sin(ph * TAU) * Balance.MOB_QUAD_PITCH_RAD * face_sign
+		else:
+			# Biped: a chest rise per STEP (twice per cycle), grounded at the
+			# contacts — the same crossings the footfall dust fires on.
+			my += (0.5 - 0.5 * cos(ph * TAU * 2.0)) * Balance.MOB_WALK_BOUNCE_FRAC
+	# --- travel lean (all shapes; gliders bank less) ----------------------
+	var lean_target := 0.0
+	if moving and speed > 0.0 and Balance.MOB_WALK_LEAN_RAD > 0.0:
+		var lean_max: float = Balance.MOB_WALK_LEAN_RAD
+		if _gait_shape == "glide":
+			lean_max *= Balance.MOB_GLIDE_LEAN_MULT
+		lean_target = clampf(velocity.x / speed, -1.0, 1.0) * lean_max
+	if pounce_time > 0.0:
+		# Mid-leap: bank hard into the pounce and stretch along it.
+		lean_target = signf(pounce_dir.x) * Balance.MOB_POUNCE_LEAN_RAD
+		mx += Balance.MOB_POUNCE_STRETCH
+		my -= Balance.MOB_POUNCE_STRETCH
+	_lean = lerpf(_lean, lean_target, minf(1.0, delta * Balance.WALK_LEAN_EASE))
+	rot += _lean
+	# --- transient poses: hit squash, windup crouch, spawn, death --------
+	mx += _squash_k
+	my -= _squash_k
+	my += _pose_y
+	mx += _pose_x
+	_pose_y = move_toward(_pose_y, 0.0, delta * 0.9)
+	_pose_x = move_toward(_pose_x, 0.0, delta * 0.9)
+	if _spawn_k > 0.0:
+		my *= 1.0 - 0.45 * _spawn_k
+		mx *= 1.0 + 0.10 * _spawn_k
+	if _death_k > 0.0:
+		my *= 1.0 - 0.62 * _death_k
+		mx *= 1.0 + 0.16 * _death_k
+	# --- compose (feet pinned: the ground contact never moves) -----------
+	sprite.scale = Vector2(_scale_base.x * mx, _scale_base.y * my)
+	sprite.rotation = rot
+	var hover := 0.0
 	if hover_amp > 0.0:
-		sprite.position.y = -hover_amp + sin(anim_t * 2.2) * (hover_amp * 0.4)
+		hover = -hover_amp + sin(anim_t * 2.2) * (hover_amp * 0.4)
+	sprite.position.y = hover \
+		- (cell_h * 0.5 + sprite.offset.y) * _scale_base.y * (my - 1.0)
+	# --- footfall cues ---------------------------------------------------
+	if moving and anim_frames > 0 and _gait_shape != "glide":
+		var per_cycle := 1.0 if _gait_shape == "quad" else 2.0
+		var steps_now: float = anim_t * anim_fps * per_cycle / float(anim_frames)
+		if steps_now < _steps:
+			_steps = steps_now        # clock restarted (strip swap) — re-arm
+		elif int(steps_now) > int(_steps):
+			_footfall(cell_h * _scale_base.y)
+		_steps = maxf(_steps, steps_now)
+
+
+## Start a walk on a PLANTED frame. The clock runs continuously, so a body that
+## begins moving picks up mid-stride at whatever phase the idle happened to
+## reach -- it pops into a swing pose with nothing under it. Rounding the clock
+## up to the next whole cycle starts the walk on frame 0 (a contact) and lets
+## _render_tail's first rise begin from the ground. Cheap, and the per-instance
+## phase seeds/gait rates keep a pack from stepping off in unison.
+func _enter_walk_on_contact() -> void:
+	if anim_frames <= 1 or anim_fps <= 0.0:
+		return
+	var cycle: float = float(anim_frames) / anim_fps
+	anim_t = ceil(anim_t / cycle) * cycle
+	_steps = 0.0
+
+
+## One footfall: a puff of floor dust, and for a heavy body a whisper of
+## camera rumble. Budgeted — every puff is a CPUParticles2D node, and a room
+## can hold 30 walkers.
+func _footfall(rendered_cell: float) -> void:
+	if game == null or _is_headless():
+		return
+	var vscale := float(art_scale) * render_mult
+	if Balance.MOB_DUST_MAX_PER_TICK > 0 and is_instance_valid(game.player):
+		var d := global_position.distance_to(game.player.global_position)
+		if d < Balance.MOB_DUST_RANGE:
+			var frame := Engine.get_physics_frames()
+			if _dust_tick != frame:
+				_dust_tick = frame
+				_dust_n = 0
+			if _dust_n < Balance.MOB_DUST_MAX_PER_TICK:
+				_dust_n += 1
+				game.foot_dust(global_position + Vector2(
+					-signf(velocity.x) * 4.0 * vscale, 6.0 * vscale))
+			# A heavy body lands with weight: a rumble far under the hit kick
+			# (HIT_SHAKE 1.4), attenuated with distance so a far boss is quiet.
+			if rendered_cell >= Balance.BOSS_STOMP_MIN_CELL:
+				game.shake(Balance.BOSS_STEP_SHAKE
+					* (1.0 - d / Balance.MOB_DUST_RANGE))
+
+
+static func _is_headless() -> bool:
+	if _headless_cached < 0:
+		_headless_cached = 1 if DisplayServer.get_name() == "headless" else 0
+	return _headless_cached == 1
+
+
+## 8-direction facing with HYSTERESIS. The raw to-target vector used to feed
+## dir8_suffix straight into a strip swap, so a player orbiting a boss at a
+## 22.5° sector boundary flipped it between two strips every physics tick
+## (each swap also cancelled a live hit squash). Low-pass the aim, then only
+## leave the current sector once the angle clears it by a margin AND the
+## dwell has elapsed.
+func _dir8_stable(delta: float) -> String:
+	var want := _facing_vec()
+	if not want.is_finite() or want == Vector2.ZERO:
+		return _cur_dir if _cur_dir != "" else "s"
+	_dir_t += delta
+	_face_lp = want.normalized() if _face_lp == Vector2.ZERO \
+		else _face_lp.lerp(want.normalized(), minf(1.0, delta * 12.0))
+	var nd := Art.dir8_suffix(_face_lp)
+	if _cur_dir == "" or nd == _cur_dir:
+		return nd
+	# Committed to another sector: require both a real angular margin past the
+	# current sector's edge and a minimum dwell, so a wobble can't strobe.
+	var cur_ang := _dir_angle(_cur_dir)
+	var off: float = absf(angle_difference(cur_ang, _face_lp.angle()))
+	if off < PI / 8.0 + Balance.MOB_TURN_HYST_RAD or _dir_t < Balance.MOB_TURN_DWELL:
+		return _cur_dir
+	_dir_t = 0.0
+	return nd
+
+
+## Recompute the body scale from `art_scale` on the CURRENT strip — the same
+## math _apply_strip runs — so a persistent visual rescale (elite promotion,
+## a weakling summon) shows immediately and survives every later swap.
+func _rescale_body() -> void:
+	if sprite == null or sprite.texture == null:
+		return
+	if _body_cell <= 0.0:
+		_scale_base = Art.scale_for(sprite.texture, art_scale * render_mult)
 	else:
-		sprite.position.y = 0.0
+		var s := art_scale * render_mult * 16.0 / float(sprite.texture.get_height())
+		_scale_base = Vector2(s, s)
+	sprite.scale = _scale_base
+
+
+## Death animation: play the shipped `<sprite>_death` clip when one exists
+## (holding its last frame), else collapse the body feet-pinned. Returns the
+## seconds to wait before the fade starts. 21 authored death clips shipped
+## with the mobs and nothing ever played one before 2026-09-03 — the old path
+## froze the current walk frame and inflated it x1.3 while fading out.
+func _play_death_anim() -> float:
+	if sprite == null:
+		return 0.0
+	_end_squash()
+	_pose_x = 0.0
+	_pose_y = 0.0
+	_spawn_k = 0.0
+	if _try_action_strip("death"):
+		_action_hold = true
+		anim_fps = Balance.MOB_DEATH_FPS
+		return Balance.MOB_DEATH_HOLD + float(anim_frames) / maxf(1.0, anim_fps)
+	var col := create_tween()
+	col.tween_property(self, "_death_k", 1.0, Balance.MOB_DEATH_COLLAPSE_T) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	return Balance.MOB_DEATH_COLLAPSE_T * 0.7
+
+
+func _death_fade(hold: float) -> void:
+	var tw := create_tween()
+	tw.tween_interval(hold)
+	tw.tween_property(sprite, "modulate:a", 0.0, Balance.MOB_DEATH_FADE)
+	tw.tween_callback(queue_free)
+
+
+static func _dir_angle(d: String) -> float:
+	match d:
+		"e": return 0.0
+		"se": return PI / 4.0
+		"s": return PI / 2.0
+		"sw": return 3.0 * PI / 4.0
+		"w": return PI
+		"nw": return -3.0 * PI / 4.0
+		"n": return -PI / 2.0
+		"ne": return -PI / 4.0
+	return PI / 2.0
+
+
+## Mid-fight SUMMONS grow out of the ground in their own palette instead of
+## popping in fully opaque (opt-in: room-build spawns never call this, so
+## entering a room does not fade 30 bodies in).
+func spawn_in() -> void:
+	if _is_headless():
+		_spawn_k = 0.0
+		return
+	_spawn_k = 1.0
+	if sprite != null:
+		sprite.modulate.a = 0.0
+		var tw := create_tween()
+		tw.tween_property(sprite, "modulate:a", 1.0, Balance.MOB_SPAWN_IN_T)
+		tw.parallel().tween_property(self, "_spawn_k", 0.0, Balance.MOB_SPAWN_IN_T) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	if game != null:
+		game.burst(global_position, _death_color(), 6)
+
+
+## While `dying` the AI is off but the BODY still animates: a shipped death
+## clip plays through and holds its last frame, or a sheetless body collapses
+## feet-pinned. (The old path froze mid-stride and inflated x1.3 while fading,
+## which read as "despawned" rather than "killed".)
+func _tick_dying(delta: float) -> void:
+	if sprite == null:
+		return
+	if not _strip_action.is_empty():
+		_advance_action_anim(delta)
+	_render_tail(delta, false)
 
 
 ## MP-09: per-frame mirror upkeep — chase the last snapshot position
@@ -1017,21 +1303,40 @@ func _net_mirror_tick(delta: float) -> void:
 			else global_position.lerp(net_target, minf(1.0, delta * 10.0))
 	elif not global_position.is_finite():
 		global_position = Vector2.ZERO
+	# Presentation velocity for the juice (a mirror never calls move_and_slide,
+	# so `velocity` would stay zero and the lean/dust would never fire).
+	velocity = (net_target - global_position) / maxf(delta, 0.0001) if net_walk \
+		else Vector2.ZERO
 	if not _strip_action.is_empty():
 		_advance_action_anim(delta)
-	elif anim_frames > 1 or not _strip_walk.is_empty():
-		if not _strip_walk.is_empty() and net_walk != _strip_walking:
+	elif anim_frames > 1 or not _strip_walk.is_empty() \
+			or not _dir_idle.is_empty() or not _dir_walk.is_empty():
+		# CO-OP FIX 2026-09-03: this used to swap only `_strip_walk`, so every
+		# BOSS_DIRECTIONAL_WALK boss (whose _strip_walk is EMPTY — its walk
+		# lives in _dir_walk) and every 8-direction mob stayed on its flat
+		# breathing idle and slid across the arena on a guest. Mirror the live
+		# path's directional branch instead; the facing comes from the
+		# snapshot delta, so the packet is unchanged.
+		var directional_loco := (net_walk and not _dir_walk.is_empty()) \
+			or (not net_walk and not _dir_idle.is_empty())
+		if directional_loco:
+			var nd := _dir8_stable(delta)
+			var dset: Dictionary = _dir_walk if (net_walk and not _dir_walk.is_empty()) else _dir_idle
+			if nd != _cur_dir or net_walk != _strip_walking:
+				_cur_dir = nd
+				_strip_walking = net_walk
+				_apply_strip(dset[nd])
+			sprite.flip_h = false
+		elif not _strip_walk.is_empty() and net_walk != _strip_walking:
 			_strip_walking = net_walk
 			_apply_strip(_strip_walk if net_walk else _strip_idle)
-		# The live path ticks anim_t once per frame plus once more while
-		# moving — 1x idle, 2x walking. Same clock here.
-		anim_t += delta * (2.0 if net_walk else 1.0)
+		# Same clock the live path runs (idle in real time, the walk on the
+		# stride clock with this body's own gait personality — mirrors used to
+		# march in lockstep at a flat 2x).
+		anim_t += delta * (Balance.MOB_WALK_CLOCK * _gait_rate if net_walk else 1.0)
 		sprite.frame = int(anim_t * anim_fps) % anim_frames
 	_varo_phase_sprite()  # guests flip throne->standing off replicated hp
-	if hover_amp > 0.0:
-		sprite.position.y = -hover_amp + sin(anim_t * 2.2) * (hover_amp * 0.4)
-	else:
-		sprite.position.y = 0.0
+	_render_tail(delta, net_walk)
 	# Wave-2 fix #2: hold a combat-tell tint for its window, then revert to
 	# base_mod ONCE (no per-frame re-assert — matches the host, where the tint
 	# is set once and a hit-flash may stomp it early). net_apply_tell set it.
@@ -1128,10 +1433,7 @@ func net_mirror_die() -> void:
 	# more chips than a hit — the kill reads as this creature coming apart.
 	game.burst(global_position, _death_color().lerp(Color(0.9, 0.3, 0.3), 0.35), 14)
 	game.death_stain(global_position, _death_color(), last_hit_dir)
-	var tween := create_tween()
-	tween.tween_property(sprite, "modulate:a", 0.0, 0.35)
-	tween.parallel().tween_property(sprite, "scale", sprite.scale * 1.3, 0.35)
-	tween.tween_callback(queue_free)
+	_death_fade(_play_death_anim())
 
 
 ## The enemy's current prey (MP targeting seam). Re-resolves IMMEDIATELY
@@ -1664,10 +1966,12 @@ func _spawn_add() -> void:
 	add.max_hp *= 0.4; add.hp = add.max_hp
 	add.dmg *= 0.6
 	add.xp_value = 0; add.gold_value = 0
-	add.sprite.scale *= 0.8
+	add.art_scale *= 0.8   # via art_scale so the first strip swap keeps it
+	add._rescale_body()
 	if zone_idx >= 0:
 		game.zone_alive[zone_idx] = game.zone_alive.get(zone_idx, 0) + 1
 	game.add_enemy(add)
+	add.spawn_in()
 	game.spawn_text(global_position + Vector2(0, -60), "a spawn crawls forth", Color(0.6, 0.9, 0.5))
 
 func _tick_tether() -> void:
@@ -1726,26 +2030,28 @@ func _martyr_wail() -> void:
 ## swap that rewrites sprite.scale first kills a running squash (see
 ## _apply_strip / morph) so a mid-squash idle->walk can never end on a stale
 ## scale.
+## 2026-09-03: the squash is now a scalar the render tail composes (it used
+## to tween sprite.scale directly about the sprite CENTRE, which lifted the
+## feet off the contact shadow by k/2 of the body height — ~20 px on a big
+## boss — and overshot them BELOW the ground line on the TRANS_BACK recover;
+## a strip swap also had to cancel it, so a turning boss rarely finished
+## one). Feet stay pinned and it survives swaps.
 var _squash_tw: Tween = null
-var _squash_base := Vector2.ONE
 func _hit_squash(is_crit: bool) -> void:
 	if sprite == null:
 		return
 	_end_squash()
-	_squash_base = sprite.scale
-	var k := 0.16 if is_crit else 0.10
-	sprite.scale = Vector2(_squash_base.x * (1.0 + k), _squash_base.y * (1.0 - k))
+	_squash_k = 0.16 if is_crit else 0.10
 	_squash_tw = create_tween()
-	_squash_tw.tween_property(sprite, "scale", _squash_base, 0.16 if is_crit else 0.12) \
+	_squash_tw.tween_property(self, "_squash_k", 0.0, 0.16 if is_crit else 0.12) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func _end_squash() -> void:
 	if _squash_tw != null and _squash_tw.is_valid():
 		_squash_tw.kill()
-		if sprite != null:
-			sprite.scale = _squash_base
 	_squash_tw = null
+	_squash_k = 0.0
 
 
 ## The mob's dominant body colour — the mean of its current frame's opaque
@@ -1814,7 +2120,12 @@ func promote_elite() -> void:
 	# ELITE_SPRITE_MULT already scales the body, not the hitbox).
 	if size_var < Balance.ELITE_SIZE_BIAS:
 		var grow := Balance.ELITE_SIZE_BIAS / size_var
-		sprite.scale *= grow
+		# Through art_scale, not sprite.scale: _apply_strip recomputes
+		# sprite.scale from art_scale on EVERY strip swap, so a direct write
+		# here was thrown away the first time the elite stepped, turned or
+		# attacked — "size is the threat tell" lasted until it moved
+		# (bug found 2026-09-03).
+		art_scale *= grow
 		max_hp *= grow
 		var osd := size_var - 1.0
 		var nsd := Balance.ELITE_SIZE_BIAS - 1.0
@@ -1829,7 +2140,8 @@ func promote_elite() -> void:
 	critres += Balance.ELITE_CRITRES_BONUS
 	xp_value = 0  # elites never pay XP (fixed chapter totals)
 	gold_value *= Balance.ELITE_GOLD_MULT
-	sprite.scale *= Balance.ELITE_SPRITE_MULT
+	art_scale *= Balance.ELITE_SPRITE_MULT
+	_rescale_body()
 	# A gold ring underfoot marks the rank at a glance (body tints reset
 	# on damage flashes, so a child sprite is the durable marker).
 	var ring := Sprite2D.new()
@@ -2150,7 +2462,4 @@ func die() -> void:
 	# Deferred: loot spawns collision objects, which is not allowed
 	# in the middle of a physics callback (e.g. a projectile hit).
 	game.on_enemy_died.call_deferred(self)
-	var tween := create_tween()
-	tween.tween_property(sprite, "modulate:a", 0.0, 0.35)
-	tween.parallel().tween_property(sprite, "scale", sprite.scale * 1.3, 0.35)
-	tween.tween_callback(queue_free)
+	_death_fade(_play_death_anim())

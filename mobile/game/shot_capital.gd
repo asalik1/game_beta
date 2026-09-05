@@ -46,6 +46,12 @@ func _ready() -> void:
 
 	game.enter_capital()
 	await _frames(12)
+	# enter_capital fires the Crownfall WELCOME dialogue (game_world.gd, cap_seen
+	# is unset under no_saves), and fast_travel returns early while
+	# hud.dialogue_active — so every "room" frame below was really room 0 with a
+	# different line of text on it (the 08-19 tour differed by ~1% of pixels).
+	# Dismiss it here, not only before entering (2026-09-03).
+	await _dismiss_opening()
 	game.camera.zoom = Vector2(0.72, 0.72)
 	for room_index in game.zone_count:
 		game.fast_travel(room_index)

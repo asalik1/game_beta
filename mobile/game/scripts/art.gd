@@ -3362,6 +3362,35 @@ static func boss_directional_walk(name: String) -> bool:
 	return BOSS_DIRECTIONAL_WALK.has(name)
 
 
+## Body ARCHETYPE for the stride-locked juice (enemy.gd _render_tail,
+## visual overhaul 2026-09-03): "biped" (default — a chest rise per step +
+## a lean into travel), "quad" (four-legged / many-legged: one bob per
+## cycle + a nose pitch), "glide" (robed casters and floaters: cloth drift
+## is the motion — a lean only). Idle-only robed bodies default to glide.
+## Keyed by SPRITE name.
+const MOB_GAIT_SHAPE := {
+	# quadrupeds / arachnids / crawlers
+	"wolf": "quad", "blightwolf": "quad", "winterfang": "quad", "rime_wolf": "quad",
+	"fangmaw": "quad", "cinderhide": "quad", "duneprowler": "quad", "deep_stalker": "quad",
+	"spider": "quad", "greyrun_lurker": "quad", "bog_lurker": "quad", "vent_skitter": "quad",
+	"casket_creeper": "quad", "grove_horror": "quad", "flux_hound": "quad",
+	"slag_hound": "quad", "void_hound": "quad", "thorn_howler": "quad", "first_howl": "quad",
+	"stone_base": "quad", "root_spiderling": "quad", "storm_harrier": "quad",
+	"bogspider": "quad",
+	# gliders / floaters (the robed idle-only casters glide by default)
+	"banshee": "glide", "choir_censer": "glide", "veyx": "glide", "morwen": "glide",
+	"word_wisp": "glide", "pollen_drifter": "glide", "riftling": "glide",
+	"waking_shard": "glide", "verdict_drone": "glide", "elara_vessel": "glide",
+}
+
+static func gait_shape(name: String) -> String:
+	if MOB_GAIT_SHAPE.has(name):
+		return MOB_GAIT_SHAPE[name]
+	if mob_idle_only_locomotion(name):
+		return "glide"
+	return "biped"
+
+
 static func mob_idle_only_locomotion(name: String) -> bool:
 	return MOB_IDLE_ONLY_LOCOMOTION.has(name)
 

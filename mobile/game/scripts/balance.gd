@@ -93,6 +93,99 @@ const GAIT_STEP_JITTER := 0.04    # heroes: per-step rate wobble (±, rolled eac
 const GAIT_BOUNCE_JITTER := 0.18  # heroes: per-step bounce-height wobble (±)
 const GAIT_EASE := 6.0            # 1/s blend toward the freshly rolled step rate
 const MOB_GAIT_VAR := 0.06        # mobs: per-instance stride-rate personality (±)
+# MOB / BOSS stride-locked juice (visual overhaul 2026-09-03 — the hero lane-1
+# mechanisms ported to enemies per body ARCHETYPE, Art.gait_shape()). All of
+# it is keyed to the walk strip's own clock (anim_t * anim_fps), never a
+# free-running sine, and composed as MULTIPLIERS over the strip's base scale
+# (enemy.gd _render_tail) so the hit squash, a windup crouch and the bounce
+# never fight each other or a strip swap.
+#  MOB_WALK_CLOCK      — walk clock over the strip fps while moving (2.0 = the
+#    old base tick + stride tick at cruise: 6 fps strips play at 12). Now the
+#    WHOLE clock rides the live speed ratio (a 0.35 slow plays at 35 %, not 67 %).
+#  MOB_WALK_BOUNCE_FRAC — biped chest rise per STEP, fraction of the rendered
+#    cell height (feet pinned; the hero's 1.6 px / ~99 px body).
+#  MOB_WALK_LEAN_RAD   — biped bank into horizontal travel, eased at WALK_LEAN_EASE.
+#  MOB_QUAD_BOB_FRAC / MOB_QUAD_PITCH_RAD — quadrupeds: one bob per CYCLE (a
+#    lope, not a step) + a nose pitch signed by the way the body faces.
+#  MOB_GLIDE_LEAN_MULT — robed/floating gliders: a fraction of the biped lean,
+#    no bounce (their cloth drift is the motion).
+#  MOB_TURN_HYST_RAD / MOB_TURN_DWELL — 8-direction strips only swap facing
+#    once the (low-passed) aim leaves the current sector by this margin AND the
+#    dwell has elapsed (an orbiting player used to strobe two strips at 60 Hz).
+#  MOB_DUST_* — footfall dust on the strip's contact crossings for grounded
+#    shapes, budgeted per physics tick across all mobs (each puff is a node)
+#    and culled beyond RANGE px of the player.
+#  BOSS_STEP_SHAKE / BOSS_STOMP_MIN_CELL — bodies rendering at least MIN_CELL px
+#    rumble the camera a hair per footfall (kept under HIT_SHAKE so the hit
+#    kick stays the louder beat; distance-attenuated).
+#  MOB_WINDUP_CROUCH / MOB_POUNCE_* — bite windup crouch + snap, pounce flight
+#    stretch + lean (art-free body reactions on the existing timers).
+#  MOB_DEATH_* — a mob with a <sprite>_death strip plays it (fps below, last
+#    frame held) then fades; sheetless bodies collapse feet-pinned instead of
+#    inflating. MOB_SPAWN_IN_T — mid-fight summons grow out of the ground.
+const MOB_WALK_CLOCK := 2.0
+const MOB_WALK_BOUNCE_FRAC := 0.014
+const MOB_WALK_LEAN_RAD := 0.04
+const MOB_QUAD_BOB_FRAC := 0.010
+const MOB_QUAD_PITCH_RAD := 0.03
+const MOB_GLIDE_LEAN_MULT := 0.5
+const MOB_TURN_HYST_RAD := 0.12
+const MOB_TURN_DWELL := 0.12
+const MOB_DUST_MAX_PER_TICK := 2
+const MOB_DUST_RANGE := 700.0
+const BOSS_STEP_SHAKE := 0.8
+const BOSS_STOMP_MIN_CELL := 230.0
+const MOB_WINDUP_CROUCH := 0.06
+const MOB_POUNCE_STRETCH := 0.08
+const MOB_POUNCE_LEAN_RAD := 0.12
+const MOB_DEATH_FPS := 9.0
+const MOB_DEATH_HOLD := 0.25
+const MOB_DEATH_FADE := 0.35
+const MOB_DEATH_COLLAPSE_T := 0.4
+const MOB_SPAWN_IN_T := 0.28
+# BOSS TELL STYLE (visual overhaul 2026-09-03) — the answer to "boss attacks all
+# look visually similar". All 47 telegraph sites in boss.gd funnel through
+# `_boss_telegraph`, which merges this table exactly the way it already merges
+# `impact_sfx`: one HUE and one ground SHAPE per boss, so a tell is identifiable
+# before you read its size. Seven bosses previously shared one pale blue and
+# every single tell was the same rimmed disc.
+#   shape: disc | ring | cone | line | cross | square  (game_base._tell_figure;
+#          the hit test follows the same figure, so a tell never lies)
+#   arc:   cone half-angle in radians;  width: line/cross bar width in px
+# The table OWNS the hue (that is the point) but keeps each call site's ALPHA,
+# which encodes intensity; a site that needs its own colour passes
+# `"color_locked": true`. Shape/arc/width are defaults a call site may override.
+const BOSS_TELL := {
+	# --- ch1-2 ---
+	"fangmaw":        {"color": Color(0.95, 0.45, 0.18), "shape": "cone", "arc": 0.70},
+	"morwen":         {"color": Color(0.55, 1.00, 0.25), "shape": "ring"},
+	"vargoth":        {"color": Color(1.00, 0.32, 0.10), "shape": "cross"},
+	"stormwarden":    {"color": Color(1.00, 0.95, 0.40), "shape": "line"},
+	"choirmother":    {"color": Color(0.92, 0.90, 0.78), "shape": "ring"},
+	"nullwarden":     {"color": Color(0.45, 0.85, 1.00), "shape": "square"},
+	# --- ch3 Unburied Vale ---
+	"sexton":         {"color": Color(0.85, 0.70, 0.40), "shape": "square"},
+	"vess":           {"color": Color(0.72, 0.40, 1.00), "shape": "ring"},
+	"saint_varo":     {"color": Color(1.00, 0.85, 0.45), "shape": "disc"},
+	# --- ch4 Slagfields ---
+	"forgemistress":  {"color": Color(1.00, 0.55, 0.15), "shape": "line"},
+	"cinderhide":     {"color": Color(0.95, 0.25, 0.15), "shape": "cone", "arc": 0.62},
+	"ashpriest":      {"color": Color(0.90, 0.62, 0.35), "shape": "ring"},
+	# --- ch5 The Long Sleep ---
+	"whitepelt":      {"color": Color(0.65, 0.90, 1.00), "shape": "cone", "arc": 0.66},
+	"icebound":       {"color": Color(0.35, 0.62, 1.00), "shape": "square"},
+	"sleepkeeper":    {"color": Color(0.70, 0.72, 1.00), "shape": "ring"},
+	# --- ch6 The Blooming Deep ---
+	"auroch":         {"color": Color(0.85, 0.42, 0.30), "shape": "line"},
+	"gardener":       {"color": Color(0.45, 0.85, 0.35), "shape": "square"},   # garden plots
+	"curetwisted":    {"color": Color(0.80, 0.90, 0.30), "shape": "disc"},
+	# --- ch7 Breaking Sky ---
+	"stormdrake_veyx": {"color": Color(0.40, 0.95, 1.00), "shape": "line"},
+	"unnamed_echo":   {"color": Color(0.80, 0.75, 1.00), "shape": "ring"},
+	"stormmouth":     {"color": Color(0.90, 0.60, 1.00), "shape": "cone", "arc": 0.72},
+	# --- Moonfen interlude ---
+	"first_howl":     {"color": Color(0.70, 0.80, 0.95), "shape": "cone", "arc": 0.68},
+}
 # Camera feel (2026-08-18): look-ahead in the move direction (px at full
 # speed, eased) and the combat zoom-in (multiplier on the base zoom while
 # enemies are aggro'd within CAMERA_COMBAT_RANGE px, eased in/out).

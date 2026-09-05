@@ -1,0 +1,7 @@
+codex = C:\Users\asali\AppData\Local\OpenAI\Codex\bin\9ba750cce02d5e5c\codex.exe
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__attack__e_v2 (3 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\boss_fix3_2026-09-03\stormmouth__n_v3 (2 refs)
+launched 2 codex jobs
+OK   C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/mage_profile_2026-09-03/mage__attack__e_v2  (result 778 bytes)
+OK   C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd/art_src/boss_fix3_2026-09-03/stormmouth__n_v3  (result 1228 bytes)
+batch complete

@@ -3117,6 +3117,100 @@ func _sheltered(pos: Vector2) -> bool:
 	return false
 
 
+## ------------------------------------------------- tell shape vocabulary ---
+## A telegraph's per-boss ACCENT, drawn INSIDE the danger disc.
+##
+## The disc itself is never replaced: it is the truth about where the damage
+## lands, and every one of the 47 boss sites was tuned against it. A cone or a
+## bar that also became the HIT SHAPE would quietly shrink a boss's danger area
+## to a fraction of the circle — a balance nerf smuggled in under a visual pass.
+## So the fill/rim disc stays exactly as it was, and the shape adds a figure on
+## top of it: the boss is identifiable at a glance, the dodge is unchanged.
+##
+##   ring    a bright band inside the rim — bells, wails, novas
+##   cone    a wedge from the centre along opts.dir (arc = half-angle) — claws, breath
+##   line    a bar across the disc along opts.dir — lashes, charges, beams
+##   cross   two crossed bars — sigil slams
+##   square  an inscribed plot outline — grave work, slabs, ice floors
+##
+## Everything is a Polygon2D/Line2D at white, tinted by the parent's modulate,
+## so ONE fuse tween drives the whole thing and the co-op mirror needs no new
+## plumbing (opts stay Vector2/float/String, which the telegraph RPC serialises).
+func _tell_accent(shape: String, radius: float, opts: Dictionary) -> Node2D:
+	var root := Node2D.new()
+	var d: Vector2 = opts.get("dir", Vector2.RIGHT)
+	if not d.is_finite() or d == Vector2.ZERO:
+		d = Vector2.RIGHT
+	d = d.normalized()
+	var arc := float(opts.get("arc", 0.55))
+	# Every accent is clamped INSIDE the disc: an accent poking past the rim
+	# would promise danger where none lands (the inverse lie).
+	var r := radius * 0.82
+	var width := minf(float(opts.get("width", maxf(20.0, radius * 0.30))), radius * 0.7)
+	var pts := PackedVector2Array()
+	match shape:
+		"ring":
+			var inner: float = r * 0.66
+			var steps := 30
+			for i in steps + 1:
+				var a: float = TAU * float(i) / float(steps)
+				pts.append(Vector2(cos(a), sin(a)) * r)
+			for i in steps + 1:
+				var a2: float = TAU * float(steps - i) / float(steps)
+				pts.append(Vector2(cos(a2), sin(a2)) * inner)
+		"cone":
+			pts.append(Vector2.ZERO)
+			var steps2 := 16
+			for i in steps2 + 1:
+				var a3: float = d.angle() - arc + 2.0 * arc * float(i) / float(steps2)
+				pts.append(Vector2(cos(a3), sin(a3)) * r)
+		"line":
+			var n := d.orthogonal() * (width * 0.5)
+			pts = PackedVector2Array([-d * r - n, d * r - n, d * r + n, -d * r + n])
+		"cross":
+			var n2 := d.orthogonal() * (width * 0.4)
+			var m := d * (width * 0.4)
+			var e := d * r
+			var f := d.orthogonal() * r
+			pts = PackedVector2Array([
+				-e - n2, -m - n2, -m - f, m - f, m - n2, e - n2,
+				e + n2, m + n2, m + f, -m + f, -m + n2, -e + n2])
+		_:  # square: the largest axis-aligned plot inside the circle
+			var s := r * 0.72
+			pts = PackedVector2Array([Vector2(-s, -s), Vector2(s, -s),
+				Vector2(s, s), Vector2(-s, s)])
+	var fill := Polygon2D.new()
+	fill.polygon = pts
+	fill.color = Color(1, 1, 1, 0.34)
+	root.add_child(fill)
+	var rim_w := maxf(2.0, radius * 0.04)
+	if shape == "ring":
+		# Two separate circles, NOT one closed polyline around the annulus: a
+		# single line has to travel between the outer and inner rings and draws
+		# that journey as a radial seam across the band.
+		for rr: float in [r, r * 0.66]:
+			var circle := Line2D.new()
+			var cp := PackedVector2Array()
+			for i in 31:
+				var ca: float = TAU * float(i) / 30.0
+				cp.append(Vector2(cos(ca), sin(ca)) * rr)
+			circle.points = cp
+			circle.closed = true
+			circle.width = rim_w
+			circle.default_color = Color(1, 1, 1, 0.9)
+			circle.joint_mode = Line2D.LINE_JOINT_ROUND
+			root.add_child(circle)
+		return root
+	var rim := Line2D.new()
+	rim.points = pts
+	rim.closed = true
+	rim.width = rim_w
+	rim.default_color = Color(1, 1, 1, 0.9)
+	rim.joint_mode = Line2D.LINE_JOINT_ROUND
+	root.add_child(rim)
+	return root
+
+
 func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts := {}) -> void:
 	# Shelter wards the GROUND (player rule 2026-07-09): a danger telegraph
 	# that would land inside a live shelter never forms — Varo's reliquary
@@ -3131,17 +3225,47 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 	# (bosses, mob traits, bloat bursts). Solo: net_host() is false.
 	if net_host():
 		net_session().host_telegraph(pos, radius, delay, opts)
+	# SHAPE VOCABULARY (2026-09-03). Every one of the 47 boss tell sites used to
+	# draw the same rimmed disc, differing only in tint and radius — the reason
+	# "boss attacks all look visually similar". opts["shape"] picks the ground
+	# figure; "disc" (the default) is byte-identical to the old path, so mob
+	# traits and bloat bursts are untouched. The hit test below follows the same
+	# shape, so a tell never lies about where it lands.
+	var tint: Color = opts.get("color", Color(1.0, 0.2, 0.15, 0.55))
+	var shape := String(opts.get("shape", "disc"))
 	var zone := Sprite2D.new()
 	zone.texture = Art.tex("telegraph")
 	zone.global_position = pos
 	zone.scale = Vector2(radius / 32.0, radius / 32.0)
-	zone.modulate = opts.get("color", Color(1.0, 0.2, 0.15, 0.55))
+	zone.modulate = tint
 	zone.z_index = -6
 	add_child(zone)
+	if shape != "disc":
+		# The accent is a SIBLING (not a child): the disc's scale encodes the
+		# radius, and a child would inherit it and draw at radius^2/32.
+		var accent := _tell_accent(shape, radius, opts)
+		accent.global_position = pos
+		accent.modulate = tint
+		accent.z_index = -5   # over the disc, still under the actors
+		add_child(accent)
+		var apulse := accent.create_tween()
+		apulse.tween_property(accent, "modulate:a", tint.a, maxf(0.06, delay * 0.72)) \
+			.from(tint.a * 0.20)
+		apulse.tween_property(accent, "modulate:a", minf(1.0, tint.a * 1.8), 0.14)
+		# Hold to the pop, then go with the disc — an accent that faded early
+		# would tell the player the danger had passed.
+		apulse.tween_interval(maxf(0.0, delay - maxf(0.06, delay * 0.72) - 0.14))
+		apulse.tween_callback(accent.queue_free)
+	# FUSE-READABLE FILL: the old loop pulsed 0.18s on/off no matter how long
+	# the fuse was, so a 0.35s crack and a 2.9s verdict read identically. Ramp
+	# the fill over the fuse instead (time-to-pop is now visible), then snap
+	# twice at the end. One-shot and delay-bounded, so it cannot drift.
 	var pulse := zone.create_tween()
-	pulse.set_loops()
-	pulse.tween_property(zone, "modulate:a", 0.85, 0.18)
-	pulse.tween_property(zone, "modulate:a", 0.45, 0.18)
+	pulse.tween_property(zone, "modulate:a", tint.a, maxf(0.06, delay * 0.72)) \
+		.from(tint.a * 0.34)
+	pulse.tween_property(zone, "modulate:a", tint.a * 0.5, 0.09)
+	pulse.tween_property(zone, "modulate:a", minf(1.0, tint.a * 1.7), 0.09)
+	pulse.tween_property(zone, "modulate:a", tint.a * 0.6, 0.08)
 
 	var falling: Sprite2D = null
 	var falling_trail: CPUParticles2D = null

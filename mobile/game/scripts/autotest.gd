@@ -2144,6 +2144,7 @@ func _run_systems() -> void:
 	print("ok: shop, codex, records, journal, daily, skill tree, theme, stats, map, dev UI")
 	_test_status_icon_coverage()
 	_test_hud_icon_integrity()
+	_test_tell_shapes()
 
 	# 5c. Endgame modes (ACT2_DESIGN.md §II): The Crucible + The Waking Depths.
 	await _test_endgame()
@@ -4539,7 +4540,7 @@ func _test_mob_strip_anchor_consistency() -> void:
 		return _fail("Marsh Spider selected inconsistent small directional walk sheets")
 	var slag_idle := Art.anim_info("stone_broken")
 	var slag_walk := Art.walk_info("stone_broken")
-	if int(slag_idle.get("frames", 0)) != 1 or int(slag_walk.get("frames", 0)) != 4:
+	if int(slag_idle.get("frames", 0)) != 1 or int(slag_walk.get("frames", 0)) != 6:
 		probe.queue_free()
 		return _fail("Slagbound Brute must use idle frame 0 and its former idle as 4f walk")
 	probe.queue_free()
@@ -9958,3 +9959,43 @@ func _fm_first_strike(log: Array, uid: int) -> int:
 		if String(e.get("t", "")) == "strike" and int(e.get("atk", -1)) == uid:
 			return int(e.get("dmg", -1))
 	return -999
+
+
+## Boss TELL ACCENTS (visual overhaul 2026-09-03): each boss draws a per-kind
+## figure inside its danger disc. The disc stays the ONLY hit test (a shape that
+## also became the hit shape would silently shrink every boss's danger area), so
+## what this guards is the inverse lie: an accent must never reach past the rim
+## and promise damage where none lands, and every styled row must name a shape
+## the drawer knows and a real boss kind.
+func _test_tell_shapes() -> void:
+	var radius := 120.0
+	for shape: String in ["ring", "cone", "line", "cross", "square"]:
+		var opts := {"shape": shape, "dir": Vector2(0.6, 0.8).normalized(),
+			"arc": 0.55, "width": 44.0}
+		var acc: Node2D = game._tell_accent(shape, radius, opts)
+		var poly: PackedVector2Array = (acc.get_child(0) as Polygon2D).polygon
+		if acc.get_child_count() < 2:
+			return _fail("tell accent %s drew no rim" % shape)
+		acc.queue_free()
+		if poly.size() < 3:
+			return _fail("tell accent %s is degenerate (%d pts)" % [shape, poly.size()])
+		var far := 0.0
+		for p: Vector2 in poly:
+			far = maxf(far, p.length())
+		if far > radius:
+			return _fail("tell accent %s reaches %.0fpx past a %.0fpx danger disc"
+				% [shape, far - radius, radius])
+		if far < radius * 0.3:
+			return _fail("tell accent %s is too small to read (%.0f of %.0f)"
+				% [shape, far, radius])
+	for kind: String in Balance.BOSS_TELL:
+		var row: Dictionary = Balance.BOSS_TELL[kind]
+		if not (row.get("color") is Color):
+			return _fail("BOSS_TELL[%s] has no Color" % kind)
+		var s := String(row.get("shape", "disc"))
+		if not s in ["disc", "ring", "cone", "line", "cross", "square"]:
+			return _fail("BOSS_TELL[%s] names an unknown shape %s" % [kind, s])
+		if not kind in Menus.BOSS_KINDS:
+			return _fail("BOSS_TELL[%s] is not a boss kind (typo?)" % kind)
+	print("ok: boss tell accents (inside the danger disc, %d styled bosses)"
+		% Balance.BOSS_TELL.size())
