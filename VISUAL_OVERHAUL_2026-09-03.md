@@ -10,11 +10,11 @@ are the merge gates and are recorded at the bottom).
 ## How to review
 
 - **Before/after GIFs** of every changed sprite: `~/Downloads/ba_gifs_visual_overhaul/`
-  (158, built by `tools/art/ba_gifs.py --base 7fd27a4`). Palette-quantized and
+  (198, built by `tools/art/ba_gifs.py --base 7fd27a4`). Palette-quantized and
   above game scale — for CHANGE review, not colour judgement.
 - **Travel GIFs** (old vs new walk over scrolling ground at the mob's real
-  speed): `~/Downloads/travel_gifs_visual_overhaul/` (skeleton, zombie,
-  royal_knight, wolf, cultist, stone_broken).
+  speed): `~/Downloads/travel_gifs_visual_overhaul/` (zombie, royal_knight,
+  wolf, cultist, stone_broken, plus mage_walk_e and warlock_walk_e old vs new).
 - **In-game**: `shot.bat capital` (nine rooms), `shot.bat tells` (every boss's
   telegraph on one sheet), then play: any mob pack in ch1 (walk juice, dust,
   real deaths, windup crouch), an elite (it stays big now), Crownfall, and any
@@ -93,6 +93,35 @@ generated with the documented walk-plus-firing-arm technique and installed
 - 63 sprites stripped of a green keying ring (`despill_rim.py`), including 19
   warlock attack strips the standing triage had ruled out. The scan is at 0.
 - 8 candy-bright props graded into the house palette (`palette_grade.py`).
+
+## 6. Final QA round (2026-09-05) — 9 read-only audits, every finding re-checked by hand before acting
+
+Fixed on the branch:
+- mage cast E/W: frames 0/1/6 were drawn ~15% small (the hero renderer locks a clip to
+  frame 0, so the whole cast ballooned); row normalised to frame 2's body, re-installed
+  into a 320px cell (`install_gait_row --cell`) so the raised crystal is no longer cut.
+- mage anim E/W: hip pouch pasted from walk_e (every other E clip + the S idle carry it —
+  it blinked off whenever she stopped). mage attack E/W: v2 re-roll (staff stayed in the far
+  hand and the last three frames were 13% compressed). mage attack_walk_s: aligned to
+  walk_s (12px sideways hop when firing on the move); sleeve fleck dropped.
+- warlock walk E/W: the floating skull existed in only 2 of 6 frames — composited from f0.
+  warlock attack_walk_n: a second skull at the elbow in f2/f3 — regen queued.
+- serane S: frame 2 was a redrawn, 10% larger figure (dropped → 5-frame glide); the
+  idle's two floating shoulder shards were absent (composited); slivers dropped.
+- nullwarden: the IDLE sat 51px off-centre (a sideways jump on every idle↔walk
+  transition) — recentred; the N walk lifted the right boot in 4 of 6 frames — rebuilt as
+  a mirrored-half cycle (R R R / L L L; the back view is symmetric).
+- korrag: E family, N and S walks tone-matched to the idle (13-26% darker before; the boss
+  dimmed on every step). stormmouth N v3: a real stride + the family's blue-steel plate.
+
+Verified but NOT fixed (owner's eye / cheap later):
+- stormmouth N reads ~15% slimmer across the pauldrons than S and the idle (three rolls,
+  the generator will not give back-view pauldron mass; the crest on the E helm is absent
+  from behind). paladin walk_n: the regen's f6 ≈ f2 and a slightly right-dominant leg
+  cycle (owner call already flagged above; the re-sliced old cycle is the swap).
+- warlock attack_walk_e trim reads ~5° yellower than walk_e; echo N carries a teal cast on
+  the wings; serane N is ~12% brighter than the idle (pre-existing); cinderhide attack f3
+  keeps ~100px of sub-alpha residue from the claw erase (sub-pixel in play).
 
 ## Open / not done
 
