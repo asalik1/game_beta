@@ -179,6 +179,11 @@ backups in `art_src/_backups/recenter/`). Walks produced by the gait-transfer la
 left torso-anchored (the feet-band anchor would add torso wobble to a real stride).
 Two idles still report a 4-6px residual (grove_horror, nullwarden) and bannerman's 4th
 idle frame was already clipped in the source (a regen would be needed to recover it).
+- Seam fixes from the same scan: 14 walks tone-matched to their idles (cold_pilgrim,
+  elf_ranger, fungus_immature, skeleton, royal_knight, orc_rogue, heart_of_the_root,
+  static_caller, skeleton_mage, bog_lurker, fangmaw, skeleton_warrior S/E/N); the four
+  hounds (flux/rime/slag/void) reseated to their idle's body size (they shrank ~25% on the
+  first step); seven walks centred on their idle (rat_mage was 19% of the cell off).
 
 ## Open / not done
 
