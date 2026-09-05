@@ -10,7 +10,7 @@ are the merge gates and are recorded at the bottom).
 ## How to review
 
 - **Before/after GIFs** of every changed sprite: `~/Downloads/ba_gifs_visual_overhaul/`
-  (195, built by `tools/art/ba_gifs.py --base 7fd27a4`). Palette-quantized and
+  (364, built by `tools/art/ba_gifs.py --base 7fd27a4`). Palette-quantized and
   above game scale — for CHANGE review, not colour judgement.
 - **Travel GIFs** (old vs new walk over scrolling ground at the mob's real
   speed): `~/Downloads/travel_gifs_visual_overhaul/` (zombie, royal_knight,
@@ -234,6 +234,6 @@ idle frame was already clipped in the source (a regen would be needed to recover
 ## Gates
 
 - Every commit: compile gate + `test_quick` green.
-- Full suite: **AUTOTEST PASS, 172 sections, exit 0** (2026-09-04, on the tree at 252547e: all motion/tell code + the art up to that point). Every commit after it changes PNGs, art tools and docs only (no game script changed), each gated by `test_quick`.
+- Full suite: **AUTOTEST PASS, 172 sections** twice — 2026-09-04 at 252547e and **2026-09-05 12:38 on the final tree (db80ef6)** after waves 3-6 and the seam sweep.
 - Final desktop pass (2026-09-05 12:00, after wave 3-6 + the seam sweep): `--import` (the long one segfaulted at its shutdown tail — the known box crash — and a confirming re-import exited 0), **AUTOTEST QUICK PASS**, **PREFLIGHT OK** (IMPORT MODULES BALANCE PHYSICS RIGS ARTQA).
 - Mobile: `sync_mobile.py --apply --gate` → **GATE OK** twice (2026-09-05 05:17: 341 files; 2026-09-05 12:24 after waves 3-6 + the seam sweep: 287 files; mobile compile 121 scripts + quick suite passed both times). Note for the next sync after a big PNG batch: the gate's first `--import` can exceed its 600s watchdog; run the mobile import by hand once, then re-run the gate.
