@@ -1,0 +1,7 @@
+{
+ "base": "zombie_overweight",
+ "clip": "death",
+ "frames": 6,
+ "idle": "zombie_overweight_anim.png",
+ "arch": "biped"
+}

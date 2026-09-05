@@ -1,0 +1,7 @@
+{
+ "base": "flame_pilgrim",
+ "clip": "death",
+ "frames": 6,
+ "idle": "flame_pilgrim_anim.png",
+ "arch": "biped"
+}

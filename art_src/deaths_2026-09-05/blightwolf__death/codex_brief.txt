@@ -1,0 +1,23 @@
+Draw a 6-frame DEATH animation of THIS character (reference 1), as a horizontal row.
+
+THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not change):
+a blight-cursed wolf with mottled dark grey-green fur cracked by glowing green veins, glowing green eyes, a lean body, four legs, a ragged tail
+crisp hi-res dark-fantasy game sprite, muted palette, no black outlines. Same design, same
+palette, same equipment in every frame; the figure faces the SAME way as reference 1.
+
+THE ACTION, frame by frame: frame 1 the head jerks back from a hit, frame 2 the front legs buckle, frame 3 the chest drops to the ground, hindquarters still up, frame 4 the body rolls onto its side, frame 5 it slumps flat, legs stretched, frame 6 it lies still on its side -- the FINAL frame is a body lying on its side, feet where the standing feet were.
+Each frame is a distinct pose that reads as a continuous fall; the body stays roughly where
+it stood (no sliding across the cell); the last frame is still and final -- it will be held
+on screen. Draw NO blood spray, NO particles, NO ghost, NO effect -- only the body.
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, evenly spaced, all drawn at ONE
+identical scale (the standing figure in frame 1 is the same size as reference 1's figure;
+later frames are the same body, just lower and wider), feet on one shared ground line,
+generous green margins, no figure touching an edge or its neighbour (make the image WIDER
+if a lying body needs room). Flat solid #00ff00 GREEN background, nothing else in the image.
+Generate ONE image and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\blightwolf__death\blightwolf_death_row.png
+then stop.
+
+In your final message report, per frame, the pose, and confirm frame 1 is standing at the
+reference size and the last frame lies on the ground.

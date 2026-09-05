@@ -1,0 +1,23 @@
+Draw a 6-frame DEATH animation of THIS character (reference 1), as a horizontal row.
+
+THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not change):
+a robed pilgrim in a frosted grey-blue hooded cloak with a chain across the chest, a frost-white skull face with glowing cold eyes, a curved ice dagger in one hand, the cloak reaching the ground
+crisp hi-res dark-fantasy game sprite, muted palette, no black outlines. Same design, same
+palette, same equipment in every frame; the figure faces the SAME way as reference 1.
+
+THE ACTION, frame by frame: frame 1 the figure recoils from a hit, frame 2 it sags and the robe/cloth collapses, frame 3 it sinks toward the ground, frame 4 it folds down, frame 5 it crumples onto the ground, frame 6 a still heap of cloth and body on the ground -- the FINAL frame is low and wide.
+Each frame is a distinct pose that reads as a continuous fall; the body stays roughly where
+it stood (no sliding across the cell); the last frame is still and final -- it will be held
+on screen. Draw NO blood spray, NO particles, NO ghost, NO effect -- only the body.
+
+Produce ONE image: a horizontal row of EXACTLY 6 figures, evenly spaced, all drawn at ONE
+identical scale (the standing figure in frame 1 is the same size as reference 1's figure;
+later frames are the same body, just lower and wider), feet on one shared ground line,
+generous green margins, no figure touching an edge or its neighbour (make the image WIDER
+if a lying body needs room). Flat solid #00ff00 GREEN background, nothing else in the image.
+Generate ONE image and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_2026-09-05\cold_pilgrim__death\cold_pilgrim_death_row.png
+then stop.
+
+In your final message report, per frame, the pose, and confirm frame 1 is standing at the
+reference size and the last frame lies on the ground.

@@ -1,0 +1,7 @@
+{
+ "base": "rat_rogue",
+ "clip": "death",
+ "frames": 6,
+ "idle": "rat_rogue_anim.png",
+ "arch": "biped"
+}

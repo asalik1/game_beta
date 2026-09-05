@@ -1,0 +1,107 @@
+[
+ {
+  "base": "wolf",
+  "arch": "quadruped",
+  "desc": "a gaunt blight-touched grey wolf with matted dark fur, a pale skull-like face with hollow glowing eyes, ribs and spine showing through the fur, a lowered stalking head and a ragged tail"
+ },
+ {
+  "base": "winterfang",
+  "arch": "quadruped",
+  "desc": "a white frost wolf with thick pale fur tipped in ice-blue, crystal-blue eyes, four legs, a bushy white tail"
+ },
+ {
+  "base": "blightwolf",
+  "arch": "quadruped",
+  "desc": "a blight-cursed wolf with mottled dark grey-green fur cracked by glowing green veins, glowing green eyes, a lean body, four legs, a ragged tail"
+ },
+ {
+  "base": "duneprowler",
+  "arch": "quadruped",
+  "desc": "a lean sand-coloured hyena-like desert prowler with a ridged crest of scaly plates down its back, long pointed ears, a long thin tail, four clawed legs"
+ },
+ {
+  "base": "deep_stalker",
+  "arch": "arachnid",
+  "desc": "a crystal-plated cave spider: a low broad body armored in pale blue-white crystal shards over dark chitin, eight jointed dark legs with pale crystal tips, glowing blue eyes"
+ },
+ {
+  "base": "casket_creeper",
+  "arch": "arachnid",
+  "desc": "a casket creeper: an ornate dark iron-banded coffin with glowing green trim and chains, carried on eight pale bony spider legs, a small skull-faced head peeking from one end. The coffin body stays rigid and level in every frame; only the legs move"
+ },
+ {
+  "base": "vent_skitter",
+  "arch": "arachnid",
+  "desc": "a magma spider: a dark chitin spider with a bulbous abdomen cracked with glowing orange-red lava seams, eight jointed dark legs with glowing orange joints, red eyes. Body drawn at the SAME size as reference 1 (the current walk is drawn too small)"
+ },
+ {
+  "base": "bog_lurker",
+  "arch": "arachnid",
+  "desc": "a marsh spider with a moss-grown grassy dome, a pale sac on its back, eight long thin dark-brown stilt legs with a knee bend, a small dark head"
+ },
+ {
+  "base": "cultist",
+  "arch": "biped",
+  "desc": "a gaunt blight cultist in a tattered dark-brown hooded robe and layered rag coat, an antlered deer-skull mask with glowing eye sockets, a gnarled wooden staff topped with a spiked iron ring held in one hand, thin bony legs and wrapped feet showing below the ragged hem"
+ },
+ {
+  "base": "mummy_rogue",
+  "arch": "biped",
+  "desc": "a lean mummy wrapped head to toe in pale cream bandages, a red cloth sash at the waist, small green gem trinkets on the chest, a curved bronze dagger held in one hand, blue-glowing eye slits, bare bandaged feet"
+ },
+ {
+  "base": "mummy_warrior",
+  "arch": "biped",
+  "desc": "a mummy in cream bandages wearing a golden pharaoh headdress with teal inlays, a teal-and-gold collar, a red loincloth, a curved golden khopesh sword held down in one hand, blue-glowing eye slits"
+ },
+ {
+  "base": "rat_rogue",
+  "arch": "biped",
+  "desc": "a hunched grey-brown ratman in a tattered brown hooded cloak, a small dagger in one clawed hand, a long pink tail, bare clawed feet"
+ },
+ {
+  "base": "rat_warrior",
+  "arch": "biped",
+  "desc": "a stocky grey-brown ratman in a ragged tunic and a small iron helmet, a round wooden shield on one arm and a cleaver-axe raised in the other hand, a long pink tail"
+ },
+ {
+  "base": "zombie_overweight",
+  "arch": "biped",
+  "desc": "a bloated pale-green zombie with a huge sagging belly, ragged trousers with a rope belt, exposed sores, a bald head with a slack jaw, arms hanging"
+ },
+ {
+  "base": "greyrun_lurker",
+  "arch": "arachnid",
+  "desc": "a large dark grey-black spider with a bristly hairy body, an orange-spotted abdomen, eight long segmented legs, pale eyes"
+ },
+ {
+  "base": "grove_horror",
+  "arch": "quadruped",
+  "desc": "a hulking four-legged forest beast of bark and moss with a rack of branch antlers, glowing amber sap cracks and eyes, root-like legs ending in hooves"
+ },
+ {
+  "base": "fungus_immature",
+  "arch": "biped",
+  "desc": "a small mushroom creature: a big orange cap with pale spots over a pale cream stalk body with a dark grin slit, two stubby cream arms and stubby feet"
+ },
+ {
+  "base": "spider",
+  "arch": "arachnid",
+  "desc": "a dark grey spider with a rounded bristly abdomen, eight long segmented legs, several small red eyes"
+ },
+ {
+  "base": "cold_pilgrim",
+  "arch": "glide",
+  "desc": "a robed pilgrim in a frosted grey-blue hooded cloak with a chain across the chest, a frost-white skull face with glowing cold eyes, a curved ice dagger in one hand, the cloak reaching the ground"
+ },
+ {
+  "base": "stormcult",
+  "arch": "glide",
+  "desc": "a cultist in a white-and-gold hooded robe with a tall pointed hood, one hand raised, a hanging brass censer on a chain in the other hand, the robe reaching the ground"
+ },
+ {
+  "base": "flame_pilgrim",
+  "arch": "biped",
+  "desc": "an old grey-haired man in a brown travel robe with a red scarf, a hanging brass lantern in one hand, sandals"
+ }
+]

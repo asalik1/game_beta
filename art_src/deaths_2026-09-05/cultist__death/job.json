@@ -1,0 +1,7 @@
+{
+ "base": "cultist",
+ "clip": "death",
+ "frames": 6,
+ "idle": "cultist_anim.png",
+ "arch": "biped"
+}

@@ -1,0 +1,7 @@
+{
+ "base": "vent_skitter",
+ "clip": "death",
+ "frames": 6,
+ "idle": "vent_skitter_anim.png",
+ "arch": "arachnid"
+}

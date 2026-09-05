@@ -1,0 +1,7 @@
+{
+ "base": "wolf",
+ "clip": "death",
+ "frames": 6,
+ "idle": "wolf_anim.png",
+ "arch": "quadruped"
+}

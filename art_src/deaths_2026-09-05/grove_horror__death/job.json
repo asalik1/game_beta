@@ -1,0 +1,7 @@
+{
+ "base": "grove_horror",
+ "clip": "death",
+ "frames": 6,
+ "idle": "grove_horror_anim.png",
+ "arch": "quadruped"
+}

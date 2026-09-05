@@ -1,0 +1,7 @@
+{
+ "base": "stormcult",
+ "clip": "death",
+ "frames": 6,
+ "idle": "stormcult_anim.png",
+ "arch": "glide"
+}

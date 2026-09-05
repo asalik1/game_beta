@@ -1,0 +1,7 @@
+{
+ "base": "casket_creeper",
+ "clip": "death",
+ "frames": 6,
+ "idle": "casket_creeper_anim.png",
+ "arch": "arachnid"
+}

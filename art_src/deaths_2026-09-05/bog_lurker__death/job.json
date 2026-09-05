@@ -1,0 +1,7 @@
+{
+ "base": "bog_lurker",
+ "clip": "death",
+ "frames": 6,
+ "idle": "bog_lurker_anim.png",
+ "arch": "arachnid"
+}

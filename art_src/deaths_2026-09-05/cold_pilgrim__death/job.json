@@ -1,0 +1,7 @@
+{
+ "base": "cold_pilgrim",
+ "clip": "death",
+ "frames": 6,
+ "idle": "cold_pilgrim_anim.png",
+ "arch": "glide"
+}

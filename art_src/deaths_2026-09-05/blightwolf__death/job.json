@@ -1,0 +1,7 @@
+{
+ "base": "blightwolf",
+ "clip": "death",
+ "frames": 6,
+ "idle": "blightwolf_anim.png",
+ "arch": "quadruped"
+}

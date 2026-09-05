@@ -1,0 +1,7 @@
+{
+ "base": "deep_stalker",
+ "clip": "death",
+ "frames": 6,
+ "idle": "deep_stalker_anim.png",
+ "arch": "arachnid"
+}

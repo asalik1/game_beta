@@ -1,0 +1,7 @@
+{
+ "base": "winterfang",
+ "clip": "death",
+ "frames": 6,
+ "idle": "winterfang_anim.png",
+ "arch": "quadruped"
+}

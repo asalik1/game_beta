@@ -1,0 +1,7 @@
+{
+ "base": "fungus_immature",
+ "clip": "death",
+ "frames": 6,
+ "idle": "fungus_immature_anim.png",
+ "arch": "biped"
+}

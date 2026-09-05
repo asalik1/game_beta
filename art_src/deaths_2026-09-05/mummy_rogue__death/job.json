@@ -1,0 +1,7 @@
+{
+ "base": "mummy_rogue",
+ "clip": "death",
+ "frames": 6,
+ "idle": "mummy_rogue_anim.png",
+ "arch": "biped"
+}

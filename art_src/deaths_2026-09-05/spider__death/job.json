@@ -1,0 +1,7 @@
+{
+ "base": "spider",
+ "clip": "death",
+ "frames": 6,
+ "idle": "spider_anim.png",
+ "arch": "arachnid"
+}

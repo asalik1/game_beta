@@ -1,0 +1,7 @@
+{
+ "base": "duneprowler",
+ "clip": "death",
+ "frames": 6,
+ "idle": "duneprowler_anim.png",
+ "arch": "quadruped"
+}
