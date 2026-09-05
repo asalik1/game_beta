@@ -123,6 +123,21 @@ Verified but NOT fixed (owner's eye / cheap later):
   the wings; serane N is ~12% brighter than the idle (pre-existing); cinderhide attack f3
   keeps ~100px of sub-alpha residue from the claw erase (sub-pixel in play).
 
+### 6b. Second pass on the wave-1 mob/boss walks (two auditors, findings hand-checked)
+- Fixed: ashpriest S carried an opaque green keying patch inside the flail gap (keyed out);
+  vent_skitter and deep_stalker frames 3/7 were botched renders (lava tips / crystal plating
+  gone) — dropped to 6-frame cycles; auroch_minotaur S/N were an ice-blue palette —
+  graded toward the idle; fungus_long S/E and stone_base N/S rendered 12-22% larger than
+  their siblings — reseated; vow_sentinel's warhammer vanished in 2 of 6 frames — filled
+  from the neighbour frames; bandit_scout walk 30% brighter than its idle — tone-matched;
+  casket_creeper fragment, royal_knight ice motes dropped.
+- Re-rolls queued (wave 4/5, crossing-hardened briefs): blightwolf (teal palette, lost its
+  lime shoulder vein), choirmother N (invented glowing hands), hrolgar N (missing skull
+  pauldron), and the seven bipeds whose new walks still scissor without a passing frame
+  (elf_ranger, royal_knight, skeleton, zombie, elf_druid, skeleton_rogue, bandit_scout).
+- Left as-is (P3): wolf/rotmaw/veyx/duneprowler/casket hue nits, cultist boot swap,
+  fungus_heavy N 8% small, stone_base pebble blink, korrag spiked-ball reinterpretation.
+
 ## Open / not done
 
 - **Mage E column DONE**: anim/walk/attack/cast E regenerated as a true right

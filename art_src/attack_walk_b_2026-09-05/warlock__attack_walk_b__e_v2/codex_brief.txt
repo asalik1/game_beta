@@ -1,14 +1,14 @@
 Redraw this EXACT walk cycle (reference 1) with one change: the character fires
 its basic attack once during the stride.
 
-Reference 1 is the character's own 7-frame walk, toward the viewer, frame by frame. Reproduce
-it EXACTLY: the same 7 frames, the same leg cycle and stride, the same crossing,
+Reference 1 is the character's own 6-frame walk, in profile, facing RIGHT, frame by frame. Reproduce
+it EXACTLY: the same 6 frames, the same leg cycle and stride, the same crossing,
 the same garment, the same held equipment in the same hand, the same body height
 and width, the same palette. The legs are already correct -- do not redesign them.
 
-THE SHOVE HAPPENS ONCE, NOT AS A HELD POSE: frames 1-2 both hands at the sides exactly as in the walk (the grimoire in its hand, the skull floating), frames 3-5 both hands thrust forward together in the shove, frames 6-8 the hands return to the sides. The previous attempt drew the shove in every frame, which is wrong.
+THE SHOVE HAPPENS ONCE, NOT AS A HELD POSE: frames 1-2 both hands at the sides exactly as in the walk (the skull floating), the middle frames both hands thrust forward together in the shove, the last frames the hands return to the sides. A held shove in every frame is WRONG.
 THE GRIMOIRE NEVER LEAVES THE FRAME: in the frames where the hands are at the sides it is held open in the near hand exactly as in the walk; during the shove BOTH hands push the OPEN GRIMOIRE forward together (the book between the palms, its purple glow facing forward). Frames with two empty hands are WRONG -- the previous attempt dropped the book entirely.
-THE ONLY CHANGE: BOTH hands shove forward together at chest height, palms out. Spread the motion across the 7 frames so it starts,
+THE ONLY CHANGE: BOTH hands shove forward together at chest height, palms out. Spread the motion across the 6 frames so it starts,
 peaks around the middle and returns by the end, while the legs keep walking
 through their unchanged cycle.
 
@@ -24,13 +24,13 @@ Hard requirements:
   The game spawns the projectile itself; anything drawn here would double it.
 - Same body height and width in every frame; no frame is a copy of another.
 
-Produce ONE image: a horizontal row of EXACTLY 7 figures, evenly spaced, all feet
+Produce ONE image: a horizontal row of EXACTLY 6 figures, evenly spaced, all feet
 on one shared ground line, each body near its cell's horizontal centre, green
 margins all round -- no figure touching an image edge or its neighbour. EVERY FIGURE
 IS THE SAME SIZE; if they will not fit at full size, make the image WIDER. Flat solid
 #00ff00 GREEN background, nothing else in the image.
 Generate ONE image and SAVE it to disk at the exact path
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\warlock__attack_walk_b__s_v2\warlock_attack_walk_b_s_row.png
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\attack_walk_b_2026-09-05\warlock__attack_walk_b__e_v2\warlock_attack_walk_b_e_row.png
 then stop.
 
 In your final message, report for each frame: which leg leads, and where the firing
