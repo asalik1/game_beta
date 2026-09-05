@@ -1,0 +1,43 @@
+Redraw this animation clip as a TRUE RIGHT-SIDE PROFILE.
+
+Reference 1 is the character (front view): reproduce this exact design -- face,
+hair, garment, palette, the staff and which hand holds it. Nothing about the
+design changes.
+Reference 2 shows a similar character drawn in a REAL side profile: the viewer
+sees the RIGHT side of the body only, one shoulder in front of the other, the
+face in profile with one eye visible, the near arm in front of the torso. Draw
+reference 1's character from THIS angle.
+Reference 3 is the current clip, 7 frames, which was drawn front-on by mistake.
+Keep its frame count and its per-frame ACTION exactly: the basic ranged ATTACK: the free hand thrusts forward and a bolt is loosed from it (draw the hand gesture only -- NO bolt, spark, flame or projectile on the sprite). Frame 1 of the
+new row does what frame 1 of reference 3 does, and so on -- only the viewing
+angle changes.
+
+THE CHARACTER: a slender woman with long white hair, a deep-blue and white hooded mage's robe with gold trim and a dark sash, a long dark staff with a glowing blue crystal head held in her right hand, dark boots below a closed floor-length hem
+
+Hard requirements:
+- THE STAFF STAYS IN HER RIGHT HAND IN EVERY FRAME. Facing right, her right hand is the NEAR (camera-side)
+  hand, so the staff is drawn in FRONT of her body, exactly where reference 1 and the idle hold it; it never
+  changes hands and never goes behind her. The THRUST is done by the LEFT (far) hand, which reaches forward
+  past the staff.
+- EVERY frame has the SAME body height, head at the same height above the ground line: the recovery frames
+  are NOT smaller or crouched. The previous attempt shrank the last three frames by 13% and swapped the staff
+  to the far hand -- both are wrong.
+- A genuine profile in EVERY frame: no frame turns the face or the shoulders
+  back toward the camera.
+- Same body height and width in every frame; feet on one shared ground line;
+  the body near each cell's horizontal centre (no drift across the row).
+- The robe stays CLOSED and floor-length: no slit, no bare legs; the walk reads
+  through the boots below the hem and the hem's sway.
+- Draw NO projectile, bolt, flame, spark, glow or magic effect anywhere -- the
+  game spawns those; anything drawn here would double it.
+
+Produce ONE image: a horizontal row of EXACTLY 7 figures, evenly spaced, all the
+same size (if they will not fit at full size, make the image WIDER), green margins
+all round, no figure touching an edge or its neighbour. Flat solid #00ff00 GREEN
+background, nothing else in the image.
+Generate ONE image and SAVE it to disk at the exact path
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\mage_profile_2026-09-03\mage__attack__e_v2\mage_attack_e_row.png
+then stop.
+
+In your final message report, per frame, what the character is doing and confirm
+every frame is a profile with no projectile or effect drawn.

@@ -1,0 +1,14 @@
+{
+ "base": "stormmouth",
+ "facing": "n",
+ "arch": "biped_heavy",
+ "frames": 6,
+ "heavy": true,
+ "desc": "a storm-armoured juggernaut walking AWAY from the viewer: the back of a massive humanoid in heavy dark-blue plate armour with pale-blue lightning veins along the plates and a glowing blue core, a smooth rounded helm seen from behind (no face), huge shoulder pauldrons, thick armoured legs and sabatons",
+ "defect": "the current north strip is a byte copy of the east strip -- a right-facing profile wearing the north name",
+ "idle_ref": "stormmouth_anim_codex",
+ "donor": "skins/elite/warrior_emberbound_heir_walk_n",
+ "donor_flipped": false,
+ "refs": 2,
+ "desc_v2": "THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not\nchange): a massive storm-armoured juggernaut seen from BEHIND: heavy GUNMETAL dark-steel plate\n(not bright blue) with pale-blue lightning veins crackling along the plates; ENORMOUS layered\nshoulder pauldrons exactly as wide as in reference 1 (at the shoulders the silhouette is far wider\nthan the hips); a rounded spiked helm seen from behind; a BROWN LEATHER tabard hanging from the\nbelt over the back of the thighs; thick armoured legs and sabatons. The glowing blue lightning\nMAW on his chest is on the FRONT ONLY -- from behind the back is plain dark plate: draw NO glowing\norb, core, gem, light or opening anywhere on the back.\n"
+}

@@ -257,6 +257,7 @@ def main() -> int:
     ap.add_argument("--mirror-out", action="append", default=[], help="per-cell mirrored destination(s)")
     ap.add_argument("--copy-out", action="append", default=[], help="byte-copy destination(s)")
     ap.add_argument("--frames", type=int, default=None)
+    ap.add_argument("--cell", type=int, default=None, help="override the cell size (a taller cell for a clip whose raised weapon overflows the old one); the feet keep the old bottom margin")
     ap.add_argument("--gutters", action="store_true", help="slice at real gutters, not equal width")
     ap.add_argument("--gutter-gap", type=int, default=4, help="content runs closer than this merge into one figure (a shield held off the body)")
     ap.add_argument("--anchor", choices=["torso", "centroid", "bbox"], default="torso")
@@ -270,6 +271,9 @@ def main() -> int:
 
     old = Path(args.old)
     cell, body, feet = old_geometry(old)
+    if args.cell:
+        feet = args.cell - (cell - feet)
+        cell = args.cell
     print(f"old {old.name}: cell {cell} body {body} feet {feet}")
     strip = build(Path(args.row), cell, body, feet, args.frames, args.gutters, args.anchor,
                   args.flip, not args.no_orphans, args.report, args.gutter_gap)
