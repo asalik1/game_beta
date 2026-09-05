@@ -9997,5 +9997,26 @@ func _test_tell_shapes() -> void:
 			return _fail("BOSS_TELL[%s] names an unknown shape %s" % [kind, s])
 		if not kind in Menus.BOSS_KINDS:
 			return _fail("BOSS_TELL[%s] is not a boss kind (typo?)" % kind)
-	print("ok: boss tell accents (inside the danger disc, %d styled bosses)"
+		var w := String(row.get("windup", ""))
+		if not w in ["", "crouch", "rise", "lean", "coil"]:
+			return _fail("BOSS_TELL[%s] names an unknown windup %s" % [kind, w])
+	# The per-boss WINDUP posture rides a held pose channel (_tell_pose_*) that
+	# the per-frame _pose_* decay cannot fight: a crouch must still be on the
+	# body a beat into the fuse, and the render tail must carry it to the sprite.
+	var b: Boss = Boss.make_boss(game, "vargoth", game.player.global_position + Vector2(900.0, 0.0))
+	b.dmg = 0.0
+	game.bosses.append(b)
+	game.add_child(b)   # make_boss builds it; the caller parents it (the net tests' pattern)
+	await get_tree().process_frame
+	b._tell_windup(Balance.BOSS_TELL["vargoth"], 0.8, b.global_position + Vector2(120.0, 0.0))
+	await get_tree().create_timer(0.35).timeout
+	var held: float = b._tell_pose_y
+	var on_sprite: bool = b.sprite != null and b.sprite.scale.y < b._scale_base.y * 0.995
+	game.bosses.erase(b)
+	b.queue_free()
+	if held > -0.02:
+		return _fail("boss tell windup did not hold a crouch (_tell_pose_y %.3f)" % held)
+	if not on_sprite:
+		return _fail("boss tell windup crouch never reached the sprite scale")
+	print("ok: boss tell accents (inside the danger disc, %d styled bosses) + windup posture held"
 		% Balance.BOSS_TELL.size())

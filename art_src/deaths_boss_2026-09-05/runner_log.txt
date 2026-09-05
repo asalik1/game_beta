@@ -1,2 +1,13 @@
 codex = C:\Users\asali\AppData\Local\OpenAI\Codex\bin\9ba750cce02d5e5c\codex.exe
 launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\ashpriest__death (1 refs)
+wait: free RAM 0.42GB < 1.3GB gate (1 running)
+wait: free RAM 0.34GB < 1.3GB gate (1 running)
+wait: free RAM 0.35GB < 1.3GB gate (1 running)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\auroch_minotaur__death (1 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\hrolgar__death (1 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\kaethra__death (1 refs)
+wait: free RAM 0.78GB < 1.3GB gate (1 running)
+wait: free RAM 0.62GB < 1.3GB gate (1 running)
+wait: free RAM 0.96GB < 1.3GB gate (1 running)
+wait: free RAM 1.02GB < 1.3GB gate (0 running)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\korrag__death (1 refs)

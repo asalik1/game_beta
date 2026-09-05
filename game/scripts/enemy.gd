@@ -104,6 +104,9 @@ var _pose_x := 0.0          # ... and on scale.x
 var _spawn_k := 0.0         # spawn-in growth 1 -> 0 (mid-fight summons only)
 var _death_k := 0.0         # sheetless death collapse 0 -> 1
 var _lean := 0.0            # eased travel lean (rad)
+var _tell_pose_y := 0.0     # boss tell windup: held posture through a fuse (scale.y delta)
+var _tell_pose_x := 0.0     # ... scale.x delta
+var _tell_lean := 0.0       # ... aim lean (rad); all three tweened by Boss._tell_windup, no decay
 var _gait_shape := "biped"  # Art.gait_shape(sprite key): biped | quad | glide
 var _steps := 0.0           # contact counter (footfall dust / boss stomp)
 var _dir_t := 0.0           # seconds since the last 8-direction strip swap
@@ -1098,12 +1101,12 @@ func _render_tail(delta: float, moving: bool) -> void:
 		mx += Balance.MOB_POUNCE_STRETCH
 		my -= Balance.MOB_POUNCE_STRETCH
 	_lean = lerpf(_lean, lean_target, minf(1.0, delta * Balance.WALK_LEAN_EASE))
-	rot += _lean
+	rot += _lean + _tell_lean
 	# --- transient poses: hit squash, windup crouch, spawn, death --------
 	mx += _squash_k
 	my -= _squash_k
-	my += _pose_y
-	mx += _pose_x
+	my += _pose_y + _tell_pose_y
+	mx += _pose_x + _tell_pose_x
 	_pose_y = move_toward(_pose_y, 0.0, delta * 0.9)
 	_pose_x = move_toward(_pose_x, 0.0, delta * 0.9)
 	if _spawn_k > 0.0:
