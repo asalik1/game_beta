@@ -7,27 +7,28 @@ At line:7 char:14
  
 OpenAI Codex v0.153.0
 --------
-workdir: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death
+workdir: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\vargoth__death
 model: gpt-5.6-sol
 provider: openai
 approval: never
 sandbox: danger-full-access
 reasoning effort: high
 reasoning summaries: none
-session id: 01a0737d-007e-7483-aa27-5d737335fabc
+session id: 01a0738e-d057-7e43-96e1-bd2347dc7cbe
 --------
 user
 Draw a 6-frame DEATH animation of THIS character (reference 1), as a horizontal row.
 
 THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not change):
-a ghostly nun in a dark hooded veil with a faint halo, a pale face, a translucent dark gown fading to mist at the hem, 
-arms spread
+a black-armoured knight with a spiked crown helm, fire licking from the shoulders and the visor, a flaming greatsword 
+held low in one hand, a dark cape
 crisp hi-res dark-fantasy game sprite, muted palette, no black outlines. Same design, same
 palette, same equipment in every frame; the figure faces the SAME way as reference 1.
 
-THE ACTION, frame by frame: frame 1 the figure recoils from a hit, frame 2 it sags and the robe/cloth collapses, frame 
-3 it sinks toward the ground, frame 4 it folds down, frame 5 it crumples onto the ground, frame 6 a still heap of 
-cloth and body on the ground -- the FINAL frame is low and wide.
+THE ACTION, frame by frame: frame 1 the body jolts back from a hit (head snaps, arms fly up), frame 2 it staggers, one 
+knee buckling, frame 3 it drops to its knees, frame 4 it topples sideways/forward, frame 5 it hits the ground, limbs 
+sprawled, frame 6 it lies still, flat on the ground -- the FINAL frame is a lying body, much wider than tall, its feet 
+where the standing feet were.
 Each frame is a distinct pose that reads as a continuous fall; the body stays roughly where
 it stood (no sliding across the cell); the last frame is still and final -- it will be held
 on screen. Draw NO blood spray, NO particles, NO ghost, NO effect -- only the body.
@@ -38,8 +39,8 @@ all at one identical scale, all feet on one shared ground line per row, each fig
 green margins between figures and around the image edges -- no figure touching another figure or an edge. Flat solid 
 #00ff00 GREEN background, nothing else in the image.
 Generate ONE image and SAVE it to disk at the exact path
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death\morwen_de
-ath_grid.png
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\vargoth__death\vargoth_
+death_grid.png
 then stop.
 
 In your final message report, per frame, the pose, and confirm frame 1 is standing at the
@@ -47,14 +48,17 @@ reference size and the last frame lies on the ground.
 
 
 codex
-IΓÇÖm using the image-generation workflow and first checking the repositoryΓÇÖs art rules, then IΓÇÖll generate the 
-single six-frame sheet, verify its layout visually, and save it at the exact requested path.
+IΓÇÖm using the image-generation workflow to preserve the reference character while composing the six requested death 
+poses, then IΓÇÖll verify the saved grid and exact output path.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 'C:\\Users\\as
+ali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_boss_2026-09-05\\vargoth__death\\CLAUDE.md'
+" in C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\vargoth__death
 exec
 "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 
-'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'; Get-Content -Raw -LiteralPath 'C:\\Users\\asali\\Proje
-cts\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_boss_2026-09-05\\morwen__death\\CLAUDE.md'" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death
- exited 1 in 361ms:
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\vargoth__death
+ succeeded in 252ms:
 ---
 name: "imagegen"
 description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, 
@@ -422,24 +426,624 @@ into their active environment.
 - `scripts/image_gen.py`: fallback-only CLI implementation. Use only when the user explicitly chooses or confirms CLI 
 mode.
 
+
+ exited 1 in 392ms:
 Get-Content : Cannot find path 'C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_20
-26-09-05\morwen__death\CLAUDE.md' because it does not exist.
-At line:2 char:89
-+ ... \SKILL.md'; Get-Content -Raw -LiteralPath 'C:\Users\asali\Projects\MM ...
-+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+26-09-05\vargoth__death\CLAUDE.md' because it does not exist.
+At line:2 char:1
++ Get-Content -Raw -LiteralPath 'C:\Users\asali\Projects\MMO\.claude\wo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     + CategoryInfo          : ObjectNotFound: (C:\Users\asali\...death\CLAUDE.md:String) [Get-Content], ItemNotFoundEx 
    ception
     + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
  
 
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$p = Resolve-Path -LiteralPath '"'.'; while 
-("'$p) { $candidate = Join-Path $p '"'CLAUDE.md'; if (Test-Path -LiteralPath "'$candidate) { Write-Output $candidate; 
-Get-Content -Raw -LiteralPath $candidate; break }; $parent = Split-Path -Parent $p; if ($parent -eq $p) { break }; $p 
-= $parent }' in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death
- succeeded in 355ms:
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$p=(Get-Location).Path; while ($true) { 
+$f=Join-Path $p '"'CLAUDE.md'; if (Test-Path -LiteralPath "'$f) { Write-Output $f }; $parent=Split-Path -Parent $p; if 
+($parent -eq $p -or [string]::IsNullOrEmpty($parent)) { break }; $p=$parent }' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\vargoth__death
+ succeeded in 361ms:
 C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\CLAUDE.md
+C:\Users\asali\Projects\MMO\CLAUDE.md
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\references\\prompting.md'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\vargoth__death
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 
+'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\references\\sample-prompts.md'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\vargoth__death
+ succeeded in 240ms:
+# Prompting best practices
+
+These prompting principles are shared by both top-level modes of the skill:
+- built-in `image_gen` tool (default)
+- explicit `scripts/image_gen.py` CLI fallback
+
+This file is about prompt structure, specificity, and iteration. Fallback-only execution controls such as `quality`, 
+`input_fidelity`, masks, output format, and output paths live in the fallback docs.
+
+## Contents
+- [Structure](#structure)
+- [Specificity policy](#specificity-policy)
+- [Allowed and disallowed augmentation](#allowed-and-disallowed-augmentation)
+- [Composition and layout](#composition-and-layout)
+- [Constraints and invariants](#constraints-and-invariants)
+- [Text in images](#text-in-images)
+- [Input images and references](#input-images-and-references)
+- [Iterate deliberately](#iterate-deliberately)
+- [Transparent images](#transparent-images)
+- [Fallback-only execution controls](#fallback-only-execution-controls)
+- [Use-case tips](#use-case-tips)
+- [Where to find copy/paste recipes](#where-to-find-copypaste-recipes)
+
+## Structure
+- Use a consistent order: scene/backdrop -> subject -> key details -> constraints -> output intent.
+- Include intended use (ad, UI mock, infographic) to set the level of polish.
+- For complex requests, use short labeled lines instead of one long paragraph.
+
+## Specificity policy
+- If the user prompt is already specific and detailed, normalize it into a clean spec without adding creative 
+requirements.
+- If the prompt is generic, you may add tasteful detail when it materially improves the output.
+- Treat examples in `sample-prompts.md` as fully-authored recipes, not as the default amount of augmentation to add to 
+every request.
+- For photorealism, include `photorealistic` directly when that is the goal, plus concrete real-world texture such as 
+pores, wrinkles, fabric wear, material grain, or imperfect everyday detail.
+
+## Allowed and disallowed augmentation
+
+Allowed augmentation for generic prompts:
+- composition and framing cues
+- intended-use or polish-level hints
+- practical layout guidance
+- reasonable scene concreteness that supports the request
+
+Do not add:
+- extra characters, props, or objects that are not implied
+- brand palettes, slogans, or story beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Composition and layout
+- Specify framing and viewpoint (close-up, wide, top-down) and placement only when it materially helps.
+- Call out negative space if the asset clearly needs room for UI or copy.
+- Avoid making left/right layout decisions unless the user or surrounding layout supports them.
+- For people, describe body framing, scale, gaze, and object interactions when they matter (`full body visible`, 
+`looking down at the book`, `hands naturally gripping the handlebars`).
+
+## Constraints and invariants
+- State what must not change (`keep background unchanged`).
+- For edits, say `change only X; keep Y unchanged` and repeat invariants on every iteration to reduce drift.
+
+## Text in images
+- Put literal text in quotes or ALL CAPS and specify typography (font style, size, color, placement).
+- Spell uncommon words letter-by-letter if accuracy matters.
+- For in-image copy, require verbatim rendering and no extra characters.
+- In CLI fallback mode, use `medium` or `high` quality for small text, dense infographics, data-heavy slides, 
+multi-font layouts, legends, axes, and footnotes.
+
+## Input images and references
+- Do not assume that every provided image is an edit target.
+- Label each image by index and role (`Image 1: edit target`, `Image 2: style reference`).
+- If the user provides images for style, composition, or mood guidance and does not ask to modify them, treat the 
+request as generation with references.
+- If the user asks to preserve an existing image while changing specific parts, treat the request as an edit.
+- For compositing, describe how the images interact (`place the subject from Image 2 into Image 1`).
+
+## Iterate deliberately
+- Start with a clean base prompt, then make small single-change edits.
+- Re-specify critical constraints when you iterate.
+- Prefer one targeted follow-up at a time over rewriting the whole prompt.
+
+## Transparent images
+- Ask built-in `image_gen` for a genuinely transparent background and preserve its alpha.
+
+## Fallback-only execution controls
+- `quality`, `input_fidelity`, explicit masks, output format, and output paths are fallback-only execution controls.
+- Do not assume they are built-in `image_gen` tool arguments.
+- If the user explicitly chooses CLI fallback, see `references/cli.md` and `references/image-api.md` for those 
+controls.
+- In CLI fallback mode, `gpt-image-2` is the default. It supports `quality=low|medium|high|auto`; use `low` for fast 
+drafts and thumbnails, and move to `medium`, `high`, or `auto` for final assets.
+- `gpt-image-2` always uses high fidelity for image inputs, so do not set `input_fidelity` with that model.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user 
+explicitly requested that model.
+- If the user asks for 4K-style output with `gpt-image-2`, use `3840x2160` for landscape or `2160x3840` for portrait.
+
+## Use-case tips
+Generate:
+- photorealistic-natural: Prompt as if a real photo is captured in the moment; use photography language (lens, 
+lighting, framing); call for real texture; avoid over-stylized polish unless requested.
+- product-mockup: Describe the product/packaging and materials; ensure clean silhouette and label clarity; if in-image 
+text is needed, require verbatim rendering and specify typography.
+- ui-mockup: Describe the target fidelity first (shippable mockup or low-fi wireframe), then focus on layout, 
+hierarchy, and practical UI elements; avoid concept-art language.
+- infographic-diagram: Define the audience and layout flow; label parts explicitly; require verbatim text; prefer 
+higher quality in CLI mode for dense labels.
+- logo-brand: Keep it simple and scalable; ask for a strong silhouette and balanced negative space; avoid decorative 
+flourishes unless requested.
+- ads-marketing: Write like a creative brief; include brand positioning, audience, desired vibe, scene, and exact 
+tagline if text must appear.
+- productivity-visual: Name the exact artifact (slide, chart, workflow diagram), define the canvas and hierarchy, 
+provide real labels/data, and ask for readable typography and polished spacing.
+- scientific-educational: Define audience, lesson objective, required labels, scientific constraints, arrows, and 
+scan-friendly whitespace.
+- illustration-story: Define panels or scene beats; keep each action concrete.
+- stylized-concept: Specify style cues, material finish, and rendering approach (3D, painterly, clay) without 
+inventing new story elements.
+- historical-scene: State the location/date and required period accuracy; constrain clothing, props, and environment 
+to match the era.
+
+Edit:
+- text-localization: Change only the text; preserve layout, typography, spacing, and hierarchy; no extra words or 
+reflow unless needed.
+- identity-preserve: Lock identity (face, body, pose, hair, expression); change only the specified elements; match 
+lighting and shadows.
+- precise-object-edit: Specify exactly what to remove/replace; preserve surrounding texture and lighting; keep 
+everything else unchanged.
+- lighting-weather: Change only environmental conditions (light, shadows, atmosphere, precipitation); keep geometry, 
+framing, and subject identity.
+- background-extraction: Request a clean cutout on a genuinely transparent background; preserve fine edges and label 
+text; no halos or restyling.
+- style-transfer: Specify style cues to preserve (palette, texture, brushwork) and what must change; add `no extra 
+elements` to prevent drift.
+- compositing: Reference inputs by index; specify what moves where; match lighting, perspective, and scale; keep the 
+base framing unchanged.
+- sketch-to-render: Preserve layout, proportions, and perspective; choose materials and lighting that support the 
+supplied sketch without adding new elements.
+
+## Where to find copy/paste recipes
+For copy/paste prompt specs (examples only), see `references/sample-prompts.md`. This file focuses on principles, 
+specificity, and iteration patterns.
+
+
+ succeeded in 246ms:
+# Sample prompts (copy/paste)
+
+These prompt recipes are shared across both top-level modes of the skill:
+- built-in `image_gen` tool (default)
+- `scripts/image_gen.py` CLI fallback for explicit or user-confirmed CLI/API/model requests
+
+Use these as starting points. They are intentionally complete prompt recipes, not the default amount of augmentation 
+to add to every user request.
+
+When adapting a user's prompt:
+- keep user-provided requirements
+- only add detail according to the specificity policy in `SKILL.md`
+- do not treat every example below as permission to invent extra story elements
+
+The labeled lines are prompt scaffolding, not a closed schema. `Asset type` and `Input images` are prompt-only 
+scaffolding; the CLI does not expose them as dedicated flags.
+
+Execution details such as explicit CLI flags, `quality`, `input_fidelity`, masks, output formats, and local output 
+paths depend on mode. Use built-in `image_gen` by default, request transparent backgrounds directly, and preserve the 
+generated alpha; apply CLI-specific controls only when the user chooses or confirms that fallback.
+
+CLI model notes:
+- `gpt-image-2` is the fallback CLI default for new workflows.
+- `gpt-image-2` supports `quality` values `low`, `medium`, `high`, and `auto`.
+- For 4K-style `gpt-image-2` output, use `3840x2160` or `2160x3840`.
+- CLI `gpt-image-2` does not support `background=transparent`; ask before using `gpt-image-1.5` unless the user 
+explicitly requested that model.
+- Do not set `input_fidelity` with `gpt-image-2`; image inputs already use high fidelity.
+
+For prompting principles (structure, specificity, invariants, iteration), see `references/prompting.md`.
+
+## Generate
+
+### photorealistic-natural
+```
+Use case: photorealistic-natural
+Primary request: candid photo of an elderly sailor on a small fishing boat adjusting a net
+Scene/backdrop: coastal water with soft haze
+Subject: weathered skin with wrinkles and sun texture
+Style/medium: photorealistic candid photo
+Composition/framing: medium close-up, eye-level
+Lighting/mood: soft coastal daylight, shallow depth of field, subtle film grain
+Materials/textures: real skin texture, worn fabric, salt-worn wood
+Constraints: natural color balance; no heavy retouching; no glamorization; no watermark
+Avoid: studio polish; staged look
+```
+
+### product-mockup
+```
+Use case: product-mockup
+Primary request: premium product photo of a matte black shampoo bottle with a minimal label
+Scene/backdrop: clean studio gradient from light gray to white
+Subject: single bottle centered with subtle reflection
+Style/medium: premium product photography
+Composition/framing: centered, slight three-quarter angle, generous padding
+Lighting/mood: softbox lighting, clean highlights, controlled shadows
+Materials/textures: matte plastic, crisp label printing
+Constraints: no logos or trademarks; no watermark
+```
+
+### ui-mockup
+```
+Use case: ui-mockup
+Primary request: mobile app home screen for a local farmers market with vendors and daily specials
+Asset type: mobile app screen
+Style/medium: realistic product UI, not concept art
+Composition/framing: clean vertical mobile layout with clear hierarchy
+Constraints: practical layout, clear typography, no logos or trademarks, no watermark
+```
+
+### infographic-diagram
+```
+Use case: infographic-diagram
+Primary request: detailed infographic of an automatic coffee machine flow
+Scene/backdrop: clean, light neutral background
+Subject: bean hopper -> grinder -> brew group -> boiler -> water tank -> drip tray
+Style/medium: clean vector-like infographic with clear callouts and arrows
+Composition/framing: vertical poster layout, top-to-bottom flow
+Text (verbatim): "Bean Hopper", "Grinder", "Brew Group", "Boiler", "Water Tank", "Drip Tray"
+Constraints: clear labels, strong contrast, no logos or trademarks, no watermark
+```
+
+### scientific-educational
+```
+Use case: scientific-educational
+Primary request: biology diagram titled "Cellular Respiration at a Glance" for high school students
+Scene/backdrop: clean white classroom handout background
+Subject: glucose turns into energy inside a cell; include glycolysis, Krebs cycle, and electron transport chain
+Style/medium: flat scientific diagram with consistent icons, arrows, and readable labels
+Composition/framing: landscape slide-style layout with clear hierarchy and generous whitespace
+Text (verbatim): "Cellular Respiration at a Glance", "Glucose", "Pyruvate", "ATP", "NADH", "FADH2", "CO2", "O2", "H2O"
+Constraints: scientifically plausible; avoid tiny text; no extra decoration; no watermark
+```
+
+### logo-brand
+```
+Use case: logo-brand
+Primary request: original logo for "Field & Flour", a local bakery
+Style/medium: vector logo mark; flat colors; minimal
+Composition/framing: single centered logo on a plain background with generous padding
+Constraints: strong silhouette, balanced negative space; original design only; no gradients unless essential; no 
+trademarks; no watermark
+```
+
+### illustration-story
+```
+Use case: illustration-story
+Primary request: 4-panel comic about a pet left alone at home
+Scene/backdrop: cozy living room across panels
+Subject: pet reacting to the owner leaving, then relaxing, then returning to a composed pose
+Style/medium: comic illustration with clear panels
+Composition/framing: 4 equal-sized vertical panels, readable actions per panel
+Constraints: no text; no logos or trademarks; no watermark
+```
+
+### stylized-concept
+```
+Use case: stylized-concept
+Primary request: cavernous hangar interior with tall support beams and drifting fog
+Scene/backdrop: industrial hangar interior, deep scale, light haze
+Subject: compact shuttle parked near the center
+Style/medium: cinematic concept art, industrial realism
+Composition/framing: wide-angle, low-angle
+Lighting/mood: volumetric light rays cutting through fog
+Constraints: no logos or trademarks; no watermark
+```
+
+### ads-marketing
+```
+Use case: ads-marketing
+Primary request: campaign image for a streetwear brand called Thread
+Subject: group of friends hanging out together in a stylish urban setting
+Style/medium: polished youth streetwear campaign photography
+Composition/framing: vertical ad layout with natural poses and integrated headline space
+Lighting/mood: contemporary, energetic, tasteful
+Text (verbatim): "Yours to Create."
+Constraints: render the tagline exactly once; clean legible typography; no extra text; no watermarks; no unrelated 
+logos
+```
+
+### productivity-visual
+```
+Use case: productivity-visual
+Primary request: one pitch-deck slide titled "Market Opportunity"
+Asset type: fundraising slide image
+Style/medium: clean modern deck slide, white background, crisp sans-serif typography
+Subject: TAM/SAM/SOM concentric-circle diagram plus a small growth bar chart from 2021 to 2026
+Composition/framing: 16:9 landscape slide, clear data hierarchy, polished spacing
+Text (verbatim): "Market Opportunity", "TAM: $42B", "SAM: $8.7B", "SOM: $340M", "AGI Research, 2024", "Internal 
+analysis"
+Constraints: readable labels, no clip art, no stock photography, no decorative clutter, no watermark
+```
+
+### historical-scene
+```
+Use case: historical-scene
+Primary request: outdoor crowd scene in Bethel, New York on August 16, 1969
+Scene/backdrop: open field with period-appropriate staging
+Subject: crowd in period-accurate clothing, authentic environment
+Style/medium: photorealistic photo
+Composition/framing: wide shot, eye-level
+Constraints: period-accurate details; no modern objects; no logos or trademarks; no watermark
+```
+
+## Asset type templates (taxonomy-aligned)
+
+### Website assets template
+```
+Use case: <photorealistic-natural|stylized-concept|product-mockup|infographic-diagram|ui-mockup>
+Asset type: <hero image / section illustration / blog header>
+Primary request: <short description>
+Scene/backdrop: <environment or abstract backdrop>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D>
+Composition/framing: <wide/centered; note usable negative space only if needed>
+Lighting/mood: <soft/bright/neutral>
+Color palette: <brand colors or neutral>
+Constraints: <no text; no logos; no watermark; leave room for UI if needed>
+```
+
+### Website assets example: minimal hero background
+```
+Use case: stylized-concept
+Asset type: landing page hero background
+Primary request: minimal abstract background with a soft gradient and subtle texture
+Style/medium: matte illustration / soft-rendered abstract background
+Composition/framing: wide composition with usable negative space for page copy
+Lighting/mood: gentle studio glow
+Color palette: restrained neutral palette
+Constraints: no text; no logos; no watermark
+```
+
+### Website assets example: feature section illustration
+```
+Use case: stylized-concept
+Asset type: feature section illustration
+Primary request: simple abstract shapes suggesting connection and flow
+Scene/backdrop: subtle light-gray backdrop with faint texture
+Style/medium: flat illustration; soft shadows; restrained contrast
+Composition/framing: centered cluster; open margins for UI
+Color palette: muted neutral palette
+Constraints: no text; no logos; no watermark
+```
+
+### Website assets example: blog header image
+```
+Use case: photorealistic-natural
+Asset type: blog header image
+Primary request: overhead desk scene with notebook, pen, and coffee cup
+Scene/backdrop: warm wooden tabletop
+Style/medium: photorealistic photo
+Composition/framing: wide crop with clean room for page copy
+Lighting/mood: soft morning light
+Constraints: no text; no logos; no watermark
+```
+
+### Game assets template
+```
+Use case: stylized-concept
+Asset type: <game environment concept art / game character concept / game UI icon / tileable game texture>
+Primary request: <biome/scene/character/icon/material>
+Scene/backdrop: <location + set dressing> (if applicable)
+Subject: <main focal element(s)>
+Style/medium: <realistic/stylized>; <concept art / character render / UI icon / texture>
+Composition/framing: <wide/establishing/top-down>; <camera angle>; <focal point placement>
+Lighting/mood: <time of day>; <mood>; <volumetric/fog/etc>
+Constraints: no logos or trademarks; no watermark
+```
+
+### Game assets example: environment concept art
+```
+Use case: stylized-concept
+Asset type: game environment concept art
+Primary request: cavernous hangar interior with tall support beams and drifting fog
+Scene/backdrop: industrial hangar interior, deep scale, light haze
+Subject: compact shuttle parked near the center
+Style/medium: cinematic concept art, industrial realism
+Composition/framing: wide-angle, low-angle
+Lighting/mood: volumetric light rays cutting through fog
+Constraints: no logos or trademarks; no watermark
+```
+
+### Game assets example: character concept
+```
+Use case: stylized-concept
+Asset type: game character concept
+Primary request: desert scout character with layered travel gear
+Subject: long coat, satchel, practical travel clothing
+Style/medium: character render; stylized realism
+Composition/framing: neutral hero pose on a simple backdrop
+Constraints: no logos or trademarks; no watermark
+```
+
+### Game assets example: UI icon
+```
+Use case: stylized-concept
+Asset type: game UI icon
+Primary request: round shield icon with a subtle rune pattern
+Style/medium: painted game UI icon
+Composition/framing: centered icon; generous padding; clear silhouette
+Constraints: no text; no background scene elements; no logos or trademarks; no watermark
+```
+
+### Game assets example: tileable texture
+```
+Use case: stylized-concept
+Asset type: tileable game texture
+Primary request: worn sandstone blocks
+Style/medium: seamless tileable texture; PBR-ish look
+Scene/backdrop: neutral lighting reference only
+Constraints: seamless edges; no obvious focal elements; no text; no logos or trademarks; no watermark
+```
+
+### Wireframe template
+```
+Use case: ui-mockup
+Asset type: website wireframe
+Primary request: <page or flow to sketch>
+Style/medium: low-fi grayscale wireframe
+Composition/framing: <landscape or portrait to match expected device>
+Subject: <sections in order; grid/columns; key labels>
+Constraints: no color; no logos; no real photos; no watermark
+```
+
+### Wireframe example: homepage (desktop)
+```
+Use case: ui-mockup
+Asset type: website wireframe
+Primary request: SaaS homepage layout with clear hierarchy
+Style/medium: low-fi grayscale wireframe
+Subject: top nav; hero with headline and CTA; three feature cards; testimonial strip; pricing preview; footer
+Composition/framing: landscape desktop layout
+Constraints: label major blocks; no color; no logos; no real photos; no watermark
+```
+
+### Wireframe example: pricing page
+```
+Use case: ui-mockup
+Asset type: website wireframe
+Primary request: pricing page layout with comparison table
+Style/medium: low-fi grayscale wireframe
+Subject: header; plan toggle; 3 pricing cards; comparison table; FAQ accordion; footer
+Composition/framing: desktop or tablet layout
+Constraints: label key areas; no color; no logos; no real photos; no watermark
+```
+
+### Wireframe example: mobile onboarding flow
+```
+Use case: ui-mockup
+Asset type: mobile onboarding wireframe
+Primary request: three-screen mobile onboarding flow
+Style/medium: low-fi grayscale wireframe
+Subject: screen 1 headline and CTA; screen 2 feature bullets; screen 3 form fields and CTA
+Composition/framing: portrait mobile layout
+Constraints: label screens and blocks; no color; no logos; no real photos; no watermark
+```
+
+### Logo template
+```
+Use case: logo-brand
+Asset type: logo concept
+Primary request: <brand idea or symbol concept>
+Style/medium: vector logo mark; flat colors; minimal
+Composition/framing: centered mark; clear silhouette; generous margin
+Color palette: <1-2 colors; high contrast>
+Text (verbatim): "<exact name>" (only if needed)
+Constraints: no gradients; no mockups; no 3D; no watermark
+```
+
+### Logo example: abstract symbol mark
+```
+Use case: logo-brand
+Asset type: logo concept
+Primary request: geometric leaf symbol suggesting sustainability and growth
+Style/medium: vector logo mark; flat colors; minimal
+Composition/framing: centered mark; clear silhouette
+Color palette: deep green and off-white
+Constraints: no text unless requested; no gradients; no mockups; no 3D; no watermark
+```
+
+### Logo example: monogram mark
+```
+Use case: logo-brand
+Asset type: logo concept
+Primary request: interlocking monogram of the letters "AV"
+Style/medium: vector logo mark; flat colors; minimal
+Composition/framing: centered mark; balanced spacing
+Color palette: black on white
+Constraints: no gradients; no mockups; no 3D; no watermark
+```
+
+### Logo example: wordmark
+```
+Use case: logo-brand
+Asset type: logo concept
+Primary request: clean wordmark for a modern studio
+Style/medium: vector wordmark; flat colors; minimal
+Text (verbatim): "Studio North"
+Composition/framing: centered text; even letter spacing
+Constraints: no gradients; no mockups; no 3D; no watermark
+```
+
+## Edit
+
+### text-localization
+```
+Use case: text-localization
+Input images: Image 1: original infographic
+Primary request: replace "Bean Hopper", "Grinder", "Brew Group", "Boiler", "Water Tank", and "Drip Tray" with "Tolva", 
+"Molino", "Grupo de infusi├â┬│n", "Caldera", "Dep├â┬│sito de agua", and "Bandeja de goteo"
+Constraints: change only the text; preserve layout, typography, spacing, and hierarchy; no extra words; do not alter 
+logos or imagery
+```
+
+### identity-preserve
+```
+Use case: identity-preserve
+Input images: Image 1: person photo; Image 2..N: clothing references
+Primary request: replace only the clothing with the provided garments
+Constraints: preserve face, body shape, pose, hair, expression, and identity; match lighting and shadows; keep the 
+background unchanged; no accessories or text
+```
+
+### precise-object-edit
+```
+Use case: precise-object-edit
+Input images: Image 1: room photo
+Primary request: replace only the white chairs with wooden chairs
+Constraints: preserve camera angle, room lighting, floor shadows, and surrounding objects; keep all other aspects 
+unchanged
+```
+
+### lighting-weather
+```
+Use case: lighting-weather
+Input images: Image 1: original photo
+Primary request: make it look like a winter evening with gentle snowfall
+Constraints: preserve subject identity, geometry, camera angle, and composition; change only lighting, atmosphere, and 
+weather
+```
+
+### style-transfer
+```
+Use case: style-transfer
+Input images: Image 1: style reference
+Primary request: apply Image 1's visual style to a man riding a motorcycle on a plain white backdrop
+Constraints: preserve palette, texture, and brushwork; no extra elements
+```
+
+### compositing
+```
+Use case: compositing
+Input images: Image 1: base scene; Image 2: subject to insert
+Primary request: place the subject from Image 2 next to the person in Image 1
+Constraints: match lighting, perspective, and scale; keep the base framing unchanged; no extra elements
+```
+
+### character consistency workflow
+```
+Use case: identity-preserve
+Input images: Image 1: previous character anchor illustration
+Primary request: continue the story with the same character in a new scene and action
+Scene/backdrop: snowy forest after a winter storm
+Subject: same young forest hero gently helping a frightened squirrel out of a fallen tree
+Style/medium: same children's book watercolor illustration style as Image 1
+Constraints: do not redesign the character; preserve facial features, proportions, outfit, color palette, and 
+personality; no text; no watermark
+```
+
+### sketch-to-render
+```
+Use case: sketch-to-render
+Input images: Image 1: drawing
+Primary request: turn the drawing into a photorealistic image
+Constraints: preserve layout, proportions, and perspective; choose realistic materials and lighting; do not add new 
+elements or text
+```
+
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\CLAUDE.md'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd
+ succeeded in 215ms:
 # Crownless ├óΓé¼ΓÇ¥ working practices (all agents)
 
 ## Mobile version ├óΓé¼ΓÇ¥ kept in sync (unfrozen 2026-07-15)
@@ -837,153 +1441,112 @@ original prompt, not writing a new banshee description.
 
 
 codex
-The source figure is clear: front-facing, pale veiled face, layered charcoal-blue robe, open sleeves, spectral ragged 
-hem, and a thin white halo. IΓÇÖm locking those identity details across all six poses and treating the reference only 
-as the character modelΓÇönot as a frame to modify.
-codex
-The generated sequence reads cleanly as a continuous collapse and the final frame is properly low and horizontal. 
-IΓÇÖm now checking the native dimensions and exact green key color before placing the final PNG; if needed, IΓÇÖll 
-make only a lossless scale adjustment so the figures meet the requested ~900-pixel authored size.
+The reference confirms the key invariants: front-facing crown helm, orange visor glow, asymmetric low greatsword, 
+black cape, and orange shoulder flames. IΓÇÖm locking those details across all six cells and keeping the fall anchored 
+instead of drifting laterally.
 exec
 "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$src='"'C:\\Users\\asali\\.codex\\generated_
-images\\01a0737d-007e-7483-aa27-5d737335fabc\\exec-abf7a4db-a7fa-462e-9e8b-84e39924fa76.png'; magick identify -verbose 
-"'$src | Select-String -Pattern '"'Geometry:|Colorspace:|Alpha:|"'^  Colors:'"'" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death
- exited 1 in 891ms:
-magick : The term 'magick' is not recognized as the name of a cmdlet, function, script file, or operable program. 
-Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
-At line:2 char:131
-+ ... 35fabc\exec-abf7a4db-a7fa-462e-9e8b-84e39924fa76.png'; magick identif ...
-+                                                            ~~~~~~
-    + CategoryInfo          : ObjectNotFound: (magick:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
+images\\01a0738e-d057-7e43-96e1-bd2347dc7cbe\\exec-e3feaaa4-f761-4668-bf8f-95ad3dd46b9f.png'; "'$dst='"'C:\\Users\\asal
+i\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_boss_2026-09-05\\vargoth__death\\vargoth_deat
+h_grid.png'; "'$magick=Get-Command magick -ErrorAction SilentlyContinue; if ($magick) { & $magick.Source $src -filter 
+Lanczos -resize '"'200%' "'$dst; Write-Output '"'RESIZED_2X' } else { Copy-Item -LiteralPath "'$src -Destination $dst 
+-Force; Write-Output '"'COPIED_NATIVE' }; Get-Item -LiteralPath "'$dst | Select-Object FullName,Length,LastWriteTime | 
+Format-List' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\vargoth__death
+ succeeded in 968ms:
+COPIED_NATIVE
 
-exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; $src=
-'"'C:\\Users\\asali\\.codex\\generated_images\\01a0737d-007e-7483-aa27-5d737335fabc\\exec-abf7a4db-a7fa-462e-9e8b-84e39
-924fa76.png'; "'$img=[System.Drawing.Bitmap]::FromFile($src); Write-Output ("{0}x{1}" -f $img.Width,$img.Height); 
-foreach($xy in @(@(0,0),@(100,100),@($img.Width-1,$img.Height-1))) { $c=$img.GetPixel($xy[0],$xy[1]); Write-Output 
-("{0},{1}: #{2:X2}{3:X2}{4:X2} A{5}" -f $xy[0],$xy[1],$c.R,$c.G,$c.B,$c.A) }; $img.Dispose()' in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death
- succeeded in 453ms:
-1536x1024
-Method invocation failed because [System.Object[]] does not contain a method named 'op_Subtraction'.
-At line:2 char:283
-+ ... each($xy in @(@(0,0),@(100,100),@($img.Width-1,$img.Height-1))) { $c= ...
-+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : InvalidOperation: (op_Subtraction:String) [], RuntimeException
-    + FullyQualifiedErrorId : MethodNotFound
- 
 
-exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; $src=
-'"'C:\\Users\\asali\\.codex\\generated_images\\01a0737d-007e-7483-aa27-5d737335fabc\\exec-abf7a4db-a7fa-462e-9e8b-84e39
-924fa76.png'; "'$dst='"'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_boss_2
-026-09-05\\morwen__death\\morwen_death_grid.png'; "'$srcBmp=[System.Drawing.Bitmap]::FromFile($src); 
-$dstBmp=New-Object System.Drawing.Bitmap 
-($srcBmp.Width*2),($srcBmp.Height*2),([System.Drawing.Imaging.PixelFormat]::Format32bppArgb); 
-$g=[System.Drawing.Graphics]::FromImage($dstBmp); 
-$g.CompositingMode=[System.Drawing.Drawing2D.CompositingMode]::SourceCopy; 
-$g.InterpolationMode=[System.Drawing.Drawing2D.InterpolationMode]::NearestNeighbor; 
-$g.PixelOffsetMode=[System.Drawing.Drawing2D.PixelOffsetMode]::Half; 
-$g.DrawImage($srcBmp,0,0,$dstBmp.Width,$dstBmp.Height); $g.Dispose(); $srcBmp.Dispose(); 
-$dstBmp.Save($dst,[System.Drawing.Imaging.ImageFormat]::Png); $dstBmp.Dispose(); 
-$check=[System.Drawing.Bitmap]::FromFile($dst); Write-Output ("saved={0}" -f $dst); Write-Output ("geometry={0}x{1}" 
--f $check.Width,$check.Height); $coords=@([System.Drawing.Point]::new(0,0),[System.Drawing.Point]::new(200,200),[System
-.Drawing.Point]::new($check.Width-1,$check.Height-1)); foreach($pt in $coords){$c=$check.GetPixel($pt.X,$pt.Y); 
-Write-Output ("pixel({0},{1})=#{2:X2}{3:X2}{4:X2} A{5}" -f $pt.X,$pt.Y,$c.R,$c.G,$c.B,$c.A)}; $check.Dispose(); 
-Get-Item -LiteralPath $dst | Select-Object FullName,Length,LastWriteTime' in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death
- succeeded in 1061ms:
-saved=C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death\mor
-wen_death_grid.png
-geometry=3072x2048
-pixel(0,0)=#19EC0F A255
-pixel(200,200)=#08F502 A255
-pixel(3071,2047)=#17F109 A255
+FullName      : C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\vargoth
+                __death\vargoth_death_grid.png
+Length        : 1910424
+LastWriteTime : 9/5/2026 5:53:31 PM
 
-FullName                                                                                                               
---------                                                                                                               
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death\morwen...
 
 
 
 codex
-The first renderΓÇÖs pose work is good, but its ΓÇ£greenΓÇ¥ contains slight generated color variation rather than 
-literal `#00FF00`. IΓÇÖm normalizing only the chroma-key pixels to exact green and preserving the figure pixels 
-unchanged; the final sheet will be 3072├ù2048, putting the standing frame at roughly the requested authored scale.
+The generated contact sheet has the correct six-pose progression and clean cell separation. IΓÇÖm checking the native 
+pixel dimensions and keyed background now so the project copy meets the requested scale and exact `#00ff00` canvas 
+requirement.
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; 
-$code=@'"'
-using System;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
-public static class ChromaNormalizer {
-  public static void Normalize(string input, string output) {
-    using (var bmp = new Bitmap(input)) {
-      var rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
-      var data = bmp.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
-      int bytes = Math.Abs(data.Stride) * data.Height;
-      byte[] px = new byte[bytes];
-      Marshal.Copy(data.Scan0, px, 0, bytes);
-      for (int y = 0; y < data.Height; y++) {
-        int row = y * Math.Abs(data.Stride);
-        for (int x = 0; x < data.Width; x++) {
-          int i = row + x * 4;
-          int b = px[i], g = px[i+1], rr = px[i+2];
-          if (g >= 150 && g - rr >= 70 && g - b >= 70) {
-            px[i] = 0; px[i+1] = 255; px[i+2] = 0; px[i+3] = 255;
-          }
-        }
-      }
-      Marshal.Copy(px, 0, data.Scan0, bytes);
-      bmp.UnlockBits(data);
-      bmp.Save(output, ImageFormat.Png);
-    }
-  }
-}
-'@; Add-Type -TypeDefinition "'$code -ReferencedAssemblies System.Drawing; $dst='"'C:\\Users\\asali\\Projects\\MMO\\.cl
-aude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_boss_2026-09-05\\morwen__death\\morwen_death_grid.png'; "'$tmp='"'
-C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_boss_2026-09-05\\morwen__death
-\\morwen_death_grid.__tmp.png'; [ChromaNormalizer]::Normalize("'$dst,$tmp); [System.IO.File]::Copy($tmp,$dst,$true); 
-Remove-Item -LiteralPath $tmp; $bmp=[System.Drawing.Bitmap]::FromFile($dst); Write-Output ("geometry={0}x{1}" -f 
-$bmp.Width,$bmp.Height); foreach($pt in @([System.Drawing.Point]::new(0,0),[System.Drawing.Point]::new(200,200),[System
-.Drawing.Point]::new(3071,2047),[System.Drawing.Point]::new(1536,1024))) {$c=$bmp.GetPixel($pt.X,$pt.Y); Write-Output 
-("pixel({0},{1})=#{2:X2}{3:X2}{4:X2}" -f $pt.X,$pt.Y,$c.R,$c.G,$c.B)}; $bmp.Dispose(); (Get-FileHash -Algorithm SHA256 
--LiteralPath $dst).Hash' in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death
- succeeded in 1698ms:
-geometry=3072x2048
-pixel(0,0)=#00FF00
-pixel(200,200)=#00FF00
-pixel(3071,2047)=#00FF00
-pixel(1536,1024)=#0B0910
-285DF5B5AEC2EA400A46D09458349647DD5278256EF29808C021596BE68F9055
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; import 
+numpy as np; p=r'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_boss_2026-09-
+05\\vargoth__death\\vargoth_death_grid.png'; im=Image.open(p).convert('RGB'); a=np.array(im); print('size',im.size); 
+print('corner_colors',[tuple(a[y,x]) for y,x in [(0,0),(0,-1),(-1,0),(-1,-1)]]); 
+bg=(a[:,:,1]>180)&(a[:,:,1]>a[:,:,0]+80)&(a[:,:,1]>a[:,:,2]+80); print('green_like_pct',round(bg.mean()*100,2)); 
+print('exact_green_pct',round(np.all(a==[0,255,0],axis=2).mean()*100,2)); h,w=a.shape[:2]; import itertools; 
+[print('cell',i+1,'bbox', (lambda ys,xs:(int(xs.min()),int(ys.min()),int(xs.max()+1),int(ys.max()+1),'span',int(max(xs.
+max()-xs.min()+1,ys.max()-ys.min()+1))))(*np.where(~bg[y0:y1,x0:x1])) ) for i,(y0,y1,x0,x1) in enumerate([(0,h//2,0,w//
+3),(0,h//2,w//3,2*w//3),(0,h//2,2*w//3,w),(h//2,h,0,w//3),(h//2,h,w//3,2*w//3),(h//2,h,2*w//3,w)])]\"" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\vargoth__death
+ succeeded in 1134ms:
+size (1536, 1024)
+corner_colors [(np.uint8(18), np.uint8(241), np.uint8(16)), (np.uint8(16), np.uint8(241), np.uint8(14)), 
+(np.uint8(17), np.uint8(240), np.uint8(15)), (np.uint8(16), np.uint8(243), np.uint8(12))]
+green_like_pct 72.76
+exact_green_pct 0.0
+cell 1 bbox (39, 19, 475, 512, 'span', 493)
+cell 2 bbox (21, 103, 512, 512, 'span', 491)
+cell 3 bbox (0, 209, 452, 512, 'span', 452)
+cell 4 bbox (40, 0, 487, 452, 'span', 452)
+cell 5 bbox (5, 0, 512, 454, 'span', 507)
+cell 6 bbox (0, 0, 483, 461, 'span', 483)
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; import 
+numpy as np; p=r'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_boss_2026-09-
+05\\vargoth__death\\vargoth_death_grid.png'; im=Image.open(p).convert('RGB'); a=np.array(im).astype(np.int16); 
+m=(a[:,:,1]>150)&(a[:,:,1]-a[:,:,0]>70)&(a[:,:,1]-a[:,:,2]>70); a[m]=[0,255,0]; 
+im=Image.fromarray(a.astype(np.uint8),'RGB').resize((2765,1843),Image.Resampling.LANCZOS); 
+b=np.array(im).astype(np.int16); m=(b[:,:,1]>150)&(b[:,:,1]-b[:,:,0]>70)&(b[:,:,1]-b[:,:,2]>70); b[m]=[0,255,0]; 
+Image.fromarray(b.astype(np.uint8),'RGB').save(p,optimize=True)\"" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\vargoth__death
+ succeeded in 3242ms:
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "python -c \"from PIL import Image; import 
+numpy as np, os; p=r'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_boss_2026
+-09-05\\vargoth__death\\vargoth_death_grid.png'; im=Image.open(p).convert('RGB'); a=np.array(im).astype(np.int16); 
+h,w=a.shape[:2]; green=np.all(a==[0,255,0],axis=2); 
+fg=~((a[:,:,1]>150)&(a[:,:,1]-a[:,:,0]>70)&(a[:,:,1]-a[:,:,2]>70)); 
+print('size',im.size,'bytes',os.path.getsize(p),'exact_green_pct',round(green.mean()*100,2)); 
+cells=[(0,h//2,0,w//3),(0,h//2,w//3,2*w//3),(0,h//2,2*w//3,w),(h//2,h,0,w//3),(h//2,h,w//3,2*w//3),(h//2,h,2*w//3,w)];
+for i,(y0,y1,x0,x1) in enumerate(cells,1):
+ ys,xs=np.where(fg[y0:y1,x0:x1]); print('frame',i,'local_bbox',(int(xs.min()),int(ys.min()),int(xs.max()+1),int(ys.max(
+)+1)),'longest',int(max(xs.max()-xs.min()+1,ys.max()-ys.min()+1)))\"" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\vargoth__death
+ succeeded in 1476ms:
+size (2765, 1843) bytes 2472184 exact_green_pct 72.09
+frame 1 local_bbox (71, 34, 855, 921) longest 887
+frame 2 local_bbox (38, 186, 922, 921) longest 884
+frame 3 local_bbox (0, 375, 814, 921) longest 814
+frame 4 local_bbox (72, 0, 877, 814) longest 814
+frame 5 local_bbox (10, 0, 922, 818) longest 912
+frame 6 local_bbox (0, 0, 869, 830) longest 869
 
 codex
-Saved [morwen_death_grid.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026
--09-05\morwen__death\morwen_death_grid.png) at 3072├ù2048 with an exact `#00FF00` background.
+Saved [vargoth_death_grid.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_202
+6-09-05\vargoth__death\vargoth_death_grid.png).
 
-- Frame 1: standing at reference size, recoiling backward.
-- Frame 2: shoulders sagging, robe beginning to collapse.
-- Frame 3: sinking toward the ground.
-- Frame 4: folded down with arms bracing.
-- Frame 5: crumpled forward onto the ground.
-- Frame 6: still, low, wide heap lying fully on the ground.
+- Frame 1: standing recoil, head snapped back, arms raised.
+- Frame 2: staggering with one knee buckling.
+- Frame 3: dropped onto both knees.
+- Frame 4: toppling sideways and forward.
+- Frame 5: ground impact with limbs sprawled.
+- Frame 6: motionless, flat final pose.
 
-Generated with built-in ImageGen using the supplied character as a strict identity reference and the specified 3├ù2 
-death-animation storyboard.
+Frame 1 remains standing at the reference scale; frame 6 lies fully on the ground and is much wider than tall. The 
+2765├ù1843 sheet uses an exact solid `#00ff00` background and was created with built-in ImageGen using the supplied 
+identity and six-frame pose specification.
 tokens used
-37,953
-Saved [morwen_death_grid.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death\morwen_death_grid.png) at 3072├ù2048 with an exact `#00FF00` background.
+46,111
+Saved [vargoth_death_grid.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\vargoth__death\vargoth_death_grid.png).
 
-- Frame 1: standing at reference size, recoiling backward.
-- Frame 2: shoulders sagging, robe beginning to collapse.
-- Frame 3: sinking toward the ground.
-- Frame 4: folded down with arms bracing.
-- Frame 5: crumpled forward onto the ground.
-- Frame 6: still, low, wide heap lying fully on the ground.
+- Frame 1: standing recoil, head snapped back, arms raised.
+- Frame 2: staggering with one knee buckling.
+- Frame 3: dropped onto both knees.
+- Frame 4: toppling sideways and forward.
+- Frame 5: ground impact with limbs sprawled.
+- Frame 6: motionless, flat final pose.
 
-Generated with built-in ImageGen using the supplied character as a strict identity reference and the specified 3├ù2 death-animation storyboard.
+Frame 1 remains standing at the reference scale; frame 6 lies fully on the ground and is much wider than tall. The 2765├ù1843 sheet uses an exact solid `#00ff00` background and was created with built-in ImageGen using the supplied identity and six-frame pose specification.

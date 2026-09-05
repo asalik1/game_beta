@@ -7,27 +7,29 @@ At line:7 char:14
  
 OpenAI Codex v0.153.0
 --------
-workdir: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death
+workdir: 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death
 model: gpt-5.6-sol
 provider: openai
 approval: never
 sandbox: danger-full-access
 reasoning effort: high
 reasoning summaries: none
-session id: 01a0737d-007e-7483-aa27-5d737335fabc
+session id: 01a0738a-6bab-79b3-94e0-ef35c1b80b81
 --------
 user
 Draw a 6-frame DEATH animation of THIS character (reference 1), as a horizontal row.
 
 THE CHARACTER (reference 1 -- reproduce this exact figure, its design must not change):
-a ghostly nun in a dark hooded veil with a faint halo, a pale face, a translucent dark gown fading to mist at the hem, 
-arms spread
+a massive juggernaut in dark blue-steel plate with pale-blue lightning veins, a glowing blue lightning maw on the 
+chest, enormous pauldrons, a brown leather tabard, thick armoured legs and sabatons
 crisp hi-res dark-fantasy game sprite, muted palette, no black outlines. Same design, same
 palette, same equipment in every frame; the figure faces the SAME way as reference 1.
 
-THE ACTION, frame by frame: frame 1 the figure recoils from a hit, frame 2 it sags and the robe/cloth collapses, frame 
-3 it sinks toward the ground, frame 4 it folds down, frame 5 it crumples onto the ground, frame 6 a still heap of 
-cloth and body on the ground -- the FINAL frame is low and wide.
+THE ACTION, frame by frame: frame 1 the body jolts back from a hit (head snaps, arms fly up), frame 2 it staggers, one 
+knee buckling, frame 3 it drops to its knees, frame 4 it topples sideways/forward, frame 5 it hits the ground, limbs 
+sprawled, frame 6 it lies still, flat on the ground -- the FINAL frame is a lying body, much wider than tall, its feet 
+where the standing feet were.
 Each frame is a distinct pose that reads as a continuous fall; the body stays roughly where
 it stood (no sliding across the cell); the last frame is still and final -- it will be held
 on screen. Draw NO blood spray, NO particles, NO ghost, NO effect -- only the body.
@@ -38,8 +40,8 @@ all at one identical scale, all feet on one shared ground line per row, each fig
 green margins between figures and around the image edges -- no figure touching another figure or an edge. Flat solid 
 #00ff00 GREEN background, nothing else in the image.
 Generate ONE image and SAVE it to disk at the exact path
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death\morwen_de
-ath_grid.png
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death\storm
+mouth_death_grid.png
 then stop.
 
 In your final message report, per frame, the pose, and confirm frame 1 is standing at the
@@ -47,14 +49,23 @@ reference size and the last frame lies on the ground.
 
 
 codex
-IΓÇÖm using the image-generation workflow and first checking the repositoryΓÇÖs art rules, then IΓÇÖll generate the 
-single six-frame sheet, verify its layout visually, and save it at the exact requested path.
+IΓÇÖm using the image-generation workflow with the supplied character reference. IΓÇÖll first load the repositoryΓÇÖs 
+working rules, then generate the six-frame sheet, verify its layout, and save it at the exact requested path.
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 
-'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'; Get-Content -Raw -LiteralPath 'C:\\Users\\asali\\Proje
-cts\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_boss_2026-09-05\\morwen__death\\CLAUDE.md'" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death
- exited 1 in 361ms:
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 'C:\\Users\\as
+ali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_boss_2026-09-05\\stormmouth__death\\CLAUDE.
+md'; Get-Content -Raw -LiteralPath 'C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\SKILL.md'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death
+ succeeded in 375ms:
+Get-Content : Cannot find path 'C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_20
+26-09-05\stormmouth__death\CLAUDE.md' because it does not exist.
+At line:2 char:1
++ Get-Content -Raw -LiteralPath 'C:\Users\asali\Projects\MMO\.claude\wo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (C:\Users\asali\...death\CLAUDE.md:String) [Get-Content], ItemNotFoundEx 
+   ception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+ 
 ---
 name: "imagegen"
 description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, 
@@ -422,24 +433,34 @@ into their active environment.
 - `scripts/image_gen.py`: fallback-only CLI implementation. Use only when the user explicitly chooses or confirms CLI 
 mode.
 
-Get-Content : Cannot find path 'C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_20
-26-09-05\morwen__death\CLAUDE.md' because it does not exist.
-At line:2 char:89
-+ ... \SKILL.md'; Get-Content -Raw -LiteralPath 'C:\Users\asali\Projects\MM ...
-+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : ObjectNotFound: (C:\Users\asali\...death\CLAUDE.md:String) [Get-Content], ItemNotFoundEx 
-   ception
-    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.GetContentCommand
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$repo = git rev-parse --show-toplevel; 
+Write-Output $repo; rg --files -g '"'CLAUDE.md' "'$repo' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death
+ exited 1 in 1010ms:
+C:/Users/asali/Projects/MMO/.claude/worktrees/epic-panini-3fd8fd
+rg : The term 'rg' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the 
+spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:2 char:60
++ $repo = git rev-parse --show-toplevel; Write-Output $repo; rg --files ...
++                                                            ~~
+    + CategoryInfo          : ObjectNotFound: (rg:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
  
 
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$p = Resolve-Path -LiteralPath '"'.'; while 
-("'$p) { $candidate = Join-Path $p '"'CLAUDE.md'; if (Test-Path -LiteralPath "'$candidate) { Write-Output $candidate; 
-Get-Content -Raw -LiteralPath $candidate; break }; $parent = Split-Path -Parent $p; if ($parent -eq $p) { break }; $p 
-= $parent }' in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death
- succeeded in 355ms:
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd' -Filter 'CLAUDE.md' -File -Recurse | 
+Select-Object -ExpandProperty FullName" in C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd
+ succeeded in 8390ms:
 C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\CLAUDE.md
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-Content -Raw -LiteralPath 
+'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\CLAUDE.md'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd
+ succeeded in 207ms:
 # Crownless ├óΓé¼ΓÇ¥ working practices (all agents)
 
 ## Mobile version ├óΓé¼ΓÇ¥ kept in sync (unfrozen 2026-07-15)
@@ -837,153 +858,700 @@ original prompt, not writing a new banshee description.
 
 
 codex
-The source figure is clear: front-facing, pale veiled face, layered charcoal-blue robe, open sleeves, spectral ragged 
-hem, and a thin white halo. IΓÇÖm locking those identity details across all six poses and treating the reference only 
-as the character modelΓÇönot as a frame to modify.
-codex
-The generated sequence reads cleanly as a continuous collapse and the final frame is properly low and horizontal. 
-IΓÇÖm now checking the native dimensions and exact green key color before placing the final PNG; if needed, IΓÇÖll 
-make only a lossless scale adjustment so the figures meet the requested ~900-pixel authored size.
+The reference is clear: front-facing, broad low-set silhouette, twin vertical shoulder guards, orange forehead gem, 
+cyan chest maw, and the torn brown tabard are the key identity anchors. IΓÇÖm generating the 2├ù3 fall sequence now, 
+with the green keyed background and no added effects.
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$src='"'C:\\Users\\asali\\.codex\\generated_
-images\\01a0737d-007e-7483-aa27-5d737335fabc\\exec-abf7a4db-a7fa-462e-9e8b-84e39924fa76.png'; magick identify -verbose 
-"'$src | Select-String -Pattern '"'Geometry:|Colorspace:|Alpha:|"'^  Colors:'"'" in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death
- exited 1 in 891ms:
-magick : The term 'magick' is not recognized as the name of a cmdlet, function, script file, or operable program. 
-Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
-At line:2 char:131
-+ ... 35fabc\exec-abf7a4db-a7fa-462e-9e8b-84e39924fa76.png'; magick identif ...
-+                                                            ~~~~~~
-    + CategoryInfo          : ObjectNotFound: (magick:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath 
+'C:\\Users\\asali\\.codex\\generated_images' -File -Recurse | Sort-Object LastWriteTime -Descending | Select-Object 
+-First 10 FullName,Length,LastWriteTime" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death
+ succeeded in 2201ms:
+
+FullName                                                                                                               
+--------                                                                                                               
+C:\Users\asali\.codex\generated_images\01a0738a-6bab-79b3-94e0-ef35c1b80b81\exec-5339f0a1-01fd-4b49-afbb-add68710b1d...
+C:\Users\asali\.codex\generated_images\01a07387-69e3-7c23-a738-b4ae241a7e59\exec-b617b72e-4b88-476b-90ff-812950da495...
+C:\Users\asali\.codex\generated_images\01a07383-7b3c-7222-a289-5a5980012570\exec-b02e9917-dc6b-4f1a-99f4-2c95cdcfe89...
+C:\Users\asali\.codex\generated_images\01a0737f-c892-7e71-949c-fb632a4abdbf\exec-05303240-9c31-46e3-821f-2a9088b55b4...
+C:\Users\asali\.codex\generated_images\01a0737d-007e-7483-aa27-5d737335fabc\exec-abf7a4db-a7fa-462e-9e8b-84e39924fa7...
+C:\Users\asali\.codex\generated_images\01a07379-4cfe-7a90-8810-9c1dee8b11a4\exec-5829343c-df48-4f18-b565-9e63577f107...
+C:\Users\asali\.codex\generated_images\01a07379-4cfe-7a90-8810-9c1dee8b11a4\exec-b5865666-4387-43fa-9440-58674d349a3...
+C:\Users\asali\.codex\generated_images\01a07377-72f9-79f0-b4c1-1815f669111b\exec-55622bb0-43fa-4f80-87af-f467641d2f9...
+C:\Users\asali\.codex\generated_images\01a07374-ac2d-7d80-a74f-0c3e9e00415c\exec-71e72e56-bde8-4fe4-b99d-88a7decdd89...
+C:\Users\asali\.codex\generated_images\01a07370-8278-7c81-89f3-a1afef92965d\exec-6b4cc7b7-c65a-4185-863e-5382f83b6a3...
+
+
 
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; $src=
-'"'C:\\Users\\asali\\.codex\\generated_images\\01a0737d-007e-7483-aa27-5d737335fabc\\exec-abf7a4db-a7fa-462e-9e8b-84e39
-924fa76.png'; "'$img=[System.Drawing.Bitmap]::FromFile($src); Write-Output ("{0}x{1}" -f $img.Width,$img.Height); 
-foreach($xy in @(@(0,0),@(100,100),@($img.Width-1,$img.Height-1))) { $c=$img.GetPixel($xy[0],$xy[1]); Write-Output 
-("{0},{1}: #{2:X2}{3:X2}{4:X2} A{5}" -f $xy[0],$xy[1],$c.R,$c.G,$c.B,$c.A) }; $img.Dispose()' in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death
- succeeded in 453ms:
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "Get-ChildItem -LiteralPath 
+'C:\\Users\\asali\\.codex\\generated_images' -File -Recurse | Sort-Object LastWriteTime -Descending | Select-Object 
+-First 3 | Format-List FullName,Length,LastWriteTime" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death
+ succeeded in 2128ms:
+
+
+FullName      : C:\Users\asali\.codex\generated_images\01a0738a-6bab-79b3-94e0-ef35c1b80b81\exec-5339f0a1-01fd-4b49-afb
+                b-add68710b1db.png
+Length        : 1985608
+LastWriteTime : 9/5/2026 5:49:20 PM
+
+FullName      : C:\Users\asali\.codex\generated_images\01a07387-69e3-7c23-a738-b4ae241a7e59\exec-b617b72e-4b88-476b-90f
+                f-812950da4955.png
+Length        : 1654538
+LastWriteTime : 9/5/2026 5:45:40 PM
+
+FullName      : C:\Users\asali\.codex\generated_images\01a07383-7b3c-7222-a289-5a5980012570\exec-b02e9917-dc6b-4f1a-99f
+                4-2c95cdcfe890.png
+Length        : 1841681
+LastWriteTime : 9/5/2026 5:41:30 PM
+
+
+
+
+codex
+The generated sheet has the intended six-stage fall and keeps the chest maw, helmet gem, armor, and tabard consistent. 
+IΓÇÖm checking the pixel geometry now; the generator produced a smaller canvas than requested, so IΓÇÖll preserve the 
+artwork and upscale the complete sheet uniformly if needed before saving.
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$img = '"'C:\\Users\\asali\\.codex\\generate
+d_images\\01a0738a-6bab-79b3-94e0-ef35c1b80b81\\exec-5339f0a1-01fd-4b49-afbb-add68710b1db.png'; Get-Command magick 
+-ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source; Add-Type -AssemblyName System.Drawing; "'$bmp = 
+[System.Drawing.Bitmap]::FromFile($img); Write-Output ("{0}x{1}" -f $bmp.Width,$bmp.Height); $samples = 
+@(@(0,0),@($bmp.Width-1,0),@(0,$bmp.Height-1),@($bmp.Width-1,$bmp.Height-1)); foreach ($s in $samples) { 
+$c=$bmp.GetPixel($s[0],$s[1]); Write-Output ("{0},{1}: #{2:X2}{3:X2}{4:X2}" -f $s[0],$s[1],$c.R,$c.G,$c.B) }; 
+$bmp.Dispose()' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death
+ succeeded in 1107ms:
 1536x1024
 Method invocation failed because [System.Object[]] does not contain a method named 'op_Subtraction'.
-At line:2 char:283
-+ ... each($xy in @(@(0,0),@(100,100),@($img.Width-1,$img.Height-1))) { $c= ...
-+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+At line:2 char:361
++ ... mp.Height); $samples = @(@(0,0),@($bmp.Width-1,0),@(0,$bmp.Height-1), ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     + CategoryInfo          : InvalidOperation: (op_Subtraction:String) [], RuntimeException
     + FullyQualifiedErrorId : MethodNotFound
  
 
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; $src=
-'"'C:\\Users\\asali\\.codex\\generated_images\\01a0737d-007e-7483-aa27-5d737335fabc\\exec-abf7a4db-a7fa-462e-9e8b-84e39
-924fa76.png'; "'$dst='"'C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_boss_2
-026-09-05\\morwen__death\\morwen_death_grid.png'; "'$srcBmp=[System.Drawing.Bitmap]::FromFile($src); 
-$dstBmp=New-Object System.Drawing.Bitmap 
-($srcBmp.Width*2),($srcBmp.Height*2),([System.Drawing.Imaging.PixelFormat]::Format32bppArgb); 
-$g=[System.Drawing.Graphics]::FromImage($dstBmp); 
-$g.CompositingMode=[System.Drawing.Drawing2D.CompositingMode]::SourceCopy; 
-$g.InterpolationMode=[System.Drawing.Drawing2D.InterpolationMode]::NearestNeighbor; 
-$g.PixelOffsetMode=[System.Drawing.Drawing2D.PixelOffsetMode]::Half; 
-$g.DrawImage($srcBmp,0,0,$dstBmp.Width,$dstBmp.Height); $g.Dispose(); $srcBmp.Dispose(); 
-$dstBmp.Save($dst,[System.Drawing.Imaging.ImageFormat]::Png); $dstBmp.Dispose(); 
-$check=[System.Drawing.Bitmap]::FromFile($dst); Write-Output ("saved={0}" -f $dst); Write-Output ("geometry={0}x{1}" 
--f $check.Width,$check.Height); $coords=@([System.Drawing.Point]::new(0,0),[System.Drawing.Point]::new(200,200),[System
-.Drawing.Point]::new($check.Width-1,$check.Height-1)); foreach($pt in $coords){$c=$check.GetPixel($pt.X,$pt.Y); 
-Write-Output ("pixel({0},{1})=#{2:X2}{3:X2}{4:X2} A{5}" -f $pt.X,$pt.Y,$c.R,$c.G,$c.B,$c.A)}; $check.Dispose(); 
-Get-Item -LiteralPath $dst | Select-Object FullName,Length,LastWriteTime' in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death
- succeeded in 1061ms:
-saved=C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death\mor
-wen_death_grid.png
-geometry=3072x2048
-pixel(0,0)=#19EC0F A255
-pixel(200,200)=#08F502 A255
-pixel(3071,2047)=#17F109 A255
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$imgPath = '"'C:\\Users\\asali\\.codex\\gene
+rated_images\\01a0738a-6bab-79b3-94e0-ef35c1b80b81\\exec-5339f0a1-01fd-4b49-afbb-add68710b1db.png'; Add-Type 
+-AssemblyName System.Drawing; "'$bmp = [System.Drawing.Bitmap]::FromFile($imgPath); $xMax = $bmp.Width - 1; $yMax = 
+$bmp.Height - 1; $samples = @(@(0,0),@($xMax,0),@(0,$yMax),@($xMax,$yMax),@(768,512)); foreach ($s in $samples) { 
+$c=$bmp.GetPixel([int]$s[0],[int]$s[1]); Write-Output ("{0},{1}: #{2:X2}{3:X2}{4:X2}" -f $s[0],$s[1],$c.R,$c.G,$c.B) 
+}; $bmp.Dispose()' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death
+ succeeded in 450ms:
+0,0: #10EE0D
+1535,0: #11EF0B
+0,1023: #0FF00C
+1535,1023: #0FF209
+768,512: #04F502
 
-FullName                                                                                                               
---------                                                                                                               
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death\morwen...
+apply patch
+patch: completed
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death\postp
+rocess_stormmouth.ps1
+diff --git a/art_src/deaths_boss_2026-09-05/stormmouth__death/postprocess_stormmouth.ps1 
+b/art_src/deaths_boss_2026-09-05/stormmouth__death/postprocess_stormmouth.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..32813da80d57db01272a773ba630f9696b830069
+--- /dev/null
++++ b/art_src/deaths_boss_2026-09-05/stormmouth__death/postprocess_stormmouth.ps1
+@@ -0,0 +1,71 @@
++Add-Type -AssemblyName System.Drawing
++
++$sourcePath = 'C:\Users\asali\.codex\generated_images\01a0738a-6bab-79b3-94e0-ef35c1b80b81\exec-5339f0a1-01fd-4b49-afb
+b-add68710b1db.png'
++$targetPath = 'C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmo
+uth__death\stormmouth_death_grid.png'
++
++Add-Type -TypeDefinition @'
++using System;
++using System.Drawing;
++using System.Drawing.Drawing2D;
++using System.Drawing.Imaging;
++using System.Runtime.InteropServices;
++
++public static class StormmouthSheetPostprocessor
++{
++    public static void Run(string sourcePath, string targetPath)
++    {
++        using (var source = new Bitmap(sourcePath))
++        using (var keyed = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppArgb))
++        {
++            using (var graphics = Graphics.FromImage(keyed))
++            {
++                graphics.DrawImageUnscaled(source, 0, 0);
++            }
++
++            var rect = new Rectangle(0, 0, keyed.Width, keyed.Height);
++            var data = keyed.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
++            try
++            {
++                int byteCount = Math.Abs(data.Stride) * keyed.Height;
++                var pixels = new byte[byteCount];
++                Marshal.Copy(data.Scan0, pixels, 0, byteCount);
++                for (int y = 0; y < keyed.Height; y++)
++                {
++                    int row = y * data.Stride;
++                    for (int x = 0; x < keyed.Width; x++)
++                    {
++                        int i = row + x * 4;
++                        int b = pixels[i];
++                        int g = pixels[i + 1];
++                        int r = pixels[i + 2];
++                        if (g > 80 && g > Math.Max(r, b) + 40)
++                        {
++                            pixels[i] = 0;
++                            pixels[i + 1] = 255;
++                            pixels[i + 2] = 0;
++                            pixels[i + 3] = 255;
++                        }
++                    }
++                }
++                Marshal.Copy(pixels, 0, data.Scan0, byteCount);
++            }
++            finally
++            {
++                keyed.UnlockBits(data);
++            }
++
++            using (var output = new Bitmap(keyed.Width * 2, keyed.Height * 2, PixelFormat.Format32bppArgb))
++            using (var graphics = Graphics.FromImage(output))
++            {
++                graphics.CompositingMode = CompositingMode.SourceCopy;
++                graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
++                graphics.PixelOffsetMode = PixelOffsetMode.Half;
++                graphics.DrawImage(keyed, new Rectangle(0, 0, output.Width, output.Height), 0, 0, keyed.Width, 
+keyed.Height, GraphicsUnit.Pixel);
++                output.Save(targetPath, ImageFormat.Png);
++            }
++        }
++    }
++}
++'@
++
++[StormmouthSheetPostprocessor]::Run($sourcePath, $targetPath)
 
+diff --git a/art_src/deaths_boss_2026-09-05/stormmouth__death/postprocess_stormmouth.ps1 
+b/art_src/deaths_boss_2026-09-05/stormmouth__death/postprocess_stormmouth.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..32813da80d57db01272a773ba630f9696b830069
+--- /dev/null
++++ b/art_src/deaths_boss_2026-09-05/stormmouth__death/postprocess_stormmouth.ps1
+@@ -0,0 +1,71 @@
++Add-Type -AssemblyName System.Drawing
++
++$sourcePath = 'C:\Users\asali\.codex\generated_images\01a0738a-6bab-79b3-94e0-ef35c1b80b81\exec-5339f0a1-01fd-4b49-afb
+b-add68710b1db.png'
++$targetPath = 'C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmo
+uth__death\stormmouth_death_grid.png'
++
++Add-Type -TypeDefinition @'
++using System;
++using System.Drawing;
++using System.Drawing.Drawing2D;
++using System.Drawing.Imaging;
++using System.Runtime.InteropServices;
++
++public static class StormmouthSheetPostprocessor
++{
++    public static void Run(string sourcePath, string targetPath)
++    {
++        using (var source = new Bitmap(sourcePath))
++        using (var keyed = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppArgb))
++        {
++            using (var graphics = Graphics.FromImage(keyed))
++            {
++                graphics.DrawImageUnscaled(source, 0, 0);
++            }
++
++            var rect = new Rectangle(0, 0, keyed.Width, keyed.Height);
++            var data = keyed.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
++            try
++            {
++                int byteCount = Math.Abs(data.Stride) * keyed.Height;
++                var pixels = new byte[byteCount];
++                Marshal.Copy(data.Scan0, pixels, 0, byteCount);
++                for (int y = 0; y < keyed.Height; y++)
++                {
++                    int row = y * data.Stride;
++                    for (int x = 0; x < keyed.Width; x++)
++                    {
++                        int i = row + x * 4;
++                        int b = pixels[i];
++                        int g = pixels[i + 1];
++                        int r = pixels[i + 2];
++                        if (g > 80 && g > Math.Max(r, b) + 40)
++                        {
++                            pixels[i] = 0;
++                            pixels[i + 1] = 255;
++                            pixels[i + 2] = 0;
++                            pixels[i + 3] = 255;
++                        }
++                    }
++                }
++                Marshal.Copy(pixels, 0, data.Scan0, byteCount);
++            }
++            finally
++            {
++                keyed.UnlockBits(data);
++            }
++
++            using (var output = new Bitmap(keyed.Width * 2, keyed.Height * 2, PixelFormat.Format32bppArgb))
++            using (var graphics = Graphics.FromImage(output))
++            {
++                graphics.CompositingMode = CompositingMode.SourceCopy;
++                graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
++                graphics.PixelOffsetMode = PixelOffsetMode.Half;
++                graphics.DrawImage(keyed, new Rectangle(0, 0, output.Width, output.Height), 0, 0, keyed.Width, 
+keyed.Height, GraphicsUnit.Pixel);
++                output.Save(targetPath, ImageFormat.Png);
++            }
++        }
++    }
++}
++'@
++
++[StormmouthSheetPostprocessor]::Run($sourcePath, $targetPath)
 
-
-codex
-The first renderΓÇÖs pose work is good, but its ΓÇ£greenΓÇ¥ contains slight generated color variation rather than 
-literal `#00FF00`. IΓÇÖm normalizing only the chroma-key pixels to exact green and preserving the figure pixels 
-unchanged; the final sheet will be 3072├ù2048, putting the standing frame at roughly the requested authored scale.
 exec
-"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command 'Add-Type -AssemblyName System.Drawing; 
-$code=@'"'
-using System;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
-public static class ChromaNormalizer {
-  public static void Normalize(string input, string output) {
-    using (var bmp = new Bitmap(input)) {
-      var rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
-      var data = bmp.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
-      int bytes = Math.Abs(data.Stride) * data.Height;
-      byte[] px = new byte[bytes];
-      Marshal.Copy(data.Scan0, px, 0, bytes);
-      for (int y = 0; y < data.Height; y++) {
-        int row = y * Math.Abs(data.Stride);
-        for (int x = 0; x < data.Width; x++) {
-          int i = row + x * 4;
-          int b = px[i], g = px[i+1], rr = px[i+2];
-          if (g >= 150 && g - rr >= 70 && g - b >= 70) {
-            px[i] = 0; px[i+1] = 255; px[i+2] = 0; px[i+3] = 255;
-          }
-        }
-      }
-      Marshal.Copy(px, 0, data.Scan0, bytes);
-      bmp.UnlockBits(data);
-      bmp.Save(output, ImageFormat.Png);
-    }
-  }
-}
-'@; Add-Type -TypeDefinition "'$code -ReferencedAssemblies System.Drawing; $dst='"'C:\\Users\\asali\\Projects\\MMO\\.cl
-aude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_boss_2026-09-05\\morwen__death\\morwen_death_grid.png'; "'$tmp='"'
-C:\\Users\\asali\\Projects\\MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_boss_2026-09-05\\morwen__death
-\\morwen_death_grid.__tmp.png'; [ChromaNormalizer]::Normalize("'$dst,$tmp); [System.IO.File]::Copy($tmp,$dst,$true); 
-Remove-Item -LiteralPath $tmp; $bmp=[System.Drawing.Bitmap]::FromFile($dst); Write-Output ("geometry={0}x{1}" -f 
-$bmp.Width,$bmp.Height); foreach($pt in @([System.Drawing.Point]::new(0,0),[System.Drawing.Point]::new(200,200),[System
-.Drawing.Point]::new(3071,2047),[System.Drawing.Point]::new(1536,1024))) {$c=$bmp.GetPixel($pt.X,$pt.Y); Write-Output 
-("pixel({0},{1})=#{2:X2}{3:X2}{4:X2}" -f $pt.X,$pt.Y,$c.R,$c.G,$c.B)}; $bmp.Dispose(); (Get-FileHash -Algorithm SHA256 
--LiteralPath $dst).Hash' in 
-C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death
- succeeded in 1698ms:
-geometry=3072x2048
-pixel(0,0)=#00FF00
-pixel(200,200)=#00FF00
-pixel(3071,2047)=#00FF00
-pixel(1536,1024)=#0B0910
-285DF5B5AEC2EA400A46D09458349647DD5278256EF29808C021596BE68F9055
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "& 'C:\\Users\\asali\\Projects\\MMO\\.claude\
+\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_boss_2026-09-05\\stormmouth__death\\postprocess_stormmouth.ps1'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death
+ succeeded in 671ms:
+Add-Type : c:\Users\asali\AppData\Local\Temp\usvcneub.0.cs(3) : The type or namespace name 'Drawing2D' does not exist 
+in the namespace 'System.Drawing' (are you missing an assembly reference?)
+c:\Users\asali\AppData\Local\Temp\usvcneub.0.cs(2) : using System.Drawing;
+c:\Users\asali\AppData\Local\Temp\usvcneub.0.cs(3) : >>> using System.Drawing.Drawing2D;
+c:\Users\asali\AppData\Local\Temp\usvcneub.0.cs(4) : using System.Drawing.Imaging;
+At C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death\po
+stprocess_stormmouth.ps1:6 char:1
++ Add-Type -TypeDefinition @'
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidData: (Microsoft.Power...peCompilerError:AddTypeCompilerError) [Add-Type], Except 
+   ion
+    + FullyQualifiedErrorId : SOURCE_CODE_ERROR,Microsoft.PowerShell.Commands.AddTypeCommand
+ 
+Add-Type : c:\Users\asali\AppData\Local\Temp\usvcneub.0.cs(4) : The type or namespace name 'Imaging' does not exist in 
+the namespace 'System.Drawing' (are you missing an assembly reference?)
+c:\Users\asali\AppData\Local\Temp\usvcneub.0.cs(3) : using System.Drawing.Drawing2D;
+c:\Users\asali\AppData\Local\Temp\usvcneub.0.cs(4) : >>> using System.Drawing.Imaging;
+c:\Users\asali\AppData\Local\Temp\usvcneub.0.cs(5) : using System.Runtime.InteropServices;
+At C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death\po
+stprocess_stormmouth.ps1:6 char:1
++ Add-Type -TypeDefinition @'
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidData: (Microsoft.Power...peCompilerError:AddTypeCompilerError) [Add-Type], Except 
+   ion
+    + FullyQualifiedErrorId : SOURCE_CODE_ERROR,Microsoft.PowerShell.Commands.AddTypeCommand
+ 
+Add-Type : Cannot add type. Compilation errors occurred.
+At C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death\po
+stprocess_stormmouth.ps1:6 char:1
++ Add-Type -TypeDefinition @'
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidData: (:) [Add-Type], InvalidOperationException
+    + FullyQualifiedErrorId : COMPILER_ERRORS,Microsoft.PowerShell.Commands.AddTypeCommand
+ 
+Unable to find type [StormmouthSheetPostprocessor].
+At C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death\po
+stprocess_stormmouth.ps1:71 char:1
++ [StormmouthSheetPostprocessor]::Run($sourcePath, $targetPath)
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (StormmouthSheetPostprocessor:TypeName) [], RuntimeException
+    + FullyQualifiedErrorId : TypeNotFound
+ 
+
+diff --git a/art_src/deaths_boss_2026-09-05/stormmouth__death/postprocess_stormmouth.ps1 
+b/art_src/deaths_boss_2026-09-05/stormmouth__death/postprocess_stormmouth.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..32813da80d57db01272a773ba630f9696b830069
+--- /dev/null
++++ b/art_src/deaths_boss_2026-09-05/stormmouth__death/postprocess_stormmouth.ps1
+@@ -0,0 +1,71 @@
++Add-Type -AssemblyName System.Drawing
++
++$sourcePath = 'C:\Users\asali\.codex\generated_images\01a0738a-6bab-79b3-94e0-ef35c1b80b81\exec-5339f0a1-01fd-4b49-afb
+b-add68710b1db.png'
++$targetPath = 'C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmo
+uth__death\stormmouth_death_grid.png'
++
++Add-Type -TypeDefinition @'
++using System;
++using System.Drawing;
++using System.Drawing.Drawing2D;
++using System.Drawing.Imaging;
++using System.Runtime.InteropServices;
++
++public static class StormmouthSheetPostprocessor
++{
++    public static void Run(string sourcePath, string targetPath)
++    {
++        using (var source = new Bitmap(sourcePath))
++        using (var keyed = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppArgb))
++        {
++            using (var graphics = Graphics.FromImage(keyed))
++            {
++                graphics.DrawImageUnscaled(source, 0, 0);
++            }
++
++            var rect = new Rectangle(0, 0, keyed.Width, keyed.Height);
++            var data = keyed.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
++            try
++            {
++                int byteCount = Math.Abs(data.Stride) * keyed.Height;
++                var pixels = new byte[byteCount];
++                Marshal.Copy(data.Scan0, pixels, 0, byteCount);
++                for (int y = 0; y < keyed.Height; y++)
++                {
++                    int row = y * data.Stride;
++                    for (int x = 0; x < keyed.Width; x++)
++                    {
++                        int i = row + x * 4;
++                        int b = pixels[i];
++                        int g = pixels[i + 1];
++                        int r = pixels[i + 2];
++                        if (g > 80 && g > Math.Max(r, b) + 40)
++                        {
++                            pixels[i] = 0;
++                            pixels[i + 1] = 255;
++                            pixels[i + 2] = 0;
++                            pixels[i + 3] = 255;
++                        }
++                    }
++                }
++                Marshal.Copy(pixels, 0, data.Scan0, byteCount);
++            }
++            finally
++            {
++                keyed.UnlockBits(data);
++            }
++
++            using (var output = new Bitmap(keyed.Width * 2, keyed.Height * 2, PixelFormat.Format32bppArgb))
++            using (var graphics = Graphics.FromImage(output))
++            {
++                graphics.CompositingMode = CompositingMode.SourceCopy;
++                graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
++                graphics.PixelOffsetMode = PixelOffsetMode.Half;
++                graphics.DrawImage(keyed, new Rectangle(0, 0, output.Width, output.Height), 0, 0, keyed.Width, 
+keyed.Height, GraphicsUnit.Pixel);
++                output.Save(targetPath, ImageFormat.Png);
++            }
++        }
++    }
++}
++'@
++
++[StormmouthSheetPostprocessor]::Run($sourcePath, $targetPath)
+
+apply patch
+patch: completed
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death\postp
+rocess_stormmouth.ps1
+diff --git a/art_src/deaths_boss_2026-09-05/stormmouth__death/postprocess_stormmouth.ps1 
+b/art_src/deaths_boss_2026-09-05/stormmouth__death/postprocess_stormmouth.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..dc0693065b81c912d577fcdbc1dd6dfd4dc778e9
+--- /dev/null
++++ b/art_src/deaths_boss_2026-09-05/stormmouth__death/postprocess_stormmouth.ps1
+@@ -0,0 +1,71 @@
++Add-Type -AssemblyName System.Drawing
++
++$sourcePath = 'C:\Users\asali\.codex\generated_images\01a0738a-6bab-79b3-94e0-ef35c1b80b81\exec-5339f0a1-01fd-4b49-afb
+b-add68710b1db.png'
++$targetPath = 'C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmo
+uth__death\stormmouth_death_grid.png'
++
++Add-Type -ReferencedAssemblies 'System.Drawing' -TypeDefinition @'
++using System;
++using System.Drawing;
++using System.Drawing.Drawing2D;
++using System.Drawing.Imaging;
++using System.Runtime.InteropServices;
++
++public static class StormmouthSheetPostprocessor
++{
++    public static void Run(string sourcePath, string targetPath)
++    {
++        using (var source = new Bitmap(sourcePath))
++        using (var keyed = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppArgb))
++        {
++            using (var graphics = Graphics.FromImage(keyed))
++            {
++                graphics.DrawImageUnscaled(source, 0, 0);
++            }
++
++            var rect = new Rectangle(0, 0, keyed.Width, keyed.Height);
++            var data = keyed.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
++            try
++            {
++                int byteCount = Math.Abs(data.Stride) * keyed.Height;
++                var pixels = new byte[byteCount];
++                Marshal.Copy(data.Scan0, pixels, 0, byteCount);
++                for (int y = 0; y < keyed.Height; y++)
++                {
++                    int row = y * data.Stride;
++                    for (int x = 0; x < keyed.Width; x++)
++                    {
++                        int i = row + x * 4;
++                        int b = pixels[i];
++                        int g = pixels[i + 1];
++                        int r = pixels[i + 2];
++                        if (g > 80 && g > Math.Max(r, b) + 40)
++                        {
++                            pixels[i] = 0;
++                            pixels[i + 1] = 255;
++                            pixels[i + 2] = 0;
++                            pixels[i + 3] = 255;
++                        }
++                    }
++                }
++                Marshal.Copy(pixels, 0, data.Scan0, byteCount);
++            }
++            finally
++            {
++                keyed.UnlockBits(data);
++            }
++
++            using (var output = new Bitmap(keyed.Width * 2, keyed.Height * 2, PixelFormat.Format32bppArgb))
++            using (var graphics = Graphics.FromImage(output))
++            {
++                graphics.CompositingMode = CompositingMode.SourceCopy;
++                graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
++                graphics.PixelOffsetMode = PixelOffsetMode.Half;
++                graphics.DrawImage(keyed, new Rectangle(0, 0, output.Width, output.Height), 0, 0, keyed.Width, 
+keyed.Height, GraphicsUnit.Pixel);
++                output.Save(targetPath, ImageFormat.Png);
++            }
++        }
++    }
++}
++'@
++
++[StormmouthSheetPostprocessor]::Run($sourcePath, $targetPath)
+
+diff --git a/art_src/deaths_boss_2026-09-05/stormmouth__death/postprocess_stormmouth.ps1 
+b/art_src/deaths_boss_2026-09-05/stormmouth__death/postprocess_stormmouth.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..dc0693065b81c912d577fcdbc1dd6dfd4dc778e9
+--- /dev/null
++++ b/art_src/deaths_boss_2026-09-05/stormmouth__death/postprocess_stormmouth.ps1
+@@ -0,0 +1,71 @@
++Add-Type -AssemblyName System.Drawing
++
++$sourcePath = 'C:\Users\asali\.codex\generated_images\01a0738a-6bab-79b3-94e0-ef35c1b80b81\exec-5339f0a1-01fd-4b49-afb
+b-add68710b1db.png'
++$targetPath = 'C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmo
+uth__death\stormmouth_death_grid.png'
++
++Add-Type -ReferencedAssemblies 'System.Drawing' -TypeDefinition @'
++using System;
++using System.Drawing;
++using System.Drawing.Drawing2D;
++using System.Drawing.Imaging;
++using System.Runtime.InteropServices;
++
++public static class StormmouthSheetPostprocessor
++{
++    public static void Run(string sourcePath, string targetPath)
++    {
++        using (var source = new Bitmap(sourcePath))
++        using (var keyed = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppArgb))
++        {
++            using (var graphics = Graphics.FromImage(keyed))
++            {
++                graphics.DrawImageUnscaled(source, 0, 0);
++            }
++
++            var rect = new Rectangle(0, 0, keyed.Width, keyed.Height);
++            var data = keyed.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
++            try
++            {
++                int byteCount = Math.Abs(data.Stride) * keyed.Height;
++                var pixels = new byte[byteCount];
++                Marshal.Copy(data.Scan0, pixels, 0, byteCount);
++                for (int y = 0; y < keyed.Height; y++)
++                {
++                    int row = y * data.Stride;
++                    for (int x = 0; x < keyed.Width; x++)
++                    {
++                        int i = row + x * 4;
++                        int b = pixels[i];
++                        int g = pixels[i + 1];
++                        int r = pixels[i + 2];
++                        if (g > 80 && g > Math.Max(r, b) + 40)
++                        {
++                            pixels[i] = 0;
++                            pixels[i + 1] = 255;
++                            pixels[i + 2] = 0;
++                            pixels[i + 3] = 255;
++                        }
++                    }
++                }
++                Marshal.Copy(pixels, 0, data.Scan0, byteCount);
++            }
++            finally
++            {
++                keyed.UnlockBits(data);
++            }
++
++            using (var output = new Bitmap(keyed.Width * 2, keyed.Height * 2, PixelFormat.Format32bppArgb))
++            using (var graphics = Graphics.FromImage(output))
++            {
++                graphics.CompositingMode = CompositingMode.SourceCopy;
++                graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
++                graphics.PixelOffsetMode = PixelOffsetMode.Half;
++                graphics.DrawImage(keyed, new Rectangle(0, 0, output.Width, output.Height), 0, 0, keyed.Width, 
+keyed.Height, GraphicsUnit.Pixel);
++                output.Save(targetPath, ImageFormat.Png);
++            }
++        }
++    }
++}
++'@
++
++[StormmouthSheetPostprocessor]::Run($sourcePath, $targetPath)
+
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "& 'C:\\Users\\asali\\Projects\\MMO\\.claude\
+\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_boss_2026-09-05\\stormmouth__death\\postprocess_stormmouth.ps1'" in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death
+ succeeded in 1165ms:
+diff --git a/art_src/deaths_boss_2026-09-05/stormmouth__death/postprocess_stormmouth.ps1 
+b/art_src/deaths_boss_2026-09-05/stormmouth__death/postprocess_stormmouth.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..dc0693065b81c912d577fcdbc1dd6dfd4dc778e9
+--- /dev/null
++++ b/art_src/deaths_boss_2026-09-05/stormmouth__death/postprocess_stormmouth.ps1
+@@ -0,0 +1,71 @@
++Add-Type -AssemblyName System.Drawing
++
++$sourcePath = 'C:\Users\asali\.codex\generated_images\01a0738a-6bab-79b3-94e0-ef35c1b80b81\exec-5339f0a1-01fd-4b49-afb
+b-add68710b1db.png'
++$targetPath = 'C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmo
+uth__death\stormmouth_death_grid.png'
++
++Add-Type -ReferencedAssemblies 'System.Drawing' -TypeDefinition @'
++using System;
++using System.Drawing;
++using System.Drawing.Drawing2D;
++using System.Drawing.Imaging;
++using System.Runtime.InteropServices;
++
++public static class StormmouthSheetPostprocessor
++{
++    public static void Run(string sourcePath, string targetPath)
++    {
++        using (var source = new Bitmap(sourcePath))
++        using (var keyed = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppArgb))
++        {
++            using (var graphics = Graphics.FromImage(keyed))
++            {
++                graphics.DrawImageUnscaled(source, 0, 0);
++            }
++
++            var rect = new Rectangle(0, 0, keyed.Width, keyed.Height);
++            var data = keyed.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
++            try
++            {
++                int byteCount = Math.Abs(data.Stride) * keyed.Height;
++                var pixels = new byte[byteCount];
++                Marshal.Copy(data.Scan0, pixels, 0, byteCount);
++                for (int y = 0; y < keyed.Height; y++)
++                {
++                    int row = y * data.Stride;
++                    for (int x = 0; x < keyed.Width; x++)
++                    {
++                        int i = row + x * 4;
++                        int b = pixels[i];
++                        int g = pixels[i + 1];
++                        int r = pixels[i + 2];
++                        if (g > 80 && g > Math.Max(r, b) + 40)
++                        {
++                            pixels[i] = 0;
++                            pixels[i + 1] = 255;
++                            pixels[i + 2] = 0;
++                            pixels[i + 3] = 255;
++                        }
++                    }
++                }
++                Marshal.Copy(pixels, 0, data.Scan0, byteCount);
++            }
++            finally
++            {
++                keyed.UnlockBits(data);
++            }
++
++            using (var output = new Bitmap(keyed.Width * 2, keyed.Height * 2, PixelFormat.Format32bppArgb))
++            using (var graphics = Graphics.FromImage(output))
++            {
++                graphics.CompositingMode = CompositingMode.SourceCopy;
++                graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
++                graphics.PixelOffsetMode = PixelOffsetMode.Half;
++                graphics.DrawImage(keyed, new Rectangle(0, 0, output.Width, output.Height), 0, 0, keyed.Width, 
+keyed.Height, GraphicsUnit.Pixel);
++                output.Save(targetPath, ImageFormat.Png);
++            }
++        }
++    }
++}
++'@
++
++[StormmouthSheetPostprocessor]::Run($sourcePath, $targetPath)
+
+apply patch
+patch: completed
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death\postp
+rocess_stormmouth.ps1
+exec
+"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command '$finalPath = '"'C:\\Users\\asali\\Projects\\
+MMO\\.claude\\worktrees\\epic-panini-3fd8fd\\art_src\\deaths_boss_2026-09-05\\stormmouth__death\\stormmouth_death_grid.
+png'; Add-Type -AssemblyName System.Drawing; "'$bmp = [System.Drawing.Bitmap]::FromFile($finalPath); Write-Output 
+("size={0}x{1}" -f $bmp.Width,$bmp.Height); foreach ($pt in @(@(0,0),@(3071,0),@(0,2047),@(3071,2047),@(1536,1024))) { 
+$c=$bmp.GetPixel([int]$pt[0],[int]$pt[1]); Write-Output ("pixel {0},{1}=#{2:X2}{3:X2}{4:X2}" -f 
+$pt[0],$pt[1],$c.R,$c.G,$c.B) }; $bmp.Dispose(); Get-Item -LiteralPath $finalPath | Select-Object 
+FullName,Length,LastWriteTime | Format-List' in 
+C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death
+ succeeded in 470ms:
+size=3072x2048
+pixel 0,0=#00FF00
+pixel 3071,0=#00FF00
+pixel 0,2047=#00FF00
+pixel 3071,2047=#00FF00
+pixel 1536,1024=#00FF00
+
+
+FullName      : C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmo
+                uth__death\stormmouth_death_grid.png
+Length        : 1778186
+LastWriteTime : 9/5/2026 5:51:16 PM
+
+
+
 
 codex
-Saved [morwen_death_grid.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026
--09-05\morwen__death\morwen_death_grid.png) at 3072├ù2048 with an exact `#00FF00` background.
+Saved the 3072├ù2048 sprite sheet to [stormmouth_death_grid.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-pan
+ini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death\stormmouth_death_grid.png).
 
-- Frame 1: standing at reference size, recoiling backward.
-- Frame 2: shoulders sagging, robe beginning to collapse.
-- Frame 3: sinking toward the ground.
-- Frame 4: folded down with arms bracing.
-- Frame 5: crumpled forward onto the ground.
-- Frame 6: still, low, wide heap lying fully on the ground.
+- Frame 1: Standing at reference scale, jolting backward with raised arms.
+- Frame 2: Staggering with one knee buckling.
+- Frame 3: Dropping onto both knees.
+- Frame 4: Toppling sideways and forward.
+- Frame 5: Impacting the ground with limbs sprawled.
+- Frame 6: Lying still and flat on the ground, much wider than tall.
 
-Generated with built-in ImageGen using the supplied character as a strict identity reference and the specified 3├ù2 
-death-animation storyboard.
+Created with built-in ImageGen using the identity-locked 2├ù3 death-animation brief. Background is solid `#00FF00`; no 
+blood, particles, ghosts, or effects.
 tokens used
-37,953
-Saved [morwen_death_grid.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\morwen__death\morwen_death_grid.png) at 3072├ù2048 with an exact `#00FF00` background.
+70,149
+Saved the 3072├ù2048 sprite sheet to [stormmouth_death_grid.png](C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths_boss_2026-09-05\stormmouth__death\stormmouth_death_grid.png).
 
-- Frame 1: standing at reference size, recoiling backward.
-- Frame 2: shoulders sagging, robe beginning to collapse.
-- Frame 3: sinking toward the ground.
-- Frame 4: folded down with arms bracing.
-- Frame 5: crumpled forward onto the ground.
-- Frame 6: still, low, wide heap lying fully on the ground.
+- Frame 1: Standing at reference scale, jolting backward with raised arms.
+- Frame 2: Staggering with one knee buckling.
+- Frame 3: Dropping onto both knees.
+- Frame 4: Toppling sideways and forward.
+- Frame 5: Impacting the ground with limbs sprawled.
+- Frame 6: Lying still and flat on the ground, much wider than tall.
 
-Generated with built-in ImageGen using the supplied character as a strict identity reference and the specified 3├ù2 death-animation storyboard.
+Created with built-in ImageGen using the identity-locked 2├ù3 death-animation brief. Background is solid `#00FF00`; no blood, particles, ghosts, or effects.

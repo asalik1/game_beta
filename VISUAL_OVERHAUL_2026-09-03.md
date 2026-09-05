@@ -198,6 +198,24 @@ elf_wild, ragged_soldier, ridge_deserter, vale_mourner (27 in all). Every row wa
 on a sheet beside its idle before install. Bosses keep their own death sequences (untouched);
 the tiny legacy placeholders (beastkin, sentry, verdant_*) and the tick critters were skipped.
 
+## 11. Boss windup postures + boss death clips (2026-09-05)
+
+- **Tell WINDUP posture** (`Balance.BOSS_TELL` "windup", knobs `BOSS_WINDUP_K` /
+  `BOSS_WINDUP_LEAN`): through a tell's fuse each boss now holds a per-kind posture and
+  snaps on release — brutes crouch and widen (vargoth, nullwarden, stormmouth, auroch,
+  fangmaw, cinderhide, saint_varo, whitepelt, icebound, first_howl), casters and floaters
+  draw up (morwen, choirmother, vess, forgemistress, ashpriest, sleepkeeper, gardener,
+  unnamed_echo), skirmishers lean into the aim (stormwarden, sexton), serpents coil
+  (curetwisted, stormdrake_veyx). Hue and shape said WHAT was coming; this says WHO. Rides a
+  held pose channel in the render tail; visual only (no timing/radius/damage change);
+  guarded by autotest (a real boss in the tree must carry the crouch to its sprite).
+  Review: `shot.bat tells --bosses --phase=0.85` vs `--phase=0.02`.
+- **Boss death clips** for the 20 bosses that still collapsed procedurally (ashpriest,
+  auroch_minotaur, hrolgar, kaethra, korrag, rotmaw, serane, veyx, choirmother, echo,
+  forgemistress, halla, morwen, nullwarden, saint_varo_standing, sexton, stormmouth,
+  vargoth, vess, first_howl): two-row grid rows at their cells, each eye-checked before
+  install. The 32px placeholders (whitepelt, icebound, stormwarden) were skipped.
+
 ## Open / not done
 
 - **Mage E column DONE**: anim/walk/attack/cast E regenerated as a true right
