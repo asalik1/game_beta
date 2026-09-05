@@ -235,5 +235,5 @@ idle frame was already clipped in the source (a regen would be needed to recover
 
 - Every commit: compile gate + `test_quick` green.
 - Full suite: **AUTOTEST PASS, 172 sections, exit 0** (2026-09-04, on the tree at 252547e: all motion/tell code + the art up to that point). Every commit after it changes PNGs, art tools and docs only (no game script changed), each gated by `test_quick`.
-- Final desktop pass (2026-09-05, after the last install): `--import` exit 0, **AUTOTEST QUICK PASS**, **PREFLIGHT OK** (IMPORT MODULES BALANCE PHYSICS RIGS ARTQA).
-- Mobile: `sync_mobile.py --apply --gate` → **APPLIED 312 + 29 files, GATE OK (mobile compile 121 scripts + quick suite passed)** 2026-09-05. Note for the next sync after a big PNG batch: the gate's first `--import` can exceed its 600s watchdog; run the mobile import by hand once, then re-run the gate.
+- Final desktop pass (2026-09-05 12:00, after wave 3-6 + the seam sweep): `--import` (the long one segfaulted at its shutdown tail — the known box crash — and a confirming re-import exited 0), **AUTOTEST QUICK PASS**, **PREFLIGHT OK** (IMPORT MODULES BALANCE PHYSICS RIGS ARTQA).
+- Mobile: `sync_mobile.py --apply --gate` → **GATE OK** twice (2026-09-05 05:17: 341 files; 2026-09-05 12:24 after waves 3-6 + the seam sweep: 287 files; mobile compile 121 scripts + quick suite passed both times). Note for the next sync after a big PNG batch: the gate's first `--import` can exceed its 600s watchdog; run the mobile import by hand once, then re-run the gate.
