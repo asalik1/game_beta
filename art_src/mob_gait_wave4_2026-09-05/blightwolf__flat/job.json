@@ -1,0 +1,13 @@
+{
+ "base": "blightwolf",
+ "facing": "flat",
+ "arch": "quadruped",
+ "old": "blightwolf_walk.png",
+ "frames": 6,
+ "desc": "a lean wolf whose fur is NEAR-BLACK with a dark olive-green cast (NOT blue, NOT teal, NOT grey), one large bright lime-green glowing root-vein branching across the shoulder and upper foreleg, lime-green glowing eyes, four legs, a ragged tail; reproduce reference 1's colours exactly",
+ "defect": "the previous roll came back teal/steel-blue with thin yellow veins everywhere and lost the single bright shoulder vein",
+ "idle_ref": "blightwolf_anim",
+ "donor": null,
+ "donor_flipped": false,
+ "refs": 2
+}

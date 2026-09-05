@@ -1,0 +1,14 @@
+{
+ "base": "hrolgar",
+ "facing": "n",
+ "arch": "biped_heavy",
+ "old": "hrolgar_walk_codex_n.png",
+ "frames": 6,
+ "heavy": true,
+ "desc": "a frost-jarl berserker walking AWAY from the viewer: the back of a huge pale-skinned humanoid, a white fur mantle over the shoulders and the back of a shaggy white mane, a bare muscled back with blue frost markings, a fur kilt and wrapped boots, a great two-handed axe carried in one hand Reproduce the shoulder gear of reference 1 exactly: the large SKULL PAULDRON strapped on his RIGHT upper arm (which from behind sits on the viewer's LEFT side) must be present in every frame, the same size as in reference 1.",
+ "defect": "the previous roll dropped the skull pauldron from the back view (both upper arms bare)",
+ "idle_ref": "hrolgar_anim_codex",
+ "donor": "skins/elite/warrior_emberbound_heir_walk_n",
+ "donor_flipped": false,
+ "refs": 2
+}

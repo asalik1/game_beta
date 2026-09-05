@@ -1,0 +1,30 @@
+[
+ {
+  "base": "blightwolf",
+  "facing": "flat",
+  "arch": "quadruped",
+  "old": "blightwolf_walk.png",
+  "frames": 6,
+  "desc": "a lean wolf whose fur is NEAR-BLACK with a dark olive-green cast (NOT blue, NOT teal, NOT grey), one large bright lime-green glowing root-vein branching across the shoulder and upper foreleg, lime-green glowing eyes, four legs, a ragged tail; reproduce reference 1's colours exactly",
+  "defect": "the previous roll came back teal/steel-blue with thin yellow veins everywhere and lost the single bright shoulder vein"
+ },
+ {
+  "base": "choirmother",
+  "facing": "n",
+  "arch": "glide",
+  "old": "choirmother_walk_codex_n.png",
+  "frames": 6,
+  "desc": "a choir matriarch drifting AWAY from the viewer: the back of a tall figure in a deep-blue floor-length gown with gold trim, a raised blue hood, wide sleeves with pale hands spread out to either side, the back of the gown falling in heavy folds to the ground The hands are plain pale silver-grey skin with NO glow, NO light and NO magic on them; the gown is deep NAVY blue (dark, low-saturation), not royal blue.",
+  "defect": "the previous roll gave every hand a cyan glow and a lighter royal-blue gown"
+ },
+ {
+  "base": "hrolgar",
+  "facing": "n",
+  "arch": "biped_heavy",
+  "old": "hrolgar_walk_codex_n.png",
+  "frames": 6,
+  "heavy": true,
+  "desc": "a frost-jarl berserker walking AWAY from the viewer: the back of a huge pale-skinned humanoid, a white fur mantle over the shoulders and the back of a shaggy white mane, a bare muscled back with blue frost markings, a fur kilt and wrapped boots, a great two-handed axe carried in one hand Reproduce the shoulder gear of reference 1 exactly: the large SKULL PAULDRON strapped on his RIGHT upper arm (which from behind sits on the viewer's LEFT side) must be present in every frame, the same size as in reference 1.",
+  "defect": "the previous roll dropped the skull pauldron from the back view (both upper arms bare)"
+ }
+]
