@@ -10,8 +10,10 @@ are the merge gates and are recorded at the bottom).
 ## How to review
 
 - **Before/after GIFs** of every changed sprite: `~/Downloads/ba_gifs_visual_overhaul/`
-  (417, built by `tools/art/ba_gifs.py --base 7fd27a4`). Palette-quantized and
-  above game scale — for CHANGE review, not colour judgement.
+  (417, built by `tools/art/ba_gifs.py --base 7fd27a4`), sorted into
+  `classes/<class>/`, `bosses/<boss>/`, `mobs/<mob>/`, `npcs/`, `capital/`, `props/` and
+  `travel/` (README.md inside). Palette-quantized and above game scale — for CHANGE
+  review, not colour judgement.
 - **Travel GIFs** (old vs new walk over scrolling ground at the mob's real
   speed): `~/Downloads/travel_gifs_visual_overhaul/` (zombie, royal_knight,
   wolf, cultist, stone_broken, plus mage_walk_e and warlock_walk_e old vs new).
