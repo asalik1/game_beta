@@ -1,0 +1,10 @@
+codex = C:\Users\asali\AppData\Local\OpenAI\Codex\bin\9ba750cce02d5e5c\codex.exe
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\npc_remaster_2026-09-05\merchant_nw (2 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\npc_remaster_2026-09-05\merchant_w (2 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\npc_remaster_2026-09-05\merchant_sw (2 refs)
+launched 3 codex jobs
+OK   C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\npc_remaster_2026-09-05\merchant_nw  (result 166 bytes)
+OK   C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\npc_remaster_2026-09-05\merchant_w  (result 135 bytes)
+OK   C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\npc_remaster_2026-09-05\merchant_sw  (result 130 bytes)
+batch complete
+batch4 done Sun Sep  6 02:01:35 EDT 2026
