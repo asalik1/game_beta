@@ -1,5 +1,14 @@
 #!/usr/bin/env python
-"""Grade a style-outlier sprite's PALETTE toward a sibling that already sits in
+"""DO NOT ADD A HUE MATCH HERE (tried and reverted 2026-09-06). A generated walk
+can come back a different COLOUR from its idle while its luminance matches, and the
+obvious fix -- rotate the strip's mean hue onto the idle's -- is WRONG for this cast:
+these bodies are a large desaturated mass carrying a small saturated ACCENT (blightwolf's
+lime vein, void_hound's violet slit), so the weighted mean hue is dominated by the mass
+and rotating it drags the accent somewhere else entirely. Measured 0 deg of "error"
+afterwards and the veins had gone from teal to brown. If a strip's colour is wrong, fix
+the ACCENT or re-roll the strip; never grade the whole body onto a mean.
+
+Grade a style-outlier sprite's PALETTE toward a sibling that already sits in
 the house palette — colour only, structure untouched.
 
 The world was unified painterly in Aug 2026, but a handful of variant rolls came
