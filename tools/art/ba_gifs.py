@@ -165,7 +165,8 @@ above game scale -- for CHANGE review, not colour judgement.
 - props/             world props and scenery
 - travel/            old-vs-new walks over scrolling ground at the mob's real speed
 
-Built by tools/art/ba_gifs.py --base <ref> (--flat for the old single pile).
+Built by tools/art/ba_gifs.py --base <ref> (--flat for the old single pile). The review
+guide for the current set is README.md next to this file.
 """
 
 
@@ -262,7 +263,7 @@ def main() -> int:
     FLAT = a.flat
     out_dir.mkdir(parents=True, exist_ok=True)
     if not FLAT:
-        (out_dir / "README.md").write_text(README, encoding="utf-8")
+        (out_dir / "LAYOUT.md").write_text(README, encoding="utf-8")   # README.md is the hand-written review guide; never overwrite it
     ok = 0
     for n in names:
         try:
