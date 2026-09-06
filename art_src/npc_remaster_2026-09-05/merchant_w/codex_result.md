@@ -1,0 +1,1 @@
+Pose is slightly more upright, and the backpack and scale are larger with minor added strap detail; gear types and sides are preserved.

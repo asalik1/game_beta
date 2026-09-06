@@ -1,0 +1,1 @@
+Pose differs slightly with a wider boot stance; gear placement matches, though the balance scale is more exposed.

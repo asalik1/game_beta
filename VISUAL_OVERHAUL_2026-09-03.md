@@ -303,6 +303,31 @@ only blanks the 8-dir set, so a flat-walk regen there is still live.
 gliding mob is the most robotic locomotion in the game, so on-model walks + coming off the
 list is a real improvement -- but it changes an owner-reviewed decision, so it is your call.
 
+## 15. Turn seams: three families that changed brightness or size when they turned (2026-09-06)
+
+A new report, `tools/art/facing_seam_scan.py`, asks a question no gate asked: does a body
+change when it TURNS? The 8-dir layout the owner approved is author S/E/N, SE+NE = byte
+COPIES of E, W/NW/SW = per-cell MIRRORS of E -- cheap to keep right, and easy to half-fix,
+because a tone match or a re-seat on E leaves the copies and mirrors on the OLD art. It
+finds families that use the convention (SE or NE is an exact byte copy of E) and reports a
+follower facing whose measured body or luma is off E. 74 families use it; 70 hold.
+
+- **vess** (found by the scan): only E, N and W were tone-matched in the 09-04 geometry pass,
+  so the four diagonals -- copies of the pre-match E and W -- stayed 7% brighter. The banshee
+  brightened every time she turned onto a diagonal. Diagonals rebuilt from the matched E/W;
+  the family now sits inside 55.4-58.3 luma.
+- **base mage**: her regenerated profile E column reads 6.8-13.2% darker than the SE and NE
+  facings it turns into (the QA round measured 5% against the S idle alone and let it pass;
+  measured against BOTH neighbours it is past the bar in three of four clips). anim, walk,
+  attack and cast E tone-matched to the mean of their own SE/NE, W re-mirrored from the new E
+  (the mirror was and remains byte-exact).
+- **merchant**: the eight re-mastered facings were eight independent generations, so the body
+  size spread closed (6% -> 0%) but the LIGHTING spread opened (7% -> 31%). All eight
+  tone-matched to their common mean: 12% now, with saturated accents protected.
+The 4 families the scan still flags are the base paladin's attack2/attackb/cast/death, whose
+W facings are authored, not mirrored: with light from the top-left a figure facing west shows
+its lit side, so 15-20% is intentional. Documented in the tool, not "fixed".
+
 ## Open / not done
 
 - **Mage E column DONE**: anim/walk/attack/cast E regenerated as a true right

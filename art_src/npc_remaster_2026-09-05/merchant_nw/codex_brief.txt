@@ -6,8 +6,10 @@ POSE, FACING and design -- reproduce this exact figure, same stance, same facing
 the same sides, same colours. Reference image 2 is the SAME character's already-remastered SOUTH facing: match ITS painterly detail
 level, rendering style and palette exactly.
 
-Generate ONE image: the single figure, centered, filling most of the canvas, on a TRANSPARENT
-background (real alpha). Painterly, soft-shaded, NO black outlines, muted palette, top-down
+Generate ONE image: the single figure, centered, filling most of the canvas, on a FLAT SOLID
+PURE-GREEN (#00FF00) background -- fill every pixel that is not the figure with that green,
+and use NO other green anywhere in the figure. (Asking for transparency is unreliable: three
+of seven facings came back on WHITE, 2026-09-06.) Painterly, soft-shaded, NO black outlines, muted palette, top-down
 three-quarter game view, light from the top-left. NO text, NO ground patch, NO shadow blob.
 
 Save the image to disk at the exact path C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\npc_remaster_2026-09-05\merchant_nw\merchant_nw_master.png and stop. Then reply with one line: any way the

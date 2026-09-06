@@ -1,0 +1,1 @@
+Slight difference: the rear boot and balance pan are more visible; all gear remains on the same sides.

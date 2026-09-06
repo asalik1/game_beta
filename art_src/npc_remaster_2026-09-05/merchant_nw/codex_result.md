@@ -1,0 +1,1 @@
+Pose is slightly more straight-north with wider-splayed feet; the scales are larger, backpack detailing differs, and the viewer-left bottle is amber instead of green.

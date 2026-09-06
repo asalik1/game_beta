@@ -1,0 +1,1 @@
+Pose/gear differences: the stance is slightly more upright, and the backpack/bedroll is proportionally larger than in reference 1.
