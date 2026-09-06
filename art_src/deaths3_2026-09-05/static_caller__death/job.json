@@ -1,0 +1,7 @@
+{
+ "base": "static_caller",
+ "clip": "death",
+ "frames": 6,
+ "idle": "static_caller_anim.png",
+ "arch": "glide"
+}

@@ -1,0 +1,1 @@
+The upper canopy is slightly narrower and more jagged, the central arch is larger, and several mushroom clusters shifted from the subject’s exact positions.

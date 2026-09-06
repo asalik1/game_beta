@@ -1,0 +1,1 @@
+The silhouette is slightly broader: both arrows, the ironwork, rope, and stone footing are fuller, while their placement remains consistent.

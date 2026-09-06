@@ -67,29 +67,39 @@ Then reply with one line: which reference you matched the style to, and any way 
 CANVAS = {"square": "Square 1024x1024", "wide": "Landscape 1536x640 (the subject is very wide)"}
 
 
-def main():
-    ap = sys.argv[1:]
-    if not ap:
-        print(__doc__); return 1
-    root = ap[0]
-    names = ap[1:] or list(PLAN)
+def stage_plan(root, plan, names=None, brief=None):
+    """Write one Codex stage per plan entry (refs + brief) and <root>/stages.txt.
+    Shared by the capital lane and the landmark re-master lane
+    (make_landmark_briefs.py, 2026-09-05), which passes its own brief text."""
+    names = names or list(plan)
+    BRIEF_ = brief or BRIEF
     os.makedirs(root, exist_ok=True)
     stages = []
     for name in names:
-        ref, desc, canvas = PLAN[name]
+        ref, desc, canvas = plan[name]
         stage = os.path.join(root, name)
         refs = os.path.join(stage, "refs")
         os.makedirs(refs, exist_ok=True)
         shutil.copy(os.path.join(SPR, ref + ".png"), os.path.join(refs, f"1_style_{ref}.png"))
         shutil.copy(os.path.join(SPR, name + ".png"), os.path.join(refs, f"2_subject_{name}.png"))
         with open(os.path.join(stage, "codex_brief.txt"), "w", encoding="utf-8") as f:
-            f.write(BRIEF.format(ref=ref, name=name, desc=desc, out=os.path.abspath(stage),
-                                 canvas=CANVAS[canvas]))
+            f.write(BRIEF_.format(ref=ref, name=name, desc=desc, out=os.path.abspath(stage),
+                                  canvas=CANVAS[canvas]))
         stages.append(os.path.abspath(stage))
         print("stage", name, "<-", ref)
     with open(os.path.join(root, "stages.txt"), "w") as f:
         f.write("\n".join(stages) + "\n")
     print(len(stages), "stages ->", os.path.join(root, "stages.txt"))
+    return stages
+
+
+def main():
+    ap = sys.argv[1:]
+    if not ap or ap[0] in ("-h", "--help"):
+        print(__doc__); return 1
+    root = ap[0]
+    names = ap[1:] or list(PLAN)
+    stage_plan(root, PLAN, names)
     return 0
 
 

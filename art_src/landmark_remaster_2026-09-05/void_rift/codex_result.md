@@ -1,0 +1,1 @@
+The central opening is slightly wider, with several framing stones bulkier and subtly shifted versus the subject.

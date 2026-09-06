@@ -1,0 +1,1 @@
+The top cap is slightly broader/squarer, the right buttress bulkier, and the base wider than the subject.

@@ -236,6 +236,52 @@ sheet `art_src/_qa_final/prop_pulse_heat.png`; tour rig frames for The Crystal D
 The Null Bastion. Backups `art_src/_backups/prop_pulse_2026-09-05/`. Also sewer_outfall
 frames 1-3 sat 1 px right of frame 0 (the audit's "1 px tick"): shifted onto it.
 
+## 13. Landmark re-masters, two death fixes, NPC bodies (2026-09-06)
+
+**Landmark masters (the fidelity rule applied to STRUCTURE bases).** `fidelity_audit.py`
+scores a prop at its SCATTER width, but `_add_structure` scales the same PNG to the
+structure def's `w` (84-190 px) when it is an ecology landmark -- so thirteen painterly
+masters that pass as scatter rendered at 1.02-1.65x as landmarks, under the >=2x bar.
+New lane `tools/art/style_unify/make_landmark_briefs.py` (re-master brief: the piece is its
+own SUBJECT, a family sibling is the STYLE ref, "resolve more detail, do not redesign") ->
+`install_capital_stage.py --render-w` (key, -14% saturation, tight-crop, cap at 2.3x the
+LANDMARK width, re-derive the `_anim`). Installed at 2.30x: castle_statue, forge_statue,
+grave_angel, ice_cairn, sandstone, storm_conductor, void_rift, crystal_spire, pillar,
+sewer_outfall, signpost, torch_pillar. Vet gate = `art_src/landmark_remaster_2026-09-05/vet_aspect.py`
+(old-vs-new sheet + height-at-equal-width, since a landmark is scaled to its def width so
+aspect drift IS an on-screen height change): crystal_spire's first roll came back 15% squat
+and was re-rolled with the 1.7:1 proportion pinned (+0.1%); spore_shrine's filled the canvas
+edge to edge (roots cut off) and is re-rolling with a margin clause. sewer_outfall was also
+the audit's one STYLE outlier (a 160 px pixel-art pipe beside painterly wells) and is now
+painterly.
+- **New `flow` motion** in `derive_prop_anim.py`: `shimmer` only knows BLUE water, so the
+  new outfall's olive sludge got a 0% pulse (a dead 4-frame strip). `flow` masks the liquid
+  (cool OR olive-green, minus the 2 px keyed rim -- animating that rim would shimmer the
+  whole outline) and scrolls its COLOUR downward 2 px per frame with a gentle breath;
+  alpha is never touched, so the silhouette stays byte-stable (verified: alpha identical on
+  every frame, 3% of body pixels change per frame, pulse 2%).
+
+**Two death clips replaced (audit findings that were still open).** static_caller's death
+strip drew a bronze ring over the head and a walking figure with greaves the idle never has;
+skeleton_warrior's drew plated greaves and boots under a knee-length tabard where the idle is
+a floor-length robe. Both regenerated through the death lane with the identity taken from
+their own idle frame 0 (glide storyboard: recoil, sag, sink, fold, crumple, heap) and
+installed at frame-0 body 1.00x the idle, feet on the idle's feet line, 4 frames -> 6.
+
+**NPC bodies at the roster recipe.** `tools/art/npc_remaster.py` (new): the elder /
+caged_beastkin recipe of 08-25 as a tool -- stage per facing (refs = the current still for
+pose and identity + the roster's finished sibling for detail), install at 256x256 with a
+223 px body on the feet line. merchant and onna were 1.50x and 1.52x (the audit's two "regen"
+NPC calls); their south bodies are now 2.35x. onna's old strip was 2 byte-identical frames,
+so nothing animated was lost. The merchant's seven other facings are staged and re-rolling
+(a dir set must be remastered as a set or the body pops on the turn).
+
+**NPC turn-scale fix (`game.gd`).** `_face_interactable_to_player` re-normalised the body on
+EVERY facing's own alpha height, so a facing whose alpha box is inflated by a raised prop
+rendered the body smaller on the turn (piet se/sw, 14%; warden_edda s, 9%; digger_haim and
+tinker_osla 6-7%). It now normalises on the SOUTH facing's alpha height and keeps that scale
+for all eight, which is correct by construction for a dir set (one canvas, one body size).
+
 ## Open / not done
 
 - **Mage E column DONE**: anim/walk/attack/cast E regenerated as a true right

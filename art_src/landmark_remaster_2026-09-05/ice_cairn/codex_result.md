@@ -1,0 +1,1 @@
+The silhouette is slightly more regular, with minor differences in individual stone and icicle placement.

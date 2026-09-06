@@ -1,0 +1,10 @@
+Re-master a game LANDMARK prop at a higher resolution. This is for a top-down dark-fantasy action RPG in which every prop is PAINTERLY: softly shaded, fine natural detail, NO black outlines, muted somber palette, weathered materials, light from the top-left, top-down three-quarter view.
+
+Reference image 2_subject_crystal_spire.png (SUBJECT): the current version — "a cluster of tall translucent cyan-blue crystal shards rising from a dark rock base, one dominant central spire flanked by smaller angled shards, glowing pale-blue facets, small crystals at the foot". It was painted at a small size and renders soft in-game. Reproduce it LARGE with finer, crisper detail: the SAME object, same silhouette, footprint, proportions and view angle, every part in the same place, the same palette and material reads. Do not redesign it, add parts, or change its colours; only resolve more detail (stone grain, edge wear, moss, glow gradients) at the larger size. If the subject is pixel-art, repaint it painterly to match reference 1 while keeping everything else.
+
+Reference image 1_style_crystal_cluster.png (STYLE): a finished sibling prop from this game at the target level of detail and brushwork. Match its rendering (edge softness, material shading, saturation level).
+
+Generate ONE image: the subject re-painted large, filling most of the canvas, centred, on a flat solid pure-green (#00FF00) background. No ground shadow beyond what the subject itself carries, no text, no frame, nothing else in the image. Square 1024x1024.
+
+Save the PNG to exactly this path: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\landmark_remaster_2026-09-05\crystal_spire/crystal_spire.png
+Then reply with one line: any way the silhouette or part placement differs from the subject.

@@ -52,6 +52,11 @@ ANIM = {
     "capital_sable_hall": ("flicker", 0.18), "capital_watchtower": ("flicker", 0.20),
     "capital_proving_gate": ("flicker", 0.20), "capital_great_hearth": ("flicker", 0.22),
     "capital_crown_fountain": ("shimmer", 0.10), "capital_wellspring": ("shimmer", 0.10),
+    # landmark re-masters (2026-09-05, make_landmark_briefs.py): glow pulses are
+    # glow-only since the same day; void_rift keeps its rigid-shell swirl; the
+    # outfall's sludge shimmers; the torch pillar is an open fire.
+    "crystal_spire": ("pulse", 0.10), "storm_conductor": ("pulse", 0.10), "spore_shrine": ("pulse", 0.10),
+    "void_rift": ("swirl", 0.12), "sewer_outfall": ("flow", 0.12), "torch_pillar": ("flicker", 0.20),
 }
 
 

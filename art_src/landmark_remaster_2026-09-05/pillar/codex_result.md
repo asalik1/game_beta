@@ -1,0 +1,1 @@
+The base is slightly broader/deeper and the capital stones more segmented; otherwise the silhouette and part placement are preserved.

@@ -1,0 +1,14 @@
+[
+ {
+  "base": "static_caller",
+  "arch": "glide",
+  "frames": 6,
+  "desc": "a gaunt hooded storm-caller: a tattered black cloak falling to the ground with no legs visible, a bronze skull-like mask under the hood, a gold-trimmed dark robe and belt, thin cyan-blue lightning arcs crawling over the cloak and shoulders, a short bronze wand held low in the right hand"
+ },
+ {
+  "base": "skeleton_warrior",
+  "arch": "glide",
+  "frames": 6,
+  "desc": "an armoured skeleton knight: dark grey-black plate armour with a closed great-helm, glowing pale-blue eye slits, pale frost-blue ice crystals growing on the helm and pauldrons, icy chains across the chest, a frost-spiked spear held low across the body in both hands, a floor-length dark tattered tabard-robe hiding the legs"
+ }
+]

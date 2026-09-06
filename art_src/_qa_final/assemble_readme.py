@@ -8,7 +8,28 @@ GIFS = pathlib.Path(r"C:\Users\asali\Downloads\ba_gifs_visual_overhaul")
 SPR = ROOT / "game" / "assets" / "sprites"
 BASE = "7fd27a4"
 
-parts = [(ART / f"_review_readme_part{i}.md").read_text(encoding="utf-8") for i in (1, 2, 3)]
+import sys
+UPDATE = "--update" in sys.argv   # regenerate the appendices inside the existing README (the hand-written parts were folded in)
+APPX_TAIL = [
+    "## Appendix A. Per-subject change log", "",
+    "Every GIF subject with the commits that touched its sprites (subjects appear in their folder",
+    "order; a commit is listed once per subject).", "", "{{APPENDIX_A}}", "",
+    "## Appendix B. Recentre drift table", "",
+    "Max per-frame feet-anchor offset removed by `recenter_strip.py --apply` (px, in the strip's",
+    "own cell). Every file listed was off its frame grid; the figure slid by this much across the",
+    "loop.", "", "{{APPENDIX_B}}", "",
+    "## Appendix C. Audit findings, final status", "",
+    "The 57 findings of the 2026-09-05 nine-subject workflow audit (classes, boss facings, the",
+    "frame edits), each re-checked by hand, with what happened to it. FIXED = changed on the",
+    "branch; SUPERSEDED = the strip was regenerated or rebuilt afterwards so the finding no longer",
+    "applies as stated; LEFT = verified and deliberately not changed (reason given).", "", "{{APPENDIX_C}}", "",
+]
+if UPDATE:
+    existing = (GIFS / "README.md").read_text(encoding="utf-8")
+    head = existing.split("## Appendix A. Per-subject change log")[0]
+    parts = [head + chr(10).join(APPX_TAIL)]
+else:
+    parts = [(ART / f"_review_readme_part{i}.md").read_text(encoding="utf-8") for i in (1, 2, 3)]
 
 # ---- subject -> gif stems, in folder order
 subjects = []  # (cat, subject, [stems])

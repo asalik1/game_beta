@@ -1,0 +1,12 @@
+codex = C:\Users\asali\AppData\Local\OpenAI\Codex\bin\9ba750cce02d5e5c\codex.exe
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths3_2026-09-05\static_caller__death (1 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths3_2026-09-05\skeleton_warrior__death (1 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\npc_remaster_2026-09-05\merchant_s (2 refs)
+launch: C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\npc_remaster_2026-09-05\onna_s (2 refs)
+launched 4 codex jobs
+OK   C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths3_2026-09-05\static_caller__death  (result 695 bytes)
+OK   C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\deaths3_2026-09-05\skeleton_warrior__death  (result 614 bytes)
+OK   C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\npc_remaster_2026-09-05\merchant_s  (result 139 bytes)
+OK   C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\npc_remaster_2026-09-05\onna_s  (result 158 bytes)
+batch complete
+after-landmarks batch done Sun Sep  6 00:22:54 EDT 2026

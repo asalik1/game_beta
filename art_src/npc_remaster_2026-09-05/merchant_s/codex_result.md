@@ -1,0 +1,1 @@
+Pose/gear differences: the stance is slightly wider and the balance scale hangs lower/larger; gear placement otherwise matches reference 1.

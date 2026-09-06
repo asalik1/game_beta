@@ -1,0 +1,1 @@
+The central spire is slightly broader, the rock base wider/blockier, and several smaller shards are subtly shifted or reshaped versus the subject.

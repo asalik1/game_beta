@@ -1,0 +1,1 @@
+The silhouette is slightly wider through the wings and pedestal; the broken wing tips and exact hand/robe-fold contours differ subtly from the subject.

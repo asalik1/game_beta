@@ -1,0 +1,1 @@
+Pose is slightly more forward-stepping and strongly turned down-right; gear remains on the correct sides, with finer pack and scale details.

@@ -1,0 +1,1 @@
+The crown is slightly wider with taller, more flared prongs, and the base masonry is somewhat fuller; otherwise part placement matches the subject.

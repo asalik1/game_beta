@@ -1,0 +1,1 @@
+Minor drift: the crown/hood and ember slab are slightly larger, while the side braziers sit lower and farther outward than in the subject.

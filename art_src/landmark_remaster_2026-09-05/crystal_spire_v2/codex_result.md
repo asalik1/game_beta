@@ -1,0 +1,1 @@
+The lower silhouette is slightly fuller, with some side shards and base rocks shifted or enlarged; the dominant spire and 1.7:1 profile are preserved.

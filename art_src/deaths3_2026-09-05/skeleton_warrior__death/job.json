@@ -1,0 +1,7 @@
+{
+ "base": "skeleton_warrior",
+ "clip": "death",
+ "frames": 6,
+ "idle": "skeleton_warrior_anim.png",
+ "arch": "glide"
+}

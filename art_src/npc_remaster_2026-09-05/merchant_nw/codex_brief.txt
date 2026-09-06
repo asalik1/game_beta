@@ -1,0 +1,14 @@
+Repaint an EXISTING game NPC's NORTH-WEST (three-quarter, facing up-left, back mostly to camera) facing at high resolution.
+This is a FIDELITY UPGRADE, not a redesign.
+
+Reference image 1 is the CURRENT in-game NORTH-WEST (three-quarter, facing up-left, back mostly to camera) still (upscaled): the authority for the
+POSE, FACING and design -- reproduce this exact figure, same stance, same facing, same gear on
+the same sides, same colours. Reference image 2 is the SAME character's already-remastered SOUTH facing: match ITS painterly detail
+level, rendering style and palette exactly.
+
+Generate ONE image: the single figure, centered, filling most of the canvas, on a TRANSPARENT
+background (real alpha). Painterly, soft-shaded, NO black outlines, muted palette, top-down
+three-quarter game view, light from the top-left. NO text, NO ground patch, NO shadow blob.
+
+Save the image to disk at the exact path C:\Users\asali\Projects\MMO\.claude\worktrees\epic-panini-3fd8fd\art_src\npc_remaster_2026-09-05\merchant_nw\merchant_nw_master.png and stop. Then reply with one line: any way the
+pose or gear differs from reference 1.

@@ -1,0 +1,1 @@
+The upper root crown is denser and broader, with a few extra root spurs and slightly shifted mushroom clusters.

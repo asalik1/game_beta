@@ -711,6 +711,36 @@ The capital was "pending a visual update". Three layers, in the order they lande
   remains a 160 px pixel-art master rendered at 156 px (a style outlier the audit flagged
   for a repaint).
 
+## props/ and npcs/ addendum (2026-09-06 round, after the guide's first cut)
+
+These GIFs compare against the BRANCH's own previous state where a piece was already
+changed on the branch, not against main.
+
+**Twelve landmark masters re-mastered.** Defect: the fidelity audit scores a prop at its
+scatter width, but an ecology LANDMARK is scaled to its structure def width, so these
+rendered at 1.02 to 1.65x their master, under your 2x bar (castle_statue 1.45, forge_statue
+1.56, grave_angel 1.49, ice_cairn 1.51, sandstone 1.35, crystal_spire 1.40, storm_conductor
+1.42, void_rift 1.17, pillar 1.53, signpost 1.65, torch_pillar 1.79, sewer_outfall 1.02).
+Each was re-painted larger from itself (its own art is the subject, a painterly sibling the
+style reference, "resolve more detail, do not redesign") and installed at 2.30x the landmark
+width. sewer_outfall was also the audit's one pixel-art style outlier and is now painterly.
+Look for: the same silhouette and parts, more resolved stone grain and edge wear, nothing
+redesigned. Two rolls were rejected and re-rolled: crystal_spire came back 15 percent squat,
+spore_shrine filled its canvas and lost the root tips.
+
+**sewer_outfall now flows.** Its four-frame strip did nothing (the water motion only knows
+blue; the sludge is olive). A new liquid motion scrolls the pour and puddle colour downward
+without touching alpha, so the pipe is byte-stable and only the sludge moves.
+
+**Two death clips replaced** (static_caller, skeleton_warrior): the shipped strips were
+off-identity, drawing armoured legs and boots under bodies whose idles are floor-length
+robes, plus a bronze ring the caller never wears. Regenerated from each idle, 4 frames to 6,
+frame-0 body exactly the idle's.
+
+**merchant and onna** were the audit's two NPC regen calls (1.50x and 1.52x masters, soft
+beside the 2.35x roster). Their south bodies are re-mastered at the roster recipe; the
+merchant's other seven facings are re-rolling as a set.
+
 ## travel/  (7 GIFs)
 
 Old vs new walks over scrolling ground at the mob's real in-game speed, the only way to see
@@ -869,6 +899,7 @@ order; a commit is listed once per subject).
   - Boss death clips: morwen, nullwarden, saint_varo_standing, sexton, stormmouth, vargoth, vess, first_howl (20 of 20); board 11 (windup postures + boss deaths)
   - Boss walk geometry re-seats (nullwarden 60%-size walk, saint_varo E/W cell, 5 more) + the paladin's broken north walk
 - **bosses/nullwarden** (6 GIFs: nullwarden_anim_codex, nullwarden_death, nullwarden_walk_codex_e, nullwarden_walk_codex_n, nullwarden_walk_codex_nw, nullwarden_walk_codex_s)
+  - Review guide rewritten at subject granularity (owner: "not detailed enough, what was done and why"); nullwarden N hem fleck dropped; the 148 new sprite .import sidecars ...
   - nullwarden idle: the recentre pass had emptied its last frame (1px of alpha) -- restored to the centred pre-recentre version; bog_lurker/cinderhide/skeleton_warrior S ...
   - Boss death clips: morwen, nullwarden, saint_varo_standing, sexton, stormmouth, vargoth, vess, first_howl (20 of 20); board 11 (windup postures + boss deaths)
   - Corpus seam sweep + fix-up batch installs
@@ -1244,20 +1275,58 @@ order; a commit is listed once per subject).
   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
 - **props/cactus2** (1 GIF: cactus2)
   - Palette-grade the world's style outliers back into the house palette
+- **props/camp_furnace** (1 GIF: camp_furnace_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
+- **props/crystal_cluster** (1 GIF: crystal_cluster_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
+- **props/crystal_spire** (1 GIF: crystal_spire_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
+- **props/forge_brazier** (1 GIF: forge_brazier_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
+- **props/forge_cauldron** (1 GIF: forge_cauldron_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
+- **props/geode** (1 GIF: geode_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
 - **props/grass2** (1 GIF: grass2)
   - Palette-grade the world's style outliers back into the house palette
 - **props/grass3** (1 GIF: grass3)
   - Palette-grade the world's style outliers back into the house palette
+- **props/magma_furnace** (1 GIF: magma_furnace_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
 - **props/mushroom2** (1 GIF: mushroom2)
   - Palette-grade the world's style outliers back into the house palette
 - **props/mushroom3** (1 GIF: mushroom3)
   - Palette-grade the world's style outliers back into the house palette
+- **props/node_crystal** (1 GIF: node_crystal_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
+- **props/sewer_outfall** (1 GIF: sewer_outfall_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
+- **props/spore_shrine** (1 GIF: spore_shrine_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
+- **props/spore_vent** (1 GIF: spore_vent_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
+- **props/station_alchemy_t1** (1 GIF: station_alchemy_t1_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
+- **props/station_alchemy_t2** (1 GIF: station_alchemy_t2_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
+- **props/station_furnace_t1** (1 GIF: station_furnace_t1_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
+- **props/station_furnace_t2** (1 GIF: station_furnace_t2_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
+- **props/station_furnace_t3** (1 GIF: station_furnace_t3_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
+- **props/storm_standing_stone** (1 GIF: storm_standing_stone_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
 - **props/toadstool** (1 GIF: toadstool)
   - Palette-grade the world's style outliers back into the house palette
 - **props/tree_green2** (2 GIFs: tree_green2, tree_green2_anim)
   - Palette-grade the world's style outliers back into the house palette
 - **props/tree_green4** (2 GIFs: tree_green4, tree_green4_anim)
   - Palette-grade the world's style outliers back into the house palette
+- **props/void_monolith** (1 GIF: void_monolith_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
+- **props/void_obelisk** (1 GIF: void_obelisk_anim)
+  - Glow props breathe the glow only: derive_prop_anim's pulse is luma-gated (18 strips re-derived), sewer_outfall's 1 px tick shifted out, tour rig skips the room dialogue ...
 
 ## Appendix B. Recentre drift table
 

@@ -1,0 +1,1 @@
+The pose is slightly more front-facing and wider than reference 1; the balance pans hang farther apart, but all gear remains on the correct sides.

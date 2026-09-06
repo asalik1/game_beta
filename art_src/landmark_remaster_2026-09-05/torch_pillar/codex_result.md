@@ -1,0 +1,1 @@
+The capital and lower plinth are slightly broader/chunkier; all parts retain the subject’s placement and order.

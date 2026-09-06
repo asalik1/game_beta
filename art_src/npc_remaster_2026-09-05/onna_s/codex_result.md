@@ -1,0 +1,1 @@
+The screen-left hand sits slightly higher on the strap, and minor belt pouches are more defined; otherwise the pose, facing, and gear sides match Reference 1.

@@ -1,0 +1,1 @@
+Differences: slightly bulkier pauldrons/hands, a wider sword guard, and a taller, deeper plinth than the subject.

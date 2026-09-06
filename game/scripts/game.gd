@@ -586,9 +586,15 @@ func _face_interactable_to_player(entry: Dictionary) -> void:
 		var legacy_scale := Art.scale_for(spr.texture,
 			float(entry.get("render_scale", Balance.NPC_RENDER_SCALE))
 				* float(entry.get("size_var", 1.0)), frames)
-		spr.scale = Art.scale_for_alpha_height(spr.texture,
+		# Normalise on the SOUTH facing's alpha height and keep that scale for
+		# every facing: a dir set shares one canvas and body size by
+		# construction, so a raised spear that inflates one facing's alpha box
+		# (piet se/sw, 14 %) must not shrink the body on the turn (2026-09-05).
+		var south: Dictionary = dirs.get("s", info)
+		var south_tex: Texture2D = south.get("tex", spr.texture)
+		spr.scale = Art.scale_for_alpha_height(south_tex,
 			body_target * Balance.CHAR_RENDER_SCALE
-				* float(entry.get("size_var", 1.0)), frames)
+				* float(entry.get("size_var", 1.0)), int(south.get("frames", frames)))
 		spr.position.y = Art.alpha_feet_offset(spr.texture, legacy_scale.y, frames) \
 			- Art.alpha_feet_offset(spr.texture, spr.scale.y, frames)
 	else:

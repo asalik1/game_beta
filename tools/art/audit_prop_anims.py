@@ -51,7 +51,7 @@ CODEX_PROPS = {"signal_fire", "torch_pillar", "watch_brazier", "great_hearth", "
                "town_fountain", "bog_rootwell", "storm_array", "camp_bonfire", "magma_chainrig", "fountain_flow"}
 # Motion class per DERIVED prop (from the 2026-08-17 batch): what --fix re-derives with.
 MOTION = {
-    "old_well": "shimmer", "castle_banner": "wave", "hideout_firepit": "flicker", "flame": "flicker",
+    "old_well": "shimmer", "sewer_outfall": "flow", "castle_banner": "wave", "hideout_firepit": "flicker", "flame": "flicker",
     "forge_hearth": "flicker", "cook_pan": "shimmer",
     # 2026-08-18 style-unify re-derives (batch B/D statics): pulse = colour-only, rigid-safe.
     "station_alchemy_t1": "pulse", "station_alchemy_t2": "pulse", "node_crystal": "pulse",
@@ -87,6 +87,18 @@ FOLIAGE_PROPS = {
     "topiary", "bush", "bush2", "bush3",
 }
 FOLIAGE_BAND = 0.12
+# DEAD strips (2026-09-06). The gate only ever asked "does this move TOO MUCH".
+# A corpus scan found the opposite failure: a derived strip whose motion mask
+# matched (almost) nothing, so the prop ships a 4-frame animation that never
+# changes -- shimmer on olive sludge (sewer_outfall), swirl on pale-blue light
+# (capital_portal_story), a canopy strip that is four copies of the static
+# (tree_winter2, tree_autumn2), a pulse on a station whose glow it missed
+# (station_alchemy_t3). All five are fixed; this keeps them fixed.
+DEAD_PCT = 0.5     # under this share of the body changing on EVERY frame = dead
+# Props with nothing to animate by design: an empty copper pan, a well whose
+# water is not visible (a swinging bucket needs authored frames -- owner ruling),
+# an UNLIT firepit ring. Their strips are inert on purpose.
+NO_MOTION_OK = {"cook_pan", "old_well", "hideout_firepit"}
 
 
 def frame_w(strip_path, base):
@@ -146,6 +158,25 @@ def measure(strip_path, fw):
     bdrift = max(max(abs(b[0] - bases[0][0]), abs(b[1] - bases[0][1]), abs(b[2] - bases[0][2])) for b in bases)
     pulse = (max(lums) - min(lums)) / max(1e-6, max(lums)) * 100.0
     return n, drift, bdrift, pulse
+
+
+def motion_pct(strip_path, fw):
+    """Largest share of the body (%) that CHANGES on any frame vs frame 0 --
+    alpha or colour. Near 0 = a dead strip (the animation does nothing)."""
+    a = np.asarray(Image.open(strip_path).convert("RGBA")).astype(int)
+    n = a.shape[1] // fw
+    if n < 2:
+        return 100.0
+    fr = [a[:, i * fw:(i + 1) * fw] for i in range(n)]
+    al0 = fr[0][..., 3] > 40
+    if not al0.any():
+        return 100.0
+    best = 0.0
+    for f in fr[1:]:
+        alpha_d = int(((f[..., 3] > 40) ^ al0).sum())
+        rgb_d = int((np.abs(f[..., :3] - fr[0][..., :3]).sum(2) > 20).sum())
+        best = max(best, max(alpha_d, rgb_d) / al0.sum() * 100.0)
+    return best
 
 
 def is_derived(strip_path, fw):
@@ -288,20 +319,26 @@ def main():
         if not m:
             continue
         n, drift, bdrift, pulse = m
+        dead = base not in NO_MOTION_OK and motion_pct(p, fw) < DEAD_PCT
         pulse_max = PULSE_MAX_FIRE if base in FIRE_PROPS else (
             PULSE_MAX_ENERGY if base in ENERGY_PROPS else PULSE_MAX)
-        flag = bool(bdrift >= BASE_DRIFT_MAX or pulse >= pulse_max)
-        rows.append((base, n, fw, round(drift, 1), round(bdrift, 1), round(pulse), flag, os.path.exists(static)))
+        flag = bool(bdrift >= BASE_DRIFT_MAX or pulse >= pulse_max or dead)
+        rows.append((base, n, fw, round(drift, 1), round(bdrift, 1), round(pulse), flag, os.path.exists(static), dead))
     rows.sort(key=lambda r: (0 if r[6] else 1, -r[5], -r[4]))
     print("%-24s %2s %4s %6s %6s %6s %s" % ("base", "n", "fw", "drift", "bdrft", "pulse%", "flag"))
     for r in rows:
-        print("%-24s %2d %4d %6.1f %6.1f %6d %s" % (r[0], r[1], r[2], r[3], r[4], r[5], "FLAG" if r[6] else ""))
+        print("%-24s %2d %4d %6.1f %6.1f %6d %s" % (r[0], r[1], r[2], r[3], r[4], r[5],
+              ("FLAG DEAD" if r[8] else "FLAG") if r[6] else ""))
     flagged = [r for r in rows if r[6]]
     print("%d prop strips, %d flagged" % (len(rows), len(flagged)))
     if not a.fix:
         return 1 if flagged else 0
     for r in flagged:
-        base, n, fw, drift, bdrift, pulse, _, has_static = r
+        base, n, fw, drift, bdrift, pulse, _, has_static, dead = r
+        if dead:
+            print("dead     ", base, "-- its motion mask matches nothing in the art; pick a motion that fits "
+                  "(derive_prop_anim warns when a mask covers <1%) or add it to NO_MOTION_OK")
+            continue
         p = os.path.join(SPR, base + "_anim.png")
         if base in FOLIAGE_PROPS and not (has_static and is_derived(p, fw)):
             print("foliage  ", base, "— authored canopy sway: never realigned/band-locked; fix by regen only")

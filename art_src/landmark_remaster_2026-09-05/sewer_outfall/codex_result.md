@@ -1,0 +1,1 @@
+Minor difference: the masonry plinth and sludge puddle are slightly broader than the subject; pipe and flow placement are preserved.
