@@ -103,7 +103,7 @@ and, where a lane needed a reference, the five enhanced-base skins.
 - Look for: hood in profile every frame, the skull floating behind the head in all six, the
   grimoire in the near hand, boots alternating below the hem.
 
-**attack, attack2 and their eight facings (19 GIFs)**
+**attack, attack2 and their eight facings (18 GIFs; 19 strips, one pair byte-identical)**
 - Defect: every one of the 19 warlock basic and attack2 strips carried a #00FF00 keying
   ring on the silhouette (a design with no green in it at all), invisible on a dark contact
   sheet, a halo over grass. Found by the corpus scan `despill_rim.py --scan` (rim-band
@@ -112,7 +112,7 @@ and, where a lane needed a reference, the five enhanced-base skins.
 - Fix: rim-band despill only (it cannot dull green garments); the scan returns 0 now.
 - Look for: no green edge on the sleeves or skull over the grass-coloured GIF background.
 
-**attack_walk family (8 GIFs) and attack_walk_b family**
+**attack_walk family and attack_walk_b family (4 GIFs each)**
 - Built as for the mage. attack_walk_e was rebuilt after walk_e became a profile; the job
   then iterated the baked hand-flame out of the thrust frames on its own (the final row was
   installed). attack_walk_n from the earlier install carried a SECOND floating skull at the
