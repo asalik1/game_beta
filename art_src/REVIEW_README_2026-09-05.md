@@ -757,6 +757,25 @@ a job whose walk the engine suppresses, naming the table (`"force": true` overri
 Whether these ten should get on-model walks and come off the glide list at all is an open
 question for you, not something I should decide.
 
+## Reverted after the owner's 2026-09-06 review (their GIFs are gone from this set)
+
+He caught six by eye; measuring the first one found the class. Nine strips are back to main:
+cinderhide, fangmaw, slag_hound, flux_hound, vent_skitter and rime_wolf walks (six quadruped
+and arachnid regens whose hindquarters were sliced flat against the cell boundary, 19 to 50
+percent of the body height sitting on the cut against zero on main), grove_horror's recentred
+idle and walk (the same slice), and the skeleton, skeleton_rogue and skeleton_mage walks he
+judged regressions. Their before-and-after GIFs are removed from this set because those files
+now match main exactly.
+
+Two of his six were real but NOT from this branch: sleepwalker's legs still do not cross and
+sluice_lurker still plants its hands instead of walking. Both are byte-identical to main apart
+from a recentre. They need a regen, which is a decision for you, not a fix I should have made
+quietly.
+
+skeleton_mage was the sharpest catch: its walk is in `MOB_IDLE_ONLY_LOCOMOTION`, so the engine
+NEVER plays it. That prompted a full count of art the engine cannot show, and there are 154
+such walk files over 22 subjects. The list is `art_src/_qa_final/unused_art.csv`.
+
 ## travel/  (7 GIFs)
 
 Old vs new walks over scrolling ground at the mob's real in-game speed, the only way to see
