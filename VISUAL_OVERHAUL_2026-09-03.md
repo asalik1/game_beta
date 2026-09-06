@@ -457,6 +457,33 @@ deliberately marked NOISY: it reads zone tables textually, so a kind spawned fro
 as unplaced. Eleven names come back today; treat each as a question for the owner, not a
 verdict, and use `fidelity_audit --entities` (a live engine dump) as the authority.
 
+## 19. Palette drift on the surviving walk regens — OPEN, your call (2026-09-06)
+
+Reviewing the still-live regens against main the way you do, side by side, found a class the
+luma tone-match structurally cannot see: a regenerated walk can come back a different COLOUR
+from its idle while its luminance matches. Measured as the saturation-weighted mean hue of the
+body against the idle's:
+
+| subject | hue drift | saturation | what it reads as |
+|---|---:|---:|---|
+| blightwolf | 39 deg | +0.00 | idle's lime shoulder vein reads teal in the walk |
+| void_hound | 35 deg | -0.04 | violet flank slit reads more blue |
+| wolf | 20 deg | +0.09 | grey coat picks up a pink cast |
+| zombie | 13 deg | +0.15 | tan skin reads redder |
+| elf_ranger | 1 deg | +0.11 | leaf cloak more saturated |
+| fungus_heavy | 5 deg | -0.08 | cap flatter |
+
+**I tried the obvious repair and reverted it.** Rotating each strip's mean hue onto the idle's
+measured a perfect 0 degrees of error afterwards, and blightwolf's lime veins had turned
+BROWN. These bodies are a large desaturated mass carrying a small saturated accent, so the mean
+is dominated by the mass and the rotation drags the accent somewhere else. All three reverted,
+`--hue` removed from palette_grade so it cannot invite the same mistake, and the reasoning is
+in CLAUDE.md. Sheets: `art_src/_qa_final/selfreview_bipeds.png`, `hue_fix_vet.png`.
+
+So the drift is still there, listed rather than papered over. The honest options are a
+per-accent fix or a re-roll, and after your slicing ruling I am not going to pick one without
+you: say the word and these six get re-rolled with the idle's palette named in the brief.
+
 ## Open / not done
 
 - **Mage E column DONE**: anim/walk/attack/cast E regenerated as a true right
