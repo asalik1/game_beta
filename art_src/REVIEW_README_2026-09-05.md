@@ -673,7 +673,7 @@ The capital was "pending a visual update". Three layers, in the order they lande
    strips. Judge the whole plaza in-game: `shot.bat capital` shoots nine rooms (the tour
    rig used to shoot room 0 nine times; fixed).
 
-## props/  (9 subjects, 11 GIFs)
+## props/  (28 subjects, 30 GIFs)
 
 - tree_green2, tree_green4 (+ anims): canopy saturation 0.72 and 0.76 with 88 to 92 percent
   of pixels above 0.6, against tree_green 0.47 (3 percent) and tree_green3 0.43 (1 percent):
@@ -689,6 +689,27 @@ The capital was "pending a visual update". Three layers, in the order they lande
 - bridge: green keying ring despilled.
 - Verified in all eight grades: alpha and canvas byte-identical before and after,
   `audit_prop_anims` still 0 flagged.
+- **Glow props, 18 animated strips (added 2026-09-05 after the guide's first cut; their GIFs
+  compare against the branch's own previous state, so OLD is this branch, not main)**:
+  crystal_spire, spore_shrine, storm_standing_stone, geode, crystal_cluster, node_crystal,
+  void_monolith, void_obelisk, spore_vent, station_alchemy_t1/t2 (glow pulse) and
+  forge_brazier, magma_furnace, camp_furnace, forge_cauldron, station_furnace_t1/t2/t3
+  (furnace fire). Defect (props/NPC audit, P2): the derived pulse brightened the WHOLE
+  sprite, the darkest 30 percent of each body swinging 4.5 to 9 percent, the same as its
+  glow, so a crystal's rock base and a furnace's stone stack breathed with the light (the
+  "dim, don't strobe" rule says bright and warm pixels only). Fix: the pulse weight in
+  `derive_prop_anim.py` is now a smoothstep over the sprite's own luminance (0 below the
+  45th percentile, 1 above the 85th), furnaces also gated by the fire mask. Re-derived from
+  the same statics (frame 0 is still the static; alpha byte-identical). Measured after:
+  darkest 30 percent swing 0.0 percent on all 18, brightest 30 percent 9.6 to 9.9 percent
+  on the glows, the flame cores 12 percent on the furnaces with their stone at 0; the
+  prop-anim gate 0 flagged; watched in The Crystal Deeps and The Null Bastion through the
+  tour rig. Look for: the rock still, the light breathing. Backups in
+  `art_src/_backups/prop_pulse_2026-09-05/`.
+- sewer_outfall_anim: frames 1 to 3 sat one pixel right of frame 0 (alpha overlap peaks
+  at a one-pixel shift), a tick every loop on a rigid pipe; shifted onto frame 0. It
+  remains a 160 px pixel-art master rendered at 156 px (a style outlier the audit flagged
+  for a repaint).
 
 ## travel/  (7 GIFs)
 

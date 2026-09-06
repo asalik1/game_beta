@@ -10,8 +10,14 @@ Frame layout matches anim_info(): N frames each the static's WxH, concatenated
 horizontally (so the engine reads frames = anim_width / static_width).
 
 Motions:
-  pulse    brightness breathes, weighted by luminance (glows/facets shimmer,
-           dark stone stays put) — crystals, geodes, void/storm/spore/magma glow
+  pulse    brightness breathes on the GLOW ONLY: a smoothstep over the sprite's
+           own luminance distribution (0 below the 45th percentile, 1 above the
+           85th), so facets and cores shimmer and the stone shell holds byte-
+           still — crystals, geodes, void/storm/spore/magma glow. `--warm`
+           further gates the weight by the fire mask (furnaces, braziers: the
+           flame breathes, the stone stack never). Before 2026-09-05 the weight
+           was 0.35 + 0.65*lum and the darkest stone still swung a third of
+           the amplitude (audit: darkest-30% 4.5-8.5%, same as the bright 30%).
   flicker  warm (fire) pixels flicker brighter/dimmer + the flame top wobbles
   wave     horizontal sine shear per row — a banner rippling in the wind
   shimmer  cool (water) pixels breathe + a 1px horizontal jitter — well water
@@ -56,12 +62,24 @@ def _scale_rgb(a, factor):
     return out.astype(np.uint8)
 
 
-def frame(base: np.ndarray, motion: str, phase: float, amp: float) -> Image.Image:
+def frame(base: np.ndarray, motion: str, phase: float, amp: float, warm_only: bool = False) -> Image.Image:
     a = base.copy()
     lum = _lum(a[..., :3])
     s = np.sin(phase)
     if motion == "pulse":
-        factor = 1.0 + amp * s * (0.35 + 0.65 * lum)   # bright pixels breathe most
+        # GLOW-ONLY (2026-09-05): the old weight 0.35 + 0.65*lum still swung the
+        # darkest stone by a third of the amplitude, so a crystal's rock base
+        # breathed with its facets (audit: darkest-30% pixels 4.5-8.5%, the
+        # same as the bright 30%). The weight is now a smoothstep over the
+        # sprite's own luminance distribution -- 0 below the 45th percentile,
+        # 1 above the 85th -- so only the glow breathes and the shell holds.
+        a_on = a[..., 3] > 40
+        lo, hi = (np.percentile(lum[a_on], 45), np.percentile(lum[a_on], 85)) if a_on.any() else (0.4, 0.8)
+        t = np.clip((lum - lo) / max(1e-3, hi - lo), 0.0, 1.0)
+        weight = t * t * (3.0 - 2.0 * t)
+        if warm_only:
+            weight = weight * _warm_mask(a[..., :3])   # furnaces: the flame only, never the stone stack
+        factor = 1.0 + amp * s * weight
         a = _scale_rgb(a, factor)
     elif motion == "flicker":
         warm = _warm_mask(a[..., :3])
@@ -127,6 +145,8 @@ def main() -> int:
     ap.add_argument("--frames", type=int, default=4)
     ap.add_argument("--amp", type=float, default=0.35)
     ap.add_argument("--no-mobile", action="store_true")
+    ap.add_argument("--warm", action="store_true",
+                    help="pulse: weight the glow by the warm (fire) mask as well, so a furnace's stone stack never breathes")
     args = ap.parse_args()
 
     src = DESK / f"{args.name}.png"
@@ -140,7 +160,7 @@ def main() -> int:
     strip = Image.new("RGBA", (w * args.frames, h), (0, 0, 0, 0))
     for i in range(args.frames):
         phase = 2.0 * np.pi * i / args.frames    # frame 0 = static (sin 0 = 0)
-        strip.paste(frame(base, args.motion, phase, args.amp), (i * w, 0))
+        strip.paste(frame(base, args.motion, phase, args.amp, args.warm), (i * w, 0))
     print(f"{args.name}: {args.frames}x{w}x{h} ({args.motion})")
     for root, on in ((DESK, True), (MOBILE, not args.no_mobile)):
         if not on:

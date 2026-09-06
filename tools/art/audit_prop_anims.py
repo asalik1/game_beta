@@ -267,7 +267,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--fix", action="store_true")
     ap.add_argument("--only", default="")
-    ap.add_argument("--amp", type=float, default=0.14, help="re-derive amplitude for flagged derived strips")
+    ap.add_argument("--amp", type=float, default=0.10, help="re-derive amplitude for flagged derived strips (glow-only pulse since 2026-09-05: the bright 30%% swings by this, the shell by 0)")
     a = ap.parse_args()
     only = set(x for x in a.only.split(",") if x)
     rows = []

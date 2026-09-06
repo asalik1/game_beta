@@ -218,6 +218,24 @@ the tiny legacy placeholders (beastkin, sentry, verdant_*) and the tick critters
   vargoth, vess, first_howl): two-row grid rows at their cells, each eye-checked before
   install. The 32px placeholders (whitepelt, icebound, stormwarden) were skipped.
 
+## 12. Glow props: the pulse breathes the glow only (2026-09-05 late)
+
+The props/NPC audit's P2: `derive_prop_anim.py --motion pulse` weighted the breath by
+`0.35 + 0.65*lum`, so the darkest stone of a crystal, geode or furnace still swung a third
+of the amplitude -- measured 4.5-9% on the darkest 30% of each body, the same as its glow
+(the contract: bright/warm pixels only, never the whole sprite). The weight is now a
+smoothstep over the sprite's own luminance percentiles (0 below the 45th, 1 above the
+85th); `--warm` also gates by the fire mask. Re-derived from the same statics: 11 glows
+(crystal_spire, spore_shrine, storm_standing_stone, geode, crystal_cluster, node_crystal,
+void_monolith, void_obelisk, spore_vent, station_alchemy_t1/t2, amp 0.10) and 7 furnaces
+(forge_brazier, magma_furnace, camp_furnace, forge_cauldron, station_furnace_t1-t3, amp
+0.12 warm). After: darkest-30% swing 0.0% on all 18, brightest-30% 9.6-9.9% (glows) /
+flame cores 12% with the stone at 0 (furnaces); alpha byte-identical (frame 0 = static);
+`audit_prop_anims` 0 flagged; quick suite (the animated-prop seam contract) green; heat
+sheet `art_src/_qa_final/prop_pulse_heat.png`; tour rig frames for The Crystal Deeps /
+The Null Bastion. Backups `art_src/_backups/prop_pulse_2026-09-05/`. Also sewer_outfall
+frames 1-3 sat 1 px right of frame 0 (the audit's "1 px tick"): shifted onto it.
+
 ## Open / not done
 
 - **Mage E column DONE**: anim/walk/attack/cast E regenerated as a true right
