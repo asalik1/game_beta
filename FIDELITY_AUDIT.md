@@ -119,14 +119,14 @@ twelve (`tools/art/style_unify/make_landmark_briefs.py`, board section 13), and 
 now in the tool: `fidelity_audit.py --only structures` (sprite -> the LARGEST def `w` that
 uses it, so a sprite backing several defs is judged on its worst case).
 
-**Structure lane, 2026-09-06: 54 assets, median 2.05x, 6 under 2.0x.**
+**Structure lane, 2026-09-06: 54 assets, median 2.05x, 5 under 2.0x** (keep_arch re-mastered the same day, 1.87x -> 2.30x).
 
 | asset | authored | renders | ratio | status |
 |---|---:|---:|---:|---|
 | capital_city_arcade | 1514 | 1852 | 0.82x | documented ceiling: a 1650px backdrop the generator cannot reach |
 | capital_crown_spire_gate | 1512 | 984 | 1.54x | same ceiling (a very wide gate) |
 | camp_bonfire | 225 | 123 | 1.83x | MUST-FIX by the bar, but its `_anim` is AUTHORED silhouette motion (alpha changes per frame), so a new static would strand the fire animation -- needs a static + anim regen together, not a re-master |
-| keep_arch | 420 | 224 | 1.87x | MUST-FIX; re-master staged (it is also the painterly STYLE reference several capital pieces were generated against, so its identity must not move) |
+| keep_arch | ~~420~~ 460 | 224 | ~~1.87x~~ **2.30x** | FIXED 2026-09-06 by a re-master; the first roll came back 12% squat (the piers spread) and was re-rolled with the 0.92 height-over-width pinned, landing at 0.0% drift -- its identity matters because several capital pieces were generated against it as the painterly STYLE reference |
 | hideout_table | 300 | 157 | 1.91x | inside the 1.90-1.99x document-only band |
 | crypt | 375 | 188 | 1.99x | inside the document-only band |
 

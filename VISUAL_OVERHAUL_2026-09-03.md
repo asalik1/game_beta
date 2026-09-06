@@ -299,6 +299,19 @@ naming the table (`"force": true` overrides) -- so the lane cannot spend another
 art the game will not play. Only `MOB_IDLE_ONLY_LOCOMOTION` blocks; `MOB_FLAT_WALK_LOCOMOTION`
 only blanks the 8-dir set, so a flat-walk regen there is still live.
 
+### 15b. keep_arch (2026-09-06)
+
+The new structures lane found one more must-fix: `keep_arch` renders at 1.87x as the
+`ruined_gate` landmark (420px master at def w 200). Re-mastered to 2.30x. The first roll came
+back 12% squat -- the piers spread apart -- and the vet gate caught it; the re-roll with the
+0.92 height-over-width pinned lands at 0.0% drift. Its identity matters more than most: it is
+the painterly STYLE reference several capital pieces were generated against. Structure lane
+now: 54 assets, 5 under 2.0x, and every one of those five is either a documented generator
+ceiling (the arcade and the spire gate), inside the 1.90-1.99x document-only band
+(hideout_table, crypt), or camp_bonfire at 1.83x, which a re-master cannot take because its
+`_anim` is AUTHORED silhouette motion -- a new static would strand the fire animation, so it
+needs a static+anim regen together.
+
 **Open for the owner:** those ten bodies glide because their 2026-08-08 walks were bad. A
 gliding mob is the most robotic locomotion in the game, so on-model walks + coming off the
 list is a real improvement -- but it changes an owner-reviewed decision, so it is your call.

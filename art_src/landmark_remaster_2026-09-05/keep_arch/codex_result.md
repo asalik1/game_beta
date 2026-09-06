@@ -1,0 +1,1 @@
+Minor differences: the crown is slightly broader, the base rubble is redistributed, and the right-hand cloth hangs farther outward.

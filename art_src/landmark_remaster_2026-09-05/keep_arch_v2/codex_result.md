@@ -1,0 +1,1 @@
+The silhouette matches the subject’s 0.92 height/width footprint; individual rubble contours vary, and the right cloth hangs slightly lower.
