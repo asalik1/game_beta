@@ -277,6 +277,9 @@ func _tour() -> void:
 			continue
 		step("tour " + nm)
 		await _goto(i)
+		# A room-entry dialogue pauses the tree: the still would carry the box and a
+		# --gif series would record 75 identical frames (The Null Bastion, 2026-09-05).
+		await skip_dialogue()
 		if arg("paint", "") != "":       # --paint=<terrain>: repaint the toured room first (fog, walls…)
 			apply_terrain(arg("paint", ""), i)
 			await sim_wait(0.6)
