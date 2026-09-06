@@ -741,6 +741,22 @@ frame-0 body exactly the idle's.
 beside the 2.35x roster). Their south bodies are re-mastered at the roster recipe; the
 merchant's other seven facings are re-rolling as a set.
 
+## Reverted: four walk regens the engine can never play (2026-09-06)
+
+`Art.MOB_IDLE_ONLY_LOCOMOTION` blanks BOTH the flat walk and the 8-direction set for ten
+robed bodies (the owner-reviewed 2026-08-08 repair pass: they glide on their idle strip).
+Four of them got new walks in wave 3 anyway (mummy, mummy_mage, skeleton_warrior, rat_mage),
+and the strips are invisible in game. Worse, with nothing on screen to check them against,
+three had drifted off-model: the mummy's walk drops the hood and sash its idle wears, the
+skeleton warrior's walks on plated legs under a robe that reaches the floor in its idle
+(the same drift its death strip had, fixed in this round), and the mummy mage's palette
+warms. All 28 strips are reverted to main; the old files are kept in
+`art_src/_backups/dormant_walks_2026-09-06/` and their GIFs are removed from this set.
+The lane now refuses the mistake: `gait_briefs.py` reads the engine's own tables and SKIPS
+a job whose walk the engine suppresses, naming the table (`"force": true` overrides).
+Whether these ten should get on-model walks and come off the glide list at all is an open
+question for you, not something I should decide.
+
 ## travel/  (7 GIFs)
 
 Old vs new walks over scrolling ground at the mob's real in-game speed, the only way to see

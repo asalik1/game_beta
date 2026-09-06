@@ -282,6 +282,27 @@ rendered the body smaller on the turn (piet se/sw, 14%; warden_edda s, 9%; digge
 tinker_osla 6-7%). It now normalises on the SOUTH facing's alpha height and keeps that scale
 for all eight, which is correct by construction for a dir set (one canvas, one body size).
 
+## 14. Reverted: four walk regens the engine never plays (2026-09-06)
+
+`Art.MOB_IDLE_ONLY_LOCOMOTION` blanks BOTH `_strip_walk` and `_dir_walk` (enemy.gd 404-419),
+so the ten robed bodies on that list glide on their idle strip -- the owner-reviewed
+2026-08-08 repair pass. Wave 3 regenerated walks for four of them anyway (mummy S/E/N,
+mummy_mage S/E/N, skeleton_warrior E/N/S, rat_mage) and they have been dormant ever since;
+because nothing on screen could contradict them, three had drifted off-model (the mummy's
+walk drops the hood and sash of its idle, skeleton_warrior walks on plated legs under a
+floor-length robe -- the same drift its death strip carried -- and mummy_mage's palette
+warms). All 28 strips reverted to main, old files in `art_src/_backups/dormant_walks_2026-09-06/`,
+their GIFs removed from the review set.
+
+`gait_briefs.py` now reads the engine's own tables and SKIPS a job whose walk is suppressed,
+naming the table (`"force": true` overrides) -- so the lane cannot spend another batch on
+art the game will not play. Only `MOB_IDLE_ONLY_LOCOMOTION` blocks; `MOB_FLAT_WALK_LOCOMOTION`
+only blanks the 8-dir set, so a flat-walk regen there is still live.
+
+**Open for the owner:** those ten bodies glide because their 2026-08-08 walks were bad. A
+gliding mob is the most robotic locomotion in the game, so on-model walks + coming off the
+list is a real improvement -- but it changes an owner-reviewed decision, so it is your call.
+
 ## Open / not done
 
 - **Mage E column DONE**: anim/walk/attack/cast E regenerated as a true right

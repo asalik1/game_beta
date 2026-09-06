@@ -303,6 +303,31 @@ Report any repeated pose, and whether the body stayed cell-centred and at consta
                                                indent=1), encoding="utf-8")
 
 
+def suppressed_locomotion(base: str) -> str:
+    """Would the ENGINE ever play this walk? `Art.MOB_IDLE_ONLY_LOCOMOTION`
+    blanks BOTH the flat walk and the 8-dir set (`enemy.gd` _strip_walk/_dir_walk),
+    and `MOB_FLAT_WALK_LOCOMOTION` blanks the dir set, so a regen for a body in
+    the first table is invisible in game. Four wave-3 regens (mummy, mummy_mage,
+    skeleton_warrior, rat_mage) were generated, installed and reviewed before
+    anyone noticed -- and three had drifted off-model, which nobody could see
+    because the strips never play (2026-09-06). Returns "" when the walk is live.
+    """
+    import re
+    src = (ROOT / "game" / "scripts" / "art.gd").read_text(encoding="utf-8")
+
+    def table(name):
+        blk = src.split("const %s := {" % name, 1)
+        if len(blk) < 2:
+            return set()
+        return set(re.findall(r'"([a-z0-9_]+)":\s*true', blk[1].split("}", 1)[0]))
+
+    if base in table("MOB_IDLE_ONLY_LOCOMOTION"):
+        return "MOB_IDLE_ONLY_LOCOMOTION (it glides on its idle strip; the walk NEVER plays)"
+    if base in table("MOB_FLAT_WALK_LOCOMOTION"):
+        return ""      # flat walk still plays; only the 8-dir set is suppressed
+    return ""
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("stage_root")
@@ -321,6 +346,11 @@ def main() -> int:
     jobs = json.loads(Path(args.plan).read_text(encoding="utf-8"))
     stages = []
     for job in jobs:
+        why = suppressed_locomotion(job["base"])
+        if why and not job.get("force"):
+            print(f"SKIP {job['base']}: {why} -- add \"force\": true to the job to stage it anyway",
+                  file=sys.stderr)
+            continue
         stage = root / f"{job['base']}__{job.get('facing', 'flat')}"
         make_brief(job, stage)
         stages.append(str(stage.resolve()))
