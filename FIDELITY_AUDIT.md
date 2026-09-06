@@ -108,6 +108,30 @@ below** (re-run stamped at the bottom).
 
 ### Final numbers (re-run 2026-08-26, corrected formulas)
 
+## STRUCTURES lane added 2026-09-06 — the gap that hid twelve landmarks
+
+`_add_structure` scales a prop's PNG to the structure def's `w` when the piece is placed as
+an ecology LANDMARK (def widths 80-1654 px) but the audit only ever scored it at its
+`SCENERY_RENDER_WIDTH` (71-122 px for these). So twelve masters passed as scatter at
+2.2-2.5x while rendering at **1.02-1.65x** as landmarks, and nothing could see it because
+the lane did not exist. Found by the 2026-09-03 props/NPC sweep, fixed by re-mastering all
+twelve (`tools/art/style_unify/make_landmark_briefs.py`, board section 13), and the lane is
+now in the tool: `fidelity_audit.py --only structures` (sprite -> the LARGEST def `w` that
+uses it, so a sprite backing several defs is judged on its worst case).
+
+**Structure lane, 2026-09-06: 54 assets, median 2.05x, 6 under 2.0x.**
+
+| asset | authored | renders | ratio | status |
+|---|---:|---:|---:|---|
+| capital_city_arcade | 1514 | 1852 | 0.82x | documented ceiling: a 1650px backdrop the generator cannot reach |
+| capital_crown_spire_gate | 1512 | 984 | 1.54x | same ceiling (a very wide gate) |
+| camp_bonfire | 225 | 123 | 1.83x | MUST-FIX by the bar, but its `_anim` is AUTHORED silhouette motion (alpha changes per frame), so a new static would strand the fire animation -- needs a static + anim regen together, not a re-master |
+| keep_arch | 420 | 224 | 1.87x | MUST-FIX; re-master staged (it is also the painterly STYLE reference several capital pieces were generated against, so its identity must not move) |
+| hideout_table | 300 | 157 | 1.91x | inside the 1.90-1.99x document-only band |
+| crypt | 375 | 188 | 1.99x | inside the document-only band |
+
+The twelve re-mastered landmarks now sit at 2.30x (the installer's `FIDELITY_X` cap).
+
 | Category | n | median | min | under 2.0× | under 1.90× (must-fix bar) |
 |---|---|---|---|---|---|
 | Class | 6 | 2.12× | 1.95× | 1 (archer — tolerance, owner-ruled) | 0 |

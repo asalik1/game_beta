@@ -38,6 +38,8 @@ PLAN = {
     "pillar": ("keep_arch", "a tall square grey-stone pillar with a plain capital and a stepped base, chipped edges, moss and water stains on the lower blocks", "square"),
     "sewer_outfall": ("old_well", "a sewer outfall: a large rusted dark-iron pipe with riveted bands jutting from a short mossy brick-and-stone wall segment, thick green-brown sludge pouring from the pipe mouth into a spreading puddle at its foot", "square"),
     "signpost": ("camp_workbench", "a weathered wooden signpost: a single dark post with three arrow-shaped signboards pointing different ways, worn carved lettering, a small stone footing", "square"),
+    # 2026-09-06 wave 2: found by the NEW structures lane in fidelity_audit.py
+    "keep_arch": ("crypt", "a freestanding ruined stone gate arch: two thick weathered grey-stone piers carrying a wide round arch with a keystone, blocks chipped and mossy at the base, the opening walkable and empty", "square"),
     "torch_pillar": ("keep_brazier", "a square grey-stone pillar brazier: a stepped stone base and column with an iron-rimmed bowl on top holding a bright orange-yellow flame, soot on the bowl, a warm glow on the upper stones", "square"),
 }
 
@@ -45,7 +47,7 @@ PLAN = {
 RENDER_W = {
     "castle_statue": 145, "forge_statue": 155, "grave_angel": 150, "ice_cairn": 150, "sandstone": 185,
     "crystal_spire": 175, "storm_conductor": 170, "void_rift": 180, "spore_shrine": 190, "pillar": 120,
-    "sewer_outfall": 140, "signpost": 84, "torch_pillar": 80,
+    "sewer_outfall": 140, "signpost": 84, "torch_pillar": 80, "keep_arch": 200,
 }
 
 

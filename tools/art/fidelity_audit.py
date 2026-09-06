@@ -29,7 +29,7 @@ Render formulas reverse-engineered from the engine (all x camera base zoom
 classes/props/critters need no runtime data. mobs/bosses/npcs need each
 entity's `scale`/sprite -> pass --entities <json> from tools/fidelity_dump.gd.
 
-  python fidelity_audit.py [--entities e.json] [--csv out.csv] [--min 2.0] [--only classes,props]
+  python fidelity_audit.py [--entities e.json] [--csv out.csv] [--min 2.0] [--only classes,props,structures]
 """
 from __future__ import annotations
 import argparse, csv, json, re, sys
@@ -86,6 +86,29 @@ def _prop_families() -> dict[str, list[str]]:
 
 
 PROP_FAMILIES = _prop_families()
+
+
+def _structures() -> dict:
+    """terrains.gd STRUCTURES: sprite -> the def's authored world width `w`.
+
+    THE GAP THIS CLOSES (2026-09-06): a prop is scored at its SCENERY_RENDER_WIDTH,
+    but `_add_structure` scales the SAME PNG to the structure def's `w` when the
+    piece is placed as an ecology landmark -- 84-190px against scatter widths of
+    71-122 -- so twelve masters passed the audit at 2.2-2.5x while rendering at
+    1.02-1.65x as landmarks. Nobody could see it because this lane did not exist.
+    When one sprite backs several defs, the LARGEST width wins (the worst case)."""
+    src = (GAME / "scripts" / "terrains.gd").read_text(errors="replace")
+    out = {}
+    for blk in re.finditer(r'"([a-z_0-9]+)":\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}', src, re.S):
+        body = blk.group(2)
+        sm = re.search(r'"sprite":\s*"([a-z0-9_]+)"', body)
+        wm = re.search(r'"w":\s*([0-9.]+)', body)
+        if sm and wm:
+            out[sm.group(1)] = max(out.get(sm.group(1), 0.0), float(wm.group(1)))
+    return out
+
+
+STRUCTURES_W = _structures()
 
 
 def cell_and_body(png: Path) -> tuple[int, int]:
@@ -219,6 +242,18 @@ def audit(entities: dict | None, mn: float, only: set[str] | None, include_unpla
                              round(native_w / rendered, 2),
                              verdict(native_w / rendered, mn), f"render_w {rw:.0f}"))
 
+    # ---- STRUCTURES (ecology landmarks): the same PNG scaled to the def's `w` ----
+    if want("structures"):
+        for sprite, w in sorted(STRUCTURES_W.items()):
+            p = SPRITES / f"{sprite}.png"
+            if not p.exists():
+                continue
+            rendered = w * ZOOM
+            native_w = Image.open(p).size[0]
+            rows.append(("structure", sprite, native_w, round(rendered, 1),
+                         round(native_w / rendered, 2),
+                         verdict(native_w / rendered, mn), f"def w {w:.0f}"))
+
     audit.skipped_unplaced = skipped_unplaced
     return rows
 
@@ -247,7 +282,7 @@ def main() -> int:
         by_cat.setdefault(r[0], []).append(r)
     print(f"FIDELITY AUDIT — authored / rendered, flag < {args.min}x  (zoom {ZOOM})")
     total_bad = 0
-    for cat in ("class", "skin", "mob", "boss", "npc", "critter", "prop"):
+    for cat in ("class", "skin", "mob", "boss", "npc", "critter", "prop", "structure"):
         cr = by_cat.get(cat)
         if not cr:
             continue
