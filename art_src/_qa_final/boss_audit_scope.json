@@ -1,0 +1,267 @@
+[
+ {
+  "subject": "ashpriest",
+  "files": [
+   "ashpriest_death",
+   "ashpriest_walk_codex_n",
+   "ashpriest_walk_codex_s"
+  ]
+ },
+ {
+  "subject": "auroch_minotaur",
+  "files": [
+   "auroch_minotaur_death",
+   "auroch_minotaur_walk_codex_e",
+   "auroch_minotaur_walk_codex_n",
+   "auroch_minotaur_walk_codex_ne",
+   "auroch_minotaur_walk_codex_nw",
+   "auroch_minotaur_walk_codex_s",
+   "auroch_minotaur_walk_codex_se",
+   "auroch_minotaur_walk_codex_sw",
+   "auroch_minotaur_walk_codex_w"
+  ]
+ },
+ {
+  "subject": "choirmother",
+  "files": [
+   "choirmother_death",
+   "choirmother_walk_codex_n",
+   "choirmother_walk_codex_s"
+  ]
+ },
+ {
+  "subject": "cinderhide",
+  "files": [
+   "cinderhide_attack"
+  ]
+ },
+ {
+  "subject": "echo",
+  "files": [
+   "echo_death",
+   "echo_walk_codex_e",
+   "echo_walk_codex_n",
+   "echo_walk_codex_ne",
+   "echo_walk_codex_nw",
+   "echo_walk_codex_se",
+   "echo_walk_codex_sw",
+   "echo_walk_codex_w"
+  ]
+ },
+ {
+  "subject": "fangmaw",
+  "files": [
+   "fangmaw_anim_codex"
+  ]
+ },
+ {
+  "subject": "first_howl",
+  "files": [
+   "first_howl_death"
+  ]
+ },
+ {
+  "subject": "forgemistress",
+  "files": [
+   "forgemistress_death",
+   "forgemistress_walk_codex_n"
+  ]
+ },
+ {
+  "subject": "glacius",
+  "files": [
+   "glacius_anim",
+   "glacius_walk"
+  ]
+ },
+ {
+  "subject": "halla",
+  "files": [
+   "halla_anim_codex",
+   "halla_death"
+  ]
+ },
+ {
+  "subject": "hrolgar",
+  "files": [
+   "hrolgar_death",
+   "hrolgar_walk_codex_e",
+   "hrolgar_walk_codex_n",
+   "hrolgar_walk_codex_ne",
+   "hrolgar_walk_codex_nw",
+   "hrolgar_walk_codex_se",
+   "hrolgar_walk_codex_sw",
+   "hrolgar_walk_codex_w"
+  ]
+ },
+ {
+  "subject": "kaethra",
+  "files": [
+   "kaethra_death",
+   "kaethra_walk_codex_e",
+   "kaethra_walk_codex_n",
+   "kaethra_walk_codex_ne",
+   "kaethra_walk_codex_nw",
+   "kaethra_walk_codex_se",
+   "kaethra_walk_codex_sw",
+   "kaethra_walk_codex_w"
+  ]
+ },
+ {
+  "subject": "korrag",
+  "files": [
+   "korrag_death",
+   "korrag_reborn_anim",
+   "korrag_reborn_walk",
+   "korrag_walk_codex_e",
+   "korrag_walk_codex_n",
+   "korrag_walk_codex_ne",
+   "korrag_walk_codex_nw",
+   "korrag_walk_codex_s",
+   "korrag_walk_codex_se",
+   "korrag_walk_codex_sw",
+   "korrag_walk_codex_w"
+  ]
+ },
+ {
+  "subject": "morwen",
+  "files": [
+   "morwen_death",
+   "morwen_walk"
+  ]
+ },
+ {
+  "subject": "nullwarden",
+  "files": [
+   "nullwarden_anim_codex",
+   "nullwarden_death",
+   "nullwarden_walk_codex_e",
+   "nullwarden_walk_codex_n",
+   "nullwarden_walk_codex_ne",
+   "nullwarden_walk_codex_nw",
+   "nullwarden_walk_codex_s",
+   "nullwarden_walk_codex_se",
+   "nullwarden_walk_codex_sw",
+   "nullwarden_walk_codex_w"
+  ]
+ },
+ {
+  "subject": "rotmaw",
+  "files": [
+   "rotmaw_death",
+   "rotmaw_walk_codex_e",
+   "rotmaw_walk_codex_ne",
+   "rotmaw_walk_codex_nw",
+   "rotmaw_walk_codex_s",
+   "rotmaw_walk_codex_se",
+   "rotmaw_walk_codex_sw",
+   "rotmaw_walk_codex_w"
+  ]
+ },
+ {
+  "subject": "saint_varo_standing",
+  "files": [
+   "saint_varo_standing_death",
+   "saint_varo_standing_walk_codex_e",
+   "saint_varo_standing_walk_codex_ne",
+   "saint_varo_standing_walk_codex_nw",
+   "saint_varo_standing_walk_codex_se",
+   "saint_varo_standing_walk_codex_sw",
+   "saint_varo_standing_walk_codex_w"
+  ]
+ },
+ {
+  "subject": "serane",
+  "files": [
+   "serane_death",
+   "serane_walk_codex_e",
+   "serane_walk_codex_ne",
+   "serane_walk_codex_nw",
+   "serane_walk_codex_s",
+   "serane_walk_codex_se",
+   "serane_walk_codex_sw",
+   "serane_walk_codex_w"
+  ]
+ },
+ {
+  "subject": "sexton",
+  "files": [
+   "sexton_death",
+   "sexton_walk_codex_e",
+   "sexton_walk_codex_n",
+   "sexton_walk_codex_ne",
+   "sexton_walk_codex_nw",
+   "sexton_walk_codex_se",
+   "sexton_walk_codex_sw",
+   "sexton_walk_codex_w"
+  ]
+ },
+ {
+  "subject": "smelter_lord_thrain",
+  "files": [
+   "smelter_lord_thrain_anim",
+   "smelter_lord_thrain_walk"
+  ]
+ },
+ {
+  "subject": "stormmouth",
+  "files": [
+   "stormmouth_death",
+   "stormmouth_walk_codex_e",
+   "stormmouth_walk_codex_n",
+   "stormmouth_walk_codex_ne",
+   "stormmouth_walk_codex_nw",
+   "stormmouth_walk_codex_s",
+   "stormmouth_walk_codex_se",
+   "stormmouth_walk_codex_sw",
+   "stormmouth_walk_codex_w"
+  ]
+ },
+ {
+  "subject": "thornfather_grael",
+  "files": [
+   "thornfather_grael_anim",
+   "thornfather_grael_walk"
+  ]
+ },
+ {
+  "subject": "vargoth",
+  "files": [
+   "vargoth_anim_codex",
+   "vargoth_death",
+   "vargoth_walk_codex_e",
+   "vargoth_walk_codex_n",
+   "vargoth_walk_codex_ne",
+   "vargoth_walk_codex_nw",
+   "vargoth_walk_codex_se",
+   "vargoth_walk_codex_sw",
+   "vargoth_walk_codex_w"
+  ]
+ },
+ {
+  "subject": "vess",
+  "files": [
+   "vess_death",
+   "vess_walk_codex_e",
+   "vess_walk_codex_n",
+   "vess_walk_codex_ne",
+   "vess_walk_codex_nw",
+   "vess_walk_codex_se",
+   "vess_walk_codex_sw",
+   "vess_walk_codex_w"
+  ]
+ },
+ {
+  "subject": "veyx",
+  "files": [
+   "veyx_death",
+   "veyx_walk_codex_e",
+   "veyx_walk_codex_ne",
+   "veyx_walk_codex_nw",
+   "veyx_walk_codex_s",
+   "veyx_walk_codex_se",
+   "veyx_walk_codex_sw",
+   "veyx_walk_codex_w"
+  ]
+ }
+]
