@@ -10,7 +10,7 @@ are the merge gates and are recorded at the bottom).
 ## How to review
 
 - **Before/after GIFs** of every changed sprite: `~/Downloads/ba_gifs_visual_overhaul/`
-  (417, built by `tools/art/ba_gifs.py --base 7fd27a4`), sorted into
+  (424, built by `tools/art/ba_gifs.py --base 7fd27a4`), sorted into
   `classes/<class>/`, `bosses/<boss>/`, `mobs/<mob>/`, `npcs/`, `capital/`, `props/` and
   `travel/` (README.md inside). Palette-quantized and above game scale — for CHANGE
   review, not colour judgement.

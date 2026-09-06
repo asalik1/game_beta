@@ -1,0 +1,482 @@
+## classes/archer  gifs=4: archer_attack_walk, archer_attack_walk_e, archer_attack_walk_n, archer_attack_walk_nw
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+## classes/assassin  gifs=8: assassin_attack_walk, assassin_attack_walk_b, assassin_attack_walk_b_e, assassin_attack_walk_b_n, assassin_attack_walk_b_nw, assassin_attack_walk_e, assassin_attack_walk_n, assassin_attack_walk_nw
+   - Wave 3: 16 placed mob/boss walks regenerated (mummy S/E/N, mummy_mage S/E/N, skeleton_warrior E/N, rat_mage, flux_hound, rime_wolf, slag_hound, void_h
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+## classes/mage  gifs=16: mage_anim_e, mage_anim_w, mage_attack_e, mage_attack_w, mage_attack_walk, mage_attack_walk_b, mage_attack_walk_b_e, mage_attack_walk_b_n, mage_attack_walk_b_nw, mage_attack_walk_e, mage_attack_walk_n, mage_attack_walk_nw, mage_cast_e, mage_cast_w, mage_walk_e, mage_walk_w
+   - ashpriest S: green keying patch fully neutralised (strict mask everywhere, loose mask + de-green confined to the flail gap); mage attack_walk_b N (fra
+   - Audit B fixes (quad/creature mobs + boss facings, each re-checked by hand) + mage attack_walk_b S/E
+   - QA round on the last installs (findings from a 9-subject audit, each verified by hand before acting)
+   - Mage attack_walk E family regenerated from the new profile walk (the shipped one was built on the old front-facing walk); SE/NE copies, W/NW/SW mirror
+   - Mage E column as a true profile + paladin north walk re-slice
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+## classes/paladin  gifs=1: paladin_walk_b_n
+   - Paladin walk_n: install the gait-transfer back-view regen (shield stable on the arm every frame); the re-sliced old cycle stays beside it as a one-cop
+   - Mage E column as a true profile + paladin north walk re-slice
+   - Boss walk geometry re-seats (nullwarden 60%-size walk, saint_varo E/W cell, 5 more) + the paladin's broken north walk
+## classes/warlock  gifs=28: warlock_attack, warlock_attack2, warlock_attack2_e, warlock_attack2_n, warlock_attack2_ne, warlock_attack2_nw, warlock_attack2_s, warlock_attack2_se, warlock_attack2_sw, warlock_attack2_w, warlock_attack_e, warlock_attack_n, warlock_attack_ne, warlock_attack_nw, warlock_attack_s, warlock_attack_se, warlock_attack_sw, warlock_attack_w, warlock_attack_walk, warlock_attack_walk_b, warlock_attack_walk_b_e, warlock_attack_walk_b_n, warlock_attack_walk_b_nw, warlock_attack_walk_e, warlock_attack_walk_n, warlock_attack_walk_nw, warlock_walk_e, warlock_walk_w
+   - Corpus seam sweep + fix-up batch installs
+   - Warlock attack_walk N regenerated from walk_n (the old one carried a second skull at the elbow in f2/f3)
+   - QA round on the last installs (findings from a 9-subject audit, each verified by hand before acting)
+   - Warlock attack_walk E family from the job's final row (it iterated the baked hand-flame out of the thrust frames; the game spawns the bolt)
+   - Warlock attack_walk E family regenerated from the new profile walk (SE/NE copies, W/NW/SW mirrors)
+   - Warlock walk E/W as a true profile (was a 3/4 front view against his full-profile side idle; hood snapped to camera on the first step). Same profile l
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## classes/warrior  gifs=2: warrior_walk_e, warrior_walk_nw
+   - Wave 3: 16 placed mob/boss walks regenerated (mummy S/E/N, mummy_mage S/E/N, skeleton_warrior E/N, rat_mage, flux_hound, rime_wolf, slag_hound, void_h
+## bosses/ashpriest  gifs=3: ashpriest_death, ashpriest_walk_codex_n, ashpriest_walk_codex_s
+   - Boss tell WINDUP posture: each boss holds a per-kind body posture through a tell's fuse and snaps on release
+   - ashpriest S: green keying patch fully neutralised (strict mask everywhere, loose mask + de-green confined to the flail gap); mage attack_walk_b N (fra
+   - Audit B fixes (quad/creature mobs + boss facings, each re-checked by hand) + mage attack_walk_b S/E
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+## bosses/auroch_minotaur  gifs=5: auroch_minotaur_death, auroch_minotaur_walk_codex_e, auroch_minotaur_walk_codex_n, auroch_minotaur_walk_codex_nw, auroch_minotaur_walk_codex_s
+   - Boss tell WINDUP posture: each boss holds a per-kind body posture through a tell's fuse and snaps on release
+   - Corpus seam sweep + fix-up batch installs
+   - Audit B fixes (quad/creature mobs + boss facings, each re-checked by hand) + mage attack_walk_b S/E
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+## bosses/choirmother  gifs=3: choirmother_death, choirmother_walk_codex_n, choirmother_walk_codex_s
+   - Boss death clips: rotmaw, serane, veyx, choirmother, echo, forgemistress, halla (12 of 20 in)
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - Wave 4 re-rolls installed: blightwolf walk back in the idle's near-black olive with the lime shoulder vein (heights normalised, graded toward the idle
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+## bosses/cinderhide  gifs=2: cinderhide_attack, cinderhide_walk
+   - cinderhide walk: 6-frame three-headed trot from a two-row grid (was 4 stiff poses); skeleton_warrior S walk (+flat) from the re-run fix-up job
+   - cinderhide attack f3: erase the neighbour-cell claw sliver at the left edge
+## bosses/echo  gifs=4: echo_death, echo_walk_codex_e, echo_walk_codex_n, echo_walk_codex_nw
+   - Boss death clips: rotmaw, serane, veyx, choirmother, echo, forgemistress, halla (12 of 20 in)
+   - Corpus seam sweep + fix-up batch installs
+   - echo N walk: the winged flame-skull from behind, dagger in one hand every frame
+## bosses/fangmaw  gifs=2: fangmaw_anim_codex, fangmaw_walk
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - Corpus seam sweep + fix-up batch installs
+   - Wave 3: 16 placed mob/boss walks regenerated (mummy S/E/N, mummy_mage S/E/N, skeleton_warrior E/N, rat_mage, flux_hound, rime_wolf, slag_hound, void_h
+## bosses/first_howl  gifs=1: first_howl_death
+   - Boss death clips: morwen, nullwarden, saint_varo_standing, sexton, stormmouth, vargoth, vess, first_howl (20 of 20); board 11 (windup postures + boss 
+## bosses/forgemistress  gifs=2: forgemistress_death, forgemistress_walk_codex_n
+   - Boss death clips: rotmaw, serane, veyx, choirmother, echo, forgemistress, halla (12 of 20 in)
+   - Corpus seam sweep + fix-up batch installs
+## bosses/glacius  gifs=2: glacius_anim, glacius_walk
+   - Corpus seam sweep + fix-up batch installs
+## bosses/halla  gifs=2: halla_anim_codex, halla_death
+   - Boss death clips: rotmaw, serane, veyx, choirmother, echo, forgemistress, halla (12 of 20 in)
+   - Corpus seam sweep + fix-up batch installs
+## bosses/hrolgar  gifs=4: hrolgar_death, hrolgar_walk_codex_e, hrolgar_walk_codex_n, hrolgar_walk_codex_nw
+   - Boss tell WINDUP posture: each boss holds a per-kind body posture through a tell's fuse and snaps on release
+   - Wave 4 re-rolls installed: blightwolf walk back in the idle's near-black olive with the lime shoulder vein (heights normalised, graded toward the idle
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+## bosses/kaethra  gifs=4: kaethra_death, kaethra_walk_codex_e, kaethra_walk_codex_n, kaethra_walk_codex_nw
+   - Boss tell WINDUP posture: each boss holds a per-kind body posture through a tell's fuse and snaps on release
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+## bosses/korrag  gifs=5: korrag_death, korrag_walk_codex_e, korrag_walk_codex_n, korrag_walk_codex_nw, korrag_walk_codex_s
+   - Tells rig --bosses mode (a real boss per kind fires its tell with AI silenced) for windup review; windup knobs 0.11 / 0.17 rad; korrag death clip
+   - Corpus seam sweep + fix-up batch installs
+   - QA round on the last installs (findings from a 9-subject audit, each verified by hand before acting)
+   - korrag E (with his lightning), skeleton (without the invented shield), veyx E (with his bulk)
+## bosses/morwen  gifs=2: morwen_death, morwen_walk
+   - Boss death clips: morwen, nullwarden, saint_varo_standing, sexton, stormmouth, vargoth, vess, first_howl (20 of 20); board 11 (windup postures + boss 
+   - Boss walk geometry re-seats (nullwarden 60%-size walk, saint_varo E/W cell, 5 more) + the paladin's broken north walk
+## bosses/nullwarden  gifs=6: nullwarden_anim_codex, nullwarden_death, nullwarden_walk_codex_e, nullwarden_walk_codex_n, nullwarden_walk_codex_nw, nullwarden_walk_codex_s
+   - nullwarden idle: the recentre pass had emptied its last frame (1px of alpha) -- restored to the centred pre-recentre version; bog_lurker/cinderhide/sk
+   - Boss death clips: morwen, nullwarden, saint_varo_standing, sexton, stormmouth, vargoth, vess, first_howl (20 of 20); board 11 (windup postures + boss 
+   - Corpus seam sweep + fix-up batch installs
+   - QA round on the last installs (findings from a 9-subject audit, each verified by hand before acting)
+   - Nullwarden N from the two-row hi-res request (850px figures, installed near-native at the E strip's geometry)
+   - Nullwarden N: the job's final row (leg phases resolved as one 3-frame step + mirror); grid_to_row.py for two-row hi-res requests; board caveats
+   - Nullwarden walk N: true back view with empty fists (v2 roll; v1 invented a slung greatsword his idle/E walk never carry; the old N was front art)
+   - Boss walk geometry re-seats (nullwarden 60%-size walk, saint_varo E/W cell, 5 more) + the paladin's broken north walk
+## bosses/rotmaw  gifs=4: rotmaw_death, rotmaw_walk_codex_e, rotmaw_walk_codex_nw, rotmaw_walk_codex_s
+   - Boss death clips: rotmaw, serane, veyx, choirmother, echo, forgemistress, halla (12 of 20 in)
+   - Corpus seam sweep + fix-up batch installs
+   - rotmaw E walk: the hulk is a hulk again; docs for the new lanes and the lessons
+## bosses/saint_varo  gifs=3: saint_varo_standing_death, saint_varo_standing_walk_codex_e, saint_varo_standing_walk_codex_nw
+   - Boss death clips: morwen, nullwarden, saint_varo_standing, sexton, stormmouth, vargoth, vess, first_howl (20 of 20); board 11 (windup postures + boss 
+   - Boss walk geometry re-seats (nullwarden 60%-size walk, saint_varo E/W cell, 5 more) + the paladin's broken north walk
+## bosses/serane  gifs=4: serane_death, serane_walk_codex_e, serane_walk_codex_nw, serane_walk_codex_s
+   - Boss death clips: rotmaw, serane, veyx, choirmother, echo, forgemistress, halla (12 of 20 in)
+   - QA round on the last installs (findings from a 9-subject audit, each verified by hand before acting)
+   - Serane S: the clean 6-figure re-roll replaces the 4-frame salvage
+   - Serane S walk: 4-frame glide from the fix3 row (was a byte copy of the idle); normalize_row.py for crammed rows; stormmouth/nullwarden N first rolls a
+   - Boss walk geometry re-seats (nullwarden 60%-size walk, saint_varo E/W cell, 5 more) + the paladin's broken north walk
+## bosses/sexton  gifs=4: sexton_death, sexton_walk_codex_e, sexton_walk_codex_n, sexton_walk_codex_nw
+   - Boss death clips: morwen, nullwarden, saint_varo_standing, sexton, stormmouth, vargoth, vess, first_howl (20 of 20); board 11 (windup postures + boss 
+   - Corpus seam sweep + fix-up batch installs
+   - Boss walk geometry re-seats (nullwarden 60%-size walk, saint_varo E/W cell, 5 more) + the paladin's broken north walk
+## bosses/smelter_lord_thrain  gifs=2: smelter_lord_thrain_anim, smelter_lord_thrain_walk
+   - Corpus seam sweep + fix-up batch installs
+## bosses/stormmouth  gifs=5: stormmouth_death, stormmouth_walk_codex_e, stormmouth_walk_codex_n, stormmouth_walk_codex_nw, stormmouth_walk_codex_s
+   - Boss death clips: morwen, nullwarden, saint_varo_standing, sexton, stormmouth, vargoth, vess, first_howl (20 of 20); board 11 (windup postures + boss 
+   - Corpus seam sweep + fix-up batch installs
+   - Stormmouth N v3: a real stride (rear boot lifts 25-70px vs +-4 before) and the family's blue-steel plate; hi-res grid; bulk still slimmer than the S w
+   - Stormmouth N from the two-row hi-res request: 890px figures (installed at 0.65x, no upscale), wider pauldrons closer to the idle
+   - Stormmouth walk N: true back view (v2 roll with the chest maw named front-only; was a byte copy of E)
+## bosses/thornfather_grael  gifs=2: thornfather_grael_anim, thornfather_grael_walk
+   - Corpus seam sweep + fix-up batch installs
+## bosses/vargoth  gifs=5: vargoth_anim_codex, vargoth_death, vargoth_walk_codex_e, vargoth_walk_codex_n, vargoth_walk_codex_nw
+   - Boss death clips: morwen, nullwarden, saint_varo_standing, sexton, stormmouth, vargoth, vess, first_howl (20 of 20); board 11 (windup postures + boss 
+   - Corpus seam sweep + fix-up batch installs
+   - Boss walk geometry re-seats (nullwarden 60%-size walk, saint_varo E/W cell, 5 more) + the paladin's broken north walk
+## bosses/vess  gifs=4: vess_death, vess_walk_codex_e, vess_walk_codex_n, vess_walk_codex_w
+   - Boss death clips: morwen, nullwarden, saint_varo_standing, sexton, stormmouth, vargoth, vess, first_howl (20 of 20); board 11 (windup postures + boss 
+   - Corpus seam sweep + fix-up batch installs
+   - Boss walk geometry re-seats (nullwarden 60%-size walk, saint_varo E/W cell, 5 more) + the paladin's broken north walk
+## bosses/veyx  gifs=4: veyx_death, veyx_walk_codex_e, veyx_walk_codex_nw, veyx_walk_codex_s
+   - Boss death clips: rotmaw, serane, veyx, choirmother, echo, forgemistress, halla (12 of 20 in)
+   - Corpus seam sweep + fix-up batch installs
+   - veyx E walk installed (the first attempt refused a speck cell; re-sliced at --frames 6)
+   - Boss walk geometry re-seats (nullwarden 60%-size walk, saint_varo E/W cell, 5 more) + the paladin's broken north walk
+## mobs/aldric_burned_out  gifs=2: aldric_burned_out_anim, aldric_burned_out_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/anchor_vine  gifs=1: anchor_vine_anim
+   - Corpus seam sweep + fix-up batch installs
+## mobs/archon_vassik  gifs=2: archon_vassik_anim, archon_vassik_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/bandit_scout  gifs=1: bandit_scout_walk
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - Wave 5: the seven scissoring bipeds re-rolled with crossing-hardened briefs (elf_ranger, royal_knight, skeleton, zombie, elf_druid, skeleton_rogue, ba
+   - Audit A fixes: vow_sentinel's warhammer vanished in f2/f5 (filled from the neighbour frames); bandit_scout walk tone-matched to its idle (was 30% brig
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+## mobs/bannerman  gifs=2: bannerman_anim, bannerman_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/bellows_imp  gifs=1: bellows_imp_anim
+   - Corpus seam sweep + fix-up batch installs
+## mobs/blightwolf  gifs=2: blightwolf_death, blightwolf_walk
+   - Death clips (first eight): wolf, winterfang, blightwolf, duneprowler, deep_stalker, casket_creeper, vent_skitter, bog_lurker -- 6-frame collapses from
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - Wave 4 re-rolls installed: blightwolf walk back in the idle's near-black olive with the lime shoulder vein (heights normalised, graded toward the idle
+   - Mob walks wave 1: seven creatures regenerated as real gaits (gait-transfer lane)
+## mobs/bloat_leech  gifs=2: bloat_leech_anim, bloat_leech_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/blooming_convert  gifs=1: blooming_convert_death
+   - Death installer: bipeds scale by a central-band body height (a raised hand/weapon in frame 0 no longer shrinks the body); the sixteen biped deaths re-
+   - Death clips batch 2: blooming_convert, choir_pilgrim, elf_wild, ragged_soldier, ridge_deserter, vale_mourner (27 death clips total from the lane); boa
+## mobs/bog_lurker  gifs=2: bog_lurker_death, bog_lurker_walk
+   - Death clips (first eight): wolf, winterfang, blightwolf, duneprowler, deep_stalker, casket_creeper, vent_skitter, bog_lurker -- 6-frame collapses from
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - Corpus seam sweep + fix-up batch installs
+   - Wave 3: 16 placed mob/boss walks regenerated (mummy S/E/N, mummy_mage S/E/N, skeleton_warrior E/N, rat_mage, flux_hound, rime_wolf, slag_hound, void_h
+   - Palette-grade the world's style outliers back into the house palette
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/broodmother_yskara  gifs=1: broodmother_yskara_anim
+   - Corpus seam sweep + fix-up batch installs
+## mobs/burned_kings_echo  gifs=2: burned_kings_echo_anim, burned_kings_echo_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/casket_creeper  gifs=2: casket_creeper_death, casket_creeper_walk
+   - Death clips (first eight): wolf, winterfang, blightwolf, duneprowler, deep_stalker, casket_creeper, vent_skitter, bog_lurker -- 6-frame collapses from
+   - Audit B fixes (quad/creature mobs + boss facings, each re-checked by hand) + mage attack_walk_b S/E
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+   - Palette-grade the world's style outliers back into the house palette
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/choir_ascendant  gifs=2: choir_ascendant_anim, choir_ascendant_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/choir_of_frost  gifs=2: choir_of_frost_anim, choir_of_frost_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/choir_radical  gifs=2: choir_radical_anim, choir_radical_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/chorister_of_frost  gifs=2: chorister_of_frost_anim, chorister_of_frost_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/cindersmith  gifs=1: cindersmith_anim
+   - Corpus seam sweep + fix-up batch installs
+## mobs/cistern_mimic  gifs=2: cistern_mimic_anim, cistern_mimic_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/cold_pilgrim  gifs=4: cold_pilgrim_anim, cold_pilgrim_attack, cold_pilgrim_death, cold_pilgrim_walk
+   - Death installer: bipeds scale by a central-band body height (a raised hand/weapon in frame 0 no longer shrinks the body); the sixteen biped deaths re-
+   - Death clips for the remaining 13 placed mobs (cultist, mummy_rogue/warrior, rat_rogue/warrior, zombie_overweight, greyrun_lurker, grove_horror, fungus
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/commander_drayce  gifs=2: commander_drayce_anim, commander_drayce_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/conductor_acolyte  gifs=2: conductor_acolyte_anim, conductor_acolyte_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/converted  gifs=2: converted_anim, converted_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/crusade_zealot  gifs=2: crusade_zealot_anim, crusade_zealot_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/cultist  gifs=3: cultist_anim, cultist_death, cultist_walk
+   - Death installer: bipeds scale by a central-band body height (a raised hand/weapon in frame 0 no longer shrinks the body); the sixteen biped deaths re-
+   - Death clips for the remaining 13 placed mobs (cultist, mummy_rogue/warrior, rat_rogue/warrior, zombie_overweight, greyrun_lurker, grove_horror, fungus
+   - Corpus seam sweep + fix-up batch installs
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/cure_seeker_heretic  gifs=1: cure_seeker_heretic_anim
+   - Corpus seam sweep + fix-up batch installs
+## mobs/deep_stalker  gifs=2: deep_stalker_death, deep_stalker_walk
+   - Death clips (first eight): wolf, winterfang, blightwolf, duneprowler, deep_stalker, casket_creeper, vent_skitter, bog_lurker -- 6-frame collapses from
+   - Audit B fixes (quad/creature mobs + boss facings, each re-checked by hand) + mage attack_walk_b S/E
+   - Mob walks wave 1: seven creatures regenerated as real gaits (gait-transfer lane)
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/drowned_warden  gifs=2: drowned_warden_anim, drowned_warden_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/duneprowler  gifs=3: duneprowler_attack, duneprowler_death, duneprowler_walk
+   - Death clips (first eight): wolf, winterfang, blightwolf, duneprowler, deep_stalker, casket_creeper, vent_skitter, bog_lurker -- 6-frame collapses from
+   - Mob walks wave 1: seven creatures regenerated as real gaits (gait-transfer lane)
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/elara_vessel  gifs=2: elara_vessel_anim, elara_vessel_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/elf_druid  gifs=2: elf_druid_walk, elf_druid_walk_n
+   - Corpus seam sweep + fix-up batch installs
+   - Wave 5: the seven scissoring bipeds re-rolled with crossing-hardened briefs (elf_ranger, royal_knight, skeleton, zombie, elf_druid, skeleton_rogue, ba
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/elf_ranger  gifs=2: elf_ranger_attack, elf_ranger_walk
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - Wave 5: the seven scissoring bipeds re-rolled with crossing-hardened briefs (elf_ranger, royal_knight, skeleton, zombie, elf_druid, skeleton_rogue, ba
+   - elf_ranger attack f2: erase the baked in-flight arrow (the game spawns one -> it doubled); board: gates + open list
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/elf_wild  gifs=1: elf_wild_death
+   - Death clips batch 2: blooming_convert, choir_pilgrim, elf_wild, ragged_soldier, ridge_deserter, vale_mourner (27 death clips total from the lane); boa
+## mobs/field_chirurgeon  gifs=2: field_chirurgeon_anim, field_chirurgeon_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/flame_pilgrim  gifs=1: flame_pilgrim_death
+   - Death installer: bipeds scale by a central-band body height (a raised hand/weapon in frame 0 no longer shrinks the body); the sixteen biped deaths re-
+   - Death clips for the remaining 13 placed mobs (cultist, mummy_rogue/warrior, rat_rogue/warrior, zombie_overweight, greyrun_lurker, grove_horror, fungus
+## mobs/flux_hound  gifs=2: flux_hound_anim, flux_hound_walk
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - Corpus seam sweep + fix-up batch installs
+   - Wave 3: 16 placed mob/boss walks regenerated (mummy S/E/N, mummy_mage S/E/N, skeleton_warrior E/N, rat_mage, flux_hound, rime_wolf, slag_hound, void_h
+## mobs/forge_zealot  gifs=2: forge_zealot_anim, forge_zealot_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/foundry_thrall  gifs=2: foundry_thrall_anim, foundry_thrall_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/fungus_heavy  gifs=2: fungus_heavy_walk_n, fungus_heavy_walk_s
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/fungus_immature  gifs=2: fungus_immature_death, fungus_immature_walk
+   - Death clips for the remaining 13 placed mobs (cultist, mummy_rogue/warrior, rat_rogue/warrior, zombie_overweight, greyrun_lurker, grove_horror, fungus
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+## mobs/fungus_long  gifs=5: fungus_long_walk, fungus_long_walk_e, fungus_long_walk_n, fungus_long_walk_nw, fungus_long_walk_s
+   - Audit B fixes (quad/creature mobs + boss facings, each re-checked by hand) + mage attack_walk_b S/E
+   - Mob walks wave 1: seven creatures regenerated as real gaits (gait-transfer lane)
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/glasshide_stalker  gifs=2: glasshide_stalker_anim, glasshide_stalker_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/greyrun_lurker  gifs=2: greyrun_lurker_anim, greyrun_lurker_death
+   - Death clips for the remaining 13 placed mobs (cultist, mummy_rogue/warrior, rat_rogue/warrior, zombie_overweight, greyrun_lurker, grove_horror, fungus
+   - Corpus seam sweep + fix-up batch installs
+## mobs/grove_horror  gifs=3: grove_horror_anim, grove_horror_death, grove_horror_walk
+   - Death clips for the remaining 13 placed mobs (cultist, mummy_rogue/warrior, rat_rogue/warrior, zombie_overweight, greyrun_lurker, grove_horror, fungus
+   - Corpus seam sweep + fix-up batch installs
+## mobs/grove_tender  gifs=2: grove_tender_anim, grove_tender_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/heart_of_the_root  gifs=2: heart_of_the_root_anim, heart_of_the_root_walk
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - Corpus seam sweep + fix-up batch installs
+## mobs/high_artificer_maeven  gifs=2: high_artificer_maeven_anim, high_artificer_maeven_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/hollow_knight  gifs=2: hollow_knight_anim, hollow_knight_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/korrag_reborn  gifs=2: korrag_reborn_anim, korrag_reborn_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/morwyn_hollow_flame  gifs=2: morwyn_hollow_flame_anim, morwyn_hollow_flame_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/mouth_of_the_storm  gifs=1: mouth_of_the_storm_anim
+   - Corpus seam sweep + fix-up batch installs
+## mobs/mummy  gifs=4: mummy_walk, mummy_walk_e, mummy_walk_n, mummy_walk_nw
+   - Death installer: bipeds scale by a central-band body height (a raised hand/weapon in frame 0 no longer shrinks the body); the sixteen biped deaths re-
+   - Death installer: 2-D component slicing (touching figures split at the thinnest column, specks dropped); the five strips the equal-width slice had cut 
+   - Death clips for the remaining 13 placed mobs (cultist, mummy_rogue/warrior, rat_rogue/warrior, zombie_overweight, greyrun_lurker, grove_horror, fungus
+   - Wave 3: 16 placed mob/boss walks regenerated (mummy S/E/N, mummy_mage S/E/N, skeleton_warrior E/N, rat_mage, flux_hound, rime_wolf, slag_hound, void_h
+## mobs/mummy_mage  gifs=6: mummy_mage_walk, mummy_mage_walk_e, mummy_mage_walk_n, mummy_mage_walk_ne, mummy_mage_walk_nw, mummy_mage_walk_s
+   - Wave 3: 16 placed mob/boss walks regenerated (mummy S/E/N, mummy_mage S/E/N, skeleton_warrior E/N, rat_mage, flux_hound, rime_wolf, slag_hound, void_h
+## mobs/mummy_rogue  gifs=1: mummy_rogue_death
+   - Death installer: bipeds scale by a central-band body height (a raised hand/weapon in frame 0 no longer shrinks the body); the sixteen biped deaths re-
+   - Death clips for the remaining 13 placed mobs (cultist, mummy_rogue/warrior, rat_rogue/warrior, zombie_overweight, greyrun_lurker, grove_horror, fungus
+## mobs/mummy_warrior  gifs=1: mummy_warrior_death
+   - Death installer: bipeds scale by a central-band body height (a raised hand/weapon in frame 0 no longer shrinks the body); the sixteen biped deaths re-
+   - Death installer: 2-D component slicing (touching figures split at the thinnest column, specks dropped); the five strips the equal-width slice had cut 
+   - Death clips for the remaining 13 placed mobs (cultist, mummy_rogue/warrior, rat_rogue/warrior, zombie_overweight, greyrun_lurker, grove_horror, fungus
+## mobs/oathbound_knight  gifs=2: oathbound_knight_anim, oathbound_knight_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/orc  gifs=3: orc_attack, orc_walk_n, orc_walk_s
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - Corpus seam sweep + fix-up batch installs
+   - Install orc_rogue + skeleton_rogue gaits; tighten the row brief against size drift
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/orc_rogue  gifs=1: orc_rogue_walk
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - Install orc_rogue + skeleton_rogue gaits; tighten the row brief against size drift
+## mobs/overgrown_gatewarden  gifs=2: overgrown_gatewarden_anim, overgrown_gatewarden_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/pale_nursery  gifs=1: pale_nursery_anim
+   - Corpus seam sweep + fix-up batch installs
+## mobs/pollen_drifter  gifs=1: pollen_drifter_anim
+   - Corpus seam sweep + fix-up batch installs
+## mobs/ragged_soldier  gifs=1: ragged_soldier_death
+   - Death installer: bipeds scale by a central-band body height (a raised hand/weapon in frame 0 no longer shrinks the body); the sixteen biped deaths re-
+   - Death clips batch 2: blooming_convert, choir_pilgrim, elf_wild, ragged_soldier, ridge_deserter, vale_mourner (27 death clips total from the lane); boa
+## mobs/rat_mage  gifs=2: rat_mage_anim, rat_mage_walk
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - Wave 3: 16 placed mob/boss walks regenerated (mummy S/E/N, mummy_mage S/E/N, skeleton_warrior E/N, rat_mage, flux_hound, rime_wolf, slag_hound, void_h
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/rat_rogue  gifs=1: rat_rogue_death
+   - Death installer: bipeds scale by a central-band body height (a raised hand/weapon in frame 0 no longer shrinks the body); the sixteen biped deaths re-
+   - Death installer: 2-D component slicing (touching figures split at the thinnest column, specks dropped); the five strips the equal-width slice had cut 
+   - Death clips for the remaining 13 placed mobs (cultist, mummy_rogue/warrior, rat_rogue/warrior, zombie_overweight, greyrun_lurker, grove_horror, fungus
+## mobs/rat_warrior  gifs=1: rat_warrior_death
+   - Death installer: bipeds scale by a central-band body height (a raised hand/weapon in frame 0 no longer shrinks the body); the sixteen biped deaths re-
+   - Death installer: 2-D component slicing (touching figures split at the thinnest column, specks dropped); the five strips the equal-width slice had cut 
+   - Death clips for the remaining 13 placed mobs (cultist, mummy_rogue/warrior, rat_rogue/warrior, zombie_overweight, greyrun_lurker, grove_horror, fungus
+## mobs/ridge_deserter  gifs=1: ridge_deserter_death
+   - Death installer: bipeds scale by a central-band body height (a raised hand/weapon in frame 0 no longer shrinks the body); the sixteen biped deaths re-
+   - Death clips batch 2: blooming_convert, choir_pilgrim, elf_wild, ragged_soldier, ridge_deserter, vale_mourner (27 death clips total from the lane); boa
+## mobs/riftling  gifs=2: riftling_anim, riftling_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/rime_wolf  gifs=2: rime_wolf_anim, rime_wolf_walk
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - Corpus seam sweep + fix-up batch installs
+   - Wave 3: 16 placed mob/boss walks regenerated (mummy S/E/N, mummy_mage S/E/N, skeleton_warrior E/N, rat_mage, flux_hound, rime_wolf, slag_hound, void_h
+## mobs/root_spiderling  gifs=2: root_spiderling_anim, root_spiderling_walk
+   - Corpus seam sweep + fix-up batch installs
+   - Wave 3: 16 placed mob/boss walks regenerated (mummy S/E/N, mummy_mage S/E/N, skeleton_warrior E/N, rat_mage, flux_hound, rime_wolf, slag_hound, void_h
+## mobs/rootspawn  gifs=2: rootspawn_anim, rootspawn_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/rootweaver  gifs=2: rootweaver_anim, rootweaver_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/royal_knight  gifs=3: royal_knight_walk, royal_knight_walk_n, royal_knight_walk_s
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - Corpus seam sweep + fix-up batch installs
+   - Wave 5: the seven scissoring bipeds re-rolled with crossing-hardened briefs (elf_ranger, royal_knight, skeleton, zombie, elf_druid, skeleton_rogue, ba
+   - Audit A fixes: vow_sentinel's warhammer vanished in f2/f5 (filled from the neighbour frames); bandit_scout walk tone-matched to its idle (was 30% brig
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/sand_revenant  gifs=2: sand_revenant_anim, sand_revenant_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/shardcaller  gifs=2: shardcaller_anim, shardcaller_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/shattered_vow  gifs=2: shattered_vow_anim, shattered_vow_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/skeleton  gifs=2: skeleton_attack, skeleton_walk
+   - nullwarden idle: the recentre pass had emptied its last frame (1px of alpha) -- restored to the centred pre-recentre version; bog_lurker/cinderhide/sk
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - cinderhide walk: 6-frame three-headed trot from a two-row grid (was 4 stiff poses); skeleton_warrior S walk (+flat) from the re-run fix-up job
+   - Corpus seam sweep + fix-up batch installs
+   - Wave 5: the seven scissoring bipeds re-rolled with crossing-hardened briefs (elf_ranger, royal_knight, skeleton, zombie, elf_druid, skeleton_rogue, ba
+   - Wave 3: 16 placed mob/boss walks regenerated (mummy S/E/N, mummy_mage S/E/N, skeleton_warrior E/N, rat_mage, flux_hound, rime_wolf, slag_hound, void_h
+   - korrag E (with his lightning), skeleton (without the invented shield), veyx E (with his bulk)
+   - Install orc_rogue + skeleton_rogue gaits; tighten the row brief against size drift
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/skeleton_mage  gifs=1: skeleton_mage_walk
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+## mobs/skeleton_rogue  gifs=2: skeleton_rogue_walk, skeleton_rogue_walk_n
+   - Corpus seam sweep + fix-up batch installs
+   - Wave 5: the seven scissoring bipeds re-rolled with crossing-hardened briefs (elf_ranger, royal_knight, skeleton, zombie, elf_druid, skeleton_rogue, ba
+   - Install orc_rogue + skeleton_rogue gaits; tighten the row brief against size drift
+## mobs/skeleton_warrior  gifs=5: skeleton_warrior_walk, skeleton_warrior_walk_e, skeleton_warrior_walk_n, skeleton_warrior_walk_nw, skeleton_warrior_walk_s
+   - nullwarden idle: the recentre pass had emptied its last frame (1px of alpha) -- restored to the centred pre-recentre version; bog_lurker/cinderhide/sk
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - cinderhide walk: 6-frame three-headed trot from a two-row grid (was 4 stiff poses); skeleton_warrior S walk (+flat) from the re-run fix-up job
+   - Wave 3: 16 placed mob/boss walks regenerated (mummy S/E/N, mummy_mage S/E/N, skeleton_warrior E/N, rat_mage, flux_hound, rime_wolf, slag_hound, void_h
+## mobs/slag_hound  gifs=2: slag_hound_anim, slag_hound_walk
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - Corpus seam sweep + fix-up batch installs
+   - Wave 3: 16 placed mob/boss walks regenerated (mummy S/E/N, mummy_mage S/E/N, skeleton_warrior E/N, rat_mage, flux_hound, rime_wolf, slag_hound, void_h
+## mobs/sleepwalker  gifs=2: sleepwalker_anim, sleepwalker_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/sluice_lurker  gifs=2: sluice_lurker_anim, sluice_lurker_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/spider  gifs=11: spider_attack, spider_death, spider_walk, spider_walk_e, spider_walk_n, spider_walk_ne, spider_walk_nw, spider_walk_s, spider_walk_se, spider_walk_sw, spider_walk_w
+   - Death installer: 2-D component slicing (touching figures split at the thinnest column, specks dropped); the five strips the equal-width slice had cut 
+   - Death clips for the remaining 13 placed mobs (cultist, mummy_rogue/warrior, rat_rogue/warrior, zombie_overweight, greyrun_lurker, grove_horror, fungus
+   - Corpus seam sweep + fix-up batch installs
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/static_caller  gifs=1: static_caller_walk
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+## mobs/stone_base  gifs=4: stone_base_walk_e, stone_base_walk_n, stone_base_walk_nw, stone_base_walk_s
+   - Audit B fixes (quad/creature mobs + boss facings, each re-checked by hand) + mage attack_walk_b S/E
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+## mobs/stone_broken  gifs=2: stone_broken_walk, stone_broken_walk_s
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - Corpus seam sweep + fix-up batch installs
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+## mobs/storm_adept  gifs=2: storm_adept_anim, storm_adept_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/storm_harrier  gifs=2: storm_harrier_attack, storm_harrier_walk
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/stormcult  gifs=4: stormcult, stormcult_anim, stormcult_attack, stormcult_death
+   - Death installer: bipeds scale by a central-band body height (a raised hand/weapon in frame 0 no longer shrinks the body); the sixteen biped deaths re-
+   - Death clips for the remaining 13 placed mobs (cultist, mummy_rogue/warrior, rat_rogue/warrior, zombie_overweight, greyrun_lurker, grove_horror, fungus
+   - Corpus seam sweep + fix-up batch installs
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/thorn_howler  gifs=2: thorn_howler_anim, thorn_howler_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/unfinished_sentence  gifs=2: unfinished_sentence_anim, unfinished_sentence_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/vale_mourner  gifs=3: vale_mourner, vale_mourner_anim, vale_mourner_death
+   - Death installer: bipeds scale by a central-band body height (a raised hand/weapon in frame 0 no longer shrinks the body); the sixteen biped deaths re-
+   - Death clips batch 2: blooming_convert, choir_pilgrim, elf_wild, ragged_soldier, ridge_deserter, vale_mourner (27 death clips total from the lane); boa
+   - Corpus seam sweep + fix-up batch installs
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/vent_skitter  gifs=2: vent_skitter_death, vent_skitter_walk
+   - Death clips (first eight): wolf, winterfang, blightwolf, duneprowler, deep_stalker, casket_creeper, vent_skitter, bog_lurker -- 6-frame collapses from
+   - Audit B fixes (quad/creature mobs + boss facings, each re-checked by hand) + mage attack_walk_b S/E
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/verdant_anvil  gifs=1: verdant_anvil_anim
+   - Corpus seam sweep + fix-up batch installs
+## mobs/verdict_drone  gifs=2: verdict_drone_anim, verdict_drone_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/void_hound  gifs=2: void_hound_anim, void_hound_walk
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - Corpus seam sweep + fix-up batch installs
+   - Wave 3: 16 placed mob/boss walks regenerated (mummy S/E/N, mummy_mage S/E/N, skeleton_warrior E/N, rat_mage, flux_hound, rime_wolf, slag_hound, void_h
+## mobs/vow_sentinel  gifs=1: vow_sentinel_walk
+   - Idle-to-walk seam fixes: 14 walks tone-matched to their idles, the four hounds reseated to idle body size, seven walks centred on their idle (rat_mage
+   - Audit A fixes: vow_sentinel's warhammer vanished in f2/f5 (filled from the neighbour frames); bandit_scout walk tone-matched to its idle (was 30% brig
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+## mobs/waking_shard  gifs=2: waking_shard_anim, waking_shard_walk
+   - Corpus seam sweep + fix-up batch installs
+## mobs/winterfang  gifs=2: winterfang_death, winterfang_walk
+   - Death clips (first eight): wolf, winterfang, blightwolf, duneprowler, deep_stalker, casket_creeper, vent_skitter, bog_lurker -- 6-frame collapses from
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+## mobs/wolf  gifs=2: wolf_death, wolf_walk
+   - Death clips (first eight): wolf, winterfang, blightwolf, duneprowler, deep_stalker, casket_creeper, vent_skitter, bog_lurker -- 6-frame collapses from
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/word_wisp  gifs=1: word_wisp_anim
+   - Corpus seam sweep + fix-up batch installs
+## mobs/zombie  gifs=2: zombie_attack, zombie_walk
+   - Death installer: bipeds scale by a central-band body height (a raised hand/weapon in frame 0 no longer shrinks the body); the sixteen biped deaths re-
+   - Death installer: 2-D component slicing (touching figures split at the thinnest column, specks dropped); the five strips the equal-width slice had cut 
+   - Death clips for the remaining 13 placed mobs (cultist, mummy_rogue/warrior, rat_rogue/warrior, zombie_overweight, greyrun_lurker, grove_horror, fungus
+   - Wave 5: the seven scissoring bipeds re-rolled with crossing-hardened briefs (elf_ranger, royal_knight, skeleton, zombie, elf_druid, skeleton_rogue, ba
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## mobs/zombie_overweight  gifs=1: zombie_overweight_death
+   - Death installer: bipeds scale by a central-band body height (a raised hand/weapon in frame 0 no longer shrinks the body); the sixteen biped deaths re-
+   - Death installer: 2-D component slicing (touching figures split at the thinnest column, specks dropped); the five strips the equal-width slice had cut 
+   - Death clips for the remaining 13 placed mobs (cultist, mummy_rogue/warrior, rat_rogue/warrior, zombie_overweight, greyrun_lurker, grove_horror, fungus
+## npcs/choir_pilgrim  gifs=1: choir_pilgrim_death
+   - Death installer: bipeds scale by a central-band body height (a raised hand/weapon in frame 0 no longer shrinks the body); the sixteen biped deaths re-
+   - Death clips batch 2: blooming_convert, choir_pilgrim, elf_wild, ragged_soldier, ridge_deserter, vale_mourner (27 death clips total from the lane); boa
+## npcs/npc_bandit_tracker  gifs=1: npc_bandit_tracker
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## npcs/npc_scholar_a  gifs=1: npc_scholar_a
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## npcs/npc_scholar_b  gifs=1: npc_scholar_b
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## npcs/npc_villager_f  gifs=1: npc_villager_f
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## npcs/npc_villager_m  gifs=1: npc_villager_m
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## npcs/villager  gifs=1: villager
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## capital/capital  gifs=42: capital_accord_longhouse, capital_accord_longhouse_anim, capital_alembic_station, capital_ashen_tankard, capital_ashen_tankard_anim, capital_ashfire_forge, capital_ashfire_forge_anim, capital_chartered_hall, capital_city_arcade, capital_city_bench, capital_city_directory, capital_crown_fountain, capital_crown_fountain_anim, capital_crown_spire_gate, capital_crown_spire_gate_anim, capital_emberward_gate, capital_emberward_gate_anim, capital_grand_archive, capital_great_hearth, capital_great_hearth_anim, capital_market_stall, capital_portal_crucible, capital_portal_crucible_anim, capital_portal_depths, capital_portal_depths_anim, capital_portal_story, capital_portal_story_anim, capital_proving_gate, capital_proving_gate_anim, capital_rot_chapel, capital_sable_hall, capital_sable_hall_anim, capital_stables, capital_undercroft, capital_vault_chest, capital_watchtower, capital_watchtower_anim, capital_wellspring, capital_wellspring_anim, capital_wildfang_fangmoot, capital_wildfang_fangmoot_anim, ground_field_holystone
+   - Art wave 2: 11 more mob walks, 12 boss walk facings, the 26-piece capital repaint, and fire-on-move for the base classes
+   - Capital: light sockets on every flame, portal strobe fix, room-tour rig fix (CAP-6/3/10a)
+## props/bridge  gifs=1: bridge
+   - Green keying-ring sweep (63 sprites) + orphan frame edits + the QA findings board
+## props/cactus2  gifs=1: cactus2
+   - Palette-grade the world's style outliers back into the house palette
+## props/grass2  gifs=1: grass2
+   - Palette-grade the world's style outliers back into the house palette
+## props/grass3  gifs=1: grass3
+   - Palette-grade the world's style outliers back into the house palette
+## props/mushroom2  gifs=1: mushroom2
+   - Palette-grade the world's style outliers back into the house palette
+## props/mushroom3  gifs=1: mushroom3
+   - Palette-grade the world's style outliers back into the house palette
+## props/toadstool  gifs=1: toadstool
+   - Palette-grade the world's style outliers back into the house palette
+## props/tree_green2  gifs=2: tree_green2, tree_green2_anim
+   - Palette-grade the world's style outliers back into the house palette
+## props/tree_green4  gifs=2: tree_green4, tree_green4_anim
+   - Palette-grade the world's style outliers back into the house palette
