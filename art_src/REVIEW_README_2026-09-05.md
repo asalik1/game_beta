@@ -761,7 +761,10 @@ question for you, not something I should decide.
 
 Old vs new walks over scrolling ground at the mob's real in-game speed, the only way to see
 foot skating: cultist, royal_knight, stone_broken, wolf, zombie, and the mage and warlock
-walk_e. Walks march in place by your ruling, so a foot that slides is expected; what changed
+walk_e. Five of the seven were rebuilt on 2026-09-06 because their walks changed after the
+first set was made (the seam pass re-seated royal_knight and stone_broken, wave 5 re-rolled
+zombie, and the mage's and warlock's E columns were regenerated and then tone-matched), so
+every pane now shows the strip the game currently plays. Walks march in place by your ruling, so a foot that slides is expected; what changed
 is the stride shape. The mage's new walk_e reads at 0.14 bodies per cycle, the same
 marching family as the assassin (0.22) and archer (0.22).
 
