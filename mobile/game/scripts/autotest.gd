@@ -2144,7 +2144,7 @@ func _run_systems() -> void:
 	print("ok: shop, codex, records, journal, daily, skill tree, theme, stats, map, dev UI")
 	_test_status_icon_coverage()
 	_test_hud_icon_integrity()
-	_test_tell_shapes()
+	await _test_tell_shapes()
 
 	# 5c. Endgame modes (ACT2_DESIGN.md §II): The Crucible + The Waking Depths.
 	await _test_endgame()
@@ -4542,7 +4542,8 @@ func _test_mob_strip_anchor_consistency() -> void:
 	var slag_walk := Art.walk_info("stone_broken")
 	if int(slag_idle.get("frames", 0)) != 1 or int(slag_walk.get("frames", 0)) != 6:
 		probe.queue_free()
-		return _fail("Slagbound Brute must use idle frame 0 and its former idle as 4f walk")
+		return _fail("Slagbound Brute must use idle frame 0 and a 6-frame walk (idle %d, walk %d)"
+			% [int(slag_idle.get("frames", 0)), int(slag_walk.get("frames", 0))])
 	probe.queue_free()
 	await _frames(2)
 	print("ok: mob strip body scale + ground anchor persist across idle/walk/attack")
@@ -7597,33 +7598,97 @@ func _capital_bench_gate() -> void:
 ## it shipped). The CHOICE flag is asserted separately on purpose: it is its
 ## own overlay (dialogue_active drops before dialogue_choice raises it) and was
 ## missing from every one of these gates.
+##
+## The keys are HELD FOR REAL (_press_key, the way _test_dash_direction drives
+## Input headless), and the first step is a live CONTROL — exactly like the
+## touch twin above. WRITING the intent fields proves nothing here: player.gd
+## re-polls the device every physics frame BEFORE the gate, and with no key
+## pressed player_core._poll_local_intents zeroes intent_move/intent_a1 on its
+## own, so the old "wrote RIGHT, read ZERO" assert was satisfied by the harness
+## and stayed green through the whole period the gate did nothing on desktop.
+## The asserts below therefore read the CONSUMERS too — velocity/position for
+## the move intent, the a1 cooldown for the ability intent.
 func _test_overlay_intent_gate() -> void:
 	var paused_was: bool = get_tree().paused
 	var p: Player = game.local_player
-	# 1. Dialogue overlay: stale move/ability/interact intents must die.
-	get_tree().paused = false
-	game.hud.dialogue_active = true
-	p.intent_move = Vector2.RIGHT
-	p.intent_a1 = true
-	p.intent_interact = true
-	await _frames(2)
-	var stale_dlg: bool = p.intent_move != Vector2.ZERO or p.intent_a1 or p.intent_interact
+	var a1_key: int = int(game.binds["a1"])
+	# Snapshot everything the held keys can move — the restore below runs on the
+	# failure paths too (_fail only QUEUES quit: the next section still runs, and
+	# a leaked held key would corrupt every later section that reads Input).
+	var pos_was: Vector2 = p.global_position
+	var mp_was: float = p.mp
+	var cd_was: float = p.cds["a1"]
+	var frozen_was: float = p.frozen_time
+	var gust_was: Vector2 = game.gust_vec
+	var err: String = await _overlay_intent_checks(p, a1_key)
+	_press_key(KEY_D, false)
+	_press_key(a1_key, false)
 	game.hud.dialogue_active = false
-	if stale_dlg:
-		get_tree().paused = paused_was
-		return _fail("overlay intent gate: stale keyboard intents survived a dialogue overlay")
-	# 2. CHOICE overlay — its own flag, not dialogue_active.
-	game.hud.choices_active = true
-	get_tree().paused = false
-	p.intent_move = Vector2.RIGHT
-	p.intent_interact = true
-	await _frames(2)
-	var stale_choice: bool = p.intent_move != Vector2.ZERO or p.intent_interact
 	game.hud.choices_active = false
 	get_tree().paused = paused_was
-	if stale_choice:
-		return _fail("overlay intent gate: stale keyboard intents survived a CHOICE overlay")
-	print("ok: overlay intent gate (stale keyboard intents die under dialogue + choice overlays, world unpaused — co-op)")
+	game.gust_vec = gust_was
+	p.global_position = pos_was
+	p.velocity = Vector2.ZERO
+	p.clear_local_intents()
+	p.mp = mp_was
+	p.cds["a1"] = cd_was
+	p.frozen_time = frozen_was
+	await _frames(2)
+	if err != "":
+		return _fail(err)
+	print("ok: overlay intent gate (held keys stop moving + casting under dialogue + choice overlays, world unpaused — co-op)")
+
+
+## The assertions of the section above; its caller owns the restore.
+## Returns "" on success, else the failure message.
+func _overlay_intent_checks(p: Player, a1_key: int) -> String:
+	get_tree().paused = false
+	game.gust_vec = Vector2.ZERO   # a sandstorm push moves the hero with zero intent
+	p.frozen_time = 0.0            # frozen blocks casting: the control step needs one
+	p.cds["a1"] = 0.0
+	p.mp = p.max_mp
+	_press_key(KEY_D, true)
+	_press_key(a1_key, true)
+	await _frames(2)
+	# CONTROL: with nothing open the held keys MUST reach the intents and the
+	# frame MUST consume them, or every "stayed still" assert below is vacuous.
+	if p.intent_move == Vector2.ZERO or not p.intent_a1:
+		return "overlay intent gate: held keys wrote no intent with nothing open — asserts would be vacuous"
+	if p.cds["a1"] <= 0.0:
+		return "overlay intent gate: a held ability key never cast with nothing open — asserts would be vacuous"
+	# 1. Dialogue overlay: the poll keeps firing, the gate must zero it.
+	var dlg: String = await _overlay_intent_dead(p, "dialogue")
+	if dlg != "":
+		return dlg
+	# 2. CHOICE overlay — its own flag, not dialogue_active.
+	return await _overlay_intent_dead(p, "CHOICE")
+
+
+## Raise one overlay with the keys still held and assert the hero goes inert:
+## no intents, no movement (velocity/position), no cast (the a1 cooldown, which
+## use_ability raises before anything else, and which only ever DECAYS otherwise).
+func _overlay_intent_dead(p: Player, which: String) -> String:
+	if which == "dialogue":
+		game.hud.dialogue_active = true
+	else:
+		game.hud.choices_active = true
+	get_tree().paused = false
+	p.cds["a1"] = 0.0
+	p.mp = p.max_mp
+	var pos: Vector2 = p.global_position
+	await _frames(4)
+	var out := ""
+	if p.intent_move != Vector2.ZERO or p.intent_a1 or p.intent_interact:
+		out = "overlay intent gate: stale keyboard intents survived a %s overlay" % which
+	elif p.velocity != Vector2.ZERO or p.global_position.distance_to(pos) > 0.01:
+		out = "overlay intent gate: the hero kept walking under a %s overlay" % which
+	elif p.cds["a1"] > 0.0:
+		out = "overlay intent gate: a held ability key still cast under a %s overlay" % which
+	if which == "dialogue":
+		game.hud.dialogue_active = false
+	else:
+		game.hud.choices_active = false
+	return out
 
 
 ## Two-regime mob growth (2026-07-21, Depths audit): per-kind hp_g through the

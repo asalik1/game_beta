@@ -207,7 +207,11 @@ def main() -> int:
         # pastes silently, so the overhang is baked into the NEXT frame's cell
         # (echo_death f4 spilled a 120px fragment into f5, shipped). Only the left
         # edge was clamped before.
-        lo, hi = f * out_cell, (f + 1) * out_cell - s.shape[1]
+        # keep a MARGIN inside the cell, not just inside the boundary: clamping
+        # flush to the edge still reads as a cut body (owner 2026-09-06, "if a
+        # weapon is cut off outside the frame that is a regression too").
+        margin = 4 if s.shape[1] + 8 <= out_cell else 0
+        lo, hi = f * out_cell + margin, (f + 1) * out_cell - s.shape[1] - margin
         px_c = min(max(px, lo), max(lo, hi))
         if px_c != px:
             print(f"  f{f}: placement clamped {px - lo:+d} -> {px_c - lo:+d} px in-cell (would have crossed the cell edge)")

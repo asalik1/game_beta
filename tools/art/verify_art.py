@@ -154,11 +154,32 @@ A_SOLID = 8            # alpha above this counts as body content
 # regens crossed this line (89-2403px of body on the cut) while sitting in the
 # WARN pile nobody is required to read, until the owner caught them by eye.
 EDGECUT_FAIL_RUN = 0.18  # fraction of body height, longest contiguous run on the cut
-# Strips that were ALREADY cut on main before this gate existed (2026-09-06
-# corpus scan). They are pre-existing art debt, not a regression to block on;
-# listing them keeps a clean tree at 0 FAIL so a NEW cut cannot hide in noise.
-# Remove a name here the moment its art is re-made.
-EDGECUT_KNOWN = {"sewer_flow_anim", "cat_anim", "flux_hound_walk", "frog_anim"}
+# Not figures: a tile tiles edge-to-edge and a projectile is drawn frame-filling.
+EDGECUT_SKIP_PREFIX = ("ground_", "canopy_", "wall_", "arrow_", "bolt_", "proj_")
+EDGECUT_SKIP = {"mage_firebolt", "warlock_shadowbolt", "sewer_flow_anim"}
+# Strips ALREADY cut on main before this gate existed (2026-09-06 corpus scan,
+# 58 of them -- mostly legacy 4-frame death strips whose lying body reaches the
+# boundary). They are art DEBT, not accepted art: listing them keeps a clean
+# tree at 0 FAIL so a NEW cut cannot hide in the noise. Delete a name the moment
+# its art is re-made. Sprites that fill their frame BY DESIGN -- ground/canopy/
+# wall tiles and projectiles (arrow_*, mage_firebolt, warlock_shadowbolt) -- are
+# excluded by class in EDGECUT_SKIP instead, since they are not figures at all.
+EDGECUT_KNOWN = {"aldric_burned_out_death", "archer_dash_e", "archer_dash_ne",
+    "archer_dash_nw", "archer_dash_se", "archer_dash_sw", "archer_dash_w", "archer_ult_n",
+    "archon_vassik_death", "assassin_ultidle_ne", "bannerman_death", "bloat_leech_death",
+    "burned_kings_echo_attack", "cat_anim", "choir_ascendant_death", "choir_radical_death",
+    "chorister_of_frost_death", "cindersmith_death", "cistern_mimic_death",
+    "commander_drayce_death", "conductor_acolyte_death", "converted_death",
+    "crusade_zealot_attack", "crusade_zealot_death", "cure_seeker_heretic_death",
+    "elara_vessel_attack", "elara_vessel_death", "field_chirurgeon_death", "flux_hound_attack",
+    "flux_hound_death", "flux_hound_walk", "forge_zealot_death", "foundry_thrall_death",
+    "frog_anim", "fx_whirl_blade", "glacius_attack", "glacius_death",
+    "glasshide_stalker_attack", "high_artificer_maeven_death", "hollow_knight_death",
+    "korrag_reborn_death", "morwyn_hollow_flame_death", "oathbound_knight_death",
+    "rat_mage_death", "riftling_death", "rime_wolf_death", "rootspawn_death",
+    "sand_revenant_death", "shardcaller_death", "skeleton_death", "slag_hound_death",
+    "sluice_lurker_death", "smelter_lord_thrain_death", "storm_adept_death",
+    "void_hound_death", "waking_shard_attack", "warrior_ult_nw", "zombie_death"}
 ANCHOR_CX = 0.08       # centroid-x drift, fraction of frame width (anim/walk)
 ANCHOR_CX_RUN = 0.10   # runs sway more legitimately (airborne stride)
 ANCHOR_CY = 0.08       # centroid-y drift, fraction of cell height
@@ -730,29 +751,29 @@ def check_file(png: Path) -> None:
                                 "<name> --motion swirl|pulse (ignore if the whole body is "
                                 "meant to move, e.g. cloth/energy)")
                 else:
-                    # EDGECUT is a WARN on ACTION clips by design: a weapon reaching
-                    # the cell edge at the extreme of a swing is the documented
-                    # benign class (CLAUDE.md's WARN triage). On a LOCOMOTION or
-                    # IDLE strip it never is -- the whole body has to live inside
-                    # the cell, every frame, because the renderer normalises the
-                    # strip by that cell. Six quadruped/arachnid walk regens
-                    # shipped with the tail or hindquarters sliced flat against
-                    # the boundary (owner catch 2026-09-06: "slag hound its legs
-                    # appear cut off"), and every one of them was sitting right
-                    # here as a WARN nobody was required to read. So: FAIL on a
-                    # walk/idle strip, WARN on anything else.
+                    # EDGECUT was a WARN everywhere, on the reading that a weapon
+                    # reaching the cell edge at the extreme of a swing is benign.
+                    # The owner OVERRULED that on 2026-09-06 -- "if a weapon is cut
+                    # off outside the frame that is a regression too" -- after six
+                    # quadruped walk regens shipped with the hindquarters sliced
+                    # flat, every one of them sitting right here in the WARN pile.
+                    # So EDGECUT FAILs on ANY clip once enough of the silhouette
+                    # sits ON the boundary; the run measure (not a raw pixel
+                    # count) is what keeps a 1-2px antialias graze out of it.
                     stem = Path(rel).stem
-                    locomotion = "_walk" in stem or "_anim" in stem
                     worst = max((m["edge_run"] for m in live if m), default=0.0)
                     msg = (f"[EDGECUT] {rel}: f{cut} content touches a left/right cell "
                            "edge -- limb clipped at the frame cut, or bleed from the "
                            "neighbour cell")
-                    if locomotion and worst >= EDGECUT_FAIL_RUN and stem not in EDGECUT_KNOWN:
+                    skip_cls = (stem in EDGECUT_KNOWN or stem in EDGECUT_SKIP
+                                or stem.startswith(EDGECUT_SKIP_PREFIX))
+                    if worst >= EDGECUT_FAIL_RUN and not skip_cls:
                         FAIL.append(msg + f" ({worst:.0%} of the body height sits on the "
-                                    "cut in the worst frame) "
-                                    "-- a LOCOMOTION/IDLE body must fit its cell "
-                                    "(re-install with a real width fit, or keep the "
-                                    "outgoing strip)")
+                                    "cut in the worst frame) -- the figure AND anything it "
+                                    "carries must fit the cell (owner 2026-09-06: \"if a "
+                                    "weapon is cut off outside the frame that is a "
+                                    "regression too\"). Re-install with a real width fit, "
+                                    "grow the cell, or keep the outgoing strip")
                     else:
                         WARN.append(msg)
             # FEETSLIDE (action clips: swings/casts/boss abilities -- see the

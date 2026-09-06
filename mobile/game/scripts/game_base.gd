@@ -248,6 +248,11 @@ var _cam_look := Vector2.ZERO   # eased look-ahead offset (camera feel, 2026-08-
 var _cam_zoom_mult := 1.0       # eased combat zoom multiplier on the base zoom
 var sounds: Dictionary = {}
 var sound_pool: Array = []
+# Pending cutoff fades, keyed by the pool player they were scheduled on. The
+# pool is first-free round-robin, so a slot is recycled the instant its sound
+# ends — reusing one must CANCEL its pending fade or the fade lands on the
+# next, unrelated play (every boss roar shorter than the 2.5 s cutoff).
+var sfx_cutoff_tweens: Dictionary = {}
 # Variant groups are discovered from override names ending in `_vN`.
 # Callers play the stable semantic key (for example `boss_fire_cast`), and
 # this bank chooses a different installed take without immediately repeating.
@@ -3026,22 +3031,28 @@ func sfx(name: String, pitch := 1.0, cutoff := 0.0, vol_db := 0.0) -> void:
 		if not sp.playing:
 			chosen = sp
 			break
+	# Taking the slot cancels any cutoff fade still pending on it: that fade
+	# belongs to the play that scheduled it, not to the player. Without this
+	# it ducks (and re-stamps the level of) whatever sound is here now.
+	var pending: Tween = sfx_cutoff_tweens.get(chosen, null)
+	if pending != null and pending.is_valid():
+		pending.kill()
+	sfx_cutoff_tweens.erase(chosen)
 	# Small random pitch per play: kills the machine-gun sameness of
 	# repeated samples and the phasing of near-simultaneous ones.
 	# vol_db offsets the base level (e.g. quiet ambient stings).
 	chosen.pitch_scale = pitch * randf_range(0.94, 1.06)
-	chosen.volume_db = -8.0 + vol_db
+	chosen.volume_db = Balance.SFX_BASE_DB + vol_db
 	chosen.stream = sounds[stream_key]
 	chosen.play()
 	if cutoff > 0.0:
-		var this_stream: AudioStream = chosen.stream
 		var tween := create_tween()
+		sfx_cutoff_tweens[chosen] = tween
 		tween.tween_interval(cutoff)
-		tween.tween_property(chosen, "volume_db", -40.0, 0.4)
+		tween.tween_property(chosen, "volume_db", Balance.SFX_CUTOFF_DUCK_DB, Balance.SFX_CUTOFF_FADE)
 		tween.tween_callback(func() -> void:
-			if chosen.stream == this_stream:
-				chosen.stop()
-			chosen.volume_db = -8.0
+			chosen.stop()
+			sfx_cutoff_tweens.erase(chosen)
 		)
 
 ## Camera shake. `amount` = the random jitter (existing beats), `dir` + `kick`

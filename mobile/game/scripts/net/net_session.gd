@@ -1316,16 +1316,16 @@ func _rpc_enemy_status(id: int, kind: String, d: Dictionary) -> void:
 ## hurt_cd (incl. the heavy-pierce rule) and death happen on the machine
 ## that owns the stats. attacker_id names the enemy so the owner resolves
 ## crit/pen/dex/Enfeeble against its own mirror, exactly like solo.
-func host_player_hit(pid: int, amount: float, dmg_type: String, attacker_id: int, heavy: bool, pvp_pen := 0.0) -> void:
+func host_player_hit(pid: int, amount: float, dmg_type: String, attacker_id: int, heavy: bool, pvp_pen := 0.0, pvp_dex := 0.0) -> void:
 	if not _net().is_online() or not multiplayer.is_server():
 		return
 	if not (pid in _net().peers):
 		return
-	_rpc_player_hit.rpc_id(pid, amount, dmg_type, attacker_id, heavy, pvp_pen)
+	_rpc_player_hit.rpc_id(pid, amount, dmg_type, attacker_id, heavy, pvp_pen, pvp_dex)
 
 
 @rpc("authority", "call_remote", "reliable")
-func _rpc_player_hit(amount: float, dmg_type: String, attacker_id: int, heavy: bool, pvp_pen := 0.0) -> void:
+func _rpc_player_hit(amount: float, dmg_type: String, attacker_id: int, heavy: bool, pvp_pen := 0.0, pvp_dex := 0.0) -> void:
 	if game == null or multiplayer.is_server():
 		return
 	var p: Node = game.local_player
@@ -1336,10 +1336,11 @@ func _rpc_player_hit(amount: float, dmg_type: String, attacker_id: int, heavy: b
 		var m: Enemy = net_enemies.get(attacker_id)
 		if m != null and is_instance_valid(m) and not m.dying:
 			attacker = m  # the mirror: real kind/level stats resolve the hit
-	# pvp_pen is the PvP striker's forwarded penetration (0 for enemy hits, whose
-	# pen resolves attacker-side against the mirror above). Bound both finite.
+	# pvp_pen/pvp_dex are the PvP striker's forwarded penetration and DEX (0 for
+	# enemy hits, whose pen/dex resolve attacker-side against the mirror above).
+	# Bound them all finite.
 	p.take_damage(_finpos(amount, Balance.NET_MAX_HIT), dmg_type, attacker, heavy,
-		_fin(pvp_pen, 1.0e6, 0.0))
+		_fin(pvp_pen, 1.0e6, 0.0), _fin(pvp_dex, 1.0e6, 0.0))
 
 
 ## HOST -> OWNER: a control effect a host-side source put on the shell
@@ -3017,18 +3018,18 @@ func _rpc_session_over() -> void:
 
 ## ANY MACHINE: my proxy resolved a hit on the rival — route it to the host,
 ## which validates the fight is live and applies it to the target's owner.
-func pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0) -> void:
+func pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0, dex := 0.0) -> void:
 	if game == null or not _net().is_online() or not bool(game.pvp_active):
 		return
 	if multiplayer.is_server():
 		if game.pvp != null and bool(game.pvp.combat_live()):
-			_pvp_apply_strike(target_pid, amount, dmg_type, pen)
+			_pvp_apply_strike(target_pid, amount, dmg_type, pen, dex)
 	else:
-		_rpc_pvp_strike.rpc_id(1, target_pid, amount, dmg_type, pen)
+		_rpc_pvp_strike.rpc_id(1, target_pid, amount, dmg_type, pen, dex)
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _rpc_pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0) -> void:
+func _rpc_pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0, dex := 0.0) -> void:
 	if not multiplayer.is_server() or game == null or not bool(game.pvp_active):
 		return
 	var pid := multiplayer.get_remote_sender_id()
@@ -3036,23 +3037,24 @@ func _rpc_pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.
 		return
 	if game.pvp == null or not bool(game.pvp.combat_live()):
 		return  # gates closed on the HOST's clock — late/early blows fizzle
-	_pvp_apply_strike(target_pid, amount, dmg_type, pen)
+	_pvp_apply_strike(target_pid, amount, dmg_type, pen, dex)
 
 
 ## HOST: land a validated strike on the target's owner. The host's own hero
 ## takes it directly; a guest's rides the existing owner-applied hit RPC.
-func _pvp_apply_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0) -> void:
-	# Guest-forwarded strike values reach here — bound both finite (CR-002).
+func _pvp_apply_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0, dex := 0.0) -> void:
+	# Guest-forwarded strike values reach here — bound them all finite (CR-002).
 	amount = _finpos(amount, Balance.NET_MAX_HIT)
 	pen = _fin(pen, 1.0e6, 0.0)
+	dex = _fin(dex, 1.0e6, 0.0)
 	if amount <= 0.0:
 		return
 	if target_pid == 1:
 		var p: Player = game.local_player
 		if p != null and is_instance_valid(p) and not p.dead:
-			p.take_damage(amount, dmg_type, null, false, pen)
+			p.take_damage(amount, dmg_type, null, false, pen, dex)
 	else:
-		host_player_hit(target_pid, amount, dmg_type, 0, false, pen)
+		host_player_hit(target_pid, amount, dmg_type, 0, false, pen, dex)
 
 
 ## ANY MACHINE: a control rider landed on the rival (duel refactor 2026-08-02

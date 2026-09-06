@@ -584,6 +584,7 @@ var bleed_dps := 0.0
 var slow_time := 0.0    # synergy window (Killing Frost); the real CC rides the wire
 var stun_time := 0.0
 var brittle := 0        # ice-stack synergy, attacker-side
+var brittle_t := 0.0    # its decay clock (pvp.gd ages it; enemy.gd semantics)
 var crush_t := 0.0      # void-crush window (a shove can't cross the wire; this can)
 var res_shred := 0.0    # kit-write compat; defender-side armor is invisible here,
 var res_shred_t := 0.0  # so shred carries no math weight vs a rival (v1)
@@ -642,7 +643,8 @@ func apply_vuln(dur: float, mult := -1.0) -> void:
 func add_brittle() -> void:
 	if not _rival_shell():
 		return
-	brittle = mini(brittle + 1, 8)
+	brittle = mini(brittle + 1, Balance.BRITTLE_MAX_STACKS)
+	brittle_t = Balance.BRITTLE_DUR   # refresh-to-full, exactly like enemy.gd
 
 
 func apply_knock(_vec: Vector2, crush := false) -> void:
@@ -670,6 +672,11 @@ var _occlusion_outline_mat: ShaderMaterial
 var _occlusion_clips := {}  # covering visual's instance id -> outline Sprite2D clipped inside it
 var _occlusion_images := {}
 var _occlusion_probe_reach := 0.0  # longest probe offset, computed once in _ready
+# StringName keys for the per-candidate meta reads in _covering_structures:
+# that loop walks the whole occluder group every render frame, so the
+# String -> StringName conversion a literal argument pays is not free there.
+const OCCL_SORT_Y_META := &"occlusion_sort_y"
+const OCCL_RADIUS_META := &"occlusion_radius"
 var weapon_spr: Sprite2D
 var weapon_glow: Sprite2D
 var aura: Sprite2D
@@ -1379,24 +1386,36 @@ func _covering_structures() -> Array:
 	var covering: Array = []
 	if get_tree() == null:
 		return covering
+	# Every scatter prop in every BUILT room is a group member now (the group
+	# is global and rooms are never torn down), and this runs once per RENDER
+	# frame per hero, so the reject ORDER matters: the cheap stamped-meta
+	# tests run first, ahead of the is_visible_in_tree ancestor walk and of
+	# any per-probe transform math. Reading sort_y through has_meta (rather
+	# than get_meta's default) also keeps `global_position` -- an eagerly
+	# evaluated argument -- off every candidate: every live spawn site stamps
+	# the meta, so only a legacy member without it pays the transform read.
+	var here := global_position
 	for candidate in get_tree().get_nodes_in_group("structure_occluders"):
 		var visual := candidate as Node2D
-		if visual == null or not visual.is_visible_in_tree():
+		if visual == null:
 			continue
-		var sort_y: float = float(visual.get_meta(
-			"occlusion_sort_y", visual.global_position.y))
-		if global_position.y >= sort_y:
+		var sort_y: float
+		if visual.has_meta(OCCL_SORT_Y_META):
+			sort_y = float(visual.get_meta(OCCL_SORT_Y_META))
+		else:
+			sort_y = visual.global_position.y
+		if here.y >= sort_y:
 			continue
-		# Every scatter prop in every BUILT room is a group member now, so far
-		# candidates must exit before the per-probe transform math. Members
-		# without the radius meta (legacy spawns) keep the full probe.
-		var occl_radius: float = float(visual.get_meta("occlusion_radius", 0.0))
+		# Members without the radius meta (legacy spawns) keep the full probe.
+		var occl_radius: float = float(visual.get_meta(OCCL_RADIUS_META, 0.0))
 		if occl_radius > 0.0:
 			var reach := occl_radius + _occlusion_probe_reach
-			if global_position.distance_squared_to(visual.global_position) > reach * reach:
+			if here.distance_squared_to(visual.global_position) > reach * reach:
 				continue
+		if not visual.is_visible_in_tree():
+			continue
 		for probe in Balance.PLAYER_OCCLUSION_PROBES:
-			if _visual_alpha_at(visual, global_position + probe) \
+			if _visual_alpha_at(visual, here + probe) \
 					>= Balance.PLAYER_OCCLUSION_ALPHA_THRESHOLD:
 				covering.append(visual)
 				break

@@ -365,6 +365,12 @@ func play(log: Array, speed := 1.0) -> void:
 	finished.emit()
 
 func _run(log: Array) -> void:
+	# The sim finishes a token AFTER the pre-fight spec (home-ground +1/+1, charm
+	# offsets), so seed the chips from its own numbers before the board settles.
+	for e in log:
+		if String(e.get("t", "")) != "build":
+			break
+		_set_stats(int(e.get("uid", 0)), int(e.get("bite", -1)), int(e.get("hide", -1)))
 	await _wait(0.55)
 	for e in log:
 		if not is_instance_valid(self):
@@ -386,6 +392,13 @@ func _run(log: Array) -> void:
 			"summon":
 				_summon(e)
 				await _wait(0.2)
+			"status_use":
+				# burn/rot/preserve move hide with no dmg event of their own; the
+				# statuses that don't (ward, frost) carry no hide to read.
+				if e.has("hide"):
+					_set_hide(int(e["uid"]), int(e["hide"]))
+			"stat_change":
+				_set_stats(int(e.get("uid", 0)), int(e.get("bite", -1)), int(e.get("hide", -1)))
 	await _wait(0.4)
 
 
@@ -486,17 +499,32 @@ func _summon(e: Dictionary) -> void:
 		return
 	var side := int(owner["side"])
 	var kind := String(e.get("kind", ""))
-	var spec := {"kind": kind, "tribe": String(owner["tribe"]), "bite": 2, "hide": 2}
-	var idx := 0
-	for rec in _toks:
-		if rec["side"] == side:
-			idx += 1
-	_make_token(spec, side, mini(idx, 5), int(e.get("uid", 0)))
+	var spec := {
+		"kind": kind, "tribe": String(owner["tribe"]),
+		"bite": int(e.get("bite", 1)), "hide": int(e.get("hide", 1)),
+	}
+	_make_token(spec, side, _free_slot(side), int(e.get("uid", 0)))
 	var last: Dictionary = _toks[_toks.size() - 1]
 	last["node"].modulate = Color(1, 1, 1, 0)
 	var t := create_tween()
 	t.tween_property(last["node"], "modulate", Color.WHITE, 0.22)
 	_pulse(last["home"])
+
+
+# The first pedestal on this side no LIVING token stands on. Fallen tokens keep
+# their record, so counting records instead walks a summon off the board edge.
+func _free_slot(side: int) -> int:
+	var taken := {}
+	for rec in _toks:
+		if int(rec["side"]) == side and not bool(rec["dead"]):
+			taken[rec["home"]] = true
+	var i := 0
+	var slots := int(Balance.FANGMOOT_BOARD)   # the sim caps a side at the warband size
+	while i < slots:
+		if not taken.has(_slot_pos(side, i)):
+			return i
+		i += 1
+	return slots
 
 
 func _play_clip(rec: Dictionary, action: String) -> void:
@@ -511,6 +539,21 @@ func _set_hide(uid: int, hide: int) -> void:
 	rec["hide"] = maxi(0, hide)
 	if is_instance_valid(rec["hide_chip"]):
 		rec["hide_chip"].text = str(rec["hide"])
+
+func _set_bite(uid: int, bite: int) -> void:
+	var rec = _by_uid.get(uid, null)
+	if rec == null:
+		return
+	rec["bite"] = maxi(0, bite)
+	if is_instance_valid(rec["bite_chip"]):
+		rec["bite_chip"].text = str(rec["bite"])
+
+# Write whichever chips the event carried; -1 = "this event didn't say".
+func _set_stats(uid: int, bite: int, hide: int) -> void:
+	if bite >= 0:
+		_set_bite(uid, bite)
+	if hide >= 0:
+		_set_hide(uid, hide)
 
 func _float(pos: Vector2, text: String, col: Color, big := false) -> void:
 	var l := Label.new()

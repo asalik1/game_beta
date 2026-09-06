@@ -1000,7 +1000,7 @@ func drink_potion() -> void:
 ## So a HEAVY hit pierces a gate armed by chip damage; it is still blocked by
 ## a gate armed by another heavy hit (or a deliberate i-frame window), so two
 ## overlapping telegraphs can't double-tap someone instantly.
-func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy := false, pvp_pen := 0.0) -> void:
+func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy := false, pvp_pen := 0.0, pvp_dex := 0.0) -> void:
 	if dead:
 		return
 	if downed or ghost:
@@ -1118,16 +1118,40 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			if uniq_set_k("B", 4, "holy_blunt") > 0.0:
 				holy_charge = minf(atk * Balance.PALADIN_CHARGE_CAP, holy_charge + atk * 0.4)
 	else:
-		if randf() < Stats.eva_curve(eff_eva):
-			game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.7, 0.9, 1.0))
-			game.sfx("blink")
-			_uniq_on_evade(attacker)
-			return
+		# The attacker-less path resolves evasion the SAME way Stats.resolve does
+		# attacker-side: the striker's DEX answers our dodge as a TIER, and TRUE
+		# damage always hits (stats.gd's contract — it ignores all defenses).
+		# pvp_dex crosses the wire beside pvp_pen; it is 0 for hazards, telegraphs
+		# and pvp.gd's forwarded DoT ticks, where tier 0 keeps the plain full dodge.
+		var pvp_grazed := false
+		if dmg_type != "true":
+			var tier := Stats.dex_tier(pvp_dex, eff_eva)
+			if tier < 2 and randf() < Stats.eva_curve(eff_eva):
+				if tier == 0:
+					game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.7, 0.9, 1.0))
+					game.sfx("blink")
+					_uniq_on_evade(attacker)
+					return
+				# A graze that leaks ~nothing must NOT arm the 0.6s hurt gate:
+				# at the bottom of the band graze_through returns 0.0, and a
+				# 0-damage hit that locks out every follow-up for longer than any
+				# a1 cooldown would make low DEX WORSE for the striker than none
+				# at all. Below the floor it reads as the dodge it effectively is.
+				if Stats.graze_through(pvp_dex, eff_eva) < Balance.GRAZE_MIN_THROUGH:
+					game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.7, 0.9, 1.0))
+					game.sfx("blink")
+					_uniq_on_evade(attacker)
+					return
+				pvp_grazed = true  # tier 1: it connects, but only just
+				game.spawn_text(global_position + Vector2(0, -40), "GRAZE", Color(0.7, 0.9, 1.0))
 		if dmg_type != "true":
 			# PvP: the striker's pen crosses the wire and cuts our resistance here
 			# (pvp_pen; 0 for enemy hits, which resolve pen attacker-side above).
 			# This is what makes pen gems answer the melee-res grant in duels.
 			amount *= (1.0 - Stats.res_frac(maxf(0.0, res - pvp_pen)))
+		# The graze is the LAST cut, after res/pen — Stats.resolve's own ordering.
+		if pvp_grazed:
+			amount *= Stats.graze_through(pvp_dex, eff_eva)
 		if dash_guard_time > 0.0 and dmg_type != "true":
 			# Mirrorstep (assassin S weapon): the un-dodgeable AoE (telegraphs,
 			# hazards — the attacker-less path) is softened during the dash.

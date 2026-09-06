@@ -169,6 +169,9 @@ func _build(band: Array, side: int) -> void:
 		for op in t.ability.get("ops", []):
 			if String(op.get("fx", "")) == "preserve_ally":
 				t.preserve_ally_left = _lv(op.get("uses", 1), t.level)
+		# publish the FINAL stats: the home-ground and charm offsets above land
+		# after the pre-fight spec, so a renderer's band numbers are stale.
+		_emit({"t": "build", "uid": t.uid, "side": side, "bite": t.bite, "hide": t.hide})
 		row.append(t)
 		built.append(t)
 	sides[side] = row
@@ -254,7 +257,7 @@ func _strike_damage(t: Tok) -> int:
 		return 0
 	if t.burn:
 		t.hide -= 2
-		_emit({"t": "status_use", "uid": t.uid, "st": "burn"})
+		_emit({"t": "status_use", "uid": t.uid, "st": "burn", "hide": maxi(0, t.hide)})
 		if t.hide <= 0:
 			return 0
 	if t.frost:
@@ -295,6 +298,7 @@ func _ally_ahead_bites(fa: Tok, fb: Tok) -> void:
 		if behind != null:
 			if behind.opal:
 				behind.bite += 1
+				_emit({"t": "stat_change", "uid": behind.uid, "stat": "bite", "val": 1, "perm": false, "bite": behind.bite, "hide": maxi(0, behind.hide)})
 			_fire(behind, "ally_ahead_bites", {"ahead": t})
 	_process_hurts()
 	_resolve_falls()
@@ -314,7 +318,7 @@ func _process_hurts() -> void:
 				_fire(a, "ally_hurt", {"hurt": t})
 		if t.rot > 0 and not t.dead and t.hide > 0:
 			t.hide -= t.rot
-			_emit({"t": "status_use", "uid": t.uid, "st": "rot", "amt": t.rot})
+			_emit({"t": "status_use", "uid": t.uid, "st": "rot", "amt": t.rot, "hide": maxi(0, t.hide)})
 
 # Bounded death cascade: Fall (Preserved check), Slay, AllyFalls.
 func _resolve_falls() -> void:
@@ -347,7 +351,7 @@ func _try_preserve(t: Tok) -> bool:
 	if t.preserve > 0:
 		t.preserve -= 1
 		t.hide = 1
-		_emit({"t": "status_use", "uid": t.uid, "st": "preserved"})
+		_emit({"t": "status_use", "uid": t.uid, "st": "preserved", "hide": t.hide})
 		if t.preserve_ward:
 			t.ward += 1
 		return true
@@ -357,7 +361,7 @@ func _try_preserve(t: Tok) -> bool:
 		if a.preserve_ally_left > 0:
 			a.preserve_ally_left -= 1
 			t.hide = 1
-			_emit({"t": "status_use", "uid": t.uid, "st": "preserved"})
+			_emit({"t": "status_use", "uid": t.uid, "st": "preserved", "hide": t.hide})
 			return true
 	return false
 
@@ -465,7 +469,7 @@ func _op_buff(src: Tok, g: Tok, op: Dictionary) -> void:
 		g.max_hide = maxi(1, g.max_hide + v)
 		if perm:
 			g.perm_hide += v
-	_emit({"t": "stat_change", "uid": g.uid, "stat": stat, "val": v, "perm": perm})
+	_emit({"t": "stat_change", "uid": g.uid, "stat": stat, "val": v, "perm": perm, "bite": g.bite, "hide": maxi(0, g.hide)})
 
 func _op_status(g: Tok, op: Dictionary, level: int) -> void:
 	var st := String(op.get("st", ""))
@@ -530,7 +534,7 @@ func _do_summon(owner: Tok, op: Dictionary) -> void:
 			idx = sides[owner.side].size() - 1
 		sides[owner.side].insert(idx + 1, s)
 		owner.summons_made += 1
-		_emit({"t": "summon", "owner": owner.uid, "uid": s.uid, "kind": s.kind})
+		_emit({"t": "summon", "owner": owner.uid, "uid": s.uid, "kind": s.kind, "bite": s.bite, "hide": s.hide})
 
 
 # ------------------------------------------------------------- targeting

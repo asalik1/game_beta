@@ -1556,8 +1556,12 @@ func _think(delta: float) -> Vector2:
 	# LINE OF SIGHT (2026-07-09): a mob can't pathfind, so it only wakes when
 	# it can trace a clear line to you (ray gated behind the cheap range check
 	# so far/idle mobs never cast). force_aggro (pack cascade, boss adds, dev)
-	# skips sight entirely — it already knows.
-	var can_see: bool = dist <= aggro_range * Balance.MOB_AGGRO_KEEP and _has_los(player)
+	# skips sight entirely — it already knows, so the ray is short-circuited
+	# away too (both readers below are already gated on `not force_aggro`;
+	# can_see therefore means "can see AND cares", and reads false for every
+	# force_aggro mob).
+	var can_see: bool = not force_aggro \
+		and dist <= aggro_range * Balance.MOB_AGGRO_KEEP and _has_los(player)
 	if not alerted and not force_aggro:
 		if dist > aggro_range or not can_see:
 			return _drift_home()
@@ -1841,13 +1845,21 @@ func _tick_traits(delta: float) -> void:
 				game.sfx("blink", 0.7)
 		if pounce_time > 0.0:
 			pounce_time -= delta
-			var prey: Player = _get_target()
-			if pounce_time <= 0.0 and is_instance_valid(prey):
-				# Landed: if the prey is NOT here, it overshot — expose it.
-				if global_position.distance_to(prey.global_position) > 96.0:
+			if pounce_time <= 0.0:
+				# The crouch tell ends WITH the leap — drop it unconditionally
+				# (prey freed mid-leap must not strand the purple), then re-tint
+				# only if it landed nowhere near the prey.
+				sprite.modulate = base_mod
+				var prey: Player = _get_target()
+				if is_instance_valid(prey) and global_position.distance_to(prey.global_position) > 96.0:
+					# Landed: the prey is NOT here, it overshot — expose it.
 					pounce_whiff = Balance.MOB_POUNCE_WHIFF
 					sprite.modulate = Color(1.6, 1.6, 0.5)  # dazed-yellow: punish me
-		pounce_whiff = maxf(0.0, pounce_whiff - delta)
+					_net_tell(Color(1.6, 1.6, 0.5), Balance.MOB_POUNCE_WHIFF)
+		if pounce_whiff > 0.0:
+			pounce_whiff = maxf(0.0, pounce_whiff - delta)
+			if pounce_whiff <= 0.0:
+				sprite.modulate = base_mod  # punish window closed: stop advertising it
 	# --- cooldown-only ticks for the on-demand traits ---
 	if traits.has("web"):     web_cd = maxf(0.0, web_cd - delta)
 	if traits.has("snare"):   snare_cd = maxf(0.0, snare_cd - delta)

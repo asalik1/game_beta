@@ -415,7 +415,16 @@ measure that separates a sliced hindquarter (19-50%) from a leg, tail or flame T
 still a WARN, e.g. saint_varo's blade and the spider's legs). Four strips already cut on main
 are listed in `EDGECUT_KNOWN` so a clean tree reads 0 FAIL.
 
-Three rules went into CLAUDE.md: the EDGECUT split; **never hand-assemble generated art** (his
+**He then overruled the split itself** (2026-09-06): *"'a weapon reaching the edge mid-swing is
+normal' — not true / if a weapon is cut off outside the frame that is a regression too"*. So
+EDGECUT FAILs on ANY clip, not just locomotion. Corpus effect: one more of mine
+(ridge_deserter's death clip, whose lying body the placement clamp had pushed flush — the
+installer now keeps a real 4px margin instead of clamping to the boundary) and 58 pre-existing
+strips, almost all legacy 4-frame death strips whose lying body reaches the edge. Those 58 are
+listed in `EDGECUT_KNOWN` as DEBT, not as accepted art, so a clean tree reads 0 FAIL and a new
+cut cannot hide. Tiles and projectiles are excluded by class: they fill their frame by design.
+
+Three rules went into CLAUDE.md: the EDGECUT rule; **never hand-assemble generated art** (his
 words: "ai is incapable of slicing images and piecing them together" — if a row does not slice
 cleanly, re-roll it, never repair it); and **a regen must beat what it replaces or it does not
 ship**, with reverting always available.
