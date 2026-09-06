@@ -341,6 +341,51 @@ The 4 families the scan still flags are the base paladin's attack2/attackb/cast/
 W facings are authored, not mirrored: with light from the top-left a figure facing west shows
 its lit side, so 15-20% is intentional. Documented in the tool, not "fixed".
 
+## 16. Code sweep: 22 confirmed defects, 19 fixes (2026-09-06)
+
+A read-only sweep over eight subsystems produced 57 candidate findings; two independent
+adversarial verifiers judged each and 35 were refuted. The 22 survivors were fixed one file
+at a time (so no two agents touched the same file) and every fix was re-read by a fresh
+reviewer against the diff: 19 fix rows, 19 sound reviews, FULL SUITE AUTOTEST PASS 172
+sections. Findings list `art_src/_qa_final/bugsweep_confirmed.json`, fix+review record
+`art_src/_qa_final/bugfix_results.json`, commit b8bf634.
+
+Two of them are defects in THIS branch's own visual work:
+
+- **art.gd `gait_shape()`** called the ten Act-1 bosses that got new directional walks (vargoth,
+  korrag, sexton, hrolgar, auroch_minotaur, rotmaw, kaethra, echo, stormmouth, nullwarden)
+  "glide" bodies, because the fallback reads MOB_IDLE_ONLY_LOCOMOTION -- and `_render_tail` gates
+  the whole stride-locked juice block and the footfall block on `_gait_shape != "glide"`. So the
+  09-03 chest rise, foot dust and boss stomp never fired on any of them, and they took half the
+  travel lean. `make()` already had the same override for the STRIP path; gait_shape was the one
+  place that did not get it.
+- **install_death_row.py** pasted a frame past its own cell (only the left edge was clamped) and
+  PIL composites out-of-range silently, so the overhang was baked into the NEXT frame. echo's
+  death clip shipped with a 120px fragment of frame 4 sitting in frame 5. Both edges clamped;
+  a scan of every death strip found echo was the only case (commit 9d8c52d).
+
+The rest, by file:
+
+- **enemy.gd** — Co-op mirror never restores the flat idle for a directional-walk boss
+- **enemy.gd** — _lean low-pass had no is_finite guard -- one bad frame latched sprite.rotation = NaN forever
+- **enemy.gd** — Mirror stride clock ignored the host's speed ratio -- slowed and wandering mobs skated on a guest
+- **enemy.gd** — Death reset missed pounce_time and the boss tell pose
+- **enemy.gd** — Elite promotion rescaled the body but not the HP bar, ground AO or contact shadow
+- **enemy.gd** — A guest's damage rendered as the host's own big number
+- **player.gd** — Cast theme payload survives the windup await (per-cast snapshot/restore)
+- **player.gd** — Fire-on-move walk no longer inherits the archer's due-south bow bias
+- **player.gd** — Co-op desktop overlay input gate now actually gates
+- **game_base.gd** — Telegraph comments claimed a shape-following hit test that does not exist
+- **game_world.gd** — Structure lights read the room they stand in, not the player's room
+- **game_world.gd** — Death reset respawns a social room's promoted ELITE
+- **codex.gd** — Codex bestiary misses the Moonfen boss (first_howl) because it only walks Story.CHAPTER_LIST
+- **codex.gd** — 'Folk of the Vale' omitted all 31 social-room wanderers
+- **player_kit_mage.gd** — Crystal Archmage twin Firebolt leaks a floating cast focus (and can index out of range) when twin/skin changes across the windup await
+- **player_kit_archer.gd** — Archer windup now routes through swing_delay() so the loose tracks fit_action_clip's haste
+- **game_flow.gd** — Weekly-challenge claim ledger is never saved (Renown is), so the weekly reward is re-farmable
+- **save.gd** — next_free_slot()/exists() ignore the .bak that read()/list() resurrect
+- **art.gd** — gait_shape() called every Act-1 directional-walk boss a 'glide' body
+
 ## Open / not done
 
 - **Mage E column DONE**: anim/walk/attack/cast E regenerated as a true right
