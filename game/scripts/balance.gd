@@ -2604,6 +2604,13 @@ const GRAZE_DAMAGE := 0.5      # (legacy flat graze; superseded by the graze CUR
 # Convex, so the final stretch to full-cancel is the steepest (the "5->6 gems"
 # payoff). through = ((ratio - GRAZE_RATIO)/(1 - GRAZE_RATIO)) ^ this.
 const GRAZE_CURVE_EXP := 1.7
+# Floor under the graze on the ATTACKER-LESS path (2026-09-06): a hit that lands
+# arms the 0.6 s hurt gate, and at the bottom of the band graze_through returns
+# 0.0 -- a 0-damage graze would lock out every follow-up for longer than any a1
+# cooldown, making a LITTLE attacker DEX strictly worse for the striker than
+# none at all. Below this fraction the graze reads as the dodge it effectively
+# is (no damage, no gate), so DEX is monotonic all the way up the band.
+const GRAZE_MIN_THROUGH := 0.06
 
 const CAP_LIFESTEAL := 0.35  # knee on the TOTAL incl. surges/berserk/pact
 const CAP_COMBO := 0.30
@@ -3427,6 +3434,14 @@ const ROAD_COURIER_ROB_GOLD := 130 # the satchel, if you cut the strap (base, sc
 # the stake back doubled (net +stake) + a rare gem; lose forfeits the stake.
 const ROAD_WAGER_STAKE_BASE := 60  # gold on the table, scaled by daily_gold_mult(level)
 const ROAD_WAGER_GEM_CHANCE := 0.25 # a clean read also drops a gem this often
+
+# ---------------------------------------------------------------- sfx bank ---
+# Levels for the pooled one-shot player (game_base.sfx). Callers pass a
+# vol_db OFFSET from the base. `cutoff > 0` fades a long recording out (the
+# real wolf howl) instead of letting it run under the fight.
+const SFX_BASE_DB := -8.0          # base level every one-shot plays at
+const SFX_CUTOFF_DUCK_DB := -40.0  # level the cutoff fade lands on
+const SFX_CUTOFF_FADE := 0.4       # seconds the cutoff fade takes
 
 # ------------------------------------------------------------ loot fanfare ---
 # Rarity is audio-visual (retention roadmap #3): every gear drop plays a

@@ -570,7 +570,10 @@ func spawn_victory_gates(zi: int = -1) -> void:
 		var gate_world: Vector2 = c + (d[2] as Vector2)
 		var gate_node := _add_structure("capital_portal_story", gate_world)
 		gate_node.modulate = d[3]
-		var gate_h: float = float(gate_node.get_child(0).get_meta("hpx", 200.0))
+		var gate_h := 200.0
+		var gate_base := _base_sprite_of(gate_node)
+		if gate_base != null:
+			gate_h = float(gate_base.get_meta("hpx", 200.0))
 		var hotspot := _make_npc("book", gate_world + Vector2(0, 34),
 			String(d[1]), func() -> void:
 				_gate_use(kind), "", Balance.PROP_HOTSPOT_REACH)
@@ -2192,6 +2195,15 @@ func _groupable(name: String) -> bool:
 		"pebble", "cattail", "frost_reeds"]
 
 
+## "tree" in the name is not enough to make a prop a CANOPY tree: `tree_stump`
+## is a knee-high SOLID_DECOR prop, and the raw substring test handed it an
+## oak's ground shadow (4x2.4 under a 42px prop — skipping the small-prop
+## shrink written for it), the tree base line (+38 instead of +22) and wind
+## sway a stump has no leaves to catch.
+func _canopy_tree(base: String) -> bool:
+	return base.contains("tree") and not Terrains.SOLID_DECOR.has(base)
+
+
 ## Living scenery shares one restrained wind language. The earlier pass only
 ## moved large trees plus two flower types, leaving reed beds and undergrowth
 ## frozen like cardboard beneath a moving canopy.
@@ -2200,7 +2212,7 @@ func _groupable(name: String) -> bool:
 ## (owner, spore/marsh rooms). Wind is for foliage — trees, bushes, grass,
 ## flowers, reeds.
 func _wind_scenery(name: String) -> bool:
-	return name.contains("tree") or name.begins_with("bush") \
+	return _canopy_tree(name) or name.begins_with("bush") \
 		or name.begins_with("grass") or name in ["flower", "cattail", "frost_reeds"]
 
 
@@ -2232,7 +2244,7 @@ func _prop_art_rect(name: String, pos: Vector2) -> Rect2:
 		* Balance.SCENERY_SCALE_JITTER.y / maxf(1.0, native.x)
 	var w := native.x * s
 	var h := native.y * s
-	var is_tree := family_base.contains("tree")
+	var is_tree := _canopy_tree(family_base)
 	var bottom: float
 	if Balance.SCENERY_RENDER_WIDTH.has(family_base):
 		bottom = 38.0 if is_tree else 22.0
@@ -2242,20 +2254,32 @@ func _prop_art_rect(name: String, pos: Vector2) -> Rect2:
 		bottom = h * 0.5
 	return Rect2(pos.x - w * 0.5, pos.y + bottom - h, w, h)
 
-## Room-local art rect of a placed building/structure body's BASE sprite (the
-## first child carrying wpx/hpx meta), for the canopy-vs-front test.
-func _front_of(body: Node2D, local_pos: Vector2) -> Dictionary:
+## A structure/prop body's BASE sprite: the first child carrying wpx/hpx meta.
+## NEVER get_child(0) — since the 2026-08-19 cast-shadow pass the shadow copy
+## is built BEFORE the base sprite and hoisted to index 0, and it carries no
+## wpx/hpx, so a get_child(0).get_meta("hpx", <fallback>) read silently
+## returned the fallback for every structure.
+func _base_sprite_of(body: Node2D) -> Node2D:
 	for c in body.get_children():
 		if (c is Sprite2D or c is AnimatedSprite2D) and c.has_meta("wpx"):
-			var w := float(c.get_meta("wpx"))
-			var h := float(c.get_meta("hpx"))
-			# Structure sprites keep their origin on the sort baseline and draw
-			# the art through `offset` (texture px, pre-scale) — fold it back in
-			# so the front rect covers the pixels, not the anchor.
-			var cp: Vector2 = (c as Node2D).position \
-				+ Vector2(c.get("offset")) * (c as Node2D).scale
-			return {"pos": local_pos, "rect": Rect2(local_pos.x + cp.x - w * 0.5,
-				local_pos.y + cp.y - h * 0.5, w, h)}
+			return c as Node2D
+	return null
+
+
+## Room-local art rect of a placed building/structure body's BASE sprite,
+## for the canopy-vs-front test.
+func _front_of(body: Node2D, local_pos: Vector2) -> Dictionary:
+	var front_spr := _base_sprite_of(body)
+	if front_spr != null:
+		var w := float(front_spr.get_meta("wpx"))
+		var h := float(front_spr.get_meta("hpx"))
+		# Structure sprites keep their origin on the sort baseline and draw
+		# the art through `offset` (texture px, pre-scale) — fold it back in
+		# so the front rect covers the pixels, not the anchor.
+		var cp: Vector2 = front_spr.position \
+			+ Vector2(front_spr.get("offset")) * front_spr.scale
+		return {"pos": local_pos, "rect": Rect2(local_pos.x + cp.x - w * 0.5,
+			local_pos.y + cp.y - h * 0.5, w, h)}
 	return {"pos": local_pos, "rect": Rect2(local_pos, Vector2.ZERO)}
 
 ## Structures whose BASE is itself a tree (village_grove, darkwood_hollow,
@@ -2272,6 +2296,20 @@ func _canopy_conflict(rect: Rect2, pos: Vector2, fronts: Array) -> bool:
 		if pos.y >= (fr["pos"] as Vector2).y + CANOPY_FRONT_MARGIN:
 			continue  # stands in front: an overhanging crown is the natural read
 		if rect.intersects(fr["rect"] as Rect2):
+			return true
+	return false
+
+
+## EXCLUSION test: true when a ROOM-LOCAL point falls inside any reservation
+## (river band, hazard pool, corner bite, authored-landmark clearance). Every
+## placement loop runs through this — clump/group MEMBERS included: they used
+## to test only their CENTRE, and a jitter/offset that reaches further than the
+## margin the accepted centre had could plant them (with a collider) back
+## inside the exclusion the centre was pushed out of.
+func _reserved_blocks(reserved: Array, local_pos: Vector2) -> bool:
+	for reservation in reserved:
+		var reserve: Dictionary = reservation
+		if local_pos.distance_to(reserve["pos"]) < float(reserve["radius"]):
 			return true
 	return false
 
@@ -2482,7 +2520,10 @@ func _spawn_scenery(zi: int) -> void:
 			unique_props_seen[String(unique_name)] = true
 		# The structure's rendered height (base sprite meta) — the prompt
 		# anchors ON the art, not at the invisible stand-point below it.
-		var landmark_h: float = float(landmark_node.get_child(0).get_meta("hpx", 120.0))
+		var landmark_h := 120.0
+		var landmark_base := _base_sprite_of(landmark_node)
+		if landmark_base != null:
+			landmark_h = float(landmark_base.get_meta("hpx", 120.0))
 		# Every foreground landmark owns typed interaction stations. Most are
 		# real service actions; only true monuments/lookouts use inspect text.
 		# Multiple stations may be spaced across one facade (the Archive).
@@ -2581,13 +2622,7 @@ func _spawn_scenery(zi: int) -> void:
 			rng.randf() < Balance.SCENERY_WALL_HUG)
 		var dcenter: Vector2 = origin + (dsp[0] as Vector2)
 		var dside: int = dsp[1]
-		var decor_blocked := false
-		for reservation in reserved:
-			var reserve: Dictionary = reservation
-			if (dcenter - origin).distance_to(reserve["pos"]) < float(reserve["radius"]):
-				decor_blocked = true
-				break
-		if decor_blocked:
+		if _reserved_blocks(reserved, dcenter - origin):
 			continue
 		for k in dclump:
 			var dpos := dcenter
@@ -2595,6 +2630,11 @@ func _spawn_scenery(zi: int) -> void:
 				dpos = dcenter + _clump_jitter(rng, dside)
 				dpos.x = clampf(dpos.x, origin.x + 70.0, origin.x + pw - 70.0)
 				dpos.y = clampf(dpos.y, origin.y + 80.0, origin.y + ph - 80.0)
+				# `reserved` is room-local; the jitter can carry a member back into
+				# the river/pool/bite the centre cleared (and a SOLID_DECOR member
+				# takes a collider in there).
+				if _reserved_blocks(reserved, dpos - origin):
+					continue
 			var decor_base := Terrains.prop_base(decor_name)
 			# Decor with real VOLUME (a domed cap, a stump, a post) spawns as a
 			# small OBSTACLE — collider + y-sort + shadow — instead of a
@@ -2651,10 +2691,8 @@ func _spawn_scenery(zi: int) -> void:
 				if bpos.distance_to(other) < 260.0:
 					bok = false
 					break
-			for reservation in reserved:      # never build on the river or a hazard
-				if bpos.distance_to(reservation["pos"]) < float(reservation["radius"]):
-					bok = false
-					break
+			if _reserved_blocks(reserved, bpos):   # never build on the river or a hazard
+				bok = false
 			if bok:
 				placed.append(bpos)
 				var bnode := _add_building(String(bname), origin + bpos)
@@ -2686,10 +2724,8 @@ func _spawn_scenery(zi: int) -> void:
 				if spos.distance_to(other) < 240.0:
 					sok = false
 					break
-			for reservation in reserved:      # never place the landmark on water or a hazard
-				if spos.distance_to(reservation["pos"]) < float(reservation["radius"]):
-					sok = false
-					break
+			if _reserved_blocks(reserved, spos):   # never place the landmark on water or a hazard
+				sok = false
 			if sok:
 				placed.append(spos)
 				var landmark_node := _add_structure(String(sname), origin + spos)
@@ -2732,19 +2768,14 @@ func _spawn_scenery(zi: int) -> void:
 				continue  # the road / east-west door lane stays open
 			if absf(pos.x - lane.x) < 130.0:
 				continue  # the north-south door lane stays open
-			var ok := true
-			for reservation in reserved:
-				var reserve: Dictionary = reservation
-				if pos.distance_to(reserve["pos"]) < float(reserve["radius"]):
-					ok = false
-					break
+			var ok := not _reserved_blocks(reserved, pos)
 			for other in placed:
 				if pos.distance_to(other) < Balance.SCENERY_MIN_SPACING:
 					ok = false
 					break
 			# A tree may not stand BEHIND a building/landmark its crown would
 			# overlap (the front would cut a rectangle out of the canopy).
-			if ok and prop_base.contains("tree") and not fronts.is_empty() \
+			if ok and _canopy_tree(prop_base) and not fronts.is_empty() \
 					and _canopy_conflict(_prop_art_rect(prop, pos), pos, fronts):
 				ok = false
 			if ok:
@@ -2767,13 +2798,17 @@ func _spawn_scenery(zi: int) -> void:
 					continue
 				if absf(mpos.x - lane.x) < 130.0:
 					continue
+				# The jitter reaches further than the clearance the accepted centre
+				# had, so a member can land back inside a reservation.
+				if _reserved_blocks(reserved, mpos):
+					continue
 				var okc := true
 				for other in placed:
 					if mpos.distance_to(other) < intra:
 						okc = false
 						break
 				# Clump members honour the same canopy-vs-front rule as the centre.
-				if okc and prop_base.contains("tree") and not fronts.is_empty() \
+				if okc and _canopy_tree(prop_base) and not fronts.is_empty() \
 						and _canopy_conflict(_prop_art_rect(prop, mpos), mpos, fronts):
 					okc = false
 				if not okc:
@@ -2813,17 +2848,14 @@ func _spawn_scenery(zi: int) -> void:
 			# clearance keeps accent groups off its facade too (2026-08-17: a
 			# brazier stand landed inside the Sable Hall's clearance and sealed
 			# the corridor behind it). Empty in procedural rooms — no-op there.
-			for reservation in reserved:
-				var reserve: Dictionary = reservation
-				if acenter.distance_to(reserve["pos"]) < float(reserve["radius"]):
-					aok = false
-					break
+			if _reserved_blocks(reserved, acenter):
+				aok = false
 			for other in placed:
 				if acenter.distance_to(other) < Balance.SCENERY_MIN_SPACING:
 					aok = false
 					break
 			# Tree accents (tree_gnarled and kin) obey canopy-vs-front too.
-			var accent_tree := Terrains.prop_base(aname).contains("tree")
+			var accent_tree := _canopy_tree(Terrains.prop_base(aname))
 			if aok and accent_tree and not fronts.is_empty() \
 					and _canopy_conflict(_prop_art_rect(aname, acenter), acenter, fronts):
 				aok = false
@@ -2843,6 +2875,10 @@ func _spawn_scenery(zi: int) -> void:
 						if apos.y > lane.y - 90.0 and apos.y < lane.y + 90.0:
 							continue
 						if absf(apos.x - lane.x) < 130.0:
+							continue
+						# Members are thrown up to `group_radius` off the centre —
+						# re-roll one the centre's clearance does not cover.
+						if _reserved_blocks(reserved, apos):
 							continue
 						var member_ok := true
 						for other in placed:
@@ -2989,7 +3025,7 @@ func _add_obstacle(sprite_name: String, pos: Vector2, visual_variation := 1.0) -
 	var family_base := Terrains.prop_base(sprite_name)
 	var visual_name := Terrains.prop_variant(
 		sprite_name, int(pos.x * 31.0 + pos.y * 17.0))
-	var is_tree := family_base.contains("tree")
+	var is_tree := _canopy_tree(family_base)
 	var body := StaticBody2D.new()
 	body.position = pos
 	body.set_meta("prop", sprite_name)   # what stands here (tests / canopy audit)

@@ -103,6 +103,9 @@ func _tick_rival_riders(delta: float) -> void:
 	foe.res_shred_t = maxf(0.0, foe.res_shred_t - delta)
 	if foe.res_shred_t <= 0.0:
 		foe.res_shred = 0.0
+	foe.brittle_t = maxf(0.0, foe.brittle_t - delta)
+	if foe.brittle_t <= 0.0:
+		foe.brittle = 0
 	var sess: Node = game.net_session()
 	if foe.burn_time > 0.0:
 		foe.burn_time -= delta
@@ -138,6 +141,7 @@ func _clear_rival_riders() -> void:
 	foe.slow_time = 0.0
 	foe.stun_time = 0.0
 	foe.brittle = 0
+	foe.brittle_t = 0.0
 	foe.crush_t = 0.0
 	foe.res_shred = 0.0
 	foe.res_shred_t = 0.0

@@ -221,8 +221,8 @@ const CONVOS := {
 		"r1": {"who": "A Road-Worn Traveller",
 			"text": "Don't stop on my account, I'm not stopping either. Third time I've moved this year. You learn the trick of it: you go when the birds do, not when the neighbours do. Neighbours argue. Birds just leave.",
 			"variants": [
-				{"band": "tempted", "text": "...I'll walk on the other side of the road, if it's all the same. No offence meant. I've got very good at reading which way a thing is about to go, and that's the whole reason I'm still walking."},
 				{"flag": "ch2_road_met", "text": "Still moving. Still ahead of it. That's the entire strategy and I'll thank you not to improve on it.", "next": ""},
+				{"band": "tempted", "text": "...I'll walk on the other side of the road, if it's all the same. No offence meant. I've got very good at reading which way a thing is about to go, and that's the whole reason I'm still walking."},
 			],
 			"choices": [
 				{"text": "\"Where do you stop, when you've run out of west?\"",
@@ -263,8 +263,8 @@ const CONVOS := {
 		"t1": {"who": "The Tracker",
 			"text": "I sell the edge. Where the blight stopped last week, where it is this morning, how fast. Accord buys it, Cinderborn buys it, and a Wildfang runner buys it with meat because they've no coin and better manners than either. Same map, three prices. I've no politics. I've got a good pair of eyes and a bad opinion of everyone.",
 			"variants": [
-				{"band": "steady", "text": "You're the quiet one, then. My line of work, you learn to read what a person is carrying. Yours sits still. That's worth a discount and I'll not be explaining why."},
 				{"flag": "ch2_tracker_met", "text": "Edge moved again. North, faster than a person walks. I've stopped selling that particular figure. Nobody was buying it twice.", "next": ""},
+				{"band": "steady", "text": "You're the quiet one, then. My line of work, you learn to read what a person is carrying. Yours sits still. That's worth a discount and I'll not be explaining why."},
 			],
 			"choices": [
 				{"text": "\"What does the edge do that you haven't sold anyone yet?\"",

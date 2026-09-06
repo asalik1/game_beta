@@ -386,6 +386,68 @@ The rest, by file:
 - **save.gd** — next_free_slot()/exists() ignore the .bak that read()/list() resurrect
 - **art.gd** — gait_shape() called every Act-1 directional-walk boss a 'glide' body
 
+## 17. Owner's first defect batch (2026-09-06) — nine strips reverted, the gate that missed them fixed
+
+He flagged six by eye. What each turned out to be:
+
+| his call | verdict |
+|---|---|
+| slag_hound legs cut off | **CONFIRMED, mine.** Every frame's hindquarters sliced flat against the cell edge |
+| skeleton_rogue "manual slicing" | **CONFIRMED, mine.** The wave-5 re-roll reads pieced together; reverted |
+| skeleton walk a regression | **CONFIRMED, mine.** Reverted |
+| skeleton_mage walk unused, both versions bad | **CORRECT on both counts.** It is in MOB_IDLE_ONLY_LOCOMOTION, so the walk NEVER plays; my tone-match was dead art and is reverted |
+| sleepwalker legs do not cross | **REAL, but not mine.** Byte-identical to main apart from a recentre — pre-existing 4-frame art |
+| sluice_lurker does not walk | **REAL, but not mine.** Same: unchanged from main apart from a recentre |
+
+Measuring his slag_hound catch found the whole class. Six quadruped/arachnid walk regens
+(cinderhide, fangmaw, slag_hound, flux_hound, vent_skitter, rime_wolf) and grove_horror's
+recentred anim + walk ship a body sliced flat against the cell boundary — 19-50% of the body
+height sitting on the cut, against 0 on main. Nine strips reverted to main, backups in
+`art_src/_backups/owner_reverts_2026-09-06/`.
+
+**Why the gate missed it.** Every one was sitting in `verify_art` as `[EDGECUT] ... content
+touches a left/right cell edge` — a WARN, in the pile CLAUDE.md's own triage says to ignore
+because a weapon reaching the cell edge at the extreme of a swing is benign. That is right for
+an ACTION strip and wrong for a walk: the renderer normalises a locomotion strip by its own
+cell, so anything outside it is gone. EDGECUT is now a FAIL on `*_walk*`/`*_anim*` when the
+longest CONTIGUOUS run of body on a boundary column reaches 18% of the body height — the
+measure that separates a sliced hindquarter (19-50%) from a leg, tail or flame TIP (2-14%,
+still a WARN, e.g. saint_varo's blade and the spider's legs). Four strips already cut on main
+are listed in `EDGECUT_KNOWN` so a clean tree reads 0 FAIL.
+
+Three rules went into CLAUDE.md: the EDGECUT split; **never hand-assemble generated art** (his
+words: "ai is incapable of slicing images and piecing them together" — if a row does not slice
+cleanly, re-roll it, never repair it); and **a regen must beat what it replaces or it does not
+ship**, with reverting always available.
+
+## 18. Unused art: 154 walk files the engine can never show (2026-09-06)
+
+Owner, after the skeleton_mage finding: *"skeleton mage unused art being surfaced is a
+concern wondering what other unused art is causing agents to not realize and waste time on
+them"*. Measured, as `tools/art/unused_art_scan.py` (report: `art_src/_qa_final/unused_art.csv`).
+
+**154 unreachable walk files over 22 subjects**, all decided from the engine's own tables:
+
+- `MOB_IDLE_ONLY_LOCOMOTION` blanks BOTH `_strip_walk` and `_dir_walk`, so every
+  `<sprite>_walk*.png` for those ten bodies is dead art: **58 files** (mummy, mummy_mage,
+  null_acolyte, skeleton_mage, skeleton_warrior, static_caller each carry a full 9-file set
+  nothing can play; cold_pilgrim, rat_mage, stormcult, vale_mourner one each).
+- `MOB_FLAT_WALK_LOCOMOTION` blanks only the 8-direction set, so the flat walk plays and the
+  eight facings do not: **96 files** over twelve subjects (bandit_scout, elf_druid, elf_ranger,
+  orc, orc_rogue, royal_knight, skeleton, skeleton_rogue, spider, stone_broken, vow_sentinel,
+  zombie).
+- A `BOSS_DIRECTIONAL_WALK` boss reads `_walk_codex_<dir>`, so its plain `_walk` is the dead one.
+
+This is exactly what burned wave 3: four subjects regenerated into the first class, invisible,
+and three of the four had drifted off-model by the time anyone could have seen them. The scan
+is now the first step of any art batch, and `gait_briefs.py` refuses a suppressed subject
+outright (section 14).
+
+A second class, enemies no zone table spawns, is in the tool behind `--placement` and is
+deliberately marked NOISY: it reads zone tables textually, so a kind spawned from code reads
+as unplaced. Eleven names come back today; treat each as a question for the owner, not a
+verdict, and use `fidelity_audit --entities` (a live engine dump) as the authority.
+
 ## Open / not done
 
 - **Mage E column DONE**: anim/walk/attack/cast E regenerated as a true right

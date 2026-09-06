@@ -136,7 +136,29 @@ def ability_tokens() -> set:
                 pass
         _ability_tokens_cache = names - set(CLIPS)
     return _ability_tokens_cache
+def _edge_run(sub, frame_width) -> int:
+    """Longest contiguous run of opaque pixels on either boundary column."""
+    best = 0
+    for col in (sub[:, 0], sub[:, frame_width - 1]):
+        run = 0
+        for v in col:
+            run = run + 1 if v else 0
+            best = max(best, run)
+    return best
+
+
 A_SOLID = 8            # alpha above this counts as body content
+# EDGECUT severity split (2026-09-06). A few pixels of a tail tip or a cloak
+# hem grazing the boundary is inherited framing and has always been benign; a
+# hindquarter sliced flat against it is a shipped defect. Six quadruped walk
+# regens crossed this line (89-2403px of body on the cut) while sitting in the
+# WARN pile nobody is required to read, until the owner caught them by eye.
+EDGECUT_FAIL_RUN = 0.18  # fraction of body height, longest contiguous run on the cut
+# Strips that were ALREADY cut on main before this gate existed (2026-09-06
+# corpus scan). They are pre-existing art debt, not a regression to block on;
+# listing them keeps a clean tree at 0 FAIL so a NEW cut cannot hide in noise.
+# Remove a name here the moment its art is re-made.
+EDGECUT_KNOWN = {"sewer_flow_anim", "cat_anim", "flux_hound_walk", "frog_anim"}
 ANCHOR_CX = 0.08       # centroid-x drift, fraction of frame width (anim/walk)
 ANCHOR_CX_RUN = 0.10   # runs sway more legitimately (airborne stride)
 ANCHOR_CY = 0.08       # centroid-y drift, fraction of cell height
@@ -315,6 +337,16 @@ def _frame_metrics(a: np.ndarray, frame_width: int) -> list[dict | None]:
             "xmin": int(xs.min()), "xmax": int(xs.max()),
             "left": bool((xs <= 0).any()),
             "right": bool((xs >= frame_width - 1).any()),
+            # how MUCH of the body sits on the cut, not just whether it does:
+            # a tail tip grazing the boundary is the benign inherited case, a
+            # sliced hindquarter is not (2026-09-06).
+            "edge_px": int((xs <= 0).sum() + (xs >= frame_width - 1).sum()),
+            # longest CONTIGUOUS vertical run of body on a boundary column,
+            # as a fraction of the body height: this is what separates a
+            # hindquarter sliced flat (19-50%) from a leg, tail or flame TIP
+            # grazing the cut (2-14%). Calibrated 2026-09-06 on the six walk
+            # regens the owner caught against the tips already in the tree.
+            "edge_run": _edge_run(region > A_SOLID, frame_width) / max(1, int(ys.max() - ys.min() + 1)),
             "vgap": int(gaps.max()) - 1 if len(gaps) else 0,
             "hgap": int(xgaps.max()) - 1 if len(xgaps) else 0,
         })
@@ -698,9 +730,31 @@ def check_file(png: Path) -> None:
                                 "<name> --motion swirl|pulse (ignore if the whole body is "
                                 "meant to move, e.g. cloth/energy)")
                 else:
-                    WARN.append(f"[EDGECUT] {rel}: f{cut} content touches a left/right cell "
-                                "edge -- limb clipped at the frame cut, or bleed from the "
-                                "neighbour cell")
+                    # EDGECUT is a WARN on ACTION clips by design: a weapon reaching
+                    # the cell edge at the extreme of a swing is the documented
+                    # benign class (CLAUDE.md's WARN triage). On a LOCOMOTION or
+                    # IDLE strip it never is -- the whole body has to live inside
+                    # the cell, every frame, because the renderer normalises the
+                    # strip by that cell. Six quadruped/arachnid walk regens
+                    # shipped with the tail or hindquarters sliced flat against
+                    # the boundary (owner catch 2026-09-06: "slag hound its legs
+                    # appear cut off"), and every one of them was sitting right
+                    # here as a WARN nobody was required to read. So: FAIL on a
+                    # walk/idle strip, WARN on anything else.
+                    stem = Path(rel).stem
+                    locomotion = "_walk" in stem or "_anim" in stem
+                    worst = max((m["edge_run"] for m in live if m), default=0.0)
+                    msg = (f"[EDGECUT] {rel}: f{cut} content touches a left/right cell "
+                           "edge -- limb clipped at the frame cut, or bleed from the "
+                           "neighbour cell")
+                    if locomotion and worst >= EDGECUT_FAIL_RUN and stem not in EDGECUT_KNOWN:
+                        FAIL.append(msg + f" ({worst:.0%} of the body height sits on the "
+                                    "cut in the worst frame) "
+                                    "-- a LOCOMOTION/IDLE body must fit its cell "
+                                    "(re-install with a real width fit, or keep the "
+                                    "outgoing strip)")
+                    else:
+                        WARN.append(msg)
             # FEETSLIDE (action clips: swings/casts/boss abilities -- see the
             # constant). A stand-and-attack should animate IN PLACE. Feet drift while
             # the bbox CENTER holds == the body was slid to keep a mechanically-

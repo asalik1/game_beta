@@ -5,6 +5,13 @@ uniform vec3 chroma_primary = vec3(0.1, 0.1, 0.1);
 uniform vec3 chroma_trim    = vec3(0.25, 0.25, 0.25);
 uniform vec3 chroma_accent  = vec3(0.69, 0.69, 0.69);
 uniform float original_keep : hint_range(0.0, 1.0) = 0.08;
+// The body colour the game paints on the sprite (rage / downed / ghost). It
+// CANNOT ride on the node's modulate here: this shader replaces the texture
+// RGB outright, and modulate.rgb is unrecoverable from the premultiplied input
+// (dividing it back out explodes on near-black texels -- see the canvas_item
+// trap in CLAUDE.md, "reuse ONLY COLOR.a"). So the CPU writes it here instead
+// whenever this material is live. 1,1,1 = untinted.
+uniform vec3 body_tint = vec3(1.0);
 
 vec3 rgb_to_hsv(vec3 c) {
 	vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
@@ -29,6 +36,12 @@ void fragment() {
 	bool is_alpha_masked = col.a > 0.995 && col.a < 0.999;
 	bool is_protected = is_warm_skin || is_alpha_masked;
 
+	// Incoming COLOR is PREMULTIPLIED (modulate x TEXTURE), so the node's
+	// modulate.a is COLOR.a / col.a -- recover it or every fade the game runs on
+	// this sprite (ghost 0.4, downed 0.85, hurt flash) is silently dropped.
+	float mod_a = col.a > 0.001 ? COLOR.a / col.a : 0.0;
+	float out_a = (col.a >= 0.5 ? 1.0 : col.a) * mod_a;
+
 	if (is_active && is_opaque && !is_protected) {
 		vec3 chroma_color;
 		if (lum < 0.5) {
@@ -41,10 +54,8 @@ void fragment() {
 			chroma_color = min(chroma_color * (lum / chroma_lum), vec3(1.0));
 		}
 		vec3 result = mix(chroma_color, col.rgb, original_keep);
-		float out_a = col.a >= 0.5 ? 1.0 : col.a;
-		COLOR = vec4(result, out_a);
+		COLOR = vec4(result * body_tint, out_a);
 	} else {
-		float out_a = col.a >= 0.5 ? 1.0 : col.a;
-		COLOR = vec4(col.rgb, out_a);
+		COLOR = vec4(col.rgb * body_tint, out_a);
 	}
 }

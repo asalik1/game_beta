@@ -339,7 +339,12 @@ static func _ensure_opp(m: Menus) -> void:
 
 
 # ------------------------------------------------------------- top bar
-static func _full_topbar(m: Menus, root: Control, mo: FangmootMoot, fighting: bool) -> void:
+# `snap` is the pre-fight display state (turn, fangs) captured by _call before
+# call_moot advanced the moot underneath us: the fight bar must describe the
+# fight being replayed, not the turn that follows it. Empty on the shop screen.
+static func _full_topbar(m: Menus, root: Control, mo: FangmootMoot, fighting: bool, snap := {}) -> void:
+	var shown_turn := int(snap.get("turn", mo.turn))
+	var shown_fangs := int(snap.get("fangs", mo.fangs))
 	var bar := Panel.new()
 	bar.size = Vector2(1280, TOPBAR_H)
 	var sb := StyleBoxFlat.new()
@@ -361,7 +366,7 @@ static func _full_topbar(m: Menus, root: Control, mo: FangmootMoot, fighting: bo
 	tl.autowrap_mode = TextServer.AUTOWRAP_OFF
 	UITheme.header(tl)
 	var gname := String(FangmootData.GROUNDS.get(mo.ground, {}).get("name", mo.ground))
-	m._lbl(tcol, "%s table · Turn %d · %s" % [mo.table.capitalize(), mo.turn, gname], 11, DIM).autowrap_mode = TextServer.AUTOWRAP_OFF
+	m._lbl(tcol, "%s table · Turn %d · %s" % [mo.table.capitalize(), shown_turn, gname], 11, DIM).autowrap_mode = TextServer.AUTOWRAP_OFF
 	# crests + scars
 	_pip_block(m, row, "CRESTS", int(Balance.FANGMOOT_CRESTS_WIN), mo.crests, GOLD)
 	_pip_block(m, row, "SCARS", int(Balance.FANGMOOT_SCARS_OUT), mo.scars, LOSS_COL)
@@ -370,7 +375,7 @@ static func _full_topbar(m: Menus, root: Control, mo: FangmootMoot, fighting: bo
 	row.add_child(sp)
 	# opponent — a framed round portrait beside the name (research: a metallic
 	# ring portrait reads "finished" where a bare name reads "prototype")
-	var opp := _persona(mo)
+	var opp := _persona(mo, shown_turn)
 	var ocol := VBoxContainer.new()
 	ocol.add_theme_constant_override("separation", -2)
 	ocol.custom_minimum_size = Vector2(292, 0)
@@ -384,7 +389,7 @@ static func _full_topbar(m: Menus, root: Control, mo: FangmootMoot, fighting: bo
 	q.clip_text = true
 	q.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_portrait_ring(row, String(opp.get("name", "?")), LOSS_COL)
-	_badge(m, row, "%d fangs" % mo.fangs, GOLD)
+	_badge(m, row, "%d fangs" % shown_fangs, GOLD)
 	if fighting:
 		m._btn(row, "%dx" % int(m.fm_speed), _cycle_speed.bind(m), INK).custom_minimum_size = Vector2(42, 30)
 	m._btn(row, "Concede", _concede.bind(m), LOSS_COL).custom_minimum_size = Vector2(84, 30)
@@ -425,10 +430,31 @@ static func _cycle_speed(m: Menus) -> void:
 # ---------------------------------------- board drop-zones (over the arena)
 static func _board_overlay(m: Menus, root: Control, mo: FangmootMoot, arena: UIFangmootArena) -> void:
 	# drop-zones are pinned to the arena's own slot positions (screen = arena-local
-	# + the topbar offset), so they can never drift from where the tokens render.
+	# + the topbar offset). The arena lays tokens out COMPACTED (_lay_side skips
+	# nulls), so a board with a hole — sell() and move() both make one — renders a
+	# token at a different position than its board index; go through _render_order
+	# or every zone at or after the hole addresses the wrong token.
+	var order := _render_order(mo)
 	for i in mo.board.size():
-		var lp: Vector2 = arena._slot_pos(0, i)
+		var lp: Vector2 = arena._slot_pos(0, order[i])
 		_slot_zone(m, root, mo, i, Vector2(lp.x - 58, TOPBAR_H + lp.y - 80), Vector2(116, 150))
+
+# board index -> the arena slot the token in it actually renders at: filled slots
+# take the front positions in board order, empty slots trail behind. Mirrors
+# fangmoot_arena._lay_side.
+static func _render_order(mo: FangmootMoot) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	out.resize(mo.board.size())
+	var idx := 0
+	for i in mo.board.size():
+		if mo.board[i] != null:
+			out[i] = idx
+			idx += 1
+	for i in mo.board.size():
+		if mo.board[i] == null:
+			out[i] = idx
+			idx += 1
+	return out
 
 static func _slot_zone(m: Menus, root: Control, mo: FangmootMoot, i: int, pos: Vector2, size: Vector2) -> void:
 	var z := Control.new()
@@ -663,6 +689,11 @@ static func _card_hover(panel: PanelContainer, sb: StyleBoxFlat, rare: Color, on
 # =============================================================== actions
 static func _start(m: Menus, table: String) -> void:
 	m.fm_moot = FangmootMoot.new(table, int(Time.get_ticks_usec() & 0x7fffffff), m.fm_host)
+	# the cache is keyed on the turn alone, and every moot starts at turn 1 — clear
+	# it here or a moot abandoned on turn 1 (Concede) leaks its caller's warband,
+	# table and all, into the next one.
+	m.fm_opp = []
+	m.fm_opp_turn = -1
 	m.fm_moot.begin_turn()
 	open(m)
 
@@ -755,27 +786,38 @@ static func _call(m: Menus) -> void:
 	if mo.board_count() == 0:
 		return
 	_ensure_opp(m)
+	# what the fight bar must keep showing: call_moot advances turn (and with it
+	# the caller _persona picks), and begin_turn refills the purse.
+	var snap := {"turn": mo.turn, "fangs": mo.fangs}
 	mo.call_moot(m.fm_opp)
 	m.fm_opp_turn = -1   # a fresh caller next turn
-	_fight_view(m)
+	# This is the one place a turn advances exactly once (open()/_moot() re-run on
+	# every click), so the new shop turn starts here: income + a fresh tray. Fangs
+	# do not carry over (PROPOSALS/FANGMOOT.md §"10 fangs a turn").
+	if not mo.done:
+		mo.begin_turn()
+	_fight_view(m, snap)
 
 
 # --------------------------------------------------------- opponent pick
-static func _persona(mo: FangmootMoot) -> Dictionary:
+# `at_turn` < 0 means "the moot's current turn". The fight view passes the turn
+# that was actually fought, because call_moot has already advanced mo.turn.
+static func _persona(mo: FangmootMoot, at_turn := -1) -> Dictionary:
 	var pool: Array = []
 	for id in FangmootData.CALLERS:
 		if String(FangmootData.CALLERS[id]["table"]) == mo.table:
 			pool.append(FangmootData.CALLERS[id])
 	if pool.is_empty():
 		pool = FangmootData.CALLERS.values()
-	var idx := (mo.turn * 2654435761) % pool.size()
+	var t := mo.turn if at_turn < 0 else at_turn
+	var idx := (t * 2654435761) % pool.size()
 	return pool[idx]
 
 
 # ============================================================ the fight
 # The same full-screen view; the moot is called, the arena plays the fight log,
 # and Continue advances to the next shop turn (or the result).
-static func _fight_view(m: Menus) -> void:
+static func _fight_view(m: Menus, snap := {}) -> void:
 	var mo: FangmootMoot = m.fm_moot
 	var root := m._open_full()
 	m.current = "fangmoot"
@@ -785,7 +827,7 @@ static func _fight_view(m: Menus) -> void:
 	var ah := 720.0 - TOPBAR_H
 	var arena := _mount_arena(m, root, mo.ground, ah)
 	arena.set_bands(mo.last_band, mo.last_opp)
-	_full_topbar(m, root, mo, true)
+	_full_topbar(m, root, mo, true, snap)
 	var band := Panel.new()
 	band.position = Vector2(0, 720 - BAR_H)
 	band.size = Vector2(1280, BAR_H)

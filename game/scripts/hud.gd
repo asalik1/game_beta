@@ -1199,7 +1199,7 @@ func _close_hud_popover() -> void:
 ## PERSISTENT states (paladin stance, warrior Grit, Second Wind) set t < 0
 ## — their chip holds a full bar with no countdown. Optional "text"
 ## replaces the countdown (Grit shows its stack count). "tip" feeds the
-## hover tooltip and reads LIVE numbers off the player, so talents and
+## click-to-reveal popover and reads LIVE numbers off the player, so talents and
 ## gear are reflected truthfully. The glyph reuses an ability icon that
 ## fits the buff; colors echo the on-hero aura so the chip and the aura
 ## read as one language.
@@ -1285,7 +1285,7 @@ func _update_buffs() -> void:
 		var slot: Dictionary = buff_slots[i]
 		if i >= active.size():
 			_set_buff_slot_visible(slot, false)
-			slot["border"].set_meta("tip", "")
+			_set_tip(slot["border"], "")   # via _set_tip so tip_raw stays in step
 			continue
 		var b: Dictionary = active[i]
 		var col: Color = b["color"]
@@ -1295,7 +1295,7 @@ func _update_buffs() -> void:
 		var chip: StyleBoxFlat = slot["chip_style"]
 		chip.border_color = col
 		chip.shadow_color = Color(col, 0.3)
-		slot["border"].set_meta("tip", _wrap_tip(String(b.get("tip", ""))))
+		_set_tip(slot["border"], String(b.get("tip", "")))
 		var glyph: String = String(b["glyph"])
 		# Prefer an authored status icon (assets/icons/buff_*.png) when this buff
 		# maps to one; else the tinted procedural ability glyph. Cached per
@@ -1887,6 +1887,33 @@ static func _wrap_tip(text: String, width := 56) -> String:
 	return "\n".join(out)
 
 
+## The "tip" metadata is read ONLY when the control is clicked
+## (_click_to_popover), but its writers sit in the per-frame update_stats /
+## _update_buffs loops — so the word-wrap above ran on every slot and every
+## buff chip, 60 times a second, for text nobody was looking at. Wrap only
+## when the source line actually changed. The raw string IS the cache key,
+## so it can never go stale against a rebind / theme swap / loadout change.
+static func _set_tip(c: Control, raw: String) -> void:
+	if String(c.get_meta("tip_raw", "")) == raw:
+		return
+	c.set_meta("tip_raw", raw)
+	c.set_meta("tip", _wrap_tip(raw))
+
+
+## add_theme_color_override ALWAYS fires NOTIFICATION_THEME_CHANGED, and a
+## Label answers that by marking its font dirty and re-shaping its paragraph
+## on the next draw — there is no value-equality short-circuit the way
+## Label.set_text has one. Unguarded per-frame writes of an unchanged colour
+## therefore re-shape the text every frame; guard on the last applied value
+## (the same shape as _fit_name's font-size guard).
+static func _set_font_color(l: Label, c: Color) -> void:
+	var prev: Color = l.get_meta("fcol", Color(0, 0, 0, 0))
+	if prev == c:
+		return
+	l.set_meta("fcol", c)
+	l.add_theme_color_override("font_color", c)
+
+
 ## Circular local-hero portrait, built as three independent layers:
 ## backplate -> masked splash crop -> cosmetic border slot.
 func _build_avatar() -> void:
@@ -2405,11 +2432,11 @@ func update_stats(p: Player) -> void:
 				_set_ability_ring(box,
 					(Color(0.75, 0.35, 0.35) if p.potion_count() > 0 else Color(0.3, 0.15, 0.15)) \
 					if left > 0 else Color(0.18, 0.12, 0.12))
-				box["border"].set_meta("tip", _wrap_tip(
+				_set_tip(box["border"],
 					"Health Potion — mends a grade-scaled %% of your MISSING health (x%d carried; drinks the cheapest first — the chapter gift, then up the grades). Bought from any merchant (Accord shelf F→A) or found; each takes a bag slot. ROOM BUDGET: %d of your %d loadout slots left — it refills next room. %s cycles the loadout; open the inventory and select a potion to plan the exact bottle." % [
 						p.potion_count(),
 						left, p.potion_slot_cap(),
-						game.control_hint("potion_next", "↻")]))
+						game.control_hint("potion_next", "↻")])
 			else:
 				var cnt := p.consumable_count(p.active_potion)
 				box["name"].text = ("%s ▸%d" % [p.potion_short_name(p.active_potion), active_left]) if left > 0 else "Spent"
@@ -2419,11 +2446,11 @@ func update_stats(p: Player) -> void:
 				_set_ability_ring(box,
 					(Color(0.4, 0.6, 0.95) if cnt > 0 else Color(0.15, 0.2, 0.35)) \
 					if left > 0 else Color(0.18, 0.12, 0.12))
-				box["border"].set_meta("tip", _wrap_tip(
+				_set_tip(box["border"],
 					"%s — slotted in your loadout (x%d carried). ROOM BUDGET: %d of %d slots left this room. %s cycles the loadout." % [
 						p.potion_display_name(p.active_potion), cnt,
 						left, p.potion_slot_cap(),
-						game.control_hint("potion_next", "↻")]))
+						game.control_hint("potion_next", "↻")])
 			_fit_name(box["name"], row_fs)
 			continue
 		var ab := Classes.ability(p.cls, slot)
@@ -2442,8 +2469,9 @@ func update_stats(p: Player) -> void:
 		# procedural glyph the tint carried it. Hand-authored art is used
 		# untinted (Art.ability_icon), so the color moves to the ability NAME —
 		# the same place the skills menu already shows it (menus.gd _btn font).
-		box["name"].add_theme_color_override("font_color",
-			tcol if Art.has_ability_art(p.cls, slot, theme_id) else Color(1, 1, 1))
+		# Settled into a local and applied ONCE below: the paladin's ult
+		# overwrites it, so two guarded writes to the same label would thrash.
+		var ncol: Color = tcol if Art.has_ability_art(p.cls, slot, theme_id) else Color(1, 1, 1)
 		box["cost"].text = _fmt_cost(cost) if cost > 0 else ""
 		# Paladin's ult is a STANCE SWAP, not a nuke — the slot itself reads out
 		# the form you're in RIGHT NOW (Conviction toggles it), so you never have
@@ -2452,7 +2480,7 @@ func update_stats(p: Player) -> void:
 			var holy: bool = p.paladin_mode == "holy"
 			box["name"].text = "◆ HOLY" if holy else "◆ RETRI"
 			var scol := Color(1.0, 0.92, 0.55) if holy else Color(1.0, 0.5, 0.28)
-			box["name"].add_theme_color_override("font_color", scol)
+			ncol = scol
 			# The stance also lights the slot glow (gold Holy / ember Retri), so
 			# the whole slot reads the form you're in, not just the name.
 			box["glow"].modulate = scol
@@ -2462,6 +2490,7 @@ func update_stats(p: Player) -> void:
 			box["icon"].modulate = Color(1, 1, 1) if Art.has_ability_art(p.cls, slot, theme_id) else scol
 		elif box["icon"] != null:
 			box["icon"].modulate = Color(1, 1, 1)
+		_set_font_color(box["name"], ncol)
 		_fit_name(box["name"], row_fs)
 		# Detail card: name/key/cost/cd, the ability's own words, then the
 		# assigned theme's variant line — built from live values, so cd
@@ -2475,9 +2504,9 @@ func update_stats(p: Player) -> void:
 			var vdesc := Classes.variant_desc(p.cls, slot, theme_id)
 			if vdesc != "":
 				tip += "\n★ %s: %s" % [String(theme.get("name", theme_id)), vdesc]
-		box["border"].set_meta("tip", _wrap_tip(tip))
+		_set_tip(box["border"], tip)
 		# Readability: the mana price reads red the moment you can't pay it.
-		box["cost"].add_theme_color_override("font_color",
+		_set_font_color(box["cost"],
 			Color(1.0, 0.4, 0.35) if p.mp < cost else Color(0.5, 0.7, 1.0))
 		var remaining: float = p.cds[slot]
 		var max_cd: float = p.ability_cd(slot)
@@ -2644,14 +2673,19 @@ func _place_down_mark(idx: int, xf: Transform2D, at: Vector2, text: String, prog
 
 ## Mid-session checks (the victory card's advance gate) render HERE; while
 ## the lobby UI is open, the lobby's own stages draw the card instead.
+## Do NOT suppress the card on menus.is_open(): the signal fires once and
+## nothing re-drives it on a menu close, so a check that arrived while the
+## map/inventory was up was lost until the 20s timeout killed it for the
+## whole party. Every menu shell already hides the HUD layer this card lives
+## on (menus._open/_open_full/open_title), so an "open" card draws nothing
+## under a menu and comes back with the HUD when close() restores it.
 func _on_proposal_changed() -> void:
 	var sess := _chat_session()
 	if sess == null or game == null:
 		_hide_ready_card()
 		return
 	var data: Dictionary = sess.proposal_open
-	if data.is_empty() or not game.net_online() \
-			or (game.menus != null and game.menus.is_open()):
+	if data.is_empty() or not game.net_online():
 		_hide_ready_card()
 		return
 	_show_ready_card(sess, data)
@@ -2909,6 +2943,7 @@ func _build_party_frame(pos: Vector2) -> Dictionary:
 	nm.position = Vector2(44, 2)
 	nm.size = Vector2(PARTY_FRAME_W - 50, 16)
 	nm.add_theme_font_size_override("font_size", 13)
+	nm.add_theme_color_override("font_color", Color(0.92, 0.92, 0.98))
 	nm.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	nm.add_theme_constant_override("outline_size", 3)
 	nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -2980,8 +3015,7 @@ func _update_party_ui(_p: Player) -> void:
 		if nm == "":
 			nm = "Ally %d" % int(d["peer"])
 		var name_l := slot["name"] as Label
-		name_l.text = nm
-		name_l.add_theme_color_override("font_color", Color(0.92, 0.92, 0.98))
+		name_l.text = nm   # colour is a build-time constant (_build_party_frame)
 		_set_fill(slot["hp_fill"], clampf(float(d["hp"]) / maxf(1.0, float(d["max_hp"])), 0.0, 1.0))
 		(slot["hp_text"] as Label).text = "%d/%d" % [int(d["hp"]), int(d["max_hp"])]
 		_apply_frame_state(slot, String(d["state"]), _ally_by_peer(int(d["peer"])))
@@ -3002,22 +3036,22 @@ func _apply_frame_state(slot: Dictionary, st: String, q) -> void:
 			var secs: int = int(ceil(q.down_t)) if q != null else 0
 			var tail := " — reviving" if (q != null and q.being_revived_by != 0) else ""
 			state_l.text = "DOWNED %ds%s" % [secs, tail]
-			state_l.add_theme_color_override("font_color", Color(1.0, 0.5, 0.45))
+			_set_font_color(state_l, Color(1.0, 0.5, 0.45))
 			hp_fill.color = Color(0.7, 0.2, 0.2)
 			icon.modulate = Color(1, 1, 1, 0.5)
 		"ghost":
 			state_l.text = "GHOST"
-			state_l.add_theme_color_override("font_color", Color(0.65, 0.82, 1.0))
+			_set_font_color(state_l, Color(0.65, 0.82, 1.0))
 			hp_fill.color = Color(0.42, 0.55, 0.82)
 			icon.modulate = Color(0.72, 0.82, 1.0, 0.55)
 		"dead":
 			state_l.text = "DEAD"
-			state_l.add_theme_color_override("font_color", Color(0.82, 0.82, 0.88))
+			_set_font_color(state_l, Color(0.82, 0.82, 0.88))
 			hp_fill.color = Color(0.4, 0.4, 0.45)
 			icon.modulate = Color(1, 1, 1, 0.35)
 		"disc":
 			state_l.text = "disconnected…"
-			state_l.add_theme_color_override("font_color", Color(0.8, 0.75, 0.6))
+			_set_font_color(state_l, Color(0.8, 0.75, 0.6))
 			icon.modulate = Color(1, 1, 1, 0.4)
 		_:
 			hp_fill.color = Color(0.8, 0.25, 0.25)
@@ -3110,7 +3144,7 @@ func _update_party_names(data: Array) -> void:
 			tag.size = Vector2(160, 16)
 			tag.position = screen - Vector2(80, 8)
 			var tint: Color = CLASS_TINT.get(String(d["cls"]), Color(0.85, 0.85, 0.9))
-			tag.add_theme_color_override("font_color", tint.lerp(Color(1, 1, 1), 0.4))
+			_set_font_color(tag, tint.lerp(Color(1, 1, 1), 0.4))
 			tag.modulate = Color(1, 1, 1, party_names_alpha)
 			tag.visible = true
 			used += 1
@@ -3230,8 +3264,7 @@ func _update_meter(show: bool) -> void:
 			nm = String(Classes.CLASSES.get(cls, {}).get("name", "Ally"))
 		var name_l := slot["name"] as Label
 		name_l.text = nm
-		name_l.add_theme_color_override("font_color",
-			CLASS_TINT.get(cls, Color(0.85, 0.85, 0.9)))
+		_set_font_color(name_l, CLASS_TINT.get(cls, Color(0.85, 0.85, 0.9)))
 		var fill := slot["fill"] as ColorRect
 		fill.size.x = float(fill.get_meta("full_w")) \
 			* clampf(float(r2.get("dmg", 0.0)) / top, 0.0, 1.0)
@@ -3610,6 +3643,10 @@ func flash_title(text: String, sub := "", hold := 1.6, overlay_fade := true) -> 
 	# Every arrival is a fresh run for boss-splash purposes: a replayed
 	# chapter's bosses get their entrance flash again.
 	_boss_splash_shown.clear()
+	# show_end_screen stamps its own colour on this shared label (victory gold,
+	# PvP red) and has no exit path of its own — so every card after one wore
+	# it. Reclaim the built white here, the way boss_banner's tween does.
+	title_label.add_theme_color_override("font_color", Color(1, 1, 1))
 	title_label.text = text
 	subtitle_label.text = sub
 	title_label.position.y = TITLE_REST_Y - TITLE_RISE
@@ -4366,8 +4403,15 @@ func set_touch_mode(on: bool) -> void:
 	for l in hint_labels:
 		l.visible = not on
 	for box in slot_boxes:
-		for k in ["border", "bg", "icon", "cd", "num", "key", "cost", "name"]:
-			if box.get(k) != null:
+		# EVERY Control the slot owns — the variant glow is a direct HUD child
+		# (not a child of the bar), so leaving it out of this list stranded five
+		# lit medallions over the world for the whole touch session.
+		for k in box:
+			# `is Control`, never `as Control`: a slot dict also holds plain
+			# values (was_ready bool, flash_ms int) and casting one of those to a
+			# native type raises "Invalid cast" at runtime, which reddens every
+			# suite (autotest calls set_touch_mode(true) in the systems tier).
+			if box[k] is Control:
 				box[k].visible = not on
 
 

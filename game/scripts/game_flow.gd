@@ -2180,6 +2180,11 @@ func net_apply_terrain_fx(ev: String, pos: Vector2) -> void:
 			burst(pos, Color(0.85, 0.72, 0.45), 16)
 			sfx("blink", 0.6)
 
+## Patch types enemies share with the player. A file-level const so the
+## per-hazard membership test doesn't rebuild an Array literal every tick
+## (a membership list, not a tuning number — it stays out of balance.gd).
+const HAZARD_PHYSICAL := ["ice", "slow", "lava"]
+
 ## Apply floor-patch effects to the player and enemies (ticked at 2.5Hz).
 ## DEDICATED: the player half skips whole (each guest's own machine ticks
 ## its own player — §4.1 hazards row); the enemy half is authority work.
@@ -2187,7 +2192,13 @@ func _apply_hazards() -> void:
 	var lp: Player = local_player if has_local_player() else null
 	if lp != null:
 		lp.hazard_speed = 1.0
-	for node in get_tree().get_nodes_in_group("enemies"):
+	# ONE group fetch for the whole tick: `hazards` is world-wide and terrain
+	# pools are permanent, so re-fetching per hazard allocated a fresh copy of
+	# the group per patch per tick. Kills mid-loop are safe — die() removes the
+	# node from the group but only fades it out, so the reference stays valid
+	# and the `e.dying` test below still skips it.
+	var mobs: Array = get_tree().get_nodes_in_group("enemies")
+	for node in mobs:
 		var e := node as Enemy
 		if e:
 			e.hazard_speed = 1.0
@@ -2208,12 +2219,17 @@ func _apply_hazards() -> void:
 				h["drift"].y *= -1.0
 			if is_instance_valid(h["sprite"]):
 				h["sprite"].global_position = h["pos"]
+		# Read the patch's fields once (after the drift block moved it) —
+		# the enemy pass below is per-mob and dict lookups there add up.
+		var htype: String = h["type"]
+		var hpos: Vector2 = h["pos"]
+		var hrad: float = h["radius"]
 		# Player effects. MP-12: a DOWNED/GHOST body is past hazard reach —
 		# take_damage would no-op anyway, and the heal patch must not lift
 		# a fallen player above 0 (the §5.3 paths own standing up).
 		if lp != null and not lp.dead and not lp.downed and not lp.ghost \
-				and lp.global_position.distance_to(h["pos"]) <= h["radius"]:
-			match h["type"]:
+				and lp.global_position.distance_to(hpos) <= hrad:
+			match htype:
 				"lava":
 					lp.take_damage(12.0, "magic")
 				"churned":  # Sexton's grave-earth: imposed floor, phys, boss-only
@@ -2228,12 +2244,12 @@ func _apply_hazards() -> void:
 					if lp.hp < lp.max_hp:
 						lp.hp = minf(lp.max_hp, lp.hp + lp.max_hp * 0.02)
 		# Enemies share physical patches (ice, slow, lava).
-		if h["type"] in ["ice", "slow", "lava"]:
-			for node in get_tree().get_nodes_in_group("enemies"):
+		if htype in HAZARD_PHYSICAL:
+			for node in mobs:
 				var e := node as Enemy
-				if e == null or e.dying or e.global_position.distance_to(h["pos"]) > h["radius"]:
+				if e == null or e.dying or e.global_position.distance_to(hpos) > hrad:
 					continue
-				match h["type"]:
+				match htype:
 					"ice":
 						e.hazard_speed = 1.35
 					"slow":

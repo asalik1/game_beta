@@ -1977,7 +1977,7 @@ func _hit_rival(q: Player, mult: float, effects := {}) -> void:
 		game.spawn_text(q.global_position + Vector2(0, -34), "%d!" % int(dmg), Color(1.0, 0.55, 0.1))
 	else:
 		game.spawn_text(q.global_position + Vector2(0, -30), str(int(dmg)), Color(1, 1, 1))
-	game.net_session().pvp_strike(q.peer_id, dmg, dmg_type, pen)
+	game.net_session().pvp_strike(q.peer_id, dmg, dmg_type, pen, dex)
 
 
 ## DoT rate mitigated by the target's res (class damage type) minus our

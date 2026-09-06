@@ -385,7 +385,9 @@ func _on_drag(e: InputEventScreenDrag) -> void:
 ## The button id whose circle contains `pos`, or "" — reverse iteration so the
 ## visually-topmost (last-added) button wins any overlap.
 func _button_at(pos: Vector2) -> String:
-	for id in _btns.keys():
+	var ids: Array = _btns.keys()
+	for i in range(ids.size() - 1, -1, -1):
+		var id: String = ids[i]
 		var b: Dictionary = _btns[id]
 		if not (b["panel"] as Panel).visible:
 			continue   # a hidden button (Act when out of range) isn't tappable
