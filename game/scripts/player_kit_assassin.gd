@@ -25,7 +25,7 @@ func _use_assassin(slot: String, f: float) -> void:
 					stab_mult *= 1.0 + uniq_k("bonus")
 					stab_eff["stagger"] = uniq_k("stagger")
 					game.spawn_text(global_position + Vector2(0, -56), "THE SUM", Color(0.95, 0.5, 0.4))
-			await get_tree().create_timer(swing_delay(Balance.STAB_STRIKE_DELAY)).timeout
+			await cast_wait(swing_delay(Balance.STAB_STRIKE_DELAY))
 			if dead or downed or ghost:
 				return
 			var cut := _melee_arc(stab_mult, 118.0, "slash", stab_eff, "stab", "stab")
@@ -123,7 +123,7 @@ func _fan_of_knives(f := 1.0) -> void:
 	# The range damage is EARNED in close (round 37): thin chip on its
 	# own, but the fan bites double while the stab surge runs.
 	var surge_amp: float = Balance.KNIFE_SURGE_MULT if stab_ls_time > 0.0 else 1.0
-	await get_tree().create_timer(swing_delay(Balance.KNIFE_THROW_RELEASE)).timeout
+	await cast_wait(swing_delay(Balance.KNIFE_THROW_RELEASE))
 	if dead or downed or ghost:
 		return  # went down mid-windup — no knives leave the hand
 	if skin == "phantom":

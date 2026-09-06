@@ -484,9 +484,10 @@ static func _chip_groups(m: Menus) -> Array:
 
 
 static func _chapter_group(chapters: Array, accent: Color) -> Dictionary:
-	# Story order, not first-seen order.
+	# Story order, not first-seen order; interludes trail the campaign, so a
+	# standalone world's rows are still reachable from a chip.
 	var ordered: Array = []
-	for chid in Story.CHAPTER_LIST:
+	for chid in _codex_worlds():
 		if String(chid) in chapters:
 			ordered.append([String(chid), _chapter_label(String(chid))])
 	return {"key": "ch", "all": "All", "opts": ordered, "accent": accent}
@@ -743,11 +744,12 @@ static func _bestiary_kinds(m: Menus, bosses: bool) -> Array:
 	return out
 
 
-## kind -> the FIRST chapter that places it (zone spawn, zone boss or final boss).
+## kind -> the FIRST world that places it (zone spawn, zone boss or final boss).
 static func _kind_chapters() -> Dictionary:
 	var out := {}
-	for chid in Story.CHAPTER_LIST:
-		var ch: Dictionary = Story.CHAPTER_LIST[chid]
+	var worlds: Dictionary = _codex_worlds()
+	for chid in worlds:
+		var ch: Dictionary = worlds[chid]
 		for zone in ch.get("zones", []):
 			for e in zone.get("enemies", []):
 				if e is Array and e.size() > 0 and not out.has(String(e[0])):
@@ -774,7 +776,7 @@ static func _bestiary_chapters(m: Menus, bosses: bool) -> Array:
 static func _bestiary_rows(m: Menus, bosses: bool) -> Array:
 	var f: Dictionary = _filters.get(_sec, {})
 	var chap := _kind_chapters()
-	var order: Array = Story.CHAPTER_LIST.keys()
+	var order: Array = _codex_worlds().keys()
 	var out: Array = []
 	for kind in _bestiary_kinds(m, bosses):
 		var st: Dictionary = Story.ALL_ENEMIES[kind]
@@ -958,6 +960,36 @@ static func _enemy_card(m: Menus, list: VBoxContainer, kind: String, is_boss: bo
 
 
 # ----------------------------------------------------------------- folk ---
+## Where a social-room wanderer is met: the roll picks a fresh room per run,
+## so no single zone name is true for them.
+const WANDER_WHERE := "a quiet room on the road"
+
+
+## Fold one npc definition into the deduped cast (or let it upgrade the face
+## already listed). Shared by the authored zone `npcs` arrays and the
+## social-wanderer pools, which spawn through a different path entirely.
+static func _add_npc_entry(seen: Dictionary, entries: Array, npc: Dictionary, chid: String, where: String) -> void:
+	# Placeholder NPCs (extracted art wired for review) live on the
+	# dev-only Future > NPCs shelf, never here.
+	if npc.get("placeholder", false):
+		return
+	var spr: String = String(npc.get("sprite", ""))
+	if spr == "":
+		return
+	var quest := _gives_quest(String(npc.get("convo", "")))
+	if seen.has(spr):
+		# Same face elsewhere can still upgrade its role line.
+		if quest:
+			seen[spr]["quest"] = true
+		return
+	var nm := _npc_name(npc)
+	if nm == "" or nm == "Narrator":
+		return  # narrator-voiced scenery: a lore read, not a person
+	var e := {"name": nm, "sprite": spr, "quest": quest, "chapter": chid, "zone": where}
+	seen[spr] = e
+	entries.append(e)
+
+
 ## The speaking cast, deduped by sprite: [{name, sprite, quest, chapter, zone}].
 ## Same derivation the old NPC shelf used, plus where each was first met.
 static func _npc_entries() -> Array:
@@ -969,25 +1001,15 @@ static func _npc_entries() -> Array:
 			if zone.has("merchant"):
 				any_merchant = true
 			for npc in zone.get("npcs", []):
-				# Placeholder NPCs (extracted art wired for review) live on the
-				# dev-only Future > NPCs shelf, never here.
-				if npc.get("placeholder", false):
-					continue
-				var spr: String = String(npc.get("sprite", ""))
-				if spr == "":
-					continue
-				var quest := _gives_quest(String(npc.get("convo", "")))
-				if seen.has(spr):
-					# Same face elsewhere can still upgrade its role line.
-					if quest:
-						seen[spr]["quest"] = true
-					continue
-				var nm := _npc_name(npc)
-				if nm == "" or nm == "Narrator":
-					continue  # narrator-voiced scenery: a lore read, not a person
-				var e := {"name": nm, "sprite": spr, "quest": quest, "chapter": String(chid), "zone": String(zone.get("name", ""))}
-				seen[spr] = e
-				entries.append(e)
+				var nd: Dictionary = npc
+				_add_npc_entry(seen, entries, nd, String(chid), String(zone.get("name", "")))
+		# Social rooms roll ONE face from the chapter's wanderer pool instead
+		# of an authored zone npc (game_world._spawn_wanderer), so none of
+		# these people live in a zone's `npcs` array — quest givers among
+		# them. Without this pass the codex lists not one of them.
+		for w in Story.wanderers_for(String(chid)):
+			var wd: Dictionary = w
+			_add_npc_entry(seen, entries, wd, String(chid), WANDER_WHERE)
 	# The merchant spawns from the zones' `merchant` spot, not an npcs list —
 	# but they're absolutely someone you speak to.
 	if any_merchant and not seen.has("merchant"):
@@ -1889,13 +1911,28 @@ static func _scroll_to_card(m: Menus, card: Control) -> void:
 	if sc != null:
 		sc.scroll_vertical = maxi(0, int(y) - 10)
 
+## Every world whose contents the codex catalogues: the campaign chapters PLUS
+## the standalone side-chapters (Q13 interludes) content modules register in
+## Story.STANDALONE_WORLDS, which are deliberately kept OUT of CHAPTER_LIST so
+## chapter select / advance_chapter never see them. A shelf built from
+## CHAPTER_LIST alone silently drops their content — the Moonfen's First Howl
+## is a boss the player can kill and never find in the codex. Chapters first,
+## so story order still sorts the shelves.
+static func _codex_worlds() -> Dictionary:
+	Story.load_content()  # idempotent; STANDALONE_WORLDS is module-registered
+	var out: Dictionary = Story.CHAPTER_LIST.duplicate()
+	out.merge(Story.STANDALONE_WORLDS)
+	return out
+
+
 ## Enemy kinds actually placed in the world: any zone's `enemies` spawns or
 ## `boss`, plus each chapter's `final_boss`. Everything else in ALL_ENEMIES is
 ## extracted-but-unplaced — off the bestiary, on the dev-only Future shelf.
 static func _used_enemy_kinds() -> Dictionary:
 	var used := {}
-	for chid in Story.CHAPTER_LIST:
-		var ch: Dictionary = Story.CHAPTER_LIST[chid]
+	var worlds: Dictionary = _codex_worlds()
+	for chid in worlds:
+		var ch: Dictionary = worlds[chid]
 		var fb := String(ch.get("final_boss", ""))
 		if fb != "":
 			used[fb] = true

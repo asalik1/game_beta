@@ -1,0 +1,12 @@
+FAIL [IMPORT] 2 asset(s) changed since last import: assets\sprites\echo_death.png, assets\sprites\keep_arch.png
+         fix: run: tools\Godot_v4.4.1-stable_win64_console.exe --headless --path game --import  (close the editor first -- --import contends with it)
+WARN [BALANCE] game/scripts/enemy.gd:1243: bare number(s) ['8.0', '8.0'] in a logic file -- if this tunes gameplay it belongs in balance.gd (#38f); ignore if it's structural
+WARN [BALANCE] game/scripts/enemy.gd:1250: bare number(s) ['0.5'] in a logic file -- if this tunes gameplay it belongs in balance.gd (#38f); ignore if it's structural
+WARN [BALANCE] game/scripts/enemy.gd:1380: bare number(s) ['0.0001'] in a logic file -- if this tunes gameplay it belongs in balance.gd (#38f); ignore if it's structural
+WARN [BALANCE] game/scripts/game_world.gd:3487: bare number(s) ['0.8'] in a logic file -- if this tunes gameplay it belongs in balance.gd (#38f); ignore if it's structural
+WARN [BALANCE] game/scripts/game_world.gd:3496: bare number(s) ['0.8'] in a logic file -- if this tunes gameplay it belongs in balance.gd (#38f); ignore if it's structural
+WARN [BALANCE] game/scripts/game_world.gd:3507: bare number(s) ['0.8'] in a logic file -- if this tunes gameplay it belongs in balance.gd (#38f); ignore if it's structural
+WARN [BALANCE] game/scripts/game_world.gd:3514: bare number(s) ['0.8'] in a logic file -- if this tunes gameplay it belongs in balance.gd (#38f); ignore if it's structural
+WARN [BALANCE] game/scripts/player_kit_mage.gd:37: bare number(s) ['2'] in a logic file -- if this tunes gameplay it belongs in balance.gd (#38f); ignore if it's structural
+
+PREFLIGHT: 1 fail, 8 warn  (IMPORT MODULES BALANCE PHYSICS RIGS ARTQA)

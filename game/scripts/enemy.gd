@@ -111,6 +111,7 @@ var _gait_shape := "biped"  # Art.gait_shape(sprite key): biped | quad | glide
 var _steps := 0.0           # contact counter (footfall dust / boss stomp)
 var _dir_t := 0.0           # seconds since the last 8-direction strip swap
 var _face_lp := Vector2.ZERO  # low-passed aim for the 8-direction pick
+var _net_gspd := 0.0        # MIRROR ONLY: low-passed RENDERED ground speed (px/s) — the stride<->ground ratio a guest walks its legs at
 var _action_hold := false   # one-shot strip latches its last frame (death)
 static var _dust_tick := -1  # footfall-dust budget: physics frame + puffs so far
 static var _dust_n := 0
@@ -145,6 +146,11 @@ var base_mod := Color(1, 1, 1)
 var hp_bar_bg: ColorRect
 var hp_bar_fg: ColorRect
 var hp_bar_cap: ColorRect  # 1px darker end-cap: the remaining-HP edge stays crisp
+# Ground furniture, kept so a post-make() body rescale can re-fit it
+# (_refresh_body_furniture): the AO pool and the contact ellipse are sized off
+# the SPAWN-time body, and an elite promotion grows the sprite ~50% after that.
+var _ao_disc: Sprite2D = null
+var _contact_disc: Sprite2D = null
 # Overhead bar geometry (presentation constants): fill width/height and the gap
 # between the body's head line and the bar's bottom edge.
 const HP_BAR_W := 36.0
@@ -360,11 +366,13 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1,
 		ao.scale = Art.scale_for(ao.texture, vscale * Balance.CHAR_GROUND_AO_W) * Vector2(1.0, 0.5)
 		ao.position = Vector2(0, 6.0 * vscale)
 		add_child(ao)
+		_ao_disc = ao
 	var shadow := Sprite2D.new()
 	shadow.texture = Art.tex("shadow")
 	shadow.scale = Vector2(vscale * 0.75, vscale * 0.75)
 	shadow.position = Vector2(0, 6.0 * vscale)
 	add_child(shadow)
+	_contact_disc = shadow
 
 	# Signature AURA (def "aura" = Color): a soft ADDITIVE glow behind the body
 	# so a near-black boss reads on same-dark terrain WITHOUT brightening its
@@ -443,13 +451,7 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1,
 	# `-8*vscale-8` floated 30-40px over a low quadruped's back because the
 	# art rarely fills its cell, and a bare red rect hovering in space was one
 	# of the "beta" tells in the trailer footage.
-	var bar_y: float = -8.0 * vscale - 8.0  # fallback: above the (rescaled) cell top
-	if sprite.texture != null:
-		var cell_h := float(sprite.texture.get_height())
-		var scan_w := int(cell_h) if sprite.hframes > 1 else sprite.texture.get_width()
-		var head := _strip_head_y(sprite.texture, cell_h, scan_w)
-		if head >= 0.0 and cell_h > 0.0:
-			bar_y = sprite.position.y + (sprite.offset.y + head - cell_h * 0.5) * sprite.scale.y - HP_BAR_GAP
+	var bar_y := _measure_bar_y(vscale)
 	hp_bar_bg = ColorRect.new()   # the rim
 	hp_bar_bg.color = Color(0.36, 0.31, 0.25, 0.95)
 	hp_bar_bg.position = Vector2(-HP_BAR_W * 0.5 - 2.0, bar_y - 2.0)
@@ -746,6 +748,7 @@ func swap_sprite(new_key: String) -> void:
 				else Art.dir_set(new_key + "_walk")
 		_apply_strip(anim)
 	face_left = Art.faces_left(new_key)
+	_refresh_body_furniture()   # new cell => new head line: re-hang the HP bar
 
 
 ## Saint Varo's throne <-> standing phase-swap, driven purely off hp
@@ -1100,6 +1103,16 @@ func _render_tail(delta: float, moving: bool) -> void:
 		lean_target = signf(pounce_dir.x) * Balance.MOB_POUNCE_LEAN_RAD
 		mx += Balance.MOB_POUNCE_STRETCH
 		my -= Balance.MOB_POUNCE_STRETCH
+	# `_lean` is an exponential low-pass exactly like `_face_vx`, and lerpf(NaN, ..)
+	# stays NaN for the life of the node — one non-finite velocity frame (the
+	# documented (nan,nan) family, or a mirror whose net_target arrived bad) would
+	# write sprite.rotation = NaN forever, and the _physics_process scrub that
+	# repairs position/velocity cannot un-poison it. Guard the target AND the
+	# accumulator, so an already-latched body recovers with the sim.
+	if not is_finite(lean_target):
+		lean_target = 0.0
+	if not is_finite(_lean):
+		_lean = 0.0
 	_lean = lerpf(_lean, lean_target, minf(1.0, delta * Balance.WALK_LEAN_EASE))
 	rot += _lean + _tell_lean
 	# --- transient poses: hit squash, windup crouch, spawn, death --------
@@ -1217,6 +1230,49 @@ func _rescale_body() -> void:
 		var s := art_scale * render_mult * 16.0 / float(sprite.texture.get_height())
 		_scale_base = Vector2(s, s)
 	sprite.scale = _scale_base
+	_refresh_body_furniture()
+
+
+## Overhead-bar height for the CURRENT body: hung from the strip's real head
+## line (frame-0 top opaque row) at the body's BASE scale, with the cell-top
+## fallback for art that can't be read. Split out of make() so a body rescaled
+## or re-spriteed later can re-hang it; `_scale_base` (not sprite.scale) and no
+## sprite.position.y term keep it free of _render_tail's transient bounce/squash
+## — both are exactly the make()-time values, so the spawn result is unchanged.
+func _measure_bar_y(vscale: float) -> float:
+	var y := -8.0 * vscale - 8.0
+	if sprite == null or sprite.texture == null:
+		return y
+	var cell_h := float(sprite.texture.get_height())
+	var scan_w := int(cell_h) if sprite.hframes > 1 else sprite.texture.get_width()
+	var head := _strip_head_y(sprite.texture, cell_h, scan_w)
+	if head >= 0.0 and cell_h > 0.0:
+		y = (sprite.offset.y + head - cell_h * 0.5) * _scale_base.y - HP_BAR_GAP
+	return y
+
+
+## Re-fit the per-body furniture make() derived ONCE from the spawn-time size:
+## the overhead HP bar's head line, the ground-AO pool and the contact shadow.
+## `_rescale_body` (elite promotion grows the body up to ~1.5x, a weakling
+## summon shrinks it to 0.8x) and `swap_sprite` (Saint Varo throne->standing, a
+## different cell entirely) both change the body after make(), and without this
+## the bar stayed at the old head line — inside an elite's sprite — while its AO
+## pool and contact ellipse stayed base-sized under a much bigger silhouette.
+func _refresh_body_furniture() -> void:
+	var vscale := art_scale * render_mult
+	if _ao_disc != null and is_instance_valid(_ao_disc):
+		_ao_disc.scale = Art.scale_for(_ao_disc.texture,
+			vscale * Balance.CHAR_GROUND_AO_W) * Vector2(1.0, 0.5)
+		_ao_disc.position = Vector2(0, 6.0 * vscale)
+	if _contact_disc != null and is_instance_valid(_contact_disc):
+		_contact_disc.scale = Vector2(vscale * 0.75, vscale * 0.75)
+		_contact_disc.position = Vector2(0, 6.0 * vscale)
+	if hp_bar_bg == null or hp_bar_fg == null or hp_bar_cap == null:
+		return
+	var bar_y := _measure_bar_y(vscale)
+	hp_bar_bg.position = Vector2(-HP_BAR_W * 0.5 - 2.0, bar_y - 2.0)
+	hp_bar_fg.position = Vector2(-HP_BAR_W * 0.5, bar_y)
+	hp_bar_cap.position.y = bar_y   # .x is the fill edge, owned by _update_hp_fill
 
 
 ## Death animation: play the shipped `<sprite>_death` clip when one exists
@@ -1231,6 +1287,15 @@ func _play_death_anim() -> float:
 	_pose_x = 0.0
 	_pose_y = 0.0
 	_spawn_k = 0.0
+	# The two pose channels with NO per-frame decay of their own. `pounce_time`
+	# is only counted down in _tick_traits, which _physics_process skips entirely
+	# once `dying`, yet _render_tail reads it unconditionally — a mob killed
+	# inside its 0.30 s lunge kept the +/-0.08 stretch and the pinned +/-0.12 rad
+	# bank for its whole death clip and fade. The tell channels are tweened by
+	# Boss._tell_windup and zeroed only at the end of the fuse, so a boss killed
+	# mid-telegraph rose/coiled/leaned right through its own death.
+	pounce_time = 0.0
+	_end_tell()
 	if _try_action_strip("death"):
 		_action_hold = true
 		anim_fps = Balance.MOB_DEATH_FPS
@@ -1301,11 +1366,21 @@ func _net_mirror_tick(delta: float) -> void:
 	# mirror's position for good (the scrub in _physics_process sits AFTER this
 	# early-return, so it never reaches a mirror). Snap to a finite target —
 	# recovering an already-poisoned position — and never chase a bad one.
+	var prev_pos := global_position
 	if net_target.is_finite():
 		global_position = net_target if not global_position.is_finite() \
 			else global_position.lerp(net_target, minf(1.0, delta * 10.0))
 	elif not global_position.is_finite():
 		global_position = Vector2.ZERO
+	# Ground speed the mirror actually RENDERS this frame — its own displacement,
+	# NOT the `velocity` below (that is the un-damped lerp residual over delta and
+	# reads several times cruise). Low-passed because the 20 Hz snapshot stream
+	# makes the raw per-frame step lumpy; it feeds the stride ratio further down.
+	if prev_pos.is_finite() and global_position.is_finite():
+		var step: float = prev_pos.distance_to(global_position) / maxf(delta, 0.0001)
+		_net_gspd = lerpf(_net_gspd, step, minf(1.0, delta * Balance.MOB_NET_STRIDE_EASE))
+	if not is_finite(_net_gspd):
+		_net_gspd = 0.0
 	# Presentation velocity for the juice (a mirror never calls move_and_slide,
 	# so `velocity` would stay zero and the lean/dust would never fire).
 	velocity = (net_target - global_position) / maxf(delta, 0.0001) if net_walk \
@@ -1330,13 +1405,31 @@ func _net_mirror_tick(delta: float) -> void:
 				_strip_walking = net_walk
 				_apply_strip(dset[nd])
 			sprite.flip_h = false
-		elif not _strip_walk.is_empty() and net_walk != _strip_walking:
-			_strip_walking = net_walk
-			_apply_strip(_strip_walk if net_walk else _strip_idle)
+		else:
+			# CO-OP FIX 2026-09-06: the 09-03 port copied the directional branch
+			# but dropped the live path's `or _cur_dir != ""` restore. A boss with
+			# a DIRECTIONAL walk and a FLAT idle (BOSS_DIRECTIONAL_WALK +
+			# idle-only) has an EMPTY _strip_walk AND an empty _dir_idle, so the
+			# old `not _strip_walk.is_empty()` guard never fired when it stopped:
+			# the mirror kept the last directional walk strip and cycled it
+			# standing still. Same shape as the live path now.
+			var want_walk := net_walk and not _strip_walk.is_empty()
+			if want_walk != _strip_walking or _cur_dir != "":
+				_strip_walking = want_walk
+				_cur_dir = ""  # clear the directional latch; a later walk re-picks
+				_apply_strip(_strip_walk if want_walk else _strip_idle)
 		# Same clock the live path runs (idle in real time, the walk on the
 		# stride clock with this body's own gait personality — mirrors used to
-		# march in lockstep at a flat 2x).
-		anim_t += delta * (Balance.MOB_WALK_CLOCK * _gait_rate if net_walk else 1.0)
+		# march in lockstep at a flat 2x). CO-OP FIX 2026-09-06: the port also
+		# dropped the live path's stride<->ground RATIO, so on a guest every
+		# slowed / hazard-iced / frenzied / half-pace-wandering mob still played
+		# its walk at cruise — the exact foot-skate the 09-03 fix removed.
+		var stride_dt := delta * Balance.MOB_WALK_CLOCK
+		if speed > 0.0:
+			stride_dt *= clampf(_net_gspd / speed,
+				Balance.STRIDE_RATE_MIN, Balance.STRIDE_RATE_MAX)
+		stride_dt *= _gait_rate
+		anim_t += stride_dt if net_walk else delta
 		sprite.frame = int(anim_t * anim_fps) % anim_frames
 	_varo_phase_sprite()  # guests flip throne->standing off replicated hp
 	_render_tail(delta, net_walk)
@@ -2057,6 +2150,16 @@ func _end_squash() -> void:
 	_squash_k = 0.0
 
 
+## Drop a held combat-TELEGRAPH posture. These three channels have no per-frame
+## decay (that is the point: a fuse holds the crouch/draw/coil for its whole
+## duration), so anything that ends a tell early — death, above all — has to
+## zero them by hand. Boss overrides this to kill the driving tween first.
+func _end_tell() -> void:
+	_tell_pose_x = 0.0
+	_tell_pose_y = 0.0
+	_tell_lean = 0.0
+
+
 ## The mob's dominant body colour — the mean of its current frame's opaque
 ## pixels, cached per sprite key — so a death burst can wear the creature's own
 ## palette (P1). Falls back to the old blood red when the art can't be read.
@@ -2353,14 +2456,24 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 	knock = from_dir * (220.0 if is_crit else 160.0)
 	if not silent:
 		game.sfx("ehit", 1.0, 0.0, 4.0)  # +4dB: the Punch source runs quiet
-		if is_crit:
+		# MP-14 (§5.6) attribution: "is this MY number?" is the STRIKER's
+		# ownership, not who ran the math. The host RESOLVES every hit — its own
+		# AND every guest's — so this branch used to render an ally's blow in the
+		# host's own big/bright style and the host alone could not tell his
+		# damage from his party's. `stat_credit` is the source captured before
+		# the reflect fallback (null for hazard/DoT ticks, which stay yours), and
+		# is_locally_controlled() is always true offline: solo is unchanged.
+		var mine := stat_credit == null or not is_instance_valid(stat_credit) \
+			or stat_credit.is_locally_controlled()
+		if not mine:
+			game.spawn_ally_damage(global_position + Vector2(0, -30), int(amount), is_crit)
+		elif is_crit:
 			game.spawn_text(global_position + Vector2(0, -34), "%d!" % int(amount), Color(1.0, 0.55, 0.1))
 		else:
 			game.spawn_text(global_position + Vector2(0, -30), str(int(amount)), Color(1, 1, 1))
-		# MP-14 (§5.6): the host is authority for every hit it applies (its own
-		# blow AND a guest's — both land here). Fan the number to the party
-		# members who did NOT strike, who show it small. net_host() gates it, so
-		# solo/offline is untouched; the shell above already showed its own big.
+		# The host is authority for every hit it applies. Fan the number to the
+		# party members who did NOT strike, who show it small. net_host() gates
+		# it, so solo/offline is untouched; the striker showed its own big.
 		if game.net_host():
 			game.net_session().host_fan_damage(net_id, int(amount), is_crit, striker)
 		sprite.modulate = Color(3, 3, 3)

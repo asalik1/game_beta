@@ -24,6 +24,16 @@ func _physics_process(delta: float) -> void:
 	# frame, same order as the old inline Input reads. A remote player's
 	# poll no-ops and the frame consumes whatever its RPCs delivered.
 	_poll_local_intents()
+	# OVERLAY GATE, keyboard side (2026-09-06). game.gd zeroes the intents every
+	# frame a menu / dialogue / choice / chat overlay is up — but that clear runs
+	# in _process and THIS poll re-fills them from the raw device on the physics
+	# frame that follows, so on desktop the gate never actually gated anything.
+	# It only looked fixed because solo PAUSES: online nothing pauses (§5.4), and
+	# a key held when the panel opened kept walking and casting the hero
+	# underneath it — the keyboard twin of the touch-HUD joystick bug. Re-apply
+	# the clear HERE, in the frame that consumes the intents.
+	if game != null and game.input_overlay_up():
+		clear_local_intents()
 	# Target-lock EDGES (set by UI events — hud.gd's Tab/Space now, the
 	# mobile HUD button later): consume-then-clear, before anything below
 	# reads locked_target, so this frame's orientation/aim/abilities already
@@ -206,7 +216,9 @@ func _physics_process(delta: float) -> void:
 		return
 
 	# ------------------------------------------------------------ movement
-	var dir := _move_dir()
+	# Read the intents polled (and overlay-gated) at the top of this frame —
+	# _move_dir() re-polls the device, which would undo the gate mid-frame.
+	var dir := intent_move
 	if frozen_time > 0.0 or rooted_time > 0.0:
 		dir = Vector2.ZERO  # crowd-controlled: the dodge is denied
 	# ORIENTATION (left/right). A hard Tab-lock turns the hero to keep facing
@@ -787,6 +799,13 @@ func use_ability(slot: String) -> void:
 		# (owner 2026-08-23), like melee attack<->attackb, so spamming a moving basic
 		# doesn't replay one clip. Art-driven: no _b strip = attack_walk only.
 		if walk_fire:
+			# The fire-on-move strip is a WALK, and it ships its own 8 facings —
+			# so the STANDING bow bias set above (a due-south draw pushed onto the
+			# SE/SW sprite because the flat south pose holds the bow across her
+			# body) must not ride along: it locked the stride 45° off the aim, and
+			# held even while she travelled north. Clear it before the one-shot
+			# takes its facing; _action_facing_vec then reads the aim/travel.
+			action_face_hint = Vector2.ZERO
 			if _clip in ["attack_walk", "attack_walk_b"] and not _clip_loop:
 				action_clip = _clip  # mid-cycle re-cast: the playing stride carries on
 			else:
@@ -807,7 +826,12 @@ func use_ability(slot: String) -> void:
 		action_face_hint = Vector2.ZERO
 	var f := dm(slot)
 
-	# Theme payload for this cast (behavior modifiers + tint).
+	# Theme payload for this cast (behavior modifiers + tint). SHARED state: a
+	# second ability pressed inside the first cast's 0.10-0.25 s windup lands
+	# here and overwrites it, and the first cast then resumed on the SECOND
+	# ability's riders (2026-09-06 fix). Every kit windup now waits through
+	# player_combat.cast_wait(), which snapshots this payload and restores it on
+	# resume — so anything you add here must be restored there too.
 	_tfx = _theme_fx(slot).duplicate()
 	_tcolor = _theme_color(slot)
 	_themed = not _tfx.is_empty()
@@ -1748,8 +1772,10 @@ func _down_tick(delta: float) -> void:
 		velocity = Vector2.ZERO
 		move_and_slide()
 		return
-	# GHOST: immaterial drift at walk speed until the room clears.
-	var dir := _move_dir()
+	# GHOST: immaterial drift at walk speed until the room clears. Same frame's
+	# gated intents as the living path — a re-poll here would drift the ghost
+	# under an open overlay.
+	var dir := intent_move
 	velocity = dir * speed
 	move_and_slide()
 	if dir.x != 0.0:

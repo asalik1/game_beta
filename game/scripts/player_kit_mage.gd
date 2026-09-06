@@ -19,7 +19,7 @@ func _use_mage(slot: String, f: float) -> void:
 				var crystal_count := 2 if _tfx.get("twin", 0) else 1
 				for i in crystal_count:
 					crystal_focuses.append(_spawn_crystal_cast_focus(prelude_dir, cast_delay))
-			await get_tree().create_timer(cast_delay).timeout
+			await cast_wait(cast_delay)
 			if dead or downed or ghost:
 				for focus in crystal_focuses:
 					_dismiss_crystal_focus(focus)
@@ -27,6 +27,19 @@ func _use_mage(slot: String, f: float) -> void:
 			# Preserve the base spell's release-time targeting. The prelude may begin
 			# earlier, but no skin is allowed to snapshot aim or alter behavior.
 			var release_dir := aim_dir()
+			# The focus set is SPAWNED off the pre-windup twin/skin state but
+			# CONSUMED off the release-time state, so a swap across the await must
+			# not strand a focus (it has no fuse — its tweens loop forever) or index
+			# one that was never spawned. Reconcile instead of snapshotting: release
+			# behavior stays the base spell's.
+			var needed_focuses := 0
+			if skin == "crystal_archmage":
+				needed_focuses = 2 if _tfx.get("twin", 0) else 1
+			while crystal_focuses.size() > needed_focuses:
+				var stranded: Node2D = crystal_focuses.pop_back()
+				_dismiss_crystal_focus(stranded)
+			while crystal_focuses.size() < needed_focuses:
+				crystal_focuses.append(null)  # _cast_crystal_focus_bolt spawns on demand
 			if s_passive() == "ninthstar":
 				# Counted per CAST (a twin release is one beat of the rhythm).
 				uniq_counter += 1

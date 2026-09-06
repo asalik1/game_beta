@@ -795,8 +795,9 @@ func _process(delta: float) -> void:
 	# in a session nothing pauses (§5.4), and an ungated poll kept firing
 	# E-interacts (re-entering the convo under its own pending decision) and
 	# moving the hero beneath the panel.
-	var overlay_up: bool = hud.dialogue_active or hud.choices_active or menus.is_open() \
-		or hud.chat_active  # MP-19: an open chat line is an input overlay (§5.4)
+	# (the composite itself lives in game_base.input_overlay_up — the player's
+	# intent poll gates on the SAME one, MP-19: an open chat line counts, §5.4)
+	var overlay_up: bool = input_overlay_up()
 	# Onboarding beat (Q8): drained behind overlays, not fired inline at
 	# room-clear — a session never pauses (§5.4), so wait for the same
 	# composite the interact poll uses before popping a menu on the player.
