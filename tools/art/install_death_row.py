@@ -201,7 +201,17 @@ def main() -> int:
         cx = (np.arange(s.shape[1]) * cols).sum() / max(1, cols.sum())
         px = int(round(f * out_cell + out_cell / 2 - cx))
         py = feet - (s.shape[0] - 1)
-        out.alpha_composite(im, (max(f * out_cell, px), max(0, py)))
+        # CLAMP TO THE CELL, both edges (2026-09-06). Centroid placement can push a
+        # frame whose mass sits left of its bbox centre past the RIGHT boundary, and
+        # PIL's alpha_composite does not reject an out-of-range box -- it crops and
+        # pastes silently, so the overhang is baked into the NEXT frame's cell
+        # (echo_death f4 spilled a 120px fragment into f5, shipped). Only the left
+        # edge was clamped before.
+        lo, hi = f * out_cell, (f + 1) * out_cell - s.shape[1]
+        px_c = min(max(px, lo), max(lo, hi))
+        if px_c != px:
+            print(f"  f{f}: placement clamped {px - lo:+d} -> {px_c - lo:+d} px in-cell (would have crossed the cell edge)")
+        out.alpha_composite(im, (px_c, max(0, py)))
         print(f"  f{f}: {s.shape[1]}x{s.shape[0]} px, feet {feet}")
     arr = np.array(out)
     if not args.no_tone:

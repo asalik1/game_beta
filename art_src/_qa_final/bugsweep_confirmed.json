@@ -1,0 +1,178 @@
+[
+ {
+  "dim": "enemy-motion",
+  "file": "game/scripts/enemy.gd",
+  "line": 1333,
+  "severity": "P1",
+  "title": "Co-op mirror never restores the flat idle for a directional-walk boss \u2014 it cycles its walk strip in place",
+  "claim": "The 2026-09-03 mirror port copied the live path's directional branch but dropped the live path's `or _cur_dir != \"\"` restore clause. For a boss with a DIRECTIONAL walk and a FLAT idle (BOSS_DIRECTIONAL_WALK + MOB_IDLE_ONLY_LOCOMOTION + BOSS_FLAT_ANIMATION_LOCOMOTION, i.e. all 18 of them: vargoth, korrag, sexton, nullwarden, choirmother, vess, forgemistress, ashpriest, veyx, echo, stormmouth, saint_varo_standing, \u2026) `_strip_walk` is EMPTY and `_dir_idle` is EMPTY, so on a guest nothing ever swaps the strip back when the boss stops. The mirror keeps the last directional walk strip and `anim_t` keeps advancing, so the boss plays its walk cycle standing still."
+ },
+ {
+  "dim": "enemy-motion",
+  "file": "game/scripts/enemy.gd",
+  "line": 1103,
+  "severity": "P2",
+  "title": "_lean low-pass has no is_finite guard \u2014 one non-finite velocity frame latches sprite.rotation = NaN forever",
+  "claim": "`_lean` is an exponential low-pass exactly like `_face_vx`, but only `_face_vx` is guarded. `lerpf(NaN, x, t)` stays NaN for the life of the node, so a single frame with a non-finite `velocity.x` (the documented NaN family that already stranded wolves at (nan,nan)) permanently writes `sprite.rotation = NaN`. The `_physics_process` NaN scrub repairs position/knock/velocity, but nothing can un-poison `_lean` \u2014 the body stays render-broken after the sim recovers. The mirror path reaches it without any sim bug at all: `velocity` there is computed from `net_target` even when `net_target` is non-finite."
+ },
+ {
+  "dim": "enemy-motion",
+  "file": "game/scripts/enemy.gd",
+  "line": 1339,
+  "severity": "P2",
+  "title": "Mirror stride clock ignores the speed ratio the host applies \u2014 slowed and wandering mobs skate on a guest",
+  "claim": "The 2026-09-03 stride/ground coupling multiplies the walk clock by `clampf(spd/speed, 0.35, 1.6)` on the live path so a slow, hazard ice, frenzy or half-pace wander plays the legs at the real ground speed. The mirror tick applies only the cruise multiplier and the gait personality, so on a guest every mob plays its walk at cruise regardless of how fast it is actually travelling \u2014 the exact foot-skate the fix removed, still present for the whole co-op audience."
+ },
+ {
+  "dim": "enemy-motion",
+  "file": "game/scripts/enemy.gd",
+  "line": 1231,
+  "severity": "P2",
+  "title": "Death reset misses pounce_time and the boss tell pose \u2014 a mob killed mid-leap collapses stretched and banked",
+  "claim": "`_play_death_anim` clears the transient pose channels it knows about (`_pose_x/_pose_y/_spawn_k`, plus the squash tween) but not `pounce_time`, and `pounce_time` is only decremented in `_tick_traits`, which `_physics_process` skips entirely once `dying`. `_render_tail` reads `pounce_time` unconditionally (not gated by `moving`), so a mob killed during its 0.30 s lunge keeps +0.08/-0.08 stretch and a pinned \u00b10.12 rad bank for every frame of its death clip and fade. The same reset misses the boss tell channel: `Boss._tell_windup`'s tween is neither killed nor zeroed on death, so a boss killed inside a telegraph fuse keeps rising/coiling/leaning through its own death animation."
+ },
+ {
+  "dim": "enemy-motion",
+  "file": "game/scripts/enemy.gd",
+  "line": 2147,
+  "severity": "P2",
+  "title": "Elite promotion rescales the body but not the HP bar, ground AO or contact shadow \u2014 the bar ends up inside the sprite",
+  "claim": "`_rescale_body()` recomputes only `_scale_base`/`sprite.scale`. Every other piece of per-body geometry is derived once in `make()` from the pre-promotion `vscale`: the HP bar's `bar_y` (hung off the measured head line times the then-current `sprite.scale.y`), the ground-AO disc and the contact shadow. `promote_elite` multiplies `art_scale` by up to ELITE_SIZE_BIAS \u00d7 ELITE_SPRITE_MULT \u2248 1.5, so an elite's head line rises ~50% while its bar, AO pool and contact ellipse stay at the base size. `_spawn_add`'s weakling (art_scale \u00d7 0.8) and `swap_sprite` (Saint Varo throne\u2192standing, a different cell entirely) have the same hole."
+ },
+ {
+  "dim": "enemy-motion",
+  "file": "game/scripts/game_base.gd",
+  "line": 3232,
+  "severity": "P3",
+  "title": "Telegraph comments (and the BOSS_TELL table doc) claim a shape-following hit test that does not exist",
+  "claim": "Two comments assert that the new tell shapes drive the damage test, and balance.gd points at a function name that is not in the codebase (`game_base._tell_figure`; the real one is `_tell_accent`). The hit test is a plain radius check on the full disc \u2014 which is what `_tell_accent`'s own header correctly says (\"the fill/rim disc stays exactly as it was \u2026 the dodge is unchanged\"). Three docs, two of them wrong, on the same feature: the next agent who trusts them will either 'fix' the hit test into a shaped one \u2014 silently shrinking 47 boss danger areas \u2014 or assume a cone tell is already narrow."
+ },
+ {
+  "dim": "player-kits",
+  "file": "game/scripts/player.gd",
+  "line": 811,
+  "severity": "P1",
+  "title": "Cast theme payload (_tfx/_tcolor/_themed/_cast_base) is shared mutable state read AFTER every kit's windup await \u2014 a second ability pressed during the windup silently rewrites the first cast's theme effects",
+  "claim": "use_ability stores the cast's theme payload in instance vars, but every class's basic attack awaits a windup timer (0.10-0.25 s) and only then reads _tfx / _tcolor / _themed. Any ability pressed inside that window overwrites those vars, so the in-flight cast lands with the WRONG ability's theme package. hit_enemy merges whatever _tfx holds at hit time, and _proj stamps whatever it holds at spawn time, so this changes real damage riders (splash / dot / pierce / echo / slow / stun_chance / vuln / brittle / twin), not just tint."
+ },
+ {
+  "dim": "player-kits",
+  "file": "game/scripts/player_kit_mage.gd",
+  "line": 19,
+  "severity": "P2",
+  "title": "Crystal Archmage twin Firebolt leaks a permanently floating cast focus (and can index out of range) when the twin flag changes across the windup await",
+  "claim": "The number of cast-focus nodes is decided from _tfx BEFORE the await; which branch consumes them is decided from _tfx AFTER the await. When those disagree, either a spawned focus is never consumed (a Node2D with an infinite looping tween parked in the world forever \u2014 it has no timer fuse, unlike the Void Weaver eye) or the twin branch indexes crystal_focuses[1] on a 1-element array and throws."
+ },
+ {
+  "dim": "player-kits",
+  "file": "game/scripts/player_kit_archer.gd",
+  "line": 29,
+  "severity": "P2",
+  "title": "Archer alone bypasses swing_delay, so its loose is never compensated for fit_action_clip's haste \u2014 at endgame cdr the arrow leaves after the fire-on-move clip has already ended",
+  "claim": "Five of six kits route their windup through swing_delay(); the archer awaits Balance.ARCHER_LOOSE_DELAY raw in all three places. swing_delay's final `return base / _clip_haste` is the only thing that pulls a cast's contact time in when fit_action_clip re-paces a clip, and fit_action_clip is applied to every fire-on-move cast. The archer therefore keeps a fixed 0.25 s release against a clip that has been sped up to fit the cooldown, so the arrow's release drifts to the end of the cycle and, past a modest cdr, past the end of it."
+ },
+ {
+  "dim": "player-kits",
+  "file": "game/scripts/player.gd",
+  "line": 760,
+  "severity": "P3",
+  "title": "The archer's due-south bow-draw facing bias is applied before action_clip is swapped to attack_walk, so it diverts the fire-on-move walk strip 45 degrees off",
+  "claim": "action_face_hint is set for the standing bow clips (its guard literally lists \"attack\", \"attack2\", \"attackb\") but it is evaluated before the walk_fire block rewrites action_clip, and it is not cleared until after play_action has already consumed it. The attack_walk one-shot therefore locks onto the SE/SW strip on a due-south aim, even though the archer ships a full 8-direction attack_walk set including _s, and even when she is travelling north."
+ },
+ {
+  "dim": "world-flow",
+  "file": "game/scripts/game_world.gd",
+  "line": 3468,
+  "severity": "P1",
+  "title": "Structure light sockets bake the PREVIOUS room's light budget (light_mult read before cur_room advances)",
+  "claim": "`_add_structure` sizes every PointLight2D from the frame-global `light_mult`, which `refresh_ambience()` derives from `cur_room`'s terrain. But structures are created inside `_build_room` -> `_spawn_scenery`, and `_enter_room` calls `_build_room(i)` BEFORE it assigns `cur_room = i`. So on a room's first (and only) build, every torch/brazier/socket energy is scaled by the terrain of the room the player just LEFT, and it is never recomputed. The very next lines in the same block already use the correct per-zone helper (`_floor_glow(..., _zone_light_mult(gz))`), so the two halves of one lit prop disagree."
+ },
+ {
+  "dim": "world-flow",
+  "file": "game/scripts/game_world.gd",
+  "line": 1450,
+  "severity": "P2",
+  "title": "Dying in a social ELITE room deletes the miniboss forever \u2014 the death reset respawns only authored packs",
+  "claim": "`_reset_room_enemies` frees every non-boss enemy whose `zone_idx == i`, then rebuilds the room from `zones[i][\"enemies\"]` only. A social room's lone elite is NOT in that array \u2014 it is spawned separately by `_spawn_elite_room` from the seeded social roll at build time \u2014 so a player death in that room deletes the miniboss and nothing puts it back. `zone_alive[i]` is reset to 0 by `_spawn_room_enemies`, which also makes the now-empty room read `room_pacified`, so `respawn_room` drops the player back into the very room they just died in, standing where the elite used to be."
+ },
+ {
+  "dim": "world-flow",
+  "file": "game/scripts/game_base.gd",
+  "line": 3232,
+  "severity": "P2",
+  "title": "Tell shape vocabulary: the code comment and BOSS_TELL doc both claim the hit test follows the accent shape \u2014 it is still a pure disc",
+  "claim": "`telegraph()` draws a cone/line/cross/square/ring accent that pulses ~3x brighter than the disc at the moment of the pop, while the damage test is unchanged: a radius circle. Two places assert the opposite (the inline comment added with the feature, and the BOSS_TELL table header), directly contradicting `_tell_accent`'s own docstring, which says the disc must remain the hit shape. A player reading the bright wedge as the strike takes full damage anywhere in the circle, and the next balance pass that trusts the comment will shrink a boss's real danger area or widen it by accident."
+ },
+ {
+  "dim": "save-settings",
+  "file": "game/scripts/game_flow.gd",
+  "line": 1150,
+  "severity": "P1",
+  "title": "Weekly-challenge claim ledger is never saved (Renown is), so the weekly reward is re-farmable",
+  "claim": "On the solo/host victory path `end_it` flips `state = ST_VICTORY` BEFORE granting the weekly reward. `autosave()` hard-gates on `state == ST_PLAYING`, so the character-side half of the grant (`weekly_claimed_week`, `player.gold`) is never written, while `add_renown()` writes meta.json immediately. Leaving the victory card without re-entering play (R = reload scene, or closing the window) banks the account Renown and drops the claim ledger, so the same week's challenge pays Renown again on every repeat. The guest path does this correctly, which is the proof the ordering is a mistake, not a design choice."
+ },
+ {
+  "dim": "save-settings",
+  "file": "game/scripts/save.gd",
+  "line": 499,
+  "severity": "P2",
+  "title": "next_free_slot()/exists() ignore the .bak that read()/list() resurrect \u2014 a listed hero can be handed to a new character",
+  "claim": "`exists()` and therefore `next_free_slot()` test only the main file, while `read()` (and so `list()`, which paints the roster) transparently recovers a slot from its `.bak`. The two disagree exactly in the window `atomic_store` itself can create: if the roll-to-.bak at save.gd:72 succeeds and the tmp->final rename at save.gd:73 fails, the main file is gone and only the .bak survives. The roster then still shows that hero, but `next_free_slot()` reports the slot free and a New Character claims it \u2014 the CR-001 overwrite the comment at save.gd:496-498 says the function exists to prevent."
+ },
+ {
+  "dim": "coop-net",
+  "file": "game/scripts/enemy.gd",
+  "line": 1333,
+  "severity": "P1",
+  "title": "Net mirror never restores a boss's flat idle \u2014 every directional-walk boss walks in place forever on a guest",
+  "claim": "`_net_mirror_tick`'s non-directional fallback only swaps strips when `_strip_walk` is non-empty. All 18 `Art.BOSS_DIRECTIONAL_WALK` bosses have an EMPTY `_strip_walk` (their walk lives in `_dir_walk` as `<sprite>_walk_codex_<dir>`) and an EMPTY `_dir_idle` (they are all also in `BOSS_FLAT_ANIMATION_LOCOMOTION`). So when the host's boss stops, `directional_loco` goes false, the `elif` guard fails, and the mirror is stranded on the last directional WALK strip while `anim_t` keeps advancing \u2014 the boss walk-cycles in place and never returns to its breathing idle. The live path was fixed for exactly this case in the same round (enemy.gd:995-1007, comment: \"A boss with a directional walk but a FLAT idle ... _strip_walk is empty, so the old `not _strip_walk.is_empty()` guard would never restore the idle and it would freeze on the last walk frame\"); the mirror copy did not get the fix."
+ },
+ {
+  "dim": "coop-net",
+  "file": "game/scripts/player.gd",
+  "line": 26,
+  "severity": "P1",
+  "title": "Co-op desktop overlay input gate is inert \u2014 the physics-frame poll overwrites clear_local_intents every frame",
+  "claim": "`game.gd` zeroes the local intents every frame an overlay is up (`player.clear_local_intents()`, game.gd:869), because \u00a75.4 means a session never pauses. But `player.gd::_physics_process` re-polls the raw keyboard unconditionally at line 26, and `player_combat._move_dir()` polls a THIRD time at line 964 immediately before movement is computed. Godot runs physics before idle `_process` in each iteration, so the intents consumed by `use_ability` (player.gd:349-358) and by `velocity = dir * spd` (player.gd:209/252) are always freshly polled from the device \u2014 the clear only ever lands in the dead window after consumption. In co-op, opening the inventory/skills/map/codex or standing in a dialogue still walks and casts your hero underneath the panel: exactly the touch-HUD bug the touch gate was fixed for, still live on the keyboard."
+ },
+ {
+  "dim": "coop-net",
+  "file": "game/scripts/enemy.gd",
+  "line": 2357,
+  "severity": "P2",
+  "title": "A guest's damage renders as the host's own big number \u2014 the host is excluded from the ally-damage fan",
+  "claim": "MP-14 \u00a75.6 says every hit fans a COMPACT number to the party members who did not strike. `enemy.take_damage` runs on the host for a guest's hit too (net_session `_rpc_hit_enemy` calls `e.take_damage`), and it unconditionally spawns the full-size own-damage number before fanning. `_flush_dmg_fan` then sends the small number only to entries of `_net().peers` \u2014 which never contains the host (id 1) \u2014 so the host neither suppresses the big number nor receives a small one. Result: on the host's screen a guest's every hit renders identically to the host's own damage (z 20, full size, white/orange), and the \"own big / allies' small\" read the guests get is inverted on the host. The comment at enemy.gd:2363 (\"the shell above already showed its own big\") is wrong: the host-side shell renders no numbers \u2014 the number was just spawned two lines above by this same call."
+ },
+ {
+  "dim": "ui-codex-data",
+  "file": "game/scripts/art.gd",
+  "line": 3389,
+  "severity": "P1",
+  "title": "gait_shape() calls every Act-1 leg-walking boss a \"glide\" body \u2014 the 2026-09-03 stride juice, footfall dust and BOSS_STEP_SHAKE stomp never fire on the 10 bosses that got the new directional walk",
+  "claim": "MOB_GAIT_SHAPE (art.gd:3371) lists fangmaw/cinderhide/morwen but none of the Act-1 regen bosses. gait_shape()'s fallback then returns \"glide\" for any sprite in MOB_IDLE_ONLY_LOCOMOTION \u2014 which is exactly the set of bosses BOSS_DIRECTIONAL_WALK (art.gd:3345) classifies as \"leg-walkers\" and gives a real 8-direction walk cycle to (vargoth, korrag, sexton, hrolgar, auroch_minotaur, rotmaw, kaethra, echo, stormmouth, nullwarden). enemy.gd's _render_tail gates the whole stride-locked juice block AND the footfall block on `_gait_shape != \"glide\"`, so those ten play an authored leg cycle with no chest rise, no foot dust, no boss stomp shake, and half the travel lean. enemy.gd's make() already documents the same override for the strip path (\"Codex directional WALK overrides the flat/idle-only suppression\") \u2014 gait_shape is the one place that did not get it."
+ },
+ {
+  "dim": "ui-codex-data",
+  "file": "game/scripts/ui/codex.gd",
+  "line": 1897,
+  "severity": "P1",
+  "title": "The codex bestiary only scans Story.CHAPTER_LIST, so the Moonfen boss (first_howl) is missing from the Bosses shelf, filed as a dev \"placeholder\", and a route to it silently opens a different boss",
+  "claim": "_used_enemy_kinds() and _kind_chapters() derive \"is this enemy actually placed?\" by walking Story.CHAPTER_LIST only. Interlude worlds are deliberately kept OUT of CHAPTER_LIST (story.gd:1194-1197, they live in STANDALONE_WORLDS), and first_howl \u2014 a shipped boss in Menus.BOSS_KINDS with authored mechanics, a BOSS_TELL row and a bespoke sprite \u2014 is placed only inside interlude_moonfen. Consequences: (a) _bestiary_kinds() drops it, so the player-facing Bosses shelf and its rail count never list the boss they just killed; (b) _future_enemies() picks it up instead and renders it with the \"[placeholder]\" tag on the dev Future > Bosses shelf; (c) open_codex(\"\", \"first_howl\") routes to the Bosses section, finds no matching row and silently falls back to rows[0] \u2014 the reader lands on Fangmaw with no error."
+ },
+ {
+  "dim": "ui-codex-data",
+  "file": "game/scripts/ui/codex.gd",
+  "line": 967,
+  "severity": "P2",
+  "title": "Codex \"Folk of the Vale\" is derived from zone `npcs` arrays only \u2014 31 wanderer NPCs (including quest-givers) and the capital's Seamster Suli never appear",
+  "claim": "_npc_entries() builds the Folk shelf by walking Story.CHAPTER_LIST zones' \"npcs\" arrays. The whole social-wanderer layer lives in Story.ALL_WANDERERS (per-chapter pools merged from each content module's WANDERERS const) and is never read, and capital_hub.gd's CHAPTER is a standalone kept out of CHAPTER_LIST. Result: 31 named speaking sprites (archivist_lene, skald_ottar, peddler_nix, clerk_voss, millers_boy, tinker_osla, driver_pell, grave_goods_peddler, \u2026) plus seamster_suli are absent from the section that documents itself as \"The speaking cast, deduped by sprite\". At least one of them hands out a side quest \u2014 story.gd's own comment names heron_feather as \"offered by the miller's boy\" \u2014 and the shelf's `quest` flag exists precisely to mark those. The names resolve fine (_npc_name reads the convo's start-node \"who\"), so nothing structural blocks including them."
+ },
+ {
+  "dim": "art-tools",
+  "file": "tools/art/install_death_row.py",
+  "line": 204,
+  "severity": "P1",
+  "title": "Death installer composites a frame past its cell \u2014 body pixels bleed into the next frame (shipped in echo_death.png)",
+  "claim": "Each scaled death frame is pasted so its ALPHA CENTROID lands on the cell centre, but only the LEFT edge is clamped (`max(f*out_cell, px)`); nothing clips the right edge. `out_cell` is sized from the widest frame's bbox (`need = max width + 8`), so any frame whose mass sits left of its bbox centre by more than ~4 px is pasted with its right end hanging over the cell boundary. PIL's `Image.Image.alpha_composite` does not reject an out-of-range dest \u2014 it crops/pastes silently (Pillow 12.3.0 source: `background = self.crop(box)` then `self.paste(result, box)`) \u2014 so the overhang is baked into the NEXT frame's cell instead of being cut."
+ }
+]
