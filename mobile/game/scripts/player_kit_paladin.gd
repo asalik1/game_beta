@@ -64,7 +64,7 @@ func _use_paladin(slot: String, f: float) -> void:
 			# Sync the impact to the warhammer's slam: the heavy overhead swing
 			# has a real windup, so the shock/pillar/hit land WITH the hammer,
 			# not on the input frame (which read ahead of the animation).
-			await get_tree().create_timer(swing_delay(Balance.PALADIN_SMITE_DELAY)).timeout
+			await cast_wait(swing_delay(Balance.PALADIN_SMITE_DELAY))
 			if dead or downed or ghost:
 				return
 			if dawn:
@@ -262,7 +262,7 @@ func _consecration(f := 1.0) -> void:
 	var fx_copy := _tfx.duplicate()
 	var fmul := f
 	# Land the nova on the warhammer's slam frame, not the input frame.
-	await get_tree().create_timer(swing_delay(Balance.PALADIN_SMITE_DELAY)).timeout
+	await cast_wait(swing_delay(Balance.PALADIN_SMITE_DELAY))
 	if dead or downed or ghost:
 		return
 	var pos := global_position

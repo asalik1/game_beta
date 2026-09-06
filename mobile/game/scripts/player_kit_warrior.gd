@@ -39,7 +39,7 @@ func _use_warrior(slot: String, f: float) -> void:
 				cleave_eff["force_crit"] = 1  # Red Horizon: the dodge lined it up
 			# Sync the cut to the swing's contact frame — the sword windup means
 			# FX/damage on the input frame read ahead of the animation.
-			await get_tree().create_timer(swing_delay(Balance.WARRIOR_SWING_DELAY)).timeout
+			await cast_wait(swing_delay(Balance.WARRIOR_SWING_DELAY))
 			if dead or downed or ghost:
 				return
 			if decree:

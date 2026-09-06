@@ -662,6 +662,19 @@ func request_pause(on: bool) -> void:
 	get_tree().paused = on
 
 
+## THE input gate that replaces the pause (§5.4): is an input-blocking overlay
+## up — a menu, dialogue, a choice prompt or the chat line? In a session
+## request_pause above no-ops, so this composite, not get_tree().paused, is what
+## stops the world reading the local device. game.gd gates its interact/menu
+## poll on it and zeroes the intents while it holds; player_core's per-physics-
+## frame poll re-checks it (the physics frame runs AFTER that clear and used to
+## re-fill the intents straight from the keyboard).
+func input_overlay_up() -> bool:
+	if hud == null or menus == null:
+		return false
+	return hud.dialogue_active or hud.choices_active or hud.chat_active or menus.is_open()
+
+
 ## NG+ tier governing THIS run's spawns and drops (0 = Normal;
 ## Balance.TIER_NAMES). Reads the RUN-START snapshot (world_run_tier) —
 ## the character's standing choice (player.run_tier, picked in the replay
@@ -3229,8 +3242,11 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 	# draw the same rimmed disc, differing only in tint and radius — the reason
 	# "boss attacks all look visually similar". opts["shape"] picks the ground
 	# figure; "disc" (the default) is byte-identical to the old path, so mob
-	# traits and bloat bursts are untouched. The hit test below follows the same
-	# shape, so a tell never lies about where it lands.
+	# traits and bloat bursts are untouched. The accent is DECORATION drawn
+	# inside the disc: the hit test below stays a plain radius check on the
+	# FULL disc (see `_tell_accent`'s header). Do not "fix" it into a shaped
+	# test — a cone or bar hit shape would silently shrink all 47 boss danger
+	# areas, and every site was tuned against the circle.
 	var tint: Color = opts.get("color", Color(1.0, 0.2, 0.15, 0.55))
 	var shape := String(opts.get("shape", "disc"))
 	var zone := Sprite2D.new()

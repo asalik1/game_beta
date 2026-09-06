@@ -68,6 +68,11 @@ const IDLE_BREATH_HZ := 0.75
 # near-stop from freezing mid-pose (walk swaps to idle below it anyway).
 const STRIDE_RATE_MIN := 0.35
 const STRIDE_RATE_MAX := 1.6
+# CO-OP mirrors have no move_and_slide velocity to read the ratio from, so a
+# guest measures the ground speed its mirror actually RENDERS (per-frame
+# displacement). At a 20 Hz snapshot stream that raw step is lumpy — low-pass it
+# at this rate (1/s) before it feeds the band above.
+const MOB_NET_STRIDE_EASE := 8.0
 # Static-art walk sway (legacy fallback: bodies WITHOUT clip sheets only) —
 # whole-sprite rock rate (rad/s) + amplitude (rad). Bodies with authored walk
 # clips hold rotation 0: the clip carries the gait, and this rock's ~1.75 Hz
@@ -153,8 +158,10 @@ const MOB_SPAWN_IN_T := 0.28
 # `impact_sfx`: one HUE and one ground SHAPE per boss, so a tell is identifiable
 # before you read its size. Seven bosses previously shared one pale blue and
 # every single tell was the same rimmed disc.
-#   shape: disc | ring | cone | line | cross | square  (game_base._tell_figure;
-#          the hit test follows the same figure, so a tell never lies)
+#   shape: disc | ring | cone | line | cross | square  (game_base._tell_accent;
+#          VISUAL ONLY — the accent is drawn inside the danger disc and the hit
+#          test remains a radius check on the full disc, so a cone tell is NOT
+#          narrower than it looks)
 #   arc:   cone half-angle in radians;  width: line/cross bar width in px
 # The table OWNS the hue (that is the point) but keeps each call site's ALPHA,
 # which encodes intensity; a site that needs its own colour passes

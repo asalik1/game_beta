@@ -23,7 +23,7 @@ func _use_warlock(slot: String, f: float) -> void:
 			var cast_eye: Node2D = null
 			if skin == "eldritch_warlock":
 				cast_eye = _spawn_eldritch_cast_eye(aim_dir(), cast_delay)
-			await get_tree().create_timer(cast_delay).timeout
+			await cast_wait(cast_delay)
 			if dead or downed or ghost:
 				_dismiss_eldritch_cast_eye(cast_eye)
 				return
@@ -257,7 +257,7 @@ func _arcane_eye_curse(e: Enemy) -> void:
 ## primed to EXPLODE on death (the class identity).
 func _hex(f := 1.0) -> void:
 	# Land the curse on the sigil-projection frame, not the input frame.
-	await get_tree().create_timer(swing_delay(Balance.WARLOCK_CAST_DELAY)).timeout
+	await cast_wait(swing_delay(Balance.WARLOCK_CAST_DELAY))
 	if dead or downed or ghost:
 		return
 	game.sfx("gate", 1.6)

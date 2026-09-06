@@ -960,6 +960,28 @@ func swing_delay(base_delay: float) -> float:
 	return base / _clip_haste
 
 
+## THE cast windup wait — every kit's "land it on the contact frame" pause goes
+## through here instead of awaiting a bare scene timer (2026-09-06).
+## The theme payload (_tfx / _tcolor / _themed / _cast_base) is SHARED instance
+## state that use_ability overwrites for each new cast, and pressing a second
+## ability inside a 0.10-0.25 s windup is ordinary play — so the first cast used
+## to resume and land with the SECOND ability's package: real riders (splash /
+## dot / pierce / echo / slow / stun_chance / vuln / brittle / twin) and flat
+## base, not just tint. Snapshot this cast's payload before the timer and put it
+## back on resume, so a cast always lands its OWN theme. (Same trick the archer's
+## delayed storm arrow already used inline for _tfx; this is the shared form.)
+func cast_wait(sec: float) -> void:
+	var fx: Dictionary = _tfx
+	var col: Color = _tcolor
+	var themed: bool = _themed
+	var base: float = _cast_base
+	await get_tree().create_timer(sec).timeout
+	_tfx = fx
+	_tcolor = col
+	_themed = themed
+	_cast_base = base
+
+
 func _move_dir() -> Vector2:
 	_poll_local_intents()
 	return intent_move

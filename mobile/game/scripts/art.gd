@@ -3347,15 +3347,18 @@ const BOSS_IDLE_STRIP_BASE := {
 ## breathing idle when stopped (BOSS_IDLE_STRIP_BASE) and plays the directional
 ## walk while moving; enemy.gd restores the idle on the walk→stop transition.
 ## saint_varo (throne-rooted) is intentionally absent.
+## The VALUE is the body archetype of that authored cycle, so gait_shape()
+## below reads the leg-walker/glider split from this one table instead of a
+## parallel list that can drift out of sync with it.
 const BOSS_DIRECTIONAL_WALK := {
 	# leg-walkers
-	"vargoth": true, "korrag": true, "sexton": true, "hrolgar": true,
-	"auroch_minotaur": true, "rotmaw": true, "kaethra": true, "echo": true,
-	"stormmouth": true, "nullwarden": true,
+	"vargoth": "biped", "korrag": "biped", "sexton": "biped", "hrolgar": "biped",
+	"auroch_minotaur": "biped", "rotmaw": "biped", "kaethra": "biped", "echo": "biped",
+	"stormmouth": "biped", "nullwarden": "biped",
 	# gliders (robe/gown/float — cloth sway + bob, no leg cycle)
-	"choirmother": true, "vess": true, "serane": true, "forgemistress": true,
-	"ashpriest": true, "halla": true, "veyx": true,
-	"saint_varo_standing": true,
+	"choirmother": "glide", "vess": "glide", "serane": "glide", "forgemistress": "glide",
+	"ashpriest": "glide", "halla": "glide", "veyx": "glide",
+	"saint_varo_standing": "glide",
 }
 
 static func boss_directional_walk(name: String) -> bool:
@@ -3385,7 +3388,15 @@ const MOB_GAIT_SHAPE := {
 
 static func gait_shape(name: String) -> String:
 	if MOB_GAIT_SHAPE.has(name):
-		return MOB_GAIT_SHAPE[name]
+		return String(MOB_GAIT_SHAPE[name])
+	# A Codex directional-walk boss plays a real authored locomotion cycle, so
+	# ITS body decides the juice — the flat/idle-only suppression below would
+	# call every one of them a glider and mute the stride rise, the footfall
+	# dust and the boss stomp shake. Same override enemy.gd's make() applies
+	# to the strip path ("Codex directional WALK overrides the flat/idle-only
+	# suppression"), which is why these bosses have a leg cycle at all.
+	if BOSS_DIRECTIONAL_WALK.has(name):
+		return String(BOSS_DIRECTIONAL_WALK[name])
 	if mob_idle_only_locomotion(name):
 		return "glide"
 	return "biped"

@@ -25,8 +25,15 @@ static func path(slot: int) -> String:
 	return "user://save_%d.json" % slot
 
 
+## True when the slot HOLDS a hero — occupancy as read()/list() see it, not just
+## "the main file is on disk". read_json falls back to the ".bak" atomic_store
+## leaves behind (CR-006), so a slot whose main file was lost or truncated still
+## LISTS its hero and still loads; treating it as free would hand it to a new
+## character and overwrite the one thing that could recover it. delete() removes
+## the sidecars too, so a deleted slot is free by either test.
 static func exists(slot: int) -> bool:
-	return FileAccess.file_exists(path(slot))
+	var p := path(slot)
+	return FileAccess.file_exists(p) or FileAccess.file_exists(p + ".bak")
 
 
 ## Crash-safe JSON write (CR-006). Every persistent JSON file in the game routes
@@ -496,6 +503,8 @@ static func list() -> Array:
 ## EXPLICIT "no free slot" — callers must not write over an existing save
 ## (CR-001: returning MAX_SLOTS here silently overwrote slot 20). The New
 ## Character UI blocks at capacity, so a real player never hits the -1 case.
+## Occupancy is exists(), which counts a backup-only slot — a slot the roster
+## still lists is never offered as free.
 static func next_free_slot() -> int:
 	for slot in range(1, MAX_SLOTS + 1):
 		if not exists(slot):

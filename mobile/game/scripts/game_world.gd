@@ -1456,6 +1456,16 @@ func _reset_room_enemies(i: int) -> void:
 			e.remove_from_group("enemies")
 			e.queue_free()
 	_spawn_room_enemies(i)
+	# A social room's lone ELITE is not in the zone's authored pack list, so the
+	# respawn above cannot bring it back: without this the miniboss (and its
+	# reward) is gone for good the first time you die in that room. Re-run the
+	# build path's roll on a fresh _social_rng so the same seed picks the same
+	# guardian. The caller only resets an UNCLEARED room, so a beaten elite room
+	# never respawns its guardian.
+	if room_type(i) == "social":
+		var erng := _social_rng(i)
+		if erng.randf() < Balance.ELITE_SOCIAL_ROOM_CHANCE * weekly_fx("elite"):
+			_spawn_elite_room(i, erng)
 
 ## One pack member noticed you: the whole pack answers (per-pack aggro —
 ## rooms are too big for all-at-once).
@@ -3449,6 +3459,15 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 			cshape.shape = rect
 		body.add_child(cshape)
 
+	# The light budget belongs to the room this structure STANDS IN, not to the
+	# room the player is in. Scenery builds run BEFORE `cur_room` advances to
+	# the room being built, so `light_mult` (refresh_ambience tracks cur_room
+	# only) still holds the PREVIOUS room's value here — every socket would be
+	# scaled by the wrong terrain. `_zone_light_mult` reads this room's own
+	# terrain; outside the graph there is no room, so fall back to the global.
+	var szi := room_at_pos(pos)
+	var slight: float = _zone_light_mult(szi) if szi >= 0 else light_mult
+
 	# Wall decals: non-colliding overlays (banners, torches, moss). A decal can
 	# animate (Lane 3) and can carry a point light — a torch's glow.
 	for d in def.get("decals", []):
@@ -3464,18 +3483,17 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 			lt.color = lcol
 			# Scale by the terrain's light budget (Track A doctrine): an unscaled
 			# additive torch glow blooms a daylight scene to white. Scenery
-			# rebuilds on terrain change, so this re-reads a fresh light_mult.
-			lt.energy = float(d.get("light_energy", 0.8)) * light_mult
+			# rebuilds on terrain change, so this re-reads a fresh budget.
+			lt.energy = float(d.get("light_energy", 0.8)) * slight
 			lt.texture_scale = float(d.get("light_scale", 0.7))
 			lt.position = d.get("off", Vector2.ZERO)
 			body.add_child(lt)
 			# ...and a floor pool the light can't make on a dark floor (see
 			# _floor_glow): the torch's warmth lands on the ground around it.
-			var gz := room_at_pos(pos)
-			if gz >= 0:
+			if szi >= 0:
 				var g := _floor_glow(body, lt.position + STRUCT_GLOW_DROP, lcol,
 					STRUCT_GLOW_RADIUS * lt.texture_scale,
-					STRUCT_GLOW_STRENGTH * float(d.get("light_energy", 0.8)), gz)
+					STRUCT_GLOW_STRENGTH * float(d.get("light_energy", 0.8)), szi)
 				g.z_as_relative = false
 				g.z_index = -8   # over the floor, under the structure's own sprites
 
@@ -3486,15 +3504,14 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 		var lt := PointLight2D.new()
 		lt.texture = Art.tex("light")
 		lt.color = light.get("color", Color.WHITE)
-		lt.energy = float(light.get("energy", 0.8)) * light_mult
+		lt.energy = float(light.get("energy", 0.8)) * slight
 		lt.texture_scale = float(light.get("scale", 0.7))
 		lt.position = light.get("off", Vector2.ZERO)
 		body.add_child(lt)
-		var gz2 := room_at_pos(pos)
-		if gz2 >= 0:
+		if szi >= 0:
 			var g2 := _floor_glow(body, lt.position + STRUCT_GLOW_DROP, lt.color,
 				STRUCT_GLOW_RADIUS * lt.texture_scale,
-				STRUCT_GLOW_STRENGTH * float(light.get("energy", 0.8)), gz2)
+				STRUCT_GLOW_STRENGTH * float(light.get("energy", 0.8)), szi)
 			g2.z_as_relative = false
 			g2.z_index = -8
 

@@ -366,6 +366,16 @@ func _tell_windup(style: Dictionary, delay: float, pos: Vector2) -> void:
 			_tell_tw = null
 
 
+## Enemy._end_tell + the driving tween: a boss killed INSIDE a telegraph fuse
+## would otherwise keep tweening its windup posture through its own death clip
+## (the tween outlives the AI, which stops the instant `dying` is set).
+func _end_tell() -> void:
+	if _tell_tw != null and _tell_tw.is_valid():
+		_tell_tw.kill()
+	_tell_tw = null
+	super()
+
+
 ## DEV-MORPH preview fire (dev_morph.gd only): spawn this action's REAL
 ## projectiles/telegraphs + play the REAL audio, so the codex Transform rig
 ## reviews the full effect, not just the clip. Boss abilities are inline in

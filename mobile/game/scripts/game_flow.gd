@@ -649,6 +649,11 @@ func _finish_weekly(res: Dictionary) -> void:
 			"WEEKLY CHALLENGE COMPLETE  (+%d gold, %d gems, +%d Renown)" % [g,
 				Balance.WEEKLY_REWARD_GEMS, Balance.RENOWN_WEEKLY],
 			Color(1.0, 0.85, 0.4), 5.0)
+		# Bank the claim ledger with the payout (claim_vault's precedent): the
+		# Renown is already in meta.json, so a ledger left in RAM would let the
+		# same weekly be claimed again after a reload. Callers run this while
+		# still ST_PLAYING — autosave() no-ops once the victory state is set.
+		autosave()
 
 ## Progression gating for the chapter select: the first chapter is
 ## always open; each later one opens once the previous is finished —
@@ -1147,6 +1152,15 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			vtext += _broken_promises_text(broken)
 			vtext += "\n\nCONTINUE — rise. The way-gates stand beside the arena."
 		var end_it := func() -> void:
+			# Grade the run BEFORE the state switch, and bank the weekly claim
+			# there too: _finish_weekly pays Renown straight into meta.json but
+			# its once-per-week ledger (weekly_claimed_week) lives in the
+			# character save, and autosave() gates on ST_PLAYING — claimed after
+			# the switch, the ledger never reaches disk and the same weekly pays
+			# again on reload. net_victory banks a guest's credit the same way.
+			var res: Dictionary = run_results() if has_local_player() else {}
+			if weekly_active and has_local_player():
+				_finish_weekly(res)   # autosaves the ledger, still ST_PLAYING
 			state = ST_VICTORY
 			set_music("")
 			sfx("victory")
@@ -1155,9 +1169,6 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			# DEDICATED: no host character — no card, no PB row; the run
 			# stats live in the world save, guests each grade their own.
 			if has_local_player():
-				var res := run_results()
-				if weekly_active:
-					_finish_weekly(res)
 				var pb := record_chapter_result(res)
 				hud.show_end_screen("VICTORY", vtext, Color(1.0, 0.85, 0.35))
 				hud.show_results(res, pb)

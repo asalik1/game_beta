@@ -26,7 +26,10 @@ func _use_archer(slot: String, f: float) -> void:
 			_archer_draw_fx(false)
 			# Loose on the bow's draw-release frame, not the input frame (the
 			# draw-and-loose animation has a windup the arrow was firing ahead of).
-			await get_tree().create_timer(Balance.ARCHER_LOOSE_DELAY).timeout
+			# Through swing_delay(), like every other kit: a fire-on-move clip that
+			# fit_action_clip sped up to fit the cooldown reaches that release frame
+			# sooner, and a raw wait would loose after the cycle had already ended.
+			await cast_wait(swing_delay(Balance.ARCHER_LOOSE_DELAY))
 			if dead or downed or ghost:
 				return
 			_hunt_rhythm_tick()
@@ -54,7 +57,7 @@ func _use_archer(slot: String, f: float) -> void:
 		"a2": _multishot(f)
 		"a3": _tumble()
 		"ult":
-			await get_tree().create_timer(Balance.ARCHER_LOOSE_DELAY).timeout
+			await cast_wait(swing_delay(Balance.ARCHER_LOOSE_DELAY))
 			if dead or downed or ghost:
 				return
 			storm_time = 3.0
@@ -203,7 +206,7 @@ func _skin_arrow(p: Projectile) -> void:
 func _multishot(f := 1.0) -> void:
 	_archer_draw_fx(true)
 	# Loose the volley on the bow's draw-release frame, not the input frame.
-	await get_tree().create_timer(Balance.ARCHER_LOOSE_DELAY).timeout
+	await cast_wait(swing_delay(Balance.ARCHER_LOOSE_DELAY))
 	if dead or downed or ghost:
 		return
 	# ONE release sound for the whole volley — five overlapping copies of
