@@ -1,7 +1,7 @@
 # Crownless visual overhaul, 2026-09-03 to 09-05: review guide
 
 Branch `claude/visual-overhaul-2026-09-03`, worktree `.claude/worktrees/epic-panini-3fd8fd`,
-78 commits on top of main 7fd27a4, 0 behind main. NOT merged; that is your call after this
+79 commits on top of main 7fd27a4 as of this guide's last edit, 0 behind main. NOT merged; that is your call after this
 review (`git merge --ff-only claude/visual-overhaul-2026-09-03` from the main checkout).
 The full record is `VISUAL_OVERHAUL_2026-09-03.md` at the branch root. This guide is
 organised the way the GIF folders are, one entry per subject, each with: what changed, the
