@@ -1,0 +1,15 @@
+ashpriest_walk_codex_n
+ashpriest_walk_codex_s
+auroch_minotaur_walk_codex_n
+auroch_minotaur_walk_codex_s
+choirmother_walk_codex_n
+echo_walk_codex_e
+echo_walk_codex_n
+echo_walk_codex_w
+hrolgar_walk_codex_e
+hrolgar_walk_codex_n
+nullwarden_walk_codex_s
+rotmaw_walk_codex_e
+rotmaw_walk_codex_w
+stormmouth_walk_codex_s
+vargoth_walk_codex_e

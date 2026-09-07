@@ -484,6 +484,47 @@ So the drift is still there, listed rather than papered over. The honest options
 per-accent fix or a re-roll, and after your slicing ruling I am not going to pick one without
 you: say the word and these six get re-rolled with the idle's palette named in the brief.
 
+## 20. Boss art audited with eyes, 33 strips reverted (2026-09-07)
+
+After the owner's first defect batch I stopped trusting the numbers and audited the boss art
+the way he does: every strip this branch changed, at main and now, side by side with the idle
+for identity and the cell bounds drawn (`tools/art/ab_sheet.py`). One agent per boss, then a
+second pair of eyes on every claim before acting. **36 findings confirmed, 85 dropped**;
+26 of the confirmed were judged worse than what they replaced.
+
+What it caught, and none of it had a geometric signature:
+
+- **ashpriest walk N** lost the twin hand-flames that ARE the character (fire pixels: idle
+  6273-6888, main's N 4780-5130, mine 1174-1359) and hung the lantern on the wrong hand. Its S
+  walk came back with the cloak beside the chain moth-eaten: transparent slits punched through
+  the cloth with grass showing through, plus detached fragments floating beside it.
+- **auroch_minotaur S and N** are a cold ice-blue drawing of a warm bronze character, and the
+  N dropped the scaled mantle the outgoing strip carried.
+- **choirmother N**: her six BONE-WHITE hands changed species, the navy-and-gold robe reads a
+  different colour from every other strip in her set, and the figure is visibly slimmer.
+- **echo E and W**: the recentre pinned the FEET and set the head sliding, so the flame skull
+  shimmies over frozen boots where main held it still. Its N turned sea-green.
+- **hrolgar N**: the white fur mantle that is his whole back silhouette is gone, the two-handed
+  axe became a hatchet, one hip skull vanished and the exposed back grew teal rune glyphs.
+- **rotmaw E/W**: the tattered rust apron is gone and the body was redrawn as an anatomical
+  figure with a defined abdominal grid.
+- **stormmouth S** and **vargoth E**: the seam sweep changed nothing but each frame's placement
+  and turned a steady cycle into a horizontal jitter.
+- **sexton's death clip** drew the skull, both hands and the lantern glass in saturated LIME
+  GREEN on a character with no green in it.
+
+**Acted on:** 33 strips reverted to main (every family kept together, so a copy or mirror never
+outlives its source), backups in `art_src/_backups/boss_audit_reverts_2026-09-07/`. echo's
+death clip keeps its 1319 keying-green pixels despilled to zero. sexton's death clip is DELETED
+rather than repaired -- it is new art with no main version to fall back to, so the engine uses
+its feet-pinned collapse exactly as it does today, and a re-roll with the bone-white skull and
+amber lantern named as hard requirements is queued.
+
+The remaining confirmed findings are ones the verifier judged NOT worse than main (a kaethra
+arm-fan that tucks in, nullwarden's walk being 28% larger than his idle, a serane glide that
+barely moves). They stay listed rather than acted on, because reverting them would trade one
+known defect for another.
+
 ## Open / not done
 
 - **Mage E column DONE**: anim/walk/attack/cast E regenerated as a true right
