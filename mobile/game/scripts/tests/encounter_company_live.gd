@@ -20,6 +20,12 @@ static func _fit(g: Game, panel: Control) -> String:
 		# The grouping Control has zero size; measure its actual health backdrop.
 		if slot.root.visible and panel.get_global_rect().intersects(slot.hp_bg.get_global_rect()):
 			return "encounter objective covers a teammate's health"
+	for slot in g.hud.buff_slots:
+		if slot.border.visible and panel.get_global_rect().intersects(slot.border.get_global_rect()):
+			return "encounter objective covers an active status effect or timer"
+	var feedback: Control = g.hud.combat_feedback
+	if is_instance_valid(feedback) and panel.get_global_rect().intersects(feedback.notice_panel.get_global_rect()):
+		return "encounter objective overlaps the ability feedback slot"
 	if g._touch_hud != null and g._touch_hud.visible:
 		for button in g._touch_hud._btns.values():
 			if panel.get_global_rect().intersects(button.panel.get_global_rect()):

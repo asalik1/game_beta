@@ -482,6 +482,9 @@ func _rpc_join_ready(block: Dictionary) -> void:
 	for hunt in get_tree().get_nodes_in_group("road_hunts"):
 		if hunt.game == game and not hunt.is_queued_for_deletion():
 			host_road_hunt_state(hunt, pid)
+	for cart in get_tree().get_nodes_in_group("road_caravans"):
+		if cart.game == game and cart.valid_world():
+			host_road_caravan_state(cart, pid)
 	var trial := preload("res://scripts/pocket_trial.gd").find(game, game.pocket_room)
 	if trial != null:
 		host_pocket_state(trial, pid)
@@ -2438,8 +2441,9 @@ func _rpc_flag_to_host(flag_name: String, value) -> void:
 	# onto the host. This matches the local route, which only ships world flags.
 	if not _flag_payload_ok(flag_name, value):
 		return
-	if flag_name.begins_with("reactive_") or flag_name.begins_with("ward_") or flag_name.begins_with("escort_"):
-		return  # only the host may consume terrain objects
+	if flag_name.begins_with("reactive_") or flag_name.begins_with("ward_") or flag_name.begins_with("escort_") \
+		or flag_name.begins_with("road_caravan_"):
+		return  # only the host may settle encounters or consume terrain objects
 	if bool(game.call("_flag_is_local", flag_name)):
 		return
 	game.net_apply_flag(flag_name, value)
@@ -2490,6 +2494,36 @@ func _rpc_terrain_state(chapter: String, prop_key: String, phase: int, fuse: flo
 
 
 # ---- busy-lock + beat orchestration ----
+
+func request_road_caravan(room: int, token: int) -> void:
+	_rpc_road_caravan_request.rpc_id(1, game.chapter_id, game.wander_seed, room, token)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_road_caravan_request(chapter: String, seed: int, room: int, token: int) -> void:
+	if not multiplayer.is_server() or game == null or chapter != game.chapter_id or seed != game.wander_seed:
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if not pid in _net().peers:
+		return
+	var cart := preload("res://scripts/road_caravan.gd").find(game, room)
+	var source := _player_of(pid)
+	if cart != null and cart.token == token and source != null:
+		cart.request(source)
+
+
+func host_road_caravan_state(cart: Node2D, peer := 0) -> void:
+	if game == null or not multiplayer.is_server():
+		return
+	_rpc_road_caravan_state.rpc_id(peer, game.chapter_id, game.wander_seed, cart.snapshot())
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_road_caravan_state(chapter: String, seed: int, block: Dictionary) -> void:
+	if game == null or multiplayer.is_server() or not world_ready or chapter != game.chapter_id or seed != game.wander_seed:
+		return
+	preload("res://scripts/road_caravan.gd").receive(game, block)
+
 
 func request_road_hunt(room: int, token: int, sign: int) -> void:
 	_rpc_road_hunt_request.rpc_id(1, game.chapter_id, game.wander_seed, room, token, sign)

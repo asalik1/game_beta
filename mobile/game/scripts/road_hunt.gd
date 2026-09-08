@@ -81,7 +81,8 @@ static func quarry_level(g: Game, room: int, enemy_kind: String) -> int:
 
 
 static func begin(g: Game, room: int, at: Vector2) -> Node2D:
-	if g.net_guest() or not eligible(g, room) or active_in(g) or g._room_hot(room) or g.get_flag(g._road_flag(room), false):
+	if g.net_guest() or not eligible(g, room) or active_in(g) or g._room_hot(room) or g.get_flag(g._road_flag(room), false) \
+		or preload("res://scripts/encounter_context.gd").blocking_name(g, room) != "":
 		return null
 	var trail := new()
 	trail.game = g

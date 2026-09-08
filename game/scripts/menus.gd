@@ -4337,6 +4337,7 @@ func open_shop(zone: int, tab := "") -> void:
 	var p: Player = game.local_player
 	var vbox := _open("The Crown Bazaar" if at_capital else "Merchant", 1120, 600, true)
 	current = "shop"
+	preload("res://scripts/ui/shop_prices.gd").watch(self, zone)
 	# Merchant band (visual-review "item fantasy" pass, 2026-08-21): the trader
 	# himself — waist-up crop of the painted merchant body — fronts the shop,
 	# his resonance-voiced line reads as SPEECH beside him, and your gold is a
@@ -4384,9 +4385,12 @@ func open_shop(zone: int, tab := "") -> void:
 		var left: int = maxi(0, (game.daily_day_index() + 1) * 86400 - game.trusted_now())
 		_lbl(bcol, "Fresh stock at dawn — new shelf in %dh %02dm." % [left / 3600, (left % 3600) / 60],
 			13, Color(0.85, 0.8, 0.55))
+	elif preload("res://scripts/road_caravan.gd").supplied(game):
+		_lbl(bcol, "Caravan supplied — equipment and supplies cost 20% less for this chapter's run.",
+			13, Color(0.68, 0.9, 0.66))
 	elif game.shop_markup(zone) > 1.0:
 		# Road markup, named as trade talk in warm amber — not alarm red.
-		_lbl(bcol, "Road prices — everything +%d%% out here. The Crown Bazaar sells fair." %
+		_lbl(bcol, "Road stock costs +%d%% out here. The Crown Bazaar sells fair." %
 			int(round((game.shop_markup(zone) - 1.0) * 100.0)), 13, Color(0.85, 0.72, 0.5))
 	# Gold chip: the painterly coin + your purse, top-right of the band.
 	var chip := PanelContainer.new()
@@ -4721,6 +4725,8 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				continue
 			var pcost := int(ceil(float(made["price"]) * haggle))
 			var buy_cb := func() -> void:
+				if not preload("res://scripts/ui/shop_prices.gd").unchanged(self, zone, haggle):
+					return
 				if p.gold >= pcost:
 					if p.add_consumable(made.duplicate(true)):
 						p.gold -= pcost
@@ -4734,6 +4740,8 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	var recall := Items.make_recall_scroll()
 	var rcost := int(ceil(float(Balance.consumable_price("recall_scroll", p.level)) * haggle))
 	var buy_recall := func() -> void:
+		if not preload("res://scripts/ui/shop_prices.gd").unchanged(self, zone, haggle):
+			return
 		if p.gold >= rcost:
 			if p.add_consumable(recall.duplicate(true)):
 				p.gold -= rcost
@@ -4757,6 +4765,8 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			var gl := glvl
 			var gprice := int(ceil(Items.gem_buy_price(gl, price_ch) * haggle))
 			var buy_gem := func() -> void:
+				if not preload("res://scripts/ui/shop_prices.gd").unchanged(self, zone, haggle):
+					return
 				if p.gold >= gprice:
 					if p.gain_gem(Items.random_gem(game.loot_rng, gl)):
 						p.gold -= gprice
@@ -4775,6 +4785,8 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 		# Disable bags that cannot improve total capacity.
 		var bimproves: bool = p.bag_would_improve(int(bit["slots"]))
 		var buy_bag := func() -> void:
+			if not preload("res://scripts/ui/shop_prices.gd").unchanged(self, zone, haggle):
+				return
 			if p.gold >= bcost and bimproves:
 				p.gold -= bcost
 				game.shop_bags[zone].erase(bit)

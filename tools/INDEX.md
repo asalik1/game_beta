@@ -44,6 +44,21 @@ and class inputs, with no direct damage or ability calls. It captures the
 pounce and fight, checks the open escape/minimap warning and saves combat.json
 with duration, health, movement and payout. Use `--class=mage` for ranged play.
 
+HUD visibility QA: `shot.bat hud_clearance --verify --timeout=180` captures
+normal camera room boundaries, hero/target overlap, touch controls, readable
+settings/popovers and separated notices/buffs. It checks ownership and stale
+target cleanup. Add `--mobile --renderer=gl_compatibility` for the mobile copy.
+
+Caravan QA: `shot.bat caravan --prices --timeout=230` accepts the real trader
+offer, uses held keyboard Interact, checks warning/pressure/work/death phases,
+paused-dialogue HUD hiding, touch prompts and actual discounted purchases.
+`shot.bat caravan --combat --class=warrior --timeout=220` plays the encounter
+with normal starting equipment and keyboard combat; `--class=mage` covers
+ranged combat. `shot.bat road_hunt --caravan --timeout=270` runs two games over
+ENet to check late join, guest work/kills, host request validation, live shop
+quotes, home saves, world rebuilds, travel and session-end cleanup. Use isolated
+APPDATA; add `--mobile --renderer=gl_compatibility` for mobile source/renderer QA.
+
 Road choice QA: `shot.bat road_choices --timeout=240` checks explicit toll,
 courier and wager actions, harmless leave/back, affordability, repeated clicks,
 touch bounds and actor-loss cleanup. A real hosted ENet session runs through

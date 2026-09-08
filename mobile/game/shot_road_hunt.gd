@@ -67,7 +67,7 @@ func _ready() -> void:
 	if error != "":
 		push_error(error)
 		return finish(1)
-	if not flag("company"):
+	if not flag("company") and not flag("caravan"):
 		print("ok: road hunt live offer, ordered tracks, late join world snapshot, guest inspection/flush, telegraphed elite, real guest damage, personal payment/save, absent participant, abandoned quarry, travel and disconnect cleanup")
 	finish()
 
@@ -189,6 +189,8 @@ func _checks() -> String:
 		if is_instance_valid(actor) and actor.has_meta("road_context"):
 			host._remove_interactable(actor)
 	host.flags.erase(host._road_flag(room))
+	if flag("caravan"):
+		return await preload("res://scripts/tests/caravan_party_live.gd").run(self, room)
 	host._road_card_node(room, "hunt")
 	var offer: Dictionary = host.interactables[-1]
 	offer.action.call()

@@ -554,7 +554,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		for entry in interactables:
 			if not is_instance_valid(entry["node"]):
 				continue
-			var np: Vector2 = entry["node"].position
+			var np: Vector2 = entry["node"].global_position
 			if player.global_position.distance_to(np) >= float(entry.get("reach", Balance.INTERACT_RANGE)):
 				continue
 			var d: float = world.distance_to(np)
@@ -572,10 +572,12 @@ func _unhandled_input(event: InputEvent) -> void:
 ## authored pose horizontally. The local hero also turns back toward the NPC so
 ## a conversation always reads as two people addressing one another.
 func _face_interactable_to_player(entry: Dictionary) -> void:
-	var npc := entry.get("node") as Node2D
-	var spr := entry.get("sprite") as Sprite2D
-	if not is_instance_valid(npc) or not is_instance_valid(spr):
+	var actor: Variant = entry.get("node")
+	var sprite: Variant = entry.get("sprite")
+	if not is_instance_valid(actor) or not actor is Node2D or not is_instance_valid(sprite) or not sprite is Sprite2D:
 		return
+	var npc := actor as Node2D
+	var spr := sprite as Sprite2D
 	var to_player := player.global_position - npc.global_position
 	if absf(to_player.x) > 1.0:
 		player.look_sign = -signf(to_player.x)
@@ -631,9 +633,10 @@ func _restore_interactable_rest_pose() -> void:
 		return
 	var entry := active_facing_interactable
 	active_facing_interactable = {}
-	var spr := entry.get("sprite") as Sprite2D
-	if not is_instance_valid(spr):
+	var sprite: Variant = entry.get("sprite")
+	if not is_instance_valid(sprite) or not sprite is Sprite2D:
 		return
+	var spr := sprite as Sprite2D
 	var rest_tex := entry.get("rest_tex") as Texture2D
 	if rest_tex == null:
 		return
@@ -794,7 +797,7 @@ func _process(delta: float) -> void:
 		npc_emote_t = randf_range(3.5, 7.0)
 		if not interactables.is_empty() and state == ST_PLAYING and not hud.dialogue_active:
 			var entry: Dictionary = interactables[randi() % interactables.size()]
-			if is_instance_valid(entry["node"]) and player.global_position.distance_to(entry["node"].position) < 700.0:
+			if is_instance_valid(entry["node"]) and player.global_position.distance_to(entry["node"].global_position) < 700.0:
 				emote(entry["node"], idle_emote_symbol())
 
 	# New theme unlocked: announce it.
@@ -840,7 +843,7 @@ func _process(delta: float) -> void:
 			if not is_instance_valid(entry["node"]):
 				continue
 			entry["prompt"].visible = false
-			var d: float = player.global_position.distance_to(entry["node"].position)
+			var d: float = player.global_position.distance_to(entry["node"].global_position)
 			# Prop hotspots carry a TIGHTER reach (capital rework fix): the
 			# entry's own reach caps eligibility; nearest eligible still wins.
 			if d < float(entry.get("reach", Balance.INTERACT_RANGE)) and d < near_d:

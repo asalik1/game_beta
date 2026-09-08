@@ -57,6 +57,9 @@ static func open(m: Menus, item: Dictionary, category := "all", shop_zone := -1)
 		var why := purchase_error(m, item, shop_zone)
 		feedback.text = why if why != "" else "%d gold · %d free bag slots" % [cost, maxi(0, p.bag_capacity() - p.bag_used())]
 		var buy := m._btn(actions, "Buy · %d gold" % cost, func() -> void:
+			if price(m, item, shop_zone) != cost:
+				m.open_shop(shop_zone, "buy")
+				return
 			var current_error := purchase_error(m, item, shop_zone)
 			if current_error != "":
 				feedback.text = current_error

@@ -6,6 +6,14 @@ system is retired from the design. Older chroma reward, Wardrobe, pricing and
 proposal references are superseded; remaining implementation is legacy debt.
 Do not add chroma content or network replication. Pets and skins remain in scope.
 
+**Road encounters (2026-09-08):** Road Deck visitors offer explicit choices,
+the Crooked Trail leads a party through tracks to an elite quarry, and
+A Wheel in the Mud combines defending a loaded cart with pulling it free.
+Saving the caravan makes road equipment and supplies 20% cheaper for the
+chapter's run. Visiting friends use the host's prices while preserving
+their home progress. See [ROAD_CHOICES.md](ROAD_CHOICES.md),
+[ROAD_HUNT.md](ROAD_HUNT.md) and [CARAVAN.md](CARAVAN.md).
+
 **Ward defense:** the Collapsed Tower's optional three-wave vigil asks the player
 to hold a ring and keep enemies away from its heart. Explicit opt-in, readable
 arrivals, free retries, a cosmetic title and a permanent light make a quest

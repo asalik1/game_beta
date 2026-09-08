@@ -112,7 +112,8 @@ static func room_enemies(g: Game, room: int) -> Array[Enemy]:
 	var out: Array[Enemy] = []
 	for node in g.get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
-		if e == null or e.dying or e.is_queued_for_deletion():
+		if e == null or e.game != g or not is_instance_valid(g.world) or not g.world.is_ancestor_of(e) \
+			or e.dying or e.is_queued_for_deletion():
 			continue
 		if e.zone_idx == room or (e.zone_idx < 0 and g.room_at_pos(e.global_position) == room):
 			out.append(e)
@@ -123,7 +124,9 @@ static func room_chests(g: Game, room: int) -> Array[Chest]:
 	var out: Array[Chest] = []
 	for node in g.get_tree().get_nodes_in_group("wayfinder_chests"):
 		var chest := node as Chest
-		if chest != null and not chest.opened and not chest.buried \
+		if chest != null and chest.game == g and is_instance_valid(g.world) \
+				and (chest.get_parent() == g or g.world.is_ancestor_of(chest)) \
+				and not chest.opened and not chest.buried \
 				and not chest.is_queued_for_deletion() and chest.is_visible_in_tree() \
 				and g.room_at_pos(chest.global_position) == room:
 			out.append(chest)
@@ -162,8 +165,10 @@ static func services(g: Game, room: int) -> String:
 		lines.append("The old tower ward · optional three-wave defense")
 	if not preload("res://scripts/wildlife.gd").site(g, room).is_empty():
 		lines.append("Small Mercies · animal sanctuary" if preload("res://scripts/wildlife.gd").site(g, room).id == "home" else "Wildlife · a small life on the road")
-	if z.has("merchant") or g.room_type(room) == "merchant":
+	if z.has("merchant") or g.room_type(room) == "merchant" or g.merchant_zones.has(room):
 		lines.append("Merchant · equipment and supplies")
+		if preload("res://scripts/road_caravan.gd").supplied(g):
+			lines.append("Caravan supplied · equipment & supplies 20% less")
 	if g.room_type(room) == "resonance":
 		lines.append("Shrine · an offering and a choice")
 	if g.room_type(room) == "social":

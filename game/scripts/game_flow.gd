@@ -1264,6 +1264,11 @@ func _kill_gold(base: int) -> int:
 func on_enemy_died(e: Enemy) -> void:
 	if e is Boss:
 		return  # boss drops are handled in on_boss_died
+	if e.has_meta("road_caravan_owner"):
+		var owner: Variant = e.get_meta("road_caravan_owner")
+		if is_instance_valid(owner) and not owner.is_queued_for_deletion():
+			owner.enemy_fell(e)
+		return  # the caravan owns this kill; no normal loot, XP or purge credit
 	if e.has_meta("road_hunt_owner"):
 		var owner: Variant = e.get_meta("road_hunt_owner")
 		if is_instance_valid(owner) and not owner.is_queued_for_deletion():

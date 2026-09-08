@@ -3545,6 +3545,10 @@ const ROAD_WAGER_GEM_CHANCE := 0.25 # a clean read also drops a gem this often
 const ROAD_HUNT_GOLD := 120           # personal purse, scaled with the recipient's level
 const ENCOUNTER_COVER_ALPHA := 0.12   # objective yields when it covers the hero/target
 const ENCOUNTER_COVER_FADE_SPEED := 6.0
+const HUD_INFO_COVER_ALPHA := 0.12
+const HUD_INFO_COVER_FADE_SPEED := 6.0
+const HUD_INFO_COVER_RELEASE := 0.18  # short hold avoids flickering on a panel edge
+const HUD_INFO_BODY_WIDTH := 0.85   # body, without transient spell/weapon trails
 const ROAD_HUNT_LEVEL_BONUS := 0      # elite strength rides the nearest authored pack
 const ROAD_HUNT_WARNING := 2.2
 const ROAD_HUNT_COMPLETE_HOLD := 6.0
@@ -3906,3 +3910,25 @@ const POCKET_FLOOR_INSET := 100.0
 const POCKET_WIRE_INTERVAL := 0.1
 
 const POCKET_SEAL_NOTICE_COOLDOWN := 0.6
+
+# A Wheel in the Mud: defend a load while freeing it, then cheaper road stock.
+const CARAVAN_ART_WIDTH := 240.0
+const CARAVAN_INSET := 270.0
+const CARAVAN_PLACEMENT_STEP := 80.0
+const CARAVAN_INTERACTION_CLEARANCE := 180.0
+const CARAVAN_HANDLE_OFFSET := Vector2(-78, 25)
+const CARAVAN_INTERACT_RANGE := 78.0
+const CARAVAN_TUG_INTERVAL := 0.55
+const CARAVAN_TUGS := 12
+const CARAVAN_WARNING_SECONDS := 3.0
+const CARAVAN_WAVES := [2, 3]
+const CARAVAN_SPAWN_RADIUS := 370.0
+const CARAVAN_SPAWN_INSET := 100.0
+const CARAVAN_PRESSURE_RADIUS := 160.0
+const CARAVAN_PRESSURE_CAP := 2
+const CARAVAN_PRESSURE_DRAIN := 3.0
+const CARAVAN_INTEGRITY := 100.0
+const CARAVAN_SYNC_SECONDS := 0.2
+const CARAVAN_COMPLETE_HOLD := 7.0
+const CARAVAN_NOTICE_INTERVAL := 2.0
+const CARAVAN_PRICE_MULT := 0.8

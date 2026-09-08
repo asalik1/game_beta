@@ -49,9 +49,12 @@ func touchify(s: String) -> String:
 		for spec in [["E", "interact"], ["Q", "potion"], ["T", "skills"], ["Space", "interact"]]:
 			s = s.replace("press " + spec[0], "press " + gamepad.label(spec[1]))
 			s = s.replace("Press " + spec[0], "Press " + gamepad.label(spec[1]))
+			s = s.replace("hold " + spec[0], "hold " + gamepad.label(spec[1]))
+			s = s.replace("Hold " + spec[0], "Hold " + gamepad.label(spec[1]))
 		return s.replace("E — ", gamepad.label("interact") + " — ")
 	if not touch_mode:
 		return s
+	s = s.replace("Hold E", "Hold Act").replace("hold E", "hold Act")
 	# Quest copy names the NPC with a gendered pronoun; keep the action copy
 	# grammatical and match the touch HUD's actual interaction-button label.
 	s = s.replace("walk up to her and press E", "walk up to her and tap Act")
@@ -331,6 +334,7 @@ var settings := {"music": 1.0, "sfx": 1.0, "fullscreen": false, "lang": "en", "t
 	"joystick_locked": false, "joystick_sensitivity": 1.0, "touch_layout": {},
 	"camera_shake": 1.0, "camera_lead": 1.0, "impact_flashes": 1.0,
 	"hit_stop": true, "damage_bearings": true, "combat_foliage": true, "combat_framing": true,
+	"hud_clearance": true,
 	"pad_deadzone": Balance.PAD_DEADZONE, "pad_cursor_speed": Balance.PAD_CURSOR_DEFAULT, "pad_labels": "auto"}
 	# user://settings.json ("touch_layout": id -> [x,y] custom offset; "joystick_pos": [x,y] custom home)
 var music_gain_db := -16.0            # base+tune of the current track
@@ -793,7 +797,8 @@ func shop_markup(zone: int) -> float:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(wander_seed) * 31 + zone * 977 + chapter_id.hash() % 65536
 	var markup := rng.randfn(Balance.ROAD_MARKUP_MEAN, Balance.ROAD_MARKUP_SD)
-	return 1.0 + clampf(markup, Balance.ROAD_MARKUP_MIN, Balance.ROAD_MARKUP_MAX)
+	var caravan_mult := Balance.CARAVAN_PRICE_MULT if preload("res://scripts/road_caravan.gd").supplied(self) else 1.0
+	return (1.0 + clampf(markup, Balance.ROAD_MARKUP_MIN, Balance.ROAD_MARKUP_MAX)) * caravan_mult
 
 
 # ------------------------------------------ capital rework: NPC favor ---

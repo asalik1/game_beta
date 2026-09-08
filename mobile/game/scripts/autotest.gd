@@ -1958,6 +1958,9 @@ func _run_systems() -> void:
 	var company_error: String = preload("res://scripts/tests/test_encounter_company.gd").run(self)
 	if company_error != "":
 		return _fail("encounter company: " + company_error)
+	var caravan_error: String = preload("res://scripts/tests/test_road_caravan.gd").run(self)
+	if caravan_error != "":
+		return _fail("road caravan: " + caravan_error)
 	var terrain_error: String = preload("res://scripts/tests/test_reactive_terrain.gd").run(self)
 	if terrain_error != "":
 		_fail(terrain_error)

@@ -18,7 +18,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	notice_panel = PanelContainer.new()
-	notice_panel.position = Vector2(440, 554)
+	notice_panel.position = Vector2(440, 534)
 	notice_panel.size = Vector2(400, 34)
 	notice_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var frame := StyleBoxFlat.new()

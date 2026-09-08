@@ -1770,6 +1770,8 @@ func _offer_road_card(i: int) -> void:
 	# Seeded weighted pick among the cards eligible for this room type.
 	var pool: Array = []
 	for id in RoadDeck.DECK:
+		if id == "caravan" and preload("res://scripts/road_caravan.gd").supplied(self):
+			continue
 		var card: Dictionary = RoadDeck.CARDS[id]
 		if room_type(i) in card.get("room_types", []):
 			for _w in maxi(1, int(card.get("weight", 1))):
@@ -1787,8 +1789,10 @@ func _road_card_node(i: int, id: String) -> void:
 	var card: Dictionary = RoadDeck.card(id)
 	if card.is_empty() or not is_instance_valid(player) or get_flag(_road_flag(i), false):
 		return
-	if preload("res://scripts/road_hunt.gd").active_in(self):
-		return  # finish or leave the current trail before another road stranger
+	if preload("res://scripts/road_hunt.gd").active_in(self) or preload("res://scripts/road_caravan.gd").active_in(self):
+		return  # finish or leave the current road encounter before another stranger
+	if id == "caravan" and preload("res://scripts/road_caravan.gd").supplied(self):
+		return
 	# Re-entering during the offer window must not stack identical strangers.
 	for entry in interactables:
 		var existing: Variant = entry.get("node")
@@ -1820,6 +1824,33 @@ func _road_card_node(i: int, id: String) -> void:
 			"courier": _road_courier(room, npc)
 			"wager": _road_wager(room, npc)
 			"hunt": _road_hunt(room, npc)
+			"caravan": _road_caravan(room, npc)
+
+
+func _road_caravan(room: int, npc: Variant) -> void:
+	if not _road_can_choose(room, npc):
+		return
+	var cart := preload("res://scripts/road_caravan.gd")
+	var hunt := preload("res://scripts/road_hunt.gd")
+	var level: int = hunt.quarry_level(self, room, hunt.quarry_kind(self, room))
+	var busy := preload("res://scripts/encounter_context.gd").blocking_name(self, room)
+	var detail := "Road equipment and supplies cost 20% less for this chapter's run. No XP or kill loot."
+	if busy != "":
+		detail += " Finish %s first." % busy
+	preload("res://scripts/ui/road_choice.gd").open(menus, npc, room, "caravan",
+		"\"Wheel's sunk to the axle. Help me free it and I'll send word to the traders ahead.\"\n\nTwo attacks, with level %d creatures. Hold Interact at the shafts to pull. Creatures near the load stop the work and damage it; draw them away or defeat them. Leaving or losing costs nothing extra." % level, [
+		{"title": "Help free the cart", "detail": detail, "enabled": busy == "" and not cart.supplied(self),
+			"action": _road_caravan_begin.bind(room, npc)}])
+
+
+func _road_caravan_begin(room: int, npc: Variant) -> void:
+	if not _road_can_choose(room, npc) or not preload("res://scripts/encounter_context.gd").may_start(self, room, player):
+		return
+	var cart := preload("res://scripts/road_caravan.gd").begin(self, room)
+	if cart == null:
+		hud.announce("No room for the cart — Try this road again after the current encounter.", UITheme.GOLD_BRIGHT)
+		return
+	_remove_interactable(npc)
 
 
 func _road_hunt(room: int, npc: Variant) -> void:

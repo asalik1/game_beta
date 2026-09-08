@@ -1,10 +1,17 @@
 extends RefCounted
-## Shared objective slot: above the keyboard bar, between the touch clusters.
+## Shared objective slot: above status chips and abilities, between touch clusters.
 
 class EncounterPanel extends Panel:
 	var hud: Hud
 	func _process(delta: float) -> void:
-		if not visible or not is_instance_valid(hud) or not is_instance_valid(hud.game):
+		if not is_instance_valid(hud) or not is_instance_valid(hud.game):
+			return
+		# A solo dialogue pauses the encounter before its physics refresh can
+		# hide this panel. This HUD-owned process keeps overlay gating live.
+		if hud.game.input_overlay_up():
+			hide()
+			return
+		if not visible:
 			return
 		var actors: Array = [hud.game.local_player, hud.target_bar_unit]
 		var covered := false
@@ -25,8 +32,9 @@ class EncounterPanel extends Panel:
 static func make(hud: CanvasLayer, title: String, color: Color, meter := false) -> Control:
 	var panel := EncounterPanel.new()
 	panel.hud = hud
+	panel.process_mode = Node.PROCESS_MODE_ALWAYS
 	panel.name = title
-	panel.position = Vector2(488, 522)
+	panel.position = Vector2(488, 428)  # feedback starts at y534, then buffs at y578
 	panel.size = Vector2(304, 100)
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var style := StyleBoxFlat.new()

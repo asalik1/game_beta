@@ -46,12 +46,20 @@ const CARDS := {
 		"room_types": ["social", "dead_end"],
 		"codex": "Follow three signs through the room and choose when to flush an elite quarry. Its level follows nearby creatures and is shown before accepting. Your party shares the tracks and the fight. Heroes present when it falls receive their own purse; the quarry pays no XP or ordinary kill loot. Leaving the room as a party abandons the hunt without an extra penalty. An unfinished hunt can be offered again.",
 	},
+	"caravan": {
+		"title": "A Wheel in the Mud",
+		"sprite": "roadside_peddler",
+		"prompt": "E — A trader calls for help",
+		"weight": 3,
+		"room_types": ["social", "dead_end"],
+		"codex": "A loaded cart is stuck. Accept two warned attacks and hold Interact at the shafts to pull it free. Creatures near the load stop the work and damage it; draw them away or defeat them. A partner can cover the puller. Free the wheel and defeat every attacker to make equipment and supplies 20% cheaper at road merchants for this chapter's run. The benefit does not stack or affect upgrades, gambling, the Crown Bazaar or endgame shops. No XP or ordinary kill loot; leaving or losing adds no penalty.",
+	},
 }
 
 ## Draw order / eligibility list. Weights inside CARDS bias which one is picked
 ## once a draw succeeds; adding a card is one row here + one row in CARDS + one
 ## dispatch arm in game_world._road_card_node.
-const DECK := ["toll", "courier", "wager", "hunt"]
+const DECK := ["toll", "courier", "wager", "hunt", "caravan"]
 
 static func card(id: String) -> Dictionary:
 	return CARDS.get(id, {})
@@ -65,5 +73,6 @@ static func field_notes() -> Array[String]:
 	for id in DECK:
 		lines.append(String(CARDS[id].title).to_upper() + " — " + String(CARDS[id].codex))
 	lines.append("Only one optional fight runs in a room at a time. Invitations explain which encounter needs finishing first.")
+	lines.append("A saved caravan supplies the shared road. Visiting friends, including late arrivals, receive that run's prices while keeping their own home progress.")
 	lines.append("Road encounters pay no XP. Each run has its own deck. In a party, the leader accepts road offers; the Crooked Trail then belongs to the party, with personal purses for heroes present at victory.")
 	return lines

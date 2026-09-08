@@ -2,62 +2,107 @@
 
 **New session authorized September 8, 2026 at 14:40 UTC.** Continue in this
 existing worktree until September 9 at 09:00 America/New_York (13:00 UTC),
-reserving the final hour for validation and documentation. Preserve the 21
-staged passes, do not commit, and leave the previous task and its paused
+reserving the final hour for validation and documentation. Preserve all work
+and leave the previous task and its paused
 automation alone. This task has a separate active heartbeat,
 `continue-crownless-wayfinder-through-september-9`, ending at that deadline.
 
-Party Appearance is validated and staged as pass 22. See PARTY_APPEARANCE.md.
-Desktop compile192/quick115/full195; mobile compile192/strict quick115;
-10+10 live ENet captures and 28 motion / 12+12 preview captures pass.
-Preflight0fail/16existing warnings and Codex DATA OK; 15 source mirrors and
-three independent UID pairs match. No art regeneration or commits.
-Road Choices is validated as pass 23. Desktop compile194/quick116/full196;
-mobile compile194/strict quick116; eight plus eight live captures; preflight
-0fail/12warn (11 existing source lines and structural percentage display),
-Codex data pass, nine source mirrors and three independent UID pairs.
-See ROAD_CHOICES.md. The Crooked Trail is validated as pass 24: desktop
-compile197 / quick117 / full197; mobile import/compile197 / strict quick117;
-eight plus eight live ENet captures, seven existing personal-history captures
-and six loot-travel captures pass. Preflight0fail/12known warnings, Codex data
-pass, sixteen frozen source mirrors and four independent UID pairs verified.
-See ROAD_HUNT.md. The live hunt also fixed a reproduced join bug that wrote the
-host's seed over the guest's home save before guest routing was established.
-Forty-seven explicit checkpoint paths are staged and uncommitted; manifest:
-build/qa/road-hunt-stage-paths.json. Next: encounter feedback, HUD readability
-and ordinary combat QA; audit at build/qa/encounter-readability-audit.md.
+**Latest user instruction: commit the work so far on this branch.** The
+validated caravan and HUD passes are included in the checkpoint titled
+`Add caravan defense and improve HUD visibility`, following `99668d4`.
+Use `git log -1` for its exact ID. All 27 completed passes are now covered by
+these two requested commits. Earlier staged/uncommitted notes are historical.
+Further development remains stage-only unless the user requests another commit.
+The next ward-activity work has only an audit; no implementation is included.
 
-Encounter Company is validated and staged as pass 25. Desktop import /
-compile201 / quick118 / full198; mobile import/compile201 / strict quick118.
-Eight desktop + nine mobile company captures, 8+12+13 original hunt/escort/
-ward captures and starting-kit warrior/mage combat probes pass. Shared
-objectives clear party health and touch controls, fade when covering combat,
-and enforce one optional fight per room. Guests receive new hunt discoveries
-once; the minimap no longer calls an active hunt a sanctuary. Preflight0fail /
-12known warnings, Codex data pass,19 frozen source mirrors and five independent
-UID pairs. The51explicit checkpoint paths are staged and uncommitted. See
-ENCOUNTER_COMPANY.md and build/qa/encounter-company-stage-paths.json.
+**September 8, 19:31 UTC: the user requested "whatever is staged commit".**
+Committed all 25 validated passes (703 files) as `99668d4`,
+`Improve Crownless exploration, combat, companions, and co-op`.
+The commit tree exactly matches the pre-commit index
+(`a2c40f6a6d19b3e3bfb7c3b84159fb883f8ee0b9`). That commit emptied the index;
+the working checkpoint and unfinished caravan prototype were preserved outside
+that commit. Pass26 is now validated and staged, uncommitted. Earlier
+"staged/uncommitted" statements below describe historical
+checkpoints. Further work remains stage-only unless the user requests a commit.
 
-Candidate next audits: build/qa/caravan-followup-plan.md and
-build/qa/hud-cover-followup-audit.md. No next-pass source work has begun yet.
-Continue through the authorized deadline; leave the older paused task alone.
+Passes22–25 are included in commit99668d4: Party Appearance, Road Choices,
+The Crooked Trail and Encounter Company. Their feature notes remain the
+validation reference: PARTY_APPEARANCE.md, ROAD_CHOICES.md, ROAD_HUNT.md and
+ENCOUNTER_COMPANY.md. Pet movement/previews are already complete. Chromas
+remain scrapped; no chroma content, replication or hero-skin art edits.
 
-The prior session paused at 14:32 UTC after Co-op Closers. Its task and
-`improve-crownless-until-september-9` automation remain paused and untouched.
-That pause does not apply to this explicitly resumed session.
+**September8,20:52UTC: pass26 A Wheel in the Mud is validated and staged, uncommitted.**
+See CARAVAN.md. Two warned attacks and twelve Interact pulls free a loaded
+cart; nearby attackers damage its load and block work. Victory requires all
+actual enemy deaths and gives the shared chapter/run road a20% stock discount.
+Host authority, late join, live quotes, travel and home-save ownership are
+preserved. Protocol0.3.15. The original generated cart was inspected in-game
+on desktop and mobile, including normal combat and touch interaction.
 
-Branch: `codex/crownless-wayfinder`.
-Worktree: `C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder`.
-Launcher: `run_game.bat` in that worktree. Changes are staged, **not committed**.
-The original `claude/visual-overhaul-2026-09-03` worktree remains untouched.
+Validation: desktop import / compile208 / quick119 / full199; mobile import /
+compile208 / strict quick119. Eleven desktop plus eleven mobile purchase
+captures; eight plus eight real ENet caravan captures; nine plus nine shared
+encounter captures; twelve existing escort and thirteen ward captures pass.
+Final normal starting-kit combat: mobile warrior36.3s,minimum119/130HP,
+load78%; desktop mage30.6s,no damage,load84%. Earlier normal warrior/mage runs
+also passed. All use real keyboard combat without injected damage. Preflight
+0fail/1existing warning and Codex data pass;27source mirrors and8independent
+UID pairs verified. Established renderer shutdown diagnostics and the full
+suite's existing malformed-code fixture/bare ObjectDB warning remain in logs.
+No new script errors and no physical mobile-device claim.
 
-Preserve the accumulated changes. Read `CLAUDE.md`; one Godot engine at a time,
-muted windowed QA, game/ source with scoped mobile sync, compile → quick → full
-before explicit-path staging. No unasked commits.
+The final source freeze and77explicit staged paths are recorded under
+build/qa/caravan-source-freeze.json and caravan-stage-paths.json. Detailed
+capture paths and combat metrics: build/qa/caravan-visual-validation.json.
+Final logs: caravan-final2-desktop-{quick,full}.log, caravan-mobile-{import,
+compile,quick,verdict}.log, caravan-final-preflight.log and the named live logs.
+Failed earlier logs remain for traceability. Actual play fixed a freed trader
+sprite reference, NPC interception of the cart handle, paused-dialogue HUD
+leakage and objective overlap with ability notices/buffs. The final objective
+slot isy446; the art width is240px. Original cart master/prompt/provenance:
+art_src/caravan_2026-09-08. The installed PNG is unchanged from its master.
+
+**September 8, 22:38 UTC: pass 27 HUD clearance is validated and staged,
+uncommitted.** Read HUD_CLEARANCE.md. The upper-left secondary information
+fades when it covers the local hero or visible target; vitals, party health
+and controls remain clear. Readable menus/settings restore the information.
+Objective y428, notice y534 and buffs y578 now occupy separate slots.
+
+Desktop import/compile210/quick119/full199 and mobile import/compile210/strict
+quick119 pass. Twelve plus twelve HUD captures and nine plus nine real-ENet
+company captures pass. Starting-kit archer41.1s and paladin35.8s combat both
+win, seven captures each. Their respective minimum HP was22/100 and61/125;
+minimum cart load64% and51%. The images were inspected. Full preflight0fail/
+1existing warning; ten frozen source mirrors and three independent UID pairs
+verified. HUD_CLEARANCE.md records logs, limitations and unchanged screenshot
+copies. No art changes or physical-mobile-device claim. Existing allowed
+shutdown diagnostics remain. The29explicit path list and source hashes live
+under build/qa/hud-clearance-{stage-paths,source-freeze}.json. The pass26 index
+was preserved and extended; no further commit was made.
+
+Next: finish normal-combat coverage with assassin and warlock (existing
+shot_caravan keyboard fixture). Reproduce the ward activity defects documented
+in build/qa/ward-activity-audit.md: guests receive no contract credit; old board
+callbacks can pay after a day refresh; ready contracts lack a persistent HUD
+indicator; displayed gold is unscaled. Keep the hero's own board/save and ward
+choice. No production edits for this follow-up yet. Q8's old onboarding heading
+is stale; talent/gear beats and Auto-equip already exist.
+
+Continue through September9,09:00America/New_York (13:00UTC), reserving the
+final hour for a stable checkpoint. The older task and its paused automation
+improve-crownless-until-september-9 remain untouched. This resumed task has
+its own heartbeat named at the top of this file.
+
+Branch: codex/crownless-wayfinder.
+Worktree: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder.
+Launcher: run_game.bat in that worktree. Preserve all accumulated work and
+stay here. The original Claude worktree remains untouched. Read CLAUDE.md;
+one Godot engine at a time, muted windowed QA, game/ source with scoped mobile
+sync, compile → quick → full before explicit staging. No unasked commits.
 
 ## Accumulated work
 
-Twenty-five validated passes are staged without commits: Wayfinder,
+Twenty-five validated passes are committed in `99668d4`: Wayfinder,
 combat/equipment care, ground warnings, combat framing, fishing, controller
 support, boss interrupts, reactive terrain, connected exploration/sanctuary,
 ward vigils, refracting-crystal/companion-motion, One More Mile, Pocket Trials, Recovered Spoils, Painted Terrains, Loot Travel, Rescue History, Target Visibility, Personal History, Companion Previews, Co-op Closers, Party Appearance, Road Choices, The Crooked Trail, and Encounter Company.
@@ -114,3 +159,10 @@ The appearance gap described above was the previous session's audit and is
 now fixed, validated and staged as pass 22. Road Choices is pass 23; see
 ROAD_CHOICES.md for its complete validation and gameplay fixes. The next
 encounter is The Crooked Trail (build/qa/road-hunt-plan.md).
+
+## Current follow-up — ward activities and class combat audit
+
+Passes 26 and 27 are included in the user-requested checkpoint. The current source
+matches its documented freeze; no engine remains from the HUD gate pipeline.
+Read the near-top checkpoint and build/qa/ward-activity-audit.md before the
+next change. Continue autonomously with one muted engine at a time.

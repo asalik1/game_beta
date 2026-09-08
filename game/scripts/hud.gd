@@ -8,6 +8,8 @@ const WayfinderUI := preload("res://scripts/ui/wayfinder_hud.gd")
 var wayfinder: Control
 var combat_feedback: Control
 var combat_foliage: Node
+var info_panel: Panel
+var clearance: Node
 
 # bars
 var hp_fill: ColorRect
@@ -317,7 +319,7 @@ func _ready() -> void:
 	xp_fill = _bar(Vector2(BAR_X, 58), Vector2(BAR_W, 8), Color(0.95, 0.8, 0.25))
 	hp_text = _bar_text(Vector2(BAR_X, 16), Vector2(BAR_W, 20), 12)
 	mp_text = _bar_text(Vector2(BAR_X, 40), Vector2(BAR_W, 14), 10)
-	_panel(Vector2(8, 76), Vector2(344, 148))
+	info_panel = _panel(Vector2(8, 76), Vector2(344, 148))
 	stats_label = _label(Vector2(18, 82), 15, Color(1, 1, 1), 650)
 	# Identity line in the body BOLD face (2026-08-18 HUD chip pass): the
 	# block reads as name / resources / two stat CHIPS instead of four
@@ -730,6 +732,9 @@ void fragment() {
 	combat_foliage = preload("res://scripts/ui/combat_foliage.gd").new()
 	combat_foliage.game = game
 	add_child(combat_foliage)
+	clearance = preload("res://scripts/ui/hud_clearance.gd").new()
+	clearance.hud = self
+	add_child(clearance)
 
 	# ---------------------------------------------------- dialogue box ---
 	dialogue_box = Control.new()
@@ -1950,7 +1955,7 @@ func _chip(pos: Vector2, chip_size: Vector2) -> Panel:
 	return c
 
 
-func _panel(pos: Vector2, panel_size: Vector2) -> void:
+func _panel(pos: Vector2, panel_size: Vector2) -> Panel:
 	var bg := Panel.new()
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(UITheme.PANEL_BG, 0.86)
@@ -1964,6 +1969,7 @@ func _panel(pos: Vector2, panel_size: Vector2) -> void:
 	bg.size = panel_size
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
+	return bg
 
 
 func _style_hud_icon(button: Button) -> void:
