@@ -7,8 +7,9 @@
 ## Cue ids resolve in cutscene.gd (CLOSER_CHAPTERS): ch1_finish_<class> /
 ## ch1_reflect_<class> -> one class plate; ch1_fall -> the shared fall plate.
 ## No branching choices — a closer is a passive cinematic (owner call).
-## Wired from game_flow.on_boss_died (solo only for v1; co-op keeps the
-## flat epilogue beat). This doc's creative + art-prompt SoT: CHAPTER_CLOSERS.md.
+## Wired from game_flow.on_boss_died and each co-op reader's ChapterFinale.
+## Each reader uses their own class; rewards are banked before the pages.
+## Creative + art-prompt SoT: PROPOSALS/CHAPTER_CLOSERS.md.
 
 const CONVOS := {
 	# ---- ch1: The Hollow King. Vargoth's dying lines land on the campaign's

@@ -5,6 +5,83 @@ class_name Balance
 ## monsters/zones) — this file is for the numbers you tweak, not the
 ## content you author.
 
+# Single-use terrain weapons: pack damage, no extra loot or boss damage.
+const REACTIVE_PER_ROOM := 2
+const REACTIVE_PLACE_TRIES := 48
+const REACTIVE_PACK_TRIES := 32
+const REACTIVE_PACK_OFFSET := Vector2(100, 210)
+const REACTIVE_MARGIN := 100.0
+const REACTIVE_CLEARANCE := 90.0
+const REACTIVE_PAIR_SPACING := 160.0
+const REACTIVE_COLLIDER := 22.0
+const REACTIVE_ART_HEIGHT := 88.0
+const REACTIVE_INTERACT_RANGE := 75.0
+const REACTIVE_SHOT_RANGE := 1600.0
+const REACTIVE_LABEL_RANGE := 360.0
+const REACTIVE_RADIUS := 220.0
+const REACTIVE_FUSE := 1.5
+const REACTIVE_EMBER_DAMAGE := 0.32
+const REACTIVE_RIME_DAMAGE := 0.12
+const REACTIVE_PLAYER_DAMAGE := 0.18
+const REACTIVE_CHILL_MULT := 0.45
+const REACTIVE_CHILL_DURATION := 3.0
+const REACTIVE_POP_TIME := 0.55
+
+# Fishing: a short catch-and-release skill loop, with no currency faucet.
+const FISH_WEIGHTS := [38.0, 30.0, 22.0, 10.0]
+const FISH_LURE_WEIGHT := 2.4
+const FISH_WATER_WEIGHT := 1.8
+const FISH_WAIT := Vector2(2.2, 4.2)
+const FISH_BITE_WINDOW := 1.5
+const FISH_CLEAN_HOOK := 0.55
+const FISH_CALM := 2.5
+const FISH_OPENING_PHASE_FRACTION := 0.4
+const FISH_SURGE := 1.25
+const FISH_WARNING := 0.5
+const FISH_START_TENSION := 0.18
+const FISH_START_PROGRESS := 0.18
+const FISH_STRAIN_CALM := 0.19
+const FISH_STRAIN_SURGE := 0.70
+const FISH_GAIN_CALM := 0.17
+const FISH_GAIN_SURGE := 0.035
+const FISH_RELAX := 0.48
+const FISH_SLACK := 0.035
+const FISH_FIGHT_LIMIT := 32.0
+const FISH_CLEAN_TENSION := 0.82
+const FISH_CLEAN_SIZE_FLOOR := 0.65
+const FISH_MAX_DELTA := 0.2
+const FISH_STEP := 1.0 / 60.0
+const FISH_SAFE_RADIUS := 560.0
+const FISH_PROP_HEIGHT := 128.0
+
+# Wayfinder presentation: no combat or movement rules depend on these values.
+const WAYFINDER_SAMPLE_SECONDS := 0.15
+const WAYFINDER_CLEAR_SECONDS := 3.0
+const WAYFINDER_ARRIVAL_SECONDS := 2.5
+const WAYFINDER_DOOR_INSET := 48.0
+const WAYFINDER_GUIDE_HIDE_DISTANCE := 32.0
+const ATLAS_MIN_ZOOM := 0.65
+const ATLAS_MAX_ZOOM := 2.6
+const ATLAS_ZOOM_STEP := 1.18
+const ATLAS_DRAG_THRESHOLD := 8.0
+
+# Combat input forgiveness and readable feedback; damage rules stay unchanged.
+const ABILITY_BUFFER_SECONDS := 0.18
+const ABILITY_NOTICE_SECONDS := 1.3
+const DAMAGE_BEARING_SECONDS := 0.8
+const COMBAT_MEMORY_SECONDS := 12.0
+const COMBAT_MEMORY_MAX_HITS := 64
+
+# Target readability through vegetation and solid props (presentation only).
+const COMBAT_FOLIAGE_SAMPLE_SECONDS := 0.10
+const COMBAT_FOLIAGE_ALPHA := 0.22
+const COMBAT_FOLIAGE_FADE_SPEED := 3.8
+const COMBAT_FOLIAGE_RANGE := 700.0
+const TARGET_OCCLUSION_OUTLINE_COLOR := Color(1.0, 0.76, 0.36, 0.78)
+const TARGET_OCCLUSION_OUTLINE_WIDTH := 1.0  # world pixels, independent of source-art resolution
+const GROUND_ATTACK_EFFECT_PADDING := 0.1
+const SAFE_SHELTER_LINGER := 0.5
+
 # ------------------------------------------------------------ facing / aim ---
 # Aiming is ORIENTATION-based: the hero faces LEFT or RIGHT (set by A/D and
 # the Tab lock), and AIMED attacks (slashes, bolts, arrows) fire toward a
@@ -40,6 +117,14 @@ const CHAR_RENDER_SCALE := 1.7
 const WORLD_CONTRAST := 1.0
 const WORLD_SATURATION := 1.06
 const FLOOR_LAYER_MODULATE := Color(0.94, 0.94, 0.965)
+# World-pixel repeat periods for high-resolution floor masters. Unlisted
+# fields retain their authored native scale; the keep's stones stay human-sized.
+const GROUND_FIELD_PERIOD := {
+	"stone": 384.0, "sand": 512.0, "snow": 512.0,
+	"grass": 512.0, "forest": 400.0,
+}
+# The neutral stone master needs a small exposure lift under keep lighting.
+const GROUND_FIELD_GAIN := {"stone": 1.28}
 # Hit feel: camera kick (px) per landed single-target blow / crit. The heavy
 # beats (ults, slams) sit at 5-9; these stay a whisper under them.
 const HIT_SHAKE := 1.4
@@ -197,14 +282,20 @@ const BOSS_TELL := {
 	# --- Moonfen interlude ---
 	"first_howl":     {"color": Color(0.70, 0.80, 0.95), "shape": "cone", "arc": 0.68, "windup": "crouch"},
 }
-# Camera feel (2026-08-18): look-ahead in the move direction (px at full
-# speed, eased) and the combat zoom-in (multiplier on the base zoom while
-# enemies are aggro'd within CAMERA_COMBAT_RANGE px, eased in/out).
+# Camera composition: movement lead, then a bounded shared frame with the
+# current aim target. Close fights retain the authored base zoom.
 const CAMERA_LOOKAHEAD_PX := 44.0
 const CAMERA_LOOKAHEAD_EASE := 3.0      # 1/s toward the target offset
-const CAMERA_COMBAT_ZOOM := 1.08
-const CAMERA_COMBAT_RANGE := 520.0
 const CAMERA_ZOOM_EASE := 2.2           # 1/s toward the target zoom
+const CAMERA_FOCUS_SHARE := 0.5
+const CAMERA_FOCUS_MOVE_SHARE := 0.25
+const CAMERA_FOCUS_MAX_OFFSET := 220.0
+const CAMERA_FRAME_MIN_ZOOM := 0.84
+const CAMERA_FRAME_MARGIN := Vector2(110, 105)
+const CAMERA_FRAME_BODY := Vector2(60, 75)
+const CAMERA_FRAME_TELEPORT := 360.0
+const TARGET_DAMAGE_HOLD := 0.4
+const TARGET_DAMAGE_DRAIN := 0.6        # bar fractions / second after hold
 # Readability + depth pass (2026-08-19 review, owner prompts: "sometimes it's a
 # little hard to distinguish the mobs from the detailed floor tiles", "shadows
 # to give the illusion of 3D", "make the world seem more lifelike"):
@@ -1841,6 +1932,9 @@ static func potion_slots(chid: String) -> int:
 const CHEST_SCALE_16PX := 3.0
 # Halo alpha on B+ chests — the "rich chest across the room" tell.
 const CHEST_HALO_ALPHA := 0.5
+const CHEST_GOLD_MIN := 3
+const CHEST_GOLD_MAX := 8
+const CHEST_GEM_CHANCE := {"wood": 0.25, "silver": 0.6, "gold": 1.0}
 # How far a chest's art is washed toward its grade colour (0 = raw art).
 # 0.3 → 0.12 (2026-08-19): the painterly chests carry their grade in their
 # MATERIAL (pine → iron → lacquer → brass → gold crown); the wash is a hint now.
@@ -3257,6 +3351,12 @@ const SCENERY_HUG_STRETCH := Vector2(1.6, 0.45)   # clump jitter along / across 
 # generated oak and a 48px pack oak in the same combat-readable size band.
 const SCENERY_SCALE_JITTER := Vector2(0.88, 1.12)
 const SCENERY_RENDER_WIDTH := {
+	# Garden details were still using native pixels x3 after their painted
+	# replacements landed: a carrot rendered 516px tall beside an 88px hero.
+	"crop_carrot": 28.0, "crop_cabbage": 44.0, "crop_turnip": 30.0,
+	"crop_mid": 32.0, "crop_sprout": 22.0, "sprout": 22.0,
+	"node_herb": 42.0,
+	"fence": 150.0,
 	"tree_green": 190.0, "tree_autumn": 190.0, "tree_gnarled": 230.0,
 	"deadtree": 180.0, "log": 130.0, "bush": 112.0,
 	"grave_statue": 92.0, "grave_angel": 100.0, "grave_deadtree": 175.0,
@@ -3328,6 +3428,9 @@ const SCENERY_COLLIDER_RADIUS := {
 	"crystal_cluster": 36.0, "crystal_spire": 31.0, "geode": 34.0,
 	"void_monolith": 31.0, "void_rift": 29.0, "void_obelisk": 31.0,
 }
+
+# Long, low rails need a matching footprint rather than a tiny center post.
+const SCENERY_COLLIDER_RECT := {"fence": Vector2(138.0, 18.0)}
 
 # Crownfall composition fallbacks. Authored zone data normally supplies the
 # width/offset; these keep malformed or hand-written capital content legible.
@@ -3424,6 +3527,9 @@ const ROAD_CARD_WINDOW := 12.0     # seconds the card waits at the door, then wi
 const ROAD_TOLL_COST_BASE := 55    # gold, scaled by daily_gold_mult(level) like the shrine
 const ROAD_TOLL_BRIGANDS := 3      # loose enemies spawned on refuse
 const ROAD_TOLL_STANDING := 1      # standing with the local ward for paying the toll
+const ROAD_TOLL_HEAL_FRACTION := 0.25
+const ROAD_TOLL_PURSE_MIN := 0.2
+const ROAD_TOLL_PURSE_MAX := 0.7
 # The Wounded Courier: mend him (spend gold) for coin + goodwill, or rob him for
 # more gold now at a standing cost.
 const ROAD_COURIER_HEAL_COST := 40 # gold, scaled by daily_gold_mult(level)
@@ -3434,6 +3540,23 @@ const ROAD_COURIER_ROB_GOLD := 130 # the satchel, if you cut the strap (base, sc
 # the stake back doubled (net +stake) + a rare gem; lose forfeits the stake.
 const ROAD_WAGER_STAKE_BASE := 60  # gold on the table, scaled by daily_gold_mult(level)
 const ROAD_WAGER_GEM_CHANCE := 0.25 # a clean read also drops a gem this often
+
+# The Crooked Trail: three signs, one deliberately flushed elite quarry.
+const ROAD_HUNT_GOLD := 120           # personal purse, scaled with the recipient's level
+const ENCOUNTER_COVER_ALPHA := 0.12   # objective yields when it covers the hero/target
+const ENCOUNTER_COVER_FADE_SPEED := 6.0
+const ROAD_HUNT_LEVEL_BONUS := 0      # elite strength rides the nearest authored pack
+const ROAD_HUNT_WARNING := 2.2
+const ROAD_HUNT_COMPLETE_HOLD := 6.0
+const ROAD_HUNT_INTERACT_RANGE := 160.0
+const ROAD_HUNT_INSET := 150.0
+const ROAD_HUNT_SPAN := Vector2(430, 280)
+const ROAD_HUNT_QUARRY_OFFSET := Vector2(110, -100)
+const ROAD_HUNT_SYNC_SECONDS := 0.25
+const ROAD_HUNT_TRACK_GAP := 46.0
+const ROAD_HUNT_TRACK_SIZE := 28.0
+const ROAD_HUNT_SEARCH_STEP := 64.0
+const ROAD_HUNT_SIGN_SEPARATION := 140.0
 
 # ---------------------------------------------------------------- sfx bank ---
 # Levels for the pooled one-shot player (game_base.sfx). Callers pass a
@@ -3625,3 +3748,161 @@ const PVP_MELEE_RES := {"warrior": 0.0, "archer": 0.0, "mage": 0.0,
 # arena's only neutral threat; keep/village-style eventless terrains excluded
 # so every round has a little weather in it).
 const PVP_TERRAINS := ["magma", "ice", "bog", "storm", "graveyard", "holy", "crystal", "void", "desert"]
+
+# Local gamepad comfort and menu navigation. Remapped radial deadzone retains
+# gentle walking and reaches exactly full speed on every diagonal.
+const PAD_DEADZONE := 0.18
+const PAD_DEADZONE_MIN := 0.08
+const PAD_DEADZONE_MAX := 0.40
+const PAD_WAKE_AXIS := 0.45
+const PAD_MOUSE_WAKE := 3.0
+const PAD_TRIGGER_ON := 0.55
+const PAD_TRIGGER_OFF := 0.35
+const PAD_CURSOR_SLOW := 300.0
+const PAD_CURSOR_FAST := 1100.0
+const PAD_CURSOR_DEFAULT := 0.5
+const PAD_FRAME_CAP := 0.05
+const PAD_SCROLL_THRESHOLD := 0.35
+const PAD_SCROLL_REPEAT := 0.10
+const PAD_SNAP_MIN := 8.0
+const PAD_SNAP_CROSS_WEIGHT := 3.0
+const PAD_TARGET_FLICK := 0.65
+const PAD_TARGET_RELEASE := 0.25
+const PAD_TARGET_RANGE := 560.0
+const PAD_TARGET_CONE := 0.35
+const PAD_TARGET_DISTANCE_WEIGHT := 0.15
+
+# Signature-cast counterplay: all damage thresholds use party-scaled boss HP.
+const BOSS_BREAK_WINDUP := 1.8
+const BOSS_BREAK_WINDUP_EARLY := 2.2
+const BOSS_BREAK_HP_FRACTION := 0.06
+const BOSS_BREAK_CLOSE_RANGE := 190.0
+const BOSS_BREAK_CLOSE_WEIGHT := 1.5
+const BOSS_BREAK_DOT_WEIGHT := 0.4
+const BOSS_BREAK_EXPOSED := 2.5
+const BOSS_BREAK_RECOVERY := 0.7
+const BOSS_BREAK_DAMAGE_MULT := 1.25
+const BOSS_BREAK_SYNC_INTERVAL := 0.1
+const BOSS_BREAK_NOTICE_RANGE := 850.0
+
+# Existing attack values, centralized when the signature bodies were extracted.
+const BOSS_BLIGHT_RAIN_COUNT := 4
+const BOSS_BLIGHT_RAIN_SPREAD := Vector2(160.0, 120.0)
+const BOSS_BLIGHT_RAIN_RADIUS := 75.0
+const BOSS_BLIGHT_RAIN_DELAY := 0.68
+const BOSS_BLIGHT_RAIN_STAGGER := 0.11
+const BOSS_BLIGHT_RAIN_DAMAGE := 1.3
+const BOSS_BLADE_INTERVAL := Vector2(0.6, 0.45) # normal / enraged
+const BOSS_HUNGER_COOLDOWN := 8.0
+const BOSS_HUNGER_RADIUS := 90.0
+const BOSS_HUNGER_DELAY := 0.62
+const BOSS_HUNGER_DAMAGE := 1.3
+const BOSS_HUNGER_HEAL := 0.02
+const BOSS_SILENCE_RING_GRACE := 2.4
+
+
+# Exploration companions and sanctuary rescues (SMALL_MERCIES.md).
+const PET_BODY_HEIGHT := 38.0
+const PET_ANIM_FPS := 7.0
+const PET_FOLLOW_SPEED := 4.5
+const PET_FOLLOW_OFFSET := Vector2(-44.0, 20.0)
+const NET_APPEARANCE_EVERY := 0.25
+const PET_WARP_DISTANCE := 420.0
+const WILDLIFE_RESCUE_SECONDS := 2.8
+const SANCTUARY_WIDTH := 240.0
+const SANCTUARY_CLEARANCE := 330.0
+const WILDLIFE_CLEARANCE := 190.0
+const PET_TURN_THRESHOLD := 4.0
+const PET_MOVE_THRESHOLD := 12.0
+
+# Optional tower defense. No currency/XP faucet; three waves and an earned title.
+const VIGIL_INTEGRITY := 100.0
+const VIGIL_GUARD_RADIUS := 280.0
+const VIGIL_HEART_RADIUS := 125.0
+const VIGIL_CLEARANCE := 470.0
+const VIGIL_SPAWN_RADIUS := 410.0
+const VIGIL_SPAWN_INSET := 85.0
+const VIGIL_INTERACT_RANGE := 80.0
+const VIGIL_LABEL_RANGE := 340.0
+const VIGIL_ART_HEIGHT := 112.0
+const VIGIL_ANIM_FPS := 8.0
+const VIGIL_ENEMY_LEVEL := 7
+const VIGIL_PREPARE_SECONDS := 4.0
+const VIGIL_ABSENT_DRAIN := 5.0
+const VIGIL_ENEMY_DRAIN := 3.0
+const VIGIL_PRESSURE_CAP := 3
+const VIGIL_WAVE_MEND := 15.0
+const VIGIL_SYNC_SECONDS := 0.2
+
+# Refracting scenery preserves projectile ownership, payload and range.
+const PROJECTILE_COLLIDER_RADIUS := 9.0
+const PRISM_MAX_BANKS := 2
+const PRISM_TARGET_RANGE := 600.0
+const PRISM_GUIDE_RANGE := 300.0
+const PRISM_GUIDE_TICK := 0.12
+const PRISM_FLASH_SECONDS := 0.3
+const PRISM_EXIT_GAP := 3.0
+
+# Companions: real eight-frame steps, hops and wingbeats.
+const PET_MOTION_FPS := {"spore_pup": 10.0, "hearth_hopper": 8.0,
+	"cinder_bat": 12.0, "ash_crow": 10.0, "glimmerwing": 16.0, "pale_flutter": 12.0}
+const PET_STRIDE_SPEED := 120.0
+const PET_STOP_SPEED := 6.0
+const PET_HOP_HEIGHT := 4.0
+const PET_HOVER_HEIGHT := 12.0
+const PET_HOVER_BOB := 1.0
+const PET_REST_BOB := 0.4
+const PET_PREVIEW_WALK_SECONDS := 2.4
+const PET_PREVIEW_REST_SECONDS := 1.2
+const PET_HOME_TRAVEL_SECONDS := 4.0
+const PET_HOME_PAUSE_SECONDS := 2.0
+const PET_HOME_DISTANCE := 24.0
+
+
+# Co-op chapter endings wait for the reader's existing local interaction.
+const FINALE_READY_POLL := 0.05
+
+
+# Tovin's optional escort: a short, retryable situation beside the village.
+const ESCORT_ROUTE_HALF := 300.0
+const ESCORT_ROUTE_Y := 80.0
+const ESCORT_ROUTE_INSET := 190.0
+const ESCORT_CLEARANCE := 130.0
+const ESCORT_BODY_HEIGHT := 88.0
+const ESCORT_LABEL_RANGE := 260.0
+const ESCORT_WALK_SPEED := 96.0
+const ESCORT_WALK_FPS := 8.0
+const ESCORT_COMPANY_RANGE := 240.0
+const ESCORT_PRESSURE_RANGE := 100.0
+const ESCORT_PRESSURE_CAP := 3
+const ESCORT_RESOLVE := 100.0
+const ESCORT_ABSENT_DRAIN := 5.0
+const ESCORT_ENEMY_DRAIN := 7.0
+const ESCORT_STAGE_MEND := 25.0
+const ESCORT_WARNING_SECONDS := 3.0
+const ESCORT_SPAWN_RADIUS := 325.0
+const ESCORT_ENEMY_LEVEL := 2
+const ESCORT_SYNC_SECONDS := 0.1
+const ESCORT_CHECKPOINTS := [0.26, 0.66]
+const ESCORT_NET_SMOOTH := 14.0
+const ESCORT_LABEL_HUD_MARGIN := 150.0
+
+
+# Portal arenas: the floor speaks before it heats; the exit always waits.
+const POCKET_PORTAL_HEIGHT := 164.0
+const POCKET_PORTAL_FPS := 5.0
+const POCKET_PORTAL_CLEARANCE := 150.0
+const POCKET_STONE_OFFSET := Vector2(0, 170)
+const POCKET_EXIT_OFFSET := Vector2(-460, 210)
+const POCKET_ARRIVAL_OFFSET := Vector2(70, 30)
+const POCKET_LABEL_RANGE := 340.0
+const POCKET_PULSE_REST := 5.0
+const POCKET_PULSE_WARNING := 3.0
+const POCKET_PULSE_HEAT := 3.0
+const POCKET_PULSE_TICK := 0.6
+const POCKET_PULSE_DAMAGE := 0.07
+const POCKET_COLD_SEAM := 160.0
+const POCKET_FLOOR_INSET := 100.0
+const POCKET_WIRE_INTERVAL := 0.1
+
+const POCKET_SEAL_NOTICE_COOLDOWN := 0.6

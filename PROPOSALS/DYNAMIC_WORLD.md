@@ -1,5 +1,30 @@
 # Dynamic World — situations, not choices (2026-08-17)
 
+**Portal trials, 2026-09-08:** Molten Court and Still Larder now enforce their floor/bottle rules; painted stones persist for entry, retreat and return after collecting loot. Guardians have independent completion and co-op settlement. [POCKET_TRIALS.md](../POCKET_TRIALS.md).
+
+**Escort implemented, 2026-09-08:** Tovin's opt-in walk across Village Outskirts adds wait/follow, two warned encounters, retry, co-op authority and a persistent homecoming. [ONE_MORE_MILE.md](../ONE_MORE_MILE.md).
+
+**Current implementation, 2026-09-08:** the Collapsed Tower now has an optional
+three-wave ward defense, Mara's object-first/giver-first quest, a persistent
+light and the Lamplighter title. [WARD_VIGILS.md](../WARD_VIGILS.md).
+
+The dated audit and proposal below describe the original baseline, rather than
+today's code. Subsequent work also installed the three-card Road Deck
+(`road_deck.gd`), Unlisted encounters, portal pockets, the Moonfen interlude,
+easter eggs, fishing, rescues and reactive terrain. Broader escort routes,
+additional defense sites and enterable interiors remain
+useful future directions; do not treat the historical "zero code" labels below
+as the current backlog.
+
+**Connected exploration implemented 2026-09-07:** six personal creature rescues across Chapters 1–2, growing sanctuaries at Stillwater Reach and Accord Commons, earned cosmetic pets with original painted sprites, visible Chapter 1 promise marks, and Journal-to-Wayfinder guidance. [SMALL_MERCIES.md](../SMALL_MERCIES.md). The first escort and defense now exist above.
+
+**Implemented 2026-09-07:** G1 now has marked Ember Casks and Rimehearts, shared
+co-op state, single-use persistence, melee/projectile/interaction activation,
+warning-preserving chains and original artwork. Details and QA:
+[REACTIVE_TERRAIN.md](../REACTIVE_TERRAIN.md). Refracting crystal clusters/spires
+now also redirect live shots: [REFRACTING_CRYSTALS.md](../REFRACTING_CRYSTALS.md). Switches,
+interiors and the other proposal layers below remain separate future work.
+
 Owner complaint, verbatim in spirit: *a lot of quests are flat — make a
 choice and that's it, no consequences or real action. Some are solid (the
 lost hat). The world should feel dynamic: bandits on the road, a hidden

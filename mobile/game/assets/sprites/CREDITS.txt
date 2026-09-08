@@ -130,6 +130,14 @@ PixelLab (pixellab.ai) AI-generated, project-commissioned art (2026-07-09):
   gem_lv1..gem_lv10, gem (icons — neutral bases, stat-tinted in code)
 Generated for this project; no third-party attribution required.
 
+2026-09-07 reactive_terrain_atlas.png: original Ember Cask and Rimeheart sprites,
+generated with the built-in Codex image tool. Transparent master installed
+unchanged. Full prompt: art_src/reactive_terrain_2026-09-07/README.md.
+
+Stillwater fishing (2026-09-07): fishing_fish_atlas.png (four original fish)
+and fishing_nook.png (rod/tackle box/creel), generated with built-in ImageGen.
+Original RGBA outputs, no pixel edits. Prompts: art_src/fishing_2026-09-07/README.md.
+
 OpenAI image generation — project-generated art (2026-07-18):
   Class-selection splash portraits: class_splash_warrior, class_splash_archer,
   class_splash_mage, class_splash_assassin, class_splash_paladin,
@@ -219,3 +227,15 @@ OpenAI image generation — project-generated art (2026-07-18):
   Void Rift collapse for base + Hellfire, hue-shifted). Masters + briefs in
   art_src/Custom/SkinFX_2026-08-15/.
 Generated for this project; no third-party attribution required.
+
+Small Mercies sanctuary_shelter.png — original built-in ImageGen, 2026-09-07. Untouched transparent PNG; provenance: art_src/sanctuary_2026-09-07/README.md. The companion set is credited separately below.
+
+companion_atlas.png — six original painted companion sprites, built-in ImageGen, 2026-09-07. Untouched transparent atlas, runtime regions; provenance: art_src/sanctuary_2026-09-07/README.md.
+
+companion_{spore_pup,hearth_hopper,cinder_bat,ash_crow,glimmerwing,pale_flutter}_walk.png — original eight-frame companion movement cycles, built-in ImageGen, 2026-09-08. Complete generated poses, chroma-keyed/despilled and anchored at one shared scale per cycle. Masters, provenance and review sheets: art_src/companion_motion_2026-09-08/. Reproducible builder: tools/art/build_companion_motion.py. No third-party source assets.
+
+wayfarer_walk.png — original six-frame traveler movement, built-in ImageGen, 2026-09-08; existing npc_wanderer identity reference. Whole-figure gutter extraction at a shared scale and stable feet line. Source master, prompts, provenance and reproduction: art_src/wayfarer_2026-09-08/.
+
+ground_field_{sand,snow,grass,forest}_painterly.png — original seamless painted terrain fields, built-in OpenAI ImageGen, 2026-09-08. Untouched 1254px square masters; world scale and mipmap filtering applied in-engine. Original field textures retained. Prompts, master provenance and measured seams: art_src/terrain_fields_2026-09-08/. No third-party source assets.
+
+road_hunt_track.png — original transparent painted wolf-track impression, built-in OpenAI ImageGen, 2026-09-08. Untouched 1254px master rendered as a ground decal; provenance and prompt: art_src/road_hunt_2026-09-08/. No third-party source assets.

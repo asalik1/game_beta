@@ -65,6 +65,7 @@ var net_id := 0            # session-unique id the HOST stamps at spawn (0 = una
 var net_mirror := false    # guest-side presentation clone: no AI, no damage, no collision
 var net_target := Vector2.ZERO  # last snapshot position (mirrors chase it)
 var net_walk := false      # last snapshot "moving" flag (drives the walk/idle strip)
+var net_combat_cue := 0   # current target instruction, carried in state flags 5–7
 # MP-10 combat tell (Wave-2 co-op fix #2): the host broadcasts each trait-window
 # tint (bite windup, pounce crouch, guard, reflect) so a guest reads the same
 # warning its sim aims — a mirror shows the tint for the window, then reverts to
@@ -90,6 +91,8 @@ var _status_mute := false
 var anim_frames := 0
 var anim_fps := 6.0
 var anim_t := 0.0
+var motion_faults := 0          # dev diagnostic; never persisted or replicated
+var last_motion_fault := {}
 var _gait_rate := 1.0  # per-instance stride-rate personality (lane 1b; set with stats)
 # Stride-locked juice + COMPOSED transforms (visual overhaul 2026-09-03): every
 # per-frame write to sprite.scale / position / rotation goes through
@@ -268,6 +271,12 @@ static func _roll_mob_size() -> float:
 
 
 func _ready() -> void:
+	# This world has walls in every direction, never floors to stand on or
+	# other actors to ride as moving platforms (Godot's grounded default).
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
+	platform_floor_layers = 0
+	platform_wall_layers = 0
+	platform_on_leave = CharacterBody2D.PLATFORM_ON_LEAVE_DO_NOTHING
 	# MP-09: every enemy that enters the HOST's tree is announced to the
 	# session HERE — one choke point under add_enemy, boss spawns, trait
 	# summons and dev spawns alike (they all add_child eventually).
@@ -854,8 +863,7 @@ func _physics_process(delta: float) -> void:
 	if not knock.is_finite():
 		knock = Vector2.ZERO
 	if not global_position.is_finite():
-		global_position = game.free_spawn_pos(home, home) if game != null else home
-		velocity = Vector2.ZERO
+		_recover_motion(game.free_spawn_pos(home, home) if game != null else home)
 	# Sticky re-target (MP seam): re-pick the prey on a slow cadence;
 	# _get_target() re-resolves immediately if it dies/frees in between.
 	retarget_t -= delta
@@ -929,7 +937,7 @@ func _physics_process(delta: float) -> void:
 		windup = 0.0
 		sprite.modulate = base_mod
 		velocity = knock
-		move_and_slide()
+		_move_body()
 		_render_tail(delta, false)
 		return
 
@@ -949,7 +957,7 @@ func _physics_process(delta: float) -> void:
 			if player and not player.dead and global_position.distance_to(player.global_position) < 64.0:
 				player.take_damage(_hit_dmg(), dmg_type, self)
 		velocity = knock
-		move_and_slide()
+		_move_body()
 		_render_tail(delta, false)
 		return
 
@@ -961,7 +969,7 @@ func _physics_process(delta: float) -> void:
 	move *= hazard_speed  # ice patches boost, void rifts slow
 
 	velocity = move + knock + game.gust_vec
-	move_and_slide()
+	_move_body()
 	# Moving-for-animation is HYSTERETIC: post-slide velocity wedged against
 	# a wall hovers right at the threshold, and a bare `> 20` there would
 	# toggle the walk/idle swap + bob every frame (visible jitter). Latch
@@ -1057,6 +1065,53 @@ func _physics_process(delta: float) -> void:
 
 
 ## ------------------------------------------------------- render tail ---
+## Keep invalid steering/physics results out of both world position AND the
+## speed-coupled animation clock. Recover immediately, before _render_tail;
+## repairing position on the next tick alone leaves anim_t as NaN forever.
+func _move_body() -> void:
+	var anchor := global_position
+	if not velocity.is_finite():
+		_recover_motion(anchor)
+		return
+	# move_and_slide computes real_velocity = displacement / delta. Calling
+	# it in a zero-time hit-stop produces NaN even without any bad input.
+	if Engine.time_scale <= 0.0:
+		return
+	var dt := get_physics_process_delta_time() if Engine.is_in_physics_frame() else get_process_delta_time()
+	if dt <= 0.0:
+		return
+	var requested := velocity
+	move_and_slide()
+	var traveled := get_real_velocity()
+	if not velocity.is_finite() or not global_position.is_finite() or not traveled.is_finite():
+		_recover_motion(anchor)
+		last_motion_fault["stage"] = "physics result"
+		last_motion_fault["requested"] = requested
+		last_motion_fault["anchor"] = anchor
+	else:
+		# Floating mode retains requested velocity at a wall. Animation and
+		# facing need the distance actually travelled, including a full stop.
+		velocity = traveled
+
+
+func _recover_motion(anchor: Vector2) -> void:
+	motion_faults += 1
+	last_motion_fault = {"position": global_position, "velocity": velocity,
+		"knock": knock, "clock": anim_t, "gust": game.gust_vec if game != null else Vector2.ZERO}
+	global_position = anchor
+	velocity = Vector2.ZERO
+	knock = Vector2.ZERO
+	anim_t = 0.0
+	_steps = 0.0
+	_lean = 0.0
+	_face_vx = 0.0
+	_face_lp = Vector2.ZERO
+	if not is_finite(_action_t):
+		_action_t = 0.0
+	if game != null and game.dev_mode:
+		print("MOTION RECOVERY %s: %s" % [kind, last_motion_fault])
+
+
 ## THE one place a mob/boss body writes sprite.scale / position / rotation
 ## per frame (visual overhaul 2026-09-03). Everything transient — the walk
 ## bounce, a travel lean, the hit squash, a windup crouch, a pounce stretch,
@@ -1471,8 +1526,9 @@ func _net_mirror_tick(delta: float) -> void:
 ## (fix #1); `plated` carries the cinderhide plate wall so the guest's
 ## optimistic hit math matches the host's plated cut (fix #3).
 func net_apply_state(pos: Vector2, flip: bool, walk: bool, hp_frac: float, untarget := false,
-		hidden := false, plated := false) -> void:
+		hidden := false, plated := false, combat_cue := 0) -> void:
 	net_target = pos
+	net_combat_cue = clampi(combat_cue, 0, 7)
 	net_walk = walk
 	untargetable = untarget
 	if sprite != null:
@@ -2463,6 +2519,8 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 	# real wall the lava-melt must open, not a resist a DPS build outscales.
 	if plate_dr > 0.0:
 		amount *= 1.0 - plate_dr
+	if self is Boss:
+		amount *= (self as Boss).cast_window.damage_multiplier()
 	hp -= amount
 	game.stat_dmg(stat_credit, amount)  # battle stats: the APPLIED number
 	knock = from_dir * (220.0 if is_crit else 160.0)
@@ -2522,6 +2580,8 @@ func _net_mirror_hit(amount: float, from_dir: Vector2, is_crit: bool, silent: bo
 		shown *= 1.0 + Balance.HOBBLE_MULT
 	if plate_dr > 0.0:
 		shown *= 1.0 - plate_dr
+	if self is Boss:
+		shown *= (self as Boss).cast_window.damage_multiplier()
 	hp -= shown  # optimistic (kill-window reads: executes, dash refunds)
 	game.sfx("ehit", 1.0, 0.0, 4.0)
 	if is_crit:

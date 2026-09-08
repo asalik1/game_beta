@@ -1459,7 +1459,7 @@ func _run_systems() -> void:
 		"falling_end_y": Balance.BOSS_FALLING_WEAPON_END_Y,
 	})
 	var saw_vargoth_blade := false
-	for child in game.get_children():
+	for child in game._ground_attacks.back().get_children():
 		var vargoth_sprite := child as Sprite2D
 		if vargoth_sprite and vargoth_sprite.texture == Art.tex("fx_vargoth_skyblade"):
 			saw_vargoth_blade = true
@@ -1501,7 +1501,7 @@ func _run_systems() -> void:
 		"falling_end_y": Balance.BOSS_FALLING_WEAPON_END_Y,
 	})
 	var saw_varo_blade := false
-	for child in game.get_children():
+	for child in game._ground_attacks.back().get_children():
 		var varo_sprite := child as Sprite2D
 		if varo_sprite and varo_sprite.texture == Art.tex("fx_varo_reliquary_blade"):
 			saw_varo_blade = true
@@ -1634,6 +1634,9 @@ func _run_systems() -> void:
 
 	# 5b. Save / load roundtrip on a scratch slot (now with room state).
 	var p: Player = game.player
+	# Bank earlier sections' loose rewards before pinning this wallet fixture.
+	# Their recovery is independently exercised by test_loot_recovery + live rig.
+	preload("res://scripts/loot_recovery.gd").recover_live(game)
 	p.char_name = "Rowan"
 	p.gold = 4321
 	p.resonance = -37.0
@@ -1885,6 +1888,89 @@ func _run_systems() -> void:
 		if not Story.ALL_CONVOS.has(String(w["convo"])):
 			return _fail("wanderer convo '%s' missing" % w["convo"])
 	print("ok: opening convo data integrity (%d convos)" % Story.ALL_CONVOS.size())
+
+	var autonomy_error: String = await preload("res://scripts/tests/test_autonomy.gd").run(self)
+	if autonomy_error != "":
+		return _fail("autonomy: " + autonomy_error)
+	var quality_error: String = await preload("res://scripts/tests/test_quality.gd").run(self)
+	if quality_error != "":
+		return _fail("quality: " + quality_error)
+	var framing_error: String = preload("res://scripts/tests/test_framing.gd").run(self)
+	if framing_error != "":
+		return _fail("framing: " + framing_error)
+	var fishing_error: String = preload("res://scripts/tests/test_fishing.gd").run(self)
+	if fishing_error != "":
+		return _fail("fishing: " + fishing_error)
+	var exploration_error: String = preload("res://scripts/tests/test_exploration.gd").run(self)
+	if exploration_error != "":
+		return _fail("exploration: " + exploration_error)
+	var vigil_error: String = preload("res://scripts/tests/test_ward_vigil.gd").run(self)
+	if vigil_error != "":
+		return _fail("vigil: " + vigil_error)
+	_test_quest_schema()  # cheap data contract: catch missing verbs in quick too
+	if _failed:
+		return
+	var pocket_error: String = preload("res://scripts/tests/test_pocket_trials.gd").run(self)
+	if pocket_error != "":
+		return _fail("portal trials: " + pocket_error)
+	var recovery_error: String = preload("res://scripts/tests/test_loot_recovery.gd").run(self)
+	if recovery_error != "":
+		return _fail("earned spoils: " + recovery_error)
+	var travel_error: String = preload("res://scripts/tests/test_loot_travel.gd").run(self)
+	if travel_error != "":
+		return _fail("loot travel: " + travel_error)
+	var rescue_error: String = preload("res://scripts/tests/test_rescue_history.gd").run(self)
+	if rescue_error != "":
+		return _fail("rescue history: " + rescue_error)
+	var visibility_error: String = preload("res://scripts/tests/test_target_visibility.gd").run(self)
+	if visibility_error != "":
+		return _fail("target visibility: " + visibility_error)
+	var history_error: String = preload("res://scripts/tests/test_character_history.gd").run(self)
+	if history_error != "":
+		return _fail("personal history: " + history_error)
+	var escort_error: String = preload("res://scripts/tests/test_wayfarer.gd").run(self)
+	if escort_error != "":
+		return _fail("escort: " + escort_error)
+	var feedback_error: String = preload("res://scripts/tests/test_reward_feedback.gd").run(self)
+	if feedback_error != "":
+		return _fail("reward feedback: " + feedback_error)
+	var prism_error: String = preload("res://scripts/tests/test_prism.gd").run(self)
+	if prism_error != "":
+		return _fail("prism: " + prism_error)
+	var companion_error: String = preload("res://scripts/tests/test_companion_motion.gd").run(self)
+	if companion_error != "":
+		return _fail("companion motion: " + companion_error)
+	var preview_error: String = preload("res://scripts/tests/test_companion_preview.gd").run(self)
+	if preview_error != "":
+		return _fail("companion preview: " + preview_error)
+	var finale_error: String = preload("res://scripts/tests/test_chapter_finale.gd").run(self)
+	if finale_error != "":
+		return _fail("chapter finale: " + finale_error)
+	var appearance_error: String = preload("res://scripts/tests/test_party_appearance.gd").run(self)
+	if appearance_error != "":
+		return _fail(appearance_error)
+	var road_choice_error: String = preload("res://scripts/tests/test_road_choices.gd").run(self)
+	if road_choice_error != "":
+		return _fail(road_choice_error)
+	var road_hunt_error: String = preload("res://scripts/tests/test_road_hunt.gd").run(self)
+	if road_hunt_error != "":
+		return _fail(road_hunt_error)
+	var company_error: String = preload("res://scripts/tests/test_encounter_company.gd").run(self)
+	if company_error != "":
+		return _fail("encounter company: " + company_error)
+	var terrain_error: String = preload("res://scripts/tests/test_reactive_terrain.gd").run(self)
+	if terrain_error != "":
+		_fail(terrain_error)
+		return
+	var boss_cast_error: String = preload("res://scripts/tests/test_boss_cast.gd").run(self)
+	if boss_cast_error != "":
+		return _fail("boss casts: " + boss_cast_error)
+	var gamepad_error: String = preload("res://scripts/tests/test_gamepad.gd").run(self)
+	if gamepad_error != "":
+		return _fail("gamepad: " + gamepad_error)
+	var wayfinder_error: String = await preload("res://scripts/tests/test_wayfinder.gd").run(self)
+	if wayfinder_error != "":
+		return _fail("wayfinder: " + wayfinder_error)
 
 	# 6. Shop + codex + map still open fine.
 	game.player.gold = 500
@@ -2538,7 +2624,6 @@ func _run_campaign_ch2() -> void:
 	await _test_quest_verbs()
 	await _test_quest_quarry()
 	await _test_quest_abandonment()
-	_test_quest_schema()
 	_test_quest_scope()
 	await _test_hunt_and_keepsake()
 	await _test_ch1_quests()
@@ -4047,24 +4132,9 @@ func _test_retention() -> void:
 	if Balance.gem_lv2_chance(99) > Balance.GEM_LV2_CAP + 0.001:
 		return _fail("gem quality blew past its cap")
 
-	# --- first-clear beat: gold in hand + a mailed spoils package ---
-	# Gems drop ch4+, so the spoils bundle is gear+gem from ch4 on, gear-only before.
-	var fc_ch: String = g.chapter_id
-	var mail_before: int = g.mailbox.size()
-	var gold_before2: int = g.player.gold
-	g.chapter_id = "ch4"
-	g._first_clear_reward(12)
-	if g.player.gold <= gold_before2:
-		return _fail("first clear paid no gold")
-	if g.mailbox.size() != mail_before + 1 or g.mailbox[-1]["items"].size() != 2:
-		return _fail("first clear (ch4) did not mail the spoils (item + gem)")
-	g.chapter_id = "ch1"
-	g._first_clear_reward(12)
-	if g.mailbox[-1]["items"].size() != 1:
-		return _fail("first clear (ch1) should mail gear only, no gem")
-	g.chapter_id = fc_ch
-	g.player.gold = gold_before2
-	g.mailbox.resize(mail_before)
+	# First-clear contents and once-only settlement use an isolated character
+	# in test_character_history, so this campaign's completed chapters do not
+	# become accidental preconditions for a reward test.
 
 	# --- gear stat doctrine (2026-07-06): special stats are gem-only ---
 	var grng := RandomNumberGenerator.new()
@@ -5577,7 +5647,7 @@ func _test_side_quests() -> void:
 ## quest's step flags all ride a kept prefix so they survive the chapter wipe
 ## (the invariant the scope persistence leans on). Read-only; no restore needed.
 func _test_quest_schema() -> void:
-	var allowed_kinds := {"flag": true, "kill": true, "hunt": true}
+	var allowed_kinds := {"flag": true, "kill": true, "hunt": true, "defend": true, "escort": true}
 	var allowed_reward := {"gold": true, "standing": true, "item": true,
 		"gem": true, "kept": true, "keepsake": true}
 	var allowed_scope := {"chapter": true, "capital": true, "world": true}
@@ -5599,6 +5669,10 @@ func _test_quest_schema() -> void:
 				return _fail("quest %s: a kill step needs target + count>=1" % id)
 			if kind == "hunt" and String(step.get("target", "")) == "":
 				return _fail("quest %s: a hunt step needs a target enemy kind" % id)
+			if kind == "defend" and String(step.flag) != preload("res://scripts/ward_vigil.gd").DONE:
+				return _fail("quest %s: a defend step needs an installed encounter" % id)
+			if kind == "escort" and String(step.flag) != preload("res://scripts/wayfarer.gd").DONE:
+				return _fail("quest %s: an escort step needs an installed encounter" % id)
 			if unscoped:
 				var f := String(step["flag"])
 				var kept := false
@@ -7619,6 +7693,7 @@ func _test_overlay_intent_gate() -> void:
 	var mp_was: float = p.mp
 	var cd_was: float = p.cds["a1"]
 	var frozen_was: float = p.frozen_time
+	var combo_was: float = p.combo
 	var gust_was: Vector2 = game.gust_vec
 	var err: String = await _overlay_intent_checks(p, a1_key)
 	_press_key(KEY_D, false)
@@ -7633,6 +7708,7 @@ func _test_overlay_intent_gate() -> void:
 	p.mp = mp_was
 	p.cds["a1"] = cd_was
 	p.frozen_time = frozen_was
+	p.combo = combo_was
 	await _frames(2)
 	if err != "":
 		return _fail(err)
@@ -7645,11 +7721,15 @@ func _overlay_intent_checks(p: Player, a1_key: int) -> String:
 	get_tree().paused = false
 	game.gust_vec = Vector2.ZERO   # a sandstorm push moves the hero with zero intent
 	p.frozen_time = 0.0            # frozen blocks casting: the control step needs one
+	p.combo = 0.0                 # a valid combo refunds CD; it is not a missed cast
 	p.cds["a1"] = 0.0
 	p.mp = p.max_mp
 	_press_key(KEY_D, true)
 	_press_key(a1_key, true)
-	await _frames(2)
+	# Input polling runs on process frames, but abilities consume those intents
+	# on physics frames. Two fast headless process frames may contain no tick.
+	await get_tree().physics_frame
+	await _frames(1)
 	# CONTROL: with nothing open the held keys MUST reach the intents and the
 	# frame MUST consume them, or every "stayed still" assert below is vacuous.
 	if p.intent_move == Vector2.ZERO or not p.intent_a1:

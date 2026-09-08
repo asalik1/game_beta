@@ -15,6 +15,8 @@ class_name SaveGame
 ## Same fields as v2, one nesting level deeper. read() lifts legacy flat
 ## blobs into this shape in memory (_migrate_v2); writes are always v3.
 
+const History := preload("res://scripts/character_history.gd")
+
 const VERSION := 3   # v3: character/world split. v2: the zone graph. v1: pre-graph.
 # 20 slots: dev rosters (6 per press) live alongside real playthroughs
 # without anyone juggling deletions. Only occupied slots render anywhere.
@@ -143,6 +145,7 @@ static func write(game: Game, slot: int) -> void:
 		# inside the pocket). pocket_room/id are re-derived by the seeded inject.
 		"pocket_done": game.pocket_done,
 		"pocket_origin": game.pocket_origin,
+		"pocket_origin_offset": [game.pocket_origin_offset.x, game.pocket_origin_offset.y],
 	}
 	var data := {
 		"version": VERSION,
@@ -183,6 +186,8 @@ static func _character_section(game: Game) -> Dictionary:
 		"chroma": p.chroma,
 		"skin": p.skin,
 		"equipped_pet": p.equipped_pet,
+		"history_flags": History.clean(game.flags),
+		"rescued_pets": preload("res://scripts/wildlife.gd").clean_rescues(p.rescued_pets),
 		# Standings + resonance are PER-CHARACTER (§5.7): reputation and band
 		# lean travel into a friend's world and come home with you.
 		"resonance": p.resonance,
@@ -205,6 +210,8 @@ static func _character_section(game: Game) -> Dictionary:
 		# Professions (crafting core): the locked trade, per-trade mastery (persists
 		# across swaps), known generic blueprints, and the weekly swap-cost counter.
 		"profession": p.profession, "mastery": p.mastery, "blueprints": p.blueprints,
+		"fishing_book": p.fishing_book,
+		"tracked_quest": p.tracked_quest,
 		"swap_cost_step": p.swap_cost_step, "swap_week": p.swap_week,
 		# The Alkahest Codex learn-once flag (CONSUMABLE_GRADES §9 synthesis capstone).
 		"knows_alkahest": p.knows_alkahest,
@@ -212,9 +219,10 @@ static func _character_section(game: Game) -> Dictionary:
 		"hp": p.hp, "mp": p.mp,
 		# Mailbox + dropped loot are CHARACTER-owned (§5.5 loot instancing:
 		# every drop / forgotten-loot mail has exactly one owner). Dropped
-		# ground positions are world coordinates, but the loss mode is benign
-		# — flush_dropped_loot converts strays to positionless mail.
+		# positions only make sense in this world. Character-only home writes
+		# and cross-world applies turn them into positionless mail immediately.
 		"mailbox": game.mailbox, "dropped_loot": game.dropped_loot,
+		"unclaimed_rewards": preload("res://scripts/loot_recovery.gd").snapshot(game),
 		# The trusted clock anchor fences THIS CHARACTER's daily/weekly/mail
 		# timers against OS clock rollback — it guards character faucets, so
 		# it rides with them (a live co-op session uses the host's clock).
@@ -252,11 +260,20 @@ static func _character_section(game: Game) -> Dictionary:
 ## them; the host's flags/rooms/seed never colonize this file.
 static func write_character_home(game: Game, slot: int) -> void:
 	var data := read(slot)  # the home save, lifted to v3 in memory
+	# A guest's live pickups still belong to the host geometry. Mail them only
+	# in this detached snapshot: saving must not consume, pay or move live loot.
+	# Each write starts fresh, so collecting/flushing later cannot double-bank it.
+	var character := _character_section(game).duplicate(true)
+	var portable := game.portable_dropped_loot()
+	if not portable.is_empty():
+		character.mailbox.append({"subject": "Dropped Loot", "body": "", "items": portable,
+			"sent_at": character.clock_anchor, "read": false})
+		character.dropped_loot = []
 	var out := {
 		"version": VERSION,
 		"saved_at": Time.get_unix_time_from_system(),
 		"chapter": String(data.get("chapter", "ch1")),
-		"character": _character_section(game),
+		"character": character,
 		"world": world_of(data),
 	}
 	atomic_store(path(slot), JSON.stringify(out))
@@ -301,6 +318,7 @@ static func write_server_world(game: Game) -> void:
 		# inside the pocket). pocket_room/id are re-derived by the seeded inject.
 		"pocket_done": game.pocket_done,
 		"pocket_origin": game.pocket_origin,
+		"pocket_origin_offset": [game.pocket_origin_offset.x, game.pocket_origin_offset.y],
 	}
 	var data := {
 		"version": VERSION,
@@ -350,6 +368,7 @@ static func apply_server_world(game: Game, data: Dictionary) -> void:
 	game.last_safe_room = clampi(_as_int(w.get("last_safe_room", 0), 0), 0, game.zone_count - 1)
 	for z in _as_arr(w.get("merchant_zones", [])):
 		game._spawn_merchant(_as_int(z, 0))
+	restore_pocket(game, w)
 	# Stand the world at its last safe room: the join snapshot's spawn_room
 	# is cur_room, so joiners arrive somewhere pacified.
 	game._enter_room(game.last_safe_room)
@@ -371,7 +390,20 @@ static func read(slot: int) -> Dictionary:
 ## the roster (SaveGame.list scans EVERY slot, so one bad file must not break
 ## access to the others — CR-007).
 static func character_of(data: Dictionary) -> Dictionary:
-	return _as_dict(data.get("character", {}))
+	var c := _as_dict(data.get("character", {}))
+	if not c.is_empty() and not c.has("rescued_pets"):
+		# Older saves kept these personal discoveries in their HOME world flags.
+		# Lift only absent fields; an explicit empty history is authoritative.
+		c = c.duplicate(true)
+		c["rescued_pets"] = preload("res://scripts/wildlife.gd").legacy_rescues(world_of(data).get("flags", {}))
+	if not c.is_empty() and not c.has("history_flags"):
+		c = c.duplicate(true)
+		c["history_flags"] = History.legacy(world_of(data).get("flags", {}), c.get("achievements", []))
+	return c
+
+
+static func flags_of(data: Dictionary) -> Dictionary:
+	return History.merge(world_of(data).get("flags", {}), character_of(data).get("history_flags", {}))
 
 
 static func world_of(data: Dictionary) -> Dictionary:
@@ -415,11 +447,13 @@ static func _as_float(v, dflt: float) -> float:
 # Where each v2 flat field lands in v3. "bag" is the round-52 legacy
 # single-bag key (pre-`bags` saves) — routed so load_bags still sees it.
 const _V2_CHARACTER_FIELDS := ["name", "cls", "level", "xp", "skill_points", "tree_points",
-	"attr_points", "unspent_attr", "gold", "ability_theme", "chroma", "skin", "equipped_pet",
+	"attr_points", "unspent_attr", "gold", "ability_theme", "chroma", "skin", "equipped_pet", "rescued_pets", "history_flags",
 	"resonance", "faction_standing", "equipment", "backpack", "gem_bag", "bags", "loose_bags", "bag",
 	"consumables", "materials", "potion_rotation", "active_potion", "depths_checkpoint", "hp", "mp",
 	"profession", "mastery", "blueprints", "swap_cost_step", "swap_week", "knows_alkahest",
+	"fishing_book", "tracked_quest",
 	"mailbox", "dropped_loot", "clock_anchor", "daily_last_day", "daily_streak",
+	"unclaimed_rewards",
 	"achievements", "boss_records", "kill_counts", "player_title", "fangmoot",
 	"bounties", "bounty_day", "bounty_week",
 	"contracts", "contract_day", "contract_claims_day",
@@ -429,7 +463,7 @@ const _V2_WORLD_FIELDS := ["quest_key", "talked_to_elder", "flags", "quest_kills
 	"run_time", "run_deaths", "run_elites", "run_secrets",
 	"weekly_active", "weekly_week", "waking_week", "bosses_slain", "pos",
 	"cur_room", "last_safe_room", "visited_rooms", "cleared_rooms", "door_seen",
-	"wander_seed", "unlisted_banked", "pocket_done", "pocket_origin"]
+	"wander_seed", "unlisted_banked", "pocket_done", "pocket_origin", "pocket_origin_offset"]
 
 
 ## Lift a legacy flat blob (v1/v2) into the v3 two-section shape, in
@@ -544,6 +578,8 @@ static func load_bags(data: Dictionary) -> Array:
 ## from it — then overrides, then recalc), then the world section, then
 ## the world reconciles.
 static func apply(game: Game, data: Dictionary) -> void:
+	var was_restoring := game.restoring_save
+	game.restoring_save = true
 	data = _migrate_v2(data)  # read() already migrates; this guards raw callers
 	var w := world_of(data)
 	var p := game.player
@@ -551,7 +587,8 @@ static func apply(game: Game, data: Dictionary) -> void:
 
 	game.quest_key = String(w.get("quest_key", "talk"))
 	game.talked_to_elder = bool(w.get("talked_to_elder", false))
-	game.flags = _as_dict(w.get("flags", {}))          # a non-dict flags blob can't poison the world
+	game.flags = flags_of(data)  # explicit personal history wins over stale home flags
+	preload("res://scripts/wildlife.gd").sync_flags(game)
 	game.quest_kills = _as_dict(w.get("quest_kills", {}))
 	# Run stats ride the save so the results card spans sessions. They are
 	# WORLD state (this run's card); only the weekly CLAIM ledger is the
@@ -573,8 +610,7 @@ static func apply(game: Game, data: Dictionary) -> void:
 	game.unlisted_banked = []
 	for ub in _as_arr(w.get("unlisted_banked", [])):
 		game.unlisted_banked.append(String(ub))
-	game.pocket_done = bool(w.get("pocket_done", false))
-	game.pocket_origin = int(w.get("pocket_origin", -1))
+	restore_pocket(game, w)
 
 	# --- room state (v2+). Pre-graph saves (v1) keep the character and
 	# the story, but restart the chapter's GEOGRAPHY from its first room
@@ -601,13 +637,14 @@ static func apply(game: Game, data: Dictionary) -> void:
 		var py := _as_float(pos[1], 360.0) if pos.size() > 1 else 360.0
 		var anchor: Vector2 = game.room_center(cur)
 		game._enter_room(cur)
-		p.global_position = game.clamp_to_zone(Vector2(px, py), anchor)
+		p.global_position = game.clamp_to_zone(game.pocket_position_legacy(Vector2(px, py)), anchor)
 	else:
 		for z in _as_arr(w.get("merchant_zones", [])):
 			game._spawn_merchant(_as_int(z, 0))
 		p.global_position = game._start_pos()
 		game._enter_room(game.room_at_pos(p.global_position))
 	game.reconcile_after_load()
+	game.restoring_save = was_restoring
 
 
 ## Restore ONLY the character section onto the live game — the §5.7 seam
@@ -615,8 +652,12 @@ static func apply(game: Game, data: Dictionary) -> void:
 ## world without touching a single world field. Solo apply() calls this
 ## too, so the two paths can never drift. spawn_ground_loot=false skips
 ## re-dropping saved ground loot (its positions belong to the character's
-## HOME geometry — while guesting they wait for the mailbox flush).
+## HOME geometry — while guesting they become mail immediately).
 static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true) -> void:
+	# Fixups and pickup placement must never mutate a caller's reusable snapshot.
+	c = c.duplicate(true)
+	preload("res://scripts/loot_recovery.gd").retire_live(game)
+	game.retire_dropped_loot()
 	var p := game.player
 	p.char_name = String(c.get("name", ""))
 	p.level = maxi(1, _as_int(c.get("level", 1), 1))
@@ -643,7 +684,13 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	p.pending_theme_note = ""
 	p.set_chroma(String(c.get("chroma", "")))
 	p.set_skin(String(c.get("skin", "")))
+	p.tracked_quest = c.get("tracked_quest", "") if c.get("tracked_quest", "") is String else ""
+	if not Story.ALL_SIDE_QUESTS.has(p.tracked_quest):
+		p.tracked_quest = ""
 	p.equipped_pet = String(c.get("equipped_pet", ""))  # follower (re)built on world build
+	game.flags = History.merge(game.flags, c.get("history_flags", {}))
+	p.rescued_pets = preload("res://scripts/wildlife.gd").clean_rescues(c.get("rescued_pets", []))
+	preload("res://scripts/wildlife.gd").sync_flags(game)
 	p.resonance = float(c.get("resonance", 0.0))
 	var fs := _as_dict(c.get("faction_standing", {}))
 	for k in p.faction_standing:
@@ -711,6 +758,7 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	p.run_tier = clampi(int(c.get("run_tier", 0)), 0, Balance.TIER_NAMES.size() - 1)  # pre-tier saves: Normal
 	# Professions (pre-professions saves: no trade — start unlocked, mastery empty).
 	p.profession = String(c.get("profession", ""))
+	p.fishing_book = preload("res://scripts/fishing.gd").clean_book(c.get("fishing_book", {}))
 	if not Balance.PROFESSION_TRADES.has(p.profession):
 		p.profession = ""  # a retired/unknown trade id just dies on load (no-migration rule)
 	p.mastery = {}
@@ -834,7 +882,14 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 			var pp: Array = _as_arr(pl.get("pos", []))
 			var lx := _as_float(pp[0], 0.0) if pp.size() > 0 else 0.0
 			var ly := _as_float(pp[1], 0.0) if pp.size() > 1 else 0.0
-			Pickup.drop_loot(game, pl, Vector2(lx, ly))
+			var at := game.pocket_position_legacy(Vector2(lx, ly))
+			pl["pos"] = [at.x, at.y]
+			Pickup.drop_loot(game, pl, at)
+	else:
+		game.flush_dropped_loot()
+	# Personal contents have no foreign geometry: solo resumes, guest joins and
+	# endgame returns all recover the owner's same frozen roll through mail.
+	preload("res://scripts/loot_recovery.gd").recover_saved(game, c.get("unclaimed_rewards", {}))
 
 
 ## JSON loads every number as float; re-cast the fields the game
@@ -867,3 +922,16 @@ static func _fix_payload(pl: Dictionary) -> void:
 		pl["item"] = _fix_item(pl["item"])
 	if pl.has("gem"):
 		pl["gem"] = _fix_gem(pl["gem"])
+
+
+## Optional fields keep old saves readable. Offsets are finite and room-local.
+static func restore_pocket(game: Game, w: Dictionary) -> void:
+	game.pocket_done = bool(w.get("pocket_done", false))
+	game.pocket_origin = _as_int(w.get("pocket_origin", -1), -1)
+	var point := _as_arr(w.get("pocket_origin_offset", []))
+	game.pocket_origin_offset = Vector2.ZERO
+	if point.size() == 2:
+		var x := _as_float(point[0], 0.0)
+		var y := _as_float(point[1], 0.0)
+		if is_finite(x) and is_finite(y):
+			game.pocket_origin_offset = Vector2(clampf(x, -Game.ROOM_W, Game.ROOM_W), clampf(y, -Game.ROOM_H, Game.ROOM_H))

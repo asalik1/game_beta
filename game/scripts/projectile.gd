@@ -131,6 +131,8 @@ var net_visual := false
 var net_id := 0
 var _net_announced := false
 var _already_hit := {}
+var _banked_crystals := {}
+var _bank_pending := false
 
 # Glow tint per projectile type — bright and readable at a glance.
 const GLOWS := {
@@ -468,7 +470,7 @@ static func spawn(game_node: Node2D, pos: Vector2, velocity: Vector2, damage: fl
 
 	var cs := CollisionShape2D.new()
 	var shape := CircleShape2D.new()
-	shape.radius = 9
+	shape.radius = Balance.PROJECTILE_COLLIDER_RADIUS
 	cs.shape = shape
 	p.add_child(cs)
 
@@ -823,6 +825,10 @@ func _mage_skin_impact() -> void:
 
 
 func _on_body_entered(body: Node) -> void:
+	if _bank_pending or is_queued_for_deletion():
+		return
+	if body.has_meta("prism_crystal") and _try_bank(body.get_meta("prism_crystal")):
+		return
 	if net_visual:
 		# MP-10 visual copy: burst where the real one bites, never damage
 		# (the real hit arrives as its own RPC on the authority's side).
@@ -925,6 +931,11 @@ func _on_body_entered(body: Node) -> void:
 			body.apply_root(root_dur)
 		queue_free()
 	elif body is StaticBody2D:
+		if body.has_meta("reactive_terrain"):
+			if friendly and is_instance_valid(source_player):
+				body.request_prime.call_deferred(source_player, "strike")
+			elif not friendly and not game.net_guest():
+				body.prime.call_deferred()
 		_notify_visual_impact()
 		game.burst(_fx_pos(), Color(glow_color, 0.5), 3)
 		if friendly:
@@ -932,6 +943,51 @@ func _on_body_entered(body: Node) -> void:
 			_impact_ring()
 			_bloom()
 		queue_free()
+
+
+## Deferred in-place redirection: preserves custom visual children, impact
+## listeners, hit history, status payload, owner, damage and remaining life.
+## Copies run the same cosmetic reflection and never gain damage authority.
+func _try_bank(prism: Node2D) -> bool:
+	if not is_instance_valid(prism) or prism.game != game or _bank_pending \
+			or is_queued_for_deletion() or not vel.is_finite() or vel.is_zero_approx() \
+			or not is_finite(life) or life <= 0.0 or _banked_crystals.has(prism) \
+			or _banked_crystals.size() >= Balance.PRISM_MAX_BANKS:
+		return false
+	_banked_crystals[prism] = true
+	_bank_pending = true
+	_finish_bank.call_deferred(prism)
+	return true
+
+
+func _finish_bank(prism: Node2D) -> void:
+	if not _bank_pending:
+		return
+	_bank_pending = false
+	if not is_instance_valid(prism) or prism.is_queued_for_deletion() or is_queued_for_deletion():
+		queue_free()
+		return
+	var direction: Vector2 = prism.direction_for(self)
+	if not direction.is_finite() or direction.is_zero_approx():
+		queue_free()
+		return
+	var speed := vel.length()
+	var separation: float = prism.radius + Balance.PROJECTILE_COLLIDER_RADIUS * maxf(absf(scale.x), absf(scale.y)) + Balance.PRISM_EXIT_GAP
+	var next: Vector2 = prism.world_center() + direction * separation
+	# Separation is real travel, paid from the same range budget. Banking
+	# cannot refresh a projectile or push it beyond its original lifetime.
+	life -= global_position.distance_to(next) / speed
+	if life <= 0.0:
+		_notify_visual_impact()
+		_bloom()
+		queue_free()
+		return
+	vel = direction * speed
+	global_position = next
+	if is_instance_valid(spr) and not (spin and tex_kind in ["knife", "shuriken"]):
+		spr.rotation = vel.angle()
+	_update_path_trail()
+	prism.bank_flash()
 
 
 func _ricochet(hit: Node) -> void:

@@ -20,6 +20,8 @@
 const SPEED_BASE_REF := 260.0
 
 var game: Game  # set by game.gd
+var motion_faults := 0          # dev diagnostic; never persisted or replicated
+var last_motion_fault := {}
 
 # --- identity ---
 var char_name := ""   # hero name chosen at creation; "" falls back to the OS account name in co-op
@@ -28,7 +30,9 @@ var ability_theme := {"a1": "", "a2": "", "a3": "", "ult": ""}
 var themes_known := 0
 var chroma := ""   # active chroma id ("" = base skin, e.g. "obsidian")
 var skin := ""     # active skin id ("" = default, e.g. "dreadknight")
+var tracked_quest := ""  # personal journal selection; no world/network state
 var equipped_pet := ""  # active cosmetic companion id ("" = none); game_world draws the follower (Q16)
+var rescued_pets: Array[String] = []  # this hero's rescues; ownership remains account-wide
 var _skin_ambient: Node2D = null  # mythic locomotion/idle identity; built by player_combat
 var _skin_ambient_id := ""
 var dev_morph: DevMorph = null  # dev-mode codex TRANSFORM: creature puppet over the hero (dev_morph.gd)
@@ -142,6 +146,7 @@ var run_tier := 0
 # Swapping (Professions.swap_trade) costs gold and doubles per week; mastery
 # below persists PER TRADE across swaps. All four fields ride the save.
 var profession := ""
+var fishing_book := {}       # personal species -> {count, best length in cm}
 var mastery := {}            # trade key -> mastery points (persists across swaps)
 var blueprints: Array = []   # known generic recipes ("slot:grade"), learn-on-acquire
 var swap_cost_step := 0      # swaps already paid THIS week (doubling counter)
@@ -369,6 +374,18 @@ func _poll_local_intents() -> void:
 	intent_potion = Input.is_key_pressed(binds["potion"])
 	intent_potion_next = Input.is_key_pressed(binds.get("potion_next", KEY_R))
 	intent_interact = Input.is_key_pressed(binds["interact"])
+	if game.gamepad != null:
+		var pad: Node = game.gamepad
+		var pad_move: Vector2 = pad.movement()
+		if pad_move != Vector2.ZERO:
+			intent_move = pad_move
+		intent_a1 = intent_a1 or pad.held("a1")
+		intent_a2 = intent_a2 or pad.held("a2")
+		intent_a3 = intent_a3 or pad.held("a3")
+		intent_ult = intent_ult or pad.held("ult")
+		intent_potion = intent_potion or pad.held("potion")
+		intent_potion_next = intent_potion_next or pad.held("potion_next")
+		intent_interact = intent_interact or pad.held("interact")
 	# --- mobile touch merge (MOBILE SNAPSHOT ONLY; §10 touch seam) ----------
 	# The touch HUD (scripts/ui/touch_hud.gd) writes held state into the
 	# MobileInput autoload each frame; OR it into the same intents the keyboard
@@ -425,9 +442,14 @@ func clear_local_intents() -> void:
 	intent_potion = false
 	intent_potion_next = false
 	intent_interact = false
+	action_buffer.clear()
+	intent_lock = false
+	intent_lock_release = false
 
 # --- combat state ---
 var cds := {"a1": 0.0, "a2": 0.0, "a3": 0.0, "ult": 0.0}
+var action_buffer: RefCounted = preload("res://scripts/action_buffer.gd").new()
+var damage_memory: RefCounted = preload("res://scripts/combat_memory.gd").new()
 var potion_cd := 0.0
 var hurt_cd := 0.0
 var hurt_was_heavy := false    # the live hurt_cd window blocks HEAVY hits too: set by a landed
@@ -890,7 +912,7 @@ func set_pet(pet_id: String) -> void:
 	if pet_id != "" and Skins.find_pet(pet_id).is_empty():
 		return
 	equipped_pet = pet_id
-	if is_instance_valid(game):
+	if is_instance_valid(game) and self == game.local_player:
 		game.call("refresh_pet_follower")
 
 
@@ -1234,6 +1256,11 @@ func _update_weapon_visual() -> void:
 
 
 func _ready() -> void:
+	# Top-down motion: no north-facing 'ceilings', floor snap or riding mobs.
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
+	platform_floor_layers = 0
+	platform_wall_layers = 0
+	platform_on_leave = CharacterBody2D.PLATFORM_ON_LEAVE_DO_NOTHING
 	collision_layer = 2
 	collision_mask = 1 | 4
 	var cs := CollisionShape2D.new()
@@ -1366,7 +1393,8 @@ func _release_occlusion_clip(outline: Sprite2D) -> void:
 	outline.queue_free()
 	if occluder is CanvasItem:
 		for child in occluder.get_children():
-			if child != outline and child.is_in_group("occlusion_clip_outlines"):
+			if child != outline and not child.is_queued_for_deletion() \
+				and child.is_in_group("occlusion_clip_outlines"):
 				return
 		(occluder as CanvasItem).clip_children = CanvasItem.CLIP_CHILDREN_DISABLED
 
@@ -2137,13 +2165,19 @@ func add_consumable(c: Dictionary) -> bool:
 func add_material(family: String, grade: String, count := 1) -> bool:
 	if count <= 0:
 		return true
+	if not Items.MATERIALS.get(family, {}).has(grade) or count > Items.MATERIAL_STACK_MAX:
+		return false
 	for m in materials:
 		if String(m.get("family", "")) == family and String(m.get("grade", "")) == grade:
-			m["count"] = mini(Items.MATERIAL_STACK_MAX, int(m.get("count", 0)) + count)
+			# Atomic refusal keeps the complete payload in its letter/on the
+			# ground. Clamping here silently destroyed every excess unit.
+			if int(m.get("count", 0)) + count > Items.MATERIAL_STACK_MAX:
+				return false
+			m["count"] = int(m.get("count", 0)) + count
 			return true
 	if bag_used() >= bag_capacity():
 		return false
-	materials.append(Items.make_material(family, grade, mini(Items.MATERIAL_STACK_MAX, count)))
+	materials.append(Items.make_material(family, grade, count))
 	return true
 
 
@@ -2508,6 +2542,11 @@ func potion_short_name(id: String) -> String:
 ## require + spend a budgeted slot of this drink type, arm the cd. A type not
 ## in this room's loadout refuses — planning is the skill, from the bag too.
 func _drink_gate(kind: String) -> bool:
+	if preload("res://scripts/pocket_trial.gd").potions_locked(game, self):
+		if potion_cd <= 0.0:
+			game.spawn_text(global_position + Vector2(0, -56), "Bottles sealed until the guardian falls", Color(0.68, 0.85, 1.0))
+		potion_cd = Balance.POCKET_SEAL_NOTICE_COOLDOWN
+		return false
 	if potion_cd > 0.0 or dead or downed or ghost:
 		return false
 	if int(room_potions.get(kind, 0)) <= 0:
@@ -2726,25 +2765,66 @@ func bag_would_improve(slots: int) -> bool:
 	return false
 
 
-func equip(item: Dictionary) -> void:
-	# Class lock (player rule, 2026-07-06): a mage cannot wear an
-	# assassin's boots. Unclassed items (legacy saves, dev tools) pass.
+func equip_error(item: Dictionary) -> String:
+	if not String(item.get("slot", "")) in Items.SLOTS:
+		return "This item cannot be equipped."
 	var item_cls := String(item.get("cls", ""))
 	if item_cls != "" and item_cls != cls:
-		game.spawn_text(global_position + Vector2(0, -56),
-			"%s gear — not yours to wear." % item_cls.capitalize(), Color(1.0, 0.7, 0.5))
+		return "%s gear — your class cannot wear it." % item_cls.capitalize()
+	for gem in item.get("gems", []):
+		var stat := String(gem["stat"])
+		if stat in Balance.SPECIAL_GEM_STATS and _special_in_other_slots(stat, String(item["slot"])):
+			return "Already wearing a %s gem — one per stat." % Items.STAT_LABEL.get(stat, stat)
+	return ""
+
+
+func set_gear_kept(item: Dictionary, keep: bool) -> bool:
+	var owned: bool = preload("res://scripts/gear_care.gd").index_of(backpack, item) >= 0
+	for worn in equipment.values():
+		owned = owned or is_same(worn, item)
+	if not owned:
+		return false
+	item["kept"] = keep
+	return true
+
+
+func sell_gear(selection: Array) -> Dictionary:
+	var count := 0
+	var value := 0
+	for item in selection.duplicate():
+		var idx: int = preload("res://scripts/gear_care.gd").index_of(backpack, item)
+		if idx < 0 or preload("res://scripts/gear_care.gd").kept(item):
+			continue
+		value += preload("res://scripts/gear_care.gd").sale_value(item)
+		strip_gems(item)
+		backpack.remove_at(idx)
+		count += 1
+	if count > 0:
+		gain_gold(value)
+		game.sfx("potion")
+	return {"count": count, "gold": gold_yield(value)}
+
+
+func discard_gear(item: Dictionary) -> bool:
+	var idx: int = preload("res://scripts/gear_care.gd").index_of(backpack, item)
+	if idx < 0 or preload("res://scripts/gear_care.gd").kept(item):
+		return false
+	backpack.remove_at(idx)
+	game.discard_to_ground({"kind": "item", "item": item})
+	return true
+
+
+func equip(item: Dictionary) -> void:
+	var why := equip_error(item)
+	if why != "":
+		game.spawn_text(global_position + Vector2(0, -56), why, Color(1.0, 0.7, 0.5))
 		return
 	var slot: String = item["slot"]
-	# One special gem per STAT across your whole loadout (2026-07-08): refuse
-	# to equip an item whose special gem duplicates one already worn elsewhere.
-	for g in item.get("gems", []):
-		var st := String(g["stat"])
-		if st in Balance.SPECIAL_GEM_STATS and _special_in_other_slots(st, slot):
-			game.spawn_text(global_position + Vector2(0, -56),
-				"Already wearing a %s gem — one per stat." % Items.STAT_LABEL.get(st, st),
-				Color(1.0, 0.7, 0.5))
-			return
-	backpack.erase(item)
+	if is_same(equipment.get(slot), item):
+		return
+	var bag_idx: int = preload("res://scripts/gear_care.gd").index_of(backpack, item)
+	if bag_idx >= 0:
+		backpack.remove_at(bag_idx)
 	if equipment.has(slot):
 		backpack.append(equipment[slot])
 	equipment[slot] = item
@@ -2911,26 +2991,15 @@ func auto_equip() -> int:
 		var did := false
 		for item in backpack.duplicate():
 			var slot := String(item.get("slot", ""))
-			if slot == "":
+			if preload("res://scripts/gear_care.gd").kept(item) \
+					or preload("res://scripts/gear_care.gd").kept(equipment.get(slot, {})):
 				continue
-			# Class lock — a mage never auto-equips assassin boots (equip() rule).
-			var icls := String(item.get("cls", ""))
-			if icls != "" and icls != cls:
-				continue
-			# One special gem per stat across the loadout: skip an item equip()
-			# would refuse for duplicating a special gem already worn elsewhere.
-			var conflict := false
-			for g in item.get("gems", []):
-				var st := String(g["stat"])
-				if st in Balance.SPECIAL_GEM_STATS and _special_in_other_slots(st, slot):
-					conflict = true
-					break
-			if conflict:
+			if equip_error(item) != "":
 				continue
 			if not Items.strictly_better(item, equipment.get(slot)):
 				continue
 			# Swap in (equip()'s core, minus the per-call recalc/visual/sfx).
-			backpack.erase(item)
+			backpack.remove_at(preload("res://scripts/gear_care.gd").index_of(backpack, item))
 			if equipment.has(slot):
 				backpack.append(equipment[slot])
 			equipment[slot] = item
@@ -3001,6 +3070,8 @@ func synthesize(stat: String, lvl: int, quiet := false) -> bool:
 # =============================================================== progression
 
 func gain_xp(amount: int) -> void:
+	if amount <= 0:
+		return  # summons and optional event actors are silent, not a capped-XP notice
 	# NG+ tiers farm gold, gear and gems — never levels. XP is story
 	# currency, paid once at parity (DESIGN "XP = story currency"); an
 	# UNCOMPLETED chapter entered at +20/+40 would otherwise pay 3-6x
@@ -3194,6 +3265,10 @@ func current_greed() -> float:
 
 
 func gain_gold(amount: int) -> void:
-	gold += int(amount * (1.0 + Stats.greed_gold(current_greed())))
+	gold += gold_yield(amount)
+
+
+func gold_yield(amount: int) -> int:
+	return int(amount * (1.0 + Stats.greed_gold(current_greed())))
 
 

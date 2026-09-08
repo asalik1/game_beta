@@ -806,16 +806,26 @@ server phase).
 
 ## Wave 10 — cinematics parity
 
-### MP-24: Per-class chapter CLOSERS in co-op — status: OPEN — **PRIORITY: HIGH** (owner 2026-08-17)
-Files: `game_flow.gd` (`on_boss_died` victory branch), `game_base.gd` / net session, `cutscene.gd`, `content/chapter_closers.gd`
-The illustrated per-class chapter CLOSER (CHAPTER_CLOSERS.md — boss dying lines
-→ class-refracted reflection, on the `Cutscene` layer) currently plays in SOLO
-ONLY. In co-op the final-boss victory branch falls back to the flat text
-epilogue beat, because the closer is per-class + local and this victory branch
-is host-authoritative (`net_session().host_chapter_end` / `host_victory` fan the
-card to guests; `request_pause` no-ops online). Task: make EACH client play ITS
-OWN class's closer locally around the synced victory, mirroring how `net_advance`
-replays the chapter OPENER per client on the guest side (`run_chapter_opener_if_needed`
-keyed on local `player.cls`). Watch the ordering vs `host_victory`'s card and the
-guest `net_victory` path so nobody soft-locks (the tree pause is not an input gate
-online — CLAUDE.md §co-op). Solo path is done and must stay bit-identical.
+### MP-24: Per-class chapter CLOSERS in co-op — OWNER: codex/crownless-wayfinder — status: DONE (2026-09-08)
+
+Each reader gets their own class's illustrated ch1–ch7 ending, with the
+authored text fallback for later chapters. The host sends victory before
+reading; each hero banks their own rewards, completion and records before
+their local ending. Victory settles after the ordered deferred reward queue,
+so same-frame receipt cannot suppress first-clear mail. Reading is excluded
+from recorded run time. Menus, NPC choices and chat finish before the ending;
+personal closers acquire no NPC claim or party-gather lock. Input stays gated
+through the dissolve. Duplicate messages, world travel and host-loss teardown
+cannot replay old pages or results over the next chapter.
+
+Full desktop and mobile gates, actual two-reader ENet victory/claims/advance,
+solo real-boss payouts, personal-history/reconnect and calibrated visual QA
+pass. See [COOP_CLOSERS.md](COOP_CLOSERS.md) for architecture and evidence.
+No art was regenerated; the solo victory branch retains its existing flow.
+
+### MP-25: Party Appearance — OWNER: codex/crownless-wayfinder — status: DONE (2026-09-08)
+
+Equipped pets and skins in join blocks and live updates, late join roster,
+shared follower movement and travel/disconnect cleanup. Cosmetic identity only;
+local ownership and saves remain local. Chromas are scrapped and excluded.
+See PARTY_APPEARANCE.md for implementation and validation status.

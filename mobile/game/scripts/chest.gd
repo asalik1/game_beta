@@ -29,6 +29,7 @@ var supply_tier := ""       # "bronze" | "silver" | "gold"
 var supply_gem := false     # this supply chest is a GUARANTEED-gem one (§3)
 var supply_first_clear := false
 var supply_lv := 1          # the boss's level — leans the table toward its ceiling (§2)
+var _sealed_contents: Dictionary = {}  # exact personal roll, shared by opening and save recovery
 
 
 # `opts` (BOSS_LOOT.md) shapes the two chest kinds — omit it for the classic
@@ -116,6 +117,7 @@ static func drop(game_node: Node2D, chest_tier: String, pos: Vector2, opts := {}
 	# (area_set_shape_disabled: "Can't change this state while flushing queries").
 	c.body_entered.connect(c._on_body_entered, CONNECT_DEFERRED)
 	game_node.add_child(c)
+	c.add_to_group("wayfinder_chests")
 
 	# Little "pop" when it lands.
 	sprite.scale = base_scale * 0.17
@@ -153,6 +155,8 @@ func _physics_process(_delta: float) -> void:
 func _on_body_entered(body: Node) -> void:
 	if opened or buried or not body is Player:
 		return
+	if body != game.local_player or body.dead or body.downed or body.ghost:
+		return
 	opened = true
 	game.sfx("chest")
 	game.burst(global_position, Color(1.0, 0.85, 0.3), 14)
@@ -171,6 +175,7 @@ func _on_body_entered(body: Node) -> void:
 	tween.tween_interval(Balance.CHEST_OPEN_HOLD)
 	tween.tween_property(self, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(queue_free)
+	game.autosave.call_deferred()  # bank the complete payout after callbacks/overflow settle
 
 
 # The OPENING MOMENT (P7.B, 2026-08-19; owner: "the chests…"): the lid FRAMES
@@ -247,23 +252,15 @@ func _open_moment() -> void:
 ## chests only) a chance at a loose gem. The boss GEAR chest passes gem_ok=false
 ## — a boss's gems ride its supply chests instead (BOSS_LOOT §3).
 func _open_gear(body: Player) -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.randomize()
-	# The grade was rolled (and shown) at drop time — honour it, don't re-roll.
-	# Same distribution as the old roll_chapter_gear path: chapter band, then
-	# _roll_slot. The chest never lies about what it holds.
-	var item := Items.roll_gear_of_grade(grade, rng, body.cls, Story.act_of(game.chapter_id))
+	var contents := sealed_contents()
+	var item: Dictionary = contents.items[0].item.duplicate(true)
 	game.give_loot({"kind": "item", "item": item}, global_position)
 	game.loot_fanfare(item["grade"], global_position)  # rarity chime + beam
-	var bonus_gold := rng.randi_range(3, 8) * (1 + ["wood", "silver", "gold"].find(tier))
+	var bonus_gold := int(contents.gold)
 	body.gain_gold(bonus_gold)
 	game.hud.loot_banner(item, bonus_gold)
-
-	# Chests can also hold loose gems (better chests, better odds) — but only
-	# once regular gems are dropping (ch4+); ch1-3 chests are gear + gold only.
-	var gem_chance: float = {"wood": 0.25, "silver": 0.6, "gold": 1.0}[tier]
-	if gear_gem_ok and Balance.regular_gems_drop(game.loot_chapter()) and rng.randf() < gem_chance:
-		var gem := Items.random_gem(rng, 1, Balance.special_gems_drop(game.loot_chapter()))
+	for payload in contents.items.slice(1):
+		var gem: Dictionary = payload.gem.duplicate(true)
 		if game.give_loot({"kind": "gem", "gem": gem}, global_position):
 			game.spawn_text(body.global_position + Vector2(0, -66), "+ " + Items.gem_title(gem), Items.gem_color(gem))
 
@@ -273,13 +270,46 @@ func _open_gear(body: Player) -> void:
 ## its contents locally (per-machine, like the gear chest) and hands them to the
 ## owner's award machinery (bag-or-ground, mail, banner) via apply_award_events.
 func _open_supply(_body: Player) -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.randomize()
-	var special_ok := Balance.special_gems_drop(game.loot_chapter())
-	var events := Chest.roll_supply_contents(supply_tier, supply_gem, supply_first_clear,
-		special_ok, supply_lv, global_position, rng)
+	var events: Array = []
+	for payload in sealed_contents().items:
+		var ev: Dictionary = payload.duplicate(true)
+		ev["k"] = ev.kind
+		ev.erase("kind")
+		ev["at"] = global_position
+		ev["ty"] = {"material": -60, "potion": -70, "gem": -88}.get(ev.k, -70)
+		events.append(ev)
 	game.apply_award_events(events)
 	game.loot_fanfare(grade, global_position)  # chime keyed to the tier ceiling
+
+
+## Freeze the same existing gear/supply roll on first save or opening. This
+## is JSON-only; saving never pays, opens the lid, or triggers a cache hook.
+func sealed_contents() -> Dictionary:
+	if not _sealed_contents.is_empty():
+		return _sealed_contents
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	var payloads: Array = []
+	var bonus_gold := 0
+	var special_ok := Balance.special_gems_drop(game.loot_chapter())
+	if kind == "supply":
+		for ev in roll_supply_contents(supply_tier, supply_gem, supply_first_clear,
+			special_ok, supply_lv, Vector2.ZERO, rng):
+			var payload: Dictionary = ev.duplicate(true)
+			payload["kind"] = payload.k
+			for key in ["k", "at", "ty"]:
+				payload.erase(key)
+			payloads.append(payload)
+	else:
+		var item := Items.roll_gear_of_grade(grade, rng, game.player.cls, Story.act_of(game.chapter_id))
+		payloads.append({"kind": "item", "item": item})
+		bonus_gold = rng.randi_range(Balance.CHEST_GOLD_MIN, Balance.CHEST_GOLD_MAX) \
+			* (1 + ["wood", "silver", "gold"].find(tier))
+		if gear_gem_ok and Balance.regular_gems_drop(game.loot_chapter()) \
+			and rng.randf() < float(Balance.CHEST_GEM_CHANCE[tier]):
+			payloads.append({"kind": "gem", "gem": Items.random_gem(rng, 1, special_ok)})
+	_sealed_contents = {"items": payloads, "gold": bonus_gold}
+	return _sealed_contents
 
 
 ## Roll ONE supply chest's contents into award events (BOSS_LOOT §2-§3). Static

@@ -6,7 +6,7 @@ class_name UIStash
 ## character on this machine.
 
 
-static func open(m: Menus) -> void:
+static func open(m: Menus, notice := "") -> void:
 	var g := m.game
 	g.ensure_stash_loaded()
 	var p := g.player
@@ -14,6 +14,8 @@ static func open(m: Menus) -> void:
 	m.current = "stash"
 	m._lbl(vbox, "Shared across ALL your characters. Select an entry to move it between your BAG and the STASH.",
 		13, Color(0.7, 0.72, 0.78))
+	if notice != "":
+		m._lbl(vbox, notice, 14, UITheme.GOLD_BRIGHT)
 
 	var cols := HBoxContainer.new()
 	cols.add_theme_constant_override("separation", 24)
@@ -21,19 +23,18 @@ static func open(m: Menus) -> void:
 	vbox.add_child(cols)
 
 	_column(m, cols, "◀  YOUR BAG  (select to deposit)", _bag_entries(p), func(pl: Dictionary) -> void:
-		if g.stash_deposit(pl):
-			_remove_from_bag(p, pl)
+		if g.stash_deposit_from_bag(pl):
 			g.sfx("equip")
+			open(m, "Stored " + _entry_label(pl) + ".")
 		else:
-			g.spawn_text(p.global_position + Vector2(0, -50), "Stash full!", Color(1, 0.6, 0.4))
-		open(m))
+			open(m, "Stash full." if g.stash.size() >= Balance.STASH_SLOTS else "This entry is no longer in your bag."))
 
 	_stash_grid(m, cols, g.stash.duplicate(), func(pl: Dictionary) -> void:
 		if g.stash_withdraw(pl):
 			g.sfx("equip")
+			open(m, "Withdrew " + _entry_label(pl) + ".")
 		else:
-			g.spawn_text(p.global_position + Vector2(0, -50), "Bag full — free a slot first", Color(1, 0.6, 0.4))
-		open(m))
+			open(m, "Bag full. Free a slot before withdrawing." if p.bag_used() >= p.bag_capacity() else "This entry is no longer in the stash."))
 
 	m._hint(vbox, "ESC to close")
 
@@ -106,16 +107,9 @@ static func _bag_entries(p: Player) -> Array:
 	return out
 
 
-static func _remove_from_bag(p: Player, pl: Dictionary) -> void:
-	match String(pl.get("kind", "")):
-		"item": p.backpack.erase(pl["item"])
-		"gem": p.gem_bag.erase(pl["gem"])
-		"stone": p.consumables.erase(pl["stone"])
-
-
 static func _entry_label(pl: Dictionary) -> String:
 	match String(pl.get("kind", "")):
-		"item": return Items.title(pl["item"])
+		"item": return ("★ " if preload("res://scripts/gear_care.gd").kept(pl["item"]) else "") + Items.title(pl["item"])
 		"gem": return Items.gem_title(pl["gem"])
 		"stone": return String(pl.get("stone", {}).get("name", "Consumable"))
 	return "?"

@@ -55,10 +55,14 @@ func net_apply_boss_intro(kind: String) -> void:
 ## Only ever called before play starts (chapter select) or on load —
 ## dynamic entities (chests, pickups, projectiles) don't exist then.
 func switch_chapter(id: String, force := false) -> void:
-	# World teardown: forgotten ground loot mails itself first (round 8).
-	flush_dropped_loot()
 	if not (Story.CHAPTER_LIST.has(id) or Story.is_endgame(id) or Story.is_standalone(id) or Story.is_pvp(id)) or (id == chapter_id and not force):
 		return
+	chapter_finale.cancel(self)
+	# Only a real teardown recovers earned spoils. Final-boss victory keeps its
+	# fresh chests in-world for the opening moment until the player leaves.
+	preload("res://scripts/loot_recovery.gd").recover_live(self)
+	flush_dropped_loot()
+	cancel_ground_attacks()
 	chapter_id = id
 	# NG+ tier snapshot: the RUN owns its tier from launch to clear. The
 	# picker edits the character's STANDING choice; it arms HERE, where
@@ -677,13 +681,17 @@ func _waking_roster(chid: String, week: int) -> Array:
 ## exploration-only boss rooms; the spine layout's side-attach pass places
 ## them (foreign terrain falls through to the any-host pass by design).
 func _waking_inject(zones_in: Array, chid: String, week: int) -> Array:
-	var out: Array = zones_in.duplicate()
+	# New optional rooms must follow the pre-existing weekly breach slots:
+	# saved cur_room / visited / cleared indices describe those old slots.
+	var late: Array = zones_in.filter(func(z: Dictionary) -> bool: return bool(z.get("after_waking", false)))
+	var out: Array = zones_in.filter(func(z: Dictionary) -> bool: return not bool(z.get("after_waking", false)))
 	for e in _waking_roster(chid, week):
 		out.append({"name": "Waking Breach", "type": "combat",
 			"terrain": String(e["terrain"]), "enemies": [],
 			"boss": String(e["kind"]), "boss_level": int(e["level"]),
 			"waking": String(e["kind"]),
 			"obstacle_count": 0, "decor_count": 0})
+	out.append_array(late)
 	return out
 
 
@@ -729,6 +737,10 @@ func _unlisted_inject(zones_in: Array, chid: String) -> Array:
 ## recomputes them); pocket_done (saved) gates the reward. Reuses a boss kit +
 ## affix, at the chapter finale's level.
 func _pocket_inject(zones_in: Array, chid: String) -> Array:
+	pocket_clock.clear()
+	pocket_done = false
+	pocket_origin = -1
+	pocket_origin_offset = Vector2.ZERO
 	pocket_room = -1
 	pocket_id = ""
 	if chid == "ch1":
@@ -759,46 +771,48 @@ func _pocket_inject(zones_in: Array, chid: String) -> Array:
 	return out
 
 
-## Drop the portal stone into the FIRST safe room visited this run (once), if a
-## pocket rolled and isn't cleared. Interacting teleports into the floating arena
-## and remembers where you left, so the boss's fall can return you.
+## The entry now belongs to a stable safe room and is rebuilt with scenery,
+## including on guests and save reloads. This old entry hook is idempotent.
 func _offer_pocket_stone(i: int) -> void:
-	if net_guest() or not is_instance_valid(player) or player.dead:
-		return
-	if pocket_room < 0 or pocket_done or _pocket_stone_placed:
-		return
-	if room_type(i) not in ["social", "dead_end"]:
-		return
-	_pocket_stone_placed = true
-	var e: Dictionary = Pockets.entry(pocket_id)
-	var pos := clamp_to_zone(room_center(i) + Vector2(0, -70), player.global_position)
-	var npc := _make_npc("pillar", pos, "E — A portal stone hums", Callable())
-	npc.modulate = Color(0.7, 0.85, 1.05)
-	burst(pos, Color(0.6, 0.8, 1.0), 12)
-	interactables[-1]["action"] = func() -> void:
-		menus.open_confirm(
-			"A portal stone hums with a cold light — a way into %s, and a way back. Step through?"
-				% String(e.get("name", "a hidden place")),
-			_enter_pocket.bind(i), func() -> void: pass)
+	var trial := preload("res://scripts/pocket_trial.gd")
+	if trial.eligible(self, i) and trial.find(self, i) == null:
+		trial.install(self, i)
+
 
 func _enter_pocket(origin: int) -> void:
-	if pocket_room < 0 or pocket_room >= zone_count or not is_instance_valid(player):
+	if not has_local_player() or pocket_room < 0 or pocket_room >= zone_count \
+		or local_player.dead or local_player.downed or local_player.ghost or state != ST_PLAYING \
+		or origin != preload("res://scripts/pocket_trial.gd").source_room(self) \
+		or room_at_pos(local_player.global_position) != origin or _room_hot(origin) \
+		or local_player.global_position.distance_to(preload("res://scripts/pocket_trial.gd").point(self, origin)) > Balance.INTERACT_RANGE:
 		return
 	pocket_origin = origin
+	pocket_origin_offset = local_player.global_position - room_center(origin)
 	sfx("blink")
-	player.global_position = room_center(pocket_room)
+	_build_room(pocket_room)
+	local_player.global_position = free_spawn_pos(preload("res://scripts/pocket_trial.gd").point(self, pocket_room) + Balance.POCKET_ARRIVAL_OFFSET, room_center(pocket_room))
 	_enter_room(pocket_room)
-	burst(player.global_position, Color(0.6, 0.8, 1.0), 14)
+	burst(local_player.global_position, Color(0.6, 0.8, 1.0), 14)
 
-## The pocket boss has fallen (game_flow._pocket_complete) — carry the hero back
-## to the origin room after a beat, so the death plays before the world shifts.
+
+## Leave when ready, including a free retreat. No timer takes the loot away.
 func _pocket_return() -> void:
-	if pocket_origin < 0 or pocket_origin >= zone_count or not is_instance_valid(player):
+	if not has_local_player() or local_player.dead or local_player.downed or local_player.ghost \
+		or state != ST_PLAYING or pocket_room < 0 \
+		or room_at_pos(local_player.global_position) != pocket_room \
+		or local_player.global_position.distance_to(preload("res://scripts/pocket_trial.gd").point(self, pocket_room)) > Balance.INTERACT_RANGE:
 		return
+	var origin := pocket_origin
+	if origin < 0 or origin >= zone_count or origin == pocket_room:
+		origin = preload("res://scripts/pocket_trial.gd").source_room(self)
+	if origin < 0:
+		return
+	var offset := pocket_origin_offset if pocket_origin_offset.is_finite() else Vector2.ZERO
+	var at := clamp_to_zone(room_center(origin) + offset, room_center(origin))
 	sfx("blink")
-	player.global_position = room_center(pocket_origin)
-	_enter_room(pocket_origin)
-	burst(player.global_position, Color(0.6, 0.8, 1.0), 14)
+	local_player.global_position = free_spawn_pos(at, room_center(origin))
+	_enter_room(origin)
+	burst(local_player.global_position, Color(0.6, 0.8, 1.0), 14)
 
 
 # ------------------------------------------------------- the room graph ---
@@ -935,14 +949,19 @@ func _generate_layout(spine: Array) -> void:
 		placed.append(i)
 
 	# Q15 pockets: floating boss arenas, reached ONLY by the portal stone's
-	# teleport and hidden on the map (no walkable edge). Park each far off the
-	# grid so its coord never collides with a spine/side room.
+	# teleport and hidden on the map (no walkable edge). Park just beyond the
+	# graph: distant 9000-cell coordinates quantized movement to whole pixels.
 	var float_slot := 0
+	var float_anchor := Vector2i.ZERO
+	for occupied: Vector2i in taken:
+		float_anchor.x = maxi(float_anchor.x, occupied.x)
+		float_anchor.y = maxi(float_anchor.y, occupied.y)
+	float_anchor += Vector2i(3, 3)
 	for i in zone_count:
 		if coord.has(i):
 			continue
 		if String(zones[i].get("pocket", "")) != "":
-			coord[i] = Vector2i(9000 + float_slot, 9000)
+			coord[i] = float_anchor + Vector2i(float_slot * 2, 0)
 			room_exits[i] = {}
 			taken[coord[i]] = true
 			placed.append(i)
@@ -1021,13 +1040,14 @@ func _enter_room(i: int) -> void:
 		# The cursed chest's bargain is offered at the door, once,
 		# while the pack still stands (playtest 2026-07-07).
 		_offer_cursed_chest(i)
-		# The Road Deck draws at the door too — but only in SAFE rooms, so it
-		# never overlaps the cursed chest (combat-only). Diminishing per run.
-		_offer_road_card(i)
 		# The portal stone waits in the first safe room, if a pocket rolled.
 		_offer_pocket_stone(i)
 	elif play_started and prev != i:
 		hud.room_dip()   # a revisit eases in instead of jump-cutting (2026-08-19)
+	if play_started and (first_visit or prev != i):
+		# Unresolved strangers and abandoned hunts may return on a later visit.
+		# Their same seeded draw, consumed flag and active-actor guard still apply.
+		_offer_road_card(i)
 	refresh_quest()
 	_ensure_quest_quarry(i)  # a KILL-step stays completable after its rooms are cleared
 	_ensure_quest_hunt(i)    # a HUNT-step's named quarry stalks combat rooms until killed
@@ -1310,7 +1330,7 @@ func _build_room(i: int) -> void:
 	# the final boss fell still finds its road out on reload.
 	var arena_boss := String(zone.get("boss", ""))
 	if arena_boss != "" and arena_boss == String(Story.chapter(chapter_id).get("final_boss", "")) \
-			and boss_done.get(arena_boss, false):
+			and String(zone.get("pocket", "")) == "" and boss_done.get(arena_boss, false):
 		spawn_victory_gates(i)
 
 	# Room-type extras.
@@ -1738,6 +1758,8 @@ func _offer_road_card(i: int) -> void:
 		return
 	if room_type(i) not in ["social", "dead_end"]:    # SAFE rooms only
 		return
+	if _room_hot(i):
+		return  # some quiet-type side rooms contain a pack; revisit once cleared
 	if merchant_zones.has(i) or get_flag(_road_flag(i), false):
 		return
 	var rng := RandomNumberGenerator.new()
@@ -1763,29 +1785,98 @@ func _offer_road_card(i: int) -> void:
 ## re-enter until they actually engage it — only a resolved choice marks it drawn.
 func _road_card_node(i: int, id: String) -> void:
 	var card: Dictionary = RoadDeck.card(id)
-	if card.is_empty() or not is_instance_valid(player):
+	if card.is_empty() or not is_instance_valid(player) or get_flag(_road_flag(i), false):
 		return
+	if preload("res://scripts/road_hunt.gd").active_in(self):
+		return  # finish or leave the current trail before another road stranger
+	# Re-entering during the offer window must not stack identical strangers.
+	for entry in interactables:
+		var existing: Variant = entry.get("node")
+		if is_instance_valid(existing) and not existing.is_queued_for_deletion() \
+				and existing.get_meta("road_context", {}).get("flag", "") == _road_flag(i):
+			return
 	var room := i
 	var toward: Vector2 = room_center(i) - player.global_position
 	var dir := toward.normalized() if toward.length() > 1.0 else Vector2.RIGHT
 	var pos := clamp_to_zone(player.global_position + dir * 150.0, player.global_position)
 	var npc := _make_npc(String(card["sprite"]), pos,
 		String(card.get("prompt", "E — A stranger")), Callable())
+	npc.set_meta("road_context", {"chapter": chapter_id, "seed": wander_seed,
+		"world": world.get_instance_id(), "room": i, "flag": _road_flag(i)})
 	burst(pos, Color(0.9, 0.85, 0.6), 10)
 	# Decision window: a CHILD Timer (pauses with the tree, dies with the room).
 	var ticker := Timer.new()
+	ticker.name = "RoadWindow"
 	ticker.wait_time = Balance.ROAD_CARD_WINDOW
 	ticker.one_shot = true
 	ticker.autostart = true
 	npc.add_child(ticker)
-	ticker.timeout.connect(func() -> void:
-		if is_instance_valid(npc) and not get_flag(_road_flag(room), false):
-			_remove_interactable(npc))
+	ticker.timeout.connect(_road_expire.bind(room, npc))
 	interactables[-1]["action"] = func() -> void:
+		if not _road_can_choose(room, npc):
+			return
 		match id:
 			"toll": _road_toll(room, npc)
 			"courier": _road_courier(room, npc)
 			"wager": _road_wager(room, npc)
+			"hunt": _road_hunt(room, npc)
+
+
+func _road_hunt(room: int, npc: Variant) -> void:
+	if not _road_can_choose(room, npc):
+		return
+	var purse := int(ceil(Balance.ROAD_HUNT_GOLD * Balance.daily_gold_mult(player.level)))
+	var hunt := preload("res://scripts/road_hunt.gd")
+	var quarry_level: int = hunt.quarry_level(self, room, hunt.quarry_kind(self, room))
+	var busy := preload("res://scripts/encounter_context.gd").blocking_name(self, room)
+	var reward_line := "Earn %d gold before bonuses • Each participating hero earns their own purse" % purse
+	if busy != "":
+		reward_line += " • Finish %s first." % busy
+	preload("res://scripts/ui/road_choice.gd").open(menus, npc, room, "hunt",
+		"A hunter kneels beside a deep pawprint. \"It doubles back when it hears me. Read the tracks, find its cover, and give it nowhere to hide. I'll pay when the road is clear.\"\n\nThree signs, then a level %d elite quarry. No tracking time limit or XP reward. Leaving or failure costs nothing extra." % quarry_level, [
+		{"title": "Take the trail", "detail": reward_line, "enabled": busy == "",
+			"action": _road_hunt_begin.bind(room, npc)}])
+
+
+func _road_hunt_begin(room: int, npc: Variant) -> void:
+	if not _road_can_choose(room, npc):
+		return
+	if not preload("res://scripts/encounter_context.gd").may_start(self, room, player):
+		return
+	var trail := preload("res://scripts/road_hunt.gd").begin(self, room, npc.global_position)
+	if trail == null:
+		hud.announce("No clear trail — Finish your current hunt or try the road again.", UITheme.GOLD_BRIGHT)
+		return
+	_remove_interactable(npc)
+	hud.announce("The Crooked Trail — Follow the pawprints. Read each sign; flush the quarry when your party is ready.", UITheme.GOLD_BRIGHT)
+
+
+## Bound callbacks may outlive a freed actor. Validate the Variant before a
+## typed Node cast, and validate context before changing money or standing.
+func _road_can_choose(room: int, npc: Variant) -> bool:
+	if not is_instance_valid(npc) or not npc is Node2D or npc.is_queued_for_deletion() \
+			or not is_ancestor_of(npc) or not is_instance_valid(player) \
+			or player.dead or player.downed or player.ghost or state != ST_PLAYING \
+			or net_guest() or get_flag(_road_flag(room), false):
+		return false
+	var context: Dictionary = npc.get_meta("road_context", {})
+	if context.is_empty():
+		return true  # detached offer factories/test actors still obey the guards above
+	return context.chapter == chapter_id and context.seed == wander_seed \
+		and is_instance_valid(world) and context.world == world.get_instance_id() \
+		and context.room == room and cur_room == room \
+		and room_at_pos(player.global_position) == room
+
+
+func _road_expire(room: int, npc: Variant) -> void:
+	if not is_instance_valid(npc) or npc.is_queued_for_deletion():
+		return
+	if _road_can_choose(room, npc) and preload("res://scripts/ui/road_choice.gd").reading(menus, npc):
+		# Online worlds keep ticking while the local player reads. Only this
+		# actor's own decision holds the offer, never an unrelated menu.
+		(npc.get_node("RoadWindow") as Timer).start()
+	else:
+		_remove_interactable(npc)
 
 
 ## A resolved card: mark it drawn (once per character per room), tick the run
@@ -1803,27 +1894,39 @@ func _road_resolve(room: int, npc: Node2D, msg: String, col: Color) -> void:
 ## The Bridgeward's Toll — pay gold for safe passage (+standing, a rest that
 ## mends you), or shove past for free at a standing cost (the ditch brigands
 ## lift what they can from your purse; no fight — owner ruling #4, no loss tax).
-func _road_toll(room: int, npc: Node2D) -> void:
+func _road_toll(room: int, npc: Variant) -> void:
+	if not _road_can_choose(room, npc):
+		return
 	var cost := int(ceil(Balance.ROAD_TOLL_COST_BASE * Balance.daily_gold_mult(player.level)))
-	menus.open_confirm(
-		"A toll-collector bars the road. \"The bridge is the crown's, traveler. %d gold sees you across — safe.\"\n\nPay the toll? (Refuse to push past — it may cost you less, or more.)" % cost,
-		_road_toll_pay.bind(room, npc, cost),
-		_road_toll_refuse.bind(room, npc, cost))
+	var paid := mini(cost, player.gold)
+	var low := mini(player.gold, int(round(cost * Balance.ROAD_TOLL_PURSE_MIN)))
+	var high := mini(player.gold, int(round(cost * Balance.ROAD_TOLL_PURSE_MAX)))
+	var pay_title := "Pay %d gold" % paid if paid == cost else ("Offer your last %d gold" % paid if paid > 0 else "Ask for passage")
+	preload("res://scripts/ui/road_choice.gd").open(menus, npc, room, "toll",
+		"A roadside toll-collector watches the crossing. \"The bridge is the crown's. Pay what you can, traveler, and catch your breath.\"", [
+		{"title": pay_title, "detail": "Spend %d gold • Recover %d%% of maximum health • +%d Accord" % [paid, roundi(Balance.ROAD_TOLL_HEAL_FRACTION * 100), Balance.ROAD_TOLL_STANDING],
+			"action": _road_toll_pay.bind(room, npc, cost)},
+		{"title": "Push past", "detail": "Lose %d–%d gold to his companions • -%d Accord" % [low, high, Balance.ROAD_TOLL_STANDING],
+			"color": Color(0.94, 0.72, 0.57), "action": _road_toll_refuse.bind(room, npc, cost)}])
 
-func _road_toll_pay(room: int, npc: Node2D, cost: int) -> void:
+func _road_toll_pay(room: int, npc: Variant, cost: int) -> void:
+	if not _road_can_choose(room, npc):
+		return
 	var paid: int = mini(cost, player.gold)
 	player.gold -= paid
 	add_standing("accord", Balance.ROAD_TOLL_STANDING)
 	if is_instance_valid(player):
-		player.hp = minf(player.max_hp, player.hp + player.max_hp * 0.25)
+		player.hp = minf(player.max_hp, player.hp + player.max_hp * Balance.ROAD_TOLL_HEAL_FRACTION)
 	_road_resolve(room, npc,
 		"The toll is paid. He waves you across with a nod, and you catch your breath. (+%d accord)"
 			% Balance.ROAD_TOLL_STANDING, Color(0.75, 0.9, 0.7))
 
-func _road_toll_refuse(room: int, npc: Node2D, cost: int) -> void:
+func _road_toll_refuse(room: int, npc: Variant, cost: int) -> void:
+	if not _road_can_choose(room, npc):
+		return
 	var loss := 0
 	if player.gold > 0:
-		loss = mini(player.gold, int(round(cost * randf_range(0.2, 0.7))))
+		loss = mini(player.gold, int(round(cost * randf_range(Balance.ROAD_TOLL_PURSE_MIN, Balance.ROAD_TOLL_PURSE_MAX))))
 		player.gold -= loss
 	add_standing("accord", -Balance.ROAD_TOLL_STANDING)
 	var msg := "You push past. Empty pockets earn only a curse at your back. (-%d accord)" % Balance.ROAD_TOLL_STANDING
@@ -1835,17 +1938,24 @@ func _road_toll_refuse(room: int, npc: Node2D, cost: int) -> void:
 
 ## The Wounded Courier — mend him with a draught (spend gold) for his coin and
 ## the crown's goodwill, or cut the strap and take the satchel at a standing cost.
-func _road_courier(room: int, npc: Node2D) -> void:
+func _road_courier(room: int, npc: Variant) -> void:
+	if not _road_can_choose(room, npc):
+		return
 	var m := Balance.daily_gold_mult(player.level)
 	var heal := int(ceil(Balance.ROAD_COURIER_HEAL_COST * m))
 	var gift := int(ceil(Balance.ROAD_COURIER_GIFT_GOLD * m))
 	var loot := int(ceil(Balance.ROAD_COURIER_ROB_GOLD * m))
-	menus.open_confirm(
-		"A king's rider slumps against a milestone, an arrow in his side. \"Please... I carry the crown's post. %d gold buys the draught that saves me.\"\n\nMend him? (Refuse to cut the strap and take his satchel.)" % heal,
-		_road_courier_mend.bind(room, npc, heal, gift),
-		_road_courier_rob.bind(room, npc, loot))
+	preload("res://scripts/ui/road_choice.gd").open(menus, npc, room, "courier",
+		"A king's rider slumps against a milestone, an arrow in his side. \"Please… I carry the crown's post. Help me buy a draught, and I will repay you.\"", [
+		{"title": "Buy treatment — %d gold" % heal,
+			"detail": "Spend %d gold • Receive %d gold before bonuses • +%d Accord" % [heal, gift, Balance.ROAD_COURIER_STANDING],
+			"enabled": player.gold >= heal, "action": _road_courier_mend.bind(room, npc, heal, gift)},
+		{"title": "Rob his satchel", "detail": "Take %d gold before bonuses • -%d Accord" % [loot, Balance.ROAD_COURIER_STANDING],
+			"color": Color(0.94, 0.72, 0.57), "action": _road_courier_rob.bind(room, npc, loot)}])
 
-func _road_courier_mend(room: int, npc: Node2D, heal: int, gift: int) -> void:
+func _road_courier_mend(room: int, npc: Variant, heal: int, gift: int) -> void:
+	if not _road_can_choose(room, npc):
+		return
 	if player.gold < heal:
 		if is_instance_valid(player):
 			spawn_text(player.global_position + Vector2(0, -70),
@@ -1858,7 +1968,9 @@ func _road_courier_mend(room: int, npc: Node2D, heal: int, gift: int) -> void:
 		"He lives. He presses %d gold on you — \"the crown remembers.\" (+%d accord)"
 			% [gift, Balance.ROAD_COURIER_STANDING], Color(0.75, 0.9, 0.7))
 
-func _road_courier_rob(room: int, npc: Node2D, loot: int) -> void:
+func _road_courier_rob(room: int, npc: Variant, loot: int) -> void:
+	if not _road_can_choose(room, npc):
+		return
 	player.gain_gold(loot)
 	add_standing("accord", -Balance.ROAD_COURIER_STANDING)
 	_road_resolve(room, npc,
@@ -1871,7 +1983,9 @@ func _road_courier_rob(room: int, npc: Node2D, loot: int) -> void:
 ## it's un-scummable), and the menu is overlay-gated. Nothing is deducted until
 ## you PICK, so backing out costs nothing. Win = +stake (a rare gem too); lose =
 ## −stake. Once per run (the resolve marks + autosaves the drawn flag).
-func _road_wager(room: int, npc: Node2D) -> void:
+func _road_wager(room: int, npc: Variant) -> void:
+	if not _road_can_choose(room, npc):
+		return
 	var stake := int(ceil(Balance.ROAD_WAGER_STAKE_BASE * Balance.daily_gold_mult(player.level)))
 	if player.gold < stake:
 		if is_instance_valid(player):
@@ -1880,8 +1994,11 @@ func _road_wager(room: int, npc: Node2D) -> void:
 		return  # card stays until the window lapses
 	var winning := loot_rng.randi() % 3
 	menus.open_wager(stake, _road_wager_pick.bind(room, npc, stake, winning))
+	preload("res://scripts/ui/road_choice.gd").guard(menus, npc, room)
 
-func _road_wager_pick(room: int, npc: Node2D, stake: int, winning: int, pick: int) -> void:
+func _road_wager_pick(room: int, npc: Variant, stake: int, winning: int, pick: int) -> void:
+	if not _road_can_choose(room, npc):
+		return
 	if pick == winning:
 		player.gain_gold(stake)          # you kept your stake AND matched it
 		var extra := ""
@@ -1944,10 +2061,12 @@ func _mark_quest_giver(npc: Node2D, convo_id: String) -> void:
 ## lookups each), so it rides the same set_flag beat that accepts a quest.
 func refresh_quest_marks() -> void:
 	for mk in quest_marks.duplicate():
-		var node: Label = mk["node"]
-		if not is_instance_valid(node):
+		# A room-owned giver can disappear before the next flag refresh. Check
+		# the Variant first: assigning a freed object to Label already errors.
+		if not is_instance_valid(mk.get("node")) or mk["node"].is_queued_for_deletion():
 			quest_marks.erase(mk)
 			continue
+		var node: Label = mk["node"]
 		# Capital service marks poll their own state machine (capital rework).
 		if mk.has("cap"):
 			node.visible = _cap_mark_active(String(mk["cap"]))
@@ -2037,6 +2156,8 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	# pass Balance.PROP_HOTSPOT_REACH so their prompts demand adjacency.
 	var npc := Node2D.new()
 	npc.position = pos
+	npc.set_meta("quest_convo", profile_key)
+	preload("res://scripts/quest_landmark.gd").attach(self, npc, profile_key)
 	# Live people use the lore-authored height profile in Balance. Everything
 	# outside that roster (props and dev-only NPC gallery entries) retains this
 	# stable hash fallback, so co-op never rolls a different footprint.
@@ -2435,6 +2556,18 @@ func _spawn_scenery(zi: int) -> void:
 	rng.seed = zi * 77 + terrain_by_zone[zi].hash() % 1000
 	var placed: Array = []
 	var reserved: Array = []
+	if not terrain_preview and preload("res://scripts/pocket_trial.gd").eligible(self, zi):
+		reserved.append({"pos": preload("res://scripts/pocket_trial.gd").point(self, zi) - origin, "radius": Balance.POCKET_PORTAL_CLEARANCE})
+	if not terrain_preview and preload("res://scripts/ward_vigil.gd").eligible(self, zi):
+		reserved.append({"pos": preload("res://scripts/ward_vigil.gd").point(self, zi) - origin, "radius": Balance.VIGIL_CLEARANCE})
+	if not terrain_preview and not preload("res://scripts/wildlife.gd").site(self, zi).is_empty():
+		reserved.append({"pos": preload("res://scripts/wildlife.gd").point(self, zi) - origin, "radius": Balance.SANCTUARY_CLEARANCE if preload("res://scripts/wildlife.gd").site(self, zi).id == "home" else Balance.WILDLIFE_CLEARANCE})
+	if not terrain_preview and preload("res://scripts/wayfarer.gd").eligible(self, zi):
+		var escort_route := preload("res://scripts/wayfarer.gd").route(self, zi)
+		var span: float = escort_route[0].distance_to(escort_route[1])
+		var stops := maxi(1, ceili(span / Balance.ESCORT_CLEARANCE))
+		for i in stops + 1:
+			reserved.append({"pos": escort_route[0].lerp(escort_route[1], float(i) / stops) - origin, "radius": Balance.ESCORT_CLEARANCE})
 	var fronts: Array = []   # buildings/landmarks a tree may not hide behind (canopy-vs-front)
 	var unique_props_seen := {}
 	_spawn_floor_wear(zi, terrain, pr)
@@ -2444,7 +2577,7 @@ func _spawn_scenery(zi: int) -> void:
 	# pool). The river was decided in _decide_river and the hazards in
 	# _spawn_patches, both BEFORE this function (see _build_room order); here we
 	# add each to `reserved`, which every placement loop below already honours.
-	var river_cfg: Dictionary = terrain.get("river", {})
+	var river_cfg: Dictionary = zones[zi].get("river", terrain.get("river", {}))
 	var river_local := Rect2()
 	if rivers.has(zi):
 		var rrect: Rect2 = rivers[zi]["rect"]
@@ -2904,6 +3037,14 @@ func _spawn_scenery(zi: int) -> void:
 					rng.randf_range(Balance.SCENERY_SCALE_JITTER.x, Balance.SCENERY_SCALE_JITTER.y)))
 			break
 
+	if not terrain_preview:
+		preload("res://scripts/reactive_terrain.gd").spawn_room(self, zi, reserved, placed)
+		preload("res://scripts/wildlife_spot.gd").install(self, zi)
+		preload("res://scripts/ward_vigil.gd").install(self, zi)
+		preload("res://scripts/wayfarer.gd").install(self, zi)
+		preload("res://scripts/pocket_trial.gd").install(self, zi)
+		preload("res://scripts/prism_crystal.gd").install_room(self, zi)
+
 	# Ambient critters (birds/crows/butterflies) live with the scenery:
 	# room rebuilds and terrain repaints sweep them up too.
 	for critter in Ambience.populate(self, zi):
@@ -2936,6 +3077,7 @@ func _spawn_scenery(zi: int) -> void:
 		world.add_child(plank)
 		zone_scenery[zi].append(plank)
 		rivers[zi] = {"rect": rect, "bridge": bridge}
+		preload("res://scripts/fishing_spot.gd").install(self, zi, bridge)
 
 ## A building: base-anchored (y-sort lets the player walk behind the
 ## roof), footprint collider, chimney smoke on the cottages.
@@ -3037,6 +3179,10 @@ func _add_obstacle(sprite_name: String, pos: Vector2, visual_variation := 1.0) -
 		family_base, 13.0 if is_tree else 11.0))
 	cs.shape = shape
 	cs.position = Vector2(0, 10)
+	if Balance.SCENERY_COLLIDER_RECT.has(family_base):
+		var rail := RectangleShape2D.new()
+		rail.size = Balance.SCENERY_COLLIDER_RECT[family_base] * visual_variation
+		cs.shape = rail
 	body.add_child(cs)
 	var shadow := Sprite2D.new()
 	shadow.texture = Art.tex("shadow")
@@ -3071,6 +3217,8 @@ func _add_obstacle(sprite_name: String, pos: Vector2, visual_variation := 1.0) -
 	spr.set_meta("occlusion_sort_y", pos.y)
 	spr.set_meta("occlusion_radius", _visual_size(spr).length() * visual_scale * 0.5)
 	spr.add_to_group("structure_occluders")
+	if is_tree:
+		spr.add_to_group("combat_foliage")
 	# CAST SHADOW (depth pass 2026-08-19): a tall STATIC prop throws a skewed,
 	# squashed dark copy of itself to the lower-right (light from the top-left),
 	# anchored on its base line — the classic 2D illusion of a third dimension.
@@ -4122,7 +4270,7 @@ func _on_boss_trigger(zi: int) -> void:
 	if boss_spawned.get(zi, false):
 		return
 	var kind: String = zones[zi]["boss"]
-	if boss_done.get(kind, false):
+	if _boss_room_resolved(zi):
 		return
 	boss_spawned[zi] = true
 	if String(zones[zi].get("waking", "")) != "" or String(zones[zi].get("unlisted", "")) != "" \
@@ -4186,6 +4334,7 @@ func _spawn_boss(zi: int, kind: String) -> void:
 		# Q15 pocket arena boss: the roster's affixes + bespoke name; its fall
 		# pays the pocket reward and returns you home (game_flow._pocket_complete).
 		current_boss.pocket_boss = true
+		current_boss.xp_value = 0  # optional encounters do not inflate the fixed chapter budget
 		var pe: Dictionary = Pockets.entry(pocket_bid)
 		var pfx: Array = pe.get("affixes", [])
 		for akey in pfx:
@@ -4223,7 +4372,7 @@ func _try_spawn_boss(zi: int, force := false) -> void:
 	if not built.get(zi, false) or zone_alive.get(zi, 0) > 0 or (zi != cur_room and not force):
 		return
 	var kind: String = zones[zi].get("boss", "")
-	if kind == "" or boss_done.get(kind, false) or boss_spawned.get(zi, false):
+	if kind == "" or _boss_room_resolved(zi) or boss_spawned.get(zi, false):
 		return
 	if String(zones[zi].get("waking", "")) != "" and waking_banked(kind):
 		return  # a banked echo does not rise again this week
@@ -4296,6 +4445,12 @@ func dev_spawn(spec: Dictionary) -> void:
 ## room must be PURGED before you move on (playtest round 2 — aggro
 ## stays per-pack, but no running past content).
 func _room_hot(i: int) -> bool:
+	var escort := preload("res://scripts/wayfarer.gd").find(self)
+	if escort != null and escort.zone == i and escort.active():
+		return true
+	var vigil := preload("res://scripts/ward_vigil.gd").find(self)
+	if vigil != null and vigil.zone == i and vigil.active():
+		return true
 	for b in _live_bosses():
 		if b.zone_idx == i or b.zone_idx < 0:
 			return true
@@ -4306,7 +4461,7 @@ func _room_hot(i: int) -> bool:
 		# 2026-07-10). Brief gap on first entry until the mirrors stream in.
 		for node in get_tree().get_nodes_in_group("enemies"):
 			var e := node as Enemy
-			if e != null and not (e is Boss) and not e.dying and e.zone_idx == i:
+			if e != null and not (e is Boss) and not e.dying and not e.from_quest and e.zone_idx == i:
 				return true
 		return false
 	return zone_alive.get(i, 0) > 0
@@ -4440,7 +4595,7 @@ func _setup_ambient_fx(terrain_id: String) -> void:
 
 ## Attach (or refresh) the room's crisp native-resolution floor: a Polygon2D
 ## that GPU-tiles the authored seamless field tile (ground_field_<kind>.png)
-## across the whole room at scale 1, UNDER the -10 procedural detail sprite —
+## across the whole room at its material scale, UNDER the -10 detail sprite —
 ## which, for a field kind, carries only the boundary walls, wall shadow and the
 ## _mark_roads band. Kinds with no field tile keep the pure procedural floor (the
 ## poly is removed). Reads the CanvasModulate tint like every world child, so no
@@ -4458,19 +4613,24 @@ func _apply_ground_field(zi: int, terrain: Dictionary) -> void:
 	if poly == null:
 		poly = Polygon2D.new()
 		poly.z_index = -11  # under the -10 detail ground
-		poly.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		poly.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 		poly.polygon = PackedVector2Array([
 			Vector2(0, 0), Vector2(ROOM_W, 0),
 			Vector2(ROOM_W, ROOM_H), Vector2(0, ROOM_H)])
-		# Polygon2D UVs are in TEXTURE PIXELS: mapping the room rect to the same
-		# span makes 1 world px = 1 texel (native), tiling the seamless field
-		# ROOM/tile times via the repeat wrap.
-		poly.uv = poly.polygon
 		poly.modulate = Balance.FLOOR_LAYER_MODULATE  # floor sits a step behind the cast
 		world.add_child(poly)
 		zone_fields[zi] = poly
 	poly.texture = tex
+	var gain := float(Balance.GROUND_FIELD_GAIN.get(gk, 1.0))
+	poly.self_modulate = Color(gain, gain, gain)
+	# UVs are texture pixels. Preserve the intended paving size while retaining
+	# the painterly master's extra detail; native pixel fields stay nearest.
+	var density := float(tex.get_width()) / Art.ground_field_period(gk)
+	var uv := PackedVector2Array()
+	for point in poly.polygon:
+		uv.append(point * density)
+	poly.uv = uv
+	poly.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS if density > 1.0 else CanvasItem.TEXTURE_FILTER_NEAREST
 	poly.position = rooms[zi]["origin"]
 
 
@@ -4620,7 +4780,7 @@ static func _road_shader() -> Shader:
 func _decide_river(zi: int) -> void:
 	rivers.erase(zi)
 	var terrain := Terrains.get_terrain(terrain_by_zone[zi])
-	var river_cfg: Dictionary = terrain.get("river", {})
+	var river_cfg: Dictionary = zones[zi].get("river", terrain.get("river", {}))
 	if river_cfg.is_empty() or String(zones[zi].get("boss", "")) != "":
 		return
 	var rrng := RandomNumberGenerator.new()
@@ -4636,7 +4796,10 @@ func _decide_river(zi: int) -> void:
 
 
 ## A pool may not sit on the river or inside a corner bite (grown by its reach).
-func _pool_blocked(zi: int, pos: Vector2) -> bool:
+func _pool_blocked(zi: int, pos: Vector2, radius := 0.0) -> bool:
+	if preload("res://scripts/pocket_trial.gd").eligible(self, zi) \
+		and pos.distance_to(preload("res://scripts/pocket_trial.gd").point(self, zi)) < Balance.POCKET_PORTAL_CLEARANCE + radius:
+		return true
 	if rivers.has(zi) and (rivers[zi]["rect"] as Rect2).grow(20.0).has_point(pos):
 		return true
 	for n in room_notches(zi):
@@ -4652,6 +4815,8 @@ func _spawn_patches(zi: int) -> void:
 			if is_instance_valid(hazards[i]["sprite"]):
 				hazards[i]["sprite"].queue_free()
 			hazards.remove_at(i)
+	if zi == pocket_room and pocket_id == "molten_court":
+		return  # the warned trial floor owns the hot/cold layout
 	var terrain := Terrains.get_terrain(terrain_by_zone[zi])
 	# Pools land inside the PLAY rect (P5.2: with per-side insets a cell-wide
 	# roll would strand more of them in the unreachable margin).
@@ -4665,10 +4830,10 @@ func _spawn_patches(zi: int) -> void:
 			# A hazard pool on the water (or inside a corner bite) makes no sense —
 			# keep it on dry, open ground.
 			var htries := 0
-			while _pool_blocked(zi, pos) and htries < 8:
+			while _pool_blocked(zi, pos, float(spec["radius"][1])) and htries < 8:
 				pos = Vector2(rng.randf_range(pr.position.x, pr.end.x), rng.randf_range(pr.position.y, pr.end.y))
 				htries += 1
-			if _pool_blocked(zi, pos):
+			if _pool_blocked(zi, pos, float(spec["radius"][1])):
 				continue  # no open spot found — skip this pool rather than flood it
 			var radius := rng.randf_range(spec["radius"][0], spec["radius"][1])
 			var drift := Vector2.ZERO

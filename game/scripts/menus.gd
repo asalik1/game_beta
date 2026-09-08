@@ -3,6 +3,9 @@ class_name Menus extends CanvasLayer
 
 # Lobby remains path-loaded so it does not require class-name registration.
 const UILobby := preload("res://scripts/ui/lobby.gd")
+const UIFieldAtlas := preload("res://scripts/ui/field_atlas.gd")
+const GearCare := preload("res://scripts/gear_care.gd")
+const UIGearInspect := preload("res://scripts/ui/gear_inspect.gd")
 # The transport autoload's SCRIPT, for NET_VERSION only (the bare
 # `NetworkManager` global doesn't exist under check_compile — MP-05).
 const NetManager := preload("res://scripts/net/net_manager.gd")
@@ -30,6 +33,8 @@ var _smith_msg_color := Color.WHITE
 var _reforge_msg := ""            # reforge bench: last quench/craft result, shown in the item panel
 var _reforge_msg_color := Color.WHITE
 var inv_cat := "all"              # inventory: last bag category filter (survives item-panel rebuilds)
+var inventory_order := "found"
+var inventory_notice := ""
 var title_stage := "cover"        # boot title: "cover" (splash) -> "slots" (roster)
 var chapter_replay := false       # chapter select opened from the pause menu
 var dev_boss_mode := 1            # dev panel boss spawn level: 0 story, 1 my Lv (default), 2 +10, 3 +20
@@ -528,7 +533,7 @@ func open_benchmark_roster() -> void:
 
 ## The in-game system menu.
 func open_pause() -> void:
-	var vbox := _open("Paused — " + String(Story.chapter(game.chapter_id)["name"]), 720, 520, true)
+	var vbox := _open("Paused — " + String(Story.chapter(game.chapter_id)["name"]), 720, 650 if game.touch_mode else 570, true)
 	current = "pause"
 	var zi := clampi(game.cur_room, 0, game.zone_count - 1)
 	_lbl(vbox, "%s, Level %d — %s" % [Classes.CLASSES[game.local_player.cls]["name"],
@@ -536,6 +541,8 @@ func open_pause() -> void:
 	var resume := _btn(vbox, "Resume game", func() -> void: close(),
 		Color(0.58, 1.0, 0.68))
 	resume.custom_minimum_size.y = 42
+	_btn(vbox, "Combat report — recent damage & last fall", func() -> void:
+		preload("res://scripts/ui/combat_report.gd").open(self), Color(0.95, 0.75, 0.60))
 	_btn(vbox, "  🔊  " + Loc.t("settings"), func() -> void: open_settings(), Color(0.9, 0.9, 0.95))
 	_btn(vbox, "  ◈  Wardrobe  (skins & chromas, bought with Renown)",
 		func() -> void: open_wardrobe(), Color(0.85, 0.7, 1.0))
@@ -581,6 +588,19 @@ func open_pause() -> void:
 		game.autosave()
 		get_tree().quit()
 	_btn(vbox, "  ✕  Save and quit game", quit_game, Color(1.0, 0.55, 0.5))
+	if game.touch_mode:
+		var scroll := ScrollContainer.new()
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		vbox.add_child(scroll)
+		var actions := VBoxContainer.new()
+		actions.add_theme_constant_override("separation", 10)
+		actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		scroll.add_child(actions)
+		for child in vbox.get_children():
+			if child is Button:
+				child.custom_minimum_size.y = 44
+				child.reparent(actions)
 	_hint(vbox, "ESC, ✕, or click anywhere outside to resume")
 
 
@@ -611,11 +631,12 @@ func open_confirm(msg: String, on_yes: Callable, on_cancel := Callable()) -> voi
 ## shells; one hides the pea (the caller rolls `winning` TRUE-random from
 ## loot_rng, so a reload can't scum it). Presented as a menu, so input is
 ## OVERLAY-gated — it pauses solo, and online the overlay state gates input,
-## never the tree (co-op §5.4). Not closable: once you're at the fire you pick.
+## never the tree (co-op §5.4). Leaving before picking keeps your stake.
 ## on_pick(pick: int) fires with the chosen shell; the caller owns the payout.
 func open_wager(stake: int, on_pick: Callable) -> void:
-	var vbox := _open("The Stranger's Wager", 640, 400, false)
+	var vbox := _open("The Stranger's Wager", 680, 390, true)
 	current = "wager"
+	var shell := root
 	var l := _lbl(vbox, "A hooded figure crouches at a low fire, turning three walnut shells over the dirt. \"One hides the pea, traveler. %d gold says your eye isn't quick enough to follow it.\"" % stake, 15, Color(0.9, 0.88, 0.82))
 	l.custom_minimum_size = Vector2(560, 0)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -626,10 +647,19 @@ func open_wager(stake: int, on_pick: Callable) -> void:
 	var labels := ["   Left shell   ", "   Middle shell   ", "   Right shell   "]
 	for s in 3:
 		var pick := s
-		_btn(row, labels[s], func() -> void:
+		var shell_button := _btn(row, labels[s], func() -> void:
+			if root != shell:
+				return
 			close()
 			on_pick.call(pick), Color(0.95, 0.85, 0.5))
-	_hint(vbox, "Pick a shell — the bet is already down")
+		shell_button.custom_minimum_size = Vector2(150, 72)
+		shell_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_lbl(vbox, "One winning shell out of three. Win: +%d gold before bonuses. Lose: -%d gold." % [stake, stake], 15)
+	var leave := _btn(vbox, "Leave — keep your stake", func() -> void:
+		if root == shell:
+			close())
+	leave.custom_minimum_size.y = 44
+	_hint(vbox, "Gold changes hands only when you pick a shell. Leaving costs nothing.")
 
 
 ## Live sound, display, language and input settings.
@@ -637,7 +667,7 @@ var settings_return := "pause"
 func open_settings(from := "pause") -> void:
 	settings_return = from
 	# Touch mode adds the joystick rows; on desktop the 520 px panel was 40 % empty.
-	var vbox := _open("Settings", 700, 520 if game.touch_mode else 400, true)
+	var vbox := _open("Settings", 700, 610 if game.touch_mode else 490, true)
 	current = "settings"
 	for spec in [["Music volume", "music"], ["Sound effects", "sfx"]]:
 		var key: String = spec[1]
@@ -717,6 +747,9 @@ func open_settings(from := "pause") -> void:
 	# Keyboard binding is irrelevant in touch mode.
 	if not game.touch_mode:
 		_btn(vbox, "  ⌨  " + Loc.t("keybinds") + "…", func() -> void: open_keybinds(), Color(0.9, 0.9, 0.95))
+	_btn(vbox, "Controller…", func() -> void: preload("res://scripts/ui/controller_settings.gd").open(self), Color(0.75, 0.92, 0.86))
+	_btn(vbox, "Combat & comfort…", func() -> void:
+		preload("res://scripts/ui/comfort.gd").open(self), Color(0.8, 0.9, 1.0))
 	_btn(vbox, "  Back  ", func() -> void: _settings_back(), Color(0.8, 0.85, 0.9))
 	_hint(vbox, "ESC to go back")
 
@@ -2096,6 +2129,9 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 12)
 	right.add_child(head)
+	if inventory_notice != "":
+		_lbl(right, inventory_notice, 13, Color(0.64, 0.95, 0.75))
+		inventory_notice = ""
 	var best_grade: String = String(p.bags[0].get("grade", "F")) if not p.bags.is_empty() else "F"
 	for bb in p.bags:
 		var bg: String = String(bb.get("grade", "F"))
@@ -2204,23 +2240,28 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	if not p.gem_bag.is_empty():
 		var auto_cb := func() -> void:
 			var n: int = game.local_player.auto_synthesize()
-			game.spawn_text(game.local_player.global_position + Vector2(0, -60),
-				"%d GEM UPGRADES" % n if n > 0 else "NOTHING TO MERGE", Color(0.6, 0.9, 1.0))
+			inventory_notice = "%d gem upgrade%s." % [n, "" if n == 1 else "s"] if n > 0 else "No matching gems to merge."
 			open_inventory("gear", cat)
 		var ab := _btn(catrow, "⚒ Auto-synthesize", auto_cb, Color(0.6, 0.9, 1.0))
 		ab.add_theme_font_size_override("font_size", 12)
 		ab.custom_minimum_size.y = 28.0 if not game.touch_mode else 34.0
 		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nIn Crownfall, gems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag); on the road only\nthe bag merges — socketed work waits for the Lapidary."
 	if not p.backpack.is_empty():
+		var order_button := _btn(catrow, "Order: " + String({"found": "Found", "grade": "Grade", "slot": "Slot", "kept": "Kept first"}[inventory_order]), func() -> void:
+			var orders := ["found", "grade", "slot", "kept"]
+			inventory_order = orders[(orders.find(inventory_order) + 1) % orders.size()]
+			open_inventory("gear", cat), Color(0.75, 0.85, 0.95))
+		order_button.name = "GearOrder"
+		order_button.add_theme_font_size_override("font_size", 12)
+		order_button.custom_minimum_size.y = 34
 		var equip_all_cb := func() -> void:
 			var n: int = game.local_player.auto_equip()
-			game.spawn_text(game.local_player.global_position + Vector2(0, -60),
-				"%d EQUIPPED" % n if n > 0 else "NOTHING BETTER", Color(0.6, 1.0, 0.6))
+			inventory_notice = "%d upgrade%s equipped." % [n, "" if n == 1 else "s"] if n > 0 else "No strict upgrades. Kept gear stays where you put it."
 			open_inventory("gear", cat)
 		var eb := _btn(catrow, "⚖ Auto-equip", equip_all_cb, Color(0.6, 1.0, 0.6))
 		eb.add_theme_font_size_override("font_size", 12)
 		eb.custom_minimum_size.y = 28.0 if not game.touch_mode else 34.0
-		eb.tooltip_text = "Fill every empty gear slot and take strict upgrades from the bag.\nNever swaps out a piece you might want — anything holding gems or\na unique passive is left alone, and side-grades are skipped."
+		eb.tooltip_text = "Fill empty slots and take strict upgrades from the bag.\nKept gear stays where you put it. Socketed gems, unique passives\nand side-grades are protected by the comparison rules."
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -2247,25 +2288,14 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	var show_mats: bool = cat == "all" or cat == "materials"
 	var show_bags: bool = cat == "all" or cat == "bags"
 	if show_gear:
-		for item in p.backpack:
+		for item in GearCare.sorted(p.backpack, inventory_order):
 			var it: Dictionary = item
 			if cat != "all" and String(it["slot"]) != cat:
 				continue
-			_bag_slot(grid, Art.icon_for(it), "", Items.GRADE_COLOR[it["grade"]],
-				func() -> void:
-					var info := "%s\n\nCompared to what's equipped:\n%s" % [Items.describe(it), _diff_tip(it)]
-					var equip_cb := func() -> void:
-						game.local_player.equip(it)
-						open_inventory("gear", cat)
-					var drop_cb := func() -> void:
-						game.local_player.backpack.erase(it)
-						game.discard_to_ground({"kind": "item", "item": it})
-						open_inventory("gear", cat)
-					var actions: Array = [
-						["  ⚔  Equip  ", Color(0.6, 1.0, 0.6), equip_cb],
-						["  ✖  Drop  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb],
-					]
-					_open_detail_popover(Art.icon_for(it), Items.title(it), Items.GRADE_COLOR[it["grade"]], info, actions, GearFlavor.of(it))).set_drag_forwarding(Callable(), sock_can, sock_drop)
+			var cell := _bag_slot(grid, Art.icon_for(it), "★" if GearCare.kept(it) else "", Items.GRADE_COLOR[it["grade"]],
+				func() -> void: UIGearInspect.open(self, it, cat))
+			cell.tooltip_text = Items.title(it) + (" · Kept" if GearCare.kept(it) else "") + "\n" + _diff_tip(it)
+			cell.set_drag_forwarding(Callable(), sock_can, sock_drop)
 	if show_cons:
 		# Consumables stack by id for display; using one consumes one.
 		var cgroups := {}
@@ -2708,6 +2738,12 @@ func _popover_settle(pop: PanelContainer, at: Vector2, scroll: ScrollContainer =
 	if scroll != null and body != null:
 		scroll.custom_minimum_size.y = minf(body.get_combined_minimum_size().y, 500.0)
 	pop.reset_size()
+	# Long equipped-item benches include their header and action rows too.
+	# Reserve that chrome before capping the body, so the final buttons never
+	# fall below the viewport when touch targets or a wrapped title grow.
+	if scroll != null and pop.size.y > 704.0:
+		scroll.custom_minimum_size.y = maxf(48.0, scroll.custom_minimum_size.y - (pop.size.y - 704.0))
+		pop.reset_size()
 	var sz := pop.size
 	# Stay inside the open panel's frame (not just the screen) — a card that
 	# hangs out of its window reads as a glitch; fall back to the screen when
@@ -3274,6 +3310,9 @@ func open_item_panel(item: Dictionary, at := Vector2(-1, -1), tab := "info") -> 
 		open_item_panel(item, Vector2(-1, -1), "gems")
 	detail_popover.set_drag_forwarding(Callable(), ov_can, ov_drop)
 	_popover_header(vbox, Art.icon_for(item), Items.title(item), color)
+	_btn(vbox, "★ Kept — unkeep" if GearCare.kept(item) else "Keep this piece", func() -> void:
+		p.set_gear_kept(item, not GearCare.kept(item))
+		open_item_panel(item, Vector2(-1, -1), tab), UITheme.GOLD_BRIGHT)
 
 	var tabrow := HBoxContainer.new()
 	tabrow.add_theme_constant_override("separation", 10)
@@ -3285,15 +3324,23 @@ func open_item_panel(item: Dictionary, at := Vector2(-1, -1), tab := "info") -> 
 		_btn(tabrow, "  %s  " % spec[1], func() -> void: open_item_panel(item, Vector2(-1, -1), tid),
 			Color(0.95, 0.85, 0.5) if tab == tid else Color(0.6, 0.6, 0.6))
 
-	var is_equipped: bool = p.equipment.get(String(item.get("slot", ""))) == item
+	var is_equipped: bool = is_same(p.equipment.get(String(item.get("slot", ""))), item)
 	if is_equipped:
 		var slot_id: String = String(item["slot"])
+		var refusal := _lbl(vbox, "Bag full. Free a slot before unequipping this piece.", 14, Color(1, 0.7, 0.5))
+		refusal.custom_minimum_size.x = 440
+		refusal.visible = p.bag_used() >= p.bag_capacity()
 		var unequip_cb := func() -> void:
+			if not is_same(p.equipment.get(slot_id), item):
+				refusal.text = "This piece is no longer equipped."
+				refusal.show()
+				return
 			if game.local_player.unequip(slot_id):
+				inventory_notice = "Moved " + Items.title(item) + " to your bag."
 				open_inventory()
 			else:
-				game.spawn_text(game.local_player.global_position + Vector2(0, -50), "Bag full!", Color(1, 0.6, 0.4))
-		_btn(vbox, "  ⇩  Unequip  (move to bag)  ", unequip_cb, Color(1.0, 0.8, 0.5))
+				refusal.show()
+		_btn(vbox, "  ⇩  Unequip  (move to bag)  ", unequip_cb, Color(1.0, 0.8, 0.5), not refusal.visible)
 
 	# Long tab content scrolls within the popover cap.
 	var scroll := ScrollContainer.new()
@@ -4485,8 +4532,8 @@ func _shop_card(grid: GridContainer, icon: Texture2D, title: String, detail: Str
 	if pm != null:
 		var num := int(pm.get_string(1).replace(",", ""))
 		price_text = "%d g" % num
-		if game != null and game.has_local_player():
-			affordable = game.player.gold >= num
+		if game != null and game.has_local_player() and not detail.begins_with("sell "):
+			affordable = game.local_player.gold >= num
 		detail = (detail.substr(0, pm.get_start()) + detail.substr(pm.get_end())).strip_edges()
 		detail = detail.trim_prefix("—").trim_prefix("-").strip_edges()
 		detail = detail.trim_suffix("—").trim_suffix("-").strip_edges()
@@ -4614,25 +4661,9 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	for item in game.shop_stock[zone]:
 		var it: Dictionary = item
 		var cost := int(ceil(Items.shop_buy_price(it, price_ch) * haggle))
-		var can_afford: bool = p.gold >= cost
 		# Buying is confirmed from the shared detail popover.
 		var open_cb := func() -> void:
-			var info := "%d gold\n%s\n\nCompared to what's equipped:\n%s" % [cost, Items.describe(it), _diff_tip(it)]
-			var actions: Array = []
-			if can_afford:
-				var buy_cb := func() -> void:
-					if p.bag_used() >= p.bag_capacity():
-						game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
-					else:
-						p.gold -= cost
-						game.shop_stock[zone].erase(it)
-						p.add_item(it)
-						game.sfx("potion")
-					open_shop(zone)
-				actions.append(["  🪙  Buy — %d gold  " % cost, Color(0.6, 1.0, 0.6), buy_cb])
-			else:
-				info += "\n\n(Not enough gold — %d short.)" % (cost - p.gold)
-			_open_detail_popover(Art.icon_for(it), Items.title(it), Items.GRADE_COLOR[it["grade"]], info, actions)
+			UIGearInspect.open(self, it, "all", zone)
 		_shop_card(gear_grid, Art.icon_for(it), Items.title(it),
 			"%s — %d gold" % [Items.describe(it), cost],
 			Items.GRADE_COLOR[it["grade"]], true, open_cb)
@@ -4784,33 +4815,30 @@ func _pick_junk_tier(g: String, zone: int) -> void:
 
 ## Sell tab: bulk actions followed by item cards.
 func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
-	_lbl(vbox, "Buy-back is %d%% of market." % int(Balance.MERCHANT_SELL_FRACTION * 100),
+	_lbl(vbox, "Buy-back is %d%% of market. ★ Kept gear is never sold; unkeep it in your inventory first." % int(Balance.MERCHANT_SELL_FRACTION * 100),
 		13, Color(0.7, 0.72, 0.78))
 
 	# Keep bulk actions fixed above the scrolling stock.
 	var gear_total := 0
-	for item in p.backpack:
-		gear_total += maxi(1, int(Items.price(item) * Balance.MERCHANT_SELL_FRACTION))
+	var sellable := GearCare.sellable(p.backpack)
+	for item in sellable:
+		gear_total += GearCare.sale_value(item)
 	if not p.backpack.is_empty():
 		var sell_all := func() -> void:
-			for item in p.backpack:
-				p.strip_gems(item)
-			p.gain_gold(gear_total)
-			p.backpack.clear()
-			game.sfx("potion")
+			p.sell_gear(sellable)
 			open_shop(zone)
-		var allb := _btn(vbox, "⚑  SELL ALL GEAR (%d) — %d gold" % [p.backpack.size(), gear_total],
-			sell_all, Color(1.0, 0.9, 0.4))
+		var allb := _btn(vbox, "Sell unkept gear (%d) — %d gold" % [sellable.size(), p.gold_yield(gear_total)],
+			sell_all, Color(1.0, 0.9, 0.4), not sellable.is_empty())
+		allb.name = "SellUnkeptGear"
 		allb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 		# Junk-sell includes the selected grade and below, never S.
-		var junk_idx := Items.GRADES.find(shop_junk_tier)
+		var junk := GearCare.sellable(p.backpack, shop_junk_tier)
 		var junk_total := 0
 		var junk_n := 0
-		for item in p.backpack:
-			if Items.GRADES.find(String(item["grade"])) <= junk_idx:
-				junk_n += 1
-				junk_total += maxi(1, int(Items.price(item) * Balance.MERCHANT_SELL_FRACTION))
+		for item in junk:
+			junk_n += 1
+			junk_total += GearCare.sale_value(item)
 		var frow := HBoxContainer.new()
 		frow.name = "ShopJunkFloorRow"
 		frow.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -4827,14 +4855,9 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				Items.GRADE_COLOR[g] if picked else Color(0.5, 0.5, 0.55))
 			chip.add_theme_font_size_override("font_size", 14)
 		var sell_junk := func() -> void:
-			for item in p.backpack.duplicate():  # erase-while-iterate: walk a copy
-				if Items.GRADES.find(String(item["grade"])) <= junk_idx:
-					p.strip_gems(item)
-					p.backpack.erase(item)
-			p.gain_gold(junk_total)
-			game.sfx("potion")
+			p.sell_gear(junk)
 			open_shop(zone)
-		var junkb := _btn(frow, "🧹  Sell ≤ %s  (%d) — %d gold" % [shop_junk_tier, junk_n, junk_total],
+		var junkb := _btn(frow, "🧹  Sell ≤ %s  (%d) — %d gold" % [shop_junk_tier, junk_n, p.gold_yield(junk_total)],
 			sell_junk, Color(0.95, 0.82, 0.5) if junk_n > 0 else Color(0.5, 0.5, 0.55), junk_n > 0)
 		junkb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
@@ -4858,13 +4881,11 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			var it: Dictionary = item
 			var value := maxi(1, int(Items.price(it) * Balance.MERCHANT_SELL_FRACTION))
 			var sell_one := func() -> void:
-				p.strip_gems(it)  # gems pop back into your bag
-				p.backpack.erase(it)
-				p.gain_gold(value)
-				game.sfx("potion")
+				p.sell_gear([it])
 				open_shop(zone)
 			_shop_card(gear_grid, Art.icon_for(it), Items.title(it),
-				"sell for %d gold" % value, Items.GRADE_COLOR[it["grade"]], true, sell_one)
+				"★ Kept · protected" if GearCare.kept(it) else "sell for %d gold" % p.gold_yield(value),
+				Items.GRADE_COLOR[it["grade"]], not GearCare.kept(it), sell_one)
 
 	# --- loose gems ---
 	var gem_groups := _gem_groups()
@@ -4879,12 +4900,15 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			var gval := maxi(1, int(Balance.gem_gold_value(int(g["lvl"])) * Balance.MERCHANT_SELL_FRACTION))
 			var xn := "  (x%d)" % gcount if gcount > 1 else ""
 			var sell_gem := func() -> void:
-				p.gem_bag.erase(g)  # one of the interchangeable stack
+				var live := GearCare.index_of(p.gem_bag, g)
+				if live < 0:
+					return
+				p.gem_bag.remove_at(live)
 				p.gain_gold(gval)
 				game.sfx("potion")
 				open_shop(zone)
 			_shop_card(gem_grid, Art.gem_icon(Items.gem_color(g), int(g["lvl"])),
-				"%s%s" % [Items.gem_title(g), xn], "sell one for %d gold" % gval,
+				"%s%s" % [Items.gem_title(g), xn], "sell one for %d gold" % p.gold_yield(gval),
 				Items.gem_color(g), true, sell_gem)
 
 	# --- marketable consumables; quest/utility items never appear here ---
@@ -4916,12 +4940,15 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			var cval := maxi(1, int(float(base_val) * Balance.MERCHANT_SELL_FRACTION))
 			var xn2 := "  (x%d)" % ccount if ccount > 1 else ""
 			var sell_cons := func() -> void:
-				p.consumables.erase(cc)
+				var live := GearCare.index_of(p.consumables, cc)
+				if live < 0:
+					return
+				p.consumables.remove_at(live)
 				p.gain_gold(cval)
 				game.sfx("potion")
 				open_shop(zone)
 			_shop_card(cons_grid, Art.consumable_icon(cc), "%s%s" % [String(cc["name"]), xn2],
-				"sell one for %d gold" % cval, Items.GRADE_COLOR[String(cc.get("grade", "C"))],
+				"sell one for %d gold" % p.gold_yield(cval), Items.GRADE_COLOR[String(cc.get("grade", "C"))],
 				true, sell_cons)
 
 	# --- materials: click sells one unit from the stack ---
@@ -4936,6 +4963,8 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			var mval := maxi(1, int(Items.material_value(mgr) * Balance.MERCHANT_SELL_FRACTION))
 			var xn3 := "  (x%d)" % mcount if mcount > 1 else ""
 			var sell_mat := func() -> void:
+				if GearCare.index_of(p.materials, mm) < 0 or int(mm.get("count", 0)) <= 0:
+					return
 				mm["count"] = int(mm.get("count", 1)) - 1
 				if int(mm.get("count", 0)) <= 0:
 					p.materials.erase(mm)
@@ -4943,7 +4972,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				game.sfx("potion")
 				open_shop(zone)
 			_shop_card(mat_grid, Art.material_icon(String(mm.get("family", "")), mgr),
-				"%s%s" % [String(mm.get("name", "")), xn3], "sell one for %d gold" % mval,
+				"%s%s" % [String(mm.get("name", "")), xn3], "sell one for %d gold" % p.gold_yield(mval),
 				Items.GRADE_COLOR.get(mgr, Color(1, 1, 1)), true, sell_mat)
 
 	# --- loose bags: sell spare capacity for its (currently trivial) resale ---
@@ -4955,9 +4984,11 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 		for bli in p.loose_bags.size():
 			var lb: Dictionary = p.loose_bags[bli]
 			var lgr := String(lb.get("grade", "F"))
-			var blidx := bli
 			var sell_bag := func() -> void:
-				p.sell_loose_bag(blidx)
+				var live := GearCare.index_of(p.loose_bags, lb)
+				if live < 0:
+					return
+				p.sell_loose_bag(live)
 				game.sfx("potion")
 				open_shop(zone)
 			_shop_card(bag_grid, Art.bag_icon(lgr),
@@ -4998,261 +5029,10 @@ const DISTRICT_NAME := {
 
 
 func open_map() -> void:
-	# The capital gets its own always-charted, high-detail city map.
 	if Story.is_standalone(game.chapter_id):
 		_open_capital_map()
 		return
-	var vbox := _open("Map — %s" % String(Story.chapter(game.chapter_id)["name"]), 1180, 640, true)
-	current = "map"
-	_lbl(vbox, "Rooms you have entered — select a lit safe camp to travel there. Notches on a room's edge are its doorways; stubs jut toward rooms you haven't explored.", 13, Color(0.7, 0.72, 0.78))
-
-	var board := Control.new()
-	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	board.custom_minimum_size = Vector2(1120, 440)
-	vbox.add_child(board)
-	# Dark chart board with a restrained inner rim.
-	var bbg := Panel.new()
-	var bsb := StyleBoxFlat.new()
-	bsb.bg_color = Color(0.115, 0.10, 0.072, 0.96)
-	bsb.set_corner_radius_all(8)
-	bsb.border_color = Color(0.9, 0.8, 0.5, 0.35)
-	bsb.set_border_width_all(1)
-	bbg.add_theme_stylebox_override("panel", bsb)
-	bbg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bbg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	board.add_child(bbg)
-	# Parchment mottle (polish 2026-08-19): the seamless value noise, tiled warm
-	# and faint, so the chart reads as a drawn map on vellum instead of a flat
-	# dark panel with grid lines.
-	var vellum := TextureRect.new()
-	vellum.texture = Art.tex("noise")
-	vellum.set_anchors_preset(Control.PRESET_FULL_RECT)
-	vellum.offset_left = 2
-	vellum.offset_top = 2
-	vellum.offset_right = -2
-	vellum.offset_bottom = -2
-	vellum.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	vellum.stretch_mode = TextureRect.STRETCH_TILE
-	vellum.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	vellum.modulate = Color(0.95, 0.82, 0.55, 0.075)
-	vellum.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	board.add_child(vellum)
-	var brim := Panel.new()
-	var brsb := StyleBoxFlat.new()
-	brsb.bg_color = Color(0, 0, 0, 0)
-	brsb.border_color = Color(UITheme.BRONZE, 0.5)
-	brsb.set_border_width_all(1)
-	brsb.set_corner_radius_all(6)
-	brim.add_theme_stylebox_override("panel", brsb)
-	brim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	brim.offset_left = 4
-	brim.offset_top = 4
-	brim.offset_right = -4
-	brim.offset_bottom = -4
-	brim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	board.add_child(brim)
-
-	# Extent: visited rooms plus one cell of breathing room for stubs.
-	var have_any := false
-	var min_c := Vector2i(1 << 20, 1 << 20)
-	var max_c := Vector2i(-(1 << 20), -(1 << 20))
-	for i in game.zone_count:
-		if not game.visited.get(i, false):
-			continue
-		have_any = true
-		var c: Vector2i = game.rooms[i]["coord"]
-		min_c = Vector2i(mini(min_c.x, c.x - 1), mini(min_c.y, c.y - 1))
-		max_c = Vector2i(maxi(max_c.x, c.x + 1), maxi(max_c.y, c.y + 1))
-	if not have_any:
-		_lbl(vbox, "Nothing charted yet.", 14)
-		_hint(vbox, "ESC / M to close")
-		return
-	var cols := max_c.x - min_c.x + 1
-	var rows := max_c.y - min_c.y + 1
-	var cw := clampf((1120.0 - (cols - 1) * 10.0) / cols, 34.0, 120.0)
-	var ch := clampf((430.0 - (rows - 1) * 10.0) / rows, 26.0, 84.0)
-	var org := Vector2(maxf(0.0, (1120.0 - cols * (cw + 10.0)) / 2.0),
-		maxf(0.0, (430.0 - rows * (ch + 10.0)) / 2.0))
-	var cell_pos := func(c: Vector2i) -> Vector2:
-		return org + Vector2((c.x - min_c.x) * (cw + 10.0), (c.y - min_c.y) * (ch + 10.0))
-
-	# Draw grid and compass in one ignore-mouse control.
-	var chrome := Control.new()
-	chrome.set_anchors_preset(Control.PRESET_FULL_RECT)
-	chrome.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	board.add_child(chrome)
-	var pitch := Vector2(cw + 10.0, ch + 10.0)
-	var grid_org := org - Vector2(5.0, 5.0)
-	chrome.draw.connect(func() -> void:
-		var sz: Vector2 = chrome.size
-		var gcol := Color(0.9, 0.8, 0.5, 0.055)
-		# Grid spans ONLY the charted patch (explored rooms + one breathing
-		# cell), not the whole board — an early one-room map then reads as a
-		# small chart fragment on vellum, not a node lost in a giant empty grid
-		# (visual-review P0). Beyond the patch stays plain vellum = "unexplored".
-		var cx0 := maxf(6.0, grid_org.x)
-		var cx1 := minf(sz.x - 6.0, grid_org.x + cols * pitch.x)
-		var cy0 := maxf(6.0, grid_org.y)
-		var cy1 := minf(sz.y - 6.0, grid_org.y + rows * pitch.y)
-		var gx := grid_org.x
-		while gx <= cx1 + 0.5:
-			if gx >= cx0:
-				chrome.draw_line(Vector2(gx, cy0), Vector2(gx, cy1), gcol, 1.0)
-			gx += pitch.x
-		var gy := grid_org.y
-		while gy <= cy1 + 0.5:
-			if gy >= cy0:
-				chrome.draw_line(Vector2(cx0, gy), Vector2(cx1, gy), gcol, 1.0)
-			gy += pitch.y
-		var cpos := Vector2(sz.x - 58.0, 62.0)
-		chrome.draw_arc(cpos, 30.0, 0.0, TAU, 48, Color(0.9, 0.8, 0.5, 0.30), 1.5)
-		chrome.draw_arc(cpos, 22.0, 0.0, TAU, 40, Color(0.9, 0.8, 0.5, 0.14), 1.0)
-		chrome.draw_colored_polygon(PackedVector2Array([cpos + Vector2(0, -26),
-			cpos + Vector2(5, 0), cpos + Vector2(0, 26), cpos + Vector2(-5, 0)]),
-			Color(0.9, 0.8, 0.5, 0.32))
-		chrome.draw_colored_polygon(PackedVector2Array([cpos + Vector2(-26, 0),
-			cpos + Vector2(0, 4), cpos + Vector2(26, 0), cpos + Vector2(0, -4)]),
-			Color(0.9, 0.8, 0.5, 0.18))
-		var cfont: Font = UITheme.display_font()
-		if cfont == null:
-			cfont = ThemeDB.fallback_font
-		chrome.draw_string(cfont, cpos + Vector2(-5.0, -36.0), "N",
-			HORIZONTAL_ALIGNMENT_LEFT, -1.0, 15, Color(0.9, 0.8, 0.5, 0.65)))
-	chrome.resized.connect(func() -> void: chrome.queue_redraw())
-
-	for i in game.zone_count:
-		if not game.visited.get(i, false):
-			continue
-		var c: Vector2i = game.rooms[i]["coord"]
-		var p: Vector2 = cell_pos.call(c)
-
-		# Draw connections and exit stubs under room cells.
-		for dir in game.rooms[i]["exits"].keys():
-			var nb: int = game.neighbor(i, String(dir))
-			if nb < 0:
-				continue
-			var delta: Vector2i = Game.DIRS[dir]
-			var mid := p + Vector2(cw / 2.0, ch / 2.0)
-			var full := Vector2(delta.x * (cw + 10.0), delta.y * (ch + 10.0))
-			var nb_visited: bool = game.visited.get(nb, false)
-			var link := ColorRect.new()
-			link.color = Color(0.55, 0.5, 0.4) if nb_visited else Color(0.4, 0.38, 0.34)
-			var reach := 1.0 if nb_visited else 0.62  # stub: juts toward the unknown
-			var to := mid + full * 0.5 * reach
-			var thick := 5.0
-			link.position = Vector2(minf(mid.x, to.x) - thick / 2.0, minf(mid.y, to.y) - thick / 2.0)
-			link.size = Vector2(absf(to.x - mid.x) + thick, absf(to.y - mid.y) + thick)
-			link.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			board.add_child(link)
-			# Seen boss doors reveal their marker before entry.
-			if not nb_visited and game.room_type(nb) == "boss" and game.door_seen.get(nb, false):
-				var skull := _lbl(board, "☠", 15, Color(1.0, 0.55, 0.6))
-				skull.position = to - Vector2(7, 12)
-				skull.size = Vector2(20, 20)
-
-	for i in game.zone_count:
-		if not game.visited.get(i, false):
-			continue
-		var c: Vector2i = game.rooms[i]["coord"]
-		var p: Vector2 = cell_pos.call(c)
-		var t: String = game.room_type(i)
-		var can_travel: bool = game.travel_target(i) and not game.barrier_active
-
-		if i == game.cur_room:
-			var here := Panel.new()  # gold frame, breathing — YOU, alive
-			var hsb := StyleBoxFlat.new()
-			hsb.bg_color = Color(0, 0, 0, 0)
-			hsb.border_color = Color(0.95, 0.85, 0.5)
-			hsb.set_border_width_all(3)
-			hsb.set_corner_radius_all(6)
-			here.add_theme_stylebox_override("panel", hsb)
-			here.position = p - Vector2(4, 4)
-			here.size = Vector2(cw + 8, ch + 8)
-			here.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			board.add_child(here)
-			var htw := here.create_tween().set_loops()
-			htw.tween_property(here, "modulate:a", 0.45, 0.7).set_trans(Tween.TRANS_SINE)
-			htw.tween_property(here, "modulate:a", 1.0, 0.7).set_trans(Tween.TRANS_SINE)
-
-		if can_travel:
-			var room_idx: int = i
-			var b := Button.new()
-			b.position = p
-			b.size = Vector2(cw, ch)
-			b.tooltip_text = "%s — travel here" % game.zones[i]["name"]
-			var sb := StyleBoxFlat.new()
-			sb.bg_color = MAP_TYPE_COLOR.get(t, Color(0.3, 0.3, 0.3)).lightened(0.18)
-			sb.set_corner_radius_all(4)
-			b.add_theme_stylebox_override("normal", sb)
-			var sbh: StyleBoxFlat = sb.duplicate()
-			sbh.bg_color = sb.bg_color.lightened(0.2)
-			b.add_theme_stylebox_override("hover", sbh)
-			b.pressed.connect(func() -> void:
-				close()
-				game.fast_travel(room_idx))
-			board.add_child(b)
-		else:
-			var cell := Panel.new()  # rounded, terrain-tinted border
-			var csb := StyleBoxFlat.new()
-			csb.bg_color = MAP_TYPE_COLOR.get(t, Color(0.3, 0.3, 0.3))
-			csb.set_corner_radius_all(4)
-			var tint: Color = Terrains.get_terrain(game.terrain_by_zone[i])["tint"]
-			csb.border_color = Color(tint.r * 0.7, tint.g * 0.7, tint.b * 0.7)
-			csb.set_border_width_all(1)
-			cell.add_theme_stylebox_override("panel", csb)
-			cell.position = p
-			cell.size = Vector2(cw, ch)
-			cell.tooltip_text = String(game.zones[i]["name"])
-			cell.mouse_filter = Control.MOUSE_FILTER_STOP
-			board.add_child(cell)
-
-		# Doorway pips expose exits at a glance.
-		for dir in game.rooms[i]["exits"].keys():
-			var pip := ColorRect.new()
-			pip.color = Color(0.95, 0.85, 0.5) if i == game.cur_room else Color(0.78, 0.74, 0.6)
-			var horiz: bool = String(dir) in ["N", "S"]
-			pip.size = Vector2(12, 4) if horiz else Vector2(4, 12)
-			match String(dir):
-				"N": pip.position = p + Vector2(cw / 2.0 - 6.0, -1.0)
-				"S": pip.position = p + Vector2(cw / 2.0 - 6.0, ch - 3.0)
-				"W": pip.position = p + Vector2(-1.0, ch / 2.0 - 6.0)
-				"E": pip.position = p + Vector2(cw - 3.0, ch / 2.0 - 6.0)
-			pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			board.add_child(pip)
-
-		var icon_text: String = MAP_TYPE_ICON.get(t, "")
-		if t == "boss":
-			var kind := String(game.zones[i].get("boss", ""))
-			if kind != "" and game.boss_done.get(kind, false):
-				icon_text = "✓"
-		if i == game.cur_room:
-			icon_text = "◆"
-		if icon_text != "":
-			var il := _lbl(board, icon_text, 15, Color(0.95, 0.92, 0.8))
-			il.position = p + Vector2(0, ch / 2.0 - 11.0)
-			il.size = Vector2(cw, 22)
-			il.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			il.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		# A quiet green check in the corner of every cleansed combat room.
-		if game.cleared.get(i, false) and t in ["combat", "elite"] and i != game.cur_room:
-			var done_l := _lbl(board, "✓", 12, Color(0.5, 0.95, 0.55))
-			done_l.position = p + Vector2(cw - 14.0, ch - 18.0)
-			done_l.size = Vector2(14, 16)
-			done_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	# Legend includes the current room name.
-	var legend := HBoxContainer.new()
-	legend.add_theme_constant_override("separation", 22)
-	vbox.add_child(legend)
-	var here_l := _lbl(legend, "◆  %s — you are here" % game.zones[game.cur_room]["name"], 13, Color(0.95, 0.85, 0.5))
-	here_l.custom_minimum_size = Vector2(340, 0)
-	for spec in [["⌂  safe camp (lit = travel)", Color(0.62, 0.82, 0.62), 200.0],
-			["☠  boss door", Color(1.0, 0.6, 0.62), 110.0], ["✓  cleared", Color(0.55, 0.9, 0.58), 95.0],
-			["▫  doorway", Color(0.78, 0.74, 0.6), 95.0]]:
-		var ll := _lbl(legend, String(spec[0]), 13, spec[1])
-		ll.custom_minimum_size = Vector2(float(spec[2]), 0)  # HBox label-collapse trap
-	_hint(vbox, "ESC / M to close" +
-		("   ·   the doors are sealed mid-fight" if game.barrier_active else ""))
+	UIFieldAtlas.open(self)
 
 
 ## Short service copy for the capital map and its hover directory. Only active,
@@ -5881,19 +5661,40 @@ func _input(event: InputEvent) -> void:
 				or (current == "codex" and event.keycode == game.binds["codex"]) \
 				or (current == "map" and event.keycode == game.binds.get("map", KEY_M)) \
 				or (current == "dev" and event.keycode == KEY_F1):
-			if current == "detail":
-				_close_detail_popover()  # dismiss the popover, stay on the screen beneath
-			elif current == "theme_pick":
-				open_skills()  # back to the tree, not out of the menu
-			elif current == "lobby":
-				UILobby.esc(self)  # one stage back / leave the lobby, never a void
-			elif current == "settings":
-				_settings_back()  # back to wherever settings was opened from
-			elif current == "benchmark_roster":
-				open_slots()  # dev roster modal → back to the slot list
-			elif current == "confirm" \
-					or (current == "chapter_select" and chapter_replay):
-				open_pause()  # back to the system menu, not out of it
-			else:
-				close()
+			controller_back()
 			get_viewport().set_input_as_handled()
+
+
+## Shared back navigation for Escape and gamepad; boot never unpauses into a void.
+func controller_back() -> void:
+	if listening_action != "":
+		listening_action = ""
+		open_keybinds()
+		return
+	if current in ["name_entry", "rename"]:
+		if current == "name_entry":
+			open_class_select()
+		else:
+			open_slots()
+		return
+	if current in ["title", "class_select", "class_splash"] or (current == "chapter_select" and not chapter_replay):
+		return
+	if current == "detail":
+		_close_detail_popover()  # dismiss the popover, stay on the screen beneath
+	elif current == "theme_pick":
+		open_skills()  # back to the tree, not out of the menu
+	elif current == "lobby":
+		UILobby.esc(self)  # one stage back / leave the lobby, never a void
+	elif current == "settings":
+		_settings_back()  # back to wherever settings was opened from
+	elif current in ["comfort", "controller"]:
+		open_settings(settings_return)
+	elif current == "combat_report":
+		open_pause()
+	elif current == "benchmark_roster":
+		open_slots()  # dev roster modal → back to the slot list
+	elif current == "confirm" \
+			or (current == "chapter_select" and chapter_replay):
+		open_pause()  # back to the system menu, not out of it
+	else:
+		close()

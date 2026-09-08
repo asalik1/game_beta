@@ -30,6 +30,8 @@ func load_settings() -> void:
 	Loc.lang = String(settings.get("lang", "en"))
 
 func save_settings() -> void:
+	if no_saves:
+		return
 	SaveGame.atomic_store("user://settings.json", JSON.stringify(settings))
 
 ## The SFX bus centralizes the sound-effect slider: the sound pool, ambience
@@ -136,8 +138,9 @@ func start_weekly() -> void:
 const SERVER_VICTORY_LINGER := 10.0
 
 func _server_after_victory(next_ch: String) -> void:
+	var victory_epoch: int = chapter_finale._epoch
 	await get_tree().create_timer(SERVER_VICTORY_LINGER).timeout
-	if state != ST_VICTORY:
+	if state != ST_VICTORY or chapter_finale._epoch != victory_epoch:
 		return  # something else already moved the world on
 	if next_ch != "":
 		advance_chapter()
@@ -676,15 +679,9 @@ func chapter_available(chid: String, replay := false) -> bool:
 # cap_ (2026-07-25 capital rework): Crownfall quest/meet progress describes
 # the CHARACTER — it survives chapter wipes and stays per-head in co-op via
 # the same list §5.4's set_flag routing reads.
-const KEPT_FLAG_PREFIXES := [
-	"opened_", "chose_", "completed_", "cap_",
-	"saw_chapter_opening_", "sq_kept_", "tut_",
-]
-const KEPT_FLAGS := ["owned_the_harm", "excused_the_harm", "walked_away",
-	"gave_back", "kept_taking", "fled_theft", "told_truth", "hid_truth",
-	"left_silent", "said_farewell", "cut_clean", "walked_silent",
-	"delivered_verdict", "spared_guilty", "recused", "closed_tome",
-	"borrowed_more", "burned_pages"]
+const KEPT_FLAG_PREFIXES := preload("res://scripts/character_history.gd").PREFIXES
+const KEPT_FLAGS := preload("res://scripts/character_history.gd").FLAGS
+
 
 ## The victory card's roll-call of promises left unkept (game_base
 ## ._expire_side_quests already charged for them). Named on the card because
@@ -744,11 +741,6 @@ func _wipe_chapter_flags() -> void:
 ## from game_base via call() (the base layer can't see this derived const),
 ## the same idiom as _recheck_gates.
 func _flag_is_local(flag_name: String) -> bool:
-	if flag_name in KEPT_FLAGS or flag_name in Story.chapter_opener_flags():
-		return true
-	for pre in KEPT_FLAG_PREFIXES:
-		if flag_name.begins_with(pre):
-			return true
 	# Wave-1 co-op fix: cache/hidden/shrine once-per-room marks gate PER-HEAD
 	# spawns — the cache chest, the hidden reveal, the gamble shrine are each
 	# personal (a guest builds and claims its OWN). Routing them as WORLD state
@@ -757,10 +749,7 @@ func _flag_is_local(flag_name: String) -> bool:
 	# claims once. NOT added to KEPT_* — they still wipe on replay and stay out
 	# of the character save section; this only steers set_flag routing.
 	# `cursed_` stays WORLD-routed: accepting the bargain buffs the SHARED pack.
-	for pre in ["cache_", "hidden_", "shrined_"]:
-		if flag_name.begins_with(pre):
-			return true
-	return false
+	return preload("res://scripts/character_history.gd").is_local(flag_name)
 
 
 ## Back to the title screen (character select). Progress is saved; the
@@ -827,6 +816,9 @@ func on_rogue_boss_died(kind: String, dead: Boss = null) -> void:
 	var boss_pos: Vector2 = src.global_position if is_instance_valid(src) \
 		else (player.global_position if has_local_player() else room_center(cur_room))
 	_boss_roster_update(src)
+	if is_instance_valid(src) and src.pocket_boss:
+		_pocket_complete(boss_pos)
+		return  # pocket participants own their personal reward, including guests
 	# MP-12: a DOWNED/GHOST host skips the heal — the §5.3 paths (channel /
 	# room-clear) own how a fallen body stands. Solo: flags always false.
 	if has_local_player() and not player.downed and not player.ghost:
@@ -850,9 +842,6 @@ func on_rogue_boss_died(kind: String, dead: Boss = null) -> void:
 	# rogue path's gold chest/pile above).
 	if is_instance_valid(src) and src.unlisted_id != "":
 		_unlisted_bank_kill(src.unlisted_id, boss_pos)
-	# A Q15 pocket boss pays the pocket reward + carries you home.
-	if is_instance_valid(src) and src.pocket_boss:
-		_pocket_complete(boss_pos)
 
 
 ## Bank a breach-echo kill (once per kind per trusted-clock week, per
@@ -902,20 +891,36 @@ func _unlisted_bank_kill(id: String, pos: Vector2) -> void:
 		Color(0.95, 0.82, 0.5), 5.0)
 	autosave()
 
-## A Q15 pocket boss has fallen: bank the reward once (a gem + Renown on top of
-## the rogue path's gold chest/pile), then carry the hero back to the origin room
-## after a beat so the death plays before the world shifts (game_world._pocket_return).
+## A guardian's fall is world state. Personal rewards reach only those in
+## the arena; no automatic teleport takes their uncollected chest away.
 func _pocket_complete(pos: Vector2) -> void:
-	if not has_local_player() or pocket_done:
+	if pocket_done or net_guest():
 		return
 	pocket_done = true
+	if pocket_room >= 0:
+		cleared[pocket_room] = true
+		zone_alive[pocket_room] = 0
+		boss_spawned[pocket_room] = true
+	if net_host():
+		net_session().host_pocket_complete(pos)
+	if has_local_player() and (pocket_room < 0 or room_at_pos(local_player.global_position) == pocket_room):
+		_pocket_reward(pos)
+	autosave()
+
+
+func _pocket_reward(pos: Vector2) -> void:
+	if not has_local_player():
+		return
+	if not local_player.dead and not local_player.downed and not local_player.ghost:
+		local_player.hp = local_player.max_hp
+		local_player.mp = local_player.max_mp
+	var kind := String(Pockets.entry(pocket_id).get("kind", ""))
+	if Story.ALL_ENEMIES.has(kind):
+		Chest.drop(self, "gold", clamp_to_zone(pos + Vector2(0, 60), pos))
+		Pickup.drop_gold(self, _kill_gold(Story.ALL_ENEMIES[kind].get("gold", 50)), pos)
 	give_loot({"kind": "gem", "gem": drop_gem(Balance.gem_drop_level(loot_chapter()))}, pos + Vector2(40, 44))
 	add_renown(Balance.RENOWN_POCKET)
-	spawn_text(player.global_position + Vector2(0, -104),
-		"THE POCKET COLLAPSES — the stone's bargain is paid", Color(0.7, 0.85, 1.0), 4.0)
-	if pocket_origin >= 0:
-		get_tree().create_timer(2.5).timeout.connect(_pocket_return)
-	autosave()
+	hud.announce("The guardian falls — Collect your spoils. The exit stone will wait.", Color(0.7, 0.85, 1.0), 4.0)
 
 
 ## A boss killed inside an endgame arena run (Boss.endgame_boss): clear the bar
@@ -1084,13 +1089,17 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		# syncs results (request_pause no-ops online, so the guests' worlds
 		# keep running and nothing can soft-lock them) — guests get the beat
 		# as a toast through the award machinery for now.
-		# MP-14 (§5.4): the real synced victory card fans from end_it below
-		# (host_victory) — no placeholder toast. Loot flush + first clear still
-		# fan here (reward beat, not UI).
+		# Bank each guest's loot and first clear before the victory fan below
+		# begins their own illustrated ending.
 		if net_host():
 			net_session().host_chapter_end(first_clear, boss_lv)
 		quest_key = "done_" + chapter_id if Story.ALL_QUESTS.has("done_" + chapter_id) else "done"
 		refresh_quest()
+		# Pay before marking completion: the owner-side helper also rejects
+		# previously completed chapters (including legacy characters). Its paid
+		# reservation prevents reconnect/repeated callbacks from paying twice.
+		if first_clear and has_local_player():
+			_first_clear_reward(boss_lv)
 		# Progression: this character has finished the chapter (kept across
 		# replays), and the NEXT chapter unlocks account-wide.
 		set_flag("completed_" + chapter_id, true)
@@ -1105,8 +1114,6 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		# are off the campaign ladder — they never advance the NG+ tier.
 		if not Story.is_interlude(chapter_id):
 			_maybe_unlock_next_tier()
-		if first_clear and has_local_player():
-			_first_clear_reward(boss_lv)
 		var next_ch := Story.next_chapter(chapter_id)
 		if next_ch != "":
 			meta_unlock(next_ch)
@@ -1151,6 +1158,19 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 				"Thanks for playing!"))
 			vtext += _broken_promises_text(broken)
 			vtext += "\n\nCONTINUE — rise. The way-gates stand beside the arena."
+		if net_online():
+			# Bank the result at the kill, before readers take different amounts
+			# of time with their own illustrated ending. Reliable rewards were
+			# sent above; the victory message now starts each local presentation.
+			var result: Dictionary = run_results() if has_local_player() else {}
+			if weekly_active and has_local_player():
+				_finish_weekly(result)
+			var personal_best: Dictionary = record_chapter_result(result) if has_local_player() else {}
+			autosave()
+			if net_host():
+				net_session().host_victory(vtext, next_ch != "")
+			_present_network_victory(vtext, result, personal_best, next_ch, epilogue)
+			return
 		var end_it := func() -> void:
 			# Grade the run BEFORE the state switch, and bank the weekly claim
 			# there too: _finish_weekly pays Renown straight into meta.json but
@@ -1172,26 +1192,12 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 				var pb := record_chapter_result(res)
 				hud.show_end_screen("VICTORY", vtext, Color(1.0, 0.85, 0.35))
 				hud.show_results(res, pb)
-			# MP-14 (§5.4): the party sees the card at the same moment. Each guest
-			# runs net_victory (its OWN run stats + chapter/weekly credit, applied
-			# owner-side per §5.7). Fan BEFORE the pause so the reliable RPC is
-			# queued while the sim is still live.
-			if net_host():
-				net_session().host_victory(vtext, next_ch != "")
 			request_pause(true)
 			# DEDICATED: nobody presses ENTER on a server — after a grace
 			# window for guests to read their cards, the world marches on.
 			if dedicated:
 				_server_after_victory(next_ch)
-		# Solo: the per-class illustrated closer (CHAPTER_CLOSERS.md) plays on the
-		# Cutscene layer in place of the flat epilogue beat. Co-op keeps the flat
-		# beat for now: a correct per-client closer needs the opener-style LOCAL
-		# play routing (net_advance's run_chapter_opener_if_needed), not the shared
-		# convo etiquette that run_cinematic_convo routes through in a session
-		# (net_session.begin_convo does claims + party-gather) — plus a 2-client
-		# in-game check the headless suite can't drive.
-		# TODO(MP-24, HIGH, owner 2026-08-17): play each client's OWN class closer
-		# locally in co-op too (see MP_TASKS.md Wave 10).
+		# Solo retains its existing illustrated closer and results handoff.
 		var closer_id := ""
 		if has_local_player():
 			closer_id = chapter_id + "_closing_" + String(player.cls)
@@ -1220,6 +1226,12 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 ## roll and a Lv2 gem. Once per character per chapter; after this,
 ## replays are the farm loop and pay as themselves.
 func _first_clear_reward(boss_lv: int) -> void:
+	var paid := "first_clear_paid_" + chapter_id
+	if get_flag(paid, false) or get_flag("completed_" + chapter_id, false):
+		return
+	# Reserve before sending mail/autosaving. Duplicate deferred RPCs and a
+	# disconnect before the later victory message must not pay the bundle twice.
+	flags[paid] = true
 	var g := int(Balance.FIRST_CLEAR_GOLD * Balance.daily_gold_mult(boss_lv))
 	player.gold += g
 	var spoils := Items.roll_chapter_gear(loot_chapter(), loot_rng, player.cls)
@@ -1252,6 +1264,13 @@ func _kill_gold(base: int) -> int:
 func on_enemy_died(e: Enemy) -> void:
 	if e is Boss:
 		return  # boss drops are handled in on_boss_died
+	if e.has_meta("road_hunt_owner"):
+		var owner: Variant = e.get_meta("road_hunt_owner")
+		if is_instance_valid(owner) and not owner.is_queued_for_deletion():
+			owner.enemy_fell(e)
+		return  # road quarry own their purse; no regular loot, XP or purge credit
+	if e.get_meta("ward_spawn", false) or e.get_meta("escort_spawn", false):
+		return  # optional encounters own these waves; no loot, purge credit or counters
 	# DEDICATED: the host-personal drops (own pile, own chest rolls) need a
 	# local player to receive them — guests' shares fan below regardless.
 	# (The old outer `e.elite and is_instance_valid(player)` gate would have
@@ -1263,7 +1282,7 @@ func on_enemy_died(e: Enemy) -> void:
 	# routes to the party like any set_flag). Host-authoritative.
 	if e.hunt_flag != "" and not net_guest():
 		set_flag(e.hunt_flag)
-	if e.xp_value > 0 or e.gold_value > 0 or e.elite:
+	if not e.from_quest and (e.xp_value > 0 or e.gold_value > 0 or e.elite):
 		note_kill(e.kind)  # codex completion (scenery props and event mood spawns don't count)
 		quest_kill_note(e.kind)  # KILL-step quest progress (host-authoritative, same gate as a real kill)
 	elif e.from_quest:
@@ -1271,7 +1290,7 @@ func on_enemy_died(e: Enemy) -> void:
 		# budget) but MUST still advance their KILL-step — else spawning them was
 		# pointless. note_kill stays gated (they're not authored content).
 		quest_kill_note(e.kind)
-	if e.elite:
+	if e.elite and not e.from_quest:
 		run_elites += 1
 		bounty_progress("elite_kills")
 		contract_progress("elite_kills")
@@ -1310,7 +1329,7 @@ func on_enemy_died(e: Enemy) -> void:
 		# them in step) + their own elite bounty credit.
 		if net_host():
 			net_session().host_elite_kill(e)
-	else:
+	elif not e.from_quest and (e.xp_value > 0 or e.gold_value > 0):
 		# Chance-based chest drops (Greed nudges the odds up from its first
 		# point). Host-personal — skipped whole on a dedicated server
 		# (unopenable chests would just litter the room until reset).
@@ -1340,7 +1359,7 @@ func on_enemy_died(e: Enemy) -> void:
 			net_session().host_mob_kill(e)
 
 	# Room clear tracking: the boss only appears once its room is purged.
-	if e.zone_idx >= 0:
+	if e.zone_idx >= 0 and not e.from_quest:
 		zone_alive[e.zone_idx] = maxi(0, zone_alive.get(e.zone_idx, 0) - 1)
 		# Pack cascade (2026-07-09): a wiped pack makes the next-nearest
 		# sleeping pack in the room aware — it comes to you, so a big arena
@@ -1447,7 +1466,7 @@ func _alive_in_room(zi: int) -> Array:
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
 		if e != null and is_instance_valid(e) and not e.dying and not e.net_mirror \
-				and not (e is Boss) and e.zone_idx == zi:
+				and not (e is Boss) and not e.from_quest and e.zone_idx == zi:
 			out.append(e)
 	return out
 
@@ -1887,6 +1906,13 @@ func _death_begin(p: Player) -> void:
 ## server's wipe path (net_wipe), which has no local body to respawn but
 ## still owns the authoritative reset.
 func _death_world_reset(death_room: int) -> void:
+	cancel_ground_attacks()
+	var vigil := preload("res://scripts/ward_vigil.gd").find(self)
+	if vigil != null:
+		vigil.cancel("")
+	var escort := preload("res://scripts/wayfarer.gd").find(self)
+	if escort != null:
+		escort.cancel("")
 	for b in _live_bosses().duplicate():
 		var live_b: Boss = b
 		if live_b.zone_idx < 0:
@@ -1938,6 +1964,8 @@ func _death_respawn(p: Player, death_room: int, forced_room := -1) -> void:
 		set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
 	hud.dim(0.0)
 	state = ST_PLAYING
+	if not p.damage_memory.last_defeat.is_empty():
+		hud.log_event("Last fall recorded · Pause → Combat report", Color(0.9, 0.75, 0.6), "combat_report")
 
 
 ## MP-12 (§5.3): ALL players down — the WIPE. The host detected it
@@ -1989,8 +2017,8 @@ func net_wipe(death_room: int, safe_room: int) -> void:
 ## and claims its own weekly reward — all owner-side, exactly as a solo clear
 ## would. The first-clear beat + loot flush already fanned via host_chapter_end.
 func net_victory(vtext: String, has_next: bool) -> void:
-	if state == ST_VICTORY:
-		return  # idempotent — one card per clear
+	if state == ST_VICTORY or chapter_finale.seen:
+		return  # one claim/presentation, including during and after the ending
 	# Character credit FIRST, while still ST_PLAYING so autosave persists it
 	# (autosave gates on ST_PLAYING; write_character_home carries the flag home).
 	var res := run_results()
@@ -2005,12 +2033,28 @@ func net_victory(vtext: String, has_next: bool) -> void:
 		if next_ch != "":
 			meta_unlock(next_ch)  # this guest's OWN next-chapter unlock
 	autosave()  # ST_PLAYING still — the completion credit writes home now
+	var next_ch := Story.next_chapter(chapter_id) if has_next else ""
+	var epilogue: Array = Story.beat_for("epilogue_" + chapter_id, Story.res_band(player.resonance), flags)
+	if epilogue.is_empty():
+		epilogue = Story.beat_for("epilogue", Story.res_band(player.resonance), flags)
+	_present_network_victory(vtext, res, pb, next_ch, epilogue)
+
+
+func _present_network_victory(vtext: String, res: Dictionary, pb: Dictionary,
+		next_ch: String, epilogue: Array) -> void:
+	chapter_finale.play(self, _network_victory_card.bind(vtext, res, pb, next_ch), epilogue)
+
+
+func _network_victory_card(vtext: String, res: Dictionary, pb: Dictionary, next_ch: String) -> void:
 	state = ST_VICTORY
 	set_music("")
 	sfx("victory")
-	hud.show_end_screen("VICTORY", vtext, Color(1.0, 0.85, 0.35))
-	hud.show_results(res, pb)
+	if has_local_player():
+		hud.show_end_screen("VICTORY", vtext, Color(1.0, 0.85, 0.35))
+		hud.show_results(res, pb)
 	request_pause(true)  # allowed in-session during ST_VICTORY (game_base)
+	if dedicated:
+		_server_after_victory(next_ch)
 
 
 ## MP-14 (§5.4), GUEST: the host advanced — follow into the next chapter
@@ -2096,6 +2140,8 @@ func run_terrain_event(ev: String, zi_in := -1, anchor: Player = null) -> void:
 	if net_guest():
 		return
 	var zi := zi_in if zi_in >= 0 else cur_room
+	if zi == pocket_room:
+		return  # guardian and authored trial own this arena's danger
 	var p: Player = anchor if anchor != null else local_player
 	if p == null or not is_instance_valid(p) or p.dead:
 		return

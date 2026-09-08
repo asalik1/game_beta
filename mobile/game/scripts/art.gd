@@ -3661,9 +3661,9 @@ static func _ground_tileset(kind: String) -> Dictionary:
 	return info
 
 
-## Native-resolution AUTHORED floor field. A seamless, tileable pixel-art tile
+## Authored floor field. A seamless, tileable material
 ## (assets/sprites/ground_field_<kind>.png) that game_world tiles across the
-## whole room ON THE GPU at scale 1 — so the floor reads at PROP pixel density
+## whole room ON THE GPU at its material scale — so the floor reads at PROP density
 ## instead of the 16px/tile procedural base upscaled 3x (owner: "terrain looks
 ## low-res"). When a kind ships one, ground() leaves the base — and its chunky
 ## procedural noise/speckle/macro — TRANSPARENT so the crisp field shows
@@ -3675,10 +3675,20 @@ static func ground_field(kind: String) -> Texture2D:
 		return _ground_field_cache[kind]
 	var tex: Texture2D = null
 	var path := "res://assets/sprites/ground_field_%s.png" % kind
+	var painted_path := "res://assets/sprites/ground_field_%s_painterly.png" % kind
+	if ResourceLoader.exists(painted_path):
+		path = painted_path
 	if ResourceLoader.exists(path):
 		tex = load(path)
 	_ground_field_cache[kind] = tex
 	return tex
+
+
+static func ground_field_period(kind: String) -> float:
+	var field := ground_field(kind)
+	if field == null:
+		return 1.0
+	return float(Balance.GROUND_FIELD_PERIOD.get(kind, field.get_width()))
 
 
 static func has_ground_field(kind: String) -> bool:
@@ -4050,9 +4060,8 @@ static func ground_preview(base_kind: String, path_kind: String, tiles_w: int, t
 	var field := ground_field(base_kind).get_image()
 	if field.get_format() != Image.FORMAT_RGBA8:
 		field.convert(Image.FORMAT_RGBA8)
-	# The world shows the field at native (3x this 16px/tile base), so a 1/3
-	# downscale of the tile lands the thumbnail at roughly the in-world scale.
-	var cell := maxi(24, int(round(field.get_width() / 3.0)))
+	# The preview uses 16px per 48px world tile, including scaled floor masters.
+	var cell := maxi(24, int(round(ground_field_period(base_kind) / 3.0)))
 	var fs := field.duplicate()
 	fs.resize(cell, cell, Image.INTERPOLATE_LANCZOS)
 	var y := 0

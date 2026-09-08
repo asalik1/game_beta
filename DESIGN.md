@@ -1,7 +1,48 @@
 # Crownless — Story & Design Bible
 (Compressed for token economy — every decision/number kept, prose trimmed.)
 
+**Chromas — scrapped (owner confirmed 2026-09-08):** the cosmetic recolor
+system is retired from the design. Older chroma reward, Wardrobe, pricing and
+proposal references are superseded; remaining implementation is legacy debt.
+Do not add chroma content or network replication. Pets and skins remain in scope.
+
+**Ward defense:** the Collapsed Tower's optional three-wave vigil asks the player
+to hold a ring and keep enemies away from its heart. Explicit opt-in, readable
+arrivals, free retries, a cosmetic title and a permanent light make a quest
+promise into a physical task. Event actors never touch chapter purge/loot
+counters. See [WARD_VIGILS.md](WARD_VIGILS.md).
+
+**Connected exploration (2026-09-07):** personal quest tracking joins the Journal to the fog-limited Wayfinder; authored rescues earn six cosmetic companions and populate sanctuaries at Stillwater Reach and Accord Commons. Original painted companion art replaces their low-resolution placeholders. Kept Chapter 1 promises leave visible landmark marks. See [SMALL_MERCIES.md](SMALL_MERCIES.md) for design, persistence and QA.
+
+**Reactive terrain (2026-09-07):** marked Ember Casks and Rimehearts turn existing
+combat-room scenery into single-use positioning tools. Interaction, melee contact
+or projectile hits start a visible fuse; blasts hurt packs and nearby heroes,
+with frost slowing movement and chain reactions preserving a warning per link.
+Boss arenas and competitive/endgame runs are excluded. See
+[REACTIVE_TERRAIN.md](REACTIVE_TERRAIN.md) for current behavior and validation.
+
+**Signature interrupts (2026-09-07):** selected boss casts now offer a damage-driven
+interrupt before their normal dodge warning. Close-range hits build more pressure;
+a successful break cancels the selected cast and opens a short damage window.
+The first six encounters, tuning and validation are documented in
+[BOSS_INTERRUPTS.md](BOSS_INTERRUPTS.md). This implements the interrupt lane in
+[the combat roadmap](PROPOSALS/COMBAT_LANES.md#3-lane-b--interrupt-windows-the-first-non-dodge-counterplay).
+
 ## Phase Plan (agreed 2026-07)
+
+**Controller play (2026-09-07):** analog movement, shoulder/trigger abilities,
+directional target selection, menu cursor plus directional snapping, dialogue,
+text entry and fishing share the keyboard/touch gameplay seams. Device prompts
+switch on intentional input; mobile touch controls remain available. See
+[CONTROLLER.md](CONTROLLER.md) for layout, architecture and validation scope.
+
+**River fishing (2026-09-07):** Stillwater Reach branches from the village
+area; marsh/bog bridges also carry fishing nooks. Free lures, timed strikes,
+calm/surge reeling and tension management feed a persistent personal catch
+journal. Four species have habitat/lure preferences and length records;
+collecting them unlocks the Riverkeeper title. Catch-and-release, with no
+inventory or currency payout. Solo pauses; live co-op cancels on danger or
+damage. Implementation, controls and QA: [FISHING.md](FISHING.md).
 
 **Phase 1 — launch (solo, Ch2) — SHIPPED 2026-07-04:**
 - Six classes: Warrior, Assassin, **Paladin** (new melee) / Archer, Mage, **Warlock** (new ranged). LoL balance rule extends: Paladin = bruiser base stats; Warlock pays the ranged damage tax like Mage.
@@ -106,6 +147,11 @@ Rolled rooms (social/elite/caches) are seeded per character — spatial variety 
 - **Death:** return to last visited safe room, gear/gold/XP intact; death room resets. No corpse runs. Nothing follows you home: homeless spawns (boss adds, event zombies) despawn; aggroed survivors calm and walk back (round 3 — a chaser once camped the respawn).
 - **Autosave on every room transition** (45–75 min chapters can't assume one sitting).
 - **Objective clarity:** quest line always on screen; once the boss door is SEEN the map marks it; before that, stubs are the only hint.
+- **Combat decisions:** the current target's bar names actionable defensive states and openings. Landed-hit bearings and an optional recent-damage/last-fall report explain consequences without delaying recovery. Short input buffering preserves taps while respecting the existing cooldown, mana and class rules; overlays, focus loss and defeat cancel it.
+- **Combat visibility:** ground warnings retain their exact boundary and fill a clockwise timing rim; shelters add inward chevrons, with false shelters retaining their flicker. Warnings, falling art, shelters and damage share the encounter lifetime and freeze together during solo pause. A wipe or chapter rebuild cancels pending ground attacks. Foreground trees covering the current target fade temporarily; buildings and collision retain their usual behavior. Discovery plaques queue in one reading position and wait behind menus, dialogue and arrival titles.
+- **Equipment care:** inspect bag/shop gear against the equipped slot. Kept pieces persist through saves and are excluded from sales, dropping and Auto-equip; explicitly equipping or improving them remains possible. Bag sorting changes the view, never item identity.
+- **Comfort:** camera shake, camera lead and impact washes can be reduced; solo hit-stop, damage bearings and combat framing have independent toggles. Combat framing eases toward the current aim target and widens for distant opponents, retaining the base scale in close combat. Lead at zero keeps the hero centered. Target health bars hold a brief lost-health trail; heals and target switches reset it.
+- **Top-down movement:** heroes and enemies use floating collision mode, with no floor snapping or moving-platform inheritance. Their stride follows measured travel, so pressing against a wall does not keep the legs walking at full speed. Zero-time hit-stop skips collision stepping; invalid motion is recovered before it can poison position or animation clocks.
 - **Audio fatigue:** each terrain family needs ≥ explore + combat/boss music layers (or deliberate silence), not one loop.
 
 ### Elites & affixes
@@ -115,7 +161,7 @@ Small affix pool (Frenzied, Bulwark, Vampiric, Stormtouched, Splitting…) on ex
 **Normal / Nightmare (+20 levels) / Torment (+40)** — a per-CHARACTER standing choice in the replay chapter select, snapshotted per run (`world_run_tier`; a mid-run flip can't touch a live run). Every authored campaign spawn lifts through the same `enemy_stats_at` growth (`game_base.tiered_level`; derived spawns inherit their parent's lifted level — never double-dipped). DROP faucets shift their chapter band +4/+8 chapters (`Balance.tier_chapter`; **ch12 authored as the S-band table**, so S farms from Torment ch4+); the SHOP and GAMBLE stay on the real chapter (they price off measured `CHAPTER_ECON`, and the village doesn't harden with the world). **Tier runs pay ZERO XP under any completion state** — they pay in gold rate, gem quality and the shifted bands. Unlocks account-wide (`tier_unlocked_N`): clear the finale (`TIER_FINALE_CH`, currently ch7) at tier T to open T+1 — flip that one constant to move the gate when later acts exist (owner leaning noted in PROPOSALS/SOCIAL_LAYER.md: after Act 3). Per-tier PB tracks (`pb_…_tN`), codex Records card, persistent HUD chip. Endgame/weekly force Normal; **in co-op the HOST's tier briefs the party** (world/advance snaps, NET_VERSION 0.1.3) — every head fights, earns unlocks and records at the world's actual tier.
 
 ### Renown & the Wardrobe — SHIPPED 2026-07-24
-The SEGREGATED event currency (SOCIAL_LAYER step 2 — the first slice of the second loop). **Renown** is an account-wide wallet (`meta.json`) filled ONLY by collected-not-farmed faucets — dailies/bounties (amounts in their `Balance` tables), vault claim, weekly-challenge completion, record PUSHES (per boss/depth past the class's previous endgame best — a PB spends itself, so it can't be farmed), and the first any-class clear of each chapter at each NG+ tier — and drained ONLY by zero-balance-impact goods in the **Wardrobe** (`ui/wardrobe.gd`; codex Records card, pause menu): chromas, elite/mythic skins (the first production acquisition path cosmetics have had — ownership account-wide, equip per-character) and a once-a-week consumable supply cache. **Story gold never converts to or from Renown**, so the currency needs no econ calibration by construction; achievements still pay identity, never currency. Numbers in `Balance.RENOWN_*`; income ≈ 180/engaged week vs prices 60/240/600.
+The SEGREGATED event currency (SOCIAL_LAYER step 2 — the first slice of the second loop). **Renown** is an account-wide wallet (`meta.json`) filled ONLY by collected-not-farmed faucets — dailies/bounties (amounts in their `Balance` tables), vault claim, weekly-challenge completion, record PUSHES (per boss/depth past the class's previous endgame best — a PB spends itself, so it can't be farmed), and the first any-class clear of each chapter at each NG+ tier — and drained ONLY by zero-balance-impact goods in the **Wardrobe** (`ui/wardrobe.gd`; codex Records card, pause menu): elite/mythic skins (the first production acquisition path cosmetics have had — ownership account-wide, equip per-character) and a once-a-week consumable supply cache. **Story gold never converts to or from Renown**, so the currency needs no econ calibration by construction; achievements still pay identity, never currency. Numbers in `Balance.RENOWN_*`; income ≈ 180/engaged week vs skin prices 240/600.
 
 ### Waking Incursions — SHIPPED 2026-07-24
 The weekly world event (spec: ACT2_DESIGN "Waking Incursions"; SOCIAL_LAYER step 3). The week's rotating chapter, once cleared, grows **3 breach rooms** off its spine on a solo replay — each holds a week-seeded story boss from ANOTHER god-king's domain (the terrain mismatch is the fiction), wearing one week-seeded elite affix, at `max(finale+5, native)` level (the no-downscaling rule caps how low a late-act echo can visit, so the roster prefers at-or-under-target picks). Echoes die down the ROGUE path (no story writes) and **bank once per week per character**: gem + gold each, the Waking Chest + Renown on the third — banked echoes don't respawn that week, so repeat visits farm nothing. `waking_week` is world geography and follows the wander_seed load contract. Solo-only for now (co-op sync = flagged follow-up, the tiers pattern); ch2 sits out until its graph-retrofit. Numbers in `Balance.WAKING_*` / `RENOWN_WAKING`.
@@ -237,7 +283,7 @@ Licenses per CLAUDE.md asset rules (CC0 / CC-BY-family only; share-alike and NC 
   3. **Animated scenery props** (`Art.anim_prop` + `game._prop_visual`): a scenery prop (obstacle/decor/accent/structure part) with a `<name>_anim.png` strip self-animates via a looping `AnimatedSprite2D` — no per-frame script — with a name-hashed start frame so a row of torches doesn't flicker in lockstep. Every prop path routes through the one `_prop_visual` seam; strip-less props keep the static `Sprite2D`. Same footprint/scale/wind/z as before, so it's a zero-churn drop-in. (~30 animated pack sheets unlocked.)
 
 ### The Greyrun river (Track B's one real feature) — SHIPPED 2026-07-06
-Terrain-config water (`Terrains.DATA[tid]["river"]`: chance + color — the bog Greyrun runs BLACK per ch2 mill canon, marsh murky teal). Seeded per room, built with the scenery, skips boss arenas and the center door lane; animated pixel-water shader (`Art.water_material`) + plank bridge carrying the road across. **Wading slows everyone** (`Balance.RIVER_WADE_MULT` 0.72; the bridge is dry — terrain mechanic, codex'd) with entry splash + wading ripples; enemies wade too. Ladder still open: drink/quest-water flavor interactions → fishing (deferred; MMO retention seed).
+Terrain-config water (`Terrains.DATA[tid]["river"]`: chance + color — the bog Greyrun runs BLACK per ch2 mill canon, marsh murky teal). Seeded per room, built with the scenery, skips boss arenas and the center door lane; animated pixel-water shader (`Art.water_material`) + plank bridge carrying the road across. **Wading slows everyone** (`Balance.RIVER_WADE_MULT` 0.72; the bridge is dry — terrain mechanic, codex'd) with entry splash + wading ripples; enemies wade too. Bridge-side fishing now gives the water a collection activity; per-zone river overrides support Stillwater Reach. Drink/quest-water flavor interactions remain open.
 
 ### Boot flow (agreed 2026-07-06)
 Cover → roster → creation, like a grown-up RPG: **stage 1 = the COVER** (`ui/cover.gd`: procedural night set — starfield, rising embers, the Ember Crown in a bloom halo, the four founders' Embers orbiting; `assets/sprites/cover.png` overrides the whole set; any key advances), **stage 2 = the character roster** (`menus.open_slots`: saved heroes with class icon/level/timestamp + delete, "New Character" on top, Settings) — class select only appears when forging a new hero. Both stages report `menus.current == "title"` (one boot state, two looks — autotest contract). All boot menus keep the cover's night backdrop until play starts. Boot music: `"title"` (somber bell theme) on the cover → `"roster"` (hushed hearth theme) from the roster through chapter/class select → terrain music at play start; both synthesized in music.gd, overridable via `assets/music/title|roster.*`. Music player + set_music crossfade run PAUSE-IMMUNE (boot menus pause the tree). Autotest path (`no_saves`) still boots straight to chapter select.

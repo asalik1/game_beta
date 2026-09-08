@@ -24,7 +24,104 @@ var unlisted_id := ""        # a Q15 Unlisted hidden boss (rogue-path death + pe
 var band_tempted := false    # Q13 First Howl: spawned in the tempted resonance band (harder + pays +10% gold)
 var pocket_boss := false     # Q15 portal-pocket arena boss: its fall pays the pocket reward + returns you home
 var endgame_boss := false    # spawned by the endgame controller (drives the run on death)
+var cast_window := preload("res://scripts/boss_cast.gd").new()
+var _cast_sync_t := 0.0
+var _fight_serial := 0
+
 var affix := ""              # elite affix key worn in the endgame modes (Balance.AFFIXES), "" = none
+
+
+func _physics_process(delta: float) -> void:
+	if cast_window.phase != "":
+		if dying or (zone_idx >= 0 and not game.active_rooms.has(zone_idx)) or not _cast_has_prey():
+			_cancel_signature()
+		else:
+			var outcome: String = cast_window.step(delta, not net_mirror)
+			if outcome == "release":
+				_end_tell()
+				_sync_signature()
+				_release_signature()
+			elif outcome == "settled":
+				_sync_signature()
+			elif not net_mirror:
+				_cast_sync_t -= delta
+				if _cast_sync_t <= 0.0:
+					_sync_signature()
+	super(delta)
+
+
+func _cast_has_prey() -> bool:
+	for p in game.players:
+		if is_instance_valid(p) and not p.dead and not p.downed and not p.ghost \
+				and (zone_idx < 0 or game.room_at_pos(p.global_position) == zone_idx):
+			return true
+	return false
+
+
+func _begin_signature() -> bool:
+	if dying or net_mirror or not _cast_has_prey() or not cast_window.start(kind, max_hp):
+		return false
+	knock = Vector2.ZERO
+	velocity = Vector2.ZERO
+	play_action(String(cast_window.MOVES[kind].action))
+	_tell_windup(Balance.BOSS_TELL.get(kind, {}), cast_window.duration, global_position)
+	game.sfx(_boss_cast_sfx())
+	_sync_signature()
+	return true
+
+
+func _cancel_signature() -> void:
+	var had_cast: bool = cast_window.phase != ""
+	cast_window.cancel()
+	if had_cast:
+		_end_tell()
+		_sync_signature()
+
+
+func _sync_signature() -> void:
+	_cast_sync_t = Balance.BOSS_BREAK_SYNC_INTERVAL
+	if net_id > 0 and not net_mirror and game.net_host():
+		game.net_session().host_boss_cast(net_id, cast_window.snapshot())
+
+
+func net_apply_cast(data: Dictionary) -> void:
+	if not net_mirror or (String(data.get("phase", "")) != "" and String(data.get("kind", "")) != kind):
+		return
+	cast_window.apply_snapshot(data)
+
+
+func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, silent := false) -> void:
+	# Count actual HP removed AFTER armor, wards and other reductions. Hazards
+	# without a player source do not interrupt, nor do optimistic guest hits.
+	var source: Player = hit_src if is_instance_valid(hit_src) else (stat_src if is_instance_valid(stat_src) else null)
+	var before := hp
+	super(amount, from_dir, is_crit, silent)
+	if dying or net_mirror or not is_instance_valid(source) or source.dead or source.downed:
+		return
+	var close := source.global_position.distance_to(global_position) <= Balance.BOSS_BREAK_CLOSE_RANGE
+	if cast_window.hit(maxf(0.0, before - hp), close, silent):
+		_end_tell()
+		knock = Vector2.ZERO
+		_pose_y = -Balance.BOSS_WINDUP_K
+		game.spawn_text_all(global_position + Vector2(0, -100), "CAST BROKEN!", Color(0.59, 1.0, 0.81))
+		game.burst(global_position + Vector2(0, -35), Color(0.59, 1.0, 0.81), 20)
+		game.sfx("ward")
+		_sync_signature()
+
+
+func _release_signature() -> void:
+	var prey: Player = _get_target()
+	if dying or not is_instance_valid(prey) or prey.dead or prey.downed:
+		return
+	match kind:
+		"morwen": _blight_rain(prey)
+		"vargoth": _blade_storm()
+		"choirmother": _hymn_of_hunger()
+		"vess":
+			ring_cd = maxf(ring_cd, Balance.BOSS_SILENCE_RING_GRACE)
+			_silence(prey)
+		"sleepkeeper": _frost_hymnal(_floor_target())
+		"gardener": _vine_lash(prey)
 
 
 static func make_boss(game_node: Node2D, boss_kind: String, pos: Vector2, at_level := -1, overcap := false) -> Boss:
@@ -330,10 +427,12 @@ func _tell_windup(style: Dictionary, delay: float, pos: Vector2) -> void:
 		_tell_tw.kill()
 	_tell_tw = create_tween()
 	var t_in: float = clampf(delay * 0.8, 0.08, 0.9)
+	var hold: float = maxf(0.0, delay - t_in)
 	match mode:
 		"crouch":
 			_tell_tw.tween_property(self, "_tell_pose_y", -k, t_in).set_ease(Tween.EASE_IN)
 			_tell_tw.parallel().tween_property(self, "_tell_pose_x", k * 0.45, t_in)
+			_tell_tw.tween_interval(hold)
 			_tell_tw.tween_property(self, "_tell_pose_y", k * 0.6, 0.09)
 			_tell_tw.parallel().tween_property(self, "_tell_pose_x", -k * 0.3, 0.09)
 			_tell_tw.tween_property(self, "_tell_pose_y", 0.0, 0.18)
@@ -341,6 +440,7 @@ func _tell_windup(style: Dictionary, delay: float, pos: Vector2) -> void:
 		"rise":
 			_tell_tw.tween_property(self, "_tell_pose_y", k, t_in).set_ease(Tween.EASE_OUT)
 			_tell_tw.parallel().tween_property(self, "_tell_pose_x", -k * 0.4, t_in)
+			_tell_tw.tween_interval(hold)
 			_tell_tw.tween_property(self, "_tell_pose_y", -k * 0.4, 0.10)
 			_tell_tw.parallel().tween_property(self, "_tell_pose_x", k * 0.25, 0.10)
 			_tell_tw.tween_property(self, "_tell_pose_y", 0.0, 0.22)
@@ -350,6 +450,7 @@ func _tell_windup(style: Dictionary, delay: float, pos: Vector2) -> void:
 			var sgn: float = -1.0 if d.x < 0.0 else 1.0
 			var lean: float = float(style.get("windup_lean", Balance.BOSS_WINDUP_LEAN))
 			_tell_tw.tween_property(self, "_tell_lean", sgn * lean, t_in).set_ease(Tween.EASE_IN_OUT)
+			_tell_tw.tween_interval(hold)
 			_tell_tw.tween_property(self, "_tell_lean", -sgn * lean * 0.5, 0.10)
 			_tell_tw.tween_property(self, "_tell_lean", 0.0, 0.20)
 		"coil":
@@ -359,6 +460,7 @@ func _tell_windup(style: Dictionary, delay: float, pos: Vector2) -> void:
 				_tell_tw.parallel().tween_property(self, "_tell_pose_x", k * 0.3, seg)
 				_tell_tw.tween_property(self, "_tell_pose_y", k * 0.35, seg)
 				_tell_tw.parallel().tween_property(self, "_tell_pose_x", -k * 0.2, seg)
+			_tell_tw.tween_interval(hold)
 			_tell_tw.tween_property(self, "_tell_pose_y", 0.0, 0.14)
 			_tell_tw.parallel().tween_property(self, "_tell_pose_x", 0.0, 0.14)
 		_:
@@ -434,6 +536,8 @@ func _boss_telegraph_safe(centers: Array, radius: float, delay: float, damage: f
 
 
 func reset_fight() -> void:
+	_fight_serial += 1
+	_cancel_signature()
 	# Called when the player dies: the boss walks back and heals up.
 	hp = max_hp
 	global_position = home
@@ -465,6 +569,7 @@ func _think(delta: float) -> Vector2:
 	# pick_target cadence, inherited from Enemy). Solo: THE player.
 	var player: Player = _get_target()
 	if player == null or player.dead:
+		_cancel_signature()
 		return _drift_home()
 	var to_player: Vector2 = player.global_position - global_position
 	var dist := to_player.length()
@@ -480,6 +585,9 @@ func _think(delta: float) -> Vector2:
 	ring_cd = maxf(0.0, ring_cd - cd_dt)
 	blink_cd = maxf(0.0, blink_cd - cd_dt)
 	special_cd = maxf(0.0, special_cd - cd_dt)
+
+	if cast_window.phase == "windup" or cast_window.recovery > 0.0:
+		return Vector2.ZERO
 
 	match kind:
 		"fangmaw":
@@ -663,12 +771,8 @@ func _morwen(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	# Signature: BLIGHT RAIN — poison zones bloom under and around you.
 	if special_cd <= 0.0:
 		special_cd = 8.0
-		roar()
-		play_action("rain")
-		for i in 4:
-			var offset := Vector2.ZERO if i == 0 else Vector2(randf_range(-160, 160), randf_range(-120, 120))
-			_boss_telegraph(player.global_position + offset, 75.0, 0.68 + i * 0.11, dmg * 1.3,
-				{"color": Color(0.55, 1.0, 0.25, 0.55)})
+		_begin_signature()
+		return Vector2.ZERO
 
 	# Blink away when the knight gets close.
 	if dist < 160.0 and blink_cd <= 0.0:
@@ -701,6 +805,17 @@ func _morwen(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	return _caster_move(to_player, dist, 240.0, 340.0)
 
 
+func _blight_rain(player: Player) -> void:
+	roar()
+	play_action("rain")
+	var spread := Balance.BOSS_BLIGHT_RAIN_SPREAD
+	for i in Balance.BOSS_BLIGHT_RAIN_COUNT:
+		var offset := Vector2.ZERO if i == 0 else Vector2(randf_range(-spread.x, spread.x), randf_range(-spread.y, spread.y))
+		_boss_telegraph(player.global_position + offset, Balance.BOSS_BLIGHT_RAIN_RADIUS,
+			Balance.BOSS_BLIGHT_RAIN_DELAY + i * Balance.BOSS_BLIGHT_RAIN_STAGGER,
+			dmg * Balance.BOSS_BLIGHT_RAIN_DAMAGE, {"color": Color(0.55, 1.0, 0.25, 0.55)})
+
+
 # ------------------------------------------------------------- Vargoth ---
 func _vargoth(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	if hp <= max_hp * 0.3 and not enraged:
@@ -715,7 +830,8 @@ func _vargoth(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	# ground, chasing the player's position. Dodge or take heavy damage.
 	if special_cd <= 0.0 and dist < 560.0:
 		special_cd = 6.0 if enraged else 9.0
-		_blade_storm()
+		_begin_signature()
+		return Vector2.ZERO
 
 	# Shockwave slam: ring of slow bolts + screen shake.
 	if ability_cd <= 0.0 and dist < 520.0:
@@ -735,12 +851,13 @@ func _vargoth(player: Player, to_player: Vector2, dist: float) -> Vector2:
 
 
 func _blade_storm() -> void:
+	var fight := _fight_serial
 	roar()
 	play_action("blade")
 	var count := 6 if enraged else 4
 	for i in count:
 		var tgt: Player = _get_target()  # per swing — the chase re-aims across awaits
-		if dying or not is_instance_valid(tgt) or tgt.dead:
+		if dying or fight != _fight_serial or not is_instance_valid(tgt) or tgt.dead or not _cast_has_prey():
 			return
 		_boss_telegraph(tgt.global_position, 85.0, 0.72, dmg * 1.3, {
 			"color": Color(1.0, 0.3, 0.08, 0.6),
@@ -748,12 +865,14 @@ func _blade_storm() -> void:
 			"falling_scale": Balance.BOSS_FALLING_WEAPON_SCALE,
 			"falling_end_y": Balance.BOSS_FALLING_WEAPON_END_Y,
 		})
-		await get_tree().create_timer(0.45 if enraged else 0.6).timeout
+		await get_tree().create_timer(Balance.BOSS_BLADE_INTERVAL.y if enraged else Balance.BOSS_BLADE_INTERVAL.x, false).timeout
 
 
 func die() -> void:
 	if dying:
 		return
+	_fight_serial += 1
+	_cancel_signature()
 	if story_boss:
 		# Zone-spawned bosses — chapter 1's trio AND content bosses
 		# placed in zone data — drive quests/gates/epilogue.
@@ -882,7 +1001,6 @@ func _lightning_lash(player: Player) -> void:
 ## the hymn of hunger marks you and FEEDS her; the choir answers at 60%.
 ## At 25% the crescendo: denser volleys and a faster liturgy.
 func _choirmother(_player: Player, to_player: Vector2, dist: float) -> Vector2:
-	const BLIGHT := Color(0.8, 0.4, 1.0, 0.55)
 	if hp <= max_hp * 0.25 and not enraged:
 		enraged = true
 		sprite.modulate = Color(1.5, 0.7, 1.5)
@@ -905,6 +1023,12 @@ func _choirmother(_player: Player, to_player: Vector2, dist: float) -> Vector2:
 			game.add_enemy(add)
 			add.spawn_in()
 
+	# Her healing hymn can be broken before either the strike or heal exists.
+	if ring_cd <= 0.0:
+		ring_cd = Balance.BOSS_HUNGER_COOLDOWN
+		_begin_signature()
+		return Vector2.ZERO
+
 	# Signature: REQUIEM — three rings of blight ripple OUT from her.
 	if special_cd <= 0.0:
 		special_cd = 6.0 if enraged else 9.0
@@ -921,15 +1045,6 @@ func _choirmother(_player: Player, to_player: Vector2, dist: float) -> Vector2:
 			for spread in spreads:
 				_bolt(aim.rotated(spread) * _aimed_speed(), dmg))
 
-	# Hymn of hunger: a marked strike — and the choir feeds her.
-	# §5.2 FLOOR: the hymn marks a rotating head; nobody kites her for free.
-	if ring_cd <= 0.0:
-		ring_cd = 8.0
-		play_action("cast")
-		_boss_telegraph(_floor_target().global_position, 90.0, 0.62, dmg * 1.3, {"color": BLIGHT})
-		hp = minf(max_hp, hp + max_hp * 0.02)
-		game.spawn_text(global_position + Vector2(0, -70), "the choir feeds her", Color(0.8, 0.5, 1.0))
-
 	# Blink away from blades, like her predecessor.
 	if dist < 160.0 and blink_cd <= 0.0:
 		blink_cd = 3.2
@@ -941,6 +1056,15 @@ func _choirmother(_player: Player, to_player: Vector2, dist: float) -> Vector2:
 		return Vector2.ZERO
 
 	return _caster_move(to_player, dist, 250.0, 360.0)
+
+
+func _hymn_of_hunger() -> void:
+	play_action("cast")
+	_boss_telegraph(_floor_target().global_position, Balance.BOSS_HUNGER_RADIUS,
+		Balance.BOSS_HUNGER_DELAY, dmg * Balance.BOSS_HUNGER_DAMAGE,
+		{"color": Color(0.8, 0.4, 1.0, 0.55)})
+	hp = minf(max_hp, hp + max_hp * Balance.BOSS_HUNGER_HEAL)
+	game.spawn_text_all(global_position + Vector2(0, -70), "the choir feeds her", Color(0.8, 0.5, 1.0))
 
 
 func _requiem() -> void:
@@ -1212,11 +1336,12 @@ func _vess(player: Player, to_player: Vector2, dist: float) -> Vector2:
 	# Signature: THE SILENCE — find the quiet circle before the wail.
 	if special_cd <= 0.0:
 		special_cd = 7.0 if enraged else 9.0
-		_silence(player)
+		_begin_signature()
 		# Composition rule (2026-07-07): the 12-bolt ring never fires
 		# while a Silence is airborne — running to shelter THROUGH a
 		# bolt wall was a forced trade, not a test.
-		ring_cd = maxf(ring_cd, 2.4)
+		ring_cd = maxf(ring_cd, cast_window.duration + Balance.BOSS_SILENCE_RING_GRACE)
+		return Vector2.ZERO
 
 	# Grief fan: 3 bolts now, and the memory of them 0.8s later.
 	# §5.2 floor (alternate): every other fan grieves at a non-target.
@@ -1562,6 +1687,10 @@ func _arena_rect() -> Rect2:
 
 ## Is the boss standing in a lava patch (its own vents, or the arena)?
 func _on_lava() -> bool:
+	if pocket_boss and game.pocket_id == "molten_court":
+		var trial := preload("res://scripts/pocket_trial.gd").find(game, zone_idx)
+		if trial != null and trial.phase == 2 and trial.hot_rect().has_point(global_position):
+			return true  # the warned floor is also the player's armor-melting tool
 	for h in game.hazards:
 		if String(h.get("type", "")) != "lava":
 			continue
@@ -2308,7 +2437,8 @@ func _sleepkeeper(player: Player, to_player: Vector2, dist: float, delta: float)
 	# its running room shrunk, not just the one she watches.
 	if special_cd <= 0.0:
 		special_cd = 7.0 if enraged else 10.0
-		_frost_hymnal(_floor_target())
+		_begin_signature()
+		return Vector2.ZERO
 
 	# §5.2 floor (alternate): her lull-bolts poke a non-target too.
 	if ability_cd <= 0.0:
@@ -2544,7 +2674,8 @@ func _gardener(player: Player, to_player: Vector2, dist: float, delta: float) ->
 	# Signature: VINE LASH — root the player inside a closing ring.
 	if special_cd <= 0.0:
 		special_cd = 7.0 if full_bloom else 10.0
-		_vine_lash(player)
+		_begin_signature()
+		return Vector2.ZERO
 
 	# Spore volley. §5.2 floor (alternate): every other volley drifts at a
 	# rotating non-target — the garden reaches for everyone.

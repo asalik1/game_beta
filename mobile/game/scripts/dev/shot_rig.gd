@@ -230,12 +230,33 @@ func spawn_enemy(kind: String, pos: Vector2, immortal: bool = true) -> Enemy:
 
 # ---------------------------------------------------------------- shots ----
 
+## HDR2D readback is linear, unlike the image the window displays. Convert
+## only HDR renderer captures; Compatibility's LDR image is already sRGB.
+## Godot 4.4 ViewportTexture documentation explicitly requires this step.
+func capture_image() -> Image:
+	var img := get_viewport().get_texture().get_image()
+	if get_viewport().use_hdr_2d and RenderingServer.get_current_rendering_method() != "gl_compatibility":
+		# Keep float precision through the transfer function. Converting to
+		# RGBA8 first crushes near-black panels into coarse colored bands.
+		img.convert(Image.FORMAT_RGBAF)
+		var samples := img.get_data().to_float32_array()
+		var encoded := PackedByteArray()
+		encoded.resize(samples.size())
+		for i in range(0, samples.size(), 4):
+			var srgb := Color(samples[i], samples[i + 1], samples[i + 2], samples[i + 3]).linear_to_srgb()
+			encoded[i] = clampi(roundi(srgb.r * 255.0), 0, 255)
+			encoded[i + 1] = clampi(roundi(srgb.g * 255.0), 0, 255)
+			encoded[i + 2] = clampi(roundi(srgb.b * 255.0), 0, 255)
+			encoded[i + 3] = clampi(roundi(srgb.a * 255.0), 0, 255)
+		img = Image.create_from_data(img.get_width(), img.get_height(), false, Image.FORMAT_RGBA8, encoded)
+	return img
+
 ## Save the viewport to `user://shots/<rig>/<name>.png`; returns the absolute
 ## path. `extra` is appended to the diagnostic line (rig-specific state).
 func shot(name: String, extra: String = "") -> String:
 	var dir := ProjectSettings.globalize_path(shot_dir)
 	DirAccess.make_dir_recursive_absolute(dir)
-	var img := get_viewport().get_texture().get_image()
+	var img := capture_image()
 	var path := "%s/%s.png" % [dir, name]
 	img.save_png(path)
 	shots_taken += 1

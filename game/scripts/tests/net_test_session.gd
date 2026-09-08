@@ -1776,7 +1776,7 @@ func _run_host8() -> void:
 	game.add_child(fboss)
 	await _frames(2)
 	fboss.take_damage(9.9e9)
-	# Skip the host's epilogue beat to reach end_it (the victory finalize).
+	# Read the host's own illustrated ending before probing the guest's card.
 	if not await _wait_for(func() -> bool:
 			return game.state == game.ST_VICTORY or game.hud.dialogue_active,
 			STEP_TIMEOUT, "host reaching victory/epilogue"):
@@ -2280,6 +2280,10 @@ func _mirror_of(sess: Node, id: int) -> Enemy:
 ## key intents. "strike" re-taps on a miss so one landed hit is certain.
 func _watch_setup(sess: Node, what: String, args: Dictionary) -> void:
 	match what:
+		"victory":
+			# MP-24: the guest owns an illustrated ending too. Act as this
+			# reader before probing its results, just as the host does above.
+			await _skip_story()
 		"chat_last":
 			# Stage 14: record every incoming line BEFORE the host speaks.
 			if not sess.chat_line.is_connected(_on_chat14):

@@ -1173,6 +1173,9 @@ const CONTENT_MODULES: Array = [
 	preload("res://scripts/content/pvp_arena.gd"),      # The Proving Grounds (PvP v1 2026-08-01): 3-room duel arena — no CONVOS/ENEMIES; CHAPTER resolved in chapter(), match flow in pvp.gd
 	preload("res://scripts/content/interlude_moonfen.gd"), # (Q13 I2) The Moonfen interlude: STANDALONE world + first_howl boss (band-read); merges into STANDALONE_WORLDS, kept out of CHAPTER_LIST
 	preload("res://scripts/content/eggs.gd"),           # Easter eggs (DYNAMIC_WORLD §8): flag-gated flavor; no overrides, so position is free
+	preload("res://scripts/content/fishing_bank.gd"),   # Stillwater Reach, near Emberfall; personal fishing journal
+	preload("res://scripts/content/ward_vigil.gd"),     # optional tower defense and Mara's promise
+	preload("res://scripts/content/wayfarer.gd"),       # Tovin's physical road escort
 	preload("res://scripts/content/promises_kept.gd"),  # (P1) promises kept — overrides chN_quests convos
 	preload("res://scripts/content/promises_kept_2.gd"),# (P2) promises kept, 2nd pass — MUST stay LAST (after P1: no override fight)
 ]

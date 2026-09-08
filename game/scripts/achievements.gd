@@ -14,6 +14,10 @@ class_name Achievements
 const DEFAULT_PTS := 10
 
 const DATA := {
+	"road_company": {"name": "One More Mile", "desc": "Walk Tovin safely to the fire in Village Outskirts.", "pts": 10},
+	"lamplighter":   {"name": "Lamplighter", "desc": "Hold all three waves at the Collapsed Tower ward.", "pts": 20},
+	"first_fish":     {"name": "A Quiet Moment", "desc": "Record your first river fish."},
+	"riverkeeper":    {"name": "Riverkeeper", "desc": "Catch and release all four river species.", "pts": 20},
 	"first_boss":     {"name": "First Blood", "desc": "Defeat your first boss."},
 	"flawless":       {"name": "Untouchable", "desc": "Defeat a boss without taking a single hit.", "pts": 20},
 	"no_potion_boss": {"name": "Iron Discipline", "desc": "Defeat a boss without drinking a potion."},
@@ -55,7 +59,7 @@ const DATA := {
 }
 
 ## Display order (registry dicts don't guarantee it).
-const ORDER := ["first_boss", "flawless", "no_potion_boss", "boss_hunter",
+const ORDER := ["first_fish", "riverkeeper", "lamplighter", "first_boss", "flawless", "no_potion_boss", "boss_hunter",
 	"s_gear", "gem_max", "wealthy", "level_20", "level_40", "streak_7",
 	"clear_ch1", "clear_ch2", "clear_ch3"]
 
@@ -91,6 +95,12 @@ const TRACK_ORDER := ["kills", "bosses", "lore", "clears", "depth"]
 # game pays out in identity. game.title_available(id) checks them.
 
 const TITLES := {
+	"road_companion": {"name": "the Road Companion", "req_ach": "road_company",
+		"how": "Walk Tovin safely to the fire in Village Outskirts."},
+	"lamplighter": {"name": "the Lamplighter", "req_ach": "lamplighter",
+		"how": "Defend the old ward at the Collapsed Tower through three waves."},
+	"riverkeeper": {"name": "the Riverkeeper", "req_ach": "riverkeeper",
+		"how": "Catch and release all four river species."},
 	"wanderer":    {"name": "the Wanderer",       "req_pts": 0,
 		"how": "Free for every bearer — the road makes no demands."},
 	"slayer":      {"name": "the Slayer",         "req_pts": 30,
@@ -107,5 +117,5 @@ const TITLES := {
 		"how": "Earn 100 achievement points."},
 }
 
-const TITLE_ORDER := ["wanderer", "slayer", "untouchable", "devoted",
+const TITLE_ORDER := ["wanderer", "riverkeeper", "lamplighter", "road_companion", "slayer", "untouchable", "devoted",
 	"lorekeeper", "reaper", "legend"]

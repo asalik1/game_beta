@@ -1,11 +1,61 @@
 # MULTIPLAYER.md — Crownless 4-Player Co-op: Design & Architecture
 
+**Personal history (2026-09-08, build 0.3.11):** character history is saved and
+restored separately from host world flags, before NPC construction and after
+full load. Host snapshots omit personal flags and per-head cache/shrine claims;
+guests apply the same filter. First-clear rewards reserve payment before the
+later victory message. Old saves recover their own history and clear-achievement
+evidence; explicit empty records remain authoritative. Both peers must update:
+older clients cannot restore personal history from the corrected snapshot.
+[Implementation and validation](PERSONAL_HISTORY.md).
+
+**Earned spoils (2026-09-08):** uncollected chest contents and coins persist in the
+owning character section, including character-only guest/endgame home saves.
+Resume recovers personal items to mail and credits already-scaled coin value;
+restoring also retires old local sources. Foreign chests and temporary Gold Rush
+coins are excluded. No new RPC or protocol revision. [Details](RECOVERED_SPOILS.md).
+
+**Portal trials (2026-09-08, 0.3.10):** entry and exit are personal movement through stable shared stones. The host owns the floor clock and guardian completion; existing hit delivery applies heat on each owner. Clock snapshots cache before lazy arena construction. Join snapshots include completion and the return point. Settlement pays present participants once; absent guests receive world completion without the reward. [Current implementation](POCKET_TRIALS.md).
+
+
+**Road escort (2026-09-08, build 0.3.9):** Tovin's host-owned movement, wait/follow/stop, warnings, resolve and join refresh use the new escort RPCs. Action requests validate the player, room and reach; guests interpolate position and cannot submit completion. See [ONE_MORE_MILE.md](ONE_MORE_MILE.md).
+**Ward vigil protocol, 2026-09-08 (0.3.8):** the host owns optional defense
+waves and integrity. Guests send validated start/stop intent; reliable 5 Hz
+updates and the ready handshake carry the live ward, including arrival tells.
+`ward_*` completion flags cannot be authored by a guest. Quarry identity now
+rides enemy spawn descriptions so cleared-room exit rules agree across peers.
+See [WARD_VIGILS.md](WARD_VIGILS.md).
+
 *Written 2026-07-09. Planning document — no code has been changed. This is the blueprint for adding
 opt-in online co-op (2–4 players clearing chapters together) while leaving solo untouched.*
 
 ---
 
 ## 0. Decisions at a glance
+
+**Exploration and sanctuary (2026-09-07):** tracked quest selection is a character save field. Guidance reads the local map and shared completion flags. Rescue marks use the existing personal `sq_kept_` prefix, remain per-hero, and grant account cosmetics through the ownership ledger. Each party member can rescue their own creature; no new RPC or protocol revision. Overlay cancellation works with an unpaused shared world. See [SMALL_MERCIES.md](SMALL_MERCIES.md).
+
+**Reactive terrain (2026-09-07, build 0.3.7):** marked casks/crystals use host
+authority for priming, chains, blast damage and chill. Guests request an object
+key/mode; the host validates the resolved player's room and reach. Existing
+owner damage/status delivery handles friendly fire. A reliable event mirrors
+the fuse/spent state, and join-ready refreshes consumption after world building.
+Settled join states are quiet. A two-peer, single-engine ENet rig checks the
+production request and receiver with distinct host and presentation worlds.
+See [REACTIVE_TERRAIN.md](REACTIVE_TERRAIN.md).
+
+**Controller adapter (2026-09-07):** gamepad state merges into the existing
+local intents and buffered ability edges; target flicks use the same combat
+candidate set. No new packet, RPC or network version. Overlay gates hold while
+the world runs; returning to combat requires releasing held controls. L3 opens
+party chat with a local text keyboard. See [CONTROLLER.md](CONTROLLER.md).
+
+**Stillwater fishing (2026-09-07, build 0.3.5):** the added campaign room
+requires matching builds, enforced by the existing join-version check. Fishing
+adds no RPC or shared-world claim. Each client's catch journal travels in its
+character save, including guest take-home writes. Menus remain live in co-op;
+nearby enemies block casting and damage/room changes cancel the local overlay.
+The fishing rig exercises those overlay gates; it is not a multi-client soak.
 
 | Question | Decision |
 |---|---|
@@ -212,6 +262,14 @@ a deliberate scoping decision. It eliminates prediction/reconciliation entirely 
 netcode) and its only cost is cheat-resistance — irrelevant in invite-only PvE with friends. The
 authority *boundaries* are still drawn in the server-authoritative shape, so tightening any row of
 the table later (for public matchmaking or the MMO) is a policy change per row, not a redesign.
+
+**Target combat cues (2026-09-07):** bits 5–7 of the existing enemy-state flags
+byte carry one prioritized tactical cue (reflect/counter/heal/pounce/exposed/
+ward/plate); each record remains 14 bytes. The reliable spawn block carries the
+same optional `cue` field. Guests display the host's cue and never infer it from
+their unsimulated AI timers. Existing low-bit flags and HP encoding are unchanged;
+missing cues default to none. Input buffering remains owner-side and clears on
+overlays and focus loss, including sessions whose world does not pause.
 
 ### 4.2 RNG policy
 
@@ -625,3 +683,23 @@ session, owner-applied damage). No new netcode class — the duel is a mode ON t
 scene-replication announcement, noray + netfox repos and docs (foxssake), GodotSteam 4.16+ release
 notes and MultiplayerPeer changelog, godotengine.org/license, Microsoft SmartScreen/Artifact-Signing
 docs, KinematicSoup & Edgegap netcode-bandwidth references. Verified 2026-07-09.*
+
+## Signature interrupts (2026-09-07)
+
+`NET_VERSION` is **0.3.6**: the reliable authority-only `_rpc_boss_cast` adds
+cast name/state, remaining windup, pressure goal/progress and break recovery /
+exposure clocks. Host updates at 10 Hz while active and immediately on state
+transitions. Enemy spawn snapshots also carry the cast, including late joins.
+The existing 14-byte enemy movement packet and three-bit combat cues are unchanged.
+
+Only authoritative, attributed HP loss builds pressure. Guest optimistic damage
+never cancels a cast; the existing hit funnel applies the guest's blow on the host.
+Periodic damage contributes through its source, with reduced pressure. The goal
+uses the boss's already party-scaled max HP, so everyone contributes to one bar.
+Both host damage and guest optimistic presentation apply the same exposed bonus;
+the raw guest damage sent to the host stays unamplified to avoid double billing.
+
+A lightweight two-peer ENet fixture in `shot_boss_cast` uses the production RPC
+and spawn receiver in one engine process. It covers progress, break, reset,
+joining during a windup, and a real guest hit breaking the host cast with the
+exposed multiplier applied exactly once. This is scoped protocol proof, not a full party soak.

@@ -202,6 +202,10 @@ static func _scoped_quest_section(m: Menus, list: VBoxContainer, scope: String,
 			entries.append([String(id), q])
 	if entries.is_empty():
 		return
+	entries.sort_custom(func(a: Array, b: Array) -> bool:
+		var ar := 2 if g.get_flag("sq_paid_" + String(a[0]), false) else (0 if g.player.tracked_quest == String(a[0]) else 1)
+		var br := 2 if g.get_flag("sq_paid_" + String(b[0]), false) else (0 if g.player.tracked_quest == String(b[0]) else 1)
+		return ar < br if ar != br else String(a[1].name) < String(b[1].name))
 	_section(m, list, title, count_fmt % [
 		entries.size(), "" if entries.size() == 1 else "s"], color)
 	for entry in entries:
@@ -222,6 +226,12 @@ static func _quest_card(m: Menus, list: VBoxContainer, id: String, q: Dictionary
 		return
 	var desc := m._lbl(card, String(q.get("desc", "")), 13, BODY)
 	_wrap(desc)
+	var tracked: bool = g.player.tracked_quest == id
+	var track_button := m._btn(card, "◆  Following this quest — stop tracking" if tracked else "◇  Track this quest", func() -> void:
+		g.hud.wayfinder.track("" if tracked else id)
+		m.open_journal("quests"), GOLD)
+	track_button.name = "TrackQuest_" + id
+	track_button.custom_minimum_size.y = 44
 	var steps: Array = q.get("steps", [])
 	var done_steps := 0
 	for step in steps:
@@ -234,11 +244,27 @@ static func _quest_card(m: Menus, list: VBoxContainer, id: String, q: Dictionary
 		var done: bool = g.get_flag(sflag, false)
 		var label := String(step["text"])
 		# KILL steps show live progress (game_base.quest_kills) until done.
-		if not done and String(step.get("kind", "flag")) == "kill":
+		if not done and String(step.get("kind", "flag")) == "kill" and not g.net_guest():
 			label += "  (%d / %d)" % [int(g.quest_kills.get(sflag, 0)),
 				maxi(1, int(step.get("count", 1)))]
-		m._lbl(card, "%s  %s" % ["✓" if done else "◇", label],
+		var objective := m._lbl(card, "%s  %s" % ["✓" if done else "◇", label],
 			13, GREEN if done else Color(0.9, 0.85, 0.7))
+		_wrap(objective)
+	var reward: Dictionary = q.get("reward", {})
+	var rewards: Array[String] = []
+	if int(reward.get("gold", 0)) > 0:
+		rewards.append("%d gold" % int(ceil(float(reward.gold) * Balance.daily_gold_mult(g.player.level))))
+	if reward.has("item"):
+		rewards.append("equipment")
+	if reward.has("gem"):
+		rewards.append("a gem")
+	if reward.has("keepsake"):
+		rewards.append(String(reward.keepsake.get("name", "a keepsake")))
+	if reward.has("kept"):
+		rewards.append("a lasting promise")
+	if not rewards.is_empty():
+		var preview := m._lbl(card, "Reward · " + " + ".join(rewards), 12, GOLD)
+		_wrap(preview)
 	if show_deadline:
 		m._lbl(card, "⌛  Chapter deadline  ·  finish before the final boss",
 			12, Color(0.98, 0.7, 0.42))
@@ -265,6 +291,10 @@ static func _available_quests(m: Menus, list: VBoxContainer) -> void:
 # ---------------------------------------------------------- ACTIVITIES ---
 
 static func _activities(m: Menus, list: VBoxContainer) -> void:
+	var wildlife := preload("res://scripts/wildlife.gd")
+	_section(m, list, "SMALL MERCIES", "%d / %d creatures rescued" % [wildlife.count(m.game), wildlife.SITES.size()], GREEN)
+	var sanctuary_button := m._btn(list, "Visit the sanctuary collection", func() -> void: preload("res://scripts/ui/sanctuary.gd").open(m), GREEN)
+	sanctuary_button.custom_minimum_size.y = 44
 	_contracts(m, list)
 	_bounties(m, list)
 	_vault(m, list)

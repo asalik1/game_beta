@@ -80,6 +80,7 @@ const READY_TIMEOUT := 20.0
 ## (damage) sends immediately so shell bars and host-side AI reads never
 ## trail a fight by more than a beat.
 const VITALS_EVERY := 0.5
+const Appearance := preload("res://scripts/net/net_appearance.gd")
 
 ## The Game instance (set by game.gd _ready). The setter hooks the game's
 ## direct children so every Chest — ANY spawn site, chest.gd untouched —
@@ -129,6 +130,8 @@ var last_ally_dmg := {}
 ## MP-10: what this machine last broadcast for its OWN player's vitals.
 var _vitals_sent := {}
 var _vitals_accum := 0.0
+var _appearance_sent := {}
+var _appearance_accum := 0.0
 ## Battle-stats sync cadence (guest report up / host table fan down, ~1 Hz).
 var _stats_accum := 0.0
 var _status_throttle := {}  # "pid:kind" -> last send ms (per-frame chill refresh)
@@ -319,8 +322,11 @@ func _send_snapshot(id: int) -> void:
 	_rpc_world_snapshot.rpc_id(id, {
 		"chapter": game.chapter_id,
 		"wander_seed": game.wander_seed,
-		"flags": game.flags,
+		"flags": SaveGame.History.world_only(game.flags),
 		"spawn_room": game.cur_room,
+		"pocket_done": game.pocket_done,
+		"pocket_origin": game.pocket_origin,
+		"pocket_origin_offset": [game.pocket_origin_offset.x, game.pocket_origin_offset.y],
 		# Wave-1 co-op fix: boss_done gates the chapter-blocking "boss" edge
 		# locks — ship it so a late joiner's already-cleared arenas build/leave
 		# their gates OPEN (applied before the post-rebuild _recheck_gates below).
@@ -372,10 +378,22 @@ func _rpc_world_snapshot(snap: Dictionary) -> void:
 	var g: Node = game
 	var p: Node = g.local_player
 	p.peer_id = multiplayer.get_unique_id()
+	# switch_chapter enters a room and autosaves synchronously. Hold ALL writes
+	# until both the host world and our own character have been restored, and
+	# establish character-only routing before that first room can be built.
+	var was_restoring: bool = g.restoring_save
+	g.restoring_save = true
+	g.guest_world = true
 	# The world: seed first, then the same rebuild a load performs.
 	g.wander_seed = int(snap.get("wander_seed", 0))
+	# Resolve the guest's OWN durable history before any host-flag-driven
+	# construction. Full character application stays after the world rebuild.
+	var slot: int = int(local_char.get("slot", 0))
+	var own_data: Dictionary = SaveGame.read(slot) if slot > 0 else {}
+	var own_character: Dictionary = SaveGame.character_of(own_data)
+	var own_history: Dictionary = SaveGame.History.clean(own_character.get("history_flags", SaveGame.History.clean(g.flags)))
 	var fl: Dictionary = snap.get("flags", {})
-	g.flags = fl.duplicate()
+	g.flags = SaveGame.History.merge(SaveGame.History.world_only(fl), own_history)
 	g.switch_chapter(String(snap.get("chapter", "ch1")), true)
 	# Wave-1 co-op fix: switch_chapter CLEARS boss_done + merchant_zones, so
 	# restore the host's from the snapshot right after the rebuild — BEFORE the
@@ -386,6 +404,7 @@ func _rpc_world_snapshot(snap: Dictionary) -> void:
 	g.boss_done = bd.duplicate()
 	var mz: Array = snap.get("merchant_zones", [])
 	g.merchant_zones = mz.duplicate()
+	SaveGame.restore_pocket(g, snap)
 	# A weekly-run host briefs the guest (MP-15 finding): weekly_fx and the
 	# journal read these — set AFTER switch_chapter, which never clears them.
 	g.weekly_active = bool(snap.get("weekly_active", false))
@@ -403,14 +422,11 @@ func _rpc_world_snapshot(snap: Dictionary) -> void:
 	# touches the host's, and ground-drop positions from another geometry
 	# are never spawned here — they ride to the mailbox instead. The dev
 	# CLI (--mp-join) still rides the minimal {cls, level} block below.
-	var slot: int = int(local_char.get("slot", 0))
 	var applied := false
-	if slot > 0:
-		var data: Dictionary = SaveGame.read(slot)
-		if not data.is_empty():
-			g.save_slot = slot  # autosaves write the character home (§5.7)
-			SaveGame.apply_character(g, SaveGame.character_of(data), false)
-			applied = true
+	if slot > 0 and not own_data.is_empty():
+		g.save_slot = slot  # autosaves write the character home (§5.7)
+		SaveGame.apply_character(g, own_character, false)
+		applied = true
 	if not applied:
 		var cls := String(local_char.get("cls", p.cls))
 		if p.cls != cls:
@@ -428,6 +444,8 @@ func _rpc_world_snapshot(snap: Dictionary) -> void:
 	g.request_pause(false)
 	g.hud.visible = true
 	world_ready = true
+	g.restoring_save = was_restoring
+	g.autosave()  # bank the fully restored character/portable spoils, with its home world intact
 	# Readiness confirmed — only now does spawning proceed (§4.1).
 	_rpc_join_ready.rpc_id(1, _char_block())
 	session_started.emit()  # the lobby wait screen closes itself on this
@@ -443,6 +461,7 @@ func _rpc_join_ready(block: Dictionary) -> void:
 	var pid := multiplayer.get_remote_sender_id()
 	if pid <= 0 or not (pid in _net().peers):
 		return
+	block = Appearance.character(block)
 	# The newcomer learns the roster so far: the host's player (a DEDICATED
 	# server has no body — nothing of peer 1 to brief)...
 	if game.local_player != null and is_instance_valid(game.local_player):
@@ -454,6 +473,22 @@ func _rpc_join_ready(block: Dictionary) -> void:
 			_rpc_spawn_player.rpc_id(int(q), pid, block)
 	peer_chars[pid] = block
 	_spawn_remote(pid, block)
+	var vigil := preload("res://scripts/ward_vigil.gd").find(game)
+	if vigil != null:
+		_send_vigil_state(vigil, pid)
+	var escort := preload("res://scripts/wayfarer.gd").find(game)
+	if escort != null:
+		_send_escort_state(escort, pid)
+	for hunt in get_tree().get_nodes_in_group("road_hunts"):
+		if hunt.game == game and not hunt.is_queued_for_deletion():
+			host_road_hunt_state(hunt, pid)
+	var trial := preload("res://scripts/pocket_trial.gd").find(game, game.pocket_room)
+	if trial != null:
+		host_pocket_state(trial, pid)
+	# Refresh consumption and live fuses after the guest's world build.
+	for prop in get_tree().get_nodes_in_group("reactive_terrain"):
+		if prop.game == game and prop.phase > 0 and not prop.is_queued_for_deletion():
+			_rpc_terrain_state.rpc_id(pid, game.chapter_id, prop.key, prop.phase, prop.remaining, true)
 	# MP-09: brief the newcomer about every LIVE enemy standing in the
 	# world (the ongoing spawn events cover everything after this line;
 	# the dupe guard in _rpc_spawn_enemy absorbs the overlap window).
@@ -467,8 +502,9 @@ func _rpc_join_ready(block: Dictionary) -> void:
 ## EVERYONE: peer pid's player exists — spawn its presentation body.
 @rpc("authority", "call_remote", "reliable")
 func _rpc_spawn_player(pid: int, block: Dictionary) -> void:
-	if game == null:
+	if game == null or pid == multiplayer.get_unique_id() or pid <= 0:
 		return
+	block = Appearance.character(block)
 	peer_chars[pid] = block
 	_spawn_remote(pid, block)
 
@@ -484,6 +520,7 @@ func _spawn_remote(pid: int, block: Dictionary) -> void:
 		return
 	var p := Player.new()
 	p.game = game
+	p._net_mgr = _net()
 	p.peer_id = pid
 	p.name = "NetPlayer%d" % pid
 	p.set_multiplayer_authority(pid)
@@ -516,6 +553,7 @@ func _spawn_remote(pid: int, block: Dictionary) -> void:
 	if nm.length() > 64:
 		nm = nm.substr(0, 64)
 	p.set_meta("net_name", nm)
+	Appearance.apply_remote(game, pid, block.get("appearance"))
 
 
 ## The character block this machine announces to the session (MP-08):
@@ -533,9 +571,57 @@ func _char_block() -> Dictionary:
 		return {"cls": String(p.cls), "level": int(p.level), "name": nm,
 			"hp": float(p.hp), "max_hp": float(p.max_hp),
 			"mp": float(p.mp), "max_mp": float(p.max_mp),
-			"crit": float(p.crit), "crit_dmg": float(p.crit_dmg)}
-	return {"cls": String(local_char.get("cls", "warrior")),
-		"level": int(local_char.get("level", 1)), "name": nm}
+			"crit": float(p.crit), "crit_dmg": float(p.crit_dmg),
+			"appearance": Appearance.from_player(p)}
+	return Appearance.character({"cls": String(local_char.get("cls", "warrior")),
+		"level": int(local_char.get("level", 1)), "name": nm})
+
+
+## Reliable, change-only identity. Sampling also catches save-field assignments.
+## Guest readiness orders this AFTER its join block on the reliable channel.
+func _tick_appearance(delta: float, p: Node) -> void:
+	if not multiplayer.is_server() and not world_ready:
+		return
+	_appearance_accum += delta
+	if _appearance_accum < Balance.NET_APPEARANCE_EVERY:
+		return
+	_appearance_accum = fmod(_appearance_accum, Balance.NET_APPEARANCE_EVERY)
+	var value := Appearance.from_player(p)
+	if value == _appearance_sent:
+		return
+	_appearance_sent = value
+	if multiplayer.is_server():
+		_rpc_appearance.rpc(multiplayer.get_unique_id(), value)
+	else:
+		_rpc_request_appearance.rpc_id(1, value)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_request_appearance(raw: Variant) -> void:
+	if not multiplayer.is_server() or game == null:
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if pid <= 0 or not _net().peers.has(pid) or not peer_chars.has(pid):
+		return
+	# Normalize against the admitted shell's class, never a claimed wire class.
+	for p in game.players:
+		if is_instance_valid(p) and p != game.local_player and p.peer_id == pid:
+			var value := Appearance.normalize(String(p.cls), raw)
+			if peer_chars[pid].get("appearance") == value:
+				return
+			if Appearance.apply_remote(game, pid, value):
+				peer_chars[pid]["appearance"] = value
+				_rpc_appearance.rpc(pid, value)
+			return
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_appearance(pid: int, raw: Variant) -> void:
+	if game == null or pid == multiplayer.get_unique_id() or not peer_chars.has(pid):
+		return
+	var value := Appearance.normalize(String(peer_chars[pid].get("cls", "warrior")), raw)
+	if Appearance.apply_remote(game, pid, value):
+		peer_chars[pid]["appearance"] = value
 
 
 # -------------------------------------------------------- peer lifecycle ---
@@ -614,6 +700,7 @@ func _on_session_ended(reason: String) -> void:
 				and game.local_player != null and is_instance_valid(game.local_player) \
 				and not game.local_player.dead:
 			SaveGame.write_character_home(game, game.save_slot)
+		game.chapter_finale.cancel(game)
 		for id in peer_chars:
 			game.unregister_player(int(id))
 	peer_chars.clear()
@@ -646,6 +733,8 @@ func _on_session_ended(reason: String) -> void:
 	_dmg_fan.clear()  # MP-14: no session, no ally-number fan
 	_vitals_sent = {}
 	_vitals_accum = 0.0
+	_appearance_sent = {}
+	_appearance_accum = 0.0
 	_stats_accum = 0.0
 	if game != null:
 		game.party_stats_net.clear()  # no session, no host table to mirror
@@ -693,6 +782,7 @@ func _physics_process(delta: float) -> void:
 	if has_p:
 		_watch_guest_death()
 		_tick_vitals(delta, p)
+		_tick_appearance(delta, p)
 	# MP-12: the host's ghost-revive / wipe sweep (rate-limits itself).
 	if multiplayer.is_server():
 		_down_sweep_t += delta
@@ -825,7 +915,9 @@ func _spawn_block(e: Enemy) -> Dictionary:
 	return {"id": e.net_id, "kind": e.kind, "level": e.level,
 		"zone": e.zone_idx, "pos": e.global_position, "elite": e.elite,
 		"boss": e is Boss, "hp": clampf(e.hp / maxf(e.max_hp, 0.001), 0.0, 1.0),
-		"gold": e.gold_value, "plated": e.plate_dr > 0.0, "size": e.size_var}
+		"gold": e.gold_value, "plated": e.plate_dr > 0.0, "size": e.size_var, "quarry": e.from_quest,
+		"cue": preload("res://scripts/combat_cues.gd").code_for(e),
+		"cast": e.cast_window.snapshot() if e is Boss else {}}
 
 
 ## HOST: a registered enemy died a REAL death (Enemy.die) — guests play
@@ -875,14 +967,19 @@ func _on_host_enemy_gone(id: int) -> void:
 ## per enemy: net_id u32 | pos x f32 | pos y f32 | flags u8 (bit0 flip,
 ## bit1 walking, bit2 untargetable — burrow/submerge/blink phases gate
 ## guest auto-aim; bit3 hidden — Wave-2 fix #1 sprite invisible; bit4
-## plated — Wave-2 fix #3 cinderhide plate wall up; bits 5-7 free) | hp u8
+## plated — Wave-2 fix #3 cinderhide plate wall up; bits 5-7 combat cue) | hp u8
 ## (fraction x255) = 14 bytes; a 40-enemy worst case is ~560 B (§4.1 budget).
 func _stream_enemy_state() -> void:
+	var data := _enemy_state_packet()
+	if not data.is_empty():
+		_rpc_enemy_state.rpc(data)
+
+
+func _enemy_state_packet() -> PackedByteArray:
 	if net_enemies.is_empty():
-		return
+		return PackedByteArray()
 	var buf := StreamPeerBuffer.new()
 	var stale: Array = []
-	var n := 0
 	for id in net_enemies:
 		var e: Enemy = net_enemies[id]
 		if e == null or not is_instance_valid(e):
@@ -910,13 +1007,12 @@ func _stream_enemy_state() -> void:
 		# raises plate_dr, so ship the bit and let net_set_plated match the cut.
 		if e.plate_dr > 0.0:
 			flags |= 16
+		flags |= preload("res://scripts/combat_cues.gd").code_for(e) << 5
 		buf.put_u8(flags)
 		buf.put_u8(int(clampf(e.hp / maxf(e.max_hp, 0.001), 0.0, 1.0) * 255.0))
-		n += 1
 	for id in stale:
 		net_enemies.erase(id)
-	if n > 0:
-		_rpc_enemy_state.rpc(buf.data_array)
+	return buf.data_array
 
 
 ## GUEST: build the mirror. Real Enemy.make/Boss.make_boss construction,
@@ -952,6 +1048,7 @@ func _rpc_spawn_enemy(block: Dictionary) -> void:
 	e.net_mirror = true
 	e.net_id = id
 	e.zone_idx = int(block.get("zone", -1))
+	e.from_quest = bool(block.get("quarry", false))
 	e.gold_value = int(block.get("gold", e.gold_value))
 	# MP-10: mirrors keep the enemy LAYER bit (solo enemies live on layer
 	# 4) so a guest's friendly projectiles detect them and its player
@@ -962,9 +1059,10 @@ func _rpc_spawn_enemy(block: Dictionary) -> void:
 	if bool(block.get("elite", false)):
 		e.promote_elite()
 	e.net_apply_state(pos, false, false, clampf(float(block.get("hp", 1.0)), 0.0, 1.0),
-		false, false, bool(block.get("plated", false)))
+		false, false, bool(block.get("plated", false)), int(block.get("cue", 0)))
 	net_enemies[id] = e
 	if e is Boss:
+		e.net_apply_cast(block.get("cast", {}))
 		# The per-frame boss bar (game.gd) reads this roster — a live
 		# boss mirror shows/updates the bar exactly like the host's own.
 		game.bosses.append(e)
@@ -979,6 +1077,10 @@ func _rpc_spawn_enemy(block: Dictionary) -> void:
 func _rpc_enemy_state(data: PackedByteArray) -> void:
 	if game == null or multiplayer.is_server():
 		return
+	_apply_enemy_state_packet(data)
+
+
+func _apply_enemy_state_packet(data: PackedByteArray) -> void:
 	var buf := StreamPeerBuffer.new()
 	buf.data_array = data
 	while buf.get_available_bytes() >= 14:
@@ -991,7 +1093,7 @@ func _rpc_enemy_state(data: PackedByteArray) -> void:
 		if e == null or not is_instance_valid(e) or e.dying:
 			continue
 		e.net_apply_state(Vector2(px, py), (flags & 1) != 0, (flags & 2) != 0,
-			frac, (flags & 4) != 0, (flags & 8) != 0, (flags & 16) != 0)
+			frac, (flags & 4) != 0, (flags & 8) != 0, (flags & 16) != 0, (flags >> 5) & 7)
 
 
 ## GUEST: the original died — die juice on the mirror, then free.
@@ -1069,6 +1171,19 @@ func _guest_boss_gone() -> void:
 # (pulse, boss-specific falling objects, beacons, decoys, dread ramp), zero damage.
 
 ## HOST -> GUESTS: a danger telegraph formed (game_base.telegraph).
+func host_boss_cast(id: int, data: Dictionary) -> void:
+	_rpc_boss_cast.rpc(id, data)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_boss_cast(id: int, data: Dictionary) -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	var enemy: Enemy = net_enemies.get(id)
+	if is_instance_valid(enemy) and enemy is Boss and not enemy.dying:
+		enemy.net_apply_cast(data)
+
+
 func host_telegraph(pos: Vector2, radius: float, delay: float, opts: Dictionary) -> void:
 	_rpc_telegraph.rpc(pos, radius, delay, opts)
 
@@ -2179,7 +2294,9 @@ func _host_down_sweep() -> void:
 func _check_wipe() -> void:
 	if game == null or not multiplayer.is_server() or not bool(game.play_started):
 		return
-	if game.state != game.ST_PLAYING:
+	if game.state != game.ST_PLAYING or game.chapter_finale.active:
+		# The final boss can fall to a lingering hit while everyone is down.
+		# That won chapter now belongs to its readers, not the wipe census.
 		return
 	# PVP: a duel death is the CONTROLLER's business (score + round reset) —
 	# the co-op wipe census would respawn-flow a legitimate fall, and a
@@ -2321,6 +2438,8 @@ func _rpc_flag_to_host(flag_name: String, value) -> void:
 	# onto the host. This matches the local route, which only ships world flags.
 	if not _flag_payload_ok(flag_name, value):
 		return
+	if flag_name.begins_with("reactive_") or flag_name.begins_with("ward_") or flag_name.begins_with("escort_"):
+		return  # only the host may consume terrain objects
 	if bool(game.call("_flag_is_local", flag_name)):
 		return
 	game.net_apply_flag(flag_name, value)
@@ -2336,7 +2455,160 @@ func _rpc_set_flag(flag_name: String, value) -> void:
 	game.net_apply_flag(flag_name, value)
 
 
+## Reactive terrain: requests carry identity, never damage or a position.
+func request_terrain_prime(prop_key: String, mode: String) -> void:
+	_rpc_terrain_prime.rpc_id(1, game.chapter_id, prop_key, mode)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_terrain_prime(chapter: String, prop_key: String, mode: String) -> void:
+	if not multiplayer.is_server() or game == null or chapter != game.chapter_id:
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if not pid in _net().peers or not mode in ["interact", "strike"]:
+		return
+	var prop := preload("res://scripts/reactive_terrain.gd").find(game, prop_key)
+	var source := _player_of(pid)
+	if prop != null and source != null:
+		prop.request_prime(source, mode)
+
+
+func host_terrain_state(prop: StaticBody2D) -> void:
+	_rpc_terrain_state.rpc(game.chapter_id, prop.key, prop.phase, prop.remaining)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_terrain_state(chapter: String, prop_key: String, phase: int, fuse: float, quiet := false) -> void:
+	if game == null or multiplayer.is_server() or not world_ready or chapter != game.chapter_id \
+		or not prop_key.begins_with("reactive_" + chapter + "_") or not phase in [1, 2] \
+		or not is_finite(fuse) or fuse < 0.0 or fuse > Balance.REACTIVE_FUSE:
+		return
+	game.net_apply_flag(prop_key, true)
+	var prop := preload("res://scripts/reactive_terrain.gd").find(game, prop_key)
+	if prop != null:
+		prop.apply_state(phase, fuse, quiet)
+
+
 # ---- busy-lock + beat orchestration ----
+
+func request_road_hunt(room: int, token: int, sign: int) -> void:
+	_rpc_road_hunt_request.rpc_id(1, game.chapter_id, game.wander_seed, room, token, sign)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_road_hunt_request(chapter: String, seed: int, room: int, token: int, sign: int) -> void:
+	if not multiplayer.is_server() or game == null or chapter != game.chapter_id or seed != game.wander_seed:
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if not pid in _net().peers:
+		return
+	var hunt := preload("res://scripts/road_hunt.gd").find(game, room)
+	var source := _player_of(pid)
+	if hunt != null and hunt.token == token and source != null:
+		hunt.request(source, sign)
+
+
+func host_road_hunt_state(hunt: Node2D, peer := 0) -> void:
+	if game == null or not multiplayer.is_server():
+		return
+	_rpc_road_hunt_state.rpc_id(peer, game.chapter_id, game.wander_seed, hunt.snapshot())
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_road_hunt_state(chapter: String, seed: int, block: Dictionary) -> void:
+	if game == null or multiplayer.is_server() or not world_ready or chapter != game.chapter_id or seed != game.wander_seed:
+		return
+	preload("res://scripts/road_hunt.gd").receive(game, block)
+
+
+func host_road_hunt_reward(hunt: Node2D) -> void:
+	if game == null or not multiplayer.is_server():
+		return
+	for pid in peer_chars:
+		var source := _player_of(int(pid))
+		if hunt.eligible_recipient(source):
+			_rpc_road_hunt_reward.rpc_id(int(pid), game.chapter_id, game.wander_seed, hunt.zone, hunt.token)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_road_hunt_reward(chapter: String, seed: int, room: int, token: int) -> void:
+	if game == null or multiplayer.is_server() or not world_ready or chapter != game.chapter_id or seed != game.wander_seed:
+		return
+	var hunt := preload("res://scripts/road_hunt.gd").find(game, room)
+	if hunt != null and hunt.token == token and hunt.phase == hunt.COMPLETE:
+		hunt.reward()  # immediate wallet/history update; no physics objects spawned
+
+
+func request_escort(action: String) -> void:
+	_rpc_escort_request.rpc_id(1, game.chapter_id, action)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_escort_request(chapter: String, action: String) -> void:
+	if not multiplayer.is_server() or game == null or chapter != game.chapter_id:
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if not pid in _net().peers or not action in ["start", "wait", "follow", "stop"]:
+		return
+	var v := preload("res://scripts/wayfarer.gd").find(game)
+	var p := _player_of(pid)
+	if v != null and p != null:
+		v.request(p, action)
+
+
+func host_escort_state(v: Node2D) -> void:
+	_send_escort_state(v, 0)
+
+
+func _send_escort_state(v: Node2D, peer: int) -> void:
+	_rpc_escort_state.rpc_id(peer, game.chapter_id, v.phase, v.stage, v.resolve,
+		v.remaining, v.waiting, v.guarded, v.pressure, v.global_position, v.moving, v.arrival_points)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_escort_state(chapter: String, phase: int, stage: int, resolve: float, timer: float,
+		waiting: bool, company: bool, pressure: int, at: Vector2, moving: bool, points: Array) -> void:
+	if game == null or multiplayer.is_server() or not world_ready or chapter != game.chapter_id:
+		return
+	var v := preload("res://scripts/wayfarer.gd").find(game)
+	if v != null:
+		v.apply_state(phase, stage, resolve, timer, waiting, company, pressure, at, moving, points)
+
+
+func request_vigil(action: String) -> void:
+	_rpc_vigil_request.rpc_id(1, game.chapter_id, action)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_vigil_request(chapter: String, action: String) -> void:
+	if not multiplayer.is_server() or game == null or chapter != game.chapter_id:
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if not pid in _net().peers or not action in ["start", "stop"]:
+		return
+	var v := preload("res://scripts/ward_vigil.gd").find(game)
+	var p := _player_of(pid)
+	if v != null and p != null:
+		v.request(p, action)
+
+
+func host_vigil_state(v: Node2D) -> void:
+	_send_vigil_state(v, 0)
+
+
+func _send_vigil_state(v: Node2D, peer: int) -> void:
+	_rpc_vigil_state.rpc_id(peer, game.chapter_id, v.phase, v.wave, v.integrity,
+		v.remaining, v.guarded, v.pressure, v.arrival_points)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_vigil_state(chapter: String, phase: int, wave: int, hp: float, timer: float,
+		held: bool, threats: int, points: Array) -> void:
+	if game == null or multiplayer.is_server() or not world_ready or chapter != game.chapter_id:
+		return
+	var v := preload("res://scripts/ward_vigil.gd").find(game)
+	if v != null:
+		v.apply_state(phase, wave, hp, timer, held, threats, points)
 
 ## game_base.run_convo_id -> here when online. Solo-in-session (the opening
 ## beats before any guest has spawned, or a lone party) collapses to a plain
@@ -2436,6 +2708,25 @@ func _on_convo_ended(id: String, is_beat: bool, on_done: Callable) -> void:
 	_release_convo(id)
 	if on_done.is_valid():
 		on_done.call()
+
+
+## A world transition cancels a local interaction without executing its old
+## quest callback. Release a pending request too; reliable ordering makes the
+## release follow the request even if its grant has not reached us yet.
+func cancel_local_convo() -> void:
+	var active_id := _active_convo_id
+	var pending_id := String(_pending_convo.get("id", ""))
+	_pending_convo = {}
+	if game != null and game.beat_broadcasting:
+		game.beat_broadcasting = false
+		if _net().is_online():
+			_rpc_beat_end.rpc()
+		if game.hud != null:
+			game.hud.mirror_end()
+	if active_id != "":
+		_release_convo(active_id)
+	if pending_id != "" and pending_id != active_id:
+		_release_convo(pending_id)
 
 
 ## Free a claim when its overlay closes (host erases; guest tells the host).
@@ -2692,12 +2983,13 @@ func _rpc_ally_damage(net_id: int, amount: int, crit: bool) -> void:
 	game.spawn_ally_damage(e.global_position, amount, crit)
 
 
-# ---- synced victory (the final boss falls — everyone sees the card) ----
+# ---- synced victory (the final boss falls — each reader gets an ending) ----
 
-## HOST: the chapter's final boss died — every guest shows the results card
-## simultaneously (§5.4). vtext is the shared victory blurb; has_next drives
-## the guest's meta unlock. Each guest renders its OWN run stats and applies
-## its OWN chapter-completion credit / weekly reward (§5.7) in net_victory.
+## HOST: the chapter's final boss died — every guest banks their credit,
+## reads their own class's illustrated ending and then sees their results.
+## vtext is the shared victory blurb; has_next drives the guest's meta unlock.
+## Each guest captures their OWN run stats and chapter/weekly credit (§5.7)
+## in net_victory before reading; the host does not wait to send this fan.
 func host_victory(vtext: String, has_next: bool) -> void:
 	if game == null or not _net().is_online() or not multiplayer.is_server():
 		return
@@ -2708,6 +3000,16 @@ func host_victory(vtext: String, has_next: bool) -> void:
 @rpc("authority", "call_remote", "reliable")
 func _rpc_victory(vtext: String, has_next: bool) -> void:
 	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	# Boss awards, board credit, loot flush and first-clear mail above use
+	# deferred owner-side effects. Join that same ordered queue before recording
+	# completed_<chapter>, or a same-frame victory suppresses its own first clear
+	# and autosaves before the rewards arrive.
+	_apply_victory.call_deferred(String(game.chapter_id), vtext, has_next)
+
+
+func _apply_victory(chapter: String, vtext: String, has_next: bool) -> void:
+	if game == null or not world_ready or chapter != game.chapter_id:
 		return
 	game.net_victory(vtext, has_next)
 
@@ -3191,3 +3493,48 @@ func _rpc_pvp_end(winner_pid: int, sc: Dictionary) -> void:
 		return
 	if bool(game.pvp_active) and game.pvp != null:
 		game.pvp._apply_end(winner_pid, sc)
+
+
+# Portal arena clocks and settlement are host authority. Guests walk through
+# their own portal; ordinary position sync activates the host's lazy arena.
+func host_pocket_state(trial: Node2D, peer := 0) -> void:
+	if game == null or not multiplayer.is_server():
+		return
+	_rpc_pocket_clock.rpc_id(peer, game.chapter_id, game.pocket_id, trial.phase, trial.side, trial.remaining)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_pocket_clock(chapter: String, id: String, phase: int, side: int, seconds: float) -> void:
+	if game == null or multiplayer.is_server() or not world_ready or chapter != game.chapter_id \
+		or id != game.pocket_id or game.pocket_room < 0 or not phase in [0, 1, 2] \
+		or not side in [0, 1] or not is_finite(seconds) or seconds < 0.0 \
+		or seconds > maxf(Balance.POCKET_PULSE_REST, maxf(Balance.POCKET_PULSE_WARNING, Balance.POCKET_PULSE_HEAT)):
+		return
+	game.pocket_clock = {"phase": phase, "side": side, "remaining": seconds}
+	var trial := preload("res://scripts/pocket_trial.gd").find(game, game.pocket_room)
+	if trial != null:
+		trial.apply_state(phase, side, seconds)
+
+
+func host_pocket_complete(at: Vector2) -> void:
+	if game == null or not multiplayer.is_server():
+		return
+	for pid in peer_chars:
+		var p := _player_of(int(pid))
+		var present: bool = is_instance_valid(p) and game.room_at_pos(p.global_position) == game.pocket_room
+		_rpc_pocket_settled.rpc_id(int(pid), game.chapter_id, game.pocket_id, at, present)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_pocket_settled(chapter: String, id: String, at: Vector2, reward: bool) -> void:
+	if game == null or multiplayer.is_server() or not world_ready or chapter != game.chapter_id \
+		or id != game.pocket_id or game.pocket_room < 0 or game.pocket_done \
+		or not at.is_finite() or not game.play_rect(game.pocket_room).has_point(at):
+		return
+	game.pocket_done = true
+	game.cleared[game.pocket_room] = true
+	game.zone_alive[game.pocket_room] = 0
+	game.boss_spawned[game.pocket_room] = true
+	if reward:
+		game._pocket_reward(at)
+	game.autosave()

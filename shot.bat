@@ -1,5 +1,5 @@
 @echo off
-rem Shot-rig runner: shot.bat <rig> [--timeout=N] [--fixed-fps=N] [--no-gate] [--no-import] [rig args...]
+rem Shot-rig runner: shot.bat <rig> [--timeout=N] [--fixed-fps=N] [--mobile] [--renderer=METHOD] [--no-gate] [--no-import] [rig args...]
 rem   e.g.  shot.bat fx_series --class=mage --theme=ice --terrain=keep --timeout=90
 rem Muted (--audio-driver Dummy), compile-gated (incl. the rig script), watchdogged
 rem (in-engine RIG TIMEOUT + outer kill at N+15s), prints the shots dir at the end.

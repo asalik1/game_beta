@@ -22,6 +22,7 @@ var loot := {}        # empty = a gold coin; else a dropped-loot payload
 var goldrush := false  # charged coin: surges greed on touch instead of paying
 var retry_cd := 0.0   # full-bag claim retry throttle
 var pickup_delay := 0.0  # discard-throw: ignore all claims until this elapses
+var claimed := false   # queue_free is deferred; each reward can pay only once
 
 
 # Coin presentation (P7.B, 2026-08-19; owner: "the coins don't look polished
@@ -59,11 +60,13 @@ static func _coin_visual(width: float) -> Node2D:
 static func drop_gold(game_node: Node2D, amount: int, pos: Vector2) -> void:
 	# Scatter a few coins around the death spot.
 	amount = (game_node as Game).gold_scaled(amount)  # weekly "gilded" hook
+	if amount <= 0:
+		return
 	var coins := clampi(amount / 3, 1, 5)
 	for i in coins:
 		var c := Pickup.new()
 		c.game = game_node
-		c.value = maxi(1, amount / coins)
+		c.value = amount / coins + int(i < amount % coins)
 		# The coin is SPAWNED at the death spot and ARCS out to its rest point
 		# (tweened below), so the scatter reads as a spill, not a teleport.
 		var rest := pos + Vector2(randf_range(-COIN_SCATTER, COIN_SCATTER), randf_range(-18, 18))
@@ -142,7 +145,8 @@ static func drop_loot(game_node: Node2D, payload: Dictionary, pos: Vector2) -> P
 	c.game = game_node
 	c.loot = payload
 	c.add_to_group("loot_pickups")
-	c.global_position = pos + Vector2(randf_range(-22, 22), randf_range(-16, 16))
+	c.global_position = (game_node as Game).resolve_drop_pos(pos + Vector2(randf_range(-22, 22), randf_range(-16, 16)))
+	payload["pos"] = [c.global_position.x, c.global_position.y]
 	# Each kind builds its icon sprite + a tint; a shared shine (glow + bob +
 	# winking glint) then makes ANY drop read as loot instead of scenery.
 	var spr: Sprite2D = null
@@ -261,13 +265,13 @@ func _body_setup() -> void:
 	shape.radius = 14
 	cs.shape = shape
 	add_child(cs)
-	body_entered.connect(_on_body_entered)
+	body_entered.connect(_on_body_entered, CONNECT_DEFERRED)
 	z_index = 4
 
 
 func _physics_process(delta: float) -> void:
 	var p: Player = game.player
-	if p == null or p.dead:
+	if claimed or p == null or p.dead or p.downed or p.ghost:
 		return
 	retry_cd = maxf(0.0, retry_cd - delta)
 	pickup_delay = maxf(0.0, pickup_delay - delta)
@@ -294,15 +298,19 @@ func _on_body_entered(body: Node) -> void:
 	# game.local_player, so this line never fires.
 	if body != game.local_player:
 		return
+	if claimed or body.dead or body.downed or body.ghost:
+		return
 	if goldrush:
+		claimed = true
 		body.goldrush_time = Balance.GOLDRUSH_DUR  # refresh, never stack
 		game.spawn_text(global_position + Vector2(0, -44), "GOLD RUSH!", Color(1.0, 0.85, 0.3))
 		game.burst(global_position, Color(1.0, 0.85, 0.35), 14)
 		game.sfx("gem")
 		queue_free()
 	elif loot.is_empty():
+		claimed = true
 		body.gain_gold(value)
-		game.hud.log_event("+%d gold" % value, Color(1.0, 0.84, 0.35), "gold")  # P7.A feed (coalesces)
+		game.hud.log_event("+%d gold" % body.gold_yield(value), Color(1.0, 0.84, 0.35), "gold")  # P7.A feed (coalesces)
 		game.hud.pulse_gold()                                                   # the counter ticks
 		game.burst(global_position, Color(1.0, 0.85, 0.4), 3)                   # three chips fly
 		game.sfx("coin")
@@ -312,8 +320,13 @@ func _on_body_entered(body: Node) -> void:
 
 
 func _try_claim(p: Player) -> void:
+	if claimed or p != game.local_player or p.dead or p.downed or p.ghost:
+		return
 	if game._try_receive(loot):
-		game.dropped_loot.erase(loot)
+		claimed = true
+		var idx := preload("res://scripts/gear_care.gd").index_of(game.dropped_loot, loot)
+		if idx >= 0:
+			game.dropped_loot.remove_at(idx)
 		# Gems get their own sparkle chime; everything else keeps the
 		# potion-swig pickup sound.
 		game.sfx("gem" if String(loot.get("kind", "")) == "gem" else "potion")
@@ -321,5 +334,5 @@ func _try_claim(p: Player) -> void:
 	else:
 		# SAY why it won't pick up (playtest: "unable to interact, idk") —
 		# the silent 1.2s retry read as a bug, not a full bag.
-		game.spawn_text(global_position + Vector2(0, -30), "BAG FULL", Color(1.0, 0.55, 0.4))
+		game.spawn_text(global_position + Vector2(0, -30), "PACK OR STACK FULL", Color(1.0, 0.55, 0.4))
 		retry_cd = 1.2

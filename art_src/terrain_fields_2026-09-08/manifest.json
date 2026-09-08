@@ -1,0 +1,74 @@
+{
+  "sand": {
+    "tool": "built-in OpenAI ImageGen",
+    "source": "C:\\Users\\asali\\.codex\\generated_images\\01a07ad4-90c0-7cf3-9b81-509ae9c889ed\\exec-4742b867-7eef-47cd-af63-2c0b97381dd5.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "edge_mean_rgb_difference": [
+      3.8314726209463053,
+      5.5691121743753325
+    ],
+    "sha256": "852eb26f48cafdc9456f1ca61a55e21d7b9e6e9b21206b7e693fed1daf071e07",
+    "runtime": "game/assets/sprites/ground_field_sand_painterly.png",
+    "transform": "none; verbatim master",
+    "world_period": 512,
+    "status": "accepted: calibrated Forward+, Forward Mobile and Compatibility gameplay review",
+    "review": "Native/detail same-scene captures: sand smoother; snow checkerboard removed; forest leaf clutter reduced; grass finer with fewer bright flecks. No visible seam lines; warning rings remain legible."
+  },
+  "snow": {
+    "tool": "built-in OpenAI ImageGen",
+    "source": "C:\\Users\\asali\\.codex\\generated_images\\01a07ad4-90c0-7cf3-9b81-509ae9c889ed\\exec-5a6f9eef-12f4-4405-b659-d4f228725626.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "edge_mean_rgb_difference": [
+      6.0975544922913345,
+      7.502126528442318
+    ],
+    "sha256": "68f2b32fc33a6084ed6bee67e9823f292f4a66fb0e3f7daf8faedc89943d4d63",
+    "runtime": "game/assets/sprites/ground_field_snow_painterly.png",
+    "transform": "none; verbatim master",
+    "world_period": 512,
+    "status": "accepted: calibrated Forward+, Forward Mobile and Compatibility gameplay review",
+    "review": "Native/detail same-scene captures: sand smoother; snow checkerboard removed; forest leaf clutter reduced; grass finer with fewer bright flecks. No visible seam lines; warning rings remain legible."
+  },
+  "grass": {
+    "tool": "built-in OpenAI ImageGen",
+    "source": "C:\\Users\\asali\\.codex\\generated_images\\01a07ad4-90c0-7cf3-9b81-509ae9c889ed\\exec-47cf5a21-e734-4f29-b8cf-f6aceadcda32.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "edge_mean_rgb_difference": [
+      6.870281765018607,
+      6.168527379053695
+    ],
+    "sha256": "47a8cef53b950229307a38b9cf0c735a3157aae014383e41bbc8074c059b3bac",
+    "runtime": "game/assets/sprites/ground_field_grass_painterly.png",
+    "transform": "none; verbatim master",
+    "world_period": 512,
+    "status": "accepted: calibrated Forward+, Forward Mobile and Compatibility gameplay review",
+    "review": "Native/detail same-scene captures: sand smoother; snow checkerboard removed; forest leaf clutter reduced; grass finer with fewer bright flecks. No visible seam lines; warning rings remain legible."
+  },
+  "forest": {
+    "tool": "built-in OpenAI ImageGen",
+    "source": "C:\\Users\\asali\\.codex\\generated_images\\01a07ad4-90c0-7cf3-9b81-509ae9c889ed\\exec-017e5249-4e40-4302-a5f9-61ae7594bb5a.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "edge_mean_rgb_difference": [
+      8.542530568846358,
+      7.232057416267943
+    ],
+    "sha256": "7a379983d2057b273bc6cb626078e06f8f50062b7d0b22d517187a93208f8b5e",
+    "runtime": "game/assets/sprites/ground_field_forest_painterly.png",
+    "transform": "none; verbatim master",
+    "world_period": 400,
+    "status": "accepted: calibrated Forward+, Forward Mobile and Compatibility gameplay review",
+    "review": "Native/detail same-scene captures: sand smoother; snow checkerboard removed; forest leaf clutter reduced; grass finer with fewer bright flecks. No visible seam lines; warning rings remain legible."
+  }
+}

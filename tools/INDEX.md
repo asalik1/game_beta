@@ -9,6 +9,103 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 
 ## Gates & suites (run these, in this order — CLAUDE.md "Testing")
 
+Screenshot verdicts: `tools/shot_verdict.ps1` checks both engine output streams,
+rejects script/runtime errors even after `RIG DONE exit=0`, and requires a valid
+completion marker from modern ShotRig scenes. Legacy zero-exit rigs remain
+supported. `powershell -NoProfile -File tools/tests/shot_verdict_tests.ps1`
+exercises eighteen success/error/watchdog/completion fixtures. Unexpected engine
+`ERROR:` lines also fail; only the established renderer shutdown errors are exempt.
+
+Party appearance QA: `shot.bat party_appearance --timeout=300` runs two complete
+games plus a lightweight late-reader roster over three real ENet APIs in one
+engine. It checks join/live pet and skin changes, sender/local ownership,
+movement, menu clocks, ghost/revive, world rebuilds, transport reconnect and
+disconnect, touch gating, account and home saves. Use a temporary APPDATA for
+the runner, and `--mobile --renderer=gl_compatibility` for handheld-source QA.
+
+Road hunt QA: `shot.bat road_hunt --timeout=300` runs two complete games over
+real ENet scopes in one engine. It checks the hunter offer, three ordered signs,
+late world join, guest flush/damage, personal rewards and exact home-save
+preservation, repeated settlement, absent recipients, abandonment, party travel
+and disconnect cleanup. Run with isolated APPDATA; add
+`--mobile --renderer=gl_compatibility` for the mobile source/renderer path.
+
+Encounter company QA: `shot.bat road_hunt --company --timeout=300` reuses the
+production ENet hunt fixture to check once-only guest discoveries, busy
+invitations, both encounter start orders, direct/guest request guards, released
+reservations and escort/ward HUD clearance beside party health and touch
+controls. Its negative control detects the old overlapping HUD position;
+camera-transformed actor overlap also checks the panel fades and recovers.
+
+Ordinary hunt combat: `shot.bat hunt_combat --class=warrior --timeout=200`
+plays a starting-kit hunt through synthetic keyboard events with normal health
+and god mode off. Setup moves to the three signs; combat only uses movement
+and class inputs, with no direct damage or ability calls. It captures the
+pounce and fight, checks the open escape/minimap warning and saves combat.json
+with duration, health, movement and payout. Use `--class=mage` for ranged play.
+
+Road choice QA: `shot.bat road_choices --timeout=240` checks explicit toll,
+courier and wager actions, harmless leave/back, affordability, repeated clicks,
+touch bounds and actor-loss cleanup. A real hosted ENet session runs through
+the full offer timer twice: the offer survives its own open decision and
+expires in an unrelated menu. Use isolated APPDATA; this adds no guest RPCs.
+
+Co-op ending QA: `shot.bat coop_closers --timeout=300` runs two real readers
+and two ENet API scopes in one engine. It checks actual host boss death,
+per-class art, queued reward ordering, independent reading, duplicate records,
+pending/active NPC claims, menu/chat waits, travel/fade cancellation, touch and
+the production host-loss save callback. Use `--mobile --renderer=gl_compatibility`
+for the mobile source/renderer path on this development host.
+
+First-conquest QA: `shot.bat first_conquest --timeout=230` kills a real final
+boss through the production death callback and checks first/replay payouts,
+chapter-specific mail contents and the solo cinematic/results handoff.
+
+Personal-history QA: `shot.bat personal_history --timeout=260` sends real ENet
+join, first-clear and victory RPCs, checks first-timer/veteran/reconnect rewards,
+actual home autosave, personal city NPC construction, touch and legacy history.
+
+Target visibility QA: `shot.bat target_cover --timeout=190` captures actual
+log cover, three animated enemy poses, target loss/deletion and touch combat/
+settings. Shared hero/target masks and repaint are in the quick/full contracts.
+
+Rescue-history QA: `shot.bat rescue_history --timeout=230` sends a real ENet
+world snapshot with a different host's rescues, then checks guest discovery,
+home save/resume, sanctuary residents/follower, legacy history and touch UI.
+
+Cross-world loot QA: `shot.bat loot_travel --timeout=200` checks the production
+host-loss callback, home-world preservation, full/complete mailbox claims,
+equal rewards, repeat reloads, immediate join mail, local drops and touch.
+
+Earned reward QA: `shot.bat loot_recovery --timeout=220` runs disk resume,
+full/partial/complete mail claims, exact contents, duplicate prevention, real
+chest contact, travel recovery, character-only home saves and large touch letters.
+
+Portal trial QA: `shot.bat pocket_trials --timeout=260` runs both real arenas,
+entry/exit buttons, hot/cold and sealed bottles, save/return/retry, rewards,
+touch and real ENet phase/participant settlement checks.
+
+Companion menu QA: `shot.bat companion_previews --timeout=240` checks paused
+Sanctuary/Codex motion, all six Wardrobe rows, purchase/equip/return, hidden
+clocks, touch layouts and cleanup.
+
+Companion animation QA: `shot.bat companions --timeout=240` renders 24 motion
+samples of all six pets and checks actual follow/stop and touch presentation.
+`tools/art/build_companion_motion.py` reproduces their complete-frame strips.
+
+Crystal bank QA: `shot.bat prism --timeout=200` checks real corner shots,
+cover, hostile/cosmetic projectiles, pause, ordinary walls and touch guidance.
+
+Ward defense QA: `shot.bat ward_vigil --timeout=240` exercises the real opt-in,
+three waves, failure/retry, snuff/pause/death cleanup, quest guidance, title,
+touch UI, object-first recognition, persistent rebuild and two-peer ENet state.
+
+Connected exploration QA: `shot.bat exploration --timeout=240` probes six live rescue sites, distance/menu/injury interruption, sanctuary collection and companion teleports, and captures quest guidance, landmarks and desktop/touch views.
+
+Reactive terrain QA: `shot.bat reactive_terrain --timeout=210` renders eight
+states and probes real melee/projectile contacts, player/monster blast damage,
+chill, chain timing, pause, touch interaction and two-peer ENet state/request flow.
+
 | tool | what it does |
 |---|---|
 | `preflight.bat` (`tools/preflight.py`) | mechanized trap checks: stale/missing `--import`, unregistered content modules, codex/BOSS_KINDS staleness, diff-scoped balance-number + CONNECT_DEFERRED lints. Run before staging; prints the fix per finding. `--fast` skips the engine data check. |
@@ -121,6 +218,7 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 | `tools/art/build_capital_polish.py` | generated Crownfall furniture/hearth sources → normalized production props, plus integrated four-frame fire strips for every fire-bearing capital landmark (no nested flame decals). |
 | `tools/art/build_terrain_prop_anims.py` | generated four-frame full-object terrain props → shared-crop, footprint-anchored static + `_anim` strips (fountains, furnaces, rifts, vents, conductor, sewer outfall; no motion stickers). |
 | `tools/art/install_ground_field.py` + `floorgen_prompts.py` | (2026-08-17) crisp native-res FLOOR fields: `floorgen_prompts.py` writes palette-anchored (from `Art.GROUND`) Codex prompts for seamless tileable floors; `install_ground_field.py` downscales + pre-brightens (`--gamma`, counters the Forward+ sink) → `assets/sprites/ground_field_<kind>.png`, GPU-tiled by `game_world._apply_ground_field` (Polygon2D) at scale 1. Renderer: `Art.ground_field`/`ground_preview`. (2026-08-18) the stored tile edge is the FEATURE SCALE (1 texel = 1 world px): `SIZE_BY_KIND` in the script pins stone/basalt/voidstone 256, crystalfloor 288, holystone 320, forest 400 (else 512) so a cobble is a third-to-half of the 88px hero, not the hero's height. **`--prefix wall_field_`** installs the WALL twin: `wall_field_<kind>.png` (kind = `Terrains.wall_for` name, 128px seamless square) that `game_world._wall_dress`/`Art.wall_field` draw at 1:1 (with the face/shadow relief) instead of the 16px tile at 3x — the 10 wall kinds shipped 2026-08-18 from a Codex batch (style ref = the matching floor field, colour ref = the old tile; edge crossfade for seams >10). |
+| Painted field siblings (2026-09-08) | `Art.ground_field` prefers `ground_field_<kind>_painterly.png` when present. Retain full-resolution masters and set `Balance.GROUND_FIELD_PERIOD` for world size; enable mipmaps. Do not use the legacy installer's default downsize for this lane. `shot.bat floorfield --compare --timeout=180` compares identical scenes at native/detail scales with attack tells; add `--mobile` for the mobile project/renderer. Source/provenance: `art_src/terrain_fields_2026-09-08/`. |
 | `tools/art/install_critter.py` | (2026-08-17) painterly Codex critter sheet → crisp pixel-art `critter_<kind>.png` animation strip: cuts N frames, aligns to a SHARED union bbox + uniform scale (per-frame trim would jitter the body), CENTER-anchored, posterize, `--alpha-cut` (low keeps thin bodies like a dragonfly abdomen). Ambience critters set hframes off it. |
 | `tools/art/derive_prop_anim.py` | (2026-08-17) DERIVE a `<name>_anim.png` FROM a prop's existing static PNG (zero drift — frame 0 = the static): `--motion pulse` (luminance-weighted glow breathe — crystals/runes/molten), `flicker` (fire), `wave` (banner shear), `shimmer` (water). For GLOWING props only; mechanical props need real motion or stay static. **2026-09-05: `pulse` is GLOW-ONLY** (smoothstep over the sprite's own luminance percentiles 45-85, the stone shell swings 0; `--warm` also gates by the fire mask for furnaces) -- the old 0.35+0.65*lum weight breathed the darkest stone by a third of the amplitude (audit props-npcs, 19 strips re-derived at amp 0.10 / 0.12 warm). **2026-09-06: two new motions + a dead-strip guard** — `flow` (a POURING liquid: the liquid mask, cool water OR olive sludge, minus the 2px keyed rim, scrolls its COLOUR down; alpha untouched so the silhouette stays byte-stable) and `sway` (canopy shear ramped from 0 at the trunk base to full at the crown, so a tree leans without sliding — `wave` moves the trunk too). Deriving now prints the chosen motion's mask coverage and WARNS below 1%: five shipped strips were DEAD because their mask matched nothing (shimmer on olive sludge, swirl on pale-blue light, a canopy strip that was 4 copies of the static). |
 | `tools/art/style_unify/` (README there) | (2026-08-18, `POLISH_TASKS.md`) the prop STYLE-UNIFY lane: `make_briefs.py` (repaint brief = painterly SIBLING as style ref + the old asset as SUBJECT), `rerolls.py` (description-led, no subject), `make_npc_briefs.py` (roster-benchmarked NPC bodies + the mill), `vet_sheet.py`/`green_check.py` (LOOK before install), `install_stage.py` (key → −14 % sat → `install_prop_hires`, game + mobile), `derive_stage.py` (rebuild `_anim` for animated statics at §40c amps), `build_npcs.py` (Ivo 256² canvas, mill 384 override). 140+ props, 9 NPCs, mill went through it (batches A–D). |
@@ -141,6 +239,17 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 | `gen_asset_manifest.py` | regenerate `game/assets/asset_manifest.json` (exports can't scan dirs; `export_all.bat` runs it). |
 
 ## In-engine shot rigs (windowed, boot the real game, screenshot to disk)
+
+`shot.bat wayfinder --timeout=240` — local tactical map, observed frontiers,
+route bearing, real encounter population, revealed loot, explored atlas at two
+zoom levels, the atlas/HUD with touch controls, and a real room clear followed
+by a return route (11 shots). Outputs to
+`user://shots/wayfinder/`; uses the shared muted, watchdog-protected `ShotRig`.
+
+`shot.bat autonomy --timeout=240` — real keyboard/touch taps, buffered cooldowns,
+damage bearings, lethal hit/recovery, combat report, comparison/keep/buy/stash
+transactions, comfort settings and live enemy/boss cues (18 shots). Includes
+duplicate-event assertions; outputs to `user://shots/autonomy/` through `ShotRig`.
 
 **Runner + base class (2026-08-15) — use these for any new rig or run:**
 
@@ -187,7 +296,26 @@ SERIES per beat (forest/keep/HUD fights with a LIVE pack and the hero driven thr
 input path, road/magma/keep-wall walks) into `gif_<beat>/`; run with the runner's new
 `--fixed-fps=30` so each frame is a deterministic 1/30 s; then
 `python tools/art/gif_from_frames.py [--width 800] [--out ~/Downloads/crownless_polish_gifs]`
-stitches 15 fps GIFs with one shared palette per GIF (owner review artefacts)) ·
+stitches 15 fps GIFs with one shared palette per GIF (owner review artefacts).
+`--beats=forest,keep,forest_hud,road,magma,keep_wall` selects a subset for slow
+renderers; `--no-capture --passes=3 --seed=907` runs the same live inputs and
+per-frame position/clock/recovery checks without PNG readbacks) ·
+`shot_controller` (`ShotRig`: analog input, trigger buffer/hysteresis, pause
+release latch, real GUI click/drag/scroll and text entry, target flicks,
+dialogue choices, fishing, touch handoff and disconnect cleanup.
+`shot.bat controller --timeout=240`; captures in `user://shots/controller`) ·
+`shot_fishing` (`ShotRig`: generated village-bank route, 120 seeded fights,
+live keyboard/pointer catch, original sprites, journal, late-claim and damage
+cancellation, nearby-enemy gate, touch and repaint cleanup.
+`shot.bat fishing --timeout=200`; 7 captures in `user://shots/fishing`) ·
+`shot_framing` (`ShotRig`: target camera before/after east/north, damage trails,
+exploration and comfort controls. `--fault-probe` runs the finite-motion
+regression only. `shot.bat framing --timeout=240`) ·
+`shot_quality` (`ShotRig`: paused/resumed/cancelled ground attacks and guest
+visual-only damage contracts; keep-floor before/after; early/late warnings on
+four terrains; targeted foliage restoration; queued announcements across
+pause and arrival titles; touch comfort and chapter reset. Run
+`shot.bat quality --timeout=240`; 16 captures in `user://shots/quality`) ·
 `tools/art/pixellab_resize_soft_clips.py` (2026-08-19, owner-authorized PixelLab:
 upscales the OLD-generation hero action strips — assassin/warlock/archer
 run·dash·cast·ult 8-dir sets + the four flat deaths, 94 strips — through
@@ -238,3 +366,21 @@ substitute for his pass.
 - `art/install_attack_regen.py` — guarded dry-run/apply installer for the approved attack manifest; archives and atomically updates desktop/mobile runtime strips and South aliases.
 - `art/stabilize_attack_anchors.py` — reframe all approved attack candidates around a dense body-column X anchor in crop-safe 352px cells, eliminating weapon-padding side drift without resampling.
 - `art/alt_swing_pipeline.py` — the melee swing-ALTERNATION lane (2026-08-16): `briefs <class>` stages Codex ImageGen briefs + refs for the alternate basic swing (`<class>_attackb_<dir>`), `build <class>` keys/slices/normalises/anchors the sources (component-based slicing — a level sword's extent may interleave the neighbour's column, so it assigns islands to the nearest body instead of cutting on gutters; cell auto-grows to fit the arc), `assassin-assemble` lays out the PixelLab Resize outputs like the base stab (E→NE/SE, W side mirrored), `install <class> [--apply]` writes the 9 runtime files with a SHA-backed backup. `pixellab_resize_assassin_attack.py --runtime-cell N` grew out of it (a wide follow-through outgrows 277).
+
+### Signature-cast QA
+
+`shot.bat boss_cast --no-import --timeout=240` runs real boss casts, pause/reset /
+healing cancellation, rendered HUD and touch checks, six class burst probes, and
+a two-peer ENet cast/spawn test inside a single muted engine. Outputs are in
+`user://shots/boss_cast/`; scan stderr as well as the runner verdict.
+
+- `shot.bat wayfarer --timeout=240`: Tovin's complete escort, wait/follow, retry/death/stop, two real ENet peers, homecoming and touch. Extends ShotRig; uses isolated QA saves.
+
+
+Screenshot color contract (2026-09-08): `ShotRig.capture_image()` converts
+HDR2D renderer readbacks to sRGB before PNG output; Compatibility stays LDR.
+Older raw-HDR captures are too dark. Do not regrade assets against them.
+`floorfield --compare` probes a known UI color before taking pictures.
+The runner accepts `--renderer=forward_plus|mobile|gl_compatibility`; the mobile
+project's handheld Compatibility override can be checked on PC with
+`shot.bat floorfield --compare --mobile --renderer=gl_compatibility`.

@@ -1,26 +1,78 @@
-# Crownless — Chapter 1: The Hollow King
+# Crownless
 
-Second iteration of the MMO project: a **story-driven action RPG** (single-player,
-with opt-in 2–4 player co-op) featuring classes, gear, loot chests, merchants
-and a skill tree.
-You play a newly-awakened shard-bearer — one of the shattered Ember Crown's
-fragments has caught in you — fighting through three zones and three bosses as
-the tyrant Vargoth climbs out of his keep a second time.
+A **story-driven action RPG** for solo play and optional 2–4 player co-op.
+Six classes explore seven Act 1 chapters through branching rooms, faction
+choices, quests and boss encounters. Gear, skill trees and class themes shape
+your build; the Crucible, Waking Depths and weekly incursions extend the journey.
 
-Built with **Godot 4.4** (free, open source — no fees ever, unlike Unity),
-which exports to **Windows/Steam and Android** from the same project.
+You are a newly awakened shard-bearer: a fragment of the shattered Ember Crown
+has caught in you. The road begins as King Vargoth rises from his keep again,
+and follows what waking the old powers means for the rest of Vaelscar.
+
+Built with **Godot 4.4**, targeting **Windows/Steam, Android and iOS** with
+shared game code.
 
 ## ▶ How to play (right now, on your PC)
 
 Double-click **`run_game.bat`**. That's it — the engine is bundled in `tools/`.
 
+Grass, forest litter, desert sand and snow now use finer painted ground, with
+the same material scale and readable combat warnings. [Visual notes](PAINTED_TERRAINS.md).
+
+**Recovered Spoils** protects unopened combat chests and loose coins across saves
+and travel. Resume to find the contents in your mailbox, with recovered gold
+already in your purse. Letters show the real attachments and keep anything that
+doesn't fit. [Details](RECOVERED_SPOILS.md).
+
+Ground overflow now travels safely through co-op joins and lost connections:
+your home save keeps it as mail, while ordinary solo saves keep local drops in
+the world. [Loot travel notes](LOOT_TRAVEL.md).
+
+**Portal trials** now put rules behind the stones: dodge the Molten Court's warned hot floor, or face the Still Larder with sealed bottles. The exit waits while you collect your spoils, and retreat is free. [Details](POCKET_TRIALS.md).
+
+**One More Mile** brings a traveler into Village Outskirts: walk Tovin to the fire, protect him through two warned encounters, and leave a home on the road. [Details](ONE_MORE_MILE.md).
+
+Stand the old tower's watch in **A Light on the Road**: an optional three-wave
+ward defense, the earned Lamplighter title, and a promise to bring back to Mara
+in Emberfall. The restored light stays with your character. [Details](WARD_VIGILS.md).
+
+Explore for **Small Mercies**: six stranded creatures can be rescued across the first two chapters. Visit your growing sanctuary at Stillwater Reach or Crownfall, collect painted companions, and use the Journal’s quest tracking to follow discovered objectives. Kept promises now leave signs, a flame and a ribbon in the world. See [SMALL_MERCIES.md](SMALL_MERCIES.md).
+
+Companions now have real steps, hops and wingbeats while following and at the
+sanctuary. [Animation details](COMPANION_MOTION.md). Blue-ringed crystals also
+bend incoming shots toward visible foes—including enemy bolts aimed at you.
+[Refracting crystals](REFRACTING_CRYSTALS.md).
+
+Each hero's sanctuary now remembers rescues made during co-op visits. Pet
+cosmetics remain shared across the account; rescue history travels with the
+hero. [Rescue history](RESCUE_HISTORY.md).
+
+A thin amber silhouette now keeps your current enemy readable behind solid
+props, following its actual attack poses. Toggle **Target visibility** in Combat
+& comfort. [Visibility notes](TARGET_VISIBILITY.md).
+
+Co-op now preserves your personal choices, kept promises and chapter history.
+First-clear spoils are yours once, independent of the host's progress, including
+a reconnect before the victory screen. [Personal history](PERSONAL_HISTORY.md).
+
+Use the scenery in a fight: **red-X Ember Casks** explode and **diamond-marked
+Rimehearts** release a slowing frost burst. Interact, swing or shoot to prime
+them, then leave the marked circle. Nearby objects can chain together, and the
+blast can hurt you too. See [reactive terrain](REACTIVE_TERRAIN.md).
+
+For a quiet diversion, visit **Stillwater Reach near Emberfall** and try river
+fishing: four original fish sprites, three lures, a reel-and-release challenge,
+saved size records and the Riverkeeper title. See [FISHING.md](FISHING.md).
+
 For testing, **`dev_mode.bat`** launches the same game with an **F1 debug
 panel**: god mode, instant class/level/gold/item/gem cheats, zone teleports,
 boss spawning, monster clearing, and a live **terrain switcher**.
 
-Combat is **keyboard only**: your abilities auto-aim at the nearest enemy
-(watch the yellow reticle). All keys below are rebindable in-game
-(ESC → B, or click any action and press a new key).
+Combat supports **keyboard, controller and touch controls**: your abilities auto-aim at the
+nearest enemy (watch the yellow reticle). Enable touch controls in Settings.
+Controller play includes analog movement, directional target selection, menu
+navigation, an on-screen keyboard and fishing. See [CONTROLLER.md](CONTROLLER.md).
+Action keys can be rebound in Settings → Keybinds. Movement and Escape stay fixed.
 
 | Input | Action |
 |---|---|
@@ -33,9 +85,42 @@ Combat is **keyboard only**: your abilities auto-aim at the nearest enemy
 | Q | Drink potion (heals 60%) |
 | E | Talk to NPCs / shop |
 | I | Inventory (equip gear) |
+| M | Field atlas (explore, set routes, fast travel) |
 | T | Skill tree (spend points) |
 | C | Codex (monsters & gear gallery) |
 | ESC | Pause (B = rebind keys) |
+
+The **Wayfinder** corner map shows nearby threats, people, revealed chests and
+doorways. Open the **field atlas** with **M**, select a room, and choose **Set
+route** to keep a gold doorway bearing visible while exploring. **Main trail**
+selects the next known step on the story road. The atlas supports pan/zoom,
+room details and fast travel to visited sanctuaries or defeated boss arenas.
+Routes respect fog of war, story gates and encounter seals. See Codex → Field
+notes → Wayfinder for the map legend and controls.
+
+Watch for **INTERRUPT** beneath a boss's health bar. Deal damage to fill the
+amber pressure bar before its white fuse runs out; close hits contribute more.
+A break cancels that cast and opens a brief **+25% damage** window. If it
+completes, dodge the normal ground warning. See [BOSS_INTERRUPTS.md](BOSS_INTERRUPTS.md).
+
+Short ability taps are buffered across the end of a cooldown. The target HUD
+calls out reflection, counter stances and other immediate combat decisions;
+Pause → **Combat report** explains the last fall. Camera motion, flashes and
+hit-stop can be adjusted under Settings → **Combat & comfort**.
+Ground-warning rims now fill toward impact and pause with solo combat.
+The **Combat foliage** setting reveals the current target through foreground
+trees. Discovery announcements appear one at a time and wait behind menus.
+Combat framing shifts the view toward your current target, widening for distant
+opponents and returning to the usual scale for close fights. A gold trail on
+target health bars briefly shows the damage just dealt. Combat framing has its
+own toggle; Camera lead controls the strength of the shared composition.
+
+Inspect bag or shop gear to compare it with your equipped piece. **Keep**
+protects gear from selling, dropping and automatic replacement; **Order** sorts
+the bag without moving items. See [the improvement log](AUTONOMY.md) for the
+combat, equipment, loot and mobile changes and their validation.
+The subsequent graphics and gameplay QA pass is recorded in [QUALITY_PASS.md](QUALITY_PASS.md).
+The camera and movement-recovery follow-up is in [COMBAT_FRAMING.md](COMBAT_FRAMING.md).
 
 ## ⚔ The systems
 

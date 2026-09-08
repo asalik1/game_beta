@@ -671,51 +671,43 @@ asserts untouched (not in CHAPTER_LIST); co-op: entry blocked online v1
 (interludes swap worlds like endgame — `enter_endgame`'s `net_online()`
 guard, `game_flow.gd:842`).
 
-## Q14 — Road Deck (v1 SLICE SHIPPED 2026-08-24; remainder OPEN)
-**Shipped (commit pending):** the framework + 2 talk-resolve cards, built as a
-DELIBERATELY DE-RISKED slice that does NOT touch combat-room invariants.
-- `road_deck.gd` (`class_name RoadDeck`): `CARDS` + `DECK` data registry
-  (title/sprite/prompt/weight/room_types/codex). Behavior split into
-  game_world handlers (like Terrains/Items).
-- Draw: `game_world._offer_road_card(i)` in the `_enter_room` first-visit
-  block beside `_offer_cursed_chest` — SAFE rooms only (social/dead_end),
-  campaign chapters only, seeded off `wander_seed` (co-op/reload deterministic,
-  no `randf()` in the draw), DIMINISHING per run via `run_road_cards`
-  (`Balance.ROAD_CARD_CHANCE * FALLOFF^n`). One card per char per room
-  (`_road_flag(i)`, wiped on chapter change → replay re-rolls). Withdraws
-  after `ROAD_CARD_WINDOW` if walked past, only a resolved choice sets the flag.
-- Cards (immediate-resolve, 2-way `open_confirm`, named `.bind()` handlers →
-  no lambda-arg trap, directly unit-tested): **The Bridgeward's Toll**
-  (pay gold → +accord + a heal / refuse → free, −accord, a seeded purse-cut,
-  no fight) and **The Wounded Courier** (mend: spend gold → +gift gold +accord /
-  rob: +satchel gold −accord). 0 XP + no loss penalty (owner rulings #3/#4).
-- `run_road_cards` counter (+ `road` key in the run summary), codex Field
-  notes › Elites & Temptations gained an "ON THE ROAD" block.
-- `_test_road_deck`: registry schema, diminishing-chance math, and every
-  handler's gold/standing/heal/flag/counter delta. Full suite green.
-- **Frequencies flagged for owner review** (ruling #5): `Balance.ROAD_CARD_*`.
+## Q14 — Road Deck (four cards implemented; caravan encounters OPEN)
 
-**Still OPEN (the richer half of the original spec below):** combat-verb cards
-(`spawn_pack` / `spawn_hunt` / `defend_waves` / `wager`), the Caravan +
-Bridge-Out cards (`merchant_zones` / `edge_locks` edits), spine-room binding
-stored in the WORLD save, per-card `req_flag`/`req_band`/`req_class` gating +
-mark follow-ups, and a full codex **Encounters** SECTIONS page + journal WORLD
-lines. These need a safe loose-combat-in-safe-room primitive (the `zone_alive`
-seal minefield) or the save-bound spine draw — neither built. Original spec:
+Verified in code September 8, 2026: the registry contains **The Bridgeward's
+Toll**, **The Wounded Courier**, **The Stranger's Wager** and **The Crooked
+Trail**. The wager includes its three-shell choice and payout.
 
-**Combat-verb cards — the blocker, diagnosed (2026-08-24).** The remaining
-slice-1 cards (Toll *fight*, Caravan *defend*, spawn_pack) all want to SPAWN
-combat, and the v1 Road Deck draws in SAFE (social/dead_end) rooms. Spawning
-into a safe room does not work cleanly: a loose enemy with `zone_idx == i`
-decrements `zone_alive` on death, but `add_enemy` never incremented it, so
-`zone_alive` sits at 0 and `_room_cleared(i)` MISFIRES on the FIRST kill (the
-room reads "cleared" — merchant spawn + rooms_cleared bounty credit — while the
-rest of the pack still fights). `zone_idx = -1` (rogue) skips that but then the
-pack never despawns on room exit (rogue spawns are "left to death/reset",
-`_calm_left_room` only calms `zone_idx == prev`). So the combat cards need the
-Road Deck to grow a COMBAT-ROOM draw path (the board's original design), where
-`zone_alive` is already live and the quest-quarry loose-spawn pattern is
-absorbed cleanly. That draw-path extension is the real prerequisite — deferred.
+The seeded draw visits safe campaign rooms (social/dead_end), excludes merchant
+rooms, and diminishes through `ROAD_CARD_CHANCE * ROAD_CARD_FALLOFF^run_road_cards`.
+Only resolution marks the room's road flag and increments the summary counter;
+walking past the timed offer does not. These encounters pay zero XP.
+
+**Road Choices (validated and staged as pass 23):** named choice
+panels replace the old ambiguous confirmation/Cancel actions. Every option
+shows its cost and consequence; Leave/back are harmless. The courier's
+unaffordable treatment is disabled, the toll accepts a short purse explicitly,
+and the wager explains its 1-in-3 odds and keeps the stake until a shell is
+picked. Actor/context/once-only guards precede rewards and costs. The offer
+waits while its own decision is being read in a live co-op world, and retires
+under unrelated menus. See ROAD_CHOICES.md for current validation/staging.
+
+**The Crooked Trail (validated as pass 24):** three painted
+paw trails, normal interactions, deliberate flush and a telegraphed elite
+quarry scaled to nearby authored creatures. Host-owned progression and enemy
+death pay personal purses to present party members; completed snapshots do
+not grant historical rewards. Late join, absence, abandonment, travel and
+disconnect are covered by the live ENet rig. See ROAD_HUNT.md.
+
+Richer opt-in caravan and road-combat situations remain worthwhile.
+The earlier safe-room blocker is **superseded**: ward_vigil.gd and wayfarer.gd
+now demonstrate owned loose enemies (`zone_idx = -1`), zero XP/ordinary drops,
+explicit absence/death/travel cleanup and host-owned state with guest mirrors.
+Reuse those invariants; assigning a loose enemy to an ordinary room without
+incrementing its purge count still produces false room-clear credit.
+
+Other open ideas from the original specification: bridge-out paths, save-bound
+spine draws, card eligibility by flags/band/class, mark follow-ups, and an
+Encounters Codex page. Current frequencies remain the original accepted values.
 
 ### Q14 — Road Deck v1 (original full spec; needs Q9 a; owner decisions 2)
 Estimated: 3 agent-days. Spec: DYNAMIC_WORLD §4 (cards 1,2,3,4,6 in v1;
@@ -805,7 +797,16 @@ Tests: inject determinism; an Unlisted room never spawns on the spine
 or in ch1 first run; pocket rooms hidden until the lock lifts; return
 stone lands in the origin room; banked-once. Codex rows present.
 
-## Q16 — pets, minigames, the follower primitive, eggs (OPEN; last)
+## Q16 — pets, minigames, the follower primitive, eggs (PARTIAL; updated 2026-09-08)
+
+The greenfield follower description below is historical: six animated pets,
+Sanctuary/Codex/Wardrobe previews, personal rescue history, Tovin's escort and
+fishing are implemented. The shell wager also exists. Party Appearance (MP-25)
+is completing co-op pet/skin identity and follower lifecycle validation; see
+PARTY_APPEARANCE.md. These completed systems do not imply every minigame or
+egg in the original specification has shipped. Chromas are scrapped.
+
+Original remaining-work reference:
 Estimated: 4 agent-days. Spec: DYNAMIC_WORLD §7-8.
 - **Follower primitive** (greenfield; unlocks `escort`, the Cage card,
   and pets): `scripts/follower.gd` Node2D under the world, lagged lerp

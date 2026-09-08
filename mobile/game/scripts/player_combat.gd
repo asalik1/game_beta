@@ -1159,6 +1159,32 @@ func cycle_target() -> void:
 	game.sfx("talk")
 
 
+## A right-stick flick chooses an eligible combatant in that direction.
+## Uses the same PvE/PvP candidate set and lock validity as Tab targeting.
+func lock_toward(direction: Vector2) -> void:
+	if not direction.is_finite() or direction == Vector2.ZERO:
+		return
+	var best: CharacterBody2D
+	var score := -INF
+	for node in _strike_candidates():
+		var e := node as CharacterBody2D
+		if e == null or e.dying or e.untargetable:
+			continue
+		var offset := e.global_position - global_position
+		if offset.length() > Balance.PAD_TARGET_RANGE:
+			continue
+		var alignment := offset.normalized().dot(direction.normalized())
+		if alignment < Balance.PAD_TARGET_CONE:
+			continue
+		var value := alignment - offset.length() / Balance.PAD_TARGET_RANGE * Balance.PAD_TARGET_DISTANCE_WEIGHT
+		if value > score:
+			score = value
+			best = e
+	if best != null and best != locked_target:
+		locked_target = best
+		game.sfx("talk")
+
+
 func aim_dir(rng := 520.0) -> Vector2:
 	var target := _aim_target(rng)
 	if target:
@@ -2514,6 +2540,8 @@ func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style
 		tween.parallel().tween_property(pivot, "modulate:a", 0.0, 0.17)
 		tween.tween_callback(pivot.queue_free)
 	var hits := 0
+	preload("res://scripts/reactive_terrain.gd").strike_circle(game, self,
+		global_position + dir * reach * 0.55, reach * 0.55)
 	for e in _enemies_within(global_position + dir * reach * 0.55, reach * 0.55):
 		hit_enemy(e, mult, effects.duplicate())
 		hits += 1

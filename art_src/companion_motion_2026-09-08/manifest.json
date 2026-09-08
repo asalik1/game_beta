@@ -1,0 +1,38 @@
+{
+  "spore_pup": {
+    "source": "C:\\Users\\asali\\.codex\\generated_images\\01a07ad4-90c0-7cf3-9b81-509ae9c889ed\\exec-83543542-4f6e-47f3-bb58-125260864302.png",
+    "master": "art_src/companion_motion_2026-09-08/masters/spore_pup.png",
+    "sha256": "5737777e0d6a6ed1a15b42bf9366b0d0fda787944482a0e89de75f972743486d",
+    "key": "green"
+  },
+  "hearth_hopper": {
+    "source": "C:\\Users\\asali\\.codex\\generated_images\\01a07ad4-90c0-7cf3-9b81-509ae9c889ed\\exec-e0f54ba7-9e4d-4754-9865-6dbc7ed537f8.png",
+    "master": "art_src/companion_motion_2026-09-08/masters/hearth_hopper.png",
+    "sha256": "b2726cbee1081baf8c3fb651276ed0166782ca63dfa77cb17f6fafd68c5c3a60",
+    "key": "magenta"
+  },
+  "cinder_bat": {
+    "source": "C:\\Users\\asali\\.codex\\generated_images\\01a07ad4-90c0-7cf3-9b81-509ae9c889ed\\exec-add31327-d496-450b-aca8-b810d2b05a8e.png",
+    "master": "art_src/companion_motion_2026-09-08/masters/cinder_bat.png",
+    "sha256": "84df07f3d7756e86a21c69727b31e26b7a706b3404fed41840f46f740b65e2aa",
+    "key": "green"
+  },
+  "ash_crow": {
+    "source": "C:\\Users\\asali\\.codex\\generated_images\\01a07ad4-90c0-7cf3-9b81-509ae9c889ed\\exec-813b4e64-2c89-42f2-a0a9-f77ff58a45e1.png",
+    "master": "art_src/companion_motion_2026-09-08/masters/ash_crow.png",
+    "sha256": "3a9dbbb1570fe2433417d02e7796d1561a171e07d6c1a0d8ed13b6bbe28467b4",
+    "key": "green"
+  },
+  "glimmerwing": {
+    "source": "C:\\Users\\asali\\.codex\\generated_images\\01a07ad4-90c0-7cf3-9b81-509ae9c889ed\\exec-763426cc-a7d9-4f13-8376-d7ea6f392a9d.png",
+    "master": "art_src/companion_motion_2026-09-08/masters/glimmerwing.png",
+    "sha256": "160f3f075c5a7df797748e0618b009bcd7d107a2e43829415c1c9dcf3ac2a619",
+    "key": "magenta"
+  },
+  "pale_flutter": {
+    "source": "C:\\Users\\asali\\.codex\\generated_images\\01a07ad4-90c0-7cf3-9b81-509ae9c889ed\\exec-5ccaacc0-ffef-444f-bfe6-2a1bbeb1f03d.png",
+    "master": "art_src/companion_motion_2026-09-08/masters/pale_flutter.png",
+    "sha256": "99d90017a382261f576f301f68da6203f839fd60ef924b1b6a899a20ff28c665",
+    "key": "green"
+  }
+}

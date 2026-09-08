@@ -10,8 +10,8 @@ class_name Pockets
 ## Static DATA table (like RoadDeck/Unlisted), consumed by the Game chain — NOT
 ## a Story content module. New class_name → run `--import` before headless.
 ##
-## v1 = 2 pockets, one twist noted per entry (the twist ENFORCEMENT is a
-## follow-up; v1 delivers the stone → arena → reward → return LOOP).
+## Each pocket now enforces its rule through pocket_trial.gd. Painted entry
+## and exit stones persist; victory leaves time to collect spoils.
 
 const ROSTER := {
 	"molten_court": {
@@ -19,7 +19,8 @@ const ROSTER := {
 		"kind": "cinderhide",             # reuse the ch4 magma bruiser
 		"affixes": ["savage"],
 		"terrain": "magma",
-		"twist": "the floor tithes",       # (enforcement TODO) a rhythmic lava pulse
+		"twist": "the floor tithes",
+		"rule": "The Molten Court heats one half of the floor at a time. Gold borders warn for three seconds before the stone burns. The opposite half and the center seam stay cold. Lure the guardian onto hot stone to melt its obsidian plates.",
 		"chapters": ["ch3", "ch4", "ch5", "ch6"],
 	},
 	"still_larder": {
@@ -27,7 +28,8 @@ const ROSTER := {
 		"kind": "icebound",               # reuse the ch5 ice captain
 		"affixes": ["bulwark"],
 		"terrain": "ice",
-		"twist": "no potions",             # (enforcement TODO) the Queen keeps what sleeps
+		"twist": "no potions",
+		"rule": "The Still Larder seals your bottles until its guardian falls. Drinking from the belt or bag spends nothing while the seal holds. Your class healing still works.",
 		"chapters": ["ch4", "ch5", "ch6", "ch7"],
 	},
 }

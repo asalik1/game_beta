@@ -1,6 +1,6 @@
 # Shot-rig runner (2026-08-15)  -  the one way to run an in-engine screenshot rig.
 #
-#   shot.bat <rig> [--timeout=N] [--fixed-fps=N] [--no-gate] [--no-import] [rig args...]
+#   shot.bat <rig> [--timeout=N] [--fixed-fps=N] [--mobile] [--renderer=METHOD] [--no-gate] [--no-import] [rig args...]
 #
 #   <rig>      fx_series | shot_fx_series | qa_skins | any game/<name>.tscn or game/shot_<name>.tscn
 #   rig args   everything else is passed to the engine after `--` (a ShotRig reads them via arg()/flag()).
@@ -23,11 +23,13 @@
 #   5. print the verdict line: exit code, RIG DONE/TIMEOUT/KILLED, shots dir + how many PNGs this run wrote
 #
 # Exit codes: the rig's own (0 ok / 1 rig-declared defect / 2 in-engine watchdog) | 3 killed by this
-# runner | 4 compile gate failed | 5 rig not found | 6 --import failed.
+# runner | 4 compile gate failed | 5 rig not found | 6 --import failed | 7 missing completion.
+# Script errors in either stream fail even when the engine and rig print exit=0.
 #
 # Windows PowerShell 5.1 (no &&, no ternary). Invoked by shot.bat; args land in $args.
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'shot_verdict.ps1')
 $root = Split-Path -Parent $PSScriptRoot
 $godot = Join-Path $root 'tools\Godot_v4.4.1-stable_win64_console.exe'
 $gameDir = Join-Path $root 'game'
@@ -55,6 +57,7 @@ $gate = $true
 $doImport = $true
 $rigArgs = @()
 $fixedFps = 0     # --fixed-fps=N: engine flag for frame-SERIES rigs (deterministic 1/N s per frame)
+$renderingMethod = ''  # optional renderer override for platform QA on this host
 foreach ($a in $rest) {
     $s = [string]$a
     if ($s -match '^--timeout=(.+)$') {
@@ -62,6 +65,13 @@ foreach ($a in $rest) {
         $rigArgs += $s            # the in-engine watchdog reads the same value
     } elseif ($s -match '^--fixed-fps=(\d+)$') {
         $fixedFps = [int]$Matches[1]
+    } elseif ($s -eq '--mobile') {
+        $gameDir = Join-Path $root 'mobile\game'
+    } elseif ($s -match '^--renderer=(forward_plus|mobile|gl_compatibility)$') {
+        $renderingMethod = $Matches[1]
+    } elseif ($s -like '--renderer=*') {
+        Write-Host '[shot] renderer must be forward_plus, mobile, or gl_compatibility'
+        exit 5
     } elseif ($s -eq '--no-gate') {
         $gate = $false
     } elseif ($s -eq '--no-import') {
@@ -82,7 +92,7 @@ if (-not $scene) {
     exit 5
 }
 $script = [IO.Path]::ChangeExtension($scene, '.gd')
-Write-Host "[shot] rig=$scene timeout=${timeout}s (outer kill at $($timeout + $grace)s) args=[$($rigArgs -join ' ')]"
+Write-Host "[shot] project=$gameDir rig=$scene timeout=${timeout}s (outer kill at $($timeout + $grace)s) args=[$($rigArgs -join ' ')]"
 
 # 2. class cache
 $cache = Join-Path $gameDir '.godot\global_script_class_cache.cfg'
@@ -92,11 +102,11 @@ if (Test-Path $cache) {
 }
 if ($needImport) {
     if (-not $doImport) {
-        Write-Host "[shot] ShotRig is NOT in the class cache and --no-import was given; the engine would hang. Run: $godot --headless --path game --import"
+        Write-Host "[shot] ShotRig is NOT in the class cache and --no-import was given; the engine would hang. Run: $godot --headless --path $gameDir --editor --import --quit"
         exit 6
     }
     Write-Host "[shot] ShotRig not in the class cache -> running --import once (contends with an open editor; a cold import in a fresh worktree is >10 min  -  copy .godot from the main checkout first)"
-    & $godot --headless --path $gameDir --import | Out-Null
+    & $godot --headless --path $gameDir --editor --import --quit | Out-Null
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[shot] --import failed (exit $LASTEXITCODE)"
         exit 6
@@ -125,6 +135,7 @@ New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 $outLog = Join-Path $logDir "$($scene -replace '\.tscn$','')_$stamp.out"
 $errLog = Join-Path $logDir "$($scene -replace '\.tscn$','')_$stamp.err"
 $argList = @('--audio-driver', 'Dummy')
+if ($renderingMethod) { $argList += @('--rendering-method', $renderingMethod) }
 if ($fixedFps -gt 0) { $argList += @('--fixed-fps', "$fixedFps") }
 $argList += @('--path', $gameDir, "res://$scene", '--') + $rigArgs
 $quoted = @()
@@ -179,6 +190,11 @@ $p.WaitForExit()
 $code = $p.ExitCode
 $log = @()
 if (Test-Path $outLog) { $log = Get-Content $outLog }
+$errors = @()
+if (Test-Path $errLog) { $errors = Get-Content $errLog }
+$modern = [bool](Select-String -LiteralPath (Join-Path $gameDir $script) -Pattern '^\s*extends\s+ShotRig\b' -Quiet)
+$modern = $modern -or [bool]($log | Select-String -Pattern '^RIG START:' -Quiet)
+$verdict = Get-ShotVerdict -OutputLines $log -ErrorLines $errors -EngineExit $code -RequireDone $modern
 $shotsDir = $null
 $m = $log | Select-String -Pattern '^RIG SHOTS DIR: (.+)$' | Select-Object -First 1
 if ($m) { $shotsDir = $m.Matches[0].Groups[1].Value.Trim() }
@@ -197,6 +213,8 @@ if ($killed) {
 }
 if ($timedOut) {
     Write-Host "[shot] VERDICT: RIG TIMEOUT (in-engine watchdog) after ${elapsed}s, exit=$code  -  see the RIG TIMEOUT line for the step it was stuck on. Log: $outLog"
+} elseif (-not $verdict.Passed) {
+    Write-Host "[shot] VERDICT: FAIL in ${elapsed}s, exit=$($verdict.ExitCode): $($verdict.Reason). Logs: $outLog / $errLog"
 } elseif ($done) {
     Write-Host "[shot] VERDICT: RIG DONE in ${elapsed}s, exit=$code. Log: $outLog"
 } else {
@@ -207,4 +225,4 @@ if ($shotsDir) {
 } else {
     Write-Host "[shot] no RIG SHOTS DIR line  -  is this rig a ShotRig subclass? (legacy rigs still work but print nothing the runner can parse)"
 }
-exit $code
+exit $verdict.ExitCode

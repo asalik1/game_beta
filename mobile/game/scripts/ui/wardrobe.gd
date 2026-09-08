@@ -202,21 +202,27 @@ static func _pet_row(m: Menus, list: VBoxContainer, id: String, pet: Dictionary)
 		b.disabled = not afford
 		if not afford:
 			b.tooltip_text = "Not enough Renown (you have %d)" % g.renown()
-	var thumb: Texture2D = Art.tex(String(pet["sprite"]))
-	if thumb != null:
-		var tr := TextureRect.new()
-		tr.texture = thumb
-		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		tr.custom_minimum_size = Vector2(48, 48)
-		row.add_child(tr)
+	var action := row.get_child(0) as Control
+	action.custom_minimum_size = Vector2(110, 44)
+	action.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var preview := preload("res://scripts/ui/companion_preview.gd").new()
+	preview.setup(id, Vector2(64, 64))
+	row.add_child(preview)
 	var rare: bool = String(pet.get("tier", "")) == "rare"
 	var chip := m._lbl(row, "RARE" if rare else "COMMON", 12,
 		Balance.RENOWN_COLOR if rare else Color(0.72, 0.9, 0.72))
 	chip.custom_minimum_size = Vector2(64, 0)
-	var nm := m._lbl(row, String(pet["name"]) + ("   ← out" if worn else ""), 14,
+	var words := VBoxContainer.new()
+	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	words.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(words)
+	var nm := m._lbl(words, String(pet["name"]) + ("   ← out" if worn else ""), 14,
 		Color(1.0, 0.88, 0.45) if worn else (Color(0.85, 0.88, 0.94) if owned else Color(0.62, 0.64, 0.7)))
 	nm.custom_minimum_size = Vector2(240, 0)
+	nm.tooltip_text = String(pet.get("lore", "")) + "\nAlso earned by rescuing this creature. See Codex → Sanctuary."
+	var lore := m._lbl(words, String(pet.get("lore", "")), 12, Color(0.65, 0.70, 0.72))
+	lore.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lore.custom_minimum_size.x = 240
 
 
 ## The buy control for an unowned cosmetic: price + Buy (confirm-gated for

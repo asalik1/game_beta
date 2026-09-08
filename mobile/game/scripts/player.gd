@@ -6,6 +6,35 @@ class_name Player extends "res://scripts/player_kit_warlock.gd"
 
 # ================================================================= per frame
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		clear_local_intents()
+
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and game != null:
+		for slot in ["a1", "a2", "a3", "ult"]:
+			if int(event.keycode) == int(game.binds.get(slot, 0)):
+				queue_ability(slot)
+
+
+func queue_ability(slot: String) -> void:
+	if not cds.has(slot) or not is_locally_controlled() or game == null \
+			or game.state != Game.ST_PLAYING or game.input_overlay_up() \
+			or dead or downed or ghost:
+		return
+	action_buffer.press(slot, Time.get_ticks_msec() * 0.001)
+	var reason := ""
+	if frozen_time > 0.0:
+		reason = "Frozen"
+	elif mp < ability_cost(slot):
+		reason = "Not enough mana"
+	elif cds[slot] > Balance.ABILITY_BUFFER_SECONDS:
+		reason = "Ready in %.1fs" % float(cds[slot])
+	if reason != "" and is_instance_valid(game.hud):
+		game.hud.combat_feedback.ability_notice(slot, reason)
+
+
 func _process(_delta: float) -> void:
 	_refresh_occlusion_outline()
 
@@ -19,6 +48,15 @@ func _physics_process(delta: float) -> void:
 	if not is_locally_controlled():
 		_remote_present(delta)
 		return
+	# Co-op endings are personal overlays; the shared world still runs.
+	# Hold this reader's survival clocks as well as input, so remaining adds,
+	# floor hazards or a bleed-out cannot punish time spent reading the ending.
+	if game != null and game.chapter_finale.active:
+		clear_local_intents()
+		velocity = Vector2.ZERO
+		return
+	if not global_position.is_finite() or not velocity.is_finite():
+		_recover_motion(global_position if global_position.is_finite() else game.room_center(game.cur_room))
 	# Intents first (MP seam): poll the local device into the intents
 	# fields, then everything below reads ONLY intents — same keys, same
 	# frame, same order as the old inline Input reads. A remote player's
@@ -262,7 +300,7 @@ func _physics_process(delta: float) -> void:
 		# hazards dropped) so the walk cycle's foot-slide reads true to a spawn.
 		spd = dev_morph.move_speed
 	velocity = dir * spd + game.gust_vec  # sandstorm gusts shove everyone
-	move_and_slide()
+	_move_body()
 
 	# Foot dust (life pass 2026-08-19): a running hero kicks a tiny puff of
 	# floor-coloured dust at the feet — never headless. With a walk clip
@@ -358,13 +396,14 @@ func _physics_process(delta: float) -> void:
 	# ------------------------------------------------------------- actions
 	# Consumed from the intents polled at the top of this frame (MP seam) —
 	# held-state presses, debounced by the cooldowns exactly as before.
-	if intent_a1:
+	var input_now := Time.get_ticks_msec() * 0.001
+	if intent_a1 or action_buffer.has_press("a1", input_now):
 		use_ability("a1")
-	if intent_a2:
+	if intent_a2 or action_buffer.has_press("a2", input_now):
 		use_ability("a2")
-	if intent_a3:
+	if intent_a3 or action_buffer.has_press("a3", input_now):
 		use_ability("a3")
-	if intent_ult:
+	if intent_ult or action_buffer.has_press("ult", input_now):
 		use_ability("ult")
 	if intent_potion:
 		drink_potion()
@@ -596,6 +635,47 @@ func _walk_juice(delta: float) -> void:
 
 
 # -------------------------------------------------- clip state machine ---
+## Match the enemy's finite physics boundary. Position repair in Game's next
+## process tick is too late: a walk can consume bad velocity first and retain
+## its NaN stride phase even after the hero is back on solid ground.
+func _move_body() -> void:
+	var anchor := global_position
+	if not anchor.is_finite():
+		_recover_motion(game.room_center(game.cur_room))
+		return
+	if not velocity.is_finite():
+		_recover_motion(anchor)
+		return
+	if Engine.time_scale <= 0.0:
+		return
+	var dt := get_physics_process_delta_time() if Engine.is_in_physics_frame() else get_process_delta_time()
+	if dt <= 0.0:
+		return
+	var requested := velocity
+	move_and_slide()
+	var traveled := get_real_velocity()
+	if not velocity.is_finite() or not global_position.is_finite() or not traveled.is_finite():
+		_recover_motion(anchor)
+		last_motion_fault["stage"] = "physics result"
+		last_motion_fault["requested"] = requested
+		last_motion_fault["anchor"] = anchor
+	else:
+		velocity = traveled  # stride follows real travel, not input pressed into a wall
+
+
+func _recover_motion(anchor: Vector2) -> void:
+	motion_faults += 1
+	last_motion_fault = {"position": global_position, "velocity": velocity,
+		"clock": strip_t, "phase": _stride_ph, "gust": game.gust_vec}
+	global_position = anchor
+	velocity = Vector2.ZERO
+	strip_t = 0.0
+	_stride_ph = 0.0
+	_gait_step = 0.0
+	if game.dev_mode:
+		print("MOTION RECOVERY hero %s: %s" % [cls, last_motion_fault])
+
+
 # Locomotion (idle/walk) loops; a one-shot action clip plays through once
 # then hands back to locomotion; death latches the final frame. Called every
 # physics frame whenever a class sheet is installed (strip_frames > 0).
@@ -732,6 +812,9 @@ func use_ability(slot: String) -> void:
 	var cost := ability_cost(slot)
 	if mp < cost:
 		return
+	action_buffer.consume(slot)
+	if game.local_player == self and is_instance_valid(game.hud):
+		game.hud.combat_feedback.ability_fired(slot)
 	cds[slot] = ability_cd(slot)
 	# Blade cadence (round 35): the assassin's two spammables share a
 	# lockout — Stab and Fan of Knives can each be spammed, but never
@@ -928,6 +1011,9 @@ func use_ability(slot: String) -> void:
 func drink_potion() -> void:
 	if potion_cd > 0.0 or dead or downed or ghost:
 		return
+	if preload("res://scripts/pocket_trial.gd").potions_locked(game, self):
+		_drink_gate(active_potion)  # explain the seal before recording a drink
+		return
 	# PVP v1 (owner spec): the duel has no stakes, so it takes no stock either —
 	# potions are BARRED (drinking real bottles into a zero-reward mode would be
 	# pure loss, and sustain in a 1v1 is its own balance question for later).
@@ -1001,6 +1087,10 @@ func drink_potion() -> void:
 ## a gate armed by another heavy hit (or a deliberate i-frame window), so two
 ## overlapping telegraphs can't double-tap someone instantly.
 func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy := false, pvp_pen := 0.0, pvp_dex := 0.0) -> void:
+	# A late host hit still arrives while local survival is held above. Each
+	# OWNER protects only their reader; remote shells keep forwarding normally.
+	if game != null and is_locally_controlled() and game.chapter_finale.active:
+		return
 	if dead:
 		return
 	if downed or ghost:
@@ -1239,6 +1329,10 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		dr_time = maxf(dr_time, uniq_k("dr_dur"))
 		dr_amt = maxf(dr_amt, uniq_k("dr"))
 		_cover_wave()
+	damage_memory.record(Time.get_ticks_msec() * 0.001, amount, hp, max_hp,
+		preload("res://scripts/combat_memory.gd").source_name(attacker, dmg_type), dmg_type, heavy)
+	if amount > 0.0 and is_instance_valid(attacker) and attacker is Node2D:
+		game.hud.combat_feedback.hit(attacker.global_position - global_position, heavy)
 	hp -= amount
 	# Vampiric (endgame affix, reworked 2026-07-21): the attacker DRINKS a
 	# fraction of the damage it actually lands (post-mitigation, post-shield).
@@ -1287,6 +1381,8 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			game.hud.flash_screen(Color(0.5, 0.1, 0.7), 0.5, 0.5)
 		else:
 			hp = 0.0
+			action_buffer.clear()
+			damage_memory.fall(Time.get_ticks_msec() * 0.001, String(game.zones[game.cur_room]["name"]))
 			# PVP (v1): a lethal hit in a duel is a real FALL — the controller
 			# scores it and resets the round. Never the co-op downed detour
 			# (nobody revives a rival), never the solo death flow (no tithe,
@@ -1679,6 +1775,8 @@ func _cover_wave() -> void:
 
 
 func revive() -> void:
+	action_buffer.clear()
+	damage_memory.clear_recent()
 	dead = false
 	net_clear_down_local()  # MP-12: down/ghost/channel state dies with the respawn (solo no-op)
 	hp = max_hp
@@ -1794,14 +1892,14 @@ func _down_tick(delta: float) -> void:
 		# to YOU). The prone pose was set on entry (_refresh_down_visual) and
 		# survives without a mover here; movement returns only as a ghost below.
 		velocity = Vector2.ZERO
-		move_and_slide()
+		_move_body()
 		return
 	# GHOST: immaterial drift at walk speed until the room clears. Same frame's
 	# gated intents as the living path — a re-poll here would drift the ghost
 	# under an open overlay.
 	var dir := intent_move
 	velocity = dir * speed
-	move_and_slide()
+	_move_body()
 	if dir.x != 0.0:
 		look_sign = signf(dir.x)
 		facing = Vector2(look_sign, 0.0)

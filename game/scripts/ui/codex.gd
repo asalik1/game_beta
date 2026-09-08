@@ -39,6 +39,8 @@ const SECTIONS := [
 	{"id": "gems", "grp": "Armory", "name": "Gems", "kind": "page", "accent": ACC_INFO},
 	{"id": "terrains", "grp": "World", "name": "Terrains", "kind": "list", "accent": ACC_GOLD},
 	{"id": "curios", "grp": "World", "name": "Curios", "kind": "list", "accent": ACC_GOLD},
+	{"id": "sanctuary", "grp": "World", "name": "Sanctuary", "kind": "page", "accent": Color(0.72, 0.91, 0.70)},
+	{"id": "fishing", "grp": "World", "name": "Catch journal", "kind": "page", "accent": Color(0.57, 0.84, 0.80)},
 	{"id": "records", "grp": "You", "name": "Records", "kind": "page", "accent": Color(1.0, 0.85, 0.4)},
 	{"id": "gallery", "grp": "You", "name": "Gallery", "kind": "page", "accent": ACC_GOLD},
 	{"id": "notes", "grp": "Reference", "name": "Field notes", "kind": "page", "accent": ACC_GOLD},
@@ -50,7 +52,7 @@ const SECTIONS := [
 
 ## Field notes pages (chips) — the prose that used to head the monster and
 ## gear shelves, plus the old Gems/Bags/Rules gear sub-tabs.
-const NOTE_PAGES := [["elites", "Elites & Temptations"], ["gear", "Gear rules"], ["gems", "Gem rules"], ["bags", "Bags & consumables"], ["fangmoot", "Fangmoot"]]
+const NOTE_PAGES := [["wayfinder", "Wayfinder"], ["combat", "Combat"], ["controller", "Controller"], ["elites", "Elites & Temptations"], ["gear", "Gear rules"], ["gems", "Gem rules"], ["bags", "Bags & consumables"], ["fangmoot", "Fangmoot"]]
 ## Gallery shelves (chips) — Heroes / Monsters / Bosses / Folk of the Vale
 ## (mirrors the Bestiary rail's Monsters-before-Bosses order).
 const GALLERY_SHELVES := [["heroes", "Heroes"], ["monsters", "Monsters"], ["bosses", "Bosses"], ["npcs", "Folk"]]
@@ -916,7 +918,12 @@ static func _enemy_card(m: Menus, list: VBoxContainer, kind: String, is_boss: bo
 			12, Color(0.5, 0.55, 0.66))
 
 	# Bosses with authored mechanics: the Mechanics & Tells fold, right here.
-	var mechs: Array = st.get("mechanics", [])
+	var mechs: Array = st.get("mechanics", []).duplicate(true)
+	var cast_move: Dictionary = preload("res://scripts/boss_cast.gd").MOVES.get(kind, {})
+	if is_boss and not cast_move.is_empty():
+		mechs.push_front({"name": String(cast_move.name) + " — interrupt window",
+			"tell": "Amber body brackets and an INTERRUPT bar. The white fuse counts down to the cast.",
+			"counter": "Deal damage to fill the pressure bar before the fuse ends. Close hits contribute more; damage over time contributes less. A break cancels the cast and opens a brief +25% damage window. Otherwise dodge its normal ground warning."})
 	if is_boss and not detail and not mechs.is_empty():
 		var fold := VBoxContainer.new()
 		fold.add_theme_constant_override("separation", 6)
@@ -1603,10 +1610,25 @@ static func _build_page(m: Menus, split: HBoxContainer) -> void:
 			UIJournal._archive(m, list)
 		"records":
 			_records(m, list)
+		"sanctuary":
+			preload("res://scripts/ui/sanctuary.gd").page(m, list)
+		"fishing":
+			preload("res://scripts/ui/fishing.gd").journal(m, list)
 		"gallery":
 			_gallery(m, list, "gallery_" + String(f.get("shelf", "heroes")))
 		"notes":
 			match String(f.get("page", "elites")):
+				"wayfinder":
+					_notes_wayfinder(m, list)
+				"combat":
+					_notes_combat(m, list)
+				"controller":
+					m._lbl(list, "PLAY WITH A CONTROLLER", 22, UITheme.GOLD_BRIGHT)
+					m._lbl(list, "Left stick moves your hero, with gentle tilt for walking. The triggers and shoulder buttons use your four equipped abilities: RT basic, LT second, RB third, LB ultimate. The ability bar shows the current button labels.", 16)
+					m._lbl(list, "A interacts and confirms; X drinks the selected potion; Y cycles potions. R3 locks or cycles a target. Flick the right stick toward a target to choose it, then release before another flick. B releases the lock. D-pad up opens the map, left the bag, right skills, and down the Codex. Menu pauses; L3 opens party chat in co-op.", 16)
+					m._lbl(list, "Menus: left stick moves the cursor, D-pad snaps between visible controls, A selects or holds a drag, and right stick scrolls. Place the cursor over the atlas to zoom with the right stick. Focus a text field and press X for an on-screen keyboard; its Done button sends party chat. B goes back.", 16)
+					m._lbl(list, "Fishing: RT casts, strikes and holds the reel. Release it when the fish surges. Use the cursor to pick lures and visit the catch journal.", 16)
+					m._lbl(list, "Settings → Controller adjusts deadzone, cursor speed and Xbox / PlayStation labels. Keyboard and touch remain available: use either to switch prompts. After closing an overlay, release held controls before returning to combat.", 16)
 				"gear":
 					_notes_gear(m, list)
 				"gems":
@@ -1681,8 +1703,44 @@ static func _gems_page(m: Menus, list: VBoxContainer) -> void:
 	foot.custom_minimum_size = Vector2(PAGE_W, 0)
 
 
+## FIELD NOTES › Wayfinder — exploration and navigation controls.
+static func _notes_wayfinder(m: Menus, list: VBoxContainer) -> void:
+	UITheme.header(m._lbl(list, "— THE WAYFINDER —", 18, ACC_GOLD))
+	for pair in [
+		["Read the room", "The corner map shows your facing, red enemies, blue people and allies, gold chest diamonds, and the room's doorways. The pale rectangle is the floor currently on your screen. Buried treasure remains hidden until you uncover it."],
+		["Finish the encounter", "The threat count and slim progress bar track the current encounter. Red doors are sealed. When the room is secured, the map turns green and tells you if revealed chests still wait to be collected."],
+		["Chart your own course", "Open the map to use the field atlas. Select an explored room or a visible unexplored passage, then choose Set route. The gold path stays inside your charted territory; it cannot reveal a shortcut through the unknown. Drag to pan and use the zoom controls to inspect a crowded chart."],
+		["Follow the bearing", "After you close the atlas, the map names your destination and a gold bearing points toward the next doorway. Its number counts the passages remaining. Guidance waits during combat, respects sealed story gates, and clears when you arrive. Pins belong to this chapter and run."],
+		["Keep a promise in sight", "Accepting your first side quest tracks it automatically. In the Journal, Track this quest selects another. A compact card follows its next objective and guides you through charted rooms to the person, prop or surviving quarry. A gold diamond marks the objective within the area. Unexplored locations stay hidden. Setting a manual atlas route stops quest guidance; you can resume it in the Journal."],
+		["The road remembers", "The Hunter’s Rounds leave crossed trail signs at the ravine, chapel and tower. A Flame at the Window leaves a burning pine light; paying Osla’s debt leaves a blue ribbon at the Hollow Oak. These marks return with your kept promises."],
+		["Return to safety", "Select a visited sanctuary or a defeated boss arena, then choose Travel. Travel remains sealed during encounters. Crownfall retains its detailed city map and service directory."],
+	]:
+		UITheme.header(m._lbl(list, String(pair[0]), 16, ACC_GOLD))
+		var text := m._lbl(list, String(pair[1]), 16, Color(0.78, 0.8, 0.86))
+		text.custom_minimum_size.x = PAGE_W
+
+
 ## FIELD NOTES › Elites & Temptations — the copy that used to sit above the
 ## monster shelf (round 6 elites + the elective risk events).
+static func _notes_combat(m: Menus, list: VBoxContainer) -> void:
+	for pair in [
+		["Walk the last mile", "Tovin waits in Village Outskirts. Accept his promise, then speak again to begin an optional escort to the fire. Stay near him to move; ask him to wait or follow when you need space. Two groups of pursuers show arrival marks before appearing. Keep creatures outside his circle and stay nearby to preserve his resolve. If it breaks, he retreats safely and you can retry. Reach the fire for the Road Companion title, then speak to him to leave a lasting mark in your story. Escort creatures pay no loot or XP. In co-op, the party shares his position, orders and resolve; menus do not pause danger."],
+		["Stand the tower's watch", "The Collapsed Tower has an old ward brazier. Clear its residents, then interact to begin an optional three-wave defense. Stay inside the broad amber ring: an unattended ward loses strength. Creatures in its small red circle also drain it. Defeat each wave; brief pauses mend some ward strength and mark the next arrivals. Snuff the brazier to stop and retry. Holding all three waves earns the Lamplighter title; tell Mara in Emberfall what happened. The flame and her promise survive in your story. Vigil creatures pay no loot or XP. In co-op, everyone shares one ward, and a menu does not pause the fight."],
+		["A tap is a commitment", "A quick ability tap is remembered briefly, including just before its cooldown ends. Holding a key still repeats at the normal cadence. Menus, dialogue, defeat and focus loss cancel pending attacks. On touch, tap to cast or hold to read the ability card."],
+		["Read your opponent", "The current target's health bar calls out openings and dangerous stances. Hold fire against reflection or a counter, interrupt a healer, and attack an exposed enemy. These cues describe the enemy's current state; the marked ground still shows where an attack will land."],
+		["Break a signature cast", "Amber brackets and an INTERRUPT bar mark selected boss casts. Fill the broad pressure bar with damage before the thin white fuse expires. Hits from within 190 units build 50% more pressure; periodic damage contributes 40%. A break cancels that cast, briefly stops the boss, and lets everyone deal 25% more damage for 2.5 seconds. Ordinary stuns still cannot stun a boss. Unbroken casts retain their normal dodge warning. In co-op, pressure is shared and scales with the boss's party health."],
+		["Know what hit you", "A short arc beside your hero points toward an attacker whose blow landed. A double amber arc marks a heavy hit. A rejected cast tells you whether you need mana, time to recover, or time to thaw."],
+		["Learn from a fall", "Pause and open Combat report to inspect the final blows of your last fall, or the most recent damage. It records health lost after shields and mitigation, never overkill. Recovery keeps this record for the current character session. Environmental damage may not have a named attacker."],
+		["Read the ground", "A bright rim fills clockwise toward impact. Its outer edge marks the affected ground throughout the warning. Green inward arrows identify a shelter; false shelters still flicker. In solo play, pausing freezes both the warning and the attack."],
+		["Turn the terrain against a pack", "Red-X Ember Casks and diamond-marked Rimehearts are single-use terrain weapons. Interact, land a melee swing, or hit one with a projectile to prime it. Enemy shots can prime them too. The marked circle fills for 1.5 seconds before bursting: move outside it. Casks damage nearby monsters; Rimehearts deal less damage but slow them for 3 seconds. Both hurt heroes caught inside. A burst primes nearby marked objects, each with its own full warning. Used objects stay spent for this chapter visit, including saves and co-op. Bosses are unaffected; ordinary scenery never explodes."],
+		["Bank a shot through crystal", "Crystal clusters and spires marked with a blue ring bend incoming projectiles toward the nearest visible foe. Enemy bolts bend toward heroes too: a crystal can turn a missed shot back into danger. A nearby guide shows the outgoing path for your attacks. Shots keep their original damage, effects and remaining range; each can bank off two different crystals. With no visible target, the shot reflects off a diagonal facet. This works in ordinary combat rooms, outside boss arenas, PvP and endgame challenges."],
+		["Make the feedback yours", "Settings › Combat & comfort adjusts camera shake, camera lead, screen flashes, impact pauses, damage bearings, combat framing and target visibility. Combat framing eases the view toward your current target and widens it for distant opponents; close fights retain the usual scale. Set Camera lead to zero to keep the hero centered, or switch Combat framing off for movement lead alone. Target visibility fades trees covering your current enemy and traces a thin amber silhouette where solid props hide it. Cover still blocks movement and attacks normally. The gold trail on an enemy's health bar briefly shows the damage you just dealt. Changes apply immediately."],
+	]:
+		UITheme.header(m._lbl(list, String(pair[0]), 17, ACC_GOLD))
+		var text := m._lbl(list, String(pair[1]), 16, Color(0.78, 0.8, 0.86))
+		text.custom_minimum_size.x = PAGE_W
+
+
 static func _notes_elites(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
 	# Elites — the roaming miniboss variant (round 6).
@@ -1713,12 +1771,7 @@ static func _notes_elites(m: Menus, list: VBoxContainer) -> void:
 	var rcard := VBoxContainer.new()
 	rcard.add_theme_constant_override("separation", 2)
 	_card(list).add_child(rcard)
-	for rline in [
-		"Between the fighting, the road throws people at you. In some quiet rooms a lone figure waits at the door and withdraws after %d seconds if you pass them by — at most a card or two a run, so they stay an event, not a checkpoint." % int(Balance.ROAD_CARD_WINDOW),
-		"THE BRIDGEWARD'S TOLL — a collector bars the way. Pay his gold for safe passage (you catch your breath, and the crown warms to you), or push past for free — the ditch may lift a few coins, and the crown remembers a stiffed toll.",
-		"THE WOUNDED COURIER — a king's rider bleeds by a milestone. Spend gold on the draught that saves him and he presses coin and goodwill on you; cut the strap instead and the satchel is yours, but a road-thief's name travels.",
-		"THE STRANGER'S WAGER — a hooded gambler and three shells. Stake gold, follow the pea: a clean read doubles your money (and now and then shakes a gem loose); a wrong shell keeps your coin at the fire. A fair one-in-three, once per road.",
-		"Road encounters pay NO experience — they are about gold and the crown's regard, not levels. Rolled per character, so a replay meets a different road."]:
+	for rline in RoadDeck.field_notes():
 		var rl := m._lbl(rcard, String(rline), 13, Color(0.78, 0.8, 0.86))
 		rl.custom_minimum_size = Vector2(PAGE_W, 0)
 	# The Unlisted — rare hidden bosses (Q15).
@@ -1738,7 +1791,9 @@ static func _notes_elites(m: Menus, list: VBoxContainer) -> void:
 	_card(list).add_child(pcard)
 	for pline in [
 		"Now and then a stone in a quiet room hums with a cold light — a door into a POCKET, a small sealed place that is not on any map: a lone arena, one boss that shouldn't be anywhere, and a way back to exactly where you were standing.",
-		"Step through if you like. Fell what's inside and the pocket collapses, paying a gem and the crown's regard, then sets you back down where you left. Rolled per character; the door is always open when it appears, and it asks nothing to walk away from."]:
+		"Step through if you like. The entry stone and the exit remain available, including after victory. Collect your chest, gem and the crown's regard, then leave when ready. Retreat is free; an empty arena resets its guardian. A completed guardian stays down this run, independently of its campaign counterpart.",
+		"The Molten Court heats alternating halves of its floor: gold borders give three seconds of warning. The other half and the center seam remain cold; lure the guardian across hot stone to melt its plates. These optional guardians pay no XP. The Still Larder seals bottles until victory; neither the belt nor the bag spends a bottle or a planned drink while sealed. Class healing still works.",
+		"Party members can enter and return individually. The host owns the arena clock and victory; everyone present earns a personal reward once. A late arrival sees the current trial and an open way home."]:
 		var pl := m._lbl(pcard, String(pline), 13, Color(0.78, 0.8, 0.86))
 		pl.custom_minimum_size = Vector2(PAGE_W, 0)
 
@@ -1773,6 +1828,9 @@ static func _notes_fangmoot(m: Menus, list: VBoxContainer) -> void:
 ## head their shelves, then the grades / chests / drop-band / cap rules.
 static func _notes_gear(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
+	UITheme.header(m._lbl(list, "COMPARE, KEEP AND SORT", 17, ACC_GEAR))
+	var care := m._lbl(list, "Select a piece in your bag or on a merchant's shelf to compare its stats with the same equipped slot. Green and red changes include upgrades and gems; signature passives remain separate. Keep a favourite to protect it from sales, dropping and Auto-equip. Kept pieces carry a star and stay kept when you save. Order the bag by grade, slot or kept pieces to find what you need.", 16, Color(0.78, 0.8, 0.86))
+	care.custom_minimum_size.x = PAGE_W
 	# What a shape TAG means (2026-07-26). It used to mean "grants these stats"; a
 	# shape now only LEANS the roll, so the gallery needs saying out loud or
 	# the tags read as promises the item never makes.
@@ -2119,7 +2177,13 @@ static func _coop(m: Menus, list: VBoxContainer) -> void:
 			"Hit zero among friends and you fall DOWNED instead of dead: 30 seconds of crawling while you bleed out. Any teammate can kneel beside you for 3 seconds (a hit interrupts them) to lift you back up at 30% health; bleed out fully and you ghost until the room is cleared. Only the WHOLE party falling ends the run — the usual death price, paid together."],
 		["Loot is personal", Color(0.6, 1.0, 0.6),
 			"Every drop, coin and gem you see is YOURS — each player is rolled their own rewards, nothing is split and nothing can be sniped. Guests take home everything their character earns; the world and its story stay the host's."],
-		["The party is the unit", Color(0.7, 0.9, 1.0),
+		["Your history comes home", Color(0.95, 0.85, 0.5),
+			"Your opening choices, city relationships, kept promises, rescued companions and chapter completion belong to your hero. Joining a friend preserves that history, and new personal accomplishments come home with you. Your first conquest of each chapter pays its spoils once, regardless of whether the host has cleared it before. Ordinary chapter quest progress, rooms and opened routes remain in their own world."],
+		["Your chapter ending", Color(0.7, 0.9, 1.0),
+			"Each hero sees their own class's illustrated chapter ending and reads at their own pace. Your rewards, chapter credit and records are banked before the ending; reading does not add to your recorded clear time."],
+		["Familiar faces and small company", Color(0.72, 0.91, 0.70),
+			"Friends see your equipped skin and companion, including changes you make during the session. Your companion follows you through travel and returns when you stand again after ghosting. These are cosmetic choices; your collection and each hero's selections remain your own."],
+		["Travelling together", Color(0.7, 0.9, 1.0),
 			"The Party HUD button stays visible for the whole session — even when you are its only member. Use it to reopen the roster, copy the join code, or manage the party after closing the panel; closing the panel never ends the session. Open party chat with ENTER on keyboard or Say on touch. Entering content is a PROPOSAL: the host names the chapter — and its difficulty tier — and everyone selects Ready; one decline cancels the check and names who declined. After a victory, WAY-GATES rise beside the fallen boss — Crownfall, a fresh pass, or the road on — and the leader's pick at a gate goes to the party as the same ready check, no codes re-read. The host can also remove a member (the ✕ in the party panel, or the pause menu mid-run)."],
 		["The battle meter", Color(0.95, 0.6, 0.25),
 			"In a party, a compact DAMAGE meter sits under the ally frames — everyone's damage this run, live. Boss victory letters carry the party's per-member breakdown, and endgame results tally damage, healing and damage taken for the whole crew."],
@@ -2492,8 +2556,9 @@ static func _gear_bags(m: Menus, list: VBoxContainer) -> void:
 			bfl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	for line2 in [
 		"Gear, gems, consumables — and your HEALTH POTIONS — all share your bags' slots, and EVERY unit counts: 20 potions take 20 slots (they only STACK for display). Equip up to %d bags at once — total capacity is the SUM of their slots (F pouch 15 … S hold 45). You start with two Frayed Pouches." % Balance.MAX_BAGS,
-		"Bags drop from BOSSES and elites (tier tracks the CHAPTER, matching its boss gear) and merchants stock them too — but a good bag costs real gold. Pick up one past your %d and your SMALLEST is cashed for %dg — the best %d are always kept." % [Balance.MAX_BAGS, Balance.BAG_SELL_GOLD, Balance.MAX_BAGS],
-		"Full bag? Select any loose gear, gem, or consumable to open its detail card and DROP it — fling it out to free a slot. New loot drops at your feet instead of vanishing — anything left on the ground arrives in your MAILBOX (pause menu) when the chapter ends. Unclaimed letters expire after %d days." % Balance.MAIL_EXPIRY_DAYS]:
+		"Bags drop from BOSSES and elites and merchants stock them too. A found bag goes into your pack as a loose item: equip it yourself, keep a spare, or sell it. Equipping another bag with all %d slots occupied offers a swap; nothing is automatically sold." % Balance.MAX_BAGS,
+		"Full bag? Select loose gear, a gem, or a consumable and DROP it to free a slot. New loot drops at your feet instead of vanishing. Ground overflow arrives in your MAILBOX (pause menu) when you leave the world or chapter. A guest's home save keeps that overflow as mail, including after a lost connection. Joining another world also mails drops left in your home world immediately. Ordinary solo saves keep local drops on the ground.",
+		"Unopened combat chests and loose coins are saved too. When you resume or leave that world, a Recovered Spoils letter holds the exact chest contents and recovered gold goes straight to your purse. Hidden caches still require discovery. Unclaimed letters expire after %d days." % Balance.MAIL_EXPIRY_DAYS]:
 		var bl := m._lbl(bags, String(line2), 13, Color(0.7, 0.72, 0.78))
 		bl.custom_minimum_size = Vector2(PAGE_W, 0)
 		bl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

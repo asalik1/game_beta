@@ -115,6 +115,13 @@ shares the name and art? Proposal: distinct debuff, shared visual language.
 
 ## 3. Lane B — Interrupt windows (the first non-dodge counterplay)
 
+**Implementation update, 2026-09-07:** first playable slice built in
+`codex/crownless-wayfinder`; see [BOSS_INTERRUPTS.md](../BOSS_INTERRUPTS.md).
+Six existing Act 1 casts now have shared pressure windows. Close hits earn more
+pressure instead of giving different classes different clocks. Exposure has its
+own lifetime so it cannot overwrite Death Mark. This section's original design
+and the other proposed lanes below remain historical/unimplemented where noted.
+
 **PICK. Fills the single biggest hole in boss design, cheap, reuses `vuln_time`.**
 
 ### The seam

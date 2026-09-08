@@ -45,6 +45,11 @@ func refresh_touch_mode() -> void:
 ## keyboard phrasing on PC. Applied at display points (quest line, dialogue). Menu
 ## close-hints are handled separately in menus._hint.
 func touchify(s: String) -> String:
+	if gamepad != null and gamepad.active:
+		for spec in [["E", "interact"], ["Q", "potion"], ["T", "skills"], ["Space", "interact"]]:
+			s = s.replace("press " + spec[0], "press " + gamepad.label(spec[1]))
+			s = s.replace("Press " + spec[0], "Press " + gamepad.label(spec[1]))
+		return s.replace("E — ", gamepad.label("interact") + " — ")
 	if not touch_mode:
 		return s
 	# Quest copy names the NPC with a gendered pronoun; keep the action copy
@@ -83,6 +88,8 @@ func ui_copy(s: String) -> String:
 
 ## A live binding on keyboard, the painted on-screen control on touch.
 func control_hint(action: String, touch_label: String) -> String:
+	if gamepad != null and gamepad.active:
+		return "[%s]" % gamepad.label(action)
 	if touch_mode:
 		return touch_label
 	return "[%s]" % OS.get_keycode_string(binds.get(action, KEY_NONE))
@@ -138,6 +145,7 @@ var player: Player:               # legacy alias — YOUR OWN player
 			players.append(value)
 var hud: Hud
 var menus: Menus
+var gamepad: Node
 var camera: Camera2D
 var ambient: CanvasModulate
 var glow_env: WorldEnvironment
@@ -173,6 +181,7 @@ var last_safe_room := 0          # death returns you here
 
 var elder: Node2D
 var pet_follower: Sprite2D = null  # Q16 cosmetic companion; lags the local player, rebuilt with the world
+var remote_pet_followers: Dictionary = {}  # owner instance id -> {owner, visual}; replacement-safe
 var interactables: Array = []    # [{node, prompt, action}]
 var active_facing_interactable: Dictionary = {} # NPC temporarily turned toward the local player
 var interact_in_range := false   # is the player next to any interactable? (touch Act-button gate)
@@ -246,6 +255,7 @@ var _hitstop_end_ms := 0
 var _hitstop_restore := 1.0       # the time_scale to return to (dev slow-mo aware)
 var _cam_look := Vector2.ZERO   # eased look-ahead offset (camera feel, 2026-08-18)
 var _cam_zoom_mult := 1.0       # eased combat zoom multiplier on the base zoom
+var camera_framing: RefCounted = preload("res://scripts/camera_framing.gd").new()
 var sounds: Dictionary = {}
 var sound_pool: Array = []
 # Pending cutoff fades, keyed by the pool player they were scheduled on. The
@@ -297,6 +307,7 @@ var _halo_pool: Sprite2D = null  # the hero's additive floor-glow (QA 5)
 # ---------------------------------------------------------- persistence ---
 var save_slot := -1                   # active save file (-1 = none yet)
 var no_saves := false                 # autotest: never touch real save files
+var restoring_save := false           # transient: room callbacks cannot write a half-restored world
 var pending_tutorial := ""            # queued onboarding beat ("talents"/"gear"), drained in game.gd once no overlay is up (transient, not saved)
 ## DEDICATED SERVER (--server, MMO step A): this process is a headless world
 ## authority with NO local player — pure host, peers connect in. Every
@@ -317,7 +328,10 @@ var guest_world := false
 ## can lose its host anew) — net_session._rpc_world_snapshot.
 var _host_lost_handled := false
 var settings := {"music": 1.0, "sfx": 1.0, "fullscreen": false, "lang": "en", "touch_controls": false,
-	"joystick_locked": false, "joystick_sensitivity": 1.0, "touch_layout": {}}
+	"joystick_locked": false, "joystick_sensitivity": 1.0, "touch_layout": {},
+	"camera_shake": 1.0, "camera_lead": 1.0, "impact_flashes": 1.0,
+	"hit_stop": true, "damage_bearings": true, "combat_foliage": true, "combat_framing": true,
+	"pad_deadzone": Balance.PAD_DEADZONE, "pad_cursor_speed": Balance.PAD_CURSOR_DEFAULT, "pad_labels": "auto"}
 	# user://settings.json ("touch_layout": id -> [x,y] custom offset; "joystick_pos": [x,y] custom home)
 var music_gain_db := -16.0            # base+tune of the current track
 var flags := {}                       # persistent story flags (saved)
@@ -327,6 +341,7 @@ var quest_marks: Array = []           # live ❢ giver markers: [{node, quests}]
 var merchant_zones: Array = []        # rooms with a merchant present (saved)
 var wander_seed := 0                  # per-character roll for seeded rooms (saved)
 var cutscene: Cutscene = null         # active opening cinematic (if any)
+var chapter_finale := preload("res://scripts/chapter_finale.gd").new()
 
 # ------------------------------------------------------------ dev mode ---
 var dev_mode := false                 # launched via dev_mode.bat (--dev)
@@ -406,6 +421,8 @@ func unlisted_banked_has(id: String) -> bool:
 # the boss's fall (decision #6: in-graph, co-op-safe, never a world swap).
 var pocket_room := -1        # the injected arena's room index this run (-1 = none rolled)
 var pocket_id := ""          # which pocket rolled (content/pockets.gd id)
+var pocket_origin_offset := Vector2.ZERO  # relative to the source room, saved
+var pocket_clock: Dictionary = {}  # latest host display clock, transient
 var pocket_origin := -1      # the room to return to (set on entry; saved for a mid-pocket reload)
 var pocket_done := false     # its boss felled this run (banks the reward once)
 var _pocket_stone_placed := false  # transient: the stone has been dropped into a safe room this run
@@ -572,6 +589,7 @@ func register_remote_player(p: Player) -> void:
 		var q := players[i]
 		if q != null and is_instance_valid(q) and q != local_player \
 				and q.peer_id == p.peer_id:
+			_clear_remote_pet(q)
 			q.queue_free()
 			players[i] = p
 			add_child(p)
@@ -591,9 +609,20 @@ func unregister_player(pid: int) -> void:
 			players.remove_at(i)
 			continue
 		if q != local_player and q.peer_id == pid:
+			_clear_remote_pet(q)
 			players.remove_at(i)
 			q.queue_free()
 	_refresh_active_rooms()
+
+
+func _clear_remote_pet(owner: Player) -> void:
+	var key := owner.get_instance_id()
+	if not remote_pet_followers.has(key):
+		return
+	var visual: Variant = remote_pet_followers[key].visual
+	if is_instance_valid(visual):
+		visual.queue_free()
+	remote_pet_followers.erase(key)
 
 
 ## Recompute the sim gate (§4.3). Starts from cur_room — the local
@@ -677,7 +706,7 @@ func request_pause(on: bool) -> void:
 func input_overlay_up() -> bool:
 	if hud == null or menus == null:
 		return false
-	return hud.dialogue_active or hud.choices_active or hud.chat_active or menus.is_open()
+	return chapter_finale.active or hud.dialogue_active or hud.choices_active or hud.chat_active or menus.is_open()
 
 
 ## NG+ tier governing THIS run's spawns and drops (0 = Normal;
@@ -877,6 +906,8 @@ func gamble(tier: String) -> Dictionary:
 ## Guesting in another world (MP-08, §5.7): only the character block
 ## travels home — the host's world must never colonize the guest's save.
 func autosave() -> void:
+	if no_saves or restoring_save:
+		return
 	# PVP (v1, 2026-08-01): the duel has NO stakes — nothing earned, nothing
 	# risked, so nothing is written from an arena world. (A guest's session-end
 	# character write in net_session_over stays the co-op safety it always was.)
@@ -1515,11 +1546,40 @@ func stash_deposit(payload: Dictionary) -> bool:
 	return true
 
 
-## Move a stashed payload back into the bag. False = bag full (stays put).
-func stash_withdraw(payload: Dictionary) -> bool:
-	if not _try_receive(payload):
+## Transfer only the exact owned bag entry represented by this UI action.
+## Stale clicks cannot deposit a second copy after the first moved it.
+func stash_deposit_from_bag(payload: Dictionary) -> bool:
+	if not has_local_player():
 		return false
-	stash.erase(payload)
+	var pocket: Array
+	var entry: Dictionary
+	match String(payload.get("kind", "")):
+		"item":
+			pocket = local_player.backpack
+			entry = payload.get("item", {})
+		"gem":
+			pocket = local_player.gem_bag
+			entry = payload.get("gem", {})
+		"stone":
+			pocket = local_player.consumables
+			entry = payload.get("stone", {})
+			if String(entry.get("kind", "")) == "quest":
+				return false
+		_:
+			return false
+	var idx := preload("res://scripts/gear_care.gd").index_of(pocket, entry)
+	if idx < 0 or not stash_deposit(payload):
+		return false
+	pocket.remove_at(idx)
+	return true
+
+
+## Move a stashed payload back into the bag. Revalidate ownership at click time.
+func stash_withdraw(payload: Dictionary) -> bool:
+	var idx := preload("res://scripts/gear_care.gd").index_of(stash, payload)
+	if idx < 0 or not _try_receive(payload):
+		return false
+	stash.remove_at(idx)
 	save_stash()
 	return true
 
@@ -1535,7 +1595,7 @@ func give_loot(payload: Dictionary, pos: Vector2) -> bool:
 	payload["pos"] = [pos.x, pos.y]
 	dropped_loot.append(payload)
 	Pickup.drop_loot(self, payload, pos)
-	spawn_text(pos + Vector2(0, -44), "Bag full! Dropped", Color(1, 0.9, 0.4))
+	spawn_text(pos + Vector2(0, -44), "No room — left on the ground", Color(1, 0.9, 0.4))
 	return false
 
 
@@ -1621,17 +1681,31 @@ func _try_receive(payload: Dictionary) -> bool:
 	return false
 
 
-## Chapter end (victory, replay, advance): whatever still lies on the
-## ground mails itself — subject "Dropped Loot", no body. Idempotent.
+## A detached travel payload: strip geometry without mutating live pickups,
+## caller snapshots or two independently earned equal-valued rewards.
+func portable_dropped_loot() -> Array:
+	var items := dropped_loot.duplicate(true)
+	for pl in items:
+		pl.erase("pos")
+	return items
+
+
+## Reserve before queue_free: a pending contact callback cannot also collect
+## loot that has been mailed or replaced by a character restore.
+func retire_dropped_loot() -> void:
+	for node in get_tree().get_nodes_in_group("loot_pickups"):
+		if node is Pickup and node.game == self:
+			node.claimed = true
+			node.queue_free()
+
+
+## Leaving a world or chapter mails remaining ground loot. Idempotent.
 func flush_dropped_loot() -> void:
 	if dropped_loot.is_empty():
 		return
-	var items := dropped_loot.duplicate()
-	for pl in items:
-		pl.erase("pos")
+	var items := portable_dropped_loot()
 	dropped_loot = []
-	for node in get_tree().get_nodes_in_group("loot_pickups"):
-		node.queue_free()
+	retire_dropped_loot()
 	send_mail("Dropped Loot", "", items)
 
 
@@ -1881,6 +1955,11 @@ func side_quest_available(sqid: String) -> bool:
 	var q: Dictionary = Story.ALL_SIDE_QUESTS.get(sqid, {})
 	if q.is_empty():
 		return false
+	# Some personal stories finish for good even when chapter replay clears
+	# their temporary acceptance/payment flags. Keep discovery honest.
+	var completed_flag: String = q.get("completed_flag", "")
+	if completed_flag != "" and get_flag(completed_flag, false):
+		return false
 	# Chapter quests only offer in their chapter; unscoped ones offer wherever
 	# their giver is reachable (a capital NPC is only reachable in Crownfall).
 	if Story.quest_scoped(q) and String(q.get("chapter", "")) != chapter_id:
@@ -1899,6 +1978,13 @@ func side_quest_available(sqid: String) -> bool:
 ## the chapter's authored zone NPCs, or it is a wanderer this run's seed
 ## actually rolled into a social room.
 func _convo_reachable(convo_id: String) -> bool:
+	# Physical encounter actors carry the same profile metadata as authored
+	# NPCs, even when no static NPC row spawns them.
+	for entry in interactables:
+		var actor = entry.get("node")
+		if is_instance_valid(actor) and actor is Node2D and actor.is_visible_in_tree() \
+			and String(actor.get_meta("quest_convo", "")) == convo_id:
+			return true
 	for z in zones:
 		for npc_def in z.get("npcs", []):
 			if String(npc_def.get("convo", "")) == convo_id:
@@ -1976,10 +2062,15 @@ func run_chapter_opener_if_needed(chapter_key: String,
 	run_cinematic_convo(convo_id, on_done)
 
 
-func run_convo(convo: Dictionary, on_done := Callable()) -> void:
-	_convo_node(convo, String(convo.get("start", "")), on_done)
+func run_convo(convo: Dictionary, on_done := Callable(), still_current := Callable()) -> void:
+	_convo_node(convo, String(convo.get("start", "")), on_done, still_current)
 
-func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
+func _convo_node(convo: Dictionary, node_id: String, on_done: Callable, still_current := Callable()) -> void:
+	# Personal endings can be retired by a party world transition. Guard every
+	# page, not just the final callback, so a retained input callback cannot
+	# repaint old narration or apply a choice over the next chapter's opener.
+	if still_current.is_valid() and not still_current.call():
+		return
 	var nodes: Dictionary = convo.get("nodes", {})
 	if node_id == "" or not nodes.has(node_id):
 		autosave()  # choices are story progress
@@ -2014,12 +2105,14 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 		choices.append(c)
 	if choices.is_empty() or force_linear:
 		hud.dialogue([[who, text]], func() -> void:
-			_convo_node(convo, next_id, on_done))
+			_convo_node(convo, next_id, on_done, still_current))
 	else:
 		var option_texts: Array = []
 		for c in choices:
 			option_texts.append(String(c["text"]))
 		hud.dialogue_choice(who, text, option_texts, func(idx: int) -> void:
+			if still_current.is_valid() and not still_current.call():
+				return
 			var c: Dictionary = choices[idx]
 			var res_delta := float(c.get("resonance", 0.0))
 			player.add_resonance(res_delta)
@@ -2043,6 +2136,8 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 						and (not Story.quest_scoped(sq) or String(sq.get("chapter", chapter_id)) == chapter_id) \
 						and not get_flag("sq_on_" + sqid, false):
 					set_flag("sq_on_" + sqid)
+					if has_local_player() and not preload("res://scripts/quest_guide.gd").active(self, player.tracked_quest):
+						player.tracked_quest = sqid
 					# What saying YES paid (Balance §quest abandonment): the
 					# accept choice grants resonance for making the promise, so
 					# record the pledge — leaving the chapter with the job
@@ -2122,7 +2217,7 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable) -> void:
 							s2.convo_toast("accepted", String(sq2.get("name", "a quest")))
 					elif _choice_sets_world_flag(c):
 						s2.convo_toast("chose", String(c.get("text", "")))
-			_convo_node(convo, String(c.get("next", "")), done_after))
+			_convo_node(convo, String(c.get("next", "")), done_after, still_current))
 
 
 ## MP-13: does this choice set at least one WORLD flag (worth a toast to the
@@ -3071,7 +3166,7 @@ func shake(amount: float, dir := Vector2.ZERO, kick := 0.0) -> void:
 ## and skips this), never headless (the suite would only slow down), never
 ## under a pause. Overlapping stops extend, they don't stack.
 func hit_stop(sec: float) -> void:
-	if sec <= 0.0 or get_tree().paused:
+	if sec <= 0.0 or get_tree().paused or not bool(settings.get("hit_stop", true)):
 		return
 	if net_online() or DisplayServer.get_name() == "headless":
 		return
@@ -3235,6 +3330,49 @@ func _tell_accent(shape: String, radius: float, opts: Dictionary) -> Node2D:
 	return root
 
 
+var _ground_attacks: Array = []
+
+
+func _new_ground_attack() -> Node2D:
+	var attack := Node2D.new()
+	attack.name = "GroundAttack"
+	attack.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(attack)
+	_ground_attacks.append(attack)
+	attack.tree_exiting.connect(func() -> void: _ground_attacks.erase(attack))
+	return attack
+
+
+## Warning, falling art and shelter all belong to the encounter that made them.
+## A chapter rebuild or wipe cancels the attack before its delayed damage lands.
+func cancel_ground_attacks() -> void:
+	for attack in _ground_attacks.duplicate():
+		if is_instance_valid(attack):
+			attack.queue_free()
+	_ground_attacks.clear()
+	if is_instance_valid(hud):
+		hud.danger_cancel()
+
+
+func _ground_clock(attack: Node2D, pos: Vector2, radius: float, delay: float,
+		tint: Color, safe := false, decoy := false) -> Node2D:
+	var clock := preload("res://scripts/ground_tell.gd").new()
+	clock.position = pos
+	clock.radius = radius
+	clock.tint = tint
+	clock.safe = safe
+	clock.decoy = decoy
+	attack.add_child(clock)
+	clock.create_tween().tween_property(clock, "progress", 1.0, maxf(0.001, delay))
+	return clock
+
+
+func _ground_linger(attack: Node2D, duration: float) -> void:
+	var tw := attack.create_tween()
+	tw.tween_interval(duration)
+	tw.tween_callback(attack.queue_free)
+
+
 func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts := {}) -> void:
 	# Shelter wards the GROUND (player rule 2026-07-09): a danger telegraph
 	# that would land inside a live shelter never forms — Varo's reliquary
@@ -3242,6 +3380,7 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 	# stand a chip-death. The dome eats the sky as well as the bullets.
 	if _sheltered(pos):
 		return
+	var attack := _new_ground_attack()
 	# MP-09: the host mirrors every tell to guests as a VISUAL-ONLY event —
 	# co-op dodging needs a guest to see exactly what the host sees,
 	# including tells the boss aims at THE GUEST (pick_target already
@@ -3266,7 +3405,8 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 	zone.scale = Vector2(radius / 32.0, radius / 32.0)
 	zone.modulate = tint
 	zone.z_index = -6
-	add_child(zone)
+	attack.add_child(zone)
+	var clock := _ground_clock(attack, pos, radius, delay, tint)
 	if shape != "disc":
 		# The accent is a SIBLING (not a child): the disc's scale encodes the
 		# radius, and a child would inherit it and draw at radius^2/32.
@@ -3274,7 +3414,7 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 		accent.global_position = pos
 		accent.modulate = tint
 		accent.z_index = -5   # over the disc, still under the actors
-		add_child(accent)
+		attack.add_child(accent)
 		var apulse := accent.create_tween()
 		apulse.tween_property(accent, "modulate:a", tint.a, maxf(0.06, delay * 0.72)) \
 			.from(tint.a * 0.20)
@@ -3315,7 +3455,7 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 			falling.rotation = PI / 2.0
 		falling.global_position = pos + Vector2(0, -420)
 		falling.z_index = Balance.FALLING_OBJECT_Z_INDEX
-		add_child(falling)
+		attack.add_child(falling)
 		if falling_key == "fireball":
 			# World-space particles remain behind as the emitter descends;
 			# parenting them to the rotated sprite would turn the plume sideways.
@@ -3340,7 +3480,7 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 			falling_trail.color_ramp = fire_ramp
 			falling_trail.global_position = falling.global_position
 			falling_trail.z_index = Balance.FALLING_OBJECT_Z_INDEX - 1
-			add_child(falling_trail)
+			attack.add_child(falling_trail)
 			falling_trail.emitting = true
 		var fall := falling.create_tween()
 		var falling_end_y: float = float(opts.get("falling_end_y",
@@ -3353,10 +3493,12 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 			trail_fall.tween_property(falling_trail, "global_position",
 				falling_target, delay).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
-	await get_tree().create_timer(delay).timeout
-	if not is_instance_valid(zone):
+	await get_tree().create_timer(delay, false).timeout
+	if not is_instance_valid(attack) or attack.is_queued_for_deletion() or not is_instance_valid(zone):
 		return
 	zone.queue_free()
+	clock.queue_free()
+	_ground_linger(attack, maxf(Balance.FALLING_OBJECT_FADE, Balance.FALLING_FIREBALL_TRAIL_LIFETIME) + Balance.GROUND_ATTACK_EFFECT_PADDING)
 	var impact_sfx := String(opts.get("impact_sfx", "slam"))
 	if not impact_sfx.is_empty():
 		sfx(impact_sfx)
@@ -3454,6 +3596,7 @@ class SafeDome extends Node2D:
 ## "callout" + a rising "sfx" whose swell IS the audible timer.
 ## Shared by every safe-spot fight (Vess / Varo / Serane / Cyrraeth).
 func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, opts := {}) -> void:
+	var attack := _new_ground_attack()
 	# MP-09: mirror the safe-spot exam to guests — circles, beacons, decoys
 	# and the dread ramp all render there (visual-only; the wail's damage
 	# stays host business until MP-10). Same hook shape as telegraph().
@@ -3474,21 +3617,24 @@ func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, 
 		zone.scale = Vector2(radius / 32.0, radius / 32.0)
 		zone.modulate = opts.get("color", Color(0.5, 1.0, 0.7, 0.5))
 		zone.z_index = -6
-		add_child(zone)
+		attack.add_child(zone)
 		zones.append(zone)
+		zones.append(_ground_clock(attack, c, radius, delay, opts.get("color", Color(0.5, 1.0, 0.7)), true))
 		var pulse := zone.create_tween()
 		pulse.set_loops()
 		pulse.tween_property(zone, "modulate:a", 0.75, 0.22)
 		pulse.tween_property(zone, "modulate:a", 0.4, 0.22)
-		zones.append(_safe_beacon(c, opts.get("color", Color(0.5, 1.0, 0.7)), false))
+		var beacon := _safe_beacon(c, opts.get("color", Color(0.5, 1.0, 0.7)), false)
+		beacon.reparent(attack)
+		zones.append(beacon)
 	# The dome shields only the REAL centers, for the fuse + a linger beat.
 	var dome := SafeDome.new()
 	dome.centers = centers.duplicate()
 	dome.dome_radius = radius
-	dome.life = delay + 0.5
+	dome.life = delay + Balance.SAFE_SHELTER_LINGER
 	dome.tint = opts.get("color", Color(0.5, 1.0, 0.7))
 	dome.game_ref = self
-	add_child(dome)
+	attack.add_child(dome)
 	var decoys: Array = opts.get("decoys", [])
 	for c in decoys:
 		var lie := Sprite2D.new()
@@ -3497,17 +3643,23 @@ func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, 
 		lie.scale = Vector2(radius / 32.0, radius / 32.0)
 		lie.modulate = opts.get("color", Color(0.5, 1.0, 0.7, 0.5))
 		lie.z_index = -6
-		add_child(lie)
+		attack.add_child(lie)
 		zones.append(lie)
+		zones.append(_ground_clock(attack, c, radius, delay, opts.get("color", Color(0.5, 1.0, 0.7)), true, true))
 		var flicker := lie.create_tween()
 		flicker.set_loops()
 		flicker.tween_property(lie, "modulate:a", 0.15, 0.07)
 		flicker.tween_property(lie, "modulate:a", 0.7, 0.09)
 		# The decoy's beacon flickers with the same lie — the tell stays
 		# consistent across both reads (circle AND pillar).
-		zones.append(_safe_beacon(c, opts.get("color", Color(0.5, 1.0, 0.7)), true))
+		var beacon := _safe_beacon(c, opts.get("color", Color(0.5, 1.0, 0.7)), true)
+		beacon.reparent(attack)
+		zones.append(beacon)
 
-	await get_tree().create_timer(delay).timeout
+	await get_tree().create_timer(delay, false).timeout
+	if not is_instance_valid(attack) or attack.is_queued_for_deletion():
+		return
+	_ground_linger(attack, Balance.SAFE_SHELTER_LINGER)
 	var any_alive := false
 	for zone in zones:
 		if is_instance_valid(zone):
@@ -4048,3 +4200,29 @@ func spawn_ally_damage(pos: Vector2, amount: int, crit: bool) -> void:
 
 
 # =================================================================== per-frame
+
+
+## Named encounters own completion independently from their reused boss kit.
+func _boss_room_resolved(zi: int) -> bool:
+	if zi < 0 or zi >= zones.size():
+		return false
+	var zone: Dictionary = zones[zi]
+	var kind := String(zone.get("boss", ""))
+	if String(zone.get("pocket", "")) != "":
+		return pocket_done
+	if String(zone.get("unlisted", "")) != "":
+		return unlisted_banked_has(String(zone["unlisted"]))
+	if String(zone.get("waking", "")) != "":
+		return waking_banked(kind)
+	return kind != "" and bool(boss_done.get(kind, false))
+
+
+## Legacy pocket cells lived at (9000,9000): migrate saved hero/drop positions
+## when loading that old layout into the nearby floating cell.
+func pocket_position_legacy(at: Vector2) -> Vector2:
+	if pocket_room < 0 or pocket_room >= rooms.size():
+		return at
+	var old := Vector2(9000.0 * ROOM_W, 9000.0 * ROOM_H)
+	if Rect2(old, Vector2(ROOM_W, ROOM_H)).has_point(at):
+		return rooms[pocket_room]["origin"] + at - old
+	return at

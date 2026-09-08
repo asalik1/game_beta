@@ -1,5 +1,12 @@
 # Crownless — Boss Bible: Early Game to Level 40
 
+**Signature interrupts (2026-09-07):** selected boss casts now offer a damage-driven
+interrupt before their normal dodge warning. Close-range hits build more pressure;
+a successful break cancels the selected cast and opens a short damage window.
+The first six encounters, tuning and validation are documented in
+[BOSS_INTERRUPTS.md](BOSS_INTERRUPTS.md). This implements the interrupt lane in
+[the combat roadmap](PROPOSALS/COMBAT_LANES.md#3-lane-b--interrupt-windows-the-first-non-dodge-counterplay).
+
 Design companion to DESIGN.md. Covers every boss from the end of Chapter 2
 (~L16, Warden Null) to the end of early game — and early game IS Act 1:
 **Act 1 = L1–40, Act 2 = mid game ~40–70, Act 3 = endgame ~70–100**

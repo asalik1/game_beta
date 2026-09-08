@@ -20,7 +20,7 @@ const CARDS := {
 		"prompt": "E — A toll-collector bars the road",
 		"weight": 3,
 		"room_types": ["social", "dead_end"],
-		"codex": "A cowled toll-collector bars the road with a rusted halberd. Pay his due in gold and he waves you through with a grudging blessing; refuse, and the brigands he keeps in the ditch rise to collect it in blood.",
+		"codex": "A toll-collector offers a moment's rest for gold and Accord standing. He accepts what you can spare. Push past and his companions lift a smaller sum from your purse, costing standing. You can also leave without paying or taking a penalty.",
 	},
 	"courier": {
 		"title": "The Wounded Courier",
@@ -28,7 +28,7 @@ const CARDS := {
 		"prompt": "E — A wounded rider slumps by the road",
 		"weight": 3,
 		"room_types": ["social", "dead_end"],
-		"codex": "A king's rider lies against a milestone, an arrow in his side and a heavy satchel across his chest. Spend a draught to mend him and he presses coin and goodwill on you; cut the strap instead and the purse is yours, but word of a road-thief travels.",
+		"codex": "A king's rider lies against a milestone, an arrow in his side. Spend gold on treatment and he repays you with coin and Accord goodwill; rob his satchel for a larger purse at a standing cost. Your own potions are never consumed. Leaving costs nothing.",
 	},
 	"wager": {
 		"title": "The Stranger's Wager",
@@ -36,17 +36,34 @@ const CARDS := {
 		"prompt": "E — A hooded gambler at a fire",
 		"weight": 2,
 		"room_types": ["social", "dead_end"],
-		"codex": "A hooded figure crouches at a low fire, turning three walnut shells over the dirt. A fair 1-in-3: follow the pea and double your stake (rarely a gem falls out too); lose it and the stake is his.",
+		"codex": "A hooded figure offers three walnut shells and a fair 1-in-3 wager. Pick a shell: win a matching stake, sometimes with a gem, or lose the stake. No money changes hands until you pick. Leaving costs nothing.",
+	},
+	"hunt": {
+		"title": "The Crooked Trail",
+		"sprite": "npc_hunter",
+		"prompt": "E — A hunter studies a torn trail",
+		"weight": 3,
+		"room_types": ["social", "dead_end"],
+		"codex": "Follow three signs through the room and choose when to flush an elite quarry. Its level follows nearby creatures and is shown before accepting. Your party shares the tracks and the fight. Heroes present when it falls receive their own purse; the quarry pays no XP or ordinary kill loot. Leaving the room as a party abandons the hunt without an extra penalty. An unfinished hunt can be offered again.",
 	},
 }
 
 ## Draw order / eligibility list. Weights inside CARDS bias which one is picked
 ## once a draw succeeds; adding a card is one row here + one row in CARDS + one
 ## dispatch arm in game_world._road_card_node.
-const DECK := ["toll", "courier", "wager"]
+const DECK := ["toll", "courier", "wager", "hunt"]
 
 static func card(id: String) -> Dictionary:
 	return CARDS.get(id, {})
 
 static func ids() -> Array:
 	return DECK.duplicate()
+
+
+static func field_notes() -> Array[String]:
+	var lines: Array[String] = ["In some quiet campaign rooms a stranger waits by the road. Offers withdraw after %d seconds if passed by; reading their decision holds the offer. A diminishing chance keeps these meetings occasional." % int(Balance.ROAD_CARD_WINDOW)]
+	for id in DECK:
+		lines.append(String(CARDS[id].title).to_upper() + " — " + String(CARDS[id].codex))
+	lines.append("Only one optional fight runs in a room at a time. Invitations explain which encounter needs finishing first.")
+	lines.append("Road encounters pay no XP. Each run has its own deck. In a party, the leader accepts road offers; the Crooked Trail then belongs to the party, with personal purses for heroes present at victory.")
+	return lines

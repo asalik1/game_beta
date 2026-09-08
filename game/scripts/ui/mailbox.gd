@@ -37,7 +37,7 @@ static func open(m: Menus) -> void:
 			col.add_child(icon)
 		var head := m._lbl(col, "No mail yet", 18, Color(0.82, 0.72, 0.45))
 		head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		var sub := m._lbl(col, "Loot you leave on the ground is mailed here when a chapter ends.", 13, Color(0.62, 0.64, 0.7))
+		var sub := m._lbl(col, "Uncollected spoils and ground overflow are recovered here.", 13, Color(0.62, 0.64, 0.7))
 		sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		sub.custom_minimum_size = Vector2(440, 0)
 	else:
@@ -69,63 +69,58 @@ static func open(m: Menus) -> void:
 	m._hint(vbox, "ESC, ✕, or click anywhere outside to close")
 
 
-static func open_letter(m: Menus, mail: Dictionary) -> void:
+static func open_letter(m: Menus, mail: Dictionary, notice := "") -> void:
 	mail["read"] = true
-	var vbox := m._open(str(mail["subject"]), 900, 560, true)
+	var items: Array = mail["items"]
+	var height := 560.0 if items.size() > 12 or str(mail["body"]).length() > 240 else (320.0 if items.is_empty() else 420.0)
+	var vbox := m._open(str(mail["subject"]), 900, height, true)
 	m.current = "mail_letter"
 	m._lbl(vbox, "Sent " + Time.get_date_string_from_unix_time(int(mail["sent_at"])), 12, Color(0.55, 0.55, 0.6))
 	if str(mail["body"]) != "":
 		var body := m._lbl(vbox, str(mail["body"]), 14, Color(0.85, 0.85, 0.9))
 		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
-	var items: Array = mail["items"]
+	if not items.is_empty():
+		var capacity := m._lbl(vbox, "Pack: %d / %d slots · Items that do not fit stay in this letter." % [m.game.player.bag_used(), m.game.player.bag_capacity()], 13, Color(0.7, 0.74, 0.8))
+		capacity.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if notice != "":
+		var feedback := m._lbl(vbox, notice, 13, Color(0.95, 0.82, 0.5))
+		feedback.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		feedback.name = "MailClaimNotice"
 	if items.is_empty():
 		m._lbl(vbox, "(claimed)", 13, Color(0.6, 0.62, 0.68))
 	else:
+		var scroll := ScrollContainer.new()
+		scroll.name = "MailAttachments"
+		scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll.follow_focus = true
+		vbox.add_child(scroll)
 		var grid := GridContainer.new()
 		grid.columns = 11
 		grid.add_theme_constant_override("h_separation", 4)
 		grid.add_theme_constant_override("v_separation", 4)
-		vbox.add_child(grid)
-		for pl in items:
-			var payload: Dictionary = pl
-			match str(payload.get("kind", "")):
-				"item":
-					var it: Dictionary = payload["item"]
-					m._bag_slot(grid, Art.icon_for(it), "", Items.GRADE_COLOR[it["grade"]],
-						func() -> void:
-							m._open_detail_popover(Art.icon_for(it), Items.title(it),
-								Items.GRADE_COLOR[it["grade"]], Items.describe(it), []))
-				"gem":
-					var g: Dictionary = payload["gem"]
-					m._bag_slot(grid, Art.gem_icon(Items.gem_color(g), int(g.get("lvl", 1))), "",
-						Items.gem_color(g),
-						func() -> void:
-							m._open_detail_popover(Art.gem_codex_icon(Items.gem_color(g), int(g.get("lvl", 1))),
-								Items.gem_title(g), Items.gem_color(g), Items.gem_title(g), []))
-				"bag":
-					# A bag mails itself when the pack was full on award (2026-08-17).
-					var bgr := str(payload.get("grade", "F"))
-					var btex: ImageTexture = Art.bag_icon(bgr)
-					m._bag_slot(grid, btex, "" if btex != null else "▣", Items.GRADE_COLOR.get(bgr, Color(1, 1, 1)),
-						func() -> void:
-							m._open_detail_popover(btex, str(Items.BAG_NAMES.get(bgr, "Bag")),
-								Items.GRADE_COLOR.get(bgr, Color(1, 1, 1)),
-								"%s-grade bag — %d carry slots. Claim it into your pack, then equip it." % [bgr, int(Items.BAG_SLOTS.get(bgr, 0))], []))
-				_:
-					var st: Dictionary = payload.get("stone", {})
-					var ctex: ImageTexture = Art.consumable_icon(st)
-					m._bag_slot(grid, ctex, "" if ctex != null else "⟲", Color(0.6, 0.9, 1.0),
-						func() -> void:
-							m._open_detail_popover(ctex, str(st.get("name", "Consumable")),
-								Color(0.6, 0.9, 1.0), str(st.get("desc", "")), []))
+		scroll.add_child(grid)
+		scroll.resized.connect(func() -> void:
+			grid.columns = maxi(1, int((scroll.size.x - 16.0) / 68.0)))
+		for payload in items:
+			var view := attachment_view(payload)
+			var b := m._bag_slot(grid, view.icon, str(view.count) if int(view.count) > 1 else "", view.color,
+				func() -> void:
+					m._open_detail_popover(view.icon, view.title, view.color, view.description, []))
+			b.custom_minimum_size = Vector2(64, 64)
+			b.tooltip_text = String(view.title)
+			b.set_meta("mail_kind", String(payload.get("kind", "")))
+			b.set_meta("mail_count", int(view.count))
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
 	vbox.add_child(row)
 	if not items.is_empty():
-		m._btn(row, "  Claim all  ", func() -> void:
+		var claim := m._btn(row, "  Claim what fits  ", func() -> void:
 			_claim(m, mail), Color(0.6, 1.0, 0.6))
+		claim.name = "MailClaimAll"
 	var do_delete := func() -> void:
 		m.game.mailbox.erase(mail)
 		open(m)
@@ -150,9 +145,49 @@ static func _claim(m: Menus, mail: Dictionary) -> void:
 		if not m.game._try_receive(pl):
 			leftover.append(pl)
 	mail["items"] = leftover
+	m.game.autosave()
 	if leftover.is_empty():
 		m.game.sfx("chest")
-	else:
-		m.game.spawn_text(m.game.player.global_position + Vector2(0, -50),
-			"Bag full — the rest stayed in the letter", Color(1, 0.9, 0.4))
-	open_letter(m, mail)
+	var notice := "All contents claimed." if leftover.is_empty() else "The rest stayed here. Free pack space or use some of a full material stack, then claim again."
+	open_letter(m, mail, notice)
+
+## All six inventory payloads use the same art and names as the bag. Materials
+## and potions used to fall through to a blank reset-stone icon in letters.
+static func attachment_view(pl: Dictionary) -> Dictionary:
+	var v := {"icon": null, "title": "Consumable", "description": "", "color": Color(0.6, 0.9, 1.0), "count": 1}
+	match String(pl.get("kind", "")):
+		"item":
+			var it: Dictionary = pl.get("item", {})
+			v.icon = Art.icon_for(it)
+			v.title = Items.title(it)
+			v.description = Items.describe(it)
+			v.color = Items.GRADE_COLOR.get(it.get("grade", "F"), Color.WHITE)
+		"gem":
+			var gem: Dictionary = pl.get("gem", {})
+			v.icon = Art.gem_icon(Items.gem_color(gem), int(gem.get("lvl", 1)))
+			v.title = Items.gem_title(gem)
+			v.description = v.title
+			v.color = Items.gem_color(gem)
+		"material":
+			var family := String(pl.get("family", ""))
+			var grade := String(pl.get("grade", "F"))
+			var mat := Items.make_material(family, grade, int(pl.get("count", 1)))
+			v.icon = Art.material_icon(family, grade)
+			v.title = mat.name
+			v.count = mat.count
+			v.color = Items.GRADE_COLOR.get(grade, Color.WHITE)
+			v.description = "%s-grade crafting material · %d units.\nClaim into your pack to use at a crafting station." % [grade, int(mat.count)]
+		"bag":
+			var grade := String(pl.get("grade", "F"))
+			v.icon = Art.bag_icon(grade)
+			v.title = Items.BAG_NAMES.get(grade, "Bag")
+			v.color = Items.GRADE_COLOR.get(grade, Color.WHITE)
+			v.description = "%s-grade bag · %d carry slots.\nClaim into your pack, then equip it." % [grade, int(Items.BAG_SLOTS.get(grade, 0))]
+		"potion", "stone":
+			var key := "potion" if String(pl.kind) == "potion" else "stone"
+			var consumable: Dictionary = pl.get(key, {})
+			v.icon = Art.consumable_icon(consumable)
+			v.title = consumable.get("name", "Consumable")
+			v.description = consumable.get("desc", "")
+			v.color = Items.GRADE_COLOR.get(consumable.get("grade", ""), v.color)
+	return v

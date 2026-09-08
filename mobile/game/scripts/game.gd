@@ -186,6 +186,17 @@ func _ready() -> void:
 	env.adjustment_enabled = true
 	env.adjustment_contrast = Balance.WORLD_CONTRAST
 	env.adjustment_saturation = Balance.WORLD_SATURATION
+	# Godot 4.4/4.5 Mobile copies HDR2D through an LDR canvas-post buffer,
+	# clipping bright floors before glow. Bypass that pass on affected engines;
+	# sprites/terrain tint keep rendering, and Forward+/Compatibility are unchanged.
+	# Fixed upstream in 4.6: godotengine/godot#109971 (issue #106282).
+	var engine_version := Engine.get_version_info()
+	if RenderingServer.get_current_rendering_method() == "mobile" \
+		and int(engine_version.major) == 4 and int(engine_version.minor) < 6 \
+		and get_viewport().use_hdr_2d:
+		env.background_mode = Environment.BG_CLEAR_COLOR
+		env.glow_enabled = false
+		env.adjustment_enabled = false
 	glow_env.environment = env
 	add_child(glow_env)
 
@@ -244,6 +255,9 @@ func _ready() -> void:
 	menus = Menus.new()
 	menus.game = self
 	add_child(menus)
+	gamepad = preload("res://scripts/gamepad.gd").new()
+	gamepad.game = self
+	add_child(gamepad)
 
 	# Build and enter the starting room (the rest of the graph is lazy).
 	_enter_room(0 if dedicated else room_at_pos(player.global_position))
@@ -429,6 +443,8 @@ func load_save(slot: int) -> void:
 	var data := SaveGame.read(slot)
 	if data.is_empty():
 		return
+	var was_restoring := restoring_save
+	restoring_save = true
 	save_slot = slot
 	guest_world = false  # resuming OUR world: full autosaves again (MP-08)
 	# The layout is a pure function of wander_seed: restore the seed
@@ -436,6 +452,9 @@ func load_save(slot: int) -> void:
 	# Waking week rides the same contract — breach rooms are geography.
 	wander_seed = int(SaveGame.world_of(data).get("wander_seed", 0))
 	_waking_restore = int(SaveGame.world_of(data).get("waking_week", -1))
+	# Personal city choices can change which NPC is built. Restore the correct
+	# flags before construction as well as the normal post-build reconciliation.
+	flags = SaveGame.flags_of(data)
 	switch_chapter(String(data.get("chapter", "ch1")), true)
 	SaveGame.apply(self, data)
 	request_pause(false)
@@ -443,6 +462,7 @@ func load_save(slot: int) -> void:
 	hud.visible = true  # the load menu hid it on the way in
 	set_music(Terrains.get_terrain(terrain_by_zone[cur_room]).get("music", "village"))
 	hud.flash_title(zones[cur_room]["name"], "The tale continues")
+	restoring_save = was_restoring
 
 ## Rebuild the world state a save implies: mark dead bosses' rooms
 ## resolved and re-check every built gate against the restored flags
@@ -452,7 +472,7 @@ func reconcile_after_load() -> void:
 		set_flag("met_elder")  # pre-graph saves stored only the bool
 	for zi in zone_count:
 		var kind: String = zones[zi].get("boss", "")
-		if kind != "" and boss_done.get(kind, false):
+		if kind != "" and _boss_room_resolved(zi):
 			boss_spawned[zi] = true
 			zone_alive[zi] = 0
 			cleared[zi] = true
@@ -643,7 +663,8 @@ func _process(delta: float) -> void:
 	if hud.dialogue_active or hud.choices_active or menus.is_open():
 		talk_cd = 0.4
 	if play_started and state == ST_PLAYING:
-		run_time += delta  # chapter run clock (results card; pauses pause it)
+		if not chapter_finale.active:
+			run_time += delta  # reading an online ending does not hurt the time grade
 		if endgame_active and endgame != null:
 			endgame.tick(delta)  # endgame arena: watch for a Depths wave clearing
 		if pvp_active and pvp != null:
@@ -784,6 +805,7 @@ func _process(delta: float) -> void:
 		player.pending_theme_note = ""
 
 	_update_pet_follower(delta)  # Q16 cosmetic companion trails the local player
+	_update_remote_pet_followers(delta)
 
 	# NPC interactions (elder, merchants). Interact is GAMEPLAY input — it
 	# fires convos/chests/desks in the shared world — so it routes through
@@ -875,28 +897,7 @@ func _process(delta: float) -> void:
 	# delta is 0 there — then springs back), the jitter linearly.
 	_shake_kick = _shake_kick.lerp(Vector2.ZERO, clampf(Balance.HIT_SHAKE_KICK_DECAY * delta, 0.0, 1.0))
 	if camera:
-		# Camera FEEL (2026-08-18): a little look-ahead in the move direction
-		# and a slight zoom-in while enemies press, both eased. Look-ahead
-		# rides camera.offset under the shake; the zoom multiplies whatever
-		# base zoom is current (dev keys / rigs set camera.zoom directly and
-		# are absorbed as the new base — nothing fights them).
-		var look_target := Vector2.ZERO
-		var in_combat := false
-		if has_local_player() and not local_player.dead:
-			var vel: Vector2 = local_player.velocity
-			var spd: float = maxf(1.0, float(local_player.speed))
-			look_target = vel.limit_length(spd) / spd * Balance.CAMERA_LOOKAHEAD_PX
-			for n in get_tree().get_nodes_in_group("enemies"):
-				if n is Enemy and n.alerted and not n.dying \
-						and n.global_position.distance_to(local_player.global_position) < Balance.CAMERA_COMBAT_RANGE:
-					in_combat = true
-					break
-		_cam_look = _cam_look.lerp(look_target, clampf(Balance.CAMERA_LOOKAHEAD_EASE * delta, 0.0, 1.0))
-		var base_zoom: float = camera.zoom.x / _cam_zoom_mult
-		var want_mult: float = Balance.CAMERA_COMBAT_ZOOM if in_combat else 1.0
-		_cam_zoom_mult = lerpf(_cam_zoom_mult, want_mult, clampf(Balance.CAMERA_ZOOM_EASE * delta, 0.0, 1.0))
-		camera.zoom = Vector2.ONE * (base_zoom * _cam_zoom_mult)
-		camera.offset = _cam_look + _shake_kick + Vector2(randf_range(-1, 1), randf_range(-1, 1)) * shake_amt
+		camera_framing.tick(self, delta)
 	# (The room-transition check at the top of _process is the safety
 	# net: any position outside the graph snaps back into the room.)
 
@@ -920,26 +921,46 @@ func _update_pet_follower(_delta: float) -> void:
 		var pet: Dictionary = Skins.find_pet(String(player.equipped_pet))
 		if pet.is_empty():
 			return
-		var tex := Art.tex(String(pet["sprite"]))
-		if tex == null:
-			return
-		pet_follower = Sprite2D.new()
-		pet_follower.texture = tex
-		if tex.get_width() > int(tex.get_height() * 1.6):  # a strip: show frame 0
-			pet_follower.hframes = maxi(1, int(round(float(tex.get_width()) / float(tex.get_height()))))
-			pet_follower.frame = 0
-		var fh: float = float(tex.get_height()) / float(maxi(1, pet_follower.hframes))
-		if fh > 0.0:
-			pet_follower.scale = Vector2.ONE * (42.0 / fh)  # ~half a hero's on-screen height
-		pet_follower.z_index = 1
-		pet_follower.global_position = player.global_position
-		pet_follower.set_meta("pet_id", String(player.equipped_pet))
+		pet_follower = preload("res://scripts/pet_visual.gd").new()
+		pet_follower.setup(String(player.equipped_pet))
 		world.add_child(pet_follower)
-	# Trail the hero, only while actually playing (so it doesn't drift under a
-	# menu / cutscene). A lazy lerp reads as "following", not "glued".
-	if state == ST_PLAYING:
-		var target: Vector2 = player.global_position + Vector2(-44.0, -8.0)
-		pet_follower.global_position = pet_follower.global_position.lerp(target, clampf(_delta * 4.5, 0.0, 1.0))
+		pet_follower.global_position = player.global_position
+	pet_follower.visible = not player.dead and not player.ghost and state == ST_PLAYING
+	if pet_follower.visible and not input_overlay_up():
+		pet_follower.follow(player.global_position, _delta)
+
+
+## Remote motion keeps running beneath LOCAL online menus, like its owner.
+func _update_remote_pet_followers(delta: float) -> void:
+	var seen := {}
+	if net_online() and is_instance_valid(world):
+		for owner in players:
+			if not is_instance_valid(owner) or owner == local_player or owner.is_queued_for_deletion() \
+					or Skins.find_pet(String(owner.equipped_pet)).is_empty():
+				continue
+			var key := owner.get_instance_id()
+			seen[key] = true
+			# World rebuild frees sprites immediately. Check the Variant BEFORE
+			# assigning a Node type: a freed object cannot enter a typed variable.
+			var visual: Variant = remote_pet_followers.get(key, {}).get("visual")
+			if not is_instance_valid(visual) or visual.get_parent() != world \
+					or visual.get_meta("pet_id", "") != owner.equipped_pet:
+				_clear_remote_pet(owner)
+				visual = preload("res://scripts/pet_visual.gd").new()
+				visual.setup(String(owner.equipped_pet))
+				world.add_child(visual)
+				visual.global_position = owner.global_position
+				remote_pet_followers[key] = {"owner": owner, "visual": visual}
+			visual.visible = state == ST_PLAYING and not owner.dead and not owner.ghost
+			if visual.visible:
+				visual.follow(owner.global_position, delta)
+	for key in remote_pet_followers.keys():
+		if not seen.has(key):
+			var visual: Variant = remote_pet_followers[key].visual
+			if is_instance_valid(visual):
+				visual.queue_free()
+			remote_pet_followers.erase(key)
+
 
 
 ## Force the follower to rebuild (Player.set_pet calls this when the equipped pet

@@ -75,6 +75,10 @@ var _info_hide_t := 0.0         # linger countdown after the finger lifts
 
 
 func _ready() -> void:
+	# Observe overlays during solo pause too: otherwise the last visible
+	# buttons remain painted behind menus until the world resumes.
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	visible = false  # matches the initial _enabled=false, including creation under a menu
 	_mi = get_node("/root/MobileInput")
 	# Strip the keyboard-only chrome the touch controls replace (desktop ability
 	# bar + WASD/keys hint lines) so the phone screen isn't cluttered/misleading.
@@ -182,15 +186,17 @@ func _layout() -> void:
 # --------------------------------------------------------------- per frame -----
 func _process(delta: float) -> void:
 	# Any overlay (menu / dialogue / choice) shuts the controls down — the same
-	# guard game.gd's tap-to-talk already uses (~L369). Solo got this for free:
-	# all three call request_pause(true), and the pause stops this node. But §5.4
-	# skips the pause in a SESSION, and nothing else gated us — the arc and the
+	# guard game.gd's tap-to-talk already uses (~L369). This node keeps ticking
+	# during solo pause so its visibility follows the overlay. §5.4
+	# skips the pause in a SESSION; before this gate, the arc and the
 	# joystick zone (the whole left half, under the overlay's dim on layer 20)
 	# stayed live, so a drag inside a panel walked your hero mid-fight.
 	# `menus` is null-checked on purpose: game.gd mounts this HUD (_apply_touch_mode,
 	# ~L189) BEFORE it builds Menus (~L192). The layout editor closes the menu
 	# before calling enter_edit_mode, so it still runs with nothing open.
 	var on: bool = game != null and game.state == game.ST_PLAYING \
+		and not game.chapter_finale.active \
+		and (game.gamepad == null or not game.gamepad.active) \
 		and game.local_player != null and is_instance_valid(game.local_player) \
 		and (game.menus == null or not game.menus.is_open()) \
 		and (game.hud == null or not (game.hud.dialogue_active or game.hud.choices_active \
@@ -343,6 +349,8 @@ func _on_touch(e: InputEventScreenTouch) -> void:
 					if game != null and game.hud != null:
 						game.hud.open_chat()
 				else:
+					if id in ["a1", "a2", "a3", "ult"]:
+						game.local_player.queue_ability(id)
 					_mi.set(id, true)
 					_pulse[id] = TAP_PULSE
 			_press_fx(id, false)

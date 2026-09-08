@@ -4,6 +4,10 @@ class_name Hud extends CanvasLayer
 ## dialogue boxes, and pause / death / victory screens.
 
 var game: Game
+const WayfinderUI := preload("res://scripts/ui/wayfinder_hud.gd")
+var wayfinder: Control
+var combat_feedback: Control
+var combat_foliage: Node
 
 # bars
 var hp_fill: ColorRect
@@ -69,6 +73,7 @@ var boss_name: Label
 var boss_badge_root: Control      # P7.D: the boss's face in a crimson ring
 var boss_badge: TextureRect
 var boss_level: Label
+var boss_cast_readout: Control
 var boss_hp_num: Label
 var _boss_badge_key := ""
 # Target-bar variants (2026-08-06): the same top bar slot, dressed per target
@@ -81,6 +86,8 @@ var mob_level: Label   # threat-tinted "Lv N" at the mob bar's left end (2026-08
 var rival_box: Control
 var rival_fill: ColorRect
 var rival_name: Label
+var target_chips := {}         # fill node -> pale damage trail immediately behind it
+var target_damage: RefCounted = preload("res://scripts/health_trail.gd").new()
 
 # ability bar
 var slot_boxes: Array = []      # [{bg, cd, key, name}] for a1,a2,a3,ult,potion
@@ -93,10 +100,8 @@ var _buff_peak := {}            # buff id -> peak seconds seen (for the drain fi
 # clickable & opaque — dismiss by clicking anywhere off the box)
 var hud_popover: Control = null
 
-# corner minimap (top-right; rebuilt only when the charted world changes)
+# corner tactical map (top-right; compatibility handles for HUD callers)
 var minimap_root: Control
-var minimap_cells: Control
-var _minimap_sig := ""
 
 # dialogue
 var dialogue_box: Control
@@ -120,6 +125,7 @@ var hint_labels: Array = []     # hidden during cutscenes
 var _hint_play_t := 0.0         # play seconds since the last menu (hint fade clock)
 var _hint_faded := false
 var _touch_mode := false        # mobile: keyboard-only chrome stays hidden (touch_hud replaces it)
+var _cinematic_mode := false    # party chrome must stay hidden on later refreshes too
 var dialogue_hint: Label = null # desktop advance keys vs touch tap-to-continue
 var minimap_title: Label = null # desktop hotkey suffix is omitted on touch
 var dialogue_lines: Array = []
@@ -569,6 +575,10 @@ func _ready() -> void:
 	stash_btn.visible = false
 	add_child(stash_btn)
 
+	boss_cast_readout = preload("res://scripts/ui/boss_cast.gd").new()
+	boss_cast_readout.game = game
+	add_child(boss_cast_readout)
+
 	# --------------------------------------------------------- boss bar ---
 	boss_box = Control.new()
 	boss_box.visible = false
@@ -577,6 +587,7 @@ func _ready() -> void:
 	# Same framed treatment as the player bars (2px border, caps, quarter
 	# ticks) — the boss's health speaks the HUD's one bar language.
 	boss_fill = _bar(Vector2(390, 88), Vector2(500, 16), Color(0.7, 0.12, 0.2), boss_box)
+	_target_damage_chip(boss_fill)
 	boss_name = Label.new()
 	boss_name.position = Vector2(390, 60)
 	boss_name.size = Vector2(500, 22)
@@ -656,6 +667,7 @@ void fragment() {
 	mob_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(mob_box)
 	mob_fill = _bar(Vector2(490, 88), Vector2(300, 10), Color(0.9, 0.25, 0.2), mob_box)
+	_target_damage_chip(mob_fill)
 	mob_name = Label.new()
 	mob_name.position = Vector2(490, 64)
 	mob_name.size = Vector2(300, 20)
@@ -684,6 +696,7 @@ void fragment() {
 	rival_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(rival_box)
 	rival_fill = _bar(Vector2(440, 88), Vector2(400, 14), Color(0.55, 0.35, 0.9), rival_box)
+	_target_damage_chip(rival_fill)
 	rival_name = Label.new()
 	rival_name.position = Vector2(440, 62)
 	rival_name.size = Vector2(400, 22)
@@ -711,6 +724,12 @@ void fragment() {
 	_build_ability_bar()
 	_build_buff_bar()
 	_build_minimap()
+	combat_feedback = preload("res://scripts/ui/combat_feedback.gd").new()
+	combat_feedback.game = game
+	add_child(combat_feedback)
+	combat_foliage = preload("res://scripts/ui/combat_foliage.gd").new()
+	combat_foliage.game = game
+	add_child(combat_foliage)
 
 	# ---------------------------------------------------- dialogue box ---
 	dialogue_box = Control.new()
@@ -1324,226 +1343,26 @@ func _update_buffs() -> void:
 		slot["time_bg"].visible = not slot["time"].text.is_empty()
 
 
-const MINIMAP_AREA := Vector2(182, 116)
-
-## Persistent top-right minimap: the charted room graph in miniature, with
-## the current room framed gold and seen-but-unentered boss doors pipped
-## red. Built once; _update_minimap redraws only when the world changes.
+## Local tactical map; the full room graph lives in the field atlas.
 func _build_minimap() -> void:
-	minimap_root = Control.new()
-	minimap_root.position = Vector2(1066, 84)
-	minimap_root.size = Vector2(198, 170)
-	minimap_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	minimap_root.visible = false
-	add_child(minimap_root)
-	if game:
-		# Click/tap the minimap to open the full map (both platforms; desktop keeps M too).
-		minimap_root.mouse_filter = Control.MOUSE_FILTER_STOP
-		minimap_root.gui_input.connect(func(e: InputEvent) -> void:
-			if (e is InputEventMouseButton and e.pressed) or (e is InputEventScreenTouch and e.pressed):
-				game.menus.open_map())
-	# Solid-enough panel + border so the map holds its shape on BLACK
-	# ground too (QA finding 7: it dissolved over void terrain).
-	var bg := Panel.new()
-	var bgsb := StyleBoxFlat.new()
-	bgsb.bg_color = Color(UITheme.PANEL_BG, 0.93)
-	bgsb.border_color = UITheme.BORDER
-	bgsb.set_border_width_all(1)
-	bgsb.set_corner_radius_all(10)
-	bg.add_theme_stylebox_override("panel", bgsb)
-	bg.size = Vector2(198, 170)
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	minimap_root.add_child(bg)
-	minimap_title = Label.new()
-	minimap_title.name = "MinimapTitle"
-	minimap_title.text = "MAP  (M)"
-	minimap_title.position = Vector2(8, 3)
-	# The chrome's header face (Cinzel, tracked) like every other panel title,
-	# not the body sans — the minimap was the last HUD panel titled in it.
-	var mh: Font = UITheme.header_font()
-	if mh != null:
-		var mfv := FontVariation.new()
-		mfv.base_font = mh
-		mfv.spacing_glyph = 2
-		minimap_title.add_theme_font_override("font", mfv)
-	minimap_title.add_theme_font_size_override("font_size", 12)
-	minimap_title.add_theme_color_override("font_color", Color(UITheme.GOLD, 0.9))
-	minimap_root.add_child(minimap_title)
-	var mrule := ColorRect.new()
-	mrule.color = Color(UITheme.GOLD, 0.28)
-	mrule.position = Vector2(8, 22)
-	mrule.size = Vector2(182, 1)
-	mrule.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	minimap_root.add_child(mrule)
-	var legend := Label.new()
-	legend.text = "◆ here   ☠ boss   ✓ cleared"
-	legend.position = Vector2(8, 150)
-	legend.add_theme_font_size_override("font_size", 10)
-	legend.add_theme_color_override("font_color", Color(0.6, 0.62, 0.68))
-	legend.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	minimap_root.add_child(legend)
-	minimap_cells = Control.new()
-	minimap_cells.position = Vector2(8, 26)
-	minimap_cells.size = MINIMAP_AREA
-	minimap_cells.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	minimap_root.add_child(minimap_cells)
+	wayfinder = WayfinderUI.new()
+	wayfinder.game = game
+	add_child(wayfinder)
+	minimap_root = wayfinder.radar_root
+	minimap_title = wayfinder.map_title
 
 
 func _update_minimap() -> void:
-	if not game.play_started or game.rooms.is_empty():
-		minimap_root.visible = false
-		return
-	minimap_root.visible = true
-	# Cheap change-detection: only the counts that alter the drawing.
-	var sig := "%d|%d|%d|%d|%d" % [game.cur_room, game.visited.size(),
-		game.door_seen.size(), game.boss_done.size(), int(Story.is_standalone(game.chapter_id))]
-	if sig == _minimap_sig:
-		return
-	_minimap_sig = sig
-	for c in minimap_cells.get_children():
-		minimap_cells.remove_child(c)
-		c.queue_free()
-
-	var min_c := Vector2i(1 << 20, 1 << 20)
-	var max_c := Vector2i(-(1 << 20), -(1 << 20))
-	var have := false
-	for i in game.zone_count:
-		if not game.charted(i):
-			continue
-		have = true
-		var c: Vector2i = game.rooms[i]["coord"]
-		min_c = Vector2i(mini(min_c.x, c.x - 1), mini(min_c.y, c.y - 1))
-		max_c = Vector2i(maxi(max_c.x, c.x + 1), maxi(max_c.y, c.y + 1))
-	if not have:
-		return
-	var cols := max_c.x - min_c.x + 1
-	var rows := max_c.y - min_c.y + 1
-	var gap := 3.0
-	var cw := clampf((MINIMAP_AREA.x - (cols - 1) * gap) / cols, 6.0, 22.0)
-	var ch := clampf((MINIMAP_AREA.y - (rows - 1) * gap) / rows, 5.0, 18.0)
-	var org := Vector2(maxf(0.0, (MINIMAP_AREA.x - cols * (cw + gap)) / 2.0),
-		maxf(0.0, (MINIMAP_AREA.y - rows * (ch + gap)) / 2.0))
-	var cell_pos := func(c: Vector2i) -> Vector2:
-		return org + Vector2((c.x - min_c.x) * (cw + gap), (c.y - min_c.y) * (ch + gap))
-
-	# Links + seen-boss-door pips, under the room cells.
-	for i in game.zone_count:
-		if not game.charted(i):
-			continue
-		var p: Vector2 = cell_pos.call(game.rooms[i]["coord"])
-		for dir in game.rooms[i]["exits"].keys():
-			var nb: int = game.neighbor(i, String(dir))
-			if nb < 0:
-				continue
-			var delta: Vector2i = Game.DIRS[dir]
-			var mid := p + Vector2(cw / 2.0, ch / 2.0)
-			var nb_vis: bool = game.charted(nb)
-			var to := mid + Vector2(delta.x * (cw + gap), delta.y * (ch + gap)) * 0.5 * (1.0 if nb_vis else 0.6)
-			var link := ColorRect.new()
-			link.color = Color(0.5, 0.47, 0.4, 0.9) if nb_vis else Color(0.4, 0.38, 0.34, 0.8)
-			link.position = Vector2(minf(mid.x, to.x) - 1.0, minf(mid.y, to.y) - 1.0)
-			link.size = Vector2(absf(to.x - mid.x) + 2.0, absf(to.y - mid.y) + 2.0)
-			link.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			minimap_cells.add_child(link)
-			if not nb_vis and game.room_type(nb) == "boss" and game.door_seen.get(nb, false):
-				var pip := ColorRect.new()
-				pip.color = Color(1.0, 0.5, 0.55)
-				pip.position = to - Vector2(2, 2)
-				pip.size = Vector2(4, 4)
-				pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-				minimap_cells.add_child(pip)
-
-	# Room cells (current room framed gold; cleared boss rooms tinted green).
-	for i in game.zone_count:
-		if not game.charted(i):
-			continue
-		var p: Vector2 = cell_pos.call(game.rooms[i]["coord"])
-		var t: String = game.room_type(i)
-		if i == game.cur_room:
-			var hl := ColorRect.new()
-			hl.color = Color(0.95, 0.85, 0.5)
-			hl.position = p - Vector2(2, 2)
-			hl.size = Vector2(cw + 4, ch + 4)
-			hl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			minimap_cells.add_child(hl)
-		var col: Color = Menus.MAP_TYPE_COLOR.get(t, Color(0.3, 0.3, 0.3))
-		if t == "boss":
-			var kind := String(game.zones[i].get("boss", ""))
-			if kind != "" and game.boss_done.get(kind, false):
-				col = col.lerp(Color(0.3, 0.55, 0.35), 0.55)
-		var cell := ColorRect.new()
-		cell.color = col.lightened(0.15) if i == game.cur_room else col
-		cell.position = p
-		cell.size = Vector2(cw, ch)
-		cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		minimap_cells.add_child(cell)
-
-		# Room-type marker. Boss/current/cleared markers always show; the
-		# quieter room-type glyphs only when the cell is big enough to read.
-		var icon_text := String(Menus.MAP_TYPE_ICON.get(t, ""))
-		if t == "boss":
-			var bk := String(game.zones[i].get("boss", ""))
-			icon_text = "✓" if (bk != "" and game.boss_done.get(bk, false)) else "☠"
-		if i == game.cur_room:
-			icon_text = "◆"
-		if icon_text != "" and (cw >= 12.0 or icon_text in ["◆", "☠", "✓"]):
-			var il := Label.new()
-			il.text = icon_text
-			il.position = p
-			il.size = Vector2(cw, ch)
-			il.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			il.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			il.add_theme_font_size_override("font_size", int(clampf(minf(cw, ch) * 0.82, 8.0, 15.0)))
-			il.add_theme_color_override("font_color",
-				Color(0.12, 0.09, 0.05) if i == game.cur_room else Color(0.95, 0.92, 0.8))
-			il.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			minimap_cells.add_child(il)
+	wayfinder.sync()
 
 
 ## A gold banner sliding in at the top when an achievement unlocks; holds
 ## a few seconds, then fades. Stacks downward if several land together.
 func achievement_toast(name: String, desc: String) -> void:
-	var stacked := get_tree().get_nodes_in_group("ach_toast").size()
-	var panel := Panel.new()
-	panel.add_to_group("ach_toast")
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.12, 0.10, 0.05, 0.95)
-	sb.border_color = Color(1.0, 0.85, 0.4)
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(8)
-	panel.add_theme_stylebox_override("panel", sb)
-	panel.size = Vector2(440, 58)
-	# Below the boss bar (which sits ~y86-130, center) so a mid-fight unlock
-	# never covers the boss's health.
-	panel.position = Vector2(640 - 220, 138 + stacked * 64)
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(panel)
-	var title := Label.new()
-	title.text = "★  Achievement Unlocked"
-	title.position = Vector2(14, 6)
-	title.add_theme_font_size_override("font_size", 13)
-	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
-	panel.add_child(title)
-	var nm := Label.new()
-	nm.text = name + " — " + desc
-	nm.position = Vector2(14, 26)
-	nm.add_theme_font_size_override("font_size", 15)
-	nm.add_theme_color_override("font_color", Color(1, 1, 1))
-	panel.add_child(nm)
-	# The longest name+desc pairs already brush the 440px frame; anything
-	# longer would spill past the gold border. Widen the panel to the line
-	# (keeping it centered) instead of letting the label outgrow it.
-	var line_w: float = nm.get_theme_font("font").get_string_size(
-		nm.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
-	if line_w + 28.0 > panel.size.x:
-		panel.size.x = line_w + 28.0
-		panel.position.x = 640.0 - panel.size.x * 0.5
-	panel.modulate.a = 0.0
-	var tw := create_tween()
-	tw.tween_property(panel, "modulate:a", 1.0, 0.3)
-	tw.tween_interval(3.2)
-	tw.tween_property(panel, "modulate:a", 0.0, 0.6)
-	tw.tween_callback(panel.queue_free)
+	# Achievements share the same reading position and overlay-aware clock
+	# as discoveries, so a reward cannot cover its own quest completion.
+	announce("Achievement unlocked · " + name + "\n" + desc,
+		Color(1.0, 0.85, 0.4), 3.2, "achievement")
 
 
 # ------------------------------------------------------ announcements ---
@@ -1558,15 +1377,19 @@ func achievement_toast(name: String, desc: String) -> void:
 const ANN_W := 560.0
 const ANN_H := 56.0
 const ANN_Y := 134.0            # below the boss bar (60-124 with its badge row), above the title card (200)
-const ANN_STACK := 62.0         # px per extra plaque when several land together
+const ANN_QUEUE_MAX := 5        # excess discoveries remain in the event log
 const ANN_SPACING_IN := 7       # px glyph spacing the title starts at (eases to REST)
 const ANN_SPACING_REST := 2
 const ANN_HOLD_MIN := 2.2
 const ANN_ICONS := {            # kind -> HUD icon (assets/icons/ui_*.png) or sprite
 	"lore": "ui_book", "quest": "ui_quest", "victory": "ui_daily",
 	"item": "ui_bag", "gold": "coin", "party": "ui_party", "note": "",
+	"achievement": "ui_daily",
 }
 var _ann_stack := 0
+var _ann_queue: Array[Dictionary] = []
+var _ann_active: Panel = null
+var _ann_tween: Tween = null
 
 
 ## Classify an announcement line by its words (the call sites are legion; the
@@ -1594,18 +1417,57 @@ static func announce_kind(text: String) -> String:
 func announce(text: String, color: Color, hold := 0.0, kind := "") -> void:
 	if kind == "":
 		kind = announce_kind(text)
+	log_event(text, color, kind)
+	if is_instance_valid(_ann_active) and String(_ann_active.get_meta("message", "")) == text:
+		return
+	for pending in _ann_queue:
+		if pending["text"] == text:
+			return
+	_ann_queue.append({"text": text, "color": color, "hold": hold, "kind": kind})
+	while _ann_queue.size() > ANN_QUEUE_MAX:
+		# Keep earned achievements ahead of incidental overflow; every message
+		# still has its event-log entry and every feat remains in the Codex.
+		var discard := 0
+		for i in _ann_queue.size():
+			if String(_ann_queue[i].kind) != "achievement":
+				discard = i
+				break
+		_ann_queue.remove_at(discard)
+	_tick_announcements()
+
+
+## One plaque, one reading position. Reading time pauses behind a menu,
+## dialogue or arrival title; simultaneous events remain available in the log.
+func _tick_announcements() -> void:
+	var readable := game.play_started and game.state == Game.ST_PLAYING \
+		and not game.input_overlay_up() and title_label.modulate.a < 0.05 \
+		and subtitle_label.modulate.a < 0.05 \
+		and not (is_instance_valid(boss_cast_readout) and boss_cast_readout.visible)
+	if is_instance_valid(_ann_active):
+		_ann_active.visible = readable
+		if _ann_tween != null and _ann_tween.is_valid():
+			if readable:
+				if not _ann_tween.is_running():
+					_ann_tween.play()
+			else:
+				_ann_tween.pause()
+	elif readable and not _ann_queue.is_empty():
+		var next: Dictionary = _ann_queue.pop_front()
+		_show_announcement(next["text"], next["color"], next["hold"], next["kind"])
+
+
+func _show_announcement(text: String, color: Color, hold: float, kind: String) -> void:
 	# A long line ("X UNLOCKED — replay any chapter at the new tier") splits at
 	# its dash: the loud part is the title, the rest the sub-line.
 	var title := text
 	var sub := ""
-	for sep in [" — ", " -- ", "  ("]:
+	for sep in ["\n", " — ", " -- ", "  ("]:
 		var at := text.find(sep)
 		if at > 0:
 			title = text.substr(0, at).strip_edges()
 			sub = text.substr(at + (0 if sep == "  (" else sep.length())).strip_edges()
 			break
-	var stacked := _ann_stack
-	_ann_stack += 1
+	_ann_stack = 1
 	# The box FITS its text (owner 2026-08-19: a short line in the fixed 560 px
 	# plaque was mostly whitespace). Measure the title at its SETTLED spacing —
 	# the brief wider ease-in clips inside the box — and the sub-line, and take
@@ -1622,8 +1484,20 @@ func announce(text: String, color: Color, hold := 0.0, kind := "") -> void:
 	if sub != "":
 		need = maxf(need, ThemeDB.fallback_font.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x)
 	var pw: float = clampf(text_x + need + 26.0, 280.0, ANN_W)
-	fv.spacing_glyph = ANN_SPACING_IN
+	var available := pw - text_x - 18.0
+	# A paragraph must wrap inside the plaque, including long reward details.
+	# Keep settled spacing on wrapped titles so the entrance cannot reflow them.
+	var wraps := need > available
+	var title_h := maxf(34.0, fv.get_multiline_string_size(title_text, HORIZONTAL_ALIGNMENT_LEFT, available, title_size).y + 4.0)
+	var sub_font: Font = UITheme.body_font()
+	if sub_font == null:
+		sub_font = ThemeDB.fallback_font
+	var sub_h := maxf(18.0, sub_font.get_multiline_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, available, 13).y + 4.0) if sub != "" else 0.0
+	fv.spacing_glyph = ANN_SPACING_REST if wraps else ANN_SPACING_IN
 	var plaque := Panel.new()
+	plaque.name = "AnnouncementPlaque"
+	plaque.set_meta("message", text)
+	_ann_active = plaque
 	plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.05, 0.045, 0.04, 0.86)
@@ -1633,9 +1507,9 @@ func announce(text: String, color: Color, hold := 0.0, kind := "") -> void:
 	sb.shadow_color = Color(0, 0, 0, 0.55)
 	sb.shadow_size = 10
 	plaque.add_theme_stylebox_override("panel", sb)
-	var h := ANN_H + (16.0 if sub != "" else 0.0)
+	var h := maxf(ANN_H, 22.0 + title_h + (sub_h + 4.0 if sub != "" else 0.0))
 	plaque.size = Vector2(pw, h)
-	plaque.position = Vector2(640.0 - pw * 0.5, ANN_Y + stacked * ANN_STACK)
+	plaque.position = Vector2(640.0 - pw * 0.5, ANN_Y)
 	plaque.pivot_offset = plaque.size * 0.5
 	plaque.clip_contents = true
 	add_child(plaque)
@@ -1660,9 +1534,11 @@ func announce(text: String, color: Color, hold := 0.0, kind := "") -> void:
 		plaque.add_child(icon)
 	# title: header face, caps, letter-spaced (FontVariation.spacing_glyph eases in)
 	var tl := Label.new()
+	tl.name = "AnnouncementTitle"
 	tl.text = title_text
-	tl.position = Vector2(text_x, 10 if sub == "" else 7)
-	tl.size = Vector2(pw - text_x - 18.0, 34)
+	tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tl.position = Vector2(text_x, 10)
+	tl.size = Vector2(available, title_h)
 	tl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if icon_name == "" else HORIZONTAL_ALIGNMENT_LEFT
 	tl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	tl.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1674,9 +1550,12 @@ func announce(text: String, color: Color, hold := 0.0, kind := "") -> void:
 	plaque.add_child(tl)
 	if sub != "":
 		var sl := Label.new()
+		sl.name = "AnnouncementDetail"
 		sl.text = sub
-		sl.position = Vector2(text_x, 40)
-		sl.size = Vector2(pw - text_x - 18.0, 22)
+		sl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		sl.add_theme_font_override("font", sub_font)
+		sl.position = Vector2(text_x, 10 + title_h + 4)
+		sl.size = Vector2(available, sub_h)
 		sl.horizontal_alignment = tl.horizontal_alignment
 		sl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		sl.add_theme_font_size_override("font_size", 13)
@@ -1714,7 +1593,8 @@ func announce(text: String, color: Color, hold := 0.0, kind := "") -> void:
 	# motion: pop → settle, spacing eases in, sweep crosses, hold, drift out
 	plaque.modulate.a = 0.0
 	plaque.scale = Vector2(1.06, 1.06)
-	var tw := create_tween()
+	var tw := plaque.create_tween()
+	_ann_tween = tw
 	tw.tween_property(plaque, "modulate:a", 1.0, 0.18)
 	tw.parallel().tween_property(plaque, "scale", Vector2.ONE, 0.42) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -1727,10 +1607,11 @@ func announce(text: String, color: Color, hold := 0.0, kind := "") -> void:
 	tw.parallel().tween_property(plaque, "position:y", plaque.position.y - 10.0, 0.5) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	tw.tween_callback(func() -> void:
-		_ann_stack = maxi(0, _ann_stack - 1)
+		_ann_stack = 0
+		_ann_active = null
+		_ann_tween = null
 		if is_instance_valid(plaque):
 			plaque.queue_free())
-	log_event(text, color, kind)
 
 
 # ---------------------------------------------------------- event log ---
@@ -1774,6 +1655,7 @@ func log_event(text: String, color: Color, kind := "") -> void:
 					last.queue_free()
 				_layout_log())
 			last.set_meta("tween", tw2)
+			_tick_event_log()
 			return
 	var row := Control.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1802,6 +1684,8 @@ func log_event(text: String, color: Color, kind := "") -> void:
 		row.add_child(ic)
 	var l := Label.new()
 	l.text = text.replace("\n", " ")
+	l.clip_text = true
+	l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	l.position = Vector2(x, 0)
 	l.size = Vector2(400, LOG_LINE_H)
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -1837,6 +1721,22 @@ func log_event(text: String, color: Color, kind := "") -> void:
 			row.queue_free()
 		_layout_log())
 	row.set_meta("tween", tw)
+	_tick_event_log()
+
+
+func _tick_event_log() -> void:
+	var readable := game.play_started and game.state == Game.ST_PLAYING and not game.input_overlay_up()
+	for row in _log_lines:
+		if not is_instance_valid(row):
+			continue
+		row.visible = readable
+		var motion: Tween = row.get_meta("tween", null)
+		if motion != null and motion.is_valid():
+			if readable:
+				if not motion.is_running():
+					motion.play()
+			else:
+				motion.pause()
 
 
 ## "+12 XP" / "+3 gold" → the currency word the line adds up in ("" = not a stream).
@@ -2213,6 +2113,18 @@ func _set_fill(fill: ColorRect, fraction: float) -> void:
 	fill.size.x = maxf(0.0, fill.get_meta("full_w") * clampf(fraction, 0.0, 1.0))
 
 
+func _target_damage_chip(fill: ColorRect) -> void:
+	var chip := ColorRect.new()
+	chip.color = Color(0.98, 0.80, 0.53, 0.9)
+	chip.position = fill.position
+	chip.size = fill.size
+	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chip.set_meta("full_w", fill.get_meta("full_w"))
+	fill.get_parent().add_child(chip)
+	fill.get_parent().move_child(chip, fill.get_index())
+	target_chips[fill] = chip
+
+
 ## Level-up flourish (P2): the XP bar flashes white and the identity line
 ## pops gold, both easing back — the moment lands on the HUD too, not only in
 ## the world text.
@@ -2323,7 +2235,7 @@ func update_stats(p: Player) -> void:
 		_set_fill(mp_fill, p.mp / p.max_mp)
 	gold_label.text = ("◉ %d gold    Potions x%d" % [p.gold, p.potion_count()]) if game.touch_mode \
 		else "◉ %d gold    Potions [%s] x%d" % [
-			p.gold, OS.get_keycode_string(game.binds["potion"]), p.potion_count()]
+			p.gold, game.control_hint("potion", "Potion").trim_prefix("[").trim_suffix("]"), p.potion_count()]
 	if p.gold >= 5000:
 		game.unlock_achievement("wealthy")  # idempotent: fires once
 	cr_label.text = "Combat Rating  %d" % p.combat_rating()
@@ -2415,7 +2327,7 @@ func update_stats(p: Player) -> void:
 		var slot: String = SLOTS[i]
 		var box: Dictionary = slot_boxes[i]
 		if slot == "potion":
-			box["key"].text = OS.get_keycode_string(game.binds["potion"])
+			box["key"].text = game.control_hint("potion", "Potion").trim_prefix("[").trim_suffix("]")
 			box["cd"].value = 0.0
 			box["cost"].text = ""
 			# The potion isn't a variant — a dim neutral glow, matching a bare
@@ -2463,7 +2375,7 @@ func update_stats(p: Player) -> void:
 		# overrides this below to follow its stance).
 		box["glow"].modulate = tcol if not theme.is_empty() else Color(0.42, 0.46, 0.6, 0.55)
 		var cost := p.ability_cost(slot)
-		box["key"].text = OS.get_keycode_string(game.binds[slot])
+		box["key"].text = game.control_hint(slot, slot.to_upper()).trim_prefix("[").trim_suffix("]")
 		box["name"].text = ab["name"]
 		# Which THEME an ability is running is an at-a-glance read, and on the
 		# procedural glyph the tint carried it. Hand-authored art is used
@@ -2495,7 +2407,7 @@ func update_stats(p: Player) -> void:
 		# Detail card: name/key/cost/cd, the ability's own words, then the
 		# assigned theme's variant line — built from live values, so cd
 		# talents and mana amods read truthfully.
-		var tip := "%s  [%s]" % [String(ab["name"]), OS.get_keycode_string(game.binds[slot])]
+		var tip := "%s  [%s]" % [String(ab["name"]), game.control_hint(slot, slot.to_upper()).trim_prefix("[").trim_suffix("]")]
 		if cost > 0:
 			tip += "  ·  %s mana" % _fmt_cost(cost)
 		tip += "  ·  %.1fs cooldown" % p.ability_cd(slot)
@@ -2596,6 +2508,9 @@ func _ensure_down_ui() -> void:
 
 ## Per-frame from update_stats: p is the LOCAL player.
 func _update_down_ui(p: Player) -> void:
+	if _cinematic_mode:
+		_hide_down_ui()
+		return
 	var online: bool = game.net_online()
 	if not online and down_banner == null:
 		return  # solo: nothing was ever built, nothing to hide
@@ -2631,6 +2546,13 @@ func _update_down_ui(p: Player) -> void:
 				clampf(p.revive_t / p.REVIVE_CHANNEL, 0.0, 1.0))
 	for i in range(used, down_marks.size()):
 		(down_marks[i]["root"] as Control).visible = false
+
+
+func _hide_down_ui() -> void:
+	if down_banner != null:
+		down_banner.hide()
+	for mark in down_marks:
+		(mark["root"] as Control).hide()
 
 
 ## Channel progress 0..1: the exact clock when WE hold the channel, the
@@ -2989,6 +2911,10 @@ func _build_party_frame(pos: Vector2) -> Dictionary:
 ## are the OTHER players). Solo / lone-online never allocates; a party of >=2
 ## builds once and draws.
 func _update_party_ui(_p: Player) -> void:
+	if _cinematic_mode:
+		_hide_party_ui()
+		_update_meter(false)
+		return
 	var online: bool = game.net_online()
 	var data: Array = party_frame_data() if online else []
 	_update_meter(online and not data.is_empty())
@@ -3324,12 +3250,18 @@ func track_target_bar(unit: CharacterBody2D) -> void:
 	if unit != target_bar_unit:
 		if unit is Boss:
 			show_boss_bar(unit.display_name)
+			# A named guardian keeps its own title, but its kit supplies the
+			# painted portrait. Display-name lookup alone left an empty ring.
+			_dress_boss_badge(String(Story.ALL_ENEMIES.get(unit.kind, {}).get("name", unit.display_name)))
 		elif unit is Player:
 			_show_rival_bar(unit as Player)
 		else:
 			_show_mob_bar(unit)
 		target_bar_unit = unit
 	var frac: float = clampf(float(unit.hp) / maxf(1.0, float(unit.max_hp)), 0.0, 1.0)
+	var trail: float = target_damage.step(unit.get_instance_id(), frac, get_process_delta_time())
+	var fill := boss_fill if unit is Boss else (rival_fill if unit is Player else mob_fill)
+	_set_fill(target_chips[fill], trail)
 	if unit is Boss:
 		update_boss_bar(frac)
 		# P7.D: level under the badge, numeric HP at the bar's right end
@@ -3384,9 +3316,10 @@ func _show_rival_bar(p: Player) -> void:
 # art through the dialogue box's own _splash_for, so every boss that can
 # speak with a face fights with one too.
 var _boss_splash_shown := {}
+var _boss_splash_layer: Control = null
 
 func _boss_splash_intro(bname: String) -> void:
-	if _boss_splash_shown.get(bname, false):
+	if _cinematic_mode or _boss_splash_shown.get(bname, false):
 		return
 	var art_key := _splash_for(bname)
 	if art_key == "" or not Art.has_sprite(art_key):
@@ -3395,7 +3328,10 @@ func _boss_splash_intro(bname: String) -> void:
 	# Facing it in battle MEETS it (owner 2026-07-25: cleared ch1, Fangmaw —
 	# who never speaks — stayed a silhouette in the gallery).
 	game.note_splash_seen(art_key)
+	if is_instance_valid(_boss_splash_layer):
+		_boss_splash_layer.free()
 	var layer := Control.new()
+	_boss_splash_layer = layer
 	layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.set_anchors_preset(Control.PRESET_FULL_RECT)
 	layer.clip_contents = true
@@ -3549,12 +3485,13 @@ func update_boss_bar(fraction: float) -> void:
 ## ships; hidden when the boss has no splash.
 func _dress_boss_badge(bname: String) -> void:
 	var art_key := _splash_for(bname)
+	if art_key == "" or not Art.has_sprite(art_key):
+		_boss_badge_key = art_key
+		boss_badge_root.visible = false
+		return
 	if art_key == _boss_badge_key:
 		return
 	_boss_badge_key = art_key
-	if art_key == "" or not Art.has_sprite(art_key):
-		boss_badge_root.visible = false
-		return
 	var source: Texture2D = Art.tex(art_key)
 	if source == null:
 		boss_badge_root.visible = false
@@ -3579,6 +3516,7 @@ func hide_boss_bar() -> void:
 	mob_box.visible = false
 	rival_box.visible = false
 	target_bar_unit = null
+	target_damage.target_id = 0
 
 
 func loot_banner(item: Dictionary, bonus_gold: int) -> void:
@@ -3912,7 +3850,15 @@ func danger_ramp(dur: float) -> void:
 		danger_tw.kill()
 	danger_rect.modulate = Color(1.9, 0.25, 0.3, 0.0)  # HDR red rim
 	danger_tw = create_tween()
+	danger_tw.set_pause_mode(Tween.TWEEN_PAUSE_STOP)
 	danger_tw.tween_property(danger_rect, "modulate:a", 0.9, dur)
+
+func danger_cancel() -> void:
+	if danger_tw != null and danger_tw.is_valid():
+		danger_tw.kill()
+	if is_instance_valid(danger_rect):
+		danger_rect.modulate.a = 0.0
+
 
 func danger_end(sheltered: bool) -> void:
 	if danger_rect == null:
@@ -3927,6 +3873,7 @@ func danger_end(sheltered: bool) -> void:
 
 ## One-frame impact flash over the whole screen (ults, meteor strikes).
 func flash_screen(color: Color, strength := 0.4, dur := 0.3) -> void:
+	strength *= float(game.settings.get("impact_flashes", 1.0))
 	if flash_rect == null:
 		flash_rect = ColorRect.new()
 		flash_rect.size = Vector2(1280, 720)
@@ -3945,6 +3892,7 @@ func flash_screen(color: Color, strength := 0.4, dur := 0.3) -> void:
 ## wash reaches edge-to-edge with no game world peeking past the print.
 func flash_splash(tex: Texture2D, opacity := 0.1, dur := 0.85,
 		tint := Color(0.12, 0.4, 1.0)) -> void:
+	opacity *= float(game.settings.get("impact_flashes", 1.0))
 	if tex == null:
 		return
 	var fill := ColorRect.new()
@@ -4284,7 +4232,24 @@ func _reset_dialogue_chrome() -> void:
 		log_panel.visible = false
 
 
+## A world/session transition abandons the old overlay without choosing an
+## option or running an old chapter's completion callback.
+func cancel_conversation() -> void:
+	dialogue_active = false
+	dialogue_lines = []
+	dialogue_done = Callable()
+	choices_active = false
+	choice_count = 0
+	choice_cb = Callable()
+	dialogue_box.hide()
+	choice_panel.hide()
+	_reset_dialogue_chrome()
+	_close_chat()
+
+
 func _process(_delta: float) -> void:
+	_tick_announcements()
+	_tick_event_log()
 	# AUTO drives line advance while dialogue is up (never through a choice or an
 	# open backlog). The HUD processes even while the tree is paused, which is
 	# exactly when a convo is showing, so real delta accrues here.
@@ -4401,7 +4366,7 @@ func set_touch_mode(on: bool) -> void:
 		chat_input.placeholder_text = "party chat…  (Return sends · tap outside closes)" if on \
 			else "party chat…  (ENTER sends · ESC closes)"
 	for l in hint_labels:
-		l.visible = not on
+		l.visible = not on and not _cinematic_mode and (game.gamepad == null or not game.gamepad.active)
 	for box in slot_boxes:
 		# EVERY Control the slot owns — the variant glow is a direct HUD child
 		# (not a child of the bar), so leaving it out of this list stranded five
@@ -4416,8 +4381,18 @@ func set_touch_mode(on: bool) -> void:
 
 
 func set_cinematic(on: bool) -> void:
+	_cinematic_mode = on
+	if on:
+		_hide_party_ui()
+		_hide_down_ui()
+		_update_meter(false)
+		# A strong hero can kill a boss before its entrance splash finishes.
+		# Retire that plate before mounting the ending beneath the dialogue.
+		if is_instance_valid(_boss_splash_layer):
+			_boss_splash_layer.free()
+		_boss_splash_layer = null
 	for l in hint_labels:
-		l.visible = (not on) and not _touch_mode
+		l.visible = (not on) and not _touch_mode and (game.gamepad == null or not game.gamepad.active)
 	# The avatar ring carries a higher z-index than ordinary HUD children, so
 	# it otherwise leaks over a full-screen opener even when every bar beneath
 	# it is covered by the art.
@@ -4653,6 +4628,11 @@ func _set_choice_hover(idx: int, on: bool) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if game.menus and game.menus.is_open():
 		return  # menus layer handles its own input
+	if game.chapter_finale.active and not dialogue_active and not choices_active:
+		# The last line has closed but the illustrated ending is dissolving.
+		# Confirm must not open chat or reach gameplay during this short gap.
+		get_viewport().set_input_as_handled()
+		return
 
 	# A decision on screen swallows everything except its number keys.
 	if choices_active:
@@ -4742,7 +4722,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## ESC opens the system menu (menus.gd owns closing it again).
 func _on_escape() -> void:
-	if dialogue_active or choices_active or not game.play_started \
+	if game.chapter_finale.active or dialogue_active or choices_active or not game.play_started \
 			or game.state != game.ST_PLAYING or game.menus.is_open():
 		return
 	game.menus.open_pause()

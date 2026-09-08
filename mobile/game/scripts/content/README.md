@@ -1,5 +1,20 @@
 # Content modules (Chapter 2+)
 
+An `escort` step is backed by Tovin's physical encounter in `wayfarer.gd`. Like
+the ward's `defend` step, its world flag is set only by the host simulation.
+Live encounter actors expose `quest_convo`/`quest_flag` metadata for discovery
+and guidance. See ONE_MORE_MILE.md for request, snapshot and retry contracts.
+
+An optional quest-level `completed_flag` hides a permanently finished personal
+story from available-quest discovery after chapter replay. Use its persistent
+`sq_kept_*` flag and provide a matching completed dialogue variant.
+
+An optional `defend` step is now backed by the tower's ward encounter:
+`{"kind": "defend", "flag": "ward_tower_lit", "text": "..."}`. The physical
+encounter owns completion, warnings, waves, retries and co-op state; a dialogue
+choice must never set that flag. New defense sites need an installed encounter
+and a schema entry, not just a new step label. See `WARD_VIGILS.md` at repo root.
+
 Each Chapter 2 task ships its content as a MODULE in this folder:
 a plain GDScript (**no `class_name`** — avoids the import-hang trap)
 exposing any of these constants:
@@ -76,6 +91,10 @@ in the old coordinate space and it Just Works. Optional keys:
 - `"gate_flag"`: "story_flag" — the gate out of this zone opens when
   that flag is set (bossless zones; setting it via `game.set_flag`
   opens the door live — reconcile_after_load handles reloads).
+- `"river"`: optional per-zone override of the terrain river config
+  (`{"chance": 1.0, "color": Color(...)}`). Decided before hazards/scenery,
+  so the channel stays clear. River bridges automatically receive a personal
+  fishing nook. See `fishing_bank.gd` for the guaranteed village-area river.
 
 Graph-authored chapters (see `Story.ZONES` for Chapter 1) lay rooms
 out on a grid instead: `"coord": [gx, gy]`, `"exits": ["N", "E"]`

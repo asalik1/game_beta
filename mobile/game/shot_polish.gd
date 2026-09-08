@@ -17,6 +17,10 @@ extends ShotRig
 ## frame no matter how long a PNG save takes (deterministic, smooth):
 ##   godot --audio-driver Dummy --fixed-fps 30 --path game res://shot_polish.tscn -- --gif [--class=mage] [--timeout=600]
 ## then tools/art/gif_from_frames.py stitches each folder into a GIF.
+## --beats=forest,keep,forest_hud,road,magma,keep_wall selects motion beats;
+## omit it for all six. Use a subset for bounded iteration on slow renderers.
+## --no-capture keeps the live inputs and per-frame checks without costly PNG
+## readbacks. --passes=N repeats motion, --seed=N pins cosmetic random rolls.
 ##
 ## --tour: the round-3 FLAG rooms as stills, any chapter, rooms by NAME:
 ##   shot.bat polish --tour --chapter=ch2 --names=the_greyrun_mills,the_sporewood [--zoom=1.0] [--gif]
@@ -29,9 +33,13 @@ var _mobs: Array = []
 const GIF_FPS := 30
 var _gif_dir := ""
 var _gif_n := 0
+var _motion_failed := false
+var _motion_frames := 0
 
 
 func _ready() -> void:
+	if arg("seed", "") != "":
+		seed(int(arg("seed")))
 	var cls := arg("class", "warrior")
 	await boot(cls, arg("chapter", "ch1"))
 	game.camera.position_smoothing_enabled = false
@@ -116,11 +124,16 @@ func _ready() -> void:
 		return
 	if flag("tour"):
 		await _tour()
-		finish()
+		finish(1 if _motion_failed else 0)
 		return
 	if flag("gif"):
-		await _gif_pass(cls)
-		finish()
+		for pass_index in maxi(1, int(arg("passes", "1"))):
+			step("motion pass %d" % (pass_index + 1))
+			await _gif_pass(cls)
+			if _motion_failed:
+				break
+		print("MOTION CHECK: %d frames; failed=%s" % [_motion_frames, _motion_failed])
+		finish(1 if _motion_failed else 0)
 		return
 	var rooms := arg("rooms", "2,17,20").split(",", false)
 	for rs in rooms:
@@ -298,6 +311,8 @@ func _tour() -> void:
 		if flag("gif"):
 			_gif_begin(s)
 			await _gif_record(2.5)
+			if _motion_failed:
+				return
 		# under the NORTH door: torch pair + inset (the "only stems" flag)
 		if game.rooms[i]["exits"].has("N"):
 			p.global_position = game.door_pos(i, "N") + Vector2(0, 150.0)
@@ -358,6 +373,10 @@ func _clear() -> void:
 
 ## One PNG per engine frame into user://shots/polish/gif_<beat>/f_%04d.png.
 func _gif_begin(beat: String) -> void:
+	if flag("no-capture"):
+		_gif_n = 0
+		step("motion check " + beat)
+		return
 	_gif_dir = ProjectSettings.globalize_path("%s/gif_%s" % [shot_dir, beat])
 	DirAccess.make_dir_recursive_absolute(_gif_dir)
 	var d := DirAccess.open(_gif_dir)
@@ -370,9 +389,27 @@ func _gif_begin(beat: String) -> void:
 
 
 func _gif_cap() -> void:
-	var img := get_viewport().get_texture().get_image()
-	img.save_png("%s/f_%04d.png" % [_gif_dir, _gif_n])
+	var p := game.player
+	if not is_finite(p.strip_t) or not is_finite(p.strip_fps) or p.strip_t < 0.0 \
+			or not p.global_position.is_finite() or not p.velocity.is_finite() or p.motion_faults > 0:
+		push_error("Invalid hero motion/animation state: clip=%s t=%s fps=%s phase=%s gait=%s velocity=%s" % [
+			p._clip, p.strip_t, p.strip_fps, p._stride_ph, p._gait_rate, p.velocity])
+		print("Last motion fault: ", p.last_motion_fault)
+		_motion_failed = true
+		return
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if not is_finite(e.anim_t) or not is_finite(e.anim_fps) or e.anim_t < 0.0 \
+				or not e.global_position.is_finite() or not e.velocity.is_finite() or e.motion_faults > 0:
+			push_error("Invalid enemy motion/animation state: kind=%s t=%s fps=%s velocity=%s" % [
+				e.kind, e.anim_t, e.anim_fps, e.velocity])
+			print("Last motion fault: ", e.last_motion_fault)
+			_motion_failed = true
+			return
+	if not flag("no-capture"):
+		var img := get_viewport().get_texture().get_image()
+		img.save_png("%s/f_%04d.png" % [_gif_dir, _gif_n])
 	_gif_n += 1
+	_motion_frames += 1
 
 
 ## Record `seconds` of frames (each engine frame = 1/30 s under --fixed-fps 30).
@@ -381,6 +418,8 @@ func _gif_record(seconds: float) -> void:
 		game.npc_emote_t = 1.0e9
 		await get_tree().process_frame
 		_gif_cap()
+		if _motion_failed:
+			return
 
 
 func _key(k: Key, down: bool) -> void:
@@ -481,6 +520,8 @@ func _gif_fight(beat: String, room: int, cls: String, seconds: float) -> void:
 		game.npc_emote_t = 1.0e9
 		await get_tree().process_frame
 		_gif_cap()
+		if _motion_failed:
+			break
 	_release(pressed)
 	_clear()
 
@@ -503,20 +544,33 @@ func _gif_walk(beat: String, room: int, start: Vector2, dir: Vector2, seconds: f
 func _gif_pass(cls: String) -> void:
 	game.camera.position_smoothing_enabled = true   # the real follow feel
 	# 1. forest fight (Darkwood Road), 2. keep fight (Outer Bailey)
-	await _gif_fight("forest_%s" % cls, 2, cls, 5.0)
-	await _gif_fight("keep_%s" % cls, 17, cls, 5.0)
+	if _motion_beat("forest"):
+		await _gif_fight("forest_%s" % cls, 2, cls, 5.0)
+	if _motion_beat("keep"):
+		await _gif_fight("keep_%s" % cls, 17, cls, 5.0)
 	# 3. the same forest fight with the HUD on
 	game.hud.visible = true
-	await _gif_fight("forest_hud_%s" % cls, 2, cls, 5.0)
+	if _motion_beat("forest_hud"):
+		await _gif_fight("forest_hud_%s" % cls, 2, cls, 5.0)
 	game.hud.visible = false
 	# 4. road walk east along the Darkwood road (edged road, props, shadows, wear)
 	var rr := game.room_rect(2)
-	await _gif_walk("road_walk", 2, Vector2(rr.size.x * 0.18, rr.size.y * 0.5), Vector2.RIGHT, 4.5)
+	if _motion_beat("road"):
+		await _gif_walk("road_walk", 2, Vector2(rr.size.x * 0.18, rr.size.y * 0.5), Vector2.RIGHT, 4.5)
 	# 5. magma: paint the room, walk past the lava pools (glow pulse)
-	await _goto(2)
-	apply_terrain("magma", 2)
-	await sim_wait(0.5)
-	await _gif_walk("magma_walk", 2, Vector2(rr.size.x * 0.2, rr.size.y * 0.5), Vector2.RIGHT, 4.5)
+	if _motion_beat("magma"):
+		await _goto(2)
+		apply_terrain("magma", 2)
+		await sim_wait(0.5)
+		await _gif_walk("magma_walk", 2, Vector2(rr.size.x * 0.2, rr.size.y * 0.5), Vector2.RIGHT, 4.5)
 	# 6. north wall / door approach in the keep (face, shadow, torches)
 	var kr := game.room_rect(17)
-	await _gif_walk("keep_wall_walk", 17, Vector2(kr.size.x * 0.5, kr.size.y * 0.55), Vector2.UP, 3.5)
+	if _motion_beat("keep_wall"):
+		await _gif_walk("keep_wall_walk", 17, Vector2(kr.size.x * 0.5, kr.size.y * 0.55), Vector2.UP, 3.5)
+
+
+func _motion_beat(beat: String) -> bool:
+	if _motion_failed:
+		return false
+	var requested := arg("beats", "")
+	return requested.is_empty() or requested.split(",").has(beat)
