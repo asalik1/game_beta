@@ -19,6 +19,8 @@ var prompt: Label
 var caption: Label
 var sprite: Sprite2D
 var clock: Node2D
+var ready_marker: Node2D
+var _marker_age := 0.0
 
 
 static func eligible(g: Game, zi: int) -> bool:
@@ -119,6 +121,14 @@ func _ready() -> void:
 	sprite.position.y = -Balance.REACTIVE_ART_HEIGHT * 0.42
 	sprite.visible = phase != 2
 	add_child(sprite)
+	ready_marker = preload("res://scripts/ground_tell.gd").new()
+	ready_marker.radius = Balance.REACTIVE_MARKER_RADIUS
+	ready_marker.tint = TYPES[kind].color
+	ready_marker.orbit_only = true
+	ready_marker.modulate.a = Balance.REACTIVE_MARKER_ALPHA
+	ready_marker.visible = phase == 0
+	add_child(ready_marker)
+	ready_marker.name = "ReactiveReadyMarker"
 	prompt = Label.new()
 	prompt.text = game.touchify("E — " + String(TYPES[kind].verb))
 	prompt.position = Vector2(-150, -110)
@@ -200,6 +210,7 @@ func apply_state(next: int, fuse: float, quiet := false) -> void:
 			remaining = minf(remaining, clampf(fuse, 0.0, Balance.REACTIVE_FUSE))
 		return
 	phase = next
+	ready_marker.visible = phase == 0
 	remaining = clampf(fuse, 0.0, Balance.REACTIVE_FUSE)
 	_remove_interaction()
 	if phase == 1:
@@ -226,6 +237,9 @@ func _physics_process(delta: float) -> void:
 	if phase != 1 and game.cur_room != zone:
 		caption.visible = false
 		return
+	if phase == 0:
+		_marker_age = fposmod(_marker_age + delta, Balance.REACTIVE_MARKER_ORBIT_SECONDS)
+		ready_marker.progress = _marker_age / Balance.REACTIVE_MARKER_ORBIT_SECONDS
 	if phase == 1:
 		# A deserted/reset encounter cannot fire a delayed blast into a return.
 		if not game.net_guest():
@@ -301,8 +315,5 @@ func _draw() -> void:
 			draw_circle(Vector2.ZERO, Balance.REACTIVE_RADIUS, Color(col, (1.0 - t) * 0.12))
 			draw_arc(Vector2.ZERO, Balance.REACTIVE_RADIUS * sqrt(t), 0, TAU, 80, Color(col, 1.0 - t), 4, true)
 	else:
-		draw_arc(Vector2.ZERO, 27, 0, TAU, 40, Color(0.02, 0.025, 0.035, 0.85), 5, true)
-		for i in 4:
-			draw_arc(Vector2.ZERO, 27, i * PI * 0.5 + 0.12, i * PI * 0.5 + 0.95, 12, Color(col, 0.85), 2, true)
 		if phase == 0 and is_instance_valid(prompt) and prompt.visible:
 			draw_arc(Vector2.ZERO, Balance.REACTIVE_RADIUS, 0, TAU, 80, Color(col, 0.28), 1.5, true)

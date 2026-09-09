@@ -1,5 +1,5 @@
 # Pure verdict logic shared by the windowed runner and its fixture tests.
-# Godot can report SCRIPT ERROR, abort an async check, then still quit(0).
+# Godot can report script/shader errors, abort work, then still quit(0).
 function Get-ShotVerdict {
     param(
         [string[]]$OutputLines = @(),
@@ -21,9 +21,9 @@ function Get-ShotVerdict {
     })
     $code = $EngineExit
     $reason = ''
-    if ($text -match 'SCRIPT ERROR|Parse Error|Assertion failed|(?m)^RIG FAIL:') {
+    if ($text -match 'SCRIPT ERROR|SHADER ERROR|shader compilation failed|Parse Error|Assertion failed|(?m)^RIG FAIL:') {
         $code = 1
-        $reason = 'script/runtime assertion error in the engine log'
+        $reason = 'script/shader/runtime assertion error in the engine log'
     } elseif ($text -match '(?m)^RIG TIMEOUT:') {
         $code = 2
         $reason = 'in-engine watchdog timed out'

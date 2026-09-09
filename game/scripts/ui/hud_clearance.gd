@@ -10,7 +10,7 @@ var release_in := 0.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	for part in [hud.info_panel, hud.stats_label, hud.gold_label, hud.cr_chip,
+	for part in [hud.info_panel, hud.stats_label, hud.gold_icon, hud.gold_label, hud.cr_chip,
 		hud.cr_label, hud.res_chip, hud.res_label, hud.res_orb_glow,
 		hud.res_orb_core, hud.res_particles]:
 		if is_instance_valid(part):

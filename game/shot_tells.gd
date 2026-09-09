@@ -10,12 +10,21 @@ extends ShotRig
 ##   shot.bat tells --phase=0.85     # where in the fuse to shoot (default 0.6)
 ##   shot.bat tells --bosses --phase=0.85   # a real boss per kind fires its tell (windup posture)
 ##
-## Output: user://shots/tells/*.png
+##   shot.bat tells --comet --fixed-fps=30 --timeout=240
+##   --comet --baseline allows the older drawing for a before comparison.
+## Output: user://shots/tells/*.png (focused mode: comet/observations.json + 15 PNGs)
 
 const FUSE := 2.4
 
 
 func _ready() -> void:
+	if flag("comet"):
+		var probe := preload("res://scripts/tests/comet_ground_live.gd").new()
+		var error: String = await probe.run(self)
+		if error != "":
+			push_error(error)
+		finish(0 if error == "" else 1)
+		return
 	await boot("warrior", "ch1")
 	hide_hud()
 	zoom(1.0)

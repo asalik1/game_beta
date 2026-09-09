@@ -1,5 +1,39 @@
 # Crownless — September 9, 2026 checkpoint
 
+**Validated owner follow-up, September 9 at 16:35 UTC:** the requested HUD
+alignment, quest overlap and blocky ground-warning fixes are complete. Gold's
+fallback coin now has a separate label so the numbers share a baseline with CR
+and Resonance. The complete quest tracker wraps beside the vitals and moves
+target/cast readouts beneath it. Analytic comet warnings replace the thick
+segmented border and scaled fill edge; intact terrain props have a quiet orbit.
+See HUD_ALIGNMENT.md for behavior, reproduction and evidence boundaries.
+
+Desktop compile 232/quick 126/full 206, mobile compile 232/strict quick 126,
+all 26 screenshot-verdict fixtures and full preflight pass. The shared HUD
+regression checks include shaped numeric baselines, containment, complete text,
+clearance, deliberate misalignment and exact restoration. Fifty accepted full
+native screenshots plus 81 native orbit crops were reviewed, with 810 numbered
+native HUD/comet checks and no failures. The existing reactive-terrain rig also
+passes real melee/projectile priming, damage/chill, chain-fuse, pause, touch and
+production ENet request/state checks. Mobile rendering uses the mobile project
+on this host; no physical-device performance claim is made.
+
+The first full run exposed a process-frame timing assumption in Vargoth's
+enrage test. A bounded wall-clock observation retains the real damage and cast
+path, verifies the living health threshold and records timing. The accepted
+full run observed enrage after 1.722 seconds with a real cast initially active.
+Earlier failed probes and the rejected faint ring revision remain excluded.
+The final 81-frame native GIF preserves the full 5.4-second orbit.
+
+This checkpoint selects 44 explicit paths. Its actual commit identity, source
+hashes, gate logs and native receipts live in
+build/qa/hud-comet-fix1/checkpoint-validation.json. All 42 frozen source/tool/UID
+hashes, 15 source/mobile pairs, four independent UID pairs and the 32 preserved
+unrelated scratch/future-QA hashes are checked. The original checkout and
+unrelated road-hunt/unlisted/vow/art work remain untouched. No push or merge
+was performed. This was a later owner-requested follow-up; the earlier
+overnight heartbeat remains PAUSED and its historical checkpoint follows.
+
 **Final validated checkpoint, September 9 at 14:54 UTC:** development is stopped
 and this task's `crownless-overnight-improvements` heartbeat is PAUSED. The
 continuation resumed at14:43UTC after the13:00UTC deadline with an interrupted

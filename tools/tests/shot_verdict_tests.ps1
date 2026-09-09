@@ -5,6 +5,16 @@ $cases = @(
     @{ Name='modern success'; Out=@($ok); Code=0; Expected=0; Modern=$true },
     @{ Name='runtime stderr after success'; Out=@($ok); Err=@("SCRIPT ERROR: Invalid access to property 'age' on Nil."); Code=0; Expected=1; Modern=$true },
     @{ Name='runtime stdout'; Out=@('SCRIPT ERROR: bad cast', $ok); Code=0; Expected=1; Modern=$true },
+    # Bare shader diagnostics can occur without a companion ERROR: line.
+    # Exercise each raw stream and a success marker after failed compilation.
+    @{ Name='bare shader stderr after success'; Out=@($ok); Err=@("SHADER ERROR: Unknown identifier in expression: 'TAU'."); Code=0; Expected=1; Modern=$true },
+    @{ Name='bare shader stdout before success'; Out=@('SHADER ERROR: Expected expression.', $ok); Code=0; Expected=1; Modern=$true },
+    @{ Name='legacy bare shader rejected'; Err=@('SHADER ERROR: Expected a type.'); Code=0; Expected=1; Modern=$false },
+    @{ Name='bare shader compilation failure stdout'; Out=@('Shader compilation failed.', $ok); Code=0; Expected=1; Modern=$true },
+    @{ Name='driver shader compilation failure stderr'; Out=@($ok); Err=@('CanvasShaderGLES3: Fragment shader compilation failed:'); Code=0; Expected=1; Modern=$true },
+    @{ Name='shader engine error after success'; Out=@($ok); Err=@('ERROR: Shader compilation failed.'); Code=0; Expected=1; Modern=$true },
+    @{ Name='shader failure is not renderer shutdown'; Out=@($ok); Err=@('SHADER ERROR: Expected expression.', "ERROR: 2 RID allocations of type 'N5GLES37TextureE' were leaked at exit.", 'ERROR: Texture with GL ID of 179: leaked 3064 bytes.'); Code=0; Expected=1; Modern=$true },
+    @{ Name='successful shader compilation allowed'; Out=@('Shader compilation finished successfully.', $ok); Code=0; Expected=0; Modern=$true },
     @{ Name='missing modern finish'; Out=@('RIG START: example'); Code=0; Expected=7; Modern=$true },
     @{ Name='legacy exit allowed'; Out=@('legacy capture saved'); Code=0; Expected=0; Modern=$false },
     @{ Name='legacy script error rejected'; Err=@('SCRIPT ERROR: bad cast'); Code=0; Expected=1; Modern=$false },

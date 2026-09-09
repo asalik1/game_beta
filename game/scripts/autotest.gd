@@ -17,6 +17,16 @@ extends "res://scripts/tests/test_ch2.gd"
 
 
 func _ready() -> void:
+	# The headless window defaults to 64x64. Stretching its fonts to our logical
+	# viewport quantizes a 14px face to 1px and reports a false 28px line height.
+	# Match the configured viewport before creating the real game/HUD.
+	if DisplayServer.get_name() == "headless":
+		var window := get_tree().root
+		if window.content_scale_size.x > 0 and window.content_scale_size.y > 0:
+			window.size = window.content_scale_size
+			await get_tree().process_frame
+		print("TEST VIEWPORT: ", window.size, " font oversampling=",
+			TextServerManager.get_primary_interface().font_get_global_oversampling())
 	quick = "--quick" in OS.get_cmdline_user_args()
 	_run()
 
@@ -2251,6 +2261,10 @@ func _run_systems() -> void:
 	print("ok: shop, codex, records, journal, daily, skill tree, theme, stats, map, dev UI")
 	_test_status_icon_coverage()
 	_test_hud_icon_integrity()
+	var alignment_error := preload("res://scripts/tests/hud_alignment_geometry.gd").suite(game.hud)
+	if alignment_error != "":
+		return _fail(alignment_error)
+	print("ok: HUD alignment (shaped numeric baselines, quest/vitals/target clearance, full text, negative controls)")
 	await _test_tell_shapes()
 
 	# 5c. Endgame modes (ACT2_DESIGN.md §II): The Crucible + The Waking Depths.

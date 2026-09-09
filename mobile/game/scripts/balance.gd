@@ -26,6 +26,18 @@ const REACTIVE_PLAYER_DAMAGE := 0.18
 const REACTIVE_CHILL_MULT := 0.45
 const REACTIVE_CHILL_DURATION := 3.0
 const REACTIVE_POP_TIME := 0.55
+# Intact terrain marker: presentation only; never the blast radius or fuse.
+const REACTIVE_MARKER_RADIUS := 27.0
+const REACTIVE_MARKER_ORBIT_SECONDS := 5.4
+const REACTIVE_MARKER_ALPHA := 0.78
+
+# Smooth ground-warning rim/comet geometry, in world pixels. The attack's
+# original circle and delay stay authoritative; these are only drawing knobs.
+const GROUND_TELL_STYLE := {
+	"rim_width": 1.4, "halo_width": 5.5, "rim_alpha": 0.90, "rim_value": 0.22, "halo_alpha": 0.13,
+	"sweep_width": 1.8, "sweep_alpha": 0.68, "head_width": 3.1,
+	"tail_turns": 0.22, "fill_alpha": 0.30,
+}
 
 # Fishing: a short catch-and-release skill loop, with no currency faucet.
 const FISH_WEIGHTS := [38.0, 30.0, 22.0, 10.0]
@@ -3550,6 +3562,16 @@ const ROAD_WAGER_GEM_CHANCE := 0.25 # a clean read also drops a gem this often
 const ROAD_HUNT_GOLD := 120           # personal purse, scaled with the recipient's level
 const ENCOUNTER_COVER_ALPHA := 0.12   # objective yields when it covers the hero/target
 const ENCOUNTER_COVER_FADE_SPEED := 6.0
+# HUD readout typography and clearance between the vital, quest and target lanes.
+const HUD_STAT_FONT_SIZE := 14
+const HUD_GOLD_ICON_WIDTH := 14.0
+const HUD_TRACKER_WIDTH := 580.0
+const HUD_TRACKER_GAP := 12.0
+const HUD_TRACKER_PADDING := Vector2(10, 8)
+const HUD_TRACKER_TOP := 8.0
+const HUD_TRACKER_LINE_GAP := 2.0
+const HUD_TRACKER_TARGET_GAP := 10.0
+
 const HUD_INFO_COVER_ALPHA := 0.12
 const HUD_INFO_COVER_FADE_SPEED := 6.0
 const HUD_INFO_COVER_RELEASE := 0.18  # short hold avoids flickering on a panel edge

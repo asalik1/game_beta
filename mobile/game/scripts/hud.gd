@@ -9,6 +9,8 @@ var wayfinder: Control
 var combat_feedback: Control
 var combat_foliage: Node
 var info_panel: Panel
+var vitals_panel: Panel
+var quest_panel: Panel
 var clearance: Node
 
 # bars
@@ -37,6 +39,7 @@ var avatar_level_badge: Panel      # P7.D: level disc on the ring
 var avatar_level_label: Label
 var _avatar_level_shown := -1
 var _avatar_art_key := ""
+var gold_icon: Label             # separate fallback glyph preserves the number's body-font baseline
 var gold_label: Label
 var cr_label: Label
 var cr_chip: Panel              # the pill behind it; widens with the number
@@ -314,7 +317,7 @@ func _ready() -> void:
 
 	# ------------------------------------------------- player stat bars ---
 	_build_avatar()
-	_panel(Vector2(BAR_X - 4.0, 12), Vector2(BAR_W + 8, 66))
+	vitals_panel = _panel(Vector2(BAR_X - 4.0, 12), Vector2(BAR_W + 8, 66))
 	hp_fill = _bar(Vector2(BAR_X, 16), Vector2(BAR_W, 20), Color(0.8, 0.2, 0.2))
 	# Damage CHIP (P2): a pale trail under the red fill that holds a beat, then
 	# drains to the new value — the eye reads how much a hit took. Sits just
@@ -344,24 +347,33 @@ func _ready() -> void:
 	var id_bf := UITheme.body_bold_font()
 	if id_bf != null:
 		stats_label.add_theme_font_override("font", id_bf)
-	gold_label = _label(Vector2(18, HUD_STAT_Y), 15, Color(1.0, 0.85, 0.35), 100)
+	# The coin uses a fallback face with a taller ascent than the body font.
+	# Keep its glyph out of the number's shaped line, so all three values align.
+	gold_icon = _label(Vector2(18, HUD_STAT_Y), Balance.HUD_STAT_FONT_SIZE, Color(1.0, 0.85, 0.35), Balance.HUD_GOLD_ICON_WIDTH)
+	gold_icon.text = "◉"
+	gold_icon.mouse_filter = Control.MOUSE_FILTER_STOP
+	gold_icon.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_click_to_popover(gold_icon, "Gold", true)
+	gold_label = _label(Vector2(18 + Balance.HUD_GOLD_ICON_WIDTH, HUD_STAT_Y), Balance.HUD_STAT_FONT_SIZE, Color(1.0, 0.85, 0.35), 100)
 	gold_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	gold_label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_click_to_popover(gold_label, "Gold", true)
 	cr_chip = _chip(Vector2(124, HUD_STAT_Y), Vector2(70, CHIP_H))
-	cr_label = _label(Vector2(130, HUD_STAT_Y), 14, Color(0.72, 0.9, 1.0), 58)
+	cr_label = _label(Vector2(130, HUD_STAT_Y), Balance.HUD_STAT_FONT_SIZE, Color(0.72, 0.9, 1.0), 58)
 	cr_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	cr_label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_click_to_popover(cr_label, "Combat Rating", true)
 	res_chip = _chip(Vector2(200, HUD_STAT_Y), Vector2(62, CHIP_H))
-	res_label = _label(Vector2(224, HUD_STAT_Y), 16, Color(0.75, 0.75, 0.8), 32)
+	res_label = _label(Vector2(224, HUD_STAT_Y), Balance.HUD_STAT_FONT_SIZE, Color(0.75, 0.75, 0.8), 32)
 	res_label.pivot_offset = Vector2(0, 10)
 	res_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	res_label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_click_to_popover(res_label, "Resonance", true)
-	for readout: Label in [gold_label, cr_label, res_label]:
+	for readout: Label in [gold_icon, gold_label, cr_label, res_label]:
 		readout.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		readout.size.y = CHIP_H
+		readout.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		readout.add_theme_constant_override("outline_size", 2)
 	# Resonance mood orb: a glowing bead just left of the number — golden
 	# fire when strongly Virtuous (+50), a dark flame when Tempted (-50),
 	# a calm white pearl at neutral, gradients between. Two glow sprites
@@ -466,10 +478,14 @@ func _ready() -> void:
 	# Sanctum portals in Crownfall, via menus.confirm_endgame.)
 
 	# ---------------------------------------------------- quest tracker ---
-	_panel(Vector2(350, 8), Vector2(580, 56))
+	quest_panel = _panel(Vector2(350, 8), Vector2(580, 56))
 	zone_label = _label(Vector2(360, 12), 16, Color(0.95, 0.85, 0.5), 560, HORIZONTAL_ALIGNMENT_CENTER)
 	UITheme.title(zone_label, 17)  # the location name is a header
 	quest_label = _label(Vector2(360, 36), 16, Color(1, 1, 1), 560, HORIZONTAL_ALIGNMENT_CENTER)
+	quest_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	quest_label.add_theme_constant_override("outline_size", 2)
+	zone_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	zone_label.add_theme_constant_override("outline_size", 2)
 	# Icon row under Resonance: ✉ mail · ! quest · bag inventory · book codex · ★ daily.
 	# The quest ! wears a red/orange SHINE (glow + twinkles) when a reward waits
 	# to be claimed in the log (the weekly vault). Glow is added BEHIND the !.
@@ -755,6 +771,8 @@ void fragment() {
 	UITheme.title(rival_name, 16)
 	_outline(rival_name)
 	rival_box.add_child(rival_name)
+	get_viewport().size_changed.connect(_layout_quest_tracker)
+	_layout_quest_tracker()
 
 	# ------------------------------------------------------ big titles ---
 	title_label = _label(Vector2(0, 200), 44, Color(1, 1, 1), 1280, HORIZONTAL_ALIGNMENT_CENTER)
@@ -2247,7 +2265,7 @@ func _layout_dossier_stats() -> void:
 	var gold_w := ceilf(_dossier_text_width(gold_label)) + 2.0
 	var cr_w := ceilf(_dossier_text_width(cr_label)) + 2.0
 	var res_w := ceilf(_dossier_text_width(res_label)) + 2.0
-	var available := HUD_IDENTITY_RECT.size.x - HUD_STAT_GAP * 2.0 - 12.0 - 32.0 - res_w
+	var available := HUD_IDENTITY_RECT.size.x - gold_icon.size.x - HUD_STAT_GAP * 2.0 - 12.0 - 32.0 - res_w
 	if gold_w + cr_w > available:
 		var fraction := available / (gold_w + cr_w)
 		gold_w *= fraction
@@ -2282,6 +2300,7 @@ func _update_dossier_detail(p: Player, identity: String, rating: int) -> void:
 		return
 	_dossier_detail_state = current
 	gold_label.set_meta("tip", "%d gold carried by this hero." % p.gold)
+	gold_icon.set_meta("tip", gold_label.get_meta("tip"))
 	cr_label.set_meta("tip", "Combat Rating: %d\nOne number approximating your total power: gear and gems, level, attributes and skill tree combined." % rating)
 	res_label.set_meta("tip", _res_tip())
 	var detail := "%s\nLevel %d · %d skill point%s available\n\n%s\n\n%s\n\n%s" % [
@@ -2364,7 +2383,7 @@ func update_stats(p: Player) -> void:
 	else:
 		mp_text.text = "%d / %d" % [int(p.mp), int(p.max_mp)]
 		_set_fill(mp_fill, p.mp / p.max_mp)
-	gold_label.text = "◉ %d gold" % p.gold
+	gold_label.text = "%d gold" % p.gold
 	if p.gold >= 5000:
 		game.unlock_achievement("wealthy")  # idempotent: fires once
 	var rating := p.combat_rating()
@@ -2584,16 +2603,56 @@ func update_stats(p: Player) -> void:
 
 
 func set_zone(text: String) -> void:
-	zone_label.text = text
+	if zone_label.text != text:
+		zone_label.text = text
+		_layout_quest_tracker()
 
 
 func set_quest(text: String) -> void:
 	var copy: String = game.touchify(text.strip_edges())
 	quest_label.text = "" if copy.is_empty() else "◆  " + copy
 	quest_label.visible = not copy.is_empty()
-	# Keep the tracker clear of the wider player bars while pinning it to center.
-	quest_label.size = Vector2(560, 30)
-	quest_label.position.x = 640.0 - quest_label.size.x * 0.5
+	_layout_quest_tracker()
+
+
+## Size the full tracker text inside its own lane, then keep target readouts
+## below it. Wrapped objectives cannot grow left across the player's vitals.
+func _layout_quest_tracker() -> void:
+	if not is_instance_valid(quest_panel) or not is_instance_valid(vitals_panel):
+		return
+	var clear_left := maxf(vitals_panel.position.x + vitals_panel.size.x,
+		info_panel.position.x + info_panel.size.x) + Balance.HUD_TRACKER_GAP
+	# The boss's portrait and level extend left of the bars. Anchor that whole
+	# family beyond the dossier, then align the tracker with its bar center.
+	var target_left := minf(boss_badge_root.position.x, boss_level.position.x)
+	var target_shift_x := maxf(0.0, clear_left - target_left)
+	var center_x := mob_name.position.x + mob_name.size.x * 0.5 + target_shift_x
+	var room_right := get_viewport().get_visible_rect().size.x - Balance.HUD_TRACKER_GAP
+	var width := minf(Balance.HUD_TRACKER_WIDTH,
+		minf(center_x - clear_left, room_right - center_x) * 2.0)
+	var left := center_x - width * 0.5
+	var padding: Vector2 = Balance.HUD_TRACKER_PADDING
+	quest_panel.position = Vector2(left, Balance.HUD_TRACKER_TOP)
+	quest_panel.size.x = maxf(padding.x * 2.0 + 1.0, width)
+	var text_width := quest_panel.size.x - padding.x * 2.0
+	zone_label.position = quest_panel.position + Vector2(padding.x, padding.y * 0.5)
+	zone_label.size = Vector2(text_width, 1.0)
+	zone_label.size.y = zone_label.get_minimum_size().y
+	quest_label.position = Vector2(left + padding.x,
+		zone_label.position.y + zone_label.size.y + Balance.HUD_TRACKER_LINE_GAP)
+	quest_label.size = Vector2(text_width, 1.0)
+	quest_label.size.y = quest_label.get_minimum_size().y
+	var bottom := zone_label.position.y + zone_label.size.y
+	if quest_label.visible:
+		bottom = quest_label.position.y + quest_label.size.y
+	quest_panel.size.y = bottom + padding.y - quest_panel.position.y
+	# Move the target family together, including damage trails and portraits.
+	# Cast UI follows the same offset; its world brackets compensate locally.
+	var target_top := minf(boss_name.position.y, minf(mob_name.position.y, rival_name.position.y))
+	var target_shift := maxf(0.0, bottom + padding.y + Balance.HUD_TRACKER_TARGET_GAP - target_top)
+	for box in [boss_box, mob_box, rival_box, boss_cast_readout]:
+		if is_instance_valid(box):
+			box.position = Vector2(target_shift_x, target_shift)
 
 
 # ------------------------------------------ downed / revive UI (MP-12 §5.3) ---
@@ -4904,7 +4963,7 @@ func _update_resonance(res: float) -> void:
 		var gold := Color(0.84, 0.7, 0.32).lerp(Color(1.0, 0.96, 0.6), shine)
 		res_label.add_theme_color_override("font_color", gold.lerp(Color(1.0, 1.0, 0.85), shimmer * 0.45))
 		res_label.add_theme_color_override("font_outline_color", Color(0.28, 0.16, 0.02))
-		res_label.add_theme_constant_override("outline_size", 3)
+		res_label.add_theme_constant_override("outline_size", 2)
 		var want := clampi(4 + int(res / 7.0), 4, 20)
 		if res_particles.amount != want:
 			res_particles.amount = want
@@ -4917,7 +4976,7 @@ func _update_resonance(res: float) -> void:
 		res_particles.emitting = false
 	else:
 		res_label.add_theme_color_override("font_color", Color(0.78, 0.8, 0.88))
-		res_label.add_theme_constant_override("outline_size", 0)
+		res_label.add_theme_constant_override("outline_size", 2)
 		res_particles.emitting = false
 	if _last_resonance <= -99998.0:
 		_last_resonance = res  # first frame / fresh load: no pulse

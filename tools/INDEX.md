@@ -10,14 +10,29 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 ## Gates & suites (run these, in this order — CLAUDE.md "Testing")
 
 Screenshot verdicts: `tools/shot_verdict.ps1` checks both engine output streams,
-rejects script/runtime errors even after `RIG DONE exit=0`, and requires a valid
+rejects script/shader/runtime errors even after `RIG DONE exit=0`, and requires a valid
 completion marker from modern ShotRig scenes. Legacy zero-exit rigs remain
-supported. `powershell -NoProfile -File tools/tests/shot_verdict_tests.ps1`
-exercises eighteen success/error/watchdog/completion fixtures. Unexpected engine
+supported. `powershell -NoProfile -ExecutionPolicy Bypass -File tools/tests/shot_verdict_tests.ps1`
+exercises twenty-six success/error/watchdog/completion fixtures. Unexpected engine
 `ERROR:` lines also fail; only the established renderer shutdown errors are exempt.
 Headless `suite_verdict.ps1` also rejects freed lambda captures even when the
 engine prints its pass marker. It retains the intentional invalid-base64 test's
 existing semantics; compile errors and visual-resource leaks remain failures.
+
+HUD alignment QA: `shot.bat hud_dossier --alignment --timeout=240` checks
+actual stat text baselines, panel clearance, complete objectives, large and
+signed values, boss/rival targets and a frozen production cast readout. The
+quick/full suites share the geometry checks and deliberate displacement tests.
+Use isolated APPDATA under `build/qa`; add
+`--mobile --renderer=gl_compatibility --touch` for mobile-source rendering.
+`--baseline` records old presentation findings; acceptance omits it.
+
+Ground comet QA: `shot.bat tells --comet --fixed-fps=30 --timeout=240`
+captures early/mid/late warning phases on stone, ice and magma, shelters/decoys,
+intact prop markers and an actual falling fireball warning. It verifies live
+progress, radius, pause and cancellation. Add `--motion --timeout=360` for
+81 native prop-orbit crops at 15fps, in addition to the 15 full frames.
+Use an isolated APPDATA and the same mobile/renderer flags as above.
 
 Door torch mounting QA: `shot.bat wall_torch_mount --timeout=300` checks actual
 N/S/E/W doors, another wall material and the narrowest inset room with an exit;

@@ -96,6 +96,8 @@ func _draw() -> void:
 	# Screen-space brackets stay readable at every camera zoom and never
 	# masquerade as a ground damage radius. Four corners surround the body.
 	var center: Vector2 = game.get_viewport().get_canvas_transform() * (boss.global_position + Vector2(0, -50))
+	# Header reflow moves this Control; world brackets remain at the actor.
+	center = get_global_transform().affine_inverse() * center
 	var radius := 36.0
 	for direction in [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]:
 		var corner: Vector2 = center + direction * radius

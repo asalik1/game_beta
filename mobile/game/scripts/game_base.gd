@@ -3435,25 +3435,23 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 	# SHAPE VOCABULARY (2026-09-03). Every one of the 47 boss tell sites used to
 	# draw the same rimmed disc, differing only in tint and radius — the reason
 	# "boss attacks all look visually similar". opts["shape"] picks the ground
-	# figure; "disc" (the default) is byte-identical to the old path, so mob
-	# traits and bloat bursts are untouched. The accent is DECORATION drawn
+	# figure; "disc" (the default) shares the same analytic fill and comet
+	# clock as mob traits and bloat bursts. The accent is DECORATION drawn
 	# inside the disc: the hit test below stays a plain radius check on the
 	# FULL disc (see `_tell_accent`'s header). Do not "fix" it into a shaped
 	# test — a cone or bar hit shape would silently shrink all 47 boss danger
 	# areas, and every site was tuned against the circle.
 	var tint: Color = opts.get("color", Color(1.0, 0.2, 0.15, 0.55))
 	var shape := String(opts.get("shape", "disc"))
-	var zone := Sprite2D.new()
-	zone.texture = Art.tex("telegraph")
+	var zone := preload("res://scripts/ground_tell.gd").make_fill(radius)
 	zone.global_position = pos
-	zone.scale = Vector2(radius / 32.0, radius / 32.0)
 	zone.modulate = tint
 	zone.z_index = -6
 	attack.add_child(zone)
 	var clock := _ground_clock(attack, pos, radius, delay, tint)
 	if shape != "disc":
-		# The accent is a SIBLING (not a child): the disc's scale encodes the
-		# radius, and a child would inherit it and draw at radius^2/32.
+		# The accent remains a SIBLING: its radius and the fill's local
+		# geometry are both already expressed in world pixels.
 		var accent := _tell_accent(shape, radius, opts)
 		accent.global_position = pos
 		accent.modulate = tint
@@ -3655,10 +3653,8 @@ func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, 
 		hud.danger_ramp(delay)
 	var zones: Array = []
 	for c in centers:
-		var zone := Sprite2D.new()
-		zone.texture = Art.tex("telegraph")
+		var zone := preload("res://scripts/ground_tell.gd").make_fill(radius)
 		zone.global_position = c
-		zone.scale = Vector2(radius / 32.0, radius / 32.0)
 		zone.modulate = opts.get("color", Color(0.5, 1.0, 0.7, 0.5))
 		zone.z_index = -6
 		attack.add_child(zone)
@@ -3681,10 +3677,8 @@ func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, 
 	attack.add_child(dome)
 	var decoys: Array = opts.get("decoys", [])
 	for c in decoys:
-		var lie := Sprite2D.new()
-		lie.texture = Art.tex("telegraph")
+		var lie := preload("res://scripts/ground_tell.gd").make_fill(radius)
 		lie.global_position = c
-		lie.scale = Vector2(radius / 32.0, radius / 32.0)
 		lie.modulate = opts.get("color", Color(0.5, 1.0, 0.7, 0.5))
 		lie.z_index = -6
 		attack.add_child(lie)

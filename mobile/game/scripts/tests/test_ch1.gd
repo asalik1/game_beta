@@ -496,11 +496,29 @@ func _test_vargoth_victory() -> void:
 		return _fail("vargoth not act-scaled (level %d)" % game.current_boss.level)
 	game.player.global_position = game.current_boss.global_position + Vector2(-180, 0)
 	await _frames(200)
-	game.current_boss.take_damage(game.current_boss.hp - game.current_boss.max_hp * 0.2)
-	await _frames(40)
-	if not game.current_boss.enraged:
-		return _fail("vargoth did not enrage")
-	print("ok: vargoth enrage")
+	var vargoth: Boss = game.current_boss
+	vargoth.take_damage(vargoth.hp - vargoth.max_hp * 0.2)
+	var enrage_started := Time.get_ticks_msec()
+	print("VARGOTH ENRAGE SETUP: hp=%.2f/%.2f cast=%s remaining=%.2f recovery=%.2f" % [
+		vargoth.hp, vargoth.max_hp, vargoth.cast_window.phase,
+		vargoth.cast_window.remaining, vargoth.cast_window.recovery])
+	if vargoth.dying or vargoth.hp <= 0.0 or vargoth.hp > vargoth.max_hp * 0.3:
+		return _fail("vargoth enrage fixture did not cross the living 30%% threshold: hp=%.2f/%.2f dying=%s" % [
+			vargoth.hp, vargoth.max_hp, vargoth.dying])
+	# The real AI defers enrage while its signature windup/recovery is active.
+	# Process frames race in headless; observe through one complete cast window.
+	var enrage_budget := Balance.BOSS_BREAK_WINDUP + Balance.BOSS_BREAK_RECOVERY + 0.5
+	var enrage_deadline := enrage_started + ceili(enrage_budget * 1000.0)
+	while is_instance_valid(vargoth) and game.current_boss == vargoth and not vargoth.enraged \
+			and Time.get_ticks_msec() < enrage_deadline:
+		await get_tree().create_timer(0.05, true, false, true).timeout
+	if not is_instance_valid(vargoth) or game.current_boss != vargoth:
+		return _fail("vargoth changed or was freed while awaiting enrage")
+	if not vargoth.enraged:
+		return _fail("vargoth did not enrage within %.2fs: hp=%.2f/%.2f dying=%s cast=%s remaining=%.2f recovery=%.2f paused=%s" % [
+			enrage_budget, vargoth.hp, vargoth.max_hp, vargoth.dying, vargoth.cast_window.phase,
+			vargoth.cast_window.remaining, vargoth.cast_window.recovery, get_tree().paused])
+	print("ok: vargoth enrage (observed after %.3fs)" % (float(Time.get_ticks_msec() - enrage_started) / 1000.0))
 	# Die to him: the fight resets, the hero wakes at the last safe camp.
 	game.player.hurt_cd = 0.0
 	game.player.max_hp = 100.0
