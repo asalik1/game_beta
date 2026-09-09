@@ -533,18 +533,19 @@ func open_benchmark_roster() -> void:
 
 ## The in-game system menu.
 func open_pause() -> void:
-	var vbox := _open("Paused — " + String(Story.chapter(game.chapter_id)["name"]), 720, 650 if game.touch_mode else 570, true)
+	var online: bool = game.net_online()
+	var vbox := _open(("Online — " if online else "Paused — ") + String(Story.chapter(game.chapter_id)["name"]), 720, 650 if game.touch_mode else 570, true)
 	current = "pause"
 	var zi := clampi(game.cur_room, 0, game.zone_count - 1)
 	_lbl(vbox, "%s, Level %d — %s" % [Classes.CLASSES[game.local_player.cls]["name"],
 		game.local_player.level, game.zones[zi]["name"]], 14, Color(0.7, 0.72, 0.78))
-	var resume := _btn(vbox, "Resume game", func() -> void: close(),
+	var resume := _btn(vbox, "Return to game" if online else "Resume game", func() -> void: close(),
 		Color(0.58, 1.0, 0.68))
 	resume.custom_minimum_size.y = 42
 	_btn(vbox, "Combat report — recent damage & last fall", func() -> void:
 		preload("res://scripts/ui/combat_report.gd").open(self), Color(0.95, 0.75, 0.60))
 	_btn(vbox, "  🔊  " + Loc.t("settings"), func() -> void: open_settings(), Color(0.9, 0.9, 0.95))
-	_btn(vbox, "  ◈  Wardrobe  (skins & chromas, bought with Renown)",
+	_btn(vbox, "  ◈  Wardrobe  (skins & pets, bought with Renown)",
 		func() -> void: open_wardrobe(), Color(0.85, 0.7, 1.0))
 	# Solo campaign travel to the capital.
 	if not game.endgame_active and game.chapter_id != "capital" and not game.net_online():
@@ -601,7 +602,13 @@ func open_pause() -> void:
 			if child is Button:
 				child.custom_minimum_size.y = 44
 				child.reparent(actions)
-	_hint(vbox, "ESC, ✕, or click anywhere outside to resume")
+	if online:
+		# Read the result of _open/request_pause, including the victory exception.
+		var state_hint := "World keeps running" if not get_tree().paused else "Game paused"
+		_hint(vbox, "%s · ESC, ✕, or click outside to return" % state_hint,
+			"%s · Tap ✕ or outside to return" % state_hint)
+	else:
+		_hint(vbox, "ESC, ✕, or click anywhere outside to resume")
 
 
 ## A single yes/cancel gate in front of destructive actions.

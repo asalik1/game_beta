@@ -2,6 +2,8 @@ extends ShotRig
 ## Candidate: publish beside the other game/shot_*.gd scenes before running.
 ## Synthetic UI states in an actual safe room; real mouse/ScreenTouch access.
 ## --baseline records known layout/access findings without declaring them fixed.
+## --online-menu runs only focused solo/host/victory menu copy + real-input evidence.
+## --cosmetic-ui inspects the actual Wardrobe/Records UI without buying or equipping.
 const NetMgr := preload("res://scripts/net/net_manager.gd")
 
 const GAME_FIELDS := ["settings", "touch_mode", "dev_god", "player_title", "mailbox", "daily_last_day", "daily_streak",
@@ -33,6 +35,10 @@ func _ready() -> void:
 	touch_run = flag("touch")
 	baseline = flag("baseline")
 	shot_dir = shot_dir.path_join("touch" if touch_run else "desktop")
+	if flag("online-menu"):
+		shot_dir = shot_dir.path_join("online_menu")
+	elif flag("cosmetic-ui"):
+		shot_dir = shot_dir.path_join("cosmetic_ui")
 	_snapshot_disk()
 	await boot("warrior", "ch3", false)
 	var error := await _run()
@@ -46,12 +52,19 @@ func _ready() -> void:
 
 
 func _run() -> String:
+	if flag("online-menu") and flag("cosmetic-ui"):
+		return "Choose one focused mode: online-menu or cosmetic-ui"
 	if game == null or not game.has_local_player():
 		return "No local hero after boot"
 	net = get_node_or_null("/root/NetworkManager")
 	session = get_node_or_null("/root/NetworkManager/Session")
 	if net == null or session == null or net.is_online():
 		return "Expected an isolated offline process"
+	if flag("online-menu") or flag("cosmetic-ui"):
+		kept.menu_game = _stash(game, ["state", "play_started", "talk_cd"])
+		kept.menu_paused = get_tree().paused
+		kept.menu_hud_visible = game.hud.visible
+		kept.menu_fields = _stash(game.menus, ["current", "_closable_now", "_shell_rect", "settings_return", "listening_action"])
 	kept.game = _stash(game, GAME_FIELDS)
 	kept.player = _stash(game.local_player, PLAYER_FIELDS)
 	kept.net = _stash_script(net)
@@ -73,6 +86,10 @@ func _run() -> String:
 		return "Chapter reveal did not settle naturally"
 	_check("isolated_safe_room", game.no_saves and String(game.zones[game.cur_room].get("type", "")) == "safe")
 	_check("control_mode", game.touch_mode == touch_run)
+	if flag("online-menu"):
+		return await _online_menu_run()
+	if flag("cosmetic-ui"):
+		return await preload("res://scripts/tests/cosmetic_ui_live.gd").run(self)
 	await _capture("01_ordinary", "Unmodified character values after ordinary safe-room boot")
 	var p: Player = game.local_player
 	p.char_name = "Alexandria Ember" # the current 16-character name-entry limit
@@ -148,27 +165,32 @@ func _badges() -> void:
 	game.contract_claims_day = 0
 
 
-func _start_party() -> String:
+func _start_party(with_allies := true) -> String:
 	# Bind only loopback. No external service, guests, messages or join traffic.
 	var peer := ENetMultiplayerPeer.new()
 	peer.set_bind_ip("127.0.0.1")
-	var port := int(arg("port", str(44000 + OS.get_process_id() % 10000)))
+	var port := int(arg("port", "0" if flag("online-menu") else str(44000 + OS.get_process_id() % 10000)))
 	var err := peer.create_server(port, 3)
 	if err != OK:
 		return "Loopback host unavailable: %s" % error_string(err)
+	if flag("online-menu"):
+		var bound_host: ENetConnection = peer.get_host()
+		port = bound_host.get_local_port() if bound_host != null else 0
+		_check("online_menu/bound_loopback_port", port > 0, {"port": port})
 	net.multiplayer.multiplayer_peer = peer
 	net.mode = NetMgr.Mode.ENET_DIRECT
 	net.session_code = "127.0.0.1:%d" % port
 	net.lobby_open = false
 	net._session_active = true
 	owned_host = true
-	for i in 3:
+	for i in (3 if with_allies else 0):
 		var pid := 710 + i
 		var block := {"name": "Dossier ally %d" % (i + 1), "cls": "warrior", "level": 1, "hp": 80.0 + i * 10, "max_hp": 130.0}
 		session._spawn_remote(pid, block)
 		session.lobby_chars[pid] = block.duplicate(true)
 		ally_ids.append(pid)
-	game.party_stats = {1: {"name": "asali", "cls": "warrior", "dmg": 2500.0, "heal": 0.0, "taken": 0.0}}
+	if with_allies:
+		game.party_stats = {1: {"name": "asali", "cls": "warrior", "dmg": 2500.0, "heal": 0.0, "taken": 0.0}}
 	session.lobby_changed.emit()
 	_check("loopback_host", game.net_host() and net.multiplayer.get_peers().is_empty())
 	return ""
@@ -182,6 +204,142 @@ func _stop_party() -> void:
 	ally_ids.clear()
 	net.leave()
 	owned_host = false
+
+
+## Focused opt-in reuse. No chapter data, story completion, remote shells or
+## pause implementation is replaced. Victory is setup only, not an earned win.
+func _online_menu_run() -> String:
+	var error := await _online_menu_case("01_solo", false, false)
+	if error != "":
+		return error
+	error = _start_party(false)
+	if error != "":
+		return error
+	error = await _online_menu_case("02_host", true, false)
+	if error != "":
+		return error
+	# Independently exercise ESC return as well as the primary GUI callback.
+	await _menu_escape()
+	_check("online_menu/escape_reentry", game.menus.is_open() and game.menus.current == "pause")
+	await _menu_escape()
+	_check("online_menu/escape_return", not game.menus.is_open() and not get_tree().paused)
+	error = await _online_menu_case("03_paused_victory", true, true)
+	if error != "":
+		return error
+	game.state = Game.ST_PLAYING
+	_stop_party()
+	await frames(4)
+	_check("online_menu/host_retired", not game.net_online() and not get_tree().paused)
+	return ""
+
+
+func _online_menu_case(id: String, online: bool, victory: bool) -> String:
+	await _close_overlay() # setup only; every measured entry/return uses events
+	game.state = Game.ST_VICTORY if victory else Game.ST_PLAYING
+	if victory:
+		game.request_pause(true)
+	_check(id + "/starting_state", game.net_online() == online and get_tree().paused == victory)
+	var before := _personal_receipt()
+	if touch_run or victory:
+		var menu_button: Control = game.hud.settings_btn
+		if not menu_button.is_visible_in_tree():
+			return id + ": HUD Menu button is not visible"
+		await _tap(menu_button.get_global_rect().get_center())
+	else:
+		await _menu_escape()
+	var opened: bool = game.menus.is_open() and game.menus.current == "pause"
+	_check(id + "/actual_entry", opened, {"input": "ScreenTouch" if touch_run else ("mouse" if victory else "Escape")})
+	if not opened:
+		return id + ": actual menu entry failed"
+	_check(id + "/state_survives_entry", game.state == (Game.ST_VICTORY if victory else Game.ST_PLAYING))
+	_check(id + "/pause_rule", get_tree().paused == (not online or victory))
+	var labels: Array[Label] = []
+	var buttons: Array[Button] = []
+	_menu_controls(game.menus.root, labels, buttons)
+	var title: Label
+	var footer: Label
+	var primary: Button
+	var chapter_name := String(Story.chapter(game.chapter_id)["name"])
+	for label in labels:
+		if label.text.contains(chapter_name):
+			title = label
+		if label.text.contains("outside"):
+			footer = label
+	for button in buttons:
+		if button.text in ["Resume game", "Return to game"]:
+			primary = button
+	if title == null or footer == null or primary == null:
+		return id + ": expected menu controls not found"
+	_probe(id + "/truthful_title", title.text == ("Online — " if online else "Paused — ") + chapter_name,
+		{"text": title.text, "online": online})
+	_probe(id + "/primary_copy", primary.text == ("Return to game" if online else "Resume game"), {"text": primary.text})
+	var expected_hint := "Game paused" if victory else "World keeps running"
+	_probe(id + "/truthful_footer", footer.text.contains(expected_hint) if online else
+		(not footer.text.contains("World keeps running") and not footer.text.contains("Game paused")),
+		{"text": footer.text, "paused": get_tree().paused})
+	var geometry := {"title": _menu_label_geometry(id + "/title", title),
+		"footer": _menu_label_geometry(id + "/footer", footer), "primary": _rect(primary.get_global_rect()),
+		"shell": _rect(game.menus._shell_rect), "viewport": _rect(get_viewport().get_visible_rect())}
+	_probe(id + "/primary_visible", primary.is_visible_in_tree() and get_viewport().get_visible_rect().encloses(primary.get_global_rect()))
+	_probe(id + "/title_primary_separate", not title.get_global_rect().intersects(primary.get_global_rect()))
+	_probe(id + "/footer_primary_separate", not footer.get_global_rect().intersects(primary.get_global_rect()))
+	await _capture(id + "_open", "Actual GUI menu; synthetic already-paused victory" if victory else "Actual GUI menu; empty loopback host" if online else "Actual GUI menu; solo", false)
+	views[-1]["online_menu"] = {"online": online, "host": game.net_host(), "paused": get_tree().paused,
+		"state": game.state, "peer_count": net.multiplayer.get_peers().size(), "geometry": geometry,
+		"title": title.text, "footer": footer.text, "primary": primary.text}
+	_write_report()
+	await _tap(primary.get_global_rect().get_center())
+	_check(id + "/actual_primary_return", not game.menus.is_open() and not get_tree().paused,
+		{"input": "ScreenTouch" if touch_run else "mouse", "state": game.state})
+	_check(id + "/state_survives_return", game.state == (Game.ST_VICTORY if victory else Game.ST_PLAYING))
+	_check(id + "/no_reward_mutation", before == _personal_receipt())
+	await _capture(id + "_returned", "Actual primary-button return; victory remains a synthetic state, with no results card or story completion", false)
+	return ""
+
+
+func _menu_escape() -> void:
+	for down in [true, false]:
+		var event := InputEventKey.new()
+		event.keycode = KEY_ESCAPE
+		event.physical_keycode = KEY_ESCAPE
+		event.pressed = down
+		Input.parse_input_event(event)
+		Input.flush_buffered_events()
+		await frames(2)
+	await frames(4)
+
+
+func _menu_controls(node: Node, labels: Array[Label], buttons: Array[Button]) -> void:
+	if node is Label and node.is_visible_in_tree():
+		labels.append(node)
+	if node is Button and node.is_visible_in_tree():
+		buttons.append(node)
+	for child in node.get_children():
+		_menu_controls(child, labels, buttons)
+
+
+func _menu_label_geometry(id: String, label: Label) -> Dictionary:
+	var ink := Rect2()
+	var count := 0
+	var missing: Array[int] = []
+	for index in label.text.length():
+		if label.text.substr(index, 1).strip_edges().is_empty():
+			continue
+		var cell := label.get_character_bounds(index)
+		if not cell.has_area():
+			missing.append(index)
+			continue
+		ink = cell if count == 0 else ink.merge(cell)
+		count += 1
+	ink = label.get_global_transform() * ink
+	var detail := {"text": label.text, "target": _rect(label.get_global_rect()), "ink": _rect(ink),
+		"minimum_height": label.get_minimum_size().y, "line_count": label.get_line_count(), "missing": missing}
+	_probe(id + "/full_text", count > 0 and missing.is_empty() and not label.clip_text
+		and label.visible_ratio >= 1.0 and label.max_lines_visible == -1, detail)
+	_probe(id + "/height_fits", label.size.y + 0.5 >= label.get_minimum_size().y, detail)
+	_probe(id + "/ink_fits", label.get_global_rect().grow(0.5).encloses(ink)
+		and game.menus._shell_rect.grow(0.5).encloses(ink) and get_viewport().get_visible_rect().encloses(ink), detail)
+	return detail
 
 
 func _access(field: String, expected: String) -> void:
@@ -463,6 +621,13 @@ func _cleanup() -> void:
 			and game.local_player.skill_points == kept.player.skill_points and game.settings == kept.game.settings
 			and game.mailbox == kept.game.mailbox and game.contracts == kept.game.contracts and not net.is_online())
 	_restore_disk()
+	if kept.has("menu_game") and is_instance_valid(game):
+		_restore(game, kept.menu_game)
+		_restore(game.menus, kept.menu_fields)
+		game.hud.visible = bool(kept.menu_hud_visible)
+		get_tree().paused = bool(kept.menu_paused)
+		_check("online_menu/restored_state", game.state == kept.menu_game.state
+			and game.play_started == kept.menu_game.play_started and get_tree().paused == kept.menu_paused)
 
 
 func _snapshot_disk() -> void:
@@ -522,7 +687,12 @@ func _write_report() -> void:
 	file.store_string(JSON.stringify({"rig": "hud_dossier", "baseline": baseline, "complete": complete,
 		"touch": touch_run, "renderer": RenderingServer.get_current_rendering_method(), "no_saves": game.no_saves,
 		"source_label": arg("label", "baseline" if baseline else "regression"),
+		"online_menu": flag("online-menu"), "menus_sha256": FileAccess.get_sha256("res://scripts/menus.gd"),
+		"cosmetic_ui": flag("cosmetic-ui"),
+		"wardrobe_sha256": FileAccess.get_sha256("res://scripts/ui/wardrobe.gd") if flag("cosmetic-ui") else "",
+		"codex_sha256": FileAccess.get_sha256("res://scripts/ui/codex.gd") if flag("cosmetic-ui") else "",
+		"cosmetic_helper_sha256": FileAccess.get_sha256("res://scripts/tests/cosmetic_ui_live.gd") if flag("cosmetic-ui") else "",
 		"hud_sha256": FileAccess.get_sha256("res://scripts/hud.gd"), "rig_sha256": FileAccess.get_sha256(get_script().resource_path),
-		"scope": "synthetic UI state; normal safe room; actual GUI inputs; loopback host with synthetic allies, no remote network delivery",
+		"scope": "actual offline Wardrobe/Codex GUI opens; no purchase or equip; scroll placement is QA setup" if flag("cosmetic-ui") else "solo and empty loopback host; actual GUI inputs; synthetic paused victory state, no story completion or remote delivery" if flag("online-menu") else "synthetic UI state; normal safe room; actual GUI inputs; loopback host with synthetic allies, no remote network delivery",
 		"checks": checks, "failures": failures, "findings": findings, "views": views}, "\t"))
 	file.close()

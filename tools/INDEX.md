@@ -112,6 +112,18 @@ exact currency/identity details, badges and party layout through actual GUI inpu
 Add `--touch --mobile --renderer=gl_compatibility` for actual ScreenTouch events.
 Synthetic party shells exercise layout only, not real peer replication.
 
+Focused menu QA reuses this rig. `--online-menu --port=0` saves six native
+frames for actual solo/empty-loopback-host menu entry/return and a synthetic
+already-paused victory state. `--cosmetic-ui` saves four frames for real
+Wardrobe/Codex navigation, current offerings and Renown copy, without buying
+or equipping. These two flags are mutually exclusive; default dossier coverage
+remains available. Use `--baseline` only for outgoing presentation findings;
+input/state/cleanup remain strict. Add `--touch --mobile --renderer=gl_compatibility`
+for ScreenTouch on mobile source. Both modes require fresh isolated profiles;
+new QA scripts need an editor import in each project to mint independent UIDs.
+Cosmetic scrolling uses explicit control placement, not touch-drag input. See
+`MENU_CLARITY.md` for the paired evidence and scope limits.
+
 Hero geometry QA: `shot.bat hero_geometry --renderer=forward_plus --timeout=420`
 checks setup geometry for six base classes and real class previews/paper dolls.
 Use fresh isolated APPDATA/LOCALAPPDATA/TEMP/TMP under `build/qa`; an ordinary

@@ -1,4 +1,45 @@
-# Autonomous work checkpoint — RESUMED September 9, 2026
+# Crownless — September 9, 2026 checkpoint
+
+**Final validated checkpoint, September 9 at 14:54 UTC:** development is stopped
+and this task's `crownless-overnight-improvements` heartbeat is PAUSED. The
+continuation resumed at14:43UTC after the13:00UTC deadline with an interrupted
+mobile gate. The deadline was missed. Recovery performed only required
+validation, documentation and the commit of code already installed before12:00.
+No production or QA code changed after the11:35UTC source freeze. Optional
+additional final-hour HUD/combat runs were never started and are not claimed.
+
+Pass37 completes truthful online-menu pause copy, removes retired Wardrobe
+Chroma offers, and clarifies Renown spending on skins, pets and the existing
+weekly cache. Eight isolated native before/after runs passed; all40 full native
+images were reviewed. There are416 logged checks:338 strict plus78 before-only
+probes,18 expected baseline presentation findings and zero after findings.
+Desktop/mobile imports, desktop compile229/quick125/full205, recovery mobile
+compile229/strictquick125 and full preflight all passed. The original mobile
+quick log stops after8 checks without a completion marker; it is preserved and
+excluded. Known native renderer shutdown diagnostics and the full suite's
+intentional invalid-base64 test/ObjectDB warning remain documented.
+
+This resume delivers eight improvement passes (30–37): correct capital ward
+boards/rewards; painted potion and grounded prop shadows; quieter environments
+and compact HUD; floor-mounted doorway torches and clearer dialogue controls;
+quieter grass; clearer pocket HUD/Renown notices; reusable hero texture geometry;
+and the menu/retired-offering cleanup. Feature evidence is in POTION_HUD.md,
+PROP_SHADOWS.md, TORCH_MOUNTS.md, VISUAL_FOCUS.md, GRASS_FOCUS.md,
+DIALOGUE_CLARITY.md, POCKET_UI_CLARITY.md, HERO_GEOMETRY.md and MENU_CLARITY.md.
+Mobile is synchronized; physical-device testing and whole-game FPS claims
+are outside the evidence. Smaller existing Codex targets remain documented debt.
+
+The final commit selects15 explicit paths. Its actual commit identity, all
+selected-file hashes, gate logs and immutable native reviews are recorded in
+build/qa/checkpoint37-validation.json; the requirement audit is
+build/qa/final-completion-audit.json. All16 frozen source hashes and32 inventoried
+unrelated scratch/future-QA hashes match. The index was empty before staging.
+Unrelated road-hunt/unlisted/vow QA and art scratch are deliberately preserved
+and excluded. Restricted skin artwork and older tasks/automations were not
+changed. No push or merge was performed. Resume only on new owner instruction.
+
+Pass36 remains `f834ea5116b6ff5dd2b264a30491d9512d9afaa6`; the historical
+checkpoints below describe earlier states and do not override this final pause.
 
 **Validated pass 36, 11:19 UTC:** hero raw geometry reuse passed four isolated
 desktop phases150/296/174/325 checks and mobile Compatibility174 checks, all

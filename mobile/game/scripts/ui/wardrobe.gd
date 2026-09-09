@@ -49,12 +49,6 @@ static func open(m: Menus) -> void:
 		Color(1.0, 0.88, 0.45) if classic_worn else Color(0.85, 0.88, 0.94))
 	cname.custom_minimum_size = Vector2(300, 0)
 
-	# --- chromas ---
-	m._lbl(list, "— CHROMAS — recolors of your classic look —", 15, Color(0.7, 0.85, 1.0))
-	for entry in Skins.chromas_for(p.cls):
-		var ch: Dictionary = entry
-		_chroma_row(m, list, String(ch["id"]), ch)
-
 	# --- skins ---
 	m._lbl(list, "— SKINS — full elite and mythic forms —", 15, Color(0.95, 0.85, 0.5))
 	if Skins.skins_for(p.cls).is_empty():
