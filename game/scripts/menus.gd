@@ -5054,36 +5054,31 @@ func _capital_zone_services(zone: Dictionary) -> String:
 	var services: Array[String] = []
 	if zone.has("merchant"):
 		services.append("MERCHANT")
-	var has_portal := false
+	var actions: Array[String] = []
 	for npc_def in zone.get("npcs", []):
 		var npc: Dictionary = npc_def
 		var action := String(npc.get("action", ""))
-		if action.begins_with("portal_"):
-			has_portal = true
-		elif action == "vault":
-			services.append("STASH")
-		elif action == "codex":
-			services.append("CODEX")
-		elif action == "daily":
-			services.append("DAILY REWARD")
-		elif action == "map":
-			services.append("CITY MAP")
-		elif action == "mail":
-			services.append("MAILBOX")
-		elif action == "journal":
-			services.append("JOURNAL")
-		elif action == "records":
-			services.append("RECORDS")
-		elif action == "guild":
-			services.append("GUILD")
-		elif action == "skills":
-			services.append("SKILLS")
-		elif action == "gear":
-			services.append("GEAR")
-	if has_portal:
-		services.append("STORY · CRUCIBLE · DEPTHS")
-	if String(zone.get("mark", "")) == "●":
-		services.append("DAILY CONTRACT")
+		if action != "" and action not in actions:
+			actions.append(action)
+	for landmark in zone.get("landmarks", []):
+		for use in landmark.get("uses", []):
+			var action := String(use.get("ref", ""))
+			if String(use.get("type", "")) == "action" and action != "" and action not in actions:
+				actions.append(action)
+	var names := {"vault": "STASH", "codex": "CODEX", "daily": "DAILY REWARD",
+		"map": "CITY MAP", "mail": "MAILBOX", "journal": "JOURNAL",
+		"records": "RECORDS", "guild": "GUILD", "skills": "SKILLS", "gear": "GEAR",
+		"wardrobe": "WARDROBE", "forge": "FORGE", "lapidary": "LAPIDARY",
+		"drill": "TRAINING", "potions": "POTIONS", "fangmoot": "FANGMOOT",
+		"professions": "PROFESSIONS", "synthesis": "SYNTHESIS", "blackmarket": "BLACK MARKET",
+		"portal_story": "STORY", "portal_crucible": "CRUCIBLE",
+		"portal_depths": "DEPTHS", "portal_moonfen": "MOONFEN"}
+	for action in actions:
+		var label := String(names.get(action, ""))
+		if action.begins_with("ward_contract_") and action.trim_prefix("ward_contract_") in Balance.WARD_CONTRACT_WARDS:
+			label = "WARD CONTRACTS"
+		if label != "" and label not in services:
+			services.append(label)
 	return "  ·  ".join(services)
 
 
@@ -5509,8 +5504,8 @@ func open_daily() -> void:
 
 
 ## The quest log / journal lives in ui/journal.gd.
-func open_journal(tab := "") -> void:
-	UIJournal.open(self, tab)
+func open_journal(tab := "", ward := "") -> void:
+	UIJournal.open(self, tab, ward)
 
 
 ## The account-wide stash lives in ui/stash.gd.

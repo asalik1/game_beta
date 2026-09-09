@@ -67,7 +67,7 @@ func _ready() -> void:
 	if error != "":
 		push_error(error)
 		return finish(1)
-	if not flag("company") and not flag("caravan") and not flag("activities"):
+	if not flag("company") and not flag("caravan") and not flag("activities") and not flag("ward-desks"):
 		print("ok: road hunt live offer, ordered tracks, late join world snapshot, guest inspection/flush, telegraphed elite, real guest damage, personal payment/save, absent participant, abandoned quarry, travel and disconnect cleanup")
 	finish()
 
@@ -252,6 +252,8 @@ func _checks() -> String:
 		return "late join restarted or displaced the trail"
 	if flag("activities"):
 		return await preload("res://scripts/tests/ward_activities_live.gd").run(self, room)
+	if flag("ward-desks"):
+		return await preload("res://scripts/tests/ward_desks_party_live.gd").run(self)
 	if flag("company"):
 		return await preload("res://scripts/tests/encounter_company_live.gd").run(self, room)
 	_show(1)

@@ -1,4 +1,45 @@
-# Autonomous work checkpoint — PAUSED AT OWNER REQUEST
+# Autonomous work checkpoint — RESUMED September 9, 2026
+
+**Current authorization, September 9, 01:20 UTC:** the owner explicitly resumed
+autonomous work in this task and this worktree, superseding the historical
+pause below. Continue until **September 9, 13:00 UTC (09:00 America/New_York)**.
+Stop new features at **12:00 UTC** and reserve the final hour for validation
+and a stable documented checkpoint. Multiple meaningful improvements and
+coherent validated checkpoint commits are authorized. No push or merge.
+
+Verified starting branch `codex/crownless-wayfinder`, HEAD
+`1ed08314e2dbf5c380cff8b033b5a21e0a53df22`; tracked files and index clean.
+Existing untracked art scratch/rejected outputs are preserved. Work only in
+`C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder`.
+
+This task's continuation is **crownless-overnight-improvements** (20-minute
+heartbeat). Pause only that automation at the deadline. The previous tasks
+and their paused automations remain untouched. Active goal is attached to
+this task. Chromas remain scrapped; all owner artwork restrictions remain.
+
+Pass 30, capital ward boards, is validated. The checkpoint is titled **Open
+capital ward boards with accurate rewards**; exact identity/status is recorded
+in `build/qa/ward-desks-checkpoint.json`. All four old destinations were
+reproduced through actual hotspots. Desktop and strict mobile quick suites
+passed (123 checks each); full desktop passed 203 checks and full preflight
+had no findings. Desktop and mobile ward/real-ENet rigs passed; mobile tapped
+Act, selectors and claim with actual touch events. Existing Activities
+regression passed including travel and disconnect ownership. Forty-one
+relevant final images were reviewed. Read WARD_DESKS.md and
+`build/qa/ward-desks-*` for the 34 explicit paths, frozen source, twelve exact
+mobile mirrors, three independent UID pairs, logs and visual reviews.
+Root alone owns engine runs, integration and commits. Ward agents have
+finished production edits. Continue the authorized work after this checkpoint.
+
+Next-pass preparation is deliberately outside the ward stage list: frozen,
+untracked `shot_optional_discovery.*` and `shot_audio_startup.*`. Compile and
+run their negative-control/measurement baselines before changing production.
+Read `build/qa/resume-player-value-audit.md`, `boot-performance-audit.md` and
+`unlisted-party-audit.md`. These are source audits, not completed fixes.
+Keep one muted engine at a time; compile → quick → full, mobile and relevant
+visual/network checks before staging explicit paths.
+
+## Historical pause — superseded by the resume above
 
 **Latest instruction, September 9, 2026:** "once you are done with your current
 feature/work commit it then pause". The current feature is complete. Do not

@@ -841,17 +841,25 @@ func add_standing(faction: String, delta: int) -> void:
 	player.faction_standing[faction] = int(player.faction_standing.get(faction, 0)) + delta
 
 
-## Add favor with the shard read applied; announces tier climbs. Favor is
-## per-character (rides the save like resonance) and only ever climbs.
-func favor_add(npc: String, points: int) -> void:
+## Exact favor credit after this hero's shard read, shared by quotes and payout.
+func favor_gain(points: int) -> int:
 	if not has_local_player() or points <= 0:
-		return
+		return 0
 	var mult := 1.0
 	match Story.res_band(player.resonance):
 		"steady": mult = Balance.FAVOR_RES_STEADY_MULT
 		"tempted": mult = Balance.FAVOR_RES_TEMPTED_MULT
+	return maxi(1, int(round(float(points) * mult)))
+
+
+## Add favor with the shard read applied; announces tier climbs. Favor is
+## per-character (rides the save like resonance) and only ever climbs.
+func favor_add(npc: String, points: int) -> void:
+	var gain := favor_gain(points)
+	if gain <= 0:
+		return
 	var before := favor_tier(npc)
-	player.npc_favor[npc] = favor_points(npc) + maxi(1, int(round(float(points) * mult)))
+	player.npc_favor[npc] = favor_points(npc) + gain
 	if favor_tier(npc) > before and is_instance_valid(player):
 		sfx("levelup")
 		spawn_text(player.global_position + Vector2(0, -70),

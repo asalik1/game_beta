@@ -958,6 +958,9 @@ func _run_systems() -> void:
 	var activity_error: String = preload("res://scripts/tests/test_activity_rewards.gd").run(self)
 	if activity_error != "":
 		return _fail(activity_error)
+	var ward_desk_error: String = await preload("res://scripts/tests/test_ward_desks.gd").run(self)
+	if ward_desk_error != "":
+		return _fail(ward_desk_error)
 
 	# 3d9. Reforge bench: affix reroll, value reroll, add socket + cap.
 	_test_reforge()
@@ -7393,6 +7396,7 @@ func _capital_in_city() -> void:
 			return _fail("capital: %s returned to random prop scatter" % zone.get("name", "?"))
 		backdrop_count += (zone.get("backdrops", []) as Array).size()
 		var zone_has_contract_action := false
+		var expected_ward := String(zone.get("terrain", "")).trim_prefix("capital_")
 		for landmark in zone.get("landmarks", []):
 			var landmark_def: Dictionary = landmark
 			# Rework: a landmark MAY be pure scenery when the NPC in front of
@@ -7413,13 +7417,14 @@ func _capital_in_city() -> void:
 					hub_actions[landmark_action] = true
 					landmark_action_count += 1
 					zone_has_contract_action = zone_has_contract_action \
-						or landmark_action == "journal"
+						or (expected_ward in Balance.WARD_CONTRACT_WARDS \
+							and landmark_action == "ward_contract_" + expected_ward)
 				elif String(use_def.get("text", "")).is_empty():
 					return _fail("capital: landmark %s inspect has no purpose text" %
 						landmark_def.get("name", "?"))
 		if String(zone.get("mark", "")) == "●":
 			if not zone_has_contract_action:
-				return _fail("capital: faction contract mark in %s does not open the journal" %
+				return _fail("capital: faction contract mark in %s does not open its exact ward board" %
 					zone.get("name", "?"))
 			faction_contract_count += 1
 		furnishing_count += (zone.get("furnishings", []) as Array).size()
@@ -7446,7 +7451,7 @@ func _capital_in_city() -> void:
 		return _fail("capital: foreground landmarks need direct typed uses/actions (%d uses, %d actions)" %
 			[landmark_use_count, landmark_action_count])
 	if faction_contract_count != 4:
-		return _fail("capital: expected four real faction contract journal links, got %d" %
+		return _fail("capital: expected four exact faction contract board links, got %d" %
 			faction_contract_count)
 	if furnishing_count < 8:
 		return _fail("capital: authored social furniture is missing (%d/8)" % furnishing_count)

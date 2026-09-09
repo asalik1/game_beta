@@ -286,6 +286,8 @@ func _hub_action(act: String) -> void:
 			menus.open_daily()
 		"journal":
 			menus.open_journal("log")
+		"ward_contract_wildfang", "ward_contract_choir", "ward_contract_accord", "ward_contract_cinderborn":
+			menus.open_journal("activities", act.trim_prefix("ward_contract_"))
 		"mail":
 			menus.open_mailbox()
 		"guild":

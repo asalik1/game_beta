@@ -32,6 +32,7 @@ P = "convo"; A = "action"
 HUB_ACTIONS = {
     "portal_story", "portal_crucible", "portal_depths", "portal_moonfen",
     "vault", "codex", "daily", "map", "mail", "journal", "records",
+    "ward_contract_wildfang", "ward_contract_choir", "ward_contract_accord", "ward_contract_cinderborn",
     "guild", "potions", "wardrobe", "forge", "lapidary", "drill",
     # Professions craft station (PROFESSIONS §7): trade lock, mastery,
     # blueprints, craft bench. Placed by Herbalist Kesh's gossip hub (the
@@ -215,13 +216,13 @@ LANDMARK_USES = {
     # BOTH uses: the fangmoot rebase (8688e49) replaced the Wildfang contracts
     # action with the moot call, silently dropping the wild district's daily-
     # contract point — the ● mark contract (autotest capital section: every
-    # ●-zone opens the journal, count == 4) went red on main. The board carries
+    # ●-zone has its own contract desk, count == 4) went red on main. The board carries
     # the moot AND the contracts, offset so the prompts don't stack (2026-08-27).
     ("wf_moot", 0): [ACTION("E — Call a moot", "fangmoot", y=95),
-                     ACTION("E — Review Wildfang contracts", "journal", x=-160, y=95)],
-    ("ch_chapel", 0): [ACTION("E — Review Choir contracts", "journal", y=90)],
-    ("acc_commons", 0): [ACTION("E — Review Accord contracts", "journal", y=95)],
-    ("cin_court", 0): [ACTION("E — Review Cinderborn contracts", "journal", y=95)],
+                     ACTION("E — Review Wildfang contracts", "ward_contract_wildfang", x=-160, y=95)],
+    ("ch_chapel", 0): [ACTION("E — Review Choir contracts", "ward_contract_choir", y=90)],
+    ("acc_commons", 0): [ACTION("E — Review Accord contracts", "ward_contract_accord", y=95)],
+    ("cin_court", 0): [ACTION("E — Review Cinderborn contracts", "ward_contract_cinderborn", y=95)],
 }
 
 # Restrained supporting dressing: capital rooms never inherit terrain scatter.

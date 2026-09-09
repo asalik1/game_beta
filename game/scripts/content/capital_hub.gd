@@ -93,7 +93,7 @@ const CHAPTER := {
 		"district": "wild", "mark": "●",
 		"obstacles": [], "obstacle_count": 0,
 		"decor": [], "decor_count": 0, "accents": [], "structures": [],
-		"landmarks": [{"name": "capital_wildfang_fangmoot", "x": 1056, "y": 570, "clearance": 285, "uses": [{"type": "action", "prompt": "E — Call a moot", "x": 0, "y": 95, "ref": "fangmoot"}, {"type": "action", "prompt": "E — Review Wildfang contracts", "x": -160, "y": 95, "ref": "journal"}]}],
+		"landmarks": [{"name": "capital_wildfang_fangmoot", "x": 1056, "y": 570, "clearance": 285, "uses": [{"type": "action", "prompt": "E — Call a moot", "x": 0, "y": 95, "ref": "fangmoot"}, {"type": "action", "prompt": "E — Review Wildfang contracts", "x": -160, "y": 95, "ref": "ward_contract_wildfang"}]}],
 		"furnishings": [{"name": "capital_city_bench", "x": 760, "y": 815, "clearance": 110}],
 		"backdrops": [],
 		"npcs": [
@@ -105,7 +105,7 @@ const CHAPTER := {
 		"district": "choir", "mark": "●",
 		"obstacles": [], "obstacle_count": 0,
 		"decor": [], "decor_count": 0, "accents": [], "structures": [],
-		"landmarks": [{"name": "capital_rot_chapel", "x": 1056, "y": 590, "clearance": 290, "uses": [{"type": "action", "prompt": "E — Review Choir contracts", "x": 0, "y": 90, "ref": "journal"}]}],
+		"landmarks": [{"name": "capital_rot_chapel", "x": 1056, "y": 590, "clearance": 290, "uses": [{"type": "action", "prompt": "E — Review Choir contracts", "x": 0, "y": 90, "ref": "ward_contract_choir"}]}],
 		"furnishings": [{"name": "capital_city_bench", "x": 760, "y": 815, "clearance": 110}],
 		"backdrops": [],
 		"npcs": [
@@ -117,7 +117,7 @@ const CHAPTER := {
 		"district": "accord", "mark": "●",
 		"obstacles": [], "obstacle_count": 0,
 		"decor": [], "decor_count": 0, "accents": [], "structures": [],
-		"landmarks": [{"name": "capital_accord_longhouse", "x": 1056, "y": 590, "clearance": 315, "uses": [{"type": "action", "prompt": "E — Review Accord contracts", "x": 0, "y": 95, "ref": "journal"}]}],
+		"landmarks": [{"name": "capital_accord_longhouse", "x": 1056, "y": 590, "clearance": 315, "uses": [{"type": "action", "prompt": "E — Review Accord contracts", "x": 0, "y": 95, "ref": "ward_contract_accord"}]}],
 		"furnishings": [{"name": "capital_city_bench", "x": 760, "y": 815, "clearance": 110}, {"name": "capital_city_bench", "x": 1352, "y": 815, "clearance": 110}],
 		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 225, "w": 1653.75}],
 		"npcs": [
@@ -130,7 +130,7 @@ const CHAPTER := {
 		"district": "cinder", "mark": "●",
 		"obstacles": [], "obstacle_count": 0,
 		"decor": [], "decor_count": 0, "accents": [], "structures": [],
-		"landmarks": [{"name": "capital_sable_hall", "x": 1056, "y": 590, "clearance": 315, "uses": [{"type": "action", "prompt": "E — Review Cinderborn contracts", "x": 0, "y": 95, "ref": "journal"}]}],
+		"landmarks": [{"name": "capital_sable_hall", "x": 1056, "y": 590, "clearance": 315, "uses": [{"type": "action", "prompt": "E — Review Cinderborn contracts", "x": 0, "y": 95, "ref": "ward_contract_cinderborn"}]}],
 		"furnishings": [],
 		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 225, "w": 1653.75}],
 		"npcs": [
@@ -173,7 +173,7 @@ static func selftest(_game: Node2D) -> String:
 	if ch.get("zones", []).size() != 9:
 		return "capital: expected 9 zones, got %d" % ch.get("zones", []).size()
 	var coords := {}
-	var known_actions := ["blackmarket", "codex", "daily", "drill", "fangmoot", "forge", "guild", "journal", "lapidary", "mail", "map", "portal_crucible", "portal_depths", "portal_moonfen", "portal_story", "potions", "professions", "records", "synthesis", "vault", "wardrobe"]
+	var known_actions := ["blackmarket", "codex", "daily", "drill", "fangmoot", "forge", "guild", "journal", "lapidary", "mail", "map", "portal_crucible", "portal_depths", "portal_moonfen", "portal_story", "potions", "professions", "records", "synthesis", "vault", "ward_contract_accord", "ward_contract_choir", "ward_contract_cinderborn", "ward_contract_wildfang", "wardrobe"]
 	for z in ch["zones"]:
 		if z.get("type", "") != "safe":
 			return "capital: zone %s is not safe" % z.get("name", "?")

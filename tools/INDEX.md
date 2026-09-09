@@ -36,6 +36,14 @@ exact reward quotes, touch claims and badges, live journal scrolling, daily
 rollover, travel and home-save ownership. Use isolated APPDATA; add
 `--mobile --renderer=gl_compatibility` for the mobile source/renderer path.
 
+Capital ward desk QA: `shot.bat ward_desks --timeout=240` uses the actual city
+hotspots with keyboard Interact, checks all four selected boards and the
+Archive, then switches wards and claims through real GUI clicks. `--touch`
+uses the on-screen Act control. `shot.bat road_hunt --ward-desks --timeout=300`
+checks selected-board ENet credit, personal claims/home saves, exact gold/favor,
+focus/scroll continuity, shared daily cap, rollover and touch overlay cleanup.
+Use isolated APPDATA and `--mobile --renderer=gl_compatibility` for mobile QA.
+
 Encounter company QA: `shot.bat road_hunt --company --timeout=300` reuses the
 production ENet hunt fixture to check once-only guest discoveries, busy
 invitations, both encounter start orders, direct/guest request guards, released

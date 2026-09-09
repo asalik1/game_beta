@@ -15,7 +15,7 @@ const BODY := Color(0.86, 0.88, 0.94)
 const CARD_TEXT_WIDTH := 744.0
 
 
-static func open(m: Menus, requested_tab := "") -> void:
+static func open(m: Menus, requested_tab := "", requested_ward := "") -> void:
 	var g := m.game
 	g.refresh_bounties()
 	g.refresh_contracts()
@@ -26,12 +26,18 @@ static func open(m: Menus, requested_tab := "") -> void:
 		tab = String(m.get_meta("journal_tab", "quests"))
 	if not tab in ["quests", "activities", "progress", "story"]:
 		tab = "quests"
+	var ward := String(requested_ward)
+	if tab != "activities" or ward not in Balance.WARD_CONTRACT_WARDS:
+		ward = ""
 	m.set_meta("journal_tab", tab)
+	m.set_meta("journal_ward", ward)
 
 	var vbox := m._open("Journal — %s" % String(Story.chapter(g.chapter_id)["name"]), 920, 650, true)
 	m.current = "journal"
 	_tabs(m, vbox, tab)
 	_context_strip(m, vbox, tab)
+	if tab == "activities":
+		_ward_selectors(m, vbox, ward)
 
 	var scroll := ScrollContainer.new()
 	scroll.name = "JournalScroll"
@@ -47,7 +53,10 @@ static func open(m: Menus, requested_tab := "") -> void:
 
 	match tab:
 		"activities":
-			_activities(m, list)
+			if ward != "":
+				_contracts(m, list, ward)
+			else:
+				_activities(m, list)
 		"progress":
 			_progress_page(m, list)
 		"story":
@@ -55,7 +64,7 @@ static func open(m: Menus, requested_tab := "") -> void:
 		_:
 			_quests(m, list)
 	m._hint(vbox, "1–4 switch sections  ·  ESC, ✕, or click outside to close")
-	preload("res://scripts/ui/activity_rewards.gd").watch(m, tab)
+	preload("res://scripts/ui/activity_rewards.gd").watch(m, tab, ward)
 
 
 static func _tabs(m: Menus, parent: VBoxContainer, active: String) -> void:
@@ -132,6 +141,9 @@ static func _context_strip(m: Menus, parent: VBoxContainer, tab: String) -> void
 			var ready := g.activity_claims_ready()
 			text = "%d reward claim%s ready · Choose your ward rewards below" % [ready, "" if ready == 1 else "s"] if ready > 0 else "Bounties pay automatically · Ward rewards are claimed below"
 			color = GOLD if ready > 0 else GREEN
+			var ward := String(m.get_meta("journal_ward", ""))
+			if ward != "":
+				text = "%s ward board · Browse the wards to choose your rewards" % ward.capitalize()
 			var notice := String(m.get_meta("journal_notice", ""))
 			if notice != "":
 				text = notice
@@ -295,6 +307,31 @@ static func _available_quests(m: Menus, list: VBoxContainer) -> void:
 
 # ---------------------------------------------------------- ACTIVITIES ---
 
+static func _ward_selectors(m: Menus, parent: VBoxContainer, selected: String) -> void:
+	var row := HBoxContainer.new()
+	row.name = "JournalWards"
+	row.add_theme_constant_override("separation", 6)
+	parent.add_child(row)
+	var wards: Array = [""]
+	wards.append_array(Balance.WARD_CONTRACT_WARDS)
+	for value in wards:
+		var ward := String(value)
+		var active := ward == selected
+		var label := "All activities" if ward == "" else ward.capitalize()
+		var button := m._btn(row, label, func() -> void:
+			m.open_journal("activities", ward)
+			var next := m.root.find_child("JournalWard_" + ("all" if ward == "" else ward), true, false) as Button
+			if next != null:
+				next.grab_focus(), GOLD if active else BODY)
+		button.name = "JournalWard_" + ("all" if ward == "" else ward)
+		button.custom_minimum_size = Vector2(0, 44)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		button.toggle_mode = true
+		button.button_pressed = active
+		button.tooltip_text = "Show all activities" if ward == "" else "View %s contracts · browsing spends no daily choice" % ward.capitalize()
+
+
 static func _activities(m: Menus, list: VBoxContainer) -> void:
 	var ready_contracts := m.game.contracts_claimable() > 0
 	if ready_contracts:
@@ -316,23 +353,40 @@ static func _activities(m: Menus, list: VBoxContainer) -> void:
 
 ## Ward contracts (Q11): the capital's daily deed board. Deeds auto-progress off
 ## the same events as bounties; the reward is CLAIMED here, capped per day.
-static func _contracts(m: Menus, list: VBoxContainer) -> void:
+static func _contracts(m: Menus, list: VBoxContainer, selected_ward := "") -> void:
 	var g := m.game
-	if g.contracts.is_empty():
+	if g.contracts.is_empty() and selected_ward == "":
 		return
-	_section(m, list, "WARD CONTRACTS",
-		"Choose up to %d per day · %d claimed on this hero" % [Balance.WARD_CONTRACT_DAILY_CAP, g.contract_claims_day],
-		Color(0.82, 0.86, 0.62))
+	var heading := m._lbl(list, "WARD CONTRACTS" if selected_ward == "" else "%s CONTRACTS" % String(selected_ward).to_upper(), 18, GOLD)
+	heading.name = "JournalWardHeading"
+	var left := maxi(0, Balance.WARD_CONTRACT_DAILY_CAP - g.contract_claims_day)
+	var allowance := m._lbl(list, "%d of %d daily choices remaining across all wards · This hero" % [left, Balance.WARD_CONTRACT_DAILY_CAP], 13, GREEN if left > 0 else MUTED)
+	allowance.name = "JournalWardAllowance"
+	var help := m._lbl(list, "No acceptance needed · Deeds progress as you play · Unclaimed rewards expire daily", 12, MUTED)
+	help.name = "JournalWardHelp"
+	if selected_ward != "" and g.has_local_player():
+		var standing := "%s standing: %d" % [String(selected_ward).capitalize(), int(g.player.faction_standing.get(selected_ward, 0))]
+		var npc := String(Balance.WARD_CONTRACT_FAVOR_NPC.get(selected_ward, ""))
+		if npc != "":
+			standing += "  ·  %s favor: %d (%s)" % [npc.capitalize(), g.favor_points(npc), g.favor_tier_name(npc)]
+		var status := m._lbl(list, standing, 13, BODY)
+		status.name = "JournalWardStanding"
+	var shown := 0
 	# Ready choices lead; ward order stays familiar within each group.
 	for state in ["ready", "unfinished", "claimed"]:
 		for ward in Balance.WARD_CONTRACT_WARDS:
+			if selected_ward != "" and String(ward) != selected_ward:
+				continue
 			for c in g.contracts:
 				var bucket := "claimed" if bool(c.get("claimed", false)) else "ready" if bool(c.get("done", false)) else "unfinished"
 				if String(c.ward) == String(ward) and bucket == state:
-					_contract_card(m, list, c)
+					_contract_card(m, list, c, selected_ward)
+					shown += 1
+	if shown == 0:
+		m._lbl(list, "No contracts on this ward's current board. Browse another ward or return to All activities.", 14, MUTED)
 
 
-static func _contract_card(m: Menus, list: VBoxContainer, c: Dictionary) -> void:
+static func _contract_card(m: Menus, list: VBoxContainer, c: Dictionary, selected_ward := "") -> void:
 	var g := m.game
 	var ward := String(c.ward)
 	var wname := String(Balance.WARD_CONTRACT_WARD_NAME.get(ward, ward))
@@ -341,18 +395,19 @@ static func _contract_card(m: Menus, list: VBoxContainer, c: Dictionary) -> void
 	var can_claim := g.contract_claims_day < Balance.WARD_CONTRACT_DAILY_CAP
 	var color := GREEN if claimed else GOLD if done and can_claim else BODY
 	var card := _card(list, color)
+	card.name = "ContractCard_" + ward + "_" + String(c.type)
 	_status_line(m, card, "✓  CLAIMED" if claimed else ("◆  READY TO CLAIM" if can_claim else "DAILY ALLOWANCE USED") if done else "○  IN PROGRESS", wname.to_upper(), color)
 	var title := m._lbl(card, String(c.desc), 15, Color.WHITE)
 	_wrap(title)
 	_meter(m, card, int(c.progress), int(c.target), GREEN if done else Color(0.7, 0.78, 0.6),
 		"PROGRESS", "%d / %d" % [int(c.progress), int(c.target)])
 	m._lbl(card, "Reward  ·  %d gold  + %d %s standing%s" % [g.activity_gold(int(c.gold)),
-		Balance.WARD_CONTRACT_STANDING, wname, "  + Kesh favor" if Balance.WARD_CONTRACT_FAVOR_NPC.has(ward) else ""], 12, Color(0.9, 0.82, 0.58))
+		Balance.WARD_CONTRACT_STANDING, wname, "  + %d Kesh favor" % g.favor_gain(Balance.WARD_CONTRACT_FAVOR) if Balance.WARD_CONTRACT_FAVOR_NPC.has(ward) else ""], 12, Color(0.9, 0.82, 0.58))
 	if done and not claimed:
 		var claim := m._btn(card, "  ◆  CLAIM  " if can_claim else "  Today's choices are used · new board tomorrow  ", func() -> void:
 			var reason := g.claim_contract(c)
 			m.set_meta("journal_notice", reason)
-			m.open_journal("activities"), GREEN if can_claim else MUTED, can_claim)
+			preload("res://scripts/ui/activity_rewards.gd").reopen(m, "activities", selected_ward), GREEN if can_claim else MUTED, can_claim)
 		claim.name = "ContractClaim_" + ward + "_" + String(c.type)
 		claim.custom_minimum_size.y = 44
 
