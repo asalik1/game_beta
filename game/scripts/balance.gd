@@ -5,6 +5,12 @@ class_name Balance
 ## monsters/zones) — this file is for the numbers you tweak, not the
 ## content you author.
 
+# Ambient life: compact village/darkwood rooms retain social pairs without
+# carrying the full-sized room's population. Full/ordinary combat rooms stay exact.
+const AMBIENT_COMPACT_AREA_MAX := 0.65
+const AMBIENT_FLOCK_MIN := 2
+const AMBIENT_SECOND_FLOCK_CHANCE := 0.4
+
 # Single-use terrain weapons: pack damage, no extra loot or boss damage.
 const REACTIVE_PER_ROOM := 2
 const REACTIVE_PLACE_TRIES := 48

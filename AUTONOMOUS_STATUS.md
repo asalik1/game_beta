@@ -22,13 +22,25 @@ compile / strict quick (126), scoped sync and full preflight pass. All 32
 unrelated file hashes remain unchanged. See MENU_NAVIGATION.md and the exact
 commit/source receipt at `build/qa/session-sept10/menu-checkpoint-validation.json`.
 
-Next: compare compact-room fauna in native motion and ordinary combat, then
-review the isolated Alchemist core/UI/economy and guest journal candidates.
-Their patches and plans live under `build/qa/session-sept10/`; none is installed
-or accepted yet. Untracked ambient QA is owned by this session but excluded
-from the menu checkpoint. Smaller touch Settings targets and low-resolution
-material icons are confirmed follow-up opportunities. Protected art and
-chromas remain excluded.
+The second accepted checkpoint reduces fauna crowding in compact village and
+darkwood rooms. Pictured Outskirts seed 17 changes from 16 animals to 6 while
+full-room recipes/seeded assignments remain exact. Desktop and mobile native
+each pass 509 checks across 20 population/control cases; all 16 after frames were
+reviewed, alongside 8 baseline frames. An independent reviewer accepts the
+before/after comparison. The existing level 1 normal-health mage caravan rig
+wins before and after; all 14 combat frames were reviewed. Desktop quick/full
+(126/206), mobile import/compile/strict quick (126), scoped sync and full
+preflight pass. All 32 preserved unrelated hashes remain intact. Details and
+limitations: AMBIENT_LIFE.md; exact commit/source receipt:
+`build/qa/session-sept10/ambient-checkpoint-validation.json`.
+
+Next: painted material pilot and native comparison, then integrate the isolated
+Alchemist core/UI/economy and Professions lifetime work. Guest journal and
+interaction/dash reproduction candidates remain separate. Patches, plans and
+uncompiled native fixtures live under `build/qa/session-sept10/`; none of those
+features is installed or accepted yet. The three material prompts and inspected
+reference hashes are ready; generation has not started. Smaller touch Settings
+targets remain a follow-up opportunity. Protected art and chromas stay excluded.
 
 # Crownless — September 9, 2026 checkpoint
 

@@ -9,6 +9,13 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 
 ## Gates & suites (run these, in this order — CLAUDE.md "Testing")
 
+Ambient population QA: `shot.bat ambient_life --timeout=240` compares real compact
+and full rooms, seeded placement, ordinary combat geometry, threshold controls,
+shadows and a four-second native motion sequence. Add `--mobile
+--renderer=gl_compatibility --touch` for mobile-source rendering. `--baseline`
+records expected population findings; acceptance omits it. Use isolated APPDATA.
+These posed views do not replace ordinary combat QA. See `AMBIENT_LIFE.md`.
+
 Menu navigation QA: `shot.bat menu_navigation --timeout=300` uses real pointer,
 key, touch and controller input for Settings return paths, confirmation cancel,
 text editing, remap lifetime and outside wheel/tap handling. Use isolated

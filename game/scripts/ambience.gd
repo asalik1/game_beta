@@ -498,6 +498,9 @@ static func populate(game: Node2D, zi: int) -> Array:
 	if String(zone.get("boss", "")) != "":
 		return out                       # boss rooms: no critters, no fog, no river life
 	var pr: Rect2 = game.play_rect(zi)
+	var area_fraction := clampf(pr.get_area() / float(game.room_rect(zi).get_area()), 0.0, 1.0)
+	var density := area_fraction if tid in ["village", "darkwood"] \
+		and area_fraction < Balance.AMBIENT_COMPACT_AREA_MAX else 1.0
 	var rng := RandomNumberGenerator.new()
 	rng.seed = zi * 991 + int(game.wander_seed)
 
@@ -533,7 +536,15 @@ static func populate(game: Node2D, zi: int) -> Array:
 		var center := pr.position + Vector2(
 			rng.randf_range(spread + 60.0, pr.size.x - spread - 60.0),
 			rng.randf_range(spread + 60.0, pr.size.y - spread - 60.0))
-		for i in rng.randi_range(lo, hi):
+		var rolled := rng.randi_range(lo, hi)
+		var kept := mini(rolled, maxi(Balance.AMBIENT_FLOCK_MIN, roundi(rolled * density)))
+		for i in rolled:
+			# Consume every old placement roll, including omitted members, so
+			# reducing this flock does not relocate the groups that follow.
+			var home := center + Vector2(
+				rng.randf_range(-spread, spread), rng.randf_range(-spread, spread))
+			if i >= kept:
+				continue
 			var c := Critter.new()
 			c.game = game
 			c.kind = kind
@@ -544,8 +555,7 @@ static func populate(game: Node2D, zi: int) -> Array:
 			if kind == "bird":
 				c.no_land = water
 				c.no_land_circles = hazard_circles
-			c.home = center + Vector2(
-				rng.randf_range(-spread, spread), rng.randf_range(-spread, spread))
+			c.home = home
 			c.position = c.home
 			game.world.add_child(c)
 			out.append(c)
@@ -554,7 +564,11 @@ static func populate(game: Node2D, zi: int) -> Array:
 	var soar_flock := func(kind: String, tint: Color, n: int) -> void:
 		var dir := 1 if rng.randf() < 0.5 else -1
 		var band := pr.position.y + rng.randf_range(24.0, pr.size.y * 0.3)
+		var kept := mini(n, maxi(Balance.AMBIENT_FLOCK_MIN, roundi(n * density)))
 		for i in n:
+			var offset := float(i) * rng.randf_range(60.0, 110.0)
+			if i >= kept:
+				continue
 			var c := Critter.new()
 			c.game = game
 			c.kind = kind
@@ -563,7 +577,7 @@ static func populate(game: Node2D, zi: int) -> Array:
 			c.span = pr
 			c.soar_dir = dir
 			c.soar_y0 = band
-			c.soar_x_off = float(i) * rng.randf_range(60.0, 110.0)
+			c.soar_x_off = offset
 			game.world.add_child(c)
 			out.append(c)
 	var fx := func(spec: Dictionary) -> void:
@@ -577,7 +591,7 @@ static func populate(game: Node2D, zi: int) -> Array:
 			flock.call("bird", "flit", W, true, 4, 7, 95.0)                   # a sparrow flock (lands to forage)
 			flock.call("butterfly", "flit", W, false, 3, 6, 80.0)            # a drift of butterflies
 			soar_flock.call("bird", W, 2 + rng.randi_range(0, 2))            # a flock crossing the sky
-			if rng.randf() < 0.4:
+			if rng.randf() < Balance.AMBIENT_SECOND_FLOCK_CHANCE * density:
 				flock.call("bird", "flit", W, true, 2, 3, 70.0)             # sometimes a second small group
 		"holy":
 			flock.call("butterfly", "flit", W, false, 3, 6, 85.0)
