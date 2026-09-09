@@ -1412,7 +1412,7 @@ func _exit_tree() -> void:
 
 func _covering_structures() -> Array:
 	var covering: Array = []
-	if get_tree() == null:
+	if get_tree() == null or not is_instance_valid(game) or not is_instance_valid(game.world):
 		return covering
 	# Every scatter prop in every BUILT room is a group member now (the group
 	# is global and rooms are never torn down), and this runs once per RENDER
@@ -1425,7 +1425,7 @@ func _covering_structures() -> Array:
 	var here := global_position
 	for candidate in get_tree().get_nodes_in_group("structure_occluders"):
 		var visual := candidate as Node2D
-		if visual == null:
+		if visual == null or visual.is_queued_for_deletion():
 			continue
 		var sort_y: float
 		if visual.has_meta(OCCL_SORT_Y_META):
@@ -1440,7 +1440,7 @@ func _covering_structures() -> Array:
 			var reach := occl_radius + _occlusion_probe_reach
 			if here.distance_squared_to(visual.global_position) > reach * reach:
 				continue
-		if not visual.is_visible_in_tree():
+		if not game.world.is_ancestor_of(visual) or not visual.is_visible_in_tree():
 			continue
 		for probe in Balance.PLAYER_OCCLUSION_PROBES:
 			if _visual_alpha_at(visual, here + probe) \

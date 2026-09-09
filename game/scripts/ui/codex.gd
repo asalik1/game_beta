@@ -52,7 +52,7 @@ const SECTIONS := [
 
 ## Field notes pages (chips) — the prose that used to head the monster and
 ## gear shelves, plus the old Gems/Bags/Rules gear sub-tabs.
-const NOTE_PAGES := [["wayfinder", "Wayfinder"], ["combat", "Combat"], ["controller", "Controller"], ["elites", "Elites & Temptations"], ["gear", "Gear rules"], ["gems", "Gem rules"], ["bags", "Bags & consumables"], ["fangmoot", "Fangmoot"]]
+const NOTE_PAGES := [["wayfinder", "Wayfinder"], ["activities", "Activities & rewards"], ["combat", "Combat"], ["controller", "Controller"], ["elites", "Elites & Temptations"], ["gear", "Gear rules"], ["gems", "Gem rules"], ["bags", "Bags & consumables"], ["fangmoot", "Fangmoot"]]
 ## Gallery shelves (chips) — Heroes / Monsters / Bosses / Folk of the Vale
 ## (mirrors the Bestiary rail's Monsters-before-Bosses order).
 const GALLERY_SHELVES := [["heroes", "Heroes"], ["monsters", "Monsters"], ["bosses", "Bosses"], ["npcs", "Folk"]]
@@ -1620,6 +1620,8 @@ static func _build_page(m: Menus, split: HBoxContainer) -> void:
 			match String(f.get("page", "elites")):
 				"wayfinder":
 					_notes_wayfinder(m, list)
+				"activities":
+					preload("res://scripts/ui/activity_rewards.gd").notes(m, list)
 				"combat":
 					_notes_combat(m, list)
 				"controller":

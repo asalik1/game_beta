@@ -2913,10 +2913,11 @@ const QUEST_ABANDON_STANDING_FRAC := 0.5  # of the quest's standing reward, LOST
 # factions — a contract pays gold + that faction's STANDING, and where the ward
 # hosts a trainer, that trainer's FAVOR (the favor faucet PROFESSIONS §4 wants).
 # Deeds auto-PROGRESS off the same events as bounties; the player CLAIMS the
-# reward (in the journal), capped account-wide per day so it's a coffee-break
+# reward (in the journal), capped per character per day so it's a coffee-break
 # loop, not a chore list. Seeded per ward per day (relog can't reroll).
 const WARD_CONTRACT_PER_WARD := 2
-const WARD_CONTRACT_DAILY_CAP := 4        # claims/day, account-wide
+const WARD_CONTRACT_DAILY_CAP := 4        # claims/day, on this character's saved board
+const ACTIVITY_BOARD_REFRESH := 0.25     # open journal refresh cadence, seconds
 const WARD_CONTRACT_STANDING := 1         # ward-faction standing per claim
 const WARD_CONTRACT_FAVOR := 5            # trainer favor where the ward hosts one
 const WARD_CONTRACT_WARDS := ["wildfang", "choir", "accord", "cinderborn"]

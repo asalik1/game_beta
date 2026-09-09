@@ -1351,7 +1351,7 @@ func bounty_progress(type: String, n := 1) -> void:
 ## give_loot so a full bag never loses them. The player is always present
 ## when a bounty completes (it rides a kill/clear event).
 func _award_bounty(b: Dictionary) -> void:
-	var g := int(float(b["gold"]) * Balance.daily_gold_mult(player.level))
+	var g := activity_gold(int(b["gold"]))
 	player.gold += g
 	var extra := ""
 	for i in int(b["gems"]):
@@ -1367,7 +1367,7 @@ func _award_bounty(b: Dictionary) -> void:
 # ---------------------------------------------------------- ward contracts ---
 # The four capital ward desks' daily deed board (Q11). Rolls per ward per day;
 # deeds auto-progress off the same kill/clear events as bounties; the player
-# claims the reward in the journal, capped account-wide per day.
+# claims the reward in the journal, capped per character per day.
 
 ## Roll the day's board if the trusted-clock day has ticked over (or the board
 ## is empty). Seeded per ward per day so a relog can't reroll it (bounty law).
@@ -1406,9 +1406,10 @@ func _roll_contracts(ward: String, count: int, seed_val: int) -> void:
 ## A deed toward every active, unfinished ward contract of `type`. Marks the
 ## contract ready to claim at the target — it does NOT pay (the claim does, so
 ## the daily cap can gate WHICH deeds you cash). Host-authoritative like kills.
-func contract_progress(type: String, n := 1) -> void:
-	if net_guest():
+func contract_progress(type: String, n := 1, from_authority := false) -> void:
+	if not has_local_player() or n <= 0 or (net_guest() and not from_authority):
 		return
+	refresh_contracts()
 	var touched := false
 	for c in contracts:
 		if String(c["type"]) == type and not bool(c["done"]):
@@ -1427,11 +1428,21 @@ func contract_progress(type: String, n := 1) -> void:
 
 ## Claim a completed contract's reward: gold (level-scaled), the ward faction's
 ## standing, and — where the ward hosts a trainer — that trainer's favor. Capped
-## account-wide per day (Balance.WARD_CONTRACT_DAILY_CAP). Returns "" on success
+## per character per day (Balance.WARD_CONTRACT_DAILY_CAP). Returns "" on success
 ## or a short failure reason the journal can show.
 func claim_contract(c: Dictionary) -> String:
 	if not has_local_player():
 		return "no character"
+	refresh_contracts()
+	# A displayed card can outlive a day rollover or character reload. Value
+	# equality also accepts detached copies, leaving the actual entry unpaid.
+	var current := false
+	for entry in contracts:
+		if is_same(entry, c):
+			current = true
+			break
+	if not current:
+		return "contract expired — choose from today's board"
 	if not bool(c.get("done", false)):
 		return "not finished"
 	if bool(c.get("claimed", false)):
@@ -1441,7 +1452,7 @@ func claim_contract(c: Dictionary) -> String:
 	contract_claims_day += 1
 	c["claimed"] = true
 	var ward := String(c["ward"])
-	var g := int(float(c["gold"]) * Balance.daily_gold_mult(player.level))
+	var g := activity_gold(int(c["gold"]))
 	player.gold += g
 	add_standing(ward, Balance.WARD_CONTRACT_STANDING)
 	var favor_extra := ""
@@ -1459,13 +1470,24 @@ func claim_contract(c: Dictionary) -> String:
 	return ""
 
 
-## Contracts finished and not yet claimed — the journal badge / claim count.
+## Exact purse credit used by both rotating-activity cards and their payouts.
+func activity_gold(base: int) -> int:
+	return int(float(base) * Balance.daily_gold_mult(player.level)) if has_local_player() else 0
+
+
+## Today's available choices, bounded by the character's remaining allowance.
 func contracts_claimable() -> int:
+	if contract_day != daily_day_index():
+		return 0
 	var n := 0
 	for c in contracts:
 		if bool(c.get("done", false)) and not bool(c.get("claimed", false)):
 			n += 1
-	return n
+	return mini(n, maxi(0, Balance.WARD_CONTRACT_DAILY_CAP - contract_claims_day))
+
+
+func activity_claims_ready() -> int:
+	return contracts_claimable() + int(vault_ready())
 
 
 # ----------------------------------------------------------- weekly vault ---

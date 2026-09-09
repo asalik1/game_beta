@@ -1835,11 +1835,19 @@ func _road_caravan(room: int, npc: Variant) -> void:
 	var level: int = hunt.quarry_level(self, room, hunt.quarry_kind(self, room))
 	var busy := preload("res://scripts/encounter_context.gd").blocking_name(self, room)
 	var detail := "Road equipment and supplies cost 20% less for this chapter's run. No XP or kill loot."
+	var available := busy == "" and not cart.supplied(self) and not cart.active_in(self)
 	if busy != "":
 		detail += " Finish %s first." % busy
+	elif cart.supplied(self):
+		detail += " These traders are already supplied."
+	elif cart.active_in(self):
+		detail += " Finish helping the other caravan first."
+	elif not cart.placement(self, room).is_finite():
+		available = false
+		detail += " There is no clear space for the cart here."
 	preload("res://scripts/ui/road_choice.gd").open(menus, npc, room, "caravan",
 		"\"Wheel's sunk to the axle. Help me free it and I'll send word to the traders ahead.\"\n\nTwo attacks, with level %d creatures. Hold Interact at the shafts to pull. Creatures near the load stop the work and damage it; draw them away or defeat them. Leaving or losing costs nothing extra." % level, [
-		{"title": "Help free the cart", "detail": detail, "enabled": busy == "" and not cart.supplied(self),
+		{"title": "Help free the cart", "detail": detail, "enabled": available,
 			"action": _road_caravan_begin.bind(room, npc)}])
 
 
@@ -1848,7 +1856,7 @@ func _road_caravan_begin(room: int, npc: Variant) -> void:
 		return
 	var cart := preload("res://scripts/road_caravan.gd").begin(self, room)
 	if cart == null:
-		hud.announce("No room for the cart — Try this road again after the current encounter.", UITheme.GOLD_BRIGHT)
+		hud.announce("The caravan cannot start here — Keep exploring.", UITheme.GOLD_BRIGHT)
 		return
 	_remove_interactable(npc)
 

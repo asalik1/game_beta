@@ -1,19 +1,82 @@
-# Autonomous work checkpoint — RESUMED
+# Autonomous work checkpoint — PAUSED AT OWNER REQUEST
 
-**New session authorized September 8, 2026 at 14:40 UTC.** Continue in this
-existing worktree until September 9 at 09:00 America/New_York (13:00 UTC),
-reserving the final hour for validation and documentation. Preserve all work
-and leave the previous task and its paused
-automation alone. This task has a separate active heartbeat,
-`continue-crownless-wayfinder-through-september-9`, ending at that deadline.
+**Latest instruction, September 9, 2026:** "once you are done with your current
+feature/work commit it then pause". The current feature is complete. Do not
+resume development or start another feature without new owner authorization.
+This supersedes the earlier September 9, 09:00 America/New_York deadline.
 
-**Latest user instruction: commit the work so far on this branch.** The
-validated caravan and HUD passes are included in the checkpoint titled
-`Add caravan defense and improve HUD visibility`, following `99668d4`.
-Use `git log -1` for its exact ID. All 27 completed passes are now covered by
-these two requested commits. Earlier staged/uncommitted notes are historical.
-Further development remains stage-only unless the user requests another commit.
-The next ward-activity work has only an audit; no implementation is included.
+The completed checkpoint is titled **Improve activity rewards and caravan
+reliability**, following `5dbbe54` on `codex/crownless-wayfinder`. Use `git log -1`
+for its exact commit ID; the final local verification record is
+`build/qa/checkpoint-commit-activity-caravan.json`. It includes passes 28 and 29,
+with all earlier passes already covered by `99668d4` and `5dbbe54`. No push was
+requested. Existing untracked art scratch/rejected outputs remain preserved.
+
+After this requested commit, pause only this task's continuation,
+`continue-crownless-wayfinder-through-september-9`. Leave the older task and its
+already-paused `improve-crownless-until-september-9` automation untouched.
+The final verification record confirms the continuation's paused state.
+
+**Pass 28 — activity rewards, validated.** Read ACTIVITY_REWARDS.md. Existing
+host credit now advances the guest's own board; expired/detached claims are
+rejected, gold quotes match payouts, and the journal provides ready-reward
+badges and live board updates. Personal save ownership and the existing
+four-choices-per-hero daily allowance are preserved. Baseline real ENet/UI
+reproduced missing guest credit, 80 quoted versus 262 paid at level 20, and an
+expired callback paying 262 while consuming a new day's choice.
+
+Desktop compile214 / quick120 / full200 and mobile compile214 / strictquick120
+passed before staging. Thirteen desktop and thirteen mobile real ENet/UI
+captures passed and were inspected. Twelve source mirrors and four independent
+UID pairs were verified; full preflight had no findings. Source/path/evidence
+records: `build/qa/activities-{source-freeze,stage-paths,visual-validation}.json`.
+Earlier failed logs remain; the save fixture was corrected for JSON float
+representation without changing real ownership.
+
+**Pass 29 — caravan visibility and placement, validated.** Read
+CARAVAN_VISIBILITY.md. The real opaque cart now reveals covered heroes and
+selected enemies through the existing animated silhouette system. Readers
+reject foreign scenery/targets and release old-world masks. A safe-interior
+fallback finds usable cart positions missed by the original circle. Offers
+explain/disable unavailable placement and recover when space is restored.
+
+The baseline failed on seeds17,19,25; all32 real offers now start on desktop
+and mobile. Blocked/restored UI was inspected. Normal starting-kit warlock
+combat on seed17 wins in37.749s, minimum51.39/95HP and57.1%load, using ordinary
+keyboard attacks/movement/pulling with no injected combat damage. Earlier
+normal caravan runs cover all six classes. No new balance or artwork changes.
+
+Final desktop import / compile218 / quick122 / full202 and mobile import /
+compile218 / strictquick122 pass. Eight live runs total57 passing captures:
+desktop/mobile caravan visibility11+11, placement UI2+2 and real ENet caravan
+8+8; desktop ordinary combat7 and existing target-cover8. Thirteen unchanged
+representative captures were retained after inspection. Ten source mirrors,
+four independent UID pairs and the original cart PNG hash are verified.
+Full preflight: no findings. Exact logs, images, limits and frozen paths live
+in CARAVAN_VISIBILITY.md and `build/qa/cart-*` records. The explicit pass29 list
+has33paths; staging preserves the earlier36-path activity checkpoint.
+
+Evidence limits: mobile captures run the mobile source through Compatibility
+on the development host, not physical Android/iOS hardware. The established
+full-suite malformed-base64 fixture/bare ObjectDB exit warning and allowed
+windowed renderer shutdown diagnostics remain. No new script errors. The
+network disconnect harness verifies cleanup and home saves while skipping
+actual scene reload; its screenshot does not prove the title transition.
+
+**Possible follow-up, NOT STARTED:** the four capital contract desks still
+route to the generic quest-log page instead of their ward board. Source audit
+only: `build/qa/ward-desks-audit.md`. No production implementation or live
+baseline was started after the owner requested this pause. A future authorized
+session can reproduce that issue before choosing a fix. Chromas remain
+scrapped; existing pet movement/previews and co-op pet/skin replication are
+already complete. No hero-skin art edits are needed.
+
+Worktree: `C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder`.
+Stay here and preserve all files. Read CLAUDE.md for mobile synchronization,
+testing order, muted windowed QA and the one-engine rule. The original Claude
+worktree remains untouched.
+
+## Historical checkpoints (superseded by the pause above)
 
 **September 8, 19:31 UTC: the user requested "whatever is staged commit".**
 Committed all 25 validated passes (703 files) as `99668d4`,

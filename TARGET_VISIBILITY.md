@@ -21,6 +21,11 @@ World repaint and HUD teardown release references and world-owned children.
 Hero and target copies share prop masks safely: a departing owner cannot remove
 another's mask, and queued children cannot leave the last mask stuck on.
 
+Caravans now register their existing opaque art with the same system. Both
+hero and target readers restrict scenery to their current world; another
+game's scenery, retired worlds and foreign targets cannot acquire copies.
+See CARAVAN_VISIBILITY.md for the reproduction and follow-up validation.
+
 Validation:
 
 - A real log and raider fixture checks opaque cover, animated copy properties,

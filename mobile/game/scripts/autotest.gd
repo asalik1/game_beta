@@ -955,6 +955,9 @@ func _run_systems() -> void:
 	# 3d8. Bounties + weekly vault: roll, progress reward, vault claim.
 	_test_bounties()
 	_test_ward_contracts()
+	var activity_error: String = preload("res://scripts/tests/test_activity_rewards.gd").run(self)
+	if activity_error != "":
+		return _fail(activity_error)
 
 	# 3d9. Reforge bench: affix reroll, value reroll, add socket + cap.
 	_test_reforge()
@@ -1925,6 +1928,9 @@ func _run_systems() -> void:
 	var visibility_error: String = preload("res://scripts/tests/test_target_visibility.gd").run(self)
 	if visibility_error != "":
 		return _fail("target visibility: " + visibility_error)
+	var ownership_error: String = preload("res://scripts/tests/test_occlusion_ownership.gd").run(self)
+	if ownership_error != "":
+		return _fail("occlusion ownership: " + ownership_error)
 	var history_error: String = preload("res://scripts/tests/test_character_history.gd").run(self)
 	if history_error != "":
 		return _fail("personal history: " + history_error)
@@ -1961,6 +1967,9 @@ func _run_systems() -> void:
 	var caravan_error: String = preload("res://scripts/tests/test_road_caravan.gd").run(self)
 	if caravan_error != "":
 		return _fail("road caravan: " + caravan_error)
+	var placement_error: String = preload("res://scripts/tests/test_caravan_placement.gd").run(self)
+	if placement_error != "":
+		return _fail("caravan placement: " + placement_error)
 	var terrain_error: String = preload("res://scripts/tests/test_reactive_terrain.gd").run(self)
 	if terrain_error != "":
 		_fail(terrain_error)

@@ -52,6 +52,8 @@ var mail_badge: Panel           # red unread-count circle on the ✉
 var mail_badge_num: Label
 var daily_btn: Button           # ★ beside the ✉ — shown only when a daily waits
 var daily_glow: Sprite2D        # pulsing shine behind the ★
+var quest_reward_badge: Panel
+var quest_reward_count: Label
 var quest_btn: Button           # ! opens the Quest Log; shines when a reward waits
 var quest_glow: Sprite2D        # red/orange pulse behind ! when the weekly vault is claimable
 var quest_sparkles: Array = []  # twinkles around ! during the shine
@@ -484,8 +486,28 @@ func _ready() -> void:
 	quest_btn.size = HUD_ICON_BUTTON
 	quest_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
-			game.menus.open_journal())
+			game.refresh_contracts()
+			game.menus.open_journal("activities" if game.activity_claims_ready() > 0 else ""))
 	add_child(quest_btn)
+	quest_reward_badge = Panel.new()
+	quest_reward_badge.name = "ActivityRewardBadge"
+	var reward_style := StyleBoxFlat.new()
+	reward_style.bg_color = UITheme.GOLD_BRIGHT
+	reward_style.set_corner_radius_all(9)
+	quest_reward_badge.add_theme_stylebox_override("panel", reward_style)
+	quest_reward_badge.position = Vector2(HUD_ICON_BUTTON.x - 8, -4)
+	quest_reward_badge.size = Vector2(18, 18)
+	quest_reward_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	quest_reward_badge.visible = false
+	quest_btn.add_child(quest_reward_badge)
+	quest_reward_count = Label.new()
+	quest_reward_count.add_theme_font_size_override("font_size", 12)
+	quest_reward_count.add_theme_color_override("font_color", Color(0.12, 0.1, 0.08))
+	quest_reward_count.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	quest_reward_count.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	quest_reward_count.size = Vector2(18, 18)
+	quest_reward_count.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	quest_reward_badge.add_child(quest_reward_count)
 	# Twinkles around the ! (on top), lit only during the shine.
 	for off: Vector2i in [Vector2i(-9, -7), Vector2i(11, -5), Vector2i(3, 11)]:
 		var sp := Sprite2D.new()
@@ -2298,12 +2320,14 @@ func update_stats(p: Player) -> void:
 		daily_glow.scale = Vector2.ONE * (0.5 + 0.16 * pulse)
 	_layout_hud_icons()
 
-	# Quest icon shine: a red/orange pulse + twinkles when the log is worth
-	# opening — a claimable weekly vault, OR a side quest somebody in this
-	# chapter is still waiting to offer (2026-07-17). The shine used to watch
-	# the vault ALONE, which meant the one icon that says "there are quests"
-	# stayed dark through a chapter full of unasked ones.
-	var quest_ready := game.vault_ready() or game.any_quest_available()
+	game.refresh_bounties()
+	game.refresh_contracts()
+	# Ready personal rewards stay visible after their brief combat message.
+	var reward_count := game.activity_claims_ready()
+	quest_reward_badge.visible = reward_count > 0
+	quest_reward_count.text = str(reward_count)
+	quest_btn.tooltip_text = "Journal · %d reward claim%s ready" % [reward_count, "" if reward_count == 1 else "s"] if reward_count > 0 else "Journal"
+	var quest_ready := reward_count > 0 or game.any_quest_available()
 	quest_glow.visible = quest_ready
 	for spk in quest_sparkles:
 		spk.visible = quest_ready
@@ -2323,8 +2347,6 @@ func update_stats(p: Player) -> void:
 
 	_update_buffs()
 	_update_minimap()
-	game.refresh_bounties()  # rolls the daily/weekly sets when the clock ticks over
-	game.refresh_contracts()  # ward contracts roll on the same day tick (Q11)
 
 	# Ability bar: cooldown shade + countdown number + affordability color.
 	var now_ms := Time.get_ticks_msec()

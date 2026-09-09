@@ -51,7 +51,8 @@ func _process(delta: float) -> void:
 
 
 func _current_target() -> Enemy:
-	if game == null or not game.has_local_player() or not is_instance_valid(game.hud) \
+	if not is_instance_valid(game) or not is_instance_valid(game.world) \
+		or not game.has_local_player() or not is_instance_valid(game.hud) \
 		or not bool(game.settings.get("combat_foliage", true)):
 		return null
 	var p: Player = game.local_player
@@ -59,6 +60,7 @@ func _current_target() -> Enemy:
 	var target := tracked as Enemy if is_instance_valid(tracked) else null
 	if game.state != Game.ST_PLAYING or p.dead or p.downed or p.ghost \
 		or target == null or target.dying or target.untargetable or target.is_queued_for_deletion() \
+		or target.game != game or not game.world.is_ancestor_of(target) \
 		or not target.is_visible_in_tree() or not is_instance_valid(target.sprite) \
 		or not target.sprite.is_visible_in_tree() \
 		or p.global_position.distance_to(target.global_position) > Balance.COMBAT_FOLIAGE_RANGE:
@@ -110,7 +112,7 @@ func _covers(visual: Node2D, feet: Vector2, head: Vector2, middle: Vector2, prob
 	var radius := float(visual.get_meta("occlusion_radius", 0.0))
 	var reach := radius + feet.distance_to(head)
 	if (radius > 0.0 and middle.distance_squared_to(visual.global_position) > reach * reach) \
-		or not visual.is_visible_in_tree():
+		or not game.world.is_ancestor_of(visual) or not visual.is_visible_in_tree():
 		return false
 	for point in probes:
 		if game.local_player._visual_alpha_at(visual, point) >= Balance.PLAYER_OCCLUSION_ALPHA_THRESHOLD:

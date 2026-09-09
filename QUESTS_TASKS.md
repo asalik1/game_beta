@@ -505,6 +505,15 @@ Illustrations: the cage fork + Ivo's fork are the two beats worth a
 plate (canon refs: `splash_scholar_ivo`, the cage sprite); Codex lane.
 
 ## Q11 — capital engine + Layer 1 ward contracts (OPEN; needs Q9 c+f)
+**Implementation audit, September 8, 2026:** production already rolls two
+boss/elite/room contracts per ward and claims them through the Journal.
+The shipped allowance and board are per character, with four claims per day;
+the account-wide wording below describes the older proposal. Pass 28 in
+`ACTIVITY_REWARDS.md` fixes guest credit, expired claims and reward visibility
+while preserving that existing ownership. Desktop compile/quick/full and
+mobile compile/strict quick plus both real ENet/UI runs pass; see that note.
+The dedicated desk UI and additional deed types below remain proposed work.
+
 Estimated: 2 agent-days, one owner. Spec: QUESTS_AND_SIDE_CHAPTERS §2
 Layer 1 + §3.
 - **Module** `content/capital_quests.gd` (register in
@@ -671,11 +680,12 @@ asserts untouched (not in CHAPTER_LIST); co-op: entry blocked online v1
 (interludes swap worlds like endgame — `enter_endgame`'s `net_online()`
 guard, `game_flow.gd:842`).
 
-## Q14 — Road Deck (four cards implemented; caravan encounters OPEN)
+## Q14 — Road Deck (five cards implemented; further variety OPEN)
 
 Verified in code September 8, 2026: the registry contains **The Bridgeward's
-Toll**, **The Wounded Courier**, **The Stranger's Wager** and **The Crooked
-Trail**. The wager includes its three-shell choice and payout.
+Toll**, **The Wounded Courier**, **The Stranger's Wager**, **The Crooked
+Trail** and **A Wheel in the Mud**. The wager includes its three-shell choice
+and payout.
 
 The seeded draw visits safe campaign rooms (social/dead_end), excludes merchant
 rooms, and diminishes through `ROAD_CARD_CHANCE * ROAD_CARD_FALLOFF^run_road_cards`.
@@ -698,7 +708,14 @@ death pay personal purses to present party members; completed snapshots do
 not grant historical rewards. Late join, absence, abandonment, travel and
 disconnect are covered by the live ENet rig. See ROAD_HUNT.md.
 
-Richer opt-in caravan and road-combat situations remain worthwhile.
+**A Wheel in the Mud (validated as pass 26):** two warned attacks and held
+Interact pulls free a loaded cart. Creatures near the load block work and
+damage it; rescuing it gives the chapter/run's road stock a 20% discount.
+Guest work/kills, late join, live prices, home saves, travel and disconnect
+cleanup are covered by real ENet checks. See CARAVAN.md. Pass 29 follows up
+the cart's visibility and safe placement; see CARAVAN_VISIBILITY.md.
+
+Further opt-in road situations remain worthwhile.
 The earlier safe-room blocker is **superseded**: ward_vigil.gd and wayfarer.gd
 now demonstrate owned loose enemies (`zone_idx = -1`), zero XP/ordinary drops,
 explicit absence/death/travel cleanup and host-owned state with guest mirrors.

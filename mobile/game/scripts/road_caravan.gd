@@ -67,28 +67,36 @@ static func placement(g: Game, room: int) -> Vector2:
 	# Try clear points around the middle, leaving the entrances open. The
 	# handle and cart footprint must be usable, not just the anchor pixel.
 	for ring in 4:
-		for spoke in 8:
+		for spoke in (1 if ring == 0 else 8):
 			var point := (g.room_center(room) + Vector2.from_angle(TAU * spoke / 8.0) \
 				* ring * Balance.CARAVAN_PLACEMENT_STEP).clamp(bounds.position, bounds.end)
-			var clear := true
-			for interaction in g.interactables:
-				var actor: Variant = interaction.get("node")
-				if is_instance_valid(actor) and actor is Node2D and not actor.is_queued_for_deletion() \
-					and float(interaction.get("reach", Balance.INTERACT_RANGE)) > 0.0 \
-					and actor.global_position.distance_to(point + Balance.CARAVAN_HANDLE_OFFSET) < Balance.CARAVAN_INTERACTION_CLEARANCE:
-					clear = false
-					break
-			if not clear:
-				continue
-			for offset in [Vector2.ZERO, Balance.CARAVAN_HANDLE_OFFSET,
-				Vector2(-100, -50), Vector2(80, -50), Vector2(-100, 70), Vector2(80, 70)]:
-				var sample: Vector2 = point + offset
-				if g._pos_in_wall(sample) or g.free_spawn_pos(sample, g.room_center(room)).distance_to(sample) > 1.0:
-					clear = false
-					break
-			if clear:
+			if _placement_clear(g, room, point):
+				return point
+	# Offset room floors can put the nominal center beside one edge. Search
+	# the remaining safe interior when that small circle is crowded.
+	var columns := maxi(1, ceili(bounds.size.x / Balance.CARAVAN_PLACEMENT_STEP))
+	var rows := maxi(1, ceili(bounds.size.y / Balance.CARAVAN_PLACEMENT_STEP))
+	for row in rows + 1:
+		for column in columns + 1:
+			var point := bounds.position + bounds.size * Vector2(float(column) / columns, float(row) / rows)
+			if _placement_clear(g, room, point):
 				return point
 	return Vector2(INF, INF)
+
+
+static func _placement_clear(g: Game, room: int, point: Vector2) -> bool:
+	for interaction in g.interactables:
+		var actor: Variant = interaction.get("node")
+		if is_instance_valid(actor) and actor is Node2D and not actor.is_queued_for_deletion() \
+			and float(interaction.get("reach", Balance.INTERACT_RANGE)) > 0.0 \
+			and actor.global_position.distance_to(point + Balance.CARAVAN_HANDLE_OFFSET) < Balance.CARAVAN_INTERACTION_CLEARANCE:
+			return false
+	for offset in [Vector2.ZERO, Balance.CARAVAN_HANDLE_OFFSET,
+		Vector2(-100, -50), Vector2(80, -50), Vector2(-100, 70), Vector2(80, 70)]:
+		var sample: Vector2 = point + offset
+		if g._pos_in_wall(sample) or g.free_spawn_pos(sample, g.room_center(room)).distance_to(sample) > 1.0:
+			return false
+	return true
 
 
 static func begin(g: Game, room: int) -> Node2D:
@@ -119,11 +127,16 @@ func _ready() -> void:
 	add_to_group("optional_encounters")
 	set_meta("encounter_title", "the stalled caravan")
 	var body := Sprite2D.new()
+	body.name = "CaravanBody"
 	body.texture = ART
 	body.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	body.scale = Vector2.ONE * Balance.CARAVAN_ART_WIDTH / ART.get_width()
 	body.position = (Vector2(0.5, 0.5) - Vector2(0.59, 0.76)) * Balance.CARAVAN_ART_WIDTH
 	add_child(body)
+	# The cart root owns its y-sort anchor; the art is raised above that base.
+	body.set_meta("occlusion_sort_y", global_position.y)
+	body.set_meta("occlusion_radius", (body.get_rect().size * body.scale).length() * 0.5)
+	body.add_to_group("structure_occluders")
 	handle = Node2D.new()
 	handle.position = Balance.CARAVAN_HANDLE_OFFSET
 	add_child(handle)

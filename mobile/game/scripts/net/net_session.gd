@@ -1703,7 +1703,7 @@ func host_chapter_end(_first_clear: bool, boss_lv: int) -> void:
 		_rpc_first_clear.rpc_id(int(pid), boss_lv)
 
 
-## HOST: bounty/vault credit to one peer, gated like the XP fan-out
+## HOST: bounty/contract/vault credit to one peer, gated like the XP fan-out
 ## (host_award_xp): present in the active-room set or it doesn't count.
 func _credit_peer(pid: int, kind: String) -> void:
 	var q: Player = _player_of(pid)
@@ -1732,7 +1732,7 @@ func _rpc_mob_kill(pos: Vector2, base_gold: int, goldrush: bool, kind := "") -> 
 	game.mob_kill_share.call_deferred(pos, base_gold, goldrush, kind)
 
 
-## OWNER: advance the OWN bounty board / weekly vault (character-owned
+## OWNER: advance the OWN bounty/contract boards and weekly vault (character-owned
 ## counters — they ride this player's save home, §5.5/§5.7).
 @rpc("authority", "call_remote", "reliable")
 func _rpc_credit(kind: String) -> void:
@@ -1741,11 +1741,14 @@ func _rpc_credit(kind: String) -> void:
 	match kind:
 		"boss":
 			game.bounty_progress.call_deferred("boss_kills")
+			game.contract_progress.call_deferred("boss_kills", 1, true)
 			game.vault_note_boss.call_deferred()
 		"elite":
 			game.bounty_progress.call_deferred("elite_kills")
+			game.contract_progress.call_deferred("elite_kills", 1, true)
 		"room":
 			game.bounty_progress.call_deferred("rooms_cleared")
+			game.contract_progress.call_deferred("rooms_cleared", 1, true)
 
 
 ## OWNER: first clear of the chapter — the same legible beat solo pays,

@@ -30,6 +30,12 @@ preservation, repeated settlement, absent recipients, abandonment, party travel
 and disconnect cleanup. Run with isolated APPDATA; add
 `--mobile --renderer=gl_compatibility` for the mobile source/renderer path.
 
+Activity rewards QA: `shot.bat road_hunt --activities --timeout=300` reuses the
+two-game ENet fixture for owner contract credit, expired callback rejection,
+exact reward quotes, touch claims and badges, live journal scrolling, daily
+rollover, travel and home-save ownership. Use isolated APPDATA; add
+`--mobile --renderer=gl_compatibility` for the mobile source/renderer path.
+
 Encounter company QA: `shot.bat road_hunt --company --timeout=300` reuses the
 production ENet hunt fixture to check once-only guest discoveries, busy
 invitations, both encounter start orders, direct/guest request guards, released
@@ -58,6 +64,14 @@ ranged combat. `shot.bat road_hunt --caravan --timeout=270` runs two games over
 ENet to check late join, guest work/kills, host request validation, live shop
 quotes, home saves, world rebuilds, travel and session-end cleanup. Use isolated
 APPDATA; add `--mobile --renderer=gl_compatibility` for mobile source/renderer QA.
+
+Caravan visibility/placement QA: `shot.bat caravan --visibility --seed=272661
+--timeout=220` checks hero and animated-target silhouettes behind the actual
+opaque cart, shared masks, touch and cart retirement. `shot.bat caravan
+--placement --seeds=32 --timeout=300` exercises real seeded trader offers,
+blocked-space explanation and restored access. It writes `placement_sweep.json`;
+failed starts also record footprint/interaction diagnostics. Add `--seed=17`
+to ordinary caravan combat to replay a formerly unavailable placement.
 
 Road choice QA: `shot.bat road_choices --timeout=240` checks explicit toll,
 courier and wager actions, harmless leave/back, affordability, repeated clicks,

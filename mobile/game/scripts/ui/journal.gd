@@ -18,6 +18,7 @@ const CARD_TEXT_WIDTH := 744.0
 static func open(m: Menus, requested_tab := "") -> void:
 	var g := m.game
 	g.refresh_bounties()
+	g.refresh_contracts()
 	var tab := String(requested_tab)
 	if tab == "log":
 		tab = "quests" # Backward compatibility for old callers.
@@ -54,6 +55,7 @@ static func open(m: Menus, requested_tab := "") -> void:
 		_:
 			_quests(m, list)
 	m._hint(vbox, "1–4 switch sections  ·  ESC, ✕, or click outside to close")
+	preload("res://scripts/ui/activity_rewards.gd").watch(m, tab)
 
 
 static func _tabs(m: Menus, parent: VBoxContainer, active: String) -> void:
@@ -74,9 +76,11 @@ static func _tabs(m: Menus, parent: VBoxContainer, active: String) -> void:
 	if nearby > 0:
 		quest_suffix += " +%d" % nearby
 	var key_prefix := ["", "", "", ""] if m.game.touch_mode else ["1  ", "2  ", "3  ", "4  "]
+	var ready := m.game.activity_claims_ready()
+	var activity_suffix := "%d ready" % ready if ready > 0 else "%d/%d" % [bounty_done, m.game.bounties.size()]
 	var specs := [
 		["quests", "%sQUESTS  ·  %s" % [key_prefix[0], quest_suffix], GOLD, KEY_1],
-		["activities", "%sACTIVITIES  ·  %d/%d" % [key_prefix[1], bounty_done, m.game.bounties.size()], GREEN, KEY_2],
+		["activities", "%sACTIVITIES  ·  %s" % [key_prefix[1], activity_suffix], GOLD if ready > 0 else GREEN, KEY_2],
 		["progress", "%sPROGRESS  ·  %d/%d" % [key_prefix[2], visited, m.game.zone_count], BLUE, KEY_3],
 		["story", "%sSTORY  ·  %d" % [key_prefix[3], story_count], PURPLE, KEY_4],
 	]
@@ -125,12 +129,13 @@ static func _context_strip(m: Menus, parent: VBoxContainer, tab: String) -> void
 				_available_side_count(g), room_left, "y" if room_left == 1 else "ies"]
 			color = GOLD
 		"activities":
-			text = "ROTATING ACTIVITIES  •  rewards are granted automatically when bounties complete"
-			if g.vault_ready():
-				text += "  •  VAULT REWARD READY"
-				color = GOLD
-			else:
-				color = GREEN
+			var ready := g.activity_claims_ready()
+			text = "%d reward claim%s ready · Choose your ward rewards below" % [ready, "" if ready == 1 else "s"] if ready > 0 else "Bounties pay automatically · Ward rewards are claimed below"
+			color = GOLD if ready > 0 else GREEN
+			var notice := String(m.get_meta("journal_notice", ""))
+			if notice != "":
+				text = notice
+				m.remove_meta("journal_notice")
 		"progress":
 			text = "CHAPTER OVERVIEW  •  route, bosses, Resonance, and faction standing"
 			color = BLUE
@@ -291,13 +296,20 @@ static func _available_quests(m: Menus, list: VBoxContainer) -> void:
 # ---------------------------------------------------------- ACTIVITIES ---
 
 static func _activities(m: Menus, list: VBoxContainer) -> void:
+	var ready_contracts := m.game.contracts_claimable() > 0
+	if ready_contracts:
+		_contracts(m, list)
+	if m.game.vault_ready():
+		_vault(m, list)
 	var wildlife := preload("res://scripts/wildlife.gd")
 	_section(m, list, "SMALL MERCIES", "%d / %d creatures rescued" % [wildlife.count(m.game), wildlife.SITES.size()], GREEN)
 	var sanctuary_button := m._btn(list, "Visit the sanctuary collection", func() -> void: preload("res://scripts/ui/sanctuary.gd").open(m), GREEN)
 	sanctuary_button.custom_minimum_size.y = 44
-	_contracts(m, list)
+	if not ready_contracts:
+		_contracts(m, list)
 	_bounties(m, list)
-	_vault(m, list)
+	if not m.game.vault_ready():
+		_vault(m, list)
 	_weekly(m, list)
 	_waking(m, list)
 
@@ -308,39 +320,41 @@ static func _contracts(m: Menus, list: VBoxContainer) -> void:
 	var g := m.game
 	if g.contracts.is_empty():
 		return
-	var cap: int = Balance.WARD_CONTRACT_DAILY_CAP
 	_section(m, list, "WARD CONTRACTS",
-		"The capital's daily deed board · %d/%d claimed today" % [g.contract_claims_day, cap],
+		"Choose up to %d per day · %d claimed on this hero" % [Balance.WARD_CONTRACT_DAILY_CAP, g.contract_claims_day],
 		Color(0.82, 0.86, 0.62))
-	for ward in Balance.WARD_CONTRACT_WARDS:
-		var wname := String(Balance.WARD_CONTRACT_WARD_NAME.get(String(ward), String(ward)))
-		var has_favor: bool = Balance.WARD_CONTRACT_FAVOR_NPC.has(String(ward))
-		for c in g.contracts:
-			if String(c["ward"]) != String(ward):
-				continue
-			var done: bool = bool(c["done"])
-			var claimed: bool = bool(c.get("claimed", false))
-			var card := _card(list, GREEN if claimed else (GOLD if done else Color(0.7, 0.78, 0.6)))
-			_status_line(m, card,
-				"✓  CLAIMED" if claimed else ("◆  READY TO CLAIM" if done else "○  %s CONTRACT" % wname.to_upper()),
-				"WARD", GREEN if claimed else (GOLD if done else BODY))
-			var title := m._lbl(card, String(c["desc"]), 15, Color.WHITE)
-			_wrap(title)
-			_meter(m, card, int(c["progress"]), int(c["target"]),
-				GREEN if done else Color(0.7, 0.78, 0.6),
-				"PROGRESS", "%d / %d" % [int(c["progress"]), int(c["target"])])
-			m._lbl(card, "Reward  ·  %d gold  +  %s standing%s" % [int(c["gold"]), wname,
-				"  + Kesh favor" if has_favor else ""], 12, Color(0.9, 0.82, 0.58))
-			if claimed:
-				continue
-			if done:
-				var cc: Dictionary = c
-				var can_claim: bool = g.contract_claims_day < cap
-				var label := "  ◆  CLAIM  " if can_claim else "  daily cap reached — return tomorrow  "
-				var claim := m._btn(card, label, func() -> void:
-					g.claim_contract(cc)
-					m.open_journal("activities"), GREEN if can_claim else MUTED, can_claim)
-				claim.custom_minimum_size = Vector2(0, 34)
+	# Ready choices lead; ward order stays familiar within each group.
+	for state in ["ready", "unfinished", "claimed"]:
+		for ward in Balance.WARD_CONTRACT_WARDS:
+			for c in g.contracts:
+				var bucket := "claimed" if bool(c.get("claimed", false)) else "ready" if bool(c.get("done", false)) else "unfinished"
+				if String(c.ward) == String(ward) and bucket == state:
+					_contract_card(m, list, c)
+
+
+static func _contract_card(m: Menus, list: VBoxContainer, c: Dictionary) -> void:
+	var g := m.game
+	var ward := String(c.ward)
+	var wname := String(Balance.WARD_CONTRACT_WARD_NAME.get(ward, ward))
+	var claimed := bool(c.get("claimed", false))
+	var done := bool(c.get("done", false))
+	var can_claim := g.contract_claims_day < Balance.WARD_CONTRACT_DAILY_CAP
+	var color := GREEN if claimed else GOLD if done and can_claim else BODY
+	var card := _card(list, color)
+	_status_line(m, card, "✓  CLAIMED" if claimed else ("◆  READY TO CLAIM" if can_claim else "DAILY ALLOWANCE USED") if done else "○  IN PROGRESS", wname.to_upper(), color)
+	var title := m._lbl(card, String(c.desc), 15, Color.WHITE)
+	_wrap(title)
+	_meter(m, card, int(c.progress), int(c.target), GREEN if done else Color(0.7, 0.78, 0.6),
+		"PROGRESS", "%d / %d" % [int(c.progress), int(c.target)])
+	m._lbl(card, "Reward  ·  %d gold  + %d %s standing%s" % [g.activity_gold(int(c.gold)),
+		Balance.WARD_CONTRACT_STANDING, wname, "  + Kesh favor" if Balance.WARD_CONTRACT_FAVOR_NPC.has(ward) else ""], 12, Color(0.9, 0.82, 0.58))
+	if done and not claimed:
+		var claim := m._btn(card, "  ◆  CLAIM  " if can_claim else "  Today's choices are used · new board tomorrow  ", func() -> void:
+			var reason := g.claim_contract(c)
+			m.set_meta("journal_notice", reason)
+			m.open_journal("activities"), GREEN if can_claim else MUTED, can_claim)
+		claim.name = "ContractClaim_" + ward + "_" + String(c.type)
+		claim.custom_minimum_size.y = 44
 
 
 static func _bounties(m: Menus, list: VBoxContainer) -> void:
@@ -367,9 +381,9 @@ static func _bounties(m: Menus, list: VBoxContainer) -> void:
 			_meter(m, card, int(b["progress"]), int(b["target"]),
 				GREEN if done else (BLUE if scope == "daily" else PURPLE),
 				"PROGRESS", "%d / %d" % [int(b["progress"]), int(b["target"])])
-			var reward := "%d gold" % int(b["gold"])
+			var reward := "%d gold" % m.game.activity_gold(int(b["gold"]))
 			if int(b["gems"]) > 0:
-				reward += "  + 1 gem"
+				reward += "  + %d gem%s" % [int(b["gems"]), "" if int(b["gems"]) == 1 else "s"]
 			if int(b.get("renown", 0)) > 0:
 				reward += "  + ◈%d Renown" % int(b["renown"])
 			m._lbl(card, "Reward  ·  " + reward, 12, Color(0.9, 0.82, 0.58))
@@ -387,7 +401,7 @@ static func _vault(m: Menus, list: VBoxContainer) -> void:
 	var goal: int = Balance.VAULT_BOSS_GOAL
 	_meter(m, card, mini(prog, goal), goal, GOLD, "BOSSES DEFEATED",
 		"%d / %d" % [mini(prog, goal), goal])
-	m._lbl(card, "Golden chest  +  ◈%d Renown" % Balance.RENOWN_VAULT, 13, Color(0.95, 0.86, 0.58))
+	m._lbl(card, "Golden chest  + bright gem  +  ◈%d Renown" % Balance.RENOWN_VAULT, 13, Color(0.95, 0.86, 0.58))
 	if ready:
 		var claim := m._btn(card, "  ◆  CLAIM VAULT REWARD  ", func() -> void:
 			g.claim_vault()

@@ -6,11 +6,22 @@ var held := {}
 
 func _ready() -> void:
 	await boot(arg("class", "warrior"), "ch1", not flag("combat"))
+	if arg("seed") != "":
+		game.wander_seed = int(arg("seed"))
+		game.switch_chapter("ch1", true)
+		await frames(3)
+		await skip_dialogue()
 	game.terrain_event_t = 10000.0
 	game.settings["camera_shake"] = 0.0
 	game.settings["combat_framing"] = false
 	game.camera.position_smoothing_enabled = false
 	game.player.set_physics_process(false)
+	if flag("placement"):
+		var placement_error := await preload("res://scripts/tests/caravan_placement_live.gd").run(self)
+		if placement_error != "":
+			push_error(placement_error)
+			return finish(1)
+		return finish()
 	if not flag("art"):
 		var error := await _checks()
 		_release()
@@ -126,9 +137,13 @@ func _checks() -> String:
 	accept.pressed.emit()
 	var cart := Caravan.find(game, room)
 	if cart == null:
+		_record_placement(room)
 		return "accepted offer failed to install a clear cart"
+	print("CARAVAN WORLD: seed=%d room=%d position=%s" % [game.wander_seed, room, cart.global_position])
 	game.player.global_position = cart.handle.global_position + Vector2(-25, 30)
 	await _capture("02_warned_attack")
+	if flag("visibility"):
+		return await preload("res://scripts/tests/caravan_visibility_live.gd").run(self, cart)
 	if flag("combat"):
 		return await preload("res://scripts/tests/caravan_combat_live.gd").run(self, cart)
 	if not await _until(func() -> bool: return cart.phase == Caravan.WORKING):
@@ -194,3 +209,43 @@ func _checks() -> String:
 	if flag("prices"):
 		return await preload("res://scripts/tests/caravan_prices_live.gd").run(self, room)
 	return ""
+
+
+func _record_placement(room: int, label := "placement") -> void:
+	var bounds := game.play_rect(room).grow(-Balance.CARAVAN_INSET)
+	var observations := []
+	for ring in 4:
+		for spoke in 8:
+			var point := (game.room_center(room) + Vector2.from_angle(TAU * spoke / 8.0) * ring * Balance.CARAVAN_PLACEMENT_STEP).clamp(bounds.position, bounds.end)
+			var neighbors := []
+			for interaction in game.interactables:
+				var actor: Variant = interaction.get("node")
+				if is_instance_valid(actor) and actor is Node2D and not actor.is_queued_for_deletion() and float(interaction.get("reach", Balance.INTERACT_RANGE)) > 0.0:
+					var separation: float = actor.global_position.distance_to(point + Balance.CARAVAN_HANDLE_OFFSET)
+					if separation < Balance.CARAVAN_INTERACTION_CLEARANCE:
+						neighbors.append({"name": actor.name, "position": str(actor.global_position), "distance": separation})
+			var blocked := []
+			for offset in [Vector2.ZERO, Balance.CARAVAN_HANDLE_OFFSET, Vector2(-100, -50), Vector2(80, -50), Vector2(-100, 70), Vector2(80, 70)]:
+				var sample: Vector2 = point + offset
+				if game._pos_in_wall(sample) or game.free_spawn_pos(sample, game.room_center(room)).distance_to(sample) > 1.0:
+					blocked.append(str(sample))
+			observations.append({"point": str(point), "neighbors": neighbors, "blocked": blocked})
+	var report := {"seed": game.wander_seed, "room": room, "bounds": str(bounds),
+		"eligible": Caravan.Hunt.eligible(game, room), "hot": game._room_hot(room),
+		"supplied": Caravan.supplied(game), "active": Caravan.active_in(game),
+		"used": game.get_flag(game._road_flag(room), false),
+		"busy": Caravan.Context.blocking_name(game, room), "candidates": observations}
+	if not _write_report(label, report):
+		push_error("could not write caravan placement diagnostics")
+	print("CARAVAN PLACEMENT FAILURE: seed=%d room=%d bounds=%s; details in %s.json" % [game.wander_seed, room, bounds, label])
+
+
+func _write_report(label: String, data: Dictionary) -> bool:
+	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(shot_dir)) != OK:
+		return false
+	var file := FileAccess.open(shot_dir.path_join(label + ".json"), FileAccess.WRITE)
+	if file == null:
+		return false
+	file.store_string(JSON.stringify(data, "\t"))
+	file.close()
+	return true
