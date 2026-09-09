@@ -110,6 +110,9 @@ static func open_letter(m: Menus, mail: Dictionary, notice := "") -> void:
 				func() -> void:
 					m._open_detail_popover(view.icon, view.title, view.color, view.description, []))
 			b.custom_minimum_size = Vector2(64, 64)
+			if String(payload.get("kind", "")) == "material" and view.icon != null \
+					and maxi(view.icon.get_width(), view.icon.get_height()) > 32:
+				b.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 			b.tooltip_text = String(view.title)
 			b.set_meta("mail_kind", String(payload.get("kind", "")))
 			b.set_meta("mail_count", int(view.count))
@@ -172,7 +175,7 @@ static func attachment_view(pl: Dictionary) -> Dictionary:
 			var family := String(pl.get("family", ""))
 			var grade := String(pl.get("grade", "F"))
 			var mat := Items.make_material(family, grade, int(pl.get("count", 1)))
-			v.icon = Art.material_icon(family, grade)
+			v.icon = Art.material_ui_icon(family, grade)
 			v.title = mat.name
 			v.count = mat.count
 			v.color = Items.GRADE_COLOR.get(grade, Color.WHITE)

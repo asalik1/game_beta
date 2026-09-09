@@ -2448,16 +2448,16 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			var mfam := String(mm.get("family", ""))
 			var mgr := String(mm.get("grade", "F"))
 			var mcount := int(mm.get("count", 1))
-			var micon: Texture2D = Art.material_icon(mfam, mgr)
+			var micon: Texture2D = Art.material_ui_icon(mfam, mgr)
 			var mcol: Color = Items.GRADE_COLOR.get(mgr, Color(1, 1, 1))
 			var mname := String(mm.get("name", ""))
 			var mglyph: String = ("x%d" % mcount) if mcount > 1 else ""
 			if micon == null and mglyph == "":
 				mglyph = "◆"
-			_bag_slot(grid, micon, mglyph, mcol,
+			var material_button := _bag_slot(grid, micon, mglyph, mcol,
 				func() -> void:
 					var mval := maxi(1, int(Items.material_value(mgr) * Balance.MERCHANT_SELL_FRACTION))
-					var info := "%s material · grade %s\n\nStacks in your bag (up to %d per slot). A crafting input for the professions bench — sell spares at any merchant for %d gold each (flat, anti-haul)." % [
+					var info := "%s material · grade %s\n\nStacks in your bag (up to %d per slot). A crafting input for the professions bench — sell spares at any merchant for %d gold each." % [
 						mfam.capitalize(), mgr, Items.MATERIAL_STACK_MAX, mval]
 					var drop_cb := func() -> void:
 						mm["count"] = int(mm.get("count", 1)) - 1
@@ -2466,7 +2466,10 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 						game.discard_to_ground({"kind": "material", "family": mfam, "grade": mgr, "count": 1})
 						open_inventory("gear", cat)
 					var actions: Array = [["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb]]
-					_open_detail_popover(micon, "%s  x%d" % [mname, mcount], mcol, info, actions, GearFlavor.of(mm))).set_drag_forwarding(Callable(), sock_can, sock_drop)
+					_open_detail_popover(micon, "%s  x%d" % [mname, mcount], mcol, info, actions, GearFlavor.of(mm)))
+			material_button.set_drag_forwarding(Callable(), sock_can, sock_drop)
+			if micon != null and maxi(micon.get_width(), micon.get_height()) > 32:
+				material_button.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	if show_bags:
 		# Loose (unequipped) bags: a cell you click to equip / swap / sell / drop,
 		# and a drag SOURCE you can pull onto an equipped chip above to swap it in.
@@ -5028,7 +5031,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				p.gain_gold(mval)
 				game.sfx("potion")
 				open_shop(zone)
-			_shop_card(mat_grid, Art.material_icon(String(mm.get("family", "")), mgr),
+			_shop_card(mat_grid, Art.material_ui_icon(String(mm.get("family", "")), mgr),
 				"%s%s" % [String(mm.get("name", "")), xn3], "sell one for %d gold" % p.gold_yield(mval),
 				Items.GRADE_COLOR.get(mgr, Color(1, 1, 1)), true, sell_mat)
 

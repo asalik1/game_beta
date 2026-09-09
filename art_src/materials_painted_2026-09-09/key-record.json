@@ -1,0 +1,66 @@
+{
+  "source": "art_src/materials_painted_2026-09-09/masters/metal_f_rusted_scrap_v3.png",
+  "source_sha256": "862b6f8f812e320569c9f6b301d596063d676ad2dca246232c2c1e9a459f4170",
+  "helper_path": "C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py",
+  "helper_sha256": "fa2989807052b857bed08f7fee0caa2502b54c46afc0a6f28cd706c25f636630",
+  "callable": "_apply_alpha_to_image",
+  "arguments": {
+    "key": [
+      255,
+      0,
+      255
+    ],
+    "tolerance": 12,
+    "spill_cleanup": true,
+    "soft_matte": true,
+    "transparent_threshold": 12.0,
+    "opaque_threshold": 96.0
+  },
+  "edge_contract": 0,
+  "edge_feather": 0,
+  "internal_alpha_noise_floor": 8,
+  "intermediate": "art_src/materials_painted_2026-09-09/alpha/metal_f_rusted_scrap_v3_keyed.png",
+  "intermediate_sha256": "845d75ffbab6ff965f7cd093a67495f721570663df1785b702e1c560dffe5618",
+  "stats": {
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGBA",
+    "alpha_bounds": {
+      "0": [
+        0,
+        136,
+        1254,
+        1254
+      ],
+      "8": [
+        0,
+        136,
+        1254,
+        1254
+      ],
+      "40": [
+        78,
+        136,
+        1197,
+        1110
+      ],
+      "128": [
+        78,
+        137,
+        1196,
+        1110
+      ]
+    },
+    "transparent": 909826,
+    "partial": 6951,
+    "opaque": 655739,
+    "visible_alpha_median": 255.0,
+    "border_alpha_max": 21,
+    "magenta_dominant_visible": 0
+  },
+  "border_fraction_within_tolerance": 0.9952983785220627,
+  "equivalent_cli": "--key-color #ff00ff --tolerance 12 --soft-matte --transparent-threshold 12 --opaque-threshold 96 --despill --edge-contract 0 --edge-feather 0",
+  "path_policy": "Source/intermediate paths are repository-relative. helper_path records historical tool provenance only; the exporter never reads it."
+}

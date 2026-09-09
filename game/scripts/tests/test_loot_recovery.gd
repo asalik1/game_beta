@@ -100,7 +100,7 @@ static func _checks(g: Game, other: Game) -> String:
 	var material := UIMailbox.attachment_view({"kind": "material", "family": "metal", "grade": "F", "count": 4})
 	var pot := Items.make_potion("health", "instant", "F", "accord")
 	var potion := UIMailbox.attachment_view({"kind": "potion", "potion": pot})
-	if material.icon == null or material.icon != Art.material_icon("metal", "F") \
+	if material.icon == null or material.icon != Art.material_ui_icon("metal", "F") \
 		or material.count != 4 or material.title != Items.MATERIALS.metal.F:
 		return "material mail attachment lost its painted icon/name/count"
 	if potion.icon == null or potion.icon != Art.consumable_icon(pot) or potion.title != pot.name:

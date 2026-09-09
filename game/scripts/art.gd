@@ -2549,6 +2549,32 @@ static func material_icon(family: String, grade: String) -> ImageTexture:
 	return t
 
 
+## Painted material UI master, separate from the unchanged 32px world icon.
+## Install only reviewed pilots in assets/icons/materials_ui/<same stem>.png.
+## Missing pilots retain the original texture instance and appearance.
+const MATERIAL_UI_MAX := 128
+static func material_ui_icon(family: String, grade: String) -> ImageTexture:
+	var mat_name := String(Items.MATERIALS.get(family, {}).get(grade, ""))
+	if mat_name == "":
+		return null
+	var stem := Items.material_stem(family, grade, mat_name)
+	var key := "matui_" + stem
+	if _cache.has(key):
+		return _cache[key]
+	var im := _icon_override("materials_ui/" + stem)
+	if im == null:
+		var fallback := material_icon(family, grade)
+		_cache[key] = fallback
+		return fallback
+	var side := maxi(im.get_width(), im.get_height())
+	if side > MATERIAL_UI_MAX:
+		var factor := float(MATERIAL_UI_MAX) / float(side)
+		im.resize(maxi(1, roundi(im.get_width() * factor)), maxi(1, roundi(im.get_height() * factor)), Image.INTERPOLATE_LANCZOS)
+	var texture := ImageTexture.create_from_image(im)
+	_cache[key] = texture
+	return texture
+
+
 # A cut gem: bright crown top-left falling to a dark pavilion — drawn
 # in whites/steels so the stat color tints it multiplicatively (same
 # trick as item_icon). Rows are 12x12.

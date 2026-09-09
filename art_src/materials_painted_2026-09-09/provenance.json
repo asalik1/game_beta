@@ -1,0 +1,125 @@
+{
+  "batch": "three F-grade material UI pilots",
+  "assets": [
+    {
+      "id": "herb_f_wilted_sprig",
+      "prompt": "Paint one isolated fantasy inventory icon of **Wilted Sprig, F grade**. Input 1 is the SUBJECT IDENTITY reference only: retain its single bent ochre-brown stem and two drooping brown/olive leaves, including the curled lower-right leaf and torn, depleted character. Interpret its chunky pixel forms as natural painted shapes; do not copy its pixel grid, black outline or magenta background. Input 2 is the STYLE reference only: match its soft painterly material shading, restrained top-left light, muted colors and clear small-icon finish. Do not borrow its bottle or red liquid. Keep the stem upright and readable, with two broad limp leaves and a little open space between them; simplify tiny edge tears enough to read at 32\u201364px without making the leaves lush or healthy. Design for a 128\u00d7128 transparent icon, centered with even padding and the stem spanning about 80% of canvas height. Native transparent background and true transparent gaps. No black outline, pixel texture, flower, berries, roots, dirt clod, tie, pot, ground shadow, platform, backdrop, frame, text or extra objects. One icon only.",
+      "subject_reference": "art_src/materials_2026-07-30/sources/herb_f_wilted_sprig.png",
+      "subject_sha256": "4554d497b420845d9fdd4e7aa87f91b99ebe193a4a5f16b46bb4a24d9f04dde6",
+      "style_reference": "game/assets/icons/consumables/defective_health_potion.png",
+      "style_sha256": "9d9cfd109699411a01606acffd60ff944233c1a792cba8b553efea88e843a240",
+      "generated_utc": "2026-09-09T19:03:54.313414+00:00",
+      "tool": "built-in image_gen.imagegen",
+      "original_tool_path": "C:\\Users\\asali\\.codex\\generated_images\\01a08739-ba84-7fa3-9f34-e3233d4166ce\\exec-ce648f4a-34d8-430a-a93b-ac152e3cbcde.png",
+      "master": "art_src/materials_painted_2026-09-09/masters/herb_f_wilted_sprig_v1.png",
+      "master_sha256": "a4e219f433b2505703b3f9dfb2ecb1d6e9731fec451cd351283281f52701390b",
+      "status": "approved painted UI source; native RGBA retained; runtime installation tracked separately"
+    },
+    {
+      "id": "reagent_f_foul_residue",
+      "prompt": "Paint one isolated fantasy inventory icon of **Foul Residue, F grade**. Input 1 is the SUBJECT IDENTITY reference only: retain the squat wide beige-gray damaged ceramic crock, its broad open mouth and chipped front rim, the thick murky olive/mustard-brown sludge inside with one spill over the front-left edge, and the single coarse round brown stopper/lid leaning against its right side. Preserve this compact combined silhouette and elevated three-quarter view. Interpret the forms naturally; do not copy the pixel grid, black outline or magenta background. Input 2 is the STYLE reference only: match its soft painterly rendering, restrained top-left highlights, muted palette and readable small-icon material separation. Do not replace the crock with glass or turn the sludge red. Make the crock matte and worn, the residue thick with a few subdued moist highlights, and the lid rough. Broad mouth, dark olive contents and chipped rim must remain distinct at 32\u201364px. Design for a 128\u00d7128 transparent icon occupying about 80% of the square with clear padding. Native transparency, including gaps beside the lid. No black contour, pixel texture, magic glow, floating bubbles, smoke, skull symbol, spoon, second vessel, ground plane or shadow, pedestal, backdrop, frame, text or extra objects. One icon only.",
+      "subject_reference": "art_src/materials_2026-07-30/sources/reagent_f_foul_residue.png",
+      "subject_sha256": "ae53bfe466671f1e1342b16e8cf5f185bba33a86874a407f21ca69616ff04414",
+      "style_reference": "game/assets/icons/consumables/defective_health_potion.png",
+      "style_sha256": "9d9cfd109699411a01606acffd60ff944233c1a792cba8b553efea88e843a240",
+      "generated_utc": "2026-09-09T19:06:17.515841+00:00",
+      "tool": "built-in image_gen.imagegen",
+      "original_tool_path": "C:\\Users\\asali\\.codex\\generated_images\\01a08739-ba84-7fa3-9f34-e3233d4166ce\\exec-8922dc63-92c2-42e1-bc35-94ffeb6c51be.png",
+      "master": "art_src/materials_painted_2026-09-09/masters/reagent_f_foul_residue_v1.png",
+      "master_sha256": "fbc1741953f878c02d5f30cda006249a01e9f3f912ad5c081f56e8f0cdac3ca0",
+      "status": "approved painted UI source; native RGBA retained; runtime installation tracked separately"
+    },
+    {
+      "id": "metal_f_rusted_scrap",
+      "prompt": "Paint one isolated fantasy inventory icon of **Rusted Scrap, F grade**. Input 1 is the SUBJECT IDENTITY reference only: retain its compact overlapping heap of bent torn metal, especially the broad jagged front-left plate with a round punched hole and the folded upper-right plate with two rivet heads. Keep cool gray-blue exposed metal with broad dull orange and rust-brown corrosion. A few smaller bent strips can support the pile; simplify tiny fragments to protect the readable silhouette. Interpret the shapes as natural painterly metal, not the reference's pixel grid, black outline or magenta background. Input 2 is the STYLE reference only: match its soft volume, restrained top-left light and readable painted finish; do not add a bottle, glass, red liquid or glossy plastic polish. Slight elevated three-quarter view. Show matte rust against a few small cool exposed edge highlights, with a clear punched hole and layered plate separation at 32\u201364px. Design for a centered 128\u00d7128 transparent icon, occupying about 80% of the square with padding. Native transparency including the punched hole and gaps between fragments. No black contour, pixel texture, complete tool or weapon, ornate armor, gold treasure, chain, ground plane or shadow, platform, pedestal, backdrop, frame, text or extra objects. One compact scrap item only.",
+      "subject_reference": "art_src/materials_2026-07-30/sources/metal_f_rusted_scrap.png",
+      "subject_sha256": "b193f61d5836541183baeb110bd9e0ac3ba481f0c9338195c33413f6749bafb6",
+      "style_reference": "game/assets/icons/consumables/defective_health_potion.png",
+      "style_sha256": "9d9cfd109699411a01606acffd60ff944233c1a792cba8b553efea88e843a240",
+      "generated_utc": "2026-09-09T19:07:50.749859+00:00",
+      "tool": "built-in image_gen.imagegen",
+      "original_tool_path": "C:\\Users\\asali\\.codex\\generated_images\\01a08739-ba84-7fa3-9f34-e3233d4166ce\\exec-0c7b7a0c-5d08-48ca-a00d-8e4e605c6783.png",
+      "master": "build/qa/session-sept10/material-rejected/metal_f_rusted_scrap_v1.png",
+      "master_sha256": "b5facfde9c14f2f66c036939a66fa226ec06afb95fd0d6c2210820ff88745d96",
+      "status": "rejected: RGB with painted checkerboard; excluded from UI export",
+      "master_at_generation": "art_src/materials_painted_2026-09-09/masters/metal_f_rusted_scrap_v1.png"
+    },
+    {
+      "id": "metal_f_rusted_scrap",
+      "variant": "v2",
+      "tool": "built-in image_gen.imagegen",
+      "generated_utc": "2026-09-09T19:11:41.515842+00:00",
+      "edit_reference": "art_src/materials_painted_2026-09-09/masters/metal_f_rusted_scrap_v1.png",
+      "prompt": "Edit this exact rusted-scrap inventory icon to give it a TRUE TRANSPARENT ALPHA BACKGROUND. The gray-and-white checkerboard visible in the input is painted into the pixels and must be removed completely, including inside the round punched hole and between the metal fragments. Preserve the same painted rusted metal pile, plate shapes, rivets, color, lighting, scale and composition. Do not repaint or redesign the item. Return an RGBA image with zero-alpha empty space, not a drawn checkerboard, white or black backdrop. No ground shadow, floor, frame, text or new objects. Keep the entire item visible with transparent padding.",
+      "original_tool_path": "C:\\Users\\asali\\.codex\\generated_images\\01a08739-ba84-7fa3-9f34-e3233d4166ce\\exec-1393fa84-b35a-4d81-9183-ed2353c25cf8.png",
+      "master": "build/qa/session-sept10/material-rejected/metal_f_rusted_scrap_v2.png",
+      "master_sha256": "1da7860d80a2b4b0022142c4f09ef74f0b38f9e37aa101f8ed3060ba9f298a8f",
+      "status": "rejected: RGB with painted checkerboard; excluded from UI export",
+      "master_at_generation": "art_src/materials_painted_2026-09-09/masters/metal_f_rusted_scrap_v2.png"
+    },
+    {
+      "id": "metal_f_rusted_scrap",
+      "variant": "v3",
+      "tool": "built-in image_gen.imagegen",
+      "generated_utc": "2026-09-09T19:13:53.241867+00:00",
+      "references": "art_src/materials_2026-07-30/sources/metal_f_rusted_scrap.png",
+      "style_reference": "game/assets/icons/consumables/defective_health_potion.png",
+      "prompt": "Paint ONE isolated fantasy inventory icon of Rusted Scrap, F grade, on an EXACT FLAT SOLID MAGENTA (#FF00FF) background. The empty background, punched hole, and gaps between fragments must all be exactly this same flat magenta key color. No checkerboard, transparency visualization, gradient, light spill, vignette, contact/ground shadow or floor. The magenta is a temporary technical background that will be keyed out for the game.\n\nInput 1 is SUBJECT IDENTITY only: a compact overlapping heap of bent torn scrap, a broad jagged front-left plate with a round punched hole, a folded upper-right plate with two rivet heads, cool gray-blue exposed metal and broad dull orange/rust-brown corrosion. Preserve the recognizable heap and simplify small fragments. Input 2 is PAINTED STYLE only: match its soft material shading, restrained top-left light, muted finish and clear inventory-scale shapes. Do not borrow the bottle or red liquid. Natural painted metal, no black contour, pixel grid, cartoon outlines, polished armor, gold treasure, complete tool or weapon, added chain, frame or text. A slight elevated three-quarter view, readable plate separation, matte rust and a few cool exposed edge highlights. Keep the whole heap centered inside the square with even clear magenta padding, occupying about 85% of the width. One complete compact item only; paint every fragment consistently. Keep ALL magenta out of the metal itself.",
+      "original_tool_path": "C:\\Users\\asali\\.codex\\generated_images\\01a08739-ba84-7fa3-9f34-e3233d4166ce\\exec-a40e8a45-e88c-4712-9ee1-1e48e0842c0f.png",
+      "master": "art_src/materials_painted_2026-09-09/masters/metal_f_rusted_scrap_v3.png",
+      "master_sha256": "862b6f8f812e320569c9f6b301d596063d676ad2dca246232c2c1e9a459f4170",
+      "status": "approved painted UI source after explicit magenta key; full-canvas RGBA archived; runtime installation tracked separately",
+      "rgba_intermediate": "art_src/materials_painted_2026-09-09/alpha/metal_f_rusted_scrap_v3_keyed.png",
+      "rgba_intermediate_sha256": "845d75ffbab6ff965f7cd093a67495f721570663df1785b702e1c560dffe5618",
+      "key_record": "art_src/materials_painted_2026-09-09/key-record.json"
+    }
+  ],
+  "path_policy": "Project paths are repository-relative. Original tool paths are historical generation records, never exporter inputs.",
+  "ui_export": {
+    "canvas": [
+      128,
+      128
+    ],
+    "builder": "tools/art/build_material_ui_icons.py",
+    "processing": "Full authored canvas, existing premultiplied LANCZOS only; no crop, normalization, quantization, gamma, sharpening, outline or background",
+    "approved_with": {
+      "pillow": "12.3.0",
+      "numpy": "2.5.1"
+    },
+    "assets": [
+      {
+        "id": "herb_f_wilted_sprig",
+        "rgba_source": "art_src/materials_painted_2026-09-09/masters/herb_f_wilted_sprig_v1.png",
+        "rgba_source_sha256": "a4e219f433b2505703b3f9dfb2ecb1d6e9731fec451cd351283281f52701390b",
+        "source_canvas": [
+          1254,
+          1254
+        ],
+        "approved_png_sha256": "002cde309b10aaa2bb371ea8b8fc33dd2b31f6b8d8b1984555c8809b5f2184e7",
+        "approved_rgba_sha256": "37cf05e84253604a042359623d989969030e5840574be5804df86101c343f224"
+      },
+      {
+        "id": "reagent_f_foul_residue",
+        "rgba_source": "art_src/materials_painted_2026-09-09/masters/reagent_f_foul_residue_v1.png",
+        "rgba_source_sha256": "fbc1741953f878c02d5f30cda006249a01e9f3f912ad5c081f56e8f0cdac3ca0",
+        "source_canvas": [
+          1254,
+          1254
+        ],
+        "approved_png_sha256": "616fe29b361901e9aa73fe5809ea2295e62d260a7541bbe7f5944273a5f9154c",
+        "approved_rgba_sha256": "7a19c5f0d6277679d65e571312790b445f39065c63e5eeb45c607a6f598c5442"
+      },
+      {
+        "id": "metal_f_rusted_scrap",
+        "rgba_source": "art_src/materials_painted_2026-09-09/alpha/metal_f_rusted_scrap_v3_keyed.png",
+        "rgba_source_sha256": "845d75ffbab6ff965f7cd093a67495f721570663df1785b702e1c560dffe5618",
+        "source_canvas": [
+          1254,
+          1254
+        ],
+        "approved_png_sha256": "ef2d42a90dc14248726c771e4b4f4954ae251c20bf8028acd01184665eeaba31",
+        "approved_rgba_sha256": "dbba48b85bec2f9d2d699f75e02a07bc3a9ec342281f392e17a5a09736468665"
+      }
+    ]
+  }
+}

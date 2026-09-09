@@ -34,13 +34,23 @@ preflight pass. All 32 preserved unrelated hashes remain intact. Details and
 limitations: AMBIENT_LIFE.md; exact commit/source receipt:
 `build/qa/session-sept10/ambient-checkpoint-validation.json`.
 
-Next: painted material pilot and native comparison, then integrate the isolated
-Alchemist core/UI/economy and Professions lifetime work. Guest journal and
-interaction/dash reproduction candidates remain separate. Patches, plans and
-uncompiled native fixtures live under `build/qa/session-sept10/`; none of those
-features is installed or accepted yet. The three material prompts and inspected
-reference hashes are ready; generation has not started. Smaller touch Settings
-targets remain a follow-up opportunity. Protected art and chromas stay excluded.
+The third accepted checkpoint paints three F-grade material UI pilots:
+Wilted Sprig, Foul Residue and Rusted Scrap. Desktop and mobile native each pass
+90 checks; the baseline records 20 expected presentation findings. Root reviewed
+all 18 full native images and an independent agent accepted the desktop
+before/after comparison. Source archives and a portable exporter reproduce the
+approved PNGs. Desktop compile/quick/full (235/126/206), mobile import/compile/
+strict quick (235/126), scoped sync and all preflight categories pass. All 35
+legacy material hashes, world pickup sizes and 32 preserved unrelated files
+remain intact. See MATERIAL_UI.md and the exact commit/source receipt at
+`build/qa/session-sept10/material-checkpoint-validation.json`.
+
+Next, integrate the isolated Alchemist core/UI/economy and Professions lifetime
+work. Guest journal, interaction/dash reproduction and touch Settings candidates
+remain separate. Patches, plans and uncompiled native fixtures live under
+`build/qa/session-sept10/`; none of those features is installed or accepted yet.
+Two rejected checkerboard scrap generations are preserved separately in
+`build/qa/session-sept10/material-rejected/`. Protected art and chromas stay excluded.
 
 # Crownless — September 9, 2026 checkpoint
 
