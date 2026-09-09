@@ -9,6 +9,16 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 
 ## Gates & suites (run these, in this order — CLAUDE.md "Testing")
 
+Capital arrival QA: `shot.bat capital_arrival --arrival-consumers --timeout=180`
+uses a normal solo boot, real Pause travel and live body/camera observations.
+Six frames cover arrival, idle, keyboard movement and map/Recall/respawn
+landings. The last two are direct production landing calls, not full scroll /
+death flows. APPDATA must be inside `capital-arrival-native-candidate`; reports
+and images are under `/before` with `--baseline`, or `/after` for strict checks.
+Add `--capital-arrivals` to the existing `brewing_persistence` rig for actual
+snapshot/reconnect placement; its local-body physics remains disabled.
+See `CAPITAL_ARRIVAL.md` for source geometry and acceptance scope.
+
 Alchemy UI QA: `shot.bat alchemy --timeout=240` checks the real recipe bench,
 39 recipe previews, exact paid actions, input, live quotes, cancelled learning,
 overflow and reading/focus continuity. Seven native views cover novice, learned

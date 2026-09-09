@@ -437,7 +437,7 @@ func _rpc_world_snapshot(snap: Dictionary) -> void:
 		p.mp = p.max_mp
 	g._recheck_gates()  # flag-locked gates react to the host's story state
 	var spawn: int = clampi(int(snap.get("spawn_room", 0)), 0, int(g.zone_count) - 1)
-	p.global_position = g.room_center(spawn)
+	p.global_position = g.room_arrival_pos(spawn)
 	g._enter_room(spawn)
 	_gate_existing_chests()  # MP-11: the rebuilt world's chests are OURS alone
 	g.play_started = true
@@ -529,7 +529,7 @@ func _spawn_remote(pid: int, block: Dictionary) -> void:
 	p.set_multiplayer_authority(pid)
 	# Stand near the local room's heart until the first movement
 	# snapshot (~1 tick) snaps it onto the owner's real position.
-	p.global_position = game.room_center(game.cur_room) + Vector2(40.0 * (pid % 5), 30.0)
+	p.global_position = game.room_arrival_pos(game.cur_room) + Vector2(40.0 * (pid % 5), 30.0)
 	game.register_remote_player(p)
 	# The join block is guest-authored (CR-005): set_class rejects an unknown
 	# cls to the default (it would otherwise crash recalc's Classes.CLASSES[cls]

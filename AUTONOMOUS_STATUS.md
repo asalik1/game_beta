@@ -83,6 +83,26 @@ categories pass. Alchemy's explicit source/commit receipt is
 `build/qa/session-sept10/alchemy-checkpoint-validation.json`; ALCHEMY.md records
 behavior, test scope and remaining limitations.
 
+The fifth accepted checkpoint keeps Crown Plaza arrivals visible on the south
+approach to the fountain at player origin (1056,832). The narrow explicit-arrival
+helper covers map travel, Recall, respawn and network arrivals while geometric
+room centers, valid saved positions and protocol remain unchanged. Generator
+synchronization preserves all 31 existing prose fields, including Kesh's copy.
+The expanded baseline records 53 checks: 42 pass, 11 expected visibility /
+placement / fountain-only body findings and zero unexpected failures. Desktop
+and mobile after runs each pass 61/61; all 12 full frames and 30 body/visibility
+samples are accepted. Independent desktop/source review confirms the corrected
++22px painted-feet model and vault clearance. Earlier y864 proposals remain
+uninstalled. Real ENet persistence on each project passes seven milestones and
+both snapshot/reconnect placement rows; all eight paired frames were reviewed
+and isolated files restored. Its disabled local physics and colocated posed
+peers are not peer-separation evidence. Mobile runs are host-rendered Windows
+Compatibility checks, not physical devices. Desktop quick/full pass 127/207;
+mobile explicit import/compile246/strict quick127 and all preflight categories
+pass. The 32 original unrelated files and 14 unfinished journey files remain
+unchanged. See CAPITAL_ARRIVAL.md and the exact commit/source receipt at
+`build/qa/session-sept10/capital-checkpoint-validation.json`.
+
 Guest journal, interaction/dash reproduction, touch Settings and a normal-stat
 brewing journey candidate remain separate. Patches, plans and uncompiled native
 fixtures live under `build/qa/session-sept10/`; none is accepted yet.

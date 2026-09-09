@@ -331,6 +331,8 @@ func _checks() -> String:
 		return "production snapshot did not establish the local guest's home-owned capital visit"
 	error = _ownership_error(guest)
 	if error != "": return error
+	error = _capital_arrival_observe("snapshot", guest)
+	if error != "": return error
 	accepted.append("real ENet snapshot loads own character into host capital; exact home chapter/world retained")
 	step("guest-owned brew, A recipe purchase and A brew")
 	error = _brew_exact(guest, "health_instant", "B")
@@ -432,6 +434,8 @@ func _checks() -> String:
 	# A fresh quote still works: old quote invalidation must not brick the bench.
 	error = _brew_exact(guest, "health_instant", "F")
 	if error == "": error = _ownership_error(guest)
+	if error != "": return error
+	error = _capital_arrival_observe("reconnect", guest)
 	if error != "": return error
 	accepted.append("actual close/reconnect/new snapshot restores own progress, rejects old order, accepts a fresh brew")
 	await _capture_milestone("04_reconnected_owner")
@@ -653,3 +657,30 @@ func _print_report_summary(error: String, restored: bool) -> void:
 		"ui_failures": int(ui.get("failures", 0)),
 		"pre_dispatch_full_writes": int(boundary.get("explained_full_writes", 0)),
 		"report": ProjectSettings.globalize_path(shot_dir + "/acceptance.json")}))
+
+
+
+func _capital_arrival_observe(label: String, reader: Game) -> String:
+	if not flag("capital-arrivals"): return ""
+	var p: Player=reader.local_player
+	var covering: Array[String]=[]
+	for visual in p._covering_structures(): covering.append(str(visual.get_path()))
+	var bodies: Array[Dictionary]=[]
+	for actor in reader.players:
+		if is_instance_valid(actor):
+			bodies.append({"peer_id":actor.peer_id,"local":actor==p,
+				"position":[actor.global_position.x,actor.global_position.y],"physics_enabled":actor.is_physics_processing()})
+	var context_good := reader.chapter_id=="capital" and reader.cur_room==0 and p.global_position.is_finite()
+	var placement_good := p.global_position.distance_to(reader._start_pos())<=0.5 and covering.is_empty()
+	var good := context_good and placement_good
+	var row := {"label":label,"passed":good,"context_passed":context_good,"placement_passed":placement_good,
+		"expected_baseline_finding":context_good and not placement_good and flag("arrival-baseline"),
+		"chapter":reader.chapter_id,"room":reader.cur_room,
+		"position":[p.global_position.x,p.global_position.y],"authored_start":[reader._start_pos().x,reader._start_pos().y],
+		"geometric_center":[reader.room_center(0).x,reader.room_center(0).y],"covering_paths":covering,"actors":bodies,
+		"qualification":"Actual production snapshot/reconnect placement and current rendered occluder membership. Paired fixture disables body physics; no live-physics overlap/recovery or exact temporary offset convergence claim."}
+	if not report.has("capital_arrivals"): report["capital_arrivals"]=[]
+	report.capital_arrivals.append(row)
+	print("CAPITAL PAIRED ARRIVAL: ",JSON.stringify(row))
+	if not context_good: return "paired "+label+" capital arrival context or finite-position control failed"
+	return "" if placement_good or flag("arrival-baseline") else "paired "+label+" did not use a clear authored capital arrival"

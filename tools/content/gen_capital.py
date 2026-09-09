@@ -15,10 +15,12 @@ import collections, os, sys
 
 ROOM_W, ROOM_H = 2112, 1248
 CX, CY = ROOM_W // 2, ROOM_H // 2  # 1056, 624
-# Spawn sits between the spire arch and the fountain — 28px north of center
-# so the fountain's corrected body (north edge at 635) clears the hero's
-# radius on every arrival (no first-frame physics nudge).
-START_Y = CY - 28
+# Arrive on the south approach, in front of the fountain rather than
+# behind its tall statue. The basin ends at y765 and its art at y777;
+# y832 also leaves the existing temporary party-shell offsets on clear
+# plaza paving. Keep room_center geometric; explicit arrival routes use
+# the authored start through Game.room_arrival_pos.
+START_Y = CY + 208
 
 # Each room: (id, Name, gx, gy, terrain, room_scale, cast)
 # cast entry: (sprite, prompt, ref, kind[, greet])
@@ -189,7 +191,7 @@ LANDMARK_USES = {
     # Fountain stand-point hugs the basin (its collider circle ends at +64;
     # +60 keeps the prompt adjacency-only — owner report 2026-07-25).
     ("plaza", 1): [INSPECT("E — Inspect the Crown Fountain", "Crown Fountain",
-        "The ward roads meet at this basin. Companies use its crown as the city's easiest rally point.", y=60)],
+        'All the ward roads meet at this basin. Companies use its crown as the easiest place in the city to rally up.', y=60)],
     # plaza 2 (forge) and 3 (lapidary benches) are owned by Petra / the Lapidary.
     ("plaza", 4): [ACTION("E — Browse the Wardrobe", "wardrobe", y=100)],
     ("plaza", 5): [ACTION("E — Check your mailbox", "mail", y=100)],
@@ -461,30 +463,30 @@ GOSSIP = {
  # virtue pays the crown's regard and costs you a friendly face.
  "cap_voss": {"start": "a", "nodes": {
     "a": {"who": "Clerk Voss",
-          "text": "Clerk Voss keeps the alms desk — a ledger, a strongbox, and a smile worn thin by the queue. \"Daily relief for shard-bearers, by the Accord's grace. Sign, and I count it out.\"",
+          "text": 'Clerk Voss keeps the alms desk: a ledger, a strongbox, and a smile worn thin by the queue. "Daily relief for shard-bearers, by the Accord\'s grace. Sign, and I count it out."',
           "variants": [
-             {"flag": "cap_voss_covered", "text": "Voss slides the box a finger's width your way before you ask. \"Our arrangement holds, friend. Sign, and I count a little heavy — quietly.\""}],
+             {"flag": "cap_voss_covered", "text": 'Voss slides the box a finger\'s width your way before you ask. "Our arrangement holds, friend. Sign, and I\'ll count a little heavy. Quietly."'}],
           "choices": [
              {"text": "Claim the daily alms", "hub_action": "daily", "next": ""},
              {"text": "\"Your count runs light. The same coin short, every day.\"", "req_not_flag": "cap_voss_covered", "next": "ledger"},
              {"text": "(Leave)", "next": ""}]},
     "ledger": {"who": "Clerk Voss",
-          "text": "The smile holds; something behind it does not. \"...You watch closely, for a soldier.\" A breath. \"The Accord pays relief for the dead as well as the living, and the dead do not sign. I draw what a ghost would have drawn. It feeds MY children, bearer — the Accord loses nothing it ever counted on.\" His hand settles on the strongbox. \"You can walk to Marshal Corin. Or you can let a clerk feed his family.\"",
+          "text": 'The smile holds. Something behind it does not. "...You watch closely, for a soldier." A breath. "The Accord pays relief for the dead as well as the living, and the dead don\'t sign. I draw what a ghost would have drawn. It feeds my children, bearer. The Accord loses nothing it ever counted on." His hand settles on the strongbox. "You can walk to Marshal Corin. Or you can let a clerk feed his family."',
           "choices": [
              {"text": "\"Corin will want to hear this.\"  (Turn him in)", "resonance": 3.0, "faction": {"accord": 2}, "flags": {"cap_voss_reported": True}, "next": "reported"},
              {"text": "\"...Count me in for the ghosts, then.\"  (Keep his secret)", "resonance": -3.0, "gold": 90, "flags": {"cap_voss_covered": True}, "next": "covered"}]},
     "reported": {"who": "Narrator",
-          "text": "Marshal Corin listens without blinking, thanks you without warmth, and by morning the desk wears a new face — a clerk who counts twice, smiles never, and does not learn your name. The queue moves faster. It feels worse. Voss is not in it, and no one says where he went.",
+          "text": "Marshal Corin listens without blinking, thanks you without any warmth, and by morning the desk wears a new face: a clerk who counts twice, never smiles, and doesn't learn your name. The queue moves faster. It feels worse. Voss isn't in it, and nobody says where he went.",
           "next": ""},
     "covered": {"who": "Clerk Voss",
-          "text": "The strongbox slides. \"A cut, for a closed mouth. The ghosts do not spend it.\" He counts you your share, and a little of theirs. You are in the ledger now — on the wrong line. It pays, and it will keep paying.",
+          "text": 'The strongbox slides. "A cut, for a closed mouth. The ghosts don\'t spend it." He counts out your share, and a little of theirs. You\'re in the ledger now, on the wrong line. It pays, and it\'ll keep paying.',
           "next": ""}}},
  # The cold replacement (only present once cap_voss_reported is set). Evergreen
  # text — it re-narrates each visit like every gossip hub, and it still hands
  # out the daily relief. Same coat, colder columns.
  "cap_voss_cold": {"start": "a", "nodes": {
     "a": {"who": "The Alms Clerk",
-          "text": "The alms desk wears a colder face now — grey coat, fresh columns, a ledger that counts once and counts true. \"Relief for shard-bearers. Sign. I do not count for the dead.\" There is no smile here to wear thin.",
+          "text": 'The alms desk wears a colder face now: grey coat, fresh columns, a ledger that counts once and counts true. "Relief for shard-bearers. Sign. I don\'t count for the dead." There\'s no smile here to wear thin.',
           "choices": [
              {"text": "Claim the daily alms", "hub_action": "daily", "next": ""},
              {"text": "(Leave)", "next": ""}]}}},
@@ -496,20 +498,20 @@ GOSSIP = {
              {"text": "\"Tell me about this place.\"", "next": "talk"},
              {"text": "(Leave)", "next": ""}]},
     "warm": {"who": "Narrator",
-          "text": "You stand a while at the Great Hearth — a public fire for cooking, waiting, and finding companions between expeditions. The road's cold lets go of your shoulders.",
+          "text": "You stand a while at the Great Hearth, a public fire for cooking, waiting, and finding companions between expeditions. The road's cold lets go of your shoulders.",
           "next": ""},
     "talk": {"who": "Old Fenna",
-          "text": "Kitchen on this side, Alembic on that — supper or medicine without crossing the square. Sit by the hearth if you're waiting on friends; someone always knows who just came through a gate.",
+          "text": "Kitchen on this side, Alembic on that, so supper or medicine without crossing the square. Sit by the hearth if you're waiting on friends. Someone always knows who just came through a gate.",
           "next": ""}}},
  "cap_tankard": {"start": "a", "nodes": {
     "a": {"who": "Tavern Keeper",
-          "text": "The Ashen Tankard — warmth, rumour, a fire that behaves. First cup's on the house for a shard-bearer. Looking for company, or just the fire?",
+          "text": "The Ashen Tankard. Warmth, rumour, a fire that behaves. First cup's on the house for a shard-bearer. Looking for company, or just the fire?",
           "choices": [
              {"text": "Find a company  (Play Together)", "hub_action": "guild", "next": "gates"},
              {"text": "\"Just the news, Nix.\"", "next": "talk"},
              {"text": "(Leave)", "next": ""}]},
     "gates": {"who": "Tavern Keeper",
-          "text": "Aye — the whole city drifts through here after dark. Let's see who's drinking.",
+          "text": "Aye, the whole city drifts through here after dark. Let's see who's drinking.",
           "next": ""},
     "talk": {"who": "Tavern Keeper",
           "text": "News? The wards keep their corners, the plaza keeps the coin, and the gates keep out exactly as much of the wild as the wild allows. Same as ever. Stay for a cup.",
@@ -518,39 +520,39 @@ GOSSIP = {
  # craft-bench choice opens the trade-agnostic Professions panel.
  "cap_kesh": {"start": "a", "nodes": {
     "a": {"who": "Herbalist Kesh",
-          "text": "Cures for the ward, reagents for the Alembic across the plaza. I keep the Alchemist's bench — charms and gloves worked from bone and cloth. And if you've found the Codex, the alembic answers to it. Craft, synthesise, or after the day's leaves?",
+          "text": "Charms and gloves at the craft bench; clean potions from the herbs and reagents you carry. Choose Alchemist to brew. If you've found the Alkahest Codex, my synthesis bench can put it to work.",
           "choices": [
-             {"text": "Open the craft bench  (Professions)", "hub_action": "professions", "next": "craft"},
+             {"text": 'Craft and brew  (Professions)', "hub_action": "professions", "next": "craft"},
              {"text": "The synthesis bench  (Alkahest Codex)", "hub_action": "synthesis", "next": "synth"},
-             {"text": "\"Tell me about the gathering.\"", "next": "talk"},
+             {"text": '"Where can I find ingredients?"', "next": "talk"},
              {"text": "(Leave)", "next": ""}]},
     "craft": {"who": "Herbalist Kesh",
-          "text": "Lock a trade at the bench — only your own trade's work will take. Mastery keeps, though, whatever you swap to.",
+          "text": "Lock Alchemist as your active trade, then choose Alchemy — browse & brew in Professions. Bring herbs and reagents of the bottle's grade, plus the fee. Mastery keeps across trade changes.",
           "next": ""},
     "synth": {"who": "Herbalist Kesh",
-          "text": "The Codex is the one text that marries a legend's clean half to the street's rotted twin. Bring me both bottles and the fee, and I'll draw off something greater than either. No single legend ever managed it — they each made one half and vanished.",
+          "text": "The Codex is the one text that marries a legend's clean half to the street's rotted twin. Bring me both bottles and the fee, and I'll draw off something greater than either. No single legend ever managed it. They each made one half and vanished.",
           "next": ""},
     "talk": {"who": "Herbalist Kesh",
-          "text": "I set the day's gathering. Bring back the right leaves and no one dies of the wrong ones.",
+          "text": 'Plant and fungal creatures in Sporewood and the Blooming Deep can yield F/E herbs; their elites can yield E/D. Beasts, cultists and void creatures can yield reagents. Boss supply chests can hold C/B stock; A-grade stock comes from NG+ supplies. Claim ingredients from your letters before visiting the bench.',
           "next": ""}}},
 }
 CONVOS = {
- "cap_citizen": ("A Citizen", "First visit? Everything a returning company needs rings this plaza — Petra's forge west, the Lapidary east, your vault by the fountain, the bazaar and mail at the south stalls. Gates north, Tankard west, Archive east, the four ward halls at the corners."),
- "cap_petra": ("Smith Petra", "The city's one forge worth the name. Quench, reforge, transmute — bring me the piece and the coin and I'll bring the fire. Spend enough seasons at my bench and you'll find my rates soften for a regular."),
- "cap_lapidary": ("Master Lapidary", "Petra handles metal; I handle what lives inside it. Stones, sockets, synthesis — all of it at these benches and nowhere else. Gems are patient work; patrons who keep coming back get my patient prices."),
- "cap_gate": ("Gate Sergeant", "The Emberward Gate. Portcullis stays up in peacetime; the wild stays out on its honour. Companies muster under the arch before they march — the road itself you take from the Wayfinder Sanctum, north of the plaza."),
- "cap_callis": ("Warden Callis", "The tribes hold this enclave by truce, not welcome. Honest work, then: survey what the Waking's made of the east, and bring us word. Daily, if you're able."),
- "cap_ottar": ("Skald Ottar", "A fire that never dies and a skald who never stops. Go do a thing worth singing — I'll trade you the doing for the song. Come back with a story."),
- "cap_ilse": ("Cantor Ilse", "The Choir does not bury its dead — rot is the land's honest truth, and the dead keep their own vigil here. Tend them with me. It's patient work. Daily work."),
- "cap_vela": ("Deacon Vela", "Quieter tasks than the Cantor's: recover a relic, carry a name north to the sleepers, witness a thing and return unbroken. The blight rewards the faithful."),
- "cap_maren": ("Elder Maren", "So — the shards still choosing, and the factions still counting. The Accord holds this ward and half this city's conscience. There's honest work daily, if you want it. Sit; the fire doesn't bite."),
- "cap_suli": ("Seamster Suli", "The needle trade — armor, breeches, boots, and bags, anything cut from cloth or hide. Lock the tailor's craft in at the bench there and bring me the makings; my needle's fast, and steady custom earns a sharper price."),
- "cap_aldric": ("Ser Aldric", "The Cinderborn keep the forms of a court that lost its crown. I keep its sword arm. There's work in the old key — recover, restore, avenge — for a crown that might yet find a head. Daily, if you've the stomach."),
- "cap_vessa": ("Envoy Vessa", "Work with us and be paid, protected, and remembered. I've a commission most days — a courier run, a quiet errand, imperial paper with teeth. First one's waiting."),
+ "cap_citizen": ("A Citizen", "First visit? Everything a returning company needs is right around this plaza. Petra's forge is west, the Lapidary east, your vault sits by the fountain, and the bazaar and mail are at the south stalls. Gates are north, the Tankard west, the Archive east, and the four ward halls sit at the corners."),
+ "cap_petra": ("Smith Petra", "The city's only forge worth the name. Quench, reforge, transmute. Bring me the piece and the coin and I'll bring the fire. Stick around my bench enough seasons and my rates soften for a regular."),
+ "cap_lapidary": ("Master Lapidary", 'Petra handles metal. I handle what lives inside it. Stones, sockets, synthesis, all of it at these benches and nowhere else. Gems are patient work, and patrons who keep coming back get my patient prices.'),
+ "cap_gate": ("Gate Sergeant", 'The Emberward Gate. In peacetime the portcullis stays up and the wild stays out on its honour. Companies muster under the arch before they march. The road itself you take from the Wayfinder Sanctum, north of the plaza.'),
+ "cap_callis": ("Warden Callis", "The tribes hold this enclave by truce, not welcome. So, honest work: go survey what the Waking's made of the east and bring us word. Daily, if you're able."),
+ "cap_ottar": ("Skald Ottar", "A fire that never dies and a skald who never stops. Go do something worth singing about and I'll trade you the doing for the song. Come back with a story."),
+ "cap_ilse": ("Cantor Ilse", "The Choir doesn't bury its dead. Rot is the land's honest truth, and the dead keep their own vigil here. Tend them with me. It's patient work. Daily work."),
+ "cap_vela": ("Deacon Vela", "Quieter tasks than the Cantor's. Recover a relic, carry a name north to the sleepers, witness something and come back unbroken. The blight rewards the faithful."),
+ "cap_maren": ("Elder Maren", "So. The shards are still choosing and the factions are still counting. The Accord holds this ward and half this city's conscience. There's honest work daily, if you want it. Sit down, the fire doesn't bite."),
+ "cap_suli": ("Seamster Suli", "The needle trade. Armor, breeches, boots, and bags, anything cut from cloth or hide. Lock the tailor's craft in at the bench there and bring me the makings. My needle's fast, and steady custom earns a sharper price."),
+ "cap_aldric": ("Ser Aldric", "The Cinderborn keep the forms of a court that lost its crown. I keep its sword arm. There's work in the old key, recover, restore, avenge, for a crown that might yet find a head. Daily, if you've got the stomach."),
+ "cap_vessa": ("Envoy Vessa", "Work with us and you'll be paid, protected, and remembered. I've got a commission most days. A courier run, a quiet errand, imperial paper with teeth. The first one's waiting."),
  # The black-market fence's one-time greet (CONSUMABLE_GRADES §10 street voice):
  # the discount is diluted blightwater, and she'll tell you it's fine — lying by
  # less than you'd hope. Played once (cap_met_fence), then the laced shelf opens.
- "cap_fence": ("The Fence", "Keep it down. The Accord won't stamp what I sell — which is why it's a third off their chartered rate, every bottle. Aye, it's cut. Blightwater, thinned near to nothing. Closes the wound just the same; the rest is a little rot, and rot never yet collected off anyone who paid on time. Come see the shelf."),
+ "cap_fence": ("The Fence", "Keep it down. The Accord won't stamp what I sell, which is why it's a third off their chartered rate, every bottle. Aye, it's cut. Blightwater, thinned near to nothing. Closes the wound just the same. The rest is a little rot, and rot never once collected off anyone who paid on time. Come see the shelf."),
 }
 
 # ---------- content integrity before write ----------
@@ -622,7 +624,7 @@ for cid,(who,text) in CONVOS.items():
     convo_lines.append('\t"%s": {"start": "a", "nodes": {"a": {"who": "%s", "text": "%s", "next": ""}}},' % (cid, who, t))
 # Gossip hubs emit verbatim — JSON literals are valid GDScript dicts.
 for cid, convo in GOSSIP.items():
-    convo_lines.append('\t"%s": %s,' % (cid, json.dumps(convo)))
+    convo_lines.append('\t"%s": %s,' % (cid, json.dumps(convo, ensure_ascii=False)))
 convos = "\n".join(convo_lines)
 
 # Output lands in THIS checkout (worktree-safe, 2026-08-18: the old absolute
@@ -651,7 +653,7 @@ class_name CapitalHub
 # never sees it — exactly like the endgame arenas.
 const CHAPTER := {
 \t"name": "Crownfall",
-\t"sub": "A gathering city — every service one plaza, every road one door",
+\t"sub": "A gathering city, every service one plaza, every road one door",
 \t"standalone": true,
 \t"loot_cap": "C",
 \t"start_quest": "",

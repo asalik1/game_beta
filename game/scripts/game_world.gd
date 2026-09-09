@@ -2183,7 +2183,7 @@ func fast_travel(i: int) -> void:
 		return
 	sfx("blink")
 	burst(player.global_position, Color(0.7, 0.8, 1.0), 12)
-	player.global_position = room_center(i)
+	player.global_position = room_arrival_pos(i)
 	_enter_room(i)
 	burst(player.global_position, Color(0.7, 0.8, 1.0), 12)
 

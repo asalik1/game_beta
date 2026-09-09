@@ -2484,6 +2484,15 @@ func room_pos(i: int, x: float, y: float) -> Vector2:
 func room_center(i: int) -> Vector2:
 	return rooms[i]["origin"] + Vector2(ROOM_W, ROOM_H) / 2.0
 
+## Explicit player arrivals use Crown Plaza's authored clear approach.
+## Keep geometric centers unchanged for rooms, roads, loot and encounters.
+## This is a placement lookup, not a physics query: a chapter rebuild can
+## call it before that room's scenery has entered the physics space.
+func room_arrival_pos(i: int) -> Vector2:
+	if chapter_id == "capital" and i == 0:
+		return _start_pos()
+	return room_center(i)
+
 ## The room whose grid cell contains pos (-1 = outside the graph).
 func room_at_pos(pos: Vector2) -> int:
 	var c := Vector2i(floori(pos.x / ROOM_W), floori(pos.y / ROOM_H))

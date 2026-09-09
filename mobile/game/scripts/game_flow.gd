@@ -156,7 +156,7 @@ func _server_after_victory(next_ch: String) -> void:
 		if net_host():
 			for q in players:
 				if q != null and is_instance_valid(q) and q != local_player:
-					q.global_position = room_center(cur_room)
+					q.global_position = room_arrival_pos(cur_room)
 			net_session().host_advance_party()
 
 
@@ -195,7 +195,7 @@ func advance_chapter() -> void:
 	if net_host():
 		for q in players:
 			if q != null and is_instance_valid(q) and q != local_player:
-				q.global_position = room_center(cur_room)
+				q.global_position = room_arrival_pos(cur_room)
 		net_session().host_advance_party()
 	run_chapter_opener_if_needed(next_ch, func() -> void:
 		hud.flash_title(zones[cur_room]["name"], String(Story.chapter(next_ch)["name"]))
@@ -260,7 +260,7 @@ func reprise_chapter(chid: String, tier: int) -> void:
 	if net_host():
 		for q in players:
 			if q != null and is_instance_valid(q) and q != local_player:
-				q.global_position = room_center(cur_room)
+				q.global_position = room_arrival_pos(cur_room)
 		net_session().host_advance_party()
 
 
@@ -1959,7 +1959,7 @@ func _death_respawn(p: Player, death_room: int, forced_room := -1) -> void:
 	# combat room counts, so a boss wipe no longer marches you back through
 	# the whole chapter (2026-07-09).
 	var rr := forced_room if forced_room >= 0 else respawn_room(death_room)
-	p.global_position = room_center(rr)
+	p.global_position = room_arrival_pos(rr)
 	p.revive()
 	_enter_room(rr)
 	# No boss serenades your respawn: unless the boss is HERE (it never
@@ -2089,7 +2089,7 @@ func net_advance(snap: Dictionary) -> void:
 	# freed world; the movement sync re-converges them within a tick.
 	for q in players:
 		if q != null and is_instance_valid(q) and q != local_player:
-			q.global_position = room_center(cur_room)
+			q.global_position = room_arrival_pos(cur_room)
 	play_started = true
 	request_pause(false)
 	hud.visible = true
@@ -2124,7 +2124,7 @@ func recall_to_safe() -> bool:
 	if barrier_active:
 		spawn_text(player.global_position + Vector2(0, -56), "Can't recall in combat!", Color(1.0, 0.6, 0.4))
 		return false
-	player.global_position = room_center(last_safe_room)
+	player.global_position = room_arrival_pos(last_safe_room)
 	_enter_room(last_safe_room)
 	burst(player.global_position, Color(0.6, 0.9, 1.0), 14)
 	spawn_text(player.global_position + Vector2(0, -56), "RECALLED to safety", Color(0.6, 0.9, 1.0))
