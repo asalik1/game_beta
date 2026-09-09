@@ -19,6 +19,23 @@ Headless `suite_verdict.ps1` also rejects freed lambda captures even when the
 engine prints its pass marker. It retains the intentional invalid-base64 test's
 existing semantics; compile errors and visual-resource leaks remain failures.
 
+Door torch mounting QA: `shot.bat wall_torch_mount --timeout=300` checks actual
+N/S/E/W doors, another wall material and the narrowest inset room with an exit;
+all four natural flame frames, floor/lane clearance, close player-depth and
+clipped silhouette transitions, and five ordinary keyboard legs. Use isolated
+APPDATA under `build/qa`; `--chapter=ch3` extends the actual material coverage.
+Append `--mobile --renderer=gl_compatibility` for mobile-source rendering.
+`--baseline` records known old presentation defects; acceptance omits it.
+Read `TORCH_MOUNTS.md` for scope and evidence.
+
+Dialogue clarity QA: `shot.bat dialogue_clarity --timeout=300` opens actual
+Fenna with E, then uses intercepted QA callbacks to check reader access, backlog
+input blocking, solo/empty-loopback pause behavior and wrapped text/choice
+layout. Isolate APPDATA under `build/qa`; add
+`--mobile --renderer=gl_compatibility --touch` for real ScreenTouch GUI input.
+`--baseline` allows explicitly recorded old presentation/input defects only.
+Read `DIALOGUE_CLARITY.md` for the unchanged long-text fixture and limits.
+
 Party appearance QA: `shot.bat party_appearance --timeout=300` runs two complete
 games plus a lightweight late-reader roster over three real ENet APIs in one
 engine. It checks join/live pet and skin changes, sender/local ownership,

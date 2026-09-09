@@ -3937,3 +3937,9 @@ const CARAVAN_SYNC_SECONDS := 0.2
 const CARAVAN_COMPLETE_HOLD := 7.0
 const CARAVAN_NOTICE_INTERVAL := 2.0
 const CARAVAN_PRICE_MULT := 0.8
+
+# Door pillars: existing rendered size/pair spacing, measured floor mounting.
+const DOOR_TORCH_HEIGHT := 64.0
+const DOOR_TORCH_PAIR_OFFSET := 26.0
+const DOOR_TORCH_GROUND_CLEARANCE := 6.0
+const DOOR_TORCH_FOOT_BAND := 0.25

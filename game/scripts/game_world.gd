@@ -4051,78 +4051,9 @@ func _post(i: int, wt: String, rect: Rect2, face: bool) -> void:
 		s.add_child(sh)
 
 
-## Flickering torches flank each doorway. (2026-08-18) They wear the hi-res
-## animated torch-PILLAR strip (the structure art, 160px cells, fire looping)
-## scaled to a door-side torch instead of the 16px procedural torch at 3x —
-## the last chunky sprite at every doorway; the procedural torch stays the
-## fallback when the strip is absent.
-const DOOR_TORCH_H := 64.0   # rendered height of the pillar torch (world px)
-const DOOR_TORCH_INSET := 40.0   # px the pair steps INTO the room off the wall line
+## Freestanding door pillars use their painted plinth to clear the wall and lane.
 func _door_torches(zi: int, pos: Vector2, vertical: bool) -> void:
-	var span := DOOR_TILES * TILE / 2.0 + 26.0
-	var pillar: Dictionary = Art.anim_info("torch_pillar")
-	# Step the pair off the wall line INTO room zi (2026-08-18, owner: at a
-	# NORTH door only the stems showed — the torch stood on the room's top edge
-	# and the camera limit clipped its upper half; east/west doors lost a
-	# shoulder the same way). Both rooms sharing a door build a pair, each on
-	# ITS side of the doorway (before, the two pairs sat on the same spot).
-	var inset := Vector2.ZERO
-	if zi >= 0:
-		# Small rooms put the DOOR at the cell edge and reach it through a
-		# corridor the camera never shows (it clamps to the PLAY rect) — the
-		# rig tour (2026-08-18) still found the pair standing in that corridor,
-		# bases just peeking under the frame edge. Anchor on the play rect's
-		# edge (the corridor MOUTH the player sees) before stepping in.
-		var pr := play_rect(zi)
-		if vertical:
-			pos.x = clampf(pos.x, pr.position.x, pr.end.x)
-		else:
-			pos.y = clampf(pos.y, pr.position.y, pr.end.y)
-		var c: Vector2 = room_center(zi)
-		if vertical:
-			inset.x = DOOR_TORCH_INSET * (1.0 if pos.x < c.x else -1.0)
-		else:
-			inset.y = DOOR_TORCH_INSET * (1.0 if pos.y < c.y else -1.0)
-	for side in [-1, 1]:
-		var off := (Vector2(0, side * span) if vertical else Vector2(side * span, 0)) + inset
-		var torch := Sprite2D.new()
-		if not pillar.is_empty():
-			torch.texture = pillar["tex"]
-			torch.hframes = int(pillar["frames"])
-			var cell := float(torch.texture.get_height())
-			var s := DOOR_TORCH_H / cell
-			torch.scale = Vector2(s, s)
-			torch.modulate = Art.hdr(Color.WHITE, EMISSIVE_BLOOM_LIFT)   # flame tips bloom (P3)
-			# Base on the old torch's ground line (its 48px art was centred on pos).
-			torch.position = pos + off + Vector2(0, 24.0 - DOOR_TORCH_H * 0.5)
-			var per := 1.0 / maxf(1.0, float(pillar.get("fps", 6.0)))
-			var fl := torch.create_tween().set_loops()
-			for f in int(pillar["frames"]):
-				fl.tween_interval(per)
-				fl.tween_callback(func() -> void:
-					if is_instance_valid(torch):
-						torch.frame = (torch.frame + 1) % torch.hframes)
-		else:
-			torch.texture = Art.tex("torch")
-			torch.scale = Vector2(3, 3)
-			torch.position = pos + off
-		torch.z_index = 2
-		world.add_child(torch)
-		var glow := Sprite2D.new()
-		glow.texture = Art.tex("glow")
-		glow.modulate = Color(1.0, 0.6, 0.2, 0.5)
-		glow.position = torch.position + Vector2(0, -12)
-		glow.scale = Vector2(2.5, 2.5)
-		glow.z_index = 1
-		world.add_child(glow)
-		var tween := glow.create_tween()
-		tween.set_loops()
-		tween.tween_property(glow, "scale", Vector2(3.1, 3.1), 0.5 + randf() * 0.3)
-		tween.tween_property(glow, "scale", Vector2(2.4, 2.4), 0.5 + randf() * 0.3)
-		# Torchlight on the floor at the door (see _floor_glow).
-		if zi >= 0:
-			_floor_glow(world, torch.position + TORCH_GLOW_DROP, TORCH_GLOW_COLOR,
-				TORCH_GLOW_RADIUS, TORCH_GLOW_STRENGTH, zi)
+	preload("res://scripts/door_torch_mount.gd").build(self, zi, pos, vertical)
 
 ## A gate barring the doorway on room i's `dir` edge.
 func _build_gate(i: int, dir: String) -> Node2D:

@@ -975,6 +975,15 @@ void fragment() {
 		choice_panel.add_child(opt)
 		choice_option_labels.append(opt)
 
+	# The reader row belongs to dialogue_box; choices remain a HUD sibling.
+	# Reconcile their coordinates when geometry changes, including each step
+	# of the existing dialogue entrance tween. No per-frame layout polling.
+	for control: Control in [dialogue_box, dialogue_frame, choice_panel, choice_frame]:
+		control.item_rect_changed.connect(_layout_dialogue_reader)
+	choice_panel.visibility_changed.connect(_layout_dialogue_reader)
+	for button: Button in [dlg_log_btn, dlg_skip_btn, dlg_auto_btn]:
+		button.resized.connect(_layout_dialogue_reader)
+
 	# --------------------------------------------------- controls hint ---
 	# Two short lines on the far left so they never collide with the
 	# ability bar's labels in the bottom center.
@@ -4313,6 +4322,9 @@ func _toggle_log() -> void:
 		log_panel.visible = false
 		return
 	_rebuild_log()
+	# Choices are a later HUD sibling. Put the backlog's full-screen input
+	# shade above them as well as its drawing; z_index alone cannot do both.
+	move_child(log_panel, get_child_count() - 1)
 	log_panel.visible = true
 
 
@@ -4383,39 +4395,63 @@ func _process(_delta: float) -> void:
 		_advance_dialogue()
 
 
-# The dialogue box hangs from a fixed BOTTOM edge and grows UPWARD to fit its
-# line, so a long paragraph can't spill past the bottom border (the box used to
-# be a static 200px and 6+ wrapped lines clipped through it). These anchor the
-# layout to that fixed bottom; see the dialogue box built in _build().
-const DIALOG_BOX_BOTTOM := 648.0   # outer frame bottom edge (fixed)
+# Text grows upward from its original bottom. Short lines keep the original
+# frame and hint positions; a full text area extends only the footer downward
+# so the advance hint never covers the final line.
+const DIALOG_BOX_BOTTOM := 648.0   # original outer frame bottom (minimum)
 const DIALOG_TEXT_BOTTOM := 640.0  # text_label bottom edge (fixed)
 const DIALOG_TEXT_MIN_H := 148.0   # original text capacity — box never shrinks below it
 const DIALOG_SPEAKER_GAP := 30.0   # speaker name sits this far above the text top
 const DIALOG_HEADER := 44.0        # frame top sits this far above the text top
+const DIALOG_READER_GAP := 6.0     # reader clearance above/inside its panel
+const DIALOG_HINT_TOP := 618.0     # original advance-hint position
+const DIALOG_HINT_GAP := 6.0       # clearance below the complete wrapped text
+const DIALOG_FOOTER_PAD := 8.0     # frame space below a displaced advance hint
 
-## Fit the box to whatever text_label currently holds: keep the bottom pinned
-## and push the top up as far as the wrapped text needs (never higher than the
-## original box). Returns the frame's top y so a choice panel can stack above
-## the ACTUAL top rather than the old fixed one. Both callers set the text first.
+## Fit the complete wrapped text upward from its original bottom; extend only
+## the footer when the advance hint needs more space. Returns the frame top so
+## choices stack above the actual grown box. Both callers set the text first.
 func _fit_dialogue_box() -> float:
-	# get_line_count() forces the label to (re)shape, so the wrapped line count is
-	# accurate right after assigning .text as long as the label is in the tree (it
-	# is). All lines share one font, so height = lines * per-line height.
-	var wrapped_h := text_label.get_line_count() * text_label.get_line_height()
-	var text_h: float = max(float(wrapped_h), DIALOG_TEXT_MIN_H)
+	# Label's shaped minimum includes line/paragraph spacing and style margins;
+	# line_count * line_height omits that spacing and under-sizes long text.
+	var wrapped_h := text_label.get_minimum_size().y
+	var text_h: float = maxf(wrapped_h, DIALOG_TEXT_MIN_H)
 	var text_top := DIALOG_TEXT_BOTTOM - text_h
 	text_label.position.y = text_top
 	text_label.size.y = text_h
 	speaker_label.position.y = text_top - DIALOG_SPEAKER_GAP
+	dialogue_hint.position.y = maxf(DIALOG_HINT_TOP, text_top + wrapped_h + DIALOG_HINT_GAP)
+	var box_bottom := maxf(DIALOG_BOX_BOTTOM,
+		dialogue_hint.position.y + dialogue_hint.get_minimum_size().y + DIALOG_FOOTER_PAD)
 	var frame_top := text_top - DIALOG_HEADER
 	dialogue_frame.position.y = frame_top
-	dialogue_frame.size.y = DIALOG_BOX_BOTTOM - frame_top
+	dialogue_frame.size.y = box_bottom - frame_top
 	dialogue_inner.position.y = frame_top + 3.0
-	dialogue_inner.size.y = (DIALOG_BOX_BOTTOM - 3.0) - (frame_top + 3.0)
-	# LOG/SKIP/AUTO ride just above the box's top-right, tracking the grown top.
-	if dlg_ctrl_row != null:
-		dlg_ctrl_row.position = Vector2(922.0, frame_top - 34.0)
+	dialogue_inner.size.y = (box_bottom - 3.0) - (frame_top + 3.0)
+	_layout_dialogue_reader()
 	return frame_top
+
+
+## LOG/SKIP/AUTO share a row, above the highest visible dialogue panel.
+## Global canvas coordinates account for the different parents: plain-line
+## controls ride the box's entrance tween; choices stay in their existing
+## sibling position, so the row compensates for the moving parent beneath it.
+func _layout_dialogue_reader() -> void:
+	if dlg_ctrl_row == null or dialogue_frame == null:
+		return
+	var row_size := Vector2.ZERO
+	for button: Button in [dlg_log_btn, dlg_skip_btn, dlg_auto_btn]:
+		if button == null:
+			return
+		row_size = row_size.max(button.position + button.size)
+	var frame_rect := dialogue_frame.get_global_rect()
+	var panel_top := frame_rect.position.y
+	if choices_active and choice_panel != null and choice_panel.visible:
+		panel_top = minf(panel_top, choice_frame.get_global_rect().position.y)
+	# The current styled buttons measure 66x31 (their requested height is 28).
+	# Preserve their rectangles; measure the actual extent for full clearance.
+	dlg_ctrl_row.global_position = Vector2(frame_rect.end.x - DIALOG_READER_GAP - row_size.x,
+		panel_top - DIALOG_READER_GAP - row_size.y)
 
 
 ## Typewriter reveal (P7.A kin, 2026-08-19): a line WRITES itself at
@@ -4661,7 +4697,7 @@ func dialogue_choice(who: String, text: String, options: Array, cb: Callable) ->
 	choices_active = true
 
 	# Options wrap now, so each row is as tall as its wrapped text. Set the text +
-	# width and MEASURE every row first (get_line_count forces a reshape), total
+	# width and MEASURE every row first (minimum_size forces a reshape), total
 	# the panel height, then stack the rows so a 2-line option can't overlap the
 	# next. ROW_W is the label width inside the fixed 1004 frame.
 	const ROW_W := 965.0
@@ -4674,7 +4710,7 @@ func dialogue_choice(who: String, text: String, options: Array, cb: Callable) ->
 		if i < choice_count:
 			opt.text = "%d.  %s" % [i + 1, options[i]]
 			opt.size.x = ROW_W
-			var rh: float = maxf(opt.get_line_count() * opt.get_line_height(), 22.0)
+			var rh: float = maxf(opt.get_minimum_size().y, 22.0)
 			row_h.append(rh)
 			total += rh + (ROW_GAP if i > 0 else 0.0)
 		else:
@@ -4701,10 +4737,12 @@ func dialogue_choice(who: String, text: String, options: Array, cb: Callable) ->
 			hl.size = Vector2(choice_inner.size.x, rh + 4.0)
 			y += rh + ROW_GAP
 	choice_panel.visible = true
+	_layout_dialogue_reader()
 
 
 func _choose(idx: int) -> void:
-	if not choices_active or idx < 0 or idx >= choice_count:
+	if not choices_active or idx < 0 or idx >= choice_count \
+			or (log_panel != null and log_panel.visible):
 		return
 	# Archive the decision (journal "Story So Far") — the row label carries
 	# the option text behind its "N.  " prefix.

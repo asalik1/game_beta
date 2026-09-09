@@ -138,13 +138,11 @@ wall edges and look unsupported. The shared `_door_torches()` uses a legacy
 40px inset against a 48px wall cap and a mismatched procedural ground line.
 The source-reviewed candidate supplies measured floor placement for all four doorway directions,
 including ground sorting/shadows and matching light translation, under
-`build/qa/wall-torch-mount-candidate`. This is the next requested implementation;
-preserve the current visual-pass sources through their checkpoint gates first.
-The dialogue-choice/reader-controls baseline is source-reviewed and frozen
-under `build/qa/dialogue-clarity-candidate`, alongside the independently reviewed
-HUD fix candidate in `build/qa/dialogue-clarity-fix`. Neither is published.
-Source-visible overlap and hidden-choice input while backlog is open still
-require the actual-input baseline before production implementation.
+`build/qa/wall-torch-mount-candidate`. Checkpoint32 is committed; this is the
+active next implementation.
+The completed dialogue baselines and reviewed HUD correction are under
+`build/qa/dialogue-clarity-candidate` and `dialogue-clarity-fix`. The current
+installed state and pending validation are recorded in the Pass 33 block below.
 
 Pass 32 final combined world runs passed 68 checks/nine frames each, and
 settled pebble runs passed 258 checks/seven frames each, on both renderers;
@@ -185,6 +183,63 @@ verified 21 exact content pairs and five independent UID pairs; 53 project/verdi
 files are frozen. Full preflight passed without findings.**
 The 59-path checkpoint excludes all future road-hunt/Vow fixtures and original
 art scratch. Root continues with the separate torch and dialogue baselines.
+
+**Committed checkpoint32:** `006ecc196478d7d156105175d7a1d9efae86b9d4`.
+All 59 intended files match the commit; the index was empty after commit.
+Final full preflight had no findings. Continue the authorized work.
+
+**Pass 33 validated checkpoint, 08:22 UTC:** the torch floor/depth correction and
+dialogue clarity patch are installed and canonically mirrored. Final source
+`build/qa/checkpoint33-source-freeze.json` contains 22 files, eight exact
+content pairs and three independent UID pairs. The 26 explicit checkpoint
+paths are in `checkpoint33-paths.json`; none of the excluded future fixtures
+or original art scratch are included. Root owns the sole engine.
+
+Torch chapter 1 desktop/mobile passed 112/118 checks, zero failures/findings,
+15/16 unique native captures and five ordinary keyboard legs each. Chapter 3
+passed 112/142 with 15/20 images and five legs each. All 66 images were
+independently reviewed. Close feet offsets -3/+3 correctly switch drawing
+order and clipped outlines. Before/after chapter 1 wall/gate/body/light
+receipts match, and chapter 3 cross-renderer receipts match. Its secondary
+material view repeats Vigil east; no second chapter 3 material is claimed.
+Read TORCH_MOUNTS.md and the three `wall-torch-*-review.md` reports.
+
+The original torch frame-window failure and QA-only boolean compile failure
+are preserved. Corrected QA gives every natural-frame capture a unique name
+and keeps strict bounded all-frame and ordinary-movement checks. No torch
+art, collision, wall/gate rule, light budget or hero sizing changed.
+
+Dialogue desktop/mobile baselines had 22 expected defects and 16 images each;
+all 32 were reviewed. The final patch measures complete wrapped height,
+extends only the necessary footer, places LOG/SKIP/AUTO above choices and
+blocks hidden choice activation under the backlog. Final desktop/mobile
+runs passed 192/193 checks with zero failures/findings and ten images each.
+All 20 final images were reviewed and match the prior corrected captures
+byte-for-byte. Actual Fenna, unchanged long text/four options, short reset,
+mouse/ScreenTouch, solo and unpaused empty-host behavior are covered. This
+is host renderer QA, not physical-device or guest replication proof.
+
+The first corrected desktop dialogue run passed solo probes but could not
+bind its derived UDP port; its failed receipt and five images remain. Exact
+cause was not recorded. Explicit-port reruns passed; the final QA defaults
+to OS-assigned port 0 and records actual ports (59627/61091 in accepted runs).
+Production networking is unchanged. Read DIALOGUE_CLARITY.md and
+`dialogue-final-native-review.md`. Installed byte hashes are recorded because
+Windows line-ending normalization differs from some candidate byte hashes;
+normalized reviewed source text is identical.
+
+Desktop compile225/quick125/full205 and mobile import/compile225/strictquick125
+passed. Known intentional invalid-base64/full-suite ObjectDB and established
+shot renderer shutdown diagnostics remain documented; no new script/freed
+callback diagnostics occur. All 86 final native receipts match final source.
+Full repository preflight passed without findings. The checkpoint is titled
+**Ground doorway torches and clarify dialogue controls**. Exact commit identity,
+status and explicit paths are recorded in `build/qa/checkpoint33-validation.json`.
+
+Next candidates remain unpublished: pocket UI clarity, raw hero geometry
+reuse and a quieter grass comparison with actual Codex/Fangmoot consumers.
+No new grass art has been generated. Continue after this checkpoint until
+12:00 feature cutoff / 13:00 deadline, preserving all excluded future work.
 
 ## Historical pause — superseded by the resume above
 
