@@ -521,73 +521,91 @@ static func _make_loot_s() -> AudioStreamWAV:
 	return _to_wav(b)
 
 
-## Build the whole sound bank the game uses.
-static func build_all() -> Dictionary:
-	return {
+## Build a complete bank, synthesizing only keys without a valid override.
+## No arguments retains the full procedural bank. The optional observer is for QA;
+## it reports actual synthesis calls, never infers work from elapsed time.
+static func build_all(overrides: Dictionary = {}, on_synth: Callable = Callable()) -> Dictionary:
+	var factories: Dictionary = {
 		# --- class ability sounds (synthesized, not beeped) ---
-		"stab":     _make_stab(),
-		"sword":    _make_sword(),
-		"knife":    _make_knife(),
-		"bow":      _make_bow(),
-		"fireball": _make_fireball(),
-		"blink":    _make_blink(),
-		"glide":    _make_glide(),           # Phantom skin's gliding footfall
-		"phantom_slash": _make_phantom_slash(),  # Phantom skin's ghostly cut
-		"phantom_knife": _make_knife(),      # Phantom skin's knife throw (override: assets/sounds/phantom_knife.*)
-		"dash":     _make_blink(),           # player dash — own key (override: assets/sounds/dash.*)
-		"nova":     _make_nova(),
-		"slam":     _make_slam(),
-		"slash":    _make_sword(),
+		"stab":     _make_stab,
+		"sword":    _make_sword,
+		"knife":    _make_knife,
+		"bow":      _make_bow,
+		"fireball": _make_fireball,
+		"blink":    _make_blink,
+		"glide":    _make_glide,           # Phantom skin's gliding footfall
+		"phantom_slash": _make_phantom_slash,  # Phantom skin's ghostly cut
+		"phantom_knife": _make_knife,      # Phantom skin's knife throw (override: assets/sounds/phantom_knife.*)
+		"dash":     _make_blink,           # player dash — own key (override: assets/sounds/dash.*)
+		"nova":     _make_nova,
+		"slam":     _make_slam,
+		"slash":    _make_sword,
 		# --- world / UI ---
-		"bolt":     tone(900, 300, 0.15, 0.3, 0.2),
-		"ehit":     tone(260, 140, 0.09, 0.4, 0.5),
-		"hurt":     tone(170, 80, 0.22, 0.45, 0.4),
-		"edie":     tone(420, 50, 0.3, 0.4, 0.5),
-		"levelup":  jingle([523, 659, 784, 1047]),
-		"potion":   tone(400, 850, 0.16, 0.35),
-		"splash":   _make_splash(),  # river entry (Graphics & Ambience)
-		"gate":     tone(120, 55, 0.5, 0.45, 0.7),
-		"roar":     tone(95, 38, 0.75, 0.55, 0.5),
-		"pdie":     tone(320, 45, 0.8, 0.45, 0.2),
-		"victory":  jingle([523, 659, 784, 1047, 784, 1047], 0.16),
-		"talk":     tone(700, 640, 0.035, 0.18),
+		"bolt":     tone.bind(900, 300, 0.15, 0.3, 0.2),
+		"ehit":     tone.bind(260, 140, 0.09, 0.4, 0.5),
+		"hurt":     tone.bind(170, 80, 0.22, 0.45, 0.4),
+		"edie":     tone.bind(420, 50, 0.3, 0.4, 0.5),
+		"levelup":  jingle.bind([523, 659, 784, 1047]),
+		"potion":   tone.bind(400, 850, 0.16, 0.35),
+		"splash":   _make_splash,  # river entry (Graphics & Ambience)
+		"gate":     tone.bind(120, 55, 0.5, 0.45, 0.7),
+		"roar":     tone.bind(95, 38, 0.75, 0.55, 0.5),
+		"pdie":     tone.bind(320, 45, 0.8, 0.45, 0.2),
+		"victory":  jingle.bind([523, 659, 784, 1047, 784, 1047], 0.16),
+		"talk":     tone.bind(700, 640, 0.035, 0.18),
 		# Buff feedback (round 44): soft, low-volume cues so on-hit mends and
 		# the arcane ward READ without drowning the swing. Replaceable by
 		# assets/sounds/{mend,ward}.wav.
-		"mend":     tone(560, 780, 0.09, 0.13),          # warm restorative blip
-		"ward":     tone(1150, 1650, 0.14, 0.16),        # crystalline shimmer up
+		"mend":     tone.bind(560, 780, 0.09, 0.13),          # warm restorative blip
+		"ward":     tone.bind(1150, 1650, 0.14, 0.16),        # crystalline shimmer up
 		# Synthesized fallbacks — normally replaced by assets/sounds/*.wav.
-		"coin":     tone(900, 1400, 0.08, 0.25),
-		"equip":    tone(300, 200, 0.12, 0.3, 0.4),
-		"chest":    tone(200, 120, 0.15, 0.35, 0.5),
-		"keen":     _make_keen(),
-		"boss_blink_v1": _make_boss_blink(0),
-		"boss_blink_v2": _make_boss_blink(1),
-		"boss_blink_v3": _make_boss_blink(2),
-		"boss_storm_cast_v1": _make_storm_cast(0),
-		"boss_storm_cast_v2": _make_storm_cast(1),
-		"boss_storm_cast_v3": _make_storm_cast(2),
-		"boss_rot_cast_v1": _make_rot_cast(0),
-		"boss_rot_cast_v2": _make_rot_cast(1),
-		"boss_rot_cast_v3": _make_rot_cast(2),
-		"grief_cast": _make_grief_cast(),
-		"grief_echo": _make_grief_echo(),
+		"coin":     tone.bind(900, 1400, 0.08, 0.25),
+		"equip":    tone.bind(300, 200, 0.12, 0.3, 0.4),
+		"chest":    tone.bind(200, 120, 0.15, 0.35, 0.5),
+		"keen":     _make_keen,
+		"boss_blink_v1": _make_boss_blink.bind(0),
+		"boss_blink_v2": _make_boss_blink.bind(1),
+		"boss_blink_v3": _make_boss_blink.bind(2),
+		"boss_storm_cast_v1": _make_storm_cast.bind(0),
+		"boss_storm_cast_v2": _make_storm_cast.bind(1),
+		"boss_storm_cast_v3": _make_storm_cast.bind(2),
+		"boss_rot_cast_v1": _make_rot_cast.bind(0),
+		"boss_rot_cast_v2": _make_rot_cast.bind(1),
+		"boss_rot_cast_v3": _make_rot_cast.bind(2),
+		"grief_cast": _make_grief_cast,
+		"grief_echo": _make_grief_echo,
 		# Loot fanfare chimes (rarity is audible; see loot_fanfare).
-		"loot_low": _make_loot_low(),
-		"loot_mid": _make_loot_mid(),
-		"loot_b":   _make_loot_b(),
-		"loot_a":   _make_loot_a(),
-		"loot_s":   _make_loot_s(),
-		"ult":      jingle([392, 523, 659, 784], 0.07, 0.4),  # rising power-up
-		"ult_warrior":  _make_ult_warrior(),
-		"ult_archer":   _make_ult_archer(),
-		"ult_assassin": _make_ult_assassin(),
-		"ult_paladin":  _make_ult_paladin(),
-		"ult_warlock":  _make_ult_warlock(),
-		"meteor":   _make_slam(),
-		"roar_fangmaw": _make_growl(),  # synthesized beast, not a wolfman
-		"roar_morwen":  _make_wail(),   # spectral witch wail (replaced the RPG-pack clip)
+		"loot_low": _make_loot_low,
+		"loot_mid": _make_loot_mid,
+		"loot_b":   _make_loot_b,
+		"loot_a":   _make_loot_a,
+		"loot_s":   _make_loot_s,
+		"ult":      jingle.bind([392, 523, 659, 784], 0.07, 0.4),  # rising power-up
+		"ult_warrior":  _make_ult_warrior,
+		"ult_archer":   _make_ult_archer,
+		"ult_assassin": _make_ult_assassin,
+		"ult_paladin":  _make_ult_paladin,
+		"ult_warlock":  _make_ult_warlock,
+		"meteor":   _make_slam,
+		"roar_fangmaw": _make_growl,  # synthesized beast, not a wolfman
+		"roar_morwen":  _make_wail,   # spectral witch wail (replaced the RPG-pack clip)
 	}
+	var bank: Dictionary = {}
+	for key in factories:
+		var override: Variant = overrides.get(key)
+		if override is AudioStream:
+			bank[key] = override
+		else:
+			var factory: Callable = factories[key]
+			bank[key] = factory.call()
+			if on_synth.is_valid():
+				on_synth.call(key)
+	# Keep the legacy base-key order, then append recording-only keys/variants
+	# in their original load order. Invalid extras never enter the sound bank.
+	for key in overrides:
+		if not bank.has(key) and overrides[key] is AudioStream:
+			bank[key] = overrides[key]
+	return bank
 
 
 # --------------------------------------------------- ambient loops ---

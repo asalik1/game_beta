@@ -63,6 +63,31 @@ normal camera room boundaries, hero/target overlap, touch controls, readable
 settings/popovers and separated notices/buffs. It checks ownership and stale
 target cleanup. Add `--mobile --renderer=gl_compatibility` for the mobile copy.
 
+Potion HUD QA: `shot.bat potion_hud --timeout=240` checks the painted default
+health bottle, stock/spent labels and an ordinary keyboard drink. It captures
+stocked, empty, spent and selected mana states at native size. Use isolated
+APPDATA; add `--touch --mobile --renderer=gl_compatibility` for a real touch tap
+and the mobile source/renderer path.
+
+Prop shadow QA: `shot.bat prop_shadows --timeout=300` captures the reported
+gravestone group, broad and narrow props, animated foliage/fountain and lore
+objects through their actual factories. It saves fullframes, native closeups
+and source/shadow transforms. Use isolated APPDATA; add
+`--mobile --renderer=gl_compatibility` for mobile source/renderer QA.
+
+Optional guardian QA: `shot.bat optional_discovery --timeout=420` checks real
+pocket/Unlisted entry, death and reentry with both campaign completion states,
+charted journal identities and actual map buttons. `--baseline` records the old
+semantic failures; setup/overkill isolate state rather than ordinary combat.
+Use isolated APPDATA; add `--touch --mobile --renderer=gl_compatibility` for touch.
+
+Audio startup QA: `shot.bat audio_startup --timeout=240` measures real startup
+separately from cache-warm synthesis phases, validates replacement/fallback
+streams and menu playback with Dummy audio, and records every fallback PCM
+hash. `--compare=<observations.json>` compares a prior complete baseline;
+`--mode=boot` and `--mode=phases` isolate the measurement modes. Use isolated
+APPDATA and the usual mobile/Compatibility flags when checking the mobile copy.
+
 Caravan QA: `shot.bat caravan --prices --timeout=230` accepts the real trader
 offer, uses held keyboard Interact, checks warning/pressure/work/death phases,
 paused-dialogue HUD hiding, touch prompts and actual discounted purchases.

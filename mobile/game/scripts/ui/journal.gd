@@ -542,30 +542,26 @@ static func _progress_page(m: Menus, list: VBoxContainer) -> void:
 	m._lbl(route, "Current position  ·  room %d of %d" % [
 		clampi(g.cur_room + 1, 1, g.zone_count), g.zone_count], 13, BODY)
 
-	_section(m, list, "CHAPTER BOSSES", "Unique encounters on this route", Color(1.0, 0.62, 0.62))
+	_section(m, list, "CHARTED GUARDIANS", "Encounters recorded in rooms you have entered", Color(1.0, 0.62, 0.62))
 	var bosses := _card(list, Color(1.0, 0.62, 0.62))
-	var seen := {}
-	var any_boss := false
 	var boss_total := 0
 	var boss_done := 0
 	for i in g.zone_count:
 		var kind := String(g.zones[i].get("boss", ""))
-		if kind == "" or seen.has(kind):
+		if kind == "" or not g.charted(i):
 			continue
-		seen[kind] = true
-		any_boss = true
 		boss_total += 1
-		var done: bool = g.boss_done.get(kind, false)
+		var done := g._boss_room_resolved(i)
 		if done:
 			boss_done += 1
-		var nm := String(Story.ALL_ENEMIES.get(kind, {}).get("name", kind))
-		m._lbl(bosses, "%s  %s" % ["✓" if done else "○", nm],
-			14, GREEN if done else BODY)
-	if any_boss:
+		_guardian_row(m, bosses, i, done)
+	var total := m._lbl(bosses, "%d of %d charted guardians defeated" % [boss_done, boss_total], 13, BODY)
+	total.name = "JournalGuardiansSummary"
+	if boss_total > 0:
 		_meter(m, bosses, boss_done, boss_total, Color(1.0, 0.62, 0.62),
-			"BOSSES DEFEATED", "%d / %d" % [boss_done, boss_total])
+			"CHARTED GUARDIANS DEFEATED", "%d / %d" % [boss_done, boss_total])
 	else:
-		m._lbl(bosses, "None charted yet.", 13, MUTED)
+		m._lbl(bosses, "No guardian rooms charted yet. Explore to record the encounters you find.", 13, MUTED)
 
 	_section(m, list, "CHARACTER PATH", "Consequences carried by this character", PURPLE)
 	var path := _card(list, PURPLE)
@@ -584,6 +580,43 @@ static func _progress_page(m: Menus, list: VBoxContainer) -> void:
 			GREEN if value > 0 else Color(1.0, 0.68, 0.58))
 	if not any_standing:
 		m._lbl(path, "No faction has taken your measure yet.", 13, MUTED)
+
+
+static func _guardian_row(m: Menus, parent: VBoxContainer, room: int, done: bool) -> void:
+	var g := m.game
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	parent.add_child(row)
+	var copy := VBoxContainer.new()
+	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(copy)
+	var title := m._lbl(copy, "%s  %s" % ["✓" if done else "○", g._boss_room_name(room)], 14, GREEN if done else BODY)
+	title.name = "JournalGuardian_%d" % room
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var zone: Dictionary = g.zones[room]
+	var family := "Main road"
+	if String(zone.get("pocket", "")) != "":
+		family = "Pocket encounter"
+	elif String(zone.get("unlisted", "")) != "":
+		family = "The Unlisted"
+	elif String(zone.get("waking", "")) != "":
+		family = "Waking breach"
+	m._lbl(copy, "%s · %s · Room %d" % ["Defeated" if done else "Awaiting victory", family, room + 1], 12, MUTED)
+	var context: String = g.hud.wayfinder.context_key()
+	var shell := m.root
+	var button := m._btn(row, "Show on map", func() -> void:
+		if not is_instance_valid(shell) or m.root != shell or context != g.hud.wayfinder.context_key():
+			return
+		if room < 0 or room >= g.zones.size() or not g.charted(room):
+			return
+		m.open_map()
+		var atlas := m.root.find_child("FieldAtlas", true, false)
+		if atlas != null:
+			atlas.select_room(room), BLUE)
+	button.name = "JournalGuardianMap_%d" % room
+	button.custom_minimum_size = Vector2(156, 44)
+	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	button.tooltip_text = "Inspect this charted room without moving or setting a route"
 
 
 # --------------------------------------------------------- STORY ARCHIVE ---

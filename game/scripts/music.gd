@@ -114,103 +114,123 @@ static func _synth(spec: Dictionary) -> AudioStreamWAV:
 	return stream
 
 
-## The whole soundtrack, keyed by track name.
-static func build_all() -> Dictionary:
+## Complete soundtrack: recordings win, missing/invalid keys use the original specs.
+## No arguments builds every procedural track; on_synth observes actual QA calls.
+static func build_all(overrides: Dictionary = {}, on_synth: Callable = Callable()) -> Dictionary:
 	var R := -99  # rest
-	return {
+	var specs: Dictionary = {
 		# ------------------------------------------------ boot screens ---
 		# Cover: the login-screen anthem (round 2 — v1 was "too slow, needs
 		# excitement"): heroic D-minor march, harmony a fifth up, walking
 		# bass, a melody that climbs to a peak and resolves. Alive, not a
 		# boss chase — the war horn heard from home.
-		"title": _synth({"bpm": 98.0, "root": 146.8, "kick_every": 8, "hat_every": 4,
+		"title": {"bpm": 98.0, "root": 146.8, "kick_every": 8, "hat_every": 4,
 			"square": 0.35, "lead2": true,
 			"melody": [0, R, 3, 5, 7, R, 7, R, 8, 7, 5, R, 7, R, R, R,
 				10, R, 8, 7, 8, R, 7, 5, 7, 5, 3, R, 5, R, R, R,
 				7, R, 8, 10, 12, R, 12, R, 15, R, 12, 10, 8, R, 10, R,
 				12, 10, 8, 7, 8, 7, 5, 3, 2, R, 3, R, 0, R, R, R],
 			"bass": [0, 0, -2, -2, -4, -4, -2, -2, 0, 0, -2, -2, -9, -9, -7, -7,
-				-4, -4, -4, -4, -2, -2, -2, -2, 0, 0, -4, -4, -2, -2, -2, -2]}),
+				-4, -4, -4, -4, -2, -2, -2, -2, 0, 0, -4, -4, -2, -2, -2, -2]},
 		# Roster / new-character screens: the hearth before the journey —
 		# hushed major pentatonic, slower and softer than the village.
-		"roster": _synth({"bpm": 76.0, "root": 196.0, "kick_every": 16, "hat_every": 8, "square": 0.12,
+		"roster": {"bpm": 76.0, "root": 196.0, "kick_every": 16, "hat_every": 8, "square": 0.12,
 			"melody": [0, R, 4, R, 7, R, 9, R, 7, R, 4, R, 2, R, 4, R,
 				0, R, 4, R, 7, R, 12, R, 9, R, 7, R, 4, R, 2, R],
-			"bass": [0, 0, -5, -5, -3, -3, -5, -5, 0, 0, -3, -3, -5, -5, -7, -7]}),
+			"bass": [0, 0, -5, -5, -3, -3, -5, -5, 0, 0, -3, -3, -5, -5, -7, -7]},
 		# Gentle, warm, major-pentatonic stroll (soft round tone).
-		"village": _synth({"bpm": 92.0, "root": 220.0, "kick_every": 8, "square": 0.25,
+		"village": {"bpm": 92.0, "root": 220.0, "kick_every": 8, "square": 0.25,
 			"melody": [0, R, 4, R, 7, R, 4, 2, 0, R, 2, R, 4, R, R, R,
 				9, R, 7, R, 4, R, 2, 4, 0, R, R, R, R, R, R, R],
-			"bass": [0, 0, -5, -5, -3, -3, -5, -5, 0, 0, -5, -5, -8, -8, -5, -5]}),
+			"bass": [0, 0, -5, -5, -3, -3, -5, -5, 0, 0, -5, -5, -8, -8, -5, -5]},
 		# Tense forest march in minor (harder chip tone).
-		"darkwood": _synth({"bpm": 108.0, "root": 196.0, "kick_every": 8, "square": 0.55,
+		"darkwood": {"bpm": 108.0, "root": 196.0, "kick_every": 8, "square": 0.55,
 			"melody": [0, R, 3, R, 5, R, 3, R, 7, R, 5, 3, 2, R, 3, R,
 				0, R, 3, R, 5, R, 7, R, 10, R, 7, 5, 3, R, 2, R],
-			"bass": [0, 0, 0, -2, -4, -4, -4, -2, 0, 0, 0, -2, -7, -7, -5, -5]}),
+			"bass": [0, 0, 0, -2, -4, -4, -4, -2, 0, 0, 0, -2, -7, -7, -5, -5]},
 		# Slow, eerie phrygian sway (hollow soft tone, sparse drums).
-		"marsh": _synth({"bpm": 82.0, "root": 174.6, "kick_every": 16, "square": 0.15, "hat_every": 4,
+		"marsh": {"bpm": 82.0, "root": 174.6, "kick_every": 16, "square": 0.15, "hat_every": 4,
 			"melody": [0, R, 1, R, R, R, 0, R, 5, R, 1, R, R, R, R, R,
 				0, R, 1, R, 3, R, 1, R, 0, R, R, R, -4, R, R, R],
-			"bass": [0, 0, 1, 1, 0, 0, -4, -4, 0, 0, 1, 1, -7, -7, -4, -4]}),
+			"bass": [0, 0, 1, 1, 0, 0, -4, -4, 0, 0, 1, 1, -7, -7, -4, -4]},
 		# Low, dread-laden crawl through the keep (dark, buzzy).
-		"keep": _synth({"bpm": 100.0, "root": 146.8, "kick_every": 8, "square": 0.65,
+		"keep": {"bpm": 100.0, "root": 146.8, "kick_every": 8, "square": 0.65,
 			"melody": [0, R, R, 3, R, R, 2, R, 0, R, R, R, -2, R, R, R,
 				0, R, R, 3, R, R, 5, R, 3, R, 2, R, 0, R, R, R],
-			"bass": [0, 0, 0, 0, -2, -2, -2, -2, -4, -4, -4, -4, -2, -2, -2, -2]}),
+			"bass": [0, 0, 0, 0, -2, -2, -2, -2, -4, -4, -4, -4, -2, -2, -2, -2]},
 		# ------------------------------------------- terrain themes ---
 		# Graveyard: slow funeral toll, hollow and sparse.
-		"graveyard": _synth({"bpm": 74.0, "root": 155.6, "kick_every": 16, "hat_every": 8, "square": 0.3,
+		"graveyard": {"bpm": 74.0, "root": 155.6, "kick_every": 16, "hat_every": 8, "square": 0.3,
 			"melody": [0, R, R, R, 3, R, R, R, 1, R, R, R, 0, R, R, R,
 				-2, R, R, R, 0, R, R, R, 1, R, 0, R, -2, R, R, R],
-			"bass": [0, 0, 0, 0, -4, -4, -4, -4, 0, 0, 0, 0, -5, -5, -5, -5]}),
+			"bass": [0, 0, 0, 0, -4, -4, -4, -4, 0, 0, 0, 0, -5, -5, -5, -5]},
 		# Scorched Wastes: driving, molten, relentless.
-		"magma": _synth({"bpm": 126.0, "root": 164.8, "kick_every": 4, "hat_every": 2, "square": 0.75, "bass_x2": true,
+		"magma": {"bpm": 126.0, "root": 164.8, "kick_every": 4, "hat_every": 2, "square": 0.75, "bass_x2": true,
 			"melody": [0, R, 0, 1, R, 1, 5, R, 0, R, 0, 1, R, 6, 5, 1,
 				0, R, 0, 1, R, 1, 5, R, 8, R, 7, 6, 5, 1, 0, R],
-			"bass": [0, 0, 1, 1, 0, 0, -2, -2, 0, 0, 1, 1, -4, -4, -2, -2]}),
+			"bass": [0, 0, 1, 1, 0, 0, -2, -2, 0, 0, 1, 1, -4, -4, -2, -2]},
 		# Frozen Expanse: high, gentle, bell-like drifting.
-		"icefield": _synth({"bpm": 86.0, "root": 293.7, "kick_every": 16, "hat_every": 8, "square": 0.1,
+		"icefield": {"bpm": 86.0, "root": 293.7, "kick_every": 16, "hat_every": 8, "square": 0.1,
 			"melody": [0, R, 7, R, 4, R, R, R, 9, R, 7, R, 4, R, R, R,
 				2, R, 4, R, 7, R, 4, R, 0, R, R, R, R, R, R, R],
-			"bass": [0, 0, -5, -5, -3, -3, -5, -5, 0, 0, -5, -5, -8, -8, -5, -5]}),
+			"bass": [0, 0, -5, -5, -3, -3, -5, -5, 0, 0, -5, -5, -8, -8, -5, -5]},
 		# Scorching Dunes: exotic phrygian-dominant sway.
-		"desert": _synth({"bpm": 96.0, "root": 196.0, "kick_every": 8, "hat_every": 4, "square": 0.4,
+		"desert": {"bpm": 96.0, "root": 196.0, "kick_every": 8, "hat_every": 4, "square": 0.4,
 			"melody": [0, R, 1, R, 4, R, 5, R, 4, R, 1, R, 0, R, R, R,
 				7, R, 5, R, 4, R, 1, R, 4, R, 1, R, 0, R, R, R],
-			"bass": [0, 0, 0, 0, -5, -5, -5, -5, 0, 0, 0, 0, -7, -7, -5, -5]}),
+			"bass": [0, 0, 0, 0, -5, -5, -5, -5, 0, 0, 0, 0, -7, -7, -5, -5]},
 		# Crystal Caverns: sparse high arpeggios, glassy.
-		"crystalline": _synth({"bpm": 102.0, "root": 261.6, "kick_every": 16, "hat_every": 4, "square": 0.2,
+		"crystalline": {"bpm": 102.0, "root": 261.6, "kick_every": 16, "hat_every": 4, "square": 0.2,
 			"melody": [0, 4, 7, 12, R, R, R, R, 0, 4, 7, 11, R, R, R, R,
 				-1, 4, 7, 12, R, R, R, R, 0, 5, 9, 12, R, R, R, R],
-			"bass": [0, 0, -3, -3, -5, -5, -3, -3, 0, 0, -3, -3, -7, -7, -5, -5]}),
+			"bass": [0, 0, -3, -3, -5, -5, -3, -3, 0, 0, -3, -3, -7, -7, -5, -5]},
 		# Sanctified Ruins: slow major hymn.
-		"holy": _synth({"bpm": 70.0, "root": 220.0, "kick_every": 16, "hat_every": 8, "square": 0.15,
+		"holy": {"bpm": 70.0, "root": 220.0, "kick_every": 16, "hat_every": 8, "square": 0.15,
 			"melody": [0, R, R, 4, R, R, 7, R, 9, R, 7, R, 4, R, R, R,
 				5, R, R, 4, R, R, 2, R, 0, R, R, R, R, R, R, R],
-			"bass": [0, 0, -3, -3, -5, -5, -3, -3, -7, -7, -5, -5, 0, 0, 0, 0]}),
+			"bass": [0, 0, -3, -3, -5, -5, -3, -3, -7, -7, -5, -5, 0, 0, 0, 0]},
 		# Thunder Plains: brooding mid-tempo under the rain.
-		"rainstorm": _synth({"bpm": 112.0, "root": 185.0, "kick_every": 8, "hat_every": 2, "square": 0.6,
+		"rainstorm": {"bpm": 112.0, "root": 185.0, "kick_every": 8, "hat_every": 2, "square": 0.6,
 			"melody": [0, R, 3, R, 2, R, 3, R, 5, R, 3, R, 2, R, 0, R,
 				0, R, 3, R, 7, R, 5, R, 3, R, 2, R, 0, R, R, R],
-			"bass": [0, 0, 0, -2, -4, -4, -4, -2, 0, 0, 0, -2, -5, -5, -4, -4]}),
+			"bass": [0, 0, 0, -2, -4, -4, -4, -2, 0, 0, 0, -2, -5, -5, -4, -4]},
 		# BOSS TENSION PACKAGE: hard square tone, a harmony voice a fifth
 		# up, driving 8th-note bass, hats every step, kicks twice a bar.
 		# Fangmaw: fast, snarling chase.
-		"boss_fangmaw": _synth({"bpm": 156.0, "root": 196.0, "kick_every": 4,
+		"boss_fangmaw": {"bpm": 156.0, "root": 196.0, "kick_every": 4,
 			"square": 0.85, "lead2": true, "bass_x2": true, "hat_every": 1,
 			"melody": [0, 0, 3, 0, 5, 0, 3, 0, 7, 7, 5, 3, 2, 3, 2, 0,
 				0, 0, 3, 0, 5, 0, 3, 0, 10, 10, 7, 5, 3, 2, 3, 5],
-			"bass": [0, 0, 0, 0, -2, -2, -2, -2, 0, 0, 0, 0, -4, -4, -2, -2]}),
+			"bass": [0, 0, 0, 0, -2, -2, -2, -2, 0, 0, 0, 0, -4, -4, -2, -2]},
 		# Morwen: lurching, chromatic witch-waltz.
-		"boss_morwen": _synth({"bpm": 132.0, "root": 185.0, "kick_every": 4,
+		"boss_morwen": {"bpm": 132.0, "root": 185.0, "kick_every": 4,
 			"square": 0.8, "lead2": true, "bass_x2": true, "hat_every": 1,
 			"melody": [0, R, 1, R, 4, R, 1, 0, 6, R, 4, 1, 0, R, 1, R,
 				0, R, 1, R, 4, R, 6, R, 7, 6, 4, 1, 0, 1, 0, R],
-			"bass": [0, 1, 0, 1, -4, -4, -2, -2, 0, 1, 0, 1, -6, -6, -4, -4]}),
+			"bass": [0, 1, 0, 1, -4, -4, -2, -2, 0, 1, 0, 1, -6, -6, -4, -4]},
 		# Vargoth: heavy, epic minor assault (kick every other 8th!).
-		"boss_vargoth": _synth({"bpm": 144.0, "root": 130.8, "kick_every": 2,
+		"boss_vargoth": {"bpm": 144.0, "root": 130.8, "kick_every": 2,
 			"square": 0.9, "lead2": true, "bass_x2": true, "hat_every": 1,
 			"melody": [0, R, 0, 3, R, 3, 5, R, 7, R, 7, 8, R, 7, 5, 3,
 				0, R, 0, 3, R, 3, 5, R, 12, R, 10, 8, 7, 5, 3, 2],
-			"bass": [0, 0, 0, 0, -4, -4, -4, -4, -5, -5, -5, -5, -2, -2, -2, -2]}),
+			"bass": [0, 0, 0, 0, -4, -4, -4, -4, -5, -5, -5, -5, -2, -2, -2, -2]},
 	}
+	var bank: Dictionary = {}
+	for key in specs:
+		var override: Variant = overrides.get(key)
+		if _valid_override(override):
+			bank[key] = override
+		else:
+			bank[key] = _synth(specs[key])
+			if on_synth.is_valid():
+				on_synth.call(key)
+	for key in overrides:
+		if not bank.has(key) and _valid_override(overrides[key]):
+			bank[key] = overrides[key]
+	return bank
+
+
+## Match Game's recorded-music loader; unsupported AudioStream types fall back.
+## Loop/start configuration belongs to that loader and is not changed here.
+static func _valid_override(stream: Variant) -> bool:
+	return stream is AudioStreamOggVorbis or stream is AudioStreamMP3 or stream is AudioStreamWAV

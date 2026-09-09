@@ -318,13 +318,17 @@ const CAST_SHADOW_A := 0.30
 const CAST_SHADOW_SKEW := 0.55
 const CAST_SHADOW_SQUASH := 0.45
 #  Shape pick (owner round 5): a PROJECTED figure only for STANDING silhouettes
-#  (>= MIN_H tall AND the bottom rows narrower than STAND_RATIO of the full
-#  width — trunks, pedestals, pillars); everything else >= HUG_MIN_H (fountains,
+#  (>= MIN_H tall AND the bottom quarter narrower than STAND_RATIO of the full
+#  width — trunks and narrow posts); everything else >= HUG_MIN_H (fountains,
 #  logs, rocks, flowers, buildings) gets a HUGGING drop shadow instead — a
 #  projected copy of a squat shape read as a detached blob.
 const CAST_SHADOW_MIN_H := 26.0
 const CAST_SHADOW_HUG_MIN_H := 14.0
 const CAST_SHADOW_STAND_RATIO := 0.55
+const CAST_SHADOW_FOOT_BAND := 0.25
+const CAST_SHADOW_HUG_OFFSET_SCALE := 0.07
+const CAST_SHADOW_HUG_OFFSET_MIN := 5.0
+const CAST_SHADOW_HUG_OFFSET_MAX := 8.0
 const FOOT_DUST_PERIOD := 0.22
 const FOOT_DUST_N := 2
 const FOOT_DUST_A := 0.55

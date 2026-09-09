@@ -1040,6 +1040,13 @@ func _build_ability_bar() -> void:
 		# number in the player's eye-line, like the hit numbers).
 		var num := _label(Vector2(x, y + 14), 22, Color(1, 1, 1), SLOT_SIZE, HORIZONTAL_ALIGNMENT_CENTER)
 		UITheme.world(num, 22, 5)
+		if slot == "potion":
+			# Stock is persistent, unlike a cooldown. Tuck it beside the
+			# bottle so its silhouette stays readable even at zero carried.
+			UITheme.world(num, 15, 4)
+			num.position = Vector2(x + 2, y + SLOT_SIZE - 21)
+			num.size = Vector2(SLOT_SIZE - 5, 22)
+			num.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		var key := _label(Vector2(x + 4, y - 1), 12, Color(0.95, 0.85, 0.5), 50)
 		UITheme.world(key, 12, 4)
 		var cost := _label(Vector2(x, y + SLOT_SIZE - 20), 12, Color(0.5, 0.7, 1.0), SLOT_SIZE - 5, HORIZONTAL_ALIGNMENT_RIGHT)

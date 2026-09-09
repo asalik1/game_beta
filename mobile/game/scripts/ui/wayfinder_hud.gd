@@ -187,7 +187,7 @@ func _sample() -> void:
 	_engaged = _hot or not _enemies.is_empty() or preload("res://scripts/encounter_context.gd").blocking_name(game, zi) != ""
 	_boss = false
 	var guardian := String(game.zones[zi].get("boss", ""))
-	_boss_pending = guardian != "" and not game.boss_done.get(guardian, false)
+	_boss_pending = guardian != "" and not game._boss_room_resolved(zi)
 	for e in _enemies:
 		if e is Boss:
 			_boss = true

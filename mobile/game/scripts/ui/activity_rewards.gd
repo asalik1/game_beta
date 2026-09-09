@@ -19,18 +19,24 @@ class BoardWatch extends Node:
 		remaining = Balance.ACTIVITY_BOARD_REFRESH
 		menus.game.refresh_bounties()
 		menus.game.refresh_contracts()
-		var next := UIActivityRewards._signature(menus.game)
+		var next := UIActivityRewards._signature(menus.game, tab)
 		if next != signature:
 			UIActivityRewards.reopen(menus, tab, ward)
 
 
-static func _signature(g: Game) -> int:
-	return hash([g.contract_day, g.contract_claims_day, g.contracts.hash(),
+static func _signature(g: Game, tab := "activities") -> int:
+	var state: Array = [g.contract_day, g.contract_claims_day, g.contracts.hash(),
 		g.bounties.hash(), g.vault_week, g.vault_progress, g.vault_claimed_week,
 		g.player.level if g.has_local_player() else 0,
 		g.player.resonance if g.has_local_player() else 0,
 		g.player.faction_standing.hash() if g.has_local_player() else 0,
-		g.player.npc_favor.hash() if g.has_local_player() else 0])
+		g.player.npc_favor.hash() if g.has_local_player() else 0]
+	if tab == "progress":
+		state.append_array([g.hud.wayfinder.context_key(), g.cur_room,
+			g.zone_count, g.visited.hash(), g.boss_done.hash(), g.pocket_done,
+			g.unlisted_banked.hash(), g.waking_kills.hash(), g.waking_kills_week,
+			g._week_index()])
+	return hash(state)
 
 
 ## A refresh is the same view with current data. Keep original card identities
@@ -74,7 +80,7 @@ static func watch(m: Menus, tab: String, ward := "") -> void:
 	guard.shell = m.root
 	guard.tab = tab
 	guard.ward = ward
-	guard.signature = _signature(m.game)
+	guard.signature = _signature(m.game, tab)
 	guard.process_mode = Node.PROCESS_MODE_ALWAYS
 	m.root.add_child(guard)
 

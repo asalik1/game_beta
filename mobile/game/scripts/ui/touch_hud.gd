@@ -143,14 +143,19 @@ func _make_button(id: String) -> void:
 	icon.custom_minimum_size = Vector2(diam * icon_span, diam * icon_span)
 	icon.size = icon.custom_minimum_size
 	pnl.add_child(icon)
-	# Centre label: cooldown countdown for abilities, x-count for potion, glyph
-	# for the static action buttons (lock / interact / cycle).
+	# Centre label: cooldown countdown or static action glyph. Potion stock
+	# sits at the lower right so it does not cover the painted bottle.
 	var lbl := Label.new()
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	lbl.size = Vector2(diam, diam)
 	lbl.add_theme_font_size_override("font_size", 22 if ABILITY_SLOTS.has(id) else 16)
+	if id == "potion":
+		lbl.position = Vector2(4.0, diam - 25.0)
+		lbl.size = Vector2(diam - 12.0, 22.0)
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		UITheme.world(lbl, 16, 4)
 	pnl.add_child(lbl)
 	# Static content for the action buttons that have no per-frame icon: the lock
 	# uses a drawn scope reticle (the ◎ glyph was thin + missing on mobile fonts);
@@ -255,7 +260,7 @@ func _refresh_ability_icons() -> void:
 		else:
 			lbl.text = ""
 			icon.modulate = Color(1, 1, 1, 1)
-	# Potion: icon + carried count (health uses the potion glyph; a slotted
+	# Potion: icon + carried count (health uses the painted health bottle; a slotted
 	# elixir uses its consumable icon). ability-agnostic, so kept separate.
 	var pb: Dictionary = _btns["potion"]
 	var picon := pb["icon"] as TextureRect
@@ -266,7 +271,8 @@ func _refresh_ability_icons() -> void:
 		var ic: Texture2D = Art.consumable_icon({"id": p.active_potion})
 		picon.texture = ic if ic != null else Art.tex("potion")
 	var left: int = p.room_potions_left()
-	plbl.text = "x%d" % p.potion_count() if left > 0 else "—"
+	var carried: int = p.potion_count() if p.active_potion == "health" else p.consumable_count(p.active_potion)
+	plbl.text = "x%d" % carried if left > 0 else "—"
 	picon.modulate = Color(1, 1, 1, 1) if left > 0 else Color(0.4, 0.4, 0.4, 0.8)
 
 

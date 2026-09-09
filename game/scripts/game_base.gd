@@ -2518,7 +2518,7 @@ func room_pacified(i: int) -> bool:
 	elif not cleared.get(i, false) and not zones[i].get("enemies", []).is_empty():
 		return false
 	var kind: String = zones[i].get("boss", "")
-	return kind == "" or boss_done.get(kind, false)
+	return kind == "" or _boss_room_resolved(i)
 
 ## Death returns you to rooms like these; the map can travel to them.
 func room_safe(i: int) -> bool:
@@ -4235,6 +4235,27 @@ func spawn_ally_damage(pos: Vector2, amount: int, crit: bool) -> void:
 
 
 # =================================================================== per-frame
+
+
+## A guardian's recorded identity belongs to this encounter, not its reused kit.
+## Callers must apply their own charted-room check before revealing this name.
+func _boss_room_name(zi: int) -> String:
+	if zi < 0 or zi >= zones.size():
+		return ""
+	var zone: Dictionary = zones[zi]
+	var kind := String(zone.get("boss", ""))
+	if kind == "":
+		return ""
+	var base_name := String(Story.ALL_ENEMIES.get(kind, {}).get("name", kind.capitalize()))
+	var pocket := String(zone.get("pocket", ""))
+	if pocket != "":
+		return String(Pockets.entry(pocket).get("name", base_name))
+	var unlisted := String(zone.get("unlisted", ""))
+	if unlisted != "":
+		return String(Unlisted.entry(unlisted).get("name", base_name))
+	if String(zone.get("waking", "")) != "":
+		return "Waking echo · " + base_name
+	return base_name
 
 
 ## Named encounters own completion independently from their reused boss kit.

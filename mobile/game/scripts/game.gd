@@ -93,7 +93,7 @@ func _ready() -> void:
 		terrain_by_zone.append(zone.get("terrain", "village"))
 	_prepare_rooms()
 
-	sounds = Sfx.build_all()
+	var recorded_sounds: Dictionary = {}
 	# Sound overrides: any assets/sounds/<name>.wav or .ogg replaces the
 	# synthesized effect of the same name (same idea as sprites).
 	for file in _override_files("sounds"):
@@ -106,7 +106,10 @@ func _ready() -> void:
 			continue
 		var snd := load(res_path) as AudioStream
 		if snd:
-			sounds[file.get_basename()] = snd
+			recorded_sounds[file.get_basename()] = snd
+	# Validate recordings first; synthesize only the keys they do not supply.
+	# The builder retains base-key order and all recording-only variants.
+	sounds = Sfx.build_all(recorded_sounds)
 	_build_sound_groups()
 	_ensure_sfx_bus()  # SFX slider drives this bus; pool + ambience + positional route here
 	for i in 10:
@@ -116,8 +119,8 @@ func _ready() -> void:
 		add_child(sp)
 		sound_pool.append(sp)
 
-	# Background music: looping procedural chiptune, one per zone + boss.
-	music_tracks = Music.build_all()
+	# Background music: recordings plus the original procedural fallbacks.
+	var recorded_music: Dictionary = {}
 	# Music overrides: assets/music/<track>.ogg/.mp3/.wav replaces the
 	# composed track of the same name, looped — same idea as sprites/sfx.
 	for file in _override_files("music"):
@@ -133,17 +136,18 @@ func _ready() -> void:
 			var ogg := track as AudioStreamOggVorbis
 			ogg.loop = true
 			ogg.loop_offset = float(tune.get("start", 0.0))
-			music_tracks[file.get_basename()] = ogg
+			recorded_music[file.get_basename()] = ogg
 		elif track is AudioStreamMP3:
 			var mp3 := track as AudioStreamMP3
 			mp3.loop = true
 			mp3.loop_offset = float(tune.get("start", 0.0))
-			music_tracks[file.get_basename()] = mp3
+			recorded_music[file.get_basename()] = mp3
 		elif track is AudioStreamWAV:
 			var wav := track as AudioStreamWAV
 			wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
 			wav.loop_end = wav.data.size() / (4 if wav.stereo else 2)
-			music_tracks[file.get_basename()] = wav
+			recorded_music[file.get_basename()] = wav
+	music_tracks = Music.build_all(recorded_music)
 	music_player = AudioStreamPlayer.new()
 	music_player.volume_db = -16.0
 	# Music survives the pause: boot menus (cover/roster) run with the
@@ -582,6 +586,8 @@ func _face_interactable_to_player(entry: Dictionary) -> void:
 	if absf(to_player.x) > 1.0:
 		player.look_sign = -signf(to_player.x)
 		player.facing = Vector2(player.look_sign, 0.0)
+	if bool(npc.get_meta("scenery_prop", false)):
+		return
 	var dirs: Dictionary = entry.get("dir_anims", {})
 	if dirs.is_empty():
 		# A flat side-profile can only answer left/right. Preserve a frontal

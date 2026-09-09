@@ -1479,7 +1479,15 @@ static func tex(name: String) -> ImageTexture:
 		var ft := ImageTexture.create_from_image(file_img)
 		_cache[name] = ft
 		return ft
-	if name == "potion":  # HUD potion icon: allow an assets/icons/ override
+	if name == "potion":
+		# The generic health slot needs the same painted fidelity as slotted
+		# bottles. Reuse the 128px health master; the old 32px glyph blurred
+		# when enlarged beside ability medallions. This is a category symbol,
+		# not a claim about the grade that the automatic health slot will pour.
+		var painted := consumable_icon({"sprite": "consumables/apprentices_health_potion"})
+		if painted != null:
+			_cache[name] = painted
+			return painted
 		var icon_img := _icon_override(name)
 		if icon_img != null:
 			var it := ImageTexture.create_from_image(icon_img)

@@ -961,6 +961,12 @@ func _run_systems() -> void:
 	var ward_desk_error: String = await preload("res://scripts/tests/test_ward_desks.gd").run(self)
 	if ward_desk_error != "":
 		return _fail(ward_desk_error)
+	var guardian_error: String = await preload("res://scripts/tests/test_optional_discovery.gd").run(self)
+	if guardian_error != "":
+		return _fail(guardian_error)
+	var prop_shadow_error: String = preload("res://scripts/tests/test_prop_shadows.gd").run(self)
+	if prop_shadow_error != "":
+		return _fail(prop_shadow_error)
 
 	# 3d9. Reforge bench: affix reroll, value reroll, add socket + cap.
 	_test_reforge()

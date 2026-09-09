@@ -31,13 +31,61 @@ mobile mirrors, three independent UID pairs, logs and visual reviews.
 Root alone owns engine runs, integration and commits. Ward agents have
 finished production edits. Continue the authorized work after this checkpoint.
 
-Next-pass preparation is deliberately outside the ward stage list: frozen,
-untracked `shot_optional_discovery.*` and `shot_audio_startup.*`. Compile and
-run their negative-control/measurement baselines before changing production.
-Read `build/qa/resume-player-value-audit.md`, `boot-performance-audit.md` and
-`unlisted-party-audit.md`. These are source audits, not completed fixes.
-Keep one muted engine at a time; compile → quick → full, mobile and relevant
-visual/network checks before staging explicit paths.
+**Validated checkpoint 31 (04:24 UTC):** four improvements are ready for the
+explicit local commit. The candidate list is
+`build/qa/checkpoint31-paths.json` (76 paths); the 70 code/scene/UID hashes live
+in `checkpoint31-source-freeze.json`. Twenty-eight source/scene mobile mirrors
+are byte-identical and seven UID pairs were independently minted. Final desktop
+compile224/full205 and mobile compile224/strictquick125 passed. Full preflight
+reported no findings. Logs use the `checkpoint31-` prefix under `build/qa/`;
+the final identity will be recorded in `checkpoint31-validation.json`.
+
+The owner's potion-HUD request uses the existing painted 128px bottle and a
+lower-right stock count; touch counts the selected potion. Desktop keyboard
+passed 79 checks/six states and final mobile touch passed 81/six states. All
+eighteen images from each final run were reviewed. Read `POTION_HUD.md`.
+Optional guardian discovery passed 209 checks/44 captures on both desktop and
+mobile, including real mobile map taps and detached pocket inspection without
+movement. All 88 desktop/mobile guardian images passed visual review.
+Read `GUARDIAN_DISCOVERY.md`. Audio startup skips replaced synthesis while
+retaining all 72 fallback PCM hashes and recorded-bank/menu contracts. Desktop
+and mobile each passed 60 checks/three captures against the clean baseline.
+The measured skipped work is not a controlled total-boot timing claim.
+Read `AUDIO_STARTUP.md`.
+
+The owner's exact mirrored `tombstone3` shadow defect was reproduced through
+the real factory. The shared scenery helper now measures the bottom quarter,
+anchors narrow projections to the opaque foot, and fits broad contact rims
+to the full source transform. Atlas frames, margins and flipped footprints
+have regression coverage. Redundant generic ovals no longer float below broad
+props. Interactive gravestones/shrines/chests stay still when addressed.
+Final desktop2 and mobile1 each passed 129 checks, 19 fullframes and 18 native
+crops; all 74 images were reviewed. Read `PROP_SHADOWS.md`. No artwork changed.
+The final integrated full and mobile quick checks include the oval cleanup.
+The prior checkpoint is `a74fdfe` (ward boards).
+
+Future baseline preparation remains outside checkpoint 31: the `--unlisted`
+hook in `shot_road_hunt.gd`, `tests/unlisted_party_live.gd` and `shot_vow_guard.*`,
+including mobile mirrors and independently minted UIDs. No associated gameplay
+fix is implemented. Run the negative controls before production changes.
+The hero-geometry candidate remains only in `build/qa/hero-geometry-candidate`;
+it is reviewed source, not an engine-validated performance result. Read the
+Unlisted party, Vow Sentinel and hero-measurement audits under `build/qa/`.
+Keep one muted engine at a time and stage only validated explicit paths.
+
+**Latest owner priority:** elevate the overall visuals and clean up remaining
+UI/HUD clutter. The owner explicitly requested a subagent research/planning
+pass using strong 2D games as references. Three bounded reviews are complete:
+`visual-elevation-research.md`, `hud-cleanliness-audit.md` and
+`world-visual-feasibility.md` under `build/qa/`. Official remote media could
+not be viewed as pixels in this runtime; reference interpretations are labeled,
+while the actual Crownless source/assets/native captures were inspected.
+After checkpoint 31, prioritize a compact fixed dossier, quieter painted
+grave-earth and a deliberate Vigil Gate gathering composition over the queued
+Unlisted/performance/combat candidates. Preserve touch targets, skill-point
+visibility and vital/action geometry. Root has read the imagegen skill for a
+single environmental-material candidate; no new art has yet been generated.
+Research is preparation; implement, playtest and compare actual game frames.
 
 ## Historical pause — superseded by the resume above
 

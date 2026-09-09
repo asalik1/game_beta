@@ -133,14 +133,17 @@ static func room_chests(g: Game, room: int) -> Array[Chest]:
 	return out
 
 
-## Keep teleported pocket arenas out of the mainland extent. Their authored
-## coordinates are thousands of cells away; fitting both makes a map disappear.
-static func chart_rooms(g: Game) -> Array[int]:
+## Inspect one known component at a time. A charted journal destination may
+## anchor a detached pocket view, but never adds a route or graph connection.
+static func chart_rooms(g: Game, anchor := -1) -> Array[int]:
 	var out: Array[int] = []
 	if g.rooms.is_empty():
 		return out
-	var queue: Array[int] = [g.cur_room]
-	var seen := {g.cur_room: true}
+	var start: int = anchor if anchor >= 0 and anchor < g.rooms.size() and g.charted(anchor) else g.cur_room
+	if start < 0 or start >= g.rooms.size():
+		return out
+	var queue: Array[int] = [start]
+	var seen := {start: true}
 	var cursor := 0
 	while cursor < queue.size():
 		var at := queue[cursor]

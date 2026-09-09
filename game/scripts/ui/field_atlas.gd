@@ -15,6 +15,9 @@ var details: VBoxContainer
 var actions: VBoxContainer
 var summary: Label
 var selected := -1
+var _view_anchor := -1
+var _detail_scroll: ScrollContainer
+var _detail_revision := 0
 var _rooms: Array[int] = []
 var _positions := {}
 var _route: Array[int] = []
@@ -27,7 +30,7 @@ var _moved := false
 var _touch_id := -1
 var _hover := -1
 var _next_refresh := 0.0
-var _signature := ""
+var _signature := 0
 var _context := ""
 var _pitch := Vector2(112, 90)
 var _origin := Vector2.ZERO
@@ -52,6 +55,7 @@ static func open(m: Menus) -> void:
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_context = game.hud.wayfinder.context_key()
+	_view_anchor = game.cur_room
 	selected = game.hud.wayfinder.pinned_room if game.hud.wayfinder.pinned_room >= 0 else game.cur_room
 	var column := VBoxContainer.new()
 	column.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -107,13 +111,23 @@ func _ready() -> void:
 	var trail := menus._btn(toolbar, "Main trail", func() -> void:
 		var target: int = Nav.main_trail(game)
 		if target >= 0:
+			# A visible frontier on the main road may be outside a detached
+			# pocket view. Restore the current component before selecting it.
+			if not _rooms.has(target):
+				_show_position()
 			select_room(target)
 		else:
 			_message = "Explore a new passage to chart the road ahead."
 			_show_details(), UITheme.GOLD_BRIGHT)
 	trail.custom_minimum_size = Vector2(112, 44)
+	trail.name = "AtlasMainTrail"
 	trail.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	trail.tooltip_text = "Select the next known step on the main road"
+	var position_button := menus._btn(toolbar, "Your position", _show_position)
+	position_button.name = "AtlasYourPosition"
+	position_button.custom_minimum_size = Vector2(126, 44)
+	position_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	position_button.tooltip_text = "Return the chart to the area you occupy"
 	var legend := _label(chart, "◆ You    ◇ Route    ? Unexplored    ━ Sealed", 12, PAPER)
 	legend.size = Vector2(560, 22)
 	legend.autowrap_mode = TextServer.AUTOWRAP_OFF
@@ -132,6 +146,8 @@ func _ready() -> void:
 	sidebar_column.add_theme_constant_override("separation", 12)
 	margin.add_child(sidebar_column)
 	var scroll := ScrollContainer.new()
+	_detail_scroll = scroll
+	scroll.name = "AtlasDetailScroll"
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	sidebar_column.add_child(scroll)
@@ -181,15 +197,19 @@ func _process(delta: float) -> void:
 
 
 func _refresh(force := false) -> void:
-	var sig := "%d|%s|%s|%s|%s|%s|%d|%s" % [game.cur_room, game.visited.hash(),
+	var sig := hash([game.cur_room, _view_anchor, game.visited.hash(),
 		game.door_seen.hash(), game.cleared.hash(), game.boss_done.hash(), game.flags.hash(),
-		game.hud.wayfinder.pinned_room, game.barrier_active]
+		game.hud.wayfinder.pinned_room, game.barrier_active, game.zone_alive.hash(), game.built.hash(),
+		game.pocket_done, game.unlisted_banked.hash(), game.waking_kills.hash(),
+		game.waking_kills_week, game._week_index()])
 	if sig == _signature and not force:
 		return
 	_signature = sig
-	_rooms = Nav.chart_rooms(game)
+	if _view_anchor < 0 or _view_anchor >= game.rooms.size() or not game.charted(_view_anchor):
+		_view_anchor = game.cur_room
+	_rooms = Nav.chart_rooms(game, _view_anchor)
 	if not _rooms.has(selected):
-		selected = game.cur_room
+		selected = game.cur_room if _rooms.has(game.cur_room) else _view_anchor
 	var explored := 0
 	var secured := 0
 	for room in _rooms:
@@ -199,7 +219,7 @@ func _refresh(force := false) -> void:
 				secured += 1
 	summary.text = "%02d CHARTED   /   %02d SECURED" % [explored, secured]
 	_layout_chart()
-	_show_details()
+	_show_details(true)
 
 
 func _layout_chart() -> void:
@@ -232,6 +252,16 @@ func _update_route() -> void:
 
 func select_room(room: int) -> void:
 	if not _rooms.has(room):
+		# A journal record can inspect a discovered detached component. Fog,
+		# the actual route graph and travel eligibility stay unchanged.
+		if room < 0 or room >= game.rooms.size() or not game.charted(room):
+			return
+		_view_anchor = room
+		selected = room
+		_message = ""
+		_zoom = 1.0
+		_pan = Vector2.ZERO
+		_refresh(true)
 		return
 	selected = room
 	_message = ""
@@ -240,7 +270,23 @@ func select_room(room: int) -> void:
 	chart.queue_redraw()
 
 
-func _show_details() -> void:
+func _show_position() -> void:
+	_view_anchor = game.cur_room
+	selected = game.cur_room
+	_message = ""
+	_zoom = 1.0
+	_pan = Vector2.ZERO
+	_refresh(true)
+
+
+func _show_details(preserve_view := false) -> void:
+	_detail_revision += 1
+	var revision := _detail_revision
+	var offset := _detail_scroll.scroll_vertical if preserve_view else 0
+	var focus_name := ""
+	var focused := get_viewport().gui_get_focus_owner()
+	if preserve_view and is_instance_valid(focused) and actions.is_ancestor_of(focused):
+		focus_name = String(focused.name)
 	for container in [details, actions]:
 		for c in container.get_children():
 			container.remove_child(c)
@@ -262,8 +308,9 @@ func _show_details() -> void:
 		_label(details, String(terrain.get("name", "The wilds")), 14, PAPER)
 		var kind := String(game.zones[selected].get("boss", ""))
 		if kind != "":
-			var boss_name := String(Story.ALL_ENEMIES.get(kind, {}).get("name", kind.capitalize()))
-			_label(details, ("Defeated · " if game.boss_done.get(kind, false) else "Guardian · ") + boss_name, 15, color)
+			var guardian := _label(details, ("Defeated · " if game._boss_room_resolved(selected) else "Guardian · ") + game._boss_room_name(selected), 15, color)
+			guardian.name = "AtlasGuardianState"
+			guardian.custom_minimum_size.x = SIDE_WIDTH - 36
 	var service := _label(details, Nav.services(game, selected), 16, Color(0.72, 0.76, 0.79))
 	service.custom_minimum_size.x = SIDE_WIDTH - 36
 	var gap := Control.new()
@@ -276,6 +323,8 @@ func _show_details() -> void:
 	if not here:
 		if _route.is_empty():
 			message = "No charted passage connects to this destination."
+			if String(game.zones[selected].get("pocket", "")) != "":
+				message = "This pocket is reached through its portal stone. Return to your current area with Your position."
 		elif blocked != "":
 			message = blocked
 		else:
@@ -312,9 +361,25 @@ func _show_details() -> void:
 		var b := menus._btn(known_row, "‹ Previous" if move < 0 else "Next ›", func() -> void:
 			var idx: int = _rooms.find(selected)
 			select_room(_rooms[posmod(idx + move, _rooms.size())]))
+		b.name = "AtlasPrevious" if move < 0 else "AtlasNext"
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.custom_minimum_size = Vector2(118, 44)
 		b.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_restore_details(revision, focus_name, offset)
+
+
+func _restore_details(revision: int, focus_name: String, offset: int) -> void:
+	await get_tree().process_frame
+	if not is_instance_valid(self) or revision != _detail_revision \
+			or menus.current != "map" or not is_instance_valid(menus.root) or not menus.root.is_ancestor_of(self):
+		return
+	if focus_name != "":
+		var focused := actions.find_child(focus_name, true, false) as Button
+		if focused == null or focused.disabled:
+			focused = find_child("AtlasYourPosition", true, false) as Button
+		if focused != null:
+			focused.grab_focus()
+	_detail_scroll.scroll_vertical = offset
 
 
 func _pin_selected() -> void:

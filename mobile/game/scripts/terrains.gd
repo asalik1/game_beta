@@ -87,6 +87,13 @@ static func prop_family(name: String) -> Array:
 	return [name]
 
 
+## Some lore objects share the interaction factory with citizens. They retain
+## scenery shadows and a fixed pose when read, opened or used.
+static func is_prop_sprite(name: String) -> bool:
+	return Balance.SCENERY_RENDER_WIDTH.has(prop_base(name)) or STRUCTURES.has(name) \
+		or name in ["book", "chest_wood", "chest_silver", "chest_gold", "crystal", "mill"]
+
+
 static func prop_base(name: String) -> String:
 	return String(prop_family(name)[0])
 
