@@ -112,6 +112,19 @@ exact currency/identity details, badges and party layout through actual GUI inpu
 Add `--touch --mobile --renderer=gl_compatibility` for actual ScreenTouch events.
 Synthetic party shells exercise layout only, not real peer replication.
 
+Hero geometry QA: `shot.bat hero_geometry --renderer=forward_plus --timeout=420`
+checks setup geometry for six base classes and real class previews/paper dolls.
+Use fresh isolated APPDATA/LOCALAPPDATA/TEMP/TMP under `build/qa`; an ordinary
+profile is refused. `--compare=<absolute-clean-baseline-observations.json>`
+requires exact geometry parity. Add `--mobile --renderer=gl_compatibility` for
+synced mobile-source rendering. Each run saves 13 fullframes and 12 native crops;
+only warrior/mage/assassin have world/model screenshots, while all six classes
+and paper dolls have numeric checks. `--work-counters` requires the matching
+temporary diagnostic wrappers; it does not instrument a clean build. Compare
+clean elapsed timings separately from instrumented native-operation counts,
+then restore clean source. Read `HERO_GEOMETRY.md` for four-phase ordering,
+synthetic cache contracts, isolation and the limits of setup-only measurements.
+
 Static pebble QA: `shot.bat pebble_prop --timeout=240` compares the actual prop
 factory against the original pebble and existing angular rock at real widths in
 five settled terrain palettes. It saves five native views and two detail views;

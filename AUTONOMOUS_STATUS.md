@@ -1,5 +1,24 @@
 # Autonomous work checkpoint — RESUMED September 9, 2026
 
+**Validated pass 36, 11:19 UTC:** hero raw geometry reuse passed four isolated
+desktop phases150/296/174/325 checks and mobile Compatibility174 checks, all
+with zero failures and the exact same six-class geometry signature. All125 PNGs
+were decoded; all75 clean desktop/mobile images were reviewed. Six clean world
+crops are byte-identical. Across139 matched setup phases, actual image reads
+fell1433→425 and alpha scans1008→400, counting400 moved seed scans. One clean
+pair measured six repeated class calls1917.589→11.616ms; no FPS/whole-boot claim.
+Clean production was restored after instrumentation;967 art/import/tuning
+hashes are unchanged. Seven source/scene pairs match mobile, and six new QA
+UIDs are independent. Desktop import/compile228/quick125/full205 and mobile
+import/compile228/strictquick125 passed. Full preflight passed without findings.
+The23 explicit paths, native reviews, logs and actual commit identity are in
+build/qa/checkpoint36-validation.json. Source/QA/UID freeze stayed exact.
+Pass35 is `cfcdb7cf4bcac07b664ef50e80b8ad8a6a1f4f6c`.
+Next: truthful online-menu copy and minimal Wardrobe Chroma UI retirement.
+The narrow patches and combined QA are reviewed and remain unpublished;
+apply to the newer Menus code after QA-first before captures. Preserve scratch.
+Continue to12:00UTC feature cutoff and13:00UTC final stable checkpoint.
+
 **Validated pass 35, 10:36 UTC:** the pocket HUD and Renown notice changes
 passed desktop compile226/quick125/full205 and mobile import/compile226/
 strictquick125. Six accepted native runs passed: focused before161/0 and

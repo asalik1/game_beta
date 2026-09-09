@@ -819,7 +819,7 @@ func _apply_class_sprite() -> void:
 	# Empty for every current class; lights up when directional art lands.
 	_dir_loco = {}
 	for clip in Art.HERO_CLIP_FILES:
-		var ds := Art.dir_set("%s_%s" % [art_name, Art.HERO_CLIP_FILES[clip]])
+		var ds := Art.dir_set("%s_%s" % [art_name, Art.HERO_CLIP_FILES[clip]], true)
 		if not ds.is_empty():
 			# dir_set's _strip_info hardcodes fps=6; stamp the clip's REAL
 			# playback rate (HERO_CLIP_FPS) so directional actions don't crawl
@@ -923,20 +923,26 @@ func refresh_skin_sprite() -> void:
 		_apply_class_sprite()
 
 
-## Read a strip's first frame alpha to find body height + feet row, and derive
+## Resolve a strip's first-frame alpha bounds to find body height + feet row, and derive
 ## the sprite scale (body -> constant on-screen size) + vertical feet offset.
 ## Returned per strip so a different-sized strip (e.g. directional poses) still
 ## renders the body at the same size and its feet on the shadow.
 func _measure_hero_frame(info: Dictionary, size_mult := 1.0) -> Dictionary:
-	var img: Image = info["tex"].get_image()
+	var tex: Texture2D = info["tex"]
 	var frames := int(info["frames"])
-	var fw := int(img.get_width() / max(1, frames))
-	var fh := img.get_height()
-	# get_used_rect runs in the engine instead of crossing the GDScript/Image
-	# boundary once per pixel. This matters now that each directional clip is
-	# measured once for its own grounding metadata.
-	var first_frame := img.get_region(Rect2i(0, 0, fw, fh))
-	var used := first_frame.get_used_rect()
+	var fw := int(tex.get_width() / max(1, frames))
+	var fh := tex.get_height()
+	var raw: Dictionary = Art.hero_frame_bounds(info, Rect2i(0, 0, fw, fh))
+	var used: Rect2i
+	if not raw.is_empty():
+		used = raw["used"]
+	else:
+		# Preserve the exact direct path for external/synthetic descriptors.
+		var img: Image = tex.get_image()
+		fw = int(img.get_width() / max(1, frames))
+		fh = img.get_height()
+		var first_frame := img.get_region(Rect2i(0, 0, fw, fh))
+		used = first_frame.get_used_rect()
 	var bot: int = used.end.y - 1
 	var body_h := maxi(1, used.size.y - 1)
 	# CHAR_RENDER_SCALE enlarges the on-screen body (less downscale = thin detail

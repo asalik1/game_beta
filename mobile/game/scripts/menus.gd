@@ -1486,13 +1486,19 @@ func _cs_play_clip(clip: String, loop: bool) -> void:
 		body_h = _cs_body_cache[ck].x
 		bot = _cs_body_cache[ck].y
 	else:
-		var img: Image = tex.get_image()
-		if img != null:
-			var first := img.get_region(Rect2i(0, 0, int(fsize.x), int(fsize.y)))
-			var used := first.get_used_rect()
-			if used.size.y > 0:
-				body_h = float(used.size.y)
-				bot = float(used.end.y)
+		var rect := Rect2i(0, 0, int(fsize.x), int(fsize.y))
+		var raw: Dictionary = Art.hero_frame_bounds(info, rect)
+		var used := Rect2i()
+		if not raw.is_empty():
+			used = raw["used"]
+		else:
+			var img: Image = tex.get_image()
+			if img != null:
+				var first := img.get_region(rect)
+				used = first.get_used_rect()
+		if used.size.y > 0:
+			body_h = float(used.size.y)
+			bot = float(used.end.y)
 		_cs_body_cache[ck] = Vector2(body_h, bot)
 	var s := minf(3.0, CS_MODEL_BODY_H / maxf(1.0, body_h))
 	_cs_model.scale = Vector2(s, s)
@@ -2965,14 +2971,22 @@ func _paper_doll(vbox: VBoxContainer, p: Player) -> void:
 		# Centre the BODY, not the cell: hero frames carry side padding, so the
 		# alpha centroid of frame 0 is the x that must land on the midline.
 		var body_dx := 0.0
-		var f0 := AtlasTexture.new()
-		f0.atlas = tex
-		f0.region = Rect2(0, 0, fsize.x, fsize.y)
-		var img0: Image = f0.get_image()
-		if img0 != null:
-			var r0 := img0.get_used_rect()
-			if r0.size.x > 0:
-				body_dx = (r0.position.x + r0.size.x * 0.5) - fsize.x * 0.5
+		var raw: Dictionary = Art.hero_frame_bounds(info, Rect2i(0, 0, int(fsize.x), int(fsize.y))) \
+			if fsize.x > 0 and fsize.y > 0 else {}
+		var r0 := Rect2i()
+		if not raw.is_empty():
+			r0 = raw["used"]
+		else:
+			# AtlasTexture's zero-size axes mean the whole source axis. Retain
+			# that original path for external/invalid-size preview descriptors.
+			var f0 := AtlasTexture.new()
+			f0.atlas = tex
+			f0.region = Rect2(0, 0, fsize.x, fsize.y)
+			var img0: Image = f0.get_image()
+			if img0 != null:
+				r0 = img0.get_used_rect()
+		if r0.size.x > 0:
+			body_dx = (r0.position.x + r0.size.x * 0.5) - fsize.x * 0.5
 		model.position = Vector2(model_x - body_dx * s, PD_H - 30.0 - fsize.y * s * 0.5)
 		stage.add_child(model)
 		model.play("idle")

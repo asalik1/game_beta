@@ -3142,6 +3142,82 @@ static func hdr(c: Color, boost: float = HDR_FX_BOOST) -> Color:
 # same native-facing rule as static overrides (Art.faces_left).
 static var _anim_cache := {}
 
+# Only hero-requested, Art-owned strips receive raw geometry metadata.
+# The texture owns it: no second global cache retains retired textures.
+# No Images, FPS, class scale or caller offset are stored here.
+const HERO_GEOMETRY_META: StringName = &"_hero_frame_geometry"
+
+
+static func _hero_image_bounds(img: Image, frames: int, frame_size: Vector2i) -> Dictionary:
+	var bounds: Dictionary = {}
+	# Gameplay divides the actual strip width; previews use frame_size. Keep
+	# both exact rectangles when an irregular strip makes them differ.
+	var gameplay := Rect2i(0, 0, int(img.get_width() / max(1, frames)), img.get_height())
+	var preview := Rect2i(Vector2i.ZERO, frame_size)
+	for rect in [gameplay, preview]:
+		if not bounds.has(rect):
+			bounds[rect] = img.get_region(rect).get_used_rect()
+	return bounds
+
+
+static func _store_hero_geometry(tex: Texture2D, size: Vector2i, bounds: Dictionary) -> void:
+	# A size override need not emit changed. Replace an existing watcher safely
+	# if this entry is reseeded before its one-shot invalidation has fired.
+	if tex.has_meta(HERO_GEOMETRY_META):
+		var previous: Dictionary = tex.get_meta(HERO_GEOMETRY_META)
+		var previous_watch: Callable = previous.get("invalidate", Callable())
+		if previous_watch.is_valid() and tex.changed.is_connected(previous_watch):
+			tex.changed.disconnect(previous_watch)
+	var source_ref: WeakRef = weakref(tex)
+	var invalidate: Callable = func() -> void:
+		var live := source_ref.get_ref() as Texture2D
+		if live != null and live.has_meta(HERO_GEOMETRY_META):
+			live.remove_meta(HERO_GEOMETRY_META)
+	tex.set_meta(HERO_GEOMETRY_META, {"source_id": tex.get_instance_id(), "size": size,
+		"bounds": bounds, "invalidate": invalidate})
+	# ImageTexture.update/set_image emit changed even when dimensions stay equal.
+	# The closure captures only a WeakRef, so metadata/signal cannot own tex.
+	tex.changed.connect(invalidate, Object.CONNECT_ONE_SHOT)
+
+
+static func _ensure_hero_geometry(info: Dictionary) -> void:
+	if info.is_empty():
+		return
+	var tex: Texture2D = info["tex"]
+	if tex.has_meta(HERO_GEOMETRY_META):
+		var current: Dictionary = tex.get_meta(HERO_GEOMETRY_META)
+		if current["source_id"] == tex.get_instance_id() and current["size"] == Vector2i(tex.get_width(), tex.get_height()):
+			return
+	# A non-hero loader may have cached this strip first. Read it only on its
+	# first hero request, then share the same bounds with all descriptor copies.
+	var img: Image = tex.get_image()
+	if img == null:
+		return
+	var frame_size: Vector2i = info.get("frame_size", Vector2i(tex.get_height(), tex.get_height()))
+	_store_hero_geometry(tex, img.get_size(), _hero_image_bounds(img, int(info["frames"]), frame_size))
+
+
+## Returns {} for unregistered textures and Atlas descriptors: callers retain their
+## direct-image fallback. Rect2i values are copied, never caller-sized metadata.
+static func hero_frame_bounds(info: Dictionary, rect: Rect2i) -> Dictionary:
+	var tex: Texture2D = info.get("tex")
+	if tex == null or tex is AtlasTexture:
+		return {}
+	if not tex.has_meta(HERO_GEOMETRY_META):
+		return {}
+	var cached: Dictionary = tex.get_meta(HERO_GEOMETRY_META)
+	if cached["source_id"] != tex.get_instance_id() or cached["size"] != Vector2i(tex.get_width(), tex.get_height()):
+		return {}
+	var bounds: Dictionary = cached["bounds"]
+	if not bounds.has(rect):
+		# Preserve arbitrary caller rectangles without reusing a similar frame.
+		var img: Image = tex.get_image()
+		if img == null:
+			return {}
+		bounds[rect] = img.get_region(rect).get_used_rect()
+	return {"used": bounds[rect]}
+
+
 ## Idle strip: assets/sprites/<name>_anim.png.
 static func anim_info(name: String) -> Dictionary:
 	var base: String = String(BOSS_IDLE_STRIP_BASE.get(name, "%s_anim" % name))
@@ -3161,8 +3237,10 @@ static func action_info(name: String, action: String) -> Dictionary:
 	return _strip_info("%s_%s" % [name, action])
 
 
-static func _strip_info(base: String) -> Dictionary:
+static func _strip_info(base: String, hero_geometry := false) -> Dictionary:
 	if _anim_cache.has(base):
+		if hero_geometry:
+			_ensure_hero_geometry(_anim_cache[base])
 		return _anim_cache[base]
 	var info := {}
 	var path := "res://assets/sprites/%s.png" % base
@@ -3183,12 +3261,17 @@ static func _strip_info(base: String) -> Dictionary:
 					and img.get_width() % static_img.get_width() == 0:
 				frame_size = static_img.get_size()
 				frames = maxi(1, int(img.get_width() / static_img.get_width()))
+		# Seed from the existing Image before uploading the strip texture.
+		var raw_bounds: Dictionary = _hero_image_bounds(img, frames, frame_size) if hero_geometry else {}
+		var texture: ImageTexture = ImageTexture.create_from_image(img)
 		info = {
-			"tex": ImageTexture.create_from_image(img),
+			"tex": texture,
 			"frames": frames,
 			"frame_size": frame_size,
 			"fps": 6.0,
 		}
+		if hero_geometry:
+			_store_hero_geometry(texture, img.get_size(), raw_bounds)
 	_anim_cache[base] = info
 	return info
 
@@ -3464,14 +3547,17 @@ static func dir8_suffix_for(name: String, d: Vector2) -> String:
 ## The eight per-direction strips for a clip base, or {} when no
 ## directional art exists on disk. Keyed by DIR8 suffix; absent sides
 ## fall back to south. Cached per base.
-static func dir_set(base: String) -> Dictionary:
+static func dir_set(base: String, hero_geometry := false) -> Dictionary:
 	if _dir_cache.has(base):
+		if hero_geometry:
+			for info in _dir_cache[base].values():
+				_ensure_hero_geometry(info)
 		return _dir_cache[base]
 	var out := {}
-	var south := _strip_info("%s_s" % base)
+	var south := _strip_info("%s_s" % base, hero_geometry)
 	if not south.is_empty():
 		for d in DIR8:
-			var info := _strip_info("%s_%s" % [base, d])
+			var info := _strip_info("%s_%s" % [base, d], hero_geometry)
 			out[d] = info if not info.is_empty() else south
 	_dir_cache[base] = out
 	return out
@@ -3536,7 +3622,7 @@ const HERO_CLIP_FPS := {
 static func hero_clips(name: String) -> Dictionary:
 	var out := {}
 	for clip in HERO_CLIP_FILES:
-		var info := _strip_info("%s_%s" % [name, HERO_CLIP_FILES[clip]])
+		var info := _strip_info("%s_%s" % [name, HERO_CLIP_FILES[clip]], true)
 		if not info.is_empty():
 			info = info.duplicate()
 			info["fps"] = HERO_CLIP_FPS[clip]
@@ -3554,7 +3640,7 @@ const HERO_DIR_FILES := {"stab": "stab_dir", "throw": "throw_dir"}
 static func hero_dir_clips(name: String) -> Dictionary:
 	var out := {}
 	for pose in HERO_DIR_FILES:
-		var info := _strip_info("%s_%s" % [name, HERO_DIR_FILES[pose]])
+		var info := _strip_info("%s_%s" % [name, HERO_DIR_FILES[pose]], true)
 		if not info.is_empty():
 			out[pose] = info
 	return out
