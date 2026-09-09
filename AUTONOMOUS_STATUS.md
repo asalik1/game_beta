@@ -1,3 +1,35 @@
+# Active session — September 9–10, 2026
+
+The owner explicitly authorized this new session at 17:32 UTC September 9.
+Continue improving the game in this worktree through September 10, 13:00 UTC
+(09:00 America/New_York). Stop starting features/art at 12:00 UTC; reserve the
+last hour for validation, fixes, documentation and committed handoff. This
+supersedes historical pause instructions for this session only. Older paused
+automations and tasks remain untouched. An active goal carries this task; no
+new heartbeat has been created.
+
+Worktree: `C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder`.
+Branch `codex/crownless-wayfinder`; initial HEAD `a47809b0f238efe5a94620bb1f2ead0a121810b1`.
+Index initially empty. All 32 preserved unrelated hashes match the prior
+inventory; current receipt: `build/qa/session-sept10/initial-preservation.json`.
+Root owns the single Godot engine and serialized explicit-path commits.
+The first accepted checkpoint fixes menu return paths, confirmation
+cancellation, focused text entry, pending remaps and touch/wheel dismissal.
+Desktop and mobile native acceptance each pass 158/158; the existing controller
+rig and online-menu regressions (67/67 each project) pass. All 37 accepted
+native frames were reviewed. Desktop quick/full (126/206), mobile import /
+compile / strict quick (126), scoped sync and full preflight pass. All 32
+unrelated file hashes remain unchanged. See MENU_NAVIGATION.md and the exact
+commit/source receipt at `build/qa/session-sept10/menu-checkpoint-validation.json`.
+
+Next: compare compact-room fauna in native motion and ordinary combat, then
+review the isolated Alchemist core/UI/economy and guest journal candidates.
+Their patches and plans live under `build/qa/session-sept10/`; none is installed
+or accepted yet. Untracked ambient QA is owned by this session but excluded
+from the menu checkpoint. Smaller touch Settings targets and low-resolution
+material icons are confirmed follow-up opportunities. Protected art and
+chromas remain excluded.
+
 # Crownless — September 9, 2026 checkpoint
 
 **Validated owner follow-up, September 9 at 16:35 UTC:** the requested HUD

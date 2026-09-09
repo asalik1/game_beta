@@ -9,6 +9,13 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 
 ## Gates & suites (run these, in this order — CLAUDE.md "Testing")
 
+Menu navigation QA: `shot.bat menu_navigation --timeout=300` uses real pointer,
+key, touch and controller input for Settings return paths, confirmation cancel,
+text editing, remap lifetime and outside wheel/tap handling. Use isolated
+APPDATA; add `--mobile --renderer=gl_compatibility` for mobile-source rendering.
+`--baseline` records known defects only; acceptance omits it. See
+`MENU_NAVIGATION.md` for the controlled-fixture scope and evidence.
+
 Screenshot verdicts: `tools/shot_verdict.ps1` checks both engine output streams,
 rejects script/shader/runtime errors even after `RIG DONE exit=0`, and requires a valid
 completion marker from modern ShotRig scenes. Legacy zero-exit rigs remain

@@ -25,6 +25,7 @@ var fm_opp_turn := -1                       # the turn fm_opp was built for
 var fm_speed := 1.0                         # fight replay speed (1x / 2x)
 var _closable_now := false        # does the open panel have a ✕ / click-outside exit?
 var listening_action := ""        # keybind screen: waiting for a key press
+var _confirm_cancel := Callable() # the current confirmation's return path
 var shop_zone := -1
 var shop_tab := "buy"             # shop: which full-width tab is showing (persists across refreshes)
 var shop_junk_tier := "F"         # sell tab: floor grade the one-click junk-sell dumps (that grade and below)
@@ -88,6 +89,7 @@ func close() -> void:
 			old.queue_free()
 	detail_popover = null
 	listening_action = ""
+	_confirm_cancel = Callable()
 	# Boot menus unpause only once the game actually starts. The lobby
 	# (MP-08) is boot-context too until a session begins play.
 	if not (current in ["class_select", "title"]) \
@@ -121,6 +123,7 @@ func _open_full() -> Control:
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
 	detail_popover = null
+	_confirm_cancel = Callable()
 	UITheme.apply(root)
 	return root
 
@@ -147,6 +150,8 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
 	detail_popover = null  # any popover was a child of the old root; drop the ref
+	_confirm_cancel = Callable()
+	var shell := root  # queued callbacks from a replaced shell cannot dismiss its successor
 	# Ease the shell in: fade + a settle around the screen centre (P2).
 	if _shell_motion() and not was_open:
 		root.pivot_offset = get_viewport().get_visible_rect().size * 0.5
@@ -161,10 +166,14 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 	dim.color = Color(0.008, 0.012, 0.022, 0.74)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	if closable:
-		# The panel absorbs its own clicks; the surrounding dim closes it.
+		# A touch has one dismissal stream: its emulated mouse press, or the
+		# raw touch when emulation is off. Otherwise it also dismisses the parent.
 		dim.gui_input.connect(func(e: InputEvent) -> void:
-			if (e is InputEventMouseButton and e.pressed) or (e is InputEventScreenTouch and e.pressed):
-				close())
+			if root != shell:
+				return
+			if (e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT and e.pressed) \
+					or (e is InputEventScreenTouch and e.pressed and not Input.emulate_mouse_from_touch):
+				controller_back())
 	root.add_child(dim)
 
 	# Boot menus retain the cover's night background.
@@ -208,8 +217,10 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 		xbtn.position = Vector2(640 - w / 2 - 3 + w + 6 - 42, 360 - h / 2 - 3 + 8)
 		xbtn.tooltip_text = "Close"
 		xbtn.pressed.connect(func() -> void:
+			if root != shell:
+				return
 			game.sfx("ui_click")
-			close())
+			controller_back())
 		root.add_child(xbtn)
 	# Enable content drag after callers populate their scroll containers.
 	call_deferred("_enable_all_touch_scroll", root)
@@ -617,21 +628,33 @@ func open_confirm(msg: String, on_yes: Callable, on_cancel := Callable()) -> voi
 	var est_lines: int = int(ceil(msg.length() / 46.0)) + msg.count("\n")
 	var vbox := _open("Are you sure?", 680, clampf(300.0 + est_lines * 24.0, 320.0, 600.0), true)
 	current = "confirm"
+	_confirm_cancel = on_cancel
+	var shell := root
 	var l := _lbl(vbox, msg, 15, Color(0.9, 0.9, 0.9))
 	l.custom_minimum_size = Vector2(600, 0)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var yes := func() -> void:
+		if root != shell:
+			return
 		close()
 		on_yes.call()
 	var no := func() -> void:
-		if on_cancel.is_valid():
-			close()
-			on_cancel.call()
-		else:
-			open_pause()
+		if root == shell:
+			controller_back()
 	_btn(vbox, "  Yes — do it  ", yes, Color(1.0, 0.6, 0.5))
 	_btn(vbox, "  Cancel  ", no, Color(0.8, 0.85, 0.9))
 	_hint(vbox, "ESC to cancel")
+
+
+## Every cancellation gesture uses the caller's return path exactly once.
+func _cancel_confirmation() -> void:
+	var cancel := _confirm_cancel
+	_confirm_cancel = Callable()
+	if cancel.is_valid():
+		close()
+		cancel.call()
+	else:
+		open_pause()
 
 
 ## The Stranger's Wager (Q16 minigame): a hooded gambler's shell game. Three
@@ -672,6 +695,7 @@ func open_wager(stake: int, on_pick: Callable) -> void:
 ## Live sound, display, language and input settings.
 var settings_return := "pause"
 func open_settings(from := "pause") -> void:
+	listening_action = ""  # leaving Keybinds must end capture before the next key
 	settings_return = from
 	# Touch mode adds the joystick rows; on desktop the 520 px panel was 40 % empty.
 	var vbox := _open("Settings", 700, 610 if game.touch_mode else 490, true)
@@ -5599,8 +5623,7 @@ func open_keybinds() -> void:
 			open_keybinds()
 		_btn(klist, text, rebind_cb, Color(1, 1, 0.6) if listening_action == act else Color(1, 1, 1))
 	_lbl(vbox, "Movement is always WASD / arrows.", 13, Color(0.6, 0.6, 0.6))
-	# Keybinds is a sub-screen of Settings now — Back returns there (the ✕ would
-	# drop straight to the world instead).
+	# The explicit Back leaves this screen even while a binding is being captured.
 	_btn(vbox, "  ← Back to settings  ", func() -> void: open_settings(settings_return), Color(0.8, 0.85, 0.9))
 	_hint(vbox)
 
@@ -5670,11 +5693,14 @@ func _input(event: InputEvent) -> void:
 				open_slots()
 				get_viewport().set_input_as_handled()
 			return
-		if current == "codex" and UICodex.search_focused():
-			# Typing in the codex search box: only ESC leaves; every other key
-			# (including the C hotkey) falls through UNHANDLED to the field.
+		var focus := get_viewport().gui_get_focus_owner()
+		if (focus is LineEdit or focus is TextEdit) and bool(focus.get("editable")) \
+				and focus.is_visible_in_tree() and not focus.is_queued_for_deletion() \
+				and root.is_ancestor_of(focus):
+			# The current editor owns typing, including remapped menu hotkeys.
+			# Escape still follows the same back path as every other device.
 			if event.keycode == KEY_ESCAPE:
-				close()
+				controller_back()
 				get_viewport().set_input_as_handled()
 			return
 		if current in ["title", "class_select", "class_splash"] \
@@ -5715,14 +5741,15 @@ func controller_back() -> void:
 		UILobby.esc(self)  # one stage back / leave the lobby, never a void
 	elif current == "settings":
 		_settings_back()  # back to wherever settings was opened from
-	elif current in ["comfort", "controller"]:
+	elif current in ["comfort", "controller", "keybinds"]:
 		open_settings(settings_return)
 	elif current == "combat_report":
 		open_pause()
 	elif current == "benchmark_roster":
 		open_slots()  # dev roster modal → back to the slot list
-	elif current == "confirm" \
-			or (current == "chapter_select" and chapter_replay):
+	elif current == "confirm":
+		_cancel_confirmation()
+	elif current == "chapter_select" and chapter_replay:
 		open_pause()  # back to the system menu, not out of it
 	else:
 		close()
