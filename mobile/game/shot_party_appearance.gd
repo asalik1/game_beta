@@ -16,6 +16,35 @@ class PartyGame extends Game:
 	func net_online() -> bool: return qa_online
 	func net_session() -> Node: return qa_bridge
 
+	# Optional bounded QA instrumentation. Normal appearance readers leave it
+	# empty, and every call still invokes the inherited production autosave.
+	var qa_save_audit: Dictionary = {}
+	func autosave() -> void:
+		if qa_save_audit.is_empty():
+			super.autosave()
+			return
+		var entry := {"owner": str(get_path()), "owner_id": get_instance_id(),
+			"slot": save_slot, "chapter": chapter_id, "guest_world": guest_world,
+			"net_online": net_online(), "restoring": restoring_save,
+			"no_saves": no_saves, "run_time": run_time,
+			"frame": Engine.get_process_frames(), "phase": qa_save_audit.get("phase", "pre_dispatch"), "stack": get_stack(),
+			"before": qa_save_file(save_slot)}
+		super.autosave()
+		entry["after"] = qa_save_file(save_slot)
+		var entries: Array = qa_save_audit.rows
+		if entries.size() < 64:
+			entries.append(entry)
+		else:
+			qa_save_audit.overflow = true
+
+	func qa_save_file(slot: int) -> Dictionary:
+		if slot <= 0:
+			return {"sha256": "no-slot", "chapter": "", "world": {}}
+		var path := SaveGame.path(slot)
+		var data := SaveGame.read(slot)
+		return {"sha256": FileAccess.get_sha256(path) if FileAccess.file_exists(path) else "absent",
+			"chapter": String(data.get("chapter", "")), "world": SaveGame.world_of(data).duplicate(true)}
+
 class ObserverGame extends Game:
 	func _ready() -> void: pass
 	func _process(_delta: float) -> void: pass

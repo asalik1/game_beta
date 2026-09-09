@@ -9,6 +9,37 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 
 ## Gates & suites (run these, in this order — CLAUDE.md "Testing")
 
+Alchemy UI QA: `shot.bat alchemy --timeout=240` checks the real recipe bench,
+39 recipe previews, exact paid actions, input, live quotes, cancelled learning,
+overflow and reading/focus continuity. Seven native views cover novice, learned
+and unknown recipes, source help and touch. Use isolated APPDATA; add `--mobile
+--renderer=gl_compatibility` for the mobile source. Resources are fixture loans.
+The quick/full suites also run the shared Alchemy domain checks. See `ALCHEMY.md`.
+
+Professions callback QA: `shot.bat profession_lifetime --timeout=240` checks
+the original lock/swap/craft/learn shell and character/world ownership, duplicate
+callbacks, exact costs and complete active-trade captions. APPDATA must be
+inside a `profession-lifetime-native-candidate` directory. It restores save
+bytes, captures five views, and uses `--baseline` only for enumerated old
+findings. Add the normal mobile/Compatibility flags for mobile source checks.
+
+Brewing save/network QA: `shot.bat brewing_persistence --timeout=300` reuses
+the one-engine paired ENet fixture for actual solo/guest save/load, overflow
+recovery, award delivery, travel and reconnect. APPDATA must be inside a
+`brewing-persistence-candidate` directory. `--ui-only` checks live recipe
+updates, input gating and held-order rejection during actual party travel;
+its captures/report are in the `/ui` subdirectory. Both branches restore
+isolated file bytes. Loaned resources/direct domain actions and the child-scene
+disconnect limitation are explicitly recorded in `ALCHEMY.md` and each report.
+
+Production admission QA: `shot.bat network_admission --timeout=180` uses three
+scoped production NetworkManagers and real ENet in one engine. It checks current
+version admission, prior-version refusal/reason, leave/rejoin, refused-manager
+recovery and cleanup. APPDATA must be inside a `network-admission-candidate`
+directory. It removes only unused Game bridges before connection; diagnostic
+boards are not player lobby views. No Noray, gameplay snapshots or second
+engine. `--prior=<version>` overrides the default previous patch version.
+
 Material UI QA: `shot.bat material_ui --timeout=180` captures inventory, details,
 mail, merchant and world controls for the three painted F-grade pilots. It checks
 full icon visibility, source/filter contracts, fallback identity and pickup size.

@@ -213,8 +213,9 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 		xbtn.add_theme_font_size_override("font_size", 22)
 		xbtn.add_theme_color_override("font_color", Color(1.0, 0.5, 0.45))
 		xbtn.add_theme_color_override("font_hover_color", Color(1.0, 0.82, 0.75))
-		xbtn.size = Vector2(36, 32)
-		xbtn.position = Vector2(640 - w / 2 - 3 + w + 6 - 42, 360 - h / 2 - 3 + 8)
+		# A full touch target with the same optical center as the old close glyph.
+		xbtn.size = Vector2(44, 44)
+		xbtn.position = Vector2(640 - w / 2 - 3 + w + 6 - 46, 360 - h / 2 - 3 + 2)
 		xbtn.tooltip_text = "Close"
 		xbtn.pressed.connect(func() -> void:
 			if root != shell:
@@ -5572,6 +5573,11 @@ func open_professions() -> void:
 	UIProfessions.open(self)
 
 
+## Clean potion recipes at the Alchemist bench.
+func open_alchemy() -> void:
+	preload("res://scripts/ui/alchemy.gd").open(self)
+
+
 ## The Synthesis bench (Alkahest Codex + Grand potions) lives in ui/synthesis.gd.
 ## Opened from Herbalist Kesh's gossip hub in Crownfall (game_world hub action).
 func open_synthesis() -> void:
@@ -5746,6 +5752,8 @@ func controller_back() -> void:
 		_settings_back()  # back to wherever settings was opened from
 	elif current in ["comfort", "controller", "keybinds"]:
 		open_settings(settings_return)
+	elif current == "alchemy":
+		preload("res://scripts/ui/alchemy.gd").back(self)
 	elif current == "combat_report":
 		open_pause()
 	elif current == "benchmark_roster":

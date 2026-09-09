@@ -6,9 +6,9 @@ class_name Professions
 ## gear rolls in items.gd. The UI (ui/professions.gd) and the autotest both call
 ## these, so the loop is identical in and out of the panel.
 ##
-## DEFERRED (noted, not built): trade-gated gathering NODES and universal
-## SALVAGE (materials already drop), and the CONSUMABLE outputs (Alchemist
-## potions / Blacksmith bench-stones / Tailor bags). This slice = GEAR only.
+## Clean potion brewing lives in alchemy.gd; this module owns gear crafting
+## and the existing Grand-potion synthesis. Trade-gated gathering nodes,
+## salvage, Blacksmith bench-stones and Tailor bags remain deferred.
 
 
 # ---------------------------------------------------------------- trades ---
@@ -129,6 +129,10 @@ static func craft(p: Player, slot: String, grade: String, rng: RandomNumberGener
 ## Buy a generic B/A blueprint at the deterministic formula price (§5 shop path).
 ## Learn-on-buy. Returns {ok, cost, reason}.
 static func buy_blueprint(p: Player, slot: String, grade: String) -> Dictionary:
+	# Potion recipes have their own Alchemist/capital/quote transaction. Do not
+	# let a namespaced key fall through the gear-price default budget.
+	if slot not in Items.SLOTS:
+		return {"ok": false, "cost": 0, "reason": "Unknown gear blueprint."}
 	if grade not in Items.BLUEPRINT_GRADES:
 		return {"ok": false, "cost": 0, "reason": "Only B and A blueprints exist."}
 	if p.has_blueprint(slot, grade):

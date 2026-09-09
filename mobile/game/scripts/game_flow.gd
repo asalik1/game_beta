@@ -1641,7 +1641,7 @@ func apply_award_events(events: Array) -> void:
 				var bp: Dictionary = ev.get("bp", {})
 				var bslot := String(bp.get("slot", ""))
 				var bgrade := String(bp.get("grade", ""))
-				if is_instance_valid(player) and bslot != "":
+				if is_instance_valid(player) and Items.valid_blueprint(bslot, bgrade):
 					if player.learn_blueprint(bslot, bgrade):
 						spawn_text(at + Vector2(0, -92), "+ " + String(bp.get("name", "Blueprint")),
 							Color(0.85, 0.75, 1.0))
@@ -1798,6 +1798,11 @@ func roll_boss_pack(kind: String, boss_pos: Vector2, boss_lv: int,
 	# reads "already learned", exactly like the blueprint above.
 	if loot_rng.randf() < Balance.ALKAHEST_CODEX_DROP_CHANCE:
 		evs.append({"k": "codex", "at": clamp_to_zone(boss_pos + Vector2(60, 40), boss_pos)})
+	# Potion recipes are an additional boss-only knowledge faucet. Existing
+	# gear recipe/Codex probabilities and slot pools above remain intact.
+	var brew_bp := preload("res://scripts/alchemy.gd").roll_blueprint(loot_rng)
+	if not brew_bp.is_empty():
+		evs.append({"k": "blueprint", "bp": brew_bp, "at": boss_pos})
 	return evs
 
 

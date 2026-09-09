@@ -1300,9 +1300,44 @@ static func blueprint_key(slot: String, grade: String) -> String:
 ## A generic-blueprint payload ({"kind":"blueprint", slot, grade, name, key}).
 ## Learn-on-acquire: apply_award_events / the shop record `key` on the player.
 static func make_blueprint(slot: String, grade: String) -> Dictionary:
+	if not valid_blueprint(slot, grade):
+		return {}
+	var label := slot.capitalize()
+	if slot.begins_with("potion/"):
+		label = String(POTION_ACCORD_NOUN[slot.trim_prefix("potion/")])
 	return {"kind": "blueprint", "slot": slot, "grade": grade,
 		"key": blueprint_key(slot, grade),
-		"name": "Blueprint: Generic %s %s" % [grade, slot.capitalize()]}
+		"name": "Blueprint: Generic %s %s" % [grade, label]}
+
+
+## Potion recipe knowledge shares the existing per-character blueprint array,
+## with a namespace that cannot collide with a gear slot. Both grades exist
+## for all seven shipped shapes; no broader potion lane enters this schema.
+static func potion_blueprint_slot(fs: String) -> String:
+	return "potion/" + fs if POTION_SHAPES.has(fs) else ""
+
+
+static func valid_blueprint(slot: String, grade: String) -> bool:
+	if grade not in BLUEPRINT_GRADES:
+		return false
+	if slot in SLOTS:
+		return true
+	return slot.begins_with("potion/") and POTION_SHAPES.has(slot.trim_prefix("potion/"))
+
+
+static func make_potion_blueprint(fs: String, grade: String) -> Dictionary:
+	return make_blueprint(potion_blueprint_slot(fs), grade)
+
+
+static func potion_blueprint_price(fs: String, grade: String) -> int:
+	if not valid_blueprint(potion_blueprint_slot(fs), grade):
+		return 0
+	var meta: Dictionary = POTION_SHAPES[fs]
+	var bottle := make_potion(String(meta.family), String(meta.shape), grade, "accord")
+	var baseline := make_potion("health", "instant", grade, "accord")
+	if bottle.is_empty() or baseline.is_empty():
+		return 0
+	return Balance.brew_blueprint_price(int(bottle.price), int(baseline.price), grade)
 
 
 # ----------------------------------------------------------- consumables ---

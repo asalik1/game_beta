@@ -968,6 +968,9 @@ func _run_systems() -> void:
 	var activity_error: String = preload("res://scripts/tests/test_activity_rewards.gd").run(self)
 	if activity_error != "":
 		return _fail(activity_error)
+	var alchemy_error: String = preload("res://scripts/tests/test_alchemy.gd").run(self)
+	if alchemy_error != "":
+		return _fail(alchemy_error)
 	var ward_desk_error: String = await preload("res://scripts/tests/test_ward_desks.gd").run(self)
 	if ward_desk_error != "":
 		return _fail(ward_desk_error)

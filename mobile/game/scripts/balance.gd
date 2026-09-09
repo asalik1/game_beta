@@ -869,6 +869,30 @@ const CRAFT_GOLD_FEE := {
 # unique of the crafter's class+slot (§5, §9 first guess ~3-5%).
 const CRAFT_PROMOTE_CHANCE := 0.04
 
+# Alchemist brewing: existing clean F-A bottles only. Tentative economy knobs
+# await native material-collection / spend probes; ingredients count at their
+# intrinsic value, then Kesh favor discounts only the gold fee.
+const BREW_HERBS_BY_GRADE := {"F": 2, "E": 3, "D": 4, "C": 5, "B": 6, "A": 7}
+const BREW_REAGENTS := 1
+const BREW_TOTAL_PRICE_FRACTION := 0.70
+const BOSS_BREW_BLUEPRINT_CHANCE := 0.12  # independent; never dilutes gear recipes
+
+static func brew_gold_fee(base_price: int, grade: String, favor_mult := 1.0) -> int:
+	if base_price <= 0 or not BREW_HERBS_BY_GRADE.has(grade) \
+			or not is_finite(favor_mult) or favor_mult <= 0.0 or favor_mult > 1.0:
+		return 0
+	var herbs := int(BREW_HERBS_BY_GRADE[grade])
+	if herbs <= 0 or BREW_REAGENTS <= 0:
+		return 0
+	var intrinsic := (herbs + BREW_REAGENTS) * Items.material_value(grade)
+	var base_fee := maxi(1, ceili(float(base_price) * BREW_TOTAL_PRICE_FRACTION) - intrinsic)
+	return maxi(1, ceili(float(base_fee) * favor_mult))
+
+static func brew_blueprint_price(base_price: int, health_price: int, grade: String) -> int:
+	if base_price <= 0 or health_price <= 0 or not BLUEPRINT_BASE_PRICE.has(grade):
+		return 0
+	return maxi(1, roundi(float(BLUEPRINT_BASE_PRICE[grade]) * float(base_price) / float(health_price)))
+
 # Boss blueprint faucet (§5: bosses + the shop are the ONLY blueprint source, no
 # ordinary-mob path). A killed boss has this chance to drop ONE generic B/A
 # blueprint; BOSS_BLUEPRINT_A_FRACTION of those are the rarer A recipe. Learn-on-

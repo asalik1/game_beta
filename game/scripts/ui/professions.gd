@@ -8,8 +8,8 @@ class_name UIProfessions
 ## capital-is-the-shop law; the panel still SHOWS your progress anywhere.
 ##
 ## The heavy lifting is in Professions (logic) + balance.gd (knobs); this file
-## is pure display + the click-throughs. DEFERRED: gathering nodes, salvage, the
-## consumable outputs (potions/bench-stones/bags) — gear crafting only.
+## is pure display + the click-throughs. Clean potion brewing lives in
+## ui/alchemy.gd. Gathering nodes, salvage, bench-stones and bags remain deferred.
 
 const CRAFT_GRADES := ["F", "E", "D", "C", "B", "A"]  # S is drop-only (never craftable)
 
@@ -34,6 +34,16 @@ static func open(m: Menus, msg := "", msg_color := Color(0.8, 0.85, 1.0), slot :
 	if msg != "":
 		m._lbl(vbox, msg, 14, msg_color)
 	_header(m, vbox, p, at_capital)
+
+	# Keep brewing visible above the long gear/trade list; recipes are inspectable
+	# before choosing Alchemist, while the core owns every active-trade restriction.
+	var brewing_shell: Control = m.root
+	var brew := m._btn(vbox, "Alchemy — browse & brew", func() -> void:
+		if m.root == brewing_shell and m.current == "professions":
+			m.open_alchemy(), UITheme.GOLD_BRIGHT, true, Art.ui_icon("potion"))
+	brew.name = "ProfessionsAlchemy"
+	brew.custom_minimum_size.y = 44
+	brew.tooltip_text = "Inspect clean potion recipes, ingredients in your pack and B/A potion blueprints. Brewing requires Alchemist active in Crownfall."
 
 	# Scrolling body (the three sections can run tall; footer stays pinned).
 	var scroll := ScrollContainer.new()
@@ -75,6 +85,47 @@ static func _header(m: Menus, vbox: VBoxContainer, p: Player, at_capital: bool) 
 			13, Color(1.0, 0.7, 0.5))
 
 
+## Bind an action to the actual visible bench and owning hero/world. The
+## screen owns the gesture lifetime; Professions still owns recipe economics.
+static func _action_scope(m: Menus) -> Dictionary:
+	if not is_instance_valid(m) or not is_instance_valid(m.game) \
+			or not m.game.has_local_player() or not is_instance_valid(m.game.world) \
+			or not is_instance_valid(m.root):
+		return {}
+	return {"game": weakref(m.game), "player": weakref(m.game.local_player),
+		"world": weakref(m.game.world), "shell": weakref(m.root),
+		"seed": m.game.wander_seed}
+
+
+## Claim the whole panel once before the first transaction. Replaced and
+## fading roots can still exist this frame; none may act on their successor.
+static func _claim_action(m: Menus, scope: Dictionary) -> bool:
+	if not is_instance_valid(m) or m.is_queued_for_deletion() or scope.is_empty():
+		return false
+	var g: Game = scope.game.get_ref() as Game
+	var p: Player = scope.player.get_ref() as Player
+	var world: Node2D = scope.world.get_ref() as Node2D
+	var shell: Control = scope.shell.get_ref() as Control
+	if not is_instance_valid(g) or not is_instance_valid(p) \
+			or not is_instance_valid(world) or not is_instance_valid(shell):
+		return false
+	if g.is_queued_for_deletion() or p.is_queued_for_deletion() \
+			or world.is_queued_for_deletion() or shell.is_queued_for_deletion():
+		return false
+	if m.game != g or m.root != shell or m.current != "professions" \
+			or g.local_player != p or p.game != g or g.world != world \
+			or g.wander_seed != int(scope.seed):
+		return false
+	if g.dedicated or g.chapter_id != "capital" or g.pvp_active \
+			or not g.play_started or g.state != Game.ST_PLAYING \
+			or p.dead or p.downed or p.ghost or p.hp <= 0.0:
+		return false
+	if bool(shell.get_meta("professions_action_claimed", false)):
+		return false
+	shell.set_meta("professions_action_claimed", true)
+	return true
+
+
 # ------------------------------------------------------------- trade lock ---
 
 static func _trade_section(m: Menus, list: VBoxContainer, p: Player, at_capital: bool, slot: String) -> void:
@@ -93,7 +144,8 @@ static func _trade_section(m: Menus, list: VBoxContainer, p: Player, at_capital:
 				ic.texture = ticon
 				ic.custom_minimum_size = Vector2(26, 26)
 				row.add_child(ic)
-			m._lbl(row, "● %s — active" % label, 14, Color(0.6, 1.0, 0.6))
+			var active_label := m._lbl(row, "● %s — active" % label, 14, Color(0.6, 1.0, 0.6))
+			active_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			continue
 		var free_lock := p.profession == ""
 		var cost := 0 if free_lock else Professions.swap_cost(p)
@@ -107,7 +159,10 @@ static func _trade_section(m: Menus, list: VBoxContainer, p: Player, at_capital:
 
 
 static func _lock_cb(m: Menus, trade: String, slot: String) -> Callable:
+	var scope := _action_scope(m)
 	return func() -> void:
+		if not _claim_action(m, scope):
+			return
 		var p: Player = m.game.local_player
 		var r := Professions.lock_trade(p, trade)
 		if not r["ok"]:
@@ -144,7 +199,10 @@ static func _craft_section(m: Menus, list: VBoxContainer, p: Player, at_capital:
 
 
 static func _craft_cb(m: Menus, cslot: String, grade: String, slot: String) -> Callable:
+	var scope := _action_scope(m)
 	return func() -> void:
+		if not _claim_action(m, scope):
+			return
 		var g := m.game
 		var p: Player = g.local_player
 		var r := Professions.craft(p, cslot, grade, g.loot_rng)
@@ -169,7 +227,7 @@ static func _craft_cb(m: Menus, cslot: String, grade: String, slot: String) -> C
 # -------------------------------------------------------------- blueprints ---
 
 static func _blueprint_section(m: Menus, list: VBoxContainer, p: Player, at_capital: bool) -> void:
-	m._lbl(list, "— Blueprints  (generic B/A recipes; boss drops, or buy the deterministic price) —",
+	m._lbl(list, "— Gear blueprints  (B/A; find from bosses or buy below) —",
 		15, Color(0.85, 0.8, 0.7))
 	if p.profession == "":
 		m._lbl(list, "   Lock a trade to learn its recipes.", 13, Color(0.6, 0.6, 0.65))
@@ -186,7 +244,10 @@ static func _blueprint_section(m: Menus, list: VBoxContainer, p: Player, at_capi
 
 
 static func _buy_cb(m: Menus, bslot: String, grade: String) -> Callable:
+	var scope := _action_scope(m)
 	return func() -> void:
+		if not _claim_action(m, scope):
+			return
 		var p: Player = m.game.local_player
 		var r := Professions.buy_blueprint(p, bslot, grade)
 		if not r["ok"]:

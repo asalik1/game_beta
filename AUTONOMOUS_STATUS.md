@@ -45,10 +45,47 @@ legacy material hashes, world pickup sizes and 32 preserved unrelated files
 remain intact. See MATERIAL_UI.md and the exact commit/source receipt at
 `build/qa/session-sept10/material-checkpoint-validation.json`.
 
-Next, integrate the isolated Alchemist core/UI/economy and Professions lifetime
-work. Guest journal, interaction/dash reproduction and touch Settings candidates
-remain separate. Patches, plans and uncompiled native fixtures live under
-`build/qa/session-sept10/`; none of those features is installed or accepted yet.
+The fourth accepted checkpoint adds Alchemy: 39 clean F–A potion recipes, exact herb/reagent and
+fee previews, B/A recipe knowledge and a live Kesh bench. Professions now
+rejects retired action callbacks and keeps active-trade captions readable.
+Desktop quick/full pass 127/207, with the final full rerun also passing 207.
+The mobile source passes explicit import/compile/strict quick 127. Six native
+acceptance runs pass on each project: Professions 347, Alchemy 389, actual-file
+ENet persistence seven milestones, live ENet UI 24, production network admission
+34 and menu returns 158. Root reviewed all 30 final native frames per project;
+Alchemy's seven final desktop views also have independent visual acceptance.
+The 39-price/27-route economy audit passes; 25,000 boss packs preserve the
+existing gear-recipe draw prefix. Network protocol is 0.3.16 for recipe awards.
+
+The paired save fixture restores every isolated file and proves solo/guest
+brew/learn, overflow recovery, award fanout, travel and reconnect ownership.
+Its home-file boundary is the last own-chapter save before the first host
+snapshot, with an exact SHA256 write chain. Empty caller stacks do not identify
+the upstream write trigger. The live UI fixture's child-scene disconnect
+observation is excluded from strict acceptance; it does not model actual
+current-scene replacement. The production admission fixture passes with clean
+shutdown after correcting its own observer reference cycle. Mobile native
+runs use Windows Compatibility rendering, not physical-device execution.
+
+Ordinary-input brewing samples remain incomplete. A posed level-6/chapter-2
+mage cleared Mills and collected its loot, then fell in Howling Fields; it
+bypassed normal character progression and is not balance evidence. A fresh
+level-1/chapter-1 route uses real earned skill/attribute spending and Auto-equip.
+Its first attempt missed a polled Skills hotkey; a QA-only held-key correction
+allowed the second run to clear/loot three rooms and complete four upkeep steps.
+The mage then fell in Fangmaw's Hollow at 161.522 seconds. All five frames have
+root and independent review; this strict failure never reached brewing. The
+optional opening chest is omitted and no-save mode suppresses skippable tutorials.
+The 14 journey source/scene/UID files remain uncommitted experiments, preserved
+in `build/qa/session-sept10/brewing-journey-experiment-preservation.json`.
+Final mobile import/compile (245)/strict quick (127) and all seven preflight
+categories pass. Alchemy's explicit source/commit receipt is
+`build/qa/session-sept10/alchemy-checkpoint-validation.json`; ALCHEMY.md records
+behavior, test scope and remaining limitations.
+
+Guest journal, interaction/dash reproduction, touch Settings and a normal-stat
+brewing journey candidate remain separate. Patches, plans and uncompiled native
+fixtures live under `build/qa/session-sept10/`; none is accepted yet.
 Two rejected checkerboard scrap generations are preserved separately in
 `build/qa/session-sept10/material-rejected/`. Protected art and chromas stay excluded.
 

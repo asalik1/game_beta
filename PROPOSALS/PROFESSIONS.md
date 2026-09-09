@@ -1,5 +1,13 @@
 # Professions — three trades, mastery, and earned gear crafting (2026-07-29 redesign)
 
+**Implementation status, September 9, 2026:** this remains the historical
+decision document; its "nothing installed" statement and build order below
+predate the live trade, gear-crafting, material and blueprint systems. Ordinary
+Alchemist brewing is now implemented in the active development checkpoint;
+current behavior, loot-source limits and acceptance status live in
+[ALCHEMY.md](../ALCHEMY.md). Proposed gathering nodes and other unbuilt trade
+outputs below are not claims about the current game.
+
 A profession layer for Crownless: **three trades**, each a self-contained gather-and-craft
 identity a character LOCKS into. You gather your trade's materials, hunt its blueprints,
 and grind mastery by crafting — and the payoff is being able to craft gear (capped at A),

@@ -2580,7 +2580,12 @@ static func _gear_bags(m: Menus, list: VBoxContainer) -> void:
 	# alembic dc673ab already proved renders as tofu on mobile, so these six
 	# were the same bug one screen over. Names carry the list on their own.
 	for util in [
-		"Potions are GRADED F→S in two lanes now (CONSUMABLE_GRADES). The ACCORD lane is clean, chartered alchemy — sold at every merchant F→A (S is boss/elite drop only). The BLACK MARKET lane is the same headline effect ~35% cheaper, cut with diluted blightwater: every laced bottle carries a sting (weakened body, sealed wounds, dulled arms, heavy limbs, a bleed-back loan). It is NEVER on the chartered shelf — buy it from the fence in Crownfall's Sable Court or the occasional road smuggler. Effect and price scale by grade; drink the right bottle for the moment.",
+		"Clean Accord potions come in grades F–S. Merchants sell F–A; S bottles are found as loot. Laced Black Market bottles cost less but carry a drawback. Buy them from the fence in Crownfall's Sable Court or a road smuggler. Their effects and prices scale by grade.",
+		"BREWING: Visit Herbalist Kesh in Crownfall, open Professions, then choose Alchemy — browse & brew. With Alchemist active, brew clean F–A bottles from carried herbs and reagents of the bottle's exact grade, plus the displayed fee. Mastery unlocks higher grades; Draught of Renewal starts at C. Brewing raises Alchemist mastery, and changing trades keeps your progress.",
+		"POTION BLUEPRINTS: F–C recipes need no blueprint. B and A each require a learned blueprint for that potion and enough Alchemist mastery. Bosses can drop recipes, or you can buy the exact one at the Alchemy bench. A blueprint is learned when acquired; learning one gives neither a bottle nor mastery. Potion recipes are separate from the gear blueprints in Professions.",
+		"INGREDIENTS: Plant and fungal creatures in Sporewood and the Blooming Deep can drop F/E herbs; their elites can drop E/D. Beasts, humanoids and void creatures can drop reagents at those same grades. Boss supply chests can hold both ingredients, including C/B stock. Carry the exact grade shown by the recipe, and claim ingredients from mail before brewing.",
+		"A-GRADE INGREDIENTS: Look to NG+ boss supplies: they can first contain A stock from Chapter 4 in NG+1, and from Chapter 1 in NG+2. The first journey's creature drops and supply chests do not provide A ingredients. You can learn an A recipe before its ingredients become available.",
+		"GRAND POTIONS: Kesh's separate synthesis bench uses the Alkahest Codex. Bring a clean S bottle and its laced A counterpart to make a Grand potion. Ordinary brewing makes clean F–A bottles; it does not make laced, S or Grand potions.",
 		"Health — a POTION restores a % of your MISSING health instantly; a TONIC restores the same total slower and cheaper (it drips over a grade-scaled window). The generic Health slot auto-pours your cheapest one; Chapters 1-3 gift a single Defective Health Potion that EXPIRES on leaving.",
 		"Mana — a POTION restores a % of MISSING mana instantly; a TONIC restores a bigger total over time.",
 		"Elixir of Might — a timed +damage window: pop it into the kill shot, not the whole fight.",
@@ -2632,7 +2637,7 @@ static func _future(m: Menus, list: VBoxContainer, tab: String) -> void:
 		UITheme.header(m._lbl(list, "— PROVISIONS — food, the future cooking consumables —", 16, Color(0.95, 0.85, 0.6)))
 		_future_gallery(m, list, Story.ALL_RELICS, "provisions", "sprite", "lore")
 	elif tab == "future_alchemy":
-		UITheme.header(m._lbl(list, "— ALCHEMY — draughts & essences awaiting the brewing loop —", 16, Color(0.95, 0.6, 0.65)))
+		UITheme.header(m._lbl(list, "— ALCHEMICAL ODDITIES — unused concept art —", 16, Color(0.95, 0.6, 0.65)))
 		_future_gallery(m, list, Story.ALL_RELICS, "alchemy", "sprite", "lore")
 	elif tab == "future_critters":
 		UITheme.header(m._lbl(list, "— CRITTERS — livestock & wildlife for the living world —", 16, Color(0.85, 0.9, 0.6)))
