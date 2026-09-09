@@ -2028,13 +2028,12 @@ func _update_avatar() -> void:
 	avatar_portrait.visible = true
 
 
-## A small rounded pill behind a stat readout (the HUD chip pass, 2026-08-18).
+## A borderless backing behind Combat Rating and Resonance.
 func _chip(pos: Vector2, chip_size: Vector2) -> Panel:
 	var c := Panel.new()
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(UITheme.SURFACE_RAISED, 0.9)
-	sb.border_color = Color(UITheme.BORDER, 0.8)
-	sb.set_border_width_all(1)
+	sb.set_border_width_all(0)
 	sb.set_corner_radius_all(9)
 	c.add_theme_stylebox_override("panel", sb)
 	c.position = pos
