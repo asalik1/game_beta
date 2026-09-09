@@ -1,0 +1,33 @@
+{
+  "utc": "2026-09-09T08:39:46.764114+00:00",
+  "generator": "built-in image_gen",
+  "original_generated_file": "C:\\Users\\asali\\.codex\\generated_images\\01a083bf-c02d-7ac1-ae93-9ba2848f95ad\\exec-7ecc96eb-da50-459a-a4e9-f8cfd6412f3f.png",
+  "preserved_master": "art_src\\grass_focus_2026-09-09\\grass_v3.png",
+  "sha256": "5462bcb8d96e073d5786ae9bd70eb6a39a30592913c6c5ece7e3df5944ff1400",
+  "size": [
+    1254,
+    1254
+  ],
+  "mode": "RGB",
+  "prompt": "prompt_v3.txt",
+  "input_reference_paths": [],
+  "processing": "none; byte-identical generated PNG",
+  "status": "accepted, installed and validated on desktop and host mobile renderer",
+  "prior_candidate": "grass_v2.png; rejected by root native review for dense sharp leaf noise",
+  "installed_utc": "2026-09-09T08:55:31.401048+00:00",
+  "runtime_destination": "game/assets/sprites/ground_field_grass_painterly.png",
+  "historical_master_retained": "art_src/terrain_fields_2026-09-08/masters/grass.png",
+  "external_reviews": [
+    "build/qa/grass-v3-village-desktop1-review.md",
+    "build/qa/grass-v3-wildfang-desktop1-review.md",
+    "build/qa/grass-v3-mobile-native-review.md"
+  ],
+  "validated_utc": "2026-09-09T09:39:58.507256+00:00",
+  "final_reviews": [
+    "build/qa/grass-world-final-review.md",
+    "build/qa/grass-fangmoot-final-review.md",
+    "build/qa/grass-codex-final-review.md",
+    "build/qa/grass-hunts-final-review.md"
+  ],
+  "validation_record": "build/qa/checkpoint34-validation.json"
+}

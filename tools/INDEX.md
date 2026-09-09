@@ -81,6 +81,23 @@ with duration, health, movement and payout. Use `--class=mage` for ranged play.
 under this real fight while preserving Village Outskirts mechanics and lighting.
 It changes only the existing floor polygon's material; this is not chapter-3 play.
 
+Grass material QA: `shot.bat floorfield --compare --terrains=village
+--candidate=<absolute-PNG> --period=512 --timeout=180` compares the outgoing
+painted field with an external candidate in seven native views. Compare mode
+waits for actual terrain ambient to settle and records source/image hashes,
+mipmaps, UV period, filtering and tint for every capture. Art's cache remains
+unchanged. These are repainted, posed scenes and synthetic tells; X/Y views
+are shifted stills. Repeat `capital_wildfang` and the mobile Compatibility
+renderer. After installation, omit `--candidate` to inspect the actual Village
+Codex in a fresh process; that comparison's Before is the legacy field.
+
+`shot.bat fangmoot --grass-material --expected-grass-sha256=<SHA>
+--timeout=180` captures the normal seeded Copper preview using the existing
+no-save host seam, with populated tokens and Bite/Hide chips. One fullframe
+and one native arena crop cover its separate native-UV/NEAREST material use.
+No replay or input claim follows. Add `--mobile --renderer=gl_compatibility`;
+use isolated `build/qa` APPDATA for all runs. Read GRASS_FOCUS.md.
+
 Visual focus QA: `shot.bat visual_focus --timeout=300 --label=current` captures
 nine actual chapter-3 positions with fixed seeds, actor/prop inventories, material
 identity, NPC reach and story-gate receipts. These are posed views, not combat.

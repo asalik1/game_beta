@@ -1,5 +1,10 @@
 # Painted terrain fields — September 8, 2026
 
+Historical source record: the grass runtime was revised on September 9 with
+the untouched master under `art_src/grass_focus_2026-09-09/`. This folder's
+original grass, prompt and manifest remain unchanged. Other fields below
+retain their existing sources. Read GRASS_FOCUS.md for the later validation.
+
 Four original 1254×1254 square textures, generated with the built-in OpenAI
 ImageGen tool. Existing game fields provide their material/palette; the
 previously accepted stone_painterly field supplies brushwork only.

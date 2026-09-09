@@ -1,5 +1,24 @@
 # Autonomous work checkpoint — RESUMED September 9, 2026
 
+**Validated pass 34, 09:40 UTC:** quieter V3 grass is installed byte-for-byte
+from its preserved generated master on desktop and mobile. All 117 image
+artifacts from 16 native runs were reviewed: 28 external comparisons, 60
+before/after world views, eight Fangmoot views, 12 terrain/Codex views and nine
+normal starting-kit hunt views. Warrior and mage hunts both won without god
+mode. The 44-path source freeze changed only the two runtime grass PNGs;
+existing imports, production rendering math and historical master remain.
+Desktop/mobile imports, scoped art verification, desktop compile225/quick125/
+full205, mobile compile225/strictquick125 and full preflight passed. The
+initial art checker lacked numpy in default Python; the unchanged check
+passed under the bundled runtime. Reviewed floorfield material receipts and
+the optional Fangmoot probe are mirrored; both rigs explicitly compiled.
+Checkpoint metadata in build/qa records the 16 exact paths and actual commit
+identity after commit. Checkpoint 33 remains
+`5fb54c46ab862d256d4c8496ac482bf905c4a486`.
+Next is QA-first pocket HUD clarity, followed by the reviewed hero geometry
+candidate and truthful online-menu copy if validated in time. Those candidates
+remain unpublished. Continue until the existing 12:00/13:00 cutoffs.
+
 **Current authorization, September 9, 01:20 UTC:** the owner explicitly resumed
 autonomous work in this task and this worktree, superseding the historical
 pause below. Continue until **September 9, 13:00 UTC (09:00 America/New_York)**.
