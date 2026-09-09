@@ -15,6 +15,9 @@ completion marker from modern ShotRig scenes. Legacy zero-exit rigs remain
 supported. `powershell -NoProfile -File tools/tests/shot_verdict_tests.ps1`
 exercises eighteen success/error/watchdog/completion fixtures. Unexpected engine
 `ERROR:` lines also fail; only the established renderer shutdown errors are exempt.
+Headless `suite_verdict.ps1` also rejects freed lambda captures even when the
+engine prints its pass marker. It retains the intentional invalid-base64 test's
+existing semantics; compile errors and visual-resource leaks remain failures.
 
 Party appearance QA: `shot.bat party_appearance --timeout=300` runs two complete
 games plus a lightweight late-reader roster over three real ENet APIs in one
@@ -57,6 +60,29 @@ and god mode off. Setup moves to the three signs; combat only uses movement
 and class inputs, with no direct damage or ability calls. It captures the
 pounce and fight, checks the open escape/minimap warning and saves combat.json
 with duration, health, movement and payout. Use `--class=mage` for ranged play.
+`--terrain=graveyard --observe=6 --trace` checks the installed grave-earth field
+under this real fight while preserving Village Outskirts mechanics and lighting.
+It changes only the existing floor polygon's material; this is not chapter-3 play.
+
+Visual focus QA: `shot.bat visual_focus --timeout=300 --label=current` captures
+nine actual chapter-3 positions with fixed seeds, actor/prop inventories, material
+identity, NPC reach and story-gate receipts. These are posed views, not combat.
+`shot.bat vigil_walk --expect-gathering --timeout=300` then uses 31 continuous
+keyboard walk legs, real Ilse/Fenna Interact prompts and the blocked story exit.
+Use isolated APPDATA; world views accept `--touch`, while the walk uses keyboard
+input on either project. Add `--mobile --renderer=gl_compatibility` for mobile.
+
+Compact dossier QA: `shot.bat hud_dossier --timeout=300` checks fixed 44px targets,
+exact currency/identity details, badges and party layout through actual GUI input.
+`--baseline` records outgoing-layout observations without accepting setup errors.
+Add `--touch --mobile --renderer=gl_compatibility` for actual ScreenTouch events.
+Synthetic party shells exercise layout only, not real peer replication.
+
+Static pebble QA: `shot.bat pebble_prop --timeout=240` compares the actual prop
+factory against the original pebble and existing angular rock at real widths in
+five settled terrain palettes. It saves five native views and two detail views;
+the isolated placement does not test biome traversal. Use isolated APPDATA and
+`--mobile --renderer=gl_compatibility --touch` for the mobile project path.
 
 HUD visibility QA: `shot.bat hud_clearance --verify --timeout=180` captures
 normal camera room boundaries, hero/target overlap, touch controls, readable

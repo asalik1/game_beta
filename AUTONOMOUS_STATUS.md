@@ -31,14 +31,17 @@ mobile mirrors, three independent UID pairs, logs and visual reviews.
 Root alone owns engine runs, integration and commits. Ward agents have
 finished production edits. Continue the authorized work after this checkpoint.
 
-**Validated checkpoint 31 (04:24 UTC):** four improvements are ready for the
-explicit local commit. The candidate list is
+**Committed checkpoint 31:** `c0b685127fa1986959681a28c4c4a9a09d9dc3e5`,
+**Ground prop shadows and refine HUD, guardian records and audio startup**.
+At that checkpoint, all 76 intended paths matched the commit, the index was
+empty, and only the excluded future road-hunt hook remained modified among
+tracked source. The list is
 `build/qa/checkpoint31-paths.json` (76 paths); the 70 code/scene/UID hashes live
 in `checkpoint31-source-freeze.json`. Twenty-eight source/scene mobile mirrors
 are byte-identical and seven UID pairs were independently minted. Final desktop
 compile224/full205 and mobile compile224/strictquick125 passed. Full preflight
 reported no findings. Logs use the `checkpoint31-` prefix under `build/qa/`;
-the final identity will be recorded in `checkpoint31-validation.json`.
+the final identity is recorded in `checkpoint31-validation.json`.
 
 The owner's potion-HUD request uses the existing painted 128px bottle and a
 lower-right stock count; touch counts the selected potion. Desktop keyboard
@@ -84,8 +87,104 @@ After checkpoint 31, prioritize a compact fixed dossier, quieter painted
 grave-earth and a deliberate Vigil Gate gathering composition over the queued
 Unlisted/performance/combat candidates. Preserve touch targets, skill-point
 visibility and vital/action geometry. Root has read the imagegen skill for a
-single environmental-material candidate; no new art has yet been generated.
+single environmental-material candidate. The first built-in output is preserved
+at `art_src/ground_focus_2026-09-09/packed_earth_v1.png` (1254px square), with
+the exact prompt and provenance. Native candidate trials
+passed on desktop Forward+ and mobile-source Compatibility, including actual
+horizontal and vertical camera displacement. Seven final frames per renderer
+were reviewed. The untouched master is now installed as
+`ground_field_gravedirt_painterly.png` in both projects, with independently
+minted import UIDs, mipmaps and a 512px world period. Actual chapter material-only
+runs passed 68 checks/nine views on each renderer; all 18 frames were reviewed.
+Later ordinary movement and combat evidence is recorded below.
+No other generator was used. Read `build/qa/grave-earth-v1-visual-review.md`.
 Research is preparation; implement, playtest and compare actual game frames.
+
+Pass 32 is validated for its checkpoint, titled **Refine world presentation,
+compact HUD and shadow callback safety**. Exact commit identity and all 59
+explicit paths are recorded in `build/qa/checkpoint32-validation.json`. Frozen desktop and
+mobile HUD baselines each passed 321 checks, zero fixture failures, 65 old-layout
+observations and 19 native frames; all 38 were reviewed. Actual mouse/touch
+opened all eight utilities and both stat popovers. Actual-world baselines each
+passed 68/nine views including Ilse, Fenna and a stone control; all 18 reviewed.
+See `build/qa/visual32-baseline-final-source.json` and the baseline reviews.
+
+Root applied the exact four-piece Vigil grouping from `vigil-gathering-plan.md`,
+reduced its scatter budgets, and mapped only the logical ground pebble's static
+visual to existing `rock2`. Art's direct pebble/ambient path remains unchanged.
+The initial desktop composition run passed 68/nine views with the old HUD.
+The reviewed compact HUD candidate (SHA256 `8623071cf405465554ef44f00fb43eb12ffd0d52b06a2c927dc8f613771cd0ea`)
+is now copied and synchronized. It has a 104px dossier, fixed 44px utility
+targets, Skills badge, separate Party header target and exact portrait details.
+The HUD clearance QA now observes the live panel rectangle. Root's first native
+compact HUD and enhanced checks are complete: desktop/mobile each passed 503
+checks with zero failures/findings and 22 captures, all 44 reviewed. Both ordinary
+Vigil walk runs passed 49 checks/31 continuous legs/12 captures; all 24 reviewed,
+with actual E dialogue and the blocked gate intact. Mobile walk uses keyboard,
+while the HUD rig uses actual ScreenTouch. Both HUD-clearance runs passed all
+body/target/touch/menu ownership checks with 12 frames each. The first clearance
+fixture missed the shortened panel; its corrected setup maps the actual panel
+and body through the canvas transform, retaining the original overlap guard.
+Final settled-lighting pebble checks, ordinary combat and combined world
+captures are now complete, with results and limits below. Source and capture
+reviews remain under `build/qa/`; `VISUAL_FOCUS.md` records bounded evidence.
+Final desktop quick/full and mobile import/compile224/strictquick125 passed;
+21 exact mirror pairs and five independent UID pairs are verified. Full preflight
+passed without findings. Root owns all engines and production
+publication. No engines run beside image generation.
+
+**New owner defect, 06:04 UTC:** freestanding stone-pedestal torches overhang
+wall edges and look unsupported. The shared `_door_torches()` uses a legacy
+40px inset against a 48px wall cap and a mismatched procedural ground line.
+The source-reviewed candidate supplies measured floor placement for all four doorway directions,
+including ground sorting/shadows and matching light translation, under
+`build/qa/wall-torch-mount-candidate`. This is the next requested implementation;
+preserve the current visual-pass sources through their checkpoint gates first.
+The dialogue-choice/reader-controls baseline is source-reviewed and frozen
+under `build/qa/dialogue-clarity-candidate`, alongside the independently reviewed
+HUD fix candidate in `build/qa/dialogue-clarity-fix`. Neither is published.
+Source-visible overlap and hidden-choice input while backlog is open still
+require the actual-input baseline before production implementation.
+
+Pass 32 final combined world runs passed 68 checks/nine frames each, and
+settled pebble runs passed 258 checks/seven frames each, on both renderers;
+all 32 images were reviewed. The ordinary warrior hunt with `--observe=6` and
+mage with standard attack timing both won with normal starting health and no
+injected damage. The separate six-second-delay mage run **failed its win
+requirement: the hero died**. Its six captures remain preserved; the standard
+mage win does not erase that failure or establish its cause. Both installed
+floorfield/color/mipmap checks passed six frames each, all 12 reviewed; the
+opened Codex selected Village, so no graveyard-detail screenshot is claimed.
+
+The first full suite failed the old HUD identity comma-chain assertion; source
+review also found the conditional-reflow expectation. The replacement checks
+retained identity/title/level/points, fixed nonoverlapping 44px targets and both
+explicit Daily/Party visibility states, with restoration before failure.
+The pre-existing freed-shadow lambda diagnostic occurs in checkpoint 31 and
+the initial pass-32 logs. A new replacement-frame assertion rejected the first
+static-bound callback candidate because Godot treated its connections as
+duplicates. The corrected per-attachment closure holds only WeakRefs and a
+float, resolving live objects on dispatch; shadow geometry is unchanged.
+
+Final desktop gates are **compile224 / quick125 / full205, passed**:
+`build/qa/checkpoint32-desktop-quick4.log` and
+`build/qa/checkpoint32-desktop-full2.log`. Keep the failed attempts distinct:
+initial quick printed a pass marker despite its freed-capture error; the first
+full failed the old identity check; quick2 failed replacement-frame following
+with duplicate signal errors; quick3 stopped at compile on inferred Variant
+warnings, before the suite ran. Quick4/full2 follow the explicit type correction
+and contain no freed-capture or script/parse errors. Full2 still contains the
+intentional invalid-base64 negative control and bare ObjectDB exit warning;
+this is not a clean-stderr claim.
+
+`suite_verdict.ps1` now rejects freed-capture errors. All four log-only fixtures
+have matching expected/actual exits in
+`build/qa/suite-verdict-lambda-fixtures/results.json`, including the preserved
+invalid-base64 negative control. **Final mobile import / compile224 / strictquick125 passed. Source parity
+verified 21 exact content pairs and five independent UID pairs; 53 project/verdict
+files are frozen. Full preflight passed without findings.**
+The 59-path checkpoint excludes all future road-hunt/Vow fixtures and original
+art scratch. Root continues with the separate torch and dialogue baselines.
 
 ## Historical pause — superseded by the resume above
 

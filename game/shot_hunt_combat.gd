@@ -1,12 +1,16 @@
 extends ShotRig
 ## Ordinary keyboard intents, starting gear/stats, real movement and damage.
 ## Setup places the hero at each sign; combat never calls use_ability/damage.
+## Optional --terrain=graveyard changes only the existing floor material.
+## This remains Village Outskirts combat with village mechanics/lighting, not ch3.
 const Hunt := preload("res://scripts/road_hunt.gd")
 var held := {}
+var terrain_setup: Dictionary = {}
 
 
 func _ready() -> void:
 	await boot(arg("class", "warrior"), "ch1", false)
+	terrain_setup["boot_hero"] = _hero_receipt()
 	var error := await _checks()
 	_release()
 	if error != "":
@@ -44,7 +48,7 @@ func _release() -> void:
 func _capture(label: String) -> void:
 	await frames(2)
 	await RenderingServer.frame_post_draw
-	shot(label)
+	shot(label, "ordinary Village Outskirts combat; visual floor=" + arg("terrain", "original") + "; original village mechanics/lighting")
 
 
 func _checks() -> String:
@@ -69,6 +73,9 @@ func _checks() -> String:
 	game._enter_room(room)
 	await skip_dialogue()
 	await frames(3)
+	var floor_error := _prepare_floor(room)
+	if floor_error != "":
+		return floor_error
 	var trail := Hunt.begin(game, room, p.global_position)
 	if trail == null:
 		return "combat fixture could not accept a village hunt"
@@ -85,6 +92,11 @@ func _checks() -> String:
 	if trail.phase != Hunt.FIGHTING:
 		return "ordinary hunt did not reach combat"
 	var quarry: Enemy = trail.quarry
+	terrain_setup["combat_start"] = {"hero": _hero_receipt(), "quarry_kind": quarry.kind,
+		"quarry_hp": quarry.max_hp, "quarry_damage": quarry.dmg, "quarry_speed": quarry.speed,
+		"quarry_traits": quarry.traits.duplicate(true), "field": _field_receipt(room)}
+	if not _write_terrain_setup():
+		return "could not record combat-start terrain setup"
 	var hp_start := p.hp
 	var hp_min := p.hp
 	var enemy_hp := quarry.max_hp
@@ -160,6 +172,11 @@ func _checks() -> String:
 	if file != null:
 		var detailed := report.duplicate(true)
 		detailed["samples"] = samples
+		detailed["terrain_setup"] = terrain_setup
+		detailed["incoming_hit_capture"] = hurt_shown
+		detailed["pounce_capture"] = crouch_seen
+		detailed["combat_end_hero"] = _hero_receipt()
+		detailed["combat_end_field"] = _field_receipt(room)
 		file.store_string(JSON.stringify(detailed, "\t"))
 		file.close()
 	print("HUNT COMBAT: ", JSON.stringify(report))
@@ -169,3 +186,122 @@ func _checks() -> String:
 		return "combat probe used inflated health, did not walk, or received no reward"
 	print("ok: ordinary hunt combat won through keyboard movement and class-kit inputs with starting equipment, normal health and no injected combat damage")
 	return ""
+
+
+## Deliberately avoid ShotRig.apply_terrain: its Game helper rebuilds rivers,
+## hazards, scenery/colliders, wall dressing, ambience and event timers.
+## This synchronous existing-polygon update uses the normal field renderer;
+## no terrain table mutation, gameplay RNG, node replacement or combat call.
+func _prepare_floor(room: int) -> String:
+	var requested := arg("terrain", "")
+	terrain_setup["requested_visual_terrain"] = requested
+	terrain_setup["room"] = room
+	terrain_setup["room_name"] = String(game.zones[room].name)
+	terrain_setup["mechanical_terrain"] = String(game.terrain_by_zone[room])
+	terrain_setup["original_field"] = _field_receipt(room)
+	terrain_setup["original_hero"] = _hero_receipt()
+	terrain_setup["fixture"] = "Village Outskirts starting-kit keyboard hunt; setup teleports to signs. Optional floor-only transplant retains village lighting, roads, detail overlay, hazards, scenery, quarry selection and physics. Not actual ch3 quest play."
+	if requested == "":
+		return "" if _write_terrain_setup() else "could not record original combat setup"
+	if requested != "graveyard":
+		return "optional combat floor supports only --terrain=graveyard"
+	var existing: Polygon2D = game.zone_fields.get(room) as Polygon2D
+	var desired: Texture2D = Art.ground_field("gravedirt")
+	if not is_instance_valid(existing) or existing.texture == null or desired == null:
+		return "floor-only combat requires an existing field polygon and installed grave-earth texture"
+	if not desired.resource_path.ends_with("ground_field_gravedirt_painterly.png"):
+		return "installed painterly gravedirt is absent; no substitute material will be invented"
+	if game.dev_god or not game.no_saves or game.net_online() or not game.player.is_physics_processing():
+		return "floor-only combat requires ordinary live physics, god off and isolated offline no_saves"
+	var original_polygon := existing.get_instance_id()
+	var before := _mechanics_receipt(room)
+	game._apply_ground_field(room, Terrains.get_terrain(requested))
+	var after := _mechanics_receipt(room)
+	terrain_setup["mechanics_before"] = before
+	terrain_setup["mechanics_after"] = after
+	terrain_setup["mechanics_unchanged"] = before == after
+	terrain_setup["rendered_field"] = _field_receipt(room)
+	if not _write_terrain_setup():
+		return "could not record floor-transplant setup"
+	if before != after:
+		return "floor-only transplant changed synchronous gameplay state"
+	if (game.zone_fields.get(room) as Polygon2D) != existing or existing.get_instance_id() != original_polygon \
+			or existing.texture != desired:
+		return "floor-only transplant replaced its polygon or failed actual texture identity"
+	var period := Art.ground_field_period("gravedirt")
+	var density := float(desired.get_width()) / period
+	if period != 512.0 or existing.uv.size() != existing.polygon.size():
+		return "grave-earth combat field period/UV count does not match the installed material contract"
+	for index in existing.polygon.size():
+		if not existing.uv[index].is_equal_approx(existing.polygon[index] * density):
+			return "grave-earth combat field UVs do not use the normal source/world period"
+	print("HUNT COMBAT FLOOR: real Village Outskirts hunt over installed grave-earth; village mechanics/lighting retained")
+	return ""
+
+
+func _hero_receipt() -> Dictionary:
+	var p := game.player
+	return {"class": p.cls, "level": p.level, "hp": p.hp, "max_hp": p.max_hp,
+		"mp": p.mp, "max_mp": p.max_mp, "attack": p.atk, "speed": p.speed,
+		"gold": p.gold, "xp": p.xp, "equipment": p.equipment.duplicate(true),
+		"room_potions": p.room_potions.duplicate(true), "position": [p.global_position.x, p.global_position.y],
+		"god_mode": game.dev_god, "physics_active": p.is_physics_processing(), "process_active": p.is_processing()}
+
+
+func _mechanics_receipt(room: int) -> Dictionary:
+	var bodies: Array[Dictionary] = []
+	for node in game.world.find_children("*", "CollisionObject2D", true, false):
+		var body := node as CollisionObject2D
+		bodies.append({"id": body.get_instance_id(), "transform": body.global_transform,
+			"layer": body.collision_layer, "mask": body.collision_mask})
+	var enemies: Array[Dictionary] = []
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var enemy := node as Enemy
+		if enemy != null:
+			enemies.append({"id": enemy.get_instance_id(), "kind": enemy.kind, "hp": enemy.hp,
+				"position": enemy.global_position, "physics": enemy.is_physics_processing()})
+	var detail: Sprite2D = game.zone_grounds.get(room) as Sprite2D
+	return {"hero": _hero_receipt(), "terrain_by_zone": game.terrain_by_zone.duplicate(true),
+		"room_zone": game.zones[room].duplicate(true), "hazards": game.hazards.duplicate(true),
+		"rivers": game.rivers.duplicate(true), "terrain_event_t": game.terrain_event_t, "hazard_tick": game.hazard_tick,
+		"play_rect": game.play_rect(room), "ambient": game.ambient.color,
+		"quarry_kind": Hunt.quarry_kind(game, room),
+		"bodies": bodies, "enemies": enemies, "scenery_ids": _node_ids(game.zone_scenery.get(room, [])),
+		"road_ids": _node_ids(game.zone_road_marks.get(room, [])),
+		"detail_node_id": detail.get_instance_id() if is_instance_valid(detail) else 0,
+		"detail_texture_id": detail.texture.get_instance_id() if is_instance_valid(detail) and detail.texture != null else 0}
+
+
+func _node_ids(nodes: Array) -> Array:
+	var ids: Array = []
+	for node in nodes:
+		if is_instance_valid(node):
+			ids.append(node.get_instance_id())
+	return ids
+
+
+func _field_receipt(room: int) -> Dictionary:
+	var field: Polygon2D = game.zone_fields.get(room) as Polygon2D
+	if not is_instance_valid(field) or field.texture == null:
+		return {}
+	var tex := field.texture
+	var is_grave := tex == Art.ground_field("gravedirt")
+	var mechanical := Terrains.get_terrain(String(game.terrain_by_zone[room]))
+	var kind := "gravedirt" if is_grave else String(mechanical["ground"])
+	return {"polygon_id": field.get_instance_id(), "resource_path": tex.resource_path,
+		"source_file_sha256": FileAccess.get_sha256(tex.resource_path),
+		"dimensions": [tex.get_width(), tex.get_height()], "world_period": Art.ground_field_period(kind),
+		"rendered_texture_is_gravedirt_lookup": is_grave,
+		"rendered_texture_is_recorded_lookup": tex == Art.ground_field(kind),
+		"field_kind": kind, "texture_filter": field.texture_filter, "self_modulate": field.self_modulate,
+		"ambient": game.ambient.color, "mechanical_terrain": String(game.terrain_by_zone[room])}
+
+
+func _write_terrain_setup() -> bool:
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(shot_dir))
+	var file := FileAccess.open(shot_dir.path_join("terrain_setup.json"), FileAccess.WRITE)
+	if file == null:
+		return false
+	file.store_string(JSON.stringify(terrain_setup, "\t"))
+	file.close()
+	return true

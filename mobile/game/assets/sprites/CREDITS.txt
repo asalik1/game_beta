@@ -239,3 +239,5 @@ wayfarer_walk.png — original six-frame traveler movement, built-in ImageGen, 2
 ground_field_{sand,snow,grass,forest}_painterly.png — original seamless painted terrain fields, built-in OpenAI ImageGen, 2026-09-08. Untouched 1254px square masters; world scale and mipmap filtering applied in-engine. Original field textures retained. Prompts, master provenance and measured seams: art_src/terrain_fields_2026-09-08/. No third-party source assets.
 
 road_hunt_track.png — original transparent painted wolf-track impression, built-in OpenAI ImageGen, 2026-09-08. Untouched 1254px master rendered as a ground decal; provenance and prompt: art_src/road_hunt_2026-09-08/. No third-party source assets.
+
+ground_field_gravedirt_painterly.png — original painted packed-earth material, built-in OpenAI ImageGen, 2026-09-09. Untouched 1254px square master; 512px world period and mipmap filtering applied in-engine. Original field retained. Exact prompt and provenance: art_src/ground_focus_2026-09-09/. No third-party source assets.

@@ -90,13 +90,24 @@ static func attach(body: Node2D, spr: Node2D, base_y_override := NAN) -> void:
 	_sync(cast, spr, base_y_override)
 	# Both sprite kinds can change frames. Shape caching is keyed by cell,
 	# so a padded animation or a vertical strip cannot borrow another's feet.
-	spr.connect("frame_changed", func() -> void:
-		if is_instance_valid(cast):
-			_sync(cast, spr, base_y_override))
+	# Resolve weak node references inside the callback. A raw freed lambda
+	# capture is rejected by Godot before an is_instance_valid guard can run.
+	var cast_ref: WeakRef = weakref(cast)
+	var source_ref: WeakRef = weakref(spr)
+	# A fresh closure distinguishes this cast from an earlier retired cast's
+	# connection; binding the static helper alone did not distinguish them.
+	var sync: Callable = func() -> void:
+		_sync_if_alive(cast_ref, source_ref, base_y_override)
+	spr.connect("frame_changed", sync)
 	if spr is AnimatedSprite2D:
-		spr.connect("animation_changed", func() -> void:
-			if is_instance_valid(cast):
-				_sync(cast, spr, base_y_override))
+		spr.connect("animation_changed", sync)
+
+
+static func _sync_if_alive(cast_ref: WeakRef, source_ref: WeakRef, base_y_override: float) -> void:
+	var cast := cast_ref.get_ref() as Node2D
+	var source := source_ref.get_ref() as Node2D
+	if cast != null and source != null:
+		_sync(cast, source, base_y_override)
 
 
 static func _sync(cast: Node2D, spr: Node2D, base_y_override: float) -> void:

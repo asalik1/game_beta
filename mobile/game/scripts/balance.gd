@@ -121,7 +121,7 @@ const FLOOR_LAYER_MODULATE := Color(0.94, 0.94, 0.965)
 # fields retain their authored native scale; the keep's stones stay human-sized.
 const GROUND_FIELD_PERIOD := {
 	"stone": 384.0, "sand": 512.0, "snow": 512.0,
-	"grass": 512.0, "forest": 400.0,
+	"grass": 512.0, "forest": 400.0, "gravedirt": 512.0,
 }
 # The neutral stone master needs a small exposure lift under keep lighting.
 const GROUND_FIELD_GAIN := {"stone": 1.28}

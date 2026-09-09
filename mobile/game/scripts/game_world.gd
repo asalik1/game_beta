@@ -3318,7 +3318,11 @@ func _prop_visual(name: String) -> Node2D:
 	var vis: Node2D = Art.anim_prop(name)
 	if vis == null:
 		var spr := Sprite2D.new()
-		spr.texture = Art.tex(name)
+		# Ground pebbles use the matte, angular stone at their existing small
+		# width. Keep the logical key for scatter/scale and Art's direct pebble
+		# texture for floating ambience, which has a different sizing contract.
+		var texture_name := "rock2" if name == "pebble" else name
+		spr.texture = Art.tex(texture_name)
 		vis = spr
 	return vis
 

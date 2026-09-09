@@ -33,6 +33,20 @@ func _ready() -> void:
 ## Same room, props, camera and light; only the field texture changes.
 ## shot.bat floorfield --compare --timeout=180 [--mobile]
 func _compare_painted() -> void:
+	# Candidate review loads a preserved master without installing it, changing
+	# Art's cache, or claiming that the production/Codex path uses it already.
+	var candidate: Texture2D = null
+	var candidate_path := arg("candidate", "")
+	var candidate_period := float(arg("period", "512"))
+	if candidate_path != "":
+		var source := Image.load_from_file(candidate_path)
+		if source == null or source.is_empty() or not is_finite(candidate_period) or candidate_period <= 0.0:
+			push_error("invalid external floor candidate or period")
+			finish(1)
+			return
+		source.generate_mipmaps()
+		candidate = ImageTexture.create_from_image(source)
+		print("CANDIDATE ONLY: ", candidate_path, " size=", source.get_size(), " world_period=", candidate_period)
 	if flag("bypass-canvas-post"):
 		game.glow_env.environment.background_mode = Environment.BG_CLEAR_COLOR
 	if not await _capture_color_check():
@@ -66,8 +80,8 @@ func _compare_painted() -> void:
 		var terrain := Terrains.get_terrain(tid)
 		var kind := String(terrain.ground)
 		var field: Polygon2D = game.zone_fields[2]
-		var painted := field.texture
-		if painted == null or not painted.resource_path.ends_with("_painterly.png"):
+		var painted: Texture2D = candidate if candidate != null else field.texture
+		if painted == null or (candidate == null and not painted.resource_path.ends_with("_painterly.png")):
 			push_error("painted field missing for " + kind)
 			finish(1)
 			return
@@ -76,13 +90,16 @@ func _compare_painted() -> void:
 			finish(1)
 			return
 		zoom(1.0)
-		var before: Texture2D = load("res://assets/sprites/ground_field_%s.png" % kind)
+		var before: Texture2D = field.texture if candidate != null else load("res://assets/sprites/ground_field_%s.png" % kind)
 		field.texture = before
-		field.uv = field.polygon
-		field.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		if candidate == null:
+			field.uv = field.polygon
+			field.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		await frames(3)
 		shot(tid + "_before")
 		game._apply_ground_field(2, terrain)
+		if candidate != null:
+			_candidate_on_field(field, candidate, candidate_period)
 		await frames(3)
 		shot(tid + "_painted")
 		zoom(2.0)
@@ -96,6 +113,24 @@ func _compare_painted() -> void:
 		await sim_wait(1.25)
 		shot(tid + "_combat_readability")
 		game.cancel_ground_attacks()
+		if candidate != null:
+			# Move only the diagnostic camera to inspect both tile axes. Posed
+			# actors and synthetic tells establish appearance, not combat feel.
+			var camera_origin := game.camera.global_position
+			var screen_origin := p.get_global_transform_with_canvas().origin
+			for offset in [Vector2(candidate_period * 0.5, 0), Vector2(0, -candidate_period * 0.5)]:
+				game.camera.global_position = camera_origin + offset
+				await frames(4)
+				var screen_now := p.get_global_transform_with_canvas().origin
+				var moved: float = absf(screen_now.x - screen_origin.x) if offset.x != 0.0 else absf(screen_now.y - screen_origin.y)
+				if moved < minf(80.0, candidate_period * 0.25):
+					push_error("candidate camera sweep was clamped before crossing a visible material span")
+					finish(1)
+					return
+				print("CANDIDATE CAMERA: requested=", offset, " actual_screen_delta=", screen_now - screen_origin)
+				shot(tid + ("_candidate_join_x" if offset.x != 0.0 else "_candidate_join_y"))
+			game.camera.global_position = camera_origin
+			continue
 		# A real Codex thumbnail must use the same floor at its world scale.
 		var preview := Art.ground_preview(kind, terrain.path, 44, 26, 2007)
 		if preview == null:
@@ -107,13 +142,26 @@ func _compare_painted() -> void:
 	game._apply_touch_mode()
 	await frames(4)
 	shot("painted_floor_touch")
+	if candidate != null:
+		print("ok: candidate-only material comparison: calibrated before/after, mipmaps, native/detail, synthetic tells and two-axis joins; not installed or ordinary combat")
+		finish()
+		return
 	game.menus.open_codex("terrains")
 	await frames(4)
 	shot("painted_terrain_codex")
 	game.menus.close()
 	game.request_pause(false)
-	print("ok: painted terrain fields: same-scene before/after, mipmaps, native/detail views, real combat tells, matching Codex previews, touch")
+	print("ok: installed painted fields: same-scene before/after, mipmaps, native/detail, synthetic tells, non-null preview API and Codex open, touch layout")
 	finish()
+
+
+func _candidate_on_field(field: Polygon2D, tex: Texture2D, period: float) -> void:
+	field.texture = tex
+	var uv := PackedVector2Array()
+	for point in field.polygon:
+		uv.append(point * float(tex.get_width()) / period)
+	field.uv = uv
+	field.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 
 
 ## A known UI swatch catches missing/doubled gamma conversion in screenshots.

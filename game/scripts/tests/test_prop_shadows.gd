@@ -244,12 +244,16 @@ static func _animated(g: Game, holder: Node2D) -> String:
 	var cast_ref: WeakRef = weakref(cast)
 	cast.free()
 	src.frame = 0  # A retained source signal must tolerate its retired shadow.
+	src.animation_changed.emit()  # Both retained signal paths must tolerate it.
 	if cast_ref.get_ref() != null:
 		return "retired animated shadow remained alive after its node was freed"
 	g._prop_cast_shadow(body, src)
 	var next_cast := _cast(body) as AnimatedSprite2D
 	if next_cast == null:
 		return "animated source could not receive a replacement shadow"
+	src.frame = 1
+	if next_cast.frame != 1:
+		return "replacement animated shadow did not follow the retained source"
 	var source_ref: WeakRef = weakref(src)
 	var next_ref: WeakRef = weakref(next_cast)
 	body.free()

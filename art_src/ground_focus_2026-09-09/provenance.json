@@ -1,0 +1,34 @@
+{
+  "created_utc": "2026-09-09T04:30:59.192444+00:00",
+  "tool": "built-in image_gen",
+  "intent": "quiet painterly packed-earth sibling, environmental art only",
+  "prompt_file": "prompt.txt",
+  "source_output": "C:/Users/asali/.codex/generated_images/01a083bf-c02d-7ac1-ae93-9ba2848f95ad/exec-fe37d5c1-97fb-4d86-844a-072b2b13a87b.png",
+  "candidate": "packed_earth_v1.png",
+  "sha256": "d0172428722dd2e305942c61e13175942a11fe5b586587eaf77117acc6caee3d",
+  "references": [
+    "game/assets/sprites/ground_field_gravedirt.png",
+    "game/assets/sprites/ground_field_forest_painterly.png"
+  ],
+  "status": "accepted after native desktop/mobile-source material, chapter placement and combat reviews; final desktop/mobile suites and full preflight passed",
+  "actual_size": [
+    1254,
+    1254
+  ],
+  "proposed_world_period": 512,
+  "source_pixels_per_screen_pixel_at_1_12": 2.186802455357143,
+  "review": "build/qa/grave-earth-v1-visual-review.md",
+  "desktop_trial": "build/qa/grave-earth-v1-desktop2.log",
+  "mobile_trial": "build/qa/grave-earth-v1-mobile1.log",
+  "limits": "Chapter3 views are posed; Vigil traversal uses ordinary keyboard movement; warrior and standard mage keyboard hunts use a floor-only transplant retaining Village Outskirts mechanics/lighting. Mobile evidence is Compatibility on the Windows host, not a device. The separate six-second delayed mage attack run failed and is preserved.",
+  "installed_paths": [
+    "game/assets/sprites/ground_field_gravedirt_painterly.png",
+    "mobile/game/assets/sprites/ground_field_gravedirt_painterly.png"
+  ],
+  "installed_reviews": [
+    "build/qa/visual-focus-desktop-final-review.md",
+    "build/qa/visual32-mobile-final-review.md",
+    "build/qa/grave-earth-installed-floorfield-review.md",
+    "build/qa/grave-earth-combat-review.md"
+  ]
+}

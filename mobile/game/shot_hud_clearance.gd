@@ -37,7 +37,7 @@ func _release() -> void:
 func _capture(label: String, enemy: Enemy = null) -> void:
 	await frames(2)
 	await RenderingServer.frame_post_draw
-	var info := Rect2(8, 76, 344, 148)
+	var info := game.hud.info_panel.get_global_rect()
 	var feet := game.player.get_global_transform_with_canvas().origin
 	var body := Clearance.body_rect(game.player)
 	var row := {"view": label, "hero_feet": str(feet), "hero_covered": info.intersects(body),

@@ -35,6 +35,22 @@ const CHAPTER_ZONES := {
 				{"sprite": "factor_imre", "x": 1500, "y": 760, "prompt": "E — Cinderborn", "convo": "ch3_cinder"},
 				{"sprite": "old_fenna", "x": 800, "y": 800, "prompt": "E — Talk", "convo": "ch3_refugee"},
 			],
+			# Small resting places beside the people; the central passage stays open.
+			"furnishings": [
+				{"name": "capital_city_bench", "x": 460, "y": 420, "clearance": 190},
+				{"name": "garden_urns", "x": 565, "y": 430, "clearance": 175},
+				{"name": "capital_city_bench", "x": 655, "y": 870, "clearance": 190},
+				{"name": "amphora", "x": 745, "y": 865, "clearance": 145},
+			],
+			"obstacle_count": 6,
+			"decor_count": 16,
+			"accents": [
+				{"name": "tombstone3", "chance": 0.25, "max": 1},
+				{"name": "grave_mound", "chance": 0.20, "max": 1},
+				{"name": "grave_bones", "chance": 0.0},
+				{"name": "coffin", "chance": 0.0},
+				{"name": "bones", "chance": 0.0},
+			],
 		},
 		{
 			"name": "The Misted Fields", "terrain": "graveyard", "type": "combat",

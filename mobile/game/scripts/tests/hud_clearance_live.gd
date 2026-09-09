@@ -49,6 +49,20 @@ static func _checks(r: Node, enemy: Enemy, room: int) -> String:
 	p.locked_target = enemy
 	await r.get_tree().create_timer(1.0, true).timeout
 	var panel := g.hud.info_panel.get_global_rect()
+	# The dossier can change height. Aim the actual painted body at its live
+	# center rather than relying on the old camera-relative world offset.
+	# Free placement and ordinary camera settling remain in the fixture.
+	if not panel.intersects(Clearance.body_rect(enemy)):
+		var body := Clearance.body_rect(enemy)
+		var to_world_local := g.world.get_global_transform_with_canvas().affine_inverse()
+		var wanted := g.world.to_global(to_world_local * panel.get_center())
+		var current := g.world.to_global(to_world_local * body.get_center())
+		enemy.global_position = g.free_spawn_pos(enemy.global_position + wanted - current, p.global_position)
+		await r.get_tree().create_timer(1.0, true).timeout
+		panel = g.hud.info_panel.get_global_rect()
+	print("HUD OVERLAP SETUP: ", JSON.stringify({"panel": str(panel),
+		"hero": str(Clearance.body_rect(p)), "target": str(Clearance.body_rect(enemy)),
+		"hero_world": str(p.global_position), "target_world": str(enemy.global_position)}))
 	if panel.intersects(Clearance.body_rect(p)) or not panel.intersects(Clearance.body_rect(enemy)):
 		return "target-only fixture did not place the visible enemy under the information panel"
 	await r._capture("07_target_visible_through_information", enemy)

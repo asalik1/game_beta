@@ -6884,39 +6884,21 @@ func _test_mp_lobby_ui() -> void:
 	if crop_uv.z >= 1.0 or crop_uv.w >= 1.0:
 		return _fail("avatar shader is not using the focused face crop")
 
-	# The identity line reads as one comma-delimited chain, with the chosen
-	# player name first and any equipped title inserted before the level.
+	# The compact name/class line retains complete identity in portrait details.
+	# Restore borrowed state before reporting any failure from the contract.
 	var keep_name: String = game.player.char_name
 	var keep_title: String = game.player_title
-	game.player.char_name = "Player1"
-	game.player_title = ""
-	game.hud.update_stats(game.player)
-	var cls_label: String = Classes.CLASSES[game.player.cls]["name"]
-	if not game.hud.stats_label.text.begins_with("Player1, %s, Lv %d" % [
-			cls_label, game.player.level]):
-		return _fail("HUD identity line omitted the player name or comma chain")
-	var title_keys: Array = Achievements.TITLES.keys()
-	if not title_keys.is_empty():
-		game.player_title = String(title_keys[0])
-		game.hud.update_stats(game.player)
-		var title_name: String = Achievements.TITLES[game.player_title]["name"]
-		if not game.hud.stats_label.text.begins_with(
-				"Player1, %s, %s, Lv %d" % [cls_label, title_name, game.player.level]):
-			return _fail("HUD identity line did not chain the equipped title")
+	var keep_daily: bool = game.hud.daily_btn.visible
+	var keep_party: bool = game.hud.party_btn.visible
+	var dossier_error := _compact_dossier_contract()
 	game.player.char_name = keep_name
 	game.player_title = keep_title
 	game.hud.update_stats(game.player)
-	# Conditional icons reflow instead of reserving blank cells. This is the
-	# common no-daily state from the player's HUD report.
-	game.hud.daily_btn.visible = false
-	game.hud.party_btn.visible = true
+	game.hud.daily_btn.visible = keep_daily
+	game.hud.party_btn.visible = keep_party
 	game.hud._layout_hud_icons()
-	if game.hud.mail_btn.size != Vector2(40, 39) \
-			or not is_equal_approx(game.hud.skills_btn.position.x, 184.0) \
-			or not is_equal_approx(game.hud.settings_btn.position.x, 226.0) \
-			or not is_equal_approx(game.hud.party_btn.position.x, 268.0):
-		return _fail("HUD icon row left a blank conditional slot")
-	game.hud.party_btn.visible = false
+	if dossier_error != "":
+		return _fail(dossier_error)
 	game.menus.open_codex("coop")
 	await _frames(2)
 	if game.menus.current != "codex":
@@ -6939,6 +6921,53 @@ func _test_mp_lobby_ui() -> void:
 	if game.menus.is_open():
 		return _fail("lobby did not close cleanly")
 	print("ok: Play Together lobby screens + codex co-op page render (offline)")
+
+
+func _compact_dossier_contract() -> String:
+	game.player.char_name = "Player1"
+	game.player_title = ""
+	game.hud.update_stats(game.player)
+	var cls_label: String = Classes.CLASSES[game.player.cls]["name"]
+	var short_identity := "Player1, %s" % cls_label
+	if game.hud.stats_label.text != short_identity:
+		return "compact HUD omitted the player name/class"
+	if game.hud.avatar_level_label.text != str(game.player.level):
+		return "portrait level badge omitted the current level"
+	var detail := String(game.hud.avatar_root.get_meta("tip", ""))
+	if not detail.contains(short_identity) or not detail.contains("Level %d" % game.player.level) \
+			or not detail.contains("%d skill point" % game.player.skill_points) \
+			or String(game.hud.stats_label.get_meta("tip", "")) != detail:
+		return "portrait/name details lost identity, level or skill-point information"
+	var title_keys: Array = Achievements.TITLES.keys()
+	if not title_keys.is_empty():
+		game.player_title = String(title_keys[0])
+		game.hud.update_stats(game.player)
+		var title_name: String = Achievements.TITLES[game.player_title]["name"]
+		if game.hud.stats_label.text != short_identity \
+				or not String(game.hud.avatar_root.get_meta("tip", "")).contains(title_name) \
+				or not String(game.hud.stats_label.get_meta("tip", "")).contains(title_name):
+			return "equipped title was lost from compact identity details"
+	# Conditional visibility must not move another action under a held pointer.
+	var buttons: Array[Button] = [game.hud.mail_btn, game.hud.quest_btn, game.hud.inv_btn,
+		game.hud.codex_btn, game.hud.daily_btn, game.hud.skills_btn, game.hud.settings_btn, game.hud.party_btn]
+	game.hud.daily_btn.visible = true
+	game.hud.party_btn.visible = false
+	game.hud._layout_hud_icons()
+	var before: Array[Rect2] = []
+	for button in buttons:
+		before.append(button.get_global_rect())
+	game.hud.daily_btn.visible = false
+	game.hud.party_btn.visible = true
+	game.hud._layout_hud_icons()
+	for i in buttons.size():
+		var rect := buttons[i].get_global_rect()
+		if rect != before[i] or rect.size.x < 44.0 or rect.size.y < 44.0 \
+				or not game.hud.info_panel.get_global_rect().encloses(rect):
+			return "compact utility targets moved, shrank or escaped their panel"
+		for j in range(i):
+			if rect.intersects(buttons[j].get_global_rect()):
+				return "compact utility input targets overlap"
+	return ""
 
 
 ## The touch HUD's OVERLAY GATE (2026-07-17). The suite runs WITHOUT --touch, so

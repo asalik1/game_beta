@@ -1,0 +1,9 @@
+Use case: precise-object-edit.
+Asset type: opaque seamless ground-material tile for Crownless, a painterly top-down 2D dark-fantasy action RPG.
+Edit target: Image 1 is the existing grave-earth material. Derive a NEW quieter sibling; preserve its subdued neutral gray-brown/taupe earth palette and approximate overall brightness, but replace the low-resolution rendering with high-fidelity hand-painted material.
+Style reference only: Image 2 demonstrates the project's soft-shaded painterly texture fidelity. Do NOT copy its green palette, foliage, roots, sticks or leaves.
+Primary change: remove the repeated upright grass symbols and the dark branching crack network. Paint gently compacted, dry, weathered cemetery soil with subtle irregular clods, very fine mineral grain and a few tiny embedded stone flecks. It should feel like real worn earth while remaining quiet behind characters and combat tells. Fine texture should be crisp and painterly, with restrained local contrast; no blurry photographic filter and no flat featureless fill.
+Composition: uniform orthographic material viewed directly from above, filling the entire square. No path drawn into the image, no centered clearing, no focal object, no perspective, no horizon, no vignette and no bright/dark border. Broad variations must be gentle and irregular. Opposite edges must join seamlessly in both directions, with consistent color and texture scale at all four corners. No conspicuous repeating signature motif.
+Lighting: diffuse overcast illumination with only very shallow soft upper-left shading of tiny surface relief; no cast shadows or baked light pools.
+Avoid: grass tufts, plants, leaves, roots, bones, gravestones, footprints, cobblestones, sand ripples, mud puddles, dramatic fissures, outlines, pixel-art blocks, text, labels, borders or watermark.
+Output: one high-resolution 2048-by-2048 square opaque material tile, not a preview sheet or a room illustration.

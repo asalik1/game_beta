@@ -60,6 +60,10 @@ var quest_sparkles: Array = []  # twinkles around ! during the shine
 var inv_btn: Button             # bag icon — opens the inventory
 var codex_btn: Button           # book icon — opens the codex
 var skills_btn: Button          # skill-tree icon — opens the talents/skill tree
+var skills_badge: Panel
+var skills_badge_num: Label
+var _dossier_values := ""
+var _dossier_detail_state: Array = []
 var settings_btn: Button        # gear icon — opens the pause/ESC menu
 var party_btn: Button           # live-session chip — reopens the persistent party panel
 var stash_btn: Button           # chest icon — opens the account stash
@@ -236,9 +240,15 @@ var mirror_options: Label = null
 
 const BAR_W := 280.0
 const BAR_X := 72.0
-const HUD_ICON_BUTTON := Vector2(40, 39)
-const HUD_ICON_STEP := 42.0
-const HUD_ICON_Y := 182.0
+const HUD_INFO_POSITION := Vector2(8, 76)
+const HUD_INFO_SIZE := Vector2(344, 104)
+const HUD_IDENTITY_RECT := Rect2(18, 80, 274, 22)
+const HUD_STAT_Y := 103.0
+const HUD_STAT_GAP := 6.0
+const HUD_ICON_BUTTON := Vector2(44, 44)
+const HUD_ICON_STEP := 46.0
+const HUD_ICON_Y := 128.0
+const HUD_PARTY_POSITION := Vector2(300, 80)
 const AVATAR_CROP_SCALE := 0.28
 # Where the face lands INSIDE the circle: dead center horizontally, at the
 # midpoint between the circle's top and its center — classic portrait framing
@@ -321,58 +331,56 @@ func _ready() -> void:
 	xp_fill = _bar(Vector2(BAR_X, 58), Vector2(BAR_W, 8), Color(0.95, 0.8, 0.25))
 	hp_text = _bar_text(Vector2(BAR_X, 16), Vector2(BAR_W, 20), 12)
 	mp_text = _bar_text(Vector2(BAR_X, 40), Vector2(BAR_W, 14), 10)
-	info_panel = _panel(Vector2(8, 76), Vector2(344, 148))
-	stats_label = _label(Vector2(18, 82), 15, Color(1, 1, 1), 650)
-	# Identity line in the body BOLD face (2026-08-18 HUD chip pass): the
-	# block reads as name / resources / two stat CHIPS instead of four
-	# same-weight text lines.
+	info_panel = _panel(HUD_INFO_POSITION, HUD_INFO_SIZE)
+	stats_label = _label(HUD_IDENTITY_RECT.position, 16, Color(1, 1, 1), HUD_IDENTITY_RECT.size.x)
+	stats_label.size = HUD_IDENTITY_RECT.size
+	stats_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	stats_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	stats_label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	stats_label.tooltip_text = "Hero details · also available from your portrait"
+	_click_to_popover(stats_label, "Hero details", true)
+	# Keep a bounded name/class row. The portrait also exposes the full name,
+	# earned title and all exact statistics through a generous touch target.
 	var id_bf := UITheme.body_bold_font()
 	if id_bf != null:
 		stats_label.add_theme_font_override("font", id_bf)
-	stats_label.add_theme_font_size_override("font_size", 16)
-	# The block is laid out from MEASURED label heights (the body face is taller
-	# than the engine default the old absolute y's assumed — the CR chip sat on
-	# the gold line's descenders; owner flag 2026-08-18) and stays clear of the
-	# icon row at HUD_ICON_Y.
-	var block_y := 82.0 + stats_label.get_minimum_size().y + 1.0
-	gold_label = _label(Vector2(18, block_y), 15, Color(1.0, 0.85, 0.35))
-	block_y += gold_label.get_minimum_size().y + 4.0
-	# Two chips: Combat Rating and Resonance sit in small rounded pills (the
-	# orb lives inside the second) so they read as gauges, not debug lines.
-	cr_chip = _chip(Vector2(14, block_y), Vector2(176, CHIP_H))
-	cr_label = _label(Vector2(22, block_y + 1.0), 14, Color(0.72, 0.9, 1.0))
-	cr_label.mouse_filter = Control.MOUSE_FILTER_PASS
-	cr_label.set_meta("tip", "Combat Rating — one number approximating your total power: gear and gems, level, attributes and skill tree combined.")
-	_click_to_popover(cr_label, "Combat Rating")
-	block_y += CHIP_H + 4.0
-	# Resonance: golden and sparkling when positive (shinier as it
-	# climbs), black-on-pale when negative, pulses on every change.
-	# Nudged right to seat the mood orb on its left.
-	res_chip = _chip(Vector2(14, block_y), Vector2(150, CHIP_H + 2.0))
-	res_label = _label(Vector2(46, block_y + 1.0), 16, Color(0.75, 0.75, 0.8))
+	gold_label = _label(Vector2(18, HUD_STAT_Y), 15, Color(1.0, 0.85, 0.35), 100)
+	gold_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	gold_label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_click_to_popover(gold_label, "Gold", true)
+	cr_chip = _chip(Vector2(124, HUD_STAT_Y), Vector2(70, CHIP_H))
+	cr_label = _label(Vector2(130, HUD_STAT_Y), 14, Color(0.72, 0.9, 1.0), 58)
+	cr_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	cr_label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_click_to_popover(cr_label, "Combat Rating", true)
+	res_chip = _chip(Vector2(200, HUD_STAT_Y), Vector2(62, CHIP_H))
+	res_label = _label(Vector2(224, HUD_STAT_Y), 16, Color(0.75, 0.75, 0.8), 32)
 	res_label.pivot_offset = Vector2(0, 10)
-	res_label.mouse_filter = Control.MOUSE_FILTER_PASS
-	res_label.set_meta("tip", "Resonance — how your shard leans: Virtue (+) or Temptation (−). Major choices move it, and the world answers through dialogue and merchant haggling.")
-	_click_to_popover(res_label, "Resonance")
+	res_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	res_label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_click_to_popover(res_label, "Resonance", true)
+	for readout: Label in [gold_label, cr_label, res_label]:
+		readout.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		readout.size.y = CHIP_H
 	# Resonance mood orb: a glowing bead just left of the number — golden
 	# fire when strongly Virtuous (+50), a dark flame when Tempted (-50),
 	# a calm white pearl at neutral, gradients between. Two glow sprites
 	# (outer aura + pearl heart) driven by _update_resonance_orb.
-	var orb_y := block_y + (CHIP_H + 2.0) * 0.5
+	var orb_y := HUD_STAT_Y + CHIP_H * 0.5
 	res_orb_glow = Sprite2D.new()
 	res_orb_glow.texture = Art.tex("glow")
-	res_orb_glow.position = Vector2(30, orb_y)
+	res_orb_glow.position = Vector2(212, orb_y)
 	add_child(res_orb_glow)
 	res_orb_core = Sprite2D.new()
 	res_orb_core.texture = Art.tex("glow")
-	res_orb_core.position = Vector2(30, orb_y)
+	res_orb_core.position = Vector2(212, orb_y)
 	add_child(res_orb_core)
 	res_particles = CPUParticles2D.new()
-	res_particles.position = Vector2(88, orb_y - 3.0)
+	res_particles.position = Vector2(230, orb_y - 3.0)
 	res_particles.amount = 6
 	res_particles.lifetime = 0.9
 	res_particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	res_particles.emission_rect_extents = Vector2(78, 8)
+	res_particles.emission_rect_extents = Vector2(18, 3)
 	res_particles.direction = Vector2(0, -1)
 	res_particles.spread = 20.0
 	res_particles.initial_velocity_min = 5.0
@@ -408,11 +416,11 @@ func _ready() -> void:
 	badge_style.set_corner_radius_all(9)  # 18px box + r9 = a circle
 	mail_badge = Panel.new()
 	mail_badge.add_theme_stylebox_override("panel", badge_style)
-	mail_badge.position = Vector2(46, 178)   # ride the top-right corner of the larger mail icon
+	mail_badge.position = Vector2(HUD_ICON_BUTTON.x - 18, -4)
 	mail_badge.size = Vector2(18, 18)
 	mail_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	mail_badge.visible = false
-	add_child(mail_badge)
+	mail_btn.add_child(mail_badge)
 	mail_badge_num = Label.new()
 	mail_badge_num.add_theme_font_size_override("font_size", 12)
 	mail_badge_num.add_theme_color_override("font_color", Color(1, 1, 1))
@@ -427,10 +435,10 @@ func _ready() -> void:
 	# claim screen. The glow is added first so it sits BEHIND the star.
 	daily_glow = Sprite2D.new()
 	daily_glow.texture = Art.tex("glow")
-	daily_glow.position = Vector2(204, 201)  # centered on the ★ (conditional tail of the icon row)
+	daily_glow.position = HUD_ICON_BUTTON * 0.5
+	daily_glow.show_behind_parent = true
 	daily_glow.modulate = Color(1.0, 0.85, 0.35, 0.0)
 	daily_glow.visible = false
-	add_child(daily_glow)
 	daily_btn = Button.new()
 	daily_btn.flat = true
 	var daily_tex: Texture2D = Art.ui_icon("ui_daily")  # Raven gold star; glyph fallback
@@ -443,13 +451,14 @@ func _ready() -> void:
 		daily_btn.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
 		daily_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.7))
 	daily_btn.tooltip_text = "Daily reward ready!"
-	daily_btn.position = Vector2(184, HUD_ICON_Y)
+	daily_btn.position = Vector2(16 + 4 * HUD_ICON_STEP, HUD_ICON_Y)
 	daily_btn.size = HUD_ICON_BUTTON
 	daily_btn.visible = false
 	daily_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
 			game.menus.open_daily())
 	add_child(daily_btn)
+	daily_btn.add_child(daily_glow)
 
 	# (The endgame trials — Crucible / Waking Depths — used to hang two glyph
 	# icons under the mailbox once Act 1 was cleared. Owner ruling 2026-08-15:
@@ -466,10 +475,10 @@ func _ready() -> void:
 	# to be claimed in the log (the weekly vault). Glow is added BEHIND the !.
 	quest_glow = Sprite2D.new()
 	quest_glow.texture = Art.tex("glow")
-	quest_glow.position = Vector2(78, 201)  # centered on the quest icon
+	quest_glow.position = HUD_ICON_BUTTON * 0.5
+	quest_glow.show_behind_parent = true
 	quest_glow.modulate = Color(1.0, 0.42, 0.18, 0.0)
 	quest_glow.visible = false
-	add_child(quest_glow)
 	quest_btn = Button.new()
 	quest_btn.flat = true
 	var quest_tex: Texture2D = Art.ui_icon("ui_quest")  # Raven scroll; glyph fallback
@@ -482,20 +491,21 @@ func _ready() -> void:
 		quest_btn.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
 		quest_btn.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 0.75))
 	quest_btn.tooltip_text = "Quest Log"
-	quest_btn.position = Vector2(58, HUD_ICON_Y)
+	quest_btn.position = Vector2(16 + HUD_ICON_STEP, HUD_ICON_Y)
 	quest_btn.size = HUD_ICON_BUTTON
 	quest_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
 			game.refresh_contracts()
 			game.menus.open_journal("activities" if game.activity_claims_ready() > 0 else ""))
 	add_child(quest_btn)
+	quest_btn.add_child(quest_glow)
 	quest_reward_badge = Panel.new()
 	quest_reward_badge.name = "ActivityRewardBadge"
 	var reward_style := StyleBoxFlat.new()
 	reward_style.bg_color = UITheme.GOLD_BRIGHT
 	reward_style.set_corner_radius_all(9)
 	quest_reward_badge.add_theme_stylebox_override("panel", reward_style)
-	quest_reward_badge.position = Vector2(HUD_ICON_BUTTON.x - 8, -4)
+	quest_reward_badge.position = Vector2(HUD_ICON_BUTTON.x - 18, -4)
 	quest_reward_badge.size = Vector2(18, 18)
 	quest_reward_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	quest_reward_badge.visible = false
@@ -512,11 +522,11 @@ func _ready() -> void:
 	for off: Vector2i in [Vector2i(-9, -7), Vector2i(11, -5), Vector2i(3, 11)]:
 		var sp := Sprite2D.new()
 		sp.texture = Art.tex("glow")
-		sp.position = Vector2(78, 199) + Vector2(off)
+		sp.position = HUD_ICON_BUTTON * 0.5 + Vector2(0, -2) + Vector2(off)
 		sp.scale = Vector2(0.1, 0.1)
 		sp.modulate = Color(1.0, 0.95, 0.75, 0.0)
 		sp.visible = false
-		add_child(sp)
+		quest_btn.add_child(sp)
 		quest_sparkles.append(sp)
 
 	# Bag = inventory, Book = codex (small procedural icons, native size).
@@ -526,7 +536,7 @@ func _ready() -> void:
 	inv_btn.icon = bag_tex
 	inv_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	inv_btn.tooltip_text = "Inventory"
-	inv_btn.position = Vector2(100, HUD_ICON_Y)
+	inv_btn.position = Vector2(16 + 2 * HUD_ICON_STEP, HUD_ICON_Y)
 	inv_btn.size = HUD_ICON_BUTTON
 	inv_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
@@ -538,7 +548,7 @@ func _ready() -> void:
 	codex_btn.icon = book_tex
 	codex_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	codex_btn.tooltip_text = "Codex"
-	codex_btn.position = Vector2(142, HUD_ICON_Y)
+	codex_btn.position = Vector2(16 + 3 * HUD_ICON_STEP, HUD_ICON_Y)
 	codex_btn.size = HUD_ICON_BUTTON
 	codex_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
@@ -554,19 +564,36 @@ func _ready() -> void:
 	skills_btn.icon = skill_tex
 	skills_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	skills_btn.tooltip_text = "Skill Tree"
-	skills_btn.position = Vector2(226, HUD_ICON_Y)
+	skills_btn.position = Vector2(16 + 5 * HUD_ICON_STEP, HUD_ICON_Y)
 	skills_btn.size = HUD_ICON_BUTTON
 	skills_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
 			game.menus.open_skills())
 	add_child(skills_btn)
+	skills_badge = Panel.new()
+	skills_badge.name = "SkillPointsBadge"
+	var skill_style := StyleBoxFlat.new()
+	skill_style.bg_color = UITheme.GOLD_BRIGHT
+	skill_style.set_corner_radius_all(9)
+	skills_badge.add_theme_stylebox_override("panel", skill_style)
+	skills_badge.size = Vector2(18, 18)
+	skills_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	skills_badge.visible = false
+	skills_btn.add_child(skills_badge)
+	skills_badge_num = Label.new()
+	skills_badge_num.add_theme_font_size_override("font_size", 12)
+	skills_badge_num.add_theme_color_override("font_color", Color(0.12, 0.1, 0.08))
+	skills_badge_num.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	skills_badge_num.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	skills_badge_num.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	skills_badge.add_child(skills_badge_num)
 	settings_btn = Button.new()
 	settings_btn.flat = true
 	var gear_tex: Texture2D = Art.ui_icon("ui_settings")  # painted icon; no procedural fallback
 	settings_btn.icon = gear_tex
 	settings_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	settings_btn.tooltip_text = "Menu"
-	settings_btn.position = Vector2(268, HUD_ICON_Y)
+	settings_btn.position = Vector2(16 + 6 * HUD_ICON_STEP, HUD_ICON_Y)
 	settings_btn.size = HUD_ICON_BUTTON
 	settings_btn.pressed.connect(func() -> void:
 		if game.play_started and not game.menus.is_open():
@@ -581,7 +608,7 @@ func _ready() -> void:
 	party_btn.icon = Art.ui_icon("ui_party")
 	party_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	party_btn.tooltip_text = "Party — 1/4 members"
-	party_btn.position = Vector2(310, HUD_ICON_Y)
+	party_btn.position = HUD_PARTY_POSITION
 	party_btn.size = HUD_ICON_BUTTON
 	party_btn.visible = false
 	party_btn.pressed.connect(func() -> void:
@@ -1171,19 +1198,20 @@ func _set_buff_slot_visible(slot: Dictionary, vis: bool) -> void:
 ## lives in meta rather than tooltip_text so there's no redundant hover.
 ## accept_event() stops the click also falling through to dialogue-advance.
 ## `title` may be "".
-func _click_to_popover(c: Control, title: String) -> void:
+func _click_to_popover(c: Control, title: String, anchor_to_control := false) -> void:
 	c.gui_input.connect(func(e: InputEvent) -> void:
 		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
 			if game.menus.is_open():
 				return
-			_open_hud_popover(title, String(c.get_meta("tip", "")))
+			var origin := c.get_global_rect().end if anchor_to_control else Vector2(-1, -1)
+			_open_hud_popover(title, String(c.get_meta("tip", "")), origin)
 			c.accept_event())
 
 
 ## The live-HUD twin of Menus._open_detail_popover: an opaque box at the
 ## cursor with a transparent full-screen catcher behind it (click anywhere
 ## off the box to dismiss). Info-only, so no buttons; the game keeps running.
-func _open_hud_popover(title: String, text: String) -> void:
+func _open_hud_popover(title: String, text: String, origin := Vector2(-1, -1)) -> void:
 	if text.strip_edges() == "":
 		return
 	if hud_popover:
@@ -1231,7 +1259,9 @@ func _open_hud_popover(title: String, text: String) -> void:
 	il.add_theme_color_override("font_color", Color(0.85, 0.85, 0.92))
 	vbox.add_child(il)
 
-	pop.position = pop.get_global_mouse_position() + Vector2(14, 8)
+	# A tapped control is a stable anchor on touch as well as mouse. Other
+	# callers retain the cursor placement when they have no control anchor.
+	pop.position = (origin if origin.x >= 0.0 else pop.get_global_mouse_position()) + Vector2(14, 8)
 	await get_tree().process_frame
 	if not is_instance_valid(pop):
 		return
@@ -1854,7 +1884,10 @@ func _build_avatar() -> void:
 	avatar_root = Control.new()
 	avatar_root.position = Vector2(4, 8)
 	avatar_root.size = Vector2(70, 70)
-	avatar_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	avatar_root.mouse_filter = Control.MOUSE_FILTER_STOP
+	avatar_root.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	avatar_root.tooltip_text = "Hero details"
+	_click_to_popover(avatar_root, "Hero details", true)
 	avatar_root.z_index = 2
 	add_child(avatar_root)
 
@@ -2170,7 +2203,8 @@ func _level_up_flourish() -> void:
 	xp_fill.modulate = Color(2.2, 2.2, 2.0)
 	tw.tween_property(xp_fill, "modulate", Color(1, 1, 1), 0.55).set_trans(Tween.TRANS_SINE)
 	stats_label.pivot_offset = Vector2(0, stats_label.get_minimum_size().y * 0.5)
-	stats_label.scale = Vector2(1.06, 1.06)
+	# The bounded identity row keeps its geometry during the level-up flash.
+	stats_label.scale = Vector2.ONE
 	stats_label.modulate = Color(1.0, 0.92, 0.6)
 	var tw2 := create_tween()
 	tw2.tween_property(stats_label, "scale", Vector2.ONE, 0.45) \
@@ -2178,20 +2212,74 @@ func _level_up_flourish() -> void:
 	tw2.parallel().tween_property(stats_label, "modulate", Color(1, 1, 1), 0.7)
 
 
-## Pack the conditional tail of the top-left icon row. The daily reward and
-## party controls come and go; fixed x slots left a conspicuous empty cell
-## whenever either was hidden.
+## Utility targets keep their positions when a daily reward or party appears.
+## Badges and shines belong to the button they describe.
 func _layout_hud_icons() -> void:
-	var next_x := 184.0  # mail, quest, bag and codex always occupy 16..142
-	if daily_btn.visible:
-		daily_btn.position.x = next_x
-		next_x += HUD_ICON_STEP
-	skills_btn.position.x = next_x
-	next_x += HUD_ICON_STEP
-	settings_btn.position.x = next_x
-	next_x += HUD_ICON_STEP
-	if party_btn.visible:
-		party_btn.position.x = next_x
+	var buttons: Array[Button] = [mail_btn, quest_btn, inv_btn, codex_btn, daily_btn, skills_btn, settings_btn]
+	for i in buttons.size():
+		buttons[i].position = Vector2(16 + i * HUD_ICON_STEP, HUD_ICON_Y)
+	party_btn.position = HUD_PARTY_POSITION
+	for pair in [[mail_badge, mail_badge_num], [quest_reward_badge, quest_reward_count], [skills_badge, skills_badge_num]]:
+		var badge: Panel = pair[0]
+		var count: Label = pair[1]
+		badge.size = Vector2(maxf(18, count.get_minimum_size().x + 4), 18)
+		count.size = badge.size
+		badge.position = Vector2(HUD_ICON_BUTTON.x - badge.size.x, -4)
+
+
+## Measure the live font before reserving each stat's space. Normal and large
+## campaign values stay exact; extreme custom values ellipsize only when the
+## physical row is full. Every exact value remains in the portrait detail.
+func _layout_dossier_stats() -> void:
+	var value_key := "%s|%s|%s" % [gold_label.text, cr_label.text, res_label.text]
+	if value_key == _dossier_values:
+		return
+	_dossier_values = value_key
+	var gold_w := ceilf(_dossier_text_width(gold_label)) + 2.0
+	var cr_w := ceilf(_dossier_text_width(cr_label)) + 2.0
+	var res_w := ceilf(_dossier_text_width(res_label)) + 2.0
+	var available := HUD_IDENTITY_RECT.size.x - HUD_STAT_GAP * 2.0 - 12.0 - 32.0 - res_w
+	if gold_w + cr_w > available:
+		var fraction := available / (gold_w + cr_w)
+		gold_w *= fraction
+		cr_w *= fraction
+	gold_label.size.x = gold_w
+	cr_chip.position.x = gold_label.position.x + gold_w + HUD_STAT_GAP
+	cr_chip.size.x = cr_w + 12.0
+	cr_label.position.x = cr_chip.position.x + 6.0
+	cr_label.size.x = cr_w
+	res_chip.position.x = cr_chip.position.x + cr_chip.size.x + HUD_STAT_GAP
+	res_chip.size.x = res_w + 32.0
+	res_label.position.x = res_chip.position.x + 24.0
+	res_label.size.x = res_w
+	res_orb_glow.position.x = res_chip.position.x + 12.0
+	res_orb_core.position.x = res_orb_glow.position.x
+	res_particles.position.x = res_label.position.x + res_w * 0.5
+
+
+func _dossier_text_width(label: Label) -> float:
+	return label.get_theme_font("font").get_string_size(label.text,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, label.get_theme_font_size("font_size")).x
+
+
+func _party_top() -> float:
+	return info_panel.position.y + info_panel.size.y + 4.0
+
+
+func _update_dossier_detail(p: Player, identity: String, rating: int) -> void:
+	var current: Array = [identity, p.level, p.skill_points, p.gold, rating, p.resonance,
+		p.res_lean(), p.constancy_heal_mult(), p.hunger_exec_bonus(), p.hunger_gold_mult()]
+	if current == _dossier_detail_state:
+		return
+	_dossier_detail_state = current
+	gold_label.set_meta("tip", "%d gold carried by this hero." % p.gold)
+	cr_label.set_meta("tip", "Combat Rating: %d\nOne number approximating your total power: gear and gems, level, attributes and skill tree combined." % rating)
+	res_label.set_meta("tip", _res_tip())
+	var detail := "%s\nLevel %d · %d skill point%s available\n\n%s\n\n%s\n\n%s" % [
+		identity, p.level, p.skill_points, "" if p.skill_points == 1 else "s",
+		String(gold_label.get_meta("tip")), String(cr_label.get_meta("tip")), String(res_label.get_meta("tip"))]
+	stats_label.set_meta("tip", detail)
+	avatar_root.set_meta("tip", detail)
 
 
 # ----------------------------------------------------------- API used by game
@@ -2244,13 +2332,12 @@ func update_stats(p: Player) -> void:
 	if hero_name == "":
 		hero_name = "Hero"
 	identity = hero_name + ", " + identity
+	stats_label.text = identity
 	if game.player_title != "" and Achievements.TITLES.has(game.player_title):
-		# Identity remains one readable chain: name, class, earned title, level.
-		identity += ", %s" % String(Achievements.TITLES[game.player_title]["name"])
-	var pts := "  (+%d pts, open Skills)" % p.skill_points if p.skill_points > 0 else ""
-	# Current/max lives INSIDE each bar now (theme pass) — the text line
-	# under them keeps class, level and the skill-point nudge.
-	stats_label.text = "%s, Lv %d%s" % [identity, p.level, pts]
+		identity += "\n%s" % String(Achievements.TITLES[game.player_title]["name"])
+	skills_badge.visible = p.skill_points > 0
+	skills_badge_num.text = str(p.skill_points) if p.skill_points < 100 else "99+"
+	skills_btn.tooltip_text = "Skills · %d point%s available" % [p.skill_points, "" if p.skill_points == 1 else "s"]
 	if avatar_level_label != null and p.level != _avatar_level_shown:
 		# P7.D: the ring badge tracks the level; a CHANGE (level-up) pops it.
 		var grew: bool = _avatar_level_shown > 0 and p.level > _avatar_level_shown
@@ -2268,15 +2355,14 @@ func update_stats(p: Player) -> void:
 	else:
 		mp_text.text = "%d / %d" % [int(p.mp), int(p.max_mp)]
 		_set_fill(mp_fill, p.mp / p.max_mp)
-	gold_label.text = ("◉ %d gold    Potions x%d" % [p.gold, p.potion_count()]) if game.touch_mode \
-		else "◉ %d gold    Potions [%s] x%d" % [
-			p.gold, game.control_hint("potion", "Potion").trim_prefix("[").trim_suffix("]"), p.potion_count()]
+	gold_label.text = "◉ %d gold" % p.gold
 	if p.gold >= 5000:
 		game.unlock_achievement("wealthy")  # idempotent: fires once
-	cr_label.text = "Combat Rating  %d" % p.combat_rating()
-	if cr_chip != null:   # the pill hugs the number (a 6-digit CR overran the fixed 176px)
-		cr_chip.size.x = maxf(120.0, cr_label.get_minimum_size().x + 16.0)
+	var rating := p.combat_rating()
+	cr_label.text = "CR %d" % rating
 	_update_resonance(p.resonance)
+	_layout_dossier_stats()
+	_update_dossier_detail(p, identity, rating)
 
 	# Controls-hint fade (2026-08-18): count real play seconds; past
 	# HINT_FADE_AFTER ease the two lines to 0 alpha; a menu open resets the
@@ -2852,7 +2938,7 @@ func _ensure_party_ui() -> void:
 	party_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(party_root)
 	for i in PARTY_MAX:
-		var y := 228.0 + i * (PARTY_FRAME_H + 6.0)
+		var y := _party_top() + i * (PARTY_FRAME_H + 6.0)
 		party_slots.append(_build_party_frame(Vector2(12, y)))
 	# Offscreen-ally arrows (pooled triangles) + on-screen name tags.
 	for i in PARTY_MAX:
@@ -3129,7 +3215,7 @@ func _ensure_meter_ui() -> void:
 		return
 	meter_root = Control.new()
 	meter_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	meter_root.position = Vector2(12, 228.0 + PARTY_MAX * (PARTY_FRAME_H + 6.0) + 6.0)
+	meter_root.position = Vector2(12, _party_top() + PARTY_MAX * (PARTY_FRAME_H + 6.0) + 6.0)
 	add_child(meter_root)
 	var bg := ColorRect.new()
 	bg.color = Color(0.05, 0.05, 0.09, 0.55)
@@ -3659,10 +3745,9 @@ func pulse_gold() -> void:
 		return
 	gold_label.pivot_offset = Vector2(0, gold_label.size.y * 0.5)
 	var tw := create_tween()
-	tw.tween_property(gold_label, "scale", Vector2(1.12, 1.12), 0.06)
-	tw.parallel().tween_property(gold_label, "modulate", Color(1.25, 1.18, 0.9), 0.06)
-	tw.tween_property(gold_label, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(gold_label, "modulate", Color.WHITE, 0.22)
+	# A colour flash marks the gain without scaling into the adjacent CR chip.
+	tw.tween_property(gold_label, "modulate", Color(1.25, 1.18, 0.9), 0.06)
+	tw.tween_property(gold_label, "modulate", Color.WHITE, 0.22)
 
 
 ## Room-enter DIP (2026-08-19): a revisited room used to jump-cut in — the
@@ -4765,18 +4850,13 @@ func _on_escape() -> void:
 
 
 ## The shard's mood, worn on the HUD (round 8): gold that gets shinier
-## and busier with sparkles as Resonance climbs; ink-black when it
-## falls. Any change pulses the label — bright for gains, violet for
+## and busier with sparkles as Resonance climbs; pale violet when it
+## falls. Any change pulses the label's colour — bright for gains, violet for
 ## losses.
 func _update_resonance(res: float) -> void:
-	res_label.text = "Resonance: %+d" % int(res) if int(res) != 0 else "Resonance: 0"
-	if res_chip != null:
-		res_chip.size.x = maxf(120.0, res_label.get_minimum_size().x + 46.0)   # orb + text
+	res_label.text = "%+d" % int(res) if int(res) != 0 else "0"
 	_update_resonance_orb(res)
-	# Keep the popover's lean numbers live (refresh only when the value
-	# moves — no per-frame string building).
-	if _last_resonance <= -99998.0 or absf(res - _last_resonance) >= 0.5:
-		res_label.set_meta("tip", _res_tip())
+	# The dossier cache refreshes exact detail on resonance or lean changes.
 	# Continuous shimmer so the number itself glimmers, not just on change.
 	var shimmer := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.006)
 	if res > 0.0:
@@ -4790,11 +4870,10 @@ func _update_resonance(res: float) -> void:
 			res_particles.amount = want
 		res_particles.emitting = true
 	elif res < 0.0:
-		res_label.add_theme_color_override("font_color", Color(0.05, 0.04, 0.07))
-		# The dark shimmer breathes in the outline — an unsettled violet.
-		res_label.add_theme_color_override("font_outline_color",
-			Color(0.5, 0.42, 0.62, 0.75).lerp(Color(0.78, 0.55, 0.98, 0.8), shimmer))
-		res_label.add_theme_constant_override("outline_size", 3)
+		res_label.add_theme_color_override("font_color",
+			Color(0.8, 0.69, 0.93).lerp(Color(0.94, 0.81, 1.0), shimmer * 0.45))
+		res_label.add_theme_color_override("font_outline_color", Color(0.16, 0.08, 0.23))
+		res_label.add_theme_constant_override("outline_size", 2)
 		res_particles.emitting = false
 	else:
 		res_label.add_theme_color_override("font_color", Color(0.78, 0.8, 0.88))
@@ -4804,8 +4883,9 @@ func _update_resonance(res: float) -> void:
 		_last_resonance = res  # first frame / fresh load: no pulse
 		return
 	if absf(res - _last_resonance) >= 0.5:
-		res_label.scale = Vector2(1.5, 1.5)
-		res_label.modulate = Color(2.2, 2.0, 1.2) if res > _last_resonance else Color(0.55, 0.35, 0.8)
+		# Keep the signed value inside its chip even during a change flash.
+		res_label.scale = Vector2.ONE
+		res_label.modulate = Color(2.2, 2.0, 1.2) if res > _last_resonance else Color(1.05, 0.88, 1.3)
 		var tw := create_tween()
 		tw.tween_property(res_label, "scale", Vector2(1, 1), 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		tw.parallel().tween_property(res_label, "modulate", Color(1, 1, 1), 0.6)
@@ -4817,6 +4897,8 @@ func _update_resonance(res: float) -> void:
 func _res_tip() -> String:
 	var base := "Resonance — how your shard leans: Virtue (+) or Temptation (−). Major choices move it, and the world answers through dialogue and merchant haggling."
 	var p: Player = game.local_player  # per-client tooltip: MY shard
+	if p != null:
+		base = "Resonance: %+d\n" % int(p.resonance) + base
 	if p == null or p.res_lean() <= 0.0:
 		return base + "\nCommit past ±25 and a lean wakes: Virtue mends (potions heal deeper), Temptation hunts (bonus damage to wounded mobs, bonus kill gold)."
 	if p.resonance > 0.0:

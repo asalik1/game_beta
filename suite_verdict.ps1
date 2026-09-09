@@ -48,7 +48,7 @@ if ($null -eq $txt) { $txt = "" }
 # while a wall-clock `await create_timer(...)` is still counting down (the timer
 # never fires, so it never self-frees). It is unavoidable and harmless; a real
 # leaked Node always ALSO emits the RID lines above, which still fail the run.
-$failPatterns = @('SCRIPT ERROR', 'Parse Error', 'were leaked at exit',
+$failPatterns = @('SCRIPT ERROR', 'Parse Error', 'Lambda capture at index', 'were leaked at exit',
 	'RIDs of type')
 $bad = @()
 foreach ($pat in $failPatterns) {
