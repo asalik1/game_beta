@@ -2588,7 +2588,9 @@ func set_zone(text: String) -> void:
 
 
 func set_quest(text: String) -> void:
-	quest_label.text = "◆  " + game.touchify(text)
+	var copy: String = game.touchify(text.strip_edges())
+	quest_label.text = "" if copy.is_empty() else "◆  " + copy
+	quest_label.visible = not copy.is_empty()
 	# Keep the tracker clear of the wider player bars while pinning it to center.
 	quest_label.size = Vector2(560, 30)
 	quest_label.position.x = 640.0 - quest_label.size.x * 0.5

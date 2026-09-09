@@ -140,6 +140,14 @@ pocket/Unlisted entry, death and reentry with both campaign completion states,
 charted journal identities and actual map buttons. `--baseline` records the old
 semantic failures; setup/overkill isolate state rather than ordinary combat.
 Use isolated APPDATA; add `--touch --mobile --renderer=gl_compatibility` for touch.
+The opt-in `--pocket-ui` mode requires a fresh `build/qa/` APPDATA home and
+captures 23 fullframes across three posed/frozen pocket cases. It checks local
+rule/campaign copy, finite victory feed, real E or ScreenTouch Act and actual
+Return-button input. `--baseline` records presentation findings separately;
+omit it for strict after-fix checks. Use the same mobile/touch flags above.
+Detailed receipts distinguish queued from visible plaques and retain all feed
+rows/active-plaque geometry; no ordinary-combat or device claim follows.
+Run the original mode separately for the broader Atlas/Journal regression.
 
 Audio startup QA: `shot.bat audio_startup --timeout=240` measures real startup
 separately from cache-warm synthesis phases, validates replacement/fallback

@@ -198,7 +198,8 @@ func _refresh() -> void:
 		and game.local_player.global_position.distance_to(global_position) < Balance.POCKET_LABEL_RANGE
 	if is_instance_valid(panel):
 		panel.visible = game.cur_room == zone and not game.input_overlay_up()
-		panel.get_node("Title").text = String(Pockets.entry(game.pocket_id).name).to_upper()
+		panel.get_node("Title").text = "POCKET SPOILS" if game.pocket_done else \
+			"TRIAL RULE" if game.pocket_id == "still_larder" else "FLOOR HAZARD"
 		panel.get_node("Detail").text = "Victory · Collect your spoils" if game.pocket_done else \
 			"Bottles sealed · Class healing works" if game.pocket_id == "still_larder" else \
 			"Hot stone · %.1fs" % remaining if phase == 2 else \

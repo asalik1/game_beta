@@ -14,9 +14,14 @@ var checks: Array[Dictionary] = []
 var cases: Array[Dictionary] = []
 var current_case: Dictionary = {}
 var failure_count := 0
+var ui_findings: Array[Dictionary] = []
 
 
 func _ready() -> void:
+	if flag("pocket-ui") and not ProjectSettings.globalize_path("user://").replace("\\", "/").to_lower().contains("/build/qa/"):
+		push_error("Pocket UI mode requires an isolated build/qa user home before boot.")
+		finish(1)
+		return
 	await boot("warrior", "ch4", false)
 	game.dev_god = true
 	game.settings["camera_shake"] = 0.0
@@ -28,6 +33,13 @@ func _ready() -> void:
 	game.camera.position_smoothing_enabled = false
 	game.player.set_physics_process(false)
 	zoom(1.0)
+	if flag("pocket-ui"):
+		await preload("res://scripts/tests/pocket_ui_clarity_live.gd").run(self)
+		_check("rig.no_saves", game.no_saves, true, game.no_saves)
+		_write_report(true)
+		print("POCKET UI: cases=%d checks=%d failed=%d; posed/overkill state probe, actual portal input" % [cases.size(), checks.size(), failure_count])
+		finish(1 if failure_count > 0 else 0)
+		return
 	for campaign_done in [false, true]:
 		await _pocket_case(bool(campaign_done))
 		_write_report(false)
@@ -514,7 +526,8 @@ func _containing(labels: Array[String], wanted: String) -> Array[String]:
 
 func _capture(name: String) -> void:
 	await frames(2)
-	var path := shot(String(current_case.id) + "_" + name)
+	var caption := "QA posed/frozen phase and overkill fixture; actual Act/E and return input; not ordinary combat" if flag("pocket-ui") else ""
+	var path := shot(String(current_case.id) + "_" + name, caption)
 	var captures: Array = current_case.captures
 	captures.append({"name": name, "path": path})
 
@@ -550,6 +563,6 @@ func _write_report(complete: bool) -> void:
 		"renderer": RenderingServer.get_current_rendering_method(),
 		"scope": "solo state and UI; QA positioning and synthetic overkill; no normal combat or network reward claim",
 		"case_count": cases.size(), "check_count": checks.size(), "failed": failure_count,
-		"cases": cases, "checks": checks}, "\t"))
+		"cases": cases, "checks": checks, "pocket_ui_mode": flag("pocket-ui"), "ui_findings": ui_findings}, "\t"))
 	file.close()
 	print("OPTIONAL REPORT: " + path)

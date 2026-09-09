@@ -1,5 +1,23 @@
 # Autonomous work checkpoint — RESUMED September 9, 2026
 
+**Validated pass 35, 10:36 UTC:** the pocket HUD and Renown notice changes
+passed desktop compile226/quick125/full205 and mobile import/compile226/
+strictquick125. Six accepted native runs passed: focused before161/0 and
+after197/0 on both renderers with23images each, and broader discovery209/0
+with44images each. All180images were reviewed. Twelve focused actual returns
+passed; six baseline Renown/portal overlaps became zero in corresponding
+after snapshots, with exact +15 and guardian feed retained and the new short
+hint visible on first award only. The corrected QA helper70741980 stayed exact
+across accepted before/after runs; two earlier readiness failures are retained.
+Five reviewed functions changed across four runtime files, mirrored to mobile.
+Final imports preserved the 16-source freeze and independent helper UIDs.
+Full preflight passed without findings. The 17 explicit paths and actual
+commit identity are recorded in build/qa/checkpoint35-validation.json.
+Pass34 remains `eba4b041ab82eea4bcc583edf40975e2f78635bc`.
+Next: the frozen hero geometry quartet, followed by reviewed online-menu and
+minimal Wardrobe retirement candidates if validated before the cutoffs.
+All future candidates remain unpublished. Continue to12:00/13:00UTC.
+
 **Validated pass 34, 09:40 UTC:** quieter V3 grass is installed byte-for-byte
 from its preserved generated master on desktop and mobile. All 117 image
 artifacts from 16 native runs were reviewed: 28 external comparisons, 60

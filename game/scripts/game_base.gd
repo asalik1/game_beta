@@ -2900,13 +2900,22 @@ func _boss_track(kind: String) -> String:
 
 ## Quest line + live "monsters left" counter for the player's room.
 func refresh_quest() -> void:
-	var text: String = Story.quest_text(quest_key)
+	# The current pocket card owns its local rule/phase and exit instruction.
+	# Keep the campaign state intact; ordinary room entry refreshes it again.
+	if cur_room == pocket_room and pocket_room >= 0 and pocket_room < zones.size() \
+			and not Pockets.entry(pocket_id).is_empty() \
+			and String(zones[pocket_room].get("pocket", "")) == pocket_id:
+		hud.set_quest("")
+		return
+	var text: String = Story.quest_text(quest_key).strip_edges()
 	var zi: int = clampi(cur_room, 0, zone_count - 1)
 	var left: int = zone_alive.get(zi, 0)
 	if left > 0:
-		# Sealed doors need a visible WHY: every room with living packs
-		# shows its purge counter, not just boss arenas.
-		text += "   —   %d monster%s left" % [left, "" if left == 1 else "s"]
+		# Sealed doors need a visible WHY: every ordinary room with living
+		# packs keeps the same purge counter, even without campaign text.
+		if text != "":
+			text += "   —   "
+		text += "%d monster%s left" % [left, "" if left == 1 else "s"]
 	hud.set_quest(text)
 
 ## Clamp a position into the room that contains `anchor` (dashes, drops

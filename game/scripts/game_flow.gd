@@ -421,26 +421,22 @@ func renown() -> int:
 	return int(_meta.get("renown", 0))
 
 
-## Grant Renown with the shared violet toast (stacked above the caller's
-## own reward text). Zero/negative grants are no-ops.
+## Grant Renown with a currency notice in the event feed.
+## Zero/negative grants are no-ops.
 func add_renown(n: int) -> void:
 	if n <= 0:
 		return
 	_load_meta()
 	_meta["renown"] = int(_meta.get("renown", 0)) + n
-	# First grant ever (account): say WHERE it spends, once — the vault's
-	# "open the Quest Log" shout pattern.
+	# First grant ever (account): explain where it spends, once.
 	var first: bool = not bool(_meta.get("renown_hint", false))
 	if first:
 		_meta["renown_hint"] = true
 	_meta_write()
 	if has_local_player():
-		spawn_text(player.global_position + Vector2(0, -114), "+%d RENOWN" % n,
-			Balance.RENOWN_COLOR, 4.0)
+		hud.log_event("+%d RENOWN" % n, Balance.RENOWN_COLOR)
 		if first:
-			spawn_text(player.global_position + Vector2(0, -136),
-				"Renown buys skins & chromas — open the WARDROBE (pause menu)",
-				Balance.RENOWN_COLOR, 6.0)
+			hud.log_event("Spend Renown on skins in the Wardrobe.", Balance.RENOWN_COLOR)
 
 
 ## Spend Renown; false (and no charge) when the balance is short.
@@ -920,7 +916,7 @@ func _pocket_reward(pos: Vector2) -> void:
 		Pickup.drop_gold(self, _kill_gold(Story.ALL_ENEMIES[kind].get("gold", 50)), pos)
 	give_loot({"kind": "gem", "gem": drop_gem(Balance.gem_drop_level(loot_chapter()))}, pos + Vector2(40, 44))
 	add_renown(Balance.RENOWN_POCKET)
-	hud.announce("The guardian falls — Collect your spoils. The exit stone will wait.", Color(0.7, 0.85, 1.0), 4.0)
+	hud.log_event("The guardian falls — Collect your spoils. The exit stone will wait.", Color(0.7, 0.85, 1.0))
 
 
 ## A boss killed inside an endgame arena run (Boss.endgame_boss): clear the bar
