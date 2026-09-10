@@ -5,6 +5,7 @@ extends ShotRig
 ## --online-menu runs only focused solo/host/victory menu copy + real-input evidence.
 ## --cosmetic-ui inspects the actual Wardrobe/Records UI without buying or equipping.
 ## --alignment checks shaped stat baselines and quest/vital/target clearance.
+## --reward-plaques controls authored boss readouts and real reward UI clocks, without rewards.
 const NetMgr := preload("res://scripts/net/net_manager.gd")
 
 const GAME_FIELDS := ["settings", "touch_mode", "dev_god", "player_title", "mailbox", "daily_last_day", "daily_streak",
@@ -42,6 +43,8 @@ func _ready() -> void:
 		shot_dir = shot_dir.path_join("cosmetic_ui")
 	elif flag("alignment"):
 		shot_dir = shot_dir.path_join("alignment")
+	elif flag("reward-plaques"):
+		shot_dir = shot_dir.path_join("reward_plaques")
 	_snapshot_disk()
 	await boot("warrior", "ch3", false)
 	var error := await _run()
@@ -55,15 +58,15 @@ func _ready() -> void:
 
 
 func _run() -> String:
-	if int(flag("online-menu")) + int(flag("cosmetic-ui")) + int(flag("alignment")) > 1:
-		return "Choose one focused mode: online-menu, cosmetic-ui or alignment"
+	if int(flag("online-menu")) + int(flag("cosmetic-ui")) + int(flag("alignment")) + int(flag("reward-plaques")) > 1:
+		return "Choose one focused mode: online-menu, cosmetic-ui, alignment or reward-plaques"
 	if game == null or not game.has_local_player():
 		return "No local hero after boot"
 	net = get_node_or_null("/root/NetworkManager")
 	session = get_node_or_null("/root/NetworkManager/Session")
 	if net == null or session == null or net.is_online():
 		return "Expected an isolated offline process"
-	if flag("online-menu") or flag("cosmetic-ui") or flag("alignment"):
+	if flag("online-menu") or flag("cosmetic-ui") or flag("alignment") or flag("reward-plaques"):
 		kept.menu_game = _stash(game, ["state", "play_started", "talk_cd"])
 		kept.menu_paused = get_tree().paused
 		kept.menu_hud_visible = game.hud.visible
@@ -95,6 +98,8 @@ func _run() -> String:
 		return await preload("res://scripts/tests/cosmetic_ui_live.gd").run(self)
 	if flag("alignment"):
 		return await preload("res://scripts/tests/hud_alignment_live.gd").run(self)
+	if flag("reward-plaques"):
+		return await preload("res://scripts/tests/reward_plaque_live.gd").run(self)
 	await _capture("01_ordinary", "Unmodified character values after ordinary safe-room boot")
 	var p: Player = game.local_player
 	p.char_name = "Alexandria Ember" # the current 16-character name-entry limit
@@ -710,6 +715,8 @@ func _write_report() -> void:
 		"touch": touch_run, "renderer": RenderingServer.get_current_rendering_method(), "no_saves": game.no_saves,
 		"source_label": arg("label", "baseline" if baseline else "regression"),
 		"online_menu": flag("online-menu"), "menus_sha256": FileAccess.get_sha256("res://scripts/menus.gd"),
+		"reward_plaques": flag("reward-plaques"),
+		"reward_plaque_helper_sha256": FileAccess.get_sha256("res://scripts/tests/reward_plaque_live.gd") if flag("reward-plaques") else "",
 		"cosmetic_ui": flag("cosmetic-ui"), "alignment": flag("alignment"),
 		"alignment_geometry_sha256": FileAccess.get_sha256("res://scripts/tests/hud_alignment_geometry.gd") if flag("alignment") else "",
 		"alignment_live_sha256": FileAccess.get_sha256("res://scripts/tests/hud_alignment_live.gd") if flag("alignment") else "",
@@ -717,6 +724,6 @@ func _write_report() -> void:
 		"codex_sha256": FileAccess.get_sha256("res://scripts/ui/codex.gd") if flag("cosmetic-ui") else "",
 		"cosmetic_helper_sha256": FileAccess.get_sha256("res://scripts/tests/cosmetic_ui_live.gd") if flag("cosmetic-ui") else "",
 		"hud_sha256": FileAccess.get_sha256("res://scripts/hud.gd"), "rig_sha256": FileAccess.get_sha256(get_script().resource_path),
-		"scope": "posed HUD layout; shaped text cells and numeric baselines; controlled strings, not gameplay or raster ink" if flag("alignment") else "actual offline Wardrobe/Codex GUI opens; no purchase or equip; scroll placement is QA setup" if flag("cosmetic-ui") else "solo and empty loopback host; actual GUI inputs; synthetic paused victory state, no story completion or remote delivery" if flag("online-menu") else "synthetic UI state; normal safe room; actual GUI inputs; loopback host with synthetic allies, no remote network delivery",
+		"scope": "controlled reward plaque / authored boss readout; paused world, real UI clocks; no earned achievement or combat" if flag("reward-plaques") else "posed HUD layout; shaped text cells and numeric baselines; controlled strings, not gameplay or raster ink" if flag("alignment") else "actual offline Wardrobe/Codex GUI opens; no purchase or equip; scroll placement is QA setup" if flag("cosmetic-ui") else "solo and empty loopback host; actual GUI inputs; synthetic paused victory state, no story completion or remote delivery" if flag("online-menu") else "synthetic UI state; normal safe room; actual GUI inputs; loopback host with synthetic allies, no remote network delivery",
 		"checks": checks, "failures": failures, "findings": findings, "views": views}, "\t"))
 	file.close()

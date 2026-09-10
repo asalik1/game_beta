@@ -314,6 +314,16 @@ Closing checks retained 1,254 source pins, 409/410 UIDs, 235 material controls,
 the original 32 preserved files and current authorized 14 journey files. See
 CAPITAL_ARRIVAL.md for the accepted arrival history and precise fountain scope.
 
+The seventeenth accepted checkpoint holds large reward cards while the boss
+readout is visible, retaining card clocks/queue order and the immediate small
+log. Its controlled baseline has 67 checks: 62 passes, five expected observations
+and zero failures; actual HP/level glyphs remain readable despite overlapping
+Control rectangles. Desktop/mobile after each passed 61 reward checks/six
+images and 558 default dossier checks/22 images, all 56 originals reviewed.
+All 32 stages passed, including quick 144/full 224/mobile 144 and strict seven-category
+preflight, with source/UID and original 32/current 14 preservation verified.
+See WARD_VIGILS.md's Reward feedback section for durable receipts and scope.
+
 The latest ordinary-input brewing diagnostic is complete as a failed experiment.
 One declared fresh chapter-1 Mage attempt used the real earned progression,
 Auto-equip and skill spending, with a bounded boss trace and ordinary Blink

@@ -1534,7 +1534,8 @@ func _tick_announcements() -> void:
 	var readable := game.play_started and game.state == Game.ST_PLAYING \
 		and not game.input_overlay_up() and title_label.modulate.a < 0.05 \
 		and subtitle_label.modulate.a < 0.05 \
-		and not (is_instance_valid(boss_cast_readout) and boss_cast_readout.visible)
+		and not (is_instance_valid(boss_cast_readout) and boss_cast_readout.visible) \
+		and not (is_instance_valid(boss_box) and boss_box.visible)
 	if is_instance_valid(_ann_active):
 		_ann_active.visible = readable
 		if _ann_tween != null and _ann_tween.is_valid():

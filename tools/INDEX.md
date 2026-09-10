@@ -285,6 +285,17 @@ clearance, including while the conditional Team control is hidden.
 Add `--touch --mobile --renderer=gl_compatibility` for actual ScreenTouch events.
 Synthetic party shells exercise layout only, not real peer replication.
 
+Reward plaque QA: `shot.bat hud_dossier --reward-plaques --timeout=180`
+uses a controlled display fixture with authored boss/quest strings and real UI
+clocks. The accepted original HUD `--baseline` has 67 checks/six images; strict
+after requires 61/six because hidden cards omit six conditional caption/panel
+checks. Default `hud_dossier` remains the separate 558-row/22-image regression;
+`--alignment` is a different fixture. Mobile reward adds `--mobile
+--renderer=gl_compatibility` without `--touch`; mobile default adds `--touch`.
+Use fresh APPDATA and the bound sequential runner. Each project passed 61 reward
+and 558 default checks; all 56 originals and closing gates are accepted.
+See WARD_VIGILS.md's Reward feedback section for actual baseline and scope.
+
 Focused menu QA reuses this rig. `--online-menu --port=0` saves six native
 frames for actual solo/empty-loopback-host menu entry/return and a synthetic
 already-paused victory state. `--cosmetic-ui` saves four frames for real

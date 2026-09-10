@@ -60,6 +60,49 @@ Zero and negative XP awards are ignored before replay-cap logic, eliminating
 overlay clocks, fixed-width text, and nonpositive XP. The live Mara capture
 also asserts that queued rewards and the event feed cannot cover her dialogue.
 
+### Boss readout follow-up
+
+Shared large announcements now wait while the boss readout is visible. A card
+already on screen hides and pauses its reading clock, then resumes when the
+readout clears. Queued cards retain their order. The immediate compact event
+log, stored messages, achievement/reward delivery and existing menu, dialogue,
+arrival-title and cast-readout gates are unchanged.
+
+The controlled baseline has 67 checks: 62 passes, five expected observations
+and zero unexpected failures, with all six originals reviewed by root and
+independently. Three findings expose the missing boss gate; two measure overlap
+of larger Control rectangles. Both authored quest captions fit one line, and
+the actual level/HP glyphs remain readable above the card. The change reduces
+competing large card presentation; the baseline does not reproduce covered
+glyphs, wrapped long-tracker copy or an ordinary earned boss achievement.
+
+```powershell
+shot.bat hud_dossier --reward-plaques --timeout=180
+```
+
+Use fresh isolated APPDATA and the frozen checkpoint runner. The original HUD
+baseline adds `--baseline`; strict after omits it. The after contract has 61
+rows and six images: hiding cards in captures 02 and 06 removes their six
+conditional panel/title/detail rows. Explicit visibility, paused/resumed
+clocks, queue/log retention, cast/title controls, natural completion and
+restoration remain strict. There is no padding or baseline waiver after.
+
+Default `hud_dossier` is a separate 558-row/22-image Team/readout regression;
+`--alignment` selects another fixture. Mobile reward uses `--mobile
+--renderer=gl_compatibility` with desktop controls, while mobile default also
+uses `--touch`. The reward fixture poses a paused world with production HUD
+builders and real UI clocks; it awards no achievement. Default dossier checks
+use synthetic HUD states, real GUI actions and loopback host synthetic allies.
+Neither establishes ordinary combat, remote reward delivery or physical-device
+behavior. Stored message equality is checked separately.
+
+Desktop and mobile each passed all 61 reward and 558 default dossier checks, with zero findings/failures.
+Root and independent reviewers inspected all 56 after originals.
+All 32 stages passed: compile 263, quick 144/full 224/mobile quick 144 and all seven strict preflight categories.
+Closing checks retained 1,259 source pins, 410/411 UIDs, the original 32 preserved files and current authorized 14 journey files.
+The [observed baseline](build/qa/session-sept10/reward-plaque-baseline-candidate/runs/842fbdab6b433c6e3bcb3d65a39f2f24fc65508f/baseline-1/observed-contract.json) and [independent baseline](build/qa/session-sept10/reward-plaque-independent-review/baseline1.json) retain 67 checks/62 passes/five expected observations.
+The [root after review](build/qa/session-sept10/reward-plaque-after-candidate/runs/842fbdab6b433c6e3bcb3d65a39f2f24fc65508f/after-1/root-review.json) and [independent after review](build/qa/session-sept10/reward-plaque-independent-review/after1.json) bind the tested source and image hashes.
+
 ## Verification
 
 `test_ward_vigil.gd` checks invalid snapshots, caller validation, content
