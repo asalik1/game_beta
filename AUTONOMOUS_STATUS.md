@@ -259,10 +259,28 @@ MATERIAL_UI.md and
 `build/qa/session-sept10/material-all-brewing-finalizer-portability-candidate/results/`
 for exact source, image, checkout and commit receipts.
 
-Guest quest refresh and save feedback candidates remain
-separate under `build/qa/session-sept10/`. Source review identified and
-proposed a fix for a private Maren objective overwritten by a new host-counter
-fanout in the quest candidate; no party-quest code is installed. The ordinary
+Party quest refresh is implemented and validated on protocol `0.3.17`.
+Guests receive partial shared kill counts without losing a private Maren main
+objective or an active driver's pending key. Initial/readiness/travel briefs,
+completed shared beats and both boss transitions publish host main text; the
+open Journal reuses existing scroll/focus restoration. Counter mirrors do not
+pay rewards or write the guest's home world.
+
+The accepted guarded `0.3.16` baseline has 30 observations: 13 strict passes,
+15 exact expected findings and 2 uncovered, with 10 originals reviewed. Final
+after-1 passed 38 Party and 34 separate production-admission checks on both
+desktop and mobile sources; root and independent reviews cover all 26 after
+originals. Desktop quick 144/full 224, mobile quick 144, all 31 pipeline stages,
+scoped 14-source sync, source/preservation checks and strict seven-category
+preflight passed. Three preceding baseline attempts remain rejected for
+multiline-lambda compilation, uncollected real opener rewards and freed-peer
+restoration respectively. These controlled ENet/callback fixtures do not prove
+ordinary combat/quest play or physical-device input. See PARTY_QUEST_REFRESH.md
+for exact lanes, ownership and limits. The save-feedback candidate remains
+separate; its future baseline template now pins observed quick 144 and still
+requires the explicitly reviewed current journey inventory SHA.
+
+The ordinary
 brewing journey remains incomplete and uncommitted as described above. Its new
 read-only fresh2 diagnosis identifies only4–5seconds of Fangmaw presence and a
 driver that ignores boss-specific tells and disables Blink; no balance nerf is

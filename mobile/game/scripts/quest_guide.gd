@@ -40,7 +40,7 @@ static func step(g: Game, id: String) -> Dictionary:
 
 static func describe(g: Game, objective: Dictionary) -> String:
 	var copy := String(objective.get("text", "Promise kept"))
-	if String(objective.get("kind", "")) == "kill" and not g.net_guest():
+	if String(objective.get("kind", "")) == "kill":
 		copy += " (%d/%d)" % [int(g.quest_kills.get(objective["flag"], 0)), int(objective.get("count", 1))]
 	return copy
 

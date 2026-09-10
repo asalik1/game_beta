@@ -261,7 +261,7 @@ static func _quest_card(m: Menus, list: VBoxContainer, id: String, q: Dictionary
 		var done: bool = g.get_flag(sflag, false)
 		var label := String(step["text"])
 		# KILL steps show live progress (game_base.quest_kills) until done.
-		if not done and String(step.get("kind", "flag")) == "kill" and not g.net_guest():
+		if not done and String(step.get("kind", "flag")) == "kill":
 			label += "  (%d / %d)" % [int(g.quest_kills.get(sflag, 0)),
 				maxi(1, int(step.get("count", 1)))]
 		var objective := m._lbl(card, "%s  %s" % ["✓" if done else "◇", label],

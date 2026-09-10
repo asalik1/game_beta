@@ -1090,6 +1090,8 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		if net_host():
 			net_session().host_chapter_end(first_clear, boss_lv)
 		quest_key = "done_" + chapter_id if Story.ALL_QUESTS.has("done_" + chapter_id) else "done"
+		if net_host():
+			net_session().host_quest_progress()
 		refresh_quest()
 		# Pay before marking completion: the owner-side helper also rejects
 		# previously completed chapters (including legacy characters). Its paid
@@ -1205,6 +1207,8 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			hud.dialogue(epilogue, end_it)
 	else:
 		quest_key = _next_quest_after(mzi)
+		if net_host():
+			net_session().host_quest_progress()
 		var beat: Array = Story.beat_for("post_" + kind,
 			Story.res_band(player.resonance), flags)
 		var proceed := func() -> void:
@@ -2090,6 +2094,11 @@ func net_advance(snap: Dictionary) -> void:
 	for q in players:
 		if q != null and is_instance_valid(q) and q != local_player:
 			q.global_position = room_arrival_pos(cur_room)
+	var quest_state: Variant = preload("res://scripts/quest_progress.gd").read(snap)
+	if quest_state is Dictionary:
+		quest_kills = quest_state.quest_kills
+		quest_key = quest_state.quest_key
+		refresh_quest()
 	play_started = true
 	request_pause(false)
 	hud.visible = true

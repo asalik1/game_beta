@@ -1932,6 +1932,9 @@ func _run_systems() -> void:
 	var exploration_error: String = preload("res://scripts/tests/test_exploration.gd").run(self)
 	if exploration_error != "":
 		return _fail("exploration: " + exploration_error)
+	var quest_progress_error: String = preload("res://scripts/tests/test_quest_progress.gd").run(self)
+	if quest_progress_error != "":
+		return _fail("party quest progress: " + quest_progress_error)
 	var vigil_error: String = preload("res://scripts/tests/test_ward_vigil.gd").run(self)
 	if vigil_error != "":
 		return _fail("vigil: " + vigil_error)

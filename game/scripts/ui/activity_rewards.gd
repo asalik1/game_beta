@@ -30,7 +30,12 @@ static func _signature(g: Game, tab := "activities") -> int:
 		g.player.level if g.has_local_player() else 0,
 		g.player.resonance if g.has_local_player() else 0,
 		g.player.faction_standing.hash() if g.has_local_player() else 0,
-		g.player.npc_favor.hash() if g.has_local_player() else 0]
+		g.player.npc_favor.hash() if g.has_local_player() else 0,
+		g.chapter_id, g.wander_seed, g.flags.hash()]
+	if tab == "quests":
+		state.append_array([g.quest_key, g.quest_kills.hash(), g.cur_room,
+			g.zone_alive.get(g.cur_room, 0),
+			g.player.tracked_quest if g.has_local_player() else ""])
 	if tab == "progress":
 		state.append_array([g.hud.wayfinder.context_key(), g.cur_room,
 			g.zone_count, g.visited.hash(), g.boss_done.hash(), g.pocket_done,

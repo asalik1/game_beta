@@ -1,4 +1,5 @@
 extends Node
+const QuestProgress := preload("res://scripts/quest_progress.gd")
 ## NET SESSION — the gameplay bridge (MP-07, wave 4). A child of the
 ## NetworkManager autoload named "Session", so every peer shares the
 ## stable node path /root/NetworkManager/Session — the one requirement
@@ -323,6 +324,8 @@ func _send_snapshot(id: int) -> void:
 		"chapter": game.chapter_id,
 		"wander_seed": game.wander_seed,
 		"flags": SaveGame.History.world_only(game.flags),
+		"quest_kills": QuestProgress.project(game.quest_kills),
+		"quest_key": QuestProgress.project_key(game.quest_key),
 		"spawn_room": game.cur_room,
 		"pocket_done": game.pocket_done,
 		"pocket_origin": game.pocket_origin,
@@ -375,7 +378,9 @@ func _rpc_world_snapshot(snap: Dictionary) -> void:
 	if game == null or multiplayer.is_server():
 		return
 	last_snapshot = snap
+	world_ready = false
 	var g: Node = game
+	g.quest_kills = {}  # retire this guest's previous world before the rebuild
 	var p: Node = g.local_player
 	p.peer_id = multiplayer.get_unique_id()
 	# switch_chapter enters a room and autosaves synchronously. Hold ALL writes
@@ -440,6 +445,11 @@ func _rpc_world_snapshot(snap: Dictionary) -> void:
 	p.global_position = g.room_arrival_pos(spawn)
 	g._enter_room(spawn)
 	_gate_existing_chests()  # MP-11: the rebuilt world's chests are OURS alone
+	var quest_state: Variant = QuestProgress.read(snap)
+	if quest_state is Dictionary:
+		g.quest_kills = quest_state.quest_kills
+		g.quest_key = quest_state.quest_key
+		g.refresh_quest()
 	g.play_started = true
 	g.request_pause(false)
 	g.hud.visible = true
@@ -473,6 +483,7 @@ func _rpc_join_ready(block: Dictionary) -> void:
 			_rpc_spawn_player.rpc_id(int(q), pid, block)
 	peer_chars[pid] = block
 	_spawn_remote(pid, block)
+	host_quest_progress(pid, true)  # a rebuild replaces main text, including work during its build
 	var vigil := preload("res://scripts/ward_vigil.gd").find(game)
 	if vigil != null:
 		_send_vigil_state(vigil, pid)
@@ -703,6 +714,8 @@ func _on_session_ended(reason: String) -> void:
 				and game.local_player != null and is_instance_valid(game.local_player) \
 				and not game.local_player.dead:
 			SaveGame.write_character_home(game, game.save_slot)
+		if game.guest_world:
+			game.quest_kills = {}  # display mirror; the preserved home world stays intact
 		game.chapter_finale.cancel(game)
 		for id in peer_chars:
 			game.unregister_player(int(id))
@@ -2741,7 +2754,10 @@ func _on_convo_ended(id: String, is_beat: bool, on_done: Callable) -> void:
 			game.hud.mirror_end()  # no-op on the driver (never showed one)
 		# In-session HUD consistency: the party's quest tracker follows the
 		# beat's advance. Cosmetic — guests never persist world state (§5.7).
-		_rpc_beat_quest.rpc(game.quest_key)
+		if multiplayer.is_server():
+			host_quest_progress()
+		else:
+			_rpc_beat_quest.rpc_id(1, game.quest_key)
 	_release_convo(id)
 	if on_done.is_valid():
 		on_done.call()
@@ -2904,17 +2920,61 @@ func _rpc_beat_end() -> void:
 		game.hud.mirror_end()
 
 
-## INITIATOR -> everyone: the beat advanced the quest tracker; the party's
-## HUD follows (cosmetic in-session consistency — guests never persist it).
+## INITIATOR -> host: its live beat claim authorizes this main-text request.
+## The host orders the accepted update with late-join/rebuild quest briefs.
 @rpc("any_peer", "call_remote", "reliable")
 func _rpc_beat_quest(qk: String) -> void:
-	if game == null or not game.play_started:  # host is a recipient too
+	if game == null or not game.play_started or not multiplayer.is_server():
 		return
-	# CR-004: on the host this REPLACES the persisted quest_key — bind it to the
-	# beat owner and bound the key length so a crafted peer can't force it.
-	if not _beat_sender_ok(multiplayer.get_remote_sender_id()):
+	var pid := multiplayer.get_remote_sender_id()
+	if pid <= 1 or not (pid in _net().peers) or not _beat_sender_ok(pid) \
+			or not QuestProgress.key_ok(qk):
 		return
-	game.quest_key = qk.substr(0, Balance.NET_MAX_QUEST_LEN)
+	game.quest_key = qk
+	game.refresh_quest()
+	host_quest_progress()
+
+
+## Host-owned display state only. Completion flags and payouts keep their
+## existing route; replacing this mirror never invokes either of them.
+func host_quest_progress(peer_id := 0, rebrief := false, counts_only := false) -> void:
+	if game == null or not _net().is_online() or not multiplayer.is_server():
+		return
+	var snap := QuestProgress.packet(game)
+	if rebrief:
+		snap["rebrief"] = true
+	elif counts_only:
+		snap["counts_only"] = true
+	if peer_id > 0:
+		if peer_chars.has(peer_id) and peer_id in _net().peers:
+			_rpc_quest_progress.rpc_id(peer_id, snap)
+		return
+	for pid in peer_chars:
+		if int(pid) in _net().peers:
+			_rpc_quest_progress.rpc_id(int(pid), snap)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_quest_progress(snap: Dictionary) -> void:
+	if game == null or multiplayer.is_server() or not world_ready \
+			or not QuestProgress.context_ok(game, snap):
+		return
+	var counts_only: Variant = snap.get("counts_only", false)
+	if not counts_only is bool:
+		return
+	var state: Variant = QuestProgress.read(snap)
+	if not state is Dictionary:
+		return
+	game.quest_kills = state.quest_kills
+	# A live driver may already hold its authored next key while reading the
+	# final line. The host learns it at beat end; an unrelated shared kill
+	# must not replace it with the older host key before that handoff.
+	# A readiness rebrief is a world replacement, just like snapshot/travel.
+	var rebrief: Variant = snap.get("rebrief", false)
+	# Private callbacks such as Maren can also advance only this guest.
+	# An unrelated kill updates counters, never that local main objective.
+	if (rebrief is bool and rebrief) or (not counts_only and not game.beat_broadcasting):
+		game.quest_key = state.quest_key
 	game.refresh_quest()
 
 
@@ -3062,6 +3122,8 @@ func host_advance_party() -> void:
 	var snap := {
 		"chapter": game.chapter_id,
 		"wander_seed": game.wander_seed,
+		"quest_kills": QuestProgress.project(game.quest_kills),
+		"quest_key": QuestProgress.project_key(game.quest_key),
 		"weekly_active": game.weekly_active,
 		"weekly_week": game.weekly_week,
 		"run_tier_world": game.world_run_tier,

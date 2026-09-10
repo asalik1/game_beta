@@ -1901,7 +1901,8 @@ func _check_side_quests() -> void:
 ## to the party. Called from game_flow.on_enemy_died beside note_kill.
 func quest_kill_note(kind: String) -> void:
 	if net_guest():
-		return  # the host owns the sim; the completion flag routes to guests
+		return  # the host owns the sim; guests only render its progress
+	var changed := false
 	for id in Story.ALL_SIDE_QUESTS:
 		var sid := String(id)
 		if not get_flag("sq_on_" + sid, false) or get_flag("sq_paid_" + sid, false):
@@ -1916,12 +1917,16 @@ func quest_kill_note(kind: String) -> void:
 			var need: int = maxi(1, int(step.get("count", 1)))
 			var have := int(quest_kills.get(f, 0)) + 1
 			quest_kills[f] = have
+			changed = true
 			if have >= need:
 				set_flag(f)  # completes the step: routes, re-checks, clears the ❢
 			elif is_instance_valid(player):
 				spawn_text(player.global_position + Vector2(0, -84),
 					"%s  (%d/%d)" % [String(step.get("text", "quarry")), have, need],
 					Color(0.9, 0.85, 0.7), 1.6)
+	if changed and net_host():
+		# Partial kills do not author a main objective (private callbacks can).
+		net_session().host_quest_progress(0, false, true)
 
 
 ## Settle every side quest ACCEPTED in this chapter and never finished.

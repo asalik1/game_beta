@@ -64,6 +64,19 @@ its captures/report are in the `/ui` subdirectory. Both branches restore
 isolated file bytes. Loaned resources/direct domain actions and the child-scene
 disconnect limitation are explicitly recorded in `ALCHEMY.md` and each report.
 
+Party quest QA: `shot.bat party_quests --timeout=300` reuses paired rendered
+readers and real local ENet with manually seeded admission and controlled quest
+state. It covers partial counts, open Journal/tracked HUD, the real private
+Maren callback, claimed guest beat ordering, boss main text, same-seed travel
+and guest-home/restoration. APPDATA must be inside `party-quest-refresh-candidate`.
+The accepted guarded `0.3.16` baseline's external contract is 30 rows:
+13 passes, 15 exact findings and 2 uncovered; `--baseline` alone is broader and
+is not the acceptance gate. Final desktop/mobile after-1 each passed 38/38 with
+10 full PNGs. Separate `network_admission --prior=0.3.16` under `0.3.17` passed
+34/34 and 3 PNGs per project. This does not establish ordinary combat, reconnect,
+changed-seed travel or physical-device behavior. See `PARTY_QUEST_REFRESH.md`
+for accepted lanes, three rejected fixture attempts and source/restore boundaries.
+
 Production admission QA: `shot.bat network_admission --timeout=180` uses three
 scoped production NetworkManagers and real ENet in one engine. It checks current
 version admission, prior-version refusal/reason, leave/rejoin, refused-manager
