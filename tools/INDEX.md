@@ -50,6 +50,16 @@ a separate 61-row/six-frame regression. Desktop/mobile native checks and the
 full checkpoint gates pass. See `CAPITAL_ARRIVAL.md` for scope and the
 preserved rejected first fixture.
 
+The existing `capital_arrival --arrival-consumers` route also supplies the NPC
+prompt/body visual control in `02_keyboard_escape.png`. The shared prompt-layer
+correction passed the unchanged 61-check/six-image route and separate
+`--fountain-prompt --fountain-after` 69-check/four-image route on each project.
+All 20 full originals and the completed pipeline received final root and
+independent acceptance.
+The 61 numeric checks do not prove text paint order, so keep the full before/after
+comparison. No QA rows or UIDs were added. See CAPITAL_ARRIVAL.md for the mobile
+stop-position qualification and actual route limits.
+
 Alchemy UI QA: `shot.bat alchemy --timeout=240` checks the real recipe bench,
 39 recipe previews, exact paid actions, input, live quotes, cancelled learning,
 overflow and reading/focus continuity. Seven native views cover novice, learned

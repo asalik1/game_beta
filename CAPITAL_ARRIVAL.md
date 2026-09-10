@@ -132,3 +132,60 @@ ordinary-combat, alternate-landmark, boss-HUD or long-quest claim. The original
 32 preserved files and current authorized 14 journey files remain separate
 preservation inventories. Settled frames and recorded movement/camera easing
 do not cover every rapid title or teleport transition.
+
+## NPC prompt draw order
+
+Shared NPC interaction pills now paint above base character bodies and carried
+weapons. The earlier Fountain after1 `02_keyboard_escape.png` originals show
+real A movement leaving the mage just south of Clerk Voss: the hero covers the
+beginning of the pill and its interaction key. The label previously shared its
+parent's world Y-sort position. This was a pre-existing rendering issue in both
+projects, despite the arrival checks passing.
+
+The two-line correction introduces `Balance.INTERACT_PROMPT_Z = 2` and assigns
+it to the Label created by `_make_npc`. Base bodies remain at z0 and the carried
+weapon at z1. This shared factory also supplies prop hotspots. The change
+preserves authored anchors, landmark lift, the Fountain tracker adjustment,
+nearest eligible selection, reach, actions, visibility gates, actor sorting,
+physics, camera and artwork. It does not guarantee priority over higher world
+effects or HUD CanvasLayers.
+
+The unchanged arrival-consumer route passed all 61 checks and six images per
+project; the separate Fountain route passed all 69 checks and four images per
+project, with zero findings or failures. Root and the independent reviewer
+inspected all 20 full originals. Direct before/after `02_keyboard_escape.png`
+comparison shows the complete E prefix, left pill and Voss text painting
+readably over the mage. The desktop stop matches the historical (796.75,832);
+the mobile stop is (792.5,832), versus historical (796.75,832), from ordinary
+frame-timed A input without forced coordinates. This is a visual comparison
+at those observed positions. The 61 numeric rows do not prove text paint order,
+and no new assertion merely checks the assigned z value.
+
+The Fountain regression retained strict clearance and anchor behavior across
+129 desktop draw samples (32 adjusted, 97 authored-clear) and 92 mobile samples
+(24 adjusted, 68 authored-clear). Every sample passed; the unchanged observer
+also checked rendered body movement and released-body camera easing. These are
+this checkpoint's samples, separate from the earlier Fountain totals above.
+
+The serial pipeline completed all 32 stages with zero exit codes: explicit
+compile 263, desktop quick 144/full 224, mobile quick 144, four exact GD sync
+controls and seven clean preflight categories. Source-before, post-import and
+source-after are byte-identical, binding 1,262 source pins and the unchanged
+410 desktop/411 mobile UID census. The original 32/current authorized 14
+preserved files remain exact. No QA or UID was added; the two unchanged QA
+files are sync controls alongside the two production paths.
+
+Both projects ran on the Windows host with actual keyboard/mouse input; the
+mobile project used the Compatibility renderer. This does not establish
+physical-device, touch, controller, ENet, every NPC/effect or ordinary-combat
+behavior. Map returns use actual map clicks; Recall and respawn remain direct
+landing calls, not consumable-use, combat-death or delayed-respawn tests. The
+existing rapid-map transient-title qualification remains unchanged.
+
+Evidence is under
+`build/qa/session-sept10/npc-prompt-after-candidate/capital-arrival-native-candidate/runs/42598087534a09651fb518783c07d97cd52cd16e/after-1/`,
+against Reward commit `42598087534a09651fb518783c07d97cd52cd16e`.
+Final acceptance is recorded in that lane's `root-review.json`
+(SHA256 `37dc3b275033821d47ff6bcfc23864e5f6ddbd3b1f0edb26f065c0a0739d092d`) and
+`build/qa/session-sept10/npc-prompt-independent-review/after1.json`
+(SHA256 `0a23b916eb7e473c2d3261f68236eaef9056bc89edaf1e192989d1b67481d529`).

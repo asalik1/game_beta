@@ -324,6 +324,20 @@ All 32 stages passed, including quick 144/full 224/mobile 144 and strict seven-c
 preflight, with source/UID and original 32/current 14 preservation verified.
 See WARD_VIGILS.md's Reward feedback section for durable receipts and scope.
 
+Eighteenth validated checkpoint: NPC interaction pills now paint above base
+actor bodies and carried weapons.
+The two source lines preserve shared NPC/prop anchors, reach, selection,
+actions, physics and art. Both projects passed arrival 61/6 and Fountain 69/4
+with no findings or failures; root and independent review covered all 20 full
+originals. Before/after Voss images show the complete E prefix over the mage.
+The mobile stop differs slightly through ordinary frame-timed A input; the
+existing numeric rows do not assert text paint order. The 32-stage pipeline
+passed explicit compile 263, desktop quick 144/full 224, mobile quick 144,
+four-file sync and seven-category preflight, with 1,262 source pins, unchanged
+410/411 UIDs and all current 46 preserved files exact. Final root and independent
+closing reviews accept the checkpoint. See CAPITAL_ARRIVAL.md for evidence and
+the Windows-host, direct Recall/respawn and higher-effect limits.
+
 The latest ordinary-input brewing diagnostic is complete as a failed experiment.
 One declared fresh chapter-1 Mage attempt used the real earned progression,
 Auto-equip and skill spending, with a bounded boss trace and ordinary Blink

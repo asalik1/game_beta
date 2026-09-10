@@ -2306,6 +2306,7 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 		smoke.color = Color(0.75, 0.74, 0.7, 0.35)
 		npc.add_child(smoke)
 	var prompt := Label.new()
+	prompt.z_index = Balance.INTERACT_PROMPT_Z
 	prompt.text = touchify(prompt_text)
 	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	# Parchment interact prompt (gameplay-polish 2026-08-18): the body BOLD face
