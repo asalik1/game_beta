@@ -2010,13 +2010,12 @@ func _build_potion_tab(vbox: VBoxContainer, p: Player) -> void:
 		b.add_theme_stylebox_override("hover", sbh)
 		b.add_theme_stylebox_override("pressed", sbh)
 		var slot_i := i
-		var pid_c := pid
 		var title := ""
 		if assigned:
 			title = String(p.potion_display_name(pid))
 			b.tooltip_text = "Slot %d — %s\nSelect to send this slot back to the default (Health)." % [i + 1, title]
 			b.pressed.connect(func() -> void:
-				game.local_player.loadout_remove(pid_c)
+				game.local_player.loadout_set_empty(slot_i, false)
 				open_inventory("potions"))
 		elif empty:
 			title = "Empty"

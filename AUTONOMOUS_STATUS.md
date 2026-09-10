@@ -291,6 +291,17 @@ material controls match. The earlier inferred-boolean import attempt remains
 rejected. SAVE_FEEDBACK.md records the actual base-plus-amendment source, lanes
 and controlled storage/layout limits; mobile is host Compatibility, not a phone.
 
+The assigned Potion tile now uses its selected slot index: removing the second
+of two Mana assignments keeps the first Mana slot. The bag's type-level Remove
+callback is unchanged. The accepted corrected baseline has 94 observations,
+92 passes and two exact mouse/touch findings, with all four originals reviewed.
+The earlier 93-row attempt remains rejected for an invalid ledger owner and
+missing restoration; QA now reads Game.flags and deep-copies tree_points.
+Desktop and mobile after each passed all 94 Potion and 158 default-menu rows
+with zero findings/failures; all 24 originals were reviewed. All 32 stages
+passed, including quick 144/full 224/mobile quick 144 and strict preflight. See POTION_SLOTS.md for the controlled no-save
+fixture and coverage limits.
+
 The latest ordinary-input brewing diagnostic is complete as a failed experiment.
 One declared fresh chapter-1 Mage attempt used the real earned progression,
 Auto-equip and skill spending, with a bounded boss trace and ordinary Blink

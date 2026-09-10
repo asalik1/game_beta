@@ -1,14 +1,16 @@
 extends ShotRig
 ## Native menu input and cancellation regression proof.
-## shot.bat menu_navigation --timeout=300 [--baseline] [--no-capture]
+## shot.bat menu_navigation --timeout=300 [--baseline] [--no-capture] [--potion-slots]
 ## Baseline records known navigation defects; input/fixture failures stay fatal.
 
 
 func _ready() -> void:
 	await boot_game()
 	shot_dir += "/" + ("before" if flag("baseline") else "after")
+	if flag("potion-slots"):
+		shot_dir += "/potion_slots"
 	var result: Dictionary
-	if flag("settings-touch"):
+	if flag("settings-touch") and not flag("potion-slots"):
 		shot_dir += "/settings_touch"
 		result = await preload("res://scripts/tests/settings_touch_live.gd").run(self)
 	else:

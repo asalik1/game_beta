@@ -77,6 +77,17 @@ is not the acceptance gate. Final desktop/mobile after-1 each passed 38/38 with
 changed-seed travel or physical-device behavior. See `PARTY_QUEST_REFRESH.md`
 for accepted lanes, three rejected fixture attempts and source/restore boundaries.
 
+Potion-slot selection QA: `shot.bat menu_navigation --potion-slots --timeout=300`
+through the execution-ledger runner checks assigned duplicate/unique slots,
+default/empty behavior and unchanged stock, cooldowns and room budget. Use fresh
+isolated APPDATA and an actual source manifest. The exact contract is 94 rows,
+10 mouse clicks, 10 emulated touch taps and four full originals. `--baseline`
+allows only the two second-duplicate-slot plan findings; strict after allows
+none. Add `--mobile --renderer=gl_compatibility` for host-rendered mobile sources,
+without `--touch`. Default menu navigation is a separate 158-row/eight-image
+regression. Both projects passed 94+158 rows with no findings or failures;
+all 24 originals and closing gates are accepted. See POTION_SLOTS.md.
+
 Character-save feedback QA: `shot.bat
 save_feedback --placement-modes --timeout=180` exercises real isolated failed
 temp-file opens, Alchemy input, character/home save routing, warning/recovery

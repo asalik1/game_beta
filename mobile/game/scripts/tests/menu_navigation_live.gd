@@ -50,6 +50,8 @@ static func run(rig: Node) -> Dictionary:
 func _run() -> String:
 	if not _check("fixture.isolated", g.no_saves and not g.net_online(), "no_saves solo Game"):
 		return "requires isolated solo Game"
+	if r.flag("potion-slots"):
+		return await _potion_slots()
 	r.step("title cover and roster settings exits")
 	m.open_title()
 	await r.frames(3)
@@ -138,6 +140,189 @@ func _run() -> String:
 	await _exit("x")
 	_check("inventory.x_closes", not m.is_open() and not g.get_tree().paused and g.hud.visible, _state())
 	return ""
+
+
+## Optional positional-plan proof. The ordinary navigation episode stays intact.
+func _potion_slots() -> String:
+	if not _check("potion.fixture.launch", not r.flag("settings-touch") and not r.flag("touch")
+			and not OS.has_feature("mobile"), "combined mouse/touch fixture: desktop host, no forced --touch"):
+		return "potion-slots must run alone on the desktop host (mobile project is supported)"
+	r.step("controlled chapter-three warrior boot; no saves, collection or rewards claim")
+	m.pick_chapter("ch3")
+	await r.frames(3)
+	m.pick_class("warrior")
+	await r.frames(5)
+	await r.skip_dialogue()
+	# Illustrated opening callbacks can outlive ShotRig's dialogue skip. Observe
+	# natural completion before freezing the solo menu; do not set play_started.
+	var deadline := Time.get_ticks_msec() + 8000
+	var ready := false
+	while Time.get_ticks_msec() < deadline:
+		var illustrated := false
+		for child in g.hud.get_children():
+			if child is Cutscene:
+				illustrated = true
+		ready = g.play_started and g.state == Game.ST_PLAYING and g.has_local_player() \
+			and not g.hud.dialogue_active and not g.hud.choices_active \
+			and not g.hud._cinematic_mode and not is_instance_valid(g.cutscene) \
+			and not illustrated and not m.is_open() and not g.get_tree().paused
+		if ready:
+			break
+		await g.get_tree().create_timer(0.05, true, false, true).timeout
+	if not _check("potion.fixture.boot_ready", ready, {"chapter": g.chapter_id,
+			"play_started": g.play_started, "state": g.state, "dialogue": g.hud.dialogue_active,
+			"choices": g.hud.choices_active, "cinematic": g.hud._cinematic_mode}):
+		return "chapter-three boot did not settle naturally"
+	var p: Player = g.local_player
+	m.open_inventory("potions")
+	await r.frames(3)
+	if not _check("potion.fixture.paused", g.no_saves and not g.net_online() and not g.dev_god
+			and g.chapter_id == "ch3" and p.potion_slot_cap() == 2 and g.get_tree().paused
+			and m.current == "inventory" and p.can_process() == false, _state()):
+		return "requires the paused two-slot no-save fixture"
+	var original: Dictionary = _potion_ledger(p)
+	var message_before: String = m._potion_msg
+	var mana: Dictionary = Items.make_potion("mana", "instant", "F", "accord")
+	var might: Dictionary = Items.make_potion("might", "buff", "F", "accord")
+	# Temporary display stock and a partly spent room/cooldown fixture. No
+	# inventory award, purchase, drink, room refill, or save API is called.
+	p.consumables = [Items.make_potion("health", "instant", "F", "accord"),
+		mana, mana.duplicate(true), might]
+	p.potion_rotation = []
+	p.active_potion = "health"
+	p.room_potions = {"health": 1}
+	p.potion_cd = 1.75
+	m._potion_msg = ""
+	var unchanged: Dictionary = _potion_ledger(p)
+	unchanged.erase("rotation")
+	var error: String = await _potion_slot_cases(p, String(mana.id), String(might.id), unchanged)
+	# All returned failures restore through this one path while the menu still
+	# pauses the hero. The outer run() owns settings/emulation and final close.
+	p.consumables = original.consumables.duplicate(true)
+	p.potion_rotation = original.rotation.duplicate(true)
+	p.active_potion = String(original.active)
+	p.room_potions = original.room_potions.duplicate(true)
+	p.potion_cd = float(original.potion_cd)
+	m._potion_msg = message_before
+	_check("potion.fixture.restored", _potion_ledger(p) == original and m._potion_msg == message_before,
+		{"hero_restored": _potion_ledger(p) == original, "message_restored": m._potion_msg == message_before})
+	return error
+
+
+func _potion_slot_cases(p: Player, mana_id: String, might_id: String, unchanged: Dictionary) -> String:
+	for touch in [false, true]:
+		var mode: String = "touch" if touch else "mouse"
+		g.settings["touch_controls"] = touch
+		g.refresh_touch_mode()
+		g._apply_touch_mode()
+		m.open_inventory("potions")
+		await r.frames(3)
+		if not _check("potion." + mode + ".mode", g.touch_mode == touch
+				and Input.emulate_mouse_from_touch, {"touch_mode": g.touch_mode,
+				"mouse_from_touch": Input.emulate_mouse_from_touch}):
+			return "requested potion pointer mode unavailable"
+		_potion_plan(p, "potion." + mode + ".initial", ["health", "health"], unchanged)
+		# Every assignment and transition below is a real visible Button press.
+		var actions: Array[Dictionary] = [
+			{"id": "add_mana_first", "kind": "owned", "value": mana_id, "plan": [mana_id, "health"]},
+			{"id": "add_mana_second", "kind": "owned", "value": mana_id, "plan": [mana_id, mana_id]},
+			{"id": "clear_duplicate_second", "kind": "slot", "value": "2", "plan": [mana_id, "health"]},
+			{"id": "reset", "kind": "reset", "value": "", "plan": ["health", "health"]},
+			{"id": "add_unique_mana", "kind": "owned", "value": mana_id, "plan": [mana_id, "health"]},
+			{"id": "add_unique_might", "kind": "owned", "value": might_id, "plan": [mana_id, might_id]},
+			{"id": "clear_unique_second", "kind": "slot", "value": "2", "plan": [mana_id, "health"]},
+			{"id": "clear_unique_first", "kind": "slot", "value": "1", "plan": ["health", "health"]},
+			{"id": "empty_first", "kind": "slot", "value": "1", "plan": [Player.LOADOUT_EMPTY, "health"]},
+			{"id": "default_first", "kind": "slot", "value": "1", "plan": ["health", "health"]},
+		]
+		for action: Dictionary in actions:
+			var id := "potion." + mode + "." + String(action.id)
+			r.step(id)
+			if not await _potion_press(p, id, String(action.kind), String(action.value), touch):
+				return "native potion control unavailable: " + id
+			_potion_plan(p, id, action.plan, unchanged, action.id == "clear_duplicate_second")
+			if action.id in ["add_mana_second", "clear_duplicate_second"]:
+				await _capture(mode + ("_01_duplicate_plan" if action.id == "add_mana_second" else "_02_selected_second_cleared"))
+	return ""
+
+
+func _potion_press(p: Player, id: String, kind: String, value: String, touch: bool) -> bool:
+	var found: Array[Button] = []
+	for node in m.root.find_children("*", "Button", true, false):
+		var button: Button = node as Button
+		if button == null or not button.is_visible_in_tree() or button.disabled:
+			continue
+		var matches := false
+		if kind == "slot":
+			matches = button.tooltip_text.begins_with("Slot " + value + " — ")
+		elif kind == "owned":
+			matches = button.tooltip_text.begins_with(p.potion_display_name(value) + "\n") \
+				and button.tooltip_text.contains("Select: assign to the next free slot")
+		else:
+			matches = button.text.contains("Reset every slot to the default")
+		if matches:
+			found.append(button)
+	var rect := Rect2()
+	var visible := Rect2()
+	if found.size() == 1:
+		rect = found[0].get_global_rect()
+		visible = rect
+		var ancestor: Node = found[0].get_parent()
+		while ancestor != null and ancestor != m.root:
+			if ancestor is Control and ancestor.clip_contents:
+				visible = visible.intersection(ancestor.get_global_rect())
+			ancestor = ancestor.get_parent()
+	var viewport: Rect2 = m.get_viewport().get_visible_rect()
+	# Existing Reset is a desktop-sized stock _btn (28px); it is a setup
+	# control, not a touch-target acceptance claim. Slot/owned tiles must be44px.
+	var minimum: float = 1.0 if kind == "reset" else 44.0
+	if not _check(id + ".target", found.size() == 1 and rect.size.x >= minimum and rect.size.y >= minimum
+			and visible.grow(0.5).encloses(rect) and m._shell_rect.grow(0.5).encloses(rect)
+			and viewport.grow(0.5).encloses(rect), {"matches": found.size(), "rect": str(rect),
+			"visible": str(visible), "kind": kind, "fixture_reset_only": kind == "reset"}):
+		return false
+	if touch:
+		await _touch(rect.get_center())
+	else:
+		await _mouse(rect.get_center())
+	await r.frames(3)
+	return _check(id + ".input_gate", m.current == "inventory" and m.is_open() and g.get_tree().paused
+		and not p.can_process() and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT), _state())
+
+
+func _potion_plan(p: Player, id: String, expected: Array, unchanged: Dictionary, known := false) -> void:
+	var expected_rotation: Array = []
+	for entry in expected:
+		expected_rotation.append("" if entry == "health" else entry)
+	while not expected_rotation.is_empty() and expected_rotation.back() == "":
+		expected_rotation.pop_back()
+	var exact: bool = p.potion_loadout() == expected and p.potion_rotation == expected_rotation
+	var actual := {"plan": p.potion_loadout(), "rotation": p.potion_rotation.duplicate(),
+		"expected": expected, "expected_rotation": expected_rotation}
+	if known:
+		_probe(id + ".plan", exact, actual)
+	else:
+		_check(id + ".plan", exact, actual)
+	var economy: Dictionary = _potion_ledger(p)
+	economy.erase("rotation")
+	_check(id + ".unchanged", economy == unchanged, {"unchanged": economy == unchanged,
+		"stock": p.consumables.size(), "room_potions": p.room_potions.duplicate(),
+		"potion_cd": p.potion_cd, "active": p.active_potion})
+
+
+func _potion_ledger(p: Player) -> Dictionary:
+	return {"rotation": p.potion_rotation.duplicate(true), "active": p.active_potion,
+		"consumables": p.consumables.duplicate(true), "materials": p.materials.duplicate(true),
+		"gold": p.gold, "mastery": p.mastery.duplicate(true), "blueprints": p.blueprints.duplicate(true),
+		"profession": p.profession, "favor": p.npc_favor.duplicate(true),
+		"backpack": p.backpack.duplicate(true), "equipment": p.equipment.duplicate(true),
+		"gems": p.gem_bag.duplicate(true), "bags": p.bags.duplicate(true), "loose_bags": p.loose_bags.duplicate(true),
+		"mailbox": g.mailbox.duplicate(true), "dropped_loot": g.dropped_loot.duplicate(true),
+		"room_potions": p.room_potions.duplicate(true), "potion_cd": p.potion_cd,
+		"potion_swap_cd": p.potion_swap_cd, "ability_cds": p.cds.duplicate(true),
+		"hp": p.hp, "mp": p.mp, "level": p.level, "xp": p.xp,
+		"skill_points": p.skill_points, "tree_points": p.tree_points.duplicate(true), "unspent_attr": p.unspent_attr,
+		"flags": g.flags.duplicate(true), "chapter": g.chapter_id, "no_saves": g.no_saves}
 
 
 func _binding_cancel() -> void:
