@@ -75,6 +75,9 @@ mobile-source rendering. `--baseline` records expected presentation findings.
 and actual E/D Mana Potion previews: nine captures total, with strict identity,
 counts, browse economy and original F/world controls. These loaned/posed fixtures
 do not prove ordinary collection or brewing. See `MATERIAL_UI.md`.
+Add `--world-prompts` to check natural capital interaction-label hiding under
+Inventory/Fangmoot and restoration after real Escape/touch/B closes. Two extra
+captures; no posed prompt visibility. See `MENU_PROMPTS.md` for copy and QA scope.
 
 Ambient population QA: `shot.bat ambient_life --timeout=240` compares real compact
 and full rooms, seeded placement, ordinary combat geometry, threshold controls,

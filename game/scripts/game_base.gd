@@ -47,28 +47,39 @@ func refresh_touch_mode() -> void:
 func touchify(s: String) -> String:
 	if gamepad != null and gamepad.active:
 		for spec in [["E", "interact"], ["Q", "potion"], ["T", "skills"], ["Space", "interact"]]:
-			s = s.replace("press " + spec[0], "press " + gamepad.label(spec[1]))
-			s = s.replace("Press " + spec[0], "Press " + gamepad.label(spec[1]))
-			s = s.replace("hold " + spec[0], "hold " + gamepad.label(spec[1]))
-			s = s.replace("Hold " + spec[0], "Hold " + gamepad.label(spec[1]))
+			s = _replace_key_prompt(s, "press " + spec[0], "press " + gamepad.label(spec[1]))
+			s = _replace_key_prompt(s, "Press " + spec[0], "Press " + gamepad.label(spec[1]))
+			s = _replace_key_prompt(s, "hold " + spec[0], "hold " + gamepad.label(spec[1]))
+			s = _replace_key_prompt(s, "Hold " + spec[0], "Hold " + gamepad.label(spec[1]))
 		return s.replace("E — ", gamepad.label("interact") + " — ")
 	if not touch_mode:
 		return s
-	s = s.replace("Hold E", "Hold Act").replace("hold E", "hold Act")
+	s = _replace_key_prompt(s, "Hold E", "Hold Act")
+	s = _replace_key_prompt(s, "hold E", "hold Act")
 	# Quest copy names the NPC with a gendered pronoun; keep the action copy
 	# grammatical and match the touch HUD's actual interaction-button label.
-	s = s.replace("walk up to her and press E", "walk up to her and tap Act")
-	s = s.replace("walk up to him and press E", "walk up to him and tap Act")
-	s = s.replace(" and press E", " and tap Act")
-	s = s.replace("press E", "tap")
-	s = s.replace("press Q", "tap the potion button")
-	s = s.replace("Press Q", "Tap the potion button")
-	s = s.replace("press Space", "tap")
-	s = s.replace("Press Space", "Tap")
-	s = s.replace("press T", "tap Skills")
-	s = s.replace("Press T", "Tap Skills")
+	s = _replace_key_prompt(s, "walk up to her and press E", "walk up to her and tap Act")
+	s = _replace_key_prompt(s, "walk up to him and press E", "walk up to him and tap Act")
+	s = _replace_key_prompt(s, "and press E", "and tap Act")
+	s = _replace_key_prompt(s, "press E", "tap")
+	s = _replace_key_prompt(s, "press Q", "tap the potion button")
+	s = _replace_key_prompt(s, "Press Q", "Tap the potion button")
+	s = _replace_key_prompt(s, "press Space", "tap")
+	s = _replace_key_prompt(s, "Press Space", "Tap")
+	s = _replace_key_prompt(s, "press T", "tap Skills")
+	s = _replace_key_prompt(s, "Press T", "Tap Skills")
 	s = s.replace("E — ", "")   # NPC over-head prompts: "E — Talk" -> "Talk"
 	return s
+
+
+## These authored phrases contain literal words only. Match the complete key
+## token: "press E" must not rewrite "press ESC", nor "T" inside "Tactics".
+func _replace_key_prompt(s: String, prompt: String, replacement: String) -> String:
+	if not s.contains(prompt):
+		return s
+	var pattern := RegEx.new()
+	pattern.compile("\\b" + prompt + "\\b")
+	return pattern.sub(s, replacement, true)
 
 
 ## Explicit UI-instruction copy. Dialogue deliberately does not use this:

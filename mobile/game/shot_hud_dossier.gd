@@ -359,6 +359,12 @@ func _access(field: String, expected: String) -> void:
 	_probe("access/" + field, opened, {"expected": expected, "actual": game.menus.current, "input": "ScreenTouch" if touch_run else "mouse"})
 	if opened:
 		successful_utility_inputs += 1
+		if field == "party_btn":
+			var footer := "Tap Close this panel — your party session stays active" if touch_run \
+				else "Close this panel or press ESC — your party session stays active"
+			var copy := _popover_text(game.menus.root)
+			_check("party_footer_whole_key", copy.contains(footer) and not copy.contains("tapSC"),
+				{"expected": footer, "visible_copy": copy, "scope": "actual live host panel; synthetic peers"})
 		await _capture("access_" + field, "Actual utility input opens " + expected, false)
 	_check("access_no_reward/" + field, before == _personal_receipt())
 	await _close_overlay()

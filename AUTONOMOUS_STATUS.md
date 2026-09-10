@@ -193,17 +193,35 @@ files remain intact. The four material QA files paused during the HUD fix now
 belong to this completed checkpoint. See MATERIAL_UI.md and
 `build/qa/session-sept10/material-followup-checkpoint-validation.json`.
 
-Guest quest refresh, save feedback, Archer Tumble landing and menu-copy/prompt
-candidates remain separate under `build/qa/session-sept10/`. The art screenshots
-expose a pre-existing world fountain prompt retained behind translucent menus;
-its minimal shared-menu suppression proposal remains uninstalled. Source review identified and
+The tenth accepted checkpoint hides world interaction prompts synchronously
+when centered or full-screen menus open, then lets the normal selector restore
+the nearby prompt after close. Party touch footers name Close this panel; whole
+key substitutions preserve ESC and longer words. The baseline records 233 checks,
+227 pass and six expected hide findings. Final desktop/mobile prompt runs each
+pass 233 checks with eleven images; HUD runs each pass 558 with 22 images and
+retain the Team/Settings column and all text clearances. General menu navigation
+passes 158 with eight images. Root reviewed four prompt and three HUD images per
+project plus all eight general images; independent review covers all eleven
+baseline and 66 final prompt/HUD originals. Desktop quick/full 143/223, mobile
+import/compile 253/strict quick 143, native compile 255 and all seven preflight
+categories pass. All 19 frozen sources, six mirrors, HUD production, painted
+material/legacy world PNGs and 46 preserved unrelated/journey files remain exact.
+These controlled Windows input fixtures do not establish active dialogue/chat,
+physical-device play or a new remote-client prompt scenario. See MENU_PROMPTS.md
+and `build/qa/session-sept10/menu-prompts-checkpoint-validation.json`.
+
+Guest quest refresh, save feedback and Archer Tumble landing candidates remain
+separate under `build/qa/session-sept10/`. Source review identified and
 proposed a fix for a private Maren objective overwritten by a new host-counter
 fanout in the quest candidate; no party-quest code is installed. The ordinary
 brewing journey remains incomplete and uncommitted as described above. Its new
 read-only fresh2 diagnosis identifies only4–5seconds of Fangmaw presence and a
 driver that ignores boss-specific tells and disables Blink; no balance nerf is
 justified. The minimal next diagnostic is defeat memory plus a short boss-input
-trace before a declared fuller-kit attempt.
+trace before a declared fuller-kit attempt. That optional bounded diagnostic
+is prepared under `brewing-journey-diagnostic-candidate`, still uninstalled.
+Six C/B/A Alchemy ingredient briefs are prepared and their actual legacy identity
+originals reviewed; no generation or installation has started for that batch.
 Two rejected checkerboard scrap generations are preserved separately in
 `build/qa/session-sept10/material-rejected/`. Protected art and chromas stay excluded.
 

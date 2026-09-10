@@ -74,6 +74,12 @@ gold, mastery, materials, potions, knowledge, mail and favor unchanged. It does
 not brew or grant trade mastery. A fresh process is required after installing
 textures because the art resolver caches fallback textures.
 
+The optional `--world-prompts` follow-up runs before the art sequence. It uses
+normal capital prompt selection, actual Inventory/Fangmoot builders and real
+Escape/touch/controller dismissal to check menu hiding and normal restoration.
+It adds two captures, for eleven with grade pairs. Only six prompt-hide findings
+are baseline-qualified; the current art stays strict. See MENU_PROMPTS.md.
+
 These are controlled presentation fixtures: loaned items, an explicitly marked
 letter and posed real Pickup nodes with collection disabled. The rig uses
 synthetic native pointer input to open actual controls. It does not prove
@@ -117,8 +123,10 @@ and 1 reagent; D requires 4 herbs and 1 reagent. The ingredient icons remain
 distinct at 32px beside the 64px finished mana bottles. Desktop uses eight
 synthetic mouse clicks; mobile uses four original pilot mouse clicks and four
 ScreenTouch Alchemy entry/recipe/grade actions. Mobile is Compatibility rendering
-on Windows, not a physical-device run. A pre-existing fountain interaction prompt
-remains visible behind or beside some translucent menus; it is tracked separately.
+on Windows, not a physical-device run. Those art-checkpoint frames retain a
+pre-existing fountain interaction prompt behind some translucent menus. The
+subsequent [menu prompt checkpoint](MENU_PROMPTS.md) fixes that behavior and
+rechecks all current artwork.
 
 Desktop quick/full (143/223), both project imports, compile (253 ordinary / 255
 native scripts), mobile strict quick (143), scoped sync and all seven preflight

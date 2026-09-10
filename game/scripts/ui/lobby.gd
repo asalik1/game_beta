@@ -413,7 +413,8 @@ static func _stage_host_lobby(m: Menus) -> void:
 		func() -> void: _leave(m, "You ended the party session." if live_world
 			else "You closed the lobby."), BAD)
 	m._hint(vbox, "Close this panel or press ESC — your party session stays active" if live_world
-		else "Start any time — a party of 1 plays the solo game; joins lock once the chapter begins")
+		else "Start any time — a party of 1 plays the solo game; joins lock once the chapter begins",
+		"Tap Close this panel — your party session stays active" if live_world else "")
 	_wire(m, sess.lobby_changed, func() -> void: _refresh(m, "host_lobby"))
 	# MP-20: the check's lifecycle redraws this screen; a pass launches.
 	_wire(m, sess.proposal_changed, func() -> void: _refresh(m, "host_lobby"))
@@ -484,7 +485,8 @@ static func _stage_guest_lobby(m: Menus) -> void:
 		vbox.add_child(brow)
 		m._btn(brow, "  ▼  Close this panel (stay in party)  ", func() -> void: m.close(), GOOD)
 		m._btn(brow, "  ✕  Leave party  ", func() -> void: _leave(m, "You left the party."), BAD)
-		m._hint(vbox, "Close this panel or press ESC — you stay with the party")
+		m._hint(vbox, "Close this panel or press ESC — you stay with the party",
+			"Tap Close this panel — you stay with the party")
 	else:
 		m._btn(vbox, "  ✕  Leave the lobby  ", func() -> void: _leave(m, "You left the lobby."), BAD)
 		m._hint(vbox, "ESC to leave the lobby")

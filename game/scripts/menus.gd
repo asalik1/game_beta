@@ -107,12 +107,22 @@ func close() -> void:
 
 # ------------------------------------------------------------ scaffolding ---
 
+## World-owned interaction Labels are outside the HUD. Clear them before a
+## solo menu pauses Game; its normal selector restores the nearest after close.
+func _hide_world_interaction_prompts() -> void:
+	for entry: Dictionary in game.interactables:
+		var prompt: Variant = entry.get("prompt")
+		if is_instance_valid(prompt) and prompt is CanvasItem:
+			prompt.hide()
+
+
 ## Open a FULL-SCREEN shell (no centered panel) — for immersive screens like the
 ## Fangmoot moot that fill the frame edge to edge. Returns the root Control to
 ## build into; the caller owns the whole 1280x720 canvas.
 func _open_full() -> Control:
 	if root:
 		root.queue_free()
+	_hide_world_interaction_prompts()
 	game.request_pause(true)
 	_closable_now = false
 	if game._touch_hud != null:
@@ -138,6 +148,7 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 	var was_open := root != null
 	if root:
 		root.queue_free()
+	_hide_world_interaction_prompts()
 	game.request_pause(true)
 	_closable_now = closable  # so _hint tells the truth about the exits on touch
 	# Release held touch input before the menu's overlay gate takes over.

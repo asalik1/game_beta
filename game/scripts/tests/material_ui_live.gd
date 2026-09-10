@@ -79,6 +79,10 @@ func _run() -> String:
 	g.mailbox = [{"subject": "Material art pilot — controlled fixture", "body": "Loaned materials beside the existing Health Potion. Review only; no collection or reward claim.",
 		"items": payloads, "sent_at": g.trusted_now(), "read": false}]
 	var before := _economy()
+	if r.flag("world-prompts"):
+		var prompt_error: String = await _world_prompt_menus()
+		if prompt_error != "":
+			return prompt_error
 	for family in PILOTS:
 		var legacy: Texture2D = Art.material_icon(family, "F")
 		var ui: Dictionary = UIMailbox.attachment_view({"kind": "material", "family": family, "grade": "F", "count": 7})
@@ -437,4 +441,95 @@ func _source_hashes() -> Dictionary:
 			if (String(grade) == "F" and PILOTS.has(String(family))) or (r.flag("grade-pairs") and PAIR_GRADES.has(String(grade)) and PAIR_FAMILIES.has(String(family))):
 				var pilot := "res://assets/icons/materials_ui/" + stem + ".png"
 				result[pilot] = FileAccess.get_sha256(pilot) if FileAccess.file_exists(pilot) else "not_installed"
+	return result
+
+
+## Optional menu-visibility follow-up. The existing rig entered Crownfall and
+## settled normally; require a real selected world prompt, never force one on.
+func _world_prompt_menus() -> String:
+	var prior_host: FangmootHost = m.fm_host
+	var prior_moot: FangmootMoot = m.fm_moot
+	var prior_standalone: bool = m.fm_standalone
+	var emulation: bool = Input.emulate_mouse_from_touch
+	var pad_state := {}
+	for field in ["active", "focused", "device", "rearm", "buttons", "axes", "_triggers"]:
+		var value: Variant = g.gamepad.get(field)
+		pad_state[field] = value.duplicate(true) if value is Dictionary else value
+	var before := _economy()
+	Input.emulate_mouse_from_touch = true
+	var error: String = await _world_prompt_views()
+	m.close()
+	m.fm_host = prior_host
+	m.fm_moot = prior_moot
+	m.fm_standalone = prior_standalone
+	Input.emulate_mouse_from_touch = emulation
+	g.gamepad._set_active(bool(pad_state.active))
+	for field in pad_state:
+		g.gamepad.set(field, pad_state[field])
+	_check("world_prompts.economy_unchanged", _economy() == before,
+		"existing controlled inventory/letter; no Act, purchase, claim or match")
+	return error
+
+
+func _world_prompt_views() -> String:
+	r.step("optional actual menu visibility: existing Crownfall interaction prompt")
+	if not _check("world_prompts.ready", not m.is_open() and not g.get_tree().paused
+			and g.is_processing() and g.state == Game.ST_PLAYING
+			and not g.input_overlay_up(), "normal no-overlay Crownfall selector must be running"):
+		return "world-prompt fixture not ready after normal capital boot"
+	await r.frames(3)
+	var selected: Array[int] = _visible_world_prompts()
+	if not _check("world_prompts.positive", selected.size() == 1 and g.interact_in_range,
+			{"visible_prompt_ids": selected, "scope": "normal current selector; no posed visibility or body/camera mutation"}):
+		return "normal Crownfall arrival did not expose one real prompt"
+	var overlay_flags := [g.hud.dialogue_active, g.hud.choices_active, g.hud.chat_active]
+	for route in ["keyboard", "touch", "controller"]:
+		if route == "controller":
+			# Build the actual full-screen hub with its existing non-granting host.
+			# No table, match, purchase or result is entered.
+			m.fm_host = FangmootHost.new()
+			m.fm_moot = null
+			m.fm_standalone = false
+			m.open_fangmoot()
+		else:
+			m.open_inventory("gear", "all")
+		var menu := "fangmoot" if route == "controller" else "inventory"
+		if not _check("world_prompts.actual_menu." + route, m.current == menu
+				and m.is_open() and g.input_overlay_up(), m.current):
+			return "actual menu builder did not open for " + route
+		# Immediate assertion matters: solo pause prevents another Game tick.
+		_check("world_prompts.hidden_on_open." + route, _visible_world_prompts().is_empty(),
+			_visible_world_prompts(), true)
+		await r.frames(3)
+		_check("world_prompts.hidden_while_open." + route, _visible_world_prompts().is_empty(),
+			_visible_world_prompts(), true)
+		if route == "keyboard":
+			await _capture("prompt_inventory_open")
+		if route == "touch":
+			await native._touch(Vector2(12, 12))
+		elif route == "controller":
+			await native._joy_back()
+		else:
+			await native._key(KEY_ESCAPE)
+		await r.frames(3)
+		if not _check("world_prompts.actual_close." + route,
+				not m.is_open() and not g.get_tree().paused, "real " + route + " dismissal"):
+			return "native close failed for " + route
+		if not _check("world_prompts.restored_on_tick." + route,
+				_visible_world_prompts() == selected and g.interact_in_range,
+				{"before": selected, "after": _visible_world_prompts()}):
+			return "normal selector did not restore the same nearby prompt"
+		_check("world_prompts.dialogue_chat_unchanged." + route,
+			[g.hud.dialogue_active, g.hud.choices_active, g.hud.chat_active] == overlay_flags,
+			"menu opening/closing did not start or cancel dialogue, choices or chat")
+	await _capture("prompt_restored_world")
+	return ""
+
+
+func _visible_world_prompts() -> Array[int]:
+	var result: Array[int] = []
+	for entry: Dictionary in g.interactables:
+		var prompt: Variant = entry.get("prompt")
+		if is_instance_valid(prompt) and prompt is CanvasItem and prompt.is_visible_in_tree():
+			result.append(prompt.get_instance_id())
 	return result
