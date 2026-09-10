@@ -624,6 +624,9 @@ func _run_systems() -> void:
 	# HELD move keys — down+dash goes DOWN — and the flat L/R dash art spins
 	# to the travel line. No keys held keeps the old straight-ahead dash.
 	await _test_dash_direction()
+	var landing_error: String = await preload("res://scripts/tests/test_dash_landing.gd").run(self)
+	if landing_error != "":
+		return _fail("dash landing: " + landing_error)
 
 	# 3b. Target lock cycling.
 	var d1 := _dummy(Vector2(120, 0))

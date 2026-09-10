@@ -2647,7 +2647,8 @@ func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, if
 	var color := _tcolor if _themed else Color(0.6, 0.7, 1.0)
 	var start := global_position
 	var dvec := dash_vec()
-	global_position = game.clamp_to_zone(start + dvec * dist, start)
+	var strike_end: Vector2 = game.clamp_to_zone(start + dvec * dist, start)
+	global_position = preload("res://scripts/dash_landing.gd").resolve(self, strike_end)
 	_aim_dash_pose(dvec)  # before the ghost trail below, so the afterimages copy the pose
 	var end := global_position
 	# Skins with their own dash read (crystal facets, the Phantom's spectral
@@ -2698,7 +2699,9 @@ func _dash_strike(dist: float, mult: float, effects := {}, stab_rider := 0.0, if
 		var e := node as CharacterBody2D  # union: the dash lane cuts the rival too
 		if e == null or e.dying or e.untargetable:
 			continue
-		var closest := Geometry2D.get_closest_point_to_segment(e.global_position, start, end)
+		# Landing safety must not shrink the existing blade/shock corridor.
+		# Large colliding bosses can stop the feet outside its center-based reach.
+		var closest := Geometry2D.get_closest_point_to_segment(e.global_position, start, strike_end)
 		var lane := e.global_position.distance_to(closest)
 		if lane <= 55.0:
 			hit_enemy(e, mult, effects.duplicate())

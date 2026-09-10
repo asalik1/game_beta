@@ -103,9 +103,44 @@ pass. The 32 original unrelated files and 14 unfinished journey files remain
 unchanged. See CAPITAL_ARRIVAL.md and the exact commit/source receipt at
 `build/qa/session-sept10/capital-checkpoint-validation.json`.
 
-Guest journal, interaction/dash reproduction, touch Settings and a normal-stat
-brewing journey candidate remain separate. Patches, plans and uncompiled native
-fixtures live under `build/qa/session-sept10/`; none is accepted yet.
+The sixth accepted checkpoint respects each interaction entry's reach and keeps
+Shield Bash, Shadow Dash and Blink destinations clear of terrain/enemy bodies.
+The nearest eligible interaction still wins. Open destinations preserve travel
+across intervening scenery; blocked destinations retreat along the approach.
+The nominal strike corridor remains intact, while hit direction and landing
+follow-ups use the actual arrival. Codex Combat notes explain the behavior.
+
+The strict before4 baseline records 549 checks and 36 expected findings: nine
+long-range reads miss and 27 landings overlap scenery before unwanted recovery
+movement. Final desktop after5 and mobile after1 each pass 796 checks across
+25 interaction, six competition, 35 terrain and seven actor rows. All landings
+are clear; every terrain recovery displacement is zero. Three actor pairs
+preserve ordered damage amounts, HP debits, mana and cooldown. All ten Codex
+reading/cleanup checks pass through actual clicks, wheel input and Escape.
+All 33 full frames per project have independent review; root reviewed the seven
+actor views, Codex page and four representative input/terrain frames per project.
+
+Real ENet guest Blink checks pass 47/47 on both projects, with two actual-input
+casts, one guest-attributed host hit each and converged position/quantized HP.
+All eight frames have root and independent review. The fixture manually admits
+its readers and uses a stationary enemy; it does not model moving combat,
+latency, admission or security. Exploration uses posed/frozen geometry and
+12 direct recovery move calls, not an ordinary playthrough or 12 complete Player
+ticks. Boss art and frozen trails can overlap the hero despite clear bodies.
+Mobile checks render the mobile project on the Windows host, not a device.
+
+Desktop quick/full pass 143/223, mobile import/compile/strict quick pass 143,
+final native compile gates pass 254 scripts and all seven preflight categories
+pass. Intermediate after2/3/4 and network desktop1 remain rejected evidence:
+QA motion reconstruction, body-setup timing, Codex capture and cleanup errors
+were corrected before acceptance. Exact scopes and source/artifact hashes:
+EXPLORATION_RELIABILITY.md and
+`build/qa/session-sept10/exploration-checkpoint-validation.json`.
+All 32 original and 14 unfinished journey hashes remain unchanged.
+
+Touch Settings, guest quest refresh, save feedback and material sibling artwork
+candidates remain separate under `build/qa/session-sept10/`. The ordinary brewing
+journey remains incomplete and uncommitted as described above.
 Two rejected checkerboard scrap generations are preserved separately in
 `build/qa/session-sept10/material-rejected/`. Protected art and chromas stay excluded.
 

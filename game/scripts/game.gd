@@ -844,14 +844,14 @@ func _process(delta: float) -> void:
 		# and takes the E press — so stepping toward the one you want selects
 		# it instead of registration order deciding.
 		var near_entry: Dictionary = {}
-		var near_d: float = Balance.INTERACT_RANGE
+		var near_d: float = INF
 		for entry in interactables:
 			if not is_instance_valid(entry["node"]):
 				continue
 			entry["prompt"].visible = false
 			var d: float = player.global_position.distance_to(entry["node"].global_position)
-			# Prop hotspots carry a TIGHTER reach (capital rework fix): the
-			# entry's own reach caps eligibility; nearest eligible still wins.
+			# Each entry owns its reach (short prop hotspots or longer hunt
+			# signs); the nearest eligible entry still wins.
 			if d < float(entry.get("reach", Balance.INTERACT_RANGE)) and d < near_d:
 				near_d = d
 				near_entry = entry

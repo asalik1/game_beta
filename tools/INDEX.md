@@ -9,6 +9,22 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 
 ## Gates & suites (run these, in this order — CLAUDE.md "Testing")
 
+Exploration QA: `shot.bat exploration_friction --competition --endpoint-contracts
+--field-notes --timeout=300` exercises actual hunt-sign input, nearest eligible
+selection, shared dash landings and Codex reading. Uses posed/frozen fixtures
+with real input; terrain, large-actor damage and reading scopes are recorded
+separately in `friction.json`. Isolate APPDATA; add `--mobile
+--renderer=gl_compatibility` for mobile-source rendering. `--baseline` exempts
+only the original nine reach/27 terrain findings, never actor or reading checks.
+See EXPLORATION_RELIABILITY.md for current acceptance and fixture limits.
+
+Guest Blink QA: `shot.bat guest_blink_enet --timeout=180` runs two readers over
+real ENet in one engine: occupied actor landing and a clear endpoint beyond it,
+native ability input, exact host damage ownership and HP/position replication.
+Uses manually admitted peers and a stationary ordinary enemy; four captures.
+APPDATA must be isolated inside `guest-blink-enet-candidate`; add `--mobile
+--renderer=gl_compatibility` for the host-rendered mobile-source check.
+
 Capital arrival QA: `shot.bat capital_arrival --arrival-consumers --timeout=180`
 uses a normal solo boot, real Pause travel and live body/camera observations.
 Six frames cover arrival, idle, keyboard movement and map/Recall/respawn
