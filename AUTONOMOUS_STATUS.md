@@ -1,18 +1,44 @@
-# Active session — September 9–10, 2026
+# Session closed — September 9–10, 2026
 
-The owner explicitly authorized this new session at 17:32 UTC September 9.
-Continue improving the game in this worktree through September 10, 13:00 UTC
-(09:00 America/New_York). Stop starting features/art at 12:00 UTC; reserve the
-last hour for validation, fixes, documentation and committed handoff. This
-supersedes historical pause instructions for this session only. Older paused
-automations and tasks remain untouched. An active goal carries this task; no
-new heartbeat has been created.
+The session is closed with **18 validated game checkpoints**. New feature and
+art work stopped at 12:00 UTC September 10; validation and handoff finished
+within the 13:00 UTC deadline. No further feature or experiment work is queued.
 
-Worktree: `C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder`.
-Branch `codex/crownless-wayfinder`; initial HEAD `a47809b0f238efe5a94620bb1f2ead0a121810b1`.
-Index initially empty. All 32 preserved unrelated hashes match the prior
-inventory; current receipt: `build/qa/session-sept10/initial-preservation.json`.
-Root owns the single Godot engine and serialized explicit-path commits.
+Final validated game-source commit: `bb092fe6cd369d30102da7509cec0a29d4fad8a4`.
+The [checkpoint receipt](build/qa/session-sept10/npc-prompt-checkpoint-validation.json)
+and [final 18 source/preservation audit](build/qa/session-sept10/handoff-final-actual-candidate/audit.json)
+bind the accepted source, all 18 checkpoint receipt links and preserved files.
+
+Worktree: `C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder`;
+branch `codex/crownless-wayfinder`. No push or merge was performed. No heartbeat
+was created; older paused automations and tasks remain untouched.
+
+The original 32 unrelated files retain their initial inventory bytes. The
+current 14 uncommitted journey files retain the later authorized diagnostic/full-kit
+inventory. That ordinary brewing journey remains incomplete after its single
+recorded Fangmaw defeat, without reaching Kesh. Its failed/partial evidence is
+preserved separately from the validated game checkpoints; only those 46
+preserved paths remain dirty or untracked at the game-source handoff.
+
+## Session chronology and checkpoint evidence
+
+The following setup and authorization are historical records of the closed
+session, followed by its detailed checkpoint history.
+
+> The owner explicitly authorized this new session at 17:32 UTC September 9.
+> Continue improving the game in this worktree through September 10, 13:00 UTC
+> (09:00 America/New_York). Stop starting features/art at 12:00 UTC; reserve the
+> last hour for validation, fixes, documentation and committed handoff. This
+> supersedes historical pause instructions for this session only. Older paused
+> automations and tasks remain untouched. An active goal carries this task; no
+> new heartbeat has been created.
+>
+> Worktree: `C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder`.
+> Branch `codex/crownless-wayfinder`; initial HEAD `a47809b0f238efe5a94620bb1f2ead0a121810b1`.
+> Index initially empty. All 32 preserved unrelated hashes match the prior
+> inventory; current receipt: `build/qa/session-sept10/initial-preservation.json`.
+> Root owns the single Godot engine and serialized explicit-path commits.
+
 The first accepted checkpoint fixes menu return paths, confirmation
 cancellation, focused text entry, pending remaps and touch/wheel dismissal.
 Desktop and mobile native acceptance each pass 158/158; the existing controller
