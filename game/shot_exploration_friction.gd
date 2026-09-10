@@ -66,6 +66,13 @@ func _physics_process(_delta: float) -> void:
 	observation = {"position": _v(p.global_position), "hits": _overlaps(p.global_position),
 		"cooldown": p.cds[observer_slot], "mp": p.mp, "physics_frame": Engine.get_physics_frames(),
 		"velocity": _v(p.velocity), "motion_faults": p.motion_faults}
+
+	if p.cls == "archer":
+		observation["tumble"] = {"in_physics": Engine.is_in_physics_frame(), "delta": _delta,
+			"last_motion": _v(p.get_last_motion()), "real_velocity": _v(p.get_real_velocity()),
+			"slides": p.get_slide_collision_count(), "perfect": p.tumble_perfect_t,
+			"hurt_cd": p.hurt_cd, "heavy": p.hurt_was_heavy,
+			"evasion": p.dodge_amt, "evasion_time": p.dodge_time}
 	p.set_physics_process(false)
 	_release()
 
@@ -311,7 +318,7 @@ func _execute() -> String:
 	game.camera.global_position = center
 	game.camera.reset_smoothing()
 	game.camera.zoom = Vector2.ONE
-	for kit in KITS:
+	for kit in _kits():
 		_prepare_class(str(kit[0]))
 		for i in DIRECTIONS.size():
 			var direction: Vector2 = DIRECTIONS[i]
@@ -329,6 +336,34 @@ func _execute() -> String:
 		if setup_error != "":
 			obstacle.queue_free()
 			return setup_error
+
+	if flag("tumble"):
+		# Clear endpoints remain valid across the same intervening factory prop.
+		# 65px on each side clears this boulder; it would NOT clear Vargoth's
+		# much larger body, so the actor fixture does not invent that control.
+		_prepare_class("archer")
+		for i in DIRECTIONS.size():
+			await _dash_case("tumble_clear_endpoint_" + str(i), "factory boulder between open Tumble endpoints",
+				"a3", 130.0, center - DIRECTIONS[i] * 65.0, DIRECTIONS[i], false, i == 0)
+			if setup_error != "":
+				obstacle.queue_free()
+				return setup_error
+		# Existing cosmetic setters are explicit fixture setup, not ownership
+		# grants. Both branches keep the same physical Tumble and ordinary input.
+		for skin_id in ["frostfall_ranger", "voidwraith"]:
+			_prepare_class("archer")
+			game.player.set_skin(skin_id)
+			if not _require_setup(game.player.skin == skin_id, "Tumble skin fixture resolves " + skin_id):
+				obstacle.queue_free()
+				return setup_error
+			await _dash_case("tumble_skin_" + skin_id, "factory boulder; explicit existing cosmetic " + skin_id,
+				"a3", 130.0, center - Vector2.RIGHT * 130.0, Vector2.RIGHT, true, true)
+			if setup_error != "":
+				obstacle.queue_free()
+				return setup_error
+			# Let Voidwraith's two short presentation timers finish before the
+			# next class/skin setup; never retain a callback into another identity.
+			await get_tree().create_timer(0.30, true, false, true).timeout
 	obstacle.queue_free()
 	_restore_solids()
 	await frames(2)
@@ -505,6 +540,13 @@ func _interaction_case(trail: Variant, mode: String, distance: float, reach: flo
 		await _capture("reach120_" + mode, "Posed actual hunt sign and camera; synthetic " + mode + " input; see JSON pre-input prompt")
 	_release()
 
+func _kits() -> Array:
+	var selected: Array = KITS.duplicate(true)
+	if flag("tumble"):
+		selected.append(["archer", "a3", 130.0])
+	return selected
+
+
 func _prepare_class(cls: String) -> void:
 	_release()
 	game.player.set_physics_process(false)
@@ -518,7 +560,7 @@ func _prepare_class(cls: String) -> void:
 
 func _authored_dash_cases(room: int) -> void:
 	step("unaltered authored scenery landing examples")
-	for kit in KITS:
+	for kit in _kits():
 		_prepare_class(str(kit[0]))
 		var found := false
 		for body in game.world.find_children("*", "StaticBody2D", true, false):
@@ -548,7 +590,7 @@ func _authored_dash_cases(room: int) -> void:
 					break
 		if not found:
 			report.skips.append("No eligible authored prop/start for " + str(kit[0]))
-	_check(report.skips.is_empty(), "All three classes have an authored-prop example; otherwise the report is incomplete")
+	_check(report.skips.is_empty(), "All selected classes have an authored-prop example; otherwise the report is incomplete")
 
 
 func _dash_case(label: String, geometry: String, slot: String, nominal_distance: float,
@@ -574,7 +616,7 @@ func _dash_case(label: String, geometry: String, slot: String, nominal_distance:
 		"direction": _v(direction), "start": _v(start), "nominal_target": _v(target),
 		"nominal_distance": nominal_distance, "start_hits": _overlaps(start),
 		"target_hits": _overlaps(target), "start_mp": p.mp, "cost": p.ability_cost(slot),
-		"expected_occupied_target": occupied_target, "god": game.dev_god}
+		"expected_occupied_target": occupied_target, "god": game.dev_god, "skin": p.skin}
 	if not _require_setup(entry.start_hits.is_empty(), label + " starts outside terrain", entry, "dash"):
 		return
 	if not _require_setup((not entry.target_hits.is_empty()) == occupied_target, label + " geometry precondition", entry, "dash"):
@@ -588,6 +630,14 @@ func _dash_case(label: String, geometry: String, slot: String, nominal_distance:
 	entry["polled_move"] = _v(p.intent_move)
 	if not _require_setup(p.intent_move.distance_to(direction) < 0.01, label + " native move keys establish the intended dash direction", entry, "dash"):
 		return
+	if p.cls == "archer":
+		# physics_frame above resumes before Player callbacks in that tick.
+		# Arm this new first-tick proof from a process boundary instead.
+		await frames(1)
+		entry["armed_in_physics"] = Engine.is_in_physics_frame()
+		if not _require_setup(not bool(entry.armed_in_physics), label + " Tumble arms outside physics", entry, "dash"):
+			return
+	entry["armed_frame"] = Engine.get_physics_frames()
 	_key(int(game.binds[slot]), true)
 	p.set_physics_process(true)
 	var deadline := Time.get_ticks_msec() + 2000
@@ -602,7 +652,34 @@ func _dash_case(label: String, geometry: String, slot: String, nominal_distance:
 	var landed: Vector2 = p.global_position
 	_check(landed.distance_to(start) > nominal_distance * 0.5, label + " real class ability displaced hero")
 	_check(absf(float(entry.start_mp) - p.mp - float(entry.cost)) < 0.5, label + " charged ordinary ability mana")
-	_check(observation.hits.is_empty(), label + " landing is outside solid terrain", occupied_target)
+	_check(observation.hits.is_empty(), label + " landing is outside solid terrain",
+		occupied_target and (not flag("tumble") or p.cls == "archer"))
+
+	if p.cls == "archer":
+		var tumble: Dictionary = observation.tumble
+		_check(bool(tumble.in_physics) and int(observation.physics_frame) == int(entry.armed_frame) + 1,
+			label + " Tumble observed on the first enabled physics tick")
+		_check(is_equal_approx(float(tumble.perfect), 0.1) and float(tumble.hurt_cd) >= 0.1
+			and bool(tumble.heavy) and is_equal_approx(float(tumble.evasion), p.rider("a3", "eva"))
+			and is_equal_approx(float(tumble.evasion_time), p.rider("a3", "eva_secs")),
+			label + " keeps ordinary perfect-dodge and evasion riders")
+		# The authored sample may contain unrelated scenery along its approach.
+		# Factory controls explicitly isolate the short, clear pre-cast walk.
+		if geometry.begins_with("factory"):
+			var walked := Vector2(float(tumble.last_motion[0]), float(tumble.last_motion[1]))
+			var real_speed := Vector2(float(tumble.real_velocity[0]), float(tumble.real_velocity[1]))
+			if not _require_setup(int(tumble.slides) == 0 and walked.distance_to(real_speed * float(tumble.delta)) < 0.01,
+					label + " single cached pre-cast motion supports exact Tumble reconstruction", entry, "dash"):
+				return
+			var cast_origin: Vector2 = start + walked
+			var nominal: Vector2 = game.clamp_to_zone(cast_origin + direction * nominal_distance, cast_origin)
+			entry["reconstructed_cast_origin"] = _v(cast_origin)
+			entry["reconstructed_nominal"] = _v(nominal)
+			_check(landed.distance_to(Geometry2D.get_closest_point_to_segment(landed, cast_origin, nominal)) < 0.02
+				and landed.distance_to(cast_origin) > 0.0,
+				label + " stays on the positive room-clamped Tumble segment")
+			if not occupied_target:
+				_check(landed.distance_to(nominal) < 0.25, label + " preserves the exact open 130px endpoint")
 	if not occupied_target:
 		_check(landed.distance_to(target) < 25.0, label + " clear endpoint survives intervening scenery")
 	if capture:

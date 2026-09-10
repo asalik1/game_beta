@@ -144,12 +144,17 @@ class Harness extends Node:
 		# Boss-immune CC has its own actual damage call BEFORE each primary:
 		# Bash stun -> concussion + hit; Shadow Dash stagger -> concussion +
 		# blade, then rider stagger -> concussion + rider. Blink has no CC.
-		for spec in [["warrior", "a2", 170.0, 2], ["assassin", "a2", 210.0, 4], ["mage", "a3", 190.0, 1]]:
+		var selected := [["warrior", "a2", 170.0, 2], ["assassin", "a2", 210.0, 4], ["mage", "a3", 190.0, 1]]
+		if r.flag("tumble"):
+			selected.append(["archer", "a3", 130.0, 0]) # base Tumble has no damage or arrows
+		for spec in selected:
 			var first: Dictionary = await cast_case(String(spec[0]), String(spec[1]), float(spec[2]), int(spec[3]), 8, center, false)
 			if error != "": return error
 			var second: Dictionary = await cast_case(String(spec[0]), String(spec[1]), float(spec[2]), int(spec[3]), 4, center, false)
 			if error != "": return error
 			var same: bool = same_damage(first.landing.damage, second.landing.damage)
+			if int(spec[3]) == 0:
+				same = first.landing.damage.is_empty() and second.landing.damage.is_empty()
 			var same_cost: bool = absf(float(first.landing.mp) - float(second.landing.mp)) < 0.001 \
 				and absf(float(first.landing.cooldown) - float(second.landing.cooldown)) < 0.001
 			ledger.pairs.append({"class": spec[0], "unscanned": first.label, "scanned": second.label,
@@ -241,7 +246,7 @@ class Harness extends Node:
 		if not need(vec(landing.last_slide_delta).length() <= p.speed * float(landing.physics_delta) + 0.1,
 				label + " one ordinary pre-cast walking step supports corridor reconstruction"): return active
 		if not need(vec(landing.actor_position).distance_to(center) < 0.01, label + " frozen actor stayed at its endpoint"): return active
-		r._check(landing.hits.is_empty(), "endpoint contracts / " + label + " first landing outside full-mask bodies")
+		r._check(landing.hits.is_empty(), "endpoint contracts / " + label + " first landing outside full-mask bodies", cls == "archer" and expected_occupied)
 		r._check(float(landing.nominal_lane) <= 55.0, "endpoint contracts / " + label + " actor remains inside intended base hit corridor")
 		r._check(absf(float(active.start_mp) - float(landing.mp) - float(active.cost)) < 0.5 and float(landing.cooldown) > 0.0,
 			"endpoint contracts / " + label + " ordinary mana/cooldown ownership")
@@ -251,7 +256,8 @@ class Harness extends Node:
 			actual += float(receipt.hp_removed)
 			r._check(bool(receipt.local_source) and not bool(receipt.crit) and not bool(receipt.silent) and float(receipt.hp_removed) > 0.0,
 				"endpoint contracts / " + label + " actual local Player damage reached Boss super")
-		r._check(actual > 0.0 and absf(float(active.actor_hp_before) - float(landing.actor_hp) - actual) < 0.001 and not actor.dying,
+		var intended_amount: bool = is_zero_approx(actual) if count == 0 else actual > 0.0
+		r._check(intended_amount and absf(float(active.actor_hp_before) - float(landing.actor_hp) - actual) < 0.001 and not actor.dying,
 			"endpoint contracts / " + label + " exact HP debit without a kill")
 		var nominal: Vector2 = vec(landing.reconstructed_nominal)
 		var dash_start: Vector2 = vec(landing.reconstructed_dash_start)
@@ -267,8 +273,8 @@ class Harness extends Node:
 			var actual_gap: float = center.x - p.global_position.x
 			r._check(actual_gap >= contact_distance - 0.01
 				and actual_gap <= contact_distance + 1.0 + p.safe_margin + 0.01,
-				"endpoint contracts / " + label + " stops within one sampling step of first circle contact")
-			r._check(p.global_position.distance_to(center) > 55.0, "endpoint contracts / " + label + " moved feet beyond center-based55px corridor without losing hit")
+				"endpoint contracts / " + label + " stops within one sampling step of first circle contact", cls == "archer")
+			r._check(p.global_position.distance_to(center) > 55.0, "endpoint contracts / " + label + " feet remain outside actor center corridor", cls == "archer")
 		g.camera.global_position = center
 		g.camera.force_update_scroll()
 		await r._capture("endpoint_" + label, "Posed Vargoth body/AI off; actual native ability and recorded damage; not campaign combat")

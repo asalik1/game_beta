@@ -11,12 +11,18 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 
 Exploration QA: `shot.bat exploration_friction --competition --endpoint-contracts
 --field-notes --timeout=300` exercises actual hunt-sign input, nearest eligible
-selection, shared dash landings and Codex reading. Uses posed/frozen fixtures
-with real input; terrain, large-actor damage and reading scopes are recorded
-separately in `friction.json`. Isolate APPDATA; add `--mobile
---renderer=gl_compatibility` for mobile-source rendering. `--baseline` exempts
-only the original nine reach/27 terrain findings, never actor or reading checks.
-See EXPLORATION_RELIABILITY.md for current acceptance and fixture limits.
+selection, shared dash landings and Codex reading. Add `--tumble` for Archer's
+nineteen terrain cases, two actor cases and zero-damage pair. The Tumble
+checkpoint omits `--competition`; the earlier selection checkpoint includes it.
+Uses posed/frozen fixtures with real input; terrain, large-actor damage and
+reading scopes are recorded separately in `friction.json`. Isolate APPDATA;
+add `--mobile --renderer=gl_compatibility` for mobile-source rendering.
+Without Tumble, `--baseline` retains the original nine reach/27 terrain
+exemptions. With Tumble, old terrain checks become strict, the nine historical
+reach exemptions remain, and named Tumble overlap findings are allowed. The
+accepted Tumble baseline's separate exact fourteen-finding whitelist rejects
+any old reach finding. Strict after runs use no `--baseline`. See
+EXPLORATION_RELIABILITY.md for current acceptance and fixture limits.
 
 Guest Blink QA: `shot.bat guest_blink_enet --timeout=180` runs two readers over
 real ENet in one engine: occupied actor landing and a clear endpoint beyond it,

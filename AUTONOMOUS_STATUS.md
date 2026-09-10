@@ -210,7 +210,28 @@ These controlled Windows input fixtures do not establish active dialogue/chat,
 physical-device play or a new remote-client prompt scenario. See MENU_PROMPTS.md
 and `build/qa/session-sept10/menu-prompts-checkpoint-validation.json`.
 
-Guest quest refresh, save feedback and Archer Tumble landing candidates remain
+The eleventh checkpoint fixes Archer Tumble landings. It uses
+the existing endpoint resolver for ordinary, Frostfall and Voidwraith branches,
+preserving the room-clamped request, cost/cooldown and existing riders. Baseline
+1,043 checks record fourteen expected Tumble findings; both final constant-form runs
+pass 1,053 checks with 42 images, including ten Codex reading checks. All 54
+terrain landings and their 162 recovery observations are clear with zero
+recovery displacement; eight open Tumble endpoints retain their full movement.
+Root reviewed 16 baseline and 17 after originals per project. Desktop quick/full
+143/223 and mobile import/compile 253/strict quick 143/native compile 255 pass.
+Independent review covers all 41 baseline and 42 after images per project.
+All seven strict preflight categories pass. The unchanged 130px distance is a
+Balance constant. The 15 owned paths include six exact source mirrors;
+26 source files per project and all 46 preserved unrelated/unfinished paths
+match their freezes. The final receipt is
+`build/qa/session-sept10/tumble-after2-checkpoint-validation.json`.
+Earlier literal-form runs passed native validation but their mobile continuation
+had one tuning-number preflight warning; their evidence remains separate.
+The first combined runner stopped at unrelated whole-tree mobile drift after
+passing desktop gates. Its failure remains recorded; a separate scoped mobile
+continuation preserves that earlier runtime evidence. See EXPLORATION_RELIABILITY.md.
+
+Guest quest refresh and save feedback candidates remain
 separate under `build/qa/session-sept10/`. Source review identified and
 proposed a fix for a private Maren objective overwritten by a new host-counter
 fanout in the quest candidate; no party-quest code is installed. The ordinary
@@ -218,10 +239,12 @@ brewing journey remains incomplete and uncommitted as described above. Its new
 read-only fresh2 diagnosis identifies only4–5seconds of Fangmaw presence and a
 driver that ignores boss-specific tells and disables Blink; no balance nerf is
 justified. The minimal next diagnostic is defeat memory plus a short boss-input
-trace before a declared fuller-kit attempt. That optional bounded diagnostic
-is prepared under `brewing-journey-diagnostic-candidate`, still uninstalled.
-Six C/B/A Alchemy ingredient briefs are prepared and their actual legacy identity
-originals reviewed; no generation or installation has started for that batch.
+trace before a declared fuller-kit attempt. The bounded diagnostic and optional
+normal-input full-kit response to current Fangmaw cues have independent source
+review; both remain uninstalled. Five C/B/A Alchemy ingredient briefs now use
+the approved full-size D masters as style references. C Verdant Herb has a
+source and 128px candidate approved for a later native trial after two rejected
+checkerboard generations; no upper-grade ingredient art is installed yet.
 Two rejected checkerboard scrap generations are preserved separately in
 `build/qa/session-sept10/material-rejected/`. Protected art and chromas stay excluded.
 

@@ -1889,6 +1889,8 @@ const MOB_REFLECT_TIME := 1.8
 const MOB_REFLECT_FRAC := 0.5
 const MOB_SOW_EVERY := 0.45
 const MOB_SOW_LIFE := 3.5
+# Archer Tumble: nominal travel before room clamp and endpoint clearance.
+const TUMBLE_DISTANCE := 130.0
 # Windrunner (archer capstone talent): DR window after a Tumble roll —
 # defense EARNED by dodging (dominated-cell rework 2026-07-09).
 const TUMBLE_DR_DUR := 3.0

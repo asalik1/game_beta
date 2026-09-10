@@ -3,7 +3,7 @@ extends RefCounted
 const NativeInput := preload("res://scripts/tests/menu_navigation_live.gd")
 const Geometry := preload("res://scripts/tests/hud_alignment_geometry.gd")
 const TITLE := "Land on clear ground"
-const COPY := "Shield Bash, Shadow Dash and Blink follow your movement input. With no movement input, they go where you face. An occupied destination shortens the movement to clear ground along that approach, while the strike along the path keeps its intended reach. A clear destination still lets these abilities cross intervening scenery."
+const COPY := "Shield Bash, Shadow Dash, Blink and Tumble follow your movement input. With no movement input, they go where you face. An occupied destination shortens the movement to clear ground along that approach. Shield Bash, Shadow Dash and Blink keep their intended strike reach; base Tumble has no damage strike. A clear destination still lets these abilities cross intervening scenery."
 
 var r: Variant
 var g: Game

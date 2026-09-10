@@ -1,7 +1,7 @@
 # Exploration interaction and dash landings
 
 Desktop and mobile native checks, required suites and full preflight pass.
-The exact checkpoint receipt is
+The original exploration checkpoint receipt is
 `build/qa/session-sept10/exploration-checkpoint-validation.json`.
 
 ## Player behavior
@@ -14,7 +14,7 @@ uses each entry's existing strict distance limit. The closest eligible entry
 still wins; tighter prop hotspots, default reach and disabled entries keep
 their rules. No interaction radius or content table changed.
 
-Shield Bash, Shadow Dash and Blink check the space needed by the hero at their
+Shield Bash, Shadow Dash, Blink and Tumble check the space needed by the hero at their
 destination. A clear destination preserves the requested movement, including
 crossing intervening scenery. An occupied destination retreats along the same
 approach until the hero's body fits. This removes landings inside props and the
@@ -50,9 +50,85 @@ Warrior Earth slams and Assassin mist/Mirrorstep geometry can consequently move
 when a destination is blocked; this change does not promise identical positions
 for every themed follow-up. Coefficients and eligibility rules are unchanged.
 
-Archer Tumble, Paladin Judgment, Assassin execution flanks, ordinary walking,
-spawns and capital arrival placement are separate paths and are not changed.
-No protected artwork, save schema or RPC format is modified.
+The accepted original checkpoint left Archer Tumble, Paladin Judgment,
+Assassin execution flanks, ordinary walking, spawns and capital arrival
+placement on their separate paths. No protected artwork, save schema or RPC
+format was modified.
+
+## Tumble extension
+
+The Archer change computes the same 130px room-clamped request once, using
+`Balance.TUMBLE_DISTANCE`, then passes it through the existing landing resolver before the ordinary,
+Frostfall Ranger and Voidwraith presentation branches. The behavior
+is the same destination-clearance rule described above: preserve a clear
+endpoint across intervening obstacles, or retreat an occupied endpoint along
+the requested segment. The helper's sampling and invalid-origin limits still
+apply. This does not add a swept path or change ordinary walking.
+
+Base Tumble has no damage strike and does not use the shared strike corridor.
+The existing perfect-dodge/heavy window, evasion, Windrunner DR, Hart's Breath
+arming and theme riders remain in place. Storm/Venom departure effects retain
+their origin; landing presentation receives the resolved arrival. This does
+not promise identical position-dependent combat results or skin animation
+quality. No ability cost, cooldown formula, arrow path, save schema or network
+protocol is changed by the movement edit.
+
+The accepted baseline records 1,043 checks: 1,029 pass, fourteen expected
+Tumble findings and no unexpected failures or skips. Eleven occupied terrain
+landings and the scanned-actor checks expose the old overlap. Zero-input
+recovery moves the hero 23.66–37.66px and becomes clear by the final observation;
+this is unwanted displacement, not a permanently stuck hero. All eight open
+Tumble endpoints preserve the full movement across the boulder. The older
+interaction and terrain controls pass.
+
+The final constant-form desktop and mobile **after2** runs each pass 1,053 checks with no
+findings, failures or skips and 42 captures. Their 25 interaction, 54 terrain, nine actor and four
+damage-pair rows include nineteen Tumble terrain cases, the two actual
+Frostfall/Voidwraith branches and scanned/unscanned actor controls. Every
+terrain landing and all 162 recovery observations are clear, with zero
+recovery displacement. The four damage pairs retain the original three
+classes' damage amounts and zero immediate base-Tumble damage. The ten Codex
+checks expose the complete updated four-line paragraph through real clicks,
+wheel input and Escape cleanup. Root reviewed all twelve Tumble captures, four
+older class/input controls and the Codex page on each project; independent
+review covers all 41 baseline and all 42 originals from each after run.
+The same final source passes desktop quick/full 143/223, mobile import,
+ordinary compile 253, strict quick 143, native compile 255 and all seven strict
+preflight categories. Six mirrored source paths, 26 frozen source files per
+project and all 46 preserved unrelated/unfinished paths remain exact. The
+15-path checkpoint receipt is `build/qa/session-sept10/tumble-after2-checkpoint-validation.json`.
+
+Run `shot.bat exploration_friction --tumble --endpoint-contracts --field-notes
+--timeout=300` with isolated APPDATA. This uses posed/frozen actors and existing
+input controls. Recovery consists of twelve calls to the zero-input movement
+primitive, not twelve complete Player updates. Old trails and floating damage
+labels can persist; the actual damage ledger establishes the current cast's
+effect. Voidwraith's portal and temporary invisibility limit visible-foot
+claims. These runs do not establish moving combat, skin animation fidelity,
+physical-device behavior or Tumble co-op replication; the earlier guest Blink
+receipt proves only its own scope.
+
+With `--baseline --tumble`, the runner retains its historical nine reach
+exemptions but makes the old terrain cases strict. The accepted baseline's
+separate exact fourteen-finding whitelist rejects any unexpected old reach
+finding. After runs have no baseline exemptions. The interrupted combined
+runner passed desktop quick/full 143/223 and strict native validation, then
+stopped at a read-only whole-tree mobile drift report before mobile execution.
+That failure is preserved; it is not a passed overall pipeline. A separate
+continuation passes the read-only five-path sync check, mobile import,
+ordinary compile (253), strict quick (143), native compile (255) and final
+source continuity. Its preflight completes with zero failures and one warning:
+the existing literal travel distance moved onto a changed line. That unchanged
+130px tuning value is now in Balance; the separate final constant-form runner
+passes fresh desktop/mobile validation and all seven strict preflight checks clean.
+Both earlier literal-form runs also passed 1,053 native checks and received full
+independent review of their 42 images, but remain evidence for that earlier source.
+The global drift consists
+of 33 older sprite PNG differences, eight UID-only import differences and 41
+older mobile-only files. Exact initial/current Git comparisons, including raw
+PNG bytes, are recorded under
+`archer-tumble-candidate/checkpoint-mobile-continuation-b07cbb6` in the session
+QA directory. This checkpoint does not declare the entire mobile tree clean.
 
 ## Evidence and reproduction
 

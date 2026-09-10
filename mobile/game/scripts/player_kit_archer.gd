@@ -255,14 +255,14 @@ func _tumble() -> void:
 		dr_amt = tumble_dr
 	var origin := global_position
 	var dvec := dash_vec()
+	var wanted: Vector2 = game.clamp_to_zone(origin + dvec * Balance.TUMBLE_DISTANCE, origin)
+	global_position = preload("res://scripts/dash_landing.gd").resolve(self, wanted)
 	if skin == "voidwraith":
 		# The portal sequence is presentation only. Relocate on the exact base
 		# Tumble frame and let its departure/arrival beats continue asynchronously.
-		global_position = game.clamp_to_zone(origin + dvec * 130.0, origin)
 		_aim_dash_pose(dvec)
 		_voidwraith_phase_tumble(origin, global_position, dvec)
 	else:
-		global_position = game.clamp_to_zone(origin + dvec * 130.0, origin)
 		_aim_dash_pose(dvec)  # before the trail below, so the ghosts copy the pose
 		if skin == "frostfall_ranger" and _action_dir_on:
 			# PixelLab's eight dash sheets do not share the idle sheets' foot root.
