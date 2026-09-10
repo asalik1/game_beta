@@ -41,6 +41,15 @@ Add `--capital-arrivals` to the existing `brewing_persistence` rig for actual
 snapshot/reconnect placement; its local-body physics remains disabled.
 See `CAPITAL_ARRIVAL.md` for source geometry and acceptance scope.
 
+Add `--fountain-prompt --fountain-after` for the separate four-frame prompt
+regression: real S/S/W movement, 69 strict rows and observations after completed
+draws check tracker clearance, unchanged authored anchor/station X and camera
+easing. The original-source baseline uses `--fountain-prompt --baseline` and
+records one expected tracker intersection in 64 rows. Keep `--arrival-consumers`
+a separate 61-row/six-frame regression. Desktop/mobile native checks and the
+full checkpoint gates pass. See `CAPITAL_ARRIVAL.md` for scope and the
+preserved rejected first fixture.
+
 Alchemy UI QA: `shot.bat alchemy --timeout=240` checks the real recipe bench,
 39 recipe previews, exact paid actions, input, live quotes, cancelled learning,
 overflow and reading/focus continuity. Seven native views cover novice, learned

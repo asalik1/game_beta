@@ -142,7 +142,8 @@ The seventh accepted checkpoint makes Settings-family touch targets 44px
 with scrolling bodies and pinned Back /
 exit hints. Desktop Settings, Controller and Keybind layouts stay compact;
 Comfort now also scrolls on desktop to contain its overflowing hint. The
-corrected baseline passes 223 checks with 38 expected findings and 0 failures.
+corrected baseline records 223 checks: 185 passes, 38 expected findings and
+0 failures.
 An added desktop Comfort baseline records exactly one hint overflow among 255
 checks. Final desktop after3 and mobile after1 each pass 255/255 with all nine
 full images per project reviewed by root and independently. The broader
@@ -301,6 +302,17 @@ Desktop and mobile after each passed all 94 Potion and 158 default-menu rows
 with zero findings/failures; all 24 originals were reviewed. All 32 stages
 passed, including quick 144/full 224/mobile quick 144 and strict preflight. See POTION_SLOTS.md for the controlled no-save
 fixture and coverage limits.
+
+The fountain prompt now avoids the location tracker with a conditional 4px
+screen gap, preserving its authored anchor/station X, arrival point, art,
+reach, selection, body and camera. The accepted 64-row baseline exposed one
+tracker intersection; the earlier render-poll overshoot fixture remains
+rejected. Desktop and mobile each passed 69 fountain and 61 arrival-consumer
+rows; all 20 originals were reviewed. Quick 144/full 224/mobile quick 144
+passed, along with all 16 stages and seven strict preflight categories.
+Closing checks retained 1,254 source pins, 409/410 UIDs, 235 material controls,
+the original 32 preserved files and current authorized 14 journey files. See
+CAPITAL_ARRIVAL.md for the accepted arrival history and precise fountain scope.
 
 The latest ordinary-input brewing diagnostic is complete as a failed experiment.
 One declared fresh chapter-1 Mage attempt used the real earned progression,

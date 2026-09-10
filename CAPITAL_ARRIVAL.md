@@ -69,3 +69,66 @@ source/log/image hashes and the independent reviews are retained under
 `build/qa/session-sept10/capital-arrival-*`; the explicit source and commit
 receipt is `capital-checkpoint-validation.json`. Known renderer shutdown diagnostics
 remain in those logs; no new diagnostic whitelist was added.
+
+## Fountain prompt and the location tracker
+
+The selected fountain prompt now stays clear of Crown Plaza's location tracker.
+Each marked landmark retains its authored anchor and station X. Immediately
+before drawing, only the selected prompt moves down when its complete bounds
+intersect the visible tracker, leaving a 4px screen gap. It returns to the
+authored anchor when clear. The accepted arrival origin y=832, fountain art,
+hotspot reach, nearest selection, prompt visibility, hero physics and camera
+behavior are unchanged.
+
+The accepted before2 baseline has 64 observations: 63 passes, one tracker
+intersection finding and zero failures, with all four originals reviewed.
+Real S/S/W movement sampled hero y=832, y=840.5, y=866 and back to y=832. At
+y=866 the hero remained 58px from the 70px hotspot, so the obscured prompt was
+still legitimately selected. The earlier before1 remains rejected: render
+polling released a movement hold too late, producing S/W/W; its 50 rows
+(47 passes, three failures) and three images are diagnostic only. The corrected
+QA releases held keys from completed physics steps without posing body/camera.
+
+Use the existing isolated rig as two separate runs:
+
+```powershell
+shot.bat capital_arrival --fountain-prompt --fountain-after --timeout=180
+shot.bat capital_arrival --arrival-consumers --timeout=180
+```
+
+The original-HUD baseline uses `--fountain-prompt --baseline`; do not combine
+that flag with the after-only observer. The after extension retains all 64
+checks and adds four settled anchor checks plus one aggregate of observations
+after completed draws. Both desktop and host Compatibility mobile runs passed
+all 69 fountain rows with four originals each. The separate arrival-consumer
+regression passed all 61 rows with six originals on each project. Root and the
+independent reviewer viewed all 20 after originals.
+
+Desktop recorded 149 draw samples: 31 adjusted, 118 clear, zero invalid. Mobile
+recorded 91: 24 adjusted, 67 clear, zero invalid. Each S/S/W leg included both a
+rendered body-position transition and separate released-body camera easing.
+The checks bind the same authored anchor, unchanged station X, minimal downward
+adjustment, complete prompt bounds and observer disconnection. They do not
+claim continuously held motion throughout every sample.
+
+All 16 stages passed: desktop/mobile compile 262, desktop quick 144/full 224,
+mobile import and quick 144, both native routes and all seven strict preflight
+categories. Closing source checks preserved 1,254 source pins, 409/410 UIDs,
+235 material controls and both preservation inventories. The preserved evidence
+lives under
+`build/qa/session-sept10/capital-arrival-native-candidate/fountain-before2/`
+and `fountain-after1/`; the rejected first lane remains `fountain-before1/`.
+The accepted root review is `fountain-after1/root-review.json`; the accepted
+independent review is `build/qa/session-sept10/fountain-prompt-independent-review/after1.json`.
+These tests used pre-commit source based on `91287e90b7cd0c69c0156e8c20c6babe14bd75f3`;
+the separate post-commit receipt is `fountain-prompt-checkpoint-validation.json`.
+
+The fountain episode covers normal solo travel, real keyboard movement and
+the visible prompt. The separate default map/Recall/respawn legs retain their
+existing controlled consumer setup; they are not evidence of ordinary death
+or scroll use. Mobile means the host Compatibility renderer with desktop
+keyboard input. There is no physical-device, controller, ENet, interaction-reward,
+ordinary-combat, alternate-landmark, boss-HUD or long-quest claim. The original
+32 preserved files and current authorized 14 journey files remain separate
+preservation inventories. Settled frames and recorded movement/camera easing
+do not cover every rapid title or teleport transition.

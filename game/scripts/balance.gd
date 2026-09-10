@@ -721,6 +721,7 @@ const CAPITAL_INTRO_GOLD := 120         # gold reward per capital intro quest (f
 # the art it belongs to (owner report 2026-07-25: fountain text at a distance).
 const PROP_HOTSPOT_REACH := 70.0
 const PROP_PROMPT_HEIGHT := 0.55        # prompt anchors this fraction up the landmark art
+const PROP_PROMPT_HUD_GAP := 4.0        # screen pixels below an intersecting location tracker
 # A prop hotspot STANDS this far south of its landmark's collider edge — the
 # trigger band then always covers a hero hugging the art (owner 2026-07-25
 # round 3: hand-authored offsets were tuned against the old oversized

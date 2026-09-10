@@ -12,6 +12,8 @@ func _ready() -> void:
 		finish(1)
 		return
 	shot_dir += "/" + ("before" if flag("baseline") else "after")
+	if flag("fountain-prompt"):
+		shot_dir += "/fountain_prompt"
 	await boot("mage", "ch1", false)
 	arrival_probe = preload("res://scripts/tests/capital_arrival_live.gd").new()
 	var result: Dictionary = await arrival_probe.run(self)

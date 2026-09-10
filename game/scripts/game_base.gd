@@ -197,6 +197,7 @@ var elder: Node2D
 var pet_follower: Sprite2D = null  # Q16 cosmetic companion; lags the local player, rebuilt with the world
 var remote_pet_followers: Dictionary = {}  # owner instance id -> {owner, visual}; replacement-safe
 var interactables: Array = []    # [{node, prompt, action}]
+var selected_landmark_prompt: Label = null  # current marked prompt; placement only
 var active_facing_interactable: Dictionary = {} # NPC temporarily turned toward the local player
 var interact_in_range := false   # is the player next to any interactable? (touch Act-button gate)
 var gates := {}                  # edge key "a_b" -> gate Node2D (locked edges only)

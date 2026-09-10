@@ -262,6 +262,7 @@ func _ready() -> void:
 	gamepad = preload("res://scripts/gamepad.gd").new()
 	gamepad.game = self
 	add_child(gamepad)
+	RenderingServer.frame_pre_draw.connect(_position_landmark_prompt)
 
 	# Build and enter the starting room (the rest of the graph is lazy).
 	_enter_room(0 if dedicated else room_at_pos(player.global_position))
@@ -821,6 +822,7 @@ func _process(delta: float) -> void:
 	# the player's intents (MP seam). The poll-through refresh keeps the
 	# old live-read timing (_process outruns physics frames headless).
 	interact_in_range = false  # recomputed below; stays false while a menu/dialogue is up
+	selected_landmark_prompt = null
 	# A CHOICE prompt is its own overlay flag — dialogue_active drops before
 	# dialogue_choice raises choices_active (hud.gd) — so it gates here too:
 	# in a session nothing pauses (§5.4), and an ungated poll kept firing
@@ -857,6 +859,8 @@ func _process(delta: float) -> void:
 				near_entry = entry
 		if not near_entry.is_empty():
 			near_entry["prompt"].visible = true
+			if near_entry["prompt"].has_meta("landmark_prompt_anchor"):
+				selected_landmark_prompt = near_entry["prompt"] as Label
 			interact_in_range = true  # the touch Act button appears only when this is true
 			if talk_cd <= 0.0 and player.intent_interact:
 				talk_cd = 0.6
@@ -909,6 +913,51 @@ func _process(delta: float) -> void:
 		camera_framing.tick(self, delta)
 	# (The room-transition check at the top of _process is the safety
 	# net: any position outside the graph snaps back into the room.)
+
+
+## Keep an eligible landmark's authored anchor unless the location tracker
+## covers it. Pre-draw uses the camera transform that will render this frame.
+func _position_landmark_prompt() -> void:
+	if not is_inside_tree() or is_queued_for_deletion() or not is_instance_valid(selected_landmark_prompt):
+		return
+	var prompt: Label = selected_landmark_prompt
+	if not prompt.is_inside_tree() or prompt.is_queued_for_deletion():
+		return
+	var anchor: Vector2 = prompt.get_meta("landmark_prompt_anchor", prompt.position)
+	prompt.position = anchor
+	if not is_instance_valid(hud) or not is_instance_valid(hud.quest_panel):
+		return
+	if chapter_id != "capital" or state != ST_PLAYING or not play_started or input_overlay_up() \
+			or not prompt.is_visible_in_tree() or not hud.visible or not hud.quest_panel.is_visible_in_tree():
+		return
+	# Include the whole pill and shaped text outline, not just nominal size.
+	var bounds := Rect2(Vector2.ZERO, prompt.size)
+	var cells := Rect2()
+	var has_cells := false
+	for index in prompt.text.length():
+		if prompt.text.substr(index, 1).strip_edges().is_empty():
+			continue
+		var cell: Rect2 = prompt.get_character_bounds(index)
+		if cell.has_area():
+			cells = cells.merge(cell) if has_cells else cell
+			has_cells = true
+	if has_cells:
+		bounds = bounds.merge(cells.grow(float(prompt.get_theme_constant("outline_size"))))
+	var screen_bounds: Rect2 = prompt.get_global_transform_with_canvas() * bounds
+	var tracker: Rect2 = hud.quest_panel.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, hud.quest_panel.size)
+	if not screen_bounds.intersects(tracker):
+		return
+	var parent_canvas := prompt.get_parent() as CanvasItem
+	if parent_canvas == null:
+		return
+	var shift := Vector2(0.0, tracker.end.y + Balance.PROP_PROMPT_HUD_GAP - screen_bounds.position.y)
+	prompt.position += parent_canvas.get_global_transform_with_canvas().affine_inverse().basis_xform(shift)
+
+
+func _exit_tree() -> void:
+	if RenderingServer.frame_pre_draw.is_connected(_position_landmark_prompt):
+		RenderingServer.frame_pre_draw.disconnect(_position_landmark_prompt)
+	selected_landmark_prompt = null
 
 
 ## Q16 cosmetic pet: a half-scale companion sprite that trails the local player.

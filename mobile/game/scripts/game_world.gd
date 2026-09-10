@@ -134,6 +134,7 @@ func switch_chapter(id: String, force := false) -> void:
 		zones = _pocket_inject(zones, id)
 		zone_count = zones.size()
 
+	selected_landmark_prompt = null
 	if is_instance_valid(world):
 		world.free()  # immediate: everything world-owned dies with it
 	world = Node2D.new()
@@ -2759,6 +2760,7 @@ func _spawn_scenery(zi: int) -> void:
 					# itself — mid-height over THIS station's x, so the Archive's
 					# three desks still label their own doors.
 					child.position.y = -(use_dy + landmark_h * Balance.PROP_PROMPT_HEIGHT)
+					child.set_meta("landmark_prompt_anchor", child.position)
 			zone_scenery[zi].append(hotspot)
 
 	# Capital furniture is placed deliberately, not scattered. This prevents
