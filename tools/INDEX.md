@@ -77,6 +77,21 @@ is not the acceptance gate. Final desktop/mobile after-1 each passed 38/38 with
 changed-seed travel or physical-device behavior. See `PARTY_QUEST_REFRESH.md`
 for accepted lanes, three rejected fixture attempts and source/restore boundaries.
 
+Character-save feedback QA: `shot.bat
+save_feedback --placement-modes --timeout=180` exercises real isolated failed
+temp-file opens, Alchemy input, character/home save routing, warning/recovery
+placement and cleanup. APPDATA must be inside `save-feedback-candidate`; use
+its prepared sequential runner, not normal player storage. The baseline adds
+`--baseline` and requires the exact external missing-presenter contract; strict
+after omits it. Add `--mobile --renderer=gl_compatibility` for host-rendered
+mobile sources with forced desktop controls. All ten originals and full report /
+file restoration require review. Loaned stock and posed guest/Fangmoot state do
+not prove ordinary gathering, real ENet, played matches or device input. See
+`SAVE_FEEDBACK.md` for behavior, the bool-amended source and accepted lanes.
+The accepted baseline has 105 observations: 53 passes and 52 exact findings.
+Strict after has 118 passes per project with all ten originals reviewed.
+No baseline allowance applies after.
+
 Production admission QA: `shot.bat network_admission --timeout=180` uses three
 scoped production NetworkManagers and real ENet in one engine. It checks current
 version admission, prior-version refusal/reason, leave/rejoin, refused-manager

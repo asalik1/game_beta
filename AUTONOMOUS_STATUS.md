@@ -276,19 +276,42 @@ preflight passed. Three preceding baseline attempts remain rejected for
 multiline-lambda compilation, uncollected real opener rewards and freed-peer
 restoration respectively. These controlled ENet/callback fixtures do not prove
 ordinary combat/quest play or physical-device input. See PARTY_QUEST_REFRESH.md
-for exact lanes, ownership and limits. The save-feedback candidate remains
-separate; its future baseline template now pins observed quick 144 and still
-requires the explicitly reviewed current journey inventory SHA.
+for exact lanes, ownership and limits.
 
-The ordinary
-brewing journey remains incomplete and uncommitted as described above. Its new
-read-only fresh2 diagnosis identifies only4–5seconds of Fangmaw presence and a
-driver that ignores boss-specific tells and disables Blink; no balance nerf is
-justified. The minimal next diagnostic is defeat memory plus a short boss-input
-trace before a declared fuller-kit attempt. The bounded diagnostic and optional
-normal-input full-kit response to current Fangmaw cues have independent source
-review; both remain uninstalled. The upper-grade material checkpoint is recorded
-above.
+Character-save feedback is implemented and validated. Failed active-character
+writes show a persistent amber warning across menus; a real successful write
+for the same hero/slot shows a brief green recovery. Guest-home routing, skipped
+save gates and transaction behavior remain unchanged. The accepted baseline
+recorded 105 observations (53 passes, 52 exact missing-notice findings); the
+bool-corrected after passed 118 strict checks per project. Root and independent
+reviews cover all 10 baseline and 20 after originals. Desktop quick/full 144/224,
+mobile quick 144, compile 260/native 262, all 27 stages, six-source mirror checks and
+strict seven-category preflight passed. Closing sources, 46 preserved files and 235
+material controls match. The earlier inferred-boolean import attempt remains
+rejected. SAVE_FEEDBACK.md records the actual base-plus-amendment source, lanes
+and controlled storage/layout limits; mobile is host Compatibility, not a phone.
+
+The latest ordinary-input brewing diagnostic is complete as a failed experiment.
+One declared fresh chapter-1 Mage attempt used the real earned progression,
+Auto-equip and skill spending, with a bounded boss trace and ordinary Blink
+responses to current visible Fangmaw cues. There was no seed override or retry.
+It cleared and collected three rooms, completed four upkeep steps, then suffered
+ordinary defeat in Fangmaw's Hollow at 170.158 seconds. Fangmaw had about 72% HP
+remaining; Kesh, brewing and the brewed-potion use leg were never reached.
+All five original frames and the final diagnostic have root and independent
+review; the wrapper's failed outcome remains rejected as a completed journey.
+This single automated attempt does not justify a balance or economy change.
+
+The 14 journey source/scene/UID files remain uncommitted experiments. Their
+explicitly reviewed current inventory is
+`build/qa/session-sept10/brewing-journey-experiment-preservation.json`
+(SHA256 `09eae4a8c78cff231064243b82f1498b69053de49cded50b42c56f3b196b7865`).
+The original inventory/history remains preserved. Reviews are
+`build/qa/session-sept10/brewing-journey-root-review/lf-full-kit-attempt.json`
+(`8c13330a…`) and
+`build/qa/session-sept10/brewing-journey-independent-review/lf-full-kit-attempt.json`
+(`b9301e6e…`). The upper-grade material checkpoint is recorded above.
+
 Two rejected checkerboard scrap generations are preserved separately in
 `build/qa/session-sept10/material-rejected/`. Protected art and chromas stay excluded.
 

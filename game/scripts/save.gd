@@ -157,7 +157,8 @@ static func write(game: Game, slot: int) -> void:
 		"character": character,
 		"world": world,
 	}
-	atomic_store(path(slot), JSON.stringify(data))
+	var stored := atomic_store(path(slot), JSON.stringify(data))
+	preload("res://scripts/ui/save_feedback.gd").record(game, slot, stored)
 
 
 ## The CHARACTER section (§5.7): everything that travels WITH the player
@@ -276,7 +277,8 @@ static func write_character_home(game: Game, slot: int) -> void:
 		"character": character,
 		"world": world_of(data),
 	}
-	atomic_store(path(slot), JSON.stringify(out))
+	var stored := atomic_store(path(slot), JSON.stringify(out))
+	preload("res://scripts/ui/save_feedback.gd").record(game, slot, stored)
 
 
 # ------------------------------------------ dedicated server world (MMO B) ---
