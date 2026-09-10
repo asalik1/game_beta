@@ -251,7 +251,8 @@ const HUD_STAT_GAP := 6.0
 const HUD_ICON_BUTTON := Vector2(44, 44)
 const HUD_ICON_STEP := 46.0
 const HUD_ICON_Y := 128.0
-const HUD_PARTY_POSITION := Vector2(300, 80)
+# Team sits directly above the Settings column in the utility row.
+const HUD_PARTY_POSITION := Vector2(16 + 6 * HUD_ICON_STEP, 80)
 const AVATAR_CROP_SCALE := 0.28
 # Where the face lands INSIDE the circle: dead center horizontally, at the
 # midpoint between the circle's top and its center — classic portrait framing

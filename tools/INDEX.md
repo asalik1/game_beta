@@ -211,6 +211,8 @@ input on either project. Add `--mobile --renderer=gl_compatibility` for mobile.
 
 Compact dossier QA: `shot.bat hud_dossier --timeout=300` checks fixed 44px targets,
 exact currency/identity details, badges and party layout through actual GUI input.
+It also measures the Team/Settings shared column, 4px gap and text-target
+clearance, including while the conditional Team control is hidden.
 `--baseline` records outgoing-layout observations without accepting setup errors.
 Add `--touch --mobile --renderer=gl_compatibility` for actual ScreenTouch events.
 Synthetic party shells exercise layout only, not real peer replication.

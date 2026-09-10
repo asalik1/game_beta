@@ -158,6 +158,31 @@ or ordinary gameplay results. All 32 original and 14 unfinished journey hashes
 remain unchanged. See SETTINGS_TOUCH.md and the exact commit/source receipt
 at `build/qa/session-sept10/settings-touch-checkpoint-validation.json`.
 
+The eighth accepted checkpoint fixes the owner's reported Team/Settings
+misalignment in
+desktop/mobile source. Team's independent x300 anchor was 8px right of the
+gear; it now derives x292 from the same utility-column expression. Size44,
+y80/y128, gap4 and callbacks stay unchanged. The native baseline records521
+checks:512 pass, nine expected alignment observations, zero failures and22 images.
+Desktop/mobile native each pass557/557 with zero findings/failures. All22 full
+images per project and all22 baseline images have independent review; root
+reviewed three before and six per after project. Other utility/label positions
+remain exact, all36 text-target clearances pass, and actual mouse/ScreenTouch
+Team/Settings access works. Desktop quick/full143/223, mobile import/compile253/
+explicit strict quick143, native compile255 and all seven preflight categories
+pass. No physical-device or real remote-client claim is made. The pre-existing
+mobile Party “tapSC” footer is under separate source review. All32 original,
+14 journey and four paused material-QA hashes remain intact. See HUD_ALIGNMENT.md
+and `build/qa/session-sept10/party-column-checkpoint-validation.json`.
+
+Material sibling QA is installed but kept separate from that HUD fix. Its
+strict before1 baseline passes212 checks:196 pass,16 expected absent-art
+presentation findings, zero failures, nine full images reviewed by root and
+independently. Four inventory-filter findings extend the original12-count
+prediction because missing32px overrides keep inherited filtering. No new
+art has been generated. Four QA source/mirror hashes are preserved in
+`build/qa/session-sept10/material-followup-interruption-preservation.json`.
+
 Guest quest refresh, save feedback and material sibling artwork candidates
 remain separate under `build/qa/session-sept10/`. Source review identified and
 proposed a fix for a private Maren objective overwritten by a new host-counter

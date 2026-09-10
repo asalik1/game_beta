@@ -494,6 +494,17 @@ func _geometry(view: String) -> Dictionary:
 			for other in visible_buttons:
 				_probe(view + "/utility_overlap/" + field + "/" + other.name, not button.get_global_rect().intersection(other.get_global_rect()).has_area())
 			visible_buttons.append(button)
+	var party_bounds := h.party_btn.get_global_rect()
+	var menu_bounds := h.settings_btn.get_global_rect()
+	_probe(view + "/party_menu_column", absf(party_bounds.get_center().x - menu_bounds.get_center().x) <= 0.5,
+		{"party": _rect(party_bounds), "menu": _rect(menu_bounds),
+			"center_offset": party_bounds.get_center().x - menu_bounds.get_center().x})
+	_probe(view + "/party_menu_vertical_gap", is_equal_approx(menu_bounds.position.y - party_bounds.end.y, 4.0),
+		{"gap": menu_bounds.position.y - party_bounds.end.y})
+	for field in ["stats_label", "gold_label", "cr_label", "res_label"]:
+		var label: Label = h.get(field)
+		_probe(view + "/party_text_clear/" + String(field), not party_bounds.intersects(label.get_global_rect()),
+			{"party": _rect(party_bounds), "text_target": _rect(label.get_global_rect()), "text": label.text})
 	_skills_badge(view)
 	if view in ["03_high_values", "04_negative_many_points"]:
 		_visible_exact_stat(view, "gold_label", str(game.local_player.gold))

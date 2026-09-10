@@ -110,3 +110,39 @@ Earlier failing probes, the first full run and the rejected faint comet
 revision are retained and excluded from acceptance. Desktop HUD after3
 preceded a QA-only conditional restoration guard; production HUD code is
 unchanged. The intermediate accelerated GIF is excluded from the final preview.
+
+## Team and Settings column — September 10 follow-up
+
+The Team shortcut now uses the same horizontal column calculation as the
+Settings gear beneath it. Its previous independent x300 anchor was eight
+pixels right of Settings at x292. Both buttons remain 44px square, with Team
+at y80 and Settings at y128, preserving the 4px gap. Their callbacks and
+online visibility behavior are unchanged.
+
+The existing default `shot.bat hud_dossier --timeout=300` now also measures
+the shared center line, vertical gap and clearance from identity/stat text
+targets. It still exercises all eight utility buttons through actual input,
+including Team opening the party panel and Settings opening Pause. The
+baseline records 521 checks: 512 passes, nine expected 8px alignment
+observations and zero unexpected failures; 22 full images cover its controlled states and
+actual menu/popover access. Geometry is measured even while Team is hidden;
+two baseline images show the live host's Team button. Three remote shells
+are synthetic layout fixtures, not peer-replication evidence.
+
+Final desktop and mobile each pass 557/557, zero failures/findings, with 22
+full images per project independently reviewed. Root reviewed three baseline
+images and six per final project: long identity, high values, both visible
+party states and actual Team/Settings access. All nine measured offsets are
+zero, the gap remains 4px and all 36 label target-clearance checks pass. The
+other seven utility and four label rectangles retain their baseline positions.
+Desktop uses real mouse input; mobile source uses ScreenTouch on the Windows
+Compatibility renderer, not physical-device execution. Both restore controlled
+state and record no persistent writes. High values are measured offline;
+there is no combined online/extreme-value frame or peer-replication claim.
+
+Desktop compile/quick/full (253/143/223), mobile import/compile/explicit strict
+quick (253/143), native compile (255) and all seven preflight categories pass.
+The existing mobile Party footer's malformed “tapSC” wording is recorded as
+a separate pre-existing follow-up; this coordinate correction does not alter
+copy. Exact sources, review scopes, artifacts and commit are recorded in
+`build/qa/session-sept10/party-column-checkpoint-validation.json`.
