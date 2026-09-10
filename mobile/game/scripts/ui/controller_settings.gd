@@ -5,10 +5,11 @@ extends RefCounted
 static func open(m: Menus) -> void:
 	var box := m._open("Controller", 940, 650, true)
 	m.current = "controller"
-	var status := m._lbl(box, "Press a button or tilt a stick to check your controller.", 14, UITheme.TEXT_MUTED)
+	var body := m._settings_body(box)
+	var status := m._lbl(body, "Press a button or tilt a stick to check your controller.", 14, UITheme.TEXT_MUTED)
 	var diagram := Control.new()
 	diagram.custom_minimum_size = Vector2(820, 238)
-	box.add_child(diagram)
+	body.add_child(diagram)
 	diagram.draw.connect(func() -> void: _draw(diagram, m.game))
 	var pulse := Timer.new()
 	pulse.wait_time = 0.1
@@ -24,7 +25,7 @@ static func open(m: Menus) -> void:
 		var key: String = spec[1]
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 16)
-		box.add_child(row)
+		body.add_child(row)
 		m._lbl(row, spec[0], 16).custom_minimum_size.x = 195
 		var slider := HSlider.new()
 		slider.name = key
@@ -40,15 +41,16 @@ static func open(m: Menus) -> void:
 			m.game.settings[key] = v
 			value.text = "%d%%" % roundi(v * 100)
 			m.game.save_settings())
-	m._btn(box, "Button labels: %s" % String(m.game.settings.pad_labels).capitalize(), func() -> void:
+	m._btn(body, "Button labels: %s" % String(m.game.settings.pad_labels).capitalize(), func() -> void:
 		var schemes := ["auto", "xbox", "playstation"]
 		m.game.settings.pad_labels = schemes[(schemes.find(m.game.settings.pad_labels) + 1) % schemes.size()]
 		m.game.save_settings()
 		open(m))
-	m._lbl(box, "In menus: left stick moves the cursor; D-pad snaps; hold Confirm to drag; right stick scrolls. Focus a text field and press %s for the on-screen keyboard." % m.game.gamepad.label("potion"), 14, UITheme.TEXT_MUTED)
-	m._lbl(box, "Right-stick flicks select a target in that direction. Release the stick before the next flick. Releasing the lock restores automatic targeting.", 14, UITheme.TEXT_MUTED)
+	m._lbl(body, "In menus: left stick moves the cursor; D-pad snaps; hold Confirm to drag; right stick scrolls. Focus a text field and press %s for the on-screen keyboard." % m.game.gamepad.label("potion"), 14, UITheme.TEXT_MUTED)
+	m._lbl(body, "Right-stick flicks select a target in that direction. Release the stick before the next flick. Releasing the lock restores automatic targeting.", 14, UITheme.TEXT_MUTED)
 	m._btn(box, "Back to settings", func() -> void: m.open_settings(m.settings_return))
 	m._hint(box, "ESC to return to settings")
+	m._settings_touch_targets(box)
 
 
 static func _draw(c: Control, g: Game) -> void:

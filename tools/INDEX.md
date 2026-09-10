@@ -87,6 +87,16 @@ APPDATA; add `--mobile --renderer=gl_compatibility` for mobile-source rendering.
 `--baseline` records known defects only; acceptance omits it. See
 `MENU_NAVIGATION.md` for the controlled-fixture scope and evidence.
 
+Settings layout QA: add `--settings-touch --desktop-comfort --timeout=180` to
+the same menu rig. It checks 68 content targets across desktop and touch
+Settings-family screens, captions, clipped bounds, slider-edge input, actual
+touch dragging, Back routes and last-row remap visibility. Nine full views
+cover panels and scroll positions. `--baseline` records expected old layout
+findings; strict acceptance omits it. The fixture sets/restores host touch
+emulation, loans a music value and restores settings/binds. Use isolated
+APPDATA; `--mobile --renderer=gl_compatibility` renders mobile source on Windows.
+See `SETTINGS_TOUCH.md` for baseline scope and the desktop Comfort correction.
+
 Screenshot verdicts: `tools/shot_verdict.ps1` checks both engine output streams,
 rejects script/shader/runtime errors even after `RIG DONE exit=0`, and requires a valid
 completion marker from modern ShotRig scenes. Legacy zero-exit rigs remain

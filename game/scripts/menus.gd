@@ -698,14 +698,15 @@ var settings_return := "pause"
 func open_settings(from := "pause") -> void:
 	listening_action = ""  # leaving Keybinds must end capture before the next key
 	settings_return = from
-	# Touch mode adds the joystick rows; on desktop the 520 px panel was 40 % empty.
-	var vbox := _open("Settings", 700, 610 if game.touch_mode else 490, true)
+	# Touch controls get a scrollable body; desktop keeps its compact layout.
+	var vbox := _open("Settings", 700, 660 if game.touch_mode else 490, true)
 	current = "settings"
+	var body := _settings_body(vbox)
 	for spec in [["Music volume", "music"], ["Sound effects", "sfx"]]:
 		var key: String = spec[1]
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 14)
-		vbox.add_child(row)
+		body.add_child(row)
 		var name_l := _lbl(row, spec[0], 15)
 		name_l.custom_minimum_size = Vector2(180, 0)
 		var slider := HSlider.new()
@@ -724,15 +725,15 @@ func open_settings(from := "pause") -> void:
 			pct.text = "%d%%" % int(v * 100)
 			if key == "sfx":
 				game.sfx("coin"))  # audible preview at the new level
-	_lbl(vbox, "Slide to 0 to mute. Changes save instantly.", 12, Color(0.55, 0.58, 0.66))
-	var fs_btn := _btn(vbox, "  Fullscreen: %s  " % ("ON" if game.settings["fullscreen"] else "OFF"),
+	_lbl(body, "Slide to 0 to mute. Changes save instantly.", 12, Color(0.55, 0.58, 0.66))
+	var fs_btn := _btn(body, "  Fullscreen: %s  " % ("ON" if game.settings["fullscreen"] else "OFF"),
 		func() -> void:
 			game.settings["fullscreen"] = not game.settings["fullscreen"]
 			game.apply_display_settings()
 			game.save_settings()
 			open_settings(settings_return), Color(0.9, 0.9, 0.95))
 	fs_btn.tooltip_text = "Borderless fullscreen on your current monitor."
-	var lang_btn := _btn(vbox, "  Language: %s  " % String(game.settings.get("lang", "en")).to_upper(),
+	var lang_btn := _btn(body, "  Language: %s  " % String(game.settings.get("lang", "en")).to_upper(),
 		func() -> void:
 			var langs := Loc.languages()
 			var i := langs.find(Loc.lang)
@@ -743,14 +744,14 @@ func open_settings(from := "pause") -> void:
 	lang_btn.tooltip_text = "Cycle UI language (localization foundation — most screens are English for now)."
 	# Desktop can preview the touch control scheme.
 	if not OS.has_feature("mobile"):
-		var tc_btn := _btn(vbox, "  Controls: %s  " % ("TOUCH" if game.settings.get("touch_controls", false) else "KEYBOARD"),
+		var tc_btn := _btn(body, "  Controls: %s  " % ("TOUCH" if game.settings.get("touch_controls", false) else "KEYBOARD"),
 			func() -> void:
 				game.set_touch_controls(not bool(game.settings.get("touch_controls", false)))
 				open_settings(settings_return), Color(0.9, 0.9, 0.95))
 		tc_btn.tooltip_text = "Touch: on-screen joystick + buttons + click-to-talk. Keyboard shortcuts always stay valid."
 	# Touch-only layout options.
 	if game.touch_mode:
-		var jl_btn := _btn(vbox, "  Joystick: %s  " % ("FIXED" if game.settings.get("joystick_locked", false) else "FLOATING"),
+		var jl_btn := _btn(body, "  Joystick: %s  " % ("FIXED" if game.settings.get("joystick_locked", false) else "FLOATING"),
 			func() -> void:
 				game.settings["joystick_locked"] = not bool(game.settings.get("joystick_locked", false))
 				game.save_settings()
@@ -758,7 +759,7 @@ func open_settings(from := "pause") -> void:
 		jl_btn.tooltip_text = "Floating: the stick springs to wherever your thumb lands. Fixed: it stays at one spot."
 		var sens_row := HBoxContainer.new()
 		sens_row.add_theme_constant_override("separation", 14)
-		vbox.add_child(sens_row)
+		body.add_child(sens_row)
 		var sens_name := _lbl(sens_row, "Joystick sensitivity", 15)
 		sens_name.custom_minimum_size = Vector2(180, 0)
 		var sens_slider := HSlider.new()
@@ -774,16 +775,55 @@ func open_settings(from := "pause") -> void:
 			game.settings["joystick_sensitivity"] = v
 			game.save_settings()
 			sens_val.text = "%.1f×" % v)
-		_lbl(vbox, "1.0× = drag to the edge for full speed; higher = full speed on a shorter drag. Drag the joystick in the button editor to move it.", 12, Color(0.55, 0.58, 0.66))
-		_btn(vbox, "  Customize buttons…  ", func() -> void: _open_layout_editor(), Color(0.8, 0.95, 0.85))
+		_lbl(body, "1.0× = drag to the edge for full speed; higher = full speed on a shorter drag. Drag the joystick in the button editor to move it.", 12, Color(0.55, 0.58, 0.66))
+		_btn(body, "  Customize buttons…  ", func() -> void: _open_layout_editor(), Color(0.8, 0.95, 0.85))
 	# Keyboard binding is irrelevant in touch mode.
 	if not game.touch_mode:
-		_btn(vbox, "  ⌨  " + Loc.t("keybinds") + "…", func() -> void: open_keybinds(), Color(0.9, 0.9, 0.95))
-	_btn(vbox, "Controller…", func() -> void: preload("res://scripts/ui/controller_settings.gd").open(self), Color(0.75, 0.92, 0.86))
-	_btn(vbox, "Combat & comfort…", func() -> void:
+		_btn(body, "  ⌨  " + Loc.t("keybinds") + "…", func() -> void: open_keybinds(), Color(0.9, 0.9, 0.95))
+	_btn(body, "Controller…", func() -> void: preload("res://scripts/ui/controller_settings.gd").open(self), Color(0.75, 0.92, 0.86))
+	_btn(body, "Combat & comfort…", func() -> void:
 		preload("res://scripts/ui/comfort.gd").open(self), Color(0.8, 0.9, 1.0))
 	_btn(vbox, "  Back  ", func() -> void: _settings_back(), Color(0.8, 0.85, 0.9))
 	_hint(vbox, "ESC to go back")
+	_settings_touch_targets(vbox)
+
+
+## Settings-family layouts share scrolling content and a pinned footer.
+## Keep this scoped to these screens; the shared shell X has its own sizing.
+func _settings_body(box: VBoxContainer, always_scroll := false) -> VBoxContainer:
+	if not game.touch_mode and not always_scroll:
+		return box
+	var scroll := ScrollContainer.new()
+	scroll.name = "SettingsContentScroll"
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	box.add_child(scroll)
+	var body := VBoxContainer.new()
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation", 10)
+	scroll.add_child(body)
+	return body
+
+
+func _settings_touch_targets(node: Node) -> void:
+	if not game.touch_mode:
+		return
+	if node is BaseButton or node is HSlider:
+		node.custom_minimum_size.x = maxf(node.custom_minimum_size.x, 44.0)
+		node.custom_minimum_size.y = maxf(node.custom_minimum_size.y, 44.0)
+	if node is HBoxContainer:
+		var slider_row := false
+		for child in node.get_children():
+			if child is HSlider:
+				slider_row = true
+		if slider_row:
+			for child in node.get_children():
+				if child is Label:
+					child.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	for child in node.get_children():
+		_settings_touch_targets(child)
 
 
 func _settings_back() -> void:
@@ -5616,6 +5656,7 @@ func open_keybinds() -> void:
 	kscroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	kscroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	kscroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	kscroll.follow_focus = game.touch_mode
 	vbox.add_child(kscroll)
 	var klist := VBoxContainer.new()
 	klist.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -5630,11 +5671,15 @@ func open_keybinds() -> void:
 		var rebind_cb := func() -> void:
 			listening_action = act
 			open_keybinds()
-		_btn(klist, text, rebind_cb, Color(1, 1, 0.6) if listening_action == act else Color(1, 1, 1))
+		var binding := _btn(klist, text, rebind_cb, Color(1, 1, 0.6) if listening_action == act else Color(1, 1, 1))
+		if game.touch_mode and listening_action == act:
+			binding.grab_focus()
+			kscroll.call_deferred("ensure_control_visible", binding)
 	_lbl(vbox, "Movement is always WASD / arrows.", 13, Color(0.6, 0.6, 0.6))
 	# The explicit Back leaves this screen even while a binding is being captured.
 	_btn(vbox, "  ← Back to settings  ", func() -> void: open_settings(settings_return), Color(0.8, 0.85, 0.9))
 	_hint(vbox)
+	_settings_touch_targets(vbox)
 
 
 # ------------------------------------------------------------------- input ---

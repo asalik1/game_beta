@@ -138,9 +138,31 @@ EXPLORATION_RELIABILITY.md and
 `build/qa/session-sept10/exploration-checkpoint-validation.json`.
 All 32 original and 14 unfinished journey hashes remain unchanged.
 
-Touch Settings, guest quest refresh, save feedback and material sibling artwork
-candidates remain separate under `build/qa/session-sept10/`. The ordinary brewing
-journey remains incomplete and uncommitted as described above.
+The seventh accepted checkpoint makes Settings-family touch targets 44px
+with scrolling bodies and pinned Back /
+exit hints. Desktop Settings, Controller and Keybind layouts stay compact;
+Comfort now also scrolls on desktop to contain its overflowing hint. The
+corrected baseline passes 223 checks with 38 expected findings and 0 failures.
+An added desktop Comfort baseline records exactly one hint overflow among 255
+checks. Final desktop after3 and mobile after1 each pass 255/255 with all nine
+full images per project reviewed by root and independently. The broader
+desktop menu regression passes 158/158; root reviewed all eight images.
+Desktop serial quick/full pass 143/223; mobile import/compile253/explicit
+strict quick143, native compile255 and all seven preflight categories pass.
+Native before1 lacks the Windows touch capability flag
+and remains rejected; after1 was stopped before images/report because root
+mistakenly launched it while quick1 still ran. Final serial gates supersede
+that overlap. The fixtures restore live settings, bindings and emulation;
+they do not establish physical-device, controller coexistence, disk persistence
+or ordinary gameplay results. All 32 original and 14 unfinished journey hashes
+remain unchanged. See SETTINGS_TOUCH.md and the exact commit/source receipt
+at `build/qa/session-sept10/settings-touch-checkpoint-validation.json`.
+
+Guest quest refresh, save feedback and material sibling artwork candidates
+remain separate under `build/qa/session-sept10/`. Source review identified and
+proposed a fix for a private Maren objective overwritten by a new host-counter
+fanout in the quest candidate; no party-quest code is installed. The ordinary
+brewing journey remains incomplete and uncommitted as described above.
 Two rejected checkerboard scrap generations are preserved separately in
 `build/qa/session-sept10/material-rejected/`. Protected art and chromas stay excluded.
 
