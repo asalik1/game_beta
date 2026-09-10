@@ -27,6 +27,10 @@ DEFAULT_OUTPUT = ROOT / "build/material_ui_icons"
 INSTALL_DIR = ROOT / "game/assets/icons/materials_ui"
 CANVAS = 128
 
+# Optional acceptance mode for the reviewed F family plus planned E/D pairs.
+F_PNG_SHA256 = {'herb_f_wilted_sprig': '002cde309b10aaa2bb371ea8b8fc33dd2b31f6b8d8b1984555c8809b5f2184e7', 'reagent_f_foul_residue': '616fe29b361901e9aa73fe5809ea2295e62d260a7541bbe7f5944273a5f9154c', 'metal_f_rusted_scrap': 'ef2d42a90dc14248726c771e4b4f4954ae251c20bf8028acd01184665eeaba31'}
+GRADE_PAIR_IDS = frozenset(F_PNG_SHA256) | frozenset(['herb_e_common_weed', 'reagent_e_crude_extract', 'herb_d_fresh_herb', 'reagent_d_clean_extract'])
+
 
 def digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -47,7 +51,7 @@ def candidate_directory(path: Path) -> Path:
     return path
 
 
-def build() -> list[dict]:
+def build(*, grade_pairs: bool = False) -> list[dict]:
     """Validate and render the whole approved manifest before writing anything."""
     contract = json.loads(PROVENANCE.read_text(encoding="utf-8"))["ui_export"]
     if contract["canvas"] != [CANVAS, CANVAS]:
@@ -55,6 +59,13 @@ def build() -> list[dict]:
     rows = contract["assets"]
     if not rows:
         raise ValueError("No approved material sources")
+    if grade_pairs:
+        ids = [row["id"] for row in rows]
+        if len(ids) != 7 or set(ids) != GRADE_PAIR_IDS:
+            raise ValueError("--grade-pairs requires exactly the three approved F and four approved E/D manifest rows; pending sources are not approval")
+        for row in rows:
+            if row["id"] in F_PNG_SHA256 and row["approved_png_sha256"] != F_PNG_SHA256[row["id"]]:
+                raise ValueError("The three accepted F PNG approvals must remain unchanged")
     built = []
     seen = set()
     for row in rows:
@@ -103,13 +114,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Candidate PNG/report directory")
     parser.add_argument("--install", action="store_true", help="Also install approved PNGs to game/assets/icons/materials_ui")
+    parser.add_argument("--grade-pairs", action="store_true", help="Require the approved three F plus four E/D sibling manifest; missing approvals fail before output")
     args = parser.parse_args()
     try:
         output = candidate_directory(args.output)
-        built = build()
+        built = build(grade_pairs=args.grade_pairs)
         filenames = [row["filename"] for row in built]
         validate_targets(output, filenames + ["export-report.json"])
         if args.install:
+            if args.grade_pairs and any(not row["approved_png_bytes_match"] for row in built):
+                raise ValueError("Grade-pair installation requires exact approved PNG bytes; keep the accepted F files byte-stable")
             # Unlike --output, the install destination cannot be selected or
             # redirected to the mobile mirror/source archive by a directory link.
             if INSTALL_DIR.resolve() != ROOT.resolve() / "game/assets/icons/materials_ui":

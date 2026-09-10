@@ -71,7 +71,10 @@ mail, merchant and world controls for the three painted F-grade pilots. It check
 full icon visibility, source/filter contracts, fallback identity and pickup size.
 Use isolated APPDATA; add `--mobile --renderer=gl_compatibility --touch` for
 mobile-source rendering. `--baseline` records expected presentation findings.
-These loaned/posed fixtures do not prove ordinary collection. See `MATERIAL_UI.md`.
+`--grade-pairs` adds four E/D herb/reagent siblings, the family inventory view
+and actual E/D Mana Potion previews: nine captures total, with strict identity,
+counts, browse economy and original F/world controls. These loaned/posed fixtures
+do not prove ordinary collection or brewing. See `MATERIAL_UI.md`.
 
 Ambient population QA: `shot.bat ambient_life --timeout=240` compares real compact
 and full rooms, seeded placement, ordinary combat geometry, threshold controls,
@@ -491,7 +494,7 @@ chill, chain timing, pause, touch interaction and two-peer ENet state/request fl
 | `tools/art/install_prop_anim.py` | (2026-08-17) Codex 4-frame prop sheet → `<name>_anim.png` for PROCEDURAL props with no static (fires, fountains, storm array, chainrig swing): shared-bbox align, BOTTOM-anchored square cells, posterize. Anim replaces the procedural look. |
 | `tools/art/build_terrain_art_fix.py` | `TERRAIN_ART_FIX_TASK.md` tier 1–3 masters → 20 palette-controlled desktop/mobile replacements plus six registered full-object `_anim` strips. |
 | `tools/art/build_material_icons.py` | generated crafting-material sources → 35 transparent 32x32 Metal/Cloth/Bone/Reagent/Herb icons plus a labelled QA contact sheet. |
-| `tools/art/build_material_ui_icons.py` | approved painted material RGBA masters → 128px UI candidates with source/decoded-pixel checks; full-canvas premultiplied resize, explicit desktop `--install`, no pixel cleanup or world-size change. Provenance: `art_src/materials_painted_2026-09-09/`. |
+| `tools/art/build_material_ui_icons.py` | approved painted material RGBA masters → 128px UI candidates with source/decoded-pixel checks; full-canvas premultiplied resize, explicit desktop `--install`; `--grade-pairs` requires the seven F/E/D rows and exact original F PNGs. No pixel cleanup or world-size change. Provenance: `art_src/materials_painted_2026-09-09/`. |
 | `tools/art/build_capital_monumental.py` | generated Crownfall Crown Spire + connected city arcade sources → production architecture and an integrated four-frame gate-fire strip. |
 | `tools/art/clean_sprite.py` | FLUX/Pollinations render → clean pixel sprite (normalize). |
 | `tools/art/polligen.py` / `tools/art/flux_draft.py` | free generation lanes (pollinations.ai textures/props / FLUX concept drafts — note: HF inference is dead, see memory/ART docs). |

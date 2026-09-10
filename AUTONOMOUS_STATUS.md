@@ -175,19 +175,35 @@ mobile Party “tapSC” footer is under separate source review. All32 original,
 14 journey and four paused material-QA hashes remain intact. See HUD_ALIGNMENT.md
 and `build/qa/session-sept10/party-column-checkpoint-validation.json`.
 
-Material sibling QA is installed but kept separate from that HUD fix. Its
-strict before1 baseline passes212 checks:196 pass,16 expected absent-art
-presentation findings, zero failures, nine full images reviewed by root and
-independently. Four inventory-filter findings extend the original12-count
-prediction because missing32px overrides keep inherited filtering. No new
-art has been generated. Four QA source/mirror hashes are preserved in
-`build/qa/session-sept10/material-followup-interruption-preservation.json`.
+The ninth accepted checkpoint adds painted E/D Alchemy ingredients: Common Weed,
+Crude Extract, Fresh Herb and Clean Extract. Four serial built-in ImageGen v1
+outputs preserve their actual legacy identities with native RGBA. Full-canvas
+premultiplied LANCZOS produces128px UI overrides; no crop, cleanup or keying.
+The originalF3 PNGs/manifest rows and all35 legacy world PNGs remain exact in both
+projects. All seven exports reproduce approved PNG and decoded-RGBA hashes.
+The baseline records212 checks,196 pass,16 expected missing-art findings and
+zero failures. Final desktop/mobile each pass212/212; root and an independent
+reviewer inspected all27 full native before/after images and light/dark scale
+proofs. Actual32px ingredient rows remain distinct beside64px finished bottles.
+Desktop uses8mouse clicks; mobile4mouse+4ScreenTouch. Controlled loans and posed
+pickups do not establish ordinary collection, brewing or physical-device behavior.
+Desktop quick/full143/223, both imports, compile253/255native, mobile strict143,
+scoped sync and all7preflight categories pass. All46 preserved unrelated/journey
+files remain intact. The four material QA files paused during the HUD fix now
+belong to this completed checkpoint. See MATERIAL_UI.md and
+`build/qa/session-sept10/material-followup-checkpoint-validation.json`.
 
-Guest quest refresh, save feedback and material sibling artwork candidates
-remain separate under `build/qa/session-sept10/`. Source review identified and
+Guest quest refresh, save feedback, Archer Tumble landing and menu-copy/prompt
+candidates remain separate under `build/qa/session-sept10/`. The art screenshots
+expose a pre-existing world fountain prompt retained behind translucent menus;
+its minimal shared-menu suppression proposal remains uninstalled. Source review identified and
 proposed a fix for a private Maren objective overwritten by a new host-counter
 fanout in the quest candidate; no party-quest code is installed. The ordinary
-brewing journey remains incomplete and uncommitted as described above.
+brewing journey remains incomplete and uncommitted as described above. Its new
+read-only fresh2 diagnosis identifies only4–5seconds of Fangmaw presence and a
+driver that ignores boss-specific tells and disables Blink; no balance nerf is
+justified. The minimal next diagnostic is defeat memory plus a short boss-input
+trace before a declared fuller-kit attempt.
 Two rejected checkerboard scrap generations are preserved separately in
 `build/qa/session-sept10/material-rejected/`. Protected art and chromas stay excluded.
 

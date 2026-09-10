@@ -4,6 +4,15 @@ extends RefCounted
 const NativeInput := preload("res://scripts/tests/menu_navigation_live.gd")
 const EncounterUI := preload("res://scripts/ui/encounter_status.gd")
 const PILOTS := ["herb", "reagent", "metal"]
+const AlchemyProof := preload("res://scripts/tests/alchemy_live.gd")
+const Alchemy := preload("res://scripts/alchemy.gd")
+const PAIR_GRADES := ["E", "D"]
+const PAIR_FAMILIES := ["herb", "reagent"]
+const F_APPROVED_PNG := {
+	"herb_f_wilted_sprig": "002cde309b10aaa2bb371ea8b8fc33dd2b31f6b8d8b1984555c8809b5f2184e7",
+	"reagent_f_foul_residue": "616fe29b361901e9aa73fe5809ea2295e62d260a7541bbe7f5944273a5f9154c",
+	"metal_f_rusted_scrap": "ef2d42a90dc14248726c771e4b4f4954ae251c20bf8028acd01184665eeaba31",
+}
 
 var r: ShotRig
 var g: Game
@@ -124,6 +133,114 @@ func _run() -> String:
 	_check("browse.no_economy_changes", _economy() == before, "no claim, sale, drop or brewing actions")
 	await _pickups()
 	_check("world.no_claim", _economy() == before, "posed factory pickups remain unclaimed")
+	if r.flag("grade-pairs"):
+		return await _grade_pairs()
+	return ""
+
+
+func _grade_pairs() -> String:
+	# This optional pass begins only after every original F-pilot/world check.
+	# Loan just four stacks, then restore on success and every early return.
+	var saved_materials: Array = p.materials.duplicate(true)
+	var memory_present := m.has_meta("alchemy_view")
+	var saved_memory: Dictionary = m.get_meta("alchemy_view", {}).duplicate(true)
+	var saved_emulation: bool = Input.emulate_mouse_from_touch
+	var source_before := _source_hashes()
+	var before := _economy()
+	Input.emulate_mouse_from_touch = true
+	var alchemy := AlchemyProof.new()
+	alchemy.r = r
+	alchemy.g = g
+	alchemy.m = m
+	alchemy.p = p
+	alchemy.native = native
+	var error: String = await _grade_pair_views(alchemy)
+	# Release current callbacks before restoring their inspected inventory/view.
+	m.close()
+	p.materials = saved_materials
+	if memory_present:
+		m.set_meta("alchemy_view", saved_memory)
+	elif m.has_meta("alchemy_view"):
+		m.remove_meta("alchemy_view")
+	Input.emulate_mouse_from_touch = saved_emulation
+	for row in alchemy.rows:
+		_check("grade_pairs." + String(row.id), bool(row.passed), row.actual)
+	_check("grade_pairs.loan_restored", _economy() == before, "four inspected stacks restored; no brew, purchase, claim or sale")
+	_check("grade_pairs.files_unchanged", _source_hashes() == source_before, "all35 legacy world PNGs and all seven UI file hashes unchanged during fixture")
+	return error
+
+
+func _grade_pair_views(alchemy: AlchemyProof) -> String:
+	r.step("optional E/D material pairs: exact F controls and loaned preview inventory")
+	for stem in F_APPROVED_PNG:
+		var path := "res://assets/icons/materials_ui/" + String(stem) + ".png"
+		if not _check("grade_pairs.accepted_F." + String(stem), FileAccess.file_exists(path)
+				and FileAccess.get_sha256(path) == F_APPROVED_PNG[stem], path):
+			return "accepted F pilot PNG changed or missing"
+	var pair_textures := {}
+	for grade in PAIR_GRADES:
+		for family in PAIR_FAMILIES:
+			var id := String(family) + "_" + String(grade)
+			var legacy: Texture2D = Art.material_icon(family, grade)
+			var icon: Texture2D = Art.material_ui_icon(family, grade)
+			if not _check("grade_pairs.legacy32." + id, legacy != null and legacy.get_size() == Vector2(32, 32), id):
+				return "legacy world texture changed size or is missing"
+			if not _check("grade_pairs.texture_available." + id, icon != null, id):
+				return "UI resolver returned no icon"
+			_check("grade_pairs.ui128." + id, icon.get_size() == Vector2(128, 128), str(icon.get_size()), true)
+			pair_textures[id] = icon
+			p.materials.append(Items.make_material(family, grade, 7))
+	var browse_before: Dictionary = alchemy._economy()
+	m.open_inventory("gear", "all")
+	await r.frames(4)
+	for grade in PAIR_GRADES:
+		for family in PAIR_FAMILIES:
+			var id := String(family) + "_" + String(grade)
+			_surface("grade_pairs.inventory." + id, m.root, pair_textures[id], true)
+	for family in PILOTS:
+		_surface("grade_pairs.inventory.F_" + String(family), m.root, textures[family], true)
+	_surface("grade_pairs.inventory.potion", m.root, Art.consumable_icon(potion), true, false)
+	await _capture("06_grade_pairs_inventory")
+	# Public Professions entry and actual bench/recipe/grade clicks; no trade lock
+	# or mastery loan is needed to inspect the art. Resource actions stay untouched.
+	m.open_professions()
+	await r.frames(3)
+	if not await alchemy._named("ProfessionsAlchemy", g.touch_mode):
+		return "actual Professions Alchemy entry unavailable"
+	if not await alchemy._named("AlchemyShape_mana_instant", g.touch_mode):
+		return "actual mana recipe row unavailable"
+	var capture_index := 7
+	for grade in PAIR_GRADES:
+		if not await alchemy._named("AlchemyGrade_" + String(grade), g.touch_mode):
+			return "actual grade selector unavailable"
+		var recipe: Dictionary = Alchemy.recipe("mana_instant", grade)
+		_check("grade_pairs.recipe." + String(grade), alchemy._view().get("shape") == "mana_instant"
+			and alchemy._view().get("grade") == grade and alchemy._text("AlchemyProductName") == String(recipe.item.name), alchemy._text("AlchemyProductName"))
+		for family in PAIR_FAMILIES:
+			var id := String(family) + "_" + String(grade)
+			var icon: Texture2D = pair_textures[id]
+			_surface("grade_pairs.alchemy." + id, m.root, icon, false)
+			var control := _texture_control(m.root, icon, false)
+			if _check("grade_pairs.alchemy.control." + id, control != null, id):
+				_check("grade_pairs.alchemy32." + id, _icon_rect(control, icon).size.is_equal_approx(Vector2(32, 32)), str(_icon_rect(control, icon)))
+				var label_text := "%s · %s grade" % [String(Items.MATERIALS[family][grade]), grade]
+				var found := false
+				for child in control.get_parent().get_children():
+					if child is Label and child.text == label_text:
+						found = child.get_visible_line_count() == child.get_line_count()
+				_check("grade_pairs.identity." + id, found, label_text)
+			var need := int(recipe.herbs) if family == "herb" else int(recipe.reagents)
+			_check("grade_pairs.count." + id, alchemy._text("AlchemyIngredient_" + String(family)).contains("Have 7 / Need %d" % need), alchemy._text("AlchemyIngredient_" + String(family)))
+		var bottle: Texture2D = Art.consumable_icon(recipe.item)
+		_surface("grade_pairs.alchemy.bottle_" + String(grade), m.root, bottle, false, false)
+		var product := _texture_control(m.root, bottle, false)
+		if _check("grade_pairs.alchemy.product." + String(grade), product != null, recipe.item.name):
+			_check("grade_pairs.alchemy64." + String(grade), _icon_rect(product, bottle).size.is_equal_approx(Vector2(64, 64)), str(_icon_rect(product, bottle)))
+		await alchemy._recipe_caption("mana_instant", grade)
+		alchemy._layout("material_pair_" + String(grade))
+		await alchemy._capture("%02d_grade_pair_%s_alchemy" % [capture_index, String(grade).to_lower()])
+		capture_index += 1
+	_check("grade_pairs.browse_no_economy_changes", alchemy._economy() == browse_before, "gold, mastery, materials, potions, blueprints, mail and favor unchanged")
 	return ""
 
 
@@ -292,9 +409,11 @@ func _check(id: String, ok: bool, actual: Variant, presentation := false) -> boo
 
 func _report() -> Dictionary:
 	var result := {"checks": rows.size(), "passed": 0, "findings": 0, "failures": 0, "rows": rows,
-		"geometry": geometry, "baseline": r.flag("baseline"), "mouse_clicks": native.mouse_clicks,
+		"geometry": geometry, "baseline": r.flag("baseline"), "grade_pairs": r.flag("grade-pairs"),
+		"mouse_clicks": native.mouse_clicks, "touch_taps": native.touch_taps,
 		"source_hashes": _source_hashes(),
-		"scope": "three F-grade UI pilots;32px world control; controlled fixtures; no real collection, crafting or persistence claim"}
+		"scope": ("three F pilots plus four E/D herb/reagent UI siblings and real Alchemy previews; " if r.flag("grade-pairs") else "three F-grade UI pilots; ")
+			+ "32px world control; controlled loans; no real collection, crafting, persistence or hardware claim"}
 	for row in rows:
 		if row.passed: result.passed += 1
 		elif row.presentation and r.flag("baseline"): result.findings += 1
@@ -315,7 +434,7 @@ func _source_hashes() -> Dictionary:
 			var stem := Items.material_stem(String(family), String(grade), String(Items.MATERIALS[family][grade]))
 			var path := "res://assets/icons/materials/" + stem + ".png"
 			result[path] = FileAccess.get_sha256(path)
-			if String(grade) == "F" and PILOTS.has(String(family)):
+			if (String(grade) == "F" and PILOTS.has(String(family))) or (r.flag("grade-pairs") and PAIR_GRADES.has(String(grade)) and PAIR_FAMILIES.has(String(family))):
 				var pilot := "res://assets/icons/materials_ui/" + stem + ".png"
 				result[pilot] = FileAccess.get_sha256(pilot) if FileAccess.file_exists(pilot) else "not_installed"
 	return result

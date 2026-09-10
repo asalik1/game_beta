@@ -1,6 +1,7 @@
 extends ShotRig
 ## Three-material pilot comparison, against the same 32px world baseline.
-## shot.bat material_ui --timeout=180 [--baseline] [--no-capture]
+## shot.bat material_ui --timeout=180 [--baseline] [--no-capture] [--grade-pairs]
+## Optional grade pairs add four E/D sibling checks and three native captures.
 
 
 func _ready() -> void:

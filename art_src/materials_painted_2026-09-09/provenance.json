@@ -1,5 +1,5 @@
 {
-  "batch": "three F-grade material UI pilots",
+  "batch": "Three F-grade material UI pilots plus E/D herb and reagent siblings",
   "assets": [
     {
       "id": "herb_f_wilted_sprig",
@@ -72,6 +72,172 @@
       "rgba_intermediate": "art_src/materials_painted_2026-09-09/alpha/metal_f_rusted_scrap_v3_keyed.png",
       "rgba_intermediate_sha256": "845d75ffbab6ff965f7cd093a67495f721570663df1785b702e1c560dffe5618",
       "key_record": "art_src/materials_painted_2026-09-09/key-record.json"
+    },
+    {
+      "id": "herb_e_common_weed",
+      "variant": "v1",
+      "tool": "built-in image_gen.imagegen",
+      "master": "art_src/materials_painted_2026-09-09/masters/herb_e_common_weed_v1.png",
+      "master_sha256": "a4deadcfd297b881f271ef903a7db1415acb45166ccf88708d0b77859f45d29c",
+      "prompt": "Use case: style-transfer. Asset: one Crownless inventory/Alchemy ingredient icon.\nRepaint only the subject of reference image1 as a smoothly hand-painted fantasy RPG item, matching the natural material volume, selective highlights, realistic edges and restrained light of reference image2 (the approved potion). Image1 supplies subject identity and palette ONLY; remove its pixel grid, thick black pixel contour, dithering and magenta key background completely. Image2 supplies painting/rendering style ONLY; do not copy its bottle shape, red liquid, ornament or cork into a herb.\nCommon Weed: a diagonal tied bunch of ordinary roadside weed. Preserve the narrow jagged/lobed olive-green leaves opening upward/right, the tallest central leaf, darker overlapping leaf planes, and pale ochre fibrous exposed roots extending lower-left. A simple tan twine binding with short loose tails wraps the stem bundle. The roots must remain visible and clearly different from cut herb stems. Simplify roots to a few readable branching strands. No flower, dew drop, soil clod, pot, aura or ornamental ribbon.\nComposition: one complete centered subject on a square transparent canvas, with comfortable padding on every side; the subject's longest extent approximately90% of canvas. Natural original diagonal orientation for herbs; upright vessel for reagents. Keep shapes distinct when displayed at32px. Muted natural midtones, subtle upper-left light, broad readable material planes, small intentional highlights. No scene, ground plane, cast shadow, frame, text, numbers, decorative backdrop, extra objects, cropping or cut-off tips. Use a genuinely transparent RGBA background including internal gaps. No checkerboard painting and no colored key background.\n",
+      "mode": "RGBA",
+      "canvas": [
+        1254,
+        1254
+      ],
+      "alpha0": 1120664,
+      "alpha255": 430,
+      "semi_alpha": 451422,
+      "opaque_red_pixels": 0,
+      "opaque_bright_green_pixels": 0,
+      "alpha_bbox": [
+        105,
+        19,
+        1226,
+        1226
+      ],
+      "status": "Approved full-canvas RGBA source and 128/64/32 export for native UI trial; in-game acceptance recorded in checkpoint validation",
+      "recorded_utc": "2026-09-10T02:09:18.235950+00:00",
+      "references": [
+        {
+          "path": "art_src/materials_2026-07-30/sources/herb_e_common_weed.png",
+          "role": "identity only; root inspected actual1254px original",
+          "sha256": "7a921b4ae78587c629458dd956d0ae0113897b28ab2bd271dd5aa74418759fde"
+        },
+        {
+          "path": "game/assets/icons/consumables/defective_health_potion.png",
+          "role": "approved painting style only; root inspected",
+          "sha256": "9d9cfd109699411a01606acffd60ff944233c1a792cba8b553efea88e843a240"
+        }
+      ],
+      "alpha_observation": "Red/bright green nonzero-alpha pixels maxalpha8/5; actual light/dark 128/64/32 proof has no visible fringe. No pixel cleanup; full authored canvas preserved.",
+      "original_tool_path": "C:\\Users\\asali\\.codex\\generated_images\\01a08739-ba84-7fa3-9f34-e3233d4166ce\\exec-6118650c-e1d3-4700-9da3-a17811184001.png",
+      "master_at_review": "build\\qa\\session-sept10\\material-followup-generated\\herb_e_common_weed_v1.png",
+      "reviewed_utc": "2026-09-10T02:26:34.275130+00:00"
+    },
+    {
+      "id": "herb_d_fresh_herb",
+      "variant": "v1",
+      "recorded_utc": "2026-09-10T02:16:20.766925+00:00",
+      "output_file_mtime_utc": "2026-09-10T02:15:43.055327+00:00",
+      "tool": "built-in image_gen.imagegen",
+      "master": "art_src/materials_painted_2026-09-09/masters/herb_d_fresh_herb_v1.png",
+      "master_sha256": "e2b6916d252db6d797840fa9959f378f2ed576891e94639365a05c03d441cf78",
+      "prompt": "Use case: style-transfer. Asset: one Crownless inventory/Alchemy ingredient icon.\nRepaint only the subject of reference image1 as a smoothly hand-painted fantasy RPG item, matching the natural material volume, selective highlights, realistic edges and restrained light of reference image2 (the approved potion). Image1 supplies subject identity and palette ONLY; remove its pixel grid, thick black pixel contour, dithering and magenta key background completely. Image2 supplies painting/rendering style ONLY; do not copy its bottle shape, red liquid, ornament or cork into a herb.\nFresh Herb: a fuller fan of broad pointed oval leaves on bundled stems, tan twine at lower-left, and short cleanly CUT stem ends. Preserve fresh yellow-green front leaves and cooler forest-green/teal overlapping back leaves, with a small natural dew glint on a central-right forward-facing leaf. Show well-separated leaf planes rather than a dense field of veins. No exposed roots. The dew drop is a tiny wet highlight, not a jewel. No flower, glow, ornamental ribbon, pot or soil.\nComposition: one complete centered subject on a square transparent canvas, with comfortable padding on every side; the subject's longest extent approximately90% of canvas. Natural original diagonal orientation for herbs; upright vessel for reagents. Keep shapes distinct when displayed at32px. Muted natural midtones, subtle upper-left light, broad readable material planes, small intentional highlights. No scene, ground plane, cast shadow, frame, text, numbers, decorative backdrop, extra objects, cropping or cut-off tips. Use a genuinely transparent RGBA background including internal gaps. No checkerboard painting and no colored key background.\n",
+      "references": [
+        {
+          "path": "art_src/materials_2026-07-30/sources/herb_d_fresh_herb.png",
+          "role": "identity only; root inspected actual1254px original",
+          "sha256": "6170dfab4807a063a13d4acb5e240ff4d1554cce44b0f114400cf74c1204af69"
+        },
+        {
+          "path": "game/assets/icons/consumables/defective_health_potion.png",
+          "role": "approved painting style only; root inspected",
+          "sha256": "9d9cfd109699411a01606acffd60ff944233c1a792cba8b553efea88e843a240"
+        }
+      ],
+      "mode": "RGBA",
+      "canvas": [
+        1254,
+        1254
+      ],
+      "alpha0": 894515,
+      "alpha255": 582,
+      "semi_alpha": 677419,
+      "alpha_bbox": [
+        33,
+        44,
+        1240,
+        1254
+      ],
+      "status": "Approved full-canvas RGBA source and 128/64/32 export for native UI trial; in-game acceptance recorded in checkpoint validation",
+      "tool_started_utc": "2026-09-10 02:14:32 UTC",
+      "tool_finished_utc": "2026-09-10 02:15:43 UTC",
+      "original_tool_path": "C:\\Users\\asali\\.codex\\generated_images\\01a08739-ba84-7fa3-9f34-e3233d4166ce\\exec-1c868e88-1972-4eb1-8ea8-6d47b3cdd0d7.png",
+      "master_at_review": "build\\qa\\session-sept10\\material-followup-generated\\herb_d_fresh_herb_v1.png",
+      "reviewed_utc": "2026-09-10T02:26:34.311546+00:00"
+    },
+    {
+      "id": "reagent_e_crude_extract",
+      "variant": "v1",
+      "recorded_utc": "2026-09-10T02:13:56.483711+00:00",
+      "output_file_mtime_utc": "2026-09-10T02:13:10.934616+00:00",
+      "tool": "built-in image_gen.imagegen",
+      "master": "art_src/materials_painted_2026-09-09/masters/reagent_e_crude_extract_v1.png",
+      "master_sha256": "8d032c09ae73df36060b83fe18c88033dddbd81f81e1bad802932de8dd191bd9",
+      "prompt": "Use case: style-transfer. Asset: one Crownless inventory/Alchemy ingredient icon.\nRepaint only the subject of reference image1 as a smoothly hand-painted fantasy RPG item, matching the natural material volume, selective highlights, realistic edges and restrained light of reference image2 (the approved potion). Image1 supplies subject identity and palette ONLY; remove its pixel grid, thick black pixel contour, dithering and magenta key background completely. Image2 supplies painting/rendering style ONLY; preserve this ingredient's own flask and stopper; do not copy the potion's vessel design, red liquid or ornament.\nCrude Extract: a squat rounded glass flask with a short neck, broad coarse dark-brown stopper, and rough tan tie around the collar. Preserve cloudy amber liquid in the lower body, an irregular pale scum band at its surface, a few visible dark sediment flecks and a heavier brown sediment layer near the rounded base. Smoky beige-gray glass has a restrained upper-left reflection. Keep it a humble raw ingredient. No paper tag, metal fitting, red liquid, magic swirl, glow, broken rim or crock.\nComposition: one complete centered subject on a square transparent canvas, with comfortable padding on every side; the subject's longest extent approximately90% of canvas. Natural original diagonal orientation for herbs; upright vessel for reagents. Keep shapes distinct when displayed at32px. Muted natural midtones, subtle upper-left light, broad readable material planes, small intentional highlights. No scene, ground plane, cast shadow, frame, text, numbers, decorative backdrop, extra objects, cropping or cut-off tips. Use a genuinely transparent RGBA background including internal gaps. No checkerboard painting and no colored key background.\n",
+      "references": [
+        {
+          "path": "art_src/materials_2026-07-30/sources/reagent_e_crude_extract.png",
+          "role": "identity only; root inspected actual1254px original",
+          "sha256": "663dd88faf0e1d0fd1d1c853a295815dc4a2fb999f9750a7542600c7b86f04ee"
+        },
+        {
+          "path": "game/assets/icons/consumables/defective_health_potion.png",
+          "role": "approved painting style only; root inspected",
+          "sha256": "9d9cfd109699411a01606acffd60ff944233c1a792cba8b553efea88e843a240"
+        }
+      ],
+      "mode": "RGBA",
+      "canvas": [
+        1254,
+        1254
+      ],
+      "alpha0": 987403,
+      "alpha255": 368,
+      "semi_alpha": 584745,
+      "alpha_bbox": [
+        0,
+        20,
+        1200,
+        1254
+      ],
+      "status": "Approved full-canvas RGBA source and 128/64/32 export for native UI trial; in-game acceptance recorded in checkpoint validation",
+      "original_tool_path": "C:\\Users\\asali\\.codex\\generated_images\\01a08739-ba84-7fa3-9f34-e3233d4166ce\\exec-d3f7c76a-5217-411d-b112-c778881d1b7d.png",
+      "master_at_review": "build\\qa\\session-sept10\\material-followup-generated\\reagent_e_crude_extract_v1.png",
+      "reviewed_utc": "2026-09-10T02:26:34.349438+00:00"
+    },
+    {
+      "id": "reagent_d_clean_extract",
+      "variant": "v1",
+      "recorded_utc": "2026-09-10T02:24:50.100448+00:00",
+      "output_file_mtime_utc": "2026-09-10T02:17:58.384006+00:00",
+      "tool": "built-in image_gen.imagegen",
+      "tool_started_utc": "2026-09-10 02:16:46 UTC",
+      "tool_finished_utc": "2026-09-10 02:17:58 UTC",
+      "master": "art_src/materials_painted_2026-09-09/masters/reagent_d_clean_extract_v1.png",
+      "master_sha256": "71cf4fba30311b6a6938373de4b908b0096705f9140983c8620ca2a5e90a9d36",
+      "prompt": "Use case: style-transfer. Asset: one Crownless inventory/Alchemy ingredient icon.\nRepaint only the subject of reference image1 as a smoothly hand-painted fantasy RPG item, matching the natural material volume, selective highlights, realistic edges and restrained light of reference image2 (the approved potion). Image1 supplies subject identity and palette ONLY; remove its pixel grid, thick black pixel contour, dithering and magenta key background completely. Image2 supplies painting/rendering style ONLY; preserve this ingredient's own flask and stopper; do not copy the potion's vessel design, red liquid or ornament.\nClean Extract: a plain rounded/bulbous clear glass flask, short narrow neck with a thick rolled glass rim and simple tan-brown cork. Preserve calm cyan/turquoise liquid with a clean oval surface and deep teal lower volume. Clear pale blue-gray glass with a few restrained soft white reflections and warm natural cork. Keep the vessel simple and visibly distinct from an ornate finished mana potion. No sediment, twine, paper tag, faceting, metal collar, swirling energy, bubbles filling the glass, aura or glow.\nComposition: one complete centered subject on a square transparent canvas, with comfortable padding on every side; the subject's longest extent approximately90% of canvas. Natural original diagonal orientation for herbs; upright vessel for reagents. Keep shapes distinct when displayed at32px. Muted natural midtones, subtle upper-left light, broad readable material planes, small intentional highlights. No scene, ground plane, cast shadow, frame, text, numbers, decorative backdrop, extra objects, cropping or cut-off tips. Use a genuinely transparent RGBA background including internal gaps. No checkerboard painting and no colored key background.\n",
+      "references": [
+        {
+          "path": "art_src/materials_2026-07-30/sources/reagent_d_clean_extract.png",
+          "role": "identity only; root inspected actual original",
+          "sha256": "d3eb150b2c84e7b0a3d08492fd7e57fb3e100d9b6f79ea456bb36f8d1ad26b45"
+        },
+        {
+          "path": "game/assets/icons/consumables/defective_health_potion.png",
+          "role": "approved painting style only; root inspected",
+          "sha256": "9d9cfd109699411a01606acffd60ff944233c1a792cba8b553efea88e843a240"
+        }
+      ],
+      "mode": "RGBA",
+      "canvas": [
+        1254,
+        1254
+      ],
+      "alpha0": 1000831,
+      "alpha255": 788,
+      "semi_alpha": 570897,
+      "alpha_bbox": [
+        49,
+        23,
+        1232,
+        1228
+      ],
+      "status": "Approved full-canvas RGBA source and 128/64/32 export for native UI trial; in-game acceptance recorded in checkpoint validation",
+      "original_tool_path": "C:\\Users\\asali\\.codex\\generated_images\\01a08739-ba84-7fa3-9f34-e3233d4166ce\\exec-01d9b8e7-ed3c-4c2a-b3a8-89f648753fbb.png",
+      "master_at_review": "build/qa/session-sept10/material-followup-generated/reagent_d_clean_extract_v1.png",
+      "reviewed_utc": "2026-09-10T02:26:34.368316+00:00"
     }
   ],
   "path_policy": "Project paths are repository-relative. Original tool paths are historical generation records, never exporter inputs.",
@@ -119,6 +285,50 @@
         ],
         "approved_png_sha256": "ef2d42a90dc14248726c771e4b4f4954ae251c20bf8028acd01184665eeaba31",
         "approved_rgba_sha256": "dbba48b85bec2f9d2d699f75e02a07bc3a9ec342281f392e17a5a09736468665"
+      },
+      {
+        "id": "herb_e_common_weed",
+        "rgba_source": "art_src/materials_painted_2026-09-09/masters/herb_e_common_weed_v1.png",
+        "rgba_source_sha256": "a4deadcfd297b881f271ef903a7db1415acb45166ccf88708d0b77859f45d29c",
+        "source_canvas": [
+          1254,
+          1254
+        ],
+        "approved_png_sha256": "b53be4ebf6967d3cd5956e82aa6dde9c341c75027ef8b26bfda1eaa570e62ebe",
+        "approved_rgba_sha256": "4ed065fdf5d0b8b99c9159a6b837cb66716c31b8deb8948dba6dad9a3ea6d1e6"
+      },
+      {
+        "id": "herb_d_fresh_herb",
+        "rgba_source": "art_src/materials_painted_2026-09-09/masters/herb_d_fresh_herb_v1.png",
+        "rgba_source_sha256": "e2b6916d252db6d797840fa9959f378f2ed576891e94639365a05c03d441cf78",
+        "source_canvas": [
+          1254,
+          1254
+        ],
+        "approved_png_sha256": "10f87dc1f86f9eee91b1b562b9b6a01cfd8fa0b654d833f75e50ddbf9a9acdbe",
+        "approved_rgba_sha256": "973a7ef61fd70518496df3f07ece57c5aec20fe1505a281144324e55bcc9c128"
+      },
+      {
+        "id": "reagent_e_crude_extract",
+        "rgba_source": "art_src/materials_painted_2026-09-09/masters/reagent_e_crude_extract_v1.png",
+        "rgba_source_sha256": "8d032c09ae73df36060b83fe18c88033dddbd81f81e1bad802932de8dd191bd9",
+        "source_canvas": [
+          1254,
+          1254
+        ],
+        "approved_png_sha256": "06b5fc7301307d2ecb7df18a21e1a99b9f62ce3558d2b61650d5d4d1595bb9a4",
+        "approved_rgba_sha256": "73c708cd01b01de8674a7a3dd36b8f4b059c2d7c640f4e9ac92f5e4b44ef07af"
+      },
+      {
+        "id": "reagent_d_clean_extract",
+        "rgba_source": "art_src/materials_painted_2026-09-09/masters/reagent_d_clean_extract_v1.png",
+        "rgba_source_sha256": "71cf4fba30311b6a6938373de4b908b0096705f9140983c8620ca2a5e90a9d36",
+        "source_canvas": [
+          1254,
+          1254
+        ],
+        "approved_png_sha256": "8947011c48a311a9f5fb600da47b587d3f9098aa149a8f919c322167d49e9446",
+        "approved_rgba_sha256": "b33d84259357c2cd87200ef299d391183250ff737ae95a2dc19aefcbfe4af7d0"
       }
     ]
   }

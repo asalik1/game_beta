@@ -1,6 +1,12 @@
-# Painted material UI pilot — September 9, 2026
+# Painted material UI — September 9–10, 2026
 
 Three F-grade materials were painted with the built-in ImageGen tool against each actual old material as a subject reference and `game/assets/icons/consumables/defective_health_potion.png` as the style reference. The old material masters were pixel art; increasing their resolution alone would not make them painterly. Names, grades and material identity are unchanged.
+
+Four E/D herb and reagent siblings extend the same family on September 10. Each
+uses its own inspected legacy identity reference and the same painted potion
+style reference. All four v1 outputs have native RGBA and use no keying or
+cleanup. Their complete original tool outputs, actual prompts, source/reference
+hashes and available call timestamps are recorded in `provenance.json`.
 
 ## Approved portable sources
 
@@ -11,6 +17,10 @@ All source canvases remain **1254×1254**. The exporter downsamples the full squ
 | F Wilted Sprig | `masters/herb_f_wilted_sprig_v1.png` | Native RGBA, no keying/despill |
 | F Foul Residue | `masters/reagent_f_foul_residue_v1.png` | Native RGBA, no keying/despill |
 | F Rusted Scrap | `alpha/metal_f_rusted_scrap_v3_keyed.png` | Approved full-canvas RGBA keyed from the magenta v3 master |
+| E Common Weed | `masters/herb_e_common_weed_v1.png` | Native RGBA; jagged leaves and exposed roots |
+| E Crude Extract | `masters/reagent_e_crude_extract_v1.png` | Native RGBA; cloudy amber with sediment and rough neck tie |
+| D Fresh Herb | `masters/herb_d_fresh_herb_v1.png` | Native RGBA; broad fresh leaves and clean cut stems |
+| D Clean Extract | `masters/reagent_d_clean_extract_v1.png` | Native RGBA; plain clear flask and turquoise liquid |
 
 `provenance.json` preserves exact prompts, reference identities/hashes, generation timestamps and raw master hashes. Its `ui_export` section is the portable source manifest, with approved source, encoded PNG and decoded RGBA SHA-256 values. Project paths are repository-relative. Historical `original_tool_path` values document where ImageGen first wrote each image; the exporter never reads those paths.
 
@@ -25,17 +35,23 @@ python tools/art/build_material_ui_icons.py
 python tools/art/build_material_ui_icons.py --output build/material_ui_review
 ```
 
-The default output is `build/material_ui_icons`. The tool writes three PNGs and `export-report.json`; it validates every source and every rebuilt RGBA result before writing output. Sources with unexpected content, dimensions or color mode fail instead of being silently normalized. It rejects candidate destinations under `game`, `mobile` or `art_src`.
+The default output is `build/material_ui_icons`. The tool writes seven PNGs and `export-report.json`; it validates every source and every rebuilt RGBA result before writing output. Sources with unexpected content, dimensions or color mode fail instead of being silently normalized. It rejects candidate destinations under `game`, `mobile` or `art_src`.
 
 Runtime installation is explicit:
 
 ```powershell
 python tools/art/build_material_ui_icons.py --install
+python tools/art/build_material_ui_icons.py --grade-pairs --install
 ```
 
 This additionally writes only the approved PNG filenames to `game/assets/icons/materials_ui`. It does not install `.import` files, modify GDScript, touch legacy `materials/`, or synchronize mobile. Root owns runtime installation, native acceptance and subsequent mobile synchronization.
 
 The approved exports were encoded with Pillow 12.3.0 / NumPy 2.5.1. A rebuild with those installed versions reproduced all three candidate PNGs byte-for-byte. The tool always requires decoded RGBA equality. If a future PNG encoder changes compression while preserving every RGBA byte, the report explicitly distinguishes that encoding-only difference.
+
+The seven-asset rebuild also reproduces exact PNG bytes. `--grade-pairs` requires
+exactly these seven approved IDs, pins the first three PNG approvals and rejects
+an install with changed encoded bytes. It changes no image-processing behavior.
+The first three manifest rows and runtime PNGs remain unchanged by this extension.
 
 ## Scrap alpha preparation provenance
 
