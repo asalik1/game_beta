@@ -1,0 +1,197 @@
+{
+  "id": "herb_c_verdant_herb",
+  "status": "approved for native UI trial",
+  "native_accepted": false,
+  "root_review": {
+    "utc": "2026-09-10T04:06:11Z",
+    "id": "herb_c_verdant_herb",
+    "version": 3,
+    "verdict": "Approved source and 128px candidate for a later native trial; runtime acceptance pending",
+    "root_reviewed": [
+      "legacy C identity master",
+      "approved D full painted master",
+      "generated v3 full magenta source",
+      "full_dark.png",
+      "full_light.png",
+      "family_dark.png",
+      "family_light.png"
+    ],
+    "notes": [
+      "Untied upright cut stalk and upward-V leaf pair retain the identity; no roots, binding or flower added.",
+      "Fine leaf shading is cohesive with the accepted botanical family and finished-potion reference.",
+      "At128/64/32px, branching C remains distinct from the diagonal dense D bundle and rooted E weed.",
+      "No visible magenta halo, clipping, backdrop or opaque gap in the reviewed composites.",
+      "No additional alpha cleanup, crop, edge contraction, feather, recolor or scale normalization requested."
+    ],
+    "candidate_dir": "build/qa/session-sept10/material-upper-generation/herb_c_v3_processed",
+    "source_sha256": "1bef628e3caf3e4b52a438396fc07b22c5ff2e99181fa4918aa94c777470580b",
+    "rgba_source_sha256": "cf296342cd81587ca08f4098becc7d6165c5a6b43eed09eababcf90986f19dce",
+    "png_sha256": "f309c9fa0e738430f65d58ad416c7cd859b274de9dca3eeebc42aef05d630509",
+    "independent_receipt": "build/qa/session-sept10/material-upper-independent-review/herb-c-v3-review.json",
+    "independent_receipt_sha256": "a4c5b46128dfcec70e5ea626529d2bbc27554ab80d1f6abfaf7b7eef998bdf7a",
+    "installed": false,
+    "native_accepted": false
+  },
+  "root_review_sha256": "51dea4ee0c7718887b3fbf4e1717848bedbe961f0e21fce6f94f6e6afdc86af5",
+  "independent_review": {
+    "reviewer": "/root/ui_audit",
+    "utc": "2026-09-10T04:05:10.568043+00:00",
+    "decision": "Suitable for a later native runtime trial; no final asset approval or installation claim.",
+    "accepted_runtime": false,
+    "identity": "A central green cut stem with broad pointed leaves, two tall upper leaves and alternating spreading lower leaves; no roots, tie or flower. The painted candidate preserves this legacy subject while replacing blocky black pixel edging with modeled green surfaces.",
+    "cohesion": "At128/64/32 on both light and dark proofs, C remains an upright broad-leaf spray and D a narrower diagonal tied harvest bundle. C has brighter fresh greens and more open side-to-side leaves; same selective highlights, volume and painterly treatment. Grade identity does not depend only on color.",
+    "edges": "No visible magenta fringe or clipped main foliage in full or scale proofs. Full master contains low-alpha perimeter dust (max23); alpha>=32 foliage remains inset and128export has zero outer-edge alpha. Thin dark green modeled contours are visible on light backgrounds, without the legacy black pixel outline.",
+    "findings": [],
+    "limits": [
+      "Processed proof review only; no generation, image processing, export/install, engine or canonical mutation by reviewer.",
+      "No claim that source has zero stray-alpha pixels; edge measurements are retained below.",
+      "Family proof labels and actual runtime source hashes bind F/E/D/potion references; native Alchemy/inventory acceptance remains pending."
+    ],
+    "metrics": {
+      "full_canvas_rgba.png": {
+        "mode": "RGBA",
+        "size": [
+          1254,
+          1254
+        ],
+        "alpha_bbox": [
+          0,
+          43,
+          1254,
+          1254
+        ],
+        "alpha_ge32_bbox": [
+          104,
+          44,
+          1165,
+          1198
+        ],
+        "alpha_edge_max": 23,
+        "nonzero_edge_samples": 4,
+        "partial_alpha_pixels": 13489,
+        "magenta_like_pixel_count_alpha_gt32": 0
+      },
+      "herb_c_verdant_herb.png": {
+        "mode": "RGBA",
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          8,
+          2,
+          121,
+          125
+        ],
+        "alpha_ge32_bbox": [
+          10,
+          4,
+          119,
+          123
+        ],
+        "alpha_edge_max": 0,
+        "nonzero_edge_samples": 0,
+        "partial_alpha_pixels": 2583,
+        "magenta_like_pixel_count_alpha_gt32": 0
+      }
+    },
+    "viewed_full_original_files": [
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/herb_c_v3_processed/full_canvas_rgba.png",
+        "sha256": "cf296342cd81587ca08f4098becc7d6165c5a6b43eed09eababcf90986f19dce"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/herb_c_v3_processed/full_dark.png",
+        "sha256": "6c9f21d59b60c1eaedbb47865b7f145aa91cf66212ae71cac1ee04cf4ca6a2cb"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/herb_c_v3_processed/full_light.png",
+        "sha256": "074b000c47f3e36ea05c0d156a9214be21e4da7690db2dc2eeaa5090a000e088"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/herb_c_v3_processed/family_dark.png",
+        "sha256": "771a4d16286c48be1ad766c2f6fd25106e3446e2d62b3e3753b5e36fd47ba7d0"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/herb_c_v3_processed/family_light.png",
+        "sha256": "ac4f0e00c4cdb6309601afd3eb3400f40a3bf818270986472db1cffab999e1f8"
+      },
+      {
+        "path": "art_src/materials_2026-07-30/sources/herb_c_verdant_herb.png",
+        "sha256": "f325974f0bfd603915243f037bd53fc6aa24ac04523d2ba6d2cd5d93e82754c5"
+      }
+    ],
+    "family_reference_sha256": {
+      "game/assets/icons/materials_ui/herb_f_wilted_sprig.png": "002cde309b10aaa2bb371ea8b8fc33dd2b31f6b8d8b1984555c8809b5f2184e7",
+      "game/assets/icons/materials_ui/herb_e_common_weed.png": "b53be4ebf6967d3cd5956e82aa6dde9c341c75027ef8b26bfda1eaa570e62ebe",
+      "game/assets/icons/materials_ui/herb_d_fresh_herb.png": "10f87dc1f86f9eee91b1b562b9b6a01cfd8fa0b654d833f75e50ddbf9a9acdbe",
+      "game/assets/icons/consumables/defective_health_potion.png": "9d9cfd109699411a01606acffd60ff944233c1a792cba8b553efea88e843a240"
+    },
+    "evidence_sha256": {
+      "build/qa/session-sept10/material-upper-generation/herb_c_v3_processed/processing.json": "645e41aa3640e1564a99d28e562c65df8a483ac982f43810b0d9d5ff803f3179",
+      "build/qa/session-sept10/material-upper-generation/herb_c_v3_processed/master.png": "1bef628e3caf3e4b52a438396fc07b22c5ff2e99181fa4918aa94c777470580b",
+      "build/qa/session-sept10/material-upper-generation/herb_c_v3_processed/herb_c_verdant_herb.png": "f309c9fa0e738430f65d58ad416c7cd859b274de9dca3eeebc42aef05d630509"
+    },
+    "engine_started": false,
+    "canonical_edits": false
+  },
+  "independent_review_sha256": "a4c5b46128dfcec70e5ea626529d2bbc27554ab80d1f6abfaf7b7eef998bdf7a",
+  "processing": {
+    "utc": "2026-09-10T04:02:24.119038+00:00",
+    "status": "processed candidate; no art approval or installation",
+    "source_sha256": "1bef628e3caf3e4b52a438396fc07b22c5ff2e99181fa4918aa94c777470580b",
+    "rgba_source_sha256": "cf296342cd81587ca08f4098becc7d6165c5a6b43eed09eababcf90986f19dce",
+    "png_sha256": "f309c9fa0e738430f65d58ad416c7cd859b274de9dca3eeebc42aef05d630509",
+    "rgba_pixel_sha256": "2d9dcea36404ca15f7f2872f41f43cff3d44da83741377e237e14098dac8f27a",
+    "source_canvas": [
+      1254,
+      1254
+    ],
+    "export_canvas": [
+      128,
+      128
+    ],
+    "key_helper": "C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py",
+    "key_helper_sha256": "fa2989807052b857bed08f7fee0caa2502b54c46afc0a6f28cd706c25f636630",
+    "key_arguments": {
+      "key": [
+        255,
+        0,
+        255
+      ],
+      "tolerance": 12,
+      "spill_cleanup": true,
+      "soft_matte": true,
+      "transparent_threshold": 12.0,
+      "opaque_threshold": 96.0
+    },
+    "edge_contract": 0,
+    "edge_feather": 0,
+    "resize_helper": "tools/art/build_gear_codex_icons.py:_resize_premultiplied",
+    "resize_helper_sha256": "53aa0e6d301efda45bf5e9bf2e627855c983e967644c8a8a17fc74af758e41dc",
+    "full_canvas": true,
+    "crop": false,
+    "alpha_counts": {
+      "zero": 889026,
+      "partial": 13489,
+      "opaque": 670001
+    },
+    "image_hashes": {
+      "family_dark.png": "771a4d16286c48be1ad766c2f6fd25106e3446e2d62b3e3753b5e36fd47ba7d0",
+      "family_light.png": "ac4f0e00c4cdb6309601afd3eb3400f40a3bf818270986472db1cffab999e1f8",
+      "full_canvas_rgba.png": "cf296342cd81587ca08f4098becc7d6165c5a6b43eed09eababcf90986f19dce",
+      "full_dark.png": "6c9f21d59b60c1eaedbb47865b7f145aa91cf66212ae71cac1ee04cf4ca6a2cb",
+      "full_light.png": "074b000c47f3e36ea05c0d156a9214be21e4da7690db2dc2eeaa5090a000e088",
+      "herb_c_verdant_herb.png": "f309c9fa0e738430f65d58ad416c7cd859b274de9dca3eeebc42aef05d630509",
+      "master.png": "1bef628e3caf3e4b52a438396fc07b22c5ff2e99181fa4918aa94c777470580b"
+    },
+    "reference_hashes": {
+      "game\\assets\\icons\\materials_ui\\herb_f_wilted_sprig.png": "002cde309b10aaa2bb371ea8b8fc33dd2b31f6b8d8b1984555c8809b5f2184e7",
+      "game\\assets\\icons\\materials_ui\\herb_e_common_weed.png": "b53be4ebf6967d3cd5956e82aa6dde9c341c75027ef8b26bfda1eaa570e62ebe",
+      "game\\assets\\icons\\materials_ui\\herb_d_fresh_herb.png": "10f87dc1f86f9eee91b1b562b9b6a01cfd8fa0b654d833f75e50ddbf9a9acdbe",
+      "game\\assets\\icons\\consumables\\defective_health_potion.png": "9d9cfd109699411a01606acffd60ff944233c1a792cba8b553efea88e843a240"
+    }
+  },
+  "generation_record": "art_src/materials_painted_2026-09-09/generation_records/herb_c_verdant_herb_v3.json",
+  "generation_record_sha256": "ac33b9151ecd231ff0bdb3d28d60213350ee9fe7ab54ed36a232a583033d9883"
+}

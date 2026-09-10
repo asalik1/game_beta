@@ -8,6 +8,12 @@ style reference. All four v1 outputs have native RGBA and use no keying or
 cleanup. Their complete original tool outputs, actual prompts, source/reference
 hashes and available call timestamps are recorded in `provenance.json`.
 
+Six C/B/A herb and reagent sources extend the family using each actual legacy
+identity and the approved full-size D master from the matching family as the
+painting reference. Root and an independent reviewer inspected every original
+and full light/dark composite, plus 128/64/32 proofs. Source/export approval
+permits a native UI trial; it does not itself establish in-game acceptance.
+
 ## Approved portable sources
 
 All source canvases remain **1254×1254**. The exporter downsamples the full square to **128×128 RGBA** with the existing `tools/art/build_gear_codex_icons.py:_resize_premultiplied` function. It does not crop by alpha bounds, normalize the silhouette, quantize, sharpen, brighten, add outlines or create a background. Sparse low-alpha master dust is retained in the source and does not control framing.
@@ -21,6 +27,12 @@ All source canvases remain **1254×1254**. The exporter downsamples the full squ
 | E Crude Extract | `masters/reagent_e_crude_extract_v1.png` | Native RGBA; cloudy amber with sediment and rough neck tie |
 | D Fresh Herb | `masters/herb_d_fresh_herb_v1.png` | Native RGBA; broad fresh leaves and clean cut stems |
 | D Clean Extract | `masters/reagent_d_clean_extract_v1.png` | Native RGBA; plain clear flask and turquoise liquid |
+| C Verdant Herb | `alpha/herb_c_verdant_herb_v3_keyed.png` | Full-canvas magenta extraction; upright untied stalk |
+| C Potent Essence | `masters/reagent_c_potent_essence_v1.png` | Native RGBA; narrow violet flask and crystal stopper |
+| B Rare Bloom | `alpha/herb_b_rare_bloom_v2_keyed.png` | Full-canvas magenta extraction; five blue petals and blue binding |
+| B Pure Essence | `masters/reagent_b_pure_essence_v1.png` | Native RGBA; tilted angular cyan vessel and silver diamond fitting |
+| A Pristine Bloom | `masters/herb_a_pristine_bloom_v1.png` | Native RGBA; ivory/mint bloom and authored gold center |
+| A Radiant Essence | `masters/reagent_a_radiant_essence_v1.png` | Native RGBA; diagonal amber vessel and contained droplet |
 
 `provenance.json` preserves exact prompts, reference identities/hashes, generation timestamps and raw master hashes. Its `ui_export` section is the portable source manifest, with approved source, encoded PNG and decoded RGBA SHA-256 values. Project paths are repository-relative. Historical `original_tool_path` values document where ImageGen first wrote each image; the exporter never reads those paths.
 
@@ -52,6 +64,42 @@ The seven-asset rebuild also reproduces exact PNG bytes. `--grade-pairs` require
 exactly these seven approved IDs, pins the first three PNG approvals and rejects
 an install with changed encoded bytes. It changes no image-processing behavior.
 The first three manifest rows and runtime PNGs remain unchanged by this extension.
+
+The optional `--all-brewing` mode selects thirteen assets from the unchanged
+seven-row `ui_export` and separate six-row `ui_export_upper_brewing` blocks.
+It requires actual archived RGBA sources, approved PNGs in `approved_exports/`
+and review records in `approvals/`. These are repository-relative dependencies;
+historical tool output paths and ignored QA paths inside the records are not
+needed to rebuild the pixels. `generation_records/` preserves the original
+generation metadata, and each combined approval record includes the exact
+processing arguments and both reviews.
+
+```powershell
+python tools/art/build_material_ui_icons.py --all-brewing --output build/material_all_brewing_review
+python tools/art/build_material_ui_icons.py --all-brewing --output build/material_all_brewing_install --install
+```
+
+Each all-brewing output directory must be fresh. The mode validates all thirteen
+before output; installation additionally requires exact approved PNG encodings.
+It leaves the existing seven files untouched, creates only absent approved
+upper files, and refuses an existing upper file with different bytes. It does
+not write mobile, import files, world icons or potion icons. Default and
+`--grade-pairs` keep their previous seven-asset behavior.
+
+The archive-local `.gitattributes` preserves the exact bytes of the new approval
+JSONs, generation records and C/B/A prompt files. Windows fresh checkout otherwise
+converts their LF endings to CRLF and invalidates recorded raw SHA-256 values.
+The four scoped rules cover these 18 new text records; older F/E/D text retains
+its existing Git policy. They do not change pixels or image processing.
+
+Four upper v1 masters retain native RGBA. Verdant Herb v1/v2 and Rare Bloom v1
+painted checkerboards and were rejected; their records remain under
+`build/qa/session-sept10/material-upper-generation/`, with original ImageGen
+files untouched. The accepted C v3 and B v2 used flat magenta followed by the
+same recorded helper/settings as scrap. No additional cleanup, edge contraction,
+feathering, crop or scale normalization was applied. Mostly near-opaque native
+body alpha and sparse low-alpha source dust are retained; all six approved
+128px borders are transparent and their light/dark proofs show no visible halo.
 
 ## Scrap alpha preparation provenance
 

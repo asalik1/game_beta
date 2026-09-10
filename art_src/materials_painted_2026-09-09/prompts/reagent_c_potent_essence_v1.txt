@@ -1,0 +1,11 @@
+Use case: style-transfer. Asset: one Crownless Alchemy/inventory ingredient icon — Potent Essence, grade C.
+
+Image 1 supplies the exact subject identity, silhouette, orientation, palette and existing ornament ONLY; ignore its pixel rendering, black contour and magenta backdrop. Image 2 is the full-resolution approved D-family painted master, used ONLY for soft modeled material volume, subtle brushwork, natural painted edges and selective upper-left highlights. Match that smooth painting quality, without copying its subject design. Use broad readable material planes instead of ink outlines, pixel steps or flat cartoon shading.
+
+One upright slender lavender/blue-gray glass flask with a long narrow connected neck and angular faceted lower bulb. Preserve the violet liquid, lilac oval meniscus and bright violet/pink front reflections. Keep the pointed purple crystal-like stopper seated in its dark silver flared collar, with the narrower band beneath. Retain the exact vertical proportions and angular pointed base. This is the already-bottled crafting essence shown in the legacy source. Keep its authored vessel and fittings; do not redesign it as a finished healing potion.
+
+Do not replace the crystal stopper with a cork, round the body into the D flask, turn the liquid cyan or red, detach the neck, or add twine, labels, ornaments, floating particles or an external aura.
+
+One complete centered icon on a square canvas, preserving the original orientation and proportions. Keep all tips inside with comfortable clear padding, with the longest subject extent about 85–90% of the canvas. Design a high-resolution master that stays recognizable at 128, 64 and 32 pixels; do not emulate a 32px pixel grid. No scene, floor, cast ground shadow, border, text, numbers, extra objects or decorative background.
+
+Output a true RGBA image with zero-alpha empty background and real transparent internal gaps. Do not paint a checkerboard, solid backdrop or simulated transparency. Preserve the complete authored canvas.

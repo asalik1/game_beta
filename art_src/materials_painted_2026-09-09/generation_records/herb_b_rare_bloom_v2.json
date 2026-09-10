@@ -1,0 +1,46 @@
+{
+  "id": "herb_b_rare_bloom",
+  "version": 2,
+  "status": "flat magenta source inspected; extraction review pending",
+  "source": "C:/Users/asali/.codex/generated_images/01a08739-ba84-7fa3-9f34-e3233d4166ce/exec-4aa22c45-e836-4b1c-ae1a-a83f499a598d.png",
+  "source_sha256": "6620886bc49991850662ebda633a0703c37e87b5a3f4e5917bb9b0430efd1646",
+  "source_mode": "RGB",
+  "source_canvas": [
+    1254,
+    1254
+  ],
+  "prompt": "Generate this icon on an EXACT FLAT SOLID MAGENTA (#FF00FF) background. Every empty area and internal gap must use that same uniform key color, with no gradient, checkerboard, scene, shadow, vignette or texture. This is a temporary technical backdrop for later separately reviewed extraction; it must not cast colored light or appear as a reflection inside the subject.\n\nUse case: style-transfer. Asset: one Crownless Alchemy/inventory ingredient icon — Rare Bloom, grade B.\n\nImage 1 supplies the exact subject identity, silhouette, orientation, palette and existing ornament ONLY; ignore its pixel rendering, black contour and magenta backdrop. Image 2 is the full-resolution approved D-family painted master, used ONLY for soft modeled material volume, subtle brushwork, natural painted edges and selective upper-left highlights. Match that smooth painting quality, without copying its subject design. Use broad readable material planes instead of ink outlines, pixel steps or flat cartoon shading.\n\nOne five-petaled cobalt/indigo blue flower, with pointed slightly curled petals around a bright blue center and pale radial stamens. Preserve the two olive-green leaves, short green stems, and small blue binding near the cut lower end. Keep the original upright flower-over-leaves silhouette and visible spaces beside the stems. This is a harvested botanical Alchemy ingredient.\n\nDo not turn the petals purple or white, add petals or a bouquet, replace the center with a gemstone, add roots, or borrow the style reference's dense leaf bundle, tan twine or dew drop.\n\nOne complete centered icon on a square canvas, preserving the original orientation and proportions. Keep all tips inside with comfortable clear padding, with the longest subject extent about 85–90% of the canvas. Design a high-resolution master that stays recognizable at 128, 64 and 32 pixels; do not emulate a 32px pixel grid. No scene, floor, cast ground shadow, border, text, numbers, extra objects or decorative background.\n\nKeep all magenta key color outside the subject. Preserve the complete square canvas and its flat key-colored padding.",
+  "prompt_file": "build/qa/session-sept10/material-upper-five-full-master-briefs/briefs/herb_b_rare_bloom-checkerboard-fallback.txt",
+  "prompt_sha256": "6f221cc1ce0721a7c3e57d12c343581d2fb29fe7d42b19cab366442c796dfa6d",
+  "references": [
+    {
+      "path": "art_src/materials_2026-07-30/sources/herb_b_rare_bloom.png",
+      "absolute_path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/art_src/materials_2026-07-30/sources/herb_b_rare_bloom.png",
+      "sha256": "c0097b0a33fa87dda61fa6d5a7a03f14a40d3b8ce2140b3c0b7ebce6ee6ad1bf",
+      "png_header_canvas": [
+        1254,
+        1254
+      ],
+      "png_header_color_type": 2,
+      "role": "Exact legacy subject identity only",
+      "visually_inspected_full_source": true
+    },
+    {
+      "path": "art_src/materials_painted_2026-09-09/masters/herb_d_fresh_herb_v1.png",
+      "absolute_path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/art_src/materials_painted_2026-09-09/masters/herb_d_fresh_herb_v1.png",
+      "sha256": "e2b6916d252db6d797840fa9959f378f2ed576891e94639365a05c03d441cf78",
+      "png_header_canvas": [
+        1254,
+        1254
+      ],
+      "png_header_color_type": 6,
+      "role": "Approved full-resolution D-family painting style only; no subject transfer",
+      "visually_inspected_full_source": true
+    }
+  ],
+  "start_utc": "2026-09-10 05:08:08 UTC",
+  "finished_utc": "2026-09-10 05:08:52 UTC",
+  "generator": "built-in image_gen.imagegen",
+  "installed": false,
+  "native_accepted": false
+}

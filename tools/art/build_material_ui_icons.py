@@ -3,6 +3,8 @@
 Default: build/material_ui_icons (candidates and a hash report).
 --output DIR selects another candidate directory. --install additionally writes
 only the approved PNGs to game/assets/icons/materials_ui. No mobile writes.
+--all-brewing additionally requires six real C/B/A approval records, fresh
+candidate output, and leaves every existing runtime PNG untouched.
 """
 from __future__ import annotations
 
@@ -51,12 +53,18 @@ def candidate_directory(path: Path) -> Path:
     return path
 
 
-def build(*, grade_pairs: bool = False) -> list[dict]:
+def build(*, grade_pairs: bool = False, all_brewing: bool = False) -> list[dict]:
     """Validate and render the whole approved manifest before writing anything."""
-    contract = json.loads(PROVENANCE.read_text(encoding="utf-8"))["ui_export"]
+    if grade_pairs and all_brewing:
+        raise ValueError("--grade-pairs and --all-brewing are separate selection modes")
+    provenance = json.loads(PROVENANCE.read_text(encoding="utf-8"))
+    contract = provenance["ui_export"]
     if contract["canvas"] != [CANVAS, CANVAS]:
         raise ValueError("Material UI export contract must remain 128 square")
     rows = contract["assets"]
+    if all_brewing:
+        from material_ui_approvals import select_all_brewing
+        rows = select_all_brewing(provenance, root=ROOT, source_root=SOURCE_ROOT)
     if not rows:
         raise ValueError("No approved material sources")
     if grade_pairs:
@@ -114,13 +122,26 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Candidate PNG/report directory")
     parser.add_argument("--install", action="store_true", help="Also install approved PNGs to game/assets/icons/materials_ui")
-    parser.add_argument("--grade-pairs", action="store_true", help="Require the approved three F plus four E/D sibling manifest; missing approvals fail before output")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--grade-pairs", action="store_true", help="Require the approved three F plus four E/D sibling manifest; missing approvals fail before output")
+    mode.add_argument("--all-brewing", action="store_true", help="Require unchanged seven plus six externally approved C/B/A records; fresh output and no runtime overwrites")
     args = parser.parse_args()
     try:
         output = candidate_directory(args.output)
-        built = build(grade_pairs=args.grade_pairs)
+        provenance_raw = PROVENANCE.read_bytes() if args.all_brewing else None
+        if args.all_brewing and (args.output.is_symlink() or output.exists()):
+            raise ValueError("--all-brewing requires a fresh candidate output directory")
+        built = build(grade_pairs=args.grade_pairs, all_brewing=args.all_brewing)
+        if args.all_brewing and PROVENANCE.read_bytes() != provenance_raw:
+            raise ValueError("Approval provenance changed during validation; no output written")
         filenames = [row["filename"] for row in built]
         validate_targets(output, filenames + ["export-report.json"])
+        install_rows = built
+        if args.all_brewing:
+            from material_ui_approvals import verify_existing_seven, new_install_rows
+            if INSTALL_DIR.resolve() != ROOT.resolve() / "game/assets/icons/materials_ui":
+                raise ValueError("Existing icons must resolve to game/assets/icons/materials_ui")
+            verify_existing_seven(INSTALL_DIR)
         if args.install:
             if args.grade_pairs and any(not row["approved_png_bytes_match"] for row in built):
                 raise ValueError("Grade-pair installation requires exact approved PNG bytes; keep the accepted F files byte-stable")
@@ -129,7 +150,9 @@ def main() -> None:
             if INSTALL_DIR.resolve() != ROOT.resolve() / "game/assets/icons/materials_ui":
                 raise ValueError("Install directory must resolve to game/assets/icons/materials_ui")
             validate_targets(INSTALL_DIR, filenames)
-        output.mkdir(parents=True, exist_ok=True)
+            if args.all_brewing:
+                install_rows = new_install_rows(INSTALL_DIR, built)
+        output.mkdir(parents=True, exist_ok=not args.all_brewing)
         for row in built:
             (output / row["filename"]).write_bytes(row["png"])
         report = dict(provenance=PROVENANCE.relative_to(ROOT).as_posix(),
@@ -138,17 +161,31 @@ def main() -> None:
                       resize_helper_sha256=digest((ROOT / "tools/art/build_gear_codex_icons.py").read_bytes()),
                       pillow=PIL.__version__, numpy=np.__version__,
                       assets=[{k: v for k, v in row.items() if k != "png"} for row in built])
+        if args.all_brewing:
+            approved = json.loads(provenance_raw)
+            report.update(mode="all-brewing", provenance_sha256=digest(provenance_raw),
+                          provenance_blocks={key: approved[key] for key in ("ui_export", "ui_export_upper_brewing")},
+                          selected_ids=[row["id"] for row in built],
+                          planned_new_install_ids=[row["id"] for row in install_rows] if args.install else [],
+                          existing_seven_untouched=True)
         (output / "export-report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         if args.install:
             INSTALL_DIR.mkdir(parents=True, exist_ok=True)
-            for row in built:
-                (INSTALL_DIR / row["filename"]).write_bytes(row["png"])
+            for row in install_rows:
+                path = INSTALL_DIR / row["filename"]
+                if args.all_brewing:
+                    # Preflight covered all targets. Exclusive creation also
+                    # prevents a later file from being overwritten in a race.
+                    with path.open("xb") as target:
+                        target.write(row["png"])
+                else:
+                    path.write_bytes(row["png"])
         encoding_changes = sum(not row["approved_png_bytes_match"] for row in built)
         print(f"Built {len(built)} approved 128px RGBA material icons in {output}")
         if encoding_changes:
             print(f"{encoding_changes} PNG encodings differ; decoded RGBA still matches approved pixels exactly")
         if args.install:
-            print(f"Installed {len(built)} PNGs in {INSTALL_DIR}; mobile synchronization is separate")
+            print(f"Installed {len(install_rows)} PNGs in {INSTALL_DIR}; mobile synchronization is separate")
     except (KeyError, OSError, TypeError, ValueError) as exc:
         parser.exit(1, f"Material icon export failed: {exc}\n")
 

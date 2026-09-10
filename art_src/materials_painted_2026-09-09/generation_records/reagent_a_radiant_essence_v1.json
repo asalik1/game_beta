@@ -1,0 +1,46 @@
+{
+  "id": "reagent_a_radiant_essence",
+  "version": 1,
+  "status": "source visually inspected; alpha and scale proof pending",
+  "source": "C:/Users/asali/.codex/generated_images/01a08739-ba84-7fa3-9f34-e3233d4166ce/exec-f674496f-bce1-49ba-85de-f0abdd0a168b.png",
+  "source_sha256": "b52398b6ff7549e87966974f74e590d47a690e9f7ca983876624155fc8e31b19",
+  "source_mode": "RGBA",
+  "source_canvas": [
+    1254,
+    1254
+  ],
+  "prompt": "Use case: style-transfer. Asset: one Crownless Alchemy/inventory ingredient icon — Radiant Essence, grade A.\n\nImage 1 supplies the exact subject identity, silhouette, orientation, palette and existing ornament ONLY; ignore its pixel rendering, black contour and magenta backdrop. Image 2 is the full-resolution approved D-family painted master, used ONLY for soft modeled material volume, subtle brushwork, natural painted edges and selective upper-left highlights. Match that smooth painting quality, without copying its subject design. Use broad readable material planes instead of ink outlines, pixel steps or flat cartoon shading.\n\nOne elongated amber/gold teardrop vessel tilted from lower left to upper right. Preserve its luminous amber fill and distinct outlined teardrop motif inside the body. Keep the brown neck, substantial gold collar and bands with the existing pointed trim, pointed amber-gold stopper, and small pointed gold base fitting. Retain the original diagonal silhouette and authored ornament placement. This is the already-bottled crafting essence shown in the legacy source. Keep its authored vessel and fittings; do not redesign it as a finished healing potion.\n\nDo not turn the internal droplet into an external flame, add rays or an aura, simplify to a plain round potion flask, or make a pendant, weapon, hanging chain or new ornate vessel.\n\nOne complete centered icon on a square canvas, preserving the original orientation and proportions. Keep all tips inside with comfortable clear padding, with the longest subject extent about 85–90% of the canvas. Design a high-resolution master that stays recognizable at 128, 64 and 32 pixels; do not emulate a 32px pixel grid. No scene, floor, cast ground shadow, border, text, numbers, extra objects or decorative background.\n\nOutput a true RGBA image with zero-alpha empty background and real transparent internal gaps. Do not paint a checkerboard, solid backdrop or simulated transparency. Preserve the complete authored canvas.",
+  "prompt_file": "build/qa/session-sept10/material-upper-five-full-master-briefs/briefs/reagent_a_radiant_essence-rgba.txt",
+  "prompt_sha256": "ec99d4c5f5a35d4fadce683b7fb34b6a63077b77fbfcdd82ac19c4884e9d12c5",
+  "references": [
+    {
+      "path": "art_src/materials_2026-07-30/sources/reagent_a_radiant_essence.png",
+      "absolute_path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/art_src/materials_2026-07-30/sources/reagent_a_radiant_essence.png",
+      "sha256": "9950c2c2356c03c7847bdc9a26695788171fded45181b91dffbe9860f8bc5af1",
+      "png_header_canvas": [
+        1254,
+        1254
+      ],
+      "png_header_color_type": 2,
+      "role": "Exact legacy subject identity only",
+      "visually_inspected_full_source": true
+    },
+    {
+      "path": "art_src/materials_painted_2026-09-09/masters/reagent_d_clean_extract_v1.png",
+      "absolute_path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/art_src/materials_painted_2026-09-09/masters/reagent_d_clean_extract_v1.png",
+      "sha256": "71cf4fba30311b6a6938373de4b908b0096705f9140983c8620ca2a5e90a9d36",
+      "png_header_canvas": [
+        1254,
+        1254
+      ],
+      "png_header_color_type": 6,
+      "role": "Approved full-resolution D-family painting style only; no subject transfer",
+      "visually_inspected_full_source": true
+    }
+  ],
+  "start_utc": "2026-09-10 05:15:47 UTC",
+  "finished_utc": "2026-09-10 05:17:12 UTC",
+  "generator": "built-in image_gen.imagegen",
+  "installed": false,
+  "native_accepted": false
+}

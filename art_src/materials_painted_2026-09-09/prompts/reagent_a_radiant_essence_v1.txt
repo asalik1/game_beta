@@ -1,0 +1,11 @@
+Use case: style-transfer. Asset: one Crownless Alchemy/inventory ingredient icon — Radiant Essence, grade A.
+
+Image 1 supplies the exact subject identity, silhouette, orientation, palette and existing ornament ONLY; ignore its pixel rendering, black contour and magenta backdrop. Image 2 is the full-resolution approved D-family painted master, used ONLY for soft modeled material volume, subtle brushwork, natural painted edges and selective upper-left highlights. Match that smooth painting quality, without copying its subject design. Use broad readable material planes instead of ink outlines, pixel steps or flat cartoon shading.
+
+One elongated amber/gold teardrop vessel tilted from lower left to upper right. Preserve its luminous amber fill and distinct outlined teardrop motif inside the body. Keep the brown neck, substantial gold collar and bands with the existing pointed trim, pointed amber-gold stopper, and small pointed gold base fitting. Retain the original diagonal silhouette and authored ornament placement. This is the already-bottled crafting essence shown in the legacy source. Keep its authored vessel and fittings; do not redesign it as a finished healing potion.
+
+Do not turn the internal droplet into an external flame, add rays or an aura, simplify to a plain round potion flask, or make a pendant, weapon, hanging chain or new ornate vessel.
+
+One complete centered icon on a square canvas, preserving the original orientation and proportions. Keep all tips inside with comfortable clear padding, with the longest subject extent about 85–90% of the canvas. Design a high-resolution master that stays recognizable at 128, 64 and 32 pixels; do not emulate a 32px pixel grid. No scene, floor, cast ground shadow, border, text, numbers, extra objects or decorative background.
+
+Output a true RGBA image with zero-alpha empty background and real transparent internal gaps. Do not paint a checkerboard, solid backdrop or simulated transparency. Preserve the complete authored canvas.

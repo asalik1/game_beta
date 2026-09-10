@@ -231,6 +231,34 @@ The first combined runner stopped at unrelated whole-tree mobile drift after
 passing desktop gates. Its failure remains recorded; a separate scoped mobile
 continuation preserves that earlier runtime evidence. See EXPLORATION_RELIABILITY.md.
 
+The twelfth accepted checkpoint completes the F–A herb/reagent family: 12 brewing
+ingredients plus F-grade Rusted Scrap, for 13 painted UI variants. The six C/B/A
+sources and 128px exports have root and independent source review. Their 32
+archived artifacts retain original prompts, generation and processing records;
+historical source-trial approvals are not rewritten as runtime acceptance.
+Default and grade-pair export selection remains seven assets; all-brewing
+selects 13. The existing 35 world PNGs and pickup sizing stay unchanged, with 22
+other material variants retaining fallback UI art.
+
+The material baseline records 588 checks, 564 passes, exactly 24 missing-art
+findings and no fixture failures. Desktop and mobile each pass all 588 checks;
+all 39 full native images have root and independent review. All 52 UI icon
+rectangles are fully visible, including 13 inventory identities and C/B/A Mana
+Potion ingredient previews. Controlled loans, browse economy, remembered views
+and touch state restore without transactions. Mobile uses four mouse and nine
+ScreenTouch actions on Windows Compatibility; no ordinary collection, brewing
+or physical-device claim is made.
+
+Both project imports/compile (255 native scripts), desktop quick/full (143/223),
+mobile strict quick (143), eight-path sync and all seven preflight categories
+pass. Closing runtime/source checks preserve 84 old material PNGs and all 46
+unrelated/unfinished files. Default/grade-pair/all-brewing export controls are
+exact at 7/7/13 assets. A reproduced Windows checkout issue is fixed with four
+archive-local Git rules preserving the 18 newly hashed source records. See
+MATERIAL_UI.md and
+`build/qa/session-sept10/material-all-brewing-finalizer-portability-candidate/results/`
+for exact source, image, checkout and commit receipts.
+
 Guest quest refresh and save feedback candidates remain
 separate under `build/qa/session-sept10/`. Source review identified and
 proposed a fix for a private Maren objective overwritten by a new host-counter
@@ -241,10 +269,8 @@ driver that ignores boss-specific tells and disables Blink; no balance nerf is
 justified. The minimal next diagnostic is defeat memory plus a short boss-input
 trace before a declared fuller-kit attempt. The bounded diagnostic and optional
 normal-input full-kit response to current Fangmaw cues have independent source
-review; both remain uninstalled. Five C/B/A Alchemy ingredient briefs now use
-the approved full-size D masters as style references. C Verdant Herb has a
-source and 128px candidate approved for a later native trial after two rejected
-checkerboard generations; no upper-grade ingredient art is installed yet.
+review; both remain uninstalled. The upper-grade material checkpoint is recorded
+above.
 Two rejected checkerboard scrap generations are preserved separately in
 `build/qa/session-sept10/material-rejected/`. Protected art and chromas stay excluded.
 

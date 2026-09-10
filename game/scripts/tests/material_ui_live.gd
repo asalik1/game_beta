@@ -8,6 +8,95 @@ const AlchemyProof := preload("res://scripts/tests/alchemy_live.gd")
 const Alchemy := preload("res://scripts/alchemy.gd")
 const PAIR_GRADES := ["E", "D"]
 const PAIR_FAMILIES := ["herb", "reagent"]
+const ALL_INVENTORY_GRADES := ["E", "D", "C", "B", "A"]
+const UPPER_GRADES := ["C", "B", "A"]
+# Preparation replaces this directive only after six real approvals validate.
+const ALL_APPROVED_PNG := {
+	"herb_f_wilted_sprig": "002cde309b10aaa2bb371ea8b8fc33dd2b31f6b8d8b1984555c8809b5f2184e7",
+	"reagent_f_foul_residue": "616fe29b361901e9aa73fe5809ea2295e62d260a7541bbe7f5944273a5f9154c",
+	"metal_f_rusted_scrap": "ef2d42a90dc14248726c771e4b4f4954ae251c20bf8028acd01184665eeaba31",
+	"herb_e_common_weed": "b53be4ebf6967d3cd5956e82aa6dde9c341c75027ef8b26bfda1eaa570e62ebe",
+	"herb_d_fresh_herb": "10f87dc1f86f9eee91b1b562b9b6a01cfd8fa0b654d833f75e50ddbf9a9acdbe",
+	"reagent_e_crude_extract": "06b5fc7301307d2ecb7df18a21e1a99b9f62ce3558d2b61650d5d4d1595bb9a4",
+	"reagent_d_clean_extract": "8947011c48a311a9f5fb600da47b587d3f9098aa149a8f919c322167d49e9446",
+	"herb_c_verdant_herb": "f309c9fa0e738430f65d58ad416c7cd859b274de9dca3eeebc42aef05d630509",
+	"reagent_c_potent_essence": "3912df756e18d0c0217809dc7b8522ad6d6277895cf0065d483f0401b361fcd1",
+	"herb_b_rare_bloom": "e308703cdf00b9c98bcea6bbbb1f2d8bda515352ac68648989b19be83d7430df",
+	"reagent_b_pure_essence": "5a08c056c7e724803c403ee29bef6ea6050e2e2e9670c62f4948aaee943fee01",
+	"herb_a_pristine_bloom": "70b54a60718ec5e5a9d4cb5155f0fefe1554a6a8de3a9afede4d97b5e0be26cc",
+	"reagent_a_radiant_essence": "7fbf3157d728fa37fe87a01dad2ce068a8674a62fa8ad5b1f5fb17b815723722"
+}
+const ALL_UPPER_IDS := ["herb_c_verdant_herb", "reagent_c_potent_essence", "herb_b_rare_bloom", "reagent_b_pure_essence", "herb_a_pristine_bloom", "reagent_a_radiant_essence"]
+const ALL_WORLD_PNG := {
+	"res://assets/icons/materials/bone_a_saintbone.png": "c5ab175ac72cdc6cb007254ae487ddc79e9c6d5ec8281447dd4c43d575202270",
+	"res://assets/icons/materials/bone_b_blessed_relic.png": "e765b244902b048849a7357e4a2a84f141f97345da8ccdb79e542951eb6ecd3b",
+	"res://assets/icons/materials/bone_c_runed_bone.png": "ffe1bc045406268841835893f399d64e6348c05c706cb69c604d38251e572b47",
+	"res://assets/icons/materials/bone_d_whole_bone.png": "aa03cd8cdd2fb99ab179b4ef4fa795414187fdfb64eefca1f8cb18a703642f37",
+	"res://assets/icons/materials/bone_e_bleached_bone.png": "27d4a336f473c74b703b5fdb71d971318787fd7e03f2e0529175d62f5b197430",
+	"res://assets/icons/materials/bone_f_cracked_bone.png": "ef29ec3689021d682ab52ebd12de906238bd4c94902511e67b7d64533d16293d",
+	"res://assets/icons/materials/bone_s_concordium_relic.png": "022d8298dfe3f5a0f1ffa5ac826cc27722d35359b5a846d77c2010dfb26434b0",
+	"res://assets/icons/materials/cloth_a_gilded_weave.png": "9c640d6c3f97a28fa5a379c2184ffc041ec97a9b5e8db079eb894ca75c661ee1",
+	"res://assets/icons/materials/cloth_b_fine_silk.png": "ea519dadd8e75522637e7cb268f1eade6abefc0f603ed8828981bd3d1c7da660",
+	"res://assets/icons/materials/cloth_c_tanned_weave.png": "97618396513c7a6cd2371f7975db51f50184d50d7ccfe16ae2da09d4f13e1382",
+	"res://assets/icons/materials/cloth_d_plain_bolt.png": "bf148755ab7c9803c4eb12246dc4b8db38be8e9f0bb6a2d99ef6e51b7d78a451",
+	"res://assets/icons/materials/cloth_e_coarse_cloth.png": "28be9032911344b6f240209c96cd8a77043b87273ec9c6efa50ce59c98bc008b",
+	"res://assets/icons/materials/cloth_f_frayed_scraps.png": "c387bf1cec13c64b01cdae55cf5644332503f955f1f72d60b1115e0695b634ad",
+	"res://assets/icons/materials/cloth_s_moonweave.png": "d20adfc31fd05c3a6f627c2f72da11f96822079553d1ed7fedd9fd12bba1361f",
+	"res://assets/icons/materials/herb_a_pristine_bloom.png": "6f55fe7419912aa788904e9519e461fb0fb6949039162b5b6d93695712e73888",
+	"res://assets/icons/materials/herb_b_rare_bloom.png": "e3ce55a7064c41685e4ea6df7f7d7bc235d622b0da78b1f9ed8f266de27f8a18",
+	"res://assets/icons/materials/herb_c_verdant_herb.png": "ee22d5d3ad241cd6384618ec89c9327fd2e614d109b526ce35e258afbb94dbcc",
+	"res://assets/icons/materials/herb_d_fresh_herb.png": "401bc06f45c519dd25eec36b4687a278ec2dd57d42903c3e006ae13bd1113e44",
+	"res://assets/icons/materials/herb_e_common_weed.png": "f0ab23216e0d3984f2322e302cc02a4361df890f76bb1c09c1937665dca0500d",
+	"res://assets/icons/materials/herb_f_wilted_sprig.png": "0012cb7b74050be0079b831abe2c9e0b7bba92993a64be5b7ef409558d94c43c",
+	"res://assets/icons/materials/herb_s_sunpetal.png": "743b4f82943c4c0c5ef796670dcec14dda06b8b7ee13a0624832829afc654dad",
+	"res://assets/icons/materials/metal_a_mastercrafted_alloy.png": "7ae75b167fb5c062e13e61d5a47dafa77261b1dfbde4239bdb1beccbe46835c5",
+	"res://assets/icons/materials/metal_b_fine_steel.png": "a462d8d9210cbcd78e247ba02d63308dc2a9db82e324c884d88056c4b6b99ad3",
+	"res://assets/icons/materials/metal_c_tempered_steel.png": "6e2b77f5cab62c3592349e69900c7cca8b4afc1b549a1195034a52b1545867d8",
+	"res://assets/icons/materials/metal_d_plain_ingot.png": "1c0bdf0f38f7a80c933840defbc76fa161a71466982daea8477231acc0a09534",
+	"res://assets/icons/materials/metal_e_pitted_iron.png": "276c14fcc5ad0907f6bf394214ba893f509b2ec65423820f2f2c984bcbcafea6",
+	"res://assets/icons/materials/metal_f_rusted_scrap.png": "e2c719a5de524494931b52e8f0c9d5548d1b19b4235bf2269c325b16f42c3db0",
+	"res://assets/icons/materials/metal_s_starforged_ingot.png": "dd08a73c04d5bc04a1f84b04467de8e336e501a5edd090371bca862f17c98931",
+	"res://assets/icons/materials/reagent_a_radiant_essence.png": "2ddebd1b798d67f662b15d19fa640648d65d9b228c628fd8d32bb7744a9687d5",
+	"res://assets/icons/materials/reagent_b_pure_essence.png": "af888a4a6ad1ccbe9c4c1c3f575cd2c5ffdb14537440c1e1754fbf474fea57e0",
+	"res://assets/icons/materials/reagent_c_potent_essence.png": "c5eebb4d7e15fb1a8f989071f3fa98360c2d5bb63580c3b1e2fb3cb3142370c8",
+	"res://assets/icons/materials/reagent_d_clean_extract.png": "8495b2270de257ae8ab6b577b83d0455c9fa8974a24c01ff1179b2a09651c32d",
+	"res://assets/icons/materials/reagent_e_crude_extract.png": "df13358abfdd58cf17a1161da87737deb65abcbc15e1e08f86d4dec0f08b6099",
+	"res://assets/icons/materials/reagent_f_foul_residue.png": "02d2ddfa71a9d8f7a9d00143814c06ca10d27987a83309aa8cd3721b8bb2a076",
+	"res://assets/icons/materials/reagent_s_quintessence.png": "02a7e9c2165c5cb0305d7c85798a9489c37a419f6310ef3d564bba3b3a4d0952"
+}
+const ALL_BASELINE_PRESENTATION := {
+	"all_brewing.ui128.herb_C": "herb_c_verdant_herb",
+	"all_brewing.inventory.herb_C.high_resolution": "herb_c_verdant_herb",
+	"all_brewing.inventory.herb_C.linear_downsampling": "herb_c_verdant_herb",
+	"all_brewing.alchemy.herb_C.high_resolution": "herb_c_verdant_herb",
+	"all_brewing.alchemy.herb_C.linear_downsampling": "herb_c_verdant_herb",
+	"all_brewing.ui128.reagent_C": "reagent_c_potent_essence",
+	"all_brewing.inventory.reagent_C.high_resolution": "reagent_c_potent_essence",
+	"all_brewing.inventory.reagent_C.linear_downsampling": "reagent_c_potent_essence",
+	"all_brewing.alchemy.reagent_C.high_resolution": "reagent_c_potent_essence",
+	"all_brewing.alchemy.reagent_C.linear_downsampling": "reagent_c_potent_essence",
+	"all_brewing.ui128.herb_B": "herb_b_rare_bloom",
+	"all_brewing.inventory.herb_B.high_resolution": "herb_b_rare_bloom",
+	"all_brewing.inventory.herb_B.linear_downsampling": "herb_b_rare_bloom",
+	"all_brewing.alchemy.herb_B.high_resolution": "herb_b_rare_bloom",
+	"all_brewing.alchemy.herb_B.linear_downsampling": "herb_b_rare_bloom",
+	"all_brewing.ui128.reagent_B": "reagent_b_pure_essence",
+	"all_brewing.inventory.reagent_B.high_resolution": "reagent_b_pure_essence",
+	"all_brewing.inventory.reagent_B.linear_downsampling": "reagent_b_pure_essence",
+	"all_brewing.alchemy.reagent_B.high_resolution": "reagent_b_pure_essence",
+	"all_brewing.alchemy.reagent_B.linear_downsampling": "reagent_b_pure_essence",
+	"all_brewing.ui128.herb_A": "herb_a_pristine_bloom",
+	"all_brewing.inventory.herb_A.high_resolution": "herb_a_pristine_bloom",
+	"all_brewing.inventory.herb_A.linear_downsampling": "herb_a_pristine_bloom",
+	"all_brewing.alchemy.herb_A.high_resolution": "herb_a_pristine_bloom",
+	"all_brewing.alchemy.herb_A.linear_downsampling": "herb_a_pristine_bloom",
+	"all_brewing.ui128.reagent_A": "reagent_a_radiant_essence",
+	"all_brewing.inventory.reagent_A.high_resolution": "reagent_a_radiant_essence",
+	"all_brewing.inventory.reagent_A.linear_downsampling": "reagent_a_radiant_essence",
+	"all_brewing.alchemy.reagent_A.high_resolution": "reagent_a_radiant_essence",
+	"all_brewing.alchemy.reagent_A.linear_downsampling": "reagent_a_radiant_essence"
+}
+const ALL_APPROVAL_CONTRACT_SHA256 := "ad86a32d398edc5244b507b042473bea92606fca6b61fe0f16f94a14ea812d94"
 const F_APPROVED_PNG := {
 	"herb_f_wilted_sprig": "002cde309b10aaa2bb371ea8b8fc33dd2b31f6b8d8b1984555c8809b5f2184e7",
 	"reagent_f_foul_residue": "616fe29b361901e9aa73fe5809ea2295e62d260a7541bbe7f5944273a5f9154c",
@@ -23,6 +112,10 @@ var rows: Array[Dictionary] = []
 var geometry: Array[Dictionary] = []
 var textures := {}
 var potion: Dictionary
+var all_sources_before := {}
+var missing_upper := {}
+var extra_captures: Array[String] = []
+var all_matrix: Array[Dictionary] = []
 
 
 static func run(rig: ShotRig) -> Dictionary:
@@ -56,6 +149,15 @@ static func run(rig: ShotRig) -> Dictionary:
 
 
 func _run() -> String:
+	if r.flag("all-brewing") and not _check("mode.exclusive", not r.flag("grade-pairs"), "choose one optional ingredient mode"):
+		return "--all-brewing and --grade-pairs are mutually exclusive"
+	if r.flag("all-brewing"):
+		var approval_error: String = _all_approval_check("before")
+		if approval_error != "":
+			return approval_error
+		all_sources_before = _source_hashes()
+		if not _check("all_brewing.source_map48", all_sources_before.size() == 48, all_sources_before.size()):
+			return "material source map must contain35 world and13 approved UI entries"
 	if not _check("fixture.no_saves_capital", g.no_saves and not g.net_online() and g.chapter_id == "capital", g.chapter_id):
 		return "requires isolated native Crownfall fixture"
 	g.play_started = true
@@ -137,12 +239,18 @@ func _run() -> String:
 	_check("browse.no_economy_changes", _economy() == before, "no claim, sale, drop or brewing actions")
 	await _pickups()
 	_check("world.no_claim", _economy() == before, "posed factory pickups remain unclaimed")
+	if r.flag("all-brewing"):
+		var pair_error: String = await _grade_pairs()
+		if pair_error != "":
+			return pair_error
+		return await _grade_pairs(ALL_INVENTORY_GRADES, UPPER_GRADES, "all_brewing", 9)
 	if r.flag("grade-pairs"):
 		return await _grade_pairs()
 	return ""
 
 
-func _grade_pairs() -> String:
+func _grade_pairs(inventory_grades: Array = PAIR_GRADES, preview_grades: Array = PAIR_GRADES,
+		prefix := "grade_pairs", first_capture := 6) -> String:
 	# This optional pass begins only after every original F-pilot/world check.
 	# Loan just four stacks, then restore on success and every early return.
 	var saved_materials: Array = p.materials.duplicate(true)
@@ -158,7 +266,8 @@ func _grade_pairs() -> String:
 	alchemy.m = m
 	alchemy.p = p
 	alchemy.native = native
-	var error: String = await _grade_pair_views(alchemy)
+	var full_before: Dictionary = _full_browse_economy(alchemy) if r.flag("all-brewing") else {}
+	var error: String = await _grade_pair_views(alchemy, inventory_grades, preview_grades, prefix, first_capture)
 	# Release current callbacks before restoring their inspected inventory/view.
 	m.close()
 	p.materials = saved_materials
@@ -168,43 +277,55 @@ func _grade_pairs() -> String:
 		m.remove_meta("alchemy_view")
 	Input.emulate_mouse_from_touch = saved_emulation
 	for row in alchemy.rows:
-		_check("grade_pairs." + String(row.id), bool(row.passed), row.actual)
-	_check("grade_pairs.loan_restored", _economy() == before, "four inspected stacks restored; no brew, purchase, claim or sale")
-	_check("grade_pairs.files_unchanged", _source_hashes() == source_before, "all35 legacy world PNGs and all seven UI file hashes unchanged during fixture")
+		_check(prefix + "." + String(row.id), bool(row.passed), row.actual)
+	_check(prefix + ".loan_restored", _economy() == before, ("four inspected stacks restored; no brew, purchase, claim or sale" if prefix == "grade_pairs" else "ten inspected stacks restored; no brew, purchase, claim or sale"))
+	_check(prefix + ".files_unchanged", _source_hashes() == source_before, ("all35 legacy world PNGs and all seven UI file hashes unchanged during fixture" if not r.flag("all-brewing") else "all35 world and all13 UI file map entries unchanged"))
+	if r.flag("all-brewing"):
+		_check(prefix + ".full_loan_restored", _full_browse_economy(alchemy) == full_before,
+			"full Alchemy economy, active profession and carried gear restored; no transaction")
+		_check(prefix + ".view_restored", m.has_meta("alchemy_view") == memory_present
+			and (not memory_present or m.get_meta("alchemy_view") == saved_memory), saved_memory)
+		_check(prefix + ".touch_restored", Input.emulate_mouse_from_touch == saved_emulation, saved_emulation)
+		_check(prefix + ".shell_closed", not m.is_open(), m.current)
 	return error
 
 
-func _grade_pair_views(alchemy: AlchemyProof) -> String:
-	r.step("optional E/D material pairs: exact F controls and loaned preview inventory")
+func _grade_pair_views(alchemy: AlchemyProof, inventory_grades: Array = PAIR_GRADES,
+		preview_grades: Array = PAIR_GRADES, prefix := "grade_pairs", first_capture := 6) -> String:
+	r.step("optional E/D material pairs: exact F controls and loaned preview inventory" if prefix == "grade_pairs" else "all brewing: approved identities and loaned C/B/A previews")
 	for stem in F_APPROVED_PNG:
 		var path := "res://assets/icons/materials_ui/" + String(stem) + ".png"
-		if not _check("grade_pairs.accepted_F." + String(stem), FileAccess.file_exists(path)
+		if not _check(prefix + ".accepted_F." + String(stem), FileAccess.file_exists(path)
 				and FileAccess.get_sha256(path) == F_APPROVED_PNG[stem], path):
 			return "accepted F pilot PNG changed or missing"
 	var pair_textures := {}
-	for grade in PAIR_GRADES:
+	for grade in inventory_grades:
 		for family in PAIR_FAMILIES:
 			var id := String(family) + "_" + String(grade)
 			var legacy: Texture2D = Art.material_icon(family, grade)
 			var icon: Texture2D = Art.material_ui_icon(family, grade)
-			if not _check("grade_pairs.legacy32." + id, legacy != null and legacy.get_size() == Vector2(32, 32), id):
+			if not _check(prefix + ".legacy32." + id, legacy != null and legacy.get_size() == Vector2(32, 32), id):
 				return "legacy world texture changed size or is missing"
-			if not _check("grade_pairs.texture_available." + id, icon != null, id):
+			if not _check(prefix + ".texture_available." + id, icon != null, id):
 				return "UI resolver returned no icon"
-			_check("grade_pairs.ui128." + id, icon.get_size() == Vector2(128, 128), str(icon.get_size()), true)
+			_check(prefix + ".ui128." + id, icon.get_size() == Vector2(128, 128), str(icon.get_size()), true)
 			pair_textures[id] = icon
 			p.materials.append(Items.make_material(family, grade, 7))
 	var browse_before: Dictionary = alchemy._economy()
+	var full_browse_before: Dictionary = _full_browse_economy(alchemy) if r.flag("all-brewing") else {}
 	m.open_inventory("gear", "all")
 	await r.frames(4)
-	for grade in PAIR_GRADES:
+	for grade in inventory_grades:
 		for family in PAIR_FAMILIES:
 			var id := String(family) + "_" + String(grade)
-			_surface("grade_pairs.inventory." + id, m.root, pair_textures[id], true)
+			_surface(prefix + ".inventory." + id, m.root, pair_textures[id], true)
 	for family in PILOTS:
-		_surface("grade_pairs.inventory.F_" + String(family), m.root, textures[family], true)
-	_surface("grade_pairs.inventory.potion", m.root, Art.consumable_icon(potion), true, false)
-	await _capture("06_grade_pairs_inventory")
+		_surface(prefix + ".inventory.F_" + String(family), m.root, textures[family], true)
+	_surface(prefix + ".inventory.potion", m.root, Art.consumable_icon(potion), true, false)
+	if prefix == "all_brewing":
+		_surface(prefix + ".inventory.metal_E_fallback", m.root, Art.material_icon("metal", "E"), true, false)
+		_all_inventory_receipt(pair_textures)
+	await _capture("%02d_%s_inventory" % [first_capture, prefix])
 	# Public Professions entry and actual bench/recipe/grade clicks; no trade lock
 	# or mastery loan is needed to inspect the art. Resource actions stay untouched.
 	m.open_professions()
@@ -213,38 +334,44 @@ func _grade_pair_views(alchemy: AlchemyProof) -> String:
 		return "actual Professions Alchemy entry unavailable"
 	if not await alchemy._named("AlchemyShape_mana_instant", g.touch_mode):
 		return "actual mana recipe row unavailable"
-	var capture_index := 7
-	for grade in PAIR_GRADES:
+	var capture_index := first_capture + 1
+	for grade in preview_grades:
 		if not await alchemy._named("AlchemyGrade_" + String(grade), g.touch_mode):
 			return "actual grade selector unavailable"
 		var recipe: Dictionary = Alchemy.recipe("mana_instant", grade)
-		_check("grade_pairs.recipe." + String(grade), alchemy._view().get("shape") == "mana_instant"
+		_check(prefix + ".recipe." + String(grade), alchemy._view().get("shape") == "mana_instant"
 			and alchemy._view().get("grade") == grade and alchemy._text("AlchemyProductName") == String(recipe.item.name), alchemy._text("AlchemyProductName"))
 		for family in PAIR_FAMILIES:
 			var id := String(family) + "_" + String(grade)
 			var icon: Texture2D = pair_textures[id]
-			_surface("grade_pairs.alchemy." + id, m.root, icon, false)
+			_surface(prefix + ".alchemy." + id, m.root, icon, false)
 			var control := _texture_control(m.root, icon, false)
-			if _check("grade_pairs.alchemy.control." + id, control != null, id):
-				_check("grade_pairs.alchemy32." + id, _icon_rect(control, icon).size.is_equal_approx(Vector2(32, 32)), str(_icon_rect(control, icon)))
+			if _check(prefix + ".alchemy.control." + id, control != null, id):
+				_check(prefix + ".alchemy32." + id, _icon_rect(control, icon).size.is_equal_approx(Vector2(32, 32)), str(_icon_rect(control, icon)))
 				var label_text := "%s · %s grade" % [String(Items.MATERIALS[family][grade]), grade]
 				var found := false
 				for child in control.get_parent().get_children():
 					if child is Label and child.text == label_text:
 						found = child.get_visible_line_count() == child.get_line_count()
-				_check("grade_pairs.identity." + id, found, label_text)
+				_check(prefix + ".identity." + id, found, label_text)
 			var need := int(recipe.herbs) if family == "herb" else int(recipe.reagents)
-			_check("grade_pairs.count." + id, alchemy._text("AlchemyIngredient_" + String(family)).contains("Have 7 / Need %d" % need), alchemy._text("AlchemyIngredient_" + String(family)))
+			_check(prefix + ".count." + id, alchemy._text("AlchemyIngredient_" + String(family)).contains("Have 7 / Need %d" % need), alchemy._text("AlchemyIngredient_" + String(family)))
 		var bottle: Texture2D = Art.consumable_icon(recipe.item)
-		_surface("grade_pairs.alchemy.bottle_" + String(grade), m.root, bottle, false, false)
+		_surface(prefix + ".alchemy.bottle_" + String(grade), m.root, bottle, false, false)
 		var product := _texture_control(m.root, bottle, false)
-		if _check("grade_pairs.alchemy.product." + String(grade), product != null, recipe.item.name):
-			_check("grade_pairs.alchemy64." + String(grade), _icon_rect(product, bottle).size.is_equal_approx(Vector2(64, 64)), str(_icon_rect(product, bottle)))
+		if _check(prefix + ".alchemy.product." + String(grade), product != null, recipe.item.name):
+			_check(prefix + ".alchemy64." + String(grade), _icon_rect(product, bottle).size.is_equal_approx(Vector2(64, 64)), str(_icon_rect(product, bottle)))
 		await alchemy._recipe_caption("mana_instant", grade)
-		alchemy._layout("material_pair_" + String(grade))
-		await alchemy._capture("%02d_grade_pair_%s_alchemy" % [capture_index, String(grade).to_lower()])
+		alchemy._layout(("material_pair_" if prefix == "grade_pairs" else "all_brewing_") + String(grade))
+		if prefix == "grade_pairs":
+			await alchemy._capture("%02d_grade_pair_%s_alchemy" % [capture_index, String(grade).to_lower()])
+		else:
+			_all_recipe_receipt(alchemy, grade, recipe)
+			await _capture("%02d_all_brewing_%s_alchemy" % [capture_index, String(grade).to_lower()])
 		capture_index += 1
-	_check("grade_pairs.browse_no_economy_changes", alchemy._economy() == browse_before, "gold, mastery, materials, potions, blueprints, mail and favor unchanged")
+	_check(prefix + ".browse_no_economy_changes", alchemy._economy() == browse_before, "gold, mastery, materials, potions, blueprints, mail and favor unchanged")
+	if r.flag("all-brewing"):
+		_check(prefix + ".full_browse_unchanged", _full_browse_economy(alchemy) == full_browse_before, "active profession and full economy unchanged while browsing")
 	return ""
 
 
@@ -402,25 +529,40 @@ func _economy() -> Dictionary:
 func _capture(name: String) -> void:
 	await r.frames(3)
 	if not r.flag("no-capture"):
-		r.shot(name, "three-material art pilot; controlled resource and presentation fixtures; no collection proof")
+		if name.contains("_all_brewing_"):
+			extra_captures.append(name)
+		r.shot(name, "controlled ingredient display loans only; no collection, mastery, trade or transaction claim" if r.flag("all-brewing") else "three-material art pilot; controlled resource and presentation fixtures; no collection proof")
 
 
 func _check(id: String, ok: bool, actual: Variant, presentation := false) -> bool:
 	rows.append({"id": id, "passed": ok, "presentation": presentation, "actual": actual})
-	print("MATERIAL CHECK %s: %s %s" % [id, "PASS" if ok else ("FINDING" if presentation and r.flag("baseline") else "FAIL"), str(actual) if not ok else ""])
+	print("MATERIAL CHECK %s: %s %s" % [id, "PASS" if ok else ("FINDING" if _expected_finding(id, presentation) else "FAIL"), str(actual) if not ok else ""])
 	return ok
 
 
 func _report() -> Dictionary:
+	if r.flag("all-brewing"):
+		_all_approval_check("after")
+		_check("all_brewing.sources_restored", not all_sources_before.is_empty()
+			and _source_hashes() == all_sources_before, "exact before/after48-entry material source map")
 	var result := {"checks": rows.size(), "passed": 0, "findings": 0, "failures": 0, "rows": rows,
 		"geometry": geometry, "baseline": r.flag("baseline"), "grade_pairs": r.flag("grade-pairs"),
 		"mouse_clicks": native.mouse_clicks, "touch_taps": native.touch_taps,
 		"source_hashes": _source_hashes(),
 		"scope": ("three F pilots plus four E/D herb/reagent UI siblings and real Alchemy previews; " if r.flag("grade-pairs") else "three F-grade UI pilots; ")
 			+ "32px world control; controlled loans; no real collection, crafting, persistence or hardware claim"}
+	if r.flag("all-brewing"):
+		result["all_brewing"] = true
+		result["selected_ids"] = ALL_APPROVED_PNG.keys()
+		result["approval_contract_sha256"] = ALL_APPROVAL_CONTRACT_SHA256
+		result["missing_upper_baseline"] = missing_upper.keys()
+		result["extra_captures"] = extra_captures
+		result["all_brewing_matrix"] = all_matrix
+		result["actual_shots"] = r.shots_taken
+		result["scope"] = "13 approved ingredient UI identities; original F/world and E/D views retained; C/B/A preview only; controlled no_saves capital stock, no trade/mastery/blueprint grant or transaction; no ordinary collection or hardware claim"
 	for row in rows:
 		if row.passed: result.passed += 1
-		elif row.presentation and r.flag("baseline"): result.findings += 1
+		elif _expected_finding(String(row.id), bool(row.presentation)): result.findings += 1
 		else: result.failures += 1
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(r.shot_dir))
 	var file := FileAccess.open(r.shot_dir.path_join("report.json"), FileAccess.WRITE)
@@ -438,7 +580,7 @@ func _source_hashes() -> Dictionary:
 			var stem := Items.material_stem(String(family), String(grade), String(Items.MATERIALS[family][grade]))
 			var path := "res://assets/icons/materials/" + stem + ".png"
 			result[path] = FileAccess.get_sha256(path)
-			if (String(grade) == "F" and PILOTS.has(String(family))) or (r.flag("grade-pairs") and PAIR_GRADES.has(String(grade)) and PAIR_FAMILIES.has(String(family))):
+			if (String(grade) == "F" and PILOTS.has(String(family))) or ((r.flag("grade-pairs") or r.flag("all-brewing")) and PAIR_GRADES.has(String(grade)) and PAIR_FAMILIES.has(String(family))) or (r.flag("all-brewing") and UPPER_GRADES.has(String(grade)) and PAIR_FAMILIES.has(String(family))):
 				var pilot := "res://assets/icons/materials_ui/" + stem + ".png"
 				result[pilot] = FileAccess.get_sha256(pilot) if FileAccess.file_exists(pilot) else "not_installed"
 	return result
@@ -533,3 +675,109 @@ func _visible_world_prompts() -> Array[int]:
 		if is_instance_valid(prompt) and prompt is CanvasItem and prompt.is_visible_in_tree():
 			result.append(prompt.get_instance_id())
 	return result
+
+
+## These checks are active only in --all-brewing. Their constants are emitted
+## by the approval preparation gate, never filled with pending hashes.
+func _all_approval_check(phase: String) -> String:
+	if not _check("all_brewing.approval_set." + phase, ALL_APPROVED_PNG.size() == 13
+			and ALL_WORLD_PNG.size() == 35 and ALL_UPPER_IDS.size() == 6,
+			"generated exact13 approved UI identities and35 unchanged world controls"):
+		return "invalid generated approval contract"
+	for stem: String in ALL_APPROVED_PNG:
+		var path := "res://assets/icons/materials_ui/" + stem + ".png"
+		var exists := FileAccess.file_exists(path)
+		var missing_allowed: bool = r.flag("baseline") and ALL_UPPER_IDS.has(stem) and not exists
+		var actual := FileAccess.get_sha256(path) if exists else "not_installed"
+		if not _check("all_brewing.approved_bytes." + phase + "." + stem,
+				missing_allowed or actual == ALL_APPROVED_PNG[stem], actual):
+			return "approved material PNG missing or changed: " + stem
+		if phase == "before" and missing_allowed:
+			missing_upper[stem] = true
+	for path: String in ALL_WORLD_PNG:
+		if not _check("all_brewing.world_bytes." + phase + "." + path.get_file(),
+				FileAccess.file_exists(path) and FileAccess.get_sha256(path) == ALL_WORLD_PNG[path], path):
+			return "legacy world PNG changed: " + path
+	return ""
+
+
+func _expected_finding(id: String, presentation: bool) -> bool:
+	if not presentation or not r.flag("baseline"):
+		return false
+	if not r.flag("all-brewing"):
+		return true # Preserve historical default and --grade-pairs baseline semantics.
+	# Every key below names one specific new identity and presentation location.
+	# Missing files alone may use legacy fallback. Installed wrong bytes, old
+	# seven, geometry, input, labels, counts, prompt gates and cleanup stay strict.
+	if not ALL_BASELINE_PRESENTATION.has(id):
+		return false
+	return missing_upper.has(String(ALL_BASELINE_PRESENTATION[id]))
+
+
+func _full_browse_economy(alchemy: AlchemyProof) -> Dictionary:
+	var result: Dictionary = alchemy._economy()
+	result["profession"] = p.profession
+	result["backpack"] = p.backpack.duplicate(true)
+	result["gem_bag"] = p.gem_bag.duplicate(true)
+	result["loose_bags"] = p.loose_bags.duplicate(true)
+	return result
+
+
+func _all_inventory_receipt(pair_textures: Dictionary) -> void:
+	var observed_ids: Array[String] = []
+	var controls: Array[int] = []
+	var fully_visible := 0
+	for stem: String in ALL_APPROVED_PNG:
+		var fields := stem.split("_")
+		var family: String = fields[0]
+		var grade: String = fields[1].to_upper()
+		var texture: Texture2D = textures[family] if grade == "F" else pair_textures[family + "_" + grade]
+		var control := _texture_control(m.root, texture, true)
+		if not _check("all_brewing.inventory_identity." + stem, control != null, stem):
+			continue
+		controls.append(control.get_instance_id())
+		var matching_stacks := 0
+		for material: Dictionary in p.materials:
+			if material.get("family") == family and material.get("grade") == grade:
+				matching_stacks += 1
+				_check("all_brewing.inventory_stack." + stem, int(material.get("count", 0)) == 7
+					and String(material.get("name")) == String(Items.MATERIALS[family][grade]), material)
+		_check("all_brewing.inventory_one_stack." + stem, matching_stacks == 1, matching_stacks)
+		var badge_ok := false
+		for child in control.get_children():
+			if child is Label and child.text == "x7" and child.is_visible_in_tree():
+				badge_ok = child.get_visible_line_count() == child.get_line_count() \
+					and control.get_global_rect().grow(0.75).encloses(child.get_global_rect())
+		_check("all_brewing.inventory_badge." + stem, badge_ok, "actual x7 child label fits its slot")
+		# _surface performs the stricter ancestor/shell-clipping checks above.
+		observed_ids.append(stem)
+		var surface_id := "all_brewing.inventory." + ("F_" + family if grade == "F" else family + "_" + grade)
+		for row: Dictionary in rows:
+			if row.id == surface_id + ".visible_contained" and bool(row.passed):
+				fully_visible += 1
+	var unique := {}
+	for instance_id in controls:
+		unique[instance_id] = true
+	_check("all_brewing.inventory_distinct13", observed_ids.size() == 13 and unique.size() == 13,
+		{"identities": observed_ids, "distinct_slot_controls": unique.size()})
+	_check("all_brewing.inventory_full13", fully_visible == 13, fully_visible)
+	all_matrix.append({"view": "09_all_brewing_inventory", "identities": observed_ids, "fully_visible": fully_visible,
+		"geometry_claim": "each full icon is separately checked against all clipping ancestors and shell",
+		"stock": "seven-count display loans; no earned collection or trade grant"})
+
+
+func _all_recipe_receipt(alchemy: AlchemyProof, grade: String, recipe: Dictionary) -> void:
+	var expected: Dictionary = Alchemy.quote(g, "mana_instant", grade)
+	_check("all_brewing.requirements." + grade,
+		alchemy._text("AlchemyRequirements").contains("Grade " + grade)
+		and (not Items.BLUEPRINT_GRADES.has(grade)
+			or alchemy._text("AlchemyRequirements").contains("Blueprint known" if bool(expected.blueprint_known) else "Blueprint not learned")),
+		alchemy._text("AlchemyRequirements"))
+	_check("all_brewing.brew_gate." + grade, alchemy._disabled("AlchemyBrew") == (not bool(expected.allowed)),
+		{"disabled": alchemy._disabled("AlchemyBrew"), "allowed": expected.allowed, "reason": expected.reason})
+	all_matrix.append({"grade": grade, "shape": "mana_instant", "product": recipe.item.name,
+		"herb": Items.MATERIALS.herb[grade], "reagent": Items.MATERIALS.reagent[grade],
+		"herbs_need": recipe.herbs, "reagents_need": recipe.reagents, "have_each": 7,
+		"requirements": alchemy._text("AlchemyRequirements"), "allowed": expected.allowed,
+		"blocked_reason": expected.reason, "active_profession": p.profession,
+		"blueprint_known": expected.blueprint_known, "inspection_only": true})

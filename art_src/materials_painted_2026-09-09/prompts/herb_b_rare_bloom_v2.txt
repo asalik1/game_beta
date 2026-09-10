@@ -1,0 +1,13 @@
+Generate this icon on an EXACT FLAT SOLID MAGENTA (#FF00FF) background. Every empty area and internal gap must use that same uniform key color, with no gradient, checkerboard, scene, shadow, vignette or texture. This is a temporary technical backdrop for later separately reviewed extraction; it must not cast colored light or appear as a reflection inside the subject.
+
+Use case: style-transfer. Asset: one Crownless Alchemy/inventory ingredient icon — Rare Bloom, grade B.
+
+Image 1 supplies the exact subject identity, silhouette, orientation, palette and existing ornament ONLY; ignore its pixel rendering, black contour and magenta backdrop. Image 2 is the full-resolution approved D-family painted master, used ONLY for soft modeled material volume, subtle brushwork, natural painted edges and selective upper-left highlights. Match that smooth painting quality, without copying its subject design. Use broad readable material planes instead of ink outlines, pixel steps or flat cartoon shading.
+
+One five-petaled cobalt/indigo blue flower, with pointed slightly curled petals around a bright blue center and pale radial stamens. Preserve the two olive-green leaves, short green stems, and small blue binding near the cut lower end. Keep the original upright flower-over-leaves silhouette and visible spaces beside the stems. This is a harvested botanical Alchemy ingredient.
+
+Do not turn the petals purple or white, add petals or a bouquet, replace the center with a gemstone, add roots, or borrow the style reference's dense leaf bundle, tan twine or dew drop.
+
+One complete centered icon on a square canvas, preserving the original orientation and proportions. Keep all tips inside with comfortable clear padding, with the longest subject extent about 85–90% of the canvas. Design a high-resolution master that stays recognizable at 128, 64 and 32 pixels; do not emulate a 32px pixel grid. No scene, floor, cast ground shadow, border, text, numbers, extra objects or decorative background.
+
+Keep all magenta key color outside the subject. Preserve the complete square canvas and its flat key-colored padding.

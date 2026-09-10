@@ -1,0 +1,4 @@
+approvals/*.json -text
+generation_records/*.json -text
+prompts/herb_[abc]_*.txt -text
+prompts/reagent_[abc]_*.txt -text

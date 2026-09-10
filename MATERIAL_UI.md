@@ -13,6 +13,13 @@ amber sediment versus clear turquoise liquid in plain ingredient flasks. These
 four early Alchemy ingredients now match the painted potion and F-grade family
 in inventory and the actual brewing preview, including its 32px ingredient rows.
 
+The upper-grade batch adds Verdant Herb and Potent Essence (C), Rare Bloom and
+Pure Essence (B), and Pristine Bloom and Radiant Essence (A). These complete the
+12 F–A herb/reagent ingredients alongside the painted F-grade Rusted Scrap:
+13 UI overrides in total. The six retain their authored leaf, flower, vessel,
+liquid and fitting identities; they remain raw ingredients, distinct from the
+finished potion preview. Native validation for this batch is recorded below.
+
 ## Rendering and sources
 
 `Art.material_ui_icon` loads reviewed 128px overrides from
@@ -24,7 +31,7 @@ counts, transactions and economy are unchanged.
 
 The existing `Art.material_icon` continues to supply 32px world pickups. Their
 1.1 scale still produces 35.2px sprites. All 35 legacy PNGs remain intact; the
-other 28 material variants have not received painted replacements.
+other 22 material variants continue to use the existing UI fallback textures.
 
 Built-in ImageGen produced three accepted subject masters at 1254px. Herb and
 reagent retain native RGBA; scrap v3 was generated on a flat magenta background
@@ -39,6 +46,13 @@ speckles in the raw sources are invisible in the reviewed light/dark exports;
 their bounds do not determine framing. All four v1 candidates were retained for
 native review, with complete leaves, roots, stem ends, corks and flask bases.
 
+The six C/B/A sources and their approved 128px exports are archived with exact
+prompts, generation records and combined root/independent source reviews.
+Verdant Herb v3 and Rare Bloom v2 use recorded flat-magenta keying; the other
+four retain native RGBA. Their full canvases are preserved. Historical source
+approval records retain their original native-trial status; final in-game
+acceptance belongs in the checkpoint receipt, not a rewritten source approval.
+
 `python tools/art/build_material_ui_icons.py` rebuilds candidate exports from
 those archived sources with premultiplied LANCZOS. It preserves the full canvas
 and checks approved decoded pixels. There is no alpha crop, silhouette sizing,
@@ -47,6 +61,18 @@ the seven desktop UI assets; mobile uses the normal scoped sync. The current
 Pillow/NumPy versions reproduce the approved PNG bytes exactly.
 The optional `--grade-pairs` acceptance mode requires exactly the reviewed seven
 IDs and pins the three F PNGs byte-for-byte before an explicit installation.
+
+The default exporter and `--grade-pairs` continue to select the same seven
+F/E/D assets. `--all-brewing` additionally requires the six complete approved
+C/B/A records in the provenance file: source, export, decoded pixels and review
+hashes must match. It selects all 13, requires a fresh candidate output directory,
+and preserves the existing seven. With explicit `--install`, it writes only
+missing approved upper UI PNGs, refuses conflicting existing files and leaves
+world textures untouched. Mobile synchronization remains a separate scoped step.
+
+```powershell
+python tools/art/build_material_ui_icons.py --all-brewing --output build/material_all_brewing_review
+```
 
 ## Native reproduction
 
@@ -57,6 +83,8 @@ shot.bat material_ui --timeout=180
 shot.bat material_ui --mobile --renderer=gl_compatibility --touch --timeout=180
 shot.bat material_ui --grade-pairs --timeout=180
 shot.bat material_ui --grade-pairs --mobile --renderer=gl_compatibility --touch --timeout=180
+shot.bat material_ui --all-brewing --timeout=180
+shot.bat material_ui --all-brewing --mobile --renderer=gl_compatibility --touch --timeout=180
 ```
 
 `--baseline` permits only the expected missing-resolution/filter findings on an
@@ -73,6 +101,17 @@ and restores materials, remembered view and input emulation. Browsing must leave
 gold, mastery, materials, potions, knowledge, mail and favor unchanged. It does
 not brew or grant trade mastery. A fresh process is required after installing
 textures because the art resolver caches fallback textures.
+
+`--all-brewing` is a separate selection mode from `--grade-pairs`. It retains
+those nine F/E/D views, then adds an inventory view of all 13 painted identities
+and actual C/B/A Mana Potion ingredient previews: 13 full captures. It checks
+whole-icon visibility, distinct slots, readable names and Have/Need counts,
+exact source/filter contracts, and complete browse economy/view/touch-state
+restoration. The controlled fixture loans material stacks; it never clicks
+Brew, learns a blueprint or grants a profession/mastery level. Both old modes
+keep their existing behavior. Adding `--world-prompts` still adds two views,
+for 15 with all-brewing. That combined prompt mode is supported by the source;
+this batch's native acceptance uses the 13-view all-brewing mode alone.
 
 The optional `--world-prompts` follow-up runs before the art sequence. It uses
 normal capital prompt selection, actual Inventory/Fangmoot builders and real
@@ -136,3 +175,44 @@ and all seven approved sources reproduce their PNG and decoded RGBA hashes.
 All 46 unrelated and unfinished-journey files remain intact. Exact source, image,
 log, independent-review and commit hashes are recorded in
 `build/qa/session-sept10/material-followup-checkpoint-validation.json`.
+
+## C/B/A batch validation — September 10
+
+The baseline records 588 checks: 564 pass, with exactly 24 missing-art
+presentation findings and no fixture failures. Each absent upper identity fails
+its UI resolution, inventory resolution/filter and Alchemy resolution checks.
+Alchemy already filters the legacy fallbacks linearly, so those six filter
+checks pass even before installation. Final desktop and mobile runs each pass
+all 588 checks with zero findings. Root and an independent reviewer inspected
+all 39 full native images, alongside the six full-source and 128/64/32 light/dark
+art proofs. The painted leaf, flower and glass silhouettes remain distinct at
+32px; fine petals and vessel fittings naturally merge at that size.
+
+All 52 measured UI icon rectangles are fully visible. The family inventory
+shows 13 separate material slots across two rows, with readable seven-count
+badges. C/B/A Mana Potion previews show Have 7 / Need 5, 6 and 7 herbs plus one
+reagent. Mastery, active-trade and unlearned B/A blueprint restrictions remain
+visible; no Brew, purchase, claim or learning action occurs. The fixture restores
+its complete borrowed economy, inventory, remembered view and touch state.
+Desktop uses 13 synthetic mouse clicks; mobile uses four mouse clicks and nine
+ScreenTouch actions. Mobile evidence is the mobile project rendered on Windows
+with Compatibility, not a physical-device run.
+
+Both imports and native compile gates (255 scripts), desktop quick/full
+(143/223), mobile strict quick (143), eight-path scoped synchronization and all
+seven strict preflight categories pass. Closing source snapshots preserve all
+runtime text and script UIDs, 84 prior material PNGs and 46 unrelated/unfinished
+files. The three original world material controls remain 35.2px wide, and the
+potion control remains 48px. Desktop native retains only the established
+renderer shutdown diagnostics; the full suite retains its intentional invalid
+base64 fixture and existing ObjectDB shutdown warning. No verdict was weakened.
+
+Default, grade-pair and all-brewing export controls reproduce the approved
+7/7/13 PNG encodings. The six new PNGs are the only runtime artwork added.
+Fresh Windows Git checkout originally changed the raw hashes of 18 new source
+records through line-ending conversion. Four archive-local Git rules now
+preserve those approval JSONs, generation records and upper prompt files
+byte-for-byte, leaving the older text policy intact.
+
+Exact source, log, image, checkout and commit evidence is recorded under
+`build/qa/session-sept10/material-all-brewing-finalizer-portability-candidate/results/`.

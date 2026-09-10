@@ -2,6 +2,8 @@ extends ShotRig
 ## Three-material pilot comparison, against the same 32px world baseline.
 ## shot.bat material_ui --timeout=180 [--baseline] [--no-capture] [--grade-pairs]
 ## Optional grade pairs add four E/D sibling checks and three native captures.
+## --all-brewing retains those nine views, adds all13 inventory + C/B/A previews.
+## Exact approval constants are prepared only from six reviewed upper records.
 
 
 func _ready() -> void:

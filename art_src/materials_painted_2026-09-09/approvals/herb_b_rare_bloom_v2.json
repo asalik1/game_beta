@@ -1,0 +1,273 @@
+{
+  "id": "herb_b_rare_bloom",
+  "status": "approved for native UI trial",
+  "native_accepted": false,
+  "root_review": {
+    "id": "herb_b_rare_bloom",
+    "version": 2,
+    "reviewed_utc": "2026-09-10T05:12:39.620178+00:00",
+    "reviewer": "root",
+    "source_and_128_candidate_approved_for_native_trial": true,
+    "installed": false,
+    "native_accepted": false,
+    "full_canvas_retained": true,
+    "inspected_original_and_four_proofs": true,
+    "scale_sizes": [
+      128,
+      64,
+      32
+    ],
+    "notes": "Five blue petals, pale stamens, two leaves and blue binding remain distinct. Full-canvas key extraction retains gaps and tips with no visible magenta halo. Painted volume fits siblings at128/64/32; native UI trial remains required.",
+    "files": [
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/herb_b_rare_bloom_v2_generation.json",
+        "sha256": "0c45ed98438e6d57b271badcc65d50a94c24d7b855d16af73810fd0225851291"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/herb_b_rare_bloom_v2_processed/processing.json",
+        "sha256": "9ce31309b1cdd852106ee695d8bde9d3d833900f428ecdfb13fe1d6485c411c9"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/herb_b_rare_bloom_v2_processed/master.png",
+        "sha256": "6620886bc49991850662ebda633a0703c37e87b5a3f4e5917bb9b0430efd1646"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/herb_b_rare_bloom_v2_processed/full_canvas_rgba.png",
+        "sha256": "4866e1dafb25773b11ac2b4d0fb9bcb49508dcff5ef6f8d688f22e63abea7860"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/herb_b_rare_bloom_v2_processed/herb_b_rare_bloom.png",
+        "sha256": "e308703cdf00b9c98bcea6bbbb1f2d8bda515352ac68648989b19be83d7430df"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/herb_b_rare_bloom_v2_processed/full_dark.png",
+        "sha256": "1b3aa381c0a6f1f70f302965b601ccd22178608cc7cb7946235d7336f5bb214c"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/herb_b_rare_bloom_v2_processed/full_light.png",
+        "sha256": "8d99e1d1cb925e84e2558ded89aee84894f05e7b56bccd2dc08365024cc69a41"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/herb_b_rare_bloom_v2_processed/family_dark.png",
+        "sha256": "8e06060fd3bcabed85f246352f088b58abbc58e87f1bcb5774dbc2986962c3c2"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/herb_b_rare_bloom_v2_processed/family_light.png",
+        "sha256": "4851181adb5f7aa77dbc041f37ed6da60769dbd4bccc2777e255e2d24e9357b8"
+      }
+    ]
+  },
+  "root_review_sha256": "73f2a9c75eabed741c108403625832b2b44ab0e2c96943b5e3e036aab5fec41e",
+  "independent_review": {
+    "reviewer": "/root/ui_audit",
+    "utc": "2026-09-10T05:12:44.012715+00:00",
+    "id": "herb_b_rare_bloom",
+    "version": 2,
+    "decision": "Suitable for a later native runtime trial; no final asset approval or installation claim.",
+    "accepted_runtime": false,
+    "identity": "Five pointed cobalt/indigo petals, pale radial stamens around the bright round blue center, two olive-green leaves, short cut green stems and small blue binding preserve the actual legacy subject. Upright flower-over-leaves silhouette and inner stem gaps remain; no roots, extra flower, ground or frame. The center is lustrous, as in the authored bright blue center; it has no newly faceted gemstone or metal setting.",
+    "cohesion": "The smooth modeled leaf planes, directional highlights and soft edge transition match the approved full-size D master. At128/64/32 on dark and light, the compact five-point blue flower remains immediately distinct from the F wilted sprig, E rooted weed and D green tied harvest. Its white center and green base survive32px; neither color alone nor tiny stamen detail is required to recognize the flower.",
+    "edges": "No visible magenta fringe or clipped tips in the full dark/light or family scale proofs. Dark blue/green modeled contours remain thin and continuous, without the old thick black stepped pixel outline. No crop or added cleanup is justified by the reviewed proofs.",
+    "findings": [],
+    "limits": [
+      "Source/processed proof review only; no generation, image processing, engine, export/install or canonical mutation by reviewer.",
+      "This is candidate trial suitability, not native Alchemy/inventory approval or comparison against still-unapproved A/C siblings.",
+      "A detailed stamen count and individual binding turns do not remain distinct at32px; the main identity does."
+    ],
+    "metrics": {
+      "full_canvas_rgba.png": {
+        "mode": "RGBA",
+        "size": [
+          1254,
+          1254
+        ],
+        "alpha_bbox": [
+          0,
+          83,
+          1254,
+          1254
+        ],
+        "alpha_ge32_bbox": [
+          215,
+          83,
+          1044,
+          1155
+        ],
+        "alpha_edge_max": 22,
+        "nonzero_edge_samples": 4,
+        "partial_alpha_pixels": 8096,
+        "magenta_like_pixel_count_alpha_gt32": 0
+      },
+      "herb_b_rare_bloom.png": {
+        "mode": "RGBA",
+        "size": [
+          128,
+          128
+        ],
+        "alpha_bbox": [
+          19,
+          6,
+          109,
+          120
+        ],
+        "alpha_ge32_bbox": [
+          22,
+          8,
+          107,
+          118
+        ],
+        "alpha_edge_max": 0,
+        "nonzero_edge_samples": 0,
+        "partial_alpha_pixels": 1407,
+        "magenta_like_pixel_count_alpha_gt32": 0
+      }
+    },
+    "viewed_full_original_files": [
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/herb_b_rare_bloom_v2_processed/master.png",
+        "sha256": "6620886bc49991850662ebda633a0703c37e87b5a3f4e5917bb9b0430efd1646"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/herb_b_rare_bloom_v2_processed/full_canvas_rgba.png",
+        "sha256": "4866e1dafb25773b11ac2b4d0fb9bcb49508dcff5ef6f8d688f22e63abea7860"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/herb_b_rare_bloom_v2_processed/full_dark.png",
+        "sha256": "1b3aa381c0a6f1f70f302965b601ccd22178608cc7cb7946235d7336f5bb214c"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/herb_b_rare_bloom_v2_processed/full_light.png",
+        "sha256": "8d99e1d1cb925e84e2558ded89aee84894f05e7b56bccd2dc08365024cc69a41"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/herb_b_rare_bloom_v2_processed/family_dark.png",
+        "sha256": "8e06060fd3bcabed85f246352f088b58abbc58e87f1bcb5774dbc2986962c3c2"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/herb_b_rare_bloom_v2_processed/family_light.png",
+        "sha256": "4851181adb5f7aa77dbc041f37ed6da60769dbd4bccc2777e255e2d24e9357b8"
+      },
+      {
+        "path": "art_src/materials_2026-07-30/sources/herb_b_rare_bloom.png",
+        "sha256": "c0097b0a33fa87dda61fa6d5a7a03f14a40d3b8ce2140b3c0b7ebce6ee6ad1bf"
+      },
+      {
+        "path": "art_src/materials_painted_2026-09-09/masters/herb_d_fresh_herb_v1.png",
+        "sha256": "e2b6916d252db6d797840fa9959f378f2ed576891e94639365a05c03d441cf78"
+      }
+    ],
+    "family_reference_sha256": {
+      "game/assets/icons/materials_ui/herb_f_wilted_sprig.png": "002cde309b10aaa2bb371ea8b8fc33dd2b31f6b8d8b1984555c8809b5f2184e7",
+      "game/assets/icons/materials_ui/herb_e_common_weed.png": "b53be4ebf6967d3cd5956e82aa6dde9c341c75027ef8b26bfda1eaa570e62ebe",
+      "game/assets/icons/materials_ui/herb_d_fresh_herb.png": "10f87dc1f86f9eee91b1b562b9b6a01cfd8fa0b654d833f75e50ddbf9a9acdbe",
+      "game/assets/icons/consumables/defective_health_potion.png": "9d9cfd109699411a01606acffd60ff944233c1a792cba8b553efea88e843a240"
+    },
+    "processing_record": {
+      "path": "build/qa/session-sept10/material-upper-generation/herb_b_rare_bloom_v2_processed/processing.json",
+      "sha256": "9ce31309b1cdd852106ee695d8bde9d3d833900f428ecdfb13fe1d6485c411c9"
+    },
+    "processing_claims": {
+      "source_sha256": "6620886bc49991850662ebda633a0703c37e87b5a3f4e5917bb9b0430efd1646",
+      "rgba_source_sha256": "4866e1dafb25773b11ac2b4d0fb9bcb49508dcff5ef6f8d688f22e63abea7860",
+      "png_sha256": "e308703cdf00b9c98bcea6bbbb1f2d8bda515352ac68648989b19be83d7430df",
+      "rgba_pixel_sha256": "30c0565d3056250f7bb00522ea9e11c5809428fe8e16ca69f4b53eea7a0f5635",
+      "source_canvas": [
+        1254,
+        1254
+      ],
+      "export_canvas": [
+        128,
+        128
+      ],
+      "alpha_mode": "magenta",
+      "key_helper": {
+        "path": "C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py",
+        "sha256": "fa2989807052b857bed08f7fee0caa2502b54c46afc0a6f28cd706c25f636630",
+        "arguments": {
+          "key": [
+            255,
+            0,
+            255
+          ],
+          "tolerance": 12,
+          "spill_cleanup": true,
+          "soft_matte": true,
+          "transparent_threshold": 12.0,
+          "opaque_threshold": 96.0
+        }
+      },
+      "edge_contract": 0,
+      "edge_feather": 0,
+      "crop": false,
+      "full_canvas": true,
+      "resize_helper_sha256": "53aa0e6d301efda45bf5e9bf2e627855c983e967644c8a8a17fc74af758e41dc"
+    },
+    "image_processing_by_reviewer": false,
+    "engine_started_by_reviewer": false,
+    "canonical_edits_by_reviewer": false
+  },
+  "independent_review_sha256": "7dc84816ffbbeb5341a8d04f794c95cc004f5f2218cf80e7e66a4f483b744ff5",
+  "processing": {
+    "utc": "2026-09-10T05:09:35.528986+00:00",
+    "id": "herb_b_rare_bloom",
+    "version": 2,
+    "status": "Processed candidate; source/scale review and native acceptance still required",
+    "metadata_sha256": "0c45ed98438e6d57b271badcc65d50a94c24d7b855d16af73810fd0225851291",
+    "source_sha256": "6620886bc49991850662ebda633a0703c37e87b5a3f4e5917bb9b0430efd1646",
+    "rgba_source_sha256": "4866e1dafb25773b11ac2b4d0fb9bcb49508dcff5ef6f8d688f22e63abea7860",
+    "png_sha256": "e308703cdf00b9c98bcea6bbbb1f2d8bda515352ac68648989b19be83d7430df",
+    "rgba_pixel_sha256": "30c0565d3056250f7bb00522ea9e11c5809428fe8e16ca69f4b53eea7a0f5635",
+    "source_canvas": [
+      1254,
+      1254
+    ],
+    "export_canvas": [
+      128,
+      128
+    ],
+    "alpha_mode": "magenta",
+    "key_helper": {
+      "path": "C:\\Users\\asali\\.codex\\skills\\.system\\imagegen\\scripts\\remove_chroma_key.py",
+      "sha256": "fa2989807052b857bed08f7fee0caa2502b54c46afc0a6f28cd706c25f636630",
+      "arguments": {
+        "key": [
+          255,
+          0,
+          255
+        ],
+        "tolerance": 12,
+        "spill_cleanup": true,
+        "soft_matte": true,
+        "transparent_threshold": 12.0,
+        "opaque_threshold": 96.0
+      }
+    },
+    "edge_contract": 0,
+    "edge_feather": 0,
+    "crop": false,
+    "full_canvas": true,
+    "resize_helper_sha256": "53aa0e6d301efda45bf5e9bf2e627855c983e967644c8a8a17fc74af758e41dc",
+    "alpha_counts": {
+      "zero": 1158697,
+      "partial": 8096,
+      "opaque": 405723
+    },
+    "image_hashes": {
+      "family_dark.png": "8e06060fd3bcabed85f246352f088b58abbc58e87f1bcb5774dbc2986962c3c2",
+      "family_light.png": "4851181adb5f7aa77dbc041f37ed6da60769dbd4bccc2777e255e2d24e9357b8",
+      "full_canvas_rgba.png": "4866e1dafb25773b11ac2b4d0fb9bcb49508dcff5ef6f8d688f22e63abea7860",
+      "full_dark.png": "1b3aa381c0a6f1f70f302965b601ccd22178608cc7cb7946235d7336f5bb214c",
+      "full_light.png": "8d99e1d1cb925e84e2558ded89aee84894f05e7b56bccd2dc08365024cc69a41",
+      "herb_b_rare_bloom.png": "e308703cdf00b9c98bcea6bbbb1f2d8bda515352ac68648989b19be83d7430df",
+      "master.png": "6620886bc49991850662ebda633a0703c37e87b5a3f4e5917bb9b0430efd1646"
+    },
+    "reference_hashes": {
+      "game\\assets\\icons\\materials_ui\\herb_f_wilted_sprig.png": "002cde309b10aaa2bb371ea8b8fc33dd2b31f6b8d8b1984555c8809b5f2184e7",
+      "game\\assets\\icons\\materials_ui\\herb_e_common_weed.png": "b53be4ebf6967d3cd5956e82aa6dde9c341c75027ef8b26bfda1eaa570e62ebe",
+      "game\\assets\\icons\\materials_ui\\herb_d_fresh_herb.png": "10f87dc1f86f9eee91b1b562b9b6a01cfd8fa0b654d833f75e50ddbf9a9acdbe",
+      "game\\assets\\icons\\consumables\\defective_health_potion.png": "9d9cfd109699411a01606acffd60ff944233c1a792cba8b553efea88e843a240"
+    }
+  },
+  "generation_record": "art_src/materials_painted_2026-09-09/generation_records/herb_b_rare_bloom_v2.json",
+  "generation_record_sha256": "0c45ed98438e6d57b271badcc65d50a94c24d7b855d16af73810fd0225851291"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "herb_c_verdant_herb",
+  "version": 3,
+  "status": "generated source; processing and visual approval pending",
+  "source": "C:/Users/asali/.codex/generated_images/01a08739-ba84-7fa3-9f34-e3233d4166ce/exec-4c0f2fab-8dd6-4d1a-a164-e9c83dda9e7f.png",
+  "references": [
+    "art_src/materials_2026-07-30/sources/herb_c_verdant_herb.png",
+    "art_src/materials_painted_2026-09-09/masters/herb_d_fresh_herb_v1.png"
+  ],
+  "start": {
+    "current_time": "2026-09-10 03:58:47 UTC"
+  },
+  "prompt": "Repaint the plant in image 1 using the fine natural botanical painting style of image 2. Image 1 is subject identity only; image 2 is the approved high-resolution style reference only. One untied upright green cut stalk, with its exact branching leaf arrangement, prominent upward V of the top pair, large pointed side leaves at distinct heights, small lower leaves and visible central stem. Keep that arrangement and silhouette. Do not copy the tied bundle, dew drop or diagonal pose from image 2.\n\nMatch image 2's finely blended natural leaf volume, thin veins, delicate surface texture, muted yellow-olive highlights and deep blue-green folds. No ink outline, black contour, chunky brush daubs, pixel grid, neon green, flower, roots, tie or added ornament. Soft upper-left lighting. Every tip stays inside a square canvas with even padding; complete stalk around 90% of canvas height, readable at 32px.\n\nPaint on an EXACT FLAT SOLID MAGENTA (#FF00FF) background, including every gap between leaves. This is a temporary chroma key for the game's existing asset pipeline. Do not draw a checkerboard, transparency pattern, paper texture, gradient, shadow, backdrop texture or magenta reflections on the plant. Keep ALL magenta out of the plant itself. One isolated plant only, no floor, glow, frame or text.",
+  "finished_utc": "2026-09-10 03:59:16 UTC"
+}

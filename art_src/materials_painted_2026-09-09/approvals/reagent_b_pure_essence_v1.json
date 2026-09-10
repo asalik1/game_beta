@@ -1,0 +1,294 @@
+{
+  "id": "reagent_b_pure_essence",
+  "status": "approved for native UI trial",
+  "native_accepted": false,
+  "root_review": {
+    "id": "reagent_b_pure_essence",
+    "version": 1,
+    "reviewed_utc": "2026-09-10T05:18:25.252083+00:00",
+    "reviewer": "root",
+    "source_and_128_candidate_approved_for_native_trial": true,
+    "installed": false,
+    "native_accepted": false,
+    "full_canvas_retained": true,
+    "inspected_original_and_four_proofs": true,
+    "scale_sizes": [
+      128,
+      64,
+      32
+    ],
+    "notes": "Right-leaning pointed cyan vessel and silver-framed blue diamond retained; pale core has blue side planes and remains separate from D round flask. Clean full and128/64/32 light/dark proofs with no visible dust or external aura. Native trial still required.",
+    "files": [
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/reagent_b_pure_essence_v1_generation.json",
+        "sha256": "56327686d2b364df9186e003f8426853e17105edd1c8bc35016b2aea699b6b35"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/reagent_b_pure_essence_v1_processed/processing.json",
+        "sha256": "24515fc5022856fdf359d031013b00e1cd5ce5088d9272ad882c788271eb5268"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/reagent_b_pure_essence_v1_processed/master.png",
+        "sha256": "a7217fee35614e5c8e11573bf262566230d149758e0c3267571a1e89f1a029fa"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/reagent_b_pure_essence_v1_processed/full_canvas_rgba.png",
+        "sha256": "a7217fee35614e5c8e11573bf262566230d149758e0c3267571a1e89f1a029fa"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/reagent_b_pure_essence_v1_processed/reagent_b_pure_essence.png",
+        "sha256": "5a08c056c7e724803c403ee29bef6ea6050e2e2e9670c62f4948aaee943fee01"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/reagent_b_pure_essence_v1_processed/full_dark.png",
+        "sha256": "43b0b0b972700a896c8826fed1c27ad897b68c3d093e31405f868bd92adbfaf0"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/reagent_b_pure_essence_v1_processed/full_light.png",
+        "sha256": "cf0ddd7dce714063b28676901a10a04cc67d5be55087fc4f26ec9200c26e5caa"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/reagent_b_pure_essence_v1_processed/family_dark.png",
+        "sha256": "6f98c5d3fe2995f597130a2e1624ac4b6b28fc0041fdcd6b173545c3e8c6bf40"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/reagent_b_pure_essence_v1_processed/family_light.png",
+        "sha256": "b84fb260e286601b4544d1156d8a2bc98bfff9ba2b7698ab3866c68b764df811"
+      }
+    ]
+  },
+  "root_review_sha256": "62bffa7ae36022ea1ffb0655ee6e67bde92e6eb16a56db5c7521124dae492e1c",
+  "independent_review": {
+    "reviewer": "/root/ui_audit",
+    "utc": "2026-09-10T05:24:57.917993+00:00",
+    "id": "reagent_b_pure_essence",
+    "version": 1,
+    "decision": "Suitable for a later native runtime trial; no final asset approval or installation claim.",
+    "accepted_runtime": false,
+    "identity": "The actual legacy tilted angular cyan crystal vessel retains its pointed base, broad sloped shoulders, cyan faceted stopper, silver collar bands and blue diamond-shaped front inlay. The bright cyan essence stays contained within the glass silhouette.",
+    "cohesion": "The deliberate tilted faceted shape distinguishes B from the round D cyan bottle even at32px and from the tall violet C trial. Painted metal reflections and glass planes fit the shared D master and potion control; the sharper crystal geometry follows the legacy identity.",
+    "edges": "Sparse low-alpha color traces in the raw alpha image do not form a visible halo on the complete dark/light composites or128/64/32 family proofs. No clipped stopper or pointed base is visible. Source and128export canvas outer edges are entirely transparent. Most partial body pixels are near opaque: source nonzero median253 and322653 pixels at250-254. The coherent body on both backgrounds agrees with this distribution; it does not justify flattening alpha or speculative cleanup.",
+    "findings": [],
+    "limits": [
+      "Source/proof trial review only, not native Alchemy/inventory acceptance or installation.",
+      "The blue/silver vial silhouette and neck remain clear at32px; fine inlay facets simplify at that size.",
+      "No claim of a dust-free source or all255 alpha; full distributions and bounds are retained.",
+      "No engine, generation, image processing/export, pixel cleanup or canonical mutation by reviewer."
+    ],
+    "metrics": {
+      "full_canvas_rgba.png": {
+        "mode": "RGBA",
+        "size": [
+          1254,
+          1254
+        ],
+        "alpha_histogram": {
+          "0-0": 1234286,
+          "1-8": 6634,
+          "9-31": 878,
+          "32-127": 1568,
+          "128-199": 1088,
+          "200-239": 1159,
+          "240-249": 3938,
+          "250-254": 322653,
+          "255-255": 312
+        },
+        "nonzero_alpha_percentiles": {
+          "0": 1.0,
+          "1": 1.0,
+          "5": 250.0,
+          "25": 252.0,
+          "50": 253.0,
+          "75": 253.0,
+          "95": 253.0,
+          "99": 253.0,
+          "100": 255.0
+        },
+        "alpha_bbox": [
+          57,
+          39,
+          1190,
+          1198
+        ],
+        "alpha_ge32_bbox": [
+          418,
+          83,
+          909,
+          1179
+        ],
+        "alpha_ge200_bbox": [
+          419,
+          84,
+          907,
+          1178
+        ],
+        "alpha_edge_max": 0,
+        "nonzero_edge_samples": 0
+      },
+      "reagent_b_pure_essence.png": {
+        "mode": "RGBA",
+        "size": [
+          128,
+          128
+        ],
+        "alpha_histogram": {
+          "0-0": 12534,
+          "1-8": 266,
+          "9-31": 45,
+          "32-127": 112,
+          "128-199": 67,
+          "200-239": 58,
+          "240-249": 108,
+          "250-254": 2990,
+          "255-255": 204
+        },
+        "nonzero_alpha_percentiles": {
+          "0": 1.0,
+          "1": 1.0,
+          "5": 4.0,
+          "25": 252.0,
+          "50": 253.0,
+          "75": 253.0,
+          "95": 255.0,
+          "99": 255.0,
+          "100": 255.0
+        },
+        "alpha_bbox": [
+          40,
+          6,
+          95,
+          123
+        ],
+        "alpha_ge32_bbox": [
+          42,
+          8,
+          93,
+          120
+        ],
+        "alpha_ge200_bbox": [
+          43,
+          9,
+          92,
+          120
+        ],
+        "alpha_edge_max": 0,
+        "nonzero_edge_samples": 0
+      }
+    },
+    "viewed_full_original_files": [
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/reagent_b_pure_essence_v1_processed/full_canvas_rgba.png",
+        "sha256": "a7217fee35614e5c8e11573bf262566230d149758e0c3267571a1e89f1a029fa"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/reagent_b_pure_essence_v1_processed/full_dark.png",
+        "sha256": "43b0b0b972700a896c8826fed1c27ad897b68c3d093e31405f868bd92adbfaf0"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/reagent_b_pure_essence_v1_processed/full_light.png",
+        "sha256": "cf0ddd7dce714063b28676901a10a04cc67d5be55087fc4f26ec9200c26e5caa"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/reagent_b_pure_essence_v1_processed/family_dark.png",
+        "sha256": "6f98c5d3fe2995f597130a2e1624ac4b6b28fc0041fdcd6b173545c3e8c6bf40"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/reagent_b_pure_essence_v1_processed/family_light.png",
+        "sha256": "b84fb260e286601b4544d1156d8a2bc98bfff9ba2b7698ab3866c68b764df811"
+      },
+      {
+        "path": "art_src/materials_2026-07-30/sources/reagent_b_pure_essence.png",
+        "sha256": "ad2fb2058527deb44f42a56072e67da7f687f4c5414b43961fe4d687d1bb9da3"
+      },
+      {
+        "path": "art_src/materials_painted_2026-09-09/masters/reagent_d_clean_extract_v1.png",
+        "sha256": "71cf4fba30311b6a6938373de4b908b0096705f9140983c8620ca2a5e90a9d36"
+      }
+    ],
+    "style_reference_note": "Exact D master was viewed in full immediately before the C essence review and reused across this contiguous C/B/A review; family proofs include exact approved F/E/D and potion controls.",
+    "source_master_identical_to_viewed_rgba": true,
+    "family_reference_sha256": {
+      "game/assets/icons/materials_ui/reagent_f_foul_residue.png": "616fe29b361901e9aa73fe5809ea2295e62d260a7541bbe7f5944273a5f9154c",
+      "game/assets/icons/materials_ui/reagent_e_crude_extract.png": "06b5fc7301307d2ecb7df18a21e1a99b9f62ce3558d2b61650d5d4d1595bb9a4",
+      "game/assets/icons/materials_ui/reagent_d_clean_extract.png": "8947011c48a311a9f5fb600da47b587d3f9098aa149a8f919c322167d49e9446",
+      "game/assets/icons/consumables/defective_health_potion.png": "9d9cfd109699411a01606acffd60ff944233c1a792cba8b553efea88e843a240"
+    },
+    "processing_record": {
+      "path": "build/qa/session-sept10/material-upper-generation/reagent_b_pure_essence_v1_processed/processing.json",
+      "sha256": "24515fc5022856fdf359d031013b00e1cd5ce5088d9272ad882c788271eb5268"
+    },
+    "processing_claims": {
+      "source_sha256": "a7217fee35614e5c8e11573bf262566230d149758e0c3267571a1e89f1a029fa",
+      "rgba_source_sha256": "a7217fee35614e5c8e11573bf262566230d149758e0c3267571a1e89f1a029fa",
+      "png_sha256": "5a08c056c7e724803c403ee29bef6ea6050e2e2e9670c62f4948aaee943fee01",
+      "rgba_pixel_sha256": "b2e4cd9633e9e318c34c6a17df1d7804436e62e79c7621fcf13b545657dbf355",
+      "source_canvas": [
+        1254,
+        1254
+      ],
+      "export_canvas": [
+        128,
+        128
+      ],
+      "alpha_mode": "native",
+      "key_helper": null,
+      "edge_contract": 0,
+      "edge_feather": 0,
+      "crop": false,
+      "full_canvas": true,
+      "resize_helper_sha256": "53aa0e6d301efda45bf5e9bf2e627855c983e967644c8a8a17fc74af758e41dc"
+    },
+    "image_processing_by_reviewer": false,
+    "engine_started_by_reviewer": false,
+    "canonical_edits_by_reviewer": false
+  },
+  "independent_review_sha256": "c81da4a28e9b57c66c20bac9325834b9f51434f073372d42fc9dc0588018d2cb",
+  "processing": {
+    "utc": "2026-09-10T05:15:44.777123+00:00",
+    "id": "reagent_b_pure_essence",
+    "version": 1,
+    "status": "Processed candidate; source/scale review and native acceptance still required",
+    "metadata_sha256": "56327686d2b364df9186e003f8426853e17105edd1c8bc35016b2aea699b6b35",
+    "source_sha256": "a7217fee35614e5c8e11573bf262566230d149758e0c3267571a1e89f1a029fa",
+    "rgba_source_sha256": "a7217fee35614e5c8e11573bf262566230d149758e0c3267571a1e89f1a029fa",
+    "png_sha256": "5a08c056c7e724803c403ee29bef6ea6050e2e2e9670c62f4948aaee943fee01",
+    "rgba_pixel_sha256": "b2e4cd9633e9e318c34c6a17df1d7804436e62e79c7621fcf13b545657dbf355",
+    "source_canvas": [
+      1254,
+      1254
+    ],
+    "export_canvas": [
+      128,
+      128
+    ],
+    "alpha_mode": "native",
+    "key_helper": null,
+    "edge_contract": 0,
+    "edge_feather": 0,
+    "crop": false,
+    "full_canvas": true,
+    "resize_helper_sha256": "53aa0e6d301efda45bf5e9bf2e627855c983e967644c8a8a17fc74af758e41dc",
+    "alpha_counts": {
+      "zero": 1234286,
+      "partial": 337918,
+      "opaque": 312
+    },
+    "image_hashes": {
+      "family_dark.png": "6f98c5d3fe2995f597130a2e1624ac4b6b28fc0041fdcd6b173545c3e8c6bf40",
+      "family_light.png": "b84fb260e286601b4544d1156d8a2bc98bfff9ba2b7698ab3866c68b764df811",
+      "full_canvas_rgba.png": "a7217fee35614e5c8e11573bf262566230d149758e0c3267571a1e89f1a029fa",
+      "full_dark.png": "43b0b0b972700a896c8826fed1c27ad897b68c3d093e31405f868bd92adbfaf0",
+      "full_light.png": "cf0ddd7dce714063b28676901a10a04cc67d5be55087fc4f26ec9200c26e5caa",
+      "master.png": "a7217fee35614e5c8e11573bf262566230d149758e0c3267571a1e89f1a029fa",
+      "reagent_b_pure_essence.png": "5a08c056c7e724803c403ee29bef6ea6050e2e2e9670c62f4948aaee943fee01"
+    },
+    "reference_hashes": {
+      "game\\assets\\icons\\materials_ui\\reagent_f_foul_residue.png": "616fe29b361901e9aa73fe5809ea2295e62d260a7541bbe7f5944273a5f9154c",
+      "game\\assets\\icons\\materials_ui\\reagent_e_crude_extract.png": "06b5fc7301307d2ecb7df18a21e1a99b9f62ce3558d2b61650d5d4d1595bb9a4",
+      "game\\assets\\icons\\materials_ui\\reagent_d_clean_extract.png": "8947011c48a311a9f5fb600da47b587d3f9098aa149a8f919c322167d49e9446",
+      "game\\assets\\icons\\consumables\\defective_health_potion.png": "9d9cfd109699411a01606acffd60ff944233c1a792cba8b553efea88e843a240"
+    }
+  },
+  "generation_record": "art_src/materials_painted_2026-09-09/generation_records/reagent_b_pure_essence_v1.json",
+  "generation_record_sha256": "56327686d2b364df9186e003f8426853e17105edd1c8bc35016b2aea699b6b35"
+}

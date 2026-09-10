@@ -1,9 +1,9 @@
 {
-  "batch": "Three F-grade material UI pilots plus E/D herb and reagent siblings",
+  "batch": "Thirteen painted material UI icons: F metal and F-A brewing herbs/reagents",
   "assets": [
     {
       "id": "herb_f_wilted_sprig",
-      "prompt": "Paint one isolated fantasy inventory icon of **Wilted Sprig, F grade**. Input 1 is the SUBJECT IDENTITY reference only: retain its single bent ochre-brown stem and two drooping brown/olive leaves, including the curled lower-right leaf and torn, depleted character. Interpret its chunky pixel forms as natural painted shapes; do not copy its pixel grid, black outline or magenta background. Input 2 is the STYLE reference only: match its soft painterly material shading, restrained top-left light, muted colors and clear small-icon finish. Do not borrow its bottle or red liquid. Keep the stem upright and readable, with two broad limp leaves and a little open space between them; simplify tiny edge tears enough to read at 32\u201364px without making the leaves lush or healthy. Design for a 128\u00d7128 transparent icon, centered with even padding and the stem spanning about 80% of canvas height. Native transparent background and true transparent gaps. No black outline, pixel texture, flower, berries, roots, dirt clod, tie, pot, ground shadow, platform, backdrop, frame, text or extra objects. One icon only.",
+      "prompt": "Paint one isolated fantasy inventory icon of **Wilted Sprig, F grade**. Input 1 is the SUBJECT IDENTITY reference only: retain its single bent ochre-brown stem and two drooping brown/olive leaves, including the curled lower-right leaf and torn, depleted character. Interpret its chunky pixel forms as natural painted shapes; do not copy its pixel grid, black outline or magenta background. Input 2 is the STYLE reference only: match its soft painterly material shading, restrained top-left light, muted colors and clear small-icon finish. Do not borrow its bottle or red liquid. Keep the stem upright and readable, with two broad limp leaves and a little open space between them; simplify tiny edge tears enough to read at 32–64px without making the leaves lush or healthy. Design for a 128×128 transparent icon, centered with even padding and the stem spanning about 80% of canvas height. Native transparent background and true transparent gaps. No black outline, pixel texture, flower, berries, roots, dirt clod, tie, pot, ground shadow, platform, backdrop, frame, text or extra objects. One icon only.",
       "subject_reference": "art_src/materials_2026-07-30/sources/herb_f_wilted_sprig.png",
       "subject_sha256": "4554d497b420845d9fdd4e7aa87f91b99ebe193a4a5f16b46bb4a24d9f04dde6",
       "style_reference": "game/assets/icons/consumables/defective_health_potion.png",
@@ -17,7 +17,7 @@
     },
     {
       "id": "reagent_f_foul_residue",
-      "prompt": "Paint one isolated fantasy inventory icon of **Foul Residue, F grade**. Input 1 is the SUBJECT IDENTITY reference only: retain the squat wide beige-gray damaged ceramic crock, its broad open mouth and chipped front rim, the thick murky olive/mustard-brown sludge inside with one spill over the front-left edge, and the single coarse round brown stopper/lid leaning against its right side. Preserve this compact combined silhouette and elevated three-quarter view. Interpret the forms naturally; do not copy the pixel grid, black outline or magenta background. Input 2 is the STYLE reference only: match its soft painterly rendering, restrained top-left highlights, muted palette and readable small-icon material separation. Do not replace the crock with glass or turn the sludge red. Make the crock matte and worn, the residue thick with a few subdued moist highlights, and the lid rough. Broad mouth, dark olive contents and chipped rim must remain distinct at 32\u201364px. Design for a 128\u00d7128 transparent icon occupying about 80% of the square with clear padding. Native transparency, including gaps beside the lid. No black contour, pixel texture, magic glow, floating bubbles, smoke, skull symbol, spoon, second vessel, ground plane or shadow, pedestal, backdrop, frame, text or extra objects. One icon only.",
+      "prompt": "Paint one isolated fantasy inventory icon of **Foul Residue, F grade**. Input 1 is the SUBJECT IDENTITY reference only: retain the squat wide beige-gray damaged ceramic crock, its broad open mouth and chipped front rim, the thick murky olive/mustard-brown sludge inside with one spill over the front-left edge, and the single coarse round brown stopper/lid leaning against its right side. Preserve this compact combined silhouette and elevated three-quarter view. Interpret the forms naturally; do not copy the pixel grid, black outline or magenta background. Input 2 is the STYLE reference only: match its soft painterly rendering, restrained top-left highlights, muted palette and readable small-icon material separation. Do not replace the crock with glass or turn the sludge red. Make the crock matte and worn, the residue thick with a few subdued moist highlights, and the lid rough. Broad mouth, dark olive contents and chipped rim must remain distinct at 32–64px. Design for a 128×128 transparent icon occupying about 80% of the square with clear padding. Native transparency, including gaps beside the lid. No black contour, pixel texture, magic glow, floating bubbles, smoke, skull symbol, spoon, second vessel, ground plane or shadow, pedestal, backdrop, frame, text or extra objects. One icon only.",
       "subject_reference": "art_src/materials_2026-07-30/sources/reagent_f_foul_residue.png",
       "subject_sha256": "ae53bfe466671f1e1342b16e8cf5f185bba33a86874a407f21ca69616ff04414",
       "style_reference": "game/assets/icons/consumables/defective_health_potion.png",
@@ -31,7 +31,7 @@
     },
     {
       "id": "metal_f_rusted_scrap",
-      "prompt": "Paint one isolated fantasy inventory icon of **Rusted Scrap, F grade**. Input 1 is the SUBJECT IDENTITY reference only: retain its compact overlapping heap of bent torn metal, especially the broad jagged front-left plate with a round punched hole and the folded upper-right plate with two rivet heads. Keep cool gray-blue exposed metal with broad dull orange and rust-brown corrosion. A few smaller bent strips can support the pile; simplify tiny fragments to protect the readable silhouette. Interpret the shapes as natural painterly metal, not the reference's pixel grid, black outline or magenta background. Input 2 is the STYLE reference only: match its soft volume, restrained top-left light and readable painted finish; do not add a bottle, glass, red liquid or glossy plastic polish. Slight elevated three-quarter view. Show matte rust against a few small cool exposed edge highlights, with a clear punched hole and layered plate separation at 32\u201364px. Design for a centered 128\u00d7128 transparent icon, occupying about 80% of the square with padding. Native transparency including the punched hole and gaps between fragments. No black contour, pixel texture, complete tool or weapon, ornate armor, gold treasure, chain, ground plane or shadow, platform, pedestal, backdrop, frame, text or extra objects. One compact scrap item only.",
+      "prompt": "Paint one isolated fantasy inventory icon of **Rusted Scrap, F grade**. Input 1 is the SUBJECT IDENTITY reference only: retain its compact overlapping heap of bent torn metal, especially the broad jagged front-left plate with a round punched hole and the folded upper-right plate with two rivet heads. Keep cool gray-blue exposed metal with broad dull orange and rust-brown corrosion. A few smaller bent strips can support the pile; simplify tiny fragments to protect the readable silhouette. Interpret the shapes as natural painterly metal, not the reference's pixel grid, black outline or magenta background. Input 2 is the STYLE reference only: match its soft volume, restrained top-left light and readable painted finish; do not add a bottle, glass, red liquid or glossy plastic polish. Slight elevated three-quarter view. Show matte rust against a few small cool exposed edge highlights, with a clear punched hole and layered plate separation at 32–64px. Design for a centered 128×128 transparent icon, occupying about 80% of the square with padding. Native transparency including the punched hole and gaps between fragments. No black contour, pixel texture, complete tool or weapon, ornate armor, gold treasure, chain, ground plane or shadow, platform, pedestal, backdrop, frame, text or extra objects. One compact scrap item only.",
       "subject_reference": "art_src/materials_2026-07-30/sources/metal_f_rusted_scrap.png",
       "subject_sha256": "b193f61d5836541183baeb110bd9e0ac3ba481f0c9338195c33413f6749bafb6",
       "style_reference": "game/assets/icons/consumables/defective_health_potion.png",
@@ -238,6 +238,90 @@
       "original_tool_path": "C:\\Users\\asali\\.codex\\generated_images\\01a08739-ba84-7fa3-9f34-e3233d4166ce\\exec-01d9b8e7-ed3c-4c2a-b3a8-89f648753fbb.png",
       "master_at_review": "build/qa/session-sept10/material-followup-generated/reagent_d_clean_extract_v1.png",
       "reviewed_utc": "2026-09-10T02:26:34.368316+00:00"
+    },
+    {
+      "id": "herb_c_verdant_herb",
+      "variant": "v3",
+      "tool": "built-in image_gen.imagegen",
+      "original_tool_path": "C:/Users/asali/.codex/generated_images/01a08739-ba84-7fa3-9f34-e3233d4166ce/exec-4c0f2fab-8dd6-4d1a-a164-e9c83dda9e7f.png",
+      "master": "art_src/materials_painted_2026-09-09/masters/herb_c_verdant_herb_v3.png",
+      "master_sha256": "1bef628e3caf3e4b52a438396fc07b22c5ff2e99181fa4918aa94c777470580b",
+      "rgba_source": "art_src/materials_painted_2026-09-09/alpha/herb_c_verdant_herb_v3_keyed.png",
+      "rgba_source_sha256": "cf296342cd81587ca08f4098becc7d6165c5a6b43eed09eababcf90986f19dce",
+      "prompt_file": "art_src/materials_painted_2026-09-09/prompts/herb_c_verdant_herb_v3.txt",
+      "generation_record": "art_src/materials_painted_2026-09-09/generation_records/herb_c_verdant_herb_v3.json",
+      "approval_receipt": "art_src/materials_painted_2026-09-09/approvals/herb_c_verdant_herb_v3.json",
+      "status": "Approved full-canvas source and128px export for native UI trial; in-game acceptance pending"
+    },
+    {
+      "id": "reagent_c_potent_essence",
+      "variant": "v1",
+      "tool": "built-in image_gen.imagegen",
+      "original_tool_path": "C:/Users/asali/.codex/generated_images/01a08739-ba84-7fa3-9f34-e3233d4166ce/exec-679381f3-a1df-4052-8c69-7fac3f50f38d.png",
+      "master": "art_src/materials_painted_2026-09-09/masters/reagent_c_potent_essence_v1.png",
+      "master_sha256": "3baa191988c11f6947131f1401948b9ca2c92a91ea62d6894fa012f36c988e6c",
+      "rgba_source": "art_src/materials_painted_2026-09-09/masters/reagent_c_potent_essence_v1.png",
+      "rgba_source_sha256": "3baa191988c11f6947131f1401948b9ca2c92a91ea62d6894fa012f36c988e6c",
+      "prompt_file": "art_src/materials_painted_2026-09-09/prompts/reagent_c_potent_essence_v1.txt",
+      "generation_record": "art_src/materials_painted_2026-09-09/generation_records/reagent_c_potent_essence_v1.json",
+      "approval_receipt": "art_src/materials_painted_2026-09-09/approvals/reagent_c_potent_essence_v1.json",
+      "status": "Approved full-canvas source and128px export for native UI trial; in-game acceptance pending"
+    },
+    {
+      "id": "herb_b_rare_bloom",
+      "variant": "v2",
+      "tool": "built-in image_gen.imagegen",
+      "original_tool_path": "C:/Users/asali/.codex/generated_images/01a08739-ba84-7fa3-9f34-e3233d4166ce/exec-4aa22c45-e836-4b1c-ae1a-a83f499a598d.png",
+      "master": "art_src/materials_painted_2026-09-09/masters/herb_b_rare_bloom_v2.png",
+      "master_sha256": "6620886bc49991850662ebda633a0703c37e87b5a3f4e5917bb9b0430efd1646",
+      "rgba_source": "art_src/materials_painted_2026-09-09/alpha/herb_b_rare_bloom_v2_keyed.png",
+      "rgba_source_sha256": "4866e1dafb25773b11ac2b4d0fb9bcb49508dcff5ef6f8d688f22e63abea7860",
+      "prompt_file": "art_src/materials_painted_2026-09-09/prompts/herb_b_rare_bloom_v2.txt",
+      "generation_record": "art_src/materials_painted_2026-09-09/generation_records/herb_b_rare_bloom_v2.json",
+      "approval_receipt": "art_src/materials_painted_2026-09-09/approvals/herb_b_rare_bloom_v2.json",
+      "status": "Approved full-canvas source and128px export for native UI trial; in-game acceptance pending"
+    },
+    {
+      "id": "reagent_b_pure_essence",
+      "variant": "v1",
+      "tool": "built-in image_gen.imagegen",
+      "original_tool_path": "C:/Users/asali/.codex/generated_images/01a08739-ba84-7fa3-9f34-e3233d4166ce/exec-1f7501ed-2cc0-4348-83af-c554857ff79d.png",
+      "master": "art_src/materials_painted_2026-09-09/masters/reagent_b_pure_essence_v1.png",
+      "master_sha256": "a7217fee35614e5c8e11573bf262566230d149758e0c3267571a1e89f1a029fa",
+      "rgba_source": "art_src/materials_painted_2026-09-09/masters/reagent_b_pure_essence_v1.png",
+      "rgba_source_sha256": "a7217fee35614e5c8e11573bf262566230d149758e0c3267571a1e89f1a029fa",
+      "prompt_file": "art_src/materials_painted_2026-09-09/prompts/reagent_b_pure_essence_v1.txt",
+      "generation_record": "art_src/materials_painted_2026-09-09/generation_records/reagent_b_pure_essence_v1.json",
+      "approval_receipt": "art_src/materials_painted_2026-09-09/approvals/reagent_b_pure_essence_v1.json",
+      "status": "Approved full-canvas source and128px export for native UI trial; in-game acceptance pending"
+    },
+    {
+      "id": "herb_a_pristine_bloom",
+      "variant": "v1",
+      "tool": "built-in image_gen.imagegen",
+      "original_tool_path": "C:/Users/asali/.codex/generated_images/01a08739-ba84-7fa3-9f34-e3233d4166ce/exec-e3443e3b-3c8c-4cd4-93fa-5c41fcbc00a8.png",
+      "master": "art_src/materials_painted_2026-09-09/masters/herb_a_pristine_bloom_v1.png",
+      "master_sha256": "ce6c7558b28ab94f4a6d3a8cc7f1b18a4edc9151eb9689d57cc08c32a7cc5177",
+      "rgba_source": "art_src/materials_painted_2026-09-09/masters/herb_a_pristine_bloom_v1.png",
+      "rgba_source_sha256": "ce6c7558b28ab94f4a6d3a8cc7f1b18a4edc9151eb9689d57cc08c32a7cc5177",
+      "prompt_file": "art_src/materials_painted_2026-09-09/prompts/herb_a_pristine_bloom_v1.txt",
+      "generation_record": "art_src/materials_painted_2026-09-09/generation_records/herb_a_pristine_bloom_v1.json",
+      "approval_receipt": "art_src/materials_painted_2026-09-09/approvals/herb_a_pristine_bloom_v1.json",
+      "status": "Approved full-canvas source and128px export for native UI trial; in-game acceptance pending"
+    },
+    {
+      "id": "reagent_a_radiant_essence",
+      "variant": "v1",
+      "tool": "built-in image_gen.imagegen",
+      "original_tool_path": "C:/Users/asali/.codex/generated_images/01a08739-ba84-7fa3-9f34-e3233d4166ce/exec-f674496f-bce1-49ba-85de-f0abdd0a168b.png",
+      "master": "art_src/materials_painted_2026-09-09/masters/reagent_a_radiant_essence_v1.png",
+      "master_sha256": "b52398b6ff7549e87966974f74e590d47a690e9f7ca983876624155fc8e31b19",
+      "rgba_source": "art_src/materials_painted_2026-09-09/masters/reagent_a_radiant_essence_v1.png",
+      "rgba_source_sha256": "b52398b6ff7549e87966974f74e590d47a690e9f7ca983876624155fc8e31b19",
+      "prompt_file": "art_src/materials_painted_2026-09-09/prompts/reagent_a_radiant_essence_v1.txt",
+      "generation_record": "art_src/materials_painted_2026-09-09/generation_records/reagent_a_radiant_essence_v1.json",
+      "approval_receipt": "art_src/materials_painted_2026-09-09/approvals/reagent_a_radiant_essence_v1.json",
+      "status": "Approved full-canvas source and128px export for native UI trial; in-game acceptance pending"
     }
   ],
   "path_policy": "Project paths are repository-relative. Original tool paths are historical generation records, never exporter inputs.",
@@ -331,5 +415,105 @@
         "approved_rgba_sha256": "b33d84259357c2cd87200ef299d391183250ff737ae95a2dc19aefcbfe4af7d0"
       }
     ]
+  },
+  "ui_export_upper_brewing": {
+    "canvas": [
+      128,
+      128
+    ],
+    "processing": "Full authored canvas, existing premultiplied LANCZOS only; no crop, normalization, quantization, gamma, sharpening, outline or background",
+    "assets": [
+      {
+        "id": "herb_c_verdant_herb",
+        "status": "approved",
+        "rgba_source": "art_src/materials_painted_2026-09-09/alpha/herb_c_verdant_herb_v3_keyed.png",
+        "rgba_source_sha256": "cf296342cd81587ca08f4098becc7d6165c5a6b43eed09eababcf90986f19dce",
+        "source_canvas": [
+          1254,
+          1254
+        ],
+        "approved_export": "art_src/materials_painted_2026-09-09/approved_exports/herb_c_verdant_herb_v3.png",
+        "approved_png_sha256": "f309c9fa0e738430f65d58ad416c7cd859b274de9dca3eeebc42aef05d630509",
+        "approved_rgba_sha256": "2d9dcea36404ca15f7f2872f41f43cff3d44da83741377e237e14098dac8f27a",
+        "approval_receipt": "art_src/materials_painted_2026-09-09/approvals/herb_c_verdant_herb_v3.json",
+        "approval_receipt_sha256": "719d498f474b8e167f3457db629133aa4f2cddfc1af0be10c42645360db393be"
+      },
+      {
+        "id": "reagent_c_potent_essence",
+        "status": "approved",
+        "rgba_source": "art_src/materials_painted_2026-09-09/masters/reagent_c_potent_essence_v1.png",
+        "rgba_source_sha256": "3baa191988c11f6947131f1401948b9ca2c92a91ea62d6894fa012f36c988e6c",
+        "source_canvas": [
+          1254,
+          1254
+        ],
+        "approved_export": "art_src/materials_painted_2026-09-09/approved_exports/reagent_c_potent_essence_v1.png",
+        "approved_png_sha256": "3912df756e18d0c0217809dc7b8522ad6d6277895cf0065d483f0401b361fcd1",
+        "approved_rgba_sha256": "ed3ab4e3ba0a4218366653f9ee07e688ca397879ee8a98ea1f65b6a48fc9984e",
+        "approval_receipt": "art_src/materials_painted_2026-09-09/approvals/reagent_c_potent_essence_v1.json",
+        "approval_receipt_sha256": "af16b4473dbd0c181ed452ef3085647658c6ded6502e43dcf2bd9717514e0915"
+      },
+      {
+        "id": "herb_b_rare_bloom",
+        "status": "approved",
+        "rgba_source": "art_src/materials_painted_2026-09-09/alpha/herb_b_rare_bloom_v2_keyed.png",
+        "rgba_source_sha256": "4866e1dafb25773b11ac2b4d0fb9bcb49508dcff5ef6f8d688f22e63abea7860",
+        "source_canvas": [
+          1254,
+          1254
+        ],
+        "approved_export": "art_src/materials_painted_2026-09-09/approved_exports/herb_b_rare_bloom_v2.png",
+        "approved_png_sha256": "e308703cdf00b9c98bcea6bbbb1f2d8bda515352ac68648989b19be83d7430df",
+        "approved_rgba_sha256": "30c0565d3056250f7bb00522ea9e11c5809428fe8e16ca69f4b53eea7a0f5635",
+        "approval_receipt": "art_src/materials_painted_2026-09-09/approvals/herb_b_rare_bloom_v2.json",
+        "approval_receipt_sha256": "d453ff3abcb2e75a5dd5f34378cca634fbb9672aaf0c520380a4f1f10d932bda"
+      },
+      {
+        "id": "reagent_b_pure_essence",
+        "status": "approved",
+        "rgba_source": "art_src/materials_painted_2026-09-09/masters/reagent_b_pure_essence_v1.png",
+        "rgba_source_sha256": "a7217fee35614e5c8e11573bf262566230d149758e0c3267571a1e89f1a029fa",
+        "source_canvas": [
+          1254,
+          1254
+        ],
+        "approved_export": "art_src/materials_painted_2026-09-09/approved_exports/reagent_b_pure_essence_v1.png",
+        "approved_png_sha256": "5a08c056c7e724803c403ee29bef6ea6050e2e2e9670c62f4948aaee943fee01",
+        "approved_rgba_sha256": "b2e4cd9633e9e318c34c6a17df1d7804436e62e79c7621fcf13b545657dbf355",
+        "approval_receipt": "art_src/materials_painted_2026-09-09/approvals/reagent_b_pure_essence_v1.json",
+        "approval_receipt_sha256": "9c556ce66329a8538b5ed8bffba67d1b52e547e0e79667f38e80aa9a8f3e882c"
+      },
+      {
+        "id": "herb_a_pristine_bloom",
+        "status": "approved",
+        "rgba_source": "art_src/materials_painted_2026-09-09/masters/herb_a_pristine_bloom_v1.png",
+        "rgba_source_sha256": "ce6c7558b28ab94f4a6d3a8cc7f1b18a4edc9151eb9689d57cc08c32a7cc5177",
+        "source_canvas": [
+          1254,
+          1254
+        ],
+        "approved_export": "art_src/materials_painted_2026-09-09/approved_exports/herb_a_pristine_bloom_v1.png",
+        "approved_png_sha256": "70b54a60718ec5e5a9d4cb5155f0fefe1554a6a8de3a9afede4d97b5e0be26cc",
+        "approved_rgba_sha256": "260a0da94f4fe29d7855be845cba1d7b8082bd5fd375e96e43e63b383ab3a4fa",
+        "approval_receipt": "art_src/materials_painted_2026-09-09/approvals/herb_a_pristine_bloom_v1.json",
+        "approval_receipt_sha256": "1f4a81120e512d37037f25564e9147d87683a3cb3fa3bd2e86e769c3706497fd"
+      },
+      {
+        "id": "reagent_a_radiant_essence",
+        "status": "approved",
+        "rgba_source": "art_src/materials_painted_2026-09-09/masters/reagent_a_radiant_essence_v1.png",
+        "rgba_source_sha256": "b52398b6ff7549e87966974f74e590d47a690e9f7ca983876624155fc8e31b19",
+        "source_canvas": [
+          1254,
+          1254
+        ],
+        "approved_export": "art_src/materials_painted_2026-09-09/approved_exports/reagent_a_radiant_essence_v1.png",
+        "approved_png_sha256": "7fbf3157d728fa37fe87a01dad2ce068a8674a62fa8ad5b1f5fb17b815723722",
+        "approved_rgba_sha256": "0a6af6dcb34df5e3f63f44da38a34fe0c9c5ee4c4cdb8647571f21f7aa5d33ba",
+        "approval_receipt": "art_src/materials_painted_2026-09-09/approvals/reagent_a_radiant_essence_v1.json",
+        "approval_receipt_sha256": "81ad5702f3cac520e7b8c42232c6170355dbf54703d50d6f37fbf2155722e720"
+      }
+    ],
+    "scope": "Six C/B/A ingredient UI candidates; existing seven and all world icons unchanged; native acceptance recorded separately"
   }
 }

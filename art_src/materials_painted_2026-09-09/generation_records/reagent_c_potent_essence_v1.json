@@ -1,0 +1,46 @@
+{
+  "id": "reagent_c_potent_essence",
+  "version": 1,
+  "status": "source visually inspected; alpha and scale proof pending",
+  "source": "C:/Users/asali/.codex/generated_images/01a08739-ba84-7fa3-9f34-e3233d4166ce/exec-679381f3-a1df-4052-8c69-7fac3f50f38d.png",
+  "source_sha256": "3baa191988c11f6947131f1401948b9ca2c92a91ea62d6894fa012f36c988e6c",
+  "source_mode": "RGBA",
+  "source_canvas": [
+    1254,
+    1254
+  ],
+  "prompt": "Use case: style-transfer. Asset: one Crownless Alchemy/inventory ingredient icon — Potent Essence, grade C.\n\nImage 1 supplies the exact subject identity, silhouette, orientation, palette and existing ornament ONLY; ignore its pixel rendering, black contour and magenta backdrop. Image 2 is the full-resolution approved D-family painted master, used ONLY for soft modeled material volume, subtle brushwork, natural painted edges and selective upper-left highlights. Match that smooth painting quality, without copying its subject design. Use broad readable material planes instead of ink outlines, pixel steps or flat cartoon shading.\n\nOne upright slender lavender/blue-gray glass flask with a long narrow connected neck and angular faceted lower bulb. Preserve the violet liquid, lilac oval meniscus and bright violet/pink front reflections. Keep the pointed purple crystal-like stopper seated in its dark silver flared collar, with the narrower band beneath. Retain the exact vertical proportions and angular pointed base. This is the already-bottled crafting essence shown in the legacy source. Keep its authored vessel and fittings; do not redesign it as a finished healing potion.\n\nDo not replace the crystal stopper with a cork, round the body into the D flask, turn the liquid cyan or red, detach the neck, or add twine, labels, ornaments, floating particles or an external aura.\n\nOne complete centered icon on a square canvas, preserving the original orientation and proportions. Keep all tips inside with comfortable clear padding, with the longest subject extent about 85–90% of the canvas. Design a high-resolution master that stays recognizable at 128, 64 and 32 pixels; do not emulate a 32px pixel grid. No scene, floor, cast ground shadow, border, text, numbers, extra objects or decorative background.\n\nOutput a true RGBA image with zero-alpha empty background and real transparent internal gaps. Do not paint a checkerboard, solid backdrop or simulated transparency. Preserve the complete authored canvas.",
+  "prompt_file": "build/qa/session-sept10/material-upper-five-full-master-briefs/briefs/reagent_c_potent_essence-rgba.txt",
+  "prompt_sha256": "06e15544f1e67c785d7696792ccbb661c1a8e9bde30cfead456abc10121540e9",
+  "references": [
+    {
+      "path": "art_src/materials_2026-07-30/sources/reagent_c_potent_essence.png",
+      "absolute_path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/art_src/materials_2026-07-30/sources/reagent_c_potent_essence.png",
+      "sha256": "44df3a9ad96ba13f04b959c2651177372221f23da85e954f908724ac7856d261",
+      "png_header_canvas": [
+        1254,
+        1254
+      ],
+      "png_header_color_type": 2,
+      "role": "Exact legacy subject identity only",
+      "visually_inspected_full_source": true
+    },
+    {
+      "path": "art_src/materials_painted_2026-09-09/masters/reagent_d_clean_extract_v1.png",
+      "absolute_path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/art_src/materials_painted_2026-09-09/masters/reagent_d_clean_extract_v1.png",
+      "sha256": "71cf4fba30311b6a6938373de4b908b0096705f9140983c8620ca2a5e90a9d36",
+      "png_header_canvas": [
+        1254,
+        1254
+      ],
+      "png_header_color_type": 6,
+      "role": "Approved full-resolution D-family painting style only; no subject transfer",
+      "visually_inspected_full_source": true
+    }
+  ],
+  "start_utc": "2026-09-10 05:12:42 UTC",
+  "finished_utc": "2026-09-10 05:13:46 UTC",
+  "generator": "built-in image_gen.imagegen",
+  "installed": false,
+  "native_accepted": false
+}

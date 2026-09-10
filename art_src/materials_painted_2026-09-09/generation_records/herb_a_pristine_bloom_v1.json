@@ -1,0 +1,46 @@
+{
+  "id": "herb_a_pristine_bloom",
+  "version": 1,
+  "status": "source visually inspected; alpha and scale proof pending",
+  "source": "C:/Users/asali/.codex/generated_images/01a08739-ba84-7fa3-9f34-e3233d4166ce/exec-e3443e3b-3c8c-4cd4-93fa-5c41fcbc00a8.png",
+  "source_sha256": "ce6c7558b28ab94f4a6d3a8cc7f1b18a4edc9151eb9689d57cc08c32a7cc5177",
+  "source_mode": "RGBA",
+  "source_canvas": [
+    1254,
+    1254
+  ],
+  "prompt": "Use case: style-transfer. Asset: one Crownless Alchemy/inventory ingredient icon — Pristine Bloom, grade A.\n\nImage 1 supplies the exact subject identity, silhouette, orientation, palette and existing ornament ONLY; ignore its pixel rendering, black contour and magenta backdrop. Image 2 is the full-resolution approved D-family painted master, used ONLY for soft modeled material volume, subtle brushwork, natural painted edges and selective upper-left highlights. Match that smooth painting quality, without copying its subject design. Use broad readable material planes instead of ink outlines, pixel steps or flat cartoon shading.\n\nOne front-facing layered star-shaped bloom with pointed ivory/cream petals, soft pale mint shading, and a spread fan of green leaves underneath and behind. Preserve the rounded cream center encircled by the existing gold radial, bead-tipped crown-like ring. Keep the original compact, roughly symmetrical bloom silhouette without a long stem. This is a harvested botanical Alchemy ingredient.\n\nDo not flatten the petals to featureless white, remove the gold center, turn the flower into a brooch or pendant, or add a loose pearl, new crown, mount, ribbon, roots or dew. The center's botanical-versus-ornamental meaning stays as authored.\n\nOne complete centered icon on a square canvas, preserving the original orientation and proportions. Keep all tips inside with comfortable clear padding, with the longest subject extent about 85–90% of the canvas. Design a high-resolution master that stays recognizable at 128, 64 and 32 pixels; do not emulate a 32px pixel grid. No scene, floor, cast ground shadow, border, text, numbers, extra objects or decorative background.\n\nOutput a true RGBA image with zero-alpha empty background and real transparent internal gaps. Do not paint a checkerboard, solid backdrop or simulated transparency. Preserve the complete authored canvas.",
+  "prompt_file": "build/qa/session-sept10/material-upper-five-full-master-briefs/briefs/herb_a_pristine_bloom-rgba.txt",
+  "prompt_sha256": "6d85a9e6409cbf3609592c497bc13ebef5be0494150f3f2b9b6d436abef2aa43",
+  "references": [
+    {
+      "path": "art_src/materials_2026-07-30/sources/herb_a_pristine_bloom.png",
+      "absolute_path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/art_src/materials_2026-07-30/sources/herb_a_pristine_bloom.png",
+      "sha256": "e88461ec6d33c29da0eb0f99f24a8399d0dc7b102db48ecbafff7a11c3d61eb4",
+      "png_header_canvas": [
+        1254,
+        1254
+      ],
+      "png_header_color_type": 2,
+      "role": "Exact legacy subject identity only",
+      "visually_inspected_full_source": true
+    },
+    {
+      "path": "art_src/materials_painted_2026-09-09/masters/herb_d_fresh_herb_v1.png",
+      "absolute_path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/art_src/materials_painted_2026-09-09/masters/herb_d_fresh_herb_v1.png",
+      "sha256": "e2b6916d252db6d797840fa9959f378f2ed576891e94639365a05c03d441cf78",
+      "png_header_canvas": [
+        1254,
+        1254
+      ],
+      "png_header_color_type": 6,
+      "role": "Approved full-resolution D-family painting style only; no subject transfer",
+      "visually_inspected_full_source": true
+    }
+  ],
+  "start_utc": "2026-09-10 05:09:33 UTC",
+  "finished_utc": "2026-09-10 05:11:08 UTC",
+  "generator": "built-in image_gen.imagegen",
+  "installed": false,
+  "native_accepted": false
+}

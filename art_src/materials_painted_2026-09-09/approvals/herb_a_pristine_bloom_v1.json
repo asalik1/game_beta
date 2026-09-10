@@ -1,0 +1,294 @@
+{
+  "id": "herb_a_pristine_bloom",
+  "status": "approved for native UI trial",
+  "native_accepted": false,
+  "root_review": {
+    "id": "herb_a_pristine_bloom",
+    "version": 1,
+    "reviewed_utc": "2026-09-10T05:12:40.043904+00:00",
+    "reviewer": "root",
+    "source_and_128_candidate_approved_for_native_trial": true,
+    "installed": false,
+    "native_accepted": false,
+    "full_canvas_retained": true,
+    "inspected_original_and_four_proofs": true,
+    "scale_sizes": [
+      128,
+      64,
+      32
+    ],
+    "notes": "Layered ivory petals and mint shading retain modeled volume; existing gold ring and cream center remain readable. Full transparent source plus light/dark proofs show clean silhouette at128/64/32 with no visible colored dust. Native UI trial remains required.",
+    "files": [
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/herb_a_pristine_bloom_v1_generation.json",
+        "sha256": "84a36ff75b4178e4e83dcb0d82bfc8e1a0394ad3e00ffe9332e5f0d07162c436"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/herb_a_pristine_bloom_v1_processed/processing.json",
+        "sha256": "a4810dca9ed78306bd4c271f27ee4d1a6318699a58128b12ae25d3a74fda18f5"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/herb_a_pristine_bloom_v1_processed/master.png",
+        "sha256": "ce6c7558b28ab94f4a6d3a8cc7f1b18a4edc9151eb9689d57cc08c32a7cc5177"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/herb_a_pristine_bloom_v1_processed/full_canvas_rgba.png",
+        "sha256": "ce6c7558b28ab94f4a6d3a8cc7f1b18a4edc9151eb9689d57cc08c32a7cc5177"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/herb_a_pristine_bloom_v1_processed/herb_a_pristine_bloom.png",
+        "sha256": "70b54a60718ec5e5a9d4cb5155f0fefe1554a6a8de3a9afede4d97b5e0be26cc"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/herb_a_pristine_bloom_v1_processed/full_dark.png",
+        "sha256": "c535ffe4117a8edbe8068f23f5295ab87ae18bd4aafd7c59389a97341642aa2d"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/herb_a_pristine_bloom_v1_processed/full_light.png",
+        "sha256": "7e212e04656d618844f432c756058ad0a5bc7483fff46a05845418aadd8b617d"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/herb_a_pristine_bloom_v1_processed/family_dark.png",
+        "sha256": "88fb3b86b1c1b2d7064689fe2839be5adfe389b02b1c46c46addfc1502b6213f"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/herb_a_pristine_bloom_v1_processed/family_light.png",
+        "sha256": "f806d9f9e139295254cec2f0ed61f9fe8eb750cc2cf99b06c201ec2a993bb4bd"
+      }
+    ]
+  },
+  "root_review_sha256": "1bc2ba13d05c99e8b6f1406ba5c7fd4569390a71c34fe7b2793efce22c256636",
+  "independent_review": {
+    "reviewer": "/root/ui_audit",
+    "utc": "2026-09-10T05:15:57.751795+00:00",
+    "id": "herb_a_pristine_bloom",
+    "version": 1,
+    "decision": "Suitable for a later native runtime trial; no final asset approval or installation claim.",
+    "accepted_runtime": false,
+    "identity": "The actual authored layered ivory-white pointed petals, pale mint/green rear layers, curled green lower leaves and round cream center surrounded by a gold ring of raised points are preserved. This fantasy botanical center remains visibly ornamental as the original; no newly inferred natural species, stem bundle, tie, roots or backdrop.",
+    "cohesion": "Modeled leaf planes and soft selective highlights match the already-viewed full-size D master. At128/64/32 on dark and light, the broad layered pale rosette with a gold focal center remains distinct from F/E/D gathered herbs and the cobalt five-petal B trial. The green perimeter maintains separation on the light proof without a thick black pixel outline.",
+    "edges": "No clipped main leaf/petal tips or visible speck/color halo in either complete full composite or actual-size family proof. Native RGBA preserves sparse low-alpha dust, including alpha1 perimeter samples;128export outer-edge alpha is0. Most partial pixels are near opaque rather than a translucent body: source nonzero median253 and700114 pixels at250-254. This numeric pattern agrees with the coherent body visible on both backgrounds and does not justify alpha flattening or speculative cleanup.",
+    "findings": [],
+    "limits": [
+      "Source/proof trial review only, not native Alchemy/inventory acceptance or installation.",
+      "Fine center ornament simplifies at32px; pale flower/gold focal center/green outer silhouette remain readable.",
+      "No claim of a dust-free source or all255 alpha; full distributions and bounds are retained.",
+      "No engine, generation, image processing/export, pixel cleanup or canonical mutation by reviewer."
+    ],
+    "metrics": {
+      "full_canvas_rgba.png": {
+        "mode": "RGBA",
+        "size": [
+          1254,
+          1254
+        ],
+        "alpha_histogram": {
+          "0-0": 825558,
+          "1-8": 23246,
+          "9-31": 1876,
+          "32-127": 3572,
+          "128-199": 2476,
+          "200-239": 2859,
+          "240-249": 12423,
+          "250-254": 700114,
+          "255-255": 392
+        },
+        "nonzero_alpha_percentiles": {
+          "0": 1.0,
+          "1": 1.0,
+          "5": 245.0,
+          "25": 252.0,
+          "50": 253.0,
+          "75": 253.0,
+          "95": 253.0,
+          "99": 253.0,
+          "100": 255.0
+        },
+        "alpha_bbox": [
+          0,
+          0,
+          1240,
+          1254
+        ],
+        "alpha_ge32_bbox": [
+          51,
+          36,
+          1202,
+          1210
+        ],
+        "alpha_ge200_bbox": [
+          52,
+          37,
+          1201,
+          1208
+        ],
+        "alpha_edge_max": 1,
+        "nonzero_edge_samples": 65
+      },
+      "herb_a_pristine_bloom.png": {
+        "mode": "RGBA",
+        "size": [
+          128,
+          128
+        ],
+        "alpha_histogram": {
+          "0-0": 8090,
+          "1-8": 528,
+          "9-31": 87,
+          "32-127": 186,
+          "128-199": 175,
+          "200-239": 127,
+          "240-249": 247,
+          "250-254": 6499,
+          "255-255": 445
+        },
+        "nonzero_alpha_percentiles": {
+          "0": 1.0,
+          "1": 1.0,
+          "5": 4.0,
+          "25": 252.0,
+          "50": 253.0,
+          "75": 253.0,
+          "95": 255.0,
+          "99": 255.0,
+          "100": 255.0
+        },
+        "alpha_bbox": [
+          3,
+          1,
+          125,
+          126
+        ],
+        "alpha_ge32_bbox": [
+          5,
+          4,
+          123,
+          124
+        ],
+        "alpha_ge200_bbox": [
+          6,
+          4,
+          121,
+          123
+        ],
+        "alpha_edge_max": 0,
+        "nonzero_edge_samples": 0
+      }
+    },
+    "viewed_full_original_files": [
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/herb_a_pristine_bloom_v1_processed/full_canvas_rgba.png",
+        "sha256": "ce6c7558b28ab94f4a6d3a8cc7f1b18a4edc9151eb9689d57cc08c32a7cc5177"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/herb_a_pristine_bloom_v1_processed/full_dark.png",
+        "sha256": "c535ffe4117a8edbe8068f23f5295ab87ae18bd4aafd7c59389a97341642aa2d"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/herb_a_pristine_bloom_v1_processed/full_light.png",
+        "sha256": "7e212e04656d618844f432c756058ad0a5bc7483fff46a05845418aadd8b617d"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/herb_a_pristine_bloom_v1_processed/family_dark.png",
+        "sha256": "88fb3b86b1c1b2d7064689fe2839be5adfe389b02b1c46c46addfc1502b6213f"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/herb_a_pristine_bloom_v1_processed/family_light.png",
+        "sha256": "f806d9f9e139295254cec2f0ed61f9fe8eb750cc2cf99b06c201ec2a993bb4bd"
+      },
+      {
+        "path": "art_src/materials_2026-07-30/sources/herb_a_pristine_bloom.png",
+        "sha256": "e88461ec6d33c29da0eb0f99f24a8399d0dc7b102db48ecbafff7a11c3d61eb4"
+      },
+      {
+        "path": "art_src/materials_painted_2026-09-09/masters/herb_d_fresh_herb_v1.png",
+        "sha256": "e2b6916d252db6d797840fa9959f378f2ed576891e94639365a05c03d441cf78"
+      }
+    ],
+    "style_reference_note": "Exact D master was viewed in full immediately before this A review during the B review; reused without another image transformation.",
+    "source_master_identical_to_viewed_rgba": true,
+    "family_reference_sha256": {
+      "game/assets/icons/materials_ui/herb_f_wilted_sprig.png": "002cde309b10aaa2bb371ea8b8fc33dd2b31f6b8d8b1984555c8809b5f2184e7",
+      "game/assets/icons/materials_ui/herb_e_common_weed.png": "b53be4ebf6967d3cd5956e82aa6dde9c341c75027ef8b26bfda1eaa570e62ebe",
+      "game/assets/icons/materials_ui/herb_d_fresh_herb.png": "10f87dc1f86f9eee91b1b562b9b6a01cfd8fa0b654d833f75e50ddbf9a9acdbe",
+      "game/assets/icons/consumables/defective_health_potion.png": "9d9cfd109699411a01606acffd60ff944233c1a792cba8b553efea88e843a240"
+    },
+    "processing_record": {
+      "path": "build/qa/session-sept10/material-upper-generation/herb_a_pristine_bloom_v1_processed/processing.json",
+      "sha256": "a4810dca9ed78306bd4c271f27ee4d1a6318699a58128b12ae25d3a74fda18f5"
+    },
+    "processing_claims": {
+      "source_sha256": "ce6c7558b28ab94f4a6d3a8cc7f1b18a4edc9151eb9689d57cc08c32a7cc5177",
+      "rgba_source_sha256": "ce6c7558b28ab94f4a6d3a8cc7f1b18a4edc9151eb9689d57cc08c32a7cc5177",
+      "png_sha256": "70b54a60718ec5e5a9d4cb5155f0fefe1554a6a8de3a9afede4d97b5e0be26cc",
+      "rgba_pixel_sha256": "260a0da94f4fe29d7855be845cba1d7b8082bd5fd375e96e43e63b383ab3a4fa",
+      "source_canvas": [
+        1254,
+        1254
+      ],
+      "export_canvas": [
+        128,
+        128
+      ],
+      "alpha_mode": "native",
+      "key_helper": null,
+      "edge_contract": 0,
+      "edge_feather": 0,
+      "crop": false,
+      "full_canvas": true,
+      "resize_helper_sha256": "53aa0e6d301efda45bf5e9bf2e627855c983e967644c8a8a17fc74af758e41dc"
+    },
+    "image_processing_by_reviewer": false,
+    "engine_started_by_reviewer": false,
+    "canonical_edits_by_reviewer": false
+  },
+  "independent_review_sha256": "5515fee09d401bcd432f692680c32164590f32c71c534b2f01e438c98c2193ab",
+  "processing": {
+    "utc": "2026-09-10T05:11:31.226359+00:00",
+    "id": "herb_a_pristine_bloom",
+    "version": 1,
+    "status": "Processed candidate; source/scale review and native acceptance still required",
+    "metadata_sha256": "84a36ff75b4178e4e83dcb0d82bfc8e1a0394ad3e00ffe9332e5f0d07162c436",
+    "source_sha256": "ce6c7558b28ab94f4a6d3a8cc7f1b18a4edc9151eb9689d57cc08c32a7cc5177",
+    "rgba_source_sha256": "ce6c7558b28ab94f4a6d3a8cc7f1b18a4edc9151eb9689d57cc08c32a7cc5177",
+    "png_sha256": "70b54a60718ec5e5a9d4cb5155f0fefe1554a6a8de3a9afede4d97b5e0be26cc",
+    "rgba_pixel_sha256": "260a0da94f4fe29d7855be845cba1d7b8082bd5fd375e96e43e63b383ab3a4fa",
+    "source_canvas": [
+      1254,
+      1254
+    ],
+    "export_canvas": [
+      128,
+      128
+    ],
+    "alpha_mode": "native",
+    "key_helper": null,
+    "edge_contract": 0,
+    "edge_feather": 0,
+    "crop": false,
+    "full_canvas": true,
+    "resize_helper_sha256": "53aa0e6d301efda45bf5e9bf2e627855c983e967644c8a8a17fc74af758e41dc",
+    "alpha_counts": {
+      "zero": 825558,
+      "partial": 746566,
+      "opaque": 392
+    },
+    "image_hashes": {
+      "family_dark.png": "88fb3b86b1c1b2d7064689fe2839be5adfe389b02b1c46c46addfc1502b6213f",
+      "family_light.png": "f806d9f9e139295254cec2f0ed61f9fe8eb750cc2cf99b06c201ec2a993bb4bd",
+      "full_canvas_rgba.png": "ce6c7558b28ab94f4a6d3a8cc7f1b18a4edc9151eb9689d57cc08c32a7cc5177",
+      "full_dark.png": "c535ffe4117a8edbe8068f23f5295ab87ae18bd4aafd7c59389a97341642aa2d",
+      "full_light.png": "7e212e04656d618844f432c756058ad0a5bc7483fff46a05845418aadd8b617d",
+      "herb_a_pristine_bloom.png": "70b54a60718ec5e5a9d4cb5155f0fefe1554a6a8de3a9afede4d97b5e0be26cc",
+      "master.png": "ce6c7558b28ab94f4a6d3a8cc7f1b18a4edc9151eb9689d57cc08c32a7cc5177"
+    },
+    "reference_hashes": {
+      "game\\assets\\icons\\materials_ui\\herb_f_wilted_sprig.png": "002cde309b10aaa2bb371ea8b8fc33dd2b31f6b8d8b1984555c8809b5f2184e7",
+      "game\\assets\\icons\\materials_ui\\herb_e_common_weed.png": "b53be4ebf6967d3cd5956e82aa6dde9c341c75027ef8b26bfda1eaa570e62ebe",
+      "game\\assets\\icons\\materials_ui\\herb_d_fresh_herb.png": "10f87dc1f86f9eee91b1b562b9b6a01cfd8fa0b654d833f75e50ddbf9a9acdbe",
+      "game\\assets\\icons\\consumables\\defective_health_potion.png": "9d9cfd109699411a01606acffd60ff944233c1a792cba8b553efea88e843a240"
+    }
+  },
+  "generation_record": "art_src/materials_painted_2026-09-09/generation_records/herb_a_pristine_bloom_v1.json",
+  "generation_record_sha256": "84a36ff75b4178e4e83dcb0d82bfc8e1a0394ad3e00ffe9332e5f0d07162c436"
+}

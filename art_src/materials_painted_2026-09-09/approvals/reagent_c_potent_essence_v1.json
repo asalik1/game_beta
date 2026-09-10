@@ -1,0 +1,294 @@
+{
+  "id": "reagent_c_potent_essence",
+  "status": "approved for native UI trial",
+  "native_accepted": false,
+  "root_review": {
+    "id": "reagent_c_potent_essence",
+    "version": 1,
+    "reviewed_utc": "2026-09-10T05:18:24.835220+00:00",
+    "reviewer": "root",
+    "source_and_128_candidate_approved_for_native_trial": true,
+    "installed": false,
+    "native_accepted": false,
+    "full_canvas_retained": true,
+    "inspected_original_and_four_proofs": true,
+    "scale_sizes": [
+      128,
+      64,
+      32
+    ],
+    "notes": "Slender connected neck, angular violet bulb, purple stopper and silver collar retained. Pink liquid and glass highlights remain internal; clean transparent silhouette on light/dark proofs, distinct purple flask at128/64/32. Native trial still required.",
+    "files": [
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/reagent_c_potent_essence_v1_generation.json",
+        "sha256": "a4d367bb37e9f3e1e8c69d581f040d2814c33403911745e5632984d2bd848446"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/reagent_c_potent_essence_v1_processed/processing.json",
+        "sha256": "e8754e844e0c79ff048c15434823a68f0898b54f16c558e9b2c6e8fdfa1cb040"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/reagent_c_potent_essence_v1_processed/master.png",
+        "sha256": "3baa191988c11f6947131f1401948b9ca2c92a91ea62d6894fa012f36c988e6c"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/reagent_c_potent_essence_v1_processed/full_canvas_rgba.png",
+        "sha256": "3baa191988c11f6947131f1401948b9ca2c92a91ea62d6894fa012f36c988e6c"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/reagent_c_potent_essence_v1_processed/reagent_c_potent_essence.png",
+        "sha256": "3912df756e18d0c0217809dc7b8522ad6d6277895cf0065d483f0401b361fcd1"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/reagent_c_potent_essence_v1_processed/full_dark.png",
+        "sha256": "71a652ee165a24233d6f55bb7ad7f27e1adad5a643ebd13e79d7c8d5dd846f3b"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/reagent_c_potent_essence_v1_processed/full_light.png",
+        "sha256": "6e72209cec7e14feb2264724b8a06f42b32b3f84045f7970ca0dfd99b453271e"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/reagent_c_potent_essence_v1_processed/family_dark.png",
+        "sha256": "79314f27907b1cc290a3396f99180dc3df4a7c31e09b801e43c95e69e46d6e3e"
+      },
+      {
+        "path": "C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/session-sept10/material-upper-generation/reagent_c_potent_essence_v1_processed/family_light.png",
+        "sha256": "422d106efaac468c1cab65b6786d2659a617aeac26c5a8185a92a79e9b15f168"
+      }
+    ]
+  },
+  "root_review_sha256": "381a38e1e2fd580a3e2b84a73ee0e9fd7843bde440e9ef0e53b2a77b07a6f99b",
+  "independent_review": {
+    "reviewer": "/root/ui_audit",
+    "utc": "2026-09-10T05:24:57.529167+00:00",
+    "id": "reagent_c_potent_essence",
+    "version": 1,
+    "decision": "Suitable for a later native runtime trial; no final asset approval or installation claim.",
+    "accepted_runtime": false,
+    "identity": "The actual legacy tall upright glass flask, pointed violet faceted stopper, two silver neck collars and widening angular purple reservoir are retained. The contained violet liquid and bright vertical reflection preserve the authored subject; no ground, platform, frame or text is added.",
+    "cohesion": "The narrow upright silhouette and violet body remain distinct from the round cyan D and amber E controls at128/64/32 on both backgrounds. Painted reflections and modeled silver surfaces fit the D master and potion control. The narrow authored flask naturally reads slimmer than the round lower grades; no alpha crop or enlargement is justified by these proofs.",
+    "edges": "The violet/magenta within the vessel is an intended identity color, not evidence of key contamination. No visible colored halo or clipped stopper/base in either full composite or actual-size family proof. Native alpha includes one canvas-edge sample at1; the128export outer edge is entirely transparent. Most partial body pixels are near opaque: source nonzero median253 and264824 pixels at250-254. The coherent body on both backgrounds agrees with this distribution; it does not justify flattening alpha or speculative cleanup.",
+    "findings": [],
+    "limits": [
+      "Source/proof trial review only, not native Alchemy/inventory acceptance or installation.",
+      "The stopper, neck and violet body remain identifiable at32px; the detailed liquid meniscus and individual facet reflections are not guaranteed at that size.",
+      "No claim of a dust-free source or all255 alpha; full distributions and bounds are retained.",
+      "No engine, generation, image processing/export, pixel cleanup or canonical mutation by reviewer."
+    ],
+    "metrics": {
+      "full_canvas_rgba.png": {
+        "mode": "RGBA",
+        "size": [
+          1254,
+          1254
+        ],
+        "alpha_histogram": {
+          "0-0": 1293904,
+          "1-8": 5370,
+          "9-31": 620,
+          "32-127": 1532,
+          "128-199": 1094,
+          "200-239": 910,
+          "240-249": 3699,
+          "250-254": 264824,
+          "255-255": 563
+        },
+        "nonzero_alpha_percentiles": {
+          "0": 1.0,
+          "1": 2.0,
+          "5": 250.0,
+          "25": 252.0,
+          "50": 253.0,
+          "75": 253.0,
+          "95": 253.0,
+          "99": 253.0,
+          "100": 255.0
+        },
+        "alpha_bbox": [
+          0,
+          21,
+          1198,
+          1238
+        ],
+        "alpha_ge32_bbox": [
+          401,
+          71,
+          854,
+          1186
+        ],
+        "alpha_ge200_bbox": [
+          401,
+          72,
+          853,
+          1185
+        ],
+        "alpha_edge_max": 1,
+        "nonzero_edge_samples": 1
+      },
+      "reagent_c_potent_essence.png": {
+        "mode": "RGBA",
+        "size": [
+          128,
+          128
+        ],
+        "alpha_histogram": {
+          "0-0": 13158,
+          "1-8": 260,
+          "9-31": 43,
+          "32-127": 97,
+          "128-199": 82,
+          "200-239": 54,
+          "240-249": 110,
+          "250-254": 2359,
+          "255-255": 221
+        },
+        "nonzero_alpha_percentiles": {
+          "0": 1.0,
+          "1": 1.0,
+          "5": 3.0,
+          "25": 252.0,
+          "50": 253.0,
+          "75": 253.0,
+          "95": 255.0,
+          "99": 255.0,
+          "100": 255.0
+        },
+        "alpha_bbox": [
+          38,
+          5,
+          90,
+          124
+        ],
+        "alpha_ge32_bbox": [
+          41,
+          7,
+          87,
+          121
+        ],
+        "alpha_ge200_bbox": [
+          41,
+          8,
+          87,
+          121
+        ],
+        "alpha_edge_max": 0,
+        "nonzero_edge_samples": 0
+      }
+    },
+    "viewed_full_original_files": [
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/reagent_c_potent_essence_v1_processed/full_canvas_rgba.png",
+        "sha256": "3baa191988c11f6947131f1401948b9ca2c92a91ea62d6894fa012f36c988e6c"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/reagent_c_potent_essence_v1_processed/full_dark.png",
+        "sha256": "71a652ee165a24233d6f55bb7ad7f27e1adad5a643ebd13e79d7c8d5dd846f3b"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/reagent_c_potent_essence_v1_processed/full_light.png",
+        "sha256": "6e72209cec7e14feb2264724b8a06f42b32b3f84045f7970ca0dfd99b453271e"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/reagent_c_potent_essence_v1_processed/family_dark.png",
+        "sha256": "79314f27907b1cc290a3396f99180dc3df4a7c31e09b801e43c95e69e46d6e3e"
+      },
+      {
+        "path": "build/qa/session-sept10/material-upper-generation/reagent_c_potent_essence_v1_processed/family_light.png",
+        "sha256": "422d106efaac468c1cab65b6786d2659a617aeac26c5a8185a92a79e9b15f168"
+      },
+      {
+        "path": "art_src/materials_2026-07-30/sources/reagent_c_potent_essence.png",
+        "sha256": "44df3a9ad96ba13f04b959c2651177372221f23da85e954f908724ac7856d261"
+      },
+      {
+        "path": "art_src/materials_painted_2026-09-09/masters/reagent_d_clean_extract_v1.png",
+        "sha256": "71cf4fba30311b6a6938373de4b908b0096705f9140983c8620ca2a5e90a9d36"
+      }
+    ],
+    "style_reference_note": "Exact D master was viewed in full immediately before the C essence review and reused across this contiguous C/B/A review; family proofs include exact approved F/E/D and potion controls.",
+    "source_master_identical_to_viewed_rgba": true,
+    "family_reference_sha256": {
+      "game/assets/icons/materials_ui/reagent_f_foul_residue.png": "616fe29b361901e9aa73fe5809ea2295e62d260a7541bbe7f5944273a5f9154c",
+      "game/assets/icons/materials_ui/reagent_e_crude_extract.png": "06b5fc7301307d2ecb7df18a21e1a99b9f62ce3558d2b61650d5d4d1595bb9a4",
+      "game/assets/icons/materials_ui/reagent_d_clean_extract.png": "8947011c48a311a9f5fb600da47b587d3f9098aa149a8f919c322167d49e9446",
+      "game/assets/icons/consumables/defective_health_potion.png": "9d9cfd109699411a01606acffd60ff944233c1a792cba8b553efea88e843a240"
+    },
+    "processing_record": {
+      "path": "build/qa/session-sept10/material-upper-generation/reagent_c_potent_essence_v1_processed/processing.json",
+      "sha256": "e8754e844e0c79ff048c15434823a68f0898b54f16c558e9b2c6e8fdfa1cb040"
+    },
+    "processing_claims": {
+      "source_sha256": "3baa191988c11f6947131f1401948b9ca2c92a91ea62d6894fa012f36c988e6c",
+      "rgba_source_sha256": "3baa191988c11f6947131f1401948b9ca2c92a91ea62d6894fa012f36c988e6c",
+      "png_sha256": "3912df756e18d0c0217809dc7b8522ad6d6277895cf0065d483f0401b361fcd1",
+      "rgba_pixel_sha256": "ed3ab4e3ba0a4218366653f9ee07e688ca397879ee8a98ea1f65b6a48fc9984e",
+      "source_canvas": [
+        1254,
+        1254
+      ],
+      "export_canvas": [
+        128,
+        128
+      ],
+      "alpha_mode": "native",
+      "key_helper": null,
+      "edge_contract": 0,
+      "edge_feather": 0,
+      "crop": false,
+      "full_canvas": true,
+      "resize_helper_sha256": "53aa0e6d301efda45bf5e9bf2e627855c983e967644c8a8a17fc74af758e41dc"
+    },
+    "image_processing_by_reviewer": false,
+    "engine_started_by_reviewer": false,
+    "canonical_edits_by_reviewer": false
+  },
+  "independent_review_sha256": "c5122fb9c36276ebb67fcff4e880f45a8431179bc1ec85d4181eab3f73501c7f",
+  "processing": {
+    "utc": "2026-09-10T05:14:14.054014+00:00",
+    "id": "reagent_c_potent_essence",
+    "version": 1,
+    "status": "Processed candidate; source/scale review and native acceptance still required",
+    "metadata_sha256": "a4d367bb37e9f3e1e8c69d581f040d2814c33403911745e5632984d2bd848446",
+    "source_sha256": "3baa191988c11f6947131f1401948b9ca2c92a91ea62d6894fa012f36c988e6c",
+    "rgba_source_sha256": "3baa191988c11f6947131f1401948b9ca2c92a91ea62d6894fa012f36c988e6c",
+    "png_sha256": "3912df756e18d0c0217809dc7b8522ad6d6277895cf0065d483f0401b361fcd1",
+    "rgba_pixel_sha256": "ed3ab4e3ba0a4218366653f9ee07e688ca397879ee8a98ea1f65b6a48fc9984e",
+    "source_canvas": [
+      1254,
+      1254
+    ],
+    "export_canvas": [
+      128,
+      128
+    ],
+    "alpha_mode": "native",
+    "key_helper": null,
+    "edge_contract": 0,
+    "edge_feather": 0,
+    "crop": false,
+    "full_canvas": true,
+    "resize_helper_sha256": "53aa0e6d301efda45bf5e9bf2e627855c983e967644c8a8a17fc74af758e41dc",
+    "alpha_counts": {
+      "zero": 1293904,
+      "partial": 278049,
+      "opaque": 563
+    },
+    "image_hashes": {
+      "family_dark.png": "79314f27907b1cc290a3396f99180dc3df4a7c31e09b801e43c95e69e46d6e3e",
+      "family_light.png": "422d106efaac468c1cab65b6786d2659a617aeac26c5a8185a92a79e9b15f168",
+      "full_canvas_rgba.png": "3baa191988c11f6947131f1401948b9ca2c92a91ea62d6894fa012f36c988e6c",
+      "full_dark.png": "71a652ee165a24233d6f55bb7ad7f27e1adad5a643ebd13e79d7c8d5dd846f3b",
+      "full_light.png": "6e72209cec7e14feb2264724b8a06f42b32b3f84045f7970ca0dfd99b453271e",
+      "master.png": "3baa191988c11f6947131f1401948b9ca2c92a91ea62d6894fa012f36c988e6c",
+      "reagent_c_potent_essence.png": "3912df756e18d0c0217809dc7b8522ad6d6277895cf0065d483f0401b361fcd1"
+    },
+    "reference_hashes": {
+      "game\\assets\\icons\\materials_ui\\reagent_f_foul_residue.png": "616fe29b361901e9aa73fe5809ea2295e62d260a7541bbe7f5944273a5f9154c",
+      "game\\assets\\icons\\materials_ui\\reagent_e_crude_extract.png": "06b5fc7301307d2ecb7df18a21e1a99b9f62ce3558d2b61650d5d4d1595bb9a4",
+      "game\\assets\\icons\\materials_ui\\reagent_d_clean_extract.png": "8947011c48a311a9f5fb600da47b587d3f9098aa149a8f919c322167d49e9446",
+      "game\\assets\\icons\\consumables\\defective_health_potion.png": "9d9cfd109699411a01606acffd60ff944233c1a792cba8b553efea88e843a240"
+    }
+  },
+  "generation_record": "art_src/materials_painted_2026-09-09/generation_records/reagent_c_potent_essence_v1.json",
+  "generation_record_sha256": "a4d367bb37e9f3e1e8c69d581f040d2814c33403911745e5632984d2bd848446"
+}
