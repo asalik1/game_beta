@@ -12,7 +12,14 @@ func _ready() -> void:
 	native.r = self
 	native.g = game
 	native.m = game.menus
-	await _checks()
+	if flag("lifetime"):
+		shot_dir = shot_dir.path_join("lifetime")
+		await preload("res://scripts/tests/ability_lifetime.gd").run(self)
+	elif flag("effects"):
+		shot_dir = shot_dir.path_join("effects")
+		await preload("res://scripts/tests/ability_timer_effects.gd").run(self)
+	else:
+		await _checks()
 	for row in native.rows:
 		_check("native." + String(row.id), bool(row.passed), row)
 	game.menus.close()
@@ -25,7 +32,8 @@ func _ready() -> void:
 	var report := {"baseline": flag("baseline"), "rows": rows, "failures": failures,
 		"findings": findings, "key_taps": native.key_taps, "mouse_clicks": native.mouse_clicks,
 		"touch_taps": native.touch_taps,
-		"scope": "Posed frozen enemy, direct production damage/cast entry, real menu key/click input. No ordinary combat or physical-device claim."}
+		"mode": "lifetime" if flag("lifetime") else "effects" if flag("effects") else "history",
+		"scope": "Posed actors with borrowed kit state, direct production effect calls, world pause and optional real chapter replay. No ordinary class play, skin unlock, replication or physical-device claim." if flag("effects") or flag("lifetime") else "Posed frozen enemy, direct production damage/cast entry, real menu key/click input. No ordinary combat or physical-device claim."}
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(shot_dir))
 	var file := FileAccess.open(shot_dir.path_join("report.json"), FileAccess.WRITE)
 	if file == null:

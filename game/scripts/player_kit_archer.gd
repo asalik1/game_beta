@@ -29,8 +29,8 @@ func _use_archer(slot: String, f: float) -> void:
 			# Through swing_delay(), like every other kit: a fire-on-move clip that
 			# fit_action_clip sped up to fit the cooldown reaches that release frame
 			# sooner, and a raw wait would loose after the cycle had already ended.
-			await cast_wait(swing_delay(Balance.ARCHER_LOOSE_DELAY))
-			if dead or downed or ghost:
+			var cast_current: bool = await cast_wait(swing_delay(Balance.ARCHER_LOOSE_DELAY))
+			if not cast_current or dead or downed or ghost:
 				return
 			_hunt_rhythm_tick()
 			if uniq_crits > 0:
@@ -57,8 +57,8 @@ func _use_archer(slot: String, f: float) -> void:
 		"a2": _multishot(f)
 		"a3": _tumble()
 		"ult":
-			await cast_wait(swing_delay(Balance.ARCHER_LOOSE_DELAY))
-			if dead or downed or ghost:
+			var cast_current: bool = await cast_wait(swing_delay(Balance.ARCHER_LOOSE_DELAY))
+			if not cast_current or dead or downed or ghost:
 				return
 			storm_time = 3.0
 			storm_tick = 0.0
@@ -206,8 +206,8 @@ func _skin_arrow(p: Projectile) -> void:
 func _multishot(f := 1.0) -> void:
 	_archer_draw_fx(true)
 	# Loose the volley on the bow's draw-release frame, not the input frame.
-	await cast_wait(swing_delay(Balance.ARCHER_LOOSE_DELAY))
-	if dead or downed or ghost:
+	var cast_current: bool = await cast_wait(swing_delay(Balance.ARCHER_LOOSE_DELAY))
+	if not cast_current or dead or downed or ghost:
 		return
 	# ONE release sound for the whole volley — five overlapping copies of
 	# the same sample phase into a nasty digital flanging artifact.
@@ -573,7 +573,7 @@ func _voidwraith_storm_scene() -> void:
 	# The retract timer is bound to THIS cast's serial: a re-cast inside the
 	# 3.14 s window used to have its fresh limbs retracted by the old timer.
 	void_storm_serial += 1
-	get_tree().create_timer(3.14).timeout.connect(_dismiss_void_tentacles.bind(void_storm_serial))
+	get_tree().create_timer(Balance.VOID_STORM_INDICATOR_DURATION, false).timeout.connect(_dismiss_void_tentacles.bind(void_storm_serial))
 
 
 func _dismiss_void_tentacles(serial: int = -1) -> void:

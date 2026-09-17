@@ -3,8 +3,8 @@
 Solo pause now holds the shared player attack windup on its animation's contact
 frame. A queued Cleave cannot damage an enemy while its swing and cooldown are
 frozen. Online menus keep the world running and committed attacks still resolve.
-This change covers `cast_wait`, used by eleven kit windups; the separate delayed
-ability/rider timers listed below are follow-up work.
+The first checkpoint covers `cast_wait`, used by eleven kit windups; checkpoint
+2 below covers the separate delayed ability/rider timers and world replacement.
 
 Combat report's recent twelve-second window now measures the local player's
 gameplay time. Paused menu reading cannot erase wounds before opening the report
@@ -66,10 +66,74 @@ every kit's timing, exact subframe contact delay, remote replication or physical
 device behavior. The history clock follows the protected reader's survival;
 already committed attacks follow the shared world, as existing projectiles do.
 
-## Follow-up candidates
+## Checkpoint 2 — delayed effects and world lifetime
 
-The read-only timer audit identifies twelve other gameplay timers, plus buff
-indicators, that remain pause-immune. Reproduce and fix these as a separate
-checkpoint; do not describe all ability effects as fixed by `cast_wait`.
-The same audit notes possible Death Mark landing overlap and delayed-rider theme
-contamination; neither is accepted as a runtime-confirmed defect yet.
+The follow-up changes twelve gameplay timer callsites and four duration-linked
+indicators to respect solo pause: Mist; Ashrider/Fury/Aftershock; Wrath,
+Consecration, Aegis blessing and Chains; Death Mark; two mage impact paths;
+Rift; mark X, Aegis crests/orbit and Voidwraith tentacles. Delays and damage
+coefficients stay unchanged. Nine named constants in `balance.gd` retain the
+existing durations and Mist tick interval. The authored Void Weaver helper currently has no
+production caller; that one check directly invokes it, not a live skin selector.
+Projectile-eye cleanup fuses and unrelated short cosmetic timers stay separate.
+
+Pending offensive effects also keep the identity of the world where they began.
+Chapter restart/travel replaces that world while retaining the Player, so old
+attacks now cancel rather than striking fresh enemies. `cast_wait` reports that
+cancellation to all eleven callers before restoring its captured theme payload.
+Existing focus/eye cleanup and dead/target guards remain. The personal Aegis
+buff already survives travel; its expiry blessing stays with that buff.
+Indicator cleanup still runs on its normal schedule. This is not a new policy
+for same-world death, personal finales or every visual lifetime.
+
+Evidence (`build/qa/session-sept17/`):
+
+- `ability-timers-baseline2/`: 73 observations, exactly sixteen expected pause
+  findings, no unexpected failures. `ability-timers-after/` first passes 73/73.
+  Root opened all six images; the first Mist framing was poor and preceding
+  effects lingered in other captures. Numeric evidence is retained, with final
+  camera settling and quiet-time checks completed in the accepted final2 captures.
+- `ability-lifetime-baseline/`: real chapter replay reproduces both old Cleave
+  and Aftershock striking fresh-world targets. The expanded `baseline2/` has
+  19 observations and exactly three findings, adding stale theme restoration.
+  New-cast positive controls and personal Aegis travel/heal controls pass.
+- The first lifetime patch incorrectly cancelled only Aegis healing while its
+  buff survived travel; review rejected it before application. Retained as
+  `ability-timers-candidate/lifetime/rejected-v1-cancelled-personal-heal.patch`.
+- The first compile attempt used the wrong path; its failure is retained in
+  `ability-timers-baseline-compile.log`. Correct compile and desktop quick pass.
+- The first full strict preflight found twelve unchanged duration literals on
+  edited timer lines. `ability-timers-preflight.log` retains this rejected gate;
+  final2 centralizes their exact values in `balance.gd` and reruns validation.
+
+Final acceptance: `ability-timers-final2-*` and `ability-timers-mobile2-*`.
+Desktop quick/full pass (145/225 rows); mobile import, compile (264 scripts),
+strict quick (145 rows) and eleven-path exact mobile sync pass. Native desktop
+lifetime/effects/history pass 19/73/30 checks; host mobile with touch HUD passes
+19/73/26, including the empty-host live-menu control. Full strict preflight passes
+without warnings. Root opened all twenty-two final2 native frames; the earlier
+equivalent final candidate also has independent reviews of all ten new-mode
+frames. The final2 constants review proves exact numeric/source equivalence.
+`ability-timers-checkpoint-validation.json` binds final source, evidence, actual
+commit and the exact forty-six-file preservation audit.
+
+These screenshots are controlled timing illustrations. Immediate pause captures
+Mist before its cloud fade-in; Aegis HUD retains the pre-fixture HP while the
+receipt checks actual HP. Borrowed kits retain the Warrior body. Full quest,
+resources, targets, reports and touch controls fit; no full-animation or normal
+skin progression claim follows from these held frames.
+
+`shot.bat combat_clocks --effects` exercises posed production entry points and
+exact baseline findings; `--lifetime` exercises real replay with frozen actors,
+direct Warrior casts and the direct Aegis helper. Its borrowed actor is not a
+normally progressed Paladin. These checks do not establish every offensive
+continuation's lifecycle independently, exact damage/hit counts for every effect,
+ordinary skin play, remote replication, physical-device behavior, or exact
+subframe timing. The original default mode retains native menu input and empty
+loopback-host controls. Use fresh isolated APPDATA for each mode.
+
+## Further candidates
+
+Death Mark landing overlap has a source-reviewed proposal and unexecuted fixture
+in `deathmark-landing-candidate/`; delayed-rider theme contamination also remains
+unresolved. Neither is an accepted runtime-confirmed improvement yet.

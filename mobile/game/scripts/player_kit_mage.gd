@@ -19,8 +19,8 @@ func _use_mage(slot: String, f: float) -> void:
 				var crystal_count := 2 if _tfx.get("twin", 0) else 1
 				for i in crystal_count:
 					crystal_focuses.append(_spawn_crystal_cast_focus(prelude_dir, cast_delay))
-			await cast_wait(cast_delay)
-			if dead or downed or ghost:
+			var cast_current: bool = await cast_wait(cast_delay)
+			if not cast_current or dead or downed or ghost:
 				for focus in crystal_focuses:
 					_dismiss_crystal_focus(focus)
 				return
@@ -966,6 +966,7 @@ func _mage_ult_mark(pos: Vector2, col: Color, radius: float) -> Sprite2D:
 
 func _void_weaver_ult_scene(pos: Vector2, hit_scale: float, on_land: Callable,
 		fx_copy: Dictionary, col: Color) -> void:
+	var world_id := game.world.get_instance_id()
 	var radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
 	var mark := _mage_ult_mark(pos, col, radius)
 	mark.modulate = Color(0.58, 0.18, 0.94, 0.50)
@@ -992,9 +993,11 @@ func _void_weaver_ult_scene(pos: Vector2, hit_scale: float, on_land: Callable,
 	var depth_bands := [-0.72, -0.36, 0.0, 0.36, 0.72]
 	for band_index in depth_bands.size():
 		_spawn_void_thread_band(pos, radius, depth_bands[band_index], band_index)
-	get_tree().create_timer(0.62).timeout.connect(func() -> void:
+	get_tree().create_timer(Balance.MAGE_SKIN_ULT_IMPACT_DELAY, false).timeout.connect(func() -> void:
 		if is_instance_valid(mark):
 			mark.queue_free()
+		if not _cast_world_current(world_id):
+			return
 		_resolve_mage_skin_ult(pos, hit_scale, on_land, fx_copy, col, "void"))
 
 
@@ -1045,6 +1048,7 @@ func _spawn_void_thread_band(center: Vector2, radius: float,
 
 func _crystal_archmage_ult_scene(pos: Vector2, hit_scale: float,
 		on_land: Callable, fx_copy: Dictionary, col: Color) -> void:
+	var world_id := game.world.get_instance_id()
 	var radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
 	var mark := _mage_ult_mark(pos, col, radius)
 	var sequence := Sprite2D.new()
@@ -1086,7 +1090,12 @@ func _crystal_archmage_ult_scene(pos: Vector2, hit_scale: float,
 	# lotus is the judgment and therefore the only gameplay-impact frame.
 	# Use the same explicit timer as the other skin instead of accumulating
 	# presentation tween intervals: artwork can never move the damage deadline.
-	get_tree().create_timer(0.62).timeout.connect(func() -> void:
+	get_tree().create_timer(Balance.MAGE_SKIN_ULT_IMPACT_DELAY, false).timeout.connect(func() -> void:
+		if not _cast_world_current(world_id):
+			for old_node in [mark, sequence, court_ghost]:
+				if is_instance_valid(old_node):
+					old_node.queue_free()
+			return
 		if not is_instance_valid(sequence):
 			return
 		if is_instance_valid(mark):

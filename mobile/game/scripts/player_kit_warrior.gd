@@ -39,8 +39,8 @@ func _use_warrior(slot: String, f: float) -> void:
 				cleave_eff["force_crit"] = 1  # Red Horizon: the dodge lined it up
 			# Sync the cut to the swing's contact frame — the sword windup means
 			# FX/damage on the input frame read ahead of the animation.
-			await cast_wait(swing_delay(Balance.WARRIOR_SWING_DELAY))
-			if dead or downed or ghost:
+			var cast_current: bool = await cast_wait(swing_delay(Balance.WARRIOR_SWING_DELAY))
+			if not cast_current or dead or downed or ghost:
 				return
 			if decree:
 				game.spawn_text(global_position + Vector2(0, -60), "DECREE", Color(0.95, 0.8, 0.5))
@@ -51,8 +51,9 @@ func _use_warrior(slot: String, f: float) -> void:
 				# (the fury wave2 pattern at full weight).
 				var out_mult := cleave_mult
 				var out_v := 2 - v
-				get_tree().create_timer(0.13).timeout.connect(func() -> void:
-					if not dead:
+				var out_world_id := game.world.get_instance_id()
+				get_tree().create_timer(Balance.MELEE_BACKSWING_DELAY, false).timeout.connect(func() -> void:
+					if _cast_world_current(out_world_id) and not dead:
 						_melee_arc(out_mult, 96.0, "slash", {"stagger": 0.2}, "swing", "sword", out_v))
 			if skin == "dreadknight":
 				# A physical soul-cut rides the contact frame, rather than a red base
@@ -89,8 +90,9 @@ func _use_warrior(slot: String, f: float) -> void:
 				# Fury: a second backhand swing follows — the mirrored cut.
 				var f2 := f
 				var v2 := 2 - v
-				get_tree().create_timer(0.13).timeout.connect(func() -> void:
-					if not dead:
+				var wave_world_id := game.world.get_instance_id()
+				get_tree().create_timer(Balance.MELEE_BACKSWING_DELAY, false).timeout.connect(func() -> void:
+					if _cast_world_current(wave_world_id) and not dead:
 						_melee_arc(0.6 * f2, 96.0, "slash", {"stagger": 0.2}, "swing", "sword", v2))
 			if s_passive() == "kingsblade":
 				var wave := Projectile.spawn(game, global_position + aim_dir(220.0) * 30.0, aim_dir(220.0) * 400.0, 0.0, true, "slash")
@@ -158,8 +160,9 @@ func _use_warrior(slot: String, f: float) -> void:
 				# Crownfall: everything falls twice — the ring collapses and
 				# detonates a beat later.
 				var af := wf
-				get_tree().create_timer(uniq_k("delay")).timeout.connect(func() -> void:
-					if dead or downed or ghost:
+				var aftershock_world_id := game.world.get_instance_id()
+				get_tree().create_timer(uniq_k("delay"), false).timeout.connect(func() -> void:
+					if not _cast_world_current(aftershock_world_id) or dead or downed or ghost:
 						return
 					game.sfx("slam", 0.9)
 					_ring_fx(global_position, Color(0.9, 0.8, 0.6), uniq_k("radius"))

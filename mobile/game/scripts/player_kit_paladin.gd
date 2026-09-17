@@ -64,8 +64,8 @@ func _use_paladin(slot: String, f: float) -> void:
 			# Sync the impact to the warhammer's slam: the heavy overhead swing
 			# has a real windup, so the shock/pillar/hit land WITH the hammer,
 			# not on the input frame (which read ahead of the animation).
-			await cast_wait(swing_delay(Balance.PALADIN_SMITE_DELAY))
-			if dead or downed or ghost:
+			var cast_current: bool = await cast_wait(swing_delay(Balance.PALADIN_SMITE_DELAY))
+			if not cast_current or dead or downed or ghost:
 				return
 			if dawn:
 				# A pillar of light falls with the hammer.
@@ -124,8 +124,9 @@ func _use_paladin(slot: String, f: float) -> void:
 			if _tfx.get("wave2", 0):
 				# Wrath: a burning backswing follows.
 				var jf2 := f
-				get_tree().create_timer(0.13).timeout.connect(func() -> void:
-					if not dead:
+				var wave_world_id := game.world.get_instance_id()
+				get_tree().create_timer(Balance.MELEE_BACKSWING_DELAY, false).timeout.connect(func() -> void:
+					if _cast_world_current(wave_world_id) and not dead:
 						_melee_arc(0.6 * jf2, 92.0, "slash", {"stagger": 0.2}, "swing", "sword"))
 		"a2": _consecration(f)
 		"a3": _aegis()
@@ -262,14 +263,15 @@ func _consecration(f := 1.0) -> void:
 	var fx_copy := _tfx.duplicate()
 	var fmul := f
 	# Land the nova on the warhammer's slam frame, not the input frame.
-	await cast_wait(swing_delay(Balance.PALADIN_SMITE_DELAY))
-	if dead or downed or ghost:
+	var cast_current: bool = await cast_wait(swing_delay(Balance.PALADIN_SMITE_DELAY))
+	if not cast_current or dead or downed or ghost:
 		return
 	var pos := global_position
 	_consecration_pulse(pos, radius, ability_coeff("a2") * f, col, fx_copy)
 	# The ground stays sanctified: a second wave erupts moments later.
-	get_tree().create_timer(0.7).timeout.connect(func() -> void:
-		if dead:
+	var pulse_world_id := game.world.get_instance_id()
+	get_tree().create_timer(Balance.CONSECRATION_REPEAT_DELAY, false).timeout.connect(func() -> void:
+		if not _cast_world_current(pulse_world_id) or dead:
 			return
 		var saved := _tfx
 		_tfx = fx_copy
@@ -418,7 +420,7 @@ func _aegis() -> void:
 		add_child(ward)
 		var ward_tw := ward.create_tween()
 		ward_tw.tween_property(ward, "scale", ward.scale * 1.12, 0.22)
-		get_tree().create_timer(aegis_time).timeout.connect(func() -> void:
+		get_tree().create_timer(aegis_time, false).timeout.connect(func() -> void:
 			if is_instance_valid(ward):
 				ward.queue_free())
 	# The two skins' seals orbit while the shield holds, then gutter out. The
@@ -459,7 +461,7 @@ func _aegis() -> void:
 	if skin in ["eclipse_knight", "fallen_arbiter"]:
 		spin.tween_interval(0.34)
 	spin.tween_property(orbit, "rotation", TAU, 1.1).as_relative()
-	get_tree().create_timer(aegis_time).timeout.connect(func() -> void:
+	get_tree().create_timer(aegis_time, false).timeout.connect(func() -> void:
 		if is_instance_valid(orbit):
 			spin.kill()
 			var fade := orbit.create_tween()
@@ -474,7 +476,7 @@ func _aegis_after(dur: float) -> void:
 	if _tfx.has("aegis_heal"):
 		# Holy: lowering the shield releases the blessing.
 		var frac: float = _tfx["aegis_heal"]
-		get_tree().create_timer(dur).timeout.connect(func() -> void:
+		get_tree().create_timer(dur, false).timeout.connect(func() -> void:
 			if not dead:
 				hp = minf(max_hp, hp + max_hp * frac)
 				game.sfx("potion")
@@ -606,10 +608,11 @@ func _chains_of_wrath(f := 1.0) -> void:
 	htw.tween_property(hammer, "global_position", global_position + Vector2(0, -18), 0.3) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	# The verdict lands once the drag finishes.
-	get_tree().create_timer(0.34).timeout.connect(func() -> void:
+	var verdict_world_id := game.world.get_instance_id()
+	get_tree().create_timer(Balance.CHAINS_VERDICT_DELAY, false).timeout.connect(func() -> void:
 		if is_instance_valid(hammer):
 			hammer.queue_free()
-		if dead:
+		if not _cast_world_current(verdict_world_id) or dead:
 			return
 		game.sfx("slam")
 		game.shake(9.0)

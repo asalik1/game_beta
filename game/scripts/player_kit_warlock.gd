@@ -23,8 +23,8 @@ func _use_warlock(slot: String, f: float) -> void:
 			var cast_eye: Node2D = null
 			if skin == "eldritch_warlock":
 				cast_eye = _spawn_eldritch_cast_eye(aim_dir(), cast_delay)
-			await cast_wait(cast_delay)
-			if dead or downed or ghost:
+			var cast_current: bool = await cast_wait(cast_delay)
+			if not cast_current or dead or downed or ghost:
 				_dismiss_eldritch_cast_eye(cast_eye)
 				return
 			_cast_shadowbolt(aim_dir(), 1.0 * f, cast_eye)
@@ -257,8 +257,8 @@ func _arcane_eye_curse(e: Enemy) -> void:
 ## primed to EXPLODE on death (the class identity).
 func _hex(f := 1.0) -> void:
 	# Land the curse on the sigil-projection frame, not the input frame.
-	await cast_wait(swing_delay(Balance.WARLOCK_CAST_DELAY))
-	if dead or downed or ghost:
+	var cast_current: bool = await cast_wait(swing_delay(Balance.WARLOCK_CAST_DELAY))
+	if not cast_current or dead or downed or ghost:
 		return
 	game.sfx("gate", 1.6)
 	var target := auto_aim()
@@ -632,6 +632,7 @@ func _eldritch_thread_rift_scene(pos: Vector2, radius: float) -> void:
 ## Void Rift: a rift tears open under the target, drags everything
 ## inward for a breath, then BURSTS — the delay IS the ability.
 func _void_rift(f := 1.0) -> void:
+	var world_id := game.world.get_instance_id()
 	_ult_sfx()
 	var target := auto_aim()
 	var pos: Vector2 = target.global_position if target else global_position + facing * 180.0
@@ -716,8 +717,8 @@ func _void_rift(f := 1.0) -> void:
 	# Four pull ticks, then the burst.
 	var hard: bool = fx_copy.get("hard_pull", 0)
 	for i in 4:
-		await get_tree().create_timer(0.22).timeout
-		if dead:
+		await get_tree().create_timer(Balance.VOID_RIFT_PULL_INTERVAL, false).timeout
+		if not _cast_world_current(world_id) or dead:
 			break
 		if skin == "":
 			_ring_fx(pos, col, radius, true)
@@ -738,7 +739,7 @@ func _void_rift(f := 1.0) -> void:
 		heart.queue_free()
 	indraw.emitting = false
 	get_tree().create_timer(0.8).timeout.connect(indraw.queue_free)
-	if dead:
+	if not _cast_world_current(world_id) or dead:
 		return
 	game.sfx("meteor")
 	game.shake(12.0)

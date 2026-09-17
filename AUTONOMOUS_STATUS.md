@@ -18,7 +18,7 @@ unrelated changes found. Receipt: `build/qa/session-sept17/initial-preservation.
 The unfinished brewing journey stays an uncommitted failed experiment, not an
 accepted improvement. No protected art or chroma work is authorized.
 
-Checkpoint 1 fixes shared attack windups resolving during
+Checkpoint 1 (`ee72299ff971ee6aa609e5325d59f273b7bea6d8`) fixes shared attack windups resolving during
 solo pause and damage history aging while solo menus are paused. Corrected
 baseline2 reproduces exactly two defects; desktop quick/full and mobile quick
 pass. Native desktop (30/30) and host mobile/touch (26/26) pass, with all twelve
@@ -27,12 +27,27 @@ sync checks pass; see COMBAT_CLOCKS.md and the checkpoint receipt at
 `build/qa/session-sept17/combat-clocks-checkpoint-validation.json`. The original
 Mage hunt passes and all four native images were reviewed. The checkpoint receipt
 records the resulting commit and preservation audit. DeepSeek's bounded source
-review is preserved and independently
-filtered. The first Claude CLI attempt failed OAuth refresh; after the owner
+review is preserved and independently filtered. The first Claude CLI attempt failed OAuth refresh; after the owner
 repaired authentication, the Fable read-only review succeeded. Its Death Mark
 landing advice is a follow-up candidate needing reproduction and review.
-The timer follow-up patch in `build/qa/session-sept17/ability-timers-candidate/`
-is advisory, unapplied and unexecuted; checkpoint 1 does not fix those timers.
+Checkpoint 2 fixes delayed ability timers and chapter lifetime. Sixteen pause
+defects were reproduced and fixed. Shared windups and delayed offensive effects
+cancel across world replacement before restoring stale cast payloads; Aegis
+expiry healing remains with its travel-persistent personal buff. Expanded replay
+baseline reproduced exactly three findings. A first strict preflight rejected
+twelve unchanged duration literals; final2 centralizes those exact values in
+`balance.gd`, with independent numeric-equivalence review and fresh validation.
+Final2 desktop quick/full (145/225), native lifetime/effects/history (19/73/30),
+mobile import/compile/strict quick (145), mobile native checks (19/73/26), exact
+eleven-path sync and full strict preflight pass. Root opened all twenty-two
+final2 screenshots. Independent source and earlier equivalent native reviews
+record the controlled-fixture, borrowed-kit, startup-FX and stale posed-HUD limits.
+See `build/qa/session-sept17/ability-timers-checkpoint-validation.json` for the
+resulting checkpoint commit, hashes and preserved-file audit. Source pins:
+`build/qa/session-sept17/ability-timers-final2-desktop-source.json`.
+All evidence and rejected attempts are under `build/qa/session-sept17/`; see
+COMBAT_CLOCKS.md for the exact scope and limitations. Death Mark landing remains an unapplied,
+unexecuted candidate in `deathmark-landing-candidate/`, not accepted work.
 
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at

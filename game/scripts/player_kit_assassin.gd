@@ -25,8 +25,8 @@ func _use_assassin(slot: String, f: float) -> void:
 					stab_mult *= 1.0 + uniq_k("bonus")
 					stab_eff["stagger"] = uniq_k("stagger")
 					game.spawn_text(global_position + Vector2(0, -56), "THE SUM", Color(0.95, 0.5, 0.4))
-			await cast_wait(swing_delay(Balance.STAB_STRIKE_DELAY))
-			if dead or downed or ghost:
+			var cast_current: bool = await cast_wait(swing_delay(Balance.STAB_STRIKE_DELAY))
+			if not cast_current or dead or downed or ghost:
 				return
 			var cut := _melee_arc(stab_mult, 118.0, "slash", stab_eff, "stab", "stab")
 			if cut > 0:
@@ -123,8 +123,8 @@ func _fan_of_knives(f := 1.0) -> void:
 	# The range damage is EARNED in close (round 37): thin chip on its
 	# own, but the fan bites double while the stab surge runs.
 	var surge_amp: float = Balance.KNIFE_SURGE_MULT if stab_ls_time > 0.0 else 1.0
-	await cast_wait(swing_delay(Balance.KNIFE_THROW_RELEASE))
-	if dead or downed or ghost:
+	var cast_current: bool = await cast_wait(swing_delay(Balance.KNIFE_THROW_RELEASE))
+	if not cast_current or dead or downed or ghost:
 		return  # went down mid-windup — no knives leave the hand
 	if skin == "phantom":
 		game.sfx("stab", 0.85, 0.0, -3.0)  # Phantom: the Stab SFX, a little deeper
@@ -275,7 +275,7 @@ func _mark_overhead_x(target: CharacterBody2D) -> void:
 	var tw := x_mark.create_tween().set_loops(5)
 	tw.tween_property(x_mark, "position:y", -62.0, 0.5)
 	tw.tween_property(x_mark, "position:y", -56.0, 0.5)
-	await get_tree().create_timer(5.0).timeout
+	await get_tree().create_timer(Balance.DEATH_MARK_INDICATOR_DURATION, false).timeout
 	if is_instance_valid(x_mark):
 		x_mark.queue_free()
 
@@ -400,9 +400,10 @@ func _gilded_iai_strike(target) -> void:
 ## BEHIND it and lands the killing stab (1.3x true, via the real stab
 ## arc). Shadow theme: a survivor under 30% is finished on the spot.
 func _death_mark_execution(target: CharacterBody2D, execute := 0.0) -> void:
+	var world_id := game.world.get_instance_id()
 	var phantom := skin == "phantom"
 	for diag in [Vector2(1, 1).normalized(), Vector2(-1, 1).normalized()]:
-		if not is_instance_valid(target) or target.dying:
+		if not _cast_world_current(world_id) or not is_instance_valid(target) or target.dying:
 			return
 		var tpos: Vector2 = target.global_position
 		if phantom:
@@ -420,8 +421,8 @@ func _death_mark_execution(target: CharacterBody2D, execute := 0.0) -> void:
 			game.shake(3.5)
 			game.burst(tpos, Color(1.0, 0.2, 0.3), 10)
 		hit_enemy(target, 0.7, {"type": "true"})  # DAMAGE — identical for both
-		await get_tree().create_timer(0.16).timeout
-	if not is_instance_valid(target) or target.dying:
+		await get_tree().create_timer(Balance.DEATH_MARK_EXECUTION_INTERVAL, false).timeout
+	if not _cast_world_current(world_id) or not is_instance_valid(target) or target.dying:
 		return
 	# The real blade: appear on the FAR side of the prey and stab back through
 	# it — identical behaviour for both skins (teleport + killing stab arc).

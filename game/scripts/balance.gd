@@ -1435,6 +1435,18 @@ const KNIFE_THROW_RELEASE := 0.15 # delay the knives to the THROW anim's release
 const STAB_STRIKE_DELAY := 0.10   # delay the stab's cut/slash to the lunge frame, so the hit lands WITH the thrust, not on the input frame
 const PALADIN_SMITE_DELAY := 0.16 # delay Judgment/Consecration impact FX+damage to the warhammer's slam frame (the heavy overhead swing has a real windup — FX on the input frame reads ahead of the animation)
 const WARRIOR_SWING_DELAY := 0.13 # delay Cleave's cut/quake to the sword swing's contact frame (same windup-vs-FX sync)
+
+# Delayed ability contacts and duration-linked indicators (gameplay seconds).
+# Named here without retuning their established timing.
+const MIST_TICK_INTERVAL := 0.4
+const MELEE_BACKSWING_DELAY := 0.13
+const VOID_STORM_INDICATOR_DURATION := 3.14
+const DEATH_MARK_INDICATOR_DURATION := 5.0
+const DEATH_MARK_EXECUTION_INTERVAL := 0.16
+const MAGE_SKIN_ULT_IMPACT_DELAY := 0.62
+const CONSECRATION_REPEAT_DELAY := 0.7
+const CHAINS_VERDICT_DELAY := 0.34
+const VOID_RIFT_PULL_INTERVAL := 0.22
 # Melee swing alternation (2026-08-16): a1 alternates the base "attack" strip with
 # an ALTERNATE swing ("<class>_attackb"). Its contact can land on a different
 # frame than the base const above was tuned to — class -> measured contact time

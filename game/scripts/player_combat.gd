@@ -970,7 +970,8 @@ func swing_delay(base_delay: float) -> float:
 ## base, not just tint. Snapshot this cast's payload before the timer and put it
 ## back on resume, so a cast always lands its OWN theme. (Same trick the archer's
 ## delayed storm arrow already used inline for _tfx; this is the shared form.)
-func cast_wait(sec: float) -> void:
+func cast_wait(sec: float) -> bool:
+	var world_id := game.world.get_instance_id()
 	var fx: Dictionary = _tfx
 	var col: Color = _tcolor
 	var themed: bool = _themed
@@ -978,10 +979,20 @@ func cast_wait(sec: float) -> void:
 	# Contact follows the same paused, time-scaled world as the swing animation.
 	# Online menus do not pause the tree, so committed attacks still resolve.
 	await get_tree().create_timer(sec, false).timeout
+	if not _cast_world_current(world_id):
+		return false
 	_tfx = fx
 	_tcolor = col
 	_themed = themed
 	_cast_base = base
+	return true
+
+
+## Chapter replay keeps this Player but replaces Game.world. Pending attacks
+## belong to the world where they began, including when a menu held the clock.
+func _cast_world_current(world_id: int) -> bool:
+	return is_instance_valid(game) and is_instance_valid(game.world) \
+		and game.world.get_instance_id() == world_id
 
 
 func _move_dir() -> Vector2:
@@ -2796,6 +2807,7 @@ const MIST_POOL_CELL := 192.0
 const MIST_POOL_OFFSET := Vector2(0, -16)
 
 func _mist(pos: Vector2, radius: float, dps_mult: float, color: Color, dur := 2.5) -> void:
+	var world_id := game.world.get_instance_id()
 	var root := Node2D.new()
 	root.global_position = pos
 	# The gas body sits UNDER the actors (z −3): enemies stand IN the cloud
@@ -2907,12 +2919,12 @@ func _mist(pos: Vector2, radius: float, dps_mult: float, color: Color, dur := 2.
 	motes.z_index = 3
 	root.add_child(motes)
 
-	var ticks := int(dur / 0.4)
+	var ticks := int(dur / Balance.MIST_TICK_INTERVAL)
 	for i in ticks:
-		await get_tree().create_timer(0.4).timeout
+		await get_tree().create_timer(Balance.MIST_TICK_INTERVAL, false).timeout
 		if not is_instance_valid(root):
 			return
-		if dead:
+		if not _cast_world_current(world_id) or dead:
 			root.queue_free()
 			return
 		for e in _enemies_within(pos, radius):

@@ -17,6 +17,12 @@ ending history guard. Use fresh isolated APPDATA; add
 `--mobile --renderer=gl_compatibility --touch` for host-rendered mobile source.
 `--baseline` permits only the two old pause findings and omits the later strict
 recovery/network phases. See COMBAT_CLOCKS.md for evidence and limitations.
+Add `--effects` to test sixteen delayed gameplay/indicator pause callsites in a
+posed kit fixture; its baseline requires exactly sixteen named findings. Add
+`--lifetime` for real chapter replay with a retained Player, cancelled old-world
+attacks/payloads, fresh-cast controls and preserved personal Aegis expiry healing.
+That mode's pausable-only baseline requires three named findings. These modes
+write `effects/` and `lifetime/` subdirectories and use direct production calls.
 
 Exploration QA: `shot.bat exploration_friction --competition --endpoint-contracts
 --field-notes --timeout=300` exercises actual hunt-sign input, nearest eligible
