@@ -3021,11 +3021,14 @@ func auto_equip() -> int:
 	return changed
 
 
-## Level up ONE socketed gem in place (eats two matching bag gems).
+## Level up ONE socketed gem within its vessel's limit (eats two matching bag gems).
 func _upgrade_equipped_once() -> bool:
 	for slot in equipment:
-		for gem in equipment[slot].get("gems", []):
-			if gem["lvl"] < Items.GEM_MAX_LEVEL and _take_from_bag(gem["stat"], gem["lvl"], 2):
+		var item: Dictionary = equipment[slot]
+		var cap := mini(Items.GEM_MAX_LEVEL, int(Items.GEM_LEVEL_LIMIT.get(String(item.get("grade", "")), 0)))
+		for gem in item.get("gems", []):
+			# Check before consuming ingredients; legacy over-cap sockets stay intact.
+			if gem["lvl"] < cap and _take_from_bag(gem["stat"], gem["lvl"], Balance.GEM_EQUIPPED_UPGRADE_MATCHES):
 				gem["lvl"] += 1
 				if gem["lvl"] >= Items.GEM_MAX_LEVEL:
 					game.unlock_achievement("gem_max")

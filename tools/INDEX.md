@@ -253,6 +253,14 @@ Append `--mobile --renderer=gl_compatibility` for mobile-source rendering.
 `--baseline` records known old presentation defects; acceptance omits it.
 Read `TORCH_MOUNTS.md` for scope and evidence.
 
+Gem synthesis QA: `shot.bat gems --synthesis-caps --timeout=180` uses legal lent
+gear and actual inventory button input to check vessel caps, exact ingredients,
+legal upgrades, road-only bag synthesis and equipped socket/body touch routing.
+Isolate APPDATA under `build/qa`;
+add `--mobile --renderer=gl_compatibility --touch` for mobile-source touch UI.
+The preserved before-source baseline requires exactly three grade crossings.
+See GEM_SYNTHESIS.md for controlled-setup and persistence limits.
+
 Dialogue clarity QA: `shot.bat dialogue_clarity --timeout=300` opens actual
 Fenna with E, then uses intercepted QA callbacks to check reader access, backlog
 input blocking, solo/empty-loopback pause behavior and wrapped text/choice

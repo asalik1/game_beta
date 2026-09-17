@@ -326,6 +326,51 @@ fixture is not ordinary solo input or replicated actor-death evidence. The
 preserved road_hunt wrapper/unlisted additions remain untouched and unneeded
 by the already accepted company entry. No warning/rez-prompt clearance claim.
 
+Checkpoint 14 is validated: equipped synthesis respects the existing C2/B3/A6/S10
+limits before consuming ingredients, skips capped vessels, and preserves bag
+triples, road policy and already-owned over-cap gems. Inventory copy explains
+the limit and says 'No available gem upgrades' when nothing can advance.
+Baseline1 mouse input reproduced exactly C3/B4/A7 illegal sockets, consuming two
+ingredients and increasing attack (25 checks, three findings, six reviewed images).
+
+Native mobile validation also exposed equipped socket presses opening the item
+Info card. Trace1 proved touch-scroll setup makes all descendants PASS, so an
+emulated mouse press bubbles from the socket into its parent. The parent now
+ignores its socket area while leaving input propagation to ScrollContainer.
+Filled/empty socket taps, body taps, raw-body fallback, one-step dismissal and
+socket-originated drag scrolling pass. Raw touch is handled only with mouse
+emulation disabled. The legacy gem showcase now opens a real menu underlay.
+The socketless-item text also correctly identifies C as the first socket grade.
+
+Rejected/partial runs remain intact: final1 mobile stale-control QA traversal;
+baseline2 wrong Info card; final2 incorrect whitespace oracle; final3 insufficient
+raw-touch-only fix; trace1 route proof; fix1 fixed-position dismissal oracle.
+Fix2's 38 touch checks passed; final4 added empty-socket acceptance. Final4
+visual review rejected maximum-level guidance in the old showcase and actual
+bag card; a new native counterexample captured its false 'Gather three' prompt.
+The card now says maximum gems cannot be synthesized and explains vessel limits.
+The fixture's perfected-gem copy is accurate too. Strict preflight also flagged
+the moved existing recipe literal; Balance now names its unchanged two-gem cost.
+Final5 desktop quick146/full226 and native36/nine images pass. Mobile import,
+compile282, quick146, native40/nine images and exact seven-source sync pass. The
+corrected default showcase adds two images per platform. Strict preflight and
+independent review of all22 final originals pass. Root reviewed selected baseline,
+rejected, prototype and final originals with hashes. Exact source/evidence hashes,
+preservation and actual commit are in gem-caps-checkpoint-validation.json.
+See GEM_SYNTHESIS.md. No owned save migration, earned progression, reload/reconnect
+or physical-device claim. Existing network contracts are unchanged. Original-resolution reinspection corrected an apparent empty-label omission in
+the review preview; all names are present in the native originals. No game defect
+is claimed from that rejected initial impression.
+
+Owner requested heavier parallel implementation. Claude Fable's loot/reward audit
+found no defensible new defect; its advisory evidence is retained. Claude now owns
+an isolated inventory body tap/drag implementation candidate; DeepSeek owns an
+isolated count-neutral first-clear guidance/QA candidate. A separate recovery
+source audit found no established defect and reviewed the planned ordinary Warrior
+experiment. Its 18-character test name was corrected to15 before any live attempt,
+with original source preserved. Root owns integration, sole engine, mobile and
+serialized commits; none of these source candidates is an accepted checkpoint.
+
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at
 the 13:00 UTC deadline. Its prompt requires the 12:00 feature cutoff, final

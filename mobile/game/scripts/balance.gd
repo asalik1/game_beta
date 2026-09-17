@@ -1063,6 +1063,8 @@ const DISCARD_NO_PICKUP_TIME := 1.5
 # SHOP gear now rolls the chapter's GENERAL band (Items.roll_shop_grade) — the
 # old per-act appearance weights are folded into CHAPTER_GEAR_WEIGHTS above.
 # GEM levels by act: elite/boss drop floor, and shop stock range [lo, hi].
+# Existing recipe: the socketed gem plus two matching bag gems makes one upgrade.
+const GEM_EQUIPPED_UPGRADE_MATCHES := 2
 const GEM_ACT_LEVEL := {1: 1, 2: 2, 3: 5}
 const SHOP_GEM_RANGE := {1: [1, 1], 2: [2, 4], 3: [5, 7]}
 const BOSS_FIRST_CLEAR_GEM_BONUS := 1                   # first-clear catch-up bundle rolls +1 level

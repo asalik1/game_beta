@@ -1659,6 +1659,9 @@ func _run_systems() -> void:
 	game.player.recalc()
 	game.chapter_id = _keep_ch_5a2
 	print("ok: auto-synthesize (equipped-first, %d upgrades)" % ups)
+	var gem_caps_error: String = preload("res://scripts/tests/test_gem_synthesis_caps.gd").run(self)
+	if gem_caps_error != "":
+		return _fail(gem_caps_error)
 
 	# 5b. Save / load roundtrip on a scratch slot (now with room state).
 	var p: Player = game.player

@@ -2328,12 +2328,12 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	if not p.gem_bag.is_empty():
 		var auto_cb := func() -> void:
 			var n: int = game.local_player.auto_synthesize()
-			inventory_notice = "%d gem upgrade%s." % [n, "" if n == 1 else "s"] if n > 0 else "No matching gems to merge."
+			inventory_notice = "%d gem upgrade%s." % [n, "" if n == 1 else "s"] if n > 0 else "No available gem upgrades."
 			open_inventory("gear", cat)
 		var ab := _btn(catrow, "⚒ Auto-synthesize", auto_cb, Color(0.6, 0.9, 1.0))
 		ab.add_theme_font_size_override("font_size", 12)
 		ab.custom_minimum_size.y = 28.0 if not game.touch_mode else 34.0
-		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nIn Crownfall, gems socketed in your equipped gear level up FIRST\n(each uses two matching gems from the bag); on the road only\nthe bag merges — socketed work waits for the Lapidary."
+		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nIn Crownfall, equipped gems level up FIRST, using two matching\nbag gems, up to their gear grade's gem limit. On the road only\nthe bag merges — socketed work waits for the Lapidary."
 	if not p.backpack.is_empty():
 		var order_button := _btn(catrow, "Order: " + String({"found": "Found", "grade": "Grade", "slot": "Slot", "kept": "Kept first"}[inventory_order]), func() -> void:
 			var orders := ["found", "grade", "slot", "kept"]
@@ -2449,8 +2449,10 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			var gem_cb := func() -> void:
 				var info := "%s  x%d\n\n" % [Items.gem_title(g), count]
 				var is_special: bool = String(g["stat"]) in Balance.SPECIAL_GEM_STATS
-				info += ("A SPECIAL gem — it takes the violet ★ socket of A/S gear.  " if is_special else "A regular gem — any ◇ socket on C+ gear.  ")
-				if can_synth:
+				info += ("A SPECIAL gem — uses a violet ★ socket on A/S gear, within its gem-level limit.  " if is_special else "A regular gem — uses a ◇ socket within the gear grade's gem-level limit.  ")
+				if int(g["lvl"]) >= Items.GEM_MAX_LEVEL:
+					info += "Maximum gem level — cannot be synthesized further."
+				elif can_synth:
 					info += "Synthesize combines three of these into one Lv%d gem." % (g["lvl"] + 1)
 				else:
 					info += "Gather three to synthesize a stronger one."
@@ -2633,10 +2635,7 @@ func _equipped_row(left: VBoxContainer, slot: String, cat: String) -> void:
 	if has:
 		var open_cb := func() -> void:
 			open_item_panel(item)
-		card.gui_input.connect(func(e: InputEvent) -> void:
-			if (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT) \
-					or (e is InputEventScreenTouch and e.pressed):
-				open_cb.call())
+		var sockets: HBoxContainer = null
 		if socket_n > 0:
 			var refresh := func() -> void: open_inventory("gear", cat)
 			var can_fn := func(_pos: Vector2, data: Variant) -> bool:
@@ -2652,6 +2651,15 @@ func _equipped_row(left: VBoxContainer, slot: String, cat: String) -> void:
 			srow.mouse_filter = Control.MOUSE_FILTER_PASS
 			row.add_child(srow)
 			_socket_row(srow, item, refresh)
+			sockets = srow
+		card.gui_input.connect(func(e: InputEvent) -> void:
+			if (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT) \
+					or (e is InputEventScreenTouch and e.pressed and not Input.emulate_mouse_from_touch):
+				# Touch scrolling makes descendants PASS. Socket presses must keep
+				# bubbling to the scroll container without also opening their item.
+				if sockets != null and sockets.get_global_rect().has_point(card.get_global_transform() * e.position):
+					return
+				open_cb.call())
 
 
 ## One clickable bag slot. A stack count (gems, potions, materials) rides as
@@ -3502,7 +3510,7 @@ func _item_gems_tab(body: VBoxContainer, item: Dictionary) -> void:
 	var slots: int = item.get("gem_slots", 0)
 	var gems: Array = item.get("gems", [])
 	if slots == 0:
-		_lbl(body, "This item has no sockets — only B-grade gear and above can hold gems.", 13, Color(0.55, 0.55, 0.6))
+		_lbl(body, "This item has no sockets — only C-grade gear and above can hold gems.", 13, Color(0.55, 0.55, 0.6))
 		return
 	_lbl(body, "The Lapidary counts you a %s." % game.favor_tier_name("lapidary"),
 		12, Color(0.75, 0.95, 0.7))
