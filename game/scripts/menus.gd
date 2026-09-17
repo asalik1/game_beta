@@ -3913,9 +3913,9 @@ func _build_talent_loadouts_tab(vbox: VBoxContainer, p: Player) -> void:
 		list.add_child(row_box)
 		var unlocked: bool = Skills.row_open(p.cls, r, p.tree_points, p.level)
 		var spent := Skills.points_in_row(p.cls, r, p.tree_points)
-		var row_l := _lbl(row_box, "LEVEL %d\n%s\n%d / %d" % [
-			Skills.ROW_LEVELS[r],
-			"UNLOCKED" if unlocked else "LOCKED\n(fill row above)",
+		var row_l := _lbl(row_box, "%s\n%s\n%d / %d" % [
+			"STARTER" if r == 0 else "LEVEL %d" % Skills.ROW_LEVELS[r],
+			"UNLOCKED" if unlocked else "LOCKED\n(or fill row above)",
 			spent, Skills.MAX_PER_ROW], 12,
 			Color(0.95, 0.85, 0.5) if unlocked else Color(0.4, 0.4, 0.45))
 		row_l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -3942,7 +3942,7 @@ func _build_talent_loadouts_tab(vbox: VBoxContainer, p: Player) -> void:
 			b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			b.add_theme_constant_override("icon_max_width", 64)
 			_talent_card_style(b, theme_col, pts > 0, unlocked)
-	_hint(vbox, "ESC / T to close — a row opens at its level, or as soon as the row above it is full")
+	_hint(vbox, "ESC / T to close — first row is always open. Later rows open at their level or when the row above is full.")
 
 
 const ABILITY_CARD := 72.0  # a square the variant icon FILLS (icons are 64px art)

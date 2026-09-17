@@ -247,7 +247,7 @@ not two-peer transport. Host mobile Compatibility is not device testing;
 hero/reward FX occlusion limits pickup/opening pictures. See PROP_SHADOWS.md.
 All 46 preserved files remain unchanged. The older failed brewing journey and
 its inventories remain unaccepted; its route advisory remains unimplemented.
-Checkpoint 11 completes touch Skills tabs and attribute allocation with 44-unit
+Checkpoint 11 (`1a6022a23882b572cd512e042959ea75bea0c19b`) completes touch Skills tabs and attribute allocation with 44-unit
 minimum targets, preserved scroll offsets after spending and a shell-identity
 guard. The one-line "All spent" heading avoids a 32-pixel layout jump; ordinary
 reopening resets both columns. Desktop buttons retain their original dimensions.
@@ -267,6 +267,20 @@ claim. Dossier synthetic party overlap remains a fixture limitation. See
 SKILLS_TOUCH.md and build/qa/session-sept17/skills-touch-checkpoint-validation.json
 for final commit, source/evidence hashes and preservation audit. All46 unrelated
 files remain unchanged. No delegated canonical edits are pending.
+
+Checkpoint 12 corrects the misleading LEVEL10 caption to STARTER on the
+always-open first talent row. The footer states its exception and both later-row
+unlock keys; locked rows say "or fill row above". DESIGN.md now matches the
+July28 owner-directed rules and identifies attribute spending correctly.
+Mechanics, budgets, caps, saves and network behavior remain unchanged.
+Final1 desktop quick/full145/225 and native focused250/dossier560 pass; mobile
+import/compile279/strictquick145 and native250/dossier560 pass. Root opened the
+old baseline plus all four final Talents views; complete copy fits desktop and
+host Compatibility/touch. The other54 generated frames are regression evidence,
+not claimed root visual reviews. Strict preflight and independent review of all four Talents originals pass.
+See build/qa/session-sept17/talent-copy-checkpoint-validation.json for the actual
+commit, exact source/evidence hashes and preservation audit.
+No new gameplay test scaffold was added for this copy correction.
 
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at
