@@ -89,12 +89,32 @@ commit, hashes, gates, fixture limits and post-commit preservation audit. All
 46 unrelated preserved files remain unchanged. No canonical delegated work is
 pending. Ignored source candidates and advisory artifacts remain preserved.
 
-Next candidates: the read-only audit at
-`build/qa/session-sept17/combat-readability-candidates.md` traces a guest overhead
-health fill that skips the final heal to full, and ally damage text spawning
-30px lower on guests. Reproduce using real support healing and actual native
-co-op presentation before accepting fixes; fixture resets alone are not ordinary
-play proof. Other delayed-rider source candidates remain separate work.
+Checkpoint 5 corrects full-health guest enemy overhead bars. After real support
+healing reaches 100%, the bar now refreshes its fill and edge cap using the
+existing helper; pristine hidden and dead bars keep their visibility policy.
+Baseline2 reproduces exactly four stale full/repeated-full geometry findings
+across 81 checks. The first baseline is preserved and rejected for seven
+framing failures from overlapping posed player bodies; separating the host
+pose fixes those without relaxing checks. Fixed desktop/mobile paired healing
+pass 81 checks each with zero findings. Desktop quick/full pass (145/225),
+mobile import/compile/strict quick pass (145), default guest Blink passes 47,
+exact three-path synchronization and full strict preflight pass. Root opened
+all 32 native frames, including rejected evidence; 14 baseline2/fixed desktop
+frames also received independent review. No physical-device or ordinary healer
+AI encounter claim: the paired rig freezes actors and controls support timing.
+See COMBAT_READABILITY.md and
+`build/qa/session-sept17/heal-bar-checkpoint-validation.json` for the resulting
+commit, source/evidence hashes, limitations and post-commit preservation audit.
+All 46 unrelated preserved files remain byte-identical; no delegated canonical
+work or engine is pending. Root owns serialized commits.
+
+Next candidates: `build/qa/session-sept17/heal-bar-design-review.md` traces
+separate host overhead refresh omissions for Vampiric attacker healing and
+some Boss self-heals/resets. `combat-readability-candidates.md` also traces ally
+damage text spawning 30px lower on guests. Reproduce and assess those separately;
+the guest full-heal candidate is now handled. Other delayed-rider source
+candidates remain separate work. Ignored source proposals and failed/partial
+evidence remain preserved, including the old unfinished brewing journey.
 
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at

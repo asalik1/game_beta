@@ -1542,6 +1542,9 @@ func net_apply_state(pos: Vector2, flip: bool, walk: bool, hp_frac: float, untar
 		hp_bar_bg.visible = true
 		hp_bar_fg.visible = true
 		_update_hp_fill()
+	elif hp == max_hp and not dying:
+		# Revealed bars stay visible after healing and must reach their full edge.
+		refresh_hp_bar()
 
 
 ## Wave-2 fix #2: apply a combat-tell tint to this MIRROR for `dur` seconds

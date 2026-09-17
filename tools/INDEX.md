@@ -68,6 +68,12 @@ positive control. L5/theme access is lent with actual L5 recalculated stats;
 outputs go in `deathmark/payload/`. The same isolated APPDATA rule applies.
 Stab is chained from the observed ultimate edge; late post-teleport contact
 observations fail the fixture instead of being accepted as missed attacks.
+Add `--healing` for real Choir Cantor support healing over the same paired ENet
+stream, checking overhead fill/cap through partial/full/repeated heals, later
+damage and replicated death. Actors and heal timing are controlled; no normal
+AI encounter claim. Writes `healing/` with seven native images; `--baseline`
+requires exactly four stale full/repeated-fill/cap findings. Same isolated
+APPDATA rule; mobile uses the host Compatibility renderer. See COMBAT_READABILITY.md.
 
 Capital arrival QA: `shot.bat capital_arrival --arrival-consumers --timeout=180`
 uses a normal solo boot, real Pause travel and live body/camera observations.
