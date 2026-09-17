@@ -110,6 +110,8 @@ static func _damage_checks(g: Game, p: Player, b: Boss) -> String:
 	if b.vuln_time != 5.0 or b.vuln_mult != 1.5:
 		return "cast exposure overwrote an existing class debuff"
 	b.reset_fight()
+	if b.hp != b.max_hp or not b.hp_bar_fg.visible or not is_equal_approx(b.hp_bar_fg.size.x, Enemy.HP_BAR_W):
+		return "fight reset left a wounded overhead health bar"
 	if b.cast_window.phase != "" or b._fight_serial != 1:
 		return "fight reset kept an old cast or sequence alive"
 	if not b._begin_signature():

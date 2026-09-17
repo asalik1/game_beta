@@ -1,5 +1,67 @@
 # Combat readability
 
+## Host enemy bars after self-healing — September 17, 2026
+
+Eight missing refresh calls now keep revealed overhead bars consistent with
+actual HP after six boss self-heals, boss fight reset, and a Vampiric attack on
+the local player. Choir Mother's Hunger, Saint Varo's incense, Ordo's consumed
+Sons, Sleepkeeper's Drowse, Gardener's compost and Kaethra's roots use the
+existing shared fill/cap helper immediately after their existing HP changes.
+Heal amounts, damage, timing, target HUD, network messages and visibility policy
+are unchanged. A pristine full bar remains hidden; a previously wounded living
+bar reaches full width after reset. The existing reset test checks this too.
+No player-facing Codex change is needed for this presentation correction.
+
+`shot.bat boss_cast --healing --timeout=180` adds a focused mode to the existing
+isolated keep rig. It checks all eight production entrypoints with real wounds,
+real add factories and healing methods. Each run has 103 assertions. The
+`--baseline` contract requires exactly 18 named stale fill/cap findings; all
+other prerequisites, HP math and negative controls remain strict. Vampiric
+healing covers partial/full health, shield-only damage and death. Boss controls
+cover absent censers/roots, actual dying compost, reset relocation/cast lifetime,
+and pristine hidden bars. The baseline keeps an 80% boss overhead bar after
+its target HUD reaches 88% and then 100%; the accepted source updates both.
+
+Baseline1 is rejected for freeing a dead actor before its deferred death
+accounting callback. The fixture now drains two frames before disposal.
+Baseline2 and baseline3 reproduce the numeric defect but have a chest obscuring
+the posed wolf. Baseline3's attempted loot cleanup did not solve that capture
+and is removed from accepted source. Baseline4 moves the wolf clear of the chest
+and lets transient text expire for settled-bar inspection. All failed/partial
+runs remain preserved. Static scenery and HUD are retained in final captures.
+
+The fixture is offline, no-save and controlled: actors are frozen, HP loss calls
+production damage directly, support timing is forced, Sons/blooms are posed,
+Drowse's accumulator is seeded, and Ordo borrows generic Morwen cast state only
+to check reset cancellation. Ordo has no authored breakable signature here.
+The minimum-level factory clamp produces a Lv2 wolf. The posed Son partly
+overlaps Ordo before consumption; this is not full add-art acceptance. Temporary death XP/loot
+callbacks may occur; this is not an earned encounter or reward test. Tiny
+Drowse healing is numerical acceptance, not a visible-pixel claim. Native
+captures cover Vampiric partial/full and Ordo consumed-Son/reset; they inspect
+settled bars, not readability while callouts overlap. The posed quest monster
+count is stale in this cleared fixture. Native mobile renders mobile source on
+the Windows Compatibility renderer with touch disabled, not a physical device.
+
+Desktop quick/full pass (145/225), mobile import/compile and strict quick pass
+(145), and focused desktop/mobile runs pass 103 checks with zero findings.
+The original boss-cast mode passes its live cast and real ENet regression with
+nine screenshots. Exact five-path mobile synchronization and full strict
+preflight pass. Root opened
+all 45 native originals, including the rejected attempts; twelve baseline4/
+strict frames have independent review. The original cast rig retains posed
+actor/HUD overlap in some shots and fading prior-cast text; it is not new global
+framing acceptance. Established shutdown renderer/RID diagnostics and the full
+suite's intentional negative base64 diagnostic remain recorded.
+
+Evidence, exact source pins and the final commit/preservation audit are in
+`build/qa/session-sept17/host-healing-checkpoint-validation.json`.
+A source review found no supported online encounter that assigns Vampiric:
+endgame and Waking Incursions are solo-gated, and online-capable authored
+affixes exclude it. Guest-owned-victim healing acknowledgment is a future
+multiplayer-affix prerequisite, not a reproduced ordinary co-op defect. See
+`vamp-authority-candidate.md` in the evidence directory.
+
 ## Guest enemy bars after full healing — September 17, 2026
 
 An already-visible guest enemy overhead bar now reaches its full edge when
@@ -60,8 +122,8 @@ The final death screenshot may retain a fading corpse; immediate numeric
 snapshots establish hidden bars. Very low HP cap thresholds and alternate
 elite/Boss art are not new native acceptance claims.
 
-Source review found separate host overhead-bar omissions in Vampiric attacker
-healing and some Boss self-heals/reset paths. Those remain follow-ups; this
-change only corrects the full-health guest state presenter. A separate candidate
+The later host-healing checkpoint above addresses the separate overhead-bar
+omissions in Vampiric attacker healing and Boss self-heals/reset paths. This
+earlier guest checkpoint only corrects the full-health guest state presenter. A separate candidate
 places ally damage text 30px lower on guests and still needs reproduction.
 The large target HUD uses actual HP and its existing damage trail is deliberate.

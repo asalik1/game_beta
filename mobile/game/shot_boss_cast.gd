@@ -20,6 +20,11 @@ func _ready() -> void:
 	game.play_started = true
 	game.hud.visible = true
 	await _prepare()
+	if flag("healing"):
+		var healing_error: String = await preload("res://scripts/tests/host_healing_live.gd").run(self)
+		if healing_error != "": push_error(healing_error)
+		finish(1 if healing_error != "" else 0)
+		return
 	var error: String = preload("res://scripts/tests/test_boss_cast.gd").run(self)
 	if error == "" and not flag("trials-only"):
 		await sim_wait(1.6)

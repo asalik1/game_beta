@@ -540,6 +540,7 @@ func reset_fight() -> void:
 	_cancel_signature()
 	# Called when the player dies: the boss walks back and heals up.
 	hp = max_hp
+	refresh_hp_bar()
 	global_position = home
 	charging = false
 	telegraphing = false
@@ -1064,6 +1065,7 @@ func _hymn_of_hunger() -> void:
 		Balance.BOSS_HUNGER_DELAY, dmg * Balance.BOSS_HUNGER_DAMAGE,
 		{"color": Color(0.8, 0.4, 1.0, 0.55)})
 	hp = minf(max_hp, hp + max_hp * Balance.BOSS_HUNGER_HEAL)
+	refresh_hp_bar()
 	game.spawn_text_all(global_position + Vector2(0, -70), "the choir feeds her", Color(0.8, 0.5, 1.0))
 
 
@@ -1447,6 +1449,7 @@ func _saint_varo(player: Player, to_player: Vector2, dist: float, delta: float) 
 			break
 	if incense:
 		hp = minf(max_hp, hp + max_hp * 0.015 * delta)
+		refresh_hp_bar()
 		heal_text_t -= delta
 		if heal_text_t <= 0.0:
 			heal_text_t = 3.0
@@ -2042,6 +2045,7 @@ func _march_sons(delta: float) -> void:
 		var to: Vector2 = global_position - s.global_position
 		if to.length() <= 90.0:
 			hp = minf(max_hp, hp + max_hp * 0.08)
+			refresh_hp_bar()
 			verdict_speed = minf(2.5, verdict_speed + 0.15)
 			game.spawn_text(global_position + Vector2(0, -70), "the Judge consumes a Son", VERDICT)
 			s.queue_free()
@@ -2416,6 +2420,7 @@ func _sleepkeeper(player: Player, to_player: Vector2, dist: float, delta: float)
 	drowse = dz_max
 	if drowse > 0:
 		hp = minf(max_hp, hp + max_hp * 0.008 * drowse * delta)
+		refresh_hp_bar()
 
 	_march_dreamers(delta)
 	dreamer_t -= delta
@@ -2721,6 +2726,7 @@ func _tend_blooms() -> void:
 		if b.dying:
 			if b.global_position.distance_to(global_position) <= 150.0:
 				hp = minf(max_hp, hp + max_hp * 0.04)
+				refresh_hp_bar()
 				game.spawn_text(global_position + Vector2(0, -70), "he composts the bloom", ROOTC)
 			continue
 		still.append(b)
@@ -2835,6 +2841,7 @@ func _kaethra_bloom(_player: Player, _to_player: Vector2, _dist: float, delta: f
 			break
 	if root_alive:
 		hp = minf(max_hp, hp + max_hp * 0.02 * delta)
+		refresh_hp_bar()
 	if special_cd <= 0.0:
 		special_cd = 5.0
 		game.sfx("nova")

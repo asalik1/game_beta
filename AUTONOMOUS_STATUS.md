@@ -108,13 +108,39 @@ commit, source/evidence hashes, limitations and post-commit preservation audit.
 All 46 unrelated preserved files remain byte-identical; no delegated canonical
 work or engine is pending. Root owns serialized commits.
 
-Next candidates: `build/qa/session-sept17/heal-bar-design-review.md` traces
-separate host overhead refresh omissions for Vampiric attacker healing and
-some Boss self-heals/resets. `combat-readability-candidates.md` also traces ally
-damage text spawning 30px lower on guests. Reproduce and assess those separately;
-the guest full-heal candidate is now handled. Other delayed-rider source
-candidates remain separate work. Ignored source proposals and failed/partial
-evidence remain preserved, including the old unfinished brewing journey.
+Next candidate after checkpoint 6: reproduce north-room-edge hero occlusion
+beneath the complete objective tracker on current source. Read-only audit and
+historical ordinary-input evidence: `build/qa/session-sept17/exploration-next-candidates.md`.
+Preserve full quest/target readability and no-empty-margin camera intent; do not
+infer difficulty tuning from the failed brewing journey. Ally damage-text height
+and other delayed-rider source candidates remain separate unaccepted work.
+Ignored source proposals and failed/partial evidence remain preserved, including
+the old unfinished brewing journey.
+
+Checkpoint 6 completes host self-healing overhead bars, based on
+`e9d75a1dfe00705e5fad74cf0dada6ec573cdfeb`. Eight missing refresh calls cover
+six Boss self-heals, fight reset and local-owner Vampiric attacker healing;
+HP arithmetic, timing, network format and visibility policy are unchanged.
+Baseline4 reproduces exactly 18 stale geometry findings across 103 checks.
+Fixed desktop and host-rendered mobile each pass all 103 with zero findings.
+The first baseline's deferred death cleanup error and baseline2/3 chest-obstructed
+captures are preserved as rejected evidence. Final fixture drains callbacks,
+poses the wolf clear of scenery and lets callouts expire; no loot removal remains.
+Desktop quick/full pass 145/225; mobile import/compile/strict quick pass 145.
+Existing live boss-cast and real ENet regression passes, exact five-path mobile
+sync and full strict preflight pass. Root opened all 45 native originals;
+twelve baseline4/strict frames also have independent visual review. Controlled
+fixture and old cast-rig framing limits are recorded in COMBAT_READABILITY.md.
+No physical-device or ordinary boss encounter acceptance is claimed.
+The resulting commit, exact 15 owned paths, hashes and preservation audit are in
+`build/qa/session-sept17/host-healing-checkpoint-validation.json`.
+All 46 unrelated files remain byte-identical; root owns the serialized commit.
+Vampiric guest-victim authority is deferred: current affix-producing modes are
+solo-gated, so source inference is not a supported co-op reproduction. See
+`build/qa/session-sept17/vamp-authority-candidate.md`.
+No delegated canonical work or engine remains. The new session continuation is
+active through September 18 13:00 UTC, with its 12:00 UTC feature cutoff intact;
+older sessions and their paused automations remain untouched.
 
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at

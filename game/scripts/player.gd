@@ -1344,6 +1344,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 	if attacker is Enemy and (attacker as Enemy).traits.get("lifesteal", false):
 		var vamp := attacker as Enemy
 		vamp.hp = minf(vamp.max_hp, vamp.hp + amount * Balance.AFFIX_LIFESTEAL_FRAC)
+		vamp.refresh_hp_bar()
 		game.spawn_text(vamp.global_position + Vector2(0, -50), "DRINKS", Color(0.9, 0.35, 0.55))
 	_uniq_on_hit_taken(amount, attacker)
 	_uniq_armor_on_hit_taken(amount, attacker, dmg_type, uniq_prev_sh)

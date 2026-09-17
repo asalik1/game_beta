@@ -773,6 +773,13 @@ healing cancellation, rendered HUD and touch checks, six class burst probes, and
 a two-peer ENet cast/spawn test inside a single muted engine. Outputs are in
 `user://shots/boss_cast/`; scan stderr as well as the runner verdict.
 
+Add `--healing` for the offline host self-heal/reset probe: six boss healing
+methods plus fight reset and local-owner Vampiric healing, 103 strict checks
+and six settled-bar screenshots. `--baseline` permits exactly 18 named stale
+fill/cap findings. Uses frozen actors, real wounds/add factories/healing calls,
+posed Sons/compost, seeded Drowse and a disclosed generic reset windup. It does
+not claim an ordinary encounter or guest-victim authority. See COMBAT_READABILITY.md.
+
 - `shot.bat wayfarer --timeout=240`: Tovin's complete escort, wait/follow, retry/death/stop, two real ENet peers, homecoming and touch. Extends ShotRig; uses isolated QA saves.
 
 
