@@ -227,7 +227,7 @@ extreme-count badge fit. Online-menu uses an empty loopback host; synthetic
 party shells exercise layout without peer replication. All 46 preserved files
 remain unchanged. See HUD_ALIGNMENT.md for scope and rejected evidence.
 
-Checkpoint 10 implements painted-base contact shadows for loot chests.
+Checkpoint 10 (`26775ece8d417c917be639ec2b06af972190957b`) implements painted-base contact shadows for loot chests.
 The existing ellipse now uses cached closed-sprite feet, with unchanged art,
 footprint, opacity, placement, collisions, scale pop, opening and rewards.
 Baseline1's QA type-inference compile error and baseline2's CanvasLayer API
@@ -247,9 +247,26 @@ not two-peer transport. Host mobile Compatibility is not device testing;
 hero/reward FX occlusion limits pickup/opening pictures. See PROP_SHADOWS.md.
 All 46 preserved files remain unchanged. The older failed brewing journey and
 its inventories remain unaccepted; its route advisory remains unimplemented.
-Next candidate: Skills touch targets and measured lower-row scroll retention;
-source-only QA lives in `build/qa/session-sept17/skills-touch-candidate/` and is
-not yet integrated, compiled or accepted.
+Checkpoint 11 completes touch Skills tabs and attribute allocation with 44-unit
+minimum targets, preserved scroll offsets after spending and a shell-identity
+guard. The one-line "All spent" heading avoids a 32-pixel layout jump; ordinary
+reopening resets both columns. Desktop buttons retain their original dimensions.
+Baseline1 reproduced exactly 24 findings (23 targets and an 82-to-0 scroll reset).
+Prototype1 was canceled after import following a failed edit precondition before
+writes. Final1 rejected the QA oracle's incorrect +5 width42 assumption; baseline
+measurements prove +1=42 and +5=43, both27 high. All rejected evidence is retained.
+Final2 desktop quick/full145/225, focusedtouch250, compactdesktop162,
+readiness192 and dossier560 pass. Mobile import/compile279, strictquick145,
+focusedtouch250/readiness192/dossier560, exact four-path sync and full strict
+preflight pass. Root opened39 originals across baseline/prototype/rejected/final
+runs; independent review covers all71 final originals. No material blocker found.
+The fixture borrows seven points; edge taps and dragging are real input, while
+right-scroll32 retention and replacement-shell interleaving are controlled
+setups. No earned-level, physical-device, boundary-clamp or real remote-peer
+claim. Dossier synthetic party overlap remains a fixture limitation. See
+SKILLS_TOUCH.md and build/qa/session-sept17/skills-touch-checkpoint-validation.json
+for final commit, source/evidence hashes and preservation audit. All46 unrelated
+files remain unchanged. No delegated canonical edits are pending.
 
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at

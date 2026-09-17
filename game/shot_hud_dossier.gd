@@ -7,6 +7,7 @@ extends ShotRig
 ## --alignment checks shaped stat baselines and quest/vital/target clearance.
 ## --reward-plaques controls authored boss readouts and real reward UI clocks, without rewards.
 ## --attribute-readiness checks lent point pools with real allocation input.
+## --skills-touch measures allocation targets and real touch spending/scrolling.
 const NetMgr := preload("res://scripts/net/net_manager.gd")
 
 const GAME_FIELDS := ["settings", "touch_mode", "dev_god", "player_title", "mailbox", "daily_last_day", "daily_streak",
@@ -48,8 +49,10 @@ func _ready() -> void:
 		shot_dir = shot_dir.path_join("reward_plaques")
 	elif flag("attribute-readiness"):
 		shot_dir = shot_dir.path_join("attribute_readiness")
+	if flag("skills-touch"):
+		shot_dir = shot_dir.path_join("skills_touch")
 	_snapshot_disk()
-	await boot("warrior", "ch1" if flag("attribute-readiness") else "ch3", false)
+	await boot("warrior", "ch1" if flag("attribute-readiness") or flag("skills-touch") else "ch3", false)
 	var error := await _run()
 	await _cleanup()
 	if error != "":
@@ -61,15 +64,15 @@ func _ready() -> void:
 
 
 func _run() -> String:
-	if int(flag("online-menu")) + int(flag("cosmetic-ui")) + int(flag("alignment")) + int(flag("reward-plaques")) + int(flag("attribute-readiness")) > 1:
-		return "Choose one focused mode: online-menu, cosmetic-ui, alignment, reward-plaques or attribute-readiness"
+	if int(flag("online-menu")) + int(flag("cosmetic-ui")) + int(flag("alignment")) + int(flag("reward-plaques")) + int(flag("attribute-readiness")) + int(flag("skills-touch")) > 1:
+		return "Choose one focused mode: online-menu, cosmetic-ui, alignment, reward-plaques, attribute-readiness or skills-touch"
 	if game == null or not game.has_local_player():
 		return "No local hero after boot"
 	net = get_node_or_null("/root/NetworkManager")
 	session = get_node_or_null("/root/NetworkManager/Session")
 	if net == null or session == null or net.is_online():
 		return "Expected an isolated offline process"
-	if flag("online-menu") or flag("cosmetic-ui") or flag("alignment") or flag("reward-plaques") or flag("attribute-readiness"):
+	if flag("online-menu") or flag("cosmetic-ui") or flag("alignment") or flag("reward-plaques") or flag("attribute-readiness") or flag("skills-touch"):
 		kept.menu_game = _stash(game, ["state", "play_started", "talk_cd"])
 		kept.menu_paused = get_tree().paused
 		kept.menu_hud_visible = game.hud.visible
@@ -103,6 +106,8 @@ func _run() -> String:
 		return await preload("res://scripts/tests/hud_alignment_live.gd").run(self)
 	if flag("reward-plaques"):
 		return await preload("res://scripts/tests/reward_plaque_live.gd").run(self)
+	if flag("skills-touch"):
+		return await preload("res://scripts/tests/skills_touch_live.gd").run(self)
 	if flag("attribute-readiness"):
 		return await preload("res://scripts/tests/attribute_readiness_live.gd").run(self)
 	await _capture("01_ordinary", "Unmodified character values after ordinary safe-room boot")
@@ -724,6 +729,8 @@ func _write_report() -> void:
 		"source_label": arg("label", "baseline" if baseline else "regression"),
 		"online_menu": flag("online-menu"), "menus_sha256": FileAccess.get_sha256("res://scripts/menus.gd"),
 		"reward_plaques": flag("reward-plaques"),
+		"skills_touch": flag("skills-touch"),
+		"skills_touch_sha256": FileAccess.get_sha256("res://scripts/tests/skills_touch_live.gd") if flag("skills-touch") else "",
 		"attribute_readiness": flag("attribute-readiness"),
 		"attribute_readiness_sha256": FileAccess.get_sha256("res://scripts/tests/attribute_readiness_live.gd") if flag("attribute-readiness") else "",
 		"reward_plaque_helper_sha256": FileAccess.get_sha256("res://scripts/tests/reward_plaque_live.gd") if flag("reward-plaques") else "",
@@ -734,6 +741,6 @@ func _write_report() -> void:
 		"codex_sha256": FileAccess.get_sha256("res://scripts/ui/codex.gd") if flag("cosmetic-ui") else "",
 		"cosmetic_helper_sha256": FileAccess.get_sha256("res://scripts/tests/cosmetic_ui_live.gd") if flag("cosmetic-ui") else "",
 		"hud_sha256": FileAccess.get_sha256("res://scripts/hud.gd"), "rig_sha256": FileAccess.get_sha256(get_script().resource_path),
-		"scope": "Lent legal L2 talent/attribute pools in fresh no-save ch1; actual mouse/ScreenTouch spending; no earned progression; scroll positioning is setup" if flag("attribute-readiness") else "controlled reward plaque / authored boss readout; paused world, real UI clocks; no earned achievement or combat" if flag("reward-plaques") else "posed HUD layout; shaped text cells and numeric baselines; controlled strings, not gameplay or raster ink" if flag("alignment") else "actual offline Wardrobe/Codex GUI opens; no purchase or equip; scroll placement is QA setup" if flag("cosmetic-ui") else "solo and empty loopback host; actual GUI inputs; synthetic paused victory state, no story completion or remote delivery" if flag("online-menu") else "synthetic UI state; normal safe room; actual GUI inputs; loopback host with synthetic allies, no remote network delivery",
+		"scope": "Borrowed seven-point allocator pool; actual edge taps and native drag; no level/XP grant or earned progression" if flag("skills-touch") else "Lent legal L2 talent/attribute pools in fresh no-save ch1; actual mouse/ScreenTouch spending; no earned progression; scroll positioning is setup" if flag("attribute-readiness") else "controlled reward plaque / authored boss readout; paused world, real UI clocks; no earned achievement or combat" if flag("reward-plaques") else "posed HUD layout; shaped text cells and numeric baselines; controlled strings, not gameplay or raster ink" if flag("alignment") else "actual offline Wardrobe/Codex GUI opens; no purchase or equip; scroll placement is QA setup" if flag("cosmetic-ui") else "solo and empty loopback host; actual GUI inputs; synthetic paused victory state, no story completion or remote delivery" if flag("online-menu") else "synthetic UI state; normal safe room; actual GUI inputs; loopback host with synthetic allies, no remote network delivery",
 		"checks": checks, "failures": failures, "findings": findings, "views": views}, "\t"))
 	file.close()

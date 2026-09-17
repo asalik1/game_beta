@@ -3833,6 +3833,10 @@ func open_skills(tab := "talents") -> void:
 	_btn(tabs, "  ATTRIBUTES  ·  %d pts  " % p.unspent_attr, func() -> void: open_skills("attributes"),
 		Color(0.95, 0.85, 0.5) if tab == "attributes" else Color(0.6, 0.6, 0.6))
 
+	if game.touch_mode:
+		for button in tabs.get_children():
+			button.custom_minimum_size = Vector2.ONE * Balance.SKILLS_TOUCH_TARGET
+
 	if tab == "attributes":
 		_build_attributes_tab(vbox, p)
 	elif tab == "abilities":
@@ -4237,7 +4241,7 @@ func _build_attributes_tab(vbox: VBoxContainer, p: Player) -> void:
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 16)
 	vbox.add_child(head)
-	var unspent := _lbl(head, ("%d unspent" % p.unspent_attr) if p.unspent_attr > 0 else "All points spent", 22,
+	var unspent := _lbl(head, ("%d unspent" % p.unspent_attr) if p.unspent_attr > 0 else "All spent", 22,
 		Color(0.5, 1.0, 0.5) if p.unspent_attr > 0 else Color(0.6, 0.6, 0.65))
 	UITheme.title(unspent, 22)
 	unspent.custom_minimum_size = Vector2(190, 0)
@@ -4252,6 +4256,7 @@ func _build_attributes_tab(vbox: VBoxContainer, p: Player) -> void:
 	vbox.add_child(body)
 	# --- left: the allocator ---
 	var lscroll := ScrollContainer.new()
+	lscroll.name = "AttributeAllocationScroll"
 	lscroll.custom_minimum_size = Vector2(620, 0)
 	lscroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	lscroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -4273,6 +4278,7 @@ func _build_attributes_tab(vbox: VBoxContainer, p: Player) -> void:
 		_attr_card(list, p, a, false, Color(0.75, 0.8, 0.92), Classes.substat_text(a), -1)
 	# --- right: the sheet ---
 	var rscroll := ScrollContainer.new()
+	rscroll.name = "AttributeSheetScroll"
 	rscroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rscroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rscroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -4287,6 +4293,25 @@ func _build_attributes_tab(vbox: VBoxContainer, p: Player) -> void:
 	smargin.add_child(sheet)
 	_stat_sheet_build(sheet, _stat_sheet_data(p), true)
 	_hint(vbox, "ESC / T to close")
+
+
+## Spending rebuilds the sheet and highlights changed values. Keep both reading
+## positions, but never restore into a different menu opened during layout.
+func _refresh_attributes() -> void:
+	var offsets: Dictionary = {}
+	for id in ["AttributeAllocationScroll", "AttributeSheetScroll"]:
+		var scroll := root.find_child(id, true, false) as ScrollContainer
+		if scroll != null:
+			offsets[id] = scroll.scroll_vertical
+	open_skills("attributes")
+	var shell := root
+	await get_tree().process_frame
+	if not is_instance_valid(shell) or root != shell:
+		return
+	for id in offsets:
+		var scroll := shell.find_child(id, true, false) as ScrollContainer
+		if scroll != null:
+			scroll.scroll_vertical = int(offsets[id])
 
 
 ## One allocation card: name · points spent (· total for the four
@@ -4317,11 +4342,14 @@ func _attr_card(list: VBoxContainer, p: Player, a: String, primary: bool, color:
 	var spend := func(n: int) -> void:
 		_stat_flash = _stat_values(game.local_player)  # remember the sheet, then move it
 		game.local_player.add_attr_points(a, n)
-		open_skills("attributes")
+		_refresh_attributes()
 	var b1 := _btn(row, " +1 ", func() -> void: spend.call(1), Color(0.5, 1.0, 0.5), can)
 	b1.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var b5 := _btn(row, " +5 ", func() -> void: spend.call(5), Color(0.5, 1.0, 0.5), can)  # add_attr_points clamps to what's unspent
 	b5.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	if game.touch_mode:
+		for button in [b1, b5]:
+			button.custom_minimum_size = Vector2.ONE * Balance.SKILLS_TOUCH_TARGET
 	# (The ★ beside the name is the whole "your class scales best here" — no caption.)
 
 

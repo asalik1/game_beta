@@ -434,6 +434,15 @@ stocked, empty, spent and selected mana states at native size. Use isolated
 APPDATA; add `--touch --mobile --renderer=gl_compatibility` for a real touch tap
 and the mobile source/renderer path.
 
+Skills allocation QA: `shot.bat hud_dossier --skills-touch --touch
+--scroll-retention --skills-extra --timeout=240` measures the three tabs and
+20 allocation targets, real edge spending/drag reachability, both scroll
+columns, ordinary reopen and a controlled replacement-shell interleaving.
+`--desktop-sizes` without `--touch` checks compact desktop geometry.
+Baseline uses `--baseline --touch --scroll-retention` without `--skills-extra`.
+Isolate APPDATA; add the standard mobile Compatibility flags for host rendering.
+See SKILLS_TOUCH.md for borrowed-pool, input and lifecycle scope.
+
 Prop shadow QA: `shot.bat prop_shadows --timeout=300` captures the reported
 gravestone group, broad and narrow props, animated foliage/fountain and lore
 objects through their actual factories. It saves fullframes, native closeups

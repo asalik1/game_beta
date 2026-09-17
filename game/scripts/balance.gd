@@ -3612,6 +3612,8 @@ const ROAD_WAGER_GEM_CHANCE := 0.25 # a clean read also drops a gem this often
 const ROAD_HUNT_GOLD := 120           # personal purse, scaled with the recipient's level
 const ENCOUNTER_COVER_ALPHA := 0.12   # objective yields when it covers the hero/target
 const ENCOUNTER_COVER_FADE_SPEED := 6.0
+# Finger-sized Skills navigation and allocation controls; desktop stays compact.
+const SKILLS_TOUCH_TARGET := 44.0
 # HUD readout typography and clearance between the vital, quest and target lanes.
 const HUD_STAT_FONT_SIZE := 14
 const HUD_GOLD_ICON_WIDTH := 14.0
