@@ -25,9 +25,15 @@ var hidden_scenery := 0
 var fixture_origin := Vector2.ZERO
 var npc_interactions := 0
 var npc_observations: Dictionary = {}
+var fixture_camera_anchor: Node2D
+var camera_state: Dictionary = {}
+var camera_restored := false
 
 
 func _ready() -> void:
+	if flag("npc-contact"):
+		await preload("res://scripts/tests/npc_ground_contact_live.gd").run(self)
+		return
 	if flag("chests"):
 		await preload("res://scripts/tests/chest_grounding_live.gd").run(self)
 		return
@@ -37,8 +43,8 @@ func _ready() -> void:
 	game.wander_seed = 902026
 	game.switch_chapter("ch3", true)
 	game.request_pause(false)
+	_begin_fixture_camera()
 	game.hud.visible = true
-	game.camera.position_smoothing_enabled = false
 	game.terrain_event_t = 1.0e9
 	game.npc_emote_t = 1.0e9
 	await skip_dialogue()
@@ -47,7 +53,7 @@ func _ready() -> void:
 	_check("actual_graveyard_room", game.chapter_id == "ch3" and String(game.zones[game.cur_room].get("type", "")) == "safe")
 	fixture_origin = game.room_center(game.cur_room)
 	game.player.global_position = fixture_origin + Vector2(0, 170)
-	game.camera.global_position = fixture_origin
+	_aim_fixture_camera(fixture_origin)
 	await _settle()
 	await RenderingServer.frame_post_draw
 	shot("00_actual_vigil_gate", "normal room scenery and HUD before controlled fixture")
@@ -62,9 +68,71 @@ func _ready() -> void:
 	for spec in CASES:
 		await _case(spec)
 	await _interactive_prop_case()
+	await _restore_fixture_camera()
 	_write_report()
 	print("PROP SHADOWS: %d checks, %d failures; real prop factories, frames and interactions" % [checks.size(), failures])
 	finish(1 if failures > 0 else 0)
+
+
+func _begin_fixture_camera() -> void:
+	# The live camera controller writes camera.position every frame. Give it
+	# an owned stationary parent instead of competing with the player parent.
+	var cam: Camera2D = game.camera
+	camera_state = {"parent": cam.get_parent(), "transform": cam.transform,
+		"zoom": cam.zoom, "offset": cam.offset, "smoothing": cam.position_smoothing_enabled,
+		"settings": game.settings.duplicate(true), "look": game._cam_look,
+		"zoom_mult": game._cam_zoom_mult}
+	fixture_camera_anchor = Node2D.new()
+	fixture_camera_anchor.name = "PropShadowFixtureCameraAnchor"
+	game.world.add_child(fixture_camera_anchor)
+	fixture_camera_anchor.global_position = cam.global_position
+	cam.reparent(fixture_camera_anchor, true)
+	cam.position = Vector2.ZERO
+	cam.offset = Vector2.ZERO
+	cam.position_smoothing_enabled = false
+	game.settings["camera_lead"] = 0.0
+	game.settings["combat_framing"] = false
+	game.settings["camera_shake"] = 0.0
+	game._cam_look = Vector2.ZERO
+	game._cam_zoom_mult = 1.0
+	_check("camera/owned_parent", cam.get_parent() == fixture_camera_anchor)
+
+
+func _aim_fixture_camera(point: Vector2) -> void:
+	fixture_camera_anchor.global_position = point
+	game.camera.position = Vector2.ZERO
+	game.camera.offset = Vector2.ZERO
+	game.camera.reset_smoothing()
+	game.camera.force_update_scroll()
+
+
+func _restore_fixture_camera() -> void:
+	var parent: Variant = camera_state.get("parent")
+	_check("camera/original_parent_alive", is_instance_valid(parent) and parent is Node
+		and not parent.is_queued_for_deletion())
+	if not is_instance_valid(parent) or not parent is Node or parent.is_queued_for_deletion(): return
+	var cam: Camera2D = game.camera
+	cam.reparent(parent, false)
+	cam.transform = camera_state.transform
+	cam.zoom = camera_state.zoom
+	cam.offset = camera_state.offset
+	cam.position_smoothing_enabled = camera_state.smoothing
+	game.settings = camera_state.settings
+	game._cam_look = camera_state.look
+	game._cam_zoom_mult = camera_state.zoom_mult
+	camera_restored = (
+		cam.get_parent() == parent and cam.transform == camera_state.transform
+		and cam.zoom == camera_state.zoom and cam.offset == camera_state.offset
+		and cam.position_smoothing_enabled == camera_state.smoothing
+		and game.settings == camera_state.settings and game._cam_look == camera_state.look
+		and game._cam_zoom_mult == camera_state.zoom_mult
+	)
+	_check("camera/original_ownership_restored", camera_restored)
+	var anchor_ref: WeakRef = weakref(fixture_camera_anchor)
+	fixture_camera_anchor.queue_free()
+	fixture_camera_anchor = null
+	await frames(2)
+	_check("camera/owned_anchor_freed", anchor_ref.get_ref() == null and cam.get_parent() == parent)
 
 
 func _case(spec: Dictionary) -> void:
@@ -90,7 +158,7 @@ func _case(spec: Dictionary) -> void:
 	_check(label + "/has_cast", not casts.is_empty())
 	var world_rect := _body_bounds(body, false)
 	game.player.global_position = point + Vector2(430, 240)
-	game.camera.global_position = world_rect.get_center()
+	_aim_fixture_camera(world_rect.get_center())
 	await _settle()
 	if spec.has("mirror"):
 		_check(label + "/requested_mirror", (source.scale.x < 0.0) == bool(spec.mirror))
@@ -172,7 +240,7 @@ func _interactive_prop_case() -> void:
 	for cast in casts:
 		cast_rest.append(_sprite_pose(cast as Sprite2D))
 	game.player.global_position = fixture_origin + Vector2(180, 80)
-	game.camera.global_position = _body_bounds(npc, false).get_center()
+	_aim_fixture_camera(_body_bounds(npc, false).get_center())
 	await _stationary_prop_window("npc/idle", source, casts, rest, cast_rest)
 	await _capture("14_interactive_tombstone_idle", {"name": "tombstone"}, npc, source, casts)
 	var side_rows: Array[Dictionary] = []
@@ -295,10 +363,25 @@ func _body_bounds(body: Node2D, canvas: bool) -> Rect2:
 
 func _capture(label: String, spec: Dictionary, body: Node2D, source: Node2D, casts: Array[Node2D]) -> void:
 	await RenderingServer.frame_post_draw
+	var full_bounds := _body_bounds(body, true).grow(16.0)
+	var viewport := get_viewport().get_visible_rect()
+	var camera_center := game.camera.get_screen_center_position()
+	_check(label + "/full_bounds_in_view", viewport.encloses(full_bounds))
+	_check(label + "/camera_centered", camera_center.is_finite()
+		and camera_center.distance_to(fixture_camera_anchor.global_position) <= 1.0)
+	_check(label + "/camera_limits_respected", camera_center.x >= game.camera.limit_left
+		and camera_center.x <= game.camera.limit_right and camera_center.y >= game.camera.limit_top
+		and camera_center.y <= game.camera.limit_bottom)
 	var row := {"label": label, "prop": spec.name, "structure": spec.get("structure", false),
 		"body_position": str(body.global_position), "source": _visual_record(source),
 		"camera_zoom": str(game.camera.zoom), "casts": [], "scenery_hidden": hidden_scenery,
-		"process_frame": Engine.get_process_frames()}
+		"process_frame": Engine.get_process_frames(), "viewport_rect": str(viewport),
+		"full_bounds_in_view": viewport.encloses(full_bounds),
+		"full_bounds_xywh": [full_bounds.position.x, full_bounds.position.y, full_bounds.size.x, full_bounds.size.y],
+		"viewport_xywh": [viewport.position.x, viewport.position.y, viewport.size.x, viewport.size.y],
+		"camera_center_world": [camera_center.x, camera_center.y],
+		"camera_anchor_world": [fixture_camera_anchor.global_position.x, fixture_camera_anchor.global_position.y],
+		"camera_limits": [game.camera.limit_left, game.camera.limit_top, game.camera.limit_right, game.camera.limit_bottom]}
 	if game.has_method("_shadow_bottom_ratio"):
 		row["footprint_ratio"] = float(game.call("_shadow_bottom_ratio", source))
 	for cast in casts:
@@ -312,7 +395,7 @@ func _capture(label: String, spec: Dictionary, body: Node2D, source: Node2D, cas
 					_check(label + "/ground_contact", child.visible == (String(cast.get_meta("cast_shadow_mode")) == "projected"))
 	row["fullframe"] = shot(label, "shared prop factory, native framebuffer")
 	var image := capture_image()
-	var bounds := _body_bounds(body, true).grow(16.0)
+	var bounds := full_bounds
 	var crop := Rect2i(bounds).intersection(Rect2i(Vector2i.ZERO, image.get_size()))
 	_check(label + "/native_crop", crop.has_area())
 	if crop.has_area():
@@ -374,5 +457,6 @@ func _write_report() -> void:
 		"room": game.zones[game.cur_room].get("name", ""), "terrain": game.terrain_by_zone[game.cur_room],
 		"purpose": "shared shadow geometry and actual interaction captures; visual review remains required",
 		"renderer": RenderingServer.get_current_rendering_method(), "scenery_hidden_in_fixture": hidden_scenery,
-		"samples": samples, "npc_observations": npc_observations, "checks": checks, "failures": failures}, "\t"))
+		"samples": samples, "npc_observations": npc_observations, "checks": checks, "failures": failures,
+		"controlled_camera_parent": true, "camera_restored": camera_restored}, "\t"))
 	file.close()

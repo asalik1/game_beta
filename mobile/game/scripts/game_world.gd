@@ -2267,7 +2267,7 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 		if scenery_prop:
 			_prop_cast_shadow(npc, spr)
 		else:
-			cast_shadow_for(npc, spr)
+			cast_shadow_for(npc, spr, 1.0, true)
 	npc.add_child(spr)
 	# Breath bob (life pass 2026-08-19): the roster bodies are single frames, so
 	# a villager used to stand frozen beside a breathing hero. A 1 px rise and

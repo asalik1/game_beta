@@ -497,6 +497,15 @@ Baseline requires only the two fresh-tap retention findings. Run default
 controller separately; isolate APPDATA and add mobile Compatibility/touch
 flags for host-rendered mobile source. See RETURN_TO_PLAY_INPUT.md.
 
+NPC painted-contact QA: `shot.bat prop_shadows --npc-contact
+--npc-grounding-strict --timeout=300` checks factory NPC painted-edge joins,
+with five actual originals and eight known-mask transform/cache controls.
+Use fresh isolated APPDATA; old-source diagnostic omits the strict flag and
+records separation without claiming a strict pass. Run default `prop_shadows`
+and `capital_arrival` separately for scenery/animation/NPC/HUD context; add
+`--mobile --renderer=gl_compatibility` for host-rendered mobile source.
+See NPC_GROUND_CONTACT.md for visual acceptance and remaining coverage limits.
+
 Prop shadow QA: `shot.bat prop_shadows --timeout=300` captures the reported
 gravestone group, broad and narrow props, animated foliage/fountain and lore
 objects through their actual factories. It saves fullframes, native closeups

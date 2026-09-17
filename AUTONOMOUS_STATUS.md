@@ -470,6 +470,12 @@ Desktop quick 147/full 227, mobile quick 147, compiles, three-source mobile sync
 
 See RETURN_TO_PLAY_INPUT.md and return-to-play-checkpoint-validation.json.
 
+Checkpoint 22 is validated: factory NPC cast shadows join the visible painted edge through live breath/frame transforms.
+
+Desktop quick/full 147/227 and mobile quick 147 pass, with import/compile, scoped five-source synchronization and strict preflight. Fresh baseline retains 59 diagnostic checks; desktop and host-rendered mobile strict grounding each pass 109 checks, including eight known-mask cases. All 59 fresh originals have completed per-image original-resolution review; 36 native close-ups are separately retained as auxiliary evidence. Default prop/scenery each passes 187 exact checks with raw full-bounds/centering evidence; capital NPC context regressions pass.
+
+See NPC_GROUND_CONTACT.md and npc-grounding-checkpoint-validation.json.
+
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at
 the 13:00 UTC deadline. Its prompt requires the 12:00 feature cutoff, final

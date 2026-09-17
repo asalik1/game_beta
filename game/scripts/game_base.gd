@@ -4093,6 +4093,9 @@ class CastShadow extends Sprite2D:
 	var src: Sprite2D = null
 	var alpha := 0.3
 	var strength := 1.0   # per-body multiplier (bosses / big bodies tone it down)
+	var npc_painted_contact := false
+	var _painted_cache: Dictionary = {}
+	var _painted_texture_id := -1
 	# frame-0 alpha bottom per texture (px from the cell top). The FRAME bottom
 	# is the wrong feet line: hero/NPC cells carry padding below the boots, and
 	# that padding became a visible GAP between body and shadow (owner flag
@@ -4125,6 +4128,59 @@ class CastShadow extends Sprite2D:
 		_feet_cache[key] = bot
 		return bot
 
+
+	## Factory NPCs use their current visible painted edge. This is an art
+	## contact point, not an anatomical foot; no Images/textures stay cached.
+	func _npc_painted_anchor() -> Dictionary:
+		if src.region_enabled or src.texture is AtlasTexture:
+			return {} # Factory bodies are plain, unregioned imported textures.
+		var texture_id: int = src.texture.get_instance_id()
+		if _painted_texture_id != texture_id:
+			_painted_cache.clear()
+			_painted_texture_id = texture_id
+		var hf := maxi(1, src.hframes)
+		var vf := maxi(1, src.vframes)
+		var key := "%d/%d/%d/%s" % [hf, vf, src.frame, src.flip_v]
+		if not _painted_cache.has(key):
+			var measured: Dictionary = {}
+			var img: Image = src.texture.get_image()
+			if img != null and img.is_compressed() and img.decompress() != OK:
+				img = null
+			if img != null and not img.is_empty() and img.get_size() == Vector2i(src.texture.get_size()):
+				var cw: int = img.get_width() / hf
+				var ch: int = img.get_height() / vf
+				var frame_count := hf * vf
+				if cw > 0 and ch > 0 and src.frame >= 0 and src.frame < frame_count:
+					var cell := img.get_region(Rect2i((src.frame % hf) * cw, (src.frame / hf) * ch, cw, ch))
+					var edge := -1
+					var left := 0
+					var right := 0
+					for row in ch:
+						var y: int = row if src.flip_v else ch - 1 - row
+						var row_left := cw
+						var row_right := -1
+						for x in cw:
+							if cell.get_pixel(x, y).a > Balance.NPC_SHADOW_CONTACT_ALPHA:
+								row_left = mini(row_left, x)
+								row_right = maxi(row_right, x)
+						if row_right >= 0:
+							edge = y
+							left = row_left
+							right = row_right
+							break # Stop at the first painted row from the rendered bottom.
+					if edge >= 0:
+						measured = {"point": Vector2((left + right) * 0.5 + 0.5, edge + 0.5), "size": Vector2(cw, ch)}
+			_painted_cache[key] = measured
+		var cached: Dictionary = _painted_cache[key]
+		if cached.is_empty(): return {}
+		var point: Vector2 = cached.point
+		var cell_size: Vector2 = cached.size
+		if src.flip_h: point.x = cell_size.x - point.x
+		if src.flip_v: point.y = cell_size.y - point.y
+		# get_rect supplies centered/offset placement; flips change the point
+		# inside that rectangle. Keep those mutable properties out of the cache.
+		return {"point": src.get_rect().position + point}
+
 	func _sync() -> void:
 		if src == null or not is_instance_valid(src) or src.texture == null:
 			visible = false
@@ -4145,6 +4201,17 @@ class CastShadow extends Sprite2D:
 		skew = -k
 		var sy: float = absf(src.scale.y) * Balance.CAST_SHADOW_SQUASH
 		scale = Vector2(src.scale.x, -sy)
+		if npc_painted_contact:
+			var painted: Dictionary = _npc_painted_anchor()
+			set_meta("npc_painted_contact", not painted.is_empty())
+			if not painted.is_empty():
+				var ground: Vector2 = painted.point
+				var projection := Transform2D(src.transform.x,
+					-src.transform.y.rotated(-k) * Balance.CAST_SHADOW_SQUASH, Vector2.ZERO)
+				projection.origin = src.transform * ground - projection.basis_xform(ground)
+				transform = projection
+				modulate = Color(0, 0, 0, alpha * strength * src.modulate.a * src.self_modulate.a)
+				return
 		var cell_h: float = float(src.texture.get_height()) / float(maxi(1, src.vframes))
 		# e = the art's FEET row in the sprite's local space (offset included):
 		# the flipped copy is placed so that row lands exactly on the source's
@@ -4160,13 +4227,14 @@ class CastShadow extends Sprite2D:
 
 ## Attach a CastShadow that follows `src` (a child of the same parent as src,
 ## drawn under it). Returns null when cast shadows are off or headless.
-func cast_shadow_for(parent: Node, src: Sprite2D, strength := 1.0) -> Node2D:
+func cast_shadow_for(parent: Node, src: Sprite2D, strength := 1.0, npc_painted_contact := false) -> Node2D:
 	if Balance.CAST_SHADOW_A <= 0.0 or src == null:
 		return null
 	var cs := CastShadow.new()
 	cs.src = src
 	cs.alpha = Balance.CAST_SHADOW_A
 	cs.strength = strength
+	cs.npc_painted_contact = npc_painted_contact
 	parent.add_child(cs)
 	# under the source sprite: move right before it in the sibling order too,
 	# so two z 0 sprites never race on draw order

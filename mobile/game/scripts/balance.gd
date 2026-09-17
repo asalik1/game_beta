@@ -359,6 +359,9 @@ const GROUND_FOG_AMBIENTS := ["mist"]
 #  NPC_BREATH_PX   — single-frame roster NPCs rise/settle this many px per
 #    breath (random rest between breaths). 0 = frozen villagers.
 const NPC_BREATH_PX := 1.0
+# Exclude faint exported fringe when joining factory NPC cast shadows to
+# their visible painted edge. Matches the observed contact diagnostic cutoff.
+const NPC_SHADOW_CONTACT_ALPHA := 0.15
 #  DIALOG_TYPE_CPS — dialogue lines WRITE themselves at this many characters a
 #    second (first confirm completes the line, the next advances). 0 = pop whole.
 const DIALOG_TYPE_CPS := 42.0
