@@ -295,6 +295,11 @@ invitations, both encounter start orders, direct/guest request guards, released
 reservations and escort/ward HUD clearance beside party health and touch
 controls. Its negative control detects the old overlapping HUD position;
 camera-transformed actor overlap also checks the panel fades and recovers.
+Add `--actor-clearance --clearance-extra` for normal-size factory-body geometry,
+stale target guards, preserved fallen-hero yielding and controlled paused-tree
+checks. The five-finding historical baseline uses `--clearance-baseline` without
+extras with its corresponding before-source snapshot. See ENCOUNTER_COMPANY.md
+for posed/mirror-actor, paused-tree and visibility limits.
 
 Ordinary hunt combat: `shot.bat hunt_combat --class=warrior --timeout=200`
 plays a starting-kit hunt through synthetic keyboard events with normal health

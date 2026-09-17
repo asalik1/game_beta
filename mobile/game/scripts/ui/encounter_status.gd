@@ -2,6 +2,7 @@ extends RefCounted
 ## Shared objective slot: above status chips and abilities, between touch clusters.
 
 class EncounterPanel extends Panel:
+	const Bodies := preload("res://scripts/ui/hud_clearance.gd")
 	var hud: Hud
 	func _process(delta: float) -> void:
 		if not is_instance_valid(hud) or not is_instance_valid(hud.game):
@@ -16,13 +17,16 @@ class EncounterPanel extends Panel:
 		var actors: Array = [hud.game.local_player, hud.target_bar_unit]
 		var covered := false
 		for actor in actors:
-			if not is_instance_valid(actor) or not actor.is_visible_in_tree():
+			if not is_instance_valid(actor) or not (actor is Player or actor is Enemy):
 				continue
-			# Use the world's canvas transform, not world coordinates: a camera
-			# held at a room edge can put the hero underneath this HUD slot.
-			var feet: Vector2 = actor.get_global_transform_with_canvas().origin
-			var body := Rect2(feet + Vector2(-40, -110), Vector2(80, 130))
-			if get_global_rect().intersects(body):
+			if actor.game != hud.game or not is_instance_valid(hud.game.world):
+				continue
+			if actor is Enemy and not hud.game.world.is_ancestor_of(actor):
+				continue
+			# Reuse camera-transformed body bounds, including fallen local heroes.
+			# The party may still be fighting; keep yielding without hiding its status.
+			var body := Bodies.body_rect(actor, true)
+			if body.has_area() and get_global_rect().intersects(body):
 				covered = true
 				break
 		var alpha: float = Balance.ENCOUNTER_COVER_ALPHA if covered else 1.0

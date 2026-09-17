@@ -105,11 +105,18 @@ static func run(r: Node, room: int) -> String:
 	if error != "":
 		return error
 	var good_position: Vector2 = traveler.status.position
-	traveler.status.position = Vector2(16, 240)
-	var baseline_detected := _fit(host, traveler.status) != ""
+	var ally_health := Rect2()
+	for slot in host.hud.party_slots:
+		if slot.root.visible:
+			ally_health = slot.hp_bg.get_global_rect()
+			break
+	if not ally_health.has_area():
+		return "layout negative control requires a visible teammate health bar"
+	traveler.status.global_position = ally_health.position
+	var baseline_detected := _fit(host, traveler.status) == "encounter objective covers a teammate's health"
 	traveler.status.position = good_position
 	if not baseline_detected:
-		return "layout check failed to detect the old overlapping position"
+		return "layout check failed to detect the actual teammate health overlap"
 	# Exercise the real panel clock with an actual camera-transformed hero.
 	# At a room edge the normal objective slot can cover the fight; it yields.
 	var feet: Vector2 = host.player.get_global_transform_with_canvas().origin
@@ -173,5 +180,9 @@ static func run(r: Node, room: int) -> String:
 	ward.cancel("")
 	if not await r._until(func() -> bool: return not reflected.active()):
 		return "the stopped ward kept its guest objective"
+	if r.flag("actor-clearance"):
+		var clearance_error: String = await preload("res://scripts/tests/encounter_clearance_live.gd").run(r)
+		if clearance_error != "":
+			return clearance_error
 	print("ok: live encounter company: guest discovery once, no historical bark, both fight orders, forced click/guest-request guard, released invitations, escort/ward party and touch health visibility, negative layout control, camera-aware combat clearance and recovery")
 	return ""

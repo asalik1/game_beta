@@ -18,13 +18,14 @@ func _ready() -> void:
 			original_alpha.append(part.self_modulate.a)
 
 
-static func body_rect(actor: Variant) -> Rect2:
+## Encounter cards also yield over fallen heroes; other HUD users keep their policy.
+static func body_rect(actor: Variant, include_incapacitated := false) -> Rect2:
 	if not is_instance_valid(actor) or not actor is Node2D \
 		or actor.is_queued_for_deletion() or not actor.is_visible_in_tree():
 		return Rect2()
 	var body := Rect2()
 	if actor is Player:
-		if actor.dead or actor.downed or actor.ghost:
+		if not include_incapacitated and (actor.dead or actor.downed or actor.ghost):
 			return Rect2()
 		# Heroes render at a class-specific body height, with their painted
 		# boots BELOW the physics origin. A generic -110px head fades too early.

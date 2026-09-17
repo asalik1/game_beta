@@ -268,7 +268,7 @@ SKILLS_TOUCH.md and build/qa/session-sept17/skills-touch-checkpoint-validation.j
 for final commit, source/evidence hashes and preservation audit. All46 unrelated
 files remain unchanged. No delegated canonical edits are pending.
 
-Checkpoint 12 corrects the misleading LEVEL10 caption to STARTER on the
+Checkpoint 12 (`0328bc3f9268c707de66e534fa93ec085b45f9a1`) corrects the misleading LEVEL10 caption to STARTER on the
 always-open first talent row. The footer states its exception and both later-row
 unlock keys; locked rows say "or fill row above". DESIGN.md now matches the
 July28 owner-directed rules and identifies attribute spending correctly.
@@ -281,6 +281,50 @@ not claimed root visual reviews. Strict preflight and independent review of all 
 See build/qa/session-sept17/talent-copy-checkpoint-validation.json for the actual
 commit, exact source/evidence hashes and preservation audit.
 No new gameplay test scaffold was added for this copy correction.
+
+The bounded ordinary onboarding attempt is preserved, failed and unaccepted.
+It created/saved a fresh Mage through normal UI, spoke to the elder and walked
+through the east gate. Attempt1 then died in the actual14-enemy first pack before
+level2 or room clear; first-clear teaching and allocation persistence remain
+unvalidated. Root opened all4 originals. The automated policy omittedBlink and
+became surrounded; this is not a balance verdict and was not retried until a win.
+Exact attempted sources/UID, source pins, saves, logs, receipt and images remain
+under build/qa/session-sept17/onboarding-candidate/attempt1*; independent source
+review and root visual receipt are alongside. Only the root-owned temporary
+wrapper hook/helper were removed after byte-exact snapshotting; accepted source
+was restored, all46 unrelated files stayed unchanged. The prior failed brewing
+journey is untouched. No ordinary onboarding gameplay fix is claimed.
+
+Checkpoint 13 is validated: encounter cards now reuse shared
+camera-transformed body bounds with actor/owner/current-world guards. An optional
+Player-state measurement flag preserves the existing fade over fallen heroes;
+other HUD callers retain their default policy. Layout, copy, opacity and timing
+are unchanged. The company helper has an opt-in geometry/lifecycle probe.
+Baseline1 stopped at a stale inherited negative control: fixed16,240 no longer
+covered actual party health206..219. The corrected control derives the visible
+hp_bg rect and requires the specific teammate-health-overlap error. Baseline2
+reproduced six proposed differences but is a rejected policy/weak-geometry
+experiment: fallen yielding is retained, and the wolf intersection was too thin.
+Baseline3 requires >=10% proxy overlap plus4px separation, keeps fallen yielding
+positive and reproduces exactly five findings in13checks. Its18images and prior
+rejected evidence are retained. Root opened six originals across these runs.
+Prototype1 passes quick145 and all23 focused checks with zero findings. Root
+opened four prototype originals; all 25 prototype originals passed independent
+review. Frozen source allows those quick/native gates to serve final acceptance.
+Final desktop full225, HUD12 and live-camera Mage hunt4 pass. Mobile scoped
+sync, compile280, quick145, paired probe23/25images, HUD12 and hunt5 pass.
+Both starting-kit hunts won and earned120gold; mobile also captured incoming
+damage (90 -> 34.907HP). Combat uses keyboard inputs with touch layout enabled
+on mobile; host Compatibility is not physical-device testing. Strict preflight
+passes. Root opened18 originals across rejected/baseline/prototype/final runs;
+independent review covers every final/prototype image. Source/evidence hashes,
+actual commit and exact46-file preservation are in
+build/qa/session-sept17/encounter-clearance-checkpoint-validation.json.
+The extra downed/ghost/default-policy, healthy-target,
+untargetable and controlled paused-tree checks retain narrow scope. The paired menu
+fixture is not ordinary solo input or replicated actor-death evidence. The
+preserved road_hunt wrapper/unlisted additions remain untouched and unneeded
+by the already accepted company entry. No warning/rez-prompt clearance claim.
 
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at

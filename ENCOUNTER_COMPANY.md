@@ -76,3 +76,40 @@ Next candidates: build/qa/caravan-followup-plan.md and
 build/qa/hud-cover-followup-audit.md. Continue autonomously until the authorized
 September 9 deadline, with a final stable checkpoint. Preserve staged work;
 no commits, chroma development, off-limits hero art or original-worktree edits.
+
+## September 17 body-bound refinement
+
+Encounter cards reuse the same camera-transformed hero/enemy body proxy as the
+quest/target HUD. They disregard invalid, hidden, dying, untargetable, foreign
+and outside-world enemy references. Their existing yielding over fallen local
+heroes is preserved through an optional Player-state measurement flag; other
+HUD consumers keep the default alive-only policy. This does not measure death
+clip silhouettes or revive prompts. Placement, complete text, alpha and fade
+speed are unchanged; the panel remains independently processed during pause.
+
+`shot.bat road_hunt --company --actor-clearance --clearance-extra --timeout=300`
+adds controlled actor/lifecycle geometry after the existing two-reader company
+scenario. Use isolated APPDATA, muted runner and mobile Compatibility flags.
+The helper uses normal-size factory art, posed panel positions, frozen host
+simulation and a disposable mirror-marked wolf. It is not a replicated enemy
+lifecycle test. Extra pause controls explicitly pause the paired SceneTree;
+opening the actual menu is a direct fixture call, not ordinary solo menu input.
+
+The historical baseline3 requires exactly five differences with meaningful
+proxy overlap and an independent gap. Baseline1's obsolete fixed negative
+control and baseline2's rejected fallen-body policy/thin-edge probe remain
+preserved under `build/qa/session-sept17/encounter-clearance-*`. The corrected
+negative control still requires a teammate-health overlap, using the current
+visible health rectangle. Natural combat, warning and NPC-prompt clearance
+remain separate claims. Prototype and final acceptance are recorded with source
+pins, native images and explicit reviewed-image hashes.
+
+Desktop full, HUD and live-camera hunt checks pass. The unchanged prototype
+source supplies the quick-suite and paired company/clearance acceptance runs.
+Mobile compilation, quick suite, paired native probe, HUD and live-camera
+combat checks pass, as do strict preflight and independent review of all final
+images. The mobile fight includes an incoming-hit capture and a surviving win;
+it uses keyboard combat with touch layout on a Windows Compatibility renderer.
+Acceptance, exact source/image hashes, rejected evidence and the actual commit
+are recorded in `build/qa/session-sept17/encounter-clearance-checkpoint-validation.json`.
+This refinement does not change encounter rules or rewards.
