@@ -184,6 +184,8 @@ static func _quests(m: Menus, list: VBoxContainer) -> void:
 	if left > 0:
 		m._lbl(main, "Current room  ·  %d monster%s remain" % [left, "" if left == 1 else "s"],
 			13, Color(0.88, 0.72, 0.48))
+	elif String(g.zones[zi].get("boss", "")) != "" and not g._boss_room_resolved(zi):
+		m._lbl(main, "Current room  ·  guardian remains", 13, GOLD)
 	else:
 		m._lbl(main, "Current room clear  ·  continue along the route", 13, GREEN)
 	_side_quests(m, list)

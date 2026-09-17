@@ -35,6 +35,7 @@ static func _signature(g: Game, tab := "activities") -> int:
 	if tab == "quests":
 		state.append_array([g.quest_key, g.quest_kills.hash(), g.cur_room,
 			g.zone_alive.get(g.cur_room, 0),
+			g._boss_room_resolved(g.cur_room),
 			g.player.tracked_quest if g.has_local_player() else ""])
 	if tab == "progress":
 		state.append_array([g.hud.wayfinder.context_key(), g.cur_room,

@@ -475,6 +475,13 @@ Baseline permits only mirrored retreat findings; strict mode permits none.
 Use fresh APPDATA; mobile adds `--mobile --renderer=gl_compatibility --touch`
 (movement remains keyboard input). See TARGET_COMMITMENT.md.
 
+Journal guardian QA: `shot.bat menu_navigation --quest-guardian --timeout=240`
+uses real reader input and controlled guardian metadata. Baseline requires exactly
+three false-clear strings and one missing reader rebuild; all other controls stay
+strict. Eight originals include nonzero scroll/focus preservation and close/reopen.
+Use isolated APPDATA; add `--mobile --renderer=gl_compatibility --touch` for
+host-rendered mobile input. See JOURNAL_GUARDIAN.md for fixture limits.
+
 Prop shadow QA: `shot.bat prop_shadows --timeout=300` captures the reported
 gravestone group, broad and narrow props, animated foliage/fountain and lore
 objects through their actual factories. It saves fullframes, native closeups

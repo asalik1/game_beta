@@ -423,6 +423,16 @@ See TARGET_COMMITMENT.md and target-checkpoint-validation.json.
 Rejected baseline1 and candidate histories remain preserved; no ordinary
 moving multiplayer retreat or physical-device claim.
 
+Checkpoint 18 is validated: the Journal main quest card distinguishes an
+unresolved authored guardian from an otherwise empty room. Completion refreshes
+an already-open reader while retaining its scroll and named focus.
+
+Desktop quick 147/full 227 and mobile quick 147 passed, with desktop/mobile imports and compiles, exact four-source sync, strict preflight and both default reader regressions. Baseline recorded 25 checks and exactly four expected findings; strict desktop/mobile recorded 25/25 checks with zero findings/failures. All 40 baseline/final originals were independently reviewed. Each project UID is pinned separately.
+
+See JOURNAL_GUARDIAN.md and journal-guardian-checkpoint-validation.json.
+Fixtures do not establish earned arena completion, genuine pocket travel,
+save-enabled board rollover, co-op delivery or physical-device behavior.
+
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at
 the 13:00 UTC deadline. Its prompt requires the 12:00 feature cutoff, final

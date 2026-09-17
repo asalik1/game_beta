@@ -5,6 +5,26 @@ extends ShotRig
 
 
 func _ready() -> void:
+	if flag("quest-guardian"):
+		var user_root := ProjectSettings.globalize_path("user://").replace("\\", "/").to_lower()
+		if not user_root.contains("/build/qa/"):
+			print("QUEST GUARDIAN FAILED: isolated build/qa APPDATA required")
+			finish(1)
+			return
+		await boot("warrior", "ch1", false)
+		game.play_started = true
+		game.state = Game.ST_PLAYING
+		game.menus.close()
+		game.request_pause(false)
+		game.hud.visible = true
+		game.settings["touch_controls"] = flag("touch")
+		game.refresh_touch_mode()
+		game._apply_touch_mode()
+		shot_dir += "/quest_guardian"
+		var guardian_result: Dictionary = await preload("res://scripts/tests/quest_guardian_live.gd").run(self)
+		print("QUEST GUARDIAN: ", JSON.stringify(guardian_result))
+		finish(1 if int(guardian_result.failures) > 0 else 0)
+		return
 	await boot_game()
 	shot_dir += "/" + ("before" if flag("baseline") else "after")
 	if flag("potion-slots"):
