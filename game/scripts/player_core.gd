@@ -2420,7 +2420,8 @@ func cycle_potion() -> void:
 		var cand: String = types[(at + step) % types.size()]
 		if int(room_potions.get(cand, 0)) <= 0:
 			continue
-		if cand != "health" and consumable_count(cand) <= 0:
+		if (cand == "health" and potion_count() <= 0) \
+				or (cand != "health" and consumable_count(cand) <= 0):
 			continue
 		if cand == active_potion:
 			return  # nothing else available to swap to

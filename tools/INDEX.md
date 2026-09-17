@@ -484,6 +484,13 @@ strict. Eight originals include nonzero scroll/focus preservation and close/reop
 Use isolated APPDATA; add `--mobile --renderer=gl_compatibility --touch` for
 host-rendered mobile input. See JOURNAL_GUARDIAN.md for fixture limits.
 
+Potion cycle stock QA: `shot.bat potion_hud --cycle-stock --timeout=240`
+uses loaned legal stock/allowances and actual R or touch cycle input. Baseline
+requires only emptyhealth/selection; four originals cover five controls. Run
+default potion_hud separately for real drinking. Isolate APPDATA; add
+`--mobile --renderer=gl_compatibility --touch` for host mobile source.
+See POTION_CYCLE_STOCK.md for exact scope and limitations.
+
 Prop shadow QA: `shot.bat prop_shadows --timeout=300` captures the reported
 gravestone group, broad and narrow props, animated foliage/fountain and lore
 objects through their actual factories. It saves fullframes, native closeups

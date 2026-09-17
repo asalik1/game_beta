@@ -437,6 +437,13 @@ Checkpoint 19 is validated: fitted reward plaque titles remain contained through
 
 The ordinary Warrior attempt remains a partial gold/save audit; its clear is not a completed return-home/reload journey. The earlier mistaken wrapped-stress copy remains preserved. No green purge-flash or progression/network change is included. Receipt: build/qa/session-sept17/plaque-entrance-checkpoint-validation.json (records the serialized commit and preserved local state).
 
+Checkpoint 20 is validated: potion cycling skips generic Health when no instant
+Health stock is owned, while retaining room allowances and specific-potion checks.
+
+Desktop quick 147/full 227 and mobile quick 147 passed; both compiles, exact three-source mobile sync, strict preflight, focused cycle input and default real drinking regressions passed. Baseline has 28 checks and the sole emptyhealth/selection finding; strict desktop/mobile have 28/28 checks with zero findings/failures. All 24 baseline/final originals were independently reviewed. New helper UIDs are pinned per project; existing wrapper/player UIDs remain unowned.
+
+See POTION_CYCLE_STOCK.md and potion-cycle-stock-checkpoint-validation.json.
+
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at
 the 13:00 UTC deadline. Its prompt requires the 12:00 feature cutoff, final

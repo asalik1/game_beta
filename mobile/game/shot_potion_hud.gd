@@ -10,6 +10,12 @@ var mana_id := ""
 
 
 func _ready() -> void:
+	if flag("cycle-stock"):
+		var user_root := ProjectSettings.globalize_path("user://").replace("\\", "/").to_lower()
+		if not user_root.contains("/build/qa/"):
+			print("CYCLE STOCK FAILED: isolated build/qa APPDATA required")
+			finish(1)
+			return
 	touch_run = flag("touch")
 	# Keep separate mode artifacts even when the runner reuses its isolated HOME.
 	shot_dir = shot_dir.path_join("touch" if touch_run else "desktop")
@@ -45,6 +51,12 @@ func _ready() -> void:
 	_check("requested_control_mode", game.touch_mode == touch_run)
 	if touch_run:
 		_check("touch_controls_live", game._touch_hud != null and game._touch_hud._enabled and game._touch_hud.visible)
+	if flag("cycle-stock"):
+		var cycle_error: String = await preload("res://scripts/tests/potion_cycle_stock_live.gd").run(self)
+		if cycle_error != "": print("CYCLE STOCK FAILED: ", cycle_error)
+		_write_report()
+		finish(1 if cycle_error != "" or failures > 0 else 0)
+		return
 	# Four real S bags allow the 123-unit layout probe without an impossible bag.
 	p.bags = [Items.make_bag("S"), Items.make_bag("S"), Items.make_bag("S"), Items.make_bag("S")]
 	_stock(5)
@@ -270,6 +282,6 @@ func _write_report() -> void:
 		failures += 1
 		return
 	file.store_string(JSON.stringify({"mode": "touch" if touch_run else "desktop", "no_saves": game.no_saves,
-		"fixture": "real Items and chapter-three plan; stock/HP setup; normal Q/touch health drinks",
+		"fixture": "real Items and chapter-three plan; stock/allowance loans; normal R/touch cycling only" if flag("cycle-stock") else "real Items and chapter-three plan; stock/HP setup; normal Q/touch health drinks",
 		"renderer": RenderingServer.get_current_rendering_method(), "failures": failures, "checks": checks, "views": views}, "\t"))
 	file.close()
