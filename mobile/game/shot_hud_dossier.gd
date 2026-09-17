@@ -36,6 +36,28 @@ var utility_reference: Dictionary = {}
 
 
 func _ready() -> void:
+	if flag("onboarding-guidance"):
+		var user_path := ProjectSettings.globalize_path("user://").replace("\\", "/")
+		if not user_path.to_lower().contains("/build/qa/"):
+			print("ONBOARDING GUIDANCE FAILED: isolated build/qa APPDATA required")
+			finish(1)
+			return
+		touch_run = flag("touch")
+		shot_dir = shot_dir.path_join("touch" if touch_run else "desktop").path_join("onboarding_guidance")
+		await boot("warrior", "ch1", false)
+		game.play_started = true
+		game.state = Game.ST_PLAYING
+		game.menus.close()
+		game.request_pause(false)
+		game.hud.visible = true
+		game.settings["touch_controls"] = touch_run
+		game.settings["touch_layout"] = {}
+		game.refresh_touch_mode()
+		game._apply_touch_mode()
+		var guidance_error: String = await preload("res://scripts/tests/onboarding_guidance_live.gd").run(self)
+		if guidance_error != "": print("ONBOARDING GUIDANCE FAILED: ", guidance_error)
+		finish(0 if guidance_error == "" else 1)
+		return
 	touch_run = flag("touch")
 	baseline = flag("baseline")
 	shot_dir = shot_dir.path_join("touch" if touch_run else "desktop")

@@ -61,3 +61,39 @@ review; root inspected39 originals across baseline, prototypes and final runs.
 Mobile uses Windows Compatibility with emulated touch. Default dossier party
 shells are synthetic and its loopback host is empty; this is not remote-peer
 replication evidence. Existing allowed shutdown warnings remain in the logs.
+
+## First-clear allocation guidance
+
+The one-time Chapter 1 lesson now directs players to Skills > Talents and
+Attributes without assuming they have exactly one unused talent point. The
+owner-required trigger after the first combat-room clear, replay/guest guards,
+completion flag and Talents callback are unchanged. There is no new point grant
+or mandatory allocation.
+
+Controlled native QA uses the existing dossier:
+`shot.bat hud_dossier --onboarding-guidance --timeout=180` with isolated APPDATA
+under build/qa. Add `--touch --mobile --renderer=gl_compatibility` for host-rendered
+mobile source. The fixture lends legal level 3 progression and spends through
+production allocation APIs to leave 2/2, 1/1, 0/0 pools. Actual Space/mouse or touch
+reveals/advances the reader and visits the Attributes tab. It checks full copy,
+visible geometry, unchanged pools/flags, Talents callback and cleanup. Seven
+images per platform need manual review. This is neither an earned clear nor
+physical-device testing; early portrait-level cache can reflect pre-fixture
+level until the next normal HUD update.
+
+The old sentence produced exactly three copy findings in 23 checks; all other
+controls passed. Evidence and final gates are recorded in
+`build/qa/session-sept17/guidance-checkpoint-validation.json`. DeepSeek v4-pro
+provided the implementation candidate and helper; source corrections and the
+lean refactor are attributed in the preserved candidate provenance.
+
+A separate save-enabled fresh Warrior expedition on checkpoint 14 cleared the
+actual 12-enemy first pack with ordinary input, reached level 2 / XP 34, read the
+original lesson with2 talent / 1 attribute available, and spent Heavy Cleave +1 and
+STR +1 through the actual UI. Its audit stopped on a gold mismatch after closing
+Skills: primary save 88 gold, later live 91 after a visible +3 pickup. The saved level,
+XP, point budgets, allocations and teaching flag match. This supports a harness
+timing error, not a save-loss conclusion. Original exit 1 / audit-incomplete evidence
+is retained; no return-home, reload, or retry is claimed. The temporary helper
+and wrapper hook were archived and removed byte-exactly. The earlier failed Mage
+and Fangmaw brewing experiments remain unchanged.

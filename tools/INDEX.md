@@ -456,6 +456,12 @@ Baseline uses `--baseline --touch --scroll-retention` without `--skills-extra`.
 Isolate APPDATA; add the standard mobile Compatibility flags for host rendering.
 See SKILLS_TOUCH.md for borrowed-pool, input and lifecycle scope.
 
+First-clear guidance QA: `shot.bat hud_dossier --onboarding-guidance --timeout=180`
+uses legal lent 2/2, 1/1 and 0/0 pools, actual reader/menu input, and seven
+native views. Isolate APPDATA under build/qa; add `--touch --mobile
+--renderer=gl_compatibility` for host mobile. Existing first-clear timing and
+Talents callback stay unchanged. See SKILLS_TOUCH.md for exact scope.
+
 Prop shadow QA: `shot.bat prop_shadows --timeout=300` captures the reported
 gravestone group, broad and narrow props, animated foliage/fountain and lore
 objects through their actual factories. It saves fullframes, native closeups

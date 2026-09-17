@@ -371,6 +371,31 @@ experiment. Its 18-character test name was corrected to15 before any live attemp
 with original source preserved. Root owns integration, sole engine, mobile and
 serialized commits; none of these source candidates is an accepted checkpoint.
 
+Checkpoint 15 is validated: first-clear guidance now names Skills > Talents
+and Attributes without assuming one unused point. Owner Q8 timing, once-only,
+replay/guest guards and callback are unchanged. DeepSeek supplied the reviewed
+candidate and lean native helper. Baseline 23 checks show exactly 3 old-copy
+findings. Final desktop quick 146/full 226, mobile compile 283/quick 146, native 23
+per platform (seven views each), exact three-source sync and strict preflight
+pass. Independent review covers all 21 baseline/final originals; root inspected
+selected originals. SKILLS_TOUCH.md and guidance-checkpoint-validation.json
+record scopes, hashes, provenance and actual commit. No transport change or
+new physical-device claim.
+
+The separate fresh Warrior expedition cleared 12 actual first-pack enemies,
+reached L2/XP34, and spent Heavy Cleave+1/STR+1 through normal lesson/menu input.
+Its later save oracle failed after unpaused pickup gold changed 88 to 91; saved
+level, XP, pools, allocations and teaching flag match. Original exit1 and
+incomplete audit remain, with no return-home/reload/recovery claim or retry.
+All 8 originals were reviewed twice. Sources/UID archived; temporary helper/hook
+removed byte-exactly. Existing Mage/brewing failures remain preserved.
+
+Parallel candidates remain unaccepted until integration/validation: Claude's
+inventory body touch gesture and combat targeting, DeepSeek's guardian journal
+copy/refresh, and the observed reward-plaque entrance wrap. Root retains the
+only engine, mobile sync, index and commit ownership. The green teaching wash
+is an early transient observation; persistent pause freezing is not established.
+
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at
 the 13:00 UTC deadline. Its prompt requires the 12:00 feature cutoff, final

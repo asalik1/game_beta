@@ -1450,7 +1450,7 @@ func _run_tutorial_beat(step: String) -> void:
 	if step == "talents":
 		set_flag("tut_talents_done")
 		hud.dialogue([["Elder Maren",
-			"You're getting stronger. Open your Skills and drop that talent point wherever you like."]],
+			"You can spend talent points in Skills, under Talents. Look under Attributes for your attribute points, too."]],
 			func() -> void:
 				if menus != null:
 					menus.open_skills("talents"))
