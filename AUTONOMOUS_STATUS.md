@@ -204,7 +204,7 @@ See COMBAT_FRAMING.md and
 All46 unrelated files remain byte-identical. No delegated canonical work remains.
 The older failed brewing journey stays unchanged.
 
-Checkpoint 9 completes unspent-attribute discoverability. Skills counts both
+Checkpoint 9 (`f2d4001ebbe3b6291a76b68b60366c62e206eddb`) completes unspent-attribute discoverability. Skills counts both
 talent and attribute points, and its tooltip/portrait name each pool. An
 attribute-only pool change invalidates the portrait cache. Allocations, rewards,
 utility geometry and borderless Combat Rating/Resonance presentation stay intact.
@@ -227,13 +227,29 @@ extreme-count badge fit. Online-menu uses an empty loopback host; synthetic
 party shells exercise layout without peer replication. All 46 preserved files
 remain unchanged. See HUD_ALIGNMENT.md for scope and rejected evidence.
 
-Next visual candidate: actual village screenshots and source measurements show
-the pale F chest extending below its old fixed contact shadow. Art and loot
-placement are intentional; a ground-contact correction is proposed, not accepted.
-Read `build/qa/session-sept17/village-crate-review.md` and the frozen source-only
-`chest-grounding-candidate/` helper/integration proposal before any edit. It has
-not run in Godot. Preserve the older failed brewing journey and its inventories.
-The separate early-progression route advisory remains unimplemented.
+Checkpoint 10 implements painted-base contact shadows for loot chests.
+The existing ellipse now uses cached closed-sprite feet, with unchanged art,
+footprint, opacity, placement, collisions, scale pop, opening and rewards.
+Baseline1's QA type-inference compile error and baseline2's CanvasLayer API
+error are preserved; corrected baseline3 passes 106 checks with exactly four
+expected findings. Prototype1 and final desktop/mobile focused runs each pass
+144 strict checks. Desktop quick/full pass 145/225; mobile import/compile278,
+strict quick145 and exact four-path synchronization pass. Both existing earned
+loot recovery native runs pass; final images comprise six focused plus ten
+recovery frames per project. Root opened 30 originals across rejected/baseline,
+prototype and final evidence. Independent source/visual records cover the final
+captures; final preflight and exact commit identity are recorded in
+`build/qa/session-sept17/chest-grounding-checkpoint-validation.json`.
+The posed F/B/bronze rows are controlled factories on two quiet safe floors;
+separate W-key pickups prove exact single payout and cleanup, not earned loot.
+Recovery uses controlled saves and a one-process character-only guest case,
+not two-peer transport. Host mobile Compatibility is not device testing;
+hero/reward FX occlusion limits pickup/opening pictures. See PROP_SHADOWS.md.
+All 46 preserved files remain unchanged. The older failed brewing journey and
+its inventories remain unaccepted; its route advisory remains unimplemented.
+Next candidate: Skills touch targets and measured lower-row scroll retention;
+source-only QA lives in `build/qa/session-sept17/skills-touch-candidate/` and is
+not yet integrated, compiled or accepted.
 
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at

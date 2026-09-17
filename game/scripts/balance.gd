@@ -1992,6 +1992,9 @@ static func potion_slots(chid: String) -> int:
 # footprint the old 16px tier art had at scale 3. Art.scale_for keeps it
 # constant however large the authored chest_<grade>.png happens to be.
 const CHEST_SCALE_16PX := 3.0
+# Contact ellipse center sits just inside the painted base; its soft rim
+# remains visible beneath the box without enlarging the existing footprint.
+const CHEST_SHADOW_FOOT_INSET := 2.0
 # Halo alpha on B+ chests — the "rich chest across the room" tell.
 const CHEST_HALO_ALPHA := 0.5
 const CHEST_GOLD_MIN := 3

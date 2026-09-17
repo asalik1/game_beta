@@ -50,3 +50,32 @@ Final desktop compile224/full205 and mobile compile224/strictquick125 passed
 after the ellipse cleanup. Full preflight reported no findings. The frozen
 source, explicit paths, logs and final identity use the `checkpoint31-` prefix
 under `build/qa/`, including `checkpoint31-validation.json`.
+
+
+## Loot chest ground contact — September 17, 2026
+
+Loot chests use the closed sprite's measured painted base to place their
+existing contact ellipse. The padded lid canvas no longer determines ground
+contact. Measurement reuses the prop geometry cache, occurs once on creation,
+and retains the 44 by 14.4 logical-unit footprint and existing opacity. The
+ellipse center sits two units inside the base; it stays still during the
+cosmetic scale pop and opening animation. Art, placement, collisions and
+reward rolls are unchanged. Empty geometry retains the previous fallback.
+
+`shot.bat prop_shadows --chests --timeout=240` exercises actual F/B gear and
+bronze supply factories on village and graveyard floors. The posed rows use
+quiet terrain, hidden scenery and direct lid previews; they are controlled
+visual fixtures. Separate normal W-key pickup controls verify movement,
+exact single payout and parent/shadow cleanup. Frame samples check a single
+persistent stationary shadow; they do not establish exhaustive animation or
+performance coverage. Pickup screenshots are partly hero-occluded.
+
+Evidence lives under `build/qa/session-sept17/chest-grounding-*`. Rejected
+baseline1 stopped at a QA type-inference compile error; baseline2 exposed an
+invalid CanvasLayer visibility call. Corrected baseline3 reproduced four
+contact failures in 106 checks. Prototype1 passed strict contact, retained
+footprint, opening and pickup checks, with all six native images reviewed.
+Final acceptance, source pins, validation logs, visual manifests and commit
+identity are recorded in `chest-grounding-checkpoint-validation.json` there.
+Mobile validation uses the mobile source on the Windows host Compatibility
+renderer; it does not establish physical-device or touch-pickup behavior.

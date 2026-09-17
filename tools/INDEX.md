@@ -440,6 +440,12 @@ objects through their actual factories. It saves fullframes, native closeups
 and source/shadow transforms. Use isolated APPDATA; add
 `--mobile --renderer=gl_compatibility` for mobile source/renderer QA.
 
+Chest contact QA: add `--chests` to `prop_shadows` for posed F/B gear and
+bronze supply chests on village/graveyard floors, stationary shadows through
+pop/open previews, and two ordinary W-key pickup controls with exact payout
+and cleanup. `--baseline` expects the four original contact findings. Isolate
+APPDATA; mobile flags above select host rendering, not touch pickup.
+
 Optional guardian QA: `shot.bat optional_discovery --timeout=420` checks real
 pocket/Unlisted entry, death and reentry with both campaign completion states,
 charted journal identities and actual map buttons. `--baseline` records the old

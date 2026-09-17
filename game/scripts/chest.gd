@@ -104,6 +104,14 @@ static func drop(game_node: Node2D, chest_tier: String, pos: Vector2, opts := {}
 	sprite.scale = base_scale
 	c.add_child(sprite)
 	c.body_sprite = sprite
+	# Lid room makes the export taller than the painted closed box. Ground the
+	# existing ellipse at that box's feet, not a fixed canvas-origin offset.
+	# It stays on the ground during the cosmetic scale pop and lid animation.
+	var painted: Dictionary = preload("res://scripts/prop_shadow.gd").shape(sprite)
+	var used: Rect2i = painted.used
+	if used.has_area():
+		var ground: Vector2 = sprite.transform * preload("res://scripts/prop_shadow.gd").foot(sprite, painted)
+		shadow.position = ground - Vector2(0, Balance.CHEST_SHADOW_FOOT_INSET)
 
 	c.collision_layer = 0
 	c.collision_mask = 2  # player

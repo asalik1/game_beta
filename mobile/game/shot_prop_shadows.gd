@@ -28,6 +28,9 @@ var npc_observations: Dictionary = {}
 
 
 func _ready() -> void:
+	if flag("chests"):
+		await preload("res://scripts/tests/chest_grounding_live.gd").run(self)
+		return
 	await boot("warrior", "ch3", false)
 	game.play_started = true
 	game.menus.close()
