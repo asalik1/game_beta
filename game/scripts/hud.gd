@@ -1566,8 +1566,8 @@ func _show_announcement(text: String, color: Color, hold: float, kind: String) -
 			break
 	_ann_stack = 1
 	# The box FITS its text (owner 2026-08-19: a short line in the fixed 560 px
-	# plaque was mostly whitespace). Measure the title at its SETTLED spacing —
-	# the brief wider ease-in clips inside the box — and the sub-line, and take
+	# plaque was mostly whitespace). Measure the title at its SETTLED spacing
+	# and the sub-line, and take
 	# the larger; clamp so a one-word line still reads as a plaque.
 	var icon_name := String(ANN_ICONS.get(kind, ""))
 	var text_x: float = 60.0 if icon_name != "" else 22.0
@@ -1590,7 +1590,12 @@ func _show_announcement(text: String, color: Color, hold: float, kind: String) -
 	if sub_font == null:
 		sub_font = ThemeDB.fallback_font
 	var sub_h := maxf(18.0, sub_font.get_multiline_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, available, 13).y + 4.0) if sub != "" else 0.0
-	fv.spacing_glyph = ANN_SPACING_REST if wraps else ANN_SPACING_IN
+	# A fitted one-line title must stay one line throughout the entrance.
+	# Wider tracking can otherwise wrap below the settled-height plaque.
+	fv.spacing_glyph = ANN_SPACING_IN
+	var entrance_need: float = fv.get_string_size(title_text, HORIZONTAL_ALIGNMENT_LEFT, -1, title_size).x
+	if wraps or entrance_need > available:
+		fv.spacing_glyph = ANN_SPACING_REST
 	var plaque := Panel.new()
 	plaque.name = "AnnouncementPlaque"
 	plaque.set_meta("message", text)

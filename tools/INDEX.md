@@ -367,15 +367,17 @@ mobile/touch flags above. Pools are lent, not earned; scroll placement is setup.
 This mode is mutually exclusive with other focused dossier modes.
 
 Reward plaque QA: `shot.bat hud_dossier --reward-plaques --timeout=180`
-uses a controlled display fixture with authored boss/quest strings and real UI
-clocks. The accepted original HUD `--baseline` has 67 checks/six images; strict
-after requires 61/six because hidden cards omit six conditional caption/panel
-checks. Default `hud_dossier` remains the separate 558-row/22-image regression;
-`--alignment` is a different fixture. Mobile reward adds `--mobile
+uses controlled production HUD calls and real UI clocks. The current twelve
+originals retain the six boss/cast/title/queue controls and add entrance/settled
+blight, short VICTORY and disclosed synthetic wrapped title/detail controls.
+`--baseline` expects exactly the blight entrance containment finding; all other
+checks remain strict. Early samples require the actual 0.18–0.55s tween window.
+Default dossier is a separate 22-original regression; check counts come from
+the actual bound receipts. Mobile reward adds `--mobile
 --renderer=gl_compatibility` without `--touch`; mobile default adds `--touch`.
-Use fresh APPDATA and the bound sequential runner. Each project passed 61 reward
-and 558 default checks; all 56 originals and closing gates are accepted.
-See WARD_VIGILS.md's Reward feedback section for actual baseline and scope.
+Use fresh isolated APPDATA and the bound sequential validator. Original
+September 10 counts remain historical in WARD_VIGILS.md; current acceptance
+and controlled/host-rendered limits are in its Plaque entrance section.
 
 Focused menu QA reuses this rig. `--online-menu --port=0` saves six native
 frames for actual solo/empty-loopback-host menu entry/return and a synthetic

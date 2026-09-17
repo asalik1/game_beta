@@ -103,6 +103,49 @@ Closing checks retained 1,259 source pins, 410/411 UIDs, the original 32 preserv
 The [observed baseline](build/qa/session-sept10/reward-plaque-baseline-candidate/runs/842fbdab6b433c6e3bcb3d65a39f2f24fc65508f/baseline-1/observed-contract.json) and [independent baseline](build/qa/session-sept10/reward-plaque-independent-review/baseline1.json) retain 67 checks/62 passes/five expected observations.
 The [root after review](build/qa/session-sept10/reward-plaque-after-candidate/runs/842fbdab6b433c6e3bcb3d65a39f2f24fc65508f/after-1/root-review.json) and [independent after review](build/qa/session-sept10/reward-plaque-independent-review/after1.json) bind the tested source and image hashes.
 
+### Plaque entrance readability
+
+THE BLIGHT BREAKS now remains inside its fitted plaque during entrance. Titles
+use settled letter spacing when wider entrance spacing would overflow the
+available text width. Short titles with room retain their tracking animation.
+The settled plaque dimensions, intentional wrapping, detail text, sweep,
+scale/fade, hold/exit, queue and existing overlay gates retain their rules.
+
+The current focused mode extends the original six boss/cast/title/queue
+controls with entrance and settled captures for authored blight, short VICTORY,
+and disclosed synthetic wrapped title/detail stress copy: twelve originals.
+Its baseline permits only `reward/07_blight/entrance_text_contained`.
+Other titles and every settled frame remain strict. Every sampled draw checks
+actual shaped Label character bounds and line counts, independently of the
+production font-width calculation. Early captures must occur between 0.18 and
+0.55 actual tween seconds; late captures fail rather than stand in for entrance
+evidence. The new samples do not freeze, seek or replace the production tween.
+The original six captures retain their established disclosed photography policy.
+
+Validated desktop quick 147/full 227 and mobile quick 147; focused native checks 74/74, default dossier 560/560 (desktop/host mobile), all strict. Twelve baseline originals reproduce exactly one blight entrance finding; all 68 final originals were actually reviewed with no remaining blocker. Source sync, compile gates and strict preflight passed.
+
+These are paused-world production HUD fixtures, not an earned achievement or
+combat victory. Mobile focused reward uses host Compatibility without touch;
+mobile default includes touch. No physical-device or ordinary remote reward
+delivery is established. Default dossier synthetic-party/empty-loopback limits
+remain. Shaped character bounds do not replace inspection of rendered ink.
+The original Warrior expedition's gold/save audit stopped after a combat clear;
+it is retained as partial evidence with no return-home or reload claim.
+The separate green purge-flash observation is unchanged.
+
+The original September 10 boss-gate counts above remain historical. The earlier
+new QA proposal incorrectly described Reaper's Tally as a wrapped stress case;
+its source is preserved, and the accepted stress fixture uses explicit
+synthetic multiline copy. Codex authored and independently reviewed the
+bounded production/helper changes; no generated art or progression change is
+included. A separate pre-runtime review caught a corrupted separator in the full QA-v2
+helper; QA-v3 removes that codepoint without changing any assertion. The
+applied production patch preserves fourteen pre-existing mixed line endings;
+a refused pre-runtime hash check and the explicit pin correction are retained.
+Exact sources, receipts, original-image review hashes, project-specific
+unchanged UIDs, preserved files and serialized commit are recorded in
+`build/qa/session-sept17/plaque-entrance-checkpoint-validation.json`.
+
 ## Verification
 
 `test_ward_vigil.gd` checks invalid snapshots, caller validation, content

@@ -433,6 +433,10 @@ See JOURNAL_GUARDIAN.md and journal-guardian-checkpoint-validation.json.
 Fixtures do not establish earned arena completion, genuine pocket travel,
 save-enabled board rollover, co-op delivery or physical-device behavior.
 
+Checkpoint 19 is validated: fitted reward plaque titles remain contained through entrance without enlarging short plaques. Validated desktop quick 147/full 227 and mobile quick 147; focused native checks 74/74, default dossier 560/560 (desktop/host mobile), all strict. Twelve baseline originals reproduce exactly one blight entrance finding; all 68 final originals were actually reviewed with no remaining blocker. Source sync, compile gates and strict preflight passed.
+
+The ordinary Warrior attempt remains a partial gold/save audit; its clear is not a completed return-home/reload journey. The earlier mistaken wrapped-stress copy remains preserved. No green purge-flash or progression/network change is included. Receipt: build/qa/session-sept17/plaque-entrance-checkpoint-validation.json (records the serialized commit and preserved local state).
+
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at
 the 13:00 UTC deadline. Its prompt requires the 12:00 feature cutoff, final

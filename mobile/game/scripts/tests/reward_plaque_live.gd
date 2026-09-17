@@ -1,5 +1,6 @@
 extends RefCounted
-## Controlled presentation only: authored quest copy and production HUD builders.
+## Controlled presentation only: production HUD builders, authored controls and
+## one explicitly synthetic long-title/detail stress case; no earned reward.
 ## No achievement is awarded and no normal encounter or input is simulated.
 const Geometry := preload("res://scripts/tests/hud_alignment_geometry.gd")
 const CastReadout := preload("res://scripts/ui/boss_cast.gd")
@@ -231,7 +232,124 @@ func _run() -> String:
 		return "final plaque and log did not age out naturally"
 	r._check("reward/six_originals", r.views.size() == 6)
 	r._check("reward/natural_completion", not is_instance_valid(h._ann_active) and h._ann_queue.is_empty() and h._log_lines.is_empty())
+	return await _entrance_cases()
+
+
+## Real entrance frames, not a settled-width reimplementation. Existing six
+## captures above retain their original photography policy; these never freeze UI.
+func _entrance_cases() -> String:
+	for case: Dictionary in [
+		{"id": "07_blight", "text": "THE BLIGHT BREAKS", "kind": "victory", "single": true},
+		{"id": "08_short", "text": "VICTORY", "kind": "victory", "single": true},
+		{"id": "09_long", "text": "CONTROLLED LONG ANNOUNCEMENT TITLE THAT MUST WRAP WITHIN ITS PLAQUE WITHOUT HIDING ANY OF THESE WORDS\nControlled detail remains fully visible below the wrapped title.", "kind": "achievement", "single": false},
+	]:
+		var error: String = await _entrance_case(case)
+		if error != "":
+			return error
+		if not await _drain(12.0):
+			return "entrance plaque and log did not retire naturally: " + String(case.id)
+	r._check("reward/twelve_originals", r.views.size() == 12)
+	var actual: Array[String] = []
+	for finding in r.findings:
+		actual.append(String(finding.finding))
+	var expected: Array[String] = []
+	if r.baseline:
+		expected.append("reward/07_blight/entrance_text_contained")
+	r._check("reward/entrance_exact_findings", actual == expected, {"actual": actual, "expected": expected})
 	return ""
+
+
+func _entrance_case(case: Dictionary) -> String:
+	h.announce(String(case.text), Color(0.55, 0.95, 0.6), 2.2, String(case.kind))
+	if not _visible_message(String(case.text)) or h._ann_tween == null:
+		return "entrance plaque did not start: " + String(case.id)
+	var plaque: Panel = h._ann_active
+	var motion: Tween = h._ann_tween
+	var samples: Array[Dictionary] = []
+	var bad: Array[Dictionary] = []
+	var early := false
+	var early_clock := -1.0
+	var settled := false
+	var deadline: int = Time.get_ticks_msec() + 15000
+	while Time.get_ticks_msec() < deadline and not settled:
+		await RenderingServer.frame_post_draw
+		if not is_instance_valid(plaque) or not motion.is_valid():
+			return "entrance plaque retired before settled capture: " + String(case.id)
+		var sample := _entrance_shape(plaque)
+		sample["clock"] = motion.get_total_elapsed_time()
+		sample["process_frame"] = Engine.get_process_frames()
+		samples.append(sample)
+		if not bool(sample.contained) or (bool(case.single) and int(sample.title_lines) != 1):
+			bad.append(sample)
+		if not early and float(sample.clock) >= 0.18:
+			_entrance_capture(String(case.id) + "_early", sample)
+			early_clock = float(sample.clock)
+			early = true
+		elif early and float(sample.clock) >= 0.70:
+			_entrance_capture(String(case.id) + "_settled", sample)
+			settled = true
+	var observed_entrance := false
+	for sample in samples:
+		if float(sample.clock) > 0.0 and float(sample.clock) < 0.55:
+			observed_entrance = true
+	r._check("reward/" + String(case.id) + "/live_window", early and settled and observed_entrance and early_clock >= 0.18 and early_clock < 0.55
+		and samples.size() >= 4 and h.process_mode == Node.PROCESS_MODE_ALWAYS
+		and h._ann_active == plaque and h._ann_tween == motion and motion.is_running(),
+		{"samples": samples.size(), "early": early, "early_clock": early_clock, "settled": settled, "observed_entrance": observed_entrance})
+	# The ordinary evidence was transient. A broken settled plaque is never
+	# an allowed baseline defect, even when its entrance also fails.
+	var settled_ok: bool = settled and not samples.is_empty() and bool(samples[-1].contained)
+	if settled_ok and bool(case.single):
+		settled_ok = int(samples[-1].title_lines) == 1
+	r._check("reward/" + String(case.id) + "/settled_text_contained", settled_ok)
+	var details := {"samples": samples, "violations": bad,
+		"oracle": "actual Label character bounds and line count after every draw; no font-width estimate"}
+	if String(case.id) == "07_blight":
+		r._probe("reward/07_blight/entrance_text_contained", bad.is_empty(), details)
+	else:
+		# Controls stay strict even in baseline mode. Only the evidenced blight
+		# clipping may become an anticipated finding, never any control failure.
+		r._check("reward/" + String(case.id) + "/entrance_text_contained", bad.is_empty(), details)
+	if String(case.id) == "09_long":
+		var wrapped_detail := not samples.is_empty()
+		for sample in samples:
+			wrapped_detail = wrapped_detail and int(sample.title_lines) > 1 \
+				and sample.labels.has("AnnouncementDetail") \
+				and not String(sample.labels.get("AnnouncementDetail", {}).get("shape", {}).get("text", "")).is_empty()
+		r._check("reward/09_long/wrapped_title_and_detail", wrapped_detail, details)
+	if String(case.id) == "08_short" and samples.size() >= 2:
+		r._check("reward/08_short/tracking_animates", float(samples[0].spacing) > float(samples[-1].spacing))
+	r._write_report()
+	return "" if early and settled else "entrance sampling timeout: " + String(case.id)
+
+
+func _entrance_shape(plaque: Panel) -> Dictionary:
+	var result := {"contained": true, "plaque": Geometry.rect(plaque.get_global_rect()),
+		"alpha": plaque.modulate.a, "labels": {}, "title_lines": 0, "spacing": 0.0}
+	for name: String in ["AnnouncementTitle", "AnnouncementDetail"]:
+		var label := plaque.get_node_or_null(name) as Label
+		if label == null:
+			continue # Short production messages legitimately have no detail label.
+		var shape := Geometry.shaped(label)
+		var cells := Geometry.to_rect(shape.cells)
+		var contained: bool = shape.count > 0 and shape.missing.is_empty() and label.visible_ratio >= 1.0 \
+			and label.max_lines_visible == -1 and label.get_visible_line_count() == label.get_line_count() \
+			and label.get_global_rect().grow(0.5).encloses(cells) and plaque.get_global_rect().grow(0.5).encloses(cells)
+		result.labels[name] = {"shape": shape, "contained": contained}
+		result.contained = bool(result.contained) and contained
+		if name == "AnnouncementTitle":
+			result.title_lines = label.get_line_count()
+			result.spacing = (label.get_theme_font("font") as FontVariation).spacing_glyph
+	result.contained = bool(result.contained) and result.labels.has("AnnouncementTitle")
+	return result
+
+
+func _entrance_capture(id: String, sample: Dictionary) -> void:
+	# Called after frame_post_draw: image and observed geometry share one frame.
+	# Synchronous readback/write may delay the NEXT frame; actual UI clock is
+	# recorded above. Never pause, seek, speed up or replace the production tween.
+	r.views.append({"view": id, "path": r.shot(id, SCOPE), "scope": SCOPE,
+		"geometry": sample, "queue": _queue(), "log": _logs(), "photography_clock_frozen": false})
 
 
 func _capture(id: String) -> void:
