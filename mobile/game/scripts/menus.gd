@@ -73,6 +73,7 @@ func _shell_motion() -> bool:
 
 
 func close() -> void:
+	_card_tap = {}
 	if root:
 		var old := root
 		root = null
@@ -120,6 +121,7 @@ func _hide_world_interaction_prompts() -> void:
 ## Fangmoot moot that fill the frame edge to edge. Returns the root Control to
 ## build into; the caller owns the whole 1280x720 canvas.
 func _open_full() -> Control:
+	_card_tap = {}
 	if root:
 		root.queue_free()
 	_hide_world_interaction_prompts()
@@ -140,6 +142,7 @@ func _open_full() -> Control:
 
 ## Open the shared modal shell. Closable screens expose ✕ and click-outside.
 func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxContainer:
+	_card_tap = {}
 	# The shell ease plays only when a menu OPENS from gameplay. Rebuilding
 	# while one is already up — spending a talent point re-runs open_skills,
 	# buying re-runs open_shop, tab hops — must swap instantly: replaying the
@@ -2652,14 +2655,123 @@ func _equipped_row(left: VBoxContainer, slot: String, cat: String) -> void:
 			row.add_child(srow)
 			_socket_row(srow, item, refresh)
 			sockets = srow
-		card.gui_input.connect(func(e: InputEvent) -> void:
-			if (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT) \
-					or (e is InputEventScreenTouch and e.pressed and not Input.emulate_mouse_from_touch):
-				# Touch scrolling makes descendants PASS. Socket presses must keep
-				# bubbling to the scroll container without also opening their item.
-				if sockets != null and sockets.get_global_rect().has_point(card.get_global_transform() * e.position):
-					return
-				open_cb.call())
+		_wire_card_tap(card, sockets, open_cb)
+
+
+## Claude-authored equipped-card gesture, revised by Codex after source review.
+## Observe real touch contacts before GUI delivery. Once multiple fingers or
+## a cancellation interrupt a gesture, no card can re-arm until all lift.
+var _card_tap := {}
+var _card_contacts := {}
+var _card_touch_blocked := false
+
+
+func _wire_card_tap(card: Control, sockets: Control, open_cb: Callable) -> void:
+	var shell := root
+	card.gui_input.connect(func(e: InputEvent) -> void:
+		if root != shell or current != "inventory" or not is_instance_valid(shell) \
+				or shell.is_queued_for_deletion() or card.is_queued_for_deletion():
+			return
+		# A real finger owns its raw stream, irrespective of mouse emulation.
+		# A physical mouse keeps press-open; its generated touch is ignored too.
+		if e.device == InputEvent.DEVICE_ID_EMULATION:
+			return
+		var touch: bool = e is InputEventScreenTouch and e.pressed and not e.canceled
+		var mouse: bool = e is InputEventMouseButton and e.pressed \
+				and e.button_index == MOUSE_BUTTON_LEFT and not e.canceled
+		if not touch and not mouse:
+			return
+		if sockets != null and not is_instance_valid(sockets):
+			return
+		var at: Vector2 = card.get_global_transform_with_canvas() * e.position
+		if sockets != null and Rect2(Vector2.ZERO, sockets.size).has_point(
+				sockets.get_global_transform_with_canvas().affine_inverse() * at):
+			return  # do not consume: socket Buttons and scroll still own their input
+		if _card_touch_blocked:
+			return
+		if mouse:
+			if _card_contacts.is_empty():
+				open_cb.call()
+			return
+		if _card_contacts.size() != 1 or not _card_contacts.has(e.index):
+			return
+		_card_tap = {"card": card, "sockets": sockets, "open_cb": open_cb,
+			"shell": shell, "index": e.index, "from": at, "moved": false})
+
+
+func _card_tap_observe(e: InputEvent) -> void:
+	if not is_open():
+		_card_tap = {}
+		_card_contacts.clear()
+		_card_touch_blocked = false
+		return
+	if e.device == InputEvent.DEVICE_ID_EMULATION:
+		return
+	if e is InputEventScreenTouch:
+		if e.canceled:
+			_card_tap = {}
+			_card_touch_blocked = true
+			# Godot reports canceled touches as released, even if their setter
+			# originally requested pressed=true. Other held contacts stay blocked.
+			_card_contacts.erase(e.index)
+		elif e.pressed:
+			if _card_contacts.has(e.index):
+				_card_touch_blocked = true
+			_card_contacts[e.index] = true
+			if _card_contacts.size() > 1:
+				_card_touch_blocked = true
+			if _card_touch_blocked:
+				_card_tap = {}
+		else:
+			var known: bool = _card_contacts.has(e.index)
+			_card_contacts.erase(e.index)
+			if known and not _card_touch_blocked and not _card_tap.is_empty() \
+					and int(_card_tap.index) == e.index:
+				_card_tap_release(e.position)
+		if _card_contacts.is_empty():
+			_card_touch_blocked = false
+	elif e is InputEventScreenDrag:
+		if not _card_tap.is_empty() and int(_card_tap.index) == e.index \
+				and e.position.distance_to(_card_tap.from) > Balance.ATLAS_DRAG_THRESHOLD:
+			_card_tap.moved = true
+	elif e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+		# A mixed mouse/finger gesture cannot complete an old finger tap.
+		_card_tap = {}
+		if not _card_contacts.is_empty():
+			_card_touch_blocked = true
+
+
+func _card_tap_release(at: Vector2) -> void:
+	var rec: Dictionary = _card_tap
+	_card_tap = {}
+	if rec.moved or at.distance_to(rec.from) > Balance.ATLAS_DRAG_THRESHOLD:
+		return
+	# Variant references may point at freed Nodes. Check before a typed binding,
+	# and reject a queued shell even before Godot frees its children.
+	if not is_instance_valid(rec.get("shell")) or not is_instance_valid(rec.get("card")):
+		return
+	if rec.shell.is_queued_for_deletion() or rec.card.is_queued_for_deletion() \
+			or root != rec.shell or current != "inventory":
+		return
+	var card: Control = rec.card
+	if not card.is_visible_in_tree() or not rec.shell.is_ancestor_of(card):
+		return
+	if not Rect2(Vector2.ZERO, card.size).has_point(card.get_global_transform_with_canvas().affine_inverse() * at):
+		return
+	if rec.sockets != null:
+		if not is_instance_valid(rec.sockets) or rec.sockets.is_queued_for_deletion():
+			return
+		var sockets: Control = rec.sockets
+		if Rect2(Vector2.ZERO, sockets.size).has_point(sockets.get_global_transform_with_canvas().affine_inverse() * at):
+			return
+	rec.open_cb.call()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		_card_tap = {}
+		_card_contacts.clear()
+		_card_touch_blocked = false
 
 
 ## One clickable bag slot. A stack count (gems, potions, materials) rides as
@@ -5731,6 +5843,7 @@ func open_keybinds() -> void:
 # ------------------------------------------------------------------- input ---
 
 func _input(event: InputEvent) -> void:
+	_card_tap_observe(event)
 	if not is_open():
 		return
 	# Keybind capture takes priority over everything.

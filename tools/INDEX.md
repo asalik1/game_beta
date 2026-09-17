@@ -462,6 +462,13 @@ native views. Isolate APPDATA under build/qa; add `--touch --mobile
 --renderer=gl_compatibility` for host mobile. Existing first-clear timing and
 Talents callback stay unchanged. See SKILLS_TOUCH.md for exact scope.
 
+Equipment card touch QA: `shot.bat gems --equip-touch --timeout=180`
+uses legal lent/reforged gear and actual viewport touch, drag and mouse events.
+Use isolated APPDATA under build/qa; `--baseline` expects only the old body-drag
+open. Add `--mobile --renderer=gl_compatibility --touch` for host mobile.
+Cancellation/multiple contacts and shell replacement remain strict; no physical
+device claim. See INVENTORY_TOUCH.md for provenance and rejected fixture history.
+
 Prop shadow QA: `shot.bat prop_shadows --timeout=300` captures the reported
 gravestone group, broad and narrow props, animated foliage/fountain and lore
 objects through their actual factories. It saves fullframes, native closeups

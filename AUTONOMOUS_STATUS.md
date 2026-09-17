@@ -396,6 +396,21 @@ copy/refresh, and the observed reward-plaque entrance wrap. Root retains the
 only engine, mobile sync, index and commit ownership. The green teaching wash
 is an early transient observation; persistent pause freezing is not established.
 
+Checkpoint 16 is validated: equipped-card finger taps open on release;
+body drags scroll without opening Info. Socket taps/scrolling, physical mouse,
+nonzero touch IDs, cancellation, multiple contacts and stale shells are covered.
+Claude Fable supplied the initial implementation/helper; Codex reviewed and
+coauthored the accepted patch. Baseline4 reproduced exactly body_drag/opened.
+Baseline1-3 and final1/trace1 remain preserved: legal socket-count, shared Gems
+header, desktop emulation, and canceled-event oracle assumptions were corrected
+from code and actual native evidence, not waived.
+
+Validated desktop quick 146/full 226, mobile quick 146, exact three-source sync and strict preflight. Equipment probes pass 48/48 checks with 5/5 originals (desktop/host mobile); desktop mouse/mobile touch gem regressions pass 36/40 checks with 9/9 originals. Every final original was independently inspected at original resolution; root inspected selected originals. No new network path or physical-device claim.
+
+See INVENTORY_TOUCH.md and equip-touch-checkpoint-validation.json for exact
+source, evidence, preservation and commit. The separate plaque/targeting/journal
+candidates remain unaccepted; root retains engine, sync and commit ownership.
+
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at
 the 13:00 UTC deadline. Its prompt requires the 12:00 feature cutoff, final

@@ -21,6 +21,24 @@ func _ready() -> void:
 		if error != "": print("GEM CAPS FAILED: ", error)
 		finish(0 if error == "" else 1)
 		return
+	if flag("equip-touch"):
+		var qa_path := ProjectSettings.globalize_path("user://").replace("\\", "/")
+		if not qa_path.to_lower().contains("/build/qa/"):
+			print("EQUIP TOUCH FAILED: isolated build/qa APPDATA required")
+			finish(1)
+			return
+		await boot("warrior", "ch1", false)
+		game.play_started = true
+		game.state = Game.ST_PLAYING
+		game.menus.close()
+		game.request_pause(false)
+		game.enter_capital()
+		await frames(6)
+		await skip_dialogue()
+		var touch_error: String = await preload("res://scripts/tests/equip_touch_live.gd").run(self)
+		if touch_error != "": print("EQUIP TOUCH FAILED: ", touch_error)
+		finish(0 if touch_error == "" else 1)
+		return
 	await boot("warrior", "ch1")
 	hide_hud()
 	game.menus.open_codex("gems")
