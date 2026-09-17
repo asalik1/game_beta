@@ -1,4 +1,4 @@
-# Exploration interaction and dash landings
+# Exploration interaction and ability landings
 
 Desktop and mobile native checks, required suites and full preflight pass.
 The original exploration checkpoint receipt is
@@ -54,6 +54,70 @@ The accepted original checkpoint left Archer Tumble, Paladin Judgment,
 Assassin execution flanks, ordinary walking, spawns and capital arrival
 placement on their separate paths. No protected artwork, save schema or RPC
 format was modified.
+
+## Death Mark extension — September 17
+
+The final execution now sends its existing room-clamped 46px far-side request
+through the same body-footprint landing resolver. `DEATH_MARK_FAR_SIDE_OFFSET`
+names that unchanged distance in `balance.gd`. Clear endpoints stay exact;
+occupied endpoints retreat along the original approach. In particular, a large
+boss can force arrival onto the approach side rather than behind it. This is
+not a sideways search, overlap repair, or a guarantee to arrive behind a target.
+The existing chapter-lifetime guard, two crossing hits, delays and coefficients
+remain intact. Unlike the shared dash corridor, this final stab originates at
+the actual landing. Representative pairs preserve all three hits, but an
+arbitrarily long retreat cannot guarantee every possible target remains in range.
+The class ability description and Combat field note explain the blocked landing.
+Paladin Judgment, ordinary movement and spawn placement remain separate paths.
+
+Evidence under `build/qa/session-sept17/`:
+
+- `deathmark-baseline/`: 295 checks, zero unexpected failures and exactly 18
+  expected findings: initial overlap and subsequent recovery drift across eight
+  factory-boulder directions and one production-sized Vargoth. Root opened all
+  three native frames. No production landing changes were applied in this run.
+- `deathmark-after/`: 295 checks, zero failures/findings, all six contact/settled
+  frames opened by root. Eight clear-versus-blocked wolf pairs and a scanned /
+  unscanned large-boss pair preserve all three positive player-sourced damage
+  calls and exact HP removal. All nondegenerate arrivals are clear; twelve
+  subsequent zero-input movement steps produce zero drift. The already-overlapped
+  coincident start remains finite and unchanged, with no clearance promise.
+- `deathmark-hunt/`: L1 base Assassin wins the ordinary live quarry in 24.235s,
+  HP 95 -> minimum 64.4118 -> 95, earning 120 gold. No god mode, resource grants
+  or injected combat damage. Optional ultimate-first keyboard strategy observes
+  activation and a 204.5px rendered jump with the final stance, then resumes
+  the existing full-kit fight. All nine native images opened by root. Hunt sign
+  teleports and deferred terrain events are setup controls; this is not a chapter
+  playthrough. Render-frame sampling is not instantaneous collision proof.
+
+`shot.bat exploration_friction --deathmark --field-notes --timeout=180` runs the
+controlled matrix and actual Codex reading. Baseline omits `--field-notes` and
+requires exactly the 18 named findings. Direct effect fixtures freeze hero/AI,
+raise target HP, and temporarily mask other bodies. Contact FX and boss artwork
+can obscure the hero despite clear colliders; frozen unrelated NPC prompts can
+remain stale. These frames do not establish every world-UI or art arrangement.
+The normal-input hunt uses `shot.bat hunt_combat --class=assassin
+--deathmark-observe --trace --timeout=180` with a fresh isolated profile.
+
+Final desktop quick/full pass (145/225). The two-reader local ENet Death Mark
+mode passes 68 checks and four root/independently reviewed native images. It
+uses real native ultimate input, then holds guest physics through the delayed
+arrival query. Clear and factory-boulder cases retain identical raw hits
+10.15/10.15/18.85 and host HP debits 15.225/15.225/28.275, including exactly one
+application of the mark's vulnerability. Guest attribution and ordinary movement
+and HP snapshots converge; host hero and both economies remain unchanged.
+This is manually admitted local transport with stationary actors and matched
+scenery, not a moving fight, latency/loss test or full world-snapshot proof.
+Mobile import/compile/strict quick (145), exact ten-path sync, final desktop and
+mobile matrix/Codex reading (305 each) and mobile ENet (68) pass. The unchanged
+default guest Blink adapter passes 47 checks. Root opened all 44 native frames
+across the baseline, iterations, hunt and final runs, including the complete
+Codex paragraph on both renderers. Compatibility shadows differ from desktop;
+the source fixture disables touch controls. This is host-rendered mobile-source
+validation, not physical-device or touch-input validation. Full strict preflight
+passes. `deathmark-checkpoint-validation.json` records source/evidence hashes,
+the resulting commit, exact owned paths and preservation audit. Root reviewed
+all 44 native frames; independent reviewers opened thirty of them.
 
 ## Tumble extension
 

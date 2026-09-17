@@ -283,6 +283,20 @@ func _execute() -> String:
 	report["room"] = room
 	report["room_name"] = str(game.zones[room].name)
 	report["hero_shape"] = _shape().get_class()
+	if flag("deathmark"):
+		shot_dir = shot_dir.path_join("deathmark")
+		game.set_process(false)
+		game.settings["touch_controls"] = false
+		game.refresh_touch_mode()
+		game._apply_touch_mode()
+		game.gamepad._set_active(false)
+		game.gamepad.cancel_held()
+		var landing_error: String = await preload("res://scripts/tests/deathmark_landing_live.gd").run(self, room)
+		if landing_error != "":
+			return landing_error
+		if flag("field-notes"):
+			return await preload("res://scripts/tests/exploration_field_notes.gd").run(self)
+		return ""
 	var settings_point: Vector2 = game.hud.settings_btn.get_global_transform_with_canvas() * (game.hud.settings_btn.size * 0.5)
 	var settings_hits: Array = _hud_hits(settings_point)
 	var found_settings := false

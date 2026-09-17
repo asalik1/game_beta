@@ -431,8 +431,9 @@ func _death_mark_execution(target: CharacterBody2D, execute := 0.0) -> void:
 	# storm plays around all of this as the added spectacle.
 	var from := global_position
 	var behind := (target.global_position - from).normalized()
-	global_position = game.clamp_to_zone(
-		target.global_position + behind * 46.0, target.global_position)
+	# Preserve a clear far-side endpoint; retreat only if the real body cannot fit.
+	global_position = preload("res://scripts/dash_landing.gd").resolve(self, game.clamp_to_zone(
+		target.global_position + behind * Balance.DEATH_MARK_FAR_SIDE_OFFSET, target.global_position))
 	# Reappear stance (Zed language): he materializes behind the prey already
 	# in the wide blades-out pose, then drives the killing stab home.
 	play_action("ultidle")

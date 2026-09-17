@@ -45,9 +45,28 @@ record the controlled-fixture, borrowed-kit, startup-FX and stale posed-HUD limi
 See `build/qa/session-sept17/ability-timers-checkpoint-validation.json` for the
 resulting checkpoint commit, hashes and preserved-file audit. Source pins:
 `build/qa/session-sept17/ability-timers-final2-desktop-source.json`.
-All evidence and rejected attempts are under `build/qa/session-sept17/`; see
-COMBAT_CLOCKS.md for the exact scope and limitations. Death Mark landing remains an unapplied,
-unexecuted candidate in `deathmark-landing-candidate/`, not accepted work.
+Checkpoint 3 completes Death Mark final landing clearance. Baseline
+reproduced exactly 18 geometry/recovery findings; the implemented resolver path
+passes all 295 controlled checks with unchanged three-hit damage in the tested
+pairs. Six strict native frames reviewed. A normal-input L1 Assassin hunt wins
+in 24.235s with a recorded Death Mark activation/teleport and nine reviewed frames.
+The copy now explains blocked landings. Final desktop quick/full pass (145/225);
+focused guest Death Mark transport passes 68 checks on desktop and mobile.
+Final matrix/Codex runs pass 305 checks each; mobile import/compile/strict quick
+and exact ten-path synchronization pass. Default guest Blink regression passes
+47 checks. Root opened all 44 native frames across baseline, strict, hunt, final
+reading and transport runs; thirty also have independent visual reviews.
+Full strict preflight passes. The final commit, source/evidence hashes, exact
+owned scope and post-commit preservation audit are recorded in
+`build/qa/session-sept17/deathmark-checkpoint-validation.json`.
+See EXPLORATION_RELIABILITY.md. Root owns production, engine, mobile and commits;
+the delegated hunt observation and guest Death Mark QA adapter are complete.
+All evidence and rejected attempts are under `build/qa/session-sept17/`. The older
+source-only proposal remains preserved in `deathmark-landing-candidate/`.
+Next bounded candidate: `delayed-payload-candidate-review.md` identifies Death
+Mark inheriting a later Poison Stab's riders. This is source-only, not yet
+reproduced or accepted. Review and reproduce before changing production.
+
 
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at

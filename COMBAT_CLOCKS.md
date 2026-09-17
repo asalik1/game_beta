@@ -134,6 +134,9 @@ loopback-host controls. Use fresh isolated APPDATA for each mode.
 
 ## Further candidates
 
-Death Mark landing overlap has a source-reviewed proposal and unexecuted fixture
-in `deathmark-landing-candidate/`; delayed-rider theme contamination also remains
-unresolved. Neither is an accepted runtime-confirmed improvement yet.
+Death Mark landing clearance is checkpoint 3 in EXPLORATION_RELIABILITY.md;
+its original source-only proposal remains preserved. Delayed-rider theme
+contamination is still unresolved. The bounded source audit at
+`build/qa/session-sept17/delayed-payload-candidate-review.md` identifies a
+candidate Poison Stab/Death Mark cross-cast case and related delayed riders.
+Reproduce it before selecting a production fix; no runtime acceptance yet.

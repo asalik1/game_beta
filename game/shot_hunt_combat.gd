@@ -3,9 +3,11 @@ extends ShotRig
 ## Setup places the hero at each sign; combat never calls use_ability/damage.
 ## Optional --terrain=graveyard changes only the existing floor material.
 ## This remains Village Outskirts combat with village mechanics/lighting, not ch3.
+## --deathmark-observe adds a base Assassin ultimate-first, live-input sample.
 const Hunt := preload("res://scripts/road_hunt.gd")
 var held := {}
 var terrain_setup: Dictionary = {}
+var deathmark_observation: Dictionary = {}
 
 
 func _ready() -> void:
@@ -114,6 +116,12 @@ func _checks() -> String:
 	print("HUNT COMBAT START: ", JSON.stringify({"kind": quarry.kind, "traits": quarry.traits,
 		"damage": quarry.dmg, "speed": quarry.speed, "hero_speed": p.speed,
 		"hero_position": str(p.global_position), "quarry_position": str(quarry.global_position)}))
+	var deathmark_error := ""
+	if flag("deathmark-observe"):
+		deathmark_error = await _observe_deathmark(quarry, room)
+		hp_min = minf(hp_min, float(deathmark_observation.get("hp_min", p.hp)))
+		traveled += float(deathmark_observation.get("distance_traveled", 0.0))
+		origin = p.global_position
 	while is_instance_valid(trail) and trail.phase == Hunt.FIGHTING and not p.dead \
 		and Time.get_ticks_msec() - begun < int(max_seconds * 1000.0):
 		var elapsed := (Time.get_ticks_msec() - begun) / 1000.0
@@ -177,15 +185,119 @@ func _checks() -> String:
 		detailed["pounce_capture"] = crouch_seen
 		detailed["combat_end_hero"] = _hero_receipt()
 		detailed["combat_end_field"] = _field_receipt(room)
+		if flag("deathmark-observe"):
+			detailed["deathmark_observation"] = deathmark_observation
 		file.store_string(JSON.stringify(detailed, "\t"))
 		file.close()
 	print("HUNT COMBAT: ", JSON.stringify(report))
 	if not won:
 		return "ordinary combat probe did not win; inspect its report before changing balance"
+	if deathmark_error != "":
+		return deathmark_error
 	if game.dev_god or hp_start > 1000.0 or traveled < 100.0 or p.gold <= money:
 		return "combat probe used inflated health, did not walk, or received no reward"
 	print("ok: ordinary hunt combat won through keyboard movement and class-kit inputs with starting equipment, normal health and no injected combat damage")
 	return ""
+
+
+## Read the rendered live world; never force an ability, target, resource or
+## landing. Sampling occurs after frame_post_draw and may follow collision
+## recovery. A large jump with ultidle is observed teleport evidence only,
+## NOT the instantaneous pre-depenetration position used by the geometry rig.
+func _observe_deathmark(quarry: Enemy, room: int) -> String:
+	var p := game.player
+	deathmark_observation = {"activated": false, "teleport_observed": false,
+		"outcome": "partial", "reason": "", "samples": [], "captures": [],
+		"setup": _hero_receipt(), "wander_seed": game.wander_seed,
+		"skin": p.skin, "themes": p.ability_theme.duplicate(true),
+		"tree_points": p.tree_points.duplicate(true), "attributes": p.attr_points.duplicate(true),
+		"quarry_id": quarry.get_instance_id(), "quarry_level": quarry.level,
+		"quarry_traits": quarry.traits.duplicate(true), "hp_min": p.hp,
+		"distance_traveled": 0.0,
+		"scope": "Ultimate-first keyboard strategy against a live hunt; setup poses/terrain-event delay retained. Render-frame samples are not pre-depenetration physics proof. No injected combat damage or resource grants."}
+	var error := ""
+	if p.cls != "assassin" or p.skin != "" or String(p.ability_theme.ult) != "" \
+			or game.dev_god or game.net_online() or not p.is_physics_processing() \
+			or not quarry.is_physics_processing():
+		error = "Death Mark observation requires unmodified base Assassin, live offline physics and god off"
+	else:
+		_release()
+		await RenderingServer.frame_post_draw
+		shot("deathmark_00_approach", "live ultimate-first hunt; before input")
+		var begun := Time.get_ticks_msec()
+		var clock_start: float = p.damage_memory.elapsed_seconds
+		var activated_at := -1.0
+		var previous := p.global_position
+		var selected: CharacterBody2D = null
+		var input_sent := false
+		while Time.get_ticks_msec() - begun < 10000 and not p.dead:
+			if not is_instance_valid(quarry) or quarry.dying:
+				break
+			var delta := quarry.global_position - p.global_position
+			if activated_at < 0.0:
+				var walk := delta.normalized() if delta.length() > 210.0 else Vector2.ZERO
+				if not game.play_rect(room).grow(-80.0).has_point(p.global_position + walk * 90.0):
+					walk = (game.room_center(room) - p.global_position).normalized()
+				_move(walk)
+				if delta.length() <= 220.0 and not input_sent:
+					selected = p.auto_aim() # read the normal targeting result; do not assign it
+					deathmark_observation["target_at_input"] = selected.get_instance_id() if is_instance_valid(selected) else 0
+					deathmark_observation["input_key"] = int(game.binds.ult)
+					_press(int(game.binds.ult), true)
+					input_sent = true
+			else:
+				_move(Vector2.ZERO) # deliberate stillness during this single execution
+				_press(int(game.binds.ult), false)
+			_press(int(game.binds.potion), p.hp < p.max_hp * 0.4)
+			await RenderingServer.frame_post_draw
+			var elapsed: float = p.damage_memory.elapsed_seconds - clock_start
+			if activated_at < 0.0 and p.deathmark_time > 0.0 and float(p.cds.ult) > 1.0:
+				activated_at = elapsed
+				deathmark_observation["activated"] = true
+				deathmark_observation["activation_seconds"] = elapsed
+			var jump := p.global_position.distance_to(previous)
+			var row := {"seconds": elapsed, "frame": Engine.get_process_frames(),
+				"physics_frame": Engine.get_physics_frames(), "hp": p.hp,
+				"hero": [p.global_position.x, p.global_position.y], "clip": p._clip,
+				"position_delta": jump, "ult_cd": p.cds.ult, "mark_seconds": p.deathmark_time,
+				"quarry_alive": is_instance_valid(quarry) and not quarry.dying,
+				"quarry_hp": quarry.hp if is_instance_valid(quarry) else 0.0,
+				"quarry": [quarry.global_position.x, quarry.global_position.y] if is_instance_valid(quarry) else [],
+				"selected_alive": is_instance_valid(selected) and not selected.dying,
+				"selected_hp": selected.hp if is_instance_valid(selected) else 0.0,
+				"selected": [selected.global_position.x, selected.global_position.y] if is_instance_valid(selected) else []}
+			deathmark_observation.samples.append(row)
+			deathmark_observation.hp_min = minf(float(deathmark_observation.hp_min), p.hp)
+			deathmark_observation.distance_traveled = float(deathmark_observation.distance_traveled) + jump
+			previous = p.global_position
+			if activated_at >= 0.0 and deathmark_observation.captures.is_empty():
+				shot("deathmark_01_convergence", "actual first sampled marked frame")
+				deathmark_observation.captures.append({"name": "deathmark_01_convergence", "sample": row.duplicate(true)})
+			if activated_at >= 0.0 and not bool(deathmark_observation.teleport_observed) \
+					and p._clip == "ultidle" and jump > 24.0:
+				deathmark_observation.teleport_observed = true
+				deathmark_observation["teleport_sample"] = row.duplicate(true)
+				shot("deathmark_02_landing_observed", "rendered jump with ultidle; not pre-depenetration proof")
+				deathmark_observation.captures.append({"name": "deathmark_02_landing_observed", "sample": row.duplicate(true)})
+			if activated_at >= 0.0 and elapsed - activated_at >= 1.0:
+				break
+		_release()
+		await RenderingServer.frame_post_draw
+		shot("deathmark_03_observation_end", "live sample outcome; normal combat resumes next")
+		if not bool(deathmark_observation.activated):
+			error = "Death Mark observation did not see successful activation"
+		elif not bool(deathmark_observation.teleport_observed):
+			error = "Death Mark activated but final teleport was not observed; inspect partial/aborted evidence"
+		elif p.dead:
+			error = "Assassin died during Death Mark observation"
+	deathmark_observation.reason = error
+	deathmark_observation.outcome = "observed" if error == "" else "partial"
+	var file := FileAccess.open(shot_dir.path_join("deathmark.json"), FileAccess.WRITE)
+	if file == null:
+		return "Could not preserve Death Mark observation receipt"
+	file.store_string(JSON.stringify(deathmark_observation, "\t"))
+	file.close()
+	return error
 
 
 ## Deliberately avoid ShotRig.apply_terrain: its Game helper rebuilds rivers,

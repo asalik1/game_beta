@@ -39,12 +39,24 @@ accepted Tumble baseline's separate exact fourteen-finding whitelist rejects
 any old reach finding. Strict after runs use no `--baseline`. See
 EXPLORATION_RELIABILITY.md for current acceptance and fixture limits.
 
+`--deathmark --field-notes --timeout=180` selects the separate Assassin execution
+landing matrix and actual Combat-note reading. Eight clear/prop pairs, a large
+boss pair and an invalid-origin control check footprint clearance, recovery drift
+and three-hit damage. These are direct production calls with frozen actors;
+`--baseline` omits reading and requires exactly eighteen old landing findings.
+Reports/captures are under `deathmark/`; use a fresh isolated APPDATA.
+
 Guest Blink QA: `shot.bat guest_blink_enet --timeout=180` runs two readers over
 real ENet in one engine: occupied actor landing and a clear endpoint beyond it,
 native ability input, exact host damage ownership and HP/position replication.
 Uses manually admitted peers and a stationary ordinary enemy; four captures.
 APPDATA must be isolated inside `guest-blink-enet-candidate`; add `--mobile
 --renderer=gl_compatibility` for the host-rendered mobile-source check.
+Add `--deathmark` for the native Assassin ultimate, delayed arrival observation,
+clear/prop-occupied endpoints, ordered three-hit ownership and authoritative
+vulnerability/HP/position convergence. Reuses paired boot and the same isolated
+APPDATA requirement; writes `deathmark/`. Both cases hold guest physics after
+the native cast edge. This is a controlled transport fixture, not moving co-op.
 
 Capital arrival QA: `shot.bat capital_arrival --arrival-consumers --timeout=180`
 uses a normal solo boot, real Pause travel and live body/camera observations.
@@ -273,6 +285,10 @@ and god mode off. Setup moves to the three signs; combat only uses movement
 and class inputs, with no direct damage or ability calls. It captures the
 pounce and fight, checks the open escape/minimap warning and saves combat.json
 with duration, health, movement and payout. Use `--class=mage` for ranged play.
+`--class=assassin --deathmark-observe --trace` attempts the ultimate first through
+normal keyboard input, records activation/rendered teleport in `deathmark.json`,
+then resumes the full-kit fight. Missing activation/teleport or defeat rejects
+the observation. Render samples do not prove pre-recovery collision clearance.
 `--terrain=graveyard --observe=6 --trace` checks the installed grave-earth field
 under this real fight while preserving Village Outskirts mechanics and lighting.
 It changes only the existing floor polygon's material; this is not chapter-3 play.
