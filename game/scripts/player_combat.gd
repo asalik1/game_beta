@@ -972,20 +972,27 @@ func swing_delay(base_delay: float) -> float:
 ## delayed storm arrow already used inline for _tfx; this is the shared form.)
 func cast_wait(sec: float) -> bool:
 	var world_id := game.world.get_instance_id()
-	var fx: Dictionary = _tfx
-	var col: Color = _tcolor
-	var themed: bool = _themed
-	var base: float = _cast_base
+	var payload := _capture_cast_payload()
 	# Contact follows the same paused, time-scaled world as the swing animation.
 	# Online menus do not pause the tree, so committed attacks still resolve.
 	await get_tree().create_timer(sec, false).timeout
 	if not _cast_world_current(world_id):
 		return false
-	_tfx = fx
-	_tcolor = col
-	_themed = themed
-	_cast_base = base
+	_restore_cast_payload(payload)
 	return true
+
+
+## Keep the dictionary identity when restoring ambient state. Delayed attacks
+## that need an owned snapshot deep-copy this capture before yielding.
+func _capture_cast_payload() -> Dictionary:
+	return {"fx": _tfx, "color": _tcolor, "themed": _themed, "base": _cast_base}
+
+
+func _restore_cast_payload(payload: Dictionary) -> void:
+	_tfx = payload.fx
+	_tcolor = payload.color
+	_themed = payload.themed
+	_cast_base = payload.base
 
 
 ## Chapter replay keeps this Player but replaces Game.world. Pending attacks

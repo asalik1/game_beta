@@ -401,6 +401,7 @@ func _gilded_iai_strike(target) -> void:
 ## arc). Shadow theme: a survivor under 30% is finished on the spot.
 func _death_mark_execution(target: CharacterBody2D, execute := 0.0) -> void:
 	var world_id := game.world.get_instance_id()
+	var payload := _capture_cast_payload().duplicate(true)
 	var phantom := skin == "phantom"
 	for diag in [Vector2(1, 1).normalized(), Vector2(-1, 1).normalized()]:
 		if not _cast_world_current(world_id) or not is_instance_valid(target) or target.dying:
@@ -420,7 +421,12 @@ func _death_mark_execution(target: CharacterBody2D, execute := 0.0) -> void:
 			game.sfx("stab")
 			game.shake(3.5)
 			game.burst(tpos, Color(1.0, 0.2, 0.3), 10)
+		# A newer cast can finish between beats; borrow this execution's payload
+		# only for the synchronous strike and restore ambient state before waiting.
+		var ambient := _capture_cast_payload()
+		_restore_cast_payload(payload)
 		hit_enemy(target, 0.7, {"type": "true"})  # DAMAGE — identical for both
+		_restore_cast_payload(ambient)
 		await get_tree().create_timer(Balance.DEATH_MARK_EXECUTION_INTERVAL, false).timeout
 	if not _cast_world_current(world_id) or not is_instance_valid(target) or target.dying:
 		return
@@ -445,9 +451,12 @@ func _death_mark_execution(target: CharacterBody2D, execute := 0.0) -> void:
 		# Gilded Iai lands on the shared execution frame. A skin-only held beat
 		# previously moved the final true hit 120ms later than base and Phantom.
 		_gilded_iai_strike(target)
+	var ambient := _capture_cast_payload()
+	_restore_cast_payload(payload)
 	_melee_arc(ability_coeff("ult"), 118.0, "slash", {"type": "true"}, "stab", "stab")
 	if execute > 0.0 and is_instance_valid(target) and not target.dying \
 			and target.hp < target.max_hp * 0.3:
 		game.spawn_text(target.global_position + Vector2(0, -70), "EXECUTED", Color(1, 0.15, 0.25))
 		game.burst(target.global_position, Color(0.6, 0.2, 0.6), 16)
 		hit_enemy(target, execute, {"type": "true"})
+	_restore_cast_payload(ambient)

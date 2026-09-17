@@ -132,11 +132,76 @@ ordinary skin play, remote replication, physical-device behavior, or exact
 subframe timing. The original default mode retains native menu input and empty
 loopback-host controls. Use fresh isolated APPDATA for each mode.
 
+## Death Mark cross-cast payload isolation (checkpoint 4)
+
+A missed Poison Stab cast during Death Mark replaced the ultimate's shared
+payload. Its later strikes then applied Poison Stab's toxin/slow and used its
+theme color. The original source reproduced exactly three named findings in
+35 checks. `payload-baseline-validation.json` binds that production revision,
+QA source and evidence; the failed behavior remains preserved.
+
+Death Mark now owns a deep copy of its effects, color, themed flag and cast base.
+Each synchronous strike borrows that copy and immediately restores the latest
+ambient payload before any wait. The final arc and optional Shadow execute share
+one scope. Capture/restore helpers also replace the existing equivalent copy in
+`cast_wait`; its dictionary identity, pause and world-cancellation behavior are
+unchanged. Coefficients, timers, landing resolution, live stats and skin branches
+are unchanged. This does not add caster-death cancellation.
+
+`shot.bat combat_clocks --payload --payload-extra --timeout=180` tests production
+calls with frozen actors. It lends L5 Poison/L15 Shadow access without recalculating
+starting combat stats. Reference and crossed casts retain the same ordered three
+(or four) damage hits; a whiff adds no statuses, while a close Stab still adds
+poison and slow. Target removal and real replay cancel further contact/blink and
+preserve the newer payload; fresh casts still work. Replay also removes the old
+target, so that case does not isolate world identity from target validity. Extra
+cases are strict-only; `--payload --baseline` permits exactly the original three
+findings and demands their exact old status/payload signature. Receipts live in
+`combat_clocks/payload/`; captured frames show the aftermath, not every strike.
+
+`shot.bat guest_blink_enet --deathmark --payload --timeout=180` adds native
+ultimate-then-Stab input to both transport landing cases. A lent actual L5 sheet
+is recalculated and remains unchanged; physics is held after each input edge.
+The Stab's real arc must miss before teleport. Exact guest-owned host damage,
+HP/position convergence, no unwanted host/mirror statuses and newer ambient state
+are required. A separate close Stab must replicate poison/slow positively.
+APPDATA must be isolated under `guest-blink-enet-candidate`; outputs are under
+`guest_blink_enet/deathmark/payload/`. Manual admission, stationary target and
+local ENet are controlled fixtures, not ordinary moving co-op or device testing.
+
+Final acceptance: desktop quick/full (145/225), mobile import/compile (267) and
+strict quick (145), exact five-source sync and full strict preflight pass.
+Expanded payload checks pass 76 on each project; native ENet payload checks pass
+101 each, with the default desktop Death Mark transport regression passing 68.
+Shared lifetime/effects regressions pass 19/73 each. A normal-input starting
+Assassin hunt wins in 23.262s with an observed execution/landing and nine reviewed
+frames; setup is posed, combat stats/input are ordinary. Root opened all 60
+native originals across baseline, strict, regression, hunt and mobile runs;
+thirteen also received independent image review. Receipt:
+`build/qa/session-sept17/payload-checkpoint-validation.json`.
+
+The four fields are observed, but legal casts here both have cast base zero;
+no contrasting nonzero-base acceptance is claimed. Source review covers shared
+skin contacts; these runs use the base Assassin. No physical mobile device was
+tested. Rapid reset captures retain marks/small-bar presentation and the damage
+meter can lag contacts; per-hit and authoritative HP/status receipts provide the
+exact oracle. Hunt cards/posed Tovin prompts can overlap nearby action; this is
+not a broad UI clearance acceptance. Existing shutdown RID/texture/ObjectDB
+warnings remain recorded by the unchanged runner; the full suite retains its
+intentional invalid-base64 negative-test diagnostic.
+
+The first mobile ENet attempt failed its pre-teleport observation window after
+58 checks; all four frames and receipt remain preserved. Contact timing was
+ambiguous because the polling wait delayed input and the next physics sample
+could follow both contacts. Final2 QA arms native Stab directly from the observed
+ultimate edge, requires a follow-up within two physics ticks and retains every
+spatial/damage/status guard. Production and all other QA source are byte-identical
+to the first final runs. Final2 desktop/mobile payload and default transport,
+quick/full/mobile suites and preflight pass.
+
 ## Further candidates
 
-Death Mark landing clearance is checkpoint 3 in EXPLORATION_RELIABILITY.md;
-its original source-only proposal remains preserved. Delayed-rider theme
-contamination is still unresolved. The bounded source audit at
-`build/qa/session-sept17/delayed-payload-candidate-review.md` identifies a
-candidate Poison Stab/Death Mark cross-cast case and related delayed riders.
-Reproduce it before selecting a production fix; no runtime acceptance yet.
+Death Mark landing clearance is checkpoint 3 in EXPLORATION_RELIABILITY.md.
+Other delayed riders identified in
+`build/qa/session-sept17/delayed-payload-candidate-review.md` remain source-level
+candidates requiring independent reproduction and bounded acceptance.

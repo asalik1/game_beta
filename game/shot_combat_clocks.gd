@@ -7,12 +7,15 @@ var native: NativeInput
 
 
 func _ready() -> void:
-	await boot("warrior", "ch1", false)
+	await boot("assassin" if flag("payload") else "warrior", "ch1", false)
 	native = NativeInput.new()
 	native.r = self
 	native.g = game
 	native.m = game.menus
-	if flag("lifetime"):
+	if flag("payload"):
+		shot_dir = shot_dir.path_join("payload")
+		await preload("res://scripts/tests/ability_payload_live.gd").run(self)
+	elif flag("lifetime"):
 		shot_dir = shot_dir.path_join("lifetime")
 		await preload("res://scripts/tests/ability_lifetime.gd").run(self)
 	elif flag("effects"):
@@ -32,8 +35,8 @@ func _ready() -> void:
 	var report := {"baseline": flag("baseline"), "rows": rows, "failures": failures,
 		"findings": findings, "key_taps": native.key_taps, "mouse_clicks": native.mouse_clicks,
 		"touch_taps": native.touch_taps,
-		"mode": "lifetime" if flag("lifetime") else "effects" if flag("effects") else "history",
-		"scope": "Posed actors with borrowed kit state, direct production effect calls, world pause and optional real chapter replay. No ordinary class play, skin unlock, replication or physical-device claim." if flag("effects") or flag("lifetime") else "Posed frozen enemy, direct production damage/cast entry, real menu key/click input. No ordinary combat or physical-device claim."}
+		"mode": "payload" if flag("payload") else "lifetime" if flag("lifetime") else "effects" if flag("effects") else "history",
+		"scope": "Posed actors with borrowed kit state, direct production ability/effect calls, world pause and optional real chapter replay. No ordinary class play, skin unlock, replication or physical-device claim." if flag("payload") or flag("effects") or flag("lifetime") else "Posed frozen enemy, direct production damage/cast entry, real menu key/click input. No ordinary combat or physical-device claim."}
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(shot_dir))
 	var file := FileAccess.open(shot_dir.path_join("report.json"), FileAccess.WRITE)
 	if file == null:

@@ -63,10 +63,38 @@ See EXPLORATION_RELIABILITY.md. Root owns production, engine, mobile and commits
 the delegated hunt observation and guest Death Mark QA adapter are complete.
 All evidence and rejected attempts are under `build/qa/session-sept17/`. The older
 source-only proposal remains preserved in `deathmark-landing-candidate/`.
-Next bounded candidate: `delayed-payload-candidate-review.md` identifies Death
-Mark inheriting a later Poison Stab's riders. This is source-only, not yet
-reproduced or accepted. Review and reproduce before changing production.
+Checkpoint 4 completes Death Mark cross-cast payload isolation, based on
+`bcc9a343911628add8f0e2e050bd94c702e86b7f`. The baseline reproduced exactly
+three findings in 35 checks: a missed Poison Stab lent toxin/slow and payload
+to later ultimate contacts. Death Mark now owns its four-field cast snapshot,
+installs it only around each synchronous contact, and restores newer ambient
+state before waiting. Shared helpers retain existing cast_wait behavior.
+Initial strict local checks passed 34; expanded Shadow execute, target removal
+and real chapter replay controls pass 76 on desktop and host mobile/touch.
+Native-input local ENet passes 101 checks on each project, including a genuine
+close Poison Stab positive control. Default Death Mark ENet regression passes
+68. Shared lifetime/effects regression passes 19/73 on each project.
+Desktop quick/full pass 145/225; mobile import/compile (267 scripts), strict
+quick (145), exact five-path sync and full strict preflight pass. Normal-input
+L1 Assassin hunt wins in 23.262s (minimum HP 64.4118/95) with recorded execution
+and landing; nine hunt frames reviewed. Root opened all 60 checkpoint native
+frames, including the preserved baseline, initial strict runs and rejected
+mobile timing attempt. Final2 chains native Stab from the ultimate input edge
+and keeps the missed-contact/three-hit/status guards intact; no gameplay timing
+was changed. Independent reviews cover thirteen local/ENet/mobile frames and
+source/receipt semantics.
+See COMBAT_CLOCKS.md and
+`build/qa/session-sept17/payload-checkpoint-validation.json` for the actual
+commit, hashes, gates, fixture limits and post-commit preservation audit. All
+46 unrelated preserved files remain unchanged. No canonical delegated work is
+pending. Ignored source candidates and advisory artifacts remain preserved.
 
+Next candidates: the read-only audit at
+`build/qa/session-sept17/combat-readability-candidates.md` traces a guest overhead
+health fill that skips the final heal to full, and ally damage text spawning
+30px lower on guests. Reproduce using real support healing and actual native
+co-op presentation before accepting fixes; fixture resets alone are not ordinary
+play proof. Other delayed-rider source candidates remain separate work.
 
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at

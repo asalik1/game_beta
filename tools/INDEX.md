@@ -23,6 +23,11 @@ posed kit fixture; its baseline requires exactly sixteen named findings. Add
 attacks/payloads, fresh-cast controls and preserved personal Aegis expiry healing.
 That mode's pausable-only baseline requires three named findings. These modes
 write `effects/` and `lifetime/` subdirectories and use direct production calls.
+Add `--payload --payload-extra` for frozen Assassin production casts, cross-cast
+Poison whiff/positive controls, Shadow execute and target/replay cancellation.
+L5/L15 access is lent without recalculating starting stats; outputs go in
+`payload/`. `--payload --baseline` requires exactly three old cross-cast findings;
+extra controls run only in strict mode. See COMBAT_CLOCKS.md for fixture limits.
 
 Exploration QA: `shot.bat exploration_friction --competition --endpoint-contracts
 --field-notes --timeout=300` exercises actual hunt-sign input, nearest eligible
@@ -57,6 +62,12 @@ clear/prop-occupied endpoints, ordered three-hit ownership and authoritative
 vulnerability/HP/position convergence. Reuses paired boot and the same isolated
 APPDATA requirement; writes `deathmark/`. Both cases hold guest physics after
 the native cast edge. This is a controlled transport fixture, not moving co-op.
+Add `--deathmark --payload` for native Poison Stab input between ultimate beats,
+zero unwanted replicated statuses, newer-payload preservation and a close Stab
+positive control. L5/theme access is lent with actual L5 recalculated stats;
+outputs go in `deathmark/payload/`. The same isolated APPDATA rule applies.
+Stab is chained from the observed ultimate edge; late post-teleport contact
+observations fail the fixture instead of being accepted as missed attacks.
 
 Capital arrival QA: `shot.bat capital_arrival --arrival-consumers --timeout=180`
 uses a normal solo boot, real Pause travel and live body/camera observations.
