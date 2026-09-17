@@ -411,6 +411,18 @@ See INVENTORY_TOUCH.md and equip-touch-checkpoint-validation.json for exact
 source, evidence, preservation and commit. The separate plaque/targeting/journal
 candidates remain unaccepted; root retains engine, sync and commit ownership.
 
+Checkpoint 17 is validated: retreating toward empty space preserves the committed
+soft target; deliberate switching still selects an enemy on the steered side.
+Initial fallback, target priorities and hard-lock behavior remain unchanged.
+
+Desktop quick 147/full 227 and mobile quick 147 passed; exact five-source mobile sync, compile, strict preflight, default framing/controller and one-engine paired ENet regression passed. The accepted baseline has 37 rows with exactly two retreat findings; strict desktop/mobile probes have 35/35 rows, zero findings/failures and six originals each. All 44 baseline/final originals were independently inspected. UIDs are pinned per project, not equalized.
+
+One Archer hunt attempt cleared its natural-AI elite quarry in 21.288 seconds using synthetic keyboard movement/kit inputs after controlled sign/hero placement. Boot and combat-start L1 stats matched (100 HP,40 MP,11.66 attack,265 speed), with no equipped items or god mode. Sampled HP and ending HP stayed100; the hunt paid120 gold. All four originals were independently reviewed. This single-quarry episode is ordinary combat after setup, not a multi-target identity test, full exploration journey, physical-device or network validation.
+
+See TARGET_COMMITMENT.md and target-checkpoint-validation.json.
+Rejected baseline1 and candidate histories remain preserved; no ordinary
+moving multiplayer retreat or physical-device claim.
+
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at
 the 13:00 UTC deadline. Its prompt requires the 12:00 feature cutoff, final

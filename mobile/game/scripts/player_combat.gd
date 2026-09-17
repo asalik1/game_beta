@@ -1120,7 +1120,8 @@ func _update_soft_target(move: Vector2) -> void:
 	var want := signf(move.x)  # horizontal input this frame; 0 when none
 	if keep and want != 0.0 and want != _side_of(soft_target):
 		var alt := _nearest_enemy(Balance.SOFT_TARGET_ACQUIRE, want)
-		if alt != null:
+		# Acquisition may fall back across the hero; deliberate switching may not.
+		if alt != null and _side_of(alt) == want:
 			soft_target = alt
 		return
 	if keep:

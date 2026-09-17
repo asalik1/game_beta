@@ -1962,6 +1962,9 @@ func _run_systems() -> void:
 	var visibility_error: String = preload("res://scripts/tests/test_target_visibility.gd").run(self)
 	if visibility_error != "":
 		return _fail("target visibility: " + visibility_error)
+	var sticky_error: String = preload("res://scripts/tests/test_soft_target_commit.gd").run(self)
+	if sticky_error != "":
+		return _fail("soft target commitment: " + sticky_error)
 	var ownership_error: String = preload("res://scripts/tests/test_occlusion_ownership.gd").run(self)
 	if ownership_error != "":
 		return _fail("occlusion ownership: " + ownership_error)

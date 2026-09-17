@@ -3,6 +3,17 @@ extends ShotRig
 
 
 func _ready() -> void:
+	if flag("soft-target"):
+		var qa_path := ProjectSettings.globalize_path("user://").replace("\\", "/")
+		if not qa_path.to_lower().contains("/build/qa/"):
+			push_error("Soft-target fixture requires isolated build/qa APPDATA")
+			finish(1)
+			return
+		await boot("archer", "ch1", false)
+		var target_error: String = await preload("res://scripts/tests/soft_target_live.gd").run(self)
+		if target_error != "": push_error(target_error)
+		finish(0 if target_error == "" else 1)
+		return
 	if flag("north-edge"):
 		await boot("mage", "ch1", false)
 		var edge_error: String = await preload("res://scripts/tests/north_edge_live.gd").run(self)

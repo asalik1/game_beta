@@ -469,6 +469,12 @@ open. Add `--mobile --renderer=gl_compatibility --touch` for host mobile.
 Cancellation/multiple contacts and shell replacement remain strict; no physical
 device claim. See INVENTORY_TOUCH.md for provenance and rejected fixture history.
 
+Soft-target commitment QA: `shot.bat framing --soft-target --timeout=180`
+uses actual A/D movement with controlled poses/frozen factory enemies.
+Baseline permits only mirrored retreat findings; strict mode permits none.
+Use fresh APPDATA; mobile adds `--mobile --renderer=gl_compatibility --touch`
+(movement remains keyboard input). See TARGET_COMMITMENT.md.
+
 Prop shadow QA: `shot.bat prop_shadows --timeout=300` captures the reported
 gravestone group, broad and narrow props, animated foliage/fountain and lore
 objects through their actual factories. It saves fullframes, native closeups
