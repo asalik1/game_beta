@@ -385,6 +385,19 @@ five settled terrain palettes. It saves five native views and two detail views;
 the isolated placement does not test biome traversal. Use isolated APPDATA and
 `--mobile --renderer=gl_compatibility --touch` for the mobile project path.
 
+North-edge tracker QA: `shot.bat framing --north-edge --extra --brackets
+--panel-brackets --timeout=240` walks a quiet existing room using held keyboard input, then
+checks wrapped quest copy, a selected real Talk prompt, frozen lateral targets,
+full cast/cue text, menu/room restoration and first-render bracket transitions.
+Use fresh isolated APPDATA. `--mobile --renderer=gl_compatibility --touch` checks
+host-rendered mobile/touch presentation; movement remains keyboard-driven.
+Base `--north-edge --baseline` expects one old tracker/body finding.
+`--bracket-baseline` with strict north/extra/brackets expects three old transform
+findings in the nested transition receipt. `--panel-brackets` also compares
+actual rendered white instruction cores with brackets shown/hidden at a posed
+overlap; `--overlap-baseline` expects the old gold overdraw. These are separate
+baseline controls, not strict acceptance flags. See HUD_CLEARANCE.md for limits.
+
 HUD visibility QA: `shot.bat hud_clearance --verify --timeout=180` captures
 normal camera room boundaries, hero/target overlap, touch controls, readable
 settings/popovers and separated notices/buffs. It checks ownership and stale

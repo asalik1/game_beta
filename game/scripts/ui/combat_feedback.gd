@@ -98,13 +98,21 @@ func _process(delta: float) -> void:
 	if not is_instance_valid(target):
 		target = null
 	var cue := Cues.code_for(target as Enemy)
-	target_cue.position = Vector2(390, 104) if target is Boss else Vector2(400, 102)
-	target_cue.size = Vector2(350, 20) if target is Boss else Vector2(480, 20)
-	target_cue.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT if target is Boss else HORIZONTAL_ALIGNMENT_CENTER
+	layout_target_cue(target)
 	target_cue.visible = cue != Cues.Cue.NONE
 	target_cue.text = String(Cues.TEXT.get(cue, ""))
 	target_cue.add_theme_color_override("font_color", Cues.tint(cue))
 	queue_redraw()
+
+
+## Keep the cue attached to the same measured target family as its health bar.
+## Tracker clearance also calls this after its final pre-draw displacement.
+func layout_target_cue(target: Variant) -> void:
+	if not is_instance_valid(target): target = null
+	var owner_box: Control = game.hud.boss_box if target is Boss else game.hud.rival_box if target is Player else game.hud.mob_box
+	target_cue.position = (Vector2(390, 104) if target is Boss else Vector2(400, 102)) + owner_box.position
+	target_cue.size = Vector2(350, 20) if target is Boss else Vector2(480, 20)
+	target_cue.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT if target is Boss else HORIZONTAL_ALIGNMENT_CENTER
 
 
 func _draw() -> void:

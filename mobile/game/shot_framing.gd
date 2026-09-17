@@ -3,6 +3,12 @@ extends ShotRig
 
 
 func _ready() -> void:
+	if flag("north-edge"):
+		await boot("mage", "ch1", false)
+		var edge_error: String = await preload("res://scripts/tests/north_edge_live.gd").run(self)
+		if edge_error != "": push_error(edge_error)
+		finish(0 if edge_error == "" else 1)
+		return
 	await boot("archer", "ch1", false)
 	var error: String = preload("res://scripts/tests/test_framing.gd").run(self)
 	if error != "":

@@ -12,6 +12,7 @@ var info_panel: Panel
 var vitals_panel: Panel
 var quest_panel: Panel
 var clearance: Node
+var tracker_clearance: Node
 
 # bars
 var hp_fill: ColorRect
@@ -803,6 +804,9 @@ void fragment() {
 	clearance = preload("res://scripts/ui/hud_clearance.gd").new()
 	clearance.hud = self
 	add_child(clearance)
+	tracker_clearance = preload("res://scripts/ui/tracker_clearance.gd").new()
+	tracker_clearance.hud = self
+	add_child(tracker_clearance)
 
 	# ---------------------------------------------------- dialogue box ---
 	dialogue_box = Control.new()
@@ -2648,12 +2652,14 @@ func _layout_quest_tracker() -> void:
 		bottom = quest_label.position.y + quest_label.size.y
 	quest_panel.size.y = bottom + padding.y - quest_panel.position.y
 	# Move the target family together, including damage trails and portraits.
-	# Cast UI follows the same offset; its world brackets compensate locally.
+	# Cast UI follows the same offset; world brackets keep their own canvas origin.
 	var target_top := minf(boss_name.position.y, minf(mob_name.position.y, rival_name.position.y))
 	var target_shift := maxf(0.0, bottom + padding.y + Balance.HUD_TRACKER_TARGET_GAP - target_top)
 	for box in [boss_box, mob_box, rival_box, boss_cast_readout]:
 		if is_instance_valid(box):
 			box.position = Vector2(target_shift_x, target_shift)
+	if is_instance_valid(tracker_clearance):
+		tracker_clearance.capture_base()
 
 
 # ------------------------------------------ downed / revive UI (MP-12 §5.3) ---

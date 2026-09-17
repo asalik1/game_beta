@@ -142,6 +142,43 @@ No delegated canonical work or engine remains. The new session continuation is
 active through September 18 13:00 UTC, with its 12:00 UTC feature cutoff intact;
 older sessions and their paused automations remain untouched.
 
+Checkpoint 7 completes north-edge quest/target clearance, based on
+`63735df387da1ec00be0a42558cd52076e72d27e`. Complete quest, target health,
+cue and cast text move together to a clear lane when available; vitals/controls
+and camera behavior stay unchanged. Selected Talk prompts and explicit NPC
+bodies are reserved. No-space compositions retain the ordinary complete UI.
+Baseline reproduces one exact north hero/tracker overlap. A moving header also
+exposed three roughly 115px first-render bracket shifts; an independent canvas
+item corrects those. Broader screenshots caught bracket overdraw of cast text:
+a native control reproduces 22 affected white glyph-core pixels, fixed to zero
+by drawing brackets beneath HUD surfaces. Shared geometry fixtures restore the
+new placement cache and check restoration after a real draw.
+Final desktop and host mobile/touch each pass 365 checks plus 29 first-render
+checks. Desktop quick/full pass 145/225; mobile import/compile (274 scripts) and
+strict quick pass 145. Alignment passes 197 on each project. Cast/real local
+ENet, visibility, default framing and capital arrival regressions pass. Final
+cast/alignment/focused checks cover exact final source; earlier visibility,
+default framing and capital checks preceded the final bracket z-order correction.
+Thirteen source mirrors and full strict preflight pass. Root reviewed 153 native
+originals, including all 61 final desktop/mobile images. Independent source and
+selected-native reviews are preserved. First baseline runtime failure, crowded
+extended cast failures and wrong-profile capital refusal remain rejected evidence.
+No earned encounter, physical-device or universal body clearance claim. The
+far-right posed mobile boss still partly overlaps touch controls; default camera
+lead is unchanged. The receipt at
+`build/qa/session-sept17/north-edge-checkpoint-validation.json` records the actual
+commit, exact 39 owned paths, hashes, validation and preservation audit.
+All 46 unrelated files remain byte-identical; the index is empty after the owned
+commit. See HUD_CLEARANCE.md for limits. No delegated canonical work is pending.
+
+Next candidate: test whether default target lead clips the hero above the north
+viewport. Read-only source audit and an unrun QA proposal are preserved in
+`build/qa/session-sept17/camera-lead-candidate/`. This is not a proven bug or an
+accepted improvement; compare real Tab targeting with the real lead preference
+and inspect canvas-based body containment. The older brewing journey and other
+failed/partial experiments remain unchanged. Root owns the only engine, canonical
+source, mobile sync and serialized commits.
+
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at
 the 13:00 UTC deadline. Its prompt requires the 12:00 feature cutoff, final

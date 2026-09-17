@@ -3618,6 +3618,9 @@ const HUD_TRACKER_PADDING := Vector2(10, 8)
 const HUD_TRACKER_TOP := 8.0
 const HUD_TRACKER_LINE_GAP := 2.0
 const HUD_TRACKER_TARGET_GAP := 10.0
+const HUD_TRACKER_BODY_GAP := 6.0
+const HUD_TRACKER_CLEARANCE_RELEASE := 0.25
+const HUD_TRACKER_CLEARANCE_BOTTOM := 428.0 # reserve encounter/notice/buff/action lanes
 
 const HUD_INFO_COVER_ALPHA := 0.12
 const HUD_INFO_COVER_FADE_SPEED := 6.0

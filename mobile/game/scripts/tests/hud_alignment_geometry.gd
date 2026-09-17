@@ -221,6 +221,18 @@ static func snapshot(h: Hud) -> Dictionary:
 	for field: String in ["res_orb_glow", "res_orb_core", "res_particles"]:
 		var item: Node2D = h.get(field)
 		result.sprites.append({"node": item, "position": item.position})
+	# Older paired baselines have no tracker node. Preserve its complete
+	# transient layout state when present; restoring Controls alone leaves the
+	# last synthetic case cached for the next frame_pre_draw.
+	for definition in h.get_property_list():
+		if String(definition.name) != "tracker_clearance": continue
+		var tracker: Node = h.get("tracker_clearance")
+		if not is_instance_valid(tracker): break
+		result["tracker_state"] = {"node": tracker}
+		for field in ["base_positions", "offset_y", "release_in", "context", "no_fit"]:
+			var value: Variant = tracker.get(field)
+			result.tracker_state[field] = value.duplicate() if value is Array else value
+		break
 	return result
 
 
@@ -255,6 +267,11 @@ static func restore(h: Hud, saved: Dictionary) -> void:
 		row.node.position = row.position
 	h._dossier_values = String(saved.dossier_values)
 	h.visible = bool(saved.hud_visible)
+	var tracker_state: Dictionary = saved.get("tracker_state", {})
+	if not tracker_state.is_empty() and is_instance_valid(tracker_state.node):
+		for field in ["base_positions", "offset_y", "release_in", "context", "no_fit"]:
+			var value: Variant = tracker_state[field]
+			tracker_state.node.set(field, value.duplicate() if value is Array else value)
 
 
 static func suite(h: Hud) -> String:

@@ -20,6 +20,23 @@ static func run(rig: Node) -> String:
 		rig._check("alignment/negative_control/" + String(key), bool(negatives[key]), negatives)
 	Geometry.restore(h, saved)
 	rig._check("alignment/fixture_restored", Geometry.snapshot(h) == saved)
+	# Keep this posed fixture paused while the real render callback runs.
+	# Timed unrelated labels need not be identical; the restored tracker
+	# family and its unshifted cache must survive an actual subsequent draw.
+	var tracker_state: Dictionary = saved.get("tracker_state", {})
+	if not tracker_state.is_empty():
+		await rig.frames(2)
+		await RenderingServer.frame_post_draw
+		var tracker: Node = tracker_state.node
+		var changed: Array[String] = []
+		for row in saved.controls:
+			if row.node not in tracker.get("parts") and row.node != h.combat_feedback.target_cue: continue
+			if row.node.position != row.position or row.node.size != row.size:
+				changed.append(str(row.node.get_path()))
+		rig._check("alignment/restored_tracker_after_draw", changed.is_empty()
+			and tracker.get("base_positions") == tracker_state.base_positions,
+			{"changed_controls": changed, "base_positions": str(tracker.get("base_positions")),
+			"expected_base_positions": str(tracker_state.base_positions)})
 	rig.get_tree().paused = was_paused
 	rig._check("alignment/pause_restored", rig.get_tree().paused == was_paused)
 	return ""

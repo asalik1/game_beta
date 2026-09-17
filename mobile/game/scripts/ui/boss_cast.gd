@@ -7,6 +7,7 @@ var boss: Boss
 var title: Label
 var instruction: Label
 var clock: Label
+var world_brackets: Node2D
 const Cast := preload("res://scripts/boss_cast.gd")
 const AMBER := Color(1.0, 0.76, 0.36)
 const MINT := Color(0.59, 1.0, 0.81)
@@ -21,6 +22,13 @@ func _ready() -> void:
 	clock = _label(Vector2(790, 134), Vector2(84, 20), 14)
 	clock.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	instruction = _label(Vector2(406, 171), Vector2(468, 20), 13)
+	world_brackets = Node2D.new()
+	world_brackets.name = "CastWorldBrackets"
+	world_brackets.top_level = true
+	# Keep world indicators beneath HUD surfaces and their readable text.
+	world_brackets.z_index = -1
+	world_brackets.draw.connect(_draw_world_brackets)
+	add_child(world_brackets)
 	hide()
 
 
@@ -69,6 +77,7 @@ func _process(_delta: float) -> void:
 		label.add_theme_color_override("font_color", tint)
 	instruction.add_theme_color_override("font_color", Color(0.88, 0.89, 0.91))
 	queue_redraw()
+	world_brackets.queue_redraw()
 
 
 func _draw() -> void:
@@ -93,15 +102,21 @@ func _draw() -> void:
 	if not broken:
 		var fuse: float = clampf(cast.remaining / maxf(0.001, cast.duration), 0.0, 1.0)
 		draw_line(Vector2(406, 169), Vector2(406 + 468 * fuse, 169), Color(0.93, 0.95, 1.0), 2)
+
+
+func _draw_world_brackets() -> void:
+	if not is_visible_in_tree() or not is_instance_valid(boss):
+		return
+	var tint: Color = MINT if boss.cast_window.phase == "broken" else AMBER
+	# The identity top-level child cannot inherit a later pre-draw translation
+	# of the target readout. The same owner controls state and visibility.
 	# Screen-space brackets stay readable at every camera zoom and never
 	# masquerade as a ground damage radius. Four corners surround the body.
 	var center: Vector2 = game.get_viewport().get_canvas_transform() * (boss.global_position + Vector2(0, -50))
-	# Header reflow moves this Control; world brackets remain at the actor.
-	center = get_global_transform().affine_inverse() * center
 	var radius := 36.0
 	for direction in [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]:
 		var corner: Vector2 = center + direction * radius
-		draw_polyline(PackedVector2Array([corner - Vector2(direction.x * 13, 0), corner,
+		world_brackets.draw_polyline(PackedVector2Array([corner - Vector2(direction.x * 13, 0), corner,
 			corner - Vector2(0, direction.y * 13)]), Color(0.01, 0.02, 0.025, 0.9), 6, true)
-		draw_polyline(PackedVector2Array([corner - Vector2(direction.x * 13, 0), corner,
+		world_brackets.draw_polyline(PackedVector2Array([corner - Vector2(direction.x * 13, 0), corner,
 			corner - Vector2(0, direction.y * 13)]), tint, 2, true)

@@ -39,7 +39,7 @@ static func open(m: Menus) -> void:
 		["Combat framing", "combat_framing", "Ease the camera toward your target and widen the view for distant opponents."],
 		["Damage bearings", "damage_bearings", "A small arc shows the direction of a landed hit."],
 		["Target visibility", "combat_foliage", "Soften covering trees and trace your target behind solid props."],
-		["HUD visibility", "hud_clearance", "Fade secondary information when it covers you or your target. Health and controls stay visible."]]:
+		["HUD visibility", "hud_clearance", "Move quest and target readouts to a clear space when available; fade secondary information covering bodies. Health and controls stay visible."]]:
 		var key := String(spec[1])
 		var button := m._btn(body, "%s: %s" % [spec[0], "ON" if m.game.settings[key] else "OFF"], func() -> void:
 			m.game.settings[key] = not bool(m.game.settings[key])
