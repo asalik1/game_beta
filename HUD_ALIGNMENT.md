@@ -146,3 +146,38 @@ The existing mobile Party footer's malformed “tapSC” wording is recorded as
 a separate pre-existing follow-up; this coordinate correction does not alter
 copy. Exact sources, review scopes, artifacts and commit are recorded in
 `build/qa/session-sept10/party-column-checkpoint-validation.json`.
+
+## Unspent talent and attribute points — September 17
+
+The Skills shortcut counts all unspent talent and attribute points, retaining
+its compact badge and 99+ cap. The tooltip and Hero Details name each pool;
+the portrait's cached text also refreshes on attribute-only pool changes.
+Spending all talents therefore leaves a visible reminder for an unspent
+attribute point. The existing Skills menu, allocation costs and point grants
+are unchanged. Combat Rating and Resonance retain their borderless appearance.
+
+The focused `hud_dossier --attribute-readiness` probe lends a legal L2 budget
+to a fresh no-save Warrior and spends it through real GUI controls. It checks
+single/mixed/exhausted pools, exact talent and attribute deductions, a disabled
+repeat click, readable portrait text and fixed utility geometry. It restores
+progression, derived stats, loadouts, HUD caches and completed flourish nodes.
+This is controlled allocation evidence; it does not prove ordinary earned
+progression, onboarding, physical-device play or extreme-count badge fit.
+
+Baseline2 has 172 checks, zero unexpected failures and exactly two expected
+findings: the attribute-only badge is hidden and its tooltip reports zero
+available points. Baseline1 is preserved but rejected because its fixture
+mistook normal HUD hiding under a full-screen menu for a state mutation.
+The first full suite rejected an obsolete skill-point wording assertion; the
+replacement retains identity/level/portrait parity and requires both pools.
+That failure is preserved. Final2 desktop quick/full pass 145/225; mobile import,
+compile 277 and strict quick 145 pass. Both projects pass focused allocation 192,
+default dossier 560, alignment 197 and online-menu 67 checks, with all 80 final
+originals independently reviewed. Root inspected the focused flow and selected
+long-value, party, alignment and host-return views. Exact four-source mobile
+parity and full strict preflight pass. Tooltip copy is checked on the control;
+the actual native portrait supplies visible breakdown evidence. Online-menu
+uses an empty loopback host, not remote replication. The existing overlapping
+synthetic ally bodies in the far-right dossier pose are layout-fixture limits.
+Evidence, rejected attempts, source hashes and resulting commit are retained in
+`build/qa/session-sept17/attribute-readiness-checkpoint-validation.json`.

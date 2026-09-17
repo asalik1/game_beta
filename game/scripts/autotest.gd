@@ -6961,9 +6961,10 @@ func _compact_dossier_contract() -> String:
 		return "portrait level badge omitted the current level"
 	var detail := String(game.hud.avatar_root.get_meta("tip", ""))
 	if not detail.contains(short_identity) or not detail.contains("Level %d" % game.player.level) \
-			or not detail.contains("%d skill point" % game.player.skill_points) \
+			or not detail.contains("%d talent point" % game.player.skill_points) \
+			or not detail.contains("%d attribute point" % game.player.unspent_attr) \
 			or String(game.hud.stats_label.get_meta("tip", "")) != detail:
-		return "portrait/name details lost identity, level or skill-point information"
+		return "portrait/name details lost identity, level or talent/attribute-point information"
 	var title_keys: Array = Achievements.TITLES.keys()
 	if not title_keys.is_empty():
 		game.player_title = String(title_keys[0])

@@ -2298,8 +2298,14 @@ func _party_top() -> float:
 	return info_panel.position.y + info_panel.size.y + 4.0
 
 
+func _available_points_text(p: Player) -> String:
+	return "%d talent point%s · %d attribute point%s available" % [
+		p.skill_points, "" if p.skill_points == 1 else "s",
+		p.unspent_attr, "" if p.unspent_attr == 1 else "s"]
+
+
 func _update_dossier_detail(p: Player, identity: String, rating: int) -> void:
-	var current: Array = [identity, p.level, p.skill_points, p.gold, rating, p.resonance,
+	var current: Array = [identity, p.level, p.skill_points, p.unspent_attr, p.gold, rating, p.resonance,
 		p.res_lean(), p.constancy_heal_mult(), p.hunger_exec_bonus(), p.hunger_gold_mult()]
 	if current == _dossier_detail_state:
 		return
@@ -2308,8 +2314,8 @@ func _update_dossier_detail(p: Player, identity: String, rating: int) -> void:
 	gold_icon.set_meta("tip", gold_label.get_meta("tip"))
 	cr_label.set_meta("tip", "Combat Rating: %d\nOne number approximating your total power: gear and gems, level, attributes and skill tree combined." % rating)
 	res_label.set_meta("tip", _res_tip())
-	var detail := "%s\nLevel %d · %d skill point%s available\n\n%s\n\n%s\n\n%s" % [
-		identity, p.level, p.skill_points, "" if p.skill_points == 1 else "s",
+	var detail := "%s\nLevel %d\n%s\n\n%s\n\n%s\n\n%s" % [
+		identity, p.level, _available_points_text(p),
 		String(gold_label.get_meta("tip")), String(cr_label.get_meta("tip")), String(res_label.get_meta("tip"))]
 	stats_label.set_meta("tip", detail)
 	avatar_root.set_meta("tip", detail)
@@ -2368,9 +2374,10 @@ func update_stats(p: Player) -> void:
 	stats_label.text = identity
 	if game.player_title != "" and Achievements.TITLES.has(game.player_title):
 		identity += "\n%s" % String(Achievements.TITLES[game.player_title]["name"])
-	skills_badge.visible = p.skill_points > 0
-	skills_badge_num.text = str(p.skill_points) if p.skill_points < 100 else "99+"
-	skills_btn.tooltip_text = "Skills · %d point%s available" % [p.skill_points, "" if p.skill_points == 1 else "s"]
+	var available_points: int = p.skill_points + p.unspent_attr
+	skills_badge.visible = available_points > 0
+	skills_badge_num.text = str(available_points) if available_points < 100 else "99+"
+	skills_btn.tooltip_text = "Skills · " + _available_points_text(p)
 	if avatar_level_label != null and p.level != _avatar_level_shown:
 		# P7.D: the ring badge tracks the level; a CHANGE (level-up) pops it.
 		var grew: bool = _avatar_level_shown > 0 and p.level > _avatar_level_shown

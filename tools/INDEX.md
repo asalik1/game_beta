@@ -343,6 +343,16 @@ clearance, including while the conditional Team control is hidden.
 Add `--touch --mobile --renderer=gl_compatibility` for actual ScreenTouch events.
 Synthetic party shells exercise layout only, not real peer replication.
 
+`--attribute-readiness` selects a separate fresh-ch1 progression UI probe:
+lent legal L2 talent/attribute pools, actual talent and attribute allocation
+through mouse/ScreenTouch, remaining-point badge and portrait copy, disabled
+repeat-spend control, shaped text/utility geometry and restored progression.
+Strict runs also change only the lent attribute pool to check detail-cache
+invalidation. `--baseline` requires exactly the two old attribute-only badge /
+tooltip findings. Six captures; isolated APPDATA, `--timeout=300`, and the same
+mobile/touch flags above. Pools are lent, not earned; scroll placement is setup.
+This mode is mutually exclusive with other focused dossier modes.
+
 Reward plaque QA: `shot.bat hud_dossier --reward-plaques --timeout=180`
 uses a controlled display fixture with authored boss/quest strings and real UI
 clocks. The accepted original HUD `--baseline` has 67 checks/six images; strict

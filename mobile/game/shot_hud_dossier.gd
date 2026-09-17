@@ -6,13 +6,14 @@ extends ShotRig
 ## --cosmetic-ui inspects the actual Wardrobe/Records UI without buying or equipping.
 ## --alignment checks shaped stat baselines and quest/vital/target clearance.
 ## --reward-plaques controls authored boss readouts and real reward UI clocks, without rewards.
+## --attribute-readiness checks lent point pools with real allocation input.
 const NetMgr := preload("res://scripts/net/net_manager.gd")
 
 const GAME_FIELDS := ["settings", "touch_mode", "dev_god", "player_title", "mailbox", "daily_last_day", "daily_streak",
 	"clock_anchor", "achievements", "contracts", "contract_day", "contract_claims_day",
 	"bounties", "bounty_day", "bounty_week", "vault_week", "vault_progress",
 	"vault_claimed_week", "party_stats", "party_stats_net", "_meta", "_meta_loaded"]
-const PLAYER_FIELDS := ["char_name", "gold", "resonance", "skill_points", "atk", "hp", "mp"]
+const PLAYER_FIELDS := ["char_name", "gold", "resonance", "skill_points", "unspent_attr", "atk", "hp", "mp"]
 const UTILITIES := ["mail_btn", "quest_btn", "inv_btn", "codex_btn", "daily_btn", "skills_btn", "settings_btn", "party_btn"]
 const POPUP_FIELDS := ["cr_label", "res_label"]
 var checks: Array[Dictionary] = []
@@ -45,8 +46,10 @@ func _ready() -> void:
 		shot_dir = shot_dir.path_join("alignment")
 	elif flag("reward-plaques"):
 		shot_dir = shot_dir.path_join("reward_plaques")
+	elif flag("attribute-readiness"):
+		shot_dir = shot_dir.path_join("attribute_readiness")
 	_snapshot_disk()
-	await boot("warrior", "ch3", false)
+	await boot("warrior", "ch1" if flag("attribute-readiness") else "ch3", false)
 	var error := await _run()
 	await _cleanup()
 	if error != "":
@@ -58,15 +61,15 @@ func _ready() -> void:
 
 
 func _run() -> String:
-	if int(flag("online-menu")) + int(flag("cosmetic-ui")) + int(flag("alignment")) + int(flag("reward-plaques")) > 1:
-		return "Choose one focused mode: online-menu, cosmetic-ui, alignment or reward-plaques"
+	if int(flag("online-menu")) + int(flag("cosmetic-ui")) + int(flag("alignment")) + int(flag("reward-plaques")) + int(flag("attribute-readiness")) > 1:
+		return "Choose one focused mode: online-menu, cosmetic-ui, alignment, reward-plaques or attribute-readiness"
 	if game == null or not game.has_local_player():
 		return "No local hero after boot"
 	net = get_node_or_null("/root/NetworkManager")
 	session = get_node_or_null("/root/NetworkManager/Session")
 	if net == null or session == null or net.is_online():
 		return "Expected an isolated offline process"
-	if flag("online-menu") or flag("cosmetic-ui") or flag("alignment") or flag("reward-plaques"):
+	if flag("online-menu") or flag("cosmetic-ui") or flag("alignment") or flag("reward-plaques") or flag("attribute-readiness"):
 		kept.menu_game = _stash(game, ["state", "play_started", "talk_cd"])
 		kept.menu_paused = get_tree().paused
 		kept.menu_hud_visible = game.hud.visible
@@ -100,6 +103,8 @@ func _run() -> String:
 		return await preload("res://scripts/tests/hud_alignment_live.gd").run(self)
 	if flag("reward-plaques"):
 		return await preload("res://scripts/tests/reward_plaque_live.gd").run(self)
+	if flag("attribute-readiness"):
+		return await preload("res://scripts/tests/attribute_readiness_live.gd").run(self)
 	await _capture("01_ordinary", "Unmodified character values after ordinary safe-room boot")
 	var p: Player = game.local_player
 	p.char_name = "Alexandria Ember" # the current 16-character name-entry limit
@@ -113,7 +118,8 @@ func _run() -> String:
 	await _capture("04_negative_many_points", "Negative resonance and 40 unspent skill points")
 	var hero_detail: Array[String] = [p.char_name, String(Classes.CLASSES[p.cls]["name"]),
 		String(Achievements.TITLES[game.player_title]["name"]), "Level %d" % p.level,
-		"%d skill points" % p.skill_points, "%d gold" % p.gold,
+		"%d talent points" % p.skill_points,
+		"%d attribute point%s" % [p.unspent_attr, "" if p.unspent_attr == 1 else "s"], "%d gold" % p.gold,
 		"Combat Rating: %d" % p.combat_rating(), "Resonance: %+d" % int(p.resonance)]
 	for field in ["avatar_root", "stats_label"]:
 		await _popover(String(field), "high_", hero_detail)
@@ -148,6 +154,7 @@ func _quiet() -> void:
 	p.gold = 47
 	p.atk = float(kept.player.atk)
 	p.skill_points = 0
+	p.unspent_attr = 0
 	p.resonance = 0
 	game.player_title = ""
 	game.mailbox = []
@@ -576,7 +583,8 @@ func _skills_badge(view: String) -> void:
 	_probe(view + "/skills_badge_available", available)
 	if not available:
 		return
-	var expected: int = game.local_player.skill_points
+	var expected: int = game.local_player.skill_points + game.local_player.unspent_attr
+	var expected_text := str(expected) if expected < 100 else "99+"
 	_probe(view + "/skills_badge_presence", badge.is_visible_in_tree() == (expected > 0),
 		{"points": expected, "visible": badge.is_visible_in_tree()})
 	if expected <= 0:
@@ -584,7 +592,7 @@ func _skills_badge(view: String) -> void:
 	var ink := _ink_rect(count)
 	var bounds := badge.get_global_rect()
 	var button: Control = game.hud.skills_btn
-	_probe(view + "/skills_badge_count", count.text == str(expected) and count.is_visible_in_tree()
+	_probe(view + "/skills_badge_count", count.text == expected_text and count.is_visible_in_tree()
 		and count.modulate.a > 0.0 and badge.modulate.a > 0.0 and bounds.encloses(ink),
 		{"expected": expected, "text": count.text, "badge": _rect(bounds), "ink": _rect(ink)})
 	_probe(view + "/skills_badge_placement", button.get_global_rect().has_point(bounds.get_center())
@@ -716,6 +724,8 @@ func _write_report() -> void:
 		"source_label": arg("label", "baseline" if baseline else "regression"),
 		"online_menu": flag("online-menu"), "menus_sha256": FileAccess.get_sha256("res://scripts/menus.gd"),
 		"reward_plaques": flag("reward-plaques"),
+		"attribute_readiness": flag("attribute-readiness"),
+		"attribute_readiness_sha256": FileAccess.get_sha256("res://scripts/tests/attribute_readiness_live.gd") if flag("attribute-readiness") else "",
 		"reward_plaque_helper_sha256": FileAccess.get_sha256("res://scripts/tests/reward_plaque_live.gd") if flag("reward-plaques") else "",
 		"cosmetic_ui": flag("cosmetic-ui"), "alignment": flag("alignment"),
 		"alignment_geometry_sha256": FileAccess.get_sha256("res://scripts/tests/hud_alignment_geometry.gd") if flag("alignment") else "",
@@ -724,6 +734,6 @@ func _write_report() -> void:
 		"codex_sha256": FileAccess.get_sha256("res://scripts/ui/codex.gd") if flag("cosmetic-ui") else "",
 		"cosmetic_helper_sha256": FileAccess.get_sha256("res://scripts/tests/cosmetic_ui_live.gd") if flag("cosmetic-ui") else "",
 		"hud_sha256": FileAccess.get_sha256("res://scripts/hud.gd"), "rig_sha256": FileAccess.get_sha256(get_script().resource_path),
-		"scope": "controlled reward plaque / authored boss readout; paused world, real UI clocks; no earned achievement or combat" if flag("reward-plaques") else "posed HUD layout; shaped text cells and numeric baselines; controlled strings, not gameplay or raster ink" if flag("alignment") else "actual offline Wardrobe/Codex GUI opens; no purchase or equip; scroll placement is QA setup" if flag("cosmetic-ui") else "solo and empty loopback host; actual GUI inputs; synthetic paused victory state, no story completion or remote delivery" if flag("online-menu") else "synthetic UI state; normal safe room; actual GUI inputs; loopback host with synthetic allies, no remote network delivery",
+		"scope": "Lent legal L2 talent/attribute pools in fresh no-save ch1; actual mouse/ScreenTouch spending; no earned progression; scroll positioning is setup" if flag("attribute-readiness") else "controlled reward plaque / authored boss readout; paused world, real UI clocks; no earned achievement or combat" if flag("reward-plaques") else "posed HUD layout; shaped text cells and numeric baselines; controlled strings, not gameplay or raster ink" if flag("alignment") else "actual offline Wardrobe/Codex GUI opens; no purchase or equip; scroll placement is QA setup" if flag("cosmetic-ui") else "solo and empty loopback host; actual GUI inputs; synthetic paused victory state, no story completion or remote delivery" if flag("online-menu") else "synthetic UI state; normal safe room; actual GUI inputs; loopback host with synthetic allies, no remote network delivery",
 		"checks": checks, "failures": failures, "findings": findings, "views": views}, "\t"))
 	file.close()

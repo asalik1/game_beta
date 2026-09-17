@@ -171,7 +171,7 @@ commit, exact 39 owned paths, hashes, validation and preservation audit.
 All 46 unrelated files remain byte-identical; the index is empty after the owned
 commit. See HUD_CLEARANCE.md for limits. No delegated canonical work is pending.
 
-Checkpoint 8 completes room-edge camera lead from
+Checkpoint 8 (`5216a2d0e8ecab3b7ed27f95a3fe3680be76e759`) completes room-edge camera lead from
 `021826c1441b8ebb0b7527184b8ff805a4c14b8a`. Native Tab targeting at the north
 wall reproduced sustained hero clipping: approximately -53.5px body top and
 painted head/upper body offscreen. Baseline parent31/nested48 has exactly one
@@ -202,9 +202,38 @@ See COMBAT_FRAMING.md and
 `build/qa/session-sept17/camera-lead-checkpoint-validation.json` for the exact
 20 owned paths, resulting commit, hashes and post-commit preservation audit.
 All46 unrelated files remain byte-identical. No delegated canonical work remains.
-The source-only attribute-readiness proposal is preserved under
-`build/qa/session-sept17/attribute-readiness-candidate/`; it is untested and not
-an accepted improvement. The older failed brewing journey stays unchanged.
+The older failed brewing journey stays unchanged.
+
+Checkpoint 9 completes unspent-attribute discoverability. Skills counts both
+talent and attribute points, and its tooltip/portrait name each pool. An
+attribute-only pool change invalidates the portrait cache. Allocations, rewards,
+utility geometry and borderless Combat Rating/Resonance presentation stay intact.
+Baseline2 reproduces exactly two findings in 172 checks. Baseline1 remains
+rejected: it compared effective badge visibility across a full-screen menu that
+normally hides the HUD. Prototype quick/native pass; the first full run caught
+an obsolete skill-point wording assertion. Its replacement retains all identity,
+level and portrait/name parity checks and requires both point-pool values.
+Final2 desktop quick/full pass 145/225; mobile import/compile 277 and strict
+quick 145 pass. Desktop and host mobile/touch each pass focused allocation 192,
+default dossier 560, alignment 197 and online-menu 67 checks. All 80 final native
+originals received independent visual review; root also inspected the focused
+flows and selected long-value, party, alignment and host-return views. Exact
+four-source synchronization and full strict preflight pass. Evidence and the
+resulting commit, exact 13 owned paths and preservation audit are recorded in
+`build/qa/session-sept17/attribute-readiness-checkpoint-validation.json`.
+The focused flow lends legal L2 pools and uses actual allocation controls; it
+does not claim earned progression, onboarding, physical-device testing or
+extreme-count badge fit. Online-menu uses an empty loopback host; synthetic
+party shells exercise layout without peer replication. All 46 preserved files
+remain unchanged. See HUD_ALIGNMENT.md for scope and rejected evidence.
+
+Next visual candidate: actual village screenshots and source measurements show
+the pale F chest extending below its old fixed contact shadow. Art and loot
+placement are intentional; a ground-contact correction is proposed, not accepted.
+Read `build/qa/session-sept17/village-crate-review.md` and the frozen source-only
+`chest-grounding-candidate/` helper/integration proposal before any edit. It has
+not run in Godot. Preserve the older failed brewing journey and its inventories.
+The separate early-progression route advisory remains unimplemented.
 
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at
