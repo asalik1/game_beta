@@ -171,13 +171,40 @@ commit, exact 39 owned paths, hashes, validation and preservation audit.
 All 46 unrelated files remain byte-identical; the index is empty after the owned
 commit. See HUD_CLEARANCE.md for limits. No delegated canonical work is pending.
 
-Next candidate: test whether default target lead clips the hero above the north
-viewport. Read-only source audit and an unrun QA proposal are preserved in
-`build/qa/session-sept17/camera-lead-candidate/`. This is not a proven bug or an
-accepted improvement; compare real Tab targeting with the real lead preference
-and inspect canvas-based body containment. The older brewing journey and other
-failed/partial experiments remain unchanged. Root owns the only engine, canonical
-source, mobile sync and serialized commits.
+Checkpoint 8 completes room-edge camera lead from
+`021826c1441b8ebb0b7527184b8ff805a4c14b8a`. Native Tab targeting at the north
+wall reproduced sustained hero clipping: approximately -53.5px body top and
+painted head/upper body offscreen. Baseline parent31/nested48 has exactly one
+expected finding. Ordinary eased lead now uses Camera2D.position before room
+limits; impact shake retains offset and its comfort preference. Composition,
+target eligibility, zoom calculation, movement and combat values are unchanged.
+The frozen old-camera screenshot comparison resets local position explicitly.
+Final desktop and host mobile/touch edge probes each pass37 parent/88 nested
+checks, covering default/zero lead, held north/south/east routes, real Tab/Space,
+target removal and menu/room restoration. Desktop quick/full pass145/225;
+mobile import/compile276 and strict quick145 pass. Desktop tracker365/29 plus
+zero text-core overdraw, distant framing on both projects, and cast/real local
+ENet regressions pass. Six canonical mirrors and full strict preflight pass.
+An opt-in live-camera hunt retains and verifies default framing/lead/smoothing;
+the legacy hunt mode still disables framing/smoothing. Both keep shake zero.
+Starting-kit Mage live-camera hunts win: desktop15.772s, minimum/end3.075552/90HP;
+mobile-source16.275s,90HP. Both pay120gold. The legacy desktop hunt wins14.512s
+at90HP. These different random scenes do not establish a balance or difficulty
+comparison. Sign setup uses direct placement; combat uses normal keyboard input.
+Root reviewed90 originals across baseline/prototype/extended/final runs and one
+historical cast comparison. Independent review covers56 originals. North posed
+wolf/NPC overlap remains partial silhouette evidence in some desktop fixtures;
+the final mobile fixture has a clear north target. Existing hymn hero/cast-panel
+overlap is confirmed against checkpoint7, not introduced here. Unselected NPC,
+Talk, decorative-label, hunt-panel/toast overlaps and small-room/extreme-zoom
+limits remain explicit. No universal viewport/HUD or physical-device claim.
+See COMBAT_FRAMING.md and
+`build/qa/session-sept17/camera-lead-checkpoint-validation.json` for the exact
+20 owned paths, resulting commit, hashes and post-commit preservation audit.
+All46 unrelated files remain byte-identical. No delegated canonical work remains.
+The source-only attribute-readiness proposal is preserved under
+`build/qa/session-sept17/attribute-readiness-candidate/`; it is untested and not
+an accepted improvement. The older failed brewing journey stays unchanged.
 
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at

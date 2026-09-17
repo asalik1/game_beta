@@ -398,6 +398,21 @@ actual rendered white instruction cores with brackets shown/hidden at a posed
 overlap; `--overlap-baseline` expects the old gold overdraw. These are separate
 baseline controls, not strict acceptance flags. See HUD_CLEARANCE.md for limits.
 
+Room-edge camera QA: `shot.bat framing --north-edge --camera-lead --camera-edges
+--timeout=300` checks default lead with live camera smoothing/limits, native
+Tab/Space lock/removal, held north/south/one clear side route, and menu/room
+restoration. Parent tracker checks remain strict. Use fresh APPDATA and add
+`--mobile --renderer=gl_compatibility --touch` for host mobile presentation.
+`--camera-baseline` without `--camera-edges` expects one old north viewport
+finding; never combine it with the older `--baseline` or `--extra` flags.
+Quiet-room placement and frozen wolf AI are controlled fixtures, not an earned
+encounter. See COMBAT_FRAMING.md for receipt paths and interpretation limits.
+Use `shot.bat hunt_combat --class=mage --live-camera --timeout=200` for a
+starting-kit keyboard fight with default combat framing, lead and smoothing.
+The ordinary hunt rig otherwise disables framing/smoothing for stable visual
+comparisons. Both modes mute shake; the receipt records the selected camera
+configuration. Sign inspection setup still uses direct placement.
+
 HUD visibility QA: `shot.bat hud_clearance --verify --timeout=180` captures
 normal camera room boundaries, hero/target overlap, touch controls, readable
 settings/popovers and separated notices/buffs. It checks ownership and stale

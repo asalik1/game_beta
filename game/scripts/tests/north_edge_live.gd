@@ -103,6 +103,9 @@ func _exercise() -> void:
 	await _walk("north", north_y)
 	await r.sim_wait(1.2)
 	await _capture("north", true)
+	if r.flag("camera-lead"):
+		var camera_report: Dictionary = await preload("res://scripts/tests/camera_lead_live.gd").run(self)
+		_check("camera_probe_complete", bool(camera_report.complete), camera_report)
 	if r.flag("extra"):
 		_check("extra.strict_only", not baseline, "extended presentation controls require strict mode")
 		if not baseline:

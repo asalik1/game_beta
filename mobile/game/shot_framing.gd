@@ -153,6 +153,7 @@ func _visuals() -> void:
 		# Match the old camera's real combat multiplier for the comparison.
 		game.set_process(false)
 		game.camera.zoom = Vector2.ONE * 1.12 * 1.08
+		game.camera.position = Vector2.ZERO # frozen pre-framing reference owns no live lead
 		game.camera.offset = Vector2.ZERO
 		game.hud.track_target_bar(e)
 		await frames(3)

@@ -4,6 +4,7 @@ extends ShotRig
 ## Optional --terrain=graveyard changes only the existing floor material.
 ## This remains Village Outskirts combat with village mechanics/lighting, not ch3.
 ## --deathmark-observe adds a base Assassin ultimate-first, live-input sample.
+## --live-camera retains default combat framing and position smoothing.
 const Hunt := preload("res://scripts/road_hunt.gd")
 var held := {}
 var terrain_setup: Dictionary = {}
@@ -61,8 +62,17 @@ func _checks() -> String:
 		return "combat fixture never reached gameplay"
 	game.dev_god = false
 	game.settings["camera_shake"] = 0.0
-	game.settings["combat_framing"] = false
-	game.camera.position_smoothing_enabled = false
+	if not flag("live-camera"):
+		game.settings["combat_framing"] = false
+		game.camera.position_smoothing_enabled = false
+	terrain_setup["camera"] = {"live_requested": flag("live-camera"),
+		"combat_framing": game.settings.get("combat_framing", true),
+		"lead": game.settings.get("camera_lead", 1.0),
+		"smoothing": game.camera.position_smoothing_enabled, "shake": 0.0}
+	if flag("live-camera") and (not bool(game.settings.get("combat_framing", true))
+			or not game.camera.position_smoothing_enabled
+			or not is_equal_approx(float(game.settings.get("camera_lead", 1.0)), 1.0)):
+		return "live-camera hunt requires default framing, lead and smoothing"
 	game.terrain_event_t = 10000.0
 	var room := -1
 	for i in game.zones.size():

@@ -10,7 +10,9 @@ Continues the autonomous improvements on `codex/crownless-wayfinder`.
   close fights and exploration retain the base zoom. It uses the existing
   targeting rules, excludes enemies in other rooms and resets its composition
   after a teleport, room change or character replacement. Easing is independent
-  of frame rate. Camera lead scales the offset; Combat framing can be disabled.
+  of frame rate. Camera lead scales the shared-center displacement; Combat
+  framing can be disabled. Ordinary lead uses the camera's local position so
+  the engine applies room limits; only impact shake uses the post-limit offset.
 - Mob, boss and duel-rival health bars show a gold lost-health trail. Repeated
   hits refresh its brief hold, then it drains to the actual health. Healing and
   changing targets reset it immediately, so neither invents damage.
@@ -72,7 +74,7 @@ recurrence; the original recording did not identify its exact first collision.
   clock/position/recovery checks remain active without expensive PNG readbacks.
   Omit `--no-capture` to produce reviewable frame series.
 
-## Verification results
+## Original verification results
 
 - Desktop import, compile and full campaign suite: **PASS**, 176 reported
   checks. `build/qa/framing-full-final.log`.
@@ -103,6 +105,63 @@ unchanged baseline. The full suite's deliberate invalid-Base64 diagnostic and
 bare ObjectDB shutdown warning are accepted by its existing strict verdict.
 No live multi-client soak or physical-device mobile build is claimed.
 
-Changes are staged on `codex/crownless-wayfinder`, with no commit created.
-The requested source branch/worktree remains untouched. Launch this worktree's
-`run_game.bat` to play the integrated changes.
+Those results describe the original framing checkpoint. Current session results
+and commit receipts are recorded in `AUTONOMOUS_STATUS.md`.
+
+## Room-edge lead correction — September 17
+
+At the north wall, locking an opponent 170 world units south could push the
+hero's head and upper body beyond the top of the viewport. The lead was assigned
+to `Camera2D.offset`, which bypasses camera limits. The live baseline reproduced
+the body proxy's top at approximately -53.5px across 20 settled rendered samples;
+native PNGs confirm painted-body clipping. No-target and zero-lead controls
+restore visibility without moving either actor. Zero lead also changes composition
+zoom, so this is a comfort-setting comparison, not an offset-only experiment.
+
+The same eased lead now uses `Camera2D.position`, before room clamping. Shake
+retains its existing offset and comfort preference. Target eligibility, combat
+zoom calculation, movement, damage and room limits are unchanged. The frozen
+legacy before-framing screenshot explicitly resets both local position and
+offset so a preceding live comparison cannot contaminate its reference.
+See [Godot 4.4 Camera2D](https://docs.godotengine.org/en/4.4/classes/class_camera2d.html)
+for offset/limit and actual screen-center behavior.
+
+`shot.bat framing --north-edge --camera-lead --camera-edges --timeout=300`
+checks live smoothing, default lead, native Tab/Space targeting, target removal,
+held travel to north/south/one clear side edge, and menu/room restoration. Use a
+fresh isolated APPDATA; add `--mobile --renderer=gl_compatibility --touch` for the
+mobile source rendered on the host. `--camera-baseline` expects only the original
+north hero-containment finding and must omit `--camera-edges`, `--extra` and the
+older tracker `--baseline` flag. Nested camera evidence is written alongside the
+parent north-edge receipt under `camera_lead/acceptance.json`.
+
+The fixture removes enemies and delays hazards, retains walls/props, and freezes
+factory wolf AI. Initial placement and room restoration are direct; route travel
+and locking use real input. Body proxies measure viewport containment, not clear
+painted silhouettes or touch-button clearance. Wandering NPC overlap in the
+prototype/extended north target pose is preserved as partial presentation
+evidence. Small rooms, extreme zoom, transient shake and arbitrary HUD overlaps
+are not universally guaranteed by this correction. Physical-device testing is
+not claimed.
+
+Final validation: desktop quick/full **145/225**, mobile import/compile **276
+scripts** and strict quick **145** pass. Desktop and host mobile/touch edge
+probes pass **37 parent / 88 nested** checks each. Existing distant-framing
+captures pass on both projects; desktop tracker **365/29** and real local ENet
+cast regressions pass. Six source mirrors and full strict preflight pass.
+
+The ordinary-input hunt now supports `--live-camera`, retaining and verifying
+default combat framing, lead and smoothing; its legacy mode still disables
+framing/smoothing. Both retain zero shake and direct sign setup. Starting-kit
+Mage live-camera runs win in **15.772s** desktop (minimum/end **3.075552/90 HP**)
+and **16.275s** mobile source (**90 HP**), each paying **120 gold**. Different
+random worlds prevent a causal comparison. The mobile combat capture includes
+an actual Blink near the north boundary with hero and quarry visible.
+
+Root inspected **90 original PNGs** including baseline and partial experiments;
+independent review inspected **56**, with exact attribution in the manifests.
+Existing hymn hero/cast-panel overlap matches the prior checkpoint's native
+capture. Hunt panels, notices and decorative labels retain their documented
+overlap limits. Evidence and the resulting commit are pinned in
+`build/qa/session-sept17/camera-lead-checkpoint-validation.json`.
+All 46 unrelated preserved files remain unchanged.
