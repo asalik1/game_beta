@@ -444,6 +444,32 @@ Desktop quick 147/full 227 and mobile quick 147 passed; both compiles, exact thr
 
 See POTION_CYCLE_STOCK.md and potion-cycle-stock-checkpoint-validation.json.
 
+The separate save-enabled Paladin expedition attempt stopped before combat when
+its movement helper could not reach the first road exit. Eight opening checks
+and two original screenshots were retained; this is neither defeat nor a
+completed journey/save audit. A fixed-distance collision probe can reject a
+nearby safe waypoint at the north wall, but the failed attempt did not record
+the active waypoint/stop branch, so that precise cause remains an inference.
+Evidence and exact temporary-source cleanup are in
+`build/qa/session-sept17/paladin-expedition-candidate/validation/execution/`.
+No replay replaced the failed evidence. The original 46 preserved files remain
+unchanged.
+
+An isolated NPC grounding diagnostic recorded 59 strict checks and five native
+originals. All five were visually inspected: cast shadows visibly separate from
+the painted boots, most clearly on the ragged soldier (about 2.4 world pixels).
+This establishes a follow-up rendering issue, not an accepted fix. The fixture
+poses factory NPCs with live breathing/cast processing and hidden scenery/hero;
+it is not ordinary exploration or physical-device evidence. Its source, images,
+measurements and exact temporary cleanup are retained under
+`build/qa/session-sept17/npc-ground-contact-candidate/validation/`.
+
+Checkpoint 21 is validated: fresh post-close ability taps survive the controller adapter returning to play.
+
+Desktop quick 147/full 227, mobile quick 147, compiles, three-source mobile sync and strict preflight passed. Baseline has 34 rows and exactly menu.fresh_tap_retained/dialogue.fresh_tap_retained findings; strict desktop/mobile have 34/34 rows and zero findings/failures. All 33 baseline/final originals were independently reviewed: five focused images per run and nine default controller images per platform. New helper UIDs are pinned separately per project; existing sidecars remain unowned.
+
+See RETURN_TO_PLAY_INPUT.md and return-to-play-checkpoint-validation.json.
+
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at
 the 13:00 UTC deadline. Its prompt requires the 12:00 feature cutoff, final

@@ -11,6 +11,16 @@ func _ready() -> void:
 	game.play_started = true
 	game.hud.visible = true
 	await sim_wait(4.0)
+	if flag("pad-context"):
+		var user_root := ProjectSettings.globalize_path("user://").replace("\\", "/")
+		if not user_root.to_lower().contains("/build/qa/"):
+			push_error("Pad-context fixture requires isolated build/qa APPDATA")
+			finish(1)
+			return
+		var context_error: String = await preload("res://scripts/tests/pad_context_live.gd").run(self)
+		if context_error != "": push_error(context_error)
+		finish(0 if context_error == "" else 1)
+		return
 	var error: String = preload("res://scripts/tests/test_gamepad.gd").run(self)
 	if error == "":
 		error = await _exercise()

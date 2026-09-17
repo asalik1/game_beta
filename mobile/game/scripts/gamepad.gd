@@ -259,7 +259,9 @@ func _sync_context() -> void:
 		choice_index = 0
 		if active and game.hud.choices_active:
 			game.hud._set_choice_hover(0, true)
-		if is_instance_valid(game.local_player):
+		# The observed non-play edge already cancelled pre-overlay input.
+		# Returning to play must preserve a fresh post-close buffered tap.
+		if next != "play" and is_instance_valid(game.local_player):
 			game.local_player.action_buffer.clear()
 		ui.context_changed()
 

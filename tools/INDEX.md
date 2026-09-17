@@ -491,6 +491,12 @@ default potion_hud separately for real drinking. Isolate APPDATA; add
 `--mobile --renderer=gl_compatibility --touch` for host mobile source.
 See POTION_CYCLE_STOCK.md for exact scope and limitations.
 
+Return-to-play input QA: `shot.bat controller --pad-context --timeout=180`
+uses actual keyboard/pad events with a lent cooldown and synthetic dialogue.
+Baseline requires only the two fresh-tap retention findings. Run default
+controller separately; isolate APPDATA and add mobile Compatibility/touch
+flags for host-rendered mobile source. See RETURN_TO_PLAY_INPUT.md.
+
 Prop shadow QA: `shot.bat prop_shadows --timeout=300` captures the reported
 gravestone group, broad and narrow props, animated foliage/fountain and lore
 objects through their actual factories. It saves fullframes, native closeups
