@@ -6,7 +6,7 @@ static func open(m: Menus, last_fall := true) -> void:
 	var p: Player = m.game.local_player
 	var memory: RefCounted = p.damage_memory
 	var fall: Dictionary = memory.last_defeat
-	var entries: Array = fall.get("hits", []) if last_fall else memory.recent(Time.get_ticks_msec() * 0.001)
+	var entries: Array = fall.get("hits", []) if last_fall else memory.recent(memory.elapsed_seconds)
 	var box := m._open("Combat report", 960, clampf(330.0 + entries.size() * 70.0, 360.0, 620.0), true)
 	m.current = "combat_report"
 	var tabs := HBoxContainer.new()
@@ -16,17 +16,17 @@ static func open(m: Menus, last_fall := true) -> void:
 	m._tab(tabs, "Recent damage", func() -> void: open(m, false), not last_fall)
 	if entries.is_empty():
 		UITheme.header(m._lbl(box, "The flame still stands" if last_fall else "No recent wounds", 24, UITheme.GOLD_BRIGHT))
-		m._lbl(box, "Your next fall will leave a record here: the final blows, who dealt them, and the health each one took." if last_fall else "Damage from the last %d seconds appears here. Dodged hits and blows fully absorbed by a shield do not count as lost health." % int(Balance.COMBAT_MEMORY_SECONDS), 17)
+		m._lbl(box, "Your next fall will leave a record here: the final blows, who dealt them, and the health each one took." if last_fall else "Damage from the last %d seconds of gameplay appears here. Paused time does not count. Dodged hits and blows fully absorbed by a shield do not count as lost health." % int(Balance.COMBAT_MEMORY_SECONDS), 17)
 		m._btn(box, "Return to game", func() -> void: m.close(), UITheme.GOLD_BRIGHT)
 		return
-	var end: float = float(fall.get("time", 0.0)) if last_fall else Time.get_ticks_msec() * 0.001
+	var end: float = float(fall.get("time", 0.0)) if last_fall else memory.elapsed_seconds
 	var total := 0.0
 	var heavy_n := 0
 	for entry in entries:
 		total += float(entry["amount"])
 		heavy_n += int(entry["heavy"])
 	var final_hit: Dictionary = entries.back()
-	UITheme.header(m._lbl(box, String(fall.get("place", "Last stand")) if last_fall else "The last %d seconds" % int(Balance.COMBAT_MEMORY_SECONDS), 23, UITheme.GOLD_BRIGHT))
+	UITheme.header(m._lbl(box, String(fall.get("place", "Last stand")) if last_fall else "The last %d seconds of gameplay" % int(Balance.COMBAT_MEMORY_SECONDS), 23, UITheme.GOLD_BRIGHT))
 	m._lbl(box, "%s · %s health lost across %d hit%s" % [
 		"Final blow: " + String(final_hit["source"]) if last_fall else "Live record",
 		Game.fmt_meter(total), entries.size(), "" if entries.size() == 1 else "s"], 16, Color(0.92, 0.79, 0.68))

@@ -9,6 +9,15 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 
 ## Gates & suites (run these, in this order — CLAUDE.md "Testing")
 
+Combat clock QA: `shot.bat combat_clocks --timeout=240` uses a controlled frozen
+enemy, production damage/cast calls, real menu input, solo pause/resume and
+defeat/recovery, plus an empty loopback ENet host. Checks retained history while
+paused, eventual shared-windup contact, active/online expiry and the personal
+ending history guard. Use fresh isolated APPDATA; add
+`--mobile --renderer=gl_compatibility --touch` for host-rendered mobile source.
+`--baseline` permits only the two old pause findings and omits the later strict
+recovery/network phases. See COMBAT_CLOCKS.md for evidence and limitations.
+
 Exploration QA: `shot.bat exploration_friction --competition --endpoint-contracts
 --field-notes --timeout=300` exercises actual hunt-sign input, nearest eligible
 selection, shared dash landings and Codex reading. Add `--tumble` for Archer's

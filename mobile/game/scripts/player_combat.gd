@@ -975,7 +975,9 @@ func cast_wait(sec: float) -> void:
 	var col: Color = _tcolor
 	var themed: bool = _themed
 	var base: float = _cast_base
-	await get_tree().create_timer(sec).timeout
+	# Contact follows the same paused, time-scaled world as the swing animation.
+	# Online menus do not pause the tree, so committed attacks still resolve.
+	await get_tree().create_timer(sec, false).timeout
 	_tfx = fx
 	_tcolor = col
 	_themed = themed

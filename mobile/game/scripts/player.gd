@@ -55,6 +55,8 @@ func _physics_process(delta: float) -> void:
 		clear_local_intents()
 		velocity = Vector2.ZERO
 		return
+	# Share the survival clock, so reading a paused menu cannot erase wounds.
+	damage_memory.advance(delta)
 	if not global_position.is_finite() or not velocity.is_finite():
 		_recover_motion(global_position if global_position.is_finite() else game.room_center(game.cur_room))
 	# Intents first (MP seam): poll the local device into the intents
@@ -1329,7 +1331,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		dr_time = maxf(dr_time, uniq_k("dr_dur"))
 		dr_amt = maxf(dr_amt, uniq_k("dr"))
 		_cover_wave()
-	damage_memory.record(Time.get_ticks_msec() * 0.001, amount, hp, max_hp,
+	damage_memory.record(damage_memory.elapsed_seconds, amount, hp, max_hp,
 		preload("res://scripts/combat_memory.gd").source_name(attacker, dmg_type), dmg_type, heavy)
 	if amount > 0.0 and is_instance_valid(attacker) and attacker is Node2D:
 		game.hud.combat_feedback.hit(attacker.global_position - global_position, heavy)
@@ -1382,7 +1384,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		else:
 			hp = 0.0
 			action_buffer.clear()
-			damage_memory.fall(Time.get_ticks_msec() * 0.001, String(game.zones[game.cur_room]["name"]))
+			damage_memory.fall(damage_memory.elapsed_seconds, String(game.zones[game.cur_room]["name"]))
 			# PVP (v1): a lethal hit in a duel is a real FALL — the controller
 			# scores it and resets the round. Never the co-op downed detour
 			# (nobody revives a rival), never the solo death flow (no tithe,

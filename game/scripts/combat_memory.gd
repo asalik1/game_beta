@@ -4,6 +4,14 @@ extends RefCounted
 
 var hits: Array[Dictionary] = []
 var last_defeat := {}
+var elapsed_seconds := 0.0
+
+
+## The local player's survival clock drives this: solo menus and personal
+## endings freeze it, while a shared world's ordinary menus keep it running.
+## Explicit timestamps below also remain useful for deterministic fixtures.
+func advance(delta: float) -> void:
+	elapsed_seconds += maxf(delta, 0.0)
 
 
 func record(now: float, amount: float, hp_before: float, max_hp: float,

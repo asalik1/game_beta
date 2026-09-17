@@ -1,3 +1,47 @@
+# Active session — September 17–18, 2026
+
+Owner authorization on September 17 opens a new autonomous session in
+`C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder`, branch
+`codex/crownless-wayfinder`. The closed September 9–10 history below remains
+unchanged and does not close this new session.
+
+Hard stop: **September 18, 13:00 UTC / 09:00 America/New_York**.
+Feature/art cutoff: **12:00 UTC / 08:00 New York**; reserve the last hour for
+validation, fixes, documentation and committed handoff. Check time on every
+resumption. Older paused automations remain untouched. Root owns the only
+Godot engine, mobile synchronization and explicit-path serialized commits.
+
+Initial verification at 06:10 UTC September 17: HEAD
+`6d2121aad981714941e60e8e725b13af98da59d6`, correct worktree/branch, empty index.
+All 46 preserved paths match the historical inventories byte for byte; no new
+unrelated changes found. Receipt: `build/qa/session-sept17/initial-preservation.json`.
+The unfinished brewing journey stays an uncommitted failed experiment, not an
+accepted improvement. No protected art or chroma work is authorized.
+
+Checkpoint 1 fixes shared attack windups resolving during
+solo pause and damage history aging while solo menus are paused. Corrected
+baseline2 reproduces exactly two defects; desktop quick/full and mobile quick
+pass. Native desktop (30/30) and host mobile/touch (26/26) pass, with all twelve
+full screenshots independently reviewed. Full strict preflight and scoped mobile
+sync checks pass; see COMBAT_CLOCKS.md and the checkpoint receipt at
+`build/qa/session-sept17/combat-clocks-checkpoint-validation.json`. The original
+Mage hunt passes and all four native images were reviewed. The checkpoint receipt
+records the resulting commit and preservation audit. DeepSeek's bounded source
+review is preserved and independently
+filtered. The first Claude CLI attempt failed OAuth refresh; after the owner
+repaired authentication, the Fable read-only review succeeded. Its Death Mark
+landing advice is a follow-up candidate needing reproduction and review.
+The timer follow-up patch in `build/qa/session-sept17/ability-timers-candidate/`
+is advisory, unapplied and unexecuted; checkpoint 1 does not fix those timers.
+
+This session's continuation is ACTIVE:
+`crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at
+the 13:00 UTC deadline. Its prompt requires the 12:00 feature cutoff, final
+handoff and pausing this heartbeat on closure. Older paused automations were
+inspected read-only and remain unchanged. Do not create a duplicate continuation.
+
+---
+
 # Session closed — September 9–10, 2026
 
 The session is closed with **18 validated game checkpoints**. New feature and
