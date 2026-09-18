@@ -113,6 +113,17 @@ profile. These strict checks have no expected-failure whitelist. Read the actual
 receipt and original images; dialogue is opaque and fallback can cover heads.
 See CAPITAL_ARRIVAL.md. Keep fountain/default/framing regressions separate.
 
+
+Keyboard menu short taps: add `--menu-shortcuts --timeout=360` to
+`capital_arrival` with its isolated profile. Ten originals cover actual travel,
+nonconflicting same-frame presses, matching-key close/cooldown, held/echo input,
+real binding capture, duplicate menu keys, shared Space/Tab/E priority, Voss/Leave
+and Rename typing. This strict mode has no baseline waiver and cannot combine
+with other capital episodes or no-capture. Actor positions/physics/resources stay
+live; editor setup and persisted keybind changes are controlled and restored.
+Run desktop and host mobile Compatibility without forced touch. See CONTROLLER.md
+for ambiguous-remap, device, GUI-consumption and transport coverage limits.
+
 Alchemy UI QA: `shot.bat alchemy --timeout=240` checks the real recipe bench,
 39 recipe previews, exact paid actions, input, live quotes, cancelled learning,
 overflow and reading/focus continuity. Seven native views cover novice, learned

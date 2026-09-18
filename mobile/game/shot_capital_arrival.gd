@@ -11,6 +11,10 @@ func _ready() -> void:
 		print("CAPITAL ARRIVAL REFUSAL: isolated capital-arrival-native-candidate APPDATA required")
 		finish(1)
 		return
+	if flag("menu-shortcuts") and (flag("baseline") or flag("npc-prompt") or flag("fountain-prompt") or flag("arrival-consumers") or flag("no-capture")):
+		print("Menu shortcuts requires its isolated strict mode")
+		finish(1)
+		return
 	if flag("npc-prompt-controls") and not flag("npc-prompt"):
 		print("NPC prompt controls require npc-prompt")
 		finish(1)
@@ -20,6 +24,8 @@ func _ready() -> void:
 		finish(1)
 		return
 	shot_dir += "/" + ("before" if flag("baseline") else "after")
+	if flag("menu-shortcuts"):
+		shot_dir += "/menu_shortcuts"
 	if flag("npc-prompt"):
 		shot_dir += "/npc_prompt"
 	if flag("fountain-prompt"):

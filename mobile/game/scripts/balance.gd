@@ -83,6 +83,9 @@ const ATLAS_MAX_ZOOM := 2.6
 const ATLAS_ZOOM_STEP := 1.18
 const ATLAS_DRAG_THRESHOLD := 8.0
 
+# Keyboard menu opening keeps its existing shared interaction cooldown.
+const MENU_SHORTCUT_COOLDOWN := 0.4
+
 # Combat input forgiveness and readable feedback; damage rules stay unchanged.
 const ABILITY_BUFFER_SECONDS := 0.18
 const ABILITY_NOTICE_SECONDS := 1.3

@@ -531,6 +531,31 @@ inspected read-only and remain unchanged. Do not create a duplicate continuation
 
 ---
 
+
+Checkpoint 25 makes nonconflicting Inventory/Skills/Codex/Map short presses
+reliable between frames and prevents held-key reopening. Ambiguous gameplay
+bindings retain their old priority; matching close/Escape and duplicate menu-key
+precedence remain intact. Actual Claude advice was corrected locally. The strict
+old-source diagnostic passed 84 of 100 rows with seven missed taps, one bounded
+held-key observation and their aggregate; all ten originals were reviewed.
+Fixed desktop/mobile focus passes 108 each; quick/full passes 147/227 and mobile
+quick 147. Menu 158, pad-context 34, default controller and paired Blink 47 pass
+on both source projects. All 82 final-evidence originals have attributed reviews.
+The first mobile controller attempt was rejected after an outer timeout with no
+controller images; its 18 earlier frames and all 122 files remain preserved.
+An unusually long concurrent host delay is only a cause hypothesis. The next
+strict preflight rejected the moved 0.4-second menu cooldown literal. Its value
+is unchanged in a named Balance constant; fresh final desktop/mobile gates and
+all 72 fixed originals replace the earlier passing trial evidence. All 772 files
+from superseded runs and the previous document state remain pinned. Controller disconnect is log-backed;
+its duplicate Settings image supplies no separate Pause witness. Guest menus,
+physical devices and ordinary campaign travel are not established by these rigs.
+The remapped Inventory footer remains a recorded follow-up. Strict preflight,
+exact five-source mobile sync, source/UID/old-history preservation and final
+15-path commit audit are recorded with the resulting commit in
+`build/qa/session-sept17/menu-shortcuts-checkpoint-validation.json`.
+See CONTROLLER.md. All 46 unrelated files remain unchanged.
+
 # Session closed — September 9–10, 2026
 
 The session is closed with **18 validated game checkpoints**. New feature and

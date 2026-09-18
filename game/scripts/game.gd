@@ -5,6 +5,7 @@ class_name Game extends "res://scripts/game_flow.gd"
 # The transport autoload's SCRIPT, for enums/consts only — the bare
 # `NetworkManager` global doesn't exist under check_compile (MP-05).
 const NetManager := preload("res://scripts/net/net_manager.gd")
+const _MENU_SHORTCUTS := ["inventory", "skills", "codex", "map"]
 
 # --- MP session entry (dev-facing, MP-07; MP-08 builds the real lobby UI
 # on these same seams). Layer-local state: only the boot flow reads them.
@@ -537,6 +538,12 @@ func set_touch_controls(on: bool) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Descendant menus/HUD keep consumed keys; unconsumed short taps no longer
+	# depend on a later frame sampling the key down. Escape keeps its owner.
+	if event is InputEventKey and event.pressed and not event.echo \
+			and _menu_shortcut_event(event.keycode):
+		get_viewport().set_input_as_handled()
+		return
 	# Touch-only tap-to-talk: a phone has no E key, so tapping an NPC you're standing
 	# next to fires its convo/desk — same range + action as the keyboard path below
 	# (~L484). Only UNCONSUMED taps reach here, so the touch HUD's joystick/ability
@@ -570,6 +577,45 @@ func _unhandled_input(event: InputEvent) -> void:
 			talk_cd = 0.6
 			_face_interactable_to_player(tap_entry)
 			tap_entry["action"].call()
+
+
+## Shared bindings keep the old post-interaction poll, including its ordering
+## relative to NPC interaction, abilities, movement and HUD target/confirm keys.
+## Only nonconflicting menu bindings receive the between-frame tap guarantee.
+func _menu_shortcut_conflicts(keycode: int) -> bool:
+	if keycode in [KEY_W, KEY_A, KEY_S, KEY_D, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT,
+			KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_E, KEY_ESCAPE]:
+		return true
+	if dev_mode and keycode in [KEY_F1, KEY_BACKSLASH, KEY_EQUAL, KEY_MINUS]:
+		return true
+	if keycode == int(binds.get("target", KEY_TAB)) \
+			or keycode == int(binds.get("potion_next", KEY_R)):
+		return true
+	for action in ["a1", "a2", "a3", "ult", "potion", "interact"]:
+		if keycode == int(binds[action]):
+			return true
+	return false
+
+
+func _menu_shortcut_event(keycode: int) -> bool:
+	if dedicated or fangmoot_mode or not play_started or not has_local_player() \
+			or hud == null or menus == null or state != ST_PLAYING \
+			or talk_cd > 0.0 or input_overlay_up() or _menu_shortcut_conflicts(keycode):
+		return false
+	for action in _MENU_SHORTCUTS:
+		if keycode == int(binds.get(action, KEY_M)):
+			_open_menu_shortcut(action)
+			return true
+	return false
+
+
+func _open_menu_shortcut(action: String) -> void:
+	talk_cd = Balance.MENU_SHORTCUT_COOLDOWN
+	match action:
+		"inventory": menus.open_inventory()
+		"skills": menus.open_skills()
+		"codex": menus.open_codex()
+		"map": menus.open_map()
 
 
 ## NPC bodies turn toward the local player when spoken to. Directional bodies
@@ -879,23 +925,15 @@ func _process(delta: float) -> void:
 						and player.global_position.distance_to(q.global_position) <= player.REVIVE_REACH:
 					interact_in_range = true
 					break
-		# Menu hotkeys. MP: UI-local, per-client — opening your inventory or
-		# map is presentation, not simulation; these never become intents.
+		# Ambiguous remaps retain the old held-state policy and original menu
+		# precedence. Event-handled bindings must never reopen from a held key.
 		if talk_cd <= 0.0:
-			if Input.is_key_pressed(binds["inventory"]):
-				talk_cd = 0.4
-				menus.open_inventory()
-			elif Input.is_key_pressed(binds["skills"]):
-				talk_cd = 0.4
-				menus.open_skills()
-			elif Input.is_key_pressed(binds["codex"]):
-				talk_cd = 0.4
-				menus.open_codex()
-			elif Input.is_key_pressed(binds.get("map", KEY_M)):
-				talk_cd = 0.4
-				menus.open_map()
-			# (ESC → pause menu lives in hud._on_escape, event-driven —
-			# a polled duplicate here caused double-open/close races.)
+			for action in _MENU_SHORTCUTS:
+				var keycode := int(binds.get(action, KEY_M))
+				if Input.is_key_pressed(keycode) and _menu_shortcut_conflicts(keycode):
+					_open_menu_shortcut(action)
+					break
+
 	elif state == ST_PLAYING and has_local_player():
 		# Overlay up: polling is skipped, and intents HOLD their last polled
 		# value — online (no pause) a key held when the overlay opened would

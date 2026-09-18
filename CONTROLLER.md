@@ -80,3 +80,60 @@ Evidence lives in `build/qa/controller-full-verified.log`,
 `controller-visual-verified2.log`, `controller-preflight-final.log` and
 `controller-mobile-parity.json`. Final images are under
 `build/qa/controller-final-render-user/Godot/app_userdata/Crownless/shots/controller/`.
+
+## Keyboard menu shortcuts — September 18, 2026
+
+Inventory, Skills, Codex and Map now handle short presses as input events after
+GUI consumers. Current bindings apply. Holding a nonconflicting shortcut or its
+auto-repeat does not reopen the menu after closing; release and press again after
+the existing cooldown. Matching-key close and Escape keep their existing paths.
+
+Keys shared with movement, interaction, abilities, potion/target controls,
+confirm/cancel or active developer shortcuts retain their previous polling
+priority. These ambiguous remaps have no between-frame tap guarantee. Duplicate
+menu-only bindings keep Inventory, Skills, Codex, then Map precedence. Distinct
+simultaneous keys do not promise the old per-frame ordering. No simulation,
+network intent or RPC was added. The existing 0.4-second opening cooldown is
+named in Balance; its value is unchanged.
+
+Use `shot.bat capital_arrival --menu-shortcuts --timeout=360` with isolated
+APPDATA inside `capital-arrival-native-candidate`. The route uses real Pause
+travel, walking to Voss, same-frame press/release, held/echo input, actual binding
+capture, shared Space/Tab/E keys, Voss/Leave and typing in Rename. Editor setup
+is controlled; actor positions, physics and resources are not reassigned.
+Character saves are disabled. Isolated keybind settings are written and their
+primary contents restored; backups remain.
+
+The strict old-source diagnostic recorded 100 rows: 84 passed and 16 failed.
+Seven lost short taps account for fourteen open/settled failures. Inventory was
+also visible 0.65 seconds after Escape while I remained held; no immediate-close
+witness establishes the full close/reopen chronology. The final failure is the
+aggregate. Fixed desktop and host-rendered mobile pass all 108 rows, including
+eight close/cooldown controls unavailable when the old opening taps failed.
+Desktop quick/full pass 147/227; mobile quick passes 147. On both source projects,
+menu navigation passes 158, pad-context passes 34 and paired ENet Blink passes 47.
+The default controller regression also completes with nine native captures.
+
+All 82 final-evidence originals (ten old-source diagnostic, 36 desktop and 36
+mobile) have attributed original-resolution reviews. The first mobile attempt
+was rejected when its controller run timed out before producing any images;
+its 18 earlier captures remain supplemental. The complete fresh-profile retry
+uses unchanged game source. A concurrent long host delay is an uncertain cause,
+not a waived check. The next strict preflight rejected the moved cooldown
+literal. Earlier passing runs are retained as supplemental evidence; final
+desktop/mobile validation was rerun after the exact-value constant correction. Known renderer shutdown diagnostics retain the runner's
+existing policy. The full checkpoint receipt records strict preflight, source
+hashes, rejected evidence, exact ownership and the resulting commit:
+`build/qa/session-sept17/menu-shortcuts-checkpoint-validation.json`.
+
+These are synthetic inputs and host Compatibility rendering, not physical-device
+or human keyboard timing evidence. Paired Blink checks transport/input authority,
+not actual guest menu/chat behavior. Rename also has an overlay gate, so its
+negative result alone does not isolate GUI consumption. Controller disconnect
+has log evidence; its final image duplicates Settings and does not independently
+show Pause. The remapped Inventory footer still names I after B; that existing
+copy defect is a separate follow-up.
+
+Actual Claude Fable supplied the advisory draft. Its raw patch was rejected and
+corrected locally. A later independent Claude review timed out with empty output;
+local source and native reviews provide the accepted evidence.
