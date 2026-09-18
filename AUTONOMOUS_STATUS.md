@@ -1,15 +1,55 @@
-# Active session — September 17–18, 2026
+# Session closed — September 17–18, 2026
 
-Owner authorization on September 17 opens a new autonomous session in
+This authorized session is complete in
 `C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder`, branch
-`codex/crownless-wayfinder`. The closed September 9–10 history below remains
-unchanged and does not close this new session.
+`codex/crownless-wayfinder`. It delivered **30 validated, committed checkpoints**.
+No new features or asset batches were started after the 12:00 UTC cutoff.
+Final handoff and continuation shutdown are recorded before the September 18,
+13:00 UTC / 09:00 America/New_York hard deadline.
 
-Hard stop: **September 18, 13:00 UTC / 09:00 America/New_York**.
-Feature/art cutoff: **12:00 UTC / 08:00 New York**; reserve the last hour for
-validation, fixes, documentation and committed handoff. Check time on every
-resumption. Older paused automations remain untouched. Root owns the only
-Godot engine, mobile synchronization and explicit-path serialized commits.
+Final validated game-source commit:
+`1dd955dc19e02801c6cde6e1bad275fa78493ab9` — Make focused menu buttons easier to see.
+The final handoff commit, precise local-state audit and heartbeat shutdown are in
+`build/qa/session-sept17/session-handoff-validation.json`. Only this session's
+heartbeat is closed; older sessions and their paused automations are preserved.
+
+The session improved combat timing and targeting, Death Mark landing/payloads,
+healing bars, camera and quest/prompt readability, touch controls, progression
+teaching, potion selection, props, and menu navigation. The last two checkpoints
+keep Comfort toggles in place during repeated input and add a clear shared gold
+focus outline. Combat Rating and Resonance retain borderless numeric displays.
+Claude and DeepSeek supplied bounded implementations/advice that were independently
+reviewed and corrected; source candidates, rejected outputs and timeouts remain
+attributed in the local evidence.
+
+Final source validation: compile 299 scripts, desktop quick/full 147/227,
+mobile quick 147, focus 85 checks on each project, menu/settings 158/255,
+Atlas 51, native controller regressions, 80 reviewed Focus originals, strict
+preflight and scoped mobile synchronization. Existing network-specific checkpoints
+retain their own transport evidence; this final UI-only change adds no new ENet claim.
+Mobile validation is host-rendered Compatibility, not physical-device testing.
+Known suite/renderer shutdown diagnostic policies remain; logs are not warning-free.
+
+The final single-attempt L1 Warrior hunt wins in 28.175 seconds, earning 120 gold
+with unchanged starting stats/equipment and god mode off. All four original images
+were reviewed. HP stays 130 throughout; there is no incoming-hit capture or potion-use
+proof. Hunt-sign setup is posed, then scripted native keyboard input drives combat.
+This is a bounded fight, not ordinary travel, a completed campaign or save/reload proof.
+See `build/qa/session-sept17/final-warrior-validation.json` for the exact result.
+
+All 46 unrelated/unfinished files from the initial inventory remain byte-identical
+and uncommitted. The final audit records an empty index and no owned changes left.
+The older September 9–10 closed-session tail remains byte-identical. No push or merge.
+
+Preserved limits and follow-ups: brewing ended in Fangmaw defeat before Kesh;
+Mage onboarding died before first clear; the earlier Warrior gold/save audit is
+partial; both Paladin attempts stopped before combat. Material Drop wording,
+guest return-play ENet and the NPC contact ellipse remain unaccepted candidates.
+Tovin's nameplate is partly obscured by the board/activity presentation in two
+final hunt captures. Controller disconnect/Settings captures duplicate one view;
+existing scroll-edge clipping and the controller Inventory keyboard footer remain.
+No chroma, PixelLab or protected-art expansion was performed. Details and accepted
+checkpoint history follow; partial experiments are not promoted to improvements.
 
 Initial verification at 06:10 UTC September 17: HEAD
 `6d2121aad981714941e60e8e725b13af98da59d6`, correct worktree/branch, empty index.
