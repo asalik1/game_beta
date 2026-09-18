@@ -133,6 +133,10 @@ var choice_count := 0
 var choice_cb := Callable()
 var speaker_label: Label
 var text_label: Label
+# Existing keyboard-reminder geometry; 16 = old 698 - 682 row pitch.
+const HINT_ORIGIN := Vector2(14, 682)
+const HINT_ROW_PITCH := 16.0
+const HINT_WIDTH := 400.0
 var hint_labels: Array = []     # hidden during cutscenes
 var _hint_play_t := 0.0         # play seconds since the last menu (hint fade clock)
 var _hint_faded := false
@@ -1010,11 +1014,13 @@ void fragment() {
 	# --------------------------------------------------- controls hint ---
 	# Two short lines on the far left so they never collide with the
 	# ability bar's labels in the bottom center.
-	var controls := _label(Vector2(14, 682), 11, Color(0.7, 0.7, 0.7), 400)
-	controls.text = "WASD move · TAB lock · SPACE unlock · E talk · M map"
-	var controls2 := _label(Vector2(14, 698), 11, Color(0.7, 0.7, 0.7), 400)
-	controls2.text = "I inventory · T skills · C codex · ESC menu"
+	var controls := _label(HINT_ORIGIN, 11, Color(0.7, 0.7, 0.7), HINT_WIDTH)
+	var controls2 := _label(HINT_ORIGIN + Vector2(0, HINT_ROW_PITCH), 11, Color(0.7, 0.7, 0.7), HINT_WIDTH)
 	hint_labels = [controls, controls2]
+	for label: Label in hint_labels:
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.custom_minimum_size.x = HINT_WIDTH
+	_update_hint_labels()
 	# The hint lines fade out after the first stretch of play (2026-08-18):
 	# a permanent "WASD move · TAB lock…" strip reads as a debug overlay.
 	# They come back at full alpha whenever a menu opens (see update_stats).
@@ -1858,11 +1864,16 @@ static func _log_agg_amount(text: String) -> int:
 
 
 func _layout_log() -> void:
+	# Keep the existing hint/feed gap when longer bound key names wrap.
+	# Reserve this footprint even after the hints fade; avoid feed motion on fade.
+	var bottom := LOG_BOTTOM
+	if hint_labels.size() == 2:
+		bottom = minf(bottom, (hint_labels[0] as Label).position.y - (HINT_ORIGIN.y - LOG_BOTTOM))
 	var n := _log_lines.size()
 	for i in n:
 		var row: Control = _log_lines[i]
 		if is_instance_valid(row):
-			row.position.y = LOG_BOTTOM - LOG_LINE_H * (n - i)
+			row.position.y = bottom - LOG_LINE_H * (n - i)
 
 
 # ------------------------------------------------------------- helpers ---
@@ -2328,7 +2339,36 @@ func _update_dossier_detail(p: Player, identity: String, rating: int) -> void:
 
 # ----------------------------------------------------------- API used by game
 
+## Keyboard reminders follow remaps; longer names wrap inside the same left
+## column. Only text/layout changes here: device visibility and fade stay owned
+## by their existing paths.
+func _update_hint_labels() -> void:
+	if hint_labels.size() != 2:
+		return
+	var first: Label = hint_labels[0]
+	var second: Label = hint_labels[1]
+	var first_text := "WASD move · %s lock · SPACE unlock · %s talk · %s map" % [
+		OS.get_keycode_string(int(game.binds.get("target", KEY_TAB))).to_upper(),
+		OS.get_keycode_string(int(game.binds.get("interact", KEY_E))).to_upper(),
+		OS.get_keycode_string(int(game.binds.get("map", KEY_M))).to_upper()]
+	var second_text := "%s inventory · %s skills · %s codex · ESC menu" % [
+		OS.get_keycode_string(int(game.binds.get("inventory", KEY_I))).to_upper(),
+		OS.get_keycode_string(int(game.binds.get("skills", KEY_T))).to_upper(),
+		OS.get_keycode_string(int(game.binds.get("codex", KEY_C))).to_upper()]
+	if first.text == first_text and second.text == second_text:
+		return
+	first.text = first_text
+	second.text = second_text
+	for label: Label in hint_labels:
+		label.size = Vector2(HINT_WIDTH, maxf(HINT_ROW_PITCH, label.get_minimum_size().y))
+	# Preserve the default 682 / 698 row origins; extra wrapped lines grow up.
+	second.position = Vector2(HINT_ORIGIN.x, HINT_ORIGIN.y + HINT_ROW_PITCH * 2.0 - second.size.y)
+	first.position = Vector2(HINT_ORIGIN.x, second.position.y - first.size.y)
+	_layout_log()
+
+
 func update_stats(p: Player) -> void:
+	_update_hint_labels()
 	# A menu opened (e.g. via hotkey) over an open HUD popover — dismiss it so
 	# it doesn't linger behind the paused menu.
 	if hud_popover and game.menus.is_open():

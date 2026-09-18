@@ -486,6 +486,35 @@ passed. Final original-image acceptance, strict preflight and the serialized
 commit are recorded in npc-prompt-placement-checkpoint-validation.json.
 See CAPITAL_ARRIVAL.md for the placement guarantee and controlled-fixture limits.
 
+Checkpoint 24 implements bottom gameplay reminders that follow current
+keyboard bindings, wrap complete key names and keep existing reward-feed
+rows above the hints. Input dispatch, fade timing and device hiding retain
+their existing behavior.
+
+The unchanged old-source diagnostic completed 105 rows: 99 passed and six
+strict failures reproduced four stale-copy and two dependent wrap/feed-layout
+requirements. It remains a failed diagnostic, with all six originals reviewed;
+the short old labels did not overlap the feed. Fixed desktop and host mobile
+each pass 105/105, including twelve real binding-button captures. Desktop
+quick/full pass 147/227; mobile import/compile and strict quick (147) pass. Three-source
+mobile parity, controller/HUD regressions (alignment 197 per project), and the
+existing paired ENet Blink regression (47 checks) pass. All 70 fixed and six
+diagnostic originals have attributed original-resolution review. Final strict
+preflight and serialized commit are required by the closure audit and recorded
+in `build/qa/session-sept17/keyboard-hints-checkpoint-validation.json`.
+
+A separate existing copy issue was observed: an authored quest still says
+press E after Talk is rebound to F3. This checkpoint changes bottom reminders;
+quest-copy adaptation is a retained, unvalidated follow-up. Partial alpha,
+chat/feed and device controls are presentation loans, not elapsed fade, online
+chat, ordinary combat or physical-device proof. Established renderer shutdown
+diagnostics and the suite ObjectDB warning retain their existing verdict policy.
+
+DeepSeek supplied the advisory draft; its raw implementation was rejected and
+the accepted candidate is a locally corrected derivative. See HUD_ALIGNMENT.md
+for controls, provenance and fixture limits. All 46 unrelated paths remain
+byte-exact. Older closed-session history is preserved.
+
 The second save-enabled Paladin attempt remains an unfinished driver experiment:
 seed 943493 stopped at (923.764,1176.243) before combat, with HP 125 / MP 55
 unchanged. Eight opening checks and two native originals are retained; no defeat,

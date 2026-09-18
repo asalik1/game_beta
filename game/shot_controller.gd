@@ -11,6 +11,16 @@ func _ready() -> void:
 	game.play_started = true
 	game.hud.visible = true
 	await sim_wait(4.0)
+	if flag("keyboard-hints"):
+		var user_root := ProjectSettings.globalize_path("user://").replace("\\", "/")
+		if not user_root.to_lower().contains("/build/qa/"):
+			push_error("Keyboard-hints fixture requires isolated build/qa APPDATA")
+			finish(1)
+			return
+		var hints_error: String = await preload("res://scripts/tests/keyboard_hints_live.gd").run(self)
+		if hints_error != "": push_error(hints_error)
+		finish(0 if hints_error == "" else 1)
+		return
 	if flag("pad-context"):
 		var user_root := ProjectSettings.globalize_path("user://").replace("\\", "/")
 		if not user_root.to_lower().contains("/build/qa/"):

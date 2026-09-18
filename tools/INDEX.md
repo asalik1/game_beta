@@ -500,6 +500,14 @@ default potion_hud separately for real drinking. Isolate APPDATA; add
 `--mobile --renderer=gl_compatibility --touch` for host mobile source.
 See POTION_CYCLE_STOCK.md for exact scope and limitations.
 
+Keyboard reminder QA: `shot.bat controller --keyboard-hints --timeout=240`
+uses the actual binding editor and ordinary Inventory/Atlas key dispatch, then
+controlled long-key, reward-feed, local-chat and device/fade presentation checks.
+Run in an isolated profile; preserve strict failures for classification rather
+than assuming a baseline whitelist. Review all six originals. Full validation
+also retains default controller, alignment, clearance and existing paired ENet
+regressions. See HUD_ALIGNMENT.md for scope and limits.
+
 Return-to-play input QA: `shot.bat controller --pad-context --timeout=180`
 uses actual keyboard/pad events with a lent cooldown and synthetic dialogue.
 Baseline requires only the two fresh-tap retention findings. Run default

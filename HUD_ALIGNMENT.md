@@ -181,3 +181,53 @@ uses an empty loopback host, not remote replication. The existing overlapping
 synthetic ally bodies in the far-right dossier pose are layout-fixture limits.
 Evidence, rejected attempts, source hashes and resulting commit are retained in
 `build/qa/session-sept17/attribute-readiness-checkpoint-validation.json`.
+
+## Keyboard reminders after rebinding — September 18
+
+The gameplay reminders now use the current target, interaction, map, inventory,
+skills and codex bindings. Fixed WASD movement, Space unlock and Escape menu
+remain literal. Full key names wrap within the existing left column; shortening
+bindings restores the original row positions. The reward feed reflows above the
+hint block with its original gap, including already visible rows. Font size,
+fade timing, device hiding and input behavior stay unchanged.
+
+The optional `shot.bat controller --keyboard-hints` episode changes bindings
+through the actual settings controls, observes ordinary cooldown readiness,
+and sends single held F5/F4 presses to open Inventory/Atlas. It uses controlled
+long key names, a local chat presentation, a reward-feed presentation and a
+partial-alpha loan; no resources or external messages are changed. All owned
+state is restored in the disposable profile. Reserved binding collisions are
+an existing separate policy: this change does not make every stored binding
+usable. The actual settings dispatch scope is not an ordinary combat or
+save/reload claim.
+
+The unchanged old-source diagnostic completed 105 rows: 99 passed and six
+strict failures reproduced four stale-copy and two dependent wrap/feed-layout
+requirements. It remains a failed diagnostic, with all six originals reviewed;
+the short old labels did not overlap the feed. Fixed desktop and host mobile
+each pass 105/105, including twelve real binding-button captures. Desktop
+quick/full pass 147/227; mobile import/compile and strict quick (147) pass. Three-source
+mobile parity, controller/HUD regressions (alignment 197 per project), and the
+existing paired ENet Blink regression (47 checks) pass. All 70 fixed and six
+diagnostic originals have attributed original-resolution review. Final strict
+preflight and serialized commit are required by the closure audit and recorded
+in `build/qa/session-sept17/keyboard-hints-checkpoint-validation.json`.
+
+A separate existing copy issue was observed: an authored quest still says
+press E after Talk is rebound to F3. This checkpoint changes bottom reminders;
+quest-copy adaptation is a retained, unvalidated follow-up. Partial alpha,
+chat/feed and device controls are presentation loans, not elapsed fade, online
+chat, ordinary combat or physical-device proof. Established renderer shutdown
+diagnostics and the suite ObjectDB warning retain their existing verdict policy.
+
+Host-rendered mobile-source checks use Compatibility and controlled device
+handoffs; no physical-device execution is claimed. The existing paired ENet
+Blink regression exercises its established transport path, not a new remap
+transport claim. Every accepted image is reviewed at original resolution;
+rejected and partial evidence remains available.
+
+DeepSeek was used as an advisory implementation partner. The first request
+exhausted its output budget without code; the second raw implementation was
+rejected. The retained candidate is a locally corrected derivative with
+independent source review. Exact source hashes, input-config history, findings,
+originals and final commit are retained in the checkpoint24 validation receipt.
