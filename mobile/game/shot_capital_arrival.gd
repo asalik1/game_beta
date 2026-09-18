@@ -11,6 +11,10 @@ func _ready() -> void:
 		print("CAPITAL ARRIVAL REFUSAL: isolated capital-arrival-native-candidate APPDATA required")
 		finish(1)
 		return
+	if flag("menu-binding-copy") and (flag("menu-shortcuts") or flag("baseline") or flag("npc-prompt") or flag("npc-prompt-controls") or flag("fountain-prompt") or flag("fountain-after") or flag("arrival-consumers") or flag("no-capture") or flag("touch") or OS.has_feature("mobile")):
+		print("Menu binding copy requires isolated host mode without forced touch; actual Controls toggle is exercised later")
+		finish(1)
+		return
 	if flag("menu-shortcuts") and (flag("baseline") or flag("npc-prompt") or flag("fountain-prompt") or flag("arrival-consumers") or flag("no-capture")):
 		print("Menu shortcuts requires its isolated strict mode")
 		finish(1)
@@ -24,6 +28,8 @@ func _ready() -> void:
 		finish(1)
 		return
 	shot_dir += "/" + ("before" if flag("baseline") else "after")
+	if flag("menu-binding-copy"):
+		shot_dir += "/menu_binding_copy"
 	if flag("menu-shortcuts"):
 		shot_dir += "/menu_shortcuts"
 	if flag("npc-prompt"):

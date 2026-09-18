@@ -816,6 +816,17 @@ Atlas adapter for compile-first, fresh muted profiles and full/mobile regression
 Evidence, final acceptance and resulting commit:
 `build/qa/session-sept17/atlas-keyboard-checkpoint-validation.json`.
 
+### Menu closing hints follow keyboard bindings (checkpoint 28)
+
+Use `shot.bat capital_arrival --menu-binding-copy --timeout=360` through the
+source-pinned footer adapter. It runs one isolated footer episode after the accepted
+arrival prefix; do not add --baseline, --touch or --no-capture. Classify actual
+copy-only diagnostic failures before a production trial, then require strict
+focused/default menu/controller, full/mobile gates and original reviews.
+
+Final evidence and resulting commit:
+`build/qa/session-sept17/menu-binding-copy-checkpoint-validation.json`.
+
 ## In-engine shot rigs (windowed, boot the real game, screenshot to disk)
 
 `shot.bat wayfinder --timeout=240` — local tactical map, observed frontiers,

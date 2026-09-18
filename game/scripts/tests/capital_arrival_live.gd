@@ -20,6 +20,7 @@ var held_key := 0
 var boot_readiness := {}
 var escape_input := {}
 
+var menu_binding_copy_episode := {}
 var menu_shortcuts_episode := {}
 var npc_prompt_episode := {}
 var fountain_episode := {"movement": [], "states": []}
@@ -74,6 +75,9 @@ func run(rig: ShotRig) -> Dictionary:
 		"qualification": "Single normal main.tscn Game; standard QA mage/ch1 boot and opening choice, no saves, no god mode, no body/camera position or physics override. Real Pause Travel to Crownfall click, real welcome key input, live one-second idle and one-second A escape. No save/load or ENet proof.",
 		"mouse_clicks": ui.mouse_clicks, "key_taps": ui.key_taps,
 		"settings": g.settings.duplicate(true)}
+	if not menu_binding_copy_episode.is_empty():
+		report["menu_binding_copy"] = menu_binding_copy_episode
+		report["qualification"] = menu_binding_copy_episode.scope
 	if not menu_shortcuts_episode.is_empty():
 		report["menu_shortcuts"] = menu_shortcuts_episode
 		report["qualification"] = menu_shortcuts_episode.scope
@@ -177,6 +181,9 @@ func _run() -> String:
 	_check("movement.fountain_cleared", not bool(escaped.fountain_covering), escaped)
 	_check("movement.stopped", p.velocity.length() <= 1.0, _vec(p.velocity))
 	await _capture("02_keyboard_escape")
+	if r.flag("menu-binding-copy"):
+		menu_binding_copy_episode = await preload("res://scripts/tests/menu_binding_copy_live.gd").run(self)
+		return String(menu_binding_copy_episode.error)
 	if r.flag("menu-shortcuts"):
 		menu_shortcuts_episode = await preload("res://scripts/tests/menu_shortcuts_live.gd").run(self)
 		return String(menu_shortcuts_episode.error)

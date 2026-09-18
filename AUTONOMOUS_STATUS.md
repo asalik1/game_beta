@@ -634,6 +634,38 @@ duplicate Settings capture limitation. Host rendering is not physical-device val
 no new ENet transport claim is made. Existing suite ObjectDB and renderer shutdown
 diagnostic policy remains in force; logs are not claimed warning-free.
 
+Checkpoint 28 makes menu closing hints follow keyboard bindings.
+
+Inventory Gear, Stats and Potions, Skills Talents and Attributes, Codex and the capital
+Map now name their current keyboard closing binding in the footer. Default keys, input
+routing, unchanged Ability Assignments copy, touch footer selection and the independent
+controller Back legend retain their existing behavior. Footer text is constructed when
+its view opens; this does not promise live refresh while a view stays open.
+
+The old-source diagnostic records 614 checks and 22 actual stale-copy failures plus
+their dependent runtime aggregate. It remains a classified strict rejection, not a
+passing baseline. Fixed focused receipts pass 614/614 checks on desktop/host-rendered
+mobile; menu regressions pass 158/158. Quick/full suites pass 147/227; mobile quick
+passes 147. All 64 original images have attributed original-resolution reviews.
+Source-bound findings and evidence are retained in
+`build/qa/session-sept17/menu-binding-copy-checkpoint-validation.json`. Final strict
+preflight, closure, commit and worktree audit remain required and are recorded there.
+
+The focused episode reuses the controlled capital-arrival route, then native same-frame
+key opening/closing, real binding-capture callbacks, current-tab markers and long-key
+text geometry. Menu/settings construction and control revelation are explicit setup
+conveniences. Touch uses the real Controls callback and an outside-shell ScreenTouch;
+controller input uses a disclosed host-focus loan, the opening D-pad command and
+separate Back legend/close control. It does not equate D-pad opening labels with closing
+commands. Character saves remain disabled; binding capture and cleanup check the
+isolated primary binding JSON, without claiming whole-profile restoration. Settings and
+preview loans are restored. Campaign Field Atlas, editable-field/duplicate-key
+regressions, networking and ordinary progression are not newly proved by this episode.
+Existing controller disconnect coverage retains its log witness and duplicate Settings
+image limitation. Host Compatibility rendering is not physical-device validation.
+Established suite/renderer shutdown policy remains visible; logs are not claimed
+warning-free.
+
 # Session closed — September 9–10, 2026
 
 The session is closed with **18 validated game checkpoints**. New feature and

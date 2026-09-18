@@ -346,6 +346,13 @@ func _diff_tip(item: Dictionary) -> String:
 	return Items.diff_text(item, game.local_player.equipment.get(item["slot"]))
 
 
+## Match the keyboard toggle used by _input. Controller Back has its own
+## live legend; its D-pad opening shortcut is not a menu-closing command.
+func menu_key(action: String) -> String:
+	var key := int(game.binds.get(action, KEY_M if action == "map" else KEY_NONE))
+	return OS.get_keycode_string(key).to_upper()
+
+
 func _hint(vbox: Node, text := "ESC to close", touch_text := "") -> void:
 	if game and game.touch_mode:
 		if touch_text != "":
@@ -2176,7 +2183,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		return
 	if tab == "potions":
 		_build_potion_tab(vbox, game.local_player)
-		_hint(vbox, "ESC, ✕, click outside, or I to close")
+		_hint(vbox, "ESC, ✕, click outside, or %s to close" % menu_key("inventory"))
 		return
 	var hbox := HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 24)
@@ -2553,7 +2560,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		if p.bags.size() < Balance.MAX_BAGS:
 			for i in grid.columns:
 				_bag_locked(grid, p.bags.size())
-	_hint(vbox, "ESC, ✕, click outside, or I to close")
+	_hint(vbox, "ESC, ✕, click outside, or %s to close" % menu_key("inventory"))
 
 
 ## One equipped-slot card of the inventory's left column: [icon well][name +
@@ -3103,7 +3110,7 @@ func _build_stats_tab(vbox: VBoxContainer, p: Player) -> void:
 		if last != null:
 			last.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_stat_flash = {}
-	_hint(vbox, "ESC, ✕, click outside, or I to close")
+	_hint(vbox, "ESC, ✕, click outside, or %s to close" % menu_key("inventory"))
 
 
 ## PAPER DOLL (P7.E, 2026-08-19; the reference bag/character screens): the
@@ -4062,7 +4069,7 @@ func _build_talent_loadouts_tab(vbox: VBoxContainer, p: Player) -> void:
 			b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			b.add_theme_constant_override("icon_max_width", 64)
 			_talent_card_style(b, theme_col, pts > 0, unlocked)
-	_hint(vbox, "ESC / T to close — first row is always open. Later rows open at their level or when the row above is full.")
+	_hint(vbox, "ESC / %s to close — first row is always open. Later rows open at their level or when the row above is full." % menu_key("skills"))
 
 
 const ABILITY_CARD := 72.0  # a square the variant icon FILLS (icons are 64px art)
@@ -4412,7 +4419,7 @@ func _build_attributes_tab(vbox: VBoxContainer, p: Player) -> void:
 	sheet.add_theme_constant_override("separation", 5)
 	smargin.add_child(sheet)
 	_stat_sheet_build(sheet, _stat_sheet_data(p), true)
-	_hint(vbox, "ESC / T to close")
+	_hint(vbox, "ESC / %s to close" % menu_key("skills"))
 
 
 ## Spending rebuilds the sheet and highlights changed values. Keep both reading
@@ -5702,7 +5709,7 @@ func _open_capital_map() -> void:
 		district_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 		district_label.custom_minimum_size = Vector2(39 + district_label.text.length() * 3.8, 16)
 		district_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	_hint(vbox, "ESC / M to close")
+	_hint(vbox, "ESC / %s to close" % menu_key("map"))
 
 
 # ------------------------------------------------------------------- codex ---

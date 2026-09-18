@@ -94,7 +94,7 @@ static func open(m: Menus, tab := "", boss := "") -> void:
 	body.add_child(content)
 	_ui = {"content": content}
 	_build_content(m)
-	m._hint(vbox, "ESC, ✕, click outside, or C to close")
+	m._hint(vbox, "ESC, ✕, click outside, or %s to close" % m.menu_key("codex"))
 
 
 ## True while the codex search field owns keyboard focus — menus._input then
