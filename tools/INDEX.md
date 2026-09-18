@@ -804,6 +804,18 @@ chill, chain timing, pause, touch interaction and two-peer ENet state/request fl
 | `gen_asset_manifest.py` | regenerate `game/assets/asset_manifest.json` (exports can't scan dirs; `export_all.bat` runs it). |
 
 
+### Field Atlas navigation and return hints (checkpoint 27)
+
+Use `shot.bat wayfinder --atlas-keyboard --timeout=240` for native Previous/Next focus;
+`--baseline` is reserved for the exact old-source six-finding control. Use `shot.bat
+wayfinder --atlas-return-hints --timeout=240` separately for keyboard/pad/touch footer
+copy and input. The footer diagnostic has no baseline waiver: classify actual copy-only
+failures with complete=false before a production trial. Run through the source-pinned
+Atlas adapter for compile-first, fresh muted profiles and full/mobile regression gates.
+
+Evidence, final acceptance and resulting commit:
+`build/qa/session-sept17/atlas-keyboard-checkpoint-validation.json`.
+
 ## In-engine shot rigs (windowed, boot the real game, screenshot to disk)
 
 `shot.bat wayfinder --timeout=240` — local tactical map, observed frontiers,

@@ -49,7 +49,9 @@ static func open(m: Menus) -> void:
 	atlas.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	atlas.custom_minimum_size = Vector2(1120, 498)
 	box.add_child(atlas)
-	m._hint(box, "Select a room · drag to pan · scroll to zoom · %s to return" % m.game.control_hint("map", "Map"), "Select a room · drag to pan · use + / − to zoom")
+	# The gameplay Map button snaps the cursor while a menu is open.
+	var return_hint := "[%s]" % m.game.gamepad.label("cancel") if m.game.gamepad != null and m.game.gamepad.active else m.game.control_hint("map", "Map")
+	m._hint(box, "Select a room · drag to pan · scroll to zoom · %s to return" % return_hint, "Select a room · drag to pan · use + / − to zoom")
 
 
 func _ready() -> void:
@@ -98,7 +100,7 @@ func _ready() -> void:
 	chart.add_child(toolbar)
 	for spec in [["−", -1], ["+", 1], ["Recenter", 0]]:
 		var value := int(spec[1])
-		var button := menus._btn(toolbar, String(spec[0]), func() -> void:
+		var button := _button(toolbar, String(spec[0]), func() -> void:
 			if value == 0:
 				_zoom = 1.0
 				_pan = Vector2.ZERO
@@ -108,7 +110,7 @@ func _ready() -> void:
 		button.custom_minimum_size = Vector2(46 if value != 0 else 100, 44)
 		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		button.tooltip_text = "Zoom out" if value < 0 else ("Zoom in" if value > 0 else "Fit the explored map")
-	var trail := menus._btn(toolbar, "Main trail", func() -> void:
+	var trail := _button(toolbar, "Main trail", func() -> void:
 		var target: int = Nav.main_trail(game)
 		if target >= 0:
 			# A visible frontier on the main road may be outside a detached
@@ -123,7 +125,7 @@ func _ready() -> void:
 	trail.name = "AtlasMainTrail"
 	trail.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	trail.tooltip_text = "Select the next known step on the main road"
-	var position_button := menus._btn(toolbar, "Your position", _show_position)
+	var position_button := _button(toolbar, "Your position", _show_position)
 	position_button.name = "AtlasYourPosition"
 	position_button.custom_minimum_size = Vector2(126, 44)
 	position_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -159,6 +161,33 @@ func _ready() -> void:
 	actions.add_theme_constant_override("separation", 6)
 	sidebar_column.add_child(actions)
 	_refresh(true)
+	_focus_keyboard_entry()
+
+
+func _focus_keyboard_entry() -> void:
+	await get_tree().process_frame
+	# A replaced/closing reader must not take focus from its successor.
+	if not is_instance_valid(self) or is_queued_for_deletion() or menus.current != "map" \
+			or not is_instance_valid(menus.root) or menus.root.is_queued_for_deletion() \
+			or not menus.root.is_ancestor_of(self) or game.touch_mode \
+			or (game.gamepad != null and game.gamepad.active):
+		return
+	var focused := get_viewport().gui_get_focus_owner()
+	if is_instance_valid(focused) and not focused.is_queued_for_deletion() and focused.is_visible_in_tree():
+		return # Keep focus already chosen by the user.
+	var button := find_child("AtlasYourPosition", true, false) as Button
+	if button != null and button.is_visible_in_tree() and not button.disabled:
+		button.grab_focus()
+
+
+## Keep the shared button behavior and chrome; only Atlas focus gets an outline.
+func _button(parent: Node, text: String, callback: Callable, color := Color(1, 1, 1), enabled := true) -> Button:
+	var button := menus._btn(parent, text, callback, color, enabled)
+	var focus := _style(Color(0, 0, 0, 0), UITheme.GOLD_BRIGHT)
+	focus.draw_center = false
+	focus.set_border_width_all(2)
+	button.add_theme_stylebox_override("focus", focus)
+	return button
 
 
 func _style(fill: Color, line: Color, radius := 8) -> StyleBoxFlat:
@@ -285,7 +314,8 @@ func _show_details(preserve_view := false) -> void:
 	var offset := _detail_scroll.scroll_vertical if preserve_view else 0
 	var focus_name := ""
 	var focused := get_viewport().gui_get_focus_owner()
-	if preserve_view and is_instance_valid(focused) and actions.is_ancestor_of(focused):
+	# Selection rebuilds actions too; only scrolling depends on preserve_view.
+	if is_instance_valid(focused) and actions.is_ancestor_of(focused):
 		focus_name = String(focused.name)
 	for container in [details, actions]:
 		for c in container.get_children():
@@ -335,14 +365,14 @@ func _show_details(preserve_view := false) -> void:
 	var route_copy := _label(details, _message if _message != "" else message, 15, MUTED)
 	route_copy.custom_minimum_size.x = SIDE_WIDTH - 36
 	var pinned: bool = game.hud.wayfinder.pinned_room == selected
-	var pin_button := menus._btn(actions, "Remove route" if pinned else "◆  Set route", _pin_selected,
+	var pin_button := _button(actions, "Remove route" if pinned else "◆  Set route", _pin_selected,
 		UITheme.GOLD_BRIGHT, pinned or (not here and not _route.is_empty() and not game.pvp_active and not game.endgame_active))
 	pin_button.name = "PinRoute"
 	pin_button.custom_minimum_size.y = 44
 	pin_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var travel_ok: bool = game.travel_target(selected) and not game.barrier_active \
 		and game.state == Game.ST_PLAYING and not game.local_player.dead and not game.local_player.downed
-	var travel_button := menus._btn(actions, "Travel to sanctuary" if game.room_type(selected) != "boss" else "Travel to cleared arena", _travel_selected, Nav.SAFE, travel_ok)
+	var travel_button := _button(actions, "Travel to sanctuary" if game.room_type(selected) != "boss" else "Travel to cleared arena", _travel_selected, Nav.SAFE, travel_ok)
 	travel_button.name = "Travel"
 	travel_button.custom_minimum_size.y = 44
 	travel_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -358,7 +388,7 @@ func _show_details(preserve_view := false) -> void:
 	actions.add_child(known_row)
 	for step in [-1, 1]:
 		var move := int(step)
-		var b := menus._btn(known_row, "‹ Previous" if move < 0 else "Next ›", func() -> void:
+		var b := _button(known_row, "‹ Previous" if move < 0 else "Next ›", func() -> void:
 			var idx: int = _rooms.find(selected)
 			select_room(_rooms[posmod(idx + move, _rooms.size())]))
 		b.name = "AtlasPrevious" if move < 0 else "AtlasNext"

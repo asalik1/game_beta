@@ -4,6 +4,13 @@ extends ShotRig
 
 
 func _ready() -> void:
+	if flag("atlas-return-hints") and (flag("atlas-keyboard") or flag("baseline") or flag("no-capture")):
+		push_error("Atlas return hints require an isolated strict capture episode")
+		finish(1)
+		return
+	if flag("atlas-keyboard") or flag("atlas-return-hints"):
+		await preload("res://scripts/tests/atlas_keyboard_live.gd").run(self)
+		return
 	await boot("warrior", "ch1", false)
 	game.dev_god = true
 	game.settings["touch_controls"] = false
