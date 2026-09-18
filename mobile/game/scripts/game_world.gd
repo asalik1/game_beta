@@ -2307,7 +2307,8 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 		npc.add_child(smoke)
 	var prompt := Label.new()
 	prompt.z_index = Balance.INTERACT_PROMPT_Z
-	prompt.text = touchify(prompt_text)
+	prompt.set_meta("interaction_authored_copy", prompt_text)
+	prompt.text = interaction_copy(prompt_text)
 	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	# Parchment interact prompt (gameplay-polish 2026-08-18): the body BOLD face
 	# (mixed case reads at 14px; the caps-only world face would shout a long
@@ -2335,8 +2336,7 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	pill.content_margin_top = 2.0
 	pill.content_margin_bottom = 2.0
 	prompt.add_theme_stylebox_override("normal", pill)
-	prompt.size = Vector2.ZERO
-	prompt.size = prompt.get_minimum_size().max(Vector2(96, 20))
+	_size_factory_prompt(prompt)
 	prompt.position = Vector2(8.0 - prompt.size.x * 0.5, -60)
 	if not scenery_prop:
 		prompt.set_meta("npc_prompt_anchor", prompt.position)

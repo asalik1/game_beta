@@ -124,6 +124,28 @@ live; editor setup and persisted keybind changes are controlled and restored.
 Run desktop and host mobile Compatibility without forced touch. See CONTROLLER.md
 for ambiguous-remap, device, GUI-consumption and transport coverage limits.
 
+### Remapped interaction-copy QA (checkpoint 26)
+
+Run `shot.bat controller --interaction-copy --timeout=360` for the strict
+old-source diagnostic. Fixed runs also pass `--interaction-copy-guards` for
+bounded null-owner and literal-key controls. The optional helper checks current
+tracker/new Journal copy, factory NPC/prop pill remeasurement, binding/device/
+label-scheme transitions, measured long-key text growth, short restoration and
+an actual remapped Maren dialogue start. Eleven focused originals are required.
+Existing default controller behavior remains a separate regression.
+
+The root-only runner and fresh QA3 lifecycle are under
+`build/qa/session-sept17/remapped-interaction-copy-candidate/validation-v3/`.
+It requires compile-first, fresh profiles, one engine, actual diagnostic
+classification, strict full/mobile/default/ENet gates, attributed original
+reviews and final preflight. QA2's forced-wrap-only failure remains preserved;
+it is not accepted evidence for QA3. Mobile uses Compatibility without forced
+--touch so the actual Controls toggle can run. NPC pose/book anchor, menu/scroll/
+pad-focus setup and synchronous settings-write loans are controlled fixture
+scope; no character-save, complete quest or physical-device claim is made.
+Actual QA3 results, final strict preflight and resulting commit:
+`build/qa/session-sept17/interaction-copy-checkpoint-validation.json`.
+
 Alchemy UI QA: `shot.bat alchemy --timeout=240` checks the real recipe bench,
 39 recipe previews, exact paid actions, input, live quotes, cancelled learning,
 overflow and reading/focus continuity. Seven native views cover novice, learned
@@ -780,6 +802,7 @@ chill, chain timing, pause, touch interaction and two-peer ENet state/request fl
 | `tools/art/pl_anim_ids.py` | print a PixelLab character's per-direction anim ids for a clip (frame-URL gotcha). |
 | `tools/content/gen_capital.py` | regenerate `capital_hub.gd` (the 9-room, 3×3 Crownfall capital content module). |
 | `gen_asset_manifest.py` | regenerate `game/assets/asset_manifest.json` (exports can't scan dirs; `export_all.bat` runs it). |
+
 
 ## In-engine shot rigs (windowed, boot the real game, screenshot to disk)
 

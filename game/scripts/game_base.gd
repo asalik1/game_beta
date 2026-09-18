@@ -40,6 +40,63 @@ func refresh_touch_mode() -> void:
 	touch_mode = OS.has_feature("mobile") or ("--touch" in OS.get_cmdline_user_args()) or bool(settings.get("touch_controls", false))
 
 
+## Binding-aware instructions only at explicit quest/factory display sites.
+## Dialogue and other authored prose keep the existing touchify policy.
+func interaction_copy(s: String) -> String:
+	if touch_mode or (gamepad != null and gamepad.active):
+		return touchify(s)
+	var key_name := OS.get_keycode_string(int(binds.get("interact", KEY_E))).to_upper()
+	var pattern := RegEx.new()
+	pattern.compile("\\b([Pp]ress|[Hh]old) E\\b")
+	var matches := pattern.search_all(s)
+	matches.reverse()
+	for hit: RegExMatch in matches:
+		# Literal concatenation also supports printable dollar/backslash keys.
+		s = s.substr(0, hit.get_start()) + hit.get_string(1) + " " + key_name + s.substr(hit.get_end())
+	if s.begins_with("E — "):
+		s = key_name + s.substr(1)
+	return s
+
+
+## Event-only refresh: bindings, control mode, controller identity/label scheme.
+## Factory ownership prevents rewriting specialty prompts or an old world.
+func refresh_interaction_copy() -> void:
+	if not is_inside_tree() or is_queued_for_deletion():
+		return
+	if is_instance_valid(world) and not world.is_queued_for_deletion() and world.is_inside_tree():
+		for entry in interactables:
+			var node: Variant = entry.get("node")
+			var prompt: Variant = entry.get("prompt")
+			if not is_instance_valid(node) or not node is Node2D \
+					or node.is_queued_for_deletion() or not world.is_ancestor_of(node): continue
+			if not is_instance_valid(prompt) or not prompt is Label \
+					or prompt.is_queued_for_deletion() or not node.is_ancestor_of(prompt) \
+					or not prompt.has_meta("interaction_authored_copy"): continue
+			var copy := interaction_copy(String(prompt.get_meta("interaction_authored_copy")))
+			if prompt.text == copy: continue
+			var old_width: float = prompt.size.x
+			prompt.text = copy
+			_size_factory_prompt(prompt)
+			# Both authored anchors are top-left positions. Shift only x, leaving
+			# road-gate heights and current body/HUD clearance displacement intact.
+			var center_shift := Vector2((old_width - prompt.size.x) * 0.5, 0.0)
+			prompt.position += center_shift
+			for key in ["npc_prompt_anchor", "landmark_prompt_anchor"]:
+				if prompt.has_meta(key):
+					var anchor: Vector2 = prompt.get_meta(key)
+					anchor += center_shift
+					prompt.set_meta(key, anchor)
+	if is_instance_valid(hud) and not hud.is_queued_for_deletion() \
+			and is_instance_valid(hud.quest_label) and zone_count > 0:
+		refresh_quest()
+
+
+## Same style-inclusive minimum at creation and on later copy changes.
+func _size_factory_prompt(prompt: Label) -> void:
+	prompt.size = Vector2.ZERO
+	prompt.size = prompt.get_minimum_size().max(Vector2(96, 20))
+
+
 ## Rewrite keyboard prompts ("press E/Q/Space") into touch wording in player-facing
 ## strings when on a touchscreen — a no-op on desktop, so authored text keeps its
 ## keyboard phrasing on PC. Applied at display points (quest line, dialogue). Menu
@@ -2311,6 +2368,7 @@ func _convo_variant(node: Dictionary) -> Dictionary:
 
 func save_binds() -> void:
 	SaveGame.atomic_store("user://keybinds.json", JSON.stringify(binds))
+	refresh_interaction_copy()
 
 func load_binds() -> void:
 	var data := SaveGame.read_json("user://keybinds.json")  # main, then .bak (CR-006)

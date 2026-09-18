@@ -45,6 +45,7 @@ static func open(m: Menus) -> void:
 		var schemes := ["auto", "xbox", "playstation"]
 		m.game.settings.pad_labels = schemes[(schemes.find(m.game.settings.pad_labels) + 1) % schemes.size()]
 		m.game.save_settings()
+		m.game.refresh_interaction_copy()
 		open(m))
 	m._lbl(body, "In menus: left stick moves the cursor; D-pad snaps; hold Confirm to drag; right stick scrolls. Focus a text field and press %s for the on-screen keyboard." % m.game.gamepad.label("potion"), 14, UITheme.TEXT_MUTED)
 	m._lbl(body, "Right-stick flicks select a target in that direction. Release the stick before the next flick. Releasing the lock restores automatic targeting.", 14, UITheme.TEXT_MUTED)

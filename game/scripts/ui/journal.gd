@@ -175,7 +175,7 @@ static func _quests(m: Menus, list: VBoxContainer) -> void:
 	var g := m.game
 	_section(m, list, "MAIN QUEST", "Your immediate path", GOLD)
 	var main := _card(list, GOLD)
-	var obj := g.touchify(Story.quest_text(g.quest_key))
+	var obj := g.interaction_copy(Story.quest_text(g.quest_key))
 	_status_line(m, main, "◆  IN PROGRESS", "STORY", GOLD)
 	var title := m._lbl(main, obj if obj != "" else "Explore.", 18, Color.WHITE)
 	_wrap(title)

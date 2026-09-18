@@ -120,8 +120,7 @@ func _set_active(on: bool) -> void:
 			hint.visible = not active and not game.touch_mode
 	if ui != null:
 		ui.refresh_hints()
-	if game.hud != null:
-		game.refresh_quest()
+	game.refresh_interaction_copy()
 
 
 func _input(event: InputEvent) -> void:
@@ -144,6 +143,8 @@ func _input(event: InputEvent) -> void:
 		cancel_held()
 		device = event.device
 		rearm = false
+		if active:
+			game.refresh_interaction_copy()
 	if meaningful:
 		_set_active(true)
 	_sync_context()

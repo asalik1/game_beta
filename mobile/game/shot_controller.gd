@@ -6,11 +6,26 @@ var decision := -1
 
 
 func _ready() -> void:
+	if flag("interaction-copy"):
+		var root := ProjectSettings.globalize_path("user://").replace("\\", "/").to_lower()
+		if not root.contains("/build/qa/") or flag("keyboard-hints") or flag("pad-context") or flag("no-capture"):
+			push_error("Interaction-copy requires isolated build/qa profile and exclusive capture mode")
+			finish(1)
+			return
+	elif flag("interaction-copy-guards"):
+		push_error("Interaction-copy guards require interaction-copy mode")
+		finish(1)
+		return
 	await boot("archer", "ch1", false)
 	# The rig's direct pick_class seam skips the real name-entry confirmation.
 	game.play_started = true
 	game.hud.visible = true
 	await sim_wait(4.0)
+	if flag("interaction-copy"):
+		var copy_error: String = await preload("res://scripts/tests/interaction_copy_live.gd").run(self)
+		if copy_error != "": push_error(copy_error)
+		finish(0 if copy_error == "" else 1)
+		return
 	if flag("keyboard-hints"):
 		var user_root := ProjectSettings.globalize_path("user://").replace("\\", "/")
 		if not user_root.to_lower().contains("/build/qa/"):

@@ -503,9 +503,10 @@ diagnostic originals have attributed original-resolution review. Final strict
 preflight and serialized commit are required by the closure audit and recorded
 in `build/qa/session-sept17/keyboard-hints-checkpoint-validation.json`.
 
-A separate existing copy issue was observed: an authored quest still says
-press E after Talk is rebound to F3. This checkpoint changes bottom reminders;
-quest-copy adaptation is a retained, unvalidated follow-up. Partial alpha,
+At checkpoint 24, an authored quest still said press E after Talk was rebound
+to F3; quest-copy adaptation was retained as an unvalidated follow-up. The
+checkpoint 26 interaction-copy section below records its separate scope and
+validation status. Checkpoint 24 changed bottom reminders only. Partial alpha,
 chat/feed and device controls are presentation loans, not elapsed fade, online
 chat, ordinary combat or physical-device proof. Established renderer shutdown
 diagnostics and the suite ObjectDB warning retain their existing verdict policy.
@@ -555,6 +556,47 @@ exact five-source mobile sync, source/UID/old-history preservation and final
 15-path commit audit are recorded with the resulting commit in
 `build/qa/session-sept17/menu-shortcuts-checkpoint-validation.json`.
 See CONTROLLER.md. All 46 unrelated files remain unchanged.
+
+Checkpoint 26 keeps interaction instructions in sync with the current Talk
+binding in the quest tracker, newly constructed Journal and factory-created
+NPC/prop labels. Authored text, pill center, anchor Y and
+current clearance offsets are preserved through binding/device/label changes.
+Specialty nonfactory prompts and live refresh of an already-open Journal remain
+outside scope; existing touch/controller wording policy remains intact.
+
+The QA2 fixed probe was rejected only by an unsupported wrapping assertion:
+its complete long-key objective measured 558.046875px inside a 560px label,
+against the 414.609375px default at the same font size. QA3 measures actual
+nonempty width growth and retains full text/containment checks. It does not
+force wrapping or change production layout. All rejected QA2 files, source
+pins and eleven originals remain preserved. QA3 old-source diagnostic records 37 failed
+rows in 182 checks; exact IDs and dependent structural findings are classified in the
+receipt. Fixed desktop/mobile focus passes 191/191; quick/full passes 147/227, mobile
+quick 147. Alignment checks pass 197/197, NPC controls 94/94, fountain 69/69, and
+existing paired Blink 47. All 121 originals have attributed original-resolution review.
+Final strict preflight, exact source/mobile/UID preservation, serialized commit and
+local worktree audit are required for acceptance and recorded in
+`build/qa/session-sept17/interaction-copy-checkpoint-validation.json`; the resulting
+commit is recorded there.
+
+All 279 rejected QA2 files and ten owned source/UID snapshots are preserved. The first
+DeepSeek call exhausted its reasoning budget; the second raw implementation was rejected
+for invented APIs and anchor/refresh defects. The retained implementation is a locally
+corrected derivative, independently source-reviewed. KEY_DOLLAR/KEY_BACKSLASH guards
+returned the host names DOLLAR/BACKSLASH; they do not prove insertion of actual literal
+metacharacter names. Known suite ObjectDB warnings and renderer shutdown diagnostics
+retain the existing verdict policy; no warning-free-log claim is made. The existing
+clearance touch presentation directly mutates settings and bypasses set_touch_controls
+refresh, so its stale press E quest copy is not an actual control-transition oracle.
+Focused05 uses the real callback and checks tap Act. The existing Atlas return footer is
+a separate queued follow-up; this checkpoint does not claim to resolve it.
+
+Maren proximity, a factory-book anchor, menu/scroll/cursor and host-focus loans
+are disclosed. Actual remapped interaction starts readable first-line dialogue
+without completing the quest. Isolated settings/keybind JSON checks use a
+synchronous no_saves loan with save_slot==-1; no character-save roundtrip,
+ordinary quest progression, physical-device or new transport claim is made.
+See HUD_ALIGNMENT.md for full scope.
 
 # Session closed — September 9–10, 2026
 

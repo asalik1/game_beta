@@ -213,9 +213,10 @@ diagnostic originals have attributed original-resolution review. Final strict
 preflight and serialized commit are required by the closure audit and recorded
 in `build/qa/session-sept17/keyboard-hints-checkpoint-validation.json`.
 
-A separate existing copy issue was observed: an authored quest still says
-press E after Talk is rebound to F3. This checkpoint changes bottom reminders;
-quest-copy adaptation is a retained, unvalidated follow-up. Partial alpha,
+At checkpoint 24, an authored quest still said press E after Talk was rebound
+to F3; quest-copy adaptation was retained as an unvalidated follow-up. The
+checkpoint 26 interaction-copy section below records its separate scope and
+validation status. Checkpoint 24 changed bottom reminders only. Partial alpha,
 chat/feed and device controls are presentation loans, not elapsed fade, online
 chat, ordinary combat or physical-device proof. Established renderer shutdown
 diagnostics and the suite ObjectDB warning retain their existing verdict policy.
@@ -231,3 +232,72 @@ exhausted its output budget without code; the second raw implementation was
 rejected. The retained candidate is a locally corrected derivative with
 independent source review. Exact source hashes, input-config history, findings,
 originals and final commit are retained in the checkpoint24 validation receipt.
+
+## Interaction instructions after rebinding — September 18
+
+Checkpoint 26 evidence and scope; final acceptance is recorded in the receipt below.
+
+The quest tracker, newly opened Journal quest view and factory-created NPC/prop
+prompts use the current interaction binding. Rebinding Talk to F3 changes the
+relevant “press E” instruction to “press F3.” Factory labels retain their original
+authored text and insert key names literally, avoiding repeated substitutions.
+Touch wording and active-controller buttons retain the existing device policy,
+including the selected Xbox/PlayStation label scheme.
+
+Factory pills are remeasured with their existing style. Their current position
+and NPC/landmark anchors shift horizontally together, preserving their center,
+Y positions and existing body/HUD clearance displacement. Binding saves, input
+device changes and controller-label changes trigger refresh without a per-frame
+text-replacement pass. Specialty nonfactory prompts and live refresh of an
+already-open Journal remain outside scope; reopening Journal constructs current
+copy. This does not alter narrative prose broadly or resolve reserved-key
+conflicts in the existing binding policy.
+
+The focused controller fixture uses a fresh Archer village objective, original
+Maren posed nearby and one owned factory-book hotspot with a controlled landmark
+anchor. Actual binding capture, Controls/label-scheme callbacks and remapped
+Maren dialogue start are checked alongside full tracker/pill text, literal key
+names, long-to-short restoration and anchor geometry. Direct menu entry, scroll
+reveal, pad cursor placement and host-focus loans are disclosed setup. Dialogue
+is canceled before completing the quest; first-line readability does not prove a
+complete conversation or restore all dialogue history.
+
+The rejected QA2 fixed probe failed its single forced-wrap expectation despite
+complete text fitting normally: default rendered quest-cell width 414.609375px,
+long-key width 558.046875px inside a 560px label, both at font size 16. QA3 instead
+requires positive, nonempty, same-font measured width growth from the captured
+default. Exact copy and complete label/panel/viewport containment remain strict.
+No authored text, label width, font or production layout was changed to force
+wrapping. Existing HUD alignment regression retains its long-wrapping coverage.
+The QA2 failure, all eleven originals and source pins remain rejected evidence;
+fresh QA3 baseline and fixed runs replace that lifecycle for final acceptance.
+
+Settings saves normally return under no_saves. The fixture briefly clears that
+flag synchronously around actual touch/scheme callbacks and cleanup save, keeps
+save_slot==-1, and restores no_saves before yielding. It checks isolated primary
+settings/keybind JSON and retains backups. No character-save roundtrip, ordinary
+earned quest or whole-history restoration is claimed. Mobile-source runs are
+host-rendered Compatibility checks, not physical-device tests. Existing paired
+ENet Blink retains its established transport scope, not new remapped-interaction
+replication coverage.
+
+QA3 old-source diagnostic records 37 failed rows in 182 checks; exact IDs and dependent
+structural findings are classified in the receipt. Fixed desktop/mobile focus passes
+191/191; quick/full passes 147/227, mobile quick 147. Alignment checks pass 197/197, NPC
+controls 94/94, fountain 69/69, and existing paired Blink 47. All 121 originals have
+attributed original-resolution review. Final strict preflight, exact source/mobile/UID
+preservation, serialized commit and local worktree audit are required for acceptance and
+recorded in `build/qa/session-sept17/interaction-copy-checkpoint-validation.json`; the
+resulting commit is recorded there.
+
+All 279 rejected QA2 files and ten owned source/UID snapshots are preserved. The first
+DeepSeek call exhausted its reasoning budget; the second raw implementation was rejected
+for invented APIs and anchor/refresh defects. The retained implementation is a locally
+corrected derivative, independently source-reviewed. KEY_DOLLAR/KEY_BACKSLASH guards
+returned the host names DOLLAR/BACKSLASH; they do not prove insertion of actual literal
+metacharacter names. Known suite ObjectDB warnings and renderer shutdown diagnostics
+retain the existing verdict policy; no warning-free-log claim is made. The existing
+clearance touch presentation directly mutates settings and bypasses set_touch_controls
+refresh, so its stale press E quest copy is not an actual control-transition oracle.
+Focused05 uses the real callback and checks tap Act. The existing Atlas return footer is
+a separate queued follow-up; this checkpoint does not claim to resolve it.

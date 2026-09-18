@@ -535,6 +535,7 @@ func set_touch_controls(on: bool) -> void:
 	save_settings()
 	refresh_touch_mode()
 	_apply_touch_mode()
+	refresh_interaction_copy()
 
 
 func _unhandled_input(event: InputEvent) -> void:

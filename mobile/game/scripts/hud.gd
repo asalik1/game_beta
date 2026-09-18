@@ -2666,7 +2666,7 @@ func set_zone(text: String) -> void:
 
 
 func set_quest(text: String) -> void:
-	var copy: String = game.touchify(text.strip_edges())
+	var copy: String = game.interaction_copy(text.strip_edges())
 	quest_label.text = "" if copy.is_empty() else "◆  " + copy
 	quest_label.visible = not copy.is_empty()
 	_layout_quest_tracker()
