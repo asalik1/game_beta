@@ -104,6 +104,15 @@ The 61 numeric checks do not prove text paint order, so keep the full before/aft
 comparison. No QA rows or UIDs were added. See CAPITAL_ARRIVAL.md for the mobile
 stop-position qualification and actual route limits.
 
+Selected citizen prompt placement: add --npc-prompt to capital_arrival for
+actual travel/A/Inventory/Escape/E/Leave, eight normal original frames, complete
+glyph bounds, independent painted bodies, unchanged resources and held dialogue
+placement. Add --npc-prompt-controls for three explicitly borrowed HUD/camera
+fallback/restoration frames. Use the same isolated capital-arrival-native-candidate
+profile. These strict checks have no expected-failure whitelist. Read the actual
+receipt and original images; dialogue is opaque and fallback can cover heads.
+See CAPITAL_ARRIVAL.md. Keep fountain/default/framing regressions separate.
+
 Alchemy UI QA: `shot.bat alchemy --timeout=240` checks the real recipe bench,
 39 recipe previews, exact paid actions, input, live quotes, cancelled learning,
 overflow and reading/focus continuity. Seven native views cover novice, learned

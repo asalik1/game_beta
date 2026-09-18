@@ -2338,6 +2338,8 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	prompt.size = Vector2.ZERO
 	prompt.size = prompt.get_minimum_size().max(Vector2(96, 20))
 	prompt.position = Vector2(8.0 - prompt.size.x * 0.5, -60)
+	if not scenery_prop:
+		prompt.set_meta("npc_prompt_anchor", prompt.position)
 	prompt.visible = false
 	npc.add_child(prompt)
 	world.add_child(npc)

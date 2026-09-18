@@ -81,19 +81,32 @@ func _family() -> Array[Rect2]:
 	return out
 
 
-func _reservations() -> Array[Rect2]:
+func _fixed_reservations() -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	for node in [hud.vitals_panel, hud.info_panel, hud.minimap_root,
 		hud.wayfinder.quest_root]:
 		if is_instance_valid(node): _drawn(out, node)
 	for slot in hud.party_slots:
 		if is_instance_valid(slot.root): _drawn(out, slot.root)
+	return out
+
+
+func _reservations() -> Array[Rect2]:
+	var out := _fixed_reservations()
 	_interaction_reservations(out)
 	return out
 
 
+## The later NPC prompt hook must avoid the HUD as actually placed this frame.
+## Exclude interaction reservations: the prompt itself is not a HUD obstacle.
+func prompt_blockers() -> Array[Rect2]:
+	var out := _fixed_reservations()
+	out.append_array(_family())
+	return out
+
+
 ## Only the current visible interaction is reserved; never scan world art.
-## The later landmark hook restores its anchor before moving a prompt, so
+## The later landmark/NPC hook restores its anchor before moving a prompt, so
 ## measure that anchor here rather than feeding back last frame's displacement.
 func _interaction_reservations(out: Array[Rect2]) -> void:
 	var g := hud.game
@@ -107,17 +120,13 @@ func _interaction_reservations(out: Array[Rect2]) -> void:
 				or prompt.is_queued_for_deletion() or not prompt.is_visible_in_tree() \
 				or prompt.text.is_empty():
 			continue
-		var bounds := Rect2(Vector2.ZERO, prompt.size)
-		for index in prompt.text.length():
-			if prompt.text.substr(index, 1).strip_edges().is_empty(): continue
-			var cell: Rect2 = prompt.get_character_bounds(index)
-			if cell.has_area():
-				bounds = bounds.merge(cell.grow(float(prompt.get_theme_constant("outline_size"))))
+		var bounds: Rect2 = g.interaction_prompt_bounds(prompt)
 		var transform: Transform2D = prompt.get_global_transform_with_canvas()
-		if prompt.has_meta("landmark_prompt_anchor"):
+		var anchor_key := "landmark_prompt_anchor" if prompt.has_meta("landmark_prompt_anchor") else "npc_prompt_anchor"
+		if prompt.has_meta(anchor_key):
 			var parent_canvas := prompt.get_parent() as CanvasItem
 			if parent_canvas != null:
-				var anchor: Vector2 = prompt.get_meta("landmark_prompt_anchor")
+				var anchor: Vector2 = prompt.get_meta(anchor_key)
 				transform.origin += parent_canvas.get_global_transform_with_canvas().basis_xform(anchor - prompt.position)
 		out.append(transform * bounds)
 		# Factory NPCs expose their one painted body in the registry. Tovin

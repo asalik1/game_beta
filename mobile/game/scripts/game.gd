@@ -918,7 +918,10 @@ func _process(delta: float) -> void:
 ## Keep an eligible landmark's authored anchor unless the location tracker
 ## covers it. Pre-draw uses the camera transform that will render this frame.
 func _position_landmark_prompt() -> void:
-	if not is_inside_tree() or is_queued_for_deletion() or not is_instance_valid(selected_landmark_prompt):
+	if not is_inside_tree() or is_queued_for_deletion():
+		return
+	_position_npc_prompt()
+	if not is_instance_valid(selected_landmark_prompt):
 		return
 	var prompt: Label = selected_landmark_prompt
 	if not prompt.is_inside_tree() or prompt.is_queued_for_deletion():
@@ -930,7 +933,20 @@ func _position_landmark_prompt() -> void:
 	if chapter_id != "capital" or state != ST_PLAYING or not play_started or input_overlay_up() \
 			or not prompt.is_visible_in_tree() or not hud.visible or not hud.quest_panel.is_visible_in_tree():
 		return
-	# Include the whole pill and shaped text outline, not just nominal size.
+	var bounds := interaction_prompt_bounds(prompt)
+	var screen_bounds: Rect2 = prompt.get_global_transform_with_canvas() * bounds
+	var tracker: Rect2 = hud.quest_panel.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, hud.quest_panel.size)
+	if not screen_bounds.intersects(tracker):
+		return
+	var parent_canvas := prompt.get_parent() as CanvasItem
+	if parent_canvas == null:
+		return
+	var shift := Vector2(0.0, tracker.end.y + Balance.PROP_PROMPT_HUD_GAP - screen_bounds.position.y)
+	prompt.position += parent_canvas.get_global_transform_with_canvas().affine_inverse().basis_xform(shift)
+
+
+## Shared with tracker reservations: full pill and every shaped glyph outline.
+func interaction_prompt_bounds(prompt: Label) -> Rect2:
 	var bounds := Rect2(Vector2.ZERO, prompt.size)
 	var cells := Rect2()
 	var has_cells := false
@@ -943,15 +959,52 @@ func _position_landmark_prompt() -> void:
 			has_cells = true
 	if has_cells:
 		bounds = bounds.merge(cells.grow(float(prompt.get_theme_constant("outline_size"))))
-	var screen_bounds: Rect2 = prompt.get_global_transform_with_canvas() * bounds
-	var tracker: Rect2 = hud.quest_panel.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, hud.quest_panel.size)
-	if not screen_bounds.intersects(tracker):
+	return bounds
+
+
+## One bounded presentation move for the selected factory citizen. The earlier
+## tracker hook reserves authored anchors; this later hook tests its final HUD.
+## Conservative sprite cells avoid image readback and include carried body art.
+func _position_npc_prompt() -> void:
+	# Menus hide labels, but dialogue can leave one visible. Hold its last
+	# placement through overlays; resume recomputes from the authored anchor.
+	if state != ST_PLAYING or not play_started or input_overlay_up() \
+			or not has_local_player() or local_player.dead or local_player.downed \
+			or local_player.ghost or not is_instance_valid(hud) or not hud.visible \
+			or not is_instance_valid(hud.tracker_clearance): return
+	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	for entry in interactables:
+		var node: Variant = entry.get("node")
+		var prompt: Variant = entry.get("prompt")
+		var sprite: Variant = entry.get("sprite")
+		if not is_instance_valid(node) or not node is Node2D \
+				or node.is_queued_for_deletion() or not world.is_ancestor_of(node): continue
+		if not is_instance_valid(prompt) or not prompt is Label \
+				or prompt.is_queued_for_deletion() or not prompt.is_visible_in_tree() \
+				or not node.is_ancestor_of(prompt) or prompt.text.is_empty() \
+				or not prompt.has_meta("npc_prompt_anchor") \
+				or prompt.has_meta("landmark_prompt_anchor"): continue
+		prompt.position = prompt.get_meta("npc_prompt_anchor")
+		if not is_instance_valid(sprite) or not sprite is Sprite2D \
+				or sprite.is_queued_for_deletion() or not sprite.is_visible_in_tree() \
+				or not node.is_ancestor_of(sprite): return
+		var body: Rect2 = sprite.get_global_transform_with_canvas() * sprite.get_rect()
+		var hero: Rect2 = preload("res://scripts/ui/hud_clearance.gd").body_rect(local_player)
+		var bounds := interaction_prompt_bounds(prompt)
+		var current: Rect2 = prompt.get_global_transform_with_canvas() * bounds
+		var gap := Balance.NPC_PROMPT_BODY_GAP
+		if not body.has_area() or not hero.has_area() or not current.has_area(): return
+		if not current.intersects(body.grow(gap)) and not current.intersects(hero.grow(gap)): return
+		var shift := Vector2(0.0, minf(body.position.y, hero.position.y) - gap - current.end.y)
+		var moved := Rect2(current.position + shift, current.size)
+		# No-fit fallback keeps the complete authored pill; never hide or fade it.
+		if not get_viewport().get_visible_rect().grow(-gap).encloses(moved): return
+		for blocker in hud.tracker_clearance.prompt_blockers():
+			if moved.intersects(blocker.grow(gap)): return
+		var parent_canvas := prompt.get_parent() as CanvasItem
+		if parent_canvas != null:
+			prompt.position += parent_canvas.get_global_transform_with_canvas().affine_inverse().basis_xform(shift)
 		return
-	var parent_canvas := prompt.get_parent() as CanvasItem
-	if parent_canvas == null:
-		return
-	var shift := Vector2(0.0, tracker.end.y + Balance.PROP_PROMPT_HUD_GAP - screen_bounds.position.y)
-	prompt.position += parent_canvas.get_global_transform_with_canvas().affine_inverse().basis_xform(shift)
 
 
 func _exit_tree() -> void:

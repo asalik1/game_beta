@@ -189,3 +189,54 @@ Final acceptance is recorded in that lane's `root-review.json`
 (SHA256 `37dc3b275033821d47ff6bcfc23864e5f6ddbd3b1f0edb26f065c0a0739d092d`) and
 `build/qa/session-sept10/npc-prompt-independent-review/after1.json`
 (SHA256 `0a23b916eb7e473c2d3261f68236eaef9056bc89edaf1e192989d1b67481d529`).
+
+## Selected NPC prompt placement
+
+Selected factory-citizen prompts now move above both the citizen and local hero
+when their authored pill would cover either body. The pre-draw pass uses the
+current camera and full shaped text bounds, and accepts one upper position only
+when the viewport and final HUD layout leave room. Tracker reservations use the
+authored anchor to avoid placement feedback. Menus and dialogue hold the last
+placement until play resumes. Full text, opacity, z2, reach and actions stay intact.
+
+This is a bounded presentation rule. If the upper position is obstructed, the
+complete prompt keeps its authored anchor and can still cover a body. Scenery
+hotspots retain their existing placement; the tombstone Read pill can intersect
+the hero helmet. NPC bounds use conservative sprite cells; the hero uses the
+existing HUD body proxy. The independent test measures painted alpha bounds,
+including carried art, at its observed poses. Online moving actors during an
+overlay, every NPC/pose and physical devices are not established by these checks.
+
+The optional capital_arrival --npc-prompt episode follows real solo Pause travel
+and A movement to Voss, then actual Inventory/Escape and E/Leave input. The
+Inventory and E presses span observed process and physics frames. Dialogue's
+illustrated portrait hides the world, so its held prompt position is coordinate
+evidence, not a visible-world-prompt claim. Add --npc-prompt-controls for explicit
+vitals-panel/camera loans exercising no-fit fallback and exact restoration;
+these frames are controlled stress cases, not ordinary camera/HUD quality.
+
+QA3 fixed an earlier synthetic tap that missed the polled input window. QA4
+makes three optional landmark metadata reads safe for ordinary NPCs. Both prior
+rejected diagnostics and all failed evidence remain. Clean baseline3 completed
+74 rows: eight observed hero/NPC overlap failures plus the aggregate completion
+failure, with valid native input prerequisites and no unexpected engine error.
+The production change is locally authored Codex work. Two actual Claude Fable
+implementation calls timed out without usable code; they are preserved without
+crediting the model for this implementation.
+
+Evidence: build/qa/session-sept17/claude-npc-prompt-candidate/validation-v4/.
+Actual final acceptance and commit: npc-prompt-placement-checkpoint-validation.json.
+
+Desktop quick/full 147/227 and mobile quick 147 passed. Both projects compiled
+296 scripts with explicit wrapper roots. Focused native placement passed 94/94
+rows on each; separate capital/fountain regressions passed 33/69, prop/scenery
+passed 187 exact bounds checks, and tracker passed 365 rows per project. The
+12-view HUD clearance regression passed on each. Seven canonical sources
+synchronize exactly; the new helper has independently generated project UIDs.
+
+The evidence contains 138 final full native originals and eight clean diagnostic
+originals. The 36 prop close-ups remain auxiliary; they cannot replace original
+review. Per-image acceptance, strict preflight and the final commit are bound by
+the checkpoint receipt named above. Existing shutdown-only messages remain in
+the logs under the unchanged strict shot-verdict policy. No network authority,
+reward or input behavior changes are included; no new network claim is made.

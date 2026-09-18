@@ -20,6 +20,7 @@ var held_key := 0
 var boot_readiness := {}
 var escape_input := {}
 
+var npc_prompt_episode := {}
 var fountain_episode := {"movement": [], "states": []}
 var fountain_move_active := false
 var fountain_move_target_y := 0.0
@@ -72,6 +73,9 @@ func run(rig: ShotRig) -> Dictionary:
 		"qualification": "Single normal main.tscn Game; standard QA mage/ch1 boot and opening choice, no saves, no god mode, no body/camera position or physics override. Real Pause Travel to Crownfall click, real welcome key input, live one-second idle and one-second A escape. No save/load or ENet proof.",
 		"mouse_clicks": ui.mouse_clicks, "key_taps": ui.key_taps,
 		"settings": g.settings.duplicate(true)}
+	if not npc_prompt_episode.is_empty():
+		report["npc_prompt"] = npc_prompt_episode
+		report["qualification"] = "Single normal Game and original Voss reached through real capital travel/welcome/A movement. Native Inventory/Escape/E/Leave; no rewards or assigned actor positions. Optional npc-prompt-controls borrows camera offset/vitals position and freezes Game processing/Player physics, then restores display/processing state after unchanged-resource checks. NPC breathing and world children remain live. Disposable no-save solo fixture; no physical-device, controller, network or crowd coverage."
 	if r.flag("fountain-prompt"):
 		report["fountain_prompt"] = fountain_episode
 		report["qualification"] = "Single normal Game and unchanged capital HUD; shared ordinary Pause/Travel/welcome boot, then three real S/S/W holds and four settled native frames. No assigned position, camera, quest, target, prompt visibility, resources or saves. Geometry includes the entire label pill and shaped text cells plus authored outline. Source-derived expected overlap is not native acceptance; no physical touch/controller or ENet claim."
@@ -169,6 +173,9 @@ func _run() -> String:
 	_check("movement.fountain_cleared", not bool(escaped.fountain_covering), escaped)
 	_check("movement.stopped", p.velocity.length() <= 1.0, _vec(p.velocity))
 	await _capture("02_keyboard_escape")
+	if r.flag("npc-prompt"):
+		npc_prompt_episode = await preload("res://scripts/tests/npc_prompt_live.gd").run(self)
+		return String(npc_prompt_episode.error)
 	if r.flag("arrival-consumers"):
 		return await _arrival_consumers()
 	return ""
@@ -615,7 +622,7 @@ func _fountain_settle(prompt: Label) -> Dictionary:
 
 
 func _fountain_geometry(prompt: Label, entry: Dictionary) -> Dictionary:
-	var anchor_value: Variant = prompt.get_meta("landmark_prompt_anchor", null)
+	var anchor_value: Variant = prompt.get_meta("landmark_prompt_anchor") if prompt.has_meta("landmark_prompt_anchor") else null
 	var has_authored_anchor: bool = typeof(anchor_value) == TYPE_VECTOR2
 	var authored_anchor := Vector2.ZERO
 	if has_authored_anchor: authored_anchor = anchor_value
@@ -709,7 +716,7 @@ func _fountain_economy() -> Dictionary:
 ## a Control, camera, physics body or production presentation state.
 func _fountain_start_draw(prompt: Label) -> void:
 	fountain_draw_prompt = prompt
-	var metadata: Variant = prompt.get_meta("landmark_prompt_anchor", null)
+	var metadata: Variant = prompt.get_meta("landmark_prompt_anchor") if prompt.has_meta("landmark_prompt_anchor") else null
 	fountain_draw_has_anchor = typeof(metadata) == TYPE_VECTOR2
 	if fountain_draw_has_anchor: fountain_draw_anchor = metadata
 	fountain_draw_leg = "00_arrival"
@@ -738,7 +745,7 @@ func _fountain_draw_begin_leg(id: String) -> void:
 func _fountain_anchor_proof(prompt: Label) -> Dictionary:
 	if not is_instance_valid(prompt) or not prompt.is_inside_tree() or not is_instance_valid(g):
 		return {"valid": false, "passed": false, "reason": "live prompt/Game required"}
-	var metadata: Variant = prompt.get_meta("landmark_prompt_anchor", null)
+	var metadata: Variant = prompt.get_meta("landmark_prompt_anchor") if prompt.has_meta("landmark_prompt_anchor") else null
 	if typeof(metadata) != TYPE_VECTOR2 or not prompt.get_parent() is CanvasItem:
 		return {"valid": false, "passed": false, "reason": "authored Vector2 metadata and CanvasItem parent required"}
 	var anchor: Vector2 = metadata

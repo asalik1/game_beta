@@ -476,6 +476,24 @@ Desktop quick/full 147/227 and mobile quick 147 pass, with import/compile, scope
 
 See NPC_GROUND_CONTACT.md and npc-grounding-checkpoint-validation.json.
 
+Checkpoint 23 implements selected citizen prompt placement above both bodies
+when an upper position fits the final HUD and viewport. When it does not fit,
+the complete prompt keeps its authored anchor. Native Inventory/Escape/E/Leave
+and explicit display fallback controls preserve resources and world poses.
+Desktop quick/full 147/227, mobile quick 147, import/compile, seven-source sync,
+focused 94/94 per project and capital/fountain/prop/tracker/clearance regressions
+passed. Final original-image acceptance, strict preflight and the serialized
+commit are recorded in npc-prompt-placement-checkpoint-validation.json.
+See CAPITAL_ARRIVAL.md for the placement guarantee and controlled-fixture limits.
+
+The second save-enabled Paladin attempt remains an unfinished driver experiment:
+seed 943493 stopped at (923.764,1176.243) before combat, with HP 125 / MP 55
+unchanged. Eight opening checks and two native originals are retained; no defeat,
+completed journey or save/reload audit occurred. The bounded lookahead change did
+not establish this stop's cause. Its exact temporary sources were archived and
+removed/restored under paladin-expedition-candidate/attempt2/validation/cleanup-v1/.
+All 46 unrelated files and earlier evidence remained unchanged.
+
 This session's continuation is ACTIVE:
 `crownless-september-17-18-authorized-improvements`, every 30 minutes, ending at
 the 13:00 UTC deadline. Its prompt requires the 12:00 feature cutoff, final

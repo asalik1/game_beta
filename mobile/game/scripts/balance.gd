@@ -3516,6 +3516,7 @@ const CAPITAL_BACKDROP_Z := 0
 # interactables can share one reach — the NEAREST candidate wins (game.gd).
 const INTERACT_RANGE := 80.0           # player must stand this close to interact
 const INTERACT_PROMPT_Z := 2           # readable above base actor bodies and carried weapons
+const NPC_PROMPT_BODY_GAP := 4.0       # screen pixels around a selected NPC prompt
 const TAP_TALK_RADIUS := 90.0          # tap-to-talk: max tap distance from the target
 
 # -------------------------------------------------------- chapter results ---

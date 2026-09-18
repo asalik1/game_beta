@@ -11,7 +11,17 @@ func _ready() -> void:
 		print("CAPITAL ARRIVAL REFUSAL: isolated capital-arrival-native-candidate APPDATA required")
 		finish(1)
 		return
+	if flag("npc-prompt-controls") and not flag("npc-prompt"):
+		print("NPC prompt controls require npc-prompt")
+		finish(1)
+		return
+	if flag("npc-prompt") and (flag("baseline") or flag("fountain-prompt") or flag("arrival-consumers") or flag("no-capture")):
+		print("NPC prompt requires its isolated strict diagnostic mode")
+		finish(1)
+		return
 	shot_dir += "/" + ("before" if flag("baseline") else "after")
+	if flag("npc-prompt"):
+		shot_dir += "/npc_prompt"
 	if flag("fountain-prompt"):
 		shot_dir += "/fountain_prompt"
 	await boot("mage", "ch1", false)
