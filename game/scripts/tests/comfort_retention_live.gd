@@ -8,6 +8,7 @@ var r: ShotRig
 var g: Game
 var m: Menus
 var native := Native.new()
+var focus_metrics := {} # Optional capture witnesses; default episode does not read/write this.
 
 static func run(rig: ShotRig) -> Dictionary:
 	var q := new()
@@ -99,6 +100,8 @@ func _case(mode: String, caption: String, capture: bool) -> String:
 	var before := _state(caption)
 	if not native._check(mode + "/scroll_setup", int(before.scroll) > 0 if capture else int(before.scroll) == 0, before):
 		return "Required native scroll state was not reached: " + mode
+	if capture and r.flag("button-focus-visibility"):
+		await _focus_capture(mode, "before", caption)
 	if capture: await native._capture(mode + "_before")
 	var key: String = TOGGLES[caption]
 	var expected: Dictionary = initial.duplicate(true)
@@ -116,6 +119,8 @@ func _case(mode: String, caption: String, capture: bool) -> String:
 	native._check(mode + "/repeat_label", second.label == before.label, second)
 	native._check(mode + "/repeat_view", _stable(before, second), {"before": before, "after": second})
 	if mode == "keyboard": native._check(mode + "/repeat_focus", bool(second.focused), second)
+	if capture and r.flag("button-focus-visibility"):
+		await _focus_capture(mode, "after_repeat", caption)
 	if capture: await native._capture(mode + "_after_repeat")
 	await native._key(KEY_ESCAPE)
 	native._check(mode + "/escape_footer", m.current == "settings" and m.settings_return == "title", m.current)
@@ -201,3 +206,91 @@ func _stable(before: Dictionary, after: Dictionary) -> bool:
 	for i in 4:
 		if absf(float(after.rect[i]) - float(before.rect[i])) > 0.5: return false
 	return true
+
+
+## Optional focused-style evidence layered on the existing six original captures.
+## No clicks, focus repair, setting writes, or reveal repair are added here.
+func _focus_capture(mode: String, stage: String, caption: String) -> void:
+	var target: Button = native._find_button(m.root, caption + ":")
+	var prefix := "focus/" + mode + "/" + stage
+	if target == null:
+		native._check(prefix + "/target", false, "Existing capture target disappeared")
+		return
+	if mode == "keyboard":
+		var prior_owner: Control = m.get_viewport().gui_get_focus_owner()
+		# Disclosed mouse-only motion to the title lane removes hover ambiguity.
+		var point: Vector2 = m._shell_rect.position + Vector2(m._shell_rect.size.x * 0.5, 24.0)
+		var motion := InputEventMouseMotion.new()
+		motion.position = point
+		motion.global_position = point
+		Input.parse_input_event(motion)
+		Input.flush_buffered_events()
+		await r.frames(3)
+		var owner: Control = m.get_viewport().gui_get_focus_owner()
+		var mouse: Vector2 = target.get_global_mouse_position()
+		native._check(prefix + "/owner", prior_owner == target and owner == target and target.has_focus(),
+			{"target": str(target.get_path()), "owner": str(owner.get_path()) if owner != null else "", "preserved": prior_owner == owner})
+		native._check(prefix + "/nonhover", m._shell_rect.has_point(point)
+			and not target.get_global_rect().has_point(mouse) and not target.is_hovered(),
+			{"requested_title_motion": [point.x, point.y], "mouse": [mouse.x, mouse.y], "hovered": target.is_hovered()})
+		native._check(prefix + "/visible", _visible(target), _state(caption))
+		var style: StyleBox = target.get_theme_stylebox("focus")
+		var flat := style as StyleBoxFlat
+		var normal := target.get_theme_stylebox("normal") as StyleBoxFlat
+		var outline_ok := flat != null and normal != null
+		if outline_ok:
+			outline_ok = not flat.draw_center and flat.border_color == UITheme.GOLD_BRIGHT
+			outline_ok = outline_ok and [flat.border_width_left, flat.border_width_top, flat.border_width_right, flat.border_width_bottom] == [2, 2, 2, 2]
+			for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
+				outline_ok = outline_ok and flat.get_content_margin(side) == 0.0
+			outline_ok = outline_ok and [flat.corner_radius_top_left, flat.corner_radius_top_right, flat.corner_radius_bottom_left, flat.corner_radius_bottom_right] == [normal.corner_radius_top_left, normal.corner_radius_top_right, normal.corner_radius_bottom_left, normal.corner_radius_bottom_right]
+			outline_ok = outline_ok and flat.get_minimum_size() == Vector2.ZERO
+		native._check(prefix + "/outline", outline_ok, _style_metrics(style))
+	var metrics := {}
+	for title: String in TOGGLES:
+		var button: Button = native._find_button(m.root, title + ":")
+		if button == null: continue
+		metrics[title] = _button_metrics(button)
+	var coherent: bool = metrics.size() == TOGGLES.size()
+	if stage == "before":
+		focus_metrics[mode] = metrics.duplicate(true)
+	else:
+		coherent = coherent and focus_metrics.has(mode) and metrics == focus_metrics[mode]
+	native._check(prefix + "/metrics", coherent,
+		{"buttons": metrics, "same_as_before": stage == "before" or metrics == focus_metrics.get(mode, {}),
+		"scope": "Actual layout and resolved non-focus style metrics; cross-run baseline/fixed comparison still required."})
+
+func _button_metrics(button: Button) -> Dictionary:
+	var rect: Rect2 = button.get_global_rect()
+	var font: Font = button.get_theme_font("font")
+	var styles := {}
+	for state: String in ["normal", "hover", "pressed", "disabled"]:
+		styles[state] = _style_metrics(button.get_theme_stylebox(state))
+	var colors := {}
+	for state: String in ["font_color", "font_hover_color", "font_pressed_color", "font_disabled_color", "font_focus_color", "font_outline_color"]:
+		colors[state] = _focus_plain(button.get_theme_color(state))
+	return {"text": button.text, "rect": [rect.position.x, rect.position.y, rect.size.x, rect.size.y],
+		"minimum": _focus_plain(button.get_minimum_size()), "combined_minimum": _focus_plain(button.get_combined_minimum_size()),
+		"custom_minimum": _focus_plain(button.custom_minimum_size), "font_path": font.resource_path,
+		"font_class": font.get_class(), "font_size": button.get_theme_font_size("font_size"), "colors": colors,
+		"styles": styles, "clip_text": button.clip_text, "text_overrun": button.text_overrun_behavior,
+		"alignment": button.alignment, "focus_mode": button.focus_mode, "disabled": button.disabled,
+		"icon_path": button.icon.resource_path if button.icon != null else "", "visible": _visible(button)}
+
+func _style_metrics(style: StyleBox) -> Dictionary:
+	var values := {"class": style.get_class(), "minimum": _focus_plain(style.get_minimum_size()), "content_margins": []}
+	for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
+		values.content_margins.append(style.get_content_margin(side))
+	if style is StyleBoxFlat:
+		for key: String in ["bg_color", "border_color", "draw_center", "border_blend", "anti_aliasing", "anti_aliasing_size",
+			"border_width_left", "border_width_top", "border_width_right", "border_width_bottom",
+			"corner_radius_top_left", "corner_radius_top_right", "corner_radius_bottom_left", "corner_radius_bottom_right",
+			"expand_margin_left", "expand_margin_top", "expand_margin_right", "expand_margin_bottom",
+			"shadow_color", "shadow_size", "shadow_offset", "skew", "corner_detail"]:
+			values[key] = _focus_plain(style.get(key))
+	return values
+
+func _focus_plain(value: Variant) -> Variant:
+	if value is Color: return [value.r, value.g, value.b, value.a]
+	if value is Vector2: return [value.x, value.y]
+	return value

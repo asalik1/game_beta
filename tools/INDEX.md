@@ -838,6 +838,17 @@ menu/settings regressions and full/mobile gates.
 Evidence and final acceptance:
 `build/qa/session-sept17/comfort-continuity-checkpoint-validation.json`.
 
+### Visible button focus (checkpoint 30)
+
+`shot.bat menu_navigation --comfort-retention --button-focus-visibility --timeout=300`
+adds strict focus-owner/nonhover/outline checks and six-stage layout evidence to the
+accepted Comfort flow. Do not add --baseline, --touch or --no-capture. Use the pinned
+Focus adapter for isolated muted compile-first diagnostics, same-helper metric
+comparison, full/mobile regressions and final preflight.
+
+Evidence and final acceptance:
+`build/qa/session-sept17/button-focus-checkpoint-validation.json`.
+
 ## In-engine shot rigs (windowed, boot the real game, screenshot to disk)
 
 `shot.bat wayfinder --timeout=240` — local tactical map, observed frontiers,

@@ -348,7 +348,15 @@ static func _build() -> Theme:
 	bd.bg_color = Color(0.06, 0.065, 0.085, 0.46)
 	bd.border_color = Color(BORDER, 0.32)
 	t.set_stylebox("disabled", "Button", bd)
-	t.set_stylebox("focus", "Button", StyleBoxEmpty.new())
+	# Focus overlays the existing chrome without changing its fill or layout.
+	# Local Atlas and Codex focus styles retain their own overrides.
+	var focus := StyleBoxFlat.new()
+	focus.draw_center = false
+	focus.border_color = GOLD_BRIGHT
+	focus.set_border_width_all(2)
+	focus.set_corner_radius_all(bn.corner_radius_top_left)
+	focus.set_content_margin_all(0)
+	t.set_stylebox("focus", "Button", focus)
 
 	# Text fields share the same neutral surface and use the accent only while
 	# focused, keeping name entry and chat consistent with menu controls.

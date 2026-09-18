@@ -696,6 +696,40 @@ locally corrected helper provenance remain preserved. Known suite ObjectDB and r
 shutdown diagnostics retain the existing verdict policy; logs are not claimed
 warning-free.
 
+Checkpoint 30 makes shared button focus visible.
+
+Focused shared menu buttons have a transparent gold outline. Existing fills, semantic
+text colors, padding and layout remain unchanged; Atlas and Codex keep their local focus
+styles. The indicator follows GUI focus, including focus retained after a mouse click or
+touch tap. Combat Rating and Resonance remain borderless. This does not add initial
+keyboard focus, change navigation, reveal clipped controls or make FOCUS_NONE controls
+keyboard-accessible.
+
+The old-theme strict diagnostic records 2 observed outline-contract failures across 85
+checks. Setup, actual focus ownership, nonhover and existing Comfort behavior remain
+strict controls. Fixed desktop/mobile focused checks pass 85/85; six complete non-focus
+metric dictionaries match the diagnostic exactly. Quick/full/mobile quick pass
+147/227/147; menu/settings/controller and Atlas native regressions also pass. All 80
+full originals have attributed original-resolution review. Final strict preflight, local
+audit and commit status are recorded in
+`build/qa/session-sept17/button-focus-checkpoint-validation.json`.
+
+The existing nonanimated, no-save title fixture opens Comfort through native pointer
+input and uses one unchanged camera-shake slider endpoint click to seed focus before
+real Tab traversal and Enter activations. Pointer seeding is disclosed setup, not proof
+of keyboard-only entry. The optional focus witness moves the pointer to the title lane
+without clicking or repairing focus, then checks the actual owner, full visibility and
+resolved outline. HUD visibility uses keyboard, mouse and synthetic touch; an upper
+Hit-stop mouse control remains. Other toggles have label/style checks. Mouse/touch cases
+retain their original input sequence. These are controlled host-rendered checks, not
+ordinary gameplay, persisted-settings or physical-device evidence. Existing suite
+ObjectDB and renderer shutdown diagnostic policies remain unchanged; logs are not
+claimed warning-free.
+
+The controller disconnect capture duplicates its touch Settings image; it is not
+separate visual proof of Pause. Existing scroll-boundary clipping and the sampled
+controller Inventory keyboard footer remain outside this focus-style change.
+
 # Session closed — September 9–10, 2026
 
 The session is closed with **18 validated game checkpoints**. New feature and
