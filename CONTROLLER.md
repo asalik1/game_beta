@@ -169,3 +169,33 @@ Existing controller disconnect coverage retains its log witness and duplicate Se
 image limitation. Host Compatibility rendering is not physical-device validation.
 Established suite/renderer shutdown policy remains visible; logs are not claimed
 warning-free.
+
+## Comfort toggle continuity (checkpoint 29)
+
+Changing a Comfort boolean updates the pressed button in place. The current scroll
+position, readable row and keyboard focus survive, so repeating Enter or the same
+pointer/touch position toggles the intended option again. Existing setting mutation and
+save calls remain unchanged; sliders and navigation retain their existing behavior.
+
+The old-source strict diagnostic records 14 actual toggle-outcome failures across 71
+checks, with setup/input/cleanup controls required to pass. It is a classified
+rejection, not a baseline waiver. Fixed desktop/mobile focus passes 71/71 checks;
+quick/full passes 147/227, mobile quick 147. Default menu/settings regressions pass
+158/255 on desktop and 158/255 on host-rendered mobile. All 52 originals have attributed
+original-resolution review. Final strict preflight, exact source/mobile/UID
+preservation, serialized commit and local audit remain required for acceptance; results
+and commit are recorded in
+`build/qa/session-sept17/comfort-continuity-checkpoint-validation.json`.
+
+The controlled no-save title fixture creates no character. It opens Settings and Comfort
+with native pointer input. The keyboard episode clicks the unchanged 100% camera-shake
+slider endpoint once to seed focus before real Tab traversal. No focus repair occurs
+between repeated activations. Wheel navigation reveals the pointer/touch rows. Bottom
+HUD visibility is exercised by keyboard, mouse and synthetic touch, with six
+before/repeat originals; an upper Hit-stop mouse control has no extra image. The three
+middle booleans have label/style checks but are not individually activated. Wrong-row
+effects are recorded before disposable cleanup. This is not persisted-settings,
+physical-device or ordinary gameplay evidence. Both actual DeepSeek responses and
+locally corrected helper provenance remain preserved. Known suite ObjectDB and renderer
+shutdown diagnostics retain the existing verdict policy; logs are not claimed
+warning-free.

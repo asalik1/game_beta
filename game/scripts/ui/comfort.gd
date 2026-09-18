@@ -41,10 +41,13 @@ static func open(m: Menus) -> void:
 		["Target visibility", "combat_foliage", "Soften covering trees and trace your target behind solid props."],
 		["HUD visibility", "hud_clearance", "Move quest and target readouts to a clear space when available; fade secondary information covering bodies. Health and controls stay visible."]]:
 		var key := String(spec[1])
-		var button := m._btn(body, "%s: %s" % [spec[0], "ON" if m.game.settings[key] else "OFF"], func() -> void:
+		var caption := String(spec[0])
+		var button := m._btn(body, "%s: %s" % [caption, "ON" if m.game.settings[key] else "OFF"], func() -> void:
 			m.game.settings[key] = not bool(m.game.settings[key])
-			m.game.save_settings()
-			open(m), UITheme.GOLD_BRIGHT)
+			m.game.save_settings(), UITheme.GOLD_BRIGHT)
+		# Connect after construction so the callback captures the actual button.
+		button.pressed.connect(func() -> void:
+			button.text = "%s: %s" % [caption, "ON" if m.game.settings[key] else "OFF"])
 		button.custom_minimum_size.y = 44
 		button.tooltip_text = String(spec[2])
 	m._btn(box, "Back to settings", func() -> void: m.open_settings(m.settings_return))

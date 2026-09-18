@@ -827,6 +827,17 @@ focused/default menu/controller, full/mobile gates and original reviews.
 Final evidence and resulting commit:
 `build/qa/session-sept17/menu-binding-copy-checkpoint-validation.json`.
 
+### Comfort toggle continuity (checkpoint 29)
+
+`shot.bat menu_navigation --comfort-retention --timeout=300` runs the native continuity
+fixture. Do not add --baseline, --touch or --no-capture: device transitions belong to
+the fixture and all six originals are required. Use the pinned Comfort adapter for
+compile-first isolated muted profiles, actual diagnostic classification, default
+menu/settings regressions and full/mobile gates.
+
+Evidence and final acceptance:
+`build/qa/session-sept17/comfort-continuity-checkpoint-validation.json`.
+
 ## In-engine shot rigs (windowed, boot the real game, screenshot to disk)
 
 `shot.bat wayfinder --timeout=240` — local tactical map, observed frontiers,

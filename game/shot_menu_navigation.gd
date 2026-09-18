@@ -5,6 +5,18 @@ extends ShotRig
 
 
 func _ready() -> void:
+	if flag("comfort-retention"):
+		var comfort_user_root := ProjectSettings.globalize_path("user://").replace("\\", "/").to_lower()
+		if not comfort_user_root.contains("/build/qa/"):
+			print("COMFORT RETENTION FAILED: fresh isolated build/qa APPDATA required")
+			finish(1)
+			return
+		await boot_game()
+		shot_dir += "/comfort_retention"
+		var comfort_result: Dictionary = await preload("res://scripts/tests/comfort_retention_live.gd").run(self)
+		print("COMFORT RETENTION: ", JSON.stringify(comfort_result))
+		finish(1 if int(comfort_result.failures) > 0 else 0)
+		return
 	if flag("quest-guardian"):
 		var user_root := ProjectSettings.globalize_path("user://").replace("\\", "/").to_lower()
 		if not user_root.contains("/build/qa/"):
