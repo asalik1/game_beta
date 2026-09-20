@@ -75,3 +75,12 @@ unaccepted. Known engine shutdown and negative-test diagnostics remain in logs.
 Coarse legacy gear/gem art, small stat/legend text, ineligible gem explanations
 and compact legacy popover controls remain follow-up. This checkpoint neither
 changes gear artwork nor constitutes whole-game visual or touch-target approval.
+
+
+September20 painted-gear follow-up: existing128px masters now serve Inventory
+gear cells, equipped wells, Stats and gear details at unchanged geometry. The
+optional `--gear-fidelity` gallery adds four named-item views and strict texture
+checks; current desktop and host-mobile runs pass290 checks and12 views each.
+Earlier146-check counts above describe the prior checkpoint. No new art or
+world/held resolver change is included. See GEAR_UI_FIDELITY.md for exact source,
+visual evidence and limitations; gem/potion/material behavior remains separate.

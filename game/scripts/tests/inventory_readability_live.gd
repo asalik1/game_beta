@@ -1,12 +1,14 @@
 extends RefCounted
 ## Controlled factory loans, real GUI actions, and strict observations.
 ## DeepSeek proposed the scenarios; Codex replaced rejected non-executable drafts.
+const GearCare := preload("res://scripts/gear_care.gd")
 const Native := preload("res://scripts/tests/menu_navigation_live.gd")
 const Geo := preload("res://scripts/tests/hud_alignment_geometry.gd")
 const MaterialProbe := preload("res://scripts/tests/material_ui_live.gd")
 const POCKETS := ["gold", "equipment", "backpack", "gem_bag", "materials", "consumables", "bags", "loose_bags", "potion_rotation"]
 const FILTERS := ["All", "Weapons", "Helmets", "Armor", "Gloves", "Pants", "Boots", "Charms", "Gems", "Consumables", "Materials", "Bags"]
 const VIEWS := ["00_empty_slots", "01_occupied_top", "02_occupied_bottom", "03_dense_grid_bottom", "04_filters_and_actions", "05_material_cancel", "06_material_remaining", "07_material_removed"]
+const GALLERY := ["08_named_bag_card", "09_worn_card", "10_stats_paperdoll", "11_stats_detail"]
 var r: ShotRig
 var g: Game
 var m: Menus
@@ -18,6 +20,7 @@ var views: Array = []
 var gestures: Array = []
 var reach_runs: Array = []
 var owned_pickups: Array = []
+var timings: Array = []
 
 static func run(rig: ShotRig) -> Dictionary:
 	var q := new()
@@ -72,7 +75,9 @@ static func run(rig: ShotRig) -> Dictionary:
 		and q.g.is_processing() == proc and q.p.is_physics_processing() == physics
 		and Input.emulate_mouse_from_touch == emulate and Input.emulate_touch_from_mouse == touch_from_mouse
 		and not q.m.is_open() and not rig.get_tree().paused)
-	q._check("captures.exact", q.views == VIEWS, q.views)
+	var expected_views: Array = VIEWS.duplicate()
+	if rig.flag("gear-fidelity"): expected_views.append_array(GALLERY)
+	q._check("captures.exact", q.views == expected_views, {"expected": expected_views, "actual": q.views})
 	return q._report()
 
 func _exercise() -> String:
@@ -115,6 +120,7 @@ func _exercise() -> String:
 			and label.get_theme_font_size("font_size") >= 14, {"color": str(color), "grade": p.equipment[slot].grade,
 			"contrast": _contrast(color), "rect": Geo.rect(label.get_global_rect()), "text": label.text,
 			"ellipsis_allowed": label.clip_text})
+		_probe_equipped_icon(card, p.equipment[slot], "occupied." + slot)
 	await _capture(VIEWS[2])
 	# Legal dense bag, with a real last cell that must become reachable by input.
 	p.materials = [Items.make_material("bone", "F", 2)]
@@ -140,15 +146,33 @@ func _exercise() -> String:
 	var first: Dictionary = p.backpack[0]
 	var second: Dictionary = p.backpack[1]
 	for item in [first, second]:
-		var cell: Control = art._texture_control(m.root, Art.icon_for(item), true)
+		# Patched bag cells carry codex icons, so the old Art.icon_for texture
+		# selector cannot find them; select by the tooltip's first (title) line.
+		var cell: Button = _gear_button(m.root, item, false)
 		if not _check("accent." + item.grade + ".cell", cell != null): return "grade cell missing"
 		var style: StyleBoxFlat = cell.get_theme_stylebox("normal") as StyleBoxFlat
 		_check("accent." + item.grade + ".preserved", style != null and style.border_color.is_equal_approx(Color(Items.GRADE_COLOR[item.grade], 0.9)))
+	# Codex fidelity probes: backpack indices 0..6 (one per Items.SLOTS from the
+	# roll cycle) plus the last GEAR cell — the grid's true last child is a
+	# material and stays with the reach gesture above. inventory_order is forced
+	# to "found" on the All view, so the first p.backpack.size() grid children
+	# are gear; each probe still guards Button type and title before pixels.
+	# Hidden cells keep full texture/geometry checks without a redundant scroll.
+	var gear_grid: GridContainer = _grid()
+	if not _check("grid.reacquired", gear_grid != null): return "bag grid unavailable"
+	var probes: Array = []
+	for i in mini(Items.SLOTS.size(), p.backpack.size()): probes.append(i)
+	var last_gear: int = p.backpack.size() - 1
+	if last_gear >= 0 and not probes.has(last_gear): probes.append(last_gear)
+	for index in probes:
+		var probe_error: String = _probe_gear_cell(gear_grid, int(index), p.backpack[int(index)])
+		if probe_error != "": return probe_error
 	if not await _click(native._find_button(m.root, "Materials", true), "filter.materials"): return "Materials unavailable"
-	_check("filter.materials_hides_gear", art._texture_control(m.root, Art.icon_for(first), true) == null and _material() != null)
+	# Negative selector scans the LIVE rebuilt tree; the pre-click grid is freed.
+	_check("filter.materials_hides_gear", _gear_button(m.root, first, false) == null and _material() != null)
 	_check("filter.materials_no_spend", _ledger() == dense)
 	if not await _click(native._find_button(m.root, "All", true), "filter.all"): return "All unavailable"
-	_check("filter.all_restores_gear", art._texture_control(m.root, Art.icon_for(first), true) != null)
+	_check("filter.all_restores_gear", _gear_button(m.root, first, false) != null)
 	_check("filter.all_no_spend", _ledger() == dense)
 	var filter_band := Rect2()
 	for text in FILTERS:
@@ -208,7 +232,176 @@ func _exercise() -> String:
 			await _capture(VIEWS[6])
 			await _tap(m._shell_rect.position + Vector2(5, 5))
 		else: await _capture(VIEWS[7])
+	if r.flag("gear-fidelity"):
+		var gallery_error: String = await _gallery(rng)
+		if gallery_error != "": return gallery_error
 	return ""
+
+## Optional focused gallery (rig --gear-fidelity): one named unique loaned from
+## the real Items.UNIQUES table, browsed read-only through bag card, worn card,
+## Stats paperdoll and its detail. Fixture placement is direct and disclosed;
+## no equip/spend ACTION runs and no stat recalc — HP/MP and sheet stay as-is.
+func _gallery(rng: RandomNumberGenerator) -> String:
+	var spec: Dictionary = {}
+	for u in Items.UNIQUES:
+		if String(u.get("cls", "")) == "warrior" and String(u.get("slot", "")) == "weapon" and String(u.get("art", "")) != "":
+			spec = u
+			break
+	if not _check("gallery.unique_spec", not spec.is_empty(), spec): return "no warrior weapon unique with art"
+	var unique: Dictionary = Items.make_unique(spec, rng)
+	if not _check("gallery.unique_metadata", String(unique.get("name", "")) == String(spec.name)
+			and String(unique.get("art", "")) == String(spec.art) and String(unique.get("art", "")) != ""
+			and String(unique.get("slot", "")) == "weapon" and String(unique.get("grade", "")) == String(spec.grade),
+			{"spec": spec, "item": {"name": unique.get("name", ""), "art": unique.get("art", ""),
+			"grade": unique.get("grade", ""), "noun": unique.get("noun", "")}}):
+		return "make_unique metadata mismatch"
+	var expected: Texture2D = _codex_icon(unique)
+	var explicit: Texture2D = Art.codex_item_icon("weapon", String(spec.grade), String(unique.get("noun", "")), String(spec.art))
+	if not _check("gallery.codex_128", expected != null and expected.get_width() == 128 and expected.get_height() == 128
+			and _same_pixels(expected, explicit), {"size": _tex_size(expected)}):
+		return "unique codex icon invalid"
+	var master_path: String = "res://assets/icons/codex/%s.png" % String(spec.art)
+	# Compare the imported authored resource; Godot applies alpha-border fixup
+	# during import, so raw PNG bytes are not the renderer's source pixels.
+	var master_texture: Texture2D = load(master_path) if ResourceLoader.exists(master_path) else null
+	var master: Image = master_texture.get_image() if master_texture != null else null
+	var actual: Image = expected.get_image()
+	if not _check("gallery.authored_master", master != null and actual != null
+			and master.get_size() == Vector2i(128, 128) and actual.get_size() == master.get_size()
+			and actual.get_format() == master.get_format() and actual.get_data() == master.get_data(), master_path):
+		return "unique UI did not use its authored master"
+	var family: Texture2D = Art.codex_item_icon("weapon", String(spec.grade), String(unique.get("noun", "")), "")
+	if not _check("gallery.distinct_from_family", not _same_pixels(expected, family), String(spec.art)):
+		return "unique fixture does not distinguish its own art from the family"
+	var checkpoint: Dictionary = _ledger()
+	var worn_before: Dictionary = p.equipment["weapon"]
+	# Direct fixture placement, disclosed: the loan enters the bag without any
+	# pickup, purchase, or reward path; the material's freed slot holds it.
+	p.backpack.append(unique)
+	await _open("all")
+	var cell: Button = _gear_button(m.root, unique, false)
+	if not _check("gallery.bag_cell", cell != null): return "unique bag cell not found"
+	_check("gallery.bag_cell_pixels", _same_pixels(cell.icon, expected), {"actual": _tex_size(cell.icon)})
+	if not await _click(cell, "gallery.bag_open"): return "unique bag card unreachable"
+	if not _check("gallery.bag_card_open", is_instance_valid(m.detail_popover)
+			and _label(m.detail_popover, Items.title(unique)) != null): return "unique bag card did not open"
+	_probe_header(m.detail_popover, expected, "gallery.bag_header")
+	await _capture(GALLERY[0])
+	if not await _dismiss("gallery.bag_card"): return "bag card dismissal failed"
+	# Scoped equipment assignment (no equip action). run() restores all pockets
+	# from the pre-run ledger even if a later step aborts mid-loan.
+	p.backpack.erase(unique)
+	p.equipment["weapon"] = unique
+	await _open("all")
+	var label: Label = _label(m.root, Items.title(unique))
+	if not _check("gallery.worn_row", label != null): return "worn unique row missing"
+	var card: Control = _panel(label)
+	if card == null or not await _reach(card): return "worn unique row unreachable"
+	_probe_equipped_icon(card, unique, "gallery.worn")
+	# The name label ignores mouse, so the tap lands on the card, not a socket.
+	await _tap(label.get_global_rect().get_center())
+	if not _check("gallery.worn_card_open", is_instance_valid(m.detail_popover)
+			and _label(m.detail_popover, Items.title(unique)) != null): return "worn card did not open"
+	_probe_header(m.detail_popover, expected, "gallery.worn_header")
+	await _capture(GALLERY[1])
+	if not await _dismiss("gallery.worn_card"): return "worn card dismissal failed"
+	if not await _click(native._find_button(m.root, "Stats"), "gallery.stats_tab"): return "Stats tab unavailable"
+	var well: Panel = _paperdoll_well(Items.title(unique))
+	if not _check("gallery.paperdoll_well", well != null, Items.title(unique)): return "paperdoll well missing"
+	var icon: TextureRect = null
+	for child in well.get_children():
+		if child is TextureRect: icon = child as TextureRect
+	if not _check("gallery.paperdoll_icon", icon != null and icon.texture != null): return "paperdoll icon missing"
+	_check("gallery.paperdoll_pixels", _same_pixels(icon.texture, expected), {"actual": _tex_size(icon.texture)})
+	_check("gallery.paperdoll_linear", icon.texture_filter == CanvasItem.TEXTURE_FILTER_LINEAR, {"filter": icon.texture_filter})
+	_check("gallery.paperdoll_geometry_44_36", well.size.is_equal_approx(Vector2(44, 44))
+		and icon.size.is_equal_approx(Vector2(36, 36)) and icon.position.is_equal_approx(Vector2(4, 4))
+		and well.get_global_rect().grow(0.5).encloses(icon.get_global_rect()),
+		{"well": Geo.rect(well.get_global_rect()), "icon": Geo.rect(icon.get_global_rect())})
+	await _capture(GALLERY[2])
+	await _tap(well.get_global_rect().get_center())
+	if not _check("gallery.detail_open", is_instance_valid(m.detail_popover)
+			and _label(m.detail_popover, Items.title(unique)) != null): return "paperdoll detail did not open"
+	_probe_header(m.detail_popover, expected, "gallery.detail_header")
+	await _capture(GALLERY[3])
+	if not await _dismiss("gallery.detail"): return "detail dismissal failed"
+	p.equipment["weapon"] = worn_before
+	if not _check("gallery.loan_restored", _ledger() == checkpoint, {"gold": p.gold}): return "gallery loan not restored"
+	return ""
+
+## Codex fidelity for one indexed bag gear cell. Hidden cells are probed too:
+## geometry and textures are laid out regardless of the scroll offset, and the
+## dense last-cell gesture already proved reachability once.
+func _probe_gear_cell(grid: GridContainer, index: int, item: Dictionary) -> String:
+	var tag: String = "bag.gear%d" % index
+	var meta: Dictionary = {"slot": item.get("slot", ""), "grade": item.get("grade", ""),
+		"noun": item.get("noun", ""), "art": item.get("art", "")}
+	if not _check(tag + ".button", is_instance_valid(grid) and index >= 0 and index < grid.get_child_count()
+			and grid.get_child(index) is Button, {"index": index, "meta": meta}):
+		return "gear cell missing at index %d" % index
+	var cell: Button = grid.get_child(index) as Button
+	var line: String = _title_line(item)
+	if not _check(tag + ".title_guard", cell.tooltip_text.get_slice("\n", 0) == line,
+			{"expected": line, "tooltip": cell.tooltip_text}):
+		return "gear cell identity mismatch at index %d" % index
+	var expected: Texture2D = _codex_icon(item)
+	_check(tag + ".codex_128", expected != null and expected.get_width() == 128 and expected.get_height() == 128,
+		{"size": _tex_size(expected), "meta": meta})
+	_check(tag + ".icon_pixels", _same_pixels(cell.icon, expected),
+		{"actual": _tex_size(cell.icon), "expected": _tex_size(expected), "meta": meta})
+	_check(tag + ".filter_linear", cell.texture_filter == CanvasItem.TEXTURE_FILTER_LINEAR, {"filter": cell.texture_filter})
+	var rect: Rect2 = cell.get_global_rect()
+	_check(tag + ".cell_48", cell.custom_minimum_size == Vector2(48, 48)
+		and is_equal_approx(rect.size.x, 48.0) and is_equal_approx(rect.size.y, 48.0),
+		{"rect": Geo.rect(rect), "visible": _visible(cell)})
+	var world: Texture2D = Art.icon_for(item)
+	_check(tag + ".world_resolver", world != null and world.get_width() == world.get_height()
+		and (world.get_width() == 32 or world.get_width() == 42) and not _same_pixels(world, expected),
+		{"world": _tex_size(world), "meta": meta})
+	return ""
+
+## Equipped-row fidelity. The TextureRect is selected by the 46px icon well,
+## NOT by texture size — an unpatched 32/42 world texture is still found and
+## its actual dimensions become the recorded old-art diagnostic.
+func _probe_equipped_icon(card: Control, item: Dictionary, prefix: String) -> void:
+	var meta: Dictionary = {"slot": item.get("slot", ""), "grade": item.get("grade", ""),
+		"noun": item.get("noun", ""), "art": item.get("art", "")}
+	var icon: TextureRect = _equipped_icon(card)
+	if not _check(prefix + ".well_icon", icon != null and icon.texture != null, meta): return
+	var expected: Texture2D = _codex_icon(item)
+	_check(prefix + ".codex_128", expected != null and expected.get_width() == 128 and expected.get_height() == 128,
+		{"size": _tex_size(expected), "meta": meta})
+	_check(prefix + ".icon_pixels", _same_pixels(icon.texture, expected),
+		{"actual": _tex_size(icon.texture), "expected": _tex_size(expected), "meta": meta})
+	_check(prefix + ".filter_linear", icon.texture_filter == CanvasItem.TEXTURE_FILTER_LINEAR, {"filter": icon.texture_filter})
+	var well: Control = icon.get_parent() as Control
+	var well_rect: Rect2 = well.get_global_rect()
+	var icon_rect: Rect2 = icon.get_global_rect()
+	_check(prefix + ".geometry_46_38", is_equal_approx(well_rect.size.x, 46.0) and is_equal_approx(well_rect.size.y, 46.0)
+		and is_equal_approx(icon_rect.size.x, 38.0) and is_equal_approx(icon_rect.size.y, 38.0)
+		and well_rect.grow(0.5).encloses(icon_rect),
+		{"well": Geo.rect(well_rect), "icon": Geo.rect(icon_rect)})
+	var world: Texture2D = Art.icon_for(item)
+	_check(prefix + ".world_resolver", world != null and world.get_width() == world.get_height()
+		and (world.get_width() == 32 or world.get_width() == 42),
+		{"world": _tex_size(world), "meta": meta})
+
+## Popover header icon: 40px, LINEAR, codex pixels.
+func _probe_header(root: Node, expected: Texture2D, prefix: String) -> void:
+	var icon: TextureRect = _header_icon(root)
+	if not _check(prefix + ".present", icon != null and icon.texture != null): return
+	_check(prefix + ".pixels", _same_pixels(icon.texture, expected), {"actual": _tex_size(icon.texture)})
+	_check(prefix + ".linear", icon.texture_filter == CanvasItem.TEXTURE_FILTER_LINEAR, {"filter": icon.texture_filter})
+	_check(prefix + ".geometry_40", icon.size.is_equal_approx(Vector2(40, 40)), Geo.rect(icon.get_global_rect()))
+
+func _dismiss(prefix: String) -> bool:
+	var outside: Vector2 = m._shell_rect.position + Vector2(5, 5)
+	if not _check(prefix + ".outside_point", is_instance_valid(m._popover_box)
+			and not m._popover_box.get_global_rect().has_point(outside),
+			Geo.rect(m._popover_box.get_global_rect()) if is_instance_valid(m._popover_box) else []):
+		return false
+	await _tap(outside)
+	return _check(prefix + ".dismissed", not is_instance_valid(m.detail_popover))
 
 func _popover(count: int, prefix: String) -> bool:
 	if not _check(prefix + ".open", is_instance_valid(m.detail_popover) and is_instance_valid(m._popover_box)): return false
@@ -234,11 +427,78 @@ func _popover(count: int, prefix: String) -> bool:
 	return true
 
 func _open(category: String) -> void:
+	var start: int = Time.get_ticks_usec()
 	m.open_inventory("gear", category)
+	var dispatched: int = Time.get_ticks_usec()
 	await r.frames(4)
+	# Diagnostic samples only — no invented thresholds; root holds the baseline.
+	timings.append({"category": category, "bag_count": p.bag_used(), "gear_count": p.backpack.size(),
+		"dispatch_usec": dispatched - start, "settled_usec": Time.get_ticks_usec() - start})
 
 func _material() -> Button:
 	return art._texture_control(m.root, Art.material_ui_icon("bone", "F"), true) as Button
+
+## Mirrors the production _gear_codex_icon exactly: all four resolver args,
+## read-only on the dictionary — dropping the art key or noun would reroute a
+## named piece onto its grade family and hide exactly the bug hunted here.
+func _codex_icon(item: Dictionary) -> Texture2D:
+	return Art.codex_item_icon(String(item.get("slot", "")), String(item.get("grade", "F")),
+		String(item.get("noun", "")), String(item.get("art", "")))
+
+func _title_line(item: Dictionary) -> String:
+	return Items.title(item) + (" · Kept" if GearCare.kept(item) else "")
+
+## Live-tree gear button selector: first tooltip line is title (+ Kept flag);
+## optional byte-equal icon pixels. Never holds refs across a rebuild — the
+## codex cache (256 entries) also makes texture-reference matching unreliable.
+func _gear_button(root: Node, item: Dictionary, require_pixels: bool) -> Button:
+	var line: String = _title_line(item)
+	var expected: Texture2D = _codex_icon(item)
+	for node in root.find_children("*", "Button", true, false):
+		var button: Button = node as Button
+		if button == null or button.tooltip_text.get_slice("\n", 0) != line: continue
+		if require_pixels and not _same_pixels(button.icon, expected): continue
+		return button
+	return null
+
+func _grid() -> GridContainer:
+	var material: Button = _material()
+	if material == null: return null
+	return material.get_parent() as GridContainer
+
+func _equipped_icon(card: Control) -> TextureRect:
+	for node in card.find_children("*", "Panel", true, false):
+		var well: Panel = node as Panel
+		if well == null or not well.custom_minimum_size.is_equal_approx(Vector2(46, 46)): continue
+		for child in well.get_children():
+			if child is TextureRect: return child as TextureRect
+	return null
+
+func _header_icon(root: Node) -> TextureRect:
+	for node in root.find_children("*", "TextureRect", true, false):
+		var rect: TextureRect = node as TextureRect
+		if rect != null and rect.custom_minimum_size.is_equal_approx(Vector2(40, 40)): return rect
+	return null
+
+func _paperdoll_well(title: String) -> Panel:
+	for node in m.root.find_children("*", "Panel", true, false):
+		var well: Panel = node as Panel
+		if well != null and well.tooltip_text == title: return well
+	return null
+
+## Byte equality of actual pixel data, guarded by dimensions and format. Both
+## sides come from live textures, never cached references.
+func _same_pixels(a: Texture2D, b: Texture2D) -> bool:
+	if a == null or b == null: return false
+	if a == b: return true
+	var ia: Image = a.get_image()
+	var ib: Image = b.get_image()
+	if ia == null or ib == null: return false
+	if ia.get_width() != ib.get_width() or ia.get_height() != ib.get_height() or ia.get_format() != ib.get_format(): return false
+	return ia.get_data() == ib.get_data()
+
+func _tex_size(texture: Texture2D) -> Array:
+	return [texture.get_width(), texture.get_height()] if texture != null else [0, 0]
 
 func _label(root: Node, text: String) -> Label:
 	for node in root.find_children("*", "Label", true, false):
@@ -382,7 +642,8 @@ func _report() -> Dictionary:
 		if not bool(row.passed): failures += 1
 	var result := {"checks": rows.size(), "passed": rows.size() - failures, "findings": 0, "failures": failures,
 		"rows": rows, "shots": views, "gestures": gestures, "reach_runs": reach_runs, "mouse_clicks": native.mouse_clicks, "touch_taps": native.touch_taps,
-		"scope": "Isolated factory loans; native GUI and scroll events; two real single-unit material discards. Host touch capability is explicitly enabled for --touch and restored; raw touch gestures, no physical device, controller, socket drag/drop, crafting, sale, save, or merchant acceptance. Equipped names may retain authored ellipsis; selected material detail full text checked. Geometry supports original-image review, never replaces it."}
+		"timings": timings,
+		"scope": "Isolated factory loans; native GUI and scroll events; two real single-unit material discards. Codex icon fidelity by byte-equal pixels against the live four-arg resolver at exact 46/38, 48, 44/36 and 40 px geometry; world-resolver dims witnessed as 32 or 42, not asserted uniform. Optional gear-fidelity gallery loans one named unique for card/worn/paperdoll views via native input with disclosed direct equipment assignment, restored. _open dispatch/settled timings recorded without thresholds. Host touch capability is explicitly enabled for --touch and restored; raw touch gestures, no physical device, controller, socket drag/drop, crafting, sale, save, merchant/world/held renderer, whole-art-corpus, or ordinary-progression acceptance. Equipped names may retain authored ellipsis; selected material detail full text checked. Geometry supports original-image review, never replaces it."}
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(r.shot_dir))
 	var file := FileAccess.open(r.shot_dir + "/report.json", FileAccess.WRITE)
 	if file != null: file.store_string(JSON.stringify(result, "\t")); file.close()

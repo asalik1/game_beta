@@ -7,6 +7,10 @@ extends ShotRig
 
 
 func _ready() -> void:
+	if flag("gear-fidelity") and not flag("inventory-readability"):
+		push_error("Gear fidelity requires the Inventory readability mode")
+		finish(1)
+		return
 	if flag("inventory-readability"):
 		var isolated: String = ProjectSettings.globalize_path("user://").replace("\\", "/").to_lower()
 		if not isolated.contains("/build/qa/") or flag("no-capture") or flag("baseline") or flag("gear-pilots") or flag("grade-pairs") or flag("all-brewing") or flag("world-prompts"):

@@ -139,15 +139,41 @@ Follow-up priorities and preserved experiments:
   final commit/local state: inventory-readability-commit-receipt.json under
   build/qa/session-sept20. All46 unrelated files and old status tail preserved.
   The session remains active through September21 21:00UTC.
-- Next painted-gear UI candidate remains PRIVATE: actual Claude produced
-  Inventory-only resolver opt-ins under inventory-readability/
-  gear-fidelity-claude-v1/reviewed-private-v1. All7 source anchors match after
-  explicit UTF8 decoding; a root metadata/line-ending dry-apply error is retained.
-  No canonical integration or native acceptance. No new assets are needed.
-  Actual DeepSeek QA drafts v1/v2 are rejected, retained with precise source,
-  selector and lifetime blockers; derive/review a corrected fixture before use.
-  Stats/details/unique art and performance still need coverage. Preserve world,
-  held gear, protected art and gameplay32px resolvers.
+- Checkpoint 5 accepted: painted gear in Inventory. Existing128px masters now
+  render in gear cells, equipped wells, worn/bag detail headers and Stats.
+  Exact slot/grade/noun/unique-art routing, original control geometry, sockets
+  and transactions are preserved. No assets or world/held resolvers changed;
+  the shared merchant inspection branch retains its original resolver.
+  Actual Claude supplied production and corrected QA; actual DeepSeek drafts
+  and evidence scaffolding were independently reviewed/corrected by root.
+  Rejected QA/metadata/provider attempts are retained, not counted as passes.
+  Desktop compile/quick/full, scoped mobile sync/import/compile/strict quick,
+  all12 native episodes and all7 strict preflight categories pass. Inventory
+  passes290/290 on desktop and host-mobile, with12 views each. Material pilots
+  pass309 each; equipment49 each; gem caps45/49; menu navigation158 each;
+  paired real ENet UI24 each. All106 originals inspected by actual Claude;
+  root independently opened selected originals and corrected overbroad claims
+  about gem fidelity, fixture claims and a mistaken paperdoll tile count.
+  Exact named-master pixels and a family-fallback negative control pass.
+  Baseline/first-painted runs pass146 each; dispatch samples are diagnostic,
+  not statistical performance or worst-case cache coverage. No ordinary
+  progression, physical-device or world/held rendering acceptance is claimed.
+  ENet UI-only does not prove persistence or real-scene disconnect cleanup;
+  the older retained-release diagnostic remains unaccepted. Legacy coarse
+  gems/bags/Pitted Iron,20 missing material variants, small stat text, dim
+  ineligible gems and compact popover controls remain explicit follow-up.
+  Evidence: gear-ui-fidelity/acceptance.json and gear-ui-fidelity-commit-receipt.json
+  under build/qa/session-sept20. All46 unrelated files,4625 icon PNGs and the
+  old status tail remain byte-identical. Session active through Sep21 21UTC.
+- Next gem UI candidate is PRIVATE under gem-ui-fidelity-next/claude-v1.
+  Actual Claude session f6d9c69e-d227-43b0-aa6f-8773209bccca returned3 narrow
+  bag/picker/filled-socket resolver opt-ins plus QA; all10 UTF8 anchors match.
+  Root made private copies only. Existing128px Ruby master was inspected;
+  production scope looks bounded, but QA needs strict master prerequisites,
+  explicit picker scope, metadata selectors and actual geometry checks.
+  Root retained those blockers and asked actual DeepSeek for a private QA
+  correction under deepseek-qa-correction-v1. No canonical gem integration or
+  runtime acceptance. Merge the contradictory historical Art comment before use.
 - The next chest/NPC prompt candidate is private in prompt-clearance-next/.
   Fresh actual Fable session fc855b69-495c-4689-ade2-a0f578763a7c read/reasoned
   but timed out without a patch; raw provider/session and failed receipt kept.

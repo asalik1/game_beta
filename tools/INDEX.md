@@ -18,6 +18,9 @@ single-unit material drops. Add `--touch` or host mobile
 host touch capability; it never substitutes wheel events for the touch branch.
 No baseline waiver or combination with other material modes is accepted.
 See INVENTORY_READABILITY.md for controlled loans and exact validation limits.
+Add `--gear-fidelity` for the four named-gear detail/Stats views and strict
+painted-texture checks; see GEAR_UI_FIDELITY.md. This flag requires the
+Inventory readability mode and does not waive its original eight views.
 
 Earned shortcut QA: `shot.bat wayfinder --shortcut-domain --timeout=240`
 checks seeded graph invariants without building campaign worlds. The owned

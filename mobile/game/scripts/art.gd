@@ -2348,9 +2348,10 @@ static func item_icon(slot: String, grade: String, noun := "", art := "") -> Ima
 	return t
 
 
-## High-detail gear texture for the codex. Runtime bag/drop/held-weapon art must
-## remain 32x32, but enlarging that tiny texture into a 56-64px catalogue cell
-## merely magnifies its pixel grid. The regeneration pass therefore installs a
+## High-detail gear for the codex and explicitly opted-in Inventory controls.
+## World drops and held weapons keep item_icon/icon_for runtime textures;
+## larger UI controls use these masters without enlarging the runtime pixel grid.
+## The regeneration pass therefore installs a
 ## parallel assets/icons/codex/<key>.png master. This resolver preserves that
 ## native detail and falls back to item_icon while a slice is still incomplete.
 ##

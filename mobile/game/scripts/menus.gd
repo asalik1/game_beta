@@ -2400,8 +2400,9 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			var it: Dictionary = item
 			if cat != "all" and String(it["slot"]) != cat:
 				continue
-			var cell := _bag_slot(grid, Art.icon_for(it), "★" if GearCare.kept(it) else "", Items.GRADE_COLOR[it["grade"]],
+			var cell := _bag_slot(grid, _gear_codex_icon(it), "★" if GearCare.kept(it) else "", Items.GRADE_COLOR[it["grade"]],
 				func() -> void: UIGearInspect.open(self, it, cat))
+			cell.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 			cell.tooltip_text = Items.title(it) + (" · Kept" if GearCare.kept(it) else "") + "\n" + _diff_tip(it)
 			cell.set_drag_forwarding(Callable(), sock_can, sock_drop)
 	if show_cons:
@@ -2574,6 +2575,16 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	_hint(vbox, "ESC, ✕, click outside, or %s to close" % menu_key("inventory"))
 
 
+## High-res gear icon for the opted-in Inventory surfaces only. Wraps
+## Art.codex_item_icon keeping all four resolver arguments — dropping the
+## unique art key or the noun would silently reroute a named piece onto the
+## grade family. Read-only on the dictionary: no copy, no mutation, so item
+## identity (is_same against equipment, transaction refs) is untouched.
+func _gear_codex_icon(item: Dictionary) -> Texture2D:
+	return Art.codex_item_icon(String(item.get("slot", "")), String(item.get("grade", "F")),
+		String(item.get("noun", "")), String(item.get("art", "")))
+
+
 ## One equipped-slot card of the inventory's left column: [icon well][name +
 ## quiet stat line][sockets]. The whole card opens the item's panel and takes a
 ## bag gem dropped anywhere on it (Crownfall); the socket squares stay their
@@ -2612,7 +2623,8 @@ func _equipped_row(left: VBoxContainer, slot: String, cat: String) -> void:
 	row.add_child(well)
 	if has:
 		var ic := TextureRect.new()
-		ic.texture = Art.icon_for(item)
+		ic.texture = _gear_codex_icon(item)
+		ic.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		ic.set_anchors_preset(Control.PRESET_FULL_RECT)
 		ic.offset_left = 4
 		ic.offset_top = 4
@@ -3321,14 +3333,15 @@ func _pd_well(parent: Control, slot: String, p: Player, at: Vector2) -> void:
 		var ic := TextureRect.new()
 		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		ic.texture = Art.icon_for(item)
+		ic.texture = _gear_codex_icon(item)
+		ic.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		ic.position = Vector2(4, 4)
 		ic.size = Vector2(36, 36)
 		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		well.add_child(ic)
 		well.gui_input.connect(func(e: InputEvent) -> void:
 			if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
-				_open_detail_popover(Art.icon_for(item), Items.title(item), color,
+				_open_detail_popover(_gear_codex_icon(item), Items.title(item), color,
 					Items.describe(item), [], GearFlavor.of(item)))
 	else:
 		var mono := Label.new()
@@ -3552,7 +3565,7 @@ func open_item_panel(item: Dictionary, at := Vector2(-1, -1), tab := "info") -> 
 		game.local_player.remove_gem(data["item"], int(data["idx"]))
 		open_item_panel(item, Vector2(-1, -1), "gems")
 	detail_popover.set_drag_forwarding(Callable(), ov_can, ov_drop)
-	_popover_header(vbox, Art.icon_for(item), Items.title(item), color)
+	_popover_header(vbox, _gear_codex_icon(item), Items.title(item), color)
 	_btn(vbox, "★ Kept — unkeep" if GearCare.kept(item) else "Keep this piece", func() -> void:
 		p.set_gear_kept(item, not GearCare.kept(item))
 		open_item_panel(item, Vector2(-1, -1), tab), UITheme.GOLD_BRIGHT)

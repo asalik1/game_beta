@@ -7,7 +7,7 @@ static func open(m: Menus, item: Dictionary, category := "all", shop_zone := -1)
 	var box := m._popover_frame(Items.GRADE_COLOR[item["grade"]])
 	var pop: PanelContainer = m._popover_box
 	box.custom_minimum_size.x = 520
-	m._popover_header(box, Art.icon_for(item), Items.title(item), Items.GRADE_COLOR[item["grade"]])
+	m._popover_header(box, m._gear_codex_icon(item) if shop_zone < 0 else Art.icon_for(item), Items.title(item), Items.GRADE_COLOR[item["grade"]])
 	var worn: Dictionary = p.equipment.get(String(item["slot"]), {})
 	var against := "Empty %s slot" % String(item["slot"]) if worn.is_empty() else "Wearing: " + Items.title(worn)
 	var caption := m._lbl(box, against, 14, UITheme.TEXT_MUTED)
