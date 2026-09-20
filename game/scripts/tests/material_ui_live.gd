@@ -149,6 +149,11 @@ static func run(rig: ShotRig) -> Dictionary:
 
 
 func _run() -> String:
+	if r.flag("gear-pilots"):
+		if not _check("gear_pilots.exclusive", not r.flag("baseline") and not r.flag("grade-pairs")
+				and not r.flag("all-brewing") and not r.flag("world-prompts"), "two-pilot mode only"):
+			return "gear-pilots conflicts with another mode"
+		if not _gear_pilot_sources("before"): return "pilot asset approval failed"
 	if r.flag("all-brewing") and not _check("mode.exclusive", not r.flag("grade-pairs"), "choose one optional ingredient mode"):
 		return "--all-brewing and --grade-pairs are mutually exclusive"
 	if r.flag("all-brewing"):
@@ -239,6 +244,7 @@ func _run() -> String:
 	_check("browse.no_economy_changes", _economy() == before, "no claim, sale, drop or brewing actions")
 	await _pickups()
 	_check("world.no_claim", _economy() == before, "posed factory pickups remain unclaimed")
+	if r.flag("gear-pilots"): return await _gear_pilots()
 	if r.flag("all-brewing"):
 		var pair_error: String = await _grade_pairs()
 		if pair_error != "":
@@ -560,6 +566,11 @@ func _report() -> Dictionary:
 		result["all_brewing_matrix"] = all_matrix
 		result["actual_shots"] = r.shots_taken
 		result["scope"] = "13 approved ingredient UI identities; original F/world and E/D views retained; C/B/A preview only; controlled no_saves capital stock, no trade/mastery/blueprint grant or transaction; no ordinary collection or hardware claim"
+	if r.flag("gear-pilots"):
+		result["gear_pilots"] = true
+		result["pilot_png_sha256"] = {"bone": r.arg("bone-f-sha256"), "cloth": r.arg("cloth-f-sha256")}
+		result["actual_shots"] = r.shots_taken
+		result["scope"] = "Two new BoneF/ClothF UI pilots; original six views and13UI/35world byte controls; controlled stock/native mouse-or-touch browsing; no collection/craft/sell/drop/claim/persistence/hardware proof"
 	for row in rows:
 		if row.passed: result.passed += 1
 		elif _expected_finding(String(row.id), bool(row.presentation)): result.findings += 1
@@ -781,3 +792,166 @@ func _all_recipe_receipt(alchemy: AlchemyProof, grade: String, recipe: Dictionar
 		"requirements": alchemy._text("AlchemyRequirements"), "allowed": expected.allowed,
 		"blocked_reason": expected.reason, "active_profession": p.profession,
 		"blueprint_known": expected.blueprint_known, "inspection_only": true})
+
+
+# Optional two-pilot extension; original six views/modes are unchanged.
+func _gear_pilot_sources(phase: String) -> bool:
+	var ok := true
+	for stem: String in ALL_APPROVED_PNG:
+		ok = _check("gear_pilots." + phase + ".old_ui." + stem,
+			FileAccess.get_sha256("res://assets/icons/materials_ui/" + stem + ".png") == ALL_APPROVED_PNG[stem], stem) and ok
+	for path: String in ALL_WORLD_PNG:
+		ok = _check("gear_pilots." + phase + ".world." + path.get_file(),
+			FileAccess.get_sha256(path) == ALL_WORLD_PNG[path], path) and ok
+	for family: String in ["bone", "cloth"]:
+		var stem := Items.material_stem(family, "F", Items.MATERIALS[family].F)
+		var path := "res://assets/icons/materials_ui/" + stem + ".png"
+		var expected: String = r.arg(family + "-f-sha256")
+		var valid := expected.length() == 64
+		for character in expected: valid = valid and "0123456789abcdef".contains(character)
+		if not _check("gear_pilots." + phase + ".approved_file." + family, valid
+				and FileAccess.file_exists(path) and FileAccess.get_sha256(path) == expected, expected):
+			ok = false
+			continue
+		# Raw PNG approval is distinct from Godot's imported alpha processing.
+		var source: Image = Image.load_from_file(path)
+		var imported: Texture2D = load(path) as Texture2D
+		var texture: Texture2D = Art.material_ui_icon(family, "F")
+		if not _check("gear_pilots." + phase + ".loaded." + family,
+				source != null and imported != null and texture != null, family):
+			ok = false
+			continue
+		var expected_image: Image = imported.get_image()
+		var sampled: Image = texture.get_image()
+		if not _check("gear_pilots." + phase + ".sampled." + family,
+				expected_image != null and sampled != null, family):
+			ok = false
+			continue
+		source.convert(Image.FORMAT_RGBA8)
+		expected_image.convert(Image.FORMAT_RGBA8)
+		sampled.convert(Image.FORMAT_RGBA8)
+		ok = _check("gear_pilots." + phase + ".raw_source_size." + family,
+			source.get_size() == Vector2i(128, 128), str(source.get_size())) and ok
+		ok = _check("gear_pilots." + phase + ".pixel_identity." + family,
+			expected_image.get_size() == Vector2i(128, 128) and sampled.get_size() == expected_image.get_size()
+			and sampled.get_data() == expected_image.get_data() and Art.material_ui_icon(family, "F") == texture,
+			{"imported_px": str(expected_image.get_size()), "sampled_px": str(sampled.get_size())}) and ok
+		var bytes: PackedByteArray = source.get_data()
+		var clear := 0
+		var body := 0
+		for index in range(3, bytes.size(), 4):
+			clear += int(bytes[index] == 0)
+			body += int(bytes[index] > 128)
+		ok = _check("gear_pilots." + phase + ".alpha." + family, clear > 0 and body > 0,
+			{"clear_pixels": clear, "body_pixels": body}) and ok
+	return ok
+
+
+func _gear_pilot_ledger() -> Dictionary:
+	var result := {}
+	for key in ["gold", "profession", "mastery", "materials", "backpack", "gem_bag", "consumables",
+			"blueprints", "npc_favor", "bags", "loose_bags", "equipment"]:
+		var value: Variant = p.get(key)
+		result[key] = value.duplicate(true) if value is Dictionary or value is Array else value
+	result["mailbox"] = g.mailbox.duplicate(true)
+	result["loot"] = [g.loot_rng.seed, g.loot_rng.state]
+	return result
+
+
+func _gear_pilots() -> String:
+	var saved := _gear_pilot_ledger()
+	var emulation := Input.emulate_mouse_from_touch
+	Input.emulate_mouse_from_touch = true
+	for family in ["bone", "cloth"]:
+		p.materials.append(Items.make_material(family, "F", 7))
+	g.mailbox = [{"subject": "Gear material pilots", "body": "Controlled art inspection; no collection or claim.",
+		"read": true, "sent_at": g.trusted_now(), "items": [
+			{"kind": "material", "family": "bone", "grade": "F", "count": 7},
+			{"kind": "material", "family": "cloth", "grade": "F", "count": 7}]}]
+	var before := _gear_pilot_ledger()
+	var error: String = await _gear_pilot_views()
+	_check("gear_pilots.browse_unchanged", _gear_pilot_ledger() == before,
+		"full character pockets, mailbox and loot RNG unchanged before restoration")
+	m.close()
+	for key in saved:
+		if key not in ["mailbox", "loot"]: p.set(key, saved[key])
+	g.mailbox = saved.mailbox
+	g.loot_rng.seed = int(saved.loot[0])
+	g.loot_rng.state = int(saved.loot[1])
+	Input.emulate_mouse_from_touch = emulation
+	_check("gear_pilots.restored", _gear_pilot_ledger() == saved, "fixture loans restored after success or returned failure")
+	if not _gear_pilot_sources("after") and error == "": error = "pilot sources changed"
+	return error
+
+
+func _gear_pilot_click(control: Control, id: String) -> bool:
+	if not _check("gear_pilots.input." + id, is_instance_valid(control), id): return false
+	await _reveal(control)
+	var rect := control.get_global_rect()
+	if not _check("gear_pilots.target." + id, control.is_visible_in_tree()
+			and not (control is BaseButton and control.disabled)
+			and m._shell_rect.encloses(rect) and m.get_viewport().get_visible_rect().encloses(rect), str(rect)): return false
+	if g.touch_mode: await native._touch(rect.get_center())
+	else: await native._mouse(rect.get_center())
+	await r.frames(3)
+	return true
+
+
+func _gear_pilot_shot(name: String) -> void:
+	await r.frames(3)
+	if not r.flag("no-capture"):
+		r.shot(name, "Bone F and Cloth F UI art only; loaned stock, native browsing, no payment/claim/drop or collection proof")
+
+
+func _gear_pilot_views() -> String:
+	m.open_inventory("gear", "all")
+	await r.frames(3)
+	for family in ["bone", "cloth"]:
+		_surface("gear_pilots.inventory." + family, m.root, Art.material_ui_icon(family, "F"), true)
+	await _gear_pilot_shot("06_gear_pilot_inventory")
+	for family in ["bone", "cloth"]:
+		m.open_inventory("gear", "all")
+		await r.frames(3)
+		var texture: Texture2D = Art.material_ui_icon(family, "F")
+		if not await _gear_pilot_click(_texture_control(m.root, texture, true), "inventory_" + family): return "pilot slot unavailable"
+		if not _check("gear_pilots.detail_open." + family, is_instance_valid(m.detail_popover), family): return "pilot detail failed"
+		_surface("gear_pilots.detail." + family, m.detail_popover, texture, false)
+		await _gear_pilot_shot("07_gear_pilot_detail_" + family)
+	UIMailbox.open(m)
+	await r.frames(3)
+	if not await _gear_pilot_click(native._find_button(m.root, "Gear material pilots"), "letter"): return "pilot letter unavailable"
+	for family in ["bone", "cloth"]:
+		_surface("gear_pilots.mail." + family, m.root, Art.material_ui_icon(family, "F"), true)
+	await _gear_pilot_shot("08_gear_pilot_mail")
+	for family in ["bone", "cloth"]:
+		var texture: Texture2D = Art.material_ui_icon(family, "F")
+		if not await _gear_pilot_click(_texture_control(m.root, texture, true), "mail_" + family): return "pilot mail slot unavailable"
+		if not _check("gear_pilots.mail_detail_open." + family, is_instance_valid(m.detail_popover), family): return "mail detail failed"
+		_surface("gear_pilots.mail_detail." + family, m.detail_popover, texture, false)
+		await _gear_pilot_shot("09_gear_pilot_mail_detail_" + family)
+		m._close_detail_popover()
+		await r.frames(2)
+	m.open_shop(g.cur_room, "buy")
+	await r.frames(3)
+	if not await _gear_pilot_click(native._find_button(m.root, "Sell", true), "sell_tab"): return "merchant tab unavailable"
+	for family in ["bone", "cloth"]:
+		var texture: Texture2D = Art.material_ui_icon(family, "F")
+		var control := _texture_control(m.root, texture, false)
+		if not _check("gear_pilots.merchant_control." + family, is_instance_valid(control), family): return "merchant pilot missing"
+		await _reveal(control)
+		_surface("gear_pilots.merchant." + family, m.root, texture, false)
+		await _gear_pilot_shot("10_gear_pilot_merchant_" + family)
+	for family in ["bone", "cloth"]:
+		m.open_professions()
+		await r.frames(3)
+		var trade := "alchemist" if family == "bone" else "tailor"
+		var slot := "charm" if family == "bone" else "armor"
+		for name: String in ["ProfTrade_" + trade, "ProfTab_craft", "ProfSlot_" + slot, "ProfGrade_F"]:
+			if not await _gear_pilot_click(m.root.find_child(name, true, false) as Control, name): return "workshop navigation unavailable"
+		_surface("gear_pilots.workshop." + family, m.root, Art.material_ui_icon(family, "F"), false)
+		var title := m.root.find_child("ProfRecipeName", true, false) as Label
+		var counts := m.root.find_child("ProfIngredient", true, false) as Label
+		_check("gear_pilots.workshop_identity." + family, title != null and title.text == slot.capitalize() + " — grade F"
+			and counts != null and counts.text == "Have 7 / Need %d" % int(Balance.CRAFT_MATERIAL_COST.F), family)
+		await _gear_pilot_shot("11_gear_pilot_workshop_" + family)
+	return ""

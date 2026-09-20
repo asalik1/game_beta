@@ -49,10 +49,25 @@ Checkpoint 1 — focused Professions workshop (validated; commit receipt below):
   audit are in `workshop-commit-receipt.json` in the same directory.
 
 Follow-up priorities and preserved experiments:
-- Inventory's bone/cloth material icons still look pixelated in the actual native
-  replacement-menu frame. This checkpoint is not whole-game visual acceptance.
-  Private `material-art-audit/` records 22 missing painted material variants;
-  upscaling the deliberately pixel-art archival masters would not fix their style.
+- Checkpoint 2 accepted: painted F-grade Cracked Bone and Frayed Scraps UI art,
+  generated with built-in ImageGen; original masters, prompts, approvals and
+  native acceptance are archived in `art_src/materials_painted_2026-09-20/`.
+  Exact 128px exports installed on desktop/mobile; world icons unchanged.
+  Actual-DeepSeek-derived reviewed V2 QA/exporter integrated, rejected drafts
+  preserved. Desktop and host-mobile pilots each pass 309/309 (16 views);
+  old all-brewing regressions each pass 588/588 (13 views). Original images
+  independently reviewed. Desktop quick/full, mobile import/compile/strict
+  quick and all seven strict preflight categories pass. No network logic changed.
+  Evidence: `material-pilot-checkpoint-validation.json`, final commit and owned
+  state: `material-pilot-commit-receipt.json` under this session's QA directory.
+  Controlled loans/browsing, not ordinary progression or physical mobile.
+  First mobile wrapper's native-stderr failure is preserved and corrected;
+  known suite/renderer shutdown diagnostics remain. All 46 unrelated files,
+  old 13 UI/35 world icons and prior source archive remain byte-identical.
+- Twenty material variants still need painted UI artwork. Older Inventory
+  density and low-contrast F labels remain review priorities; this two-icon
+  checkpoint is not whole-game visual acceptance. `material-art-audit/` keeps
+  the original 22-missing inventory; two F variants are now addressed.
 - The preserved unfinished `shot_brewing_journey.gd` still searches for the old
   Lock Alchemist caption. Leave its original evidence/files intact; adapt a new
   owned attempt before resuming it. Prior Fangmaw defeat remains incomplete.
@@ -60,6 +75,8 @@ Follow-up priorities and preserved experiments:
   production + domain-QA2 candidates. Run the real 200-seed usefulness census
   first. Still uncompiled/unaccepted; protocol compatibility bump and corrected
   native/network QA are required before shipping. No canonical shortcut edits.
+  Paired QA V4 is source-reviewed, but its road_hunt wrapper targets preserved
+  files: adapt to a new owned wrapper before any integration; never patch them.
 - Earlier Claude web-hit/root candidate under `claude-combat/` stays parked;
   raw QA has blockers. Earlier DeepSeek continuity-only drafts are superseded.
 - Initial Warrior hunt: 35.352s, HP minimum 113.467/130, +120 gold, five originals

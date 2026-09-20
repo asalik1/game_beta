@@ -242,6 +242,15 @@ remain strict. It does not brew, buy knowledge or grant trade/mastery. The
 all-brewing and grade-pair flags are separate modes; default and grade-pair
 behavior stay unchanged. Adding `--world-prompts` gives 15 all-brewing views;
 the accepted C/B/A batch uses the 13-view mode alone.
+`--gear-pilots` is a separate two-material mode for Bone F and Cloth F. Pass
+`--bone-f-sha256=<approved PNG hash>` and `--cloth-f-sha256=<approved PNG hash>`
+from `art_src/materials_painted_2026-09-20/pilot-approvals.json`. It retains the
+six original views and adds ten Inventory/detail/mail/merchant/workshop views.
+The original views retain mouse input; the added views use touch when requested.
+Raw PNG hashes/alpha, independently imported texture pixels, cache identity,
+full fitted icon visibility, previous 13 UI/35 world hashes and a complete
+before-restoration browse ledger stay strict. It cannot combine with baseline,
+grade-pairs, all-brewing or world-prompts. No sales, claims or crafting occur.
 Add `--world-prompts` to check natural capital interaction-label hiding under
 Inventory/Fangmoot and restoration after real Escape/touch/B closes. Two extra
 captures; no posed prompt visibility. See `MENU_PROMPTS.md` for copy and QA scope.
@@ -803,7 +812,7 @@ chill, chain timing, pause, touch interaction and two-peer ENet state/request fl
 | `tools/art/install_prop_anim.py` | (2026-08-17) Codex 4-frame prop sheet → `<name>_anim.png` for PROCEDURAL props with no static (fires, fountains, storm array, chainrig swing): shared-bbox align, BOTTOM-anchored square cells, posterize. Anim replaces the procedural look. |
 | `tools/art/build_terrain_art_fix.py` | `TERRAIN_ART_FIX_TASK.md` tier 1–3 masters → 20 palette-controlled desktop/mobile replacements plus six registered full-object `_anim` strips. |
 | `tools/art/build_material_icons.py` | generated crafting-material sources → 35 transparent 32x32 Metal/Cloth/Bone/Reagent/Herb icons plus a labelled QA contact sheet. |
-| `tools/art/build_material_ui_icons.py` | approved RGBA masters → 128px UI candidates with source/decoded-pixel checks and full-canvas premultiplied resize. Default/`--grade-pairs` retain seven F/E/D rows; `--all-brewing` requires six real C/B/A approvals and fresh output, selects 13 and only installs missing approved upper PNGs with explicit `--install`. Existing seven/world PNGs remain untouched. Provenance: `art_src/materials_painted_2026-09-09/`. |
+| `tools/art/build_material_ui_icons.py` | approved RGBA masters → 128px UI candidates with source/decoded-pixel checks and full-canvas premultiplied resize. Default/`--grade-pairs` retain seven F/E/D rows; `--all-brewing` selects the approved 13. `--gear-pilots --pilot-approvals <manifest>` selects exactly Bone F/Cloth F from the September 20 archive and verifies prior 13 UI/35 world bytes. Both additive modes require fresh output and refuse conflicting runtime PNGs; installation requires `--install`. Provenance: `art_src/materials_painted_2026-09-09/` and `art_src/materials_painted_2026-09-20/`. |
 | `tools/art/material_ui_approvals.py` | validates the exact seven existing and six upper source/export/review records for the optional all-brewing exporter; rejects missing/conflicting inputs and prevents runtime overwrite. No image generation or world-scale changes. |
 | `tools/art/build_capital_monumental.py` | generated Crownfall Crown Spire + connected city arcade sources → production architecture and an integrated four-frame gate-fire strip. |
 | `tools/art/clean_sprite.py` | FLUX/Pollinations render → clean pixel sprite (normalize). |

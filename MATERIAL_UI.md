@@ -20,6 +20,12 @@ Pure Essence (B), and Pristine Bloom and Radiant Essence (A). These complete the
 liquid and fitting identities; they remain raw ingredients, distinct from the
 finished potion preview. Native validation for this batch is recorded below.
 
+September 20 adds Cracked Bone and Frayed Scraps (F), bringing painted UI
+coverage to 15 of the 35 material identities. Two snapped ivory fragments and
+a tied bundle of worn linen retain the original subjects with painted shading.
+Inventory, details, mail, merchant sale rows and the Professions workshop use
+the same shared resolver. No economy or world pickup behavior changes.
+
 ## Rendering and sources
 
 `Art.material_ui_icon` loads reviewed 128px overrides from
@@ -31,7 +37,7 @@ counts, transactions and economy are unchanged.
 
 The existing `Art.material_icon` continues to supply 32px world pickups. Their
 1.1 scale still produces 35.2px sprites. All 35 legacy PNGs remain intact; the
-other 22 material variants continue to use the existing UI fallback textures.
+other 20 material variants continue to use the existing UI fallback textures.
 
 Built-in ImageGen produced three accepted subject masters at 1254px. Herb and
 reagent retain native RGBA; scrap v3 was generated on a flat magenta background
@@ -69,6 +75,14 @@ hashes must match. It selects all 13, requires a fresh candidate output director
 and preserves the existing seven. With explicit `--install`, it writes only
 missing approved upper UI PNGs, refuses conflicting existing files and leaves
 world textures untouched. Mobile synchronization remains a separate scoped step.
+
+The separate `--gear-pilots --pilot-approvals <manifest>` export mode selects
+exactly Bone F and Cloth F. Their archived source/export approvals live in
+`art_src/materials_painted_2026-09-20/pilot-approvals.json`. It requires a fresh
+candidate directory, verifies both source and export hashes plus actual review
+records, checks all previous 13 UI PNGs, and refuses conflicting runtime files.
+The two original masters have native RGBA; no keying, cropping or recoloring
+was used. Source approvals permit a native trial and remain immutable afterward.
 
 ```powershell
 python tools/art/build_material_ui_icons.py --all-brewing --output build/material_all_brewing_review
@@ -123,6 +137,26 @@ These are controlled presentation fixtures: loaned items, an explicitly marked
 letter and posed real Pickup nodes with collection disabled. The rig uses
 synthetic native pointer input to open actual controls. It does not prove
 ordinary collection, sales, claims, combat or physical-device performance.
+
+For Bone F/Cloth F, use the separate `--gear-pilots` mode and pass the two exact
+approved PNG hashes with `--bone-f-sha256` and `--cloth-f-sha256`. This retains
+the original six images and adds ten actual inventory/detail/mail/merchant/
+workshop captures. Raw-file checks are separate from imported-texture pixel
+identity; all previous 13 UI/35 world hashes and the complete browse ledger
+remain strict. Added views use native touch input when `--touch` is supplied.
+It cannot combine with baseline, grade-pairs, all-brewing or world-prompts.
+The existing 13-view all-brewing mode remains a separate regression.
+
+September 20 acceptance: desktop and host-mobile each pass 309/309 with
+16 native originals independently reviewed. The original all-brewing mode
+passes 588/588 with 13 views on each project. Desktop quick/full, mobile
+import/compile/strict quick and all seven strict preflight categories pass.
+Mobile uses Compatibility on Windows; these are controlled browsing fixtures,
+not physical-device or ordinary-progression tests. Prior material bytes and all
+46 unrelated files are preserved. Exact receipts and limitations are in
+`build/qa/session-sept20/material-pilot-checkpoint-validation.json`; portable
+art acceptance is archived with the new source masters. Twenty material
+variants remain without painted UI artwork.
 
 ## F-grade pilot validation — September 9
 

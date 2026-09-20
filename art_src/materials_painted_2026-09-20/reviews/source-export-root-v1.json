@@ -1,0 +1,61 @@
+{
+  "reviewer": "root",
+  "utc": "2026-09-20T06:11:47.513620+00:00",
+  "approved_for_native_trial": true,
+  "native_accepted": false,
+  "full_canvas_retained": true,
+  "originals_inspected": true,
+  "light_dark_scaled_proofs_inspected": true,
+  "scale_sizes": [
+    128,
+    64,
+    40,
+    32
+  ],
+  "notes": "Cracked ivory fragments and tied soft frayed cloth retain old identities, match painted scrap/potion references, remain legible at40/64 with no visible halo/clipping. Bone is naturally slender; cloth fine holes soften at32. No normalization or source editing. Native integration still required.",
+  "sources_and_exports": [
+    {
+      "id": "bone_f_cracked_bone",
+      "generated_path": "C:\\Users\\asali\\.codex\\generated_images\\01a0adf8-8220-7913-a497-c48c68cdf20b\\exec-d6521074-db27-4beb-b72f-6970b77ee39b.png",
+      "archived_source": "art_src/materials_painted_2026-09-20/sources/bone_f_cracked_bone_v1.png",
+      "sha256": "52bee66595feefc0f4848df5f3693dd7b6f8e92f58737f9b1af3a23a6e2b9c75",
+      "mode": "RGBA",
+      "canvas": [
+        1254,
+        1254
+      ],
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "zero_alpha_pixels": 1218660,
+      "border_alpha_max": 1,
+      "candidate_png_sha256": "0dc220e29eef22074c124b7eb593470656178b9ef996284a384fef673a77e5fa",
+      "candidate_rgba_sha256": "2840b9f5e4a05b03b8b587be743a220cf6a6000b3554887f9fae32ef98f281cf"
+    },
+    {
+      "id": "cloth_f_frayed_scraps",
+      "generated_path": "C:\\Users\\asali\\.codex\\generated_images\\01a0adf8-8220-7913-a497-c48c68cdf20b\\exec-4de358cf-5da4-46f7-92ec-7f0add542ee9.png",
+      "archived_source": "art_src/materials_painted_2026-09-20/sources/cloth_f_frayed_scraps_v1.png",
+      "sha256": "75fb337c5056351ec8a1c3fcad6867858db05938133233bb3a06f42b491ae602",
+      "mode": "RGBA",
+      "canvas": [
+        1254,
+        1254
+      ],
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "zero_alpha_pixels": 881171,
+      "border_alpha_max": 1,
+      "candidate_png_sha256": "bc188a21f55134b774207cd6669ab7e9f42952f329424d529ec4cc235e1d030d",
+      "candidate_rgba_sha256": "159bcdec6073b687efcd4434fa867219e9ed7f81a5cb0083c9d72be2fc45b416"
+    }
+  ],
+  "proofs": {
+    "independent-proof-dark.png": "e3494b8a0f4e196a337d59ccfdad59ab0039adbbc807b8f62fa33e099747b1de",
+    "independent-proof-light.png": "8b5b1304f11ab89331c2ebb5cf7d29cbc757a88ca7433f2a621b8ff66441c434",
+    "independent-alpha-and-export-check.json": "6a39b8349b7ac0286a72f735fa414d51addbe0d227d7f5a3cbdf7fd0dcb683de"
+  }
+}

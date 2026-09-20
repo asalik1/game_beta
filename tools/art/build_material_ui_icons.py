@@ -118,6 +118,84 @@ def validate_targets(directory: Path, filenames: list[str]) -> None:
             raise ValueError(f"Output file points outside its destination: {directory / name}")
 
 
+
+GEAR_IDS = frozenset(("bone_f_cracked_bone", "cloth_f_frayed_scraps"))
+GEAR_SOURCE_ROOT = ROOT / "art_src/materials_painted_2026-09-20"
+
+
+def build_gear_pilots(approval_path: Path) -> tuple[list[dict], dict]:
+    """Two source/export approvals permit a native trial, never imply acceptance."""
+    approval_path = approval_path.resolve()
+    if not approval_path.is_relative_to(GEAR_SOURCE_ROOT.resolve()):
+        raise ValueError("Pilot approvals must be archived under art_src/materials_painted_2026-09-20")
+    raw = approval_path.read_bytes()
+    contract = json.loads(raw)
+    rows = contract["assets"]
+    if contract.get("mode") != "gear-pilots" or contract.get("canvas") != [128, 128]:
+        raise ValueError("Expected gear-pilots /128-square approval contract")
+    if len(rows) != 2 or {row["id"] for row in rows} != GEAR_IDS:
+        raise ValueError("Pilot approvals must contain exactly Bone F and Cloth F")
+    # Reuse established approval identities, not current files as their oracle.
+    from material_ui_approvals import select_all_brewing
+    previous = select_all_brewing(json.loads(PROVENANCE.read_bytes()), root=ROOT, source_root=SOURCE_ROOT)
+    if len(previous) != 13:
+        raise ValueError("Existing thirteen approvals missing")
+    preserved = {}
+    for row in previous:
+        p = INSTALL_DIR / (row["id"] + ".png")
+        if digest(p.read_bytes()) != row["approved_png_sha256"]:
+            raise ValueError("Previously approved UI PNG changed: " + row["id"])
+        preserved[p.relative_to(ROOT).as_posix()] = digest(p.read_bytes())
+    worlds = sorted((ROOT / "game/assets/icons/materials").glob("*.png"))
+    if len(worlds) != 35:
+        raise ValueError("Expected35 unchanged world controls")
+    for p in worlds:
+        preserved[p.relative_to(ROOT).as_posix()] = digest(p.read_bytes())
+    built = []
+    for row in rows:
+        if row.get("approved_for_native_trial") is not True or not row.get("reviews"):
+            raise ValueError("Actual source/export review required before trial")
+        for review in row["reviews"]:
+            review_path = (ROOT / review["path"]).resolve()
+            if Path(review["path"]).is_absolute() or not review_path.is_relative_to(ROOT.resolve()):
+                raise ValueError("Review evidence must stay within repository")
+            if digest(review_path.read_bytes()) != review["sha256"]:
+                raise ValueError("Source review evidence hash mismatch")
+        source = (ROOT / row["rgba_source"]).resolve()
+        if Path(row["rgba_source"]).is_absolute() or not source.is_relative_to(GEAR_SOURCE_ROOT.resolve()):
+            raise ValueError("Pilot source must stay in the September20 archive")
+        source_bytes = source.read_bytes()
+        if digest(source_bytes) != row["rgba_source_sha256"]:
+            raise ValueError("Pilot source hash mismatch")
+        with Image.open(BytesIO(source_bytes)) as image:
+            if image.mode != "RGBA" or list(image.size) != row["source_canvas"] or image.width != image.height:
+                raise ValueError("Pilot must use approved square RGBA source")
+            alpha = np.asarray(image.getchannel("A"))
+            if not np.any(alpha == 0) or not np.any(alpha > 128):
+                raise ValueError("Pilot requires transparent background and visible subject")
+            result = _resize_premultiplied(image, (CANVAS, CANVAS))
+        rgba = digest(result.tobytes())
+        stream = BytesIO()
+        result.save(stream, format="PNG")
+        png = stream.getvalue()
+        if rgba != row["approved_rgba_sha256"] or digest(png) != row["approved_png_sha256"]:
+            raise ValueError("Pilot export differs from reviewed RGBA/PNG")
+        built.append(dict(id=row["id"], filename=row["id"] + ".png", png=png,
+                          rgba_source=row["rgba_source"], rgba_source_sha256=digest(source_bytes),
+                          canvas=[CANVAS, CANVAS], rgba_sha256=rgba, png_sha256=digest(png),
+                          approved_png_sha256=row["approved_png_sha256"], approved_png_bytes_match=True))
+    if approval_path.read_bytes() != raw:
+        raise ValueError("Pilot approvals changed during validation")
+    return built, dict(path=approval_path.relative_to(ROOT).as_posix(), sha256=digest(raw),
+                       contract=contract, preserved=preserved, native_acceptance=False)
+
+
+def gear_preserved_check(preserved: dict) -> None:
+    for relative, expected in preserved.items():
+        if digest((ROOT / relative).read_bytes()) != expected:
+            raise ValueError("Existing material bytes changed: " + relative)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Candidate PNG/report directory")
@@ -125,13 +203,21 @@ def main() -> None:
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--grade-pairs", action="store_true", help="Require the approved three F plus four E/D sibling manifest; missing approvals fail before output")
     mode.add_argument("--all-brewing", action="store_true", help="Require unchanged seven plus six externally approved C/B/A records; fresh output and no runtime overwrites")
+    mode.add_argument("--gear-pilots", action="store_true", help="Exactly two reviewed BoneF/ClothF UI additions; preserve existing13/world35")
+    parser.add_argument("--pilot-approvals", type=Path, help="Archived two-pilot source/export approval JSON")
     args = parser.parse_args()
     try:
+        if args.gear_pilots != (args.pilot_approvals is not None):
+            raise ValueError("Use --gear-pilots and --pilot-approvals together")
         output = candidate_directory(args.output)
         provenance_raw = PROVENANCE.read_bytes() if args.all_brewing else None
-        if args.all_brewing and (args.output.is_symlink() or output.exists()):
-            raise ValueError("--all-brewing requires a fresh candidate output directory")
-        built = build(grade_pairs=args.grade_pairs, all_brewing=args.all_brewing)
+        if (args.all_brewing or args.gear_pilots) and (args.output.is_symlink() or output.exists()):
+            raise ValueError("--all-brewing /--gear-pilots requires a fresh candidate output directory")
+        gear_record = None
+        if args.gear_pilots:
+            built, gear_record = build_gear_pilots(args.pilot_approvals)
+        else:
+            built = build(grade_pairs=args.grade_pairs, all_brewing=args.all_brewing)
         if args.all_brewing and PROVENANCE.read_bytes() != provenance_raw:
             raise ValueError("Approval provenance changed during validation; no output written")
         filenames = [row["filename"] for row in built]
@@ -152,7 +238,18 @@ def main() -> None:
             validate_targets(INSTALL_DIR, filenames)
             if args.all_brewing:
                 install_rows = new_install_rows(INSTALL_DIR, built)
-        output.mkdir(parents=True, exist_ok=not args.all_brewing)
+            if args.gear_pilots:
+                install_rows = []
+                for row in built:
+                    target = INSTALL_DIR / row["filename"]
+                    if target.exists():
+                        if target.read_bytes() != row["png"]:
+                            raise ValueError("Refusing different existing pilot: " + row["id"])
+                    else:
+                        install_rows.append(row)
+        if gear_record:
+            gear_preserved_check(gear_record["preserved"])
+        output.mkdir(parents=True, exist_ok=not (args.all_brewing or args.gear_pilots))
         for row in built:
             (output / row["filename"]).write_bytes(row["png"])
         report = dict(provenance=PROVENANCE.relative_to(ROOT).as_posix(),
@@ -168,18 +265,23 @@ def main() -> None:
                           selected_ids=[row["id"] for row in built],
                           planned_new_install_ids=[row["id"] for row in install_rows] if args.install else [],
                           existing_seven_untouched=True)
+        if gear_record:
+            report.update(mode="gear-pilots", approval=gear_record, selected_ids=sorted(GEAR_IDS),
+                          planned_new_install_ids=[row["id"] for row in install_rows] if args.install else [])
         (output / "export-report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         if args.install:
             INSTALL_DIR.mkdir(parents=True, exist_ok=True)
             for row in install_rows:
                 path = INSTALL_DIR / row["filename"]
-                if args.all_brewing:
+                if args.all_brewing or args.gear_pilots:
                     # Preflight covered all targets. Exclusive creation also
                     # prevents a later file from being overwritten in a race.
                     with path.open("xb") as target:
                         target.write(row["png"])
                 else:
                     path.write_bytes(row["png"])
+        if gear_record:
+            gear_preserved_check(gear_record["preserved"])
         encoding_changes = sum(not row["approved_png_bytes_match"] for row in built)
         print(f"Built {len(built)} approved 128px RGBA material icons in {output}")
         if encoding_changes:

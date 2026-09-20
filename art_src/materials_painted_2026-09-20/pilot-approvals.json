@@ -1,0 +1,45 @@
+{
+  "mode": "gear-pilots",
+  "canvas": [
+    128,
+    128
+  ],
+  "assets": [
+    {
+      "id": "bone_f_cracked_bone",
+      "rgba_source": "art_src/materials_painted_2026-09-20/sources/bone_f_cracked_bone_v1.png",
+      "source_canvas": [
+        1254,
+        1254
+      ],
+      "rgba_source_sha256": "52bee66595feefc0f4848df5f3693dd7b6f8e92f58737f9b1af3a23a6e2b9c75",
+      "approved_rgba_sha256": "2840b9f5e4a05b03b8b587be743a220cf6a6000b3554887f9fae32ef98f281cf",
+      "approved_png_sha256": "0dc220e29eef22074c124b7eb593470656178b9ef996284a384fef673a77e5fa",
+      "approved_for_native_trial": true,
+      "reviews": [
+        {
+          "path": "art_src/materials_painted_2026-09-20/reviews/source-export-root-v1.json",
+          "sha256": "7d012a43dcf263838ae736d6399fbfa3bc97e2f0273e4a5275bfe4839a363511"
+        }
+      ]
+    },
+    {
+      "id": "cloth_f_frayed_scraps",
+      "rgba_source": "art_src/materials_painted_2026-09-20/sources/cloth_f_frayed_scraps_v1.png",
+      "source_canvas": [
+        1254,
+        1254
+      ],
+      "rgba_source_sha256": "75fb337c5056351ec8a1c3fcad6867858db05938133233bb3a06f42b491ae602",
+      "approved_rgba_sha256": "159bcdec6073b687efcd4434fa867219e9ed7f81a5cb0083c9d72be2fc45b416",
+      "approved_png_sha256": "bc188a21f55134b774207cd6669ab7e9f42952f329424d529ec4cc235e1d030d",
+      "approved_for_native_trial": true,
+      "reviews": [
+        {
+          "path": "art_src/materials_painted_2026-09-20/reviews/source-export-root-v1.json",
+          "sha256": "7d012a43dcf263838ae736d6399fbfa3bc97e2f0273e4a5275bfe4839a363511"
+        }
+      ]
+    }
+  ]
+}

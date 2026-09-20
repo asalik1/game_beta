@@ -1,0 +1,143 @@
+{
+  "utc": "2026-09-20T06:46:30.089561+00:00",
+  "scope": "two F-grade painted material UI assets only",
+  "accepted": true,
+  "assets": {
+    "bone_f_cracked_bone": "0dc220e29eef22074c124b7eb593470656178b9ef996284a384fef673a77e5fa",
+    "cloth_f_frayed_scraps": "bc188a21f55134b774207cd6669ab7e9f42952f329424d529ec4cc235e1d030d"
+  },
+  "native": {
+    "material-pilot-native-v1": {
+      "checks": 309,
+      "shots": 16,
+      "report_sha256": "1a72cec2b266d670a9b58af75d3e7e59793e89fffa8ef104eeefb0de82ca74c4",
+      "log_sha256": "9891d95d90e216359c625f0eb35c0ae3c6706cc2dbbacbbdd6bf25023a97bfa1",
+      "images": {
+        "00_inventory_with_potion.png": "3cbc64fd2fd03f8e1b2f279634523afaa01a8280414e127081124251dd60375e",
+        "01_inventory_herb_detail.png": "286362da0f72dc83d78bc5083a55f04553d5bee142257025c1554f6d201c0b75",
+        "02_mail_with_potion.png": "f35630673490b3f7c1cb05863f62e59c861a7e6864af12271397acf0dfb7660c",
+        "03_mail_metal_detail.png": "8098a9ab0cb7d394135b8315b25114c4a490300a89c311a843ef201f3b88944e",
+        "04_merchant_sell_with_potion.png": "3fee5fabf1eef6e7fa36c6b3c685af15b2b29c04a486988b2464a1cd99b3d044",
+        "05_world_pickups_size_control.png": "56f1696be38e6fb640a808162c3c6d20f162c82d36cbd6b92c127fa9281e5174",
+        "06_gear_pilot_inventory.png": "717446d765331a1f8f2e471530c1bb8c205668e05480da14a7e50270d5fda965",
+        "07_gear_pilot_detail_bone.png": "c47852f6d6e5290ebd9637984029d53aa017dbf3fcecf12d5e3d380f41f53e00",
+        "07_gear_pilot_detail_cloth.png": "1ee79ff43ffe1aee9e97e5f1b3246d769eda476ae50be05366aa68124972edef",
+        "08_gear_pilot_mail.png": "32973e5b976c27e47b3f8114478405d7cc6a375f8e6de36bc170c21a315621ba",
+        "09_gear_pilot_mail_detail_bone.png": "78ddf062c104e30cb2c481eb2d3835e477d3f7e15c198b389f7edb8347ad64ba",
+        "09_gear_pilot_mail_detail_cloth.png": "6ea72163cac23410fc0becc66c7a0d7d399d106a0f96c85c6713970622826328",
+        "10_gear_pilot_merchant_bone.png": "a1f29544148d2a71750556928fa006f3308bf211c4b40e7ca95c4eca2a895f5e",
+        "10_gear_pilot_merchant_cloth.png": "a1f29544148d2a71750556928fa006f3308bf211c4b40e7ca95c4eca2a895f5e",
+        "11_gear_pilot_workshop_bone.png": "e23a088c7114b5406789feae8233e968a06a78bc27ad5c8285bf2b191c28f33f",
+        "11_gear_pilot_workshop_cloth.png": "fb6ff02d22b0279a5b6fc3793ac2db7e35bd1dbbd2ef3ea5e4af03d54c5738d1"
+      }
+    },
+    "material-pilot-old-native": {
+      "checks": 588,
+      "shots": 13,
+      "report_sha256": "6d6886ec92d3f9704be670aac8d6e3120c9cd269c0db5499f4db11f2cea30638",
+      "log_sha256": "772b25c93906d68a1e595cf0cc38b0813587abbf294dfb4ced64d83675b2ffab",
+      "images": {
+        "00_inventory_with_potion.png": "eb8b7d4faaca13809d6d955654cba6cd841b1fba57bd48cb1eec63b04cba1fb9",
+        "01_inventory_herb_detail.png": "8f2ed1a83867f2c89f96cdb5295efecd595c41b37fb917b862c688bf1aeaf99f",
+        "02_mail_with_potion.png": "f006edc00c9bb36463faca943f5b56ebf52cd2b5b1797df087d3c1bdad660c47",
+        "03_mail_metal_detail.png": "04bf26dcbb8f866d8e1310cb4c9227867155fdcadd8779c4012c4094fc62b2f3",
+        "04_merchant_sell_with_potion.png": "d263eaf408e02bfbe8ed74e1167f4ead0c3a7e666ddfefe1f470e1dcb24b9c9b",
+        "05_world_pickups_size_control.png": "32f27c4d430a70e2a8d99531d4f0959116b2ff2b5134ec60544b87edca7699bc",
+        "06_grade_pairs_inventory.png": "ccde7d82f66431355b470a1407bb8feeabff15548b7f2300b0a66b373d2572d0",
+        "07_grade_pair_e_alchemy.png": "c56ceb0926250408a970ac1a7b6073f46c6248c3df45d05da00791f4339827c2",
+        "08_grade_pair_d_alchemy.png": "9d222d07da800e4d01f2d86c50c222692078b3f6be9ed96c8c5840f1237effbe",
+        "09_all_brewing_inventory.png": "a17eda4fe68f1d8d5684d29c2c035b2b04e08d9a5b60921a45ab31cc1ec4da10",
+        "10_all_brewing_c_alchemy.png": "e5e38fd302bda3e29d6fd2c19c1c6a9943d0edfb8600efb9c94bdd1049a1da5a",
+        "11_all_brewing_b_alchemy.png": "4b0e128fedfed434a596dd06d1cc83759f4db37e992366752b0f0ab6521926d7",
+        "12_all_brewing_a_alchemy.png": "296656da4520c8676da18fccf3f91578e6154388fccb4310e5c2792e649aed66"
+      }
+    },
+    "material-pilot-mobile-native-v1": {
+      "checks": 309,
+      "shots": 16,
+      "report_sha256": "e59c012417ca5a17cdb7cd70ed37836f7237d0d4ca22c3abe2905d399ce56ed2",
+      "log_sha256": "c586f438f0c2500c672486bde31ac7b2ee24c53ba3afb44823d410a051a27bc9",
+      "images": {
+        "00_inventory_with_potion.png": "b71bf8787bea1b8fe65a1457fdadd444104c1d9b4a413867c7b1ff0a1583ffda",
+        "01_inventory_herb_detail.png": "6a352411472fab9d58a7db92e92767e6486c7365fb3e766226ba4cf6757195a6",
+        "02_mail_with_potion.png": "7c0fdba400b3413bd6bdcb3b6ace4f470f6a93bd31518c3cab81fde0f22a710e",
+        "03_mail_metal_detail.png": "9c153293bf48cebc2ec5275f17019a4fe67103c34fcdb916368650ec0e06eff6",
+        "04_merchant_sell_with_potion.png": "0c3d9d08d1e8bbac79990c7cb472cbc0f3f22b37b78aae2cf4c1ddba82a2dd0e",
+        "05_world_pickups_size_control.png": "012561f78641ed462c7a31076962eca20b8a83a979d663cb474486f418f2a091",
+        "06_gear_pilot_inventory.png": "784254b7f39bfc280814a6e670ce0db73f7ca81d745e1bfd9b4cbb5ee34603e5",
+        "07_gear_pilot_detail_bone.png": "168fe28c2aafe55a04cdf8f5ab8ae7df21bc189c26aa84623125e4a2e931028c",
+        "07_gear_pilot_detail_cloth.png": "fb87519b31aba88bc765a8282a9bd2d09b01fc18bcd81ff92625eeb593bff71f",
+        "08_gear_pilot_mail.png": "6f3956c7f5ea689e337e0358cb3154e79b9c7eb6937d233b09e99e38bc016be0",
+        "09_gear_pilot_mail_detail_bone.png": "86dfd46e539fe4d774edd43ac88c9171c53039ff3becfe4c1f632f35737b78cd",
+        "09_gear_pilot_mail_detail_cloth.png": "b19dd05496f0ee4b07ac1f82de83ad84558d7b7144f4e4ef81d76d2ed1f1dbaf",
+        "10_gear_pilot_merchant_bone.png": "4359822f077e3b044d43701c9c8c1d7f45d94ac858fcdac37d366a3422591689",
+        "10_gear_pilot_merchant_cloth.png": "4359822f077e3b044d43701c9c8c1d7f45d94ac858fcdac37d366a3422591689",
+        "11_gear_pilot_workshop_bone.png": "ce4798d6c6ebeae99ad595295c1d363326074e30cb9e70df3df7cd4d3102558e",
+        "11_gear_pilot_workshop_cloth.png": "146c5614ab52816c46b7161f113c0cb216be809e34b61def21260ca2cd6fa46d"
+      }
+    },
+    "material-pilot-mobile-old-native": {
+      "checks": 588,
+      "shots": 13,
+      "report_sha256": "d10bc4fd06788548d674545eb61e386a8e0d90f66f4b1ee288f5d01ac4e8602e",
+      "log_sha256": "2692d0c6f1ce773adcc1cfe8247d87b3ad3fe0f7f8a0515c16a7e62253354af0",
+      "images": {
+        "00_inventory_with_potion.png": "c072f1939ea34dddb26b0caefc9e44f91368519c6239738eea058d3adb0c2736",
+        "01_inventory_herb_detail.png": "5d9512e526b7e461c912ed2796a4c5c276cab0857e26f51625a2d09eea54977e",
+        "02_mail_with_potion.png": "948cbfb390ad25e4a6c496a38c13da8809987c7efe7f6033d8b70d541913ad44",
+        "03_mail_metal_detail.png": "06401e3bcc5bdfa3a0f4c1520ed291de9f3d1c4870a2401783ae6a804966f1b0",
+        "04_merchant_sell_with_potion.png": "3d77f876a4d3944e87d376369f2d20dec93b21e9e6cda55dfabcbc07f2451d3e",
+        "05_world_pickups_size_control.png": "ef6f97a1c8235a8e5cbce526b74f5b6fc653a86683251ee54a2e7658de6ac861",
+        "06_grade_pairs_inventory.png": "cedbbfaf27ac61cbe525998981fdc2fcbd5b038f58abc569205283b2da29ec0c",
+        "07_grade_pair_e_alchemy.png": "f6acf98b9ef0b0df6d22a5c67764ed786d2085957e8afac36df2396d8b961f9e",
+        "08_grade_pair_d_alchemy.png": "2421a9ce9c689711f12c63ba71a90d9abacd215def7ce53aca1991b99cda415b",
+        "09_all_brewing_inventory.png": "bbf1e6c9aff6747f8749460e3f4ecbc08f091d91c361cc44569825fcaf44d7fe",
+        "10_all_brewing_c_alchemy.png": "7728129b5594982aba78852607e06ee95ef857bb78a60d69d1444b72e67c205c",
+        "11_all_brewing_b_alchemy.png": "62f52dff4012d0656245c55f2f61dcdf0fcb52c46e43584c8e2c5b8c6c3a821e",
+        "12_all_brewing_a_alchemy.png": "aafbb4ae008f04a5281e3a0228338beb94cfd084c8f8618078ca689fb4c2cf64"
+      }
+    }
+  },
+  "visual_reviews": {
+    "material-pilot-native-v1/root-new-material-visual-review.json": "94146b9d51024f58b48d3cc4aa01a8efb425d53cd569de1b8d94d379e1287285",
+    "material-pilot-native-v1/independent-native-original-review.json": "8efa6b16a7aa80c87557b8afab48aeccb772c4d4b3ed713c42ec16e077b107c5",
+    "material-pilot-old-native/independent-native-original-review.json": "196cb1dd8dfeac1864445f4930d51b8c169bdf1508c5abaf3482d78ebf4e3457",
+    "material-pilot-mobile-native-v1/root-new-material-visual-review.json": "a077cf6e8bea9a341af9b9735e708e423f1eb02cc6c86199a47aefe3b50ab9b5",
+    "material-pilot-mobile-native-v1/independent-native-original-review.json": "24cae1000202829d883e8c692f4d9d01f2737cfd1334adaf12d8d2985ce76c1f",
+    "material-pilot-mobile-old-native/independent-native-original-review.json": "9e90db3f6e33d6000774f0d1c1f5e309670b2163c804212b26043bc5013d0757"
+  },
+  "gates": {
+    "desktop-quick": {
+      "path": "build/qa/session-sept20/material-pilot-gates/desktop-quick.log",
+      "sha256": "8b4b8fb39394bce7c2f2e2f0e247f30eac9c2234b4976d3d487d29f9c09d3162",
+      "required_marker": "AUTOTEST QUICK PASS"
+    },
+    "desktop-full": {
+      "path": "build/qa/session-sept20/material-pilot-gates/desktop-full.log",
+      "sha256": "79aacbf70ddb48efba387091863bfa33ec9004ae69ecf40487cf29d7f03ef2f2",
+      "required_marker": "AUTOTEST PASS"
+    },
+    "mobile-compile": {
+      "path": "build/qa/session-sept20/material-pilot-gates/mobile-compile.log",
+      "sha256": "5e189ac1592315dc6b35d9337ae62cd70d242c3a1c29abbc18f48d5492c05b47",
+      "required_marker": "COMPILE OK (298 scripts)"
+    },
+    "mobile-quick": {
+      "path": "build/qa/session-sept20/material-pilot-gates/mobile-quick.log",
+      "sha256": "9faf09a15bb4a6c789f15a0ccf0b48a1c01e915d5d06f5d892c98fec5db108b7",
+      "required_marker": "AUTOTEST QUICK PASS"
+    },
+    "preflight": {
+      "path": "build/qa/session-sept20/material-pilot-gates/preflight.log",
+      "sha256": "2b49bc4f9f276ce66eaac6f87dcba6d04473c3dee18822be7ff17d55f98b0264",
+      "required_marker": "PREFLIGHT OK (IMPORT MODULES BALANCE PHYSICS RIGS ARTQA CODEX)"
+    }
+  },
+  "limits": [
+    "Controlled capital loans and posed mail/merchant inventory; no ordinary campaign, sale, claim or craft proof.",
+    "Mobile project uses Compatibility on Windows; not physical-device testing. Old six base views use mouse; added ten gear-pilot views use ScreenTouch in mobile mode.",
+    "Asset-only production change. No protocol, save or economy logic changed; separate ENet rerun not relevant. Previous workshop checkpoint retains its own network proof and limitations.",
+    "Prior 13 painted UI and 35 world icons unchanged. World controls keep inherited 35.2px rendering. Remaining 20 material variants and old Inventory density/gray grade-F text are not visually accepted by this checkpoint.",
+    "Known intentional invalid-base64 full-suite fixture, ObjectDB and renderer shutdown diagnostics retained. First mobile wrapper rejected native stderr; fixed wrapper uses actual exit status and subsequent compile/strict quick/native gates."
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "recorded_utc": "2026-09-20T06:07:01.457247+00:00",
+  "scope": "two additive F-grade UI icons; preserve prior13UI and35world icons",
+  "assets": [
+    {
+      "id": "bone_f_cracked_bone",
+      "generated_path": "C:\\Users\\asali\\.codex\\generated_images\\01a0adf8-8220-7913-a497-c48c68cdf20b\\exec-d6521074-db27-4beb-b72f-6970b77ee39b.png",
+      "archived_source": "art_src/materials_painted_2026-09-20/sources/bone_f_cracked_bone_v1.png",
+      "sha256": "52bee66595feefc0f4848df5f3693dd7b6f8e92f58737f9b1af3a23a6e2b9c75",
+      "mode": "RGBA",
+      "canvas": [
+        1254,
+        1254
+      ],
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "zero_alpha_pixels": 1218660,
+      "border_alpha_max": 1,
+      "candidate_png_sha256": "0dc220e29eef22074c124b7eb593470656178b9ef996284a384fef673a77e5fa",
+      "candidate_rgba_sha256": "2840b9f5e4a05b03b8b587be743a220cf6a6000b3554887f9fae32ef98f281cf",
+      "prompt": "art_src/materials_painted_2026-09-20/prompts/bone_f_cracked_bone_v1.txt",
+      "prompt_sha256": "e2e87a7a7b75431afa4afbe17b34d02a81158c77e4e8c3807cf9f8da5f47f815",
+      "subject_reference": "art_src/materials_2026-07-30/sources/bone_f_cracked_bone.png",
+      "subject_reference_sha256": "6cb22cf90d344ee58d1490688cd4977f0c1310ef76b95abcf0cb764040d471ed",
+      "style_reference": "game/assets/icons/materials_ui/metal_f_rusted_scrap.png",
+      "style_reference_sha256": "ef2d42a90dc14248726c771e4b4f4954ae251c20bf8028acd01184665eeaba31",
+      "tool": "built-in image_gen.imagegen",
+      "status": "accepted after desktop and host-mobile native review and checkpoint validation",
+      "native_accepted": true,
+      "runtime_png": "game/assets/icons/materials_ui/bone_f_cracked_bone.png",
+      "runtime_png_sha256": "0dc220e29eef22074c124b7eb593470656178b9ef996284a384fef673a77e5fa",
+      "native_acceptance": "art_src/materials_painted_2026-09-20/reviews/native-acceptance-v1.json"
+    },
+    {
+      "id": "cloth_f_frayed_scraps",
+      "generated_path": "C:\\Users\\asali\\.codex\\generated_images\\01a0adf8-8220-7913-a497-c48c68cdf20b\\exec-4de358cf-5da4-46f7-92ec-7f0add542ee9.png",
+      "archived_source": "art_src/materials_painted_2026-09-20/sources/cloth_f_frayed_scraps_v1.png",
+      "sha256": "75fb337c5056351ec8a1c3fcad6867858db05938133233bb3a06f42b491ae602",
+      "mode": "RGBA",
+      "canvas": [
+        1254,
+        1254
+      ],
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "zero_alpha_pixels": 881171,
+      "border_alpha_max": 1,
+      "candidate_png_sha256": "bc188a21f55134b774207cd6669ab7e9f42952f329424d529ec4cc235e1d030d",
+      "candidate_rgba_sha256": "159bcdec6073b687efcd4434fa867219e9ed7f81a5cb0083c9d72be2fc45b416",
+      "prompt": "art_src/materials_painted_2026-09-20/prompts/cloth_f_frayed_scraps_v1.txt",
+      "prompt_sha256": "4fabe3c447c4985004d9876e52af997d17a5f8f5cac46061ed637c43c3e89a89",
+      "subject_reference": "art_src/materials_2026-07-30/sources/cloth_f_frayed_scraps.png",
+      "subject_reference_sha256": "da606b70ad018fa4b96856b60c89dbd58477e207fd09278454a80a9571e65335",
+      "style_reference": "game/assets/icons/materials_ui/metal_f_rusted_scrap.png",
+      "style_reference_sha256": "ef2d42a90dc14248726c771e4b4f4954ae251c20bf8028acd01184665eeaba31",
+      "tool": "built-in image_gen.imagegen",
+      "status": "accepted after desktop and host-mobile native review and checkpoint validation",
+      "native_accepted": true,
+      "runtime_png": "game/assets/icons/materials_ui/cloth_f_frayed_scraps.png",
+      "runtime_png_sha256": "bc188a21f55134b774207cd6669ab7e9f42952f329424d529ec4cc235e1d030d",
+      "native_acceptance": "art_src/materials_painted_2026-09-20/reviews/native-acceptance-v1.json"
+    }
+  ]
+}

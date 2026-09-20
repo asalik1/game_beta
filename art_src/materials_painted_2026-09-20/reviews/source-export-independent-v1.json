@@ -1,0 +1,208 @@
+{
+  "reviewer": "combat_history / Codex independent visual reviewer",
+  "complete": true,
+  "created_utc": "2026-09-20T06:11:32.244583+00:00",
+  "scope": "Two F-grade material pilots only; original subjects, painted style references, source and128px exports plus actual-size proofs. No engine or native UI trial performed.",
+  "verdict": "provisional_native_trial_ready",
+  "unresolved_blockers": [],
+  "images": [
+    {
+      "path": "C:\\Users\\asali\\Projects\\MMO\\.codex\\worktrees\\crownless-wayfinder\\art_src\\materials_painted_2026-09-20\\sources\\bone_f_cracked_bone_v1.png",
+      "sha256": "52bee66595feefc0f4848df5f3693dd7b6f8e92f58737f9b1af3a23a6e2b9c75",
+      "kind": "new_source",
+      "opened_original": true,
+      "detail": "original",
+      "canvas": [
+        1254,
+        1254
+      ],
+      "mode": "RGBA",
+      "notes": "Two separated cracked bone sections preserve diagonal orientation, blunt joint ends and central broken gap. Warm ivory porous painted shading retains low-grade worn identity.",
+      "verdict": "provisionally_accepted_for_native_trial",
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "border_alpha_max": 1
+    },
+    {
+      "path": "C:\\Users\\asali\\Projects\\MMO\\.codex\\worktrees\\crownless-wayfinder\\art_src\\materials_painted_2026-09-20\\sources\\cloth_f_frayed_scraps_v1.png",
+      "sha256": "75fb337c5056351ec8a1c3fcad6867858db05938133233bb3a06f42b491ae602",
+      "kind": "new_source",
+      "opened_original": true,
+      "detail": "original",
+      "canvas": [
+        1254,
+        1254
+      ],
+      "mode": "RGBA",
+      "notes": "Tied bundle preserves tan/gray layered scraps, holes, torn edges and hanging cord. More detailed fibers and folds replace pixel treatment without changing subject.",
+      "verdict": "provisionally_accepted_for_native_trial",
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "border_alpha_max": 1
+    },
+    {
+      "path": "C:\\Users\\asali\\Projects\\MMO\\.codex\\worktrees\\crownless-wayfinder\\art_src\\materials_2026-07-30\\sources\\bone_f_cracked_bone.png",
+      "sha256": "6cb22cf90d344ee58d1490688cd4977f0c1310ef76b95abcf0cb764040d471ed",
+      "kind": "old_subject_reference",
+      "opened_original": true,
+      "detail": "original",
+      "canvas": [
+        1254,
+        1254
+      ],
+      "mode": "RGB",
+      "notes": "Pixel subject reference only; two diagonal broken pieces match new identity. Its magenta background is not a new asset defect.",
+      "verdict": "reference_reviewed"
+    },
+    {
+      "path": "C:\\Users\\asali\\Projects\\MMO\\.codex\\worktrees\\crownless-wayfinder\\art_src\\materials_2026-07-30\\sources\\cloth_f_frayed_scraps.png",
+      "sha256": "da606b70ad018fa4b96856b60c89dbd58477e207fd09278454a80a9571e65335",
+      "kind": "old_subject_reference",
+      "opened_original": true,
+      "detail": "original",
+      "canvas": [
+        1254,
+        1254
+      ],
+      "mode": "RGB",
+      "notes": "Pixel subject reference only; same folded rag bundle, central tie and trailing cord as replacement.",
+      "verdict": "reference_reviewed"
+    },
+    {
+      "path": "C:\\Users\\asali\\Projects\\MMO\\.codex\\worktrees\\crownless-wayfinder\\build\\qa\\session-sept20\\material-pilots-v1\\bone_f_cracked_bone.png",
+      "sha256": "0dc220e29eef22074c124b7eb593470656178b9ef996284a384fef673a77e5fa",
+      "kind": "candidate",
+      "opened_original": true,
+      "detail": "original",
+      "canvas": [
+        128,
+        128
+      ],
+      "mode": "RGBA",
+      "notes": "Complete unclipped bone silhouette and broken center read at128,64,40 and32px. Naturally less painted area than other materials; no scale normalization warranted.",
+      "verdict": "provisionally_accepted_for_native_trial",
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "border_alpha_max": 0
+    },
+    {
+      "path": "C:\\Users\\asali\\Projects\\MMO\\.codex\\worktrees\\crownless-wayfinder\\build\\qa\\session-sept20\\material-pilots-v1\\cloth_f_frayed_scraps.png",
+      "sha256": "bc188a21f55134b774207cd6669ab7e9f42952f329424d529ec4cc235e1d030d",
+      "kind": "candidate",
+      "opened_original": true,
+      "detail": "original",
+      "canvas": [
+        128,
+        128
+      ],
+      "mode": "RGBA",
+      "notes": "Cloth layers, ragged ends and tie read at128,64 and40px. At32px fine holes/fibers soften, but bundle identity remains. No visible rectangular backdrop or edge clipping.",
+      "verdict": "provisionally_accepted_for_native_trial",
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "border_alpha_max": 0
+    },
+    {
+      "path": "C:\\Users\\asali\\Projects\\MMO\\.codex\\worktrees\\crownless-wayfinder\\game\\assets\\icons\\materials_ui\\metal_f_rusted_scrap.png",
+      "sha256": "ef2d42a90dc14248726c771e4b4f4954ae251c20bf8028acd01184665eeaba31",
+      "kind": "painted_style_reference",
+      "opened_original": true,
+      "detail": "original",
+      "canvas": [
+        128,
+        128
+      ],
+      "mode": "RGBA",
+      "notes": "Warm worn three-dimensional painted treatment and strong dark crevices are compatible with new bone/cloth.",
+      "verdict": "reference_reviewed",
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "border_alpha_max": 0
+    },
+    {
+      "path": "C:\\Users\\asali\\Projects\\MMO\\.codex\\worktrees\\crownless-wayfinder\\game\\assets\\icons\\consumables\\apprentices_health_potion.png",
+      "sha256": "e9e9acec0ec3f10065163ec62e71362db5bc49c1d1bfd8d6a97adeb2648ed486",
+      "kind": "painted_style_reference",
+      "opened_original": true,
+      "detail": "original",
+      "canvas": [
+        128,
+        128
+      ],
+      "mode": "RGBA",
+      "notes": "Existing painted glass/liquid source reference. New materials share smooth detailed shading rather than enlarged pixel blocks.",
+      "verdict": "reference_reviewed",
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "border_alpha_max": 0
+    },
+    {
+      "path": "C:\\Users\\asali\\Projects\\MMO\\.codex\\worktrees\\crownless-wayfinder\\build\\qa\\session-sept20\\material-pilots-v1\\independent-proof-dark.png",
+      "sha256": "e3494b8a0f4e196a337d59ccfdad59ab0039adbbc807b8f62fa33e099747b1de",
+      "kind": "review_derivative",
+      "opened_original": true,
+      "detail": "original",
+      "canvas": [
+        740,
+        530
+      ],
+      "mode": "RGB",
+      "notes": "Actual-size128/64/40/32 proof on dark UI-like background. All four subjects distinct; no visible colored rim, clipped tips or dark matte block.",
+      "verdict": "reference_reviewed"
+    },
+    {
+      "path": "C:\\Users\\asali\\Projects\\MMO\\.codex\\worktrees\\crownless-wayfinder\\build\\qa\\session-sept20\\material-pilots-v1\\independent-proof-light.png",
+      "sha256": "8b5b1304f11ab89331c2ebb5cf7d29cbc757a88ca7433f2a621b8ff66441c434",
+      "kind": "review_derivative",
+      "opened_original": true,
+      "detail": "original",
+      "canvas": [
+        740,
+        530
+      ],
+      "mode": "RGB",
+      "notes": "Same full-canvas resize proof on light background. No visible light/dark halo; narrow bone, cloth tie and metal silhouette remain legible.",
+      "verdict": "reference_reviewed"
+    }
+  ],
+  "support_files": [
+    {
+      "path": "C:\\Users\\asali\\Projects\\MMO\\.codex\\worktrees\\crownless-wayfinder\\build\\qa\\session-sept20\\material-pilots-v1\\source-inspection.json",
+      "sha256": "a97656acfc6f79d4a6aedeb7883696047502e80438c1f378f8b7ab2b71a51ab4"
+    },
+    {
+      "path": "C:\\Users\\asali\\Projects\\MMO\\.codex\\worktrees\\crownless-wayfinder\\build\\qa\\session-sept20\\material-pilots-v1\\independent-alpha-and-export-check.json",
+      "sha256": "6a39b8349b7ac0286a72f735fa414d51addbe0d227d7f5a3cbdf7fd0dcb683de"
+    }
+  ],
+  "method": {
+    "resize_helper": "tools/art/build_gear_codex_icons.py:_resize_premultiplied",
+    "resize_helper_file_sha256": "53aa0e6d301efda45bf5e9bf2e627855c983e967644c8a8a17fc74af758e41dc",
+    "source_to_candidate_decoded_rgba_exact": true,
+    "proof_only": "Existing full candidate canvas premultiplied resize then ordinary alpha composite. No crop, scaling normalization, creative alteration or source modification."
+  },
+  "findings": [
+    "Both painted replacements preserve original item identity and fit existing painted material/potion rendering style.",
+    "1254px sources have sparse alpha1 border pixels. These are not used to crop or normalize; both128px exports have fully transparent outer borders.",
+    "New bone has less visual mass than cloth/metal because of its narrow diagonal subject; comparable128canvas is appropriate.",
+    "Thin source-edge colored/low-opacity pixels are not a visible rim on exported light/dark proofs; do not infer final halo from source preview alone."
+  ],
+  "limits": [
+    "Provisional art/source acceptance only. Actual loaded texture/filtering and UI target bounds remain for root native trial.",
+    "Only bone F and cloth F reviewed; no approval of other grades or generated assets.",
+    "At32px cloth fine weave/holes are reduced; intended40px material presentation remains readable in proof.",
+    "Light/dark sheets are review derivatives, not native screenshots, and do not substitute for native trial."
+  ]
+}
