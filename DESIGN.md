@@ -132,6 +132,7 @@ Rooms declare **N/S/E/W exits** on a grid: branches, loops, wings, dead ends.
 - **Map (M):** fog-of-war grid, only entered rooms revealed; unexplored exits show as stubs (you see THAT there's more, not what). Visited state saves.
 - ~40–50% of rooms off the boss path.
 - **Every run lays a different map (round 4):** the boss path (*spine*) is an ordered room list walked east with seeded N/S jogs; side rooms attach to seeded same-terrain hosts. Seed = character's wander_seed (saves reload their world; replays/new characters reroll). Content authored; only geography rolls.
+- **Earned shortcuts:** Chapter 1 may add one adjacent-room loop after layout generation. Walk the original route, secure the deeper endpoint and work its winch to open a shorter return for the party. At least one endpoint is a side room; no boss/special rooms or authored progression locks are bypassed. Selection consumes no randomness; some layouts have no candidate. The opening belongs to that saved run and resets on replay. See EARNED_SHORTCUTS.md for implementation and validation scope.
 
 ### Room-type palette
 | Type | Contents |

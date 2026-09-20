@@ -639,7 +639,11 @@ static func apply(game: Game, data: Dictionary) -> void:
 		var py := _as_float(pos[1], 360.0) if pos.size() > 1 else 360.0
 		var anchor: Vector2 = game.room_center(cur)
 		game._enter_room(cur)
-		p.global_position = game.clamp_to_zone(game.pocket_position_legacy(Vector2(px, py)), anchor)
+		var arrival: Vector2 = game.clamp_to_zone(game.pocket_position_legacy(Vector2(px, py)), anchor)
+		# Older saves may predate this run's optional shortcut apron. Restore on
+		# its room-facing side; opened gates and ordinary scenery keep their
+		# historical arrival policy. Never use an already trapped pose as origin.
+		p.global_position = preload("res://scripts/dash_landing.gd").limit_shortcuts(p, anchor, arrival)
 	else:
 		for z in _as_arr(w.get("merchant_zones", [])):
 			game._spawn_merchant(_as_int(z, 0))

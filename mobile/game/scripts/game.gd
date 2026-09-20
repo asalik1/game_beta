@@ -796,7 +796,8 @@ func _process(delta: float) -> void:
 			player.global_position.y = clampf(player.global_position.y, rr.position.y + 62.0, rr.end.y - 62.0)
 		zi = cur_room
 	elif zi != cur_room and state == ST_PLAYING:
-		if _room_hot(cur_room):
+		if _room_hot(cur_room) or _shortcut_closed(cur_room, zi):
+			# A closed earned shortcut also refuses this boundary crossing.
 			# Locked in: a HOT room seals every exit until it's purged (or
 			# the boss falls). The pulsing seal glow is feedback; THIS is
 			# the wall — the seal body sits a step outside the cell and
@@ -967,6 +968,9 @@ func _position_landmark_prompt() -> void:
 		return
 	var anchor: Vector2 = prompt.get_meta("landmark_prompt_anchor", prompt.position)
 	prompt.position = anchor
+	if prompt.has_meta("shortcut_prompt"):
+		prompt.get_parent().position_prompt()
+		return
 	if not is_instance_valid(hud) or not is_instance_valid(hud.quest_panel):
 		return
 	if chapter_id != "capital" or state != ST_PLAYING or not play_started or input_overlay_up() \

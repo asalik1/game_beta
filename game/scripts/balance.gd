@@ -3522,6 +3522,25 @@ const INTERACT_PROMPT_Z := 2           # readable above base actor bodies and ca
 const NPC_PROMPT_BODY_GAP := 4.0       # screen pixels around a selected NPC prompt
 const TAP_TALK_RADIUS := 90.0          # tap-to-talk: max tap distance from the target
 
+# Earned shortcuts: one optional loop in a Chapter 1 layout, including weekly
+# Chapter 1 worlds. Selection reads the finished graph without consuming RNG.
+const SHORTCUT_CHAPTERS := ["ch1"]
+const SHORTCUT_MIN_WALK := 3          # original edge distance before adding a loop
+const SHORTCUT_LATCH_INSET := Vector2(160.0, 96.0) # inward from playable mouth and off lane
+const SHORTCUT_WINCH_CANVAS := 96.0   # whole painted canvas; source margins retained
+const SHORTCUT_WINCH_OFFSET := Vector2(0, -36) # stone footing sits at ground origin
+const SHORTCUT_WINCH_FOOTPRINT := Vector2(42, 22) # collision only around the stone base
+const SHORTCUT_WINCH_PROMPT_Y := -102.0 # clear the upright and handle
+const SHORTCUT_MOUTH_CLEARANCE := 208.0 # walking space beside the threshold returns
+const SHORTCUT_MOUTH_VISIBLE := Vector2(416, 304) # canopy-free mechanism and approach
+const SHORTCUT_MOUTH_VISIBLE_HALF := SHORTCUT_MOUTH_VISIBLE * 0.5 # centered reservation geometry
+const SHORTCUT_MOUTH_VISIBLE_OFFSET := Vector2(0, -48) # reserve upright silhouettes
+const SHORTCUT_LATCH_CLEARANCE := 128.0 # nearby bases cannot pin an interacting hero
+const SHORTCUT_GATE_FRONT_CANVAS := Vector2(200, 400.0 / 3.0)
+const SHORTCUT_GATE_FRONT_OFFSET := Vector2(0, -27) # midpoint of the two stone feet
+const SHORTCUT_GATE_SIDE_CANVAS := Vector2(160, 240)
+const SHORTCUT_GATE_SIDE_OFFSET := Vector2(0, -26) # front/back foot midpoint
+
 # -------------------------------------------------------- chapter results ---
 # The results card on every chapter clear (retention roadmap #1): run time,
 # deaths, elites, secrets, exploration -> one letter. TIME is deliberately

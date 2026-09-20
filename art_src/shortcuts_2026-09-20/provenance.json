@@ -1,0 +1,18 @@
+{
+  "tool": "built-in image_gen.imagegen",
+  "original_generated_path": "C:\\Users\\asali\\.codex\\generated_images\\01a0adf8-8220-7913-a497-c48c68cdf20b\\exec-0508f700-7e25-486c-a539-a78fbb823c48.png",
+  "source": "sources/winch_v1.png",
+  "source_sha256": "9bd781cd30adb8c7b5be98c2f5d8e6956c6115bc8bdafafdea2b1ea17c116ddc",
+  "canvas": [
+    1254,
+    1254
+  ],
+  "prompt": "prompts/winch_v1.txt",
+  "prompt_sha256": "234723459992207ff3e830d80188619c8dcc35ca84b12e28531a10bc03f4d74f",
+  "processing": "Whole canvas premultiplied Lanczos to256 via build_gear_codex_icons._resize_premultiplied; genuine alpha unchanged in original. No keying/cropping/recolor/sharpening.",
+  "export_sha256": "0e43015bc849360127ad9d520de6c8ac459bb072520f868f5cb5670da07f9fd6",
+  "status": "accepted after final desktop/mobile native original review and strict gates",
+  "runtime": "game/assets/sprites/shortcut_winch.png",
+  "acceptance_evidence": "build/qa/session-sept20/shortcuts-checkpoint-validation.json",
+  "acceptance_scope": "Painted mechanism support, contact and legibility in reviewed interaction/crossing poses; supplemental gate-cap HUD masking remains disclosed."
+}

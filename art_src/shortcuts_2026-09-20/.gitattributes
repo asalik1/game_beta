@@ -1,0 +1,3 @@
+# Keep provenance and prompt hashes stable through Windows checkout.
+*.json -text
+prompts/*.txt -text

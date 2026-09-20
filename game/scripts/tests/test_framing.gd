@@ -7,6 +7,8 @@ const Trail := preload("res://scripts/health_trail.gd")
 static func run(t: Node) -> String:
 	var error := _presentation()
 	if error == "":
+		error = preload("res://scripts/tests/test_camera_corridor.gd").run(t)
+	if error == "":
 		error = _motion(t.game)
 	if error == "":
 		print("ok: target camera bounds, health-trail identity/heals and finite movement recovery")

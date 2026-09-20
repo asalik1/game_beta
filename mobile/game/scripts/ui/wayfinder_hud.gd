@@ -236,7 +236,7 @@ func _refresh_copy() -> void:
 		status_label.text = "◆  " + Nav.room_name(game, pinned_room)
 		status_label.add_theme_color_override("font_color", UITheme.GOLD_BRIGHT)
 	else:
-		status_label.text = "⌂  Sanctuary" if game.room_safe(_room) else "✓  Doors unsealed"
+		status_label.text = "⌂  Sanctuary" if game.room_safe(_room) else "✓  Area secured"
 	if not _chests.is_empty():
 		detail_label.text = "◇  %d chest%s to collect" % [_chests.size(), "" if _chests.size() == 1 else "s"]
 		detail_label.add_theme_color_override("font_color", UITheme.GOLD_BRIGHT)

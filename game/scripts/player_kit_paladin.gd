@@ -35,9 +35,10 @@ func _use_paladin(slot: String, f: float) -> void:
 				# The finesse set's 6pc rearms the leap sooner.
 				judgment_leap_cd = Balance.JUDGMENT_LEAP_CD - uniq_set_k("C", 6, "leap_cut")
 				var j_from := global_position
-				global_position = game.clamp_to_zone(
+				var landing: Vector2 = game.clamp_to_zone(
 					j_tgt.global_position + (global_position - j_tgt.global_position).normalized() * 58.0,
 					j_tgt.global_position)
+				global_position = preload("res://scripts/dash_landing.gd").limit_shortcuts(self, j_from, landing)
 				_afterimages(j_from, global_position, _pal_skin_col(Color(1.0, 0.9, 0.55)), 3)
 				game.sfx("slam", 1.4)
 				# Landing i-frame rides the LEAP only (round 44) — and the

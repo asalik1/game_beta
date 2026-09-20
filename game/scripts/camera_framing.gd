@@ -55,6 +55,7 @@ func tick(g: Game, delta: float) -> void:
 		g._cam_look = g._cam_look.lerp(desired["look"], 1.0 - exp(-Balance.CAMERA_LOOKAHEAD_EASE * delta))
 		g._cam_zoom_mult = lerpf(g._cam_zoom_mult, desired["zoom"], 1.0 - exp(-Balance.CAMERA_ZOOM_EASE * delta))
 	g.camera.zoom = Vector2.ONE * base_zoom * g._cam_zoom_mult
+	preload("res://scripts/camera_corridor.gd").apply(g, p)
 	# Ordinary lead follows room clamping; offset deliberately bypasses limits
 	# and is reserved for the owner's impact-shake preference.
 	g.camera.position = g._cam_look

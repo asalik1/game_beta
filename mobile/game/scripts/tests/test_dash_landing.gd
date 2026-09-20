@@ -26,6 +26,10 @@ class Probe extends Node2D:
 		_case("no safe segment keeps preexisting origin", "stay", 1, Vector2(50, 0), 250.0)
 		_case("nonfinite request keeps origin", "stay", 0, Vector2(100, 0), 29.0, "nonfinite")
 		_case("zero distance remains exact", "clear", 0, Vector2(100, 0), 29.0, "zero")
+		for kind in ["closed", "actor_offset", "actor_rotated", "actor_compound", "actor_disabled",
+				"gate_offset", "gate_rotated", "gate_compound", "gate_disabled", "exception",
+				"other_world", "open_fade", "mask_zero", "no_shape", "ordinary", "arrival"]:
+			_guard_case(kind)
 
 	func _circle(parent: Node, radius: float, offset := Vector2.ZERO, disabled := false) -> void:
 		var node := CollisionShape2D.new()
@@ -96,6 +100,8 @@ class Probe extends Node2D:
 		completed.emit()
 
 	func _check_case(item: Dictionary) -> String:
+		if item.has("guard_kind"):
+			return _check_guard(item)
 		var body: CharacterBody2D = item.body
 		var before := body.global_transform
 		var result: Vector2 = Landing.resolve(body, item.wanted)
@@ -123,6 +129,88 @@ class Probe extends Node2D:
 			return "%s: %s -> %s (wanted %s)" % [item.label, item.start, result, item.wanted]
 		print("ok: dash landing geometry / " + String(item.label))
 		return ""
+
+
+	## Independent circle-versus-rectangle axial boundaries, not a second call
+	## to the production sweep or its private helpers. All old cases remain.
+	func _guard_case(kind: String) -> void:
+		var start := Vector2(0, cases.size() * 600.0)
+		var body := CharacterBody2D.new()
+		body.position = start
+		body.collision_layer = 2
+		body.collision_mask = 0 if kind == "mask_zero" else 5
+		var offset := Vector2(10, 0) if kind in ["actor_offset", "actor_rotated"] else Vector2.ZERO
+		if kind == "actor_rotated": body.rotation = PI * 0.5
+		if kind != "no_shape": _circle(body, 13.0, offset)
+		if kind == "actor_compound": _circle(body, 13.0, Vector2(10, 0))
+		if kind == "actor_disabled": _circle(body, 13.0, Vector2(25, 0), true)
+		add_child(body)
+		var gate := StaticBody2D.new()
+		gate.position = start + Vector2(60, 0)
+		gate.collision_layer = 0 if kind == "open_fade" else 1
+		gate.collision_mask = 0
+		if kind != "ordinary": gate.add_to_group("shortcut_barrier")
+		var shape := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = Vector2(10, 80)
+		shape.shape = rect
+		shape.disabled = kind == "gate_disabled"
+		if kind == "gate_offset": shape.position.x = 10.0
+		if kind == "gate_rotated": shape.rotation = PI * 0.5
+		gate.add_child(shape)
+		if kind == "gate_compound":
+			var near_shape := CollisionShape2D.new()
+			near_shape.shape = rect
+			near_shape.position.x = -15.0
+			gate.add_child(near_shape)
+		if kind == "other_world":
+			var separate := SubViewport.new()
+			separate.world_2d = World2D.new()
+			separate.size = Vector2i(64, 64)
+			separate.render_target_update_mode = SubViewport.UPDATE_DISABLED
+			add_child(separate)
+			separate.add_child(gate)
+		else:
+			add_child(gate)
+		if kind == "exception": body.add_collision_exception_with(gate)
+		var boundary := 42.0 # x60 - halfwidth5 - actor radius13
+		if kind in ["actor_offset", "actor_compound"]: boundary = 32.0
+		if kind == "gate_offset": boundary = 52.0
+		if kind == "gate_rotated": boundary = 7.0
+		if kind == "gate_compound": boundary = 27.0
+		cases.append({"guard_kind": kind, "body": body, "gate": gate,
+			"start": start, "wanted": start + Vector2(100, 0), "boundary": boundary})
+
+	func _check_guard(item: Dictionary) -> String:
+		var body: CharacterBody2D = item.body
+		var gate: StaticBody2D = item.gate
+		var before := body.global_transform
+		var gate_before := gate.global_transform
+		var start: Vector2 = item.start
+		var wanted: Vector2 = item.wanted
+		var kind := String(item.guard_kind)
+		var result: Vector2
+		if kind == "arrival":
+			# Trusted-origin API must translate shape transforms without changing
+			# the actor already standing elsewhere in this controlled fixture.
+			body.global_position = start + Vector2(200, 0)
+			before = body.global_transform
+			result = Landing.limit_shortcuts(body, start, wanted)
+		else:
+			result = Landing.resolve(body, wanted)
+		var exact := kind in ["gate_disabled", "exception", "other_world", "open_fade", "mask_zero", "no_shape", "ordinary"]
+		var ok: bool = result.is_finite() and body.global_transform == before and gate.global_transform == gate_before
+		if exact:
+			ok = ok and result == wanted
+		else:
+			var progress: float = result.x - start.x
+			var boundary: float = item.boundary
+			ok = ok and is_equal_approx(result.y, start.y) and progress <= boundary \
+				and progress >= boundary - Landing.SAMPLE_PX - body.safe_margin - 0.001
+		if not ok: return "shortcut guard %s: result %s, independent boundary %s" % [kind, result - start, item.boundary]
+		print("ok: shortcut swept landing / " + kind)
+		return ""
+
 
 
 static func run(t: Node) -> String:

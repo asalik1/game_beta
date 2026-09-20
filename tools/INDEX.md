@@ -9,6 +9,30 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 
 ## Gates & suites (run these, in this order — CLAUDE.md "Testing")
 
+Earned shortcut QA: `shot.bat wayfinder --shortcut-domain --timeout=240`
+checks seeded graph invariants without building campaign worlds. The owned
+`shot.bat shortcuts` runner requires exactly one mode: `--party`,
+`--solo-controls`, `--blink-mouth`, `--paladin-mouth` or `--corridor-camera`. Party uses two readers
+over real ENet in one engine; `--shortcut-axis=horizontal` chooses an E/W
+fixture. Solo checks native pad/touch opening and actual save/load. Blink
+checks closed/open E/W mouths, near-edge and ordinary-scenery controls;
+`--save-arrival` adds real autosave/load of synthetic old positions. Paladin
+checks native Judgment leaps against closed/open mouths. Corridor camera holds
+native movement through both directions of a seeded shortcut and an original
+unlocked connector, recording per-rendered-frame body visibility; add
+`--corridor-horizontal` for E/W and `--corridor-lazy` for first-visit/return
+construction guards. Visibility failures remain strict even when routes finish.
+`--corridor-hot` instead selects one forward original corridor into a fresh
+uncleared combat room; destination spawning/AI and hero vulnerability stay live.
+It witnesses hot arrival before the mouth and retains HP observations, with
+only source clearance loaned. It is not an earned encounter or combat victory.
+Use fresh isolated
+APPDATA under `build/qa/session-sept20/claude-shortcuts`, `--timeout=360`,
+and optional `--mobile --renderer=gl_compatibility` for host mobile source.
+Slots 96/97/98 are restored on normal return. All are controlled fixtures;
+inspect their original images and receipts. The ordinary journey remains a
+separate unshipped experiment. See EARNED_SHORTCUTS.md for current acceptance.
+
 Combat clock QA: `shot.bat combat_clocks --timeout=240` uses a controlled frozen
 enemy, production damage/cast calls, real menu input, solo pause/resume and
 defeat/recovery, plus an empty loopback ENet host. Checks retained history while

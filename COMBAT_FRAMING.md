@@ -2,6 +2,13 @@
 
 Continues the autonomous improvements on `codex/crownless-wayfinder`.
 
+The September 20 corridor improvement also adjusts limits near actual open
+doorways, where clamping separately to inset rooms could lose the hero between
+them. It preserves this document's combat composition and comfort settings.
+Presentation-only entrance previews preserve normal lazy encounter/discovery
+timing. Current acceptance and controlled native evidence are recorded in
+`EARNED_SHORTCUTS.md`; remaining world-prompt/scenery overlap is separately recorded.
+
 ## Changes
 
 - The camera composes around the hero and the current aim target. The old

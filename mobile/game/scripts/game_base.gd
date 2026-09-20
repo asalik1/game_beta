@@ -257,6 +257,7 @@ var interactables: Array = []    # [{node, prompt, action}]
 var selected_landmark_prompt: Label = null  # current marked prompt; placement only
 var active_facing_interactable: Dictionary = {} # NPC temporarily turned toward the local player
 var interact_in_range := false   # is the player next to any interactable? (touch Act-button gate)
+var shortcut_edge: Dictionary = {} # one earned loop: a, b, far, flag, original dist
 var gates := {}                  # edge key "a_b" -> gate Node2D (locked edges only)
 var zone_alive := {}             # room index -> monsters still alive
 var boss_spawned := {}
@@ -2631,7 +2632,7 @@ func respawn_room(death_room: int) -> int:
 		for i in frontier:
 			for dir in rooms[i]["exits"].keys():
 				var nb := neighbor(i, dir)
-				if nb >= 0 and not seen.has(nb):
+				if nb >= 0 and not seen.has(nb) and not _shortcut_closed(int(i), nb):
 					seen[nb] = true
 					next.append(nb)
 		frontier = next
@@ -2662,6 +2663,15 @@ func travel_target(i: int) -> bool:
 		var kind: String = zones[i].get("boss", "")
 		return kind != "" and boss_done.get(kind, false)
 	return room_safe(i)
+
+## Closed earned shortcuts must not shorten death recovery or admit a dash
+## across a grid boundary before its physical gate catches the actor. This
+## leaves the historical respawn policy for all authored locks unchanged.
+func _shortcut_closed(a: int, b: int) -> bool:
+	var info: Dictionary = edge_locks.get(_edge_key(a, b), {})
+	return String(info.get("lock", "")).begins_with("flag:shortcut_") \
+		and not _edge_unlocked(a, b)
+
 
 ## Is a locked edge's condition met? (Unlocked edges return true.)
 func _edge_unlocked(a: int, b: int) -> bool:

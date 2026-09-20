@@ -11,6 +11,9 @@ func _ready() -> void:
 	if flag("atlas-keyboard") or flag("atlas-return-hints"):
 		await preload("res://scripts/tests/atlas_keyboard_live.gd").run(self)
 		return
+	if flag("shortcut-domain"):
+		await preload("res://scripts/tests/shortcut_domain_live.gd").run(self)
+		return
 	await boot("warrior", "ch1", false)
 	game.dev_god = true
 	game.settings["touch_controls"] = false

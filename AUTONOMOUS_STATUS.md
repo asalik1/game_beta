@@ -71,12 +71,55 @@ Follow-up priorities and preserved experiments:
 - The preserved unfinished `shot_brewing_journey.gd` still searches for the old
   Lock Alchemist caption. Leave its original evidence/files intact; adapt a new
   owned attempt before resuming it. Prior Fangmaw defeat remains incomplete.
-- `claude-shortcuts/READY_FOR_ROOT.md` points to source-reviewed private V4
-  production + domain-QA2 candidates. Run the real 200-seed usefulness census
-  first. Still uncompiled/unaccepted; protocol compatibility bump and corrected
-  native/network QA are required before shipping. No canonical shortcut edits.
-  Paired QA V4 is source-reviewed, but its road_hunt wrapper targets preserved
-  files: adapt to a new owned wrapper before any integration; never patch them.
+- Checkpoint 3 accepted: earned Chapter1 party shortcuts and visible corridor
+  travel. Far-side winches open optional return routes after securing the room;
+  seeded selection preserves authored progression. Painted supported front/side
+  gates and winch, scenery clearance, native input/replication/save/replay,
+  closed-mouth Blink/Paladin and old-save arrival protection are integrated.
+  Camera bounds now accommodate actual reciprocal open doorway lanes. Matching
+  floor/entrance-wall previews preserve ordinary lazy build/discovery timing.
+  Desktop compile/quick/full, scoped mobile sync/import/compile/strict quick,
+  all native/regression/admission checks and seven strict preflight categories
+  pass. Domain census216/0 over200seeds; final desktop/mobile solo32/10,
+  paired N/S and E/W33/18 each, mobile Blink/save42/10 and Paladin23/4.
+  Lazy camera32/12 peraxis, prebuilt N/S24/12, hot S/E15/4 each and existing
+  north-edge/combat-framing tests pass. Actual ENet admission34/34 verifies
+  protocol0.3.18 versus0.3.17. Original screenshots independently reviewed.
+  Known limits: controlled fixtures, host-rendered mobile (no physical device),
+  supplemental gate-cap/remote-actor HUD masking, chest/prompt/foliage overlap,
+  normal decoration appearance after entrance-only preview. A sampled first-hot
+  E frame is nearly black under the existing0.55s arrival fade (settled clear),
+  with briefly stale minimap status. Arrival presentation remains a priority.
+  Hot runs recorded
+  no incoming hit. The31.269s/+120gold live hunt is functional evidence only:
+  card/body/fence and dying-target edge overlap remain visual follow-up.
+  The ordinary seed991652 journey stops afterL2 at teaching dialogue; it never
+  reaches the shortcut. Prior Fangmaw defeat and all partial evidence remain.
+  Actual Claude initial implementation and DeepSeek QA/movement drafts were
+  independently corrected/reviewed. Claude camera attempts timed out without
+  code; the camera/preview correction is Codex-authored. Failed compile/native/
+  visual passes and ratio-rounding finding remain preserved, not accepted.
+  Three final mobile-review metadata maps initially skipped mirrors due to a
+  wrong path; corrected-v2 reviews verify actual mobile/game bytes and preserve
+  originals. No production change/rerun was indicated. Final collector verifies
+  all source/mobile/evidence pins independently. Known negative-test/shutdown
+  diagnostics and benign soft-alpha art warnings remain disclosed.
+  Evidence: shortcuts-checkpoint-validation.json and shortcuts-commit-receipt.json
+  under build/qa/session-sept20/. EARNED_SHORTCUTS.md gives scope and limits.
+  Detailed candidate history was retained in claude-shortcuts/finalization-before-docs/.
+  All46 unrelated files and the old status tail remain byte-identical.
+- DeepSeek's separate Inventory readability candidate remains private in
+  inventory-readability/reviewed-v1: menus.gd-only, compact empty rows,
+  readable names, separate filter/actions and accurate Drop-one copy.
+  Never integrate it into the shortcut checkpoint; native review still required.
+  Native QA reviewed-v2 now derives wheel/drag budget from actual range/page,
+  with bounded time and nonprogress guards; runtime still pending.
+- The next chest/NPC prompt candidate is private in prompt-clearance-next/.
+  Fresh actual Fable session fc855b69-495c-4689-ade2-a0f578763a7c read/reasoned
+  but timed out without a patch; raw provider/session and failed receipt kept.
+  reviewed-local-v1 is explicitly Codex-authored, source-reviewed only, with
+  no engine validation or canonical integration. Keep it out of the shortcut
+  checkpoint; its HUD coverage limits and native QA plan need review.
 - Earlier Claude web-hit/root candidate under `claude-combat/` stays parked;
   raw QA has blockers. Earlier DeepSeek continuity-only drafts are superseded.
 - Initial Warrior hunt: 35.352s, HP minimum 113.467/130, +120 gold, five originals

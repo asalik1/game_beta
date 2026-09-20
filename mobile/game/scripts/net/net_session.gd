@@ -2458,8 +2458,8 @@ func _rpc_flag_to_host(flag_name: String, value) -> void:
 	if not _flag_payload_ok(flag_name, value):
 		return
 	if flag_name.begins_with("reactive_") or flag_name.begins_with("ward_") or flag_name.begins_with("escort_") \
-		or flag_name.begins_with("road_caravan_"):
-		return  # only the host may settle encounters or consume terrain objects
+		or flag_name.begins_with("road_caravan_") or flag_name.begins_with("shortcut_"):
+		return  # encounter/terrain/shortcut state requires its validated host request
 	if bool(game.call("_flag_is_local", flag_name)):
 		return
 	game.net_apply_flag(flag_name, value)
@@ -2473,6 +2473,24 @@ func _rpc_set_flag(flag_name: String, value) -> void:
 	if game == null or multiplayer.is_server():
 		return
 	game.net_apply_flag(flag_name, value)
+
+
+## The latch carries chapter/seed/flag identity, never a claimed position.
+## Resolve the sender's replicated body and the CURRENT world latch on host.
+func request_shortcut_open(flag_name: String) -> void:
+	_rpc_shortcut_open.rpc_id(1, game.chapter_id, game.wander_seed, flag_name)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_shortcut_open(chapter: String, seed_value: int, flag_name: String) -> void:
+	if not multiplayer.is_server() or not is_instance_valid(game) \
+			or chapter != game.chapter_id or seed_value != game.wander_seed:
+		return
+	var pid := multiplayer.get_remote_sender_id()
+	if pid <= 0 or not (pid in _net().peers):
+		return
+	var actor: Player = _player_of(pid)
+	preload("res://scripts/shortcut_latch.gd").request_open(game, actor, flag_name, seed_value)
 
 
 ## Reactive terrain: requests carry identity, never damage or a position.

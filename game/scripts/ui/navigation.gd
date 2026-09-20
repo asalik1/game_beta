@@ -98,6 +98,8 @@ static func lock_reason(g: Game, a: int, b: int) -> String:
 	match lock:
 		"boss": return "Defeat the guardian to open this passage."
 		"clear": return "Clear the encounter to open this passage."
+	if lock.begins_with("flag:shortcut_"):
+		return "Find the far-side latch and secure its room to open this shortcut."
 	return "Continue the story to open this passage."
 
 

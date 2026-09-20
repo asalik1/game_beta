@@ -172,6 +172,7 @@ func switch_chapter(id: String, force := false) -> void:
 	for zone in zones:
 		terrain_by_zone.append(zone.get("terrain", "village"))
 	_prepare_rooms()
+	_install_shortcut()
 	_build_door_seals()
 	quest_key = String(chapter.get("start_quest", "talk"))
 
@@ -989,6 +990,31 @@ func _generate_layout(spine: Array) -> void:
 			if lock != "" and nb >= 0 and not edge_locks.has(_edge_key(i, nb)):
 				edge_locks[_edge_key(i, nb)] = {"lock": lock, "own": i}
 
+## Add at most one optional loop after the original seeded layout is finished.
+## The selector never uses RNG or changes the existing graph. Weekly Chapter 1
+## uses the same topology rule: load and join do not need a special mode order.
+func _install_shortcut() -> void:
+	shortcut_edge = {}
+	var pick: Dictionary = preload("res://scripts/shortcut_gate.gd").select(self)
+	if pick.is_empty():
+		return
+	var a := int(pick["a"])
+	var b := int(pick["b"])
+	var dir := ""
+	for d in ["N", "E", "S", "W"]:
+		if Vector2i(rooms[a]["coord"]) + Vector2i(DIRS[d]) == Vector2i(rooms[b]["coord"]):
+			dir = String(d)
+			break
+	if dir == "" or (rooms[a]["exits"] as Dictionary).has(dir):
+		return
+	var flag: String = preload("res://scripts/shortcut_gate.gd").flag_name(chapter_id, a, b)
+	rooms[a]["exits"][dir] = ""
+	rooms[b]["exits"][OPP[dir]] = ""
+	edge_locks[_edge_key(a, b)] = {"lock": "flag:" + flag, "own": int(pick["far"])}
+	shortcut_edge = {"a": a, "b": b, "far": int(pick["far"]),
+		"flag": flag, "dist": int(pick["dist"])}
+
+
 ## Make room i the live room: build it on first entry, clamp the camera
 ## to it, wake the mood, autosave. Only the live room simulates.
 func _enter_room(i: int) -> void:
@@ -1233,15 +1259,7 @@ func _build_room(i: int) -> void:
 	var origin: Vector2 = meta["origin"]
 
 	var terrain := Terrains.get_terrain(terrain_by_zone[i])
-	var ground := Sprite2D.new()
-	ground.texture = Art.ground(terrain["ground"], terrain["path"], TILES_W, TILES_H,
-		i * 1000 + 7, meta["exits"].keys())
-	ground.centered = false
-	ground.position = origin
-	ground.scale = Vector2(3, 3)
-	ground.z_index = -10
-	ground.modulate = Balance.FLOOR_LAYER_MODULATE  # floor sits a step behind the cast
-	world.add_child(ground)
+	var ground: Sprite2D = preload("res://scripts/room_floor.gd").add_ground(self, world, i, terrain)
 	zone_grounds[i] = ground
 	_apply_ground_field(i, terrain)  # crisp native-res floor under the -10 detail
 	_mark_roads(i)
@@ -2465,7 +2483,7 @@ func _structure_is_tree(name: String) -> bool:
 func _canopy_conflict(rect: Rect2, pos: Vector2, fronts: Array) -> bool:
 	for f in fronts:
 		var fr: Dictionary = f
-		if pos.y >= (fr["pos"] as Vector2).y + CANOPY_FRONT_MARGIN:
+		if not bool(fr.get("always_clear", false)) and pos.y >= (fr["pos"] as Vector2).y + CANOPY_FRONT_MARGIN:
 			continue  # stands in front: an overhanging crown is the natural read
 		if rect.intersects(fr["rect"] as Rect2):
 			return true
@@ -2620,6 +2638,19 @@ func _spawn_scenery(zi: int) -> void:
 		for i in stops + 1:
 			reserved.append({"pos": escort_route[0].lerp(escort_route[1], float(i) / stops) - origin, "radius": Balance.ESCORT_CLEARANCE})
 	var fronts: Array = []   # buildings/landmarks a tree may not hide behind (canopy-vs-front)
+	# Shortcut mechanisms need usable approaches as well as visible bars. Both
+	# mouths reserve ground space, even after opening; canopy clearance applies
+	# from either depth so an interactable cannot disappear under a foreground tree.
+	var shortcut_clearing: Dictionary = preload("res://scripts/shortcut_barrier.gd").clearing(self, zi)
+	if not shortcut_clearing.is_empty():
+		var shortcut_local: Vector2 = shortcut_clearing.pos - origin
+		reserved.append({"pos": shortcut_local, "radius": shortcut_clearing.radius})
+		fronts.append({"pos": shortcut_local, "always_clear": true,
+			"rect": Rect2(shortcut_local + Balance.SHORTCUT_MOUTH_VISIBLE_OFFSET
+				- Balance.SHORTCUT_MOUTH_VISIBLE_HALF, Balance.SHORTCUT_MOUTH_VISIBLE)})
+		if zi == int(shortcut_edge.far):
+			reserved.append({"pos": preload("res://scripts/shortcut_latch.gd").point(self, zi) - origin,
+				"radius": Balance.SHORTCUT_LATCH_CLEARANCE})
 	var unique_props_seen := {}
 	_spawn_floor_wear(zi, terrain, pr)
 
@@ -2922,6 +2953,21 @@ func _spawn_scenery(zi: int) -> void:
 					unique_props_seen[String(unique_name)] = true
 				break
 
+	# Solid ground decor is scattered before procedural buildings/landmarks.
+	# Give those large anchors priority: an earlier stump must not remain
+	# embedded behind a newly placed facade. Later obstacle/accent loops check
+	# the same fronts before insertion; leafless stumps still keep small shadows.
+	for early_prop in zone_scenery[zi].duplicate():
+		if not is_instance_valid(early_prop) or not early_prop.has_meta("prop"):
+			continue
+		var early_name := String(early_prop.get_meta("prop"))
+		if not Terrains.SOLID_DECOR.has(Terrains.prop_base(early_name)):
+			continue
+		var early_local: Vector2 = early_prop.position - origin
+		if _canopy_conflict(_prop_art_rect(early_name, early_local), early_local, fronts):
+			zone_scenery[zi].erase(early_prop)
+			early_prop.queue_free()
+
 	var obstacle_count: int = int(terrain.get("count", 10)) if terrain_preview \
 		else int(zone.get("obstacle_count", terrain.get("count", 10)))
 	var count := int(ceil(float(obstacle_count) * Balance.SCENERY_OBSTACLE_MULT * area_frac * dens))
@@ -2960,7 +3006,9 @@ func _spawn_scenery(zi: int) -> void:
 					break
 			# A tree may not stand BEHIND a building/landmark its crown would
 			# overlap (the front would cut a rectangle out of the canopy).
-			if ok and _canopy_tree(prop_base) and not fronts.is_empty() \
+			# Stumps have no canopy/wind, but their solid painted bodies still
+			# must not intersect a landmark facade when sorted behind it.
+			if ok and prop_base.contains("tree") and not fronts.is_empty() \
 					and _canopy_conflict(_prop_art_rect(prop, pos), pos, fronts):
 				ok = false
 			if ok:
@@ -2993,7 +3041,7 @@ func _spawn_scenery(zi: int) -> void:
 						okc = false
 						break
 				# Clump members honour the same canopy-vs-front rule as the centre.
-				if okc and _canopy_tree(prop_base) and not fronts.is_empty() \
+				if okc and prop_base.contains("tree") and not fronts.is_empty() \
 						and _canopy_conflict(_prop_art_rect(prop, mpos), mpos, fronts):
 					okc = false
 				if not okc:
@@ -3040,7 +3088,7 @@ func _spawn_scenery(zi: int) -> void:
 					aok = false
 					break
 			# Tree accents (tree_gnarled and kin) obey canopy-vs-front too.
-			var accent_tree := _canopy_tree(Terrains.prop_base(aname))
+			var accent_tree := Terrains.prop_base(aname).contains("tree")
 			if aok and accent_tree and not fronts.is_empty() \
 					and _canopy_conflict(_prop_art_rect(aname, acenter), acenter, fronts):
 				aok = false
@@ -3855,6 +3903,8 @@ func _build_room_walls(i: int) -> void:
 		var key := _edge_key(i, nb)
 		if edge_locks.has(key) and not gates.has(key) and not _edge_unlocked(i, nb):
 			gates[key] = _build_gate(i, String(dir))
+	if int(shortcut_edge.get("far", -1)) == i:
+		preload("res://scripts/shortcut_latch.gd").install(self, i)
 
 
 ## The OUTER curtain of an inset room (2026-08-19). A shrunken arena walls its
@@ -4062,6 +4112,12 @@ func _door_torches(zi: int, pos: Vector2, vertical: bool) -> void:
 
 ## A gate barring the doorway on room i's `dir` edge.
 func _build_gate(i: int, dir: String) -> Node2D:
+	# Earned shortcuts have two visible, physically matching room mouths.
+	# Authored quest/boss gates continue through the unchanged builder below.
+	var shortcut_neighbor: int = neighbor(i, dir)
+	if not shortcut_edge.is_empty() and _edge_key(i, shortcut_neighbor) == \
+			_edge_key(int(shortcut_edge["a"]), int(shortcut_edge["b"])):
+		return preload("res://scripts/shortcut_barrier.gd").make(self, i, dir)
 	var vertical := dir in ["E", "W"]  # the barred passage runs east-west
 	var gate := StaticBody2D.new()
 	gate.position = door_pos(i, dir)
@@ -4094,7 +4150,8 @@ func open_edge(a: int, b: int) -> void:
 		return
 	sfx("gate")
 	gate.collision_layer = 0
-	var tween := create_tween()
+	# A load/replay may retire this world before the first fade frame.
+	var tween := gate.create_tween()
 	tween.tween_property(gate, "modulate:a", 0.0, 0.8)
 	tween.tween_callback(gate.queue_free)
 
@@ -4483,37 +4540,11 @@ func _setup_ambient_fx(terrain_id: String) -> void:
 ## poly is removed). Reads the CanvasModulate tint like every world child, so no
 ## manual tint. Cheap: one small shared texture, no per-room native bake.
 func _apply_ground_field(zi: int, terrain: Dictionary) -> void:
-	var gk := String(terrain.get("ground", ""))
-	var tex: Texture2D = Art.ground_field(gk)
-	var existing = zone_fields.get(zi)
-	if tex == null:
-		if is_instance_valid(existing):
-			existing.queue_free()
+	var field: Polygon2D = preload("res://scripts/room_floor.gd").field(self, world, zi, terrain, zone_fields.get(zi))
+	if field == null:
 		zone_fields.erase(zi)
-		return
-	var poly: Polygon2D = existing if is_instance_valid(existing) else null
-	if poly == null:
-		poly = Polygon2D.new()
-		poly.z_index = -11  # under the -10 detail ground
-		poly.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-		poly.polygon = PackedVector2Array([
-			Vector2(0, 0), Vector2(ROOM_W, 0),
-			Vector2(ROOM_W, ROOM_H), Vector2(0, ROOM_H)])
-		poly.modulate = Balance.FLOOR_LAYER_MODULATE  # floor sits a step behind the cast
-		world.add_child(poly)
-		zone_fields[zi] = poly
-	poly.texture = tex
-	var gain := float(Balance.GROUND_FIELD_GAIN.get(gk, 1.0))
-	poly.self_modulate = Color(gain, gain, gain)
-	# UVs are texture pixels. Preserve the intended paving size while retaining
-	# the painterly master's extra detail; native pixel fields stay nearest.
-	var density := float(tex.get_width()) / Art.ground_field_period(gk)
-	var uv := PackedVector2Array()
-	for point in poly.polygon:
-		uv.append(point * density)
-	poly.uv = uv
-	poly.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS if density > 1.0 else CanvasItem.TEXTURE_FILTER_NEAREST
-	poly.position = rooms[zi]["origin"]
+	else:
+		zone_fields[zi] = field
 
 
 ## Repaint a room with a different terrain (look + mechanics). Live —

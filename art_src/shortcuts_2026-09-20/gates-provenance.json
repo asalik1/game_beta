@@ -1,0 +1,56 @@
+[
+  {
+    "kind": "front",
+    "tool": "built-in image_gen.imagegen",
+    "source_path": "C:\\Users\\asali\\.codex\\generated_images\\01a0adf8-8220-7913-a497-c48c68cdf20b\\exec-8644858f-4c68-4d7a-b6ac-e6c931705609.png",
+    "source": "sources/gate_front_v1.png",
+    "source_sha256": "e54de6d29b6a2f2df6486e0cc1b86892a056306b53c50cd54d33fea84bd51239",
+    "prompt": "prompts/gate_front_v1.txt",
+    "prompt_sha256": "0067b7376f09d92676cdc58aad38f0a35041c2a759a966b9a1b9a21582084368",
+    "reference": null,
+    "source_canvas": [
+      1536,
+      1024
+    ],
+    "export_canvas": [
+      768,
+      512
+    ],
+    "export": "candidate_exports/shortcut_gate_front.png",
+    "export_sha256": "dfd2d14e1a8fd729b1bc7ab85c7880a2701b4c504f761471d5bae8cedc6e614d",
+    "runtime": "game/assets/sprites/shortcut_gate_front.png",
+    "processing": "Whole-canvas premultiplied Lanczos only; original alpha retained; no cropping, recolor or compositing.",
+    "status": "accepted after final desktop/mobile native original review and strict gates",
+    "fidelity_ratio": 3.84,
+    "superseded": "rejected_exports/under_2x_v1/shortcut_gate_front.png",
+    "acceptance_evidence": "build/qa/session-sept20/shortcuts-checkpoint-validation.json",
+    "acceptance_scope": "Painted mechanism support, contact and legibility in reviewed interaction/crossing poses; supplemental gate-cap HUD masking remains disclosed."
+  },
+  {
+    "kind": "side",
+    "tool": "built-in image_gen.imagegen",
+    "source_path": "C:\\Users\\asali\\.codex\\generated_images\\01a0adf8-8220-7913-a497-c48c68cdf20b\\exec-4233bbe5-c5a8-40ea-b75e-ce7a676229a0.png",
+    "source": "sources/gate_side_v1.png",
+    "source_sha256": "52aacb36fd768b918aa39ca610e0ca2aa20920016f0e64eeb96c73c8cd50d8d9",
+    "prompt": "prompts/gate_side_v1.txt",
+    "prompt_sha256": "720bca14f301ba3703168af32f9ef0813c38d7ea12afe76557e51e26be2fa28a",
+    "reference": "sources/gate_front_v1.png",
+    "source_canvas": [
+      1024,
+      1536
+    ],
+    "export_canvas": [
+      512,
+      768
+    ],
+    "export": "candidate_exports/shortcut_gate_side.png",
+    "export_sha256": "51f10200b5351f5539db6eb05f9a4a16d2e76d0fd33fb9e9987be35f01186367",
+    "runtime": "game/assets/sprites/shortcut_gate_side.png",
+    "processing": "Whole-canvas premultiplied Lanczos only; original alpha retained; no cropping, recolor or compositing.",
+    "status": "accepted after final desktop/mobile native original review and strict gates",
+    "fidelity_ratio": 3.2,
+    "superseded": "rejected_exports/under_2x_v1/shortcut_gate_side.png",
+    "acceptance_evidence": "build/qa/session-sept20/shortcuts-checkpoint-validation.json",
+    "acceptance_scope": "Painted mechanism support, contact and legibility in reviewed interaction/crossing poses; supplemental gate-cap HUD masking remains disclosed."
+  }
+]
