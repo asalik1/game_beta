@@ -18,7 +18,10 @@ is not physical-device multi-touch or OS cancellation testing.
 
 The fixture lends a legal B weapon with an additional regular socket through
 Items.can_add_socket/add_socket, embeds one gem through the production API, and
-freezes the hero while operating the real UI. It uses actual viewport touch,
+fills the other six slots with legal production-rolled B gear so the compact
+empty-row layout still has genuine equipped-list overflow. These are controlled
+loans, individually checked for legal equipment; the original equipment dictionary
+is restored. The fixture freezes the hero while operating the real UI. It uses actual viewport touch,
 drag and mouse events. Same-frame and freed-shell replacements are controlled
 programmatic rebuilds, separately labeled. Owned gear/progression and input
 modes are restored. No gear/crafting reward, purchase or save migration is claimed.
@@ -68,3 +71,13 @@ correction. This was an audit-script error, not a game or metadata defect.
 
 Final source, gates, native counts/images, known limits and the resulting commit
 are bound by build/qa/session-sept17/equip-touch-checkpoint-validation.json.
+
+
+September20 readability follow-up: compact empty equipment rows exposed the
+old fixture's implicit overflow assumption. Six legal B support items now keep
+the original real drag guard meaningful. Desktop and host-mobile equipment
+probes pass49 checks each, with all5 originals per project inspected. The separate
+gem-cap fixture uses the same legal overflow prerequisite and passes45/49
+desktop/mobile checks with9 originals each. Earlier48-check acceptance above
+is historical. Current source/evidence pins are in
+build/qa/session-sept20/inventory-readability/validation-collector-v3/acceptance.json.

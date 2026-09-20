@@ -35,7 +35,7 @@ static func run(rig: ShotRig) -> String:
 	var old_dir: String = rig.shot_dir
 	rig.shot_dir = old_dir.path_join("equip_touch")
 	t.rng.seed = 17092026
-	t.report["scope"] = "Controlled capital visit; one legal B weapon with an added regular socket lent (rolled and reforged via Items.can_add_socket/add_socket, not earned). Real ScreenTouch/ScreenDrag and mouse events through the viewport; the production gesture code is never called directly. touch_mode, emulate_mouse_from_touch and emulate_touch_from_mouse are forced for the touch scenarios (host touchscreen capability via emulate_touch_from_mouse) and restored after. The shell-replacement scenario rebuilds the inventory programmatically between press and release, standing in for any external refresh; no physical-device or visual-acceptance claim."
+	t.report["scope"] = "Controlled capital visit; one legal B weapon with an added regular socket lent (rolled and reforged via Items.can_add_socket/add_socket, not earned), plus legal production-rolled supporting gear lent into the six remaining slots (controlled loans, each asserted equip_error-legal) so the compacted no-empty-slot column still exceeds one page. Real ScreenTouch/ScreenDrag and mouse events through the viewport; the production gesture code is never called directly. touch_mode, emulate_mouse_from_touch and emulate_touch_from_mouse are forced for the touch scenarios (host touchscreen capability via emulate_touch_from_mouse) and restored after. The shell-replacement scenario rebuilds the inventory programmatically between press and release, standing in for any external refresh; no physical-device or visual-acceptance claim."
 	# Host drag capability: ScrollContainer touch panning needs a touchscreen;
 	# emulate_touch_from_mouse provides one on desktop (skills_touch_live's
 	# established pattern). Merely forcing g.touch_mode does not.
@@ -287,6 +287,21 @@ func _seed() -> Dictionary:
 	p.equipment["weapon"] = item
 	p.gem_bag.append(Items.make_gem("atk_flat", 2))
 	if not p.embed_gem_into(item, p.gem_bag.back()): return {}
+	# Compact empty rows now fit without scrolling. Fill the other slots with
+	# legal controlled loans so real equipped-card drags still have overflow.
+	# run() restores the original equipment dictionary on every exit.
+	var support_errors := {}
+	for slot: String in Items.SLOTS:
+		if slot == "weapon": continue
+		var support: Dictionary = Items.roll_item_of(slot, "B", rng, p.cls)
+		if support.is_empty(): return {}
+		var err: String = p.equip_error(support)
+		if err != "": support_errors[slot] = err
+		p.equipment[slot] = support
+	var supports_legal: bool = support_errors.is_empty() and p.equipment.size() == 7
+	_check("setup/support_legal", supports_legal,
+		{"errors": support_errors, "slots": p.equipment.keys()})
+	if not supports_legal: return {}
 	for i in 18: p.gem_bag.append(Items.make_gem("hp_flat", 1))  # scroll range
 	p.recalc()
 	p._update_weapon_visual()

@@ -9,6 +9,16 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 
 ## Gates & suites (run these, in this order — CLAUDE.md "Testing")
 
+Inventory readability QA: `shot.bat material_ui --inventory-readability
+--timeout=300` uses the existing muted, compile-gated runner and a fresh APPDATA
+under `build/qa/`. Eight native views cover empty/occupied equipment, maximum
+legal bag capacity, actual scrolling, filter/action separation and two real
+single-unit material drops. Add `--touch` or host mobile
+`--mobile --renderer=gl_compatibility --touch`. The helper establishes and restores
+host touch capability; it never substitutes wheel events for the touch branch.
+No baseline waiver or combination with other material modes is accepted.
+See INVENTORY_READABILITY.md for controlled loans and exact validation limits.
+
 Earned shortcut QA: `shot.bat wayfinder --shortcut-domain --timeout=240`
 checks seeded graph invariants without building campaign worlds. The owned
 `shot.bat shortcuts` runner requires exactly one mode: `--party`,

@@ -29,7 +29,7 @@ static func run(rig: ShotRig) -> String:
 	var old_dir: String = rig.shot_dir
 	rig.shot_dir = old_dir.path_join("synthesis_caps")
 	t.rng.seed = 17092026
-	t.report["scope"] = "Controlled fresh capital visit; generic legal gear/gems lent, real mouse or ScreenTouch synthesis clicks. No earned materials, combat, travel-input, save-persistence or physical-device claim. Road uses actual chapter rebuild; cleanup restores owned character fields, not old world node identity."
+	t.report["scope"] = "Controlled fresh capital visit; legal target weapon/gems plus six production-rolled legal B support items lent to ensure real equipped-list scroll overflow. Real mouse or ScreenTouch synthesis clicks. No earned materials, combat, travel-input, save-persistence or physical-device claim. Road uses actual chapter rebuild; cleanup restores owned character fields, not old world node identity."
 	t.p.set_physics_process(false)
 	var error: String = await t._exercise()
 	t.g.menus.close()
@@ -189,6 +189,23 @@ func _seed(grade: String, level: int, matches: int) -> Dictionary:
 	p.gem_bag.append(Items.make_gem("atk_flat", level))
 	if not p.embed_gem_into(item, p.gem_bag.back()): return {}
 	for i in matches: p.gem_bag.append(Items.make_gem("atk_flat", level))
+	# Crownless now compacts empty equipment rows, so the original single-weapon
+	# layout no longer guarantees scroll range for the mobile socket-drag probe.
+	# Lend legal production-rolled B gear in every non-weapon slot so the real
+	# equipped-card drag still has overflow. run() restores the original
+	# equipment dictionary on every exit.
+	var support_errors := {}
+	for slot: String in Items.SLOTS:
+		if slot == "weapon": continue
+		var support: Dictionary = Items.roll_item_of(slot, "B", rng, p.cls)
+		if support.is_empty(): return {}
+		var err: String = p.equip_error(support)
+		if err != "": support_errors[slot] = err
+		p.equipment[slot] = support
+	var supports_legal: bool = support_errors.is_empty() and p.equipment.size() == 7
+	_check(grade + str(level) + "/support_legal", supports_legal,
+		{"errors": support_errors, "slots": p.equipment.keys()})
+	if not supports_legal: return {}
 	p.recalc()
 	p._update_weapon_visual()
 	_check(grade + str(level) + "/legal_setup", level <= int(Items.GEM_LEVEL_LIMIT[grade])

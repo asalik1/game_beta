@@ -263,19 +263,33 @@ func _test_graph_walk_darkwood() -> void:
 		await _kill_room(5)
 		print("ok: social room (seeded ELITE ambush variant)")
 	else:
-		# Find the wanderer by POSITION in room 5, not a global interactables
-		# delta: earlier seeded movement may have already built room 5, so its
-		# NPC is already counted (a flaky size compare). Room 5 (Woodsman's
-		# Clearing) has no merchant or authored NPC, so any interactable
-		# inside its rect is the wanderer.
-		var w_entry: Dictionary = {}
+		# Find the wanderer by IDENTITY, not just position: room 5 can also
+		# host the shortcut winch (an interactable with no dialogue), so "any
+		# interactable in the rect" grabs the wrong node. _make_npc stores the
+		# convo id as quest_convo meta and _spawn_wanderer passes its pool
+		# convo through, so the authored wanderer is the ONE interactable in
+		# room 5 whose quest_convo belongs to the chapter's wanderer pool.
+		var pool_convos := {}
+		for w in Story.wanderers_for(game.chapter_id):
+			pool_convos[String((w as Dictionary)["convo"])] = true
+		var candidates: Array[Dictionary] = []
+		var roster: Array[String] = []
 		for it in game.interactables:
 			var node: Node2D = it.get("node")
-			if is_instance_valid(node) and game.room_rect(5).has_point(node.global_position):
-				w_entry = it
-				break
-		if w_entry.is_empty():
-			return _fail("social room rolled no wanderer")
+			if not is_instance_valid(node) \
+					or not game.room_rect(5).has_point(node.global_position):
+				continue
+			var convo := ""
+			if node.has_meta("quest_convo"):
+				convo = String(node.get_meta("quest_convo"))
+			roster.append("%s(convo='%s' at %s)" % [node.get_class(), convo,
+				node.global_position])
+			if convo != "" and pool_convos.has(convo):
+				candidates.append(it)
+		if candidates.size() != 1:
+			return _fail("social room: %d pool wanderers (want exactly 1); room 5 interactables: [%s]" %
+				[candidates.size(), ", ".join(roster)])
+		var w_entry: Dictionary = candidates[0]
 		w_entry["action"].call()
 		await _frames(2)
 		# A wanderer convo may OPEN on a choice node (tinker, orphan...)

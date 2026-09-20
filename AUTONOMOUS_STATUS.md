@@ -108,18 +108,67 @@ Follow-up priorities and preserved experiments:
   under build/qa/session-sept20/. EARNED_SHORTCUTS.md gives scope and limits.
   Detailed candidate history was retained in claude-shortcuts/finalization-before-docs/.
   All46 unrelated files and the old status tail remain byte-identical.
-- DeepSeek's separate Inventory readability candidate remains private in
-  inventory-readability/reviewed-v1: menus.gd-only, compact empty rows,
-  readable names, separate filter/actions and accurate Drop-one copy.
-  Never integrate it into the shortcut checkpoint; native review still required.
-  Native QA reviewed-v2 now derives wheel/drag budget from actual range/page,
-  with bounded time and nonprogress guards; runtime still pending.
+- Checkpoint 4 accepted: Inventory readability. Seven empty equipment rows
+  fit compactly; occupied rows retain sockets/gesture geometry and use readable
+  neutral names. Shared detail headers and merchant names follow the same rule.
+  Browse filters wrap separately from bag actions; their touch targets are44px.
+  Material Drop one copy correctly distinguishes a unit from its stack slot.
+  No gear art, transaction/domain logic or keyboard filter behavior changed.
+  Actual DeepSeek supplied production/QA drafts; actual Claude supplied bounded
+  wanderer/equipment QA fixes and inspected native originals. Root independently
+  corrected/reviewed outputs. Gem-scroll QA uses actual DeepSeek support loans;
+  empty-row compaction no longer invalidates the real overflow prerequisite.
+  Desktop compile/quick/full and mobile sync/import/compile/strict quick pass.
+  Focused Inventory146/146 on desktop, host-touch and mobile; pilots309/309 each;
+  equipment49/49 each; gem caps45 desktop/49 mobile; menu navigation158 each;
+  paired real ENet UI24 each. All106 accepted originals inspected; strict
+  preflight passes all7 categories. V3 completes affected gates; six individually
+  passing V2 native episodes retain exact unchanged source bindings. V2 as a
+  whole failed, and is never counted as a passing pipeline.
+  Preserved rejections include invalid QA gem stat/native-class collision,
+  omitted touch capability, strict original-layout141/131/10 presentation
+  diagnostic, mislabeled touch-v1 (actually desktop), broad wanderer selection,
+  and both obsolete empty-equipment scroll fixtures. No assertion was waived.
+  Limits: controlled factory loans, not earned gameplay; mobile is host
+  Compatibility, not physical device. ENet UI-only does not prove persistence
+  or real-scene disconnect cleanup; surviving child-scene release can still
+  spend and remains an unaccepted diagnostic. Known shutdown/negative-test
+  diagnostics remain disclosed. Coarse gear/gems, small stat/legend text,
+  dim ineligible gems and some compact popover controls remain follow-up.
+  Evidence: inventory-readability/validation-collector-v3/acceptance.json;
+  final commit/local state: inventory-readability-commit-receipt.json under
+  build/qa/session-sept20. All46 unrelated files and old status tail preserved.
+  The session remains active through September21 21:00UTC.
+- Next painted-gear UI candidate remains PRIVATE: actual Claude produced
+  Inventory-only resolver opt-ins under inventory-readability/
+  gear-fidelity-claude-v1/reviewed-private-v1. All7 source anchors match after
+  explicit UTF8 decoding; a root metadata/line-ending dry-apply error is retained.
+  No canonical integration or native acceptance. No new assets are needed.
+  Actual DeepSeek QA drafts v1/v2 are rejected, retained with precise source,
+  selector and lifetime blockers; derive/review a corrected fixture before use.
+  Stats/details/unique art and performance still need coverage. Preserve world,
+  held gear, protected art and gameplay32px resolvers.
 - The next chest/NPC prompt candidate is private in prompt-clearance-next/.
   Fresh actual Fable session fc855b69-495c-4689-ade2-a0f578763a7c read/reasoned
   but timed out without a patch; raw provider/session and failed receipt kept.
-  reviewed-local-v1 is explicitly Codex-authored, source-reviewed only, with
+  reviewed-local-v2 is explicitly Codex-authored, source-reviewed only, with
   no engine validation or canonical integration. Keep it out of the shortcut
-  checkpoint; its HUD coverage limits and native QA plan need review.
+  checkpoint; its HUD coverage limits and native QA plan need review. V2 keeps
+  authored elevated victory-gate labels out of the generic anchor reset; the
+  original V1 regression and independent QA adaptation are retained.
+- Arrival readability is another private candidate: actual tools-disabled
+  Fable returned a three-file live-entry implementation in arrival-readability/
+  claude-v1. Boot/load/network transition ownership needs independent review;
+  no canonical integration or runtime validation yet. Avoid blanket removal
+  of fades: network snapshot _enter_room also owns its arrival transition.
+  The reviewed four-file derivative centralizes the existing title hold in
+  Balance. Source reviews pass. Actual DeepSeek QA3 is frozen under
+  arrival-readability/native-qa-v1/reviewed-v3, adding optional strict live,
+  revisit, boot and actual-load observations to existing helpers; runtime is
+  still pending. Existing overlay-tween ownership limits remain explicit.
+  Actual Claude also supplied a separate prompt QA draft; its corrected private
+  derivative is prompt-clearance-next/qa-claude-v1/reviewed-local-v2. Actual
+  victory-arch/remapped-input and generic-chest fixtures remain unfinished.
 - Earlier Claude web-hit/root candidate under `claude-combat/` stays parked;
   raw QA has blockers. Earlier DeepSeek continuity-only drafts are superseded.
 - Initial Warrior hunt: 35.352s, HP minimum 113.467/130, +120 gold, five originals
