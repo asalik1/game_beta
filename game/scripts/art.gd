@@ -1441,6 +1441,13 @@ static func ui_icon(name: String) -> ImageTexture:
 	var key := "uiicon_" + name
 	if _cache.has(key):
 		return _cache[key]
+	# Painted bottle master for the alchemist UI (professions brew button and
+	# trade-lock icon) instead of the legacy 32px pixel-art potion.png.
+	if name == "potion":
+		var painted := consumable_icon({"sprite": "consumables/apprentices_health_potion"})
+		if painted != null:
+			_cache[key] = painted
+		return painted  # Missing painted art stays missing; never revive the pixel bottle.
 	var im := _icon_override(name)
 	if im == null:
 		return null

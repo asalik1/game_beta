@@ -16,7 +16,7 @@ func _ready() -> void:
 	await skip_dialogue()
 	game.menus.close()
 	await frames(3)
-	var result: Dictionary = await probe_script.run(self)
+	var result: Dictionary = await probe_script.preview(self) if flag("workshop-preview") else await probe_script.run(self)
 	var restored: bool = probe_script.restore_files(files)
 	result.files_restored = restored
 	if not restored:

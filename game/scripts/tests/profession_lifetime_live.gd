@@ -194,10 +194,262 @@ func _open_fixture(touch := false) -> void:
 	await r.frames(3)
 
 
+func _tap_named(name: String) -> bool:
+	var id := "browse.%s.%d" % [name, rows.size()]
+	var button := m.root.find_child(name, true, false) as Button
+	if not _check(id + ".target", button != null and button.is_visible_in_tree() and not button.disabled, name):
+		return false
+	var rect := button.get_global_rect()
+	var visible := rect
+	var ancestor := button.get_parent()
+	while ancestor != null and ancestor != m.root:
+		if ancestor is Control and ancestor.clip_contents:
+			visible = visible.intersection(ancestor.get_global_rect())
+		ancestor = ancestor.get_parent()
+	if not _check(id + ".contained", visible.grow(0.5).encloses(rect)
+			and m._shell_rect.grow(0.5).encloses(rect)
+			and m.get_viewport().get_visible_rect().encloses(rect), str(rect)):
+		return false
+	var before := _ledger(p)
+	if g.touch_mode: await native._touch(rect.get_center())
+	else: await native._mouse(rect.get_center())
+	await r.frames(3)
+	return _check(id + ".no_spend", _ledger(p) == before and m.current == "professions"
+		and is_instance_valid(m.root) and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT), _summary(p))
+
+
+func _redesign_controls() -> String:
+	# Separate new UI guards; do not inflate the 46 callback / 7 positive counters.
+	await _open_fixture()
+	if not await _tap_named("ProfTrade_tailor"): return "inactive browse failed"
+	var title := m.root.find_child("ProfTradeName", true, false) as Label
+	await _capture("05_after_redesign_inactive")
+	if not _check("redesign.inactive_browse", title != null and title.is_visible_in_tree()
+			and title.text.contains(Professions.trade_name("tailor")) and p.profession == "alchemist", _summary(p)):
+		return "inactive browse did not show Tailor without switching"
+
+	await _open_fixture()
+	p.materials = [Items.make_material("bone", "F", 2), Items.make_material("bone", "E", 3)]
+	var craft := await _action("craft")
+	if craft.is_empty(): return "exhausted craft fixture unavailable"
+	var expected := _expected("craft", p)
+	# take_material removes a drained stack. The original positive fixture's
+	# oracle uses surviving stacks, so this local expectation removes zero only.
+	var remaining: Array = []
+	for material: Dictionary in expected.player.materials:
+		if int(material.count) > 0: remaining.append(material)
+	expected.player.materials = remaining
+	_click_now(craft.button.get_global_rect().get_center())
+	if not _check("redesign.exhausted.first_exact", _ledger(p) == expected, _summary(p)):
+		return "exhausted craft first ledger mismatch"
+	await r.frames(3)
+	var before_repeat := _ledger(p)
+	await native._key(KEY_ENTER)
+	await r.frames(3)
+	var recipe := m.root.find_child("ProfRecipeName", true, false) as Label
+	await _capture("06_after_redesign_exhausted")
+	if not _check("redesign.exhausted.repeat_safe", _ledger(p) == before_repeat
+			and recipe != null and recipe.is_visible_in_tree()
+			and recipe.text.to_lower().contains("charm") and recipe.text.contains("grade F"), _summary(p)):
+		return "exhausted Enter changed selection or spent another affordable recipe"
+
+	await _open_fixture()
+	var learn := await _action("learn")
+	if learn.is_empty(): return "known blueprint fixture unavailable"
+	var expected_learn := _expected("learn", p)
+	_click_now(learn.button.get_global_rect().get_center())
+	if not _check("redesign.known.first_exact", _ledger(p) == expected_learn, _summary(p)):
+		return "known blueprint first ledger mismatch"
+	await r.frames(3)
+	var before_known_repeat := _ledger(p)
+	await native._key(KEY_ENTER)
+	await r.frames(3)
+	var action := m.root.find_child("ProfLearn", true, false) as Button
+	var known := m.root.find_child("ProfKnown_B", true, false) as Label
+	var known_visible: bool = known != null and known.is_visible_in_tree() and known.text.to_lower().contains("known")
+	await _capture("07_after_redesign_known")
+	if not _check("redesign.known.repeat_safe", _ledger(p) == before_known_repeat
+			and p.has_blueprint("charm", "B") and known_visible
+			and (action == null or action.disabled or not action.is_visible_in_tree()), _summary(p)):
+		return "known Blueprint Enter spent again or lost known state"
+	return ""
+
+
+func _changed_trade_controls() -> String:
+	# Same live shell/owner/world, but current active profession changes before
+	# the real retained action. Distinct from the original 46 lifetime controls.
+	for action in ["craft", "learn"]:
+		await _open_fixture()
+		var record := await _action(action)
+		if record.is_empty(): return "changed-trade action unavailable"
+		p.profession = "blacksmith"
+		var before := _ledger(p)
+		record.callback.call()  # No await between trade mutation and guarded action.
+		var title := m.root.find_child("ProfTradeName", true, false) as Label
+		if not _check("redesign.changed_trade.reject." + action, _ledger(p) == before
+				and m.current == "professions" and title != null
+				and title.text == Professions.trade_name("alchemist"), _summary(p)):
+			return "current-shell trade change spent resources or lost selected trade"
+		await r.frames(3)
+	return ""
+
+
+func _full_pack_mail() -> String:
+	await _open_fixture()
+	# Keep the 30-unit bone stack alive after paying two; draining a stack could
+	# free a bag slot and would not exercise mail fallback.
+	var spaces := p.bag_capacity() - p.bag_used()
+	if not _check("redesign.mail.fixture_capacity", spaces >= 0, spaces):
+		return "full-pack fixture over capacity"
+	var filler := Items.make_potion("health", "instant", "F", "accord")
+	for index in spaces: p.consumables.append(filler.duplicate(true))
+	if not _check("redesign.mail.fixture_full", p.bag_used() == p.bag_capacity()
+			and p.material_count("bone", "F") > int(Balance.CRAFT_MATERIAL_COST.F), _summary(p)):
+		return "full-pack fixture not full with surviving material stack"
+	var craft := await _action("craft")
+	if craft.is_empty(): return "full-pack Craft unavailable"
+	var expected := _expected("craft", p)
+	var expected_item: Dictionary = expected.player.backpack.pop_back()
+	var sent_after: int = g.trusted_now()
+	_click_now(craft.button.get_global_rect().get_center())
+	var sent_before: int = g.trusted_now()
+	if not _check("redesign.mail.one_letter", g.mailbox.size() == 1, g.mailbox.size()):
+		return "full-pack craft did not produce exactly one letter"
+	var letter: Dictionary = g.mailbox[0]
+	var stamp: int = int(letter.get("sent_at", -1))
+	if not _check("redesign.mail.timestamp", stamp >= sent_after and stamp <= sent_before, stamp):
+		return "full-pack letter timestamp outside action interval"
+	expected.mail.append({"subject": "Your crafted gear",
+		"body": "The bench was ready but your bag was full — the piece waits here.",
+		"items": [{"kind": "item", "item": expected_item}], "sent_at": stamp, "read": false})
+	if not _check("redesign.mail.exact", _ledger(p) == expected
+			and p.bag_used() == p.bag_capacity(), _summary(p)):
+		return "full-pack craft ledger or exact mailed payload mismatch"
+	await r.frames(3)
+	var notice := m.root.find_child("ProfResult", true, false) as Label
+	await _capture("08_after_full_pack_mail")
+	if not _check("redesign.mail.visible_result", notice != null and notice.is_visible_in_tree()
+			and notice.text.contains("mailed") and notice.text.contains(Items.title(expected_item)),
+			notice.text if notice != null else "missing"):
+		return "full-pack result did not show crafted item and mailed destination"
+	var shape: Dictionary = CaptionGeometry.shaped(notice)
+	var cells: Rect2 = CaptionGeometry.to_rect(shape.cells)
+	_check("redesign.mail.result_complete", shape.missing.is_empty() and int(shape.count) > 0
+		and notice.visible_ratio >= 1.0 and notice.max_lines_visible == -1
+		and notice.get_visible_line_count() == notice.get_line_count()
+		and notice.get_global_rect().grow(0.5).encloses(cells)
+		and m._shell_rect.grow(0.5).encloses(cells), shape)
+	return ""
+
+
+func _browse_lifetime_controls() -> String:
+	# Ten controlled retirements of real browse signals, separate from the 46
+	# transaction callbacks. Invalid identities never survive into a frame.
+	for route in ["ProfTrade_tailor", "ProfTab_blueprints"]:
+		for reason in ["owner", "world", "seed", "replaced_shell", "closed_shell"]:
+			await _open_fixture()
+			var id: String = "browse_lifetime." + route + "." + reason
+			var button := m.root.find_child(route, true, false) as Button
+			if not _check(id + ".control", button != null and button.is_visible_in_tree()
+					and not button.disabled, route): return "browse control unavailable"
+			var links := button.get_signal_connection_list("pressed")
+			if not _check(id + ".connections", links.size() == 2, links.size()):
+				return "browse signal layout changed"
+			var callback: Callable = links[1].callable
+			if not _check(id + ".callable", callback.is_valid(), route): return "browse callback invalid"
+			var temporary: Node = null
+			var owner: Player = p
+			match reason:
+				"owner":
+					var replacement := Player.new()
+					replacement.game = g
+					replacement.process_mode = Node.PROCESS_MODE_DISABLED
+					replacement.visible = false
+					g.add_child(replacement)
+					replacement.set_class(p.cls)
+					_loan(replacement)
+					g.player = replacement
+					owner = replacement
+					temporary = replacement
+				"world":
+					var replacement := Node2D.new()
+					g.add_child(replacement)
+					g.world = replacement
+					temporary = replacement
+				"seed": g.wander_seed += 1
+				"replaced_shell": m.open_inventory()
+				"closed_shell": m.close()
+			var before := _ledger(owner)
+			var original_before := _ledger(p)
+			var destination: Control = m.root
+			var destination_name := m.current
+			callback.call()
+			var rejected := _check(id + ".unchanged", _ledger(owner) == before
+				and _ledger(p) == original_before and m.root == destination
+				and m.current == destination_name, _summary(owner))
+			g.player = p
+			g.players = keep.registry.duplicate()
+			g.world = keep.world
+			g.wander_seed = int(keep.game.wander_seed)
+			if temporary != null: temporary.queue_free()
+			await r.frames(3)
+			if not rejected: return "retired browse callback changed destination or economy"
+	# Native browse starts the real deferred restore, then the destination is
+	# replaced synchronously before its first await can resume. No focus loan.
+	for replacement in [true, false]:
+		await _open_fixture()
+		var route := "ProfTrade_tailor" if replacement else "ProfTab_blueprints"
+		var id := "deferred_focus." + ("inventory" if replacement else "closed")
+		var button := m.root.find_child(route, true, false) as Button
+		if not _check(id + ".control", button != null and button.is_visible_in_tree()
+				and not button.disabled, route): return "deferred browse unavailable"
+		var rect := button.get_global_rect()
+		if not _check(id + ".click_inside", m._shell_rect.encloses(rect)
+				and m.get_viewport().get_visible_rect().encloses(rect), str(rect)):
+			return "deferred browse outside shell or viewport"
+		var old_shell: Control = m.root
+		var before := _ledger(p)
+		_click_now(rect.get_center())
+		if not _check(id + ".rebuilt", is_instance_valid(m.root) and m.root != old_shell, route):
+			return "native browse did not rebuild the shell"
+		var title := m.root.find_child("ProfTradeName", true, false) as Label
+		var selected: bool = title != null and title.text == Professions.trade_name("tailor")
+		if not replacement: selected = m.root.find_child("ProfLearn", true, false) != null
+		if not _check(id + ".native_browse", selected
+				and _ledger(p) == before, route): return "native browse did not rebuild requested view"
+		var retired: WeakRef = weakref(m.root)
+		if replacement: m.open_inventory()
+		else: m.close()
+		var destination: Control = m.root
+		var destination_name := m.current
+		await r.frames(4)
+		var focus: Control = m.get_viewport().gui_get_focus_owner()
+		var destination_focus := focus == null or (is_instance_valid(destination)
+			and (focus == destination or destination.is_ancestor_of(focus)))
+		if not _check(id + ".destination_kept", m.root == destination
+				and m.current == destination_name and destination_name == ("inventory" if replacement else "")
+				and _ledger(p) == before and retired.get_ref() == null and destination_focus,
+				{"menu": m.current, "focus": str(focus.get_path()) if focus != null else "none",
+				"retired_shell_released": retired.get_ref() == null}):
+			return "retired deferred focus changed successor, focus or economy"
+	return ""
+
+
 func _action(action: String) -> Dictionary:
-	var label := {"lock": "Lock Blacksmith", "craft": "Craft F", "learn": "Learn Generic B Charm"}
-	var button: Button = native._find_button(m.root, String(label[action]))
-	if not _check("fixture.button.%s.%d" % [action, rows.size()], button != null, label[action]):
+	var routes := {"lock": ["ProfTrade_blacksmith"],
+		"craft": ["ProfTrade_alchemist", "ProfTab_craft", "ProfSlot_charm", "ProfGrade_F"],
+		"learn": ["ProfTrade_alchemist", "ProfTab_blueprints", "ProfSlot_charm", "ProfBlueprintGrade_B"]}
+	var names := {"lock": "ProfActivate", "craft": "ProfCraft", "learn": "ProfLearn"}
+	if not routes.has(action): return {}
+	for name: String in routes[action]:
+		if not await _tap_named(name): return {}
+	var button := m.root.find_child(String(names[action]), true, false) as Button
+	if not _check("fixture.button.%s.%d" % [action, rows.size()], button != null
+			and button.is_visible_in_tree() and not button.disabled, names[action]):
+		return {}
+	var rect := button.get_global_rect()
+	if not _check("fixture.action_rect.%s.%d" % [action, rows.size()],
+			m._shell_rect.grow(0.5).encloses(rect) and m.get_viewport().get_visible_rect().encloses(rect), str(rect)):
 		return {}
 	var links := button.get_signal_connection_list("pressed")
 	if not _check("fixture.connections.%s.%d" % [action, rows.size()], links.size() == 2,
@@ -206,8 +458,6 @@ func _action(action: String) -> Dictionary:
 	var retained: Callable = links[1].callable
 	if not _check("fixture.callable.%s.%d" % [action, rows.size()], retained.is_valid(), button.text):
 		return {}
-	# A name only on the native test instance; labels and callbacks are untouched.
-	button.name = "QAProfession_" + action
 	return {"button": button, "callback": retained, "shell": m.root, "label": button.text}
 
 
@@ -270,7 +520,7 @@ func _run() -> String:
 	for touch in [false, true]:
 		for action in ACTIONS:
 			await _open_fixture(touch)
-			var record := _action(action)
+			var record := await _action(action)
 			if record.is_empty(): return "native action fixture unavailable"
 			await _reveal(record.button)
 			var expected := _expected(action, p)
@@ -286,7 +536,7 @@ func _run() -> String:
 			if action == "craft": await _capture("01_valid_craft_" + ("touch" if touch else "mouse"))
 	# This is an unpaused-overlay fixture, not a live network/session claim.
 	await _open_fixture()
-	var active := _action("craft")
+	var active := await _action("craft")
 	if active.is_empty(): return "unpaused control unavailable"
 	await _reveal(active.button)
 	g.request_pause(false)
@@ -303,64 +553,58 @@ func _run() -> String:
 	for action in ACTIONS:
 		var error: String = await _duplicate(action)
 		if error != "": return error
-	return await _cross_action()
+	var cross_error: String = await _cross_action()
+	if cross_error != "": return cross_error
+	var redesign_error: String = await _redesign_controls()
+	if redesign_error != "": return redesign_error
+	var trade_error: String = await _changed_trade_controls()
+	if trade_error != "": return trade_error
+	var mail_error: String = await _full_pack_mail()
+	if mail_error != "": return mail_error
+	return await _browse_lifetime_controls()
 
 
 func _active_trade_caption(id: String) -> void:
-	# Observe the freshly rebuilt real caption without resizing/revealing it.
-	# The original 46 callback and seven positive ledgers remain independent.
 	caption_probes += 1
-	var captions: Array[Label] = []
-	var pending: Array[Node] = [m.root]
-	while not pending.is_empty():
-		var node: Node = pending.pop_back()
-		if not is_instance_valid(node): continue
-		for child in node.get_children(): pending.append(child)
-		if node is Label and node.text.begins_with("● ") and node.text.ends_with(" — active"):
-			captions.append(node)
-	if not _check("caption.present." + id, captions.size() == 1, captions.size()):
+	var trade_name := Professions.trade_name(p.profession)
+	var title := m.root.find_child("ProfTradeName", true, false) as Label
+	var rail := m.root.find_child("ProfTrade_" + p.profession, true, false) as Button
+	var active: Array[Label] = []
+	for candidate in m.root.find_children("*", "Label", true, false):
+		var label := candidate as Label
+		if label != null and label.is_visible_in_tree() and label.text.ends_with(" · Active"):
+			active.append(label)
+	if not _check("caption.present." + id, title != null and rail != null and active.size() == 1,
+			{"title": title != null, "rail": rail != null, "active_labels": active.size()}):
 		return
-	var caption: Label = captions[0]
-	var expected := "● %s  [%s] — active" % [Professions.trade_name(p.profession),
-		", ".join(Professions.slots_of(p.profession))]
-	_check("caption.complete_text." + id, caption.text == expected,
-		{"actual": caption.text, "expected": expected})
-	var row := caption.get_parent() as HBoxContainer
-	var list: VBoxContainer = row.get_parent() as VBoxContainer if row != null else null
-	var scroll: ScrollContainer = list.get_parent() as ScrollContainer if list != null else null
-	if not _check("caption.row_structure." + id, row != null and list != null and scroll != null,
-			"active caption in live trade HBox / list / ScrollContainer"):
-		return
-	var shape: Dictionary = CaptionGeometry.shaped(caption)
-	var bounds: Rect2 = CaptionGeometry.to_rect(shape.cells)
-	var lines: int = caption.get_line_count()
-	var visible_lines: int = caption.get_visible_line_count()
-	var full_text: bool = shape.missing.is_empty() and int(shape.count) > 0 \
-		and caption.visible_ratio >= 1.0 and caption.max_lines_visible == -1 \
-		and caption.lines_skipped == 0 and not caption.clip_text and visible_lines == lines
-	var contained: bool = caption.get_global_rect().grow(1.0).encloses(bounds) \
-		and row.get_global_rect().grow(1.0).encloses(bounds) \
-		and list.get_global_rect().grow(1.0).encloses(bounds) \
-		and scroll.get_global_rect().grow(1.0).encloses(bounds) \
-		and m.get_viewport().get_visible_rect().grow(1.0).encloses(bounds)
-	var readable: bool = full_text and contained and caption.is_visible_in_tree() \
-		and lines >= 1 and lines <= 2 and caption.get_theme_font_size("font_size") >= 14
-	# Narrow-width line stacking is the ONLY new baseline exception. Missing
-	# captions, wrong text/structure, normal-width clipping and tiny text fail.
-	var collapsed: bool = full_text and caption.is_visible_in_tree() and lines > 2 \
-		and caption.get_theme_font_size("font_size") >= 14 \
-		and caption.size.x < float(caption.get_theme_font_size("font_size")) * 2.0
-	_check("caption.readable." + id, readable,
-		{"shape": shape, "label": str(caption.get_global_rect()), "row": str(row.get_global_rect()),
-		"list": str(list.get_global_rect()), "scroll": str(scroll.get_global_rect()),
-		"visible_lines": visible_lines, "full_text": full_text, "contained": contained,
-		"narrow_line_stack": collapsed}, collapsed)
+	_check("caption.complete_text." + id, title.text == trade_name
+		and active[0].text == trade_name + " · Active" and rail.is_ancestor_of(active[0]),
+		{"title": title.text, "active": active[0].text, "trade": p.profession})
+	for spec in [["title", title], ["active", active[0]]]:
+		var label: Label = spec[1]
+		var shape: Dictionary = CaptionGeometry.shaped(label)
+		var bounds: Rect2 = CaptionGeometry.to_rect(shape.cells)
+		var full: bool = shape.missing.is_empty() and int(shape.count) > 0 \
+			and label.visible_ratio >= 1.0 and label.max_lines_visible == -1 \
+			and label.lines_skipped == 0 and label.get_visible_line_count() == label.get_line_count()
+		var contained: bool = label.get_global_rect().grow(0.5).encloses(bounds) \
+			and m._shell_rect.grow(0.5).encloses(bounds) \
+			and m.get_viewport().get_visible_rect().grow(0.5).encloses(bounds)
+		if spec[0] == "active": contained = contained and rail.get_global_rect().grow(0.5).encloses(bounds)
+		var ancestor := label.get_parent()
+		while ancestor != null and ancestor != m.root:
+			if ancestor is Control and ancestor.clip_contents:
+				contained = contained and ancestor.get_global_rect().grow(0.5).encloses(bounds)
+			ancestor = ancestor.get_parent()
+		_check("caption.readable.%s.%s" % [id, spec[0]], full and contained
+			and label.is_visible_in_tree() and label.get_theme_font_size("font_size") >= 14,
+			{"shape": shape, "full_text": full, "contained": contained})
 
 
 func _retired(action: String, retirement: String) -> String:
 	r.step("controlled retained %s callback after %s" % [action, retirement])
 	await _open_fixture()
-	var record := _action(action)
+	var record := await _action(action)
 	if record.is_empty(): return "retained native action unavailable"
 	await _reveal(record.button)
 	var old_shell: WeakRef = weakref(record.shell)
@@ -439,7 +683,7 @@ func _retired(action: String, retirement: String) -> String:
 func _duplicate(action: String) -> String:
 	r.step("real native activation then same-frame duplicate " + action)
 	await _open_fixture()
-	var record := _action(action)
+	var record := await _action(action)
 	if record.is_empty(): return "duplicate action unavailable"
 	await _reveal(record.button)
 	var expected := _expected(action, p)
@@ -458,23 +702,28 @@ func _duplicate(action: String) -> String:
 
 
 func _cross_action() -> String:
-	r.step("one native Craft then old Learn from the same retired parent")
+	r.step("native Learn after browsing retires a previously captured Craft callback")
 	await _open_fixture()
-	var craft := _action("craft")
-	var learn := _action("learn")
-	if craft.is_empty() or learn.is_empty(): return "cross-action native controls unavailable"
-	await _reveal(craft.button)
-	var expected := _expected("craft", p)
-	_click_now(craft.button.get_global_rect().get_center())
-	_check("cross.first_craft_exact", _ledger(p) == expected, _summary(p))
+	var craft := await _action("craft")
+	if craft.is_empty(): return "cross-action native Craft unavailable"
+	var old_craft: Callable = craft.callback
+	var old_shell: WeakRef = weakref(craft.shell)
+	craft.clear()  # Never carry an old Button/Control across native view replacement.
+	var learn := await _action("learn")
+	if learn.is_empty(): return "cross-action native Learn unavailable"
+	var expected := _expected("learn", p)
+	_click_now(learn.button.get_global_rect().get_center())
+	if not _check("cross.first_learn_exact", _ledger(p) == expected, _summary(p)):
+		return "cross-action Learn ledger mismatch"
+	if not _check("cross.old_craft_callable", old_craft.is_valid() and old_shell.get_ref() == null,
+			"old Craft shell released through native browse; only Callable retained"):
+		return "cross-action retained Craft setup invalid"
 	var destination: Control = m.root
 	var before := _ledger(p)
-	if not _check("cross.old_learn_valid", is_instance_valid(learn.button), learn.label):
-		return "cross-action control already freed"
-	learn.callback.call()
+	old_craft.call()
 	callback_probes += 1
-	_check("cross.second_action_rejected", _ledger(p) == before and m.root == destination,
-		_summary(p), true)
+	_check("cross.second_action_rejected", _ledger(p) == before and m.root == destination
+		and m.current == "professions", _summary(p), true)
 	await r.frames(3)
 	await _capture("04_after_cross_action_probe")
 	return ""
@@ -517,9 +766,67 @@ func _report() -> Dictionary:
 		"retained_callbacks": callback_probes, "active_caption_probes": caption_probes,
 		"mouse_clicks": native.mouse_clicks,
 		"touch_taps": native.touch_taps,
-		"fixture": "loaned capital resources; simulation frozen; actual native buttons/input and extracted same-frame callbacks; no_saves; no actual online/travel/save or ordinary-click exploit claim"}
+		"fixture": "loaned capital resources; simulation frozen; actual native browsing/input, same-frame retirements and retained Craft Callable across tab replacement; no_saves; no actual online/travel/save or ordinary-click exploit claim"}
 	for row in rows:
 		if row.passed: result.passed += 1
 		elif row.expected_baseline_finding: result.findings += 1
 		else: result.failures += 1
 	return result
+
+
+## Fast art-direction pass before transaction acceptance. This deliberately
+## records ordinary initial views only, with fixture loans and no spending.
+static func preview(rig: ShotRig) -> Dictionary:
+	var proof := new()
+	proof.r = rig
+	proof.g = rig.game
+	proof.m = rig.game.menus
+	proof.p = rig.game.local_player
+	proof.native = NativeInput.new()
+	proof.native.r = rig
+	proof.native.g = proof.g
+	proof.native.m = proof.m
+	proof._snapshot()
+	var geometry_rows: Array = []
+	var previews := [
+		["alchemist", false, ["ProfGrade_A"], "master"],
+		["alchemist", false, ["ProfGrade_F"], "ready"],
+		["alchemist", false, ["ProfTab_blueprints", "ProfBlueprintGrade_B"], "blueprint"],
+		["alchemist", false, ["ProfTrade_blacksmith"], "browse"],
+		["blacksmith", false, [], "blacksmith"],
+		["tailor", true, [], "tailor"],
+		["", true, [], "novice"],
+	]
+	for spec in previews:
+		await proof._open_fixture(bool(spec[1]))
+		proof.p.profession = String(spec[0])
+		proof.p.mastery = {"alchemist": 500, "blacksmith": 80, "tailor": 0}
+		proof.m.open_professions()
+		await rig.frames(5)
+		var before := proof._ledger(proof.p)
+		for control_name in spec[2]:
+			var control := proof.m.root.find_child(String(control_name), true, false) as Button
+			if not proof._check("preview.control." + String(spec[3]) + "." + String(control_name),
+					control != null and not control.disabled, control_name):
+				break
+			if bool(spec[1]):
+				await proof.native._touch(control.get_global_rect().get_center())
+			else:
+				await proof.native._mouse(control.get_global_rect().get_center())
+			await rig.frames(4)
+		proof._check("preview.open." + String(spec[3]), proof.m.current == "professions", String(spec[0]))
+		proof._check("preview.no_spend." + String(spec[3]), proof._ledger(proof.p) == before, proof._summary(proof.p))
+		var footer: Label = null
+		for label in proof.m.root.find_children("*", "Label", true, false):
+			if label.text == "ESC to close" or label.text == "Tap ✕ or outside to close":
+				footer = label
+		var geometry := preload("res://scripts/tests/professions_visual_geometry.gd").inspect(proof.m, footer)
+		geometry_rows.append({"trade": spec[0], "touch": spec[1], "id": spec[3], "geometry": geometry})
+		proof._check("preview.geometry." + String(spec[3]), bool(geometry.ok), geometry.violations)
+		rig.shot("workshop_" + String(spec[3]),
+			"Art-direction preview only; controlled mastery/resources and synthetic touch mode, no transaction acceptance")
+	await proof._restore()
+	var report := proof._report()
+	report["geometry"] = geometry_rows
+	report["scope"] = "Art-direction preview only. Seven controlled initial/browsed menu states; no transaction or visual acceptance until originals reviewed."
+	return report

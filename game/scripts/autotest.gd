@@ -9710,6 +9710,16 @@ func _test_hud_icon_integrity() -> void:
 			return _fail("HUD icon missing authored PNG: %s.png" % icon_name)
 		if Art.ui_icon(icon_name) == null:
 			return _fail("HUD icon failed to load (a blank button would ship): %s" % icon_name)
+	# A category button must not silently revive the retired pixel bottle.
+	# Compare actual decoded pixels, not just a resized legacy image's dimensions.
+	var potion: ImageTexture = Art.ui_icon("potion")
+	var master: Texture2D = load("res://assets/icons/consumables/apprentices_health_potion.png")
+	if potion == null or master == null or potion.get_width() != 128 or potion.get_height() != 128:
+		return _fail("generic potion UI icon must load the painted 128px master")
+	if potion.get_image().get_data() != master.get_image().get_data():
+		return _fail("generic potion UI icon differs from the established painted master")
+	if Art.ui_icon("potion") != potion:
+		return _fail("painted potion UI icon failed its warm-cache lookup")
 	# No procedural-fallback wiring may creep back onto the HUD icon buttons.
 	var src := FileAccess.get_file_as_string("res://scripts/hud.gd")
 	for banned in ["else Art.tex(\"mail\")", "else Art.tex(\"bag\")",

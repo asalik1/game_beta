@@ -157,8 +157,17 @@ Professions callback QA: `shot.bat profession_lifetime --timeout=240` checks
 the original lock/swap/craft/learn shell and character/world ownership, duplicate
 callbacks, exact costs and complete active-trade captions. APPDATA must be
 inside a `profession-lifetime-native-candidate` directory. It restores save
-bytes, captures five views, and uses `--baseline` only for enumerated old
+bytes, captures nine views, and uses `--baseline` only for enumerated old
 findings. Add the normal mobile/Compatibility flags for mobile source checks.
+The September 20 workshop adaptation navigates actual trade/tab/slot/grade
+controls before capturing transaction callbacks. It preserves the 46 callback
+and seven positive ledgers, checks complete active-trade captions, exhausted
+and already-known Enter repeats, a same-shell trade change and full-pack mail.
+Twelve additional browse/deferred-focus cases reject retired identities and
+ensure pending focus restoration cannot reclaim Inventory or a closed menu.
+`--workshop-preview` is a separate seven-view art-direction/geometry pass with
+controlled mastery/resources and no transaction acceptance. Original native
+images must be inspected; numeric layout checks cannot establish visual quality.
 
 Brewing save/network QA: `shot.bat brewing_persistence --timeout=300` reuses
 the one-engine paired ENet fixture for actual solo/guest save/load, overflow

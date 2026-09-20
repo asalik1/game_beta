@@ -233,8 +233,8 @@ static func rule(parent: Node) -> Control:
 	var r := TextureRect.new()
 	var g := Gradient.new()
 	g.set_color(0, Color(GOLD, 0.62))
-	g.add_point(0.24, Color(BORDER, 0.72))
 	g.set_color(1, Color(BORDER, 0.12))
+	g.add_point(0.24, Color(BORDER, 0.72))
 	var gt := GradientTexture2D.new()
 	gt.gradient = g
 	gt.fill_from = Vector2(0, 0)

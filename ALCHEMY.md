@@ -1,8 +1,8 @@
 # Alchemy — Kesh's brewing bench
 
 The active Alchemist can turn carried herbs and reagents into one clean potion
-at a time in Crownfall. Open Kesh's Professions service, then **Alchemy — browse
-& brew**. Every character can inspect recipes before locking a trade. Seven
+at a time in Crownfall. Open Kesh's Professions service, then **Alchemy bench**.
+Every character can inspect recipes before locking a trade. Seven
 potion families share the existing consumable catalog: 39 recipes across F–A,
 with Renewal beginning at C. Ordinary brewing produces no S, Grand, laced or
 teaching bottles. Grand Synthesis remains Kesh's separate service.
@@ -70,13 +70,46 @@ The Alchemy panel independently rejects callbacks from old shells. Its live
 watcher defers refreshing while a pointer is held; releasing a stale quote
 cannot spend at outdated terms. Professions' lock, swap, gear craft and
 blueprint actions now also require their original live panel and world, with
-one action per panel. Its active-trade label expands into its row instead of
-collapsing into one-letter lines. The shared menu X has a 44 × 44 target at its
+one action per panel. The shared menu X has a 44 × 44 target at its
 previous optical center.
 
-## Validation
+## Professions workshop
 
-Implementation is installed in the active September 9–10 session. Desktop
+The September 20 workshop replaces the scrolling trade/craft/blueprint ledger
+with a trade rail and one selected recipe. Trade browsing never activates a
+profession or spends resources. The separate Choose/Activate action shows the
+current cost; inactive trades remain inspectable, including their own mastery.
+Craft gear and Blueprints use the same slot selection, with separate grade
+selectors. Recipe costs, carried ingredients and the first blocking requirement
+remain on screen together. Learning and crafting still require the selected
+trade to be active in Crownfall; callbacks recheck that requirement at payment.
+
+Fresh active-trade views prefer the highest currently craftable grade for the
+selected slot, otherwise F. Explicit recipe selection survives a transaction,
+including when its last ingredients are consumed. Focus returns to that action
+when usable, or to a harmless selection control when exhausted/already known.
+It never advances to another payable recipe. Results and gold/pack counts share
+the footer, including the existing full-pack mail fallback.
+
+The workshop uses the existing painted 128px bottle and gear masters. Material
+recipes without a suitable painted master use readable text rather than an
+enlarged 32px fallback. The generic potion UI resolver also uses the painted
+bottle. Navigation has subdued surfaces and the primary action carries the gold
+fill. The shared header rule now fades to its intended muted endpoint.
+
+The September 20 workshop passes desktop compile/quick/full, mobile import/
+compile/strict quick and strict preflight. Native transaction checks pass
+1043/1043 on each project, Alchemy 391/391 and actual paired ENet UI 24/24.
+Original screenshots were inspected, including seven preview states and nine
+transaction states. Mobile rendering used Compatibility on the development
+host, not physical devices. Fixtures loan resources/mastery; UI-only ENet does
+not establish persistence or ordinary progression. Its separate child-scene
+disconnect diagnostic remains unaccepted. Exact receipts and rejected attempts:
+`build/qa/session-sept20/workshop-checkpoint-validation.json`.
+
+## Historical September 9–10 validation
+
+The September 9–10 checkpoint installed the original Alchemy implementation. Desktop
 compile, quick (127) and full (207) pass, including a shared domain check for all 39 recipes,
 exact quotes/inputs, one-use orders, live ownership/terms, overflow and recipe
 awards. Professions native acceptance passes 347/347, including 46 retained

@@ -1,3 +1,75 @@
+# Active session — September 20–21, 2026
+
+The owner authorized this NEW session through September 21 at **21:00 UTC /
+17:00 America/New_York**. Stop starting features and asset batches at **20:00 UTC**;
+reserve the final hour for validation, fixes, documentation, commits and handoff.
+Check UTC before work and after interruptions. Older closed sessions and their
+paused automations remain unchanged.
+
+Workspace: `C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder`.
+Branch: `codex/crownless-wayfinder`. Starting HEAD:
+`3eb337486573a04dc715b92c0ba5e16d2463e2c0`; initial index empty.
+All 46 unrelated/unfinished files remain byte-identical to
+`build/qa/session-sept20/initial-preservation.json`. The exact previous status
+is preserved as this file's tail and `previous-autonomous-status.md` there.
+
+ACTIVE heartbeat: `crownless-september-20-21-authorized-improvements`.
+Pause ONLY this heartbeat when this session closes; it expires at the deadline.
+This UI checkpoint does not close the broader session.
+
+Checkpoint 1 — focused Professions workshop (validated; commit receipt below):
+- Owner rejected the old cluttered Professions ledger and pixel potion art.
+  Replaced it with a trade rail, Craft/Blueprint tabs, slot/grade selection,
+  one readable recipe and a clear primary action. Browsing never spends or
+  activates a trade. Selected recipes survive transactions and exhausted-input
+  repeats cannot move focus to another payable action.
+- Existing painted 128px bottle replaces the generic UI potion's legacy pixels;
+  recipe art uses painted masters or readable material text. Shared header rule
+  now fades correctly. No protected art, generated assets or chromas changed.
+- Actual Claude Fable implemented the private initial workshop; actual DeepSeek
+  supplied icon/geometry/QA drafts. Root and peers corrected and reviewed their
+  outputs, inspected native originals, and integrated only accepted derivatives.
+- Desktop compile/quick/full passed. Native workshop preview 28/28 (seven views),
+  transactions 1043/1043 (46 retained callbacks, seven positive actions, nine
+  views, 12 added browse/deferred-focus cases). Alchemy passes 391/391, actual
+  paired ENet UI 24/24. Mobile import/compile/strict quick and corresponding
+  native transactions/Alchemy/ENet UI pass 1043/391/24. Original images reviewed.
+  Strict final preflight passes all seven categories.
+- Mobile native checks are host Compatibility rendering, not physical-device
+  testing. Resources/mastery are controlled loans, not ordinary progression.
+  ENet UI-only does not prove persistence roundtrips. Its separate child-scene
+  disconnect diagnostic remains unaccepted (retained release can spend).
+  Known shutdown RID/RenderingServer/ObjectDB diagnostics remain disclosed.
+- Full suite pins match final production sources; final browse-case additions
+  and the Alchemy selector correction were QA-only, separately compile/native
+  validated. Failed preview collector, imported-pixel comparison, stale-selector
+  and superseded continuity attempts remain preserved, not accepted as passes.
+- Evidence and exact hashes: `build/qa/session-sept20/workshop-checkpoint-validation.json`;
+  native run directories are recorded there. Final commit and clean-owned-state
+  audit are in `workshop-commit-receipt.json` in the same directory.
+
+Follow-up priorities and preserved experiments:
+- Inventory's bone/cloth material icons still look pixelated in the actual native
+  replacement-menu frame. This checkpoint is not whole-game visual acceptance.
+  Private `material-art-audit/` records 22 missing painted material variants;
+  upscaling the deliberately pixel-art archival masters would not fix their style.
+- The preserved unfinished `shot_brewing_journey.gd` still searches for the old
+  Lock Alchemist caption. Leave its original evidence/files intact; adapt a new
+  owned attempt before resuming it. Prior Fangmaw defeat remains incomplete.
+- `claude-shortcuts/READY_FOR_ROOT.md` points to source-reviewed private V4
+  production + domain-QA2 candidates. Run the real 200-seed usefulness census
+  first. Still uncompiled/unaccepted; protocol compatibility bump and corrected
+  native/network QA are required before shipping. No canonical shortcut edits.
+- Earlier Claude web-hit/root candidate under `claude-combat/` stays parked;
+  raw QA has blockers. Earlier DeepSeek continuity-only drafts are superseded.
+- Initial Warrior hunt: 35.352s, HP minimum 113.467/130, +120 gold, five originals
+  reviewed. Posed hunt setup with native combat, not an ordinary campaign.
+
+Continue from these records. Only root runs Godot and serializes explicit-path
+commits. Game remains canonical; preserve all unrelated work and old automations.
+
+---
+
 # Session closed — September 17–18, 2026
 
 This authorized session is complete in

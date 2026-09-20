@@ -76,7 +76,11 @@ func _run() -> String:
 	await _capture("00_no_trade_inspectable")
 	if not await _named("AlchemyReturn"):
 		return "Alchemy return unavailable"
-	if not await _text_button("Lock Alchemist"):
+	var trade_before := _economy()
+	if not await _named("ProfTrade_alchemist"):
+		return "Alchemist trade preview unavailable"
+	_check("trade.preview_read_only", _economy() == trade_before, "browsing cannot spend or choose a trade")
+	if not await _named("ProfActivate"):
 		return "actual first Alchemist lock unavailable"
 	_check("trade.first_lock", p.profession == "alchemist" and Professions.points(p) == 0, p.profession)
 	if not await _named("ProfessionsAlchemy"):
