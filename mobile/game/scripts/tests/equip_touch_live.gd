@@ -1,4 +1,5 @@
 extends RefCounted
+const GemArtProbe = preload("res://scripts/tests/gem_ui_art_probe.gd")
 ## Equipped-card TAP vs DRAG probe: Claude v2 plus Codex source-review corrections (2026-09-17).
 ## Lent legal gear; real viewport ScreenTouch/ScreenDrag + mouse input against
 ## the inventory's equipped item card. No earned-loot claim. Install at:
@@ -102,6 +103,7 @@ func _exercise() -> String:
 		return "Inventory column has no scroll range for the drag control"
 	_check("setup/scrollable", true,
 		{"max": scroll.get_v_scroll_bar().max_value, "page": scroll.get_v_scroll_bar().page})
+	if not baseline: GemArtProbe.inspect(self, "touch_stack", item)
 	# 1) Short body tap opens the item panel ONCE (emulated-mouse stream).
 	if not await _tap_opens(item, "tap/body_emulated"): return "Body tap (mouse emulation) did not open the item panel once"
 	await _capture("01_tap_open")

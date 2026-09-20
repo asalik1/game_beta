@@ -2508,8 +2508,9 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 					actions.append(["  ⚒  Synthesize  (3 → 1 Lv%d)  " % (g["lvl"] + 1), Color(0.6, 0.9, 1.0), synth_cb])
 				actions.append(["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb])
 				_open_detail_popover(Art.gem_codex_icon(Items.gem_color(g), int(g["lvl"])), Items.gem_title(g), Items.gem_color(g), info, actions, GearFlavor.of(g))
-			var gbtn := _bag_slot(grid, Art.gem_icon(Items.gem_color(g), int(g["lvl"])),
+			var gbtn := _bag_slot(grid, Art.gem_codex_icon(Items.gem_color(g), int(g["lvl"])),
 				("x%d" % count) if count > 1 else "", Items.gem_color(g), gem_cb)
+			gbtn.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 			# Gem stacks accept gems dragged back out of equipment.
 			var gem_drag := func(_pos: Vector2) -> Variant:
 				gbtn.set_drag_preview(_drag_preview(Art.gem_icon(Items.gem_color(g), int(g["lvl"]))))
@@ -3701,8 +3702,9 @@ func _item_gems_tab(body: VBoxContainer, item: Dictionary) -> void:
 				var ins_cb := func() -> void:
 					if game.local_player.embed_gem_into(item, g2):
 						open_item_panel(item, Vector2(-1, -1), "gems")
-				var tile := _bag_slot(igrid, Art.gem_icon(Items.gem_color(g2), int(g2["lvl"])),
+				var tile := _bag_slot(igrid, Art.gem_codex_icon(Items.gem_color(g2), int(g2["lvl"])),
 					("x%d" % count2) if count2 > 1 else "", Items.gem_color(g2), ins_cb if err == "" else Callable())
+				tile.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 				if err == "":
 					tile.tooltip_text = "%s  x%d\nSocket into %s" % [Items.gem_title(g2), count2, Items.title(item)]
 				else:
@@ -3897,9 +3899,10 @@ func _socket_square(row: Control, item: Dictionary, gem_idx: int, special: bool,
 	var kind_txt := ("SPECIAL socket (%s only)" % "/".join(spec_names)) if special else "socket"
 	if filled:
 		var g: Dictionary = gems[gem_idx]
-		b.icon = Art.gem_icon(Items.gem_color(g), int(g["lvl"]))
+		b.icon = Art.gem_codex_icon(Items.gem_color(g), int(g["lvl"]))
 		b.expand_icon = true
 		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		b.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		b.tooltip_text = "%s — in the %s\nSelect for its card · drag to the bag to unsocket." % [Items.gem_title(g), kind_txt]
 		b.pressed.connect(func() -> void: _open_socketed_gem_popover(item, gem_idx, refresh))
 		var drag_fn := func(_pos: Vector2) -> Variant:

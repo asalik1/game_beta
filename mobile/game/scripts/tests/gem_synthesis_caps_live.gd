@@ -1,4 +1,5 @@
 extends RefCounted
+const GemArtProbe = preload("res://scripts/tests/gem_ui_art_probe.gd")
 ## Lent legal equipment; real inventory Auto-synthesize input. No earned-loot claim.
 const EXPECTED := ["C/cap", "B/cap", "A/cap"]
 var r: ShotRig
@@ -109,6 +110,7 @@ func _exercise() -> String:
 			_check(grade + "/cap", unchanged, {"before": before, "after": after})
 		_check(grade + "/exact_result", old_result if baseline else unchanged, {"before": before, "after": after})
 		_check(grade + "/notice", _notice() == ("1 gem upgrade." if baseline else "No available gem upgrades."), {"notice": _notice()})
+		if not baseline: GemArtProbe.inspect(self, grade, item)
 		if not await _socket_card():
 			await _capture("07_socket_card_missing")
 			return "Socketed gem detail unavailable"
@@ -120,6 +122,7 @@ func _exercise() -> String:
 		if grade == "A" and not baseline:
 			if not await _empty_socket_card(): return "Empty socket did not open Gems"
 			await _capture("08_empty_socket_gems")
+			GemArtProbe.inspect(self, "A_picker", item, true)
 	# Legal controls run on baseline and strict source.
 	for spec in [["B", 2, 3], ["S", 9, 10]]:
 		var item := _seed(String(spec[0]), int(spec[1]), 2)
@@ -137,9 +140,16 @@ func _exercise() -> String:
 	if not await _click_auto(): return "Maximum control button unavailable"
 	_check("S/max_unchanged", _state() == max_before)
 	if not baseline:
+		GemArtProbe.inspect(self, "maximum", maximum)
 		var max_card := await _max_bag_card()
 		await _capture("09_max_bag_card")
 		if not max_card: return "Maximum gem card promises another upgrade"
+		# A temporary special-gem loan uses the real factory and is discarded by
+		# the next existing _seed; run() still restores the caller's original bag.
+		p.gem_bag.append(Items.make_gem(String(Balance.SPECIAL_GEM_STATS[0]), 1))
+		await _open()
+		GemArtProbe.inspect(self, "special", maximum)
+		await _capture("10_special_gem_bag")
 	# The old implementation would create further known crossings here. Keep
 	# baseline's whitelist exactly the three isolated proofs above; these are
 	# strict-only acceptance, not silently waived baseline observations.

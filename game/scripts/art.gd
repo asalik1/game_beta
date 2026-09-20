@@ -2623,12 +2623,11 @@ static func _gem_stat_for_color(col: Color) -> String:
 ## assets/icons/gem_<stat>_lv<1..10>.png. Every level changes silhouette or
 ## internal motif, with a shared rough 1-3 / cut 4-6 / fine 7-9 / perfected 10
 ## quality rhythm. The old tintable cut ladder remains the missing-art fallback.
-## 32x32, cached — bags hold a lot of gems.
-## High-fidelity (128px) gem icon for the codex + detail popover — the gear-tier
-## master (assets/icons/codex/gem_<stat>_lvN.png), parallel to codex_item_icon.
-## Falls back to the 32px bag icon when the codex master is absent. Callers that
-## render LARGE (codex ladder, popover header) use this; the bag/world/drag keep
-## gem_icon (2026-08-21 dual-res, owner fidelity ruling).
+## High-fidelity cached 128px masters for Codex/detail headers and Inventory
+## bag stacks, socket pickers and filled socket buttons. These compact UI
+## controls opt into linear filtering without changing their hit area.
+## Missing masters fall back to gem_icon. World, merchant, mail and drag
+## previews retain the separate 32px gem_icon resolver.
 static func gem_codex_icon(col: Color, lvl := 1) -> ImageTexture:
 	var safe_lvl := clampi(lvl, 1, 10)
 	var key := "gemcodex_%s_%d" % [col.to_html(false), safe_lvl]

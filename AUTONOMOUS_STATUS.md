@@ -165,15 +165,38 @@ Follow-up priorities and preserved experiments:
   Evidence: gear-ui-fidelity/acceptance.json and gear-ui-fidelity-commit-receipt.json
   under build/qa/session-sept20. All46 unrelated files,4625 icon PNGs and the
   old status tail remain byte-identical. Session active through Sep21 21UTC.
-- Next gem UI candidate is PRIVATE under gem-ui-fidelity-next/claude-v1.
-  Actual Claude session f6d9c69e-d227-43b0-aa6f-8773209bccca returned3 narrow
-  bag/picker/filled-socket resolver opt-ins plus QA; all10 UTF8 anchors match.
-  Root made private copies only. Existing128px Ruby master was inspected;
-  production scope looks bounded, but QA needs strict master prerequisites,
-  explicit picker scope, metadata selectors and actual geometry checks.
-  Root retained those blockers and asked actual DeepSeek for a private QA
-  correction under deepseek-qa-correction-v1. No canonical gem integration or
-  runtime acceptance. Merge the contradictory historical Art comment before use.
+- Checkpoint 6 accepted: painted gems in Inventory stacks, filled sockets
+  and the From your bag picker. Three UI opt-ins use existing128px masters
+  and linear filtering at unchanged48/40px geometry. No new art, gameplay
+  economy, world/merchant/mail or drag-preview changes. Static census finds
+  all140 gem variants have128px masters;4625 icon PNGs are unchanged.
+  Actual Claude production/QA and DeepSeek QA/collector drafts were reviewed
+  independently. Root corrected pixel-first selection, picker scope, strict
+  prerequisites and copied historical evidence fields. Raw drafts retained.
+  Desktop compile/quick/full, scoped mobile sync/import/compile/strict quick,
+  all8 native episodes and all7 strict preflight categories pass. Equipment
+  touch70 each, gem synthesis175 desktop/179 mobile, Inventory290 each and
+  actual paired ENet UI24 each. All60 final originals were opened by actual
+  Claude; root inspected selected originals and corrected wrong gem identities,
+  eligible-picker dimming, grid counts and a false stale-material-badge claim.
+  Initial ENet visual brief wrongly asked for gems; corrected brewing-only
+  review passed. The rejected brief/results remain retained, not counted.
+  Controls are factory/resource loans, not earned progression; mobile is host
+  Compatibility/touch emulation, not physical. ENet UI-only does not validate
+  persistence or real-scene disconnect cleanup. Existing shutdown diagnostics,
+  dark ineligible picker gems, small stats, coarse bag/remaining material art
+  and compact detail controls remain. No whole-game visual acceptance.
+  Evidence: gem-ui-fidelity-next/acceptance.json; final commit/local state:
+  gem-ui-fidelity-commit-receipt.json under build/qa/session-sept20.
+  All46 unrelated files and the old status tail remain byte-identical; the
+  session remains active through September21 21UTC, feature cutoff20UTC.
+- Additional private arrival controls from actual Claude session
+  b08e34eb-7110-470d-8db7-eddf73955bfb are under
+  arrival-readability/claude-controls-v4. Eight anchors matched; private copies
+  only, no canonical integration or engine validation. Root flagged dropped
+  crossing-capture receipt metadata and an untested first-visit-under-owned-fade
+  branch. Map/pocket controls remain absent. V3 remains the prior private QA
+  candidate; raw V4 does not supersede it as accepted work.
 - The next chest/NPC prompt candidate is private in prompt-clearance-next/.
   Fresh actual Fable session fc855b69-495c-4689-ade2-a0f578763a7c read/reasoned
   but timed out without a patch; raw provider/session and failed receipt kept.

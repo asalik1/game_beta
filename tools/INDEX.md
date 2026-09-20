@@ -5,6 +5,13 @@ about to write a helper script, check here first — it probably exists.
 Details live in each tool's `--help` / doc comment; deep pipelines have their
 own docs (`tools/art/README.md`, `mobile/README.md`).
 
+Gem artwork QA reuses `shot.bat gems --equip-touch` and `--synthesis-caps` as
+separate runs. Strict fixtures inspect the actual painted bag/picker/socket
+controls as well as their existing gameplay/input checks; synthesis captures
+one additional special-gem loan view. See GEM_UI_FIDELITY.md for scope and the
+shared observation helper. Use isolated APPDATA and add host-mobile
+`--mobile --renderer=gl_compatibility --touch` as appropriate.
+
 Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_console.exe`.
 
 ## Gates & suites (run these, in this order — CLAUDE.md "Testing")
