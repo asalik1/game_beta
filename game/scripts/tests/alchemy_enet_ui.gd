@@ -1077,6 +1077,7 @@ func _party_name_checks() -> String:
 	for index in range(1, 4): pair.readers[index].local_player.global_position = originals[index - 1]
 	await pair._settle(0.3)
 	_check("party_names.roster_and_economy_preserved", _roster_snapshot() == before_roster and pair._personal(g) == before_host_economy, _roster_snapshot())
+	await _party_name_overlap_suite(pids)
 	await _down_mark_edge_suite(pids)
 	await _party_identity_lifecycle(String(names[2]), int(pids[2]))
 	return ""
@@ -1138,6 +1139,7 @@ func _party_name_observe(phase: String, names: Array, pids: Array) -> void:
 			_check(id + ".world_containment", world_rect.size.x <= 160.5 and viewport.grow(0.5).encloses(world_rect)
 				and tag.mouse_filter == Control.MOUSE_FILTER_IGNORE, {"name": tag.text, "rect": world_rect, "viewport": viewport})
 		_check(id + ".world_visible", found, "visible exact full-name world Label required; posed on-screen head")
+	_party_world_name_clear(phase, 3)
 
 
 ## Native pointer access on the concrete reviewed HUD interface. Guest access
@@ -1498,6 +1500,8 @@ func _down_mark_edge_suite(pids: Array) -> void:
 			for arrow in g.hud.party_arrows: arrows += int(arrow.is_visible_in_tree())
 			_check("party_names.down_marks." + phase + ".arrows", arrows == 3, arrows)
 		_down_mark_hud_clear(phase, visible_marks)
+		var expected_world_names := 0 if phase in ["clear_center", "top", "outside_left", "outside_right", "outside_top"] else 3
+		_party_world_name_clear("down_" + phase, expected_world_names)
 		if not r.flag("no-capture"): r.shot("down_marks_" + phase, "controlled owner poses over real ENet; three reliable down states; channel/countdown display fixtures, not earned revive")
 	g.hud.party_names_alpha = prior_names_alpha
 	_check("party_names.down_marks.names_setting_restored", g.hud.party_names_alpha == prior_names_alpha, prior_names_alpha)
@@ -1595,42 +1599,10 @@ func _down_mark_geometry(id: String, mark: Dictionary, viewport: Rect2) -> void:
 ## the production placement candidate list or its clamp/slide algorithm.
 func _down_mark_hud_clear(phase: String, visible_marks: Array[Dictionary]) -> void:
 	if phase.begins_with("outside_"): return
-	var painted: Array[Dictionary] = []
-	var roots := {"vitals": g.hud.vitals_panel, "info": g.hud.info_panel,
-		"minimap": g.hud.minimap_root, "zone": g.hud.zone_label,
-		"tracker_panel": g.hud.quest_panel, "quest": g.hud.quest_label,
-		"wayfinder_quest": g.hud.wayfinder.quest_root,
-		"boss": g.hud.boss_box, "mob": g.hud.mob_box, "rival": g.hud.rival_box}
-	for key in roots:
-		if is_instance_valid(roots[key]): _down_mark_paint_walk(painted, String(key), roots[key])
-	for tag in g.hud.party_names:
-		_down_mark_paint_walk(painted, "world_name", tag)
-	var party_cards := 0
-	for slot in g.hud.party_slots:
-		if is_instance_valid(slot.root) and (slot.root as Control).is_visible_in_tree():
-			var card: Rect2 = _party_name_card(slot)
-			if card.has_area():
-				party_cards += 1
-				painted.append({"id": "party_card", "path": str(slot.root.get_path()), "rect": card})
-	var action_panels := 0
-	if g.touch_mode:
-		for key in g._touch_hud._btns:
-			var panel: Control = g._touch_hud._btns[key].panel
-			if panel.is_visible_in_tree() and panel.size.x > 0.0 and panel.size.y > 0.0:
-				action_panels += 1
-				_down_mark_paint_walk(painted, "touch_" + String(key), panel)
-	else:
-		for slot in g.hud.slot_boxes:
-			if (slot.bg as Control).is_visible_in_tree(): action_panels += 1
-			for key in ["border", "bg", "icon", "key", "name", "cost"]:
-				_down_mark_paint_walk(painted, "hotbar_" + String(key), slot[key])
-	# Current selected world prompt is an actual Label in world canvas space.
-	# Read its native screen transform, not the production prompt solver.
-	for entry in g.interactables:
-		var prompt: Variant = entry.get("prompt")
-		if not is_instance_valid(prompt) or not prompt is Label or not prompt.is_visible_in_tree() or prompt.text.is_empty(): continue
-		var box := Rect2(Vector2.ZERO, prompt.size).grow(float(prompt.get_theme_constant("outline_size")))
-		painted.append({"id": "interaction", "path": str(prompt.get_path()), "rect": prompt.get_global_transform_with_canvas() * box})
+	var overlay: Dictionary = _party_overlay_painted()
+	var painted: Array[Dictionary] = overlay.painted
+	var party_cards: int = int(overlay.party_cards)
+	var action_panels: int = int(overlay.action_panels)
 	var categories := {}
 	for item in painted: categories[item.id] = int(categories.get(item.id, 0)) + 1
 	var id := "party_names.down_marks." + phase + ".hud_clear"
@@ -1675,3 +1647,168 @@ func _down_mark_paint_walk(out: Array[Dictionary], tag: String, node: Node) -> v
 				ancestor = ancestor.get_parent()
 			if rect.has_area(): out.append({"id": tag, "path": str(node.get_path()), "rect": rect})
 	for child in node.get_children(): _down_mark_paint_walk(out, tag, child)
+
+
+func _party_overlay_painted() -> Dictionary:
+	var painted: Array[Dictionary] = []
+	var roots := {"vitals": g.hud.vitals_panel, "info": g.hud.info_panel,
+		"minimap": g.hud.minimap_root, "zone": g.hud.zone_label,
+		"tracker_panel": g.hud.quest_panel, "quest": g.hud.quest_label,
+		"wayfinder_quest": g.hud.wayfinder.quest_root,
+		"boss": g.hud.boss_box, "mob": g.hud.mob_box, "rival": g.hud.rival_box}
+	for key in roots:
+		if is_instance_valid(roots[key]): _down_mark_paint_walk(painted, String(key), roots[key])
+	for tag in g.hud.party_names:
+		_down_mark_paint_walk(painted, "world_name", tag)
+	var party_cards := 0
+	for slot in g.hud.party_slots:
+		if is_instance_valid(slot.root) and (slot.root as Control).is_visible_in_tree():
+			var card: Rect2 = _party_name_card(slot)
+			if card.has_area():
+				party_cards += 1
+				painted.append({"id": "party_card", "path": str(slot.root.get_path()), "rect": card})
+	var action_panels := 0
+	if g.touch_mode:
+		for key in g._touch_hud._btns:
+			var panel: Control = g._touch_hud._btns[key].panel
+			if panel.is_visible_in_tree() and panel.size.x > 0.0 and panel.size.y > 0.0:
+				action_panels += 1
+				_down_mark_paint_walk(painted, "touch_" + String(key), panel)
+	else:
+		for slot in g.hud.slot_boxes:
+			if (slot.bg as Control).is_visible_in_tree(): action_panels += 1
+			for key in ["border", "bg", "icon", "key", "name", "cost"]:
+				_down_mark_paint_walk(painted, "hotbar_" + String(key), slot[key])
+	# Current selected world prompt is an actual Label in world canvas space.
+	# Read its native screen transform, not the production prompt solver.
+	for entry in g.interactables:
+		var prompt: Variant = entry.get("prompt")
+		if not is_instance_valid(prompt) or not prompt is Label or not prompt.is_visible_in_tree() or prompt.text.is_empty(): continue
+		var box := Rect2(Vector2.ZERO, prompt.size).grow(float(prompt.get_theme_constant("outline_size")))
+		painted.append({"id": "interaction", "path": str(prompt.get_path()), "rect": prompt.get_global_transform_with_canvas() * box})
+	return {"painted": painted, "party_cards": party_cards, "action_panels": action_panels}
+
+
+## Independent native world-label geometry; no production solver or metadata.
+func _party_world_name_clear(phase: String, expected_count: int) -> void:
+	var overlay: Dictionary = _party_overlay_painted()
+	var painted: Array[Dictionary] = overlay.painted
+	var categories := {}
+	for item in painted: categories[item.id] = int(categories.get(item.id, 0)) + 1
+	var id := "party_names.clearance." + phase
+	_check(id + ".blockers_present", categories.has("vitals") and categories.has("info")
+		and categories.has("minimap") and categories.has("zone") and int(overlay.party_cards) == 3 and int(overlay.action_panels) >= 5,
+		{"categories": categories, "party_cards": overlay.party_cards, "action_panels": overlay.action_panels, "touch": g.touch_mode})
+	var viewport: Rect2 = g.get_viewport().get_visible_rect()
+	var xf: Transform2D = g.get_viewport().canvas_transform
+	var expected: Array[Dictionary] = []
+	for index in 3:
+		var peer: int = pair.apis[index + 1].get_unique_id()
+		var remote: Player = pair._shell(0, peer)
+		if remote == null or remote.dead: continue
+		var head: Vector2 = xf * (remote.global_position + Vector2(0, -54))
+		if g.hud.party_names_alpha <= 0.01 or head.x < viewport.position.x or head.x > viewport.end.x or head.y < viewport.position.y or head.y > viewport.end.y: continue
+		var full_name: String = String(pair.wires[0].peer_chars.get(peer, {}).get("name", ""))
+		expected.append({"index": index, "peer": peer, "name": full_name, "head": head,
+			"identity": full_name == String(remote.get_meta("net_name", "")) and full_name == String(pair.readers[index + 1].local_player.char_name)})
+	_check(id + ".expected_count", expected.size() == expected_count, {"actual": expected.size(), "expected": expected_count, "names_alpha": g.hud.party_names_alpha})
+	var tags: Array[Label] = []
+	for tag in g.hud.party_names:
+		if tag.is_visible_in_tree() and tag.modulate.a > 0.01: tags.append(tag)
+	_check(id + ".visible_tags", tags.size() == expected_count, {"actual": tags.size(), "expected": expected_count})
+	var used: Array[Label] = []
+	for entry in expected:
+		var found: Label = null
+		for tag in tags:
+			if tag.text == String(entry.name) and not used.has(tag): found = tag; break
+		var key := id + ".%d" % int(entry.index)
+		_check(key + ".identity", found != null and bool(entry.identity), {"full_name": entry.name, "peer": entry.peer, "found": found != null})
+		if found == null: continue
+		used.append(found)
+		var rect: Rect2 = found.get_global_rect().grow(float(found.get_theme_constant("outline_size")))
+		var allowed: Rect2 = viewport
+		var ancestor: Node = found.get_parent()
+		while ancestor != null:
+			if ancestor is Control and ancestor.clip_contents: allowed = allowed.intersection(ancestor.get_global_rect())
+			ancestor = ancestor.get_parent()
+		var collisions: Array[Dictionary] = []
+		for item in painted:
+			if String(item.id) != "world_name" and rect.intersects(item.rect): collisions.append(item)
+		_check(key + ".native_bounds", allowed.grow(0.5).encloses(rect) and found.size.x <= 160.5
+			and found.clip_text and found.text_overrun_behavior == TextServer.OVERRUN_TRIM_ELLIPSIS
+			and found.mouse_filter == Control.MOUSE_FILTER_IGNORE and found.visible_characters == -1,
+			{"full_name": found.text, "rect_with_outline": rect, "allowed": allowed, "clip_text": found.clip_text, "overrun": found.text_overrun_behavior})
+		_check(key + ".hud_clear", collisions.is_empty(), {"name": found.text, "rect": rect, "collisions": collisions})
+		if phase == "separated":
+			# Authored control position, not rendered font-cell height: native minimum
+			# can exceed the requested16px. Require unchanged unobstructed placement.
+			var head: Vector2 = entry.head
+			var wanted := head - Vector2(80, 8)
+			_check(key + ".unobstructed_anchor", found.position.distance_to(wanted) <= 0.5,
+				{"position": found.position, "wanted": wanted, "head": head, "native_size": found.size})
+	if expected_count > 1:
+		var pairs: Array[Dictionary] = []
+		for first in used.size():
+			var a: Label = used[first]
+			var ar: Rect2 = a.get_global_rect().grow(float(a.get_theme_constant("outline_size")))
+			for second in range(first + 1, used.size()):
+				var b: Label = used[second]
+				var br: Rect2 = b.get_global_rect().grow(float(b.get_theme_constant("outline_size")))
+				if ar.intersects(br): pairs.append({"a": a.text, "b": b.text, "a_rect": ar, "b_rect": br})
+		_check(id + ".pairwise_clear", used.size() == expected_count and pairs.is_empty(), {"compared": used.size(), "overlaps": pairs})
+
+
+## Two controlled real-owner poses; transport retains exact full identities.
+func _party_name_overlap_suite(pids: Array) -> void:
+	var snapshots: Array[Dictionary] = []
+	var fields: Array[String] = ["global_position", "velocity"]
+	for reader in pair.readers:
+		for actor in reader.players:
+			var values := {}
+			for field in fields: values[field] = actor.get(field)
+			snapshots.append({"actor": actor, "values": values})
+	var roster := _roster_snapshot()
+	var economy: Dictionary = pair._personal(g)
+	var prior_touch: bool = bool(g.settings.get("touch_controls", false))
+	var prior_alpha: float = g.hud.party_names_alpha
+	for phase in ["separated", "colocated"]:
+		var inverse: Transform2D = g.get_viewport().canvas_transform.affine_inverse()
+		var planned: Array[Vector2] = []
+		for index in 3:
+			var head := Vector2(420.0 + 220.0 * index if phase == "separated" else 640.0, 430.0)
+			planned.append(head)
+			var owner: Player = pair.readers[index + 1].local_player
+			owner.global_position = inverse * head + Vector2(0, 54)
+		await pair._settle(1.2)
+		await RenderingServer.frame_post_draw
+		var xf: Transform2D = g.get_viewport().canvas_transform
+		var ok := true
+		var positions: Array[Dictionary] = []
+		for index in 3:
+			var remote: Player = pair._shell(0, int(pids[index]))
+			if remote == null: ok = false; continue
+			var head: Vector2 = xf * (remote.global_position + Vector2(0, -54))
+			ok = ok and head.distance_to(planned[index]) <= 2.0
+			positions.append({"peer": pids[index], "actual": head, "planned": planned[index]})
+		_check("party_names.overlap." + phase + ".host_projection", ok and positions.size() == 3, positions)
+		_party_world_name_clear(phase, 3)
+		if not r.flag("no-capture"): r.shot("names_overlay_clear" if phase == "separated" else "names_overlay_overlap", "controlled owner positions through real ENet; independent native label and fixed HUD clearance")
+	# Restore owners first and allow their real network state to propagate, then
+	# restore saved presentation transforms on every reader exactly.
+	for index in range(1, 4):
+		var owner: Player = pair.readers[index].local_player
+		for snapshot in snapshots:
+			if snapshot.actor == owner:
+				for field in fields: owner.set(field, snapshot.values[field])
+	await pair._settle(1.2)
+	for snapshot in snapshots:
+		if is_instance_valid(snapshot.actor):
+			for field in fields: snapshot.actor.set(field, snapshot.values[field])
+	var restored := true
+	for snapshot in snapshots:
+		if not is_instance_valid(snapshot.actor): restored = false; continue
+		for field in fields: restored = restored and snapshot.actor.get(field) == snapshot.values[field]
+	_check("party_names.overlap.poses_restored", restored, "exact saved position and velocity on all four reader actor sets")
+	_check("party_names.overlap.settings_preserved", bool(g.settings.get("touch_controls", false)) == prior_touch and g.hud.party_names_alpha == prior_alpha,
+		{"touch": g.settings.get("touch_controls", false), "names_alpha": g.hud.party_names_alpha})
+	_check("party_names.overlap.roster_economy_preserved", _roster_snapshot() == roster and pair._personal(g) == economy, _roster_snapshot())

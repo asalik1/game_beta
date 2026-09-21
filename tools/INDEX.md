@@ -27,7 +27,9 @@ and UI modes remain separate regression gates. The mode now includes eleven
 controlled downed/ghost/revive views: clear-center, center, four edges, four
 offscreen directions and touch-right. Independent native envelopes check
 viewport/HUD/name/prompt clearance, exact status/progress and fixture restoration.
-It emits 31 originals and 445 checks. Clear-center temporarily hides world names
+It emits 33 originals and 624 checks. Two additional views compare separated
+and colocated transported allies; independent name envelopes check exact identity,
+viewport/HUD/pairwise clearance and unobstructed authored anchors. Clear-center temporarily hides world names
 to prove the unobstructed authored anchor; normal center keeps identities visible. Add
 `--mobile --renderer=gl_compatibility` for host-rendered mobile sources. No
 controller-reader access, physical-device, ordinary typing/combat or positive

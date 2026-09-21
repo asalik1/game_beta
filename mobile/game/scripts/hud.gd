@@ -2944,10 +2944,11 @@ func _exit_tree() -> void:
 
 
 ## Reuse the existing painted-control walker, never a world/art traversal.
-func _down_mark_blockers() -> Array[Rect2]:
+func _down_mark_blockers(include_names: bool = true) -> Array[Rect2]:
 	var out: Array[Rect2] = tracker_clearance.prompt_blockers()
-	# World identity labels remain readable beside displaced status marks.
-	for tag in party_names: tracker_clearance._drawn(out, tag)
+	if include_names:
+		# World identity labels remain readable beside displaced status marks.
+		for tag in party_names: tracker_clearance._drawn(out, tag)
 	for box in slot_boxes:
 		for key in ["border", "bg", "key", "cost", "name", "num"]:
 			tracker_clearance._drawn(out, box[key])
@@ -2982,21 +2983,27 @@ func _down_mark_blockers() -> Array[Rect2]:
 	return compact
 
 
-## Keep complete status clear of final HUD geometry and earlier placed marks.
+## Place names first, then keep complete status clear of the final HUD and names.
 func _place_down_marks_clear() -> void:
 	if not is_inside_tree() or is_queued_for_deletion() or not visible or _cinematic_mode: return
 	if not is_instance_valid(game) or not game.net_online() or not is_instance_valid(tracker_clearance): return
 	var active := false
 	for mark in down_marks: active = active or (mark.root as Control).visible
-	if not active: return
+	var named := false
+	for tag in party_names: named = named or (tag as Control).visible
+	if not active and not named: return
 	const EDGE_INSET := 4.0  # match the ordinary viewport containment pass
 	const CLEAR_GAP := 3.0  # separate outlined status ink from other HUD ink
 	const HEAD_OFFSET := Vector2(0, -74)  # preserve the authored world-space lift
 	var view: Rect2 = game.get_viewport().get_visible_rect()
 	var limit := view.grow(-EDGE_INSET)
 	var xf: Transform2D = game.get_viewport().canvas_transform
-	var blockers := _down_mark_blockers()  # once for the entire visible batch
+	var blockers := _down_mark_blockers(false)  # once for the entire visible batch
 	for index in blockers.size(): blockers[index] = blockers[index].grow(CLEAR_GAP)
+	# Names first: identity outranks the status mark, which then reserves around
+	# the boxes the names actually ended up in.
+	if named: _place_party_names_clear(view, xf, blockers, EDGE_INSET, CLEAR_GAP)
+	if not active: return
 	for mark in down_marks:
 		var root := mark.root as Control
 		if not root.visible or not mark.has("world_at"): continue
@@ -3011,6 +3018,36 @@ func _place_down_marks_clear() -> void:
 		root.position = result.position - local.position
 		root.set_meta("down_mark_no_fit", not bool(result.fits))
 		blockers.append(Rect2(result.position, local.size).grow(CLEAR_GAP))
+
+
+## Place the <=3 visible world name tags against the fixed HUD and each other,
+## reprojecting the saved world anchor so a displaced tag never drifts. Appends
+## each final box to blockers, which the status pass then honours.
+func _place_party_names_clear(view: Rect2, xf: Transform2D, blockers: Array[Rect2],
+		edge_inset: float, clear_gap: float) -> void:
+	for entry in party_names:
+		var tag := entry as Label
+		if not tag.visible or not tag.has_meta("party_name_world_at"): continue
+		var at: Vector2 = tag.get_meta("party_name_world_at")
+		var head := xf * at
+		if head.x < view.position.x or head.x > view.end.x or head.y < view.position.y or head.y > view.end.y:
+			tag.hide()  # same head eligibility policy as the authored pass
+			continue
+		# Native control box plus its outline ink; the text value/colour/alpha and
+		# the fixed PARTY_TAG_W ellipsis box are untouched.
+		var outline := float(tag.get_theme_constant("outline_size"))
+		var local := Rect2(Vector2.ZERO, tag.size).grow(outline)
+		var authored := Vector2(
+			clampf(head.x - PARTY_TAG_W * 0.5, PARTY_TAG_MARGIN,
+				maxf(PARTY_TAG_MARGIN, view.size.x - PARTY_TAG_W - PARTY_TAG_MARGIN)),
+			head.y - PARTY_TAG_H * 0.5)
+		var wanted := Rect2(authored + local.position, local.size)
+		# Keep the complete outline inside the same safe inset as status marks.
+		# A clear interior authored anchor remains unchanged; edges may move inward.
+		var result := _down_mark_clear_position(wanted, view.grow(-edge_inset), blockers)
+		tag.position = result.position - local.position
+		tag.set_meta("party_name_no_fit", not bool(result.fits))
+		blockers.append(Rect2(result.position, local.size).grow(clear_gap))
 
 
 ## Exact nearest free origin among rectangular reservations: at a nearest
@@ -3373,6 +3410,9 @@ func _ensure_party_ui() -> void:
 		tag.visible = false
 		add_child(tag)
 		party_names.append(tag)
+	# Names are placed by the same late pre-draw hook as the status marks, so the
+	# lazy party build (which may happen with no down UI) must register it too.
+	_connect_down_mark_placement.call_deferred()
 
 
 func _build_party_frame(pos: Vector2) -> Dictionary:
@@ -3631,7 +3671,8 @@ func _update_party_names(data: Array) -> void:
 			var q = _ally_by_peer(int(d["peer"]))
 			if q == null:
 				continue
-			var screen: Vector2 = xf * (q.global_position + Vector2(0, -54))
+			var head: Vector2 = q.global_position + Vector2(0, -54)
+			var screen: Vector2 = xf * head
 			if screen.x < 0.0 or screen.x > 1280.0 or screen.y < 0.0 or screen.y > 720.0:
 				continue  # offscreen: the arrow points the way instead
 			if used >= party_names.size():
@@ -3648,6 +3689,9 @@ func _update_party_names(data: Array) -> void:
 				clampf(screen.x - PARTY_TAG_W * 0.5, PARTY_TAG_MARGIN,
 					get_viewport().get_visible_rect().size.x - PARTY_TAG_W - PARTY_TAG_MARGIN),
 				screen.y - PARTY_TAG_H * 0.5)
+			# The WORLD anchor, never this (possibly displaced) screen position, is
+			# what the pre-draw hook reprojects: displacement never accumulates.
+			tag.set_meta("party_name_world_at", head)
 			var tint: Color = CLASS_TINT.get(String(d["cls"]), Color(0.85, 0.85, 0.9))
 			_set_font_color(tag, tint.lerp(Color(1, 1, 1), 0.4))
 			tag.modulate = Color(1, 1, 1, party_names_alpha)

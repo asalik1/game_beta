@@ -17,8 +17,8 @@ ACTIVE heartbeat: `crownless-september-20-21-authorized-improvements`.
 Pause ONLY this heartbeat when this session closes; it expires at the deadline.
 This UI checkpoint does not close the broader session.
 
-Latest validated checkpoint: **21 — readable downed and revive status**.
-Evidence: `build/qa/session-sept20/down-mark/checkpoint-validation.json`;
+Latest validated checkpoint: **22 — clear allied world names**.
+Evidence: `build/qa/session-sept20/party-overlays/checkpoint-validation.json`;
 its `commit-receipt.json` records the resulting local HEAD and worktree state.
 
 Checkpoint 1 — focused Professions workshop (validated; commit receipt below):
@@ -605,6 +605,27 @@ Follow-up priorities and preserved experiments:
   Evidence: down-mark/checkpoint-validation.json and commit-receipt.json; design
   scope: PARTY_IDENTITY_READABILITY.md. All46 unrelated files and the exact old
   status tail are preserved. Session remains active; no additional push.
+
+- Checkpoint 22 validated: allied world names clear the HUD and each other.
+  Fresh projected anchors feed the bounded final-layout solver; names are placed
+  first and status marks reserve around their resulting outlined boxes. Identity,
+  native ellipsis, tint, opacity and offscreen policy remain unchanged. Explicit
+  no-fit fallback remains; displaced text does not prove body/name association
+  during ordinary crowded combat. No protocol, economy, combat or art change.
+  Actual Claude production and DeepSeek QA outputs were independently corrected,
+  reviewed and integrated; raw provider outputs are retained. Unchanged CP21
+  production fails 16 of 624 new-baseline checks, with all previous 445 passing.
+  Rejected evidence remains intact. Accepted desktop/mobile each pass 624 name,
+  560 HUD dossier, 64 paired UI and 149 pause observations. Compile/quick/full,
+  mobile sync/import/compile/strict quick and all seven preflight categories pass.
+  All 156 accepted native originals reviewed, 13 by root. Controlled real
+  ENet poses/status are not earned combat/revival or a persistence roundtrip;
+  mobile is host Compatibility, not physical-device testing. No arbitrary
+  viewport/zoom or performance benchmark claim. Controller reader access,
+  compact feed, stale queued departure and arrow/HUD overlap remain separate.
+  Evidence: party-overlays/checkpoint-validation.json and commit-receipt.json;
+  design/limits: PARTY_IDENTITY_READABILITY.md. All 46 unrelated files and exact
+  prior status tail preserved. Session remains active; no additional push.
 
 - Owner-requested backup completed September 21 at 05:39 UTC: origin branch
   codex/crownless-wayfinder matches d8e5b74355229cf956c764a45b981384aff94f0d.
