@@ -52,6 +52,8 @@ static func run(rig: Node) -> Dictionary:
 func _run() -> String:
 	if not _check("fixture.isolated", g.no_saves and not g.net_online(), "no_saves solo Game"):
 		return "requires isolated solo Game"
+	if r.flag("pause-layout"):
+		return await _pause_layout()
 	if r.flag("confirm-layout"):
 		return await _confirm_layout()
 	if r.flag("potion-slots"):
@@ -1293,3 +1295,213 @@ func _confirm_touch_drag(from: Vector2, to: Vector2) -> void:
 	Input.flush_buffered_events()
 	touch_taps += 1
 	await r.frames(3)
+
+
+func _pause_layout() -> String:
+	if not _check("pause_layout.fixture", g.no_saves and not g.net_online() and not r.flag("baseline") and not r.flag("no-capture"), "strict isolated solo, controlled availability"):
+		return "strict solo capture required"
+	m.pick_chapter("ch1")
+	await r.frames(3)
+	m.pick_class("warrior")
+	await r.frames(5)
+	await r.skip_dialogue()
+	g.play_started = true
+	g.dev_god = true
+	g.hud.visible = true
+	for place in ["campaign", "capital", "trial_availability"]:
+		if place == "capital":
+			var travel_before: Dictionary = _confirm_economy()
+			m.close()
+			g.enter_capital()
+			await r.frames(5)
+			await r.skip_dialogue()
+			_check("pause_layout.capital_arrived", g.chapter_id == "capital", {"before": travel_before, "after": _confirm_economy(), "scope": "observed real travel recovery; no conservation assertion across worlds"})
+		g.endgame_active = place == "trial_availability"
+		for touch in [false, true]:
+			# Host native drag capability; run() restores the original global value.
+			Input.emulate_touch_from_mouse = touch
+			g.settings["touch_controls"] = touch
+			g.refresh_touch_mode()
+			g._apply_touch_mode()
+			# Parent replacement isolates content fit from the normal entry tween.
+			m.open_inventory()
+			await r.frames(3)
+			# Snapshot after real travel and inventory settling, while already paused.
+			var case_economy: Dictionary = _confirm_economy()
+			m.open_pause()
+			var id: String = place + ("_touch" if touch else "_desktop")
+			_check("pause_layout." + id + ".touch_capability", not touch or DisplayServer.is_touchscreen_available(), {"touch_fixture": touch, "host_capability": DisplayServer.is_touchscreen_available()})
+			await _pause_geometry(id)
+			var expected: Array[String] = ["Resume game", "Combat report — recent damage & last fall", "🔊  " + Loc.t("settings"), "◈  Wardrobe  (skins & pets, bought with Renown)", "⇦  Exit to title  (switch character)", "✕  Save and quit game"]
+			if place == "trial_availability":
+				expected.append("💰  Cash out & bank rewards")
+			else:
+				expected.append("↺  Restart chapter  (keeps your character)")
+				expected.append("⚑  Chapter select  (replay any chapter)")
+				if place == "campaign": expected.append("⌂  Travel to Crownfall  (the Capital)")
+			var actual: Array[String] = []
+			var nodes: Array[Node] = [m.root]
+			while not nodes.is_empty():
+				var node: Node = nodes.pop_back()
+				for child in node.get_children(): nodes.append(child)
+				if node is Button and node.is_visible_in_tree() and node.text != "✕": actual.append(node.text.strip_edges())
+			expected.sort()
+			actual.sort()
+			_check("pause_layout." + id + ".actions_exact", expected == actual, {"expected": expected, "actual": actual, "controlled_trial_availability": g.endgame_active})
+			if await _button("Settings"):
+				await _key(KEY_ESCAPE)
+				_check("pause_layout." + id + ".settings_return", m.current == "pause" and g.get_tree().paused, _state())
+			_check("pause_layout." + id + ".no_spend", _confirm_economy() == case_economy, {"before": case_economy, "after": _confirm_economy(), "scope": "pause layout and Settings roundtrip; after world-transition settling"})
+			await _key(KEY_ESCAPE)
+	g.endgame_active = false
+	for route in ["mouse", "escape", "controller", "raw_touch"]:
+		m.open_pause()
+		await r.frames(3)
+		var close_economy: Dictionary = _confirm_economy()
+		match route:
+			"mouse": await _button("Resume game")
+			"escape": await _key(KEY_ESCAPE)
+			"controller": await _joy_back()
+			"raw_touch":
+				var emulated: bool = Input.emulate_mouse_from_touch
+				Input.emulate_mouse_from_touch = false
+				await _touch(Vector2(12, 12))
+				Input.emulate_mouse_from_touch = emulated
+		_check("pause_layout.close." + route, not m.is_open() and not g.get_tree().paused and g.hud.visible, _state())
+		_check("pause_layout.close." + route + ".no_spend", _confirm_economy() == close_economy, {"before": close_economy, "after": _confirm_economy()})
+	return ""
+
+
+## Native observations; overflow is measured, never assumed from a fixture name.
+func _pause_geometry(id: String) -> void:
+	await RenderingServer.frame_post_draw
+	var resume: Button = _find_button(m.root, "Resume game", true)
+	if not _check("pause_layout." + id + ".resume", resume != null, "actual fixed action"): return
+	var focus: Control = m.get_viewport().gui_get_focus_owner()
+	var keyboard_entry: bool = not g.touch_mode and (g.gamepad == null or not g.gamepad.active)
+	_check("pause_layout." + id + ".safe_entry_focus", focus == resume if keyboard_entry else focus == null,
+		{"keyboard": keyboard_entry, "focused": str(focus), "safe_action": resume.text})
+	var first: Dictionary = {"panel": str(_confirm_panel_rect()), "resume": str(resume.get_global_rect())}
+	var first_actions: Dictionary = _pause_action_snapshot(id + "_first")
+	r.shot("pause_" + id + "_first", "first draw after parent replacement; controlled availability")
+	await r.frames(4)
+	await RenderingServer.frame_post_draw
+	var settled_actions: Dictionary = _pause_action_snapshot(id + "_settled")
+	_check("pause_layout." + id + ".all_actions_first_stable", first_actions == settled_actions, {"first": first_actions, "settled": settled_actions})
+	var panel: Rect2 = _confirm_panel_rect()
+	var viewport: Rect2 = m.get_viewport().get_visible_rect()
+	_check("pause_layout." + id + ".first_stable", first == {"panel": str(panel), "resume": str(resume.get_global_rect())}, first)
+	_check("pause_layout." + id + ".shell", panel.has_area() and viewport.grow(0.5).encloses(panel), str(panel))
+	var scroll: ScrollContainer = null
+	var buttons: Array[Button] = []
+	var labels: Array[Label] = []
+	var nodes: Array[Node] = [m.root]
+	while not nodes.is_empty():
+		var node: Node = nodes.pop_back()
+		for child in node.get_children(): nodes.append(child)
+		if node is ScrollContainer: scroll = node
+		if node is Button and node.is_visible_in_tree() and node.text != "✕": buttons.append(node)
+		if node is Label and node.is_visible_in_tree() and not node.text.is_empty(): labels.append(node)
+	if not _check("pause_layout." + id + ".scroll", scroll != null, "all-platform action scroll"): return
+	var last: Button = null
+	for button in buttons:
+		var rect: Rect2 = button.get_global_rect()
+		var fit: Dictionary = _pause_text_fit(button)
+		_check("pause_layout." + id + ".target." + button.text.strip_edges(), bool(fit.passed), fit)
+		if scroll.is_ancestor_of(button):
+			if last == null or rect.end.y > last.get_global_rect().end.y: last = button
+			_check("pause_layout." + id + ".horizontal." + button.text.strip_edges(), rect.position.x >= scroll.get_global_rect().position.x - 0.5 and rect.end.x <= scroll.get_global_rect().end.x + 0.5, str(rect))
+		else:
+			_check("pause_layout." + id + ".fixed." + button.text.strip_edges(), panel.grow(0.5).encloses(rect) and viewport.grow(0.5).encloses(rect), str(rect))
+	for label in labels:
+		if label.text.contains("ESC") or label.text.begins_with("Tap"):
+			_check("pause_layout." + id + ".footer_fixed", not scroll.is_ancestor_of(label), label.text)
+		var rect: Rect2 = label.get_global_rect()
+		var clipped: Rect2 = rect
+		var ancestor: Node = label.get_parent()
+		while ancestor != null and ancestor != m.root:
+			if ancestor is Control and ancestor.clip_contents: clipped = clipped.intersection(ancestor.get_global_rect())
+			ancestor = ancestor.get_parent()
+		_check("pause_layout." + id + ".text." + label.text, _confirm_glyphs_complete(label) and (scroll.is_ancestor_of(label) or (clipped.grow(0.5).encloses(rect) and panel.grow(0.5).encloses(rect))), {"rect": str(rect), "clip": str(clipped)})
+	_check("pause_layout." + id + ".resume_fixed", not scroll.is_ancestor_of(resume), str(resume.get_global_rect()))
+	var fixed: Rect2 = resume.get_global_rect()
+	var bar: VScrollBar = scroll.get_v_scroll_bar()
+	var overflow: bool = bar.max_value - bar.page > 1.0
+	scroll.scroll_vertical = 0
+	await r.frames(2)
+	if overflow:
+		for index in 24: await _wheel(MOUSE_BUTTON_WHEEL_DOWN, scroll.get_global_rect().get_center())
+		_check("pause_layout." + id + ".wheel_moves", scroll.scroll_vertical > 0, scroll.scroll_vertical)
+	_check("pause_layout." + id + ".tail_reached", last != null and scroll.get_global_rect().grow(0.5).encloses(last.get_global_rect()), {"overflow": overflow, "scroll_proof": overflow and scroll.scroll_vertical > 0, "tail": str(last.get_global_rect()) if last else "missing"})
+	await _capture("pause_" + id + "_tail")
+	if overflow and g.touch_mode:
+		scroll.scroll_vertical = 0
+		await r.frames(2)
+		var area: Rect2 = scroll.get_global_rect()
+		await _confirm_touch_drag(area.get_center() + Vector2(0, area.size.y * 0.35), area.get_center() - Vector2(0, area.size.y * 0.35))
+		_check("pause_layout." + id + ".touch_moves", scroll.scroll_vertical > 0, scroll.scroll_vertical)
+	_check("pause_layout." + id + ".fixed_after_scroll", resume.get_global_rect() == fixed, str(resume.get_global_rect()))
+
+
+## TextParagraph is an independent native shaper, not access to Button's pixels.
+## Button minimum height additionally observes its own already-drawn text buffer.
+func _pause_text_fit(button: Button) -> Dictionary:
+	var rect: Rect2 = button.get_global_rect()
+	var font: Font = button.get_theme_font("font")
+	var font_size: int = button.get_theme_font_size("font_size")
+	var padding := Vector2.ZERO
+	for state in ["normal", "hover", "pressed", "disabled", "hover_pressed"]:
+		if button.has_theme_stylebox(state):
+			var style: StyleBox = button.get_theme_stylebox(state)
+			padding.x = maxf(padding.x, style.get_margin(SIDE_LEFT) + style.get_margin(SIDE_RIGHT))
+			padding.y = maxf(padding.y, style.get_margin(SIDE_TOP) + style.get_margin(SIDE_BOTTOM))
+	var available: float = rect.size.x - padding.x
+	var wrapped: bool = button.autowrap_mode != TextServer.AUTOWRAP_OFF
+	var supported: bool = (not wrapped or button.autowrap_mode == TextServer.AUTOWRAP_WORD_SMART) \
+		and button.icon == null and not button.is_layout_rtl() \
+		and button.text_direction in [Control.TEXT_DIRECTION_INHERITED, Control.TEXT_DIRECTION_LTR, Control.TEXT_DIRECTION_AUTO] \
+		and (button.language.is_empty() or button.language.begins_with("en"))
+	var paragraph := TextParagraph.new()
+	paragraph.direction = TextServer.DIRECTION_AUTO if button.text_direction == Control.TEXT_DIRECTION_AUTO else TextServer.DIRECTION_LTR
+	paragraph.alignment = button.alignment
+	paragraph.width = maxf(1.0, available) if wrapped else -1.0
+	paragraph.break_flags = TextServer.BREAK_MANDATORY | TextServer.BREAK_TRIM_EDGE_SPACES
+	if wrapped: paragraph.break_flags |= TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE
+	paragraph.line_spacing = button.get_theme_constant("line_spacing")
+	paragraph.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	var shaped: bool = paragraph.add_string(button.text, font, font_size, button.language)
+	var widest := 0.0
+	for index in paragraph.get_line_count(): widest = maxf(widest, paragraph.get_line_size(index).x)
+	var text_size: Vector2 = paragraph.get_size()
+	var inferred_direction: int = TextServerManager.get_primary_interface().shaped_text_get_inferred_direction(paragraph.get_rid())
+	var effective_ltr: bool = inferred_direction == TextServer.DIRECTION_LTR
+	var native_min: Vector2 = button.get_minimum_size()
+	var untrimmed: bool = not button.clip_text and button.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING
+	var single_line_ok: bool = true
+	if not wrapped:
+		var plain_size: Vector2 = font.get_string_size(button.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+		single_line_ok = rect.size.x + 0.5 >= plain_size.x + padding.x and rect.size.y + 0.5 >= plain_size.y + padding.y
+	var passed: bool = supported and shaped and effective_ltr and untrimmed and available > 0 and paragraph.get_line_count() > 0 \
+		and rect.size.x >= 44 and rect.size.y >= 44 and font_size >= 18 \
+		and widest <= available + 0.5 and text_size.y + padding.y <= rect.size.y + 0.5 \
+		and native_min.y <= rect.size.y + 0.5 and single_line_ok
+	return {"passed": passed, "rect": str(rect), "text": button.text, "font_size": font_size,
+		"supported": supported, "untrimmed": untrimmed, "wrapped": wrapped,
+		"requested_direction": button.text_direction, "paragraph_direction": paragraph.direction,
+		"inferred_direction": inferred_direction, "effective_ltr": effective_ltr, "layout_rtl": button.is_layout_rtl(),
+		"lines": paragraph.get_line_count(), "widest_line": widest, "available_width": available,
+		"shaped_height": text_size.y, "padding": str(padding), "native_min": str(native_min),
+		"proof": "native font shaping and actual Button minimum; pixel review still required"}
+
+
+func _pause_action_snapshot(id: String) -> Dictionary:
+	var result := {}
+	var nodes: Array[Node] = [m.root]
+	while not nodes.is_empty():
+		var node: Node = nodes.pop_back()
+		for child in node.get_children(): nodes.append(child)
+		if node is Button and node.is_visible_in_tree() and node.text != "✕":
+			var fit: Dictionary = _pause_text_fit(node)
+			_check("pause_layout." + id + ".full_text." + node.text.strip_edges(), bool(fit.passed), fit)
+			result[String(node.get_path())] = {"rect": str(node.get_global_rect()), "text": node.text, "fit": fit}
+	return result

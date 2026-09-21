@@ -5,6 +5,13 @@ extends ShotRig
 
 
 func _ready() -> void:
+	if flag("pause-layout"):
+		var pause_user_root := ProjectSettings.globalize_path("user://").replace("\\", "/").to_lower()
+		if not pause_user_root.contains("/build/qa/") or flag("baseline") or flag("no-capture") \
+				or flag("confirm-layout") or flag("potion-slots") or flag("comfort-retention") or flag("quest-guardian") or flag("settings-touch"):
+			print("PAUSE LAYOUT FAILED: isolated build/qa APPDATA and exclusive strict capture mode required")
+			finish(1)
+			return
 	if flag("confirm-layout"):
 		var confirm_user_root := ProjectSettings.globalize_path("user://").replace("\\", "/").to_lower()
 		if not confirm_user_root.contains("/build/qa/") or flag("baseline") or flag("no-capture") \
@@ -50,6 +57,8 @@ func _ready() -> void:
 		shot_dir += "/potion_slots"
 	if flag("confirm-layout"):
 		shot_dir += "/confirm_layout"
+	if flag("pause-layout"):
+		shot_dir += "/pause_layout"
 	var result: Dictionary
 	if flag("settings-touch") and not flag("potion-slots"):
 		shot_dir += "/settings_touch"

@@ -4,6 +4,72 @@ Owner: root, September 9–10 autonomous session. Initial production checkpoint:
 `a47809b0f238efe5a94620bb1f2ead0a121810b1`. The accepted source and commit
 identity are recorded in `build/qa/session-sept10/menu-checkpoint-validation.json`.
 
+## September 21 pause layout update
+
+Checkpoint 18 passes desktop compile/quick/full, mobile import/compile/strict
+quick, scoped synchronization and strict preflight (all seven categories).
+Native desktop and host-mobile runs each pass 318 pause checks, 371 confirmation
+checks, 64 paired ENet UI checks and 149 four-reader party checks. All 112 final
+original images were reviewed, including 15 opened by root. The desktop party
+run is reused only with identical five-file source hashes; the other final
+stages ran from frozen source snapshots. Exact evidence and limits are in
+`build/qa/session-sept20/pause-layout/checkpoint-validation.json`; its
+`commit-receipt.json` binds the committed checkpoint and preservation audit.
+The September 9–10 results below remain historical evidence.
+
+Pause now uses readable 18px actions with at least 44px targets, a measured
+height capped at 650px, and a shared desktop/touch scrolling action list.
+Resume (Return to game online) and the dismissal hint remain fixed. Long
+party-removal names wrap without changing their complete text. Shorter menus
+shrink around their content. Existing actions, confirmations and caller return
+paths remain intact; online play continues running behind the overlay.
+Keyboard entry starts on the safe Resume action after synchronous fitting;
+touch and the active controller pointer retain their existing behavior.
+
+Run `shot.bat menu_navigation --pause-layout --timeout=300` with fresh isolated
+APPDATA under `build/qa/`. This strict opt-in mode covers campaign, actual
+capital travel and a controlled trial-availability flag, each in desktop and
+host-emulated touch mode. It observes first/settled text and action geometry,
+safe initial focus, fixed controls, actual wheel/touch scrolling when content
+overflows, Settings return and dismissal routes. No-overflow cases are recorded
+as such. It does not start or cash out a trial, restart, remove a player or quit.
+Economy checks bracket menu interactions; legitimate loot recovery during
+capital travel is observed separately. Existing navigation tests remain a
+separate default run. Add `--mobile --renderer=gl_compatibility` for host mobile
+source; neither rendering nor emulated touch is physical-device testing.
+
+Run `shot.bat brewing_persistence --party-pause --timeout=450` with isolated
+APPDATA inside a `brewing-persistence-candidate` directory. This strict mode
+uses one engine with a real ENet host and three real guests, production
+snapshots and three controlled 64-character names. It observes wrapped rows
+from first draw through settlement, native focus/scrolling, fixed Return/hint,
+host removal-confirm cancellation and session/economy preservation. Hidden
+guest readers do not consume the host's UI events; their worlds and transport
+remain live. Mouse-emulated touch scrolling and raw-touch cancellation are
+distinct checks. Cancelling removal must return to Pause, not close it. The
+same mobile flags render mobile source on the host. These are controlled
+network/UI fixtures, not ordinary co-op combat or earned progression.
+The unchanged `--ui-only` 64-check episode remains a separate regression run.
+Touch scrolling uses the engine's [mouse-event path](https://raw.githubusercontent.com/godotengine/godot/4.4-stable/scene/gui/scroll_container.cpp); raw outside cancellation is tested independently.
+
+Actual Claude Opus 5 supplied the production layout draft in a bounded
+medium-effort CLI call after an earlier max-effort attempt timed out without
+usable code. Actual DeepSeek Flash supplied QA drafts; independent review
+corrected unsupported assumptions and strengthened the existing rigs. Raw
+provider input/output, independent corrections and rejected runs are retained
+under `build/qa/session-sept20/pause-layout-candidate/` and `pause-layout/`.
+The first old-code probe mixed layout failures with QA errors in native AUTO
+text direction, touch capability and cross-world economy scope; its corrected
+successor retained strict layout failures. Party pilots v1–v3 are not accepted:
+input routing/touch setup and cancellation expectations required correction,
+and the later focus trace exposed a real missing keyboard-entry focus. The
+safe Resume focus fix is production behavior, not a test-assigned focus waiver.
+
+The 64-character stress fixture also exposes separate existing spill from
+compact party HUD names and overhead world labels. Pause wrapping does not fix
+those surfaces; see the private `party-name-audit/` follow-up record. No broad
+HUD, artwork or target-information approval is implied by this checkpoint.
+
 ## Player-facing changes
 
 Settings returns to its opening roster or Pause screen. Comfort, Controller

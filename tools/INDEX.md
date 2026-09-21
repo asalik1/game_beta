@@ -353,6 +353,19 @@ APPDATA; add `--mobile --renderer=gl_compatibility` for mobile-source rendering.
 `--baseline` records known defects only; acceptance omits it. See
 `MENU_NAVIGATION.md` for the controlled-fixture scope and evidence.
 
+Pause layout QA: `shot.bat menu_navigation --pause-layout --timeout=300`
+uses six controlled campaign/capital/trial-availability cases with strict
+first/settled action geometry, safe entry focus, fixed Resume/hint, native
+wheel/touch overflow and menu-return checks. Use fresh isolated APPDATA under
+`build/qa`; no baseline waiver. Actual party layout uses
+`shot.bat brewing_persistence --party-pause --timeout=450` with APPDATA inside
+`brewing-persistence-candidate`: one real ENet host plus three guests, controlled
+64-character names, native host input, full wrapped actions and removal-cancel
+return to Pause without changing the party. Add
+`--mobile --renderer=gl_compatibility` for host mobile sources. No physical-device,
+ordinary co-op progression or full party-HUD readability claim. See
+`MENU_NAVIGATION.md` for retained failures and final validation status.
+
 Confirmation layout QA: `shot.bat menu_navigation --confirm-layout --timeout=300`
 uses actual mail, Pause and endgame callers, full-glyph geometry, first-frame
 stability, safe Enter, stale callbacks, native cancellation and bounded wheel/

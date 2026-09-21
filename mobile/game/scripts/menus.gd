@@ -589,29 +589,104 @@ func _trial_reward_line(lead: String) -> String:
 # ---------------------------------------------------------------- pause ---
 
 ## The in-game system menu.
+## Pause shell: 720 wide, never taller than this. Actions are touch-sized and
+## read at the same font on desktop and touch, so one measurement serves both.
+const PAUSE_MAX_H := 650.0
+const PAUSE_ACTION_MIN_H := 44.0
+const PAUSE_ACTION_FONT := 18
+const PAUSE_GROUP_GAP := 6.0
+
+
+## Touch-sized, wrapping pause action. autowrap_mode (Godot 4.4+) lets a long
+## peer name grow the row's height instead of the shell's width — Button.text
+## stays whole, so nothing downstream reads a truncated label.
+func _pause_action(b: Button) -> Button:
+	b.custom_minimum_size.y = PAUSE_ACTION_MIN_H
+	b.add_theme_font_size_override("font_size", PAUSE_ACTION_FONT)
+	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return b
+
+
+## A hairline breather between the utility / run / exit action groups.
+func _pause_gap(parent: Node) -> Control:
+	var gap := Control.new()
+	gap.custom_minimum_size.y = PAUSE_GROUP_GAP
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(gap)
+	return gap
+
+
+## Size the pause shell to its real content: fixed rows (title, rule, status,
+## Resume, hint) measured at the full inner width, the scrolled actions at the
+## width left after the reserved bar, then capped at PAUSE_MAX_H. Same
+## synchronous native measurement as _fit_confirm_shell — no deferred pass.
+func _fit_pause_shell(vbox: VBoxContainer, scroll: ScrollContainer, actions: VBoxContainer) -> void:
+	var inner := vbox.size.x
+	var pad := Vector2.ZERO
+	if scroll.has_theme_stylebox("panel"):
+		pad = scroll.get_theme_stylebox("panel").get_minimum_size()
+	# Exactly the width ScrollContainer takes back for the reserved bar.
+	var gutter: float = scroll.get_v_scroll_bar().get_combined_minimum_size().x + pad.x
+	var natural: float = pad.y
+	var arows := 0
+	for child in actions.get_children():
+		if not (child is Control) or not (child as Control).visible:
+			continue
+		arows += 1  # BoxContainer separates VISIBLE rows only
+		natural += _measured_child_height(child as Control, inner - gutter)
+	natural += float(actions.get_theme_constant("separation") * maxi(arows - 1, 0))
+	var fixed := 0.0
+	var rows := 0
+	for child in vbox.get_children():
+		if not (child is Control) or not (child as Control).visible:
+			continue
+		rows += 1
+		if child != scroll:
+			fixed += _measured_child_height(child as Control, inner)
+	fixed += float(vbox.get_theme_constant("separation") * maxi(rows - 1, 0))
+	var h := minf(fixed + natural + SHELL_INSET.y * 2.0, PAUSE_MAX_H)
+	_reheight_shell(vbox, h)
+
+
 func open_pause() -> void:
 	var online: bool = game.net_online()
-	var vbox := _open(("Online — " if online else "Paused — ") + String(Story.chapter(game.chapter_id)["name"]), 720, 650 if game.touch_mode else 570, true)
+	var vbox := _open(("Online — " if online else "Paused — ") + String(Story.chapter(game.chapter_id)["name"]), 720, PAUSE_MAX_H, true)
 	current = "pause"
 	var zi := clampi(game.cur_room, 0, game.zone_count - 1)
 	_lbl(vbox, "%s, Level %d — %s" % [Classes.CLASSES[game.local_player.cls]["name"],
 		game.local_player.level, game.zones[zi]["name"]], 14, Color(0.7, 0.72, 0.78))
+	# Resume is the one action that must never scroll away.
 	var resume := _btn(vbox, "Return to game" if online else "Resume game", func() -> void: close(),
 		Color(0.58, 1.0, 0.68))
-	resume.custom_minimum_size.y = 42
-	_btn(vbox, "Combat report — recent damage & last fall", func() -> void:
-		preload("res://scripts/ui/combat_report.gd").open(self), Color(0.95, 0.75, 0.60))
-	_btn(vbox, "  🔊  " + Loc.t("settings"), func() -> void: open_settings(), Color(0.9, 0.9, 0.95))
-	_btn(vbox, "  ◈  Wardrobe  (skins & pets, bought with Renown)",
-		func() -> void: open_wardrobe(), Color(0.85, 0.7, 1.0))
+	_pause_action(resume)
+	# Every other action lives in one scroller, on desktop AND touch, so the
+	# shell can never grow past PAUSE_MAX_H no matter how many peers are listed.
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	# Reserved (not overlaid) bar: the gutter measured below is the gutter drawn.
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_RESERVE
+	scroll.follow_focus = true
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_child(scroll)
+	var actions := VBoxContainer.new()
+	actions.add_theme_constant_override("separation", 10)
+	actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(actions)
+	_pause_action(_btn(actions, "Combat report — recent damage & last fall", func() -> void:
+		preload("res://scripts/ui/combat_report.gd").open(self), Color(0.95, 0.75, 0.60)))
+	_pause_action(_btn(actions, "  🔊  " + Loc.t("settings"), func() -> void: open_settings(), Color(0.9, 0.9, 0.95)))
+	_pause_action(_btn(actions, "  ◈  Wardrobe  (skins & pets, bought with Renown)",
+		func() -> void: open_wardrobe(), Color(0.85, 0.7, 1.0)))
 	# Solo campaign travel to the capital.
 	if not game.endgame_active and game.chapter_id != "capital" and not game.net_online():
-		_btn(vbox, "  ⌂  Travel to Crownfall  (the Capital)", func() -> void:
+		_pause_action(_btn(actions, "  ⌂  Travel to Crownfall  (the Capital)", func() -> void:
 			close()
-			game.enter_capital(), Color(0.7, 0.9, 1.0))
+			game.enter_capital(), Color(0.7, 0.9, 1.0)))
 	# Host-only removal remains behind a confirmation gate.
 	if game.net_online() and game.net_host():
-		var kick_sess: Node = get_node("/root/NetworkManager/Session")
+		var kick_sess: Node = game.net_session()
 		for pid_v in kick_sess.peer_chars:
 			var pid: int = int(pid_v)
 			if pid == 1:
@@ -624,7 +699,8 @@ func open_pause() -> void:
 						close(),
 					Callable(),
 					{"title": "Remove player?", "accept_label": "Remove player"})
-			_btn(vbox, "  ✕  Remove %s from the party" % pname, kick, Color(1.0, 0.6, 0.55))
+			_pause_action(_btn(actions, "  ✕  Remove %s from the party" % pname, kick, Color(1.0, 0.6, 0.55)))
+	_pause_gap(actions)
 	if game.endgame_active:
 		var cash := func() -> void:
 			open_confirm("Collect this trial's rewards and end the run?"
@@ -636,15 +712,16 @@ func open_pause() -> void:
 						game.endgame.cash_out(),
 				Callable(),
 				{"title": "Bank your rewards?", "accept_label": "Cash out", "accept_tone": "primary"})
-		_btn(vbox, "  💰  Cash out & bank rewards", cash, Color(1.0, 0.85, 0.4))
+		_pause_action(_btn(actions, "  💰  Cash out & bank rewards", cash, Color(1.0, 0.85, 0.4)))
 	else:
 		var restart := func() -> void:
 			open_confirm("Restart '%s' from the beginning? Story progress in this chapter resets — your character, gear and Resonance stay." % Story.chapter(game.chapter_id)["name"],
 				func() -> void: game.replay_chapter(game.chapter_id),
 				Callable(),
 				{"title": "Restart chapter?", "accept_label": "Restart chapter"})
-		_btn(vbox, "  ↺  Restart chapter  (keeps your character)", restart, Color(1.0, 0.8, 0.5))
-		_btn(vbox, "  ⚑  Chapter select  (replay any chapter)", func() -> void: open_chapter_select(true), Color(1.0, 0.8, 0.5))
+		_pause_action(_btn(actions, "  ↺  Restart chapter  (keeps your character)", restart, Color(1.0, 0.8, 0.5)))
+		_pause_action(_btn(actions, "  ⚑  Chapter select  (replay any chapter)", func() -> void: open_chapter_select(true), Color(1.0, 0.8, 0.5)))
+	_pause_gap(actions)
 	var to_title := func() -> void:
 		# Abandoning leaves the trial UNSETTLED: exit_to_title only autosaves and
 		# reloads, so the pending gold/gems/gear held on Endgame are never paid.
@@ -658,24 +735,11 @@ func open_pause() -> void:
 			Callable(),
 			({"title": "Abandon this run?", "accept_label": "Abandon run"} if game.endgame_active
 				else {"title": "Return to title?", "accept_label": "Return to title"}))
-	_btn(vbox, "  ⇦  Exit to title  (switch character)", to_title, Color(1.0, 0.65, 0.55))
+	_pause_action(_btn(actions, "  ⇦  Exit to title  (switch character)", to_title, Color(1.0, 0.65, 0.55)))
 	var quit_game := func() -> void:
 		game.autosave()
 		get_tree().quit()
-	_btn(vbox, "  ✕  Save and quit game", quit_game, Color(1.0, 0.55, 0.5))
-	if game.touch_mode:
-		var scroll := ScrollContainer.new()
-		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-		scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		vbox.add_child(scroll)
-		var actions := VBoxContainer.new()
-		actions.add_theme_constant_override("separation", 10)
-		actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		scroll.add_child(actions)
-		for child in vbox.get_children():
-			if child is Button:
-				child.custom_minimum_size.y = 44
-				child.reparent(actions)
+	_pause_action(_btn(actions, "  ✕  Save and quit game", quit_game, Color(1.0, 0.55, 0.5)))
 	if online:
 		# Read the result of _open/request_pause, including the victory exception.
 		var state_hint := "World keeps running" if not get_tree().paused else "Game paused"
@@ -683,6 +747,11 @@ func open_pause() -> void:
 			"%s · Tap ✕ or outside to return" % state_hint)
 	else:
 		_hint(vbox, "ESC, ✕, or click anywhere outside to resume")
+	_fit_pause_shell(vbox, scroll, actions)
+	# Native Tab navigation needs an entry control. Start on the safe action;
+	# touch and the controller pointer keep their existing selection behavior.
+	if not game.touch_mode and (game.gamepad == null or not game.gamepad.active):
+		resume.grab_focus()
 
 
 ## The confirm gate's two proportions that are NOT measured from content: an

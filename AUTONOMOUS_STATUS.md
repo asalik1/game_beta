@@ -483,17 +483,32 @@ Follow-up priorities and preserved experiments:
   Evidence: depths-pool/checkpoint-validation.json; commit-receipt.json binds
   exact HEAD and owned-clean state. All 46 unrelated files and old status tail
   are unchanged. Session active, no additional push.
-- Pause-layout continuation: a second actual Claude Opus5 medium attempt returned
-  usable private code in 66 seconds (the prior timeout remains). Reviewed patch
-  and callback/copy evidence are in pause-layout-candidate/provider-v2/; it is
-  not applied or runtime-validated. Native multiline Button first-draw sizing
-  and real full-party/long-name reach still need proof; source review identifies
-  Button draw-time width and paired-reader session lookup risks. Private QA
-  follow-up is under qa-v3/. Actual Claude returned a private ENet draft in
-  297 seconds under enet-v1/; provider output guessed roster labels instead of
-  actual buttons and remains under independent correction/review. No canonical
-  application, compile or gameplay proof yet. Do not count these as completed
-  UI improvements.
+- Checkpoint 18 validated: pause menu readability and keyboard navigation.
+  Actions use 18px text and at least 44px targets. Resume and the dismissal hint
+  stay fixed; desktop and touch share a scrolling action list. Shorter menus
+  fit their content, while complete long party names wrap within the panel.
+  Keyboard entry focuses safe Resume, enabling Tab to reach the list's tail.
+  Existing actions, callbacks, pending rewards and online behavior are retained.
+  Actual Claude Opus 5 implemented the private layout and ENet drafts; actual
+  DeepSeek supplied the QA draft. Root and peers independently corrected and
+  reviewed them. Raw outputs and failed/partial pilots remain preserved.
+  Corrected old-code QA reproduced 126 layout failures; party pilots also
+  exposed the missing initial keyboard focus. These are separate from fixture
+  input-routing, touch-emulation and cancellation assumptions corrected in QA.
+  Desktop compile/quick/full, mobile import/compile/strict quick, scoped sync
+  and seven-category strict preflight pass. Both renderers pass 318 pause,
+  371 confirmation, 64 paired ENet UI and 149 four-reader party checks. All
+  112 accepted originals were reviewed, 15 by root. Four-reader desktop evidence
+  is reused only at identical five-source hashes; final source review agrees.
+  Save fixture bytes restore exactly. These are controlled UI/real loopback
+  ENet fixtures, not earned trials, payout, ordinary co-op or save roundtrips.
+  Mobile is host Compatibility rendering and emulated touch, not a device.
+  Full-name HUD/world overflow, queued notices, short guidance truncation and
+  endless-Depths completion wording remain recorded; no broad visual approval.
+  Evidence: pause-layout/checkpoint-validation.json and commit-receipt.json.
+  All 46 unrelated files and the old status tail remain unchanged. Session
+  stays active; no additional push. Party-name containment is a future scope
+  documented in party-name-audit, not an implemented part of this checkpoint.
 
 - Owner-requested backup completed September 21 at 05:39 UTC: origin branch
   codex/crownless-wayfinder matches d8e5b74355229cf956c764a45b981384aff94f0d.

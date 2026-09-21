@@ -6,6 +6,9 @@ var owner_rig: ShotRig
 const Alchemy = preload("res://scripts/alchemy.gd")
 const HOST_SLOT := 98
 const OTHER_SLOT := 99
+# Opt-in --party-pause guest characters. Backed up before that branch writes
+# and byte-restored with the existing fixture slots.
+const PARTY_SLOTS := [94, 95, 96]
 const PERSONAL := ["gold", "materials", "consumables", "profession", "mastery", "blueprints", "npc_favor"]
 var home_world := {}
 var home_chapter := ""
@@ -23,13 +26,23 @@ func run() -> int:
 	if not user_root.contains("/brewing-persistence-candidate/"):
 		push_error("Run with APPDATA inside brewing-persistence-candidate; refusing real profile writes")
 		return 1
-	var backup := _save_bytes([SLOT, HOST_SLOT, OTHER_SLOT])
+	if flag("party-pause") and flag("ui-only"):
+		push_error("Run party-pause and ui-only separately; neither substitutes for the other")
+		return 1
+	var backup := _save_bytes([SLOT, HOST_SLOT, OTHER_SLOT] + (PARTY_SLOTS if flag("party-pause") else []))
 	await _reader("warrior", "Host")
 	await _reader("mage", "Guest")
 	var error: String
 	if flag("ui-only"):
 		shot_dir += "/ui"
 		error = await preload("res://scripts/tests/alchemy_enet_ui.gd").run_enet(self)
+	elif flag("party-pause"):
+		# Separate opt-in branch: two additional real ENet guest worlds in one engine.
+		# --ui-only keeps its existing two-reader meaning and must be run on its own.
+		shot_dir += "/party_pause"
+		await _reader("archer", "Guest2")
+		await _reader("assassin", "Guest3")
+		error = await preload("res://scripts/tests/alchemy_enet_ui.gd").run_party_pause(self)
 	else:
 		error = await _checks()
 	if error != "":
@@ -49,9 +62,14 @@ func run() -> int:
 		get_tree().set_multiplayer(null, roots[i].get_path())
 	var restored := _restore_bytes(backup)
 	if not restored: error += " fixture save bytes did not restore"
+	var qualification := "Fixture resources and direct domain commits; production save/load, world snapshots, travel and reliable award fanout. Boss reward trigger/duplicate recipe packets are posed, not actual boss combat. Native UI acceptance is a separate candidate."
+	if flag("ui-only"):
+		qualification = "Controlled paired capital fixture; real ENet award/travel transport and actual Alchemy input. UI-only branch skips domain persistence checks; see UI rows and qualified child-scene disconnect diagnostic."
+	elif flag("party-pause"):
+		qualification = "Host plus three real ENet guest worlds in one engine; production snapshots, host roster and native pause input. Character names/slots are controlled fixtures; no ordinary collection, combat or persistence-roundtrip claim. Guest slots are backed up and byte-restored with the other fixture slots."
 	report.merge({"checks": accepted, "error": error, "fixture_save_bytes_restored": restored,
-		"ordinary_input_gameplay": false, "real_file_roundtrip": not flag("ui-only"), "real_enet_transport": true,
-		"qualification": "Controlled paired capital fixture; real ENet award/travel transport and actual Alchemy input. UI-only branch skips domain persistence checks; see UI rows and qualified child-scene disconnect diagnostic." if flag("ui-only") else "Fixture resources and direct domain commits; production save/load, world snapshots, travel and reliable award fanout. Boss reward trigger/duplicate recipe packets are posed, not actual boss combat. Native UI acceptance is a separate candidate."}, true)
+		"ordinary_input_gameplay": false, "real_file_roundtrip": not flag("ui-only") and not flag("party-pause"),
+		"real_enet_transport": true, "qualification": qualification}, true)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(shot_dir))
 	var file := FileAccess.open(shot_dir + "/acceptance.json", FileAccess.WRITE)
 	if file != null:
@@ -652,9 +670,11 @@ func _print_report_summary(error: String, restored: bool) -> void:
 	var ui: Dictionary = report.get("ui", {})
 	var boundary: Dictionary = report.get("home_dispatch_boundary", {})
 	print("BREWING PERSISTENCE: ", JSON.stringify({"milestones": accepted.size(), "error": error,
-		"fixture_save_bytes_restored": restored, "real_file_roundtrip": not flag("ui-only"),
+		"fixture_save_bytes_restored": restored, "real_file_roundtrip": not flag("ui-only") and not flag("party-pause"),
 		"real_enet_transport": true, "ui_checks": int(ui.get("checks", 0)),
 		"ui_failures": int(ui.get("failures", 0)),
+		"party_pause_checks": int(report.get("party_pause", {}).get("checks", 0)),
+		"party_pause_failures": int(report.get("party_pause", {}).get("failures", 0)),
 		"pre_dispatch_full_writes": int(boundary.get("explained_full_writes", 0)),
 		"report": ProjectSettings.globalize_path(shot_dir + "/acceptance.json")}))
 
@@ -684,3 +704,33 @@ func _capital_arrival_observe(label: String, reader: Game) -> String:
 	print("CAPITAL PAIRED ARRIVAL: ",JSON.stringify(row))
 	if not context_good: return "paired "+label+" capital arrival context or finite-position control failed"
 	return "" if placement_good or flag("arrival-baseline") else "paired "+label+" did not use a clear authored capital arrival"
+
+
+
+## Same production join path as _connect_guest, for any additional reader index.
+## WireRoot.peers bookkeeping happens ONLY after this reader's real ENet peer id
+## is actually connected to the host transport; no peer or roster is fabricated.
+func _connect_party_guest(index: int, char_name: String) -> bool:
+	var guest: Game = readers[index]
+	if transports[index].create_client("127.0.0.1", transports[0].host.get_local_port()) != OK: return false
+	apis[index].multiplayer_peer = transports[index]
+	if not await _until(func() -> bool:
+			var pid: int = apis[index].get_unique_id()
+			return pid > 1 and apis[0].get_peers().has(pid)):
+		return false
+	var pid: int = apis[index].get_unique_id()
+	roots[0].peers[pid] = {}
+	roots[index].peers[1] = {}
+	roots[index].online = true
+	readers[0].qa_online = true
+	guest.qa_online = true
+	wires[0].set_physics_process(true)
+	wires[index].set_physics_process(true)
+	wires[index].local_char = {"slot": guest.save_slot, "name": char_name, "cls": guest.player.cls}
+	wires[index].world_ready = false
+	readers[0].player.peer_id = 1
+	guest.player.peer_id = pid
+	guest.no_saves = false
+	wires[0]._send_snapshot(pid)
+	return await _until(func() -> bool:
+		return bool(wires[index].world_ready) and wires[0].peer_chars.has(pid) and _shell(0, pid) != null)
