@@ -333,7 +333,7 @@ Follow-up priorities and preserved experiments:
   Evidence: build/qa/session-sept20/alchemy-detail-readability/;
   checkpoint-validation.json binds acceptance; commit-receipt.json records HEAD
   and the local state. All 46 unrelated files and the old status tail remain intact.
-  Private action-color and bench-money candidates are separate and unvalidated.
+  The then-private action-color and bench-money candidates became checkpoint 12.
   This checkpoint continues the active session; no new push is authorized.
 
 - Checkpoint 12 — clear prices and confirmation roles (validated):
@@ -352,12 +352,40 @@ Follow-up priorities and preserved experiments:
   Evidence: build/qa/session-sept20/purchase-clarity/checkpoint-validation.json;
   commit-receipt.json there records exact HEAD/state.46unrelated files and the
   old status tail remain intact. No new push; session heartbeat stays active.
-  Follow-up private candidate: alchemy-source-reading-candidate/reviewed.patch
-  plus qa-v1/reviewed.patch. Actual Claude implementation and DeepSeek QA were
-  independently corrected but remain uncompiled/unvalidated. Apply patches
-  only: complete candidate files predate the grouped prices and primary tone.
-  First Claude max-effort attempt timed out; focused successful attempt/raw
-  outputs remain. Do not claim candidate acceptance or run multiple engines.
+  The follow-up reader candidate is now checkpoint 13 below. Its whole-source
+  drafts predated these price/tone changes; only reviewed patches were applied.
+
+- Checkpoint 13 — dedicated Alchemy Sources reader (validated):
+  Complete ingredient guidance now occupies the left rail at 16px instead of a
+  cramped optional strip. Back to recipes restores selection/filter/list offset;
+  the right recipe metadata, Learn/Brew and result stay fixed. The footer return
+  action now matches the rail width and aligns the usage note with the recipe.
+  Actual Claude implemented the UI and DeepSeek adapted native QA; root/peer
+  reviews corrected width allocation, native observations and advisory mistakes.
+  Initial pilot passes 658 checks; root and actual Claude each reviewed its four
+  selected originals. Root then aligned the footer and froze the final source.
+  All 13 fresh serial gates passed: compile/quick/full, scoped mobile sync,
+  import/compile/strict quick, both strict preflights, and each renderer's
+  658 Alchemy and 64 paired real ENet UI checks. All eight first/settled pairs
+  and cross-view right-column comparisons show zero displacement. Root opened
+  26 final originals; peer opened all 40 Alchemy originals, with overlap; the
+  union covers all 54 final originals. No new visual blocker was found.
+  Both sources examples fit in a 374px reader; wheel/touch no-ops are explicitly
+  not positive scrolling proof. Controlled resources/input, host Compatibility
+  mobile, no ordinary progression/physical-device/persistence-roundtrip claim.
+  Small secondary/disabled text and partial unselected recipe-list edges remain.
+  Known shutdown diagnostics and older rejected disconnect evidence remain.
+  Evidence: build/qa/session-sept20/alchemy-source-reading/;
+  checkpoint-validation.json records acceptance; commit-receipt.json records
+  final HEAD/local state. All 46 unrelated files and the exact old tail preserved.
+  Raw providers, the first Claude timeout and the earlier pilot remain retained.
+  Session heartbeat remains active; this checkpoint is local, not pushed.
+
+- Private next candidate: abandon/cash-out/trial-entry confirmation copy now
+  has actual Claude runtime and DeepSeek QA drafts, independently corrected.
+  Raw output and patches: build/qa/session-sept20/abandon-clarity-candidate/.
+  None applied or natively validated; do not claim reward/save behavior changed.
+  Reviewed copy explains pending reward loss versus results and Crownfall.
 
 - Owner-requested backup completed September 21 at 05:39 UTC: origin branch
   codex/crownless-wayfinder matches d8e5b74355229cf956c764a45b981384aff94f0d.

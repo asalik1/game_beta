@@ -1,51 +1,80 @@
 # Alchemy detail readability
 
-Validated checkpoint 11, September 21, 2026. Commit and local-state receipt:
-`build/qa/session-sept20/alchemy-detail-readability/commit-receipt.json`.
+Checkpoint 13 validated September 21, 2026.
+Checkpoint 11 established fixed recipe metadata/actions; checkpoint 12 added
+readable gold grouping and ordinary confirmation colors. Both remain preserved.
 
-The brewing bench keeps the selected bottle, effect, grade, mastery requirement
-and blueprint status above optional source help. Collapsing help removes its
-empty viewport instead of separating the recipe from its ingredients. Ingredients,
-fee, Learn blueprint, Brew and the result remain outside help scrolling. The
-learning explanation is fixed below the mastery requirement, and the two actions
-share a row. Expanding or collapsing help may change their position; scrolling help must not move the action area.
+Ingredient sources now has a dedicated reading view in the left rail. The rail
+shows either recipe filters/list or the complete sources text for the selected
+recipe and grade. A persistent 44px action explicitly switches between
+Ingredient sources and Back to recipes. The right recipe, effect, requirements,
+learning explanation, ingredient counts, fee, Learn/Brew and result stay in place.
+The footer return action follows the rail width and column gap, keeping its
+caption centered and the adjacent usage note aligned with the recipe column.
 
-The existing named detail scroller retains its remembered position. Its viewport
-uses the native container's remaining height, with a reserved scrollbar gutter
-and bottom clearance. An empty viewport is hidden; no custom height solver is used. Source disclosure
-uses the shared tab style with a readable normal label and accurate Show/Hide
-tooltips. No art, recipe prices, mastery rewards,
-transaction callbacks, watcher signatures or trade rules are changed.
+The reader uses 16px prose, native wrapping and a reserved scrollbar gutter.
+Both rail views have matching content minimum widths. Fitting paragraphs should
+be visible in full; genuinely overflowing content keeps native wheel/touch
+scrolling. No estimated line-height solver or artificial overflow is used.
+Source facts, prices, mastery rewards and transaction guards are unchanged.
+
+Recipe selection, grade, filter and list position survive reading and returning.
+Reader position survives quote refresh while the reader remains open. Switching
+between recipes and sources resets the source reading position to the top.
 
 ## Validation
 
 Use the existing muted, compile-gated `shot.bat alchemy --timeout=300` with fresh
 isolated APPDATA. Add `--mobile --renderer=gl_compatibility` for mobile sources
-rendered on the development host. The original recipe previews, exact paid
-transactions, stale-order rejection, mail overflow and callback/input checks stay
-required. Paired real ENet UI coverage uses the existing
-`shot.bat brewing_persistence --ui-only --timeout=300`, with APPDATA inside a
-`brewing-persistence-candidate` directory.
+rendered on the development host. Keep the original paid ledgers, stale-order
+rejection, mail overflow, blueprint confirmation and native input checks.
+Paired real ENet UI coverage uses `shot.bat brewing_persistence --ui-only
+--timeout=300` with APPDATA inside a `brewing-persistence-candidate` directory.
 
-The native Alchemy rig additionally toggles actual Sources controls for an
-unknown A-grade Renewal blueprint and an E-grade Mana Tonic. It checks essential
-shaped glyphs against clipping ancestors, compact collapsed spacing and fixed
-Learn/Brew bounds while scrolling. The Sources normal-font contrast is checked
-against a native rendered background sample, alongside original-image review.
-Wheel and touch must reach the optional content's
-last glyph. An overflowing touch case must move from zero to a positive offset;
-a fitting viewport is explicitly recorded as no scroll proof.
-
-First and settled originals and numeric observations expose any change after
-native toggle release. Passing functional checks alone do not accept visible
-layout movement, scroll restoration or focus changes. Root must review those
-originals and bind its disposition to the report and source hashes.
+The existing rig checks the actual reader/list partition and full subject text,
+restores the real recipe caption/list offset on return, and samples right-column
+geometry before toggling and in first/settled frames after release. Its source
+label contrast and essential-glyph clipping checks remain. Full sources glyphs
+must fit when the native viewport fits them; overflow requires positive native
+wheel/touch movement from the top and a complete reachable tail. Input over
+fitting content must be reported as no scrolling proof.
 
 These are controlled resource/mastery loans and native input, not ordinary earned
 progression. Compatibility rendering and emulated touch on Windows are not
 physical-device testing. ENet UI-only does not establish persistence roundtrips.
+Original screenshots require actual review; passing logs do not accept quality.
 
-## Candidate history
+Actual Claude implemented the private reader and actual DeepSeek adapted the
+existing QA. Independent review corrected equal-width allocation, pre-toggle
+sampling, caption types, hidden-list memory and fit-mode evidence. Raw drafts,
+timeouts and corrections remain under
+`build/qa/session-sept20/alchemy-source-reading-candidate/`. Current validation
+belongs under `build/qa/session-sept20/alchemy-source-reading/`.
+
+## Checkpoint 13 acceptance
+
+All 13 serial stages passed against the frozen final source, including desktop
+compile/quick/full, mobile scoped sync/import/compile/strict quick, both strict
+preflights and native Alchemy/paired ENet UI on both renderers. Alchemy passes
+658/658 per renderer; ENet UI passes 64/64. All eight first/settled frame pairs
+and cross-view recipe-column comparisons show zero displacement. Both source
+examples fit completely in their 374px reader; no positive source-scroll claim.
+
+Root inspected 26 final originals and the independent peer inspected all 40
+Alchemy originals. Their union covers all 54 emitted final originals. The footer
+now follows the actual rail width and recipe column guide. Actual Claude's four
+pilot-image reviews preceded that footer adjustment and are retained separately;
+final acceptance uses the new originals and frozen source. Provider timeouts,
+raw drafts and corrections remain preserved. Existing small secondary/disabled
+text and partial unselected recipe-list edges remain limits, not new regressions.
+Known engine shutdown diagnostics remain handled by the existing strict runners.
+The older child-scene disconnect experiment is not accepted by these UI checks.
+
+Exact hashes, gates, review scope and preservation audit are in
+`build/qa/session-sept20/alchemy-source-reading/checkpoint-validation.json`;
+`commit-receipt.json` there records the resulting commit and local state.
+
+## Checkpoint 11 history
 
 Actual DeepSeek supplied the initial private implementation. Independent review
 corrected state identity, ownership guards, stale node references and clipping/
@@ -86,8 +115,8 @@ disclosure reflow is intentional, while first-to-settled movement is zero. The
 ENet footer variation follows deliberate touch-capability setup. All raw
 findings remain retained. No acceptance is transferred from superseded source.
 
-Optional source prose can still clip at a scroll edge; the complete tail is
-reachable. Small secondary text, disabled-label contrast, thin scrollbars,
+At checkpoint 11, optional source prose could still clip at a scroll edge; its
+complete tail was reachable. Small secondary text, disabled-label contrast, thin scrollbars,
 uneven footer alignment and ungrouped prices remain follow-up work. This
 checkpoint does not claim that the entire UI is polished. Strict acceptance
 evidence is in `checkpoint-validation.json` under the evidence directory below.

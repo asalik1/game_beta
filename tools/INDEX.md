@@ -219,8 +219,9 @@ Alchemy UI QA: `shot.bat alchemy --timeout=300` checks the real recipe bench,
 39 recipe previews, exact paid actions, input, live quotes, cancelled learning,
 overflow and reading/focus continuity. It retains the blueprint-confirmation
 original and adds actual Sources toggles, essential-glyph clipping bounds,
-first/settled layout observations, fixed blueprint actions, Sources-label contrast
-and positive native wheel/touch scroll evidence.
+first/settled and cross-view layout observations, fixed blueprint actions,
+Sources-label contrast, complete dedicated-reader text and restored recipe-list
+position. Native wheel/touch distinguishes fitting text from genuine scrolling.
 Original images and measured movement require review; functional success alone
 is not visual acceptance. Use isolated APPDATA; add `--mobile
 --renderer=gl_compatibility` for mobile sources on the host. Resources are fixture

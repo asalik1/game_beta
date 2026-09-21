@@ -173,32 +173,66 @@ func _blueprints() -> void:
 
 
 func _mail_and_retention() -> void:
-	r.step("controlled full pack: mailed output and retained filter/scroll/focus")
+	r.step("controlled full pack: mailed output and retained filter/scroll/focus across Sources reader")
 	var filler: Dictionary = Alchemy.recipe("health_instant", "F").item
 	while p.bag_used() < p.bag_capacity():
 		p.consumables.append(filler.duplicate(true))
 	_check("fixture.full_pack", p.bag_used() == p.bag_capacity(), [p.bag_used(), p.bag_capacity()])
 	await _reenter()
 	await _named("AlchemyFilter_ready")
-	await _named("AlchemySources")
+	# Wheel the ACTUAL recipe list BEFORE entering Sources and record its live offset.
 	await _scroll_down("AlchemyRecipeScroll", 7)
-	await _scroll_down("AlchemyDetailScroll", 7)
 	var rail: ScrollContainer = _node("AlchemyRecipeScroll") as ScrollContainer
-	var details: ScrollContainer = _node("AlchemyDetailScroll") as ScrollContainer
-	var expected_rail := rail.scroll_vertical
-	var expected_detail := details.scroll_vertical
-	_check("retention.scroll_exercised", expected_rail > 0 or expected_detail > 0, [expected_rail, expected_detail])
+	if not _check("retention.recipe_list_present_before_sources", rail != null and rail.visible, "recipe list before Sources"):
+		return
+	var expected_rail: int = rail.scroll_vertical
+	_check("retention.recipe_scroll_exercised", expected_rail > 0, expected_rail)
+	# Enter the Sources reader via the actual named 44px control.
+	await _named("AlchemySources")
+	var source_scroll: ScrollContainer = _node("AlchemySourceScroll") as ScrollContainer
+	if not _check("retention.reader_present_after_toggle", source_scroll != null and source_scroll.visible
+			and _node("AlchemyRecipeScroll") == null, _view()):
+		return
+	# Native wheel the Sources reader and record its live offset.
+	await _scroll_down("AlchemySourceScroll", 7)
+	source_scroll = _node("AlchemySourceScroll") as ScrollContainer
+	var expected_source: int = source_scroll.scroll_vertical
+	var source_overflows: bool = source_scroll.get_v_scroll_bar().max_value > source_scroll.get_v_scroll_bar().page + 0.5
+	_check("retention.source_scroll_exercised" if source_overflows else "retention.source_fits",
+		expected_source > 0 if source_overflows else expected_source == 0, expected_source)
+	_check("retention.scroll_exercised", expected_rail > 0 or expected_source > 0, [expected_rail, expected_source])
+	# Actual brew in reader mode; untouched _brew checks economy.
 	await _brew("full_pack_mail", true)
-	rail = _node("AlchemyRecipeScroll") as ScrollContainer
-	details = _node("AlchemyDetailScroll") as ScrollContainer
+	# After refresh, compare remembered recipe offset and live Sources offset.
+	var remembered: Dictionary = _view()
+	_check("retention.remembered_recipe_offset", int(remembered.get("rail_scroll", -1)) == expected_rail,
+		{"remembered": remembered.get("rail_scroll", -1), "expected": expected_rail})
+	source_scroll = _node("AlchemySourceScroll") as ScrollContainer
+	_check("retention.live_source_offset", source_scroll != null and absi(source_scroll.scroll_vertical - expected_source) <= 1,
+		{"live": source_scroll.scroll_vertical if source_scroll != null else -1, "expected": expected_source})
+	_check("retention.selection_filter", String(remembered.get("shape", "")) == "renewal"
+		and String(remembered.get("grade", "")) == "A" and String(remembered.get("filter", "")) == "ready", remembered)
+	_check("retention.scroll", source_scroll != null and int(remembered.get("rail_scroll", -1)) == expected_rail
+		and absi(source_scroll.scroll_vertical - expected_source) <= 1, [remembered, expected_rail, expected_source])
+	# Record Brew focus before exit.
 	var focus: Control = m.get_viewport().gui_get_focus_owner()
-	_check("retention.selection_filter", String(_view().get("shape", "")) == "renewal"
-		and String(_view().get("grade", "")) == "A" and String(_view().get("filter", "")) == "ready", _view())
-	_check("retention.scroll", absi(rail.scroll_vertical - expected_rail) <= 1
-		and absi(details.scroll_vertical - expected_detail) <= 1, [rail.scroll_vertical, details.scroll_vertical, expected_rail, expected_detail])
 	_check("retention.focus", is_instance_valid(focus) and focus.name == "AlchemyBrew", String(focus.name) if is_instance_valid(focus) else "none")
+
 	_layout("desktop_mail")
 	await _capture("05_full_pack_mailed")
+	# Return via the actual named button and prove the real recipe list restores the same position.
+	await _named("AlchemySources")
+	rail = _node("AlchemyRecipeScroll") as ScrollContainer
+	if not _check("retention.recipe_list_present_after_return", rail != null and rail.visible
+			and _node("AlchemySourceScroll") == null, _view()):
+		return
+	_check("retention.recipe_offset_restored", absi(rail.scroll_vertical - expected_rail) <= 1,
+		{"live": rail.scroll_vertical, "expected": expected_rail})
+	var restored: Dictionary = _detail_continuity()
+	_check("retention.caption_restored", bool(restored.caption_visible), restored)
+	_check("retention.return_focus", restored.focus == "AlchemySources", restored)
+	# Leave the browser after this so later existing flow remains valid.
+	_check("retention.browser_state_after_return", not bool(_view().get("sources", false)), _view())
 
 
 func _stale_input() -> void:
@@ -304,23 +338,28 @@ func _touch_and_controller() -> void:
 func _detail_disclosure(id: String, touch: bool) -> void:
 	var before: Dictionary = _economy()
 	var selection: Dictionary = _view().duplicate(true)
-	# Both states get a real release-triggered first-draw observation, even if
-	# this recipe was already settled in its collapsed state on entry.
-	if not bool(_view().get("sources", false)):
+	# Prepare the actual recipe caption before temporarily replacing its rail.
+	if bool(_view().get("sources", false)):
 		await _named("AlchemySources", touch)
+	var preparation: Dictionary = await _detail_prepare_selected()
+	if not _check("detail." + id + ".browser_selected_caption", bool(preparation.visible), preparation): return
+	var expected_rail: int = int(preparation.after_native_wheel.rail_scroll)
+	await _named("AlchemySources", touch)
 	if not await _detail_toggle_frames(id + "_collapsed", touch, false): return
 	_detail_metadata(id + ".collapsed")
 	_detail_fixed_learning(id + ".collapsed", id == "renewal_unknown")
 	await _detail_sources_contrast(id + ".collapsed")
-	var scroll := _node("AlchemyDetailScroll") as ScrollContainer
-	if not _check("detail." + id + ".scroll_identity", scroll != null, "remembered detail control retained"): return
-	if not scroll.visible:
-		var requirement := _node("AlchemyRequirements") as Label
-		var fixed_note := _node("AlchemyLearnNote") as Label
-		var last_metadata: Control = fixed_note if fixed_note != null else requirement
-		var rule := _node("AlchemyIngredientRule") as Control
-		var gap: float = rule.get_global_rect().position.y - last_metadata.get_global_rect().end.y
-		_check("detail." + id + ".collapsed_compact", gap >= 4.0 and gap <= 24.0, gap)
+	var scroll := _node("AlchemySourceScroll") as ScrollContainer
+	var list := _node("AlchemyRecipeScroll") as ScrollContainer
+	if not _check("detail." + id + ".scroll_identity", scroll == null and list != null and list.is_visible_in_tree(), "browser present; reader absent"): return
+	_check("detail." + id + ".collapsed_label", (_node("AlchemySources") as Button).text == "Ingredient sources", "Ingredient sources")
+	var requirement := _node("AlchemyRequirements") as Label
+	var fixed_note := _node("AlchemyLearnNote") as Label
+	var last_metadata: Control = fixed_note if fixed_note != null else requirement
+	var rule := _node("AlchemyIngredientRule") as Control
+	if not _check("detail." + id + ".compact_nodes", last_metadata != null and rule != null, "fixed metadata and rule"): return
+	var gap: float = rule.get_global_rect().position.y - last_metadata.get_global_rect().end.y
+	_check("detail." + id + ".collapsed_compact", gap >= 4.0 and gap <= 24.0, gap)
 	await _capture("07_detail_" + id + "_collapsed")
 	if not await _detail_toggle_frames(id + "_expanded", touch, true): return
 	_check("detail." + id + ".expanded", bool(_view().get("sources", false)), _view())
@@ -328,16 +367,33 @@ func _detail_disclosure(id: String, touch: bool) -> void:
 	_detail_fixed_learning(id + ".expanded", id == "renewal_unknown")
 	await _detail_sources_contrast(id + ".expanded")
 	# Toggling rebuilds the shell: reacquire every node after the native input.
-	scroll = _node("AlchemyDetailScroll") as ScrollContainer
+	scroll = _node("AlchemySourceScroll") as ScrollContainer
 	var brew := _node("AlchemyBrew") as Button
 	var tail := _node("AlchemySourceTail") as Label
-	if not _check("detail." + id + ".nodes", scroll != null and scroll.visible and brew != null and tail != null, _view()): return
+	var lead := _node("AlchemySourceLead") as Label
+	var subject := _node("AlchemySourceSubject") as Label
+	if not _check("detail." + id + ".nodes", scroll != null and scroll.is_visible_in_tree() and _node("AlchemyRecipeScroll") == null
+		and brew != null and tail != null and lead != null and subject != null, _view()): return
+	_check("detail." + id + ".expanded_label", (_node("AlchemySources") as Button).text == "Back to recipes", "Back to recipes")
+	# A reading viewport should show roughly ten body lines, rather than a caption strip.
+	var minimum_reader_height := 200.0
+	var minimum_reader_font := 16
+	_check("detail." + id + ".reader_height", scroll.size.y >= minimum_reader_height, scroll.size)
+	_check("detail." + id + ".reader_font", lead.get_theme_font_size("font_size") >= minimum_reader_font
+		and tail.get_theme_font_size("font_size") >= minimum_reader_font, [lead.get_theme_font_size("font_size"), tail.get_theme_font_size("font_size")])
+	_check("detail." + id + ".reader_subject", _detail_glyphs_visible(subject, 2.0)
+		and subject.text == "%s · %s grade" % [String(Items.POTION_ACCORD_NOUN[String(selection.shape)]), String(selection.grade)], subject.text)
 	var brew_rect: Rect2 = brew.get_global_rect()
 	var fixed_learning: Dictionary = _detail_learning_rects()
 	var optional_overflows: bool = scroll.get_v_scroll_bar().max_value > scroll.get_v_scroll_bar().page + 0.5
-	if id == "renewal_unknown":
-		_check("detail." + id + ".long_help_overflows", optional_overflows, scroll.get_v_scroll_bar().max_value)
-	await _scroll_down("AlchemyDetailScroll", 12)
+	if not optional_overflows:
+		_check("detail." + id + ".fit_full_copy", _detail_glyphs_visible(lead, 2.0)
+			and _detail_glyphs_visible(tail, 2.0) and _detail_glyphs_visible(subject, 2.0), [lead.text, tail.text, subject.text])
+	var wheel_before: int = scroll.scroll_vertical
+	await _scroll_down("AlchemySourceScroll", 12)
+	_check("detail." + id + ".wheel_moves" if optional_overflows else "detail." + id + ".wheel_fit_no_scroll_claim",
+		scroll.scroll_vertical > wheel_before if optional_overflows else scroll.scroll_vertical == 0,
+		{"overflow": optional_overflows, "before": wheel_before, "after": scroll.scroll_vertical})
 	_check("detail." + id + ".wheel_tail", _detail_tail_visible(tail, scroll), tail.text)
 	_check("detail." + id + ".wheel_fixed_actions", brew.get_global_rect() == brew_rect and not scroll.is_ancestor_of(brew), str(brew_rect))
 	_check("detail." + id + ".wheel_fixed_learning", _detail_learning_rects() == fixed_learning, {"before": fixed_learning, "after": _detail_learning_rects()})
@@ -371,7 +427,15 @@ func _detail_disclosure(id: String, touch: bool) -> void:
 	_detail_metadata(id + ".scrolled")
 	_layout("detail_" + id)
 	await _capture("08_detail_" + id + "_expanded_tail")
-	if not bool(selection.get("sources", false)):
+	await _named("AlchemySources", touch)
+	var restored_list := _node("AlchemyRecipeScroll") as ScrollContainer
+	var restored: Dictionary = _detail_continuity()
+	_check("detail." + id + ".return_presence", restored_list != null and restored_list.is_visible_in_tree()
+		and _node("AlchemySourceScroll") == null, restored)
+	_check("detail." + id + ".return_live_offset", restored_list != null and restored_list.scroll_vertical == expected_rail, restored)
+	_check("detail." + id + ".return_caption", bool(restored.caption_visible), restored)
+	_check("detail." + id + ".return_focus", restored.focus == "AlchemySources", restored)
+	if bool(selection.get("sources", false)):
 		await _named("AlchemySources", touch)
 	_check("detail." + id + ".read_only", _economy() == before
 		and _view().get("shape") == selection.get("shape") and _view().get("grade") == selection.get("grade")
@@ -391,8 +455,9 @@ func _detail_learning_rects() -> Dictionary:
 func _detail_fixed_learning(id: String, expected: bool) -> void:
 	var learn := _node("AlchemyLearnBlueprint") as Button
 	var note := _node("AlchemyLearnNote") as Label
-	var scroll := _node("AlchemyDetailScroll") as ScrollContainer
+	var scroll := _node("AlchemySourceScroll") as ScrollContainer
 	var brew := _node("AlchemyBrew") as Button
+	# Missing optional reader in browse mode is legitimate; Learn/Note checks unchanged.
 	if not _check("detail." + id + ".learning_presence", (learn != null and note != null) if expected else (learn == null and note == null), _detail_learning_rects()): return
 	if not expected: return
 	var allowed: Rect2 = m._shell_rect.intersection(m.get_viewport().get_visible_rect())
@@ -401,7 +466,8 @@ func _detail_fixed_learning(id: String, expected: bool) -> void:
 		if ancestor is Control and ancestor.clip_contents: allowed = allowed.intersection(ancestor.get_global_rect())
 		ancestor = ancestor.get_parent()
 	var rect: Rect2 = learn.get_global_rect()
-	_check("detail." + id + ".learning_fixed", scroll != null and not scroll.is_ancestor_of(learn) and not scroll.is_ancestor_of(note)
+	# Learn/Brew share action parent, outside any present SourceScroll.
+	_check("detail." + id + ".learning_fixed", (scroll == null or (not scroll.is_ancestor_of(learn) and not scroll.is_ancestor_of(note)))
 		and brew != null and learn.get_parent() == brew.get_parent(), _detail_learning_rects())
 	_check("detail." + id + ".learning_target44", learn.is_visible_in_tree() and rect.size.x >= 44.0 and rect.size.y >= 44.0
 		and allowed.grow(0.5).encloses(rect), str(rect))
@@ -449,6 +515,13 @@ func _detail_toggle_frames(id: String, touch: bool, expanded: bool) -> bool:
 	await _reveal(button)
 	var at: Vector2 = button.get_global_rect().get_center()
 	var old_root_id: int = m.root.get_instance_id()
+	var before_geometry: Dictionary = _detail_frame_geometry()
+	var required_right: Array[String] = ["AlchemyProductName", "AlchemyProductEffect", "AlchemyRequirements",
+		"AlchemyIngredientRule", "AlchemyIngredient_herb", "AlchemyIngredient_reagent", "AlchemyFee", "AlchemyBrew", "AlchemyResult"]
+	var baseline_complete := true
+	for name in required_right:
+		baseline_complete = baseline_complete and before_geometry.rects.has(name) and bool(before_geometry.visible.get(name, false))
+	if not _check("detail.frames." + id + ".right_baseline_complete", baseline_complete, before_geometry): return false
 	if touch:
 		var event := InputEventScreenTouch.new()
 		event.index = 0
@@ -476,7 +549,7 @@ func _detail_toggle_frames(id: String, touch: bool, expanded: bool) -> bool:
 	first.continuity = _detail_continuity()
 	var first_path := "" if r.flag("no-capture") else r.shot("09_detail_" + id + "_first_draw", "first observed native draw after sources release; geometry not yet accepted")
 	if not _check("detail.frames." + id + ".native_replaced", m.current == "alchemy" and is_instance_valid(m.root) and m.root.get_instance_id() != old_root_id
-		and bool(_view().get("sources", false)) == expanded, first): return false
+			and bool(_view().get("sources", false)) == expanded, first): return false
 	var observed_root_id: int = m.root.get_instance_id()
 	await r.frames(4)
 	await RenderingServer.frame_post_draw
@@ -491,18 +564,59 @@ func _detail_toggle_frames(id: String, touch: bool, expanded: bool) -> bool:
 	var observation := {"id": id, "first": first, "settled": settled, "max_rect_delta_px": delta,
 		"geometry_changed": first.rects != settled.rects, "first_original": first_path,
 		"settled_original": settled_path, "expected_before_release": expected, "selection_preparation": preparation,
+		"before_toggle_geometry": before_geometry,
 		"acceptance": "strict native continuity checks; original-image review remains required"}
 	detail_frame_observations.append(observation)
 	for phase in ["first", "settled"]:
 		var actual: Dictionary = first.continuity if phase == "first" else settled.continuity
+		var geometry: Dictionary = first if phase == "first" else settled
+		_check("detail.frames." + id + "." + phase + ".view_presence",
+			(bool(actual.reader_present) and not bool(actual.recipe_present) and actual.mode == "sources") if expanded
+			else (bool(actual.recipe_present) and not bool(actual.reader_present) and actual.mode == "recipes"), actual)
+		for name in geometry.essential_glyphs:
+			_check("detail.frames." + id + "." + phase + ".glyphs." + String(name), bool(geometry.essential_glyphs[name]), geometry.essential_glyphs)
 		_check("detail.frames." + id + "." + phase + ".selection", actual.shape == expected.shape and actual.grade == expected.grade
 			and actual.filter == expected.filter, actual)
 		_check("detail.frames." + id + "." + phase + ".rail_scroll", actual.rail_scroll == expected.rail_scroll, {"expected": expected, "actual": actual})
 		_check("detail.frames." + id + "." + phase + ".focus", not String(expected.focus).is_empty() and actual.focus == expected.focus, {"expected": expected.focus, "actual": actual.focus})
 		_check("detail.frames." + id + "." + phase + ".selected_caption", bool(expected.caption_visible) and bool(actual.caption_visible), actual)
-		_check("detail.frames." + id + "." + phase + ".detail_top", actual.detail_scroll == 0, actual.detail_scroll)
+		# Source offset 0 in reader; absent=-1 in browser.
+		if expanded:
+			_check("detail.frames." + id + "." + phase + ".detail_top", actual.detail_scroll == 0, actual.detail_scroll)
+		else:
+			_check("detail.frames." + id + "." + phase + ".detail_top", actual.detail_scroll == -1, actual.detail_scroll)
 	_check("detail.frames." + id + ".rect_stable", delta <= 0.5 and first.visible == settled.visible, observation)
 	_check("detail.frames." + id + ".caption_stable", first.continuity.caption_rect == settled.continuity.caption_rect, observation)
+	# Compare right-column named rects BEFORE toggle vs first AND settled after toggle.
+	var right_names: Array[String] = ["AlchemyProductName", "AlchemyProductEffect", "AlchemyRequirements",
+		"AlchemyLearnNote", "AlchemyIngredientRule", "AlchemyIngredient_herb", "AlchemyIngredient_reagent",
+		"AlchemyFee", "AlchemyLearnBlueprint", "AlchemyBrew", "AlchemyResult"]
+	var pre_rects: Dictionary = {}
+	var pre_visible: Dictionary = {}
+	for name in right_names:
+		if before_geometry.rects.has(name):
+			pre_rects[name] = before_geometry.rects[name]
+			pre_visible[name] = before_geometry.visible[name]
+	var right_delta := 0.0
+	var right_visible_match: bool = not pre_rects.is_empty()
+	for name in pre_rects:
+		if not first.rects.has(name) or not settled.rects.has(name):
+			right_visible_match = false
+			continue
+		for component in 4:
+			right_delta = maxf(right_delta, absf(float(pre_rects[name][component]) - float(first.rects[name][component])))
+			right_delta = maxf(right_delta, absf(float(pre_rects[name][component]) - float(settled.rects[name][component])))
+		if bool(pre_visible[name]) != bool(first.visible.get(name, false)) or bool(pre_visible[name]) != bool(settled.visible.get(name, false)):
+			right_visible_match = false
+	for name in right_names:
+		if first.rects.has(name) != pre_rects.has(name) or settled.rects.has(name) != pre_rects.has(name):
+			right_visible_match = false
+	_check("detail.frames." + id + ".right_column_stable", right_delta <= 0.5 and right_visible_match,
+		{"delta": right_delta, "pre": pre_rects, "first": first.rects, "settled": settled.rects})
+	# Essential glyphs full both states.
+	for name in ["AlchemyProductName", "AlchemyProductEffect", "AlchemyRequirements"]:
+		var label := _node(name) as Label
+		_check("detail.frames." + id + ".glyphs." + name, label != null and _detail_glyphs_visible(label, 2.0), name)
 	return _check("detail.frames." + id + ".observed", is_instance_valid(m.root) and m.root.get_instance_id() == observed_root_id
 		and first.process_frame < settled.process_frame and not first.rects.is_empty()
 		and first.rects.keys() == settled.rects.keys(), observation)
@@ -529,14 +643,33 @@ func _detail_prepare_selected() -> Dictionary:
 func _detail_continuity() -> Dictionary:
 	var view: Dictionary = _view()
 	var rail := _node("AlchemyRecipeScroll") as ScrollContainer
-	var detail := _node("AlchemyDetailScroll") as ScrollContainer
+	var detail := _node("AlchemySourceScroll") as ScrollContainer
 	var focus: Control = m.get_viewport().gui_get_focus_owner()
 	var selected := _node("AlchemyShape_" + String(view.get("shape", ""))) as Button
 	var result := {"shape": view.get("shape", ""), "grade": view.get("grade", ""), "filter": view.get("filter", ""),
-		"rail_scroll": rail.scroll_vertical if rail != null else -1, "detail_scroll": detail.scroll_vertical if detail != null else -1,
+		"rail_scroll": rail.scroll_vertical if rail != null else int(view.get("rail_scroll", -1)), "detail_scroll": detail.scroll_vertical if detail != null else -1,
 		"focus": String(focus.name) if is_instance_valid(focus) and is_instance_valid(m.root) and m.root.is_ancestor_of(focus) else "",
+		"mode": "sources" if bool(view.get("sources", false)) else "recipes",
+		"recipe_present": rail != null and rail.is_visible_in_tree(), "reader_present": detail != null and detail.is_visible_in_tree(),
 		"caption_visible": false, "caption_rect": [], "clip_rect": [], "caption_text": "",
 		"bounds_scope": "native TextParagraph font envelope; conservative text extent, not pixel-ink or card-border bounds"}
+	# Reader mode: use full visible Subject caption at top.
+	if detail != null and detail.visible:
+		var subject := _node("AlchemySourceSubject") as Label
+		if subject == null or not subject.is_visible_in_tree(): return result
+		var rect := Rect2()
+		for index in subject.text.length():
+			if subject.text.substr(index, 1).strip_edges().is_empty(): continue
+			var glyph: Rect2 = subject.get_global_transform_with_canvas() * subject.get_character_bounds(index)
+			if glyph.has_area(): rect = rect.merge(glyph) if rect.has_area() else glyph
+		var allowed: Rect2 = _detail_clip_bounds(subject)
+		result.caption_rect = [rect.position.x, rect.position.y, rect.size.x, rect.size.y]
+		result.clip_rect = [allowed.position.x, allowed.position.y, allowed.size.x, allowed.size.y]
+		result.caption_text = subject.text
+		result.caption_visible = rect.has_area() and _detail_glyphs_visible(subject, 2.0)
+		result.bounds_scope = "native Label character-bound union against clipping ancestors"
+		return result
+	# Browser mode: use actual selected caption.
 	if selected == null or not selected.is_visible_in_tree(): return result
 	var metrics: Dictionary = _caption_metrics(selected, "normal")
 	if not metrics.has("text_rect"): return result
@@ -560,9 +693,10 @@ func _detail_frame_geometry() -> Dictionary:
 	var rects := {}
 	var visible := {}
 	var glyphs := {}
-	for name in ["AlchemyProductName", "AlchemyProductEffect", "AlchemyRequirements", "AlchemyDetailScroll",
-			"AlchemyIngredientRule", "AlchemyIngredient_herb", "AlchemyFee", "AlchemyBrew", "AlchemyResult",
-			"AlchemyLearnBlueprint", "AlchemyLearnNote"]:
+	for name in ["AlchemyProductName", "AlchemyProductEffect", "AlchemyRequirements", "AlchemySourceScroll",
+			"AlchemySourceTitle", "AlchemySourceSubject",
+			"AlchemyIngredientRule", "AlchemyIngredient_herb", "AlchemyIngredient_reagent", "AlchemyFee",
+			"AlchemyBrew", "AlchemyResult", "AlchemyLearnBlueprint", "AlchemyLearnNote"]:
 		var control := _node(name) as Control
 		if control == null: continue
 		var rect: Rect2 = control.get_global_rect()

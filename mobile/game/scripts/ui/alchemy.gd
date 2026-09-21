@@ -1,9 +1,29 @@
 extends RefCounted
 ## One selected clean-potion recipe. The Alchemy order owns every transaction;
 ## this screen owns input, its shell lifetime, and the remembered reading view.
+## The LEFT rail shows ONE of two things — the recipe browser or the ingredient
+## sources reader — behind a persistent 44px action at its bottom. The right
+## column (product, requirements, learning, ingredient costs, fee, actions,
+## result) is fixed and identical in both rail states: optional reading help
+## never moves a transaction.
 const Alchemy := preload("res://scripts/alchemy.gd")
 const MEMORY := "alchemy_view"
 const TEXT := Color(0.9, 0.9, 0.9)
+## Rail geometry. Both rail states share one width and one 44px action row, so
+## the Sources button keeps its place — and its focus — when the rail swaps.
+const RAIL_WIDTH := 270.0
+const RAIL_ACTION_H := 44.0
+const RAIL_FILTER := Vector2(126.0, 44.0)
+const RAIL_ROW_H := 52.0
+## Reading typography. The rail reader is a reading surface rather than the
+## caption strip it replaces, so its prose runs at 16px in the shell body color
+## under a 14px recipe/grade subject line. The viewport reserves its scrollbar
+## gutter and keeps an 8px bottom inset so the last line never sits against the
+## action button below it. Nothing here estimates a line count.
+const SOURCE_TITLE_PX := 16
+const SOURCE_SUBJECT_PX := 14
+const SOURCE_TEXT_PX := 16
+const SOURCE_INSET := 8
 
 
 class QuoteWatch extends Node:
@@ -64,17 +84,18 @@ static func open(m: Menus, notice := "", notice_color := Color(0.72, 0.92, 0.76)
 	body.add_theme_constant_override("separation", 18)
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_child(body)
-	_recipe_rail(m, body, shell, state)
+	var rail := _recipe_rail(m, body, shell, state)
 	_recipe_detail(m, body, shell, state, order, quote, action_used, notice, notice_color)
 	var foot := HBoxContainer.new()
-	foot.add_theme_constant_override("separation", 14)
+	foot.add_theme_constant_override("separation", body.get_theme_constant("separation"))
 	box.add_child(foot)
 	var back := m._btn(foot, "Back to Professions", func() -> void:
 		if _owns(m, shell):
 			_remember(m)
 			m.controller_back(), UITheme.GOLD_BRIGHT)
 	back.name = "AlchemyReturn"
-	back.custom_minimum_size = Vector2(240, 44)
+	back.custom_minimum_size = Vector2(rail.get_combined_minimum_size().x, RAIL_ACTION_H)
+	back.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var note := m._lbl(foot, "Choose bottles in Inventory → Potions. Slot changes apply at the next door.\nGrand potions use Kesh's separate Synthesis bench.", 13, UITheme.TEXT_MUTED)
 	note.name = "AlchemyUseHint"
 	note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -87,11 +108,30 @@ static func open(m: Menus, notice := "", notice_color := Color(0.72, 0.92, 0.76)
 	_restore.call_deferred(m, shell, state)
 
 
-static func _recipe_rail(m: Menus, parent: Control, shell: Control, state: Dictionary) -> void:
+## The rail is ONE of two readings — the recipe browser or the sources reader —
+## under a persistent 44px action carrying the same name in both states.
+static func _recipe_rail(m: Menus, parent: Control, shell: Control, state: Dictionary) -> VBoxContainer:
 	var rail := VBoxContainer.new()
-	rail.custom_minimum_size.x = 270
+	rail.custom_minimum_size.x = RAIL_WIDTH
 	rail.add_theme_constant_override("separation", 8)
 	parent.add_child(rail)
+	var reading := bool(state.get("sources", false))
+	if reading:
+		_source_reader(m, rail, state)
+	else:
+		_recipe_browser(m, rail, shell, state)
+	var help := m._btn(rail, "Back to recipes" if reading else "Ingredient sources", func() -> void:
+		if _owns(m, shell):
+			_reopen(m, shell, {"sources": not reading, "detail_scroll": 0}), TEXT)
+	help.name = "AlchemySources"
+	help.tooltip_text = "Return to the recipe list." if reading else "Read where this recipe's herbs and reagents are found."
+	UITheme.tab(help, reading)
+	help.custom_minimum_size.y = RAIL_ACTION_H
+	return rail
+
+
+## Recipe browsing: filters over a scrolling list of every clean potion shape.
+static func _recipe_browser(m: Menus, rail: VBoxContainer, shell: Control, state: Dictionary) -> void:
 	UITheme.header(m._lbl(rail, "POTION RECIPES", 16, UITheme.GOLD_BRIGHT))
 	var filters := HBoxContainer.new()
 	filters.add_theme_constant_override("separation", 8)
@@ -102,9 +142,11 @@ static func _recipe_rail(m: Menus, parent: Control, shell: Control, state: Dicti
 			_reopen(m, shell, {"filter": key, "rail_scroll": 0}), UITheme.GOLD_BRIGHT)
 		UITheme.tab(button, String(state.filter) == key)
 		button.name = "AlchemyFilter_" + key
-		button.custom_minimum_size = Vector2(126, 44)
+		button.custom_minimum_size = RAIL_FILTER
 	var scroll := ScrollContainer.new()
 	scroll.name = "AlchemyRecipeScroll"
+	# Both rail pages reserve the same native scrollbar gutter.
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_RESERVE
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	rail.add_child(scroll)
@@ -136,21 +178,70 @@ static func _recipe_rail(m: Menus, parent: Control, shell: Control, state: Dicti
 		UITheme.tab(button, selected)
 		button.name = "AlchemyShape_" + fs
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.custom_minimum_size = Vector2(270, 52)
+		button.custom_minimum_size = Vector2(RAIL_WIDTH, RAIL_ROW_H)
 		button.add_theme_font_size_override("font_size", 14)
 		button.add_theme_constant_override("icon_max_width", 30)
 		button.clip_text = true
 		button.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		button.tooltip_text = String(preview.item.desc)
 	var source := m._lbl(rail, "Use carried herbs + reagents of the bottle's grade. Find them on creatures and in supply chests.", 13, UITheme.TEXT_MUTED)
-	source.custom_minimum_size.x = 270
-	var help := m._btn(rail, "Ingredient sources", func() -> void:
-		if _owns(m, shell):
-			_reopen(m, shell, {"sources": not bool(state.get("sources", false)), "detail_scroll": 0}), TEXT)
-	help.name = "AlchemySources"
-	help.tooltip_text = "Hide ingredient sources." if bool(state.get("sources", false)) else "Show where carried herbs and reagents are found."
-	UITheme.tab(help, bool(state.get("sources", false)))
-	help.custom_minimum_size.y = 44
+	source.name = "AlchemyRecipeHint"
+	source.custom_minimum_size.x = RAIL_WIDTH
+
+
+## Sources reading: the whole rail becomes the viewport, so the prose that used
+## to crowd a ~55px strip beside the recipe gets the rail's full reading height.
+## Native wrapping and a native expandable viewport — no estimated line counts.
+static func _source_reader(m: Menus, rail: VBoxContainer, state: Dictionary) -> void:
+	var grade := String(state.grade)
+	var shape := String(state.shape)
+	var title := m._lbl(rail, "INGREDIENT SOURCES", SOURCE_TITLE_PX, UITheme.GOLD_BRIGHT)
+	title.name = "AlchemySourceTitle"
+	UITheme.header(title)
+	var scroll := ScrollContainer.new()
+	scroll.name = "AlchemySourceScroll"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	# RESERVE keeps the gutter in both overflowing and fitting states, so the
+	# width the prose wraps at is the width it is finally laid out at.
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_RESERVE
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rail.add_child(scroll)
+	var inset := MarginContainer.new()
+	# Match the recipe rows' content minimum as well as their native gutter;
+	# otherwise the reader can narrow the rail and shift every right-hand row.
+	inset.custom_minimum_size.x = RAIL_WIDTH
+	inset.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inset.add_theme_constant_override("margin_bottom", SOURCE_INSET)
+	scroll.add_child(inset)
+	var page := VBoxContainer.new()
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.add_theme_constant_override("separation", SOURCE_INSET)
+	inset.add_child(page)
+	var subject := m._lbl(page, "%s · %s grade" % [String(Items.POTION_ACCORD_NOUN[shape]), grade],
+		SOURCE_SUBJECT_PX, Items.GRADE_COLOR[grade])
+	subject.name = "AlchemySourceSubject"
+	subject.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var lines := _source_lines(grade)
+	var lead := m._lbl(page, lines[0], SOURCE_TEXT_PX, TEXT)
+	lead.name = "AlchemySourceLead"
+	lead.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var tail := m._lbl(page, lines[1], SOURCE_TEXT_PX, TEXT)
+	tail.name = "AlchemySourceTail"
+	tail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+
+## The exact source facts the collapsed disclosure carried: the carry/mail rule,
+## then this grade band's full account. Every grade keeps its whole paragraph.
+static func _source_lines(grade: String) -> Array[String]:
+	var lines: Array[String] = ["Carry herbs and reagents at the recipe's exact grade. Claim mailed ingredients before brewing."]
+	if grade == "A":
+		lines.append("A-grade ingredients come from NG+ boss supplies: Chapter 4 onward in NG+1, or Chapter 1 onward in NG+2. The first journey's creatures and supply chests do not provide A ingredients.")
+	elif grade in ["C", "B"]:
+		lines.append("Boss supply chests and bundles can contain C/B herbs and reagents. Creature drops remain F/E, or E/D from elites.")
+	else:
+		lines.append("For F/E herbs, hunt plant and fungal creatures in Sporewood or the Blooming Deep; their elites yield E/D. Beasts, humanoids and void creatures can yield reagents at those grades. Boss supplies can also contain both ingredients.")
+	return lines
 
 
 static func _recipe_detail(m: Menus, parent: Control, shell: Control, state: Dictionary, order: RefCounted,
@@ -172,7 +263,8 @@ static func _recipe_detail(m: Menus, parent: Control, shell: Control, state: Dic
 		button.tooltip_text = "%s grade · %s mastery" % [grade, _required_band(grade)]
 	var item: Dictionary = quote.get("item", {})
 	var grade := String(state.grade)
-	# Core recipe information must remain readable while optional help scrolls.
+	# This column holds NO optional help and no viewport: it is the same fixed
+	# reading in both rail states, so nothing here moves when help is opened.
 	var card := UITheme.card(column, Items.GRADE_COLOR[grade])
 	var product := HBoxContainer.new()
 	product.add_theme_constant_override("separation", 16)
@@ -203,32 +295,6 @@ static func _recipe_detail(m: Menus, parent: Control, shell: Control, state: Dic
 		if not bool(learning.allowed):
 			learn_note = String(learning.reason)
 		m._lbl(column, learn_note, 13, UITheme.TEXT_MUTED).name = "AlchemyLearnNote"
-	var scroll := ScrollContainer.new()
-	scroll.name = "AlchemyDetailScroll"
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_RESERVE
-	# Native containers allocate the remaining height to optional text.
-	# Hide the whole viewport when optional ingredient help is collapsed.
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	column.add_child(scroll)
-	var inset := MarginContainer.new()
-	inset.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	inset.add_theme_constant_override("margin_bottom", 8)
-	scroll.add_child(inset)
-	var details := VBoxContainer.new()
-	details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	details.add_theme_constant_override("separation", 8)
-	inset.add_child(details)
-	if bool(state.get("sources", false)):
-		m._lbl(details, "Ingredient sources", 16, UITheme.GOLD_BRIGHT)
-		m._lbl(details, "Carry herbs and reagents at the recipe's exact grade. Claim mailed ingredients before brewing.", 14, UITheme.TEXT_MUTED)
-		if grade == "A":
-			m._lbl(details, "A-grade ingredients come from NG+ boss supplies: Chapter 4 onward in NG+1, or Chapter 1 onward in NG+2. The first journey's creatures and supply chests do not provide A ingredients.", 14, UITheme.TEXT_MUTED).name = "AlchemySourceTail"
-		elif grade in ["C", "B"]:
-			m._lbl(details, "Boss supply chests and bundles can contain C/B herbs and reagents. Creature drops remain F/E, or E/D from elites.", 14, UITheme.TEXT_MUTED).name = "AlchemySourceTail"
-		else:
-			m._lbl(details, "For F/E herbs, hunt plant and fungal creatures in Sporewood or the Blooming Deep; their elites yield E/D. Beasts, humanoids and void creatures can yield reagents at those grades. Boss supplies can also contain both ingredients.", 14, UITheme.TEXT_MUTED).name = "AlchemySourceTail"
-	scroll.visible = details.get_child_count() > 0
 	UITheme.rule(column).name = "AlchemyIngredientRule"
 	_ingredient(m, column, "herb", grade, int(quote.get("herbs_have", 0)), int(quote.get("herbs", 0)))
 	_ingredient(m, column, "reagent", grade, int(quote.get("reagents_have", 0)), int(quote.get("reagents", 0)))
@@ -362,6 +428,10 @@ static func _reopen(m: Menus, shell: Control, changes: Dictionary) -> void:
 		open(m, "", Color(0.72, 0.92, 0.76), changes)
 
 
+## Remembered reading view. Each offset is written ONLY when its control is
+## actually present, so the recipe list position survives Sources mode, and
+## the reader position survives quote refresh while Sources stays open.
+## Switching rail views resets the source offset to the top.
 static func _remember(m: Menus) -> Dictionary:
 	var owner: int = m.game.local_player.get_instance_id()
 	var saved: Dictionary = m.get_meta(MEMORY, {})
@@ -369,7 +439,7 @@ static func _remember(m: Menus) -> Dictionary:
 	if int(state.get("owner", 0)) != owner:
 		state = {"owner": owner, "shape": "health_instant", "grade": "F", "filter": "all", "rail_scroll": 0, "detail_scroll": 0, "focus": "AlchemyShape_health_instant", "sources": false}
 	if m.current == "alchemy" and is_instance_valid(m.root):
-		for spec in [["AlchemyRecipeScroll", "rail_scroll"], ["AlchemyDetailScroll", "detail_scroll"]]:
+		for spec in [["AlchemyRecipeScroll", "rail_scroll"], ["AlchemySourceScroll", "detail_scroll"]]:
 			var scroll := m.root.find_child(String(spec[0]), true, false) as ScrollContainer
 			if scroll != null:
 				state[String(spec[1])] = scroll.scroll_vertical
@@ -394,7 +464,7 @@ static func _restore_input(m: Menus, shell: Control, state: Dictionary) -> void:
 		focus = shell.find_child("AlchemyGrade_" + String(state.grade), true, false) as Control
 	if focus != null and focus.is_visible_in_tree() and focus.focus_mode != Control.FOCUS_NONE:
 		focus.grab_focus()
-	for spec in [["AlchemyRecipeScroll", "rail_scroll"], ["AlchemyDetailScroll", "detail_scroll"]]:
+	for spec in [["AlchemyRecipeScroll", "rail_scroll"], ["AlchemySourceScroll", "detail_scroll"]]:
 		var scroll := shell.find_child(String(spec[0]), true, false) as ScrollContainer
 		if scroll != null:
 			scroll.scroll_vertical = int(state[String(spec[1])])
