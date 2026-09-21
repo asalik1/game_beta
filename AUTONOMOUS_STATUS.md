@@ -223,22 +223,46 @@ Follow-up priorities and preserved experiments:
   under build/qa/session-sept20. All 46 unrelated files and old status tail kept.
   This checkpoint does not close the session; deadline remains Sep21 21UTC.
 
-- The next chest/NPC prompt candidate is private in prompt-clearance-next/.
-  Fresh actual Fable session fc855b69-495c-4689-ade2-a0f578763a7c read/reasoned
-  but timed out without a patch; raw provider/session and failed receipt kept.
-  reviewed-local-v2 is explicitly Codex-authored, source-reviewed only, with
-  no engine validation or canonical integration. Keep it out of the shortcut
-  checkpoint; its HUD coverage limits and native QA plan need review. V2 keeps
-  authored elevated victory-gate labels out of the generic anchor reset; the
-  original V1 regression and independent QA adaptation are retained.
-- The earlier private arrival drafts are superseded by checkpoint 7; raw versions
-  remain under arrival-readability. Its unused controls are not extra acceptance.
-  Actual Claude supplied separate prompt QA; the corrected private derivative is
-  prompt-clearance-next/qa-claude-v1/reviewed-local-v2. Actual victory-arch/remapped
-  input and generic-chest fixtures remain unfinished. Both private production
-  and QA patches still apply cleanly by read-only check; neither is integrated.
-  Another source observation: pending theme notifications still use full fades;
-  room-arrival fixes are not a claim that every in-play notification is fixed.
+- Checkpoint 8 accepted: selected citizen and ordinary scenery prompts keep
+  their complete text clear of the owner, local hero and declared HUD when a
+  supported lane fits. Authored/above/right/left/below positions are followed
+  by bounded side-lane slides around rectangle edges. Victory arches retain
+  their special lifted anchor. No changes to selection, reach, actions or art.
+  Actual Claude supplied alternatives QA; DeepSeek supplied chest/arch drafts.
+  Root authored production and substantially corrected provider QA before
+  integration. Rejected outputs and failed native pilots remain preserved.
+  Desktop compile/quick/full, scoped mobile sync/import/compile/strict quick,
+  twelve native episodes and all seven strict preflight categories pass
+  (20 stages). Per project: NPC 108, arch/generic 99, chest 37, fountain 69,
+  interaction-copy 191 plus five native rows, real paired ENet 33 witnesses.
+  All 126 final originals opened by actual Claude; root inspected critical
+  originals. Earlier V1 fixture/duplicate-frame misinterpretations have explicit
+  image-bound root dispositions; raw provider findings remain unchanged.
+  Final V2 reviews have no blockers or parsing corrections.
+  The controlled empty HUD backdrop is intentional, and arrival/selected chest
+  captures can be the same frame. Native interaction proves the selected offer.
+  A false clipped-head observation was corrected against the original image.
+  Scope: controlled fixtures and host Compatibility mobile, not physical
+  devices or earned campaigns. Oversized-label fallback is deliberately
+  unreadable; the generic legacy book is prompt/remap/reach evidence only,
+  not accepted artwork. No-fit overlap, snapping, bottom/touch/reward HUD,
+  foliage/other actor occlusion and ordinary prop grounding remain limitations.
+  Initial final V1 passed native tests but failed strict preflight on the
+  structural two-pass literal. Explicit [0, 1] iteration preserves behavior;
+  complete final V2 validation binds the corrected source. No gate waived.
+  The first failed Voss approach remains unexplained; later passive input
+  diagnostics and successful runs are not claimed as its causal fix.
+  WORLD_PROMPT_CLEARANCE.md records exact scope. Evidence:
+  prompt-clearance-next/root-validation/acceptance.json; commit/local state:
+  prompt-clearance-commit-receipt.json under build/qa/session-sept20.
+  All 46 unrelated files and the exact old status tail remain unchanged.
+  Session remains active through September 21 21:00 UTC, cutoff 20:00 UTC.
+- Candidate follow-ups from native review: content-sized confirmation dialogs
+  and ordinary prop grounding/occlusion. Neither has been implemented here;
+  inspect ordinary gameplay before choosing the next scope.
+- Older private prompt drafts are superseded by checkpoint 8; all originals
+  remain under prompt-clearance-next. Pending theme notifications still use
+  full fades; this is not a claim that every in-play notification is fixed.
 - Earlier Claude web-hit/root candidate under `claude-combat/` stays parked;
   raw QA has blockers. Earlier DeepSeek continuity-only drafts are superseded.
 - Initial Warrior hunt: 35.352s, HP minimum 113.467/130, +120 gold, five originals

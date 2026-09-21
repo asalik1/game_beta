@@ -19,8 +19,8 @@ func _ready() -> void:
 		print("Menu shortcuts requires its isolated strict mode")
 		finish(1)
 		return
-	if flag("npc-prompt-controls") and not flag("npc-prompt"):
-		print("NPC prompt controls require npc-prompt")
+	if (flag("npc-prompt-controls") or flag("npc-prompt-alternatives")) and not flag("npc-prompt"):
+		print("NPC prompt controls/alternatives require npc-prompt")
 		finish(1)
 		return
 	if flag("npc-prompt") and (flag("baseline") or flag("fountain-prompt") or flag("arrival-consumers") or flag("no-capture")):

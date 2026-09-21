@@ -83,7 +83,7 @@ func run(rig: ShotRig) -> Dictionary:
 		report["qualification"] = menu_shortcuts_episode.scope
 	if not npc_prompt_episode.is_empty():
 		report["npc_prompt"] = npc_prompt_episode
-		report["qualification"] = "Single normal Game and original Voss reached through real capital travel/welcome/A movement. Native Inventory/Escape/E/Leave; no rewards or assigned actor positions. Optional npc-prompt-controls borrows camera offset/vitals position and freezes Game processing/Player physics, then restores display/processing state after unchanged-resource checks. NPC breathing and world children remain live. Disposable no-save solo fixture; no physical-device, controller, network or crowd coverage."
+		report["qualification"] = "Single normal Game and original Voss reached through real capital travel/welcome/A movement. Native Inventory/Escape/E/Leave; no rewards or assigned actor positions. Optional npc-prompt-controls or npc-prompt-alternatives borrows camera offset/vitals position and freezes Game processing/Player physics, then restores display/processing state after unchanged-resource checks. Alternatives additionally loans an oversized label width for a supplemental unreadable no-fit control; full details are in npc_prompt.scope. NPC breathing and world children remain live. Disposable no-save solo fixture; no physical-device, controller, network or crowd coverage."
 	if r.flag("fountain-prompt"):
 		report["fountain_prompt"] = fountain_episode
 		report["qualification"] = "Single normal Game and unchanged capital HUD; shared ordinary Pause/Travel/welcome boot, then three real S/S/W holds and four settled native frames. No assigned position, camera, quest, target, prompt visibility, resources or saves. Geometry includes the entire label pill and shaped text cells plus authored outline. Source-derived expected overlap is not native acceptance; no physical touch/controller or ENet claim."
@@ -287,7 +287,9 @@ func physics_tick(delta: float) -> void:
 		held_key = 0
 		fountain_move_active = false
 	if collecting:
-		motion.append({"frame": Engine.get_physics_frames(), "at": _vec(p.global_position), "velocity": _vec(p.velocity)})
+		motion.append({"frame": Engine.get_physics_frames(), "at": _vec(p.global_position), "velocity": _vec(p.velocity),
+			"a_down": Input.is_key_pressed(KEY_A), "overlay": g.input_overlay_up(), "focused": g.get_window().has_focus(),
+			"intent_move": _vec(p.intent_move), "menu": g.menus.current, "at_ms": Time.get_ticks_msec()})
 	if pending != "":
 		observed = _snapshot(pending)
 		pending = ""

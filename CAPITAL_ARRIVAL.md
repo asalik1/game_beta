@@ -192,6 +192,39 @@ Final acceptance is recorded in that lane's `root-review.json`
 
 ## Selected NPC prompt placement
 
+Selected factory-citizen and ordinary scenery prompts now seek a clear position
+around both their owner and the local hero. The pre-draw pass preserves a clear
+authored anchor, then tries above/right/left/below positions. If those are
+obstructed, it considers nearby vertical positions along the two side lanes at
+HUD/body rectangle edges. Each accepted position fits the viewport and avoids
+the declared HUD/body bounds. Tracker reservations still use authored anchors.
+Menus and dialogue hold the last placement; full text, opacity, z2, reach and
+actions stay intact. Marked landmarks retain their own placement, and hidden
+victory-arch hotspots explicitly retain their lifted arch labels.
+
+This remains a bounded presentation rule. No-fit keeps the complete authored
+prompt and can still cover a body. Conservative sprite cells and the existing
+hero HUD proxy are not exact painted bounds. Bottom ability/touch controls,
+transient reward text and world foliage are not exhaustively represented by the
+production HUD list. Candidate changes can snap during motion; every actor pose,
+crowded world, moving online overlay and physical device is not established.
+
+Use `capital_arrival --npc-prompt --npc-prompt-alternatives` for the current
+controlled alternate-lane and oversized-label fallback probes after the normal
+real interaction checks, with display restoration at the end. The oversized image is supplemental
+unreadable no-fit evidence. The retained `--npc-prompt-controls` belongs to the
+historical above-only fallback contract. See WORLD_PROMPT_CLEARANCE.md for the
+original live chest, generic remap, victory-arch scopes and exact current
+acceptance evidence.
+
+### September 17 behavior and validation (historical)
+
+The following records the previously accepted upper-position-only rule and its
+original evidence. Its old scenery/blocked-upper-lane behavior is superseded by
+the current rule described above; the historical sources and results remain
+preserved.
+
+
 Selected factory-citizen prompts now move above both the citizen and local hero
 when their authored pill would cover either body. The pre-draw pass uses the
 current camera and full shaped text bounds, and accepts one upper position only

@@ -6,7 +6,15 @@ var decision := -1
 
 
 func _ready() -> void:
-	if flag("interaction-copy"):
+	if flag("generic-prop-prompt") and not flag("victory-arch-prompt"):
+		push_error("Generic prop prompt requires victory-arch-prompt")
+		finish(1)
+		return
+	if flag("victory-arch-prompt") and (flag("interaction-copy") or flag("interaction-copy-guards") or flag("touch")):
+		push_error("Victory arch prompt requires exclusive keyboard mode")
+		finish(1)
+		return
+	if flag("interaction-copy") or flag("victory-arch-prompt"):
 		var root := ProjectSettings.globalize_path("user://").replace("\\", "/").to_lower()
 		if not root.contains("/build/qa/") or flag("keyboard-hints") or flag("pad-context") or flag("no-capture"):
 			push_error("Interaction-copy requires isolated build/qa profile and exclusive capture mode")
@@ -25,6 +33,11 @@ func _ready() -> void:
 		var copy_error: String = await preload("res://scripts/tests/interaction_copy_live.gd").run(self)
 		if copy_error != "": push_error(copy_error)
 		finish(0 if copy_error == "" else 1)
+		return
+	if flag("victory-arch-prompt"):
+		var arch_error: String = await preload("res://scripts/tests/interaction_copy_live.gd").run_arch(self)
+		if arch_error != "": push_error(arch_error)
+		finish(0 if arch_error == "" else 1)
 		return
 	if flag("keyboard-hints"):
 		var user_root := ProjectSettings.globalize_path("user://").replace("\\", "/")

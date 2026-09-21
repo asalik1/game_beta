@@ -590,6 +590,8 @@ func spawn_victory_gates(zi: int = -1) -> void:
 				child.visible = false
 			elif child is Label:
 				child.position.y = -(34.0 + gate_h * Balance.PROP_PROMPT_HEIGHT)
+				# Hidden arch hotspots own this lifted anchor, outside generic body clearance.
+				child.remove_meta("npc_prompt_anchor")
 
 
 func _gate_use(kind: String) -> void:
@@ -2363,8 +2365,9 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	prompt.add_theme_stylebox_override("normal", pill)
 	_size_factory_prompt(prompt)
 	prompt.position = Vector2(8.0 - prompt.size.x * 0.5, -60)
-	if not scenery_prop:
-		prompt.set_meta("npc_prompt_anchor", prompt.position)
+	# Shared factory anchor: scenery prompts also avoid the local hero/HUD.
+	# Landmark prompts can later override their anchor and keep their own path.
+	prompt.set_meta("npc_prompt_anchor", prompt.position)
 	prompt.visible = false
 	npc.add_child(prompt)
 	world.add_child(npc)

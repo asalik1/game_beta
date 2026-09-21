@@ -80,6 +80,10 @@ class WireSession extends "res://scripts/net/net_session.gd":
 
 
 func _ready() -> void:
+	if flag("world-prompt-probe") and not flag("corridor-camera"):
+		push_error("world-prompt-probe requires corridor-camera")
+		finish(1)
+		return
 	var modes := int(flag("party")) + int(flag("solo-controls")) + int(flag("blink-mouth")) + int(flag("paladin-mouth")) + int(flag("corridor-camera"))
 	if modes != 1:
 		push_error("Choose exactly one shortcut mode: --party, --solo-controls, --blink-mouth, --paladin-mouth or --corridor-camera")

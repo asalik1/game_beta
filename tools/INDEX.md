@@ -153,14 +153,34 @@ The 61 numeric checks do not prove text paint order, so keep the full before/aft
 comparison. No QA rows or UIDs were added. See CAPITAL_ARRIVAL.md for the mobile
 stop-position qualification and actual route limits.
 
-Selected citizen prompt placement: add --npc-prompt to capital_arrival for
-actual travel/A/Inventory/Escape/E/Leave, eight normal original frames, complete
-glyph bounds, independent painted bodies, unchanged resources and held dialogue
-placement. Add --npc-prompt-controls for three explicitly borrowed HUD/camera
-fallback/restoration frames. Use the same isolated capital-arrival-native-candidate
-profile. These strict checks have no expected-failure whitelist. Read the actual
-receipt and original images; dialogue is opaque and fallback can cover heads.
-See CAPITAL_ARRIVAL.md. Keep fountain/default/framing regressions separate.
+Selected factory prompt placement: add `--npc-prompt` to `capital_arrival` for
+actual travel/A/Inventory/Escape/E/Leave, complete shaped text, independent
+painted bodies, unchanged resources and held dialogue placement. Add
+`--npc-prompt-alternatives` for controlled HUD/camera obstructions, clear alternate
+lanes and a separately oversized-label no-fit/restoration case. Its unreadable
+fallback frame is supplemental evidence. Use the isolated
+`capital-arrival-native-candidate` profile and inspect actual receipts/originals.
+The retained `--npc-prompt-controls` is the historical above-only fallback
+contract, not current alternate-placement acceptance. Keep fountain/default/
+framing regressions separate. See CAPITAL_ARRIVAL.md and WORLD_PROMPT_CLEARANCE.md.
+
+`shot.bat shortcuts --corridor-camera --corridor-hot --world-prompt-probe
+--timeout=300` adds strict original live-chest selection, complete-prompt/body/
+HUD observations and native confirmation/Cancel to the controlled hot-S route.
+Requires fresh shortcut-isolated APPDATA; no lazy/horizontal combination. Optional
+`--arrival-readability` retains arrival checks. Missing/expired chest is a failed
+incomplete run; no reroll or offer-lifetime loan. Read `world_prompt` in the
+existing `corridor_receipt.json` and all originals. Live AI/HP remain active.
+
+`shot.bat controller --victory-arch-prompt --generic-prop-prompt --timeout=300`
+uses actual controlled factory spawns, native movement and real Controls key
+capture for arch lift and non-landmark prop remap/reach. The generic flag requires
+the arch flag. The old visible book stand-in is prompt/remap/reach evidence only,
+not art acceptance; production arch book bodies stay hidden. The receipt is
+`shots/controller/victory_arch_prompt/acceptance_arch.json`. Exact settings/bind
+sidecars and owned nodes are restored. No earned victory, gate travel, ordinary
+campaign, generic authored-clear geometry or physical-device claim. Run the
+existing `--interaction-copy --interaction-copy-guards` mode separately.
 
 
 Keyboard menu short taps: add `--menu-shortcuts --timeout=360` to

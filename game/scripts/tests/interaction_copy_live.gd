@@ -15,6 +15,9 @@ var painted = Painted.new()
 var npc: Dictionary = {}
 var prop: Dictionary = {}
 var owned: Node2D
+var arch_entries: Array[Dictionary] = []
+var arch_nodes: Array[Node] = []
+var arch_saved: Dictionary = {}
 var rows: Array[Dictionary] = []
 var images: Array[String] = []
 var observations: Array[Dictionary] = []
@@ -464,3 +467,244 @@ func _full_label(label: Label, shape: Dictionary) -> bool:
 		and label.visible_ratio >= 1.0 and label.max_lines_visible == -1 \
 		and label.get_visible_line_count() == label.get_line_count() \
 		and label.get_global_rect().grow(0.5).encloses(Geometry.to_rect(shape.cells))
+
+
+static func run_arch(rig: ShotRig) -> String:
+	var q := new()
+	q.r = rig; q.g = rig.game
+	q.n = Native.new(); q.n.r = rig; q.n.g = q.g; q.n.m = q.g.menus
+	return await q._arch_run()
+
+
+func _arch_files() -> Dictionary:
+	var result := {}
+	for base in ["user://keybinds.json", "user://settings.json"]:
+		for suffix in ["", ".bak", ".tmp"]:
+			var path: String = base + suffix
+			result[path] = FileAccess.get_file_as_bytes(path) if FileAccess.file_exists(path) else null
+	return result
+
+
+func _arch_run() -> String:
+	var directory := r.shot_dir
+	r.shot_dir = directory.path_join("victory_arch_prompt")
+	arch_saved = {"binds": g.binds.duplicate(true), "settings": g.settings.duplicate(true),
+		"files": _arch_files(), "gates_up": g.victory_gates_up, "paused": g.get_tree().paused,
+		"scenery": g.zone_scenery.duplicate(true), "interactables": g.interactables.duplicate(),
+		"quest": g.quest_key, "flags": g.flags.duplicate(true), "chapter": g.chapter_id,
+		"children": g.world.get_children()}
+	var error := await _arch_exercise()
+	await _arch_cleanup()
+	_check("arch.completed", error == "", error)
+	for i in n.rows.size(): _check("arch.native.%d" % i, bool(n.rows[i].passed), n.rows[i])
+	var failures := 0
+	for row: Dictionary in rows: failures += int(not row.passed)
+	var report := {"complete": true, "accepted": failures == 0, "failures": failures,
+		"rows": rows, "images": images, "observations": observations, "native_rows": n.rows, "generic_prop_enabled": r.flag("generic-prop-prompt"),
+		"scope": "Controlled peaceful solo village: actual victory-gate factory, not earned boss victory. Native keyboard movement selects a real gate; real Controls button/key capture remaps E/F3/ON-SCREEN KEYBOARD/E. Every gate keeps its factory-recorded lifted height and hidden book body. A separate owned non-landmark factory book tests generic remap and native reach selection. No gate action, chapter travel, AI/collision/health loan, physical-device or network claim. Exact settings/keybinds main/bak/tmp bytes restored; only synchronously factory-created nodes removed. Generic authored-clear lane retention is NOT covered by this probe. Original images require independent review."}
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(r.shot_dir))
+	var file := FileAccess.open(r.shot_dir.path_join("acceptance_arch.json"), FileAccess.WRITE)
+	r.shot_dir = directory
+	if file == null: return "cannot write arch receipt"
+	file.store_string(JSON.stringify(report, "\t") + "\n"); file.close()
+	return error if error != "" else "" if failures == 0 else "arch strict findings: %d" % failures
+
+
+func _arch_style(label: Label) -> Dictionary:
+	return {"font": label.get_theme_font("font"), "size": label.get_theme_font_size("font_size"),
+		"pill": label.get_theme_stylebox("normal"), "outline": label.get_theme_constant("outline_size"),
+		"color": label.get_theme_color("font_color"), "clip": label.clip_text,
+		"ratio": label.visible_ratio, "lines": label.max_lines_visible, "modulate": label.modulate,
+		"self_modulate": label.self_modulate}
+
+
+func _arch_record(entry: Dictionary, gate: bool) -> Dictionary:
+	var label: Label = entry.prompt
+	return {"entry": entry, "node": entry.node, "label": label, "gate": gate,
+		"position": label.position, "reach": entry.reach, "action": entry.action,
+		"authored": String(label.get_meta("interaction_authored_copy", "")), "style": _arch_style(label)}
+
+
+func _arch_exercise() -> String:
+	if not _check("arch.setup", g.no_saves and g.save_slot == -1 and not g.net_online()
+		and g.play_started and g.cur_room == 0 and g.quest_key == "talk" and not g.dev_god
+		and not g.touch_mode and not g.gamepad.active and not g.victory_gates_up
+		and not g.input_overlay_up() and int(g.binds.interact) == KEY_E,
+		"fresh keyboard peaceful village, no existing gates or character slot"):
+		return "invalid controlled arch fixture"
+	var before: Array = g.world.get_children()
+	g.spawn_victory_gates()
+	# No await: every synchronous factory addition belongs to this fixture.
+	for child: Node in g.world.get_children():
+		if not before.has(child): arch_nodes.append(child)
+	for entry: Dictionary in g.interactables:
+		if arch_nodes.has(entry.node): arch_entries.append(_arch_record(entry, true))
+	if not _check("arch.created", arch_entries.size() >= 2 and g.victory_gates_up,
+		{"hotspots": arch_entries.size(), "owned_nodes": arch_nodes.size()}): return "gate factory incomplete"
+	observations.append({"id": "factory_before_predraw", "positions": _arch_positions(arch_entries)})
+	var selected: Dictionary = arch_entries[0]
+	for item: Dictionary in arch_entries:
+		if g.local_player.global_position.distance_to(item.node.global_position) < g.local_player.global_position.distance_to(selected.node.global_position): selected = item
+	var near: Vector2 = selected.node.global_position + Vector2(0, float(selected.reach) * 0.7)
+	if not await _arch_walk(near, "gate_approach"): return "native gate approach failed"
+	if not await _arch_view(arch_entries, selected, "01_gate_e"): return "gate selection or presentation failed"
+	for code in [KEY_F3, KEY_KEYBOARD, KEY_E]:
+		if not await _arch_remap(arch_entries, code): return "gate native remap failed"
+		await _arch_view(arch_entries, selected, "02_gate_%d" % code)
+	if not r.flag("generic-prop-prompt"): return ""
+	# A non-landmark factory prop is a separate controlled geometry fixture.
+	var book: Node2D = g._make_npc("book", g.local_player.global_position + Vector2(130, 120),
+		PROP_COPY, Callable(), "", Balance.PROP_HOTSPOT_REACH)
+	arch_nodes.append(book)
+	var generic := {}
+	for entry: Dictionary in g.interactables:
+		if entry.node == book: generic = _arch_record(entry, false)
+	if not _check("generic.created", not generic.is_empty(), "actual non-landmark factory book" ): return "generic factory missing"
+	arch_entries.append(generic)
+	var one: Array[Dictionary] = [generic]
+	if not await _arch_walk(book.global_position + Vector2(0, float(generic.reach) * 0.7), "generic_inside"): return "generic native approach failed"
+	if not await _arch_view(one, generic, "03_generic_e"): return "generic positive selection failed"
+	for code in [KEY_F3, KEY_KEYBOARD, KEY_E]:
+		if not await _arch_remap(one, code): return "generic native remap failed"
+		await _arch_view(one, generic, "04_generic_%d" % code)
+	if not await _arch_walk(book.global_position + Vector2(0, float(generic.reach) + 35.0), "generic_outside"): return "generic native departure failed"
+	await r.frames(3)
+	_check("generic.outside", g.local_player.global_position.distance_to(book.global_position) > float(generic.reach)
+		and not generic.label.is_visible_in_tree() and _arch_nearest().get("node") != book,
+		{"distance": g.local_player.global_position.distance_to(book.global_position), "reach": generic.reach})
+	images.append(r.shot("05_generic_outside"))
+	return ""
+
+
+func _arch_nearest() -> Dictionary:
+	var best := {}; var distance := INF
+	for entry: Dictionary in g.interactables:
+		if not is_instance_valid(entry.get("node")): continue
+		var d: float = g.local_player.global_position.distance_to(entry.node.global_position)
+		if d < float(entry.get("reach", Balance.INTERACT_RANGE)) and d < distance:
+			distance = d; best = entry
+	return best
+
+
+func _arch_walk(destination: Vector2, id: String) -> bool:
+	var start: Vector2 = g.local_player.global_position
+	var deadline := Time.get_ticks_msec() + 8000
+	var samples: Array[Dictionary] = []
+	while g.local_player.global_position.distance_to(destination) > 10.0 and Time.get_ticks_msec() < deadline:
+		if g.input_overlay_up(): break
+		var delta: Vector2 = destination - g.local_player.global_position
+		held = (KEY_D if delta.x > 0.0 else KEY_A) if absf(delta.x) > absf(delta.y) else (KEY_S if delta.y > 0.0 else KEY_W)
+		_key(held, true)
+		await r.frames(1)
+		await g.get_tree().physics_frame
+		_key(held, false); held = 0
+		await r.frames(1)
+		var winner: Dictionary = _arch_nearest()
+		samples.append({"position": [g.local_player.global_position.x, g.local_player.global_position.y],
+			"nearest": winner.node.get_instance_id() if not winner.is_empty() else 0})
+	if held != 0: _key(held, false); held = 0
+	var moved: float = start.distance_to(g.local_player.global_position)
+	observations.append({"id": id, "native_samples": samples})
+	return _check(id + ".native_arrival", moved > 2.0 and g.local_player.global_position.distance_to(destination) <= 10.0,
+		{"displacement": moved, "remaining": g.local_player.global_position.distance_to(destination)})
+
+
+func _arch_positions(entries: Array[Dictionary]) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for record: Dictionary in entries:
+		var label: Label = record.label
+		var row := {"center_x": label.position.x + label.size.x * 0.5, "y": label.position.y, "width": label.size.x, "text": label.text, "anchors": {}}
+		for key in ["npc_prompt_anchor", "landmark_prompt_anchor"]:
+			if label.has_meta(key):
+				var anchor: Vector2 = label.get_meta(key)
+				row.anchors[key] = {"center_x": anchor.x + label.size.x * 0.5, "y": anchor.y}
+		result.append(row)
+	return result
+
+
+func _arch_view(entries: Array[Dictionary], selected: Dictionary, id: String) -> bool:
+	for i in 2: await RenderingServer.frame_post_draw
+	var winner: Dictionary = _arch_nearest()
+	var positive := _check(id + ".selection", winner.get("node") == selected.node
+		and selected.label.is_visible_in_tree() and g.interact_in_range, "ordinary nearest selector and actual visible prompt")
+	for i in entries.size():
+		var record: Dictionary = entries[i]
+		var label: Label = record.label
+		var full: Dictionary = pill._fountain_text(label)
+		var expected: String = OS.get_keycode_string(int(g.binds.interact)).to_upper() + String(record.authored).substr(1)
+		_check(id + ".contract.%d" % i, record.entry.reach == record.reach and record.entry.action == record.action
+			and String(label.get_meta("interaction_authored_copy", "")) == record.authored
+			and label.text == expected and _arch_style(label) == record.style and bool(full.complete), full)
+		if bool(record.gate):
+			_check(id + ".arch_lift.%d" % i, label.position.y == record.position.y
+				and not label.has_meta("npc_prompt_anchor") and not record.entry.sprite.visible,
+				{"factory_y": record.position.y, "actual_y": label.position.y})
+		else:
+			_check(id + ".generic_no_landmark", not label.has_meta("landmark_prompt_anchor") and label.has_meta("npc_prompt_anchor") and record.entry.sprite.visible, "generic prop branch, visible factory body")
+	var selected_full: Dictionary = pill._fountain_text(selected.label)
+	_check(id + ".visible_full", bool(selected_full.complete) and float(selected_full.alpha) > 0.99
+		and g.get_viewport().get_visible_rect().encloses(_rect(selected_full.outer)), selected_full)
+	observations.append({"id": id, "positions": _arch_positions(entries)})
+	images.append(r.shot(id))
+	return positive
+
+
+func _arch_remap(entries: Array[Dictionary], code: int) -> bool:
+	g.menus.open_keybinds()
+	await r.frames(3)
+	if not await n._button("Talk / interact") or g.menus.listening_action != "interact":
+		_check("arch.bind.listening", false, g.menus.listening_action); return false
+	var before := _arch_positions(entries)
+	_key(code, true)
+	var after := _arch_positions(entries) # synchronous: no process/draw between observations
+	_key(code, false)
+	for i in entries.size():
+		_check("arch.bind.%d.center_y.%d" % [code, i], absf(float(before[i].center_x) - float(after[i].center_x)) <= 0.01
+			and before[i].y == after[i].y and _same_anchors(before[i].anchors, after[i].anchors), {"before": before[i], "after": after[i]})
+		if code == KEY_KEYBOARD:
+			_check("arch.bind.long_growth.%d" % i, float(after[i].width) > float(before[i].width), after[i])
+		elif code == KEY_E:
+			_check("arch.bind.short_shrink.%d" % i, float(after[i].width) < float(before[i].width), after[i])
+	await r.frames(3)
+	var applied := _check("arch.bind.%d.applied" % code, int(g.binds.interact) == code
+		and g.menus.listening_action == "" and _stored_binds(g.binds), "actual capture and primary JSON persisted")
+	await _close()
+	return applied
+
+
+func _arch_cleanup() -> void:
+	if held != 0: _key(held, false); held = 0
+	for code in [KEY_W, KEY_A, KEY_S, KEY_D, KEY_E, KEY_F3, KEY_KEYBOARD]: _key(code, false)
+	g.menus.listening_action = ""
+	await _close()
+	for record: Dictionary in arch_entries: g.interactables.erase(record.entry)
+	for key in g.zone_scenery:
+		var scenery: Array = g.zone_scenery[key]
+		for node: Node in arch_nodes: scenery.erase(node)
+	var refs: Array[WeakRef] = []
+	for node: Node in arch_nodes:
+		if is_instance_valid(node): refs.append(weakref(node)); node.queue_free()
+	g.victory_gates_up = bool(arch_saved.gates_up)
+	g.binds = arch_saved.binds.duplicate(true); g.settings = arch_saved.settings.duplicate(true)
+	g.refresh_interaction_copy()
+	await r.frames(3)
+	for path: String in arch_saved.files:
+		var bytes: Variant = arch_saved.files[path]
+		if bytes == null:
+			if FileAccess.file_exists(path): DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+		else:
+			var file := FileAccess.open(path, FileAccess.WRITE)
+			if file != null: file.store_buffer(bytes); file.close()
+	var removed := true
+	for ref: WeakRef in refs: removed = removed and ref.get_ref() == null
+	_check("arch.cleanup.owned", removed and g.interactables == arch_saved.interactables
+		and g.zone_scenery == arch_saved.scenery and g.victory_gates_up == arch_saved.gates_up,
+		"only synchronous factory additions removed; prior memberships intact")
+	_check("arch.cleanup.settings", g.binds == arch_saved.binds and g.settings == arch_saved.settings
+		and _arch_files() == arch_saved.files, "runtime values and exact main/bak/tmp bytes/existence")
+	_check("arch.cleanup.story", g.quest_key == arch_saved.quest and g.flags == arch_saved.flags
+		and g.chapter_id == arch_saved.chapter and g.no_saves and g.save_slot == -1, "no gate action or chapter travel")
+	var released := true
+	for code in [KEY_W, KEY_A, KEY_S, KEY_D, KEY_E, KEY_F3, KEY_KEYBOARD, KEY_ESCAPE]: released = released and not Input.is_key_pressed(code)
+	_check("arch.cleanup.input", released and not g.menus.is_open() and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT), "all native inputs released")
+	g.request_pause(bool(arch_saved.paused))

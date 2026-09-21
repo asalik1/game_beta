@@ -11,6 +11,10 @@ var views: Array[Dictionary] = []
 var input_observations: Array[Dictionary] = []
 var failures := 0
 var borrowed := {}
+var alternative_min_width := Vector2.ZERO
+var alternative_min_width_loaned := false
+var alternative_size := Vector2.ZERO
+var alternative_contract: Dictionary = {}
 
 
 static func run(parent: RefCounted) -> Dictionary:
@@ -22,7 +26,8 @@ static func run(parent: RefCounted) -> Dictionary:
 	await probe._restore()
 	return {"error": error if error != "" else "NPC prompt checks failed" if probe.failures > 0 else "",
 		"views": probe.views, "input_observations": probe.input_observations, "failures": probe.failures, "controlled": parent.r.flag("npc-prompt-controls"),
-		"scope": "Existing real travel/A movement, selected Voss, native Inventory/Escape/E/Leave. Optional display-only controls freeze Game/Player physics and borrow vitals position/camera offset; no actor pose/resource reset. Alpha >=0.15 bounds include carried art. No physical-device/network/crowd claim; originals require review.",
+		"alternatives": parent.r.flag("npc-prompt-alternatives"),
+		"scope": "Existing real travel/A movement, selected Voss, native Inventory/Escape/E/Leave. Optional display-only controls freeze Game/Player physics and borrow vitals position/camera offset; no actor pose/resource reset. Alpha >=0.15 bounds include carried art. Optional alternatives mode borrows the same display state plus a label minimum-width loan; its impossible-fit frame is a supplemental unreadable control, never visual acceptance. No physical-device/network/crowd claim; originals require review.",
 		"sources": {"game": FileAccess.get_sha256("res://scripts/game.gd"),
 			"factory": FileAccess.get_sha256("res://scripts/game_world.gd"),
 			"tracker": FileAccess.get_sha256("res://scripts/ui/tracker_clearance.gd"),
@@ -36,6 +41,9 @@ func _check(id: String, okay: bool, detail: Variant) -> bool:
 
 
 func _exercise() -> String:
+	if q.r.flag("npc-prompt-alternatives") and q.r.flag("npc-prompt-controls"):
+		_check("alt.exclusive", false, "Old fallback and new alternative contracts are separate episodes")
+		return "Do not combine old controls and alternatives"
 	if not _check("exclusive", not q.r.flag("baseline") and not q.r.flag("arrival-consumers")
 			and not q.r.flag("fountain-prompt") and not q.r.flag("no-capture"), "isolated strict NPC continuation"):
 		return "NPC mode cannot be combined with baseline/other episodes/no-capture"
@@ -100,6 +108,10 @@ func _exercise() -> String:
 	if q.r.flag("npc-prompt-controls"):
 		if failures > 0: return "controls require a passing actual upper-lane witness"
 		await _controls()
+	if q.r.flag("npc-prompt-alternatives"):
+		if failures > 0: return "alternatives require a passing actual upper-lane journey witness"
+		var alternative_error: String = await _alternatives()
+		if alternative_error != "": return alternative_error
 	return ""
 
 
@@ -251,6 +263,207 @@ func _controls() -> void:
 	_check("viewport_control.fallback", prompt.position.distance_to(anchor) <= 0.01, "readable authored fallback")
 	await _restore()
 	await _view("10_npc_restored", true)
+
+
+## Optional alternatives mode: an upper-lane obstruction must yield a readable
+## side/below placement, judged only by independent measurement. It borrows the
+## same display state as _controls plus a label minimum-width loan; it never
+## invokes or reimplements the production candidate solver.
+func _alternatives() -> String:
+	alternative_contract = _alternative_contract()
+	var error: String = await _alternatives_body()
+	await _alternatives_cleanup()
+	if error != "": return error
+	await _view("14_npc_alternatives_restored", true)
+	return ""
+
+
+func _alternatives_body() -> String:
+	await q.r.frames(2)
+	borrowed = {"game_process": g.is_processing(), "physics": p.is_physics_processing(),
+		"camera_offset": g.camera.offset, "vitals_position": g.hud.vitals_panel.position,
+		"economy": q._fountain_economy(), "hero_world": p.global_position, "npc_world": entry.node.global_position}
+	g.set_process(false)
+	p.set_physics_process(false)
+	await q.r.frames(2)
+	await RenderingServer.frame_post_draw
+	var clear: Dictionary = _geometry()
+	var panel: Control = g.hud.vitals_panel
+	var moved_prompt: Rect2 = _rect(clear.bounds)
+	var authored: Rect2 = _rect(clear.authored)
+	# Same real-vitals obstruction idiom as _controls: cover the previously
+	# OBSERVED upper lane only; the authored anchor rectangle stays untouched.
+	panel.position = Vector2(moved_prompt.get_center().x - panel.size.x * 0.5,
+		minf(moved_prompt.end.y + 1.0, authored.position.y - 2.0) - panel.size.y)
+	await q.r.frames(2)
+	await RenderingServer.frame_post_draw
+	if not _check("alt.setup", panel.get_global_rect().intersects(moved_prompt)
+			and not panel.get_global_rect().intersects(authored), "real vitals blocks the observed upper lane only"):
+		return "alternative-lane obstruction setup failed"
+	await _alternative_view("11_npc_alternative")
+	panel.position = borrowed.vitals_position
+	await q.r.frames(2)
+	await RenderingServer.frame_post_draw
+	# Independent second setup: less than a pill above the actual painted heads.
+	# It may select a different side/below lane; it is not an impossible-fit loan.
+	var current: Dictionary = _geometry()
+	var top: float = minf(_rect(current.hero).position.y, _rect(current.npc).position.y)
+	var height: float = _rect(current.bounds).size.y
+	var screen_shift := Vector2(g.hud.minimap_root.get_global_rect().get_center().x
+		- _rect(current.bounds).get_center().x, height * 0.5 - top)
+	g.camera.offset -= g.get_viewport().get_canvas_transform().affine_inverse().basis_xform(screen_shift)
+	await q.r.frames(4)
+	await RenderingServer.frame_post_draw
+	var edge: Dictionary = _geometry()
+	var edge_top: float = minf(_rect(edge.hero).position.y, _rect(edge.npc).position.y)
+	if not _check("alt.viewport_setup", edge_top > 0.0 and edge_top < _rect(edge.bounds).size.y,
+			"Actual heads are on-screen with less than one pill of top space"):
+		return "alternative viewport setup failed"
+	await _alternative_view("12_npc_viewport_alternative")
+	g.camera.offset = borrowed.camera_offset
+	await q.r.frames(4)
+	return await _impossible_fit()
+
+
+func _alternative_view(label: String) -> Dictionary:
+	await q.r.frames(2)
+	await RenderingServer.frame_post_draw
+	var row: Dictionary = _geometry()
+	row["id"] = label
+	var full: Dictionary = row.full
+	var bounds: Rect2 = _rect(full.prompt.outer)
+	var hero: Rect2 = _rect(row.hero)
+	var npc_body: Rect2 = _rect(row.npc)
+	var authored: Rect2 = _rect(row.authored)
+	var bottom_hud: Array[Dictionary] = _declared_extra_hud()
+	var bottom_hits: Array[Dictionary] = []
+	for extra: Dictionary in bottom_hud:
+		if bounds.intersects(_rect(extra.rect).grow(-0.5)): bottom_hits.append(extra)
+	var displaced_x: bool = absf(bounds.get_center().x - authored.get_center().x) > 0.5
+	var below_both: bool = bounds.position.y >= maxf(hero.end.y, npc_body.end.y) - 0.01
+	row["bottom_hud"] = bottom_hud
+	row["bottom_hud_hits"] = bottom_hits
+	row["displaced_x"] = displaced_x
+	row["below_both_bodies"] = below_both
+	views.append(row)
+	_check(label + ".selected", full.prompt_visible and full.visible_prompts == 1
+		and full.distance < full.reach and g.interact_in_range, full)
+	_check(label + ".copy", full.full_text and full.prompt.text == g.touchify("E — Clerk Voss")
+		and prompt.z_index == 2 and full.prompt.alpha >= 0.99, full.prompt)
+	_check(label + ".viewport", full.on_screen, full.prompt)
+	_check(label + ".hud", full.tracker_clear and full.header_complete and full.other_hud_hits.is_empty()
+		and bottom_hits.is_empty(), row)
+	_check(label + ".hero_clear", row.hero_clear, row)
+	_check(label + ".npc_clear", row.npc_clear, row)
+	# Either side is acceptable; no single direction is claimed proven. An
+	# unchanged overlapping authored placement cannot satisfy this contract.
+	_check(label + ".contract", _alternative_contract() == alternative_contract,
+		"Actual action/reach/art/font/pill contract is unchanged during this placement")
+	_check(label + ".alternate_lane", displaced_x or below_both,
+		{"displaced_x": displaced_x, "below_both_bodies": below_both,
+		"bounds": q._fountain_rect(bounds), "authored": row.authored})
+	q.r.shot(label, "NPC prompt alternative lane: obstructed upper lane; independent side/below acceptance")
+	return row
+
+
+func _declared_extra_hud() -> Array[Dictionary]:
+	# Actual declared controls, independently read: no production blocker API.
+	# Top vitals/info/minimap/tracker are already measured by _fountain_geometry.
+	var rects: Array[Dictionary] = []
+	for field: String in ["boss_box", "mob_box", "rival_box", "chat_input"]:
+		_extra_hud_tree(rects, g.hud.get(field), field)
+	_extra_hud_tree(rects, g.hud.wayfinder.quest_root, "wayfinder")
+	_extra_hud_tree(rects, g.hud.combat_feedback.target_cue, "target_cue")
+	for i in g.hud.party_slots.size():
+		_extra_hud_tree(rects, g.hud.party_slots[i].root, "party_%d" % i)
+	for i in g.hud.slot_boxes.size():
+		for key: String in ["border", "name"]:
+			_extra_hud_tree(rects, g.hud.slot_boxes[i][key], "ability_%d_%s" % [i, key])
+	for i in g.hud._log_lines.size():
+		_extra_hud_tree(rects, g.hud._log_lines[i], "reward_%d" % i)
+	if is_instance_valid(g._touch_hud) and g._touch_hud.visible:
+		_extra_hud_tree(rects, g._touch_hud, "touch")
+	return rects
+
+
+func _extra_hud_tree(out: Array[Dictionary], candidate: Variant, field: String) -> void:
+	if not is_instance_valid(candidate) or not candidate is Node: return
+	var node: Node = candidate
+	if node is CanvasItem and (not node.is_visible_in_tree() or q._fountain_alpha(node) <= 0.01): return
+	if node is Control and node.size.x > 0.0 and node.size.y > 0.0:
+		var bounds: Rect2 = node.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, node.size)
+		if node is Label:
+			if node.text.is_empty(): return
+			bounds = _rect(q._fountain_text(node).outer)
+		out.append({"field": field, "rect": q._fountain_rect(bounds)})
+	for child in node.get_children(): _extra_hud_tree(out, child, field + "/" + String(child.name))
+
+
+func _alternative_contract() -> Dictionary:
+	var pill: StyleBox = prompt.get_theme_stylebox("normal")
+	var fill: Dictionary = {}
+	if pill is StyleBoxFlat:
+		fill = {"background": pill.bg_color, "border": pill.border_color,
+			"border_widths": [pill.border_width_left, pill.border_width_top, pill.border_width_right, pill.border_width_bottom],
+			"corners": [pill.corner_radius_top_left, pill.corner_radius_top_right, pill.corner_radius_bottom_left, pill.corner_radius_bottom_right]}
+	return {"node": entry.node.get_instance_id(), "sprite": sprite.get_instance_id(),
+		"prompt": prompt.get_instance_id(), "action": entry.action, "reach": entry.reach,
+		"pose": _pose(), "copy": prompt.text, "z": prompt.z_index,
+		"font": prompt.get_theme_font("font").get_instance_id(), "font_size": prompt.get_theme_font_size("font_size"),
+		"font_color": prompt.get_theme_color("font_color"), "outline_color": prompt.get_theme_color("font_outline_color"),
+		"outline_size": prompt.get_theme_constant("outline_size"), "pill": pill.get_instance_id(),
+		"fill": fill, "margins": [pill.get_content_margin(SIDE_LEFT), pill.get_content_margin(SIDE_TOP),
+			pill.get_content_margin(SIDE_RIGHT), pill.get_content_margin(SIDE_BOTTOM)],
+		"clip": prompt.clip_text, "ratio": prompt.visible_ratio, "max_lines": prompt.max_lines_visible,
+		"wrap": prompt.autowrap_mode}
+
+
+func _impossible_fit() -> String:
+	# Supplemental unreadable control, never visual acceptance: a minimum-width
+	# loan wider than the viewport must keep complete text at the authored
+	# fallback anchor. _view() is intentionally not used here because it
+	# unconditionally demands viewport enclosure.
+	var viewport: Rect2 = g.get_viewport_rect()
+	var screen_x_per_local_x: float = absf(prompt.get_global_transform_with_canvas().x.x)
+	if not _check("impossible.axis", screen_x_per_local_x > 0.0, screen_x_per_local_x):
+		return "Cannot make an X-width loan under this degenerate canvas transform"
+	alternative_min_width = prompt.custom_minimum_size
+	alternative_size = prompt.size
+	alternative_min_width_loaned = true
+	prompt.custom_minimum_size = Vector2((viewport.size.x + 64.0) / screen_x_per_local_x, prompt.custom_minimum_size.y)
+	await q.r.frames(3)
+	await RenderingServer.frame_post_draw
+	var shape: Dictionary = q._fountain_text(prompt)
+	var bounds: Rect2 = _rect(shape.outer)
+	var row: Dictionary = {"id": "13_npc_impossible_fit", "shape": shape,
+		"viewport": q._fountain_rect(viewport), "local_position": q._vec(prompt.position),
+		"anchor": q._vec(anchor),
+		"supplemental": "unreadable display-width loan; fallback/cleanup evidence only"}
+	views.append(row)
+	if not _check("impossible.loan_measured", bounds.size.x > viewport.size.x, row):
+		return "impossible-fit loan did not exceed usable viewport width before evaluation"
+	_check("impossible.style", _alternative_contract() == alternative_contract, "Only minimum/actual width is loaned")
+	_check("impossible.complete_text", bool(shape.complete) and String(shape.text) == g.touchify("E — Clerk Voss")
+		and float(shape.alpha) >= 0.99 and prompt.z_index == 2, shape)
+	_check("impossible.fallback_anchor", prompt.position.distance_to(anchor) <= 0.01,
+		{"local_position": q._vec(prompt.position), "anchor": q._vec(anchor)})
+	_check("impossible.selected", prompt.is_visible_in_tree() and g.interact_in_range,
+		"selection retained through the unreadable fixture")
+	q.r.shot("13_npc_impossible_fit", "impossible-fit control: complete text at authored fallback; unreadable by design")
+	return ""
+
+
+func _alternatives_cleanup() -> void:
+	if alternative_min_width_loaned and is_instance_valid(prompt):
+		prompt.custom_minimum_size = alternative_min_width
+		prompt.size = alternative_size
+		alternative_min_width_loaned = false
+		await q.r.frames(2)
+		_check("alt.min_width_restored", prompt.custom_minimum_size == alternative_min_width and prompt.size == alternative_size,
+			{"restored": q._vec(prompt.custom_minimum_size), "size": q._vec(prompt.size)})
+	_check("alt.contract_unchanged", _alternative_contract() == alternative_contract,
+		"Actual entry action/reach/identity, source art and full text/style remain unchanged")
+	await _restore()
 
 
 func _restore() -> void:

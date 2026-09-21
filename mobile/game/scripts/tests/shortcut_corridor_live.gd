@@ -18,6 +18,7 @@ var observed_destination := -1
 var arrival_failures: Array = []
 var arrival_controls: Array = []
 var arrival_boot: Dictionary = {}
+var world_prompt: Dictionary = {}
 
 static func run(rig: ShotRig) -> String:
 	var q := new()
@@ -39,7 +40,7 @@ static func run(rig: ShotRig) -> String:
 		"arrival_readability": rig.flag("arrival-readability"), "arrival_ownership": rig.flag("arrival-ownership-controls"), "arrival_failures": q.arrival_failures,
 		"arrival_controls": q.arrival_controls, "arrival_boot": q.arrival_boot,
 		"arrival_scope": "Optional per-render live-entry observations. Default-entry control erases only current cleared-room visited metadata, calls ordinary one-argument _enter_room and restores visited after passive settling. The default-entry control refills the ordinary room potion budget and is not a boot/load substitute. A separate passive real boot observation is recorded here; actual load observations are in the optional solo-controls receipt. No guest/pocket claim. No title/overlay writes during walks. Optional ownership controls run only after every walk completes and make deliberate production HUD calls; each arrival_controls row carries its own scope.",
-		"checks": q.checks, "walks": q.walks, "originals": q.originals,
+		"checks": q.checks, "walks": q.walks, "originals": q.originals, "world_prompt": q.world_prompt,
 		"initial_camera": q.camera_defaults, "cleanup": {"key_released": q.held == 0,
 		"no_signal_observer_installed": not RenderingServer.frame_post_draw.is_connected(q._arrival_boot_frame), "disposable_world_not_restored": true},
 		"scope": "Controlled solo Warrior HOT arrival: ONE forward original unlocked corridor, source-only cleared/zero-alive loan, unbuilt/unvisited/uncleared authored combat destination. No shortcut-open flag loan, no enemy spawn/freeze/aggro/HP/god manipulation. Normal entry spawns real enemies; native movement continues to120px inside destination. Pose before walk and terrain-timer suppression remain controlled setup. Default camera and live AI; no ordinary-campaign, combat-balance, save, ENet or physical-device claim." if rig.flag("corridor-hot") else "Controlled solo Warrior, first qualifying seeded axis-specific shortcut and original unlocked connector; rooms pre-cleared, shortcut flag loaned, poses only before each walk. Default camera/framing/zoom/smoothing/lead/shake; native W/S or A/D continuously held through inset corridor to 120px inside destination play rect. Terrain event timer held high during setup and each rendered observation. No ordinary campaign, earned unlock, combat, save, ENet or physical-device claim.",
@@ -60,6 +61,10 @@ static func run(rig: ShotRig) -> String:
 	return error
 
 func _run() -> String:
+	if r.flag("world-prompt-probe") and (not r.flag("corridor-hot") or not r.flag("corridor-camera")
+			or r.flag("corridor-lazy") or r.flag("corridor-horizontal")
+			or r.flag("arrival-rebuild-controls") or r.flag("arrival-ownership-controls")):
+		return "world-prompt-probe requires hot south corridor mode without lazy/rebuild/ownership controls"
 	if r.flag("arrival-readability") and not (r.flag("corridor-hot") or r.flag("corridor-lazy")):
 		return "arrival-readability requires hot or lazy corridor mode"
 	if r.flag("arrival-rebuild-controls") and (not r.flag("arrival-readability") or r.flag("corridor-hot")):
@@ -213,6 +218,9 @@ func _run_hot() -> String:
 	if not _check("hot.fully_in_view", int(row.partially_clipped_frames) == 0 and float(arrival.get("minimum_margin", -1.0)) >= 0.0,
 			{"walk_clipped_frames": row.partially_clipped_frames, "fully_outside_frames": row.fully_outside_frames,
 			"arrival_ratio": arrival.get("visible_ratio", 0.0), "arrival_minimum_margin": arrival.get("minimum_margin", -1.0), "max_offscreen_observed_ms": row.max_offscreen_observed_ms}): failed = true
+	if r.flag("world-prompt-probe"):
+		var prompt_error: String = await _world_prompt_probe()
+		if prompt_error != "": return prompt_error
 	return "Hot arrival strict findings; inspect complete native evidence" if failed else ""
 
 func _ordinary(fixture: Game, a: int, b: int) -> bool:
@@ -719,3 +727,217 @@ func _ownership_death_dim() -> void:
 		"before": synchronous, "dimmed": dimmed, "after_clear": after_clear, "cancelled": cancelled,
 		"death_target_alpha": target_alpha, "captures": row.captures,
 		"scope": "Explicit controlled flash_title/death_dim/dim calls; not an actual death, respawn, game_flow reset or end-game claim."})
+
+
+func _world_prompt_probe() -> String:
+	# Original hot-room chest only. No spawn, pose, timer, actor or HUD writes.
+	world_prompt = {"complete": false, "error": "", "failures": 0, "views": [], "input": {},
+		"sources": {"helper": FileAccess.get_sha256("res://scripts/tests/shortcut_corridor_live.gd"),
+			"game": FileAccess.get_sha256("res://scripts/game.gd"), "factory": FileAccess.get_sha256("res://scripts/game_world.gd"),
+			"alpha": FileAccess.get_sha256("res://scripts/tests/npc_prompt_live.gd"),
+			"text": FileAccess.get_sha256("res://scripts/tests/capital_arrival_live.gd")},
+		"scope": "Original selected live cursed chest after controlled hot-S corridor arrival. Native one-edge interact and real Cancel. No respawn/reroll/lifespan loan, no healing or actor pose. Alpha bounds include carried art; text cells are shaped bounds. No physical-device, ordinary campaign or universal HUD-clearance claim."}
+	_release()
+	var selection: Dictionary = _world_prompt_selection()
+	world_prompt["selection"] = selection.observation
+	var entry: Dictionary = selection.entry
+	if not bool(selection.valid): return _world_prompt_end("incomplete: original live chest is not the selected nearest entry")
+	var node: Node2D = entry.node
+	var label: Label = entry.prompt
+	var sprite: Sprite2D = entry.sprite
+	var action: Callable = entry.action
+	var reach: float = float(entry.get("reach", Balance.INTERACT_RANGE))
+	var style: Dictionary = _world_prompt_style(label)
+	var paint = preload("res://scripts/tests/npc_prompt_live.gd").new()
+	var text_measure = preload("res://scripts/tests/capital_arrival_live.gd").new()
+	var shape: Dictionary = text_measure._fountain_text(label)
+	var full := Rect2(Vector2(shape.outer.position[0], shape.outer.position[1]), Vector2(shape.outer.size[0], shape.outer.size[1]))
+	var hero: Rect2 = paint._painted(p.sprite)
+	var body: Rect2 = paint._painted(sprite)
+	var hud_hits: Array = _hud_intersections(full)
+	var supplemental: Dictionary = {"boss": g.hud.boss_box, "mob": g.hud.mob_box, "rival": g.hud.rival_box,
+		"wayfinder": g.hud.wayfinder.quest_root, "target_cue": g.hud.combat_feedback.target_cue}
+	for slot in g.hud.party_slots: supplemental["party_" + str(slot.root.get_instance_id())] = slot.root
+	for key in supplemental:
+		var control: Control = supplemental[key] as Control
+		if not is_instance_valid(control) or not control.is_visible_in_tree(): continue
+		var bounds: Rect2 = control.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, control.size)
+		if bounds.has_area() and full.intersects(bounds): hud_hits.append({"name": key, "rect": _rect(bounds)})
+	var view := {"prompt": shape, "hero": _rect(hero), "chest": _rect(body), "hud_hits": hud_hits,
+		"viewport": _rect(g.get_viewport_rect()), "position": _v(label.position),
+		"has_npc_anchor": label.has_meta("npc_prompt_anchor"),
+		"npc_anchor": _v(label.get_meta("npc_prompt_anchor")) if label.has_meta("npc_prompt_anchor") else [],
+		"node_id": node.get_instance_id(), "prompt_id": label.get_instance_id(), "style": style,
+		"authored": String(label.get_meta("interaction_authored_copy", "")), "timer_left": selection.observation.timer_left}
+	world_prompt.views.append(view)
+	_world_prompt_check("painted_bodies", hero.has_area() and body.has_area(), view)
+	_world_prompt_check("complete_copy", bool(shape.complete) and float(shape.alpha) >= 0.99
+		and label.text == g.interaction_copy("E — The chest whispers") and label.z_index == Balance.INTERACT_PROMPT_Z, shape)
+	_world_prompt_check("hero_clear", hero.has_area() and not full.intersects(hero), view)
+	_world_prompt_check("chest_clear", body.has_area() and not full.intersects(body), view)
+	_world_prompt_check("viewport", g.get_viewport_rect().encloses(full), view)
+	_world_prompt_check("hud_clear", hud_hits.is_empty(), hud_hits)
+	_world_prompt_capture("world_prompt_selected")
+	# Clearance findings remain strict, but do not prevent an independent action proof.
+	var cooldown_ready: bool = await r._until(func() -> bool: return g.talk_cd <= 0.0, 1.0)
+	selection = _world_prompt_selection()
+	world_prompt["before_key_selection"] = selection.observation
+	if not cooldown_ready or not bool(selection.valid) or selection.entry.get("node") != node:
+		return _world_prompt_end("incomplete: chest expired or selection changed before the single interaction edge")
+	var code: int = int(g.binds.get("interact", KEY_E))
+	if not _world_prompt_check("input_ready", not Input.is_key_pressed(code) and p.is_physics_processing()
+		and g.can_process() and not g.input_overlay_up() and not r.get_tree().paused
+		and not p.dead and not p.downed and not p.ghost, {"code": code, "talk_cd": g.talk_cd}):
+		return _world_prompt_end("incomplete: native interaction preconditions failed")
+	var before: Dictionary = _world_prompt_economy()
+	world_prompt["before"] = before
+	var input := {"code": code, "process_start": Engine.get_process_frames(), "physics_start": Engine.get_physics_frames()}
+	held = code; _key(code, true)
+	await r.frames(2)
+	input["held_after_process"] = Input.is_key_pressed(code)
+	await r.get_tree().physics_frame
+	await r.get_tree().physics_frame
+	input["held_before_release"] = Input.is_key_pressed(code)
+	input["process_steps"] = Engine.get_process_frames() - int(input.process_start)
+	input["physics_steps"] = Engine.get_physics_frames() - int(input.physics_start)
+	_release()
+	input["released"] = not Input.is_key_pressed(code)
+	world_prompt.input = input
+	_world_prompt_check("single_edge_held", bool(input.held_after_process) and bool(input.held_before_release)
+		and int(input.process_steps) >= 2 and int(input.physics_steps) >= 2 and bool(input.released), input)
+	await r.frames(2)
+	var opened: bool = g.menus.current == "confirm" and is_instance_valid(g.menus.root)
+	if not _world_prompt_check("confirm_opened", opened, g.menus.current):
+		return _world_prompt_end("native interaction did not open confirmation")
+	var message := "The chest whispers promises. Open it, and every monster in this room grows CRUELER (+%d%% damage, faster) until the room is purged — but the purge unlocks its hoard: a golden chest and a gem, guaranteed. Open it?" % int((Balance.CURSE_DMG_MULT - 1.0) * 100)
+	_world_prompt_check("confirm_message", _world_prompt_find(g.menus.root, message, false) != null, message)
+	await RenderingServer.frame_post_draw
+	_world_prompt_capture("world_prompt_confirmation")
+	var cancel: Button = _world_prompt_find(g.menus.root, "Cancel", true) as Button
+	if cancel == null:
+		await _world_prompt_cancel_cleanup()
+		return _world_prompt_end("visible enabled Cancel button missing")
+	_world_prompt_click(cancel.get_global_rect().get_center())
+	await r.frames(2)
+	var closed: bool = not g.menus.is_open() and not r.get_tree().paused
+	_world_prompt_check("cancel_closed", closed, {"menu": g.menus.current, "paused": r.get_tree().paused})
+	if not closed:
+		await _world_prompt_cancel_cleanup()
+		return _world_prompt_end("native Cancel did not close confirmation")
+	var after: Dictionary = _world_prompt_economy()
+	world_prompt["after"] = after
+	_world_prompt_check("cancel_no_transaction", before == after, {"before": before, "after": after})
+	# The ordinary offer timer resumes with Cancel. A genuine expiry is incomplete,
+	# never rewritten into a passing action check or blamed on the cancel callback.
+	selection = _world_prompt_selection()
+	world_prompt["after_cancel_selection"] = selection.observation
+	if not bool(selection.valid) or selection.entry.get("node") != node:
+		return _world_prompt_end("incomplete: original chest expired or selection changed after Cancel")
+	_world_prompt_check("identity_reach_action_style", selection.entry.prompt == label and selection.entry.action == action
+		and float(selection.entry.get("reach", Balance.INTERACT_RANGE)) == reach
+		and _world_prompt_style(label) == style, selection.observation)
+	await RenderingServer.frame_post_draw
+	_world_prompt_capture("world_prompt_after_cancel")
+	return _world_prompt_end("")
+
+
+func _world_prompt_selection() -> Dictionary:
+	var nearest: Dictionary = {}
+	var nearest_distance := INF
+	var rows: Array = []
+	var visible := 0
+	for candidate in g.interactables:
+		var node: Node2D = candidate.get("node") as Node2D
+		var label: Label = candidate.get("prompt") as Label
+		if not is_instance_valid(node) or not is_instance_valid(label): continue
+		var current: bool = is_instance_valid(g.world) and g.world.is_ancestor_of(node) and not node.is_queued_for_deletion()
+		var distance: float = p.global_position.distance_to(node.global_position)
+		var reach: float = float(candidate.get("reach", Balance.INTERACT_RANGE))
+		if label.is_visible_in_tree(): visible += 1
+		rows.append({"node_id": node.get_instance_id(), "prompt_id": label.get_instance_id(), "distance": distance,
+			"reach": reach, "eligible": distance < reach, "current_world": current,
+			"visible": label.is_visible_in_tree(), "text": label.text,
+			"authored": String(label.get_meta("interaction_authored_copy", ""))})
+		if distance < reach and distance < nearest_distance:
+			nearest = candidate; nearest_distance = distance
+	var left := -1.0
+	var valid := false
+	var winner_id := 0
+	if not nearest.is_empty():
+		var node: Node2D = nearest.node
+		var label: Label = nearest.prompt
+		winner_id = node.get_instance_id()
+		for child in node.get_children():
+			if child is Timer and not child.is_stopped(): left = child.time_left; break
+		valid = left > 0.0 and visible == 1 and g.interact_in_range and not g.input_overlay_up()
+		valid = valid and is_instance_valid(g.world) and g.world.is_ancestor_of(node) and not node.is_queued_for_deletion()
+		valid = valid and label.is_visible_in_tree() and not label.is_queued_for_deletion()
+		valid = valid and String(label.get_meta("interaction_authored_copy", "")) == "E — The chest whispers"
+		valid = valid and String(nearest.get("sprite_name", "")) == String(Items.CHEST_TIERS.gold.sprite)
+		valid = valid and is_instance_valid(nearest.get("sprite")) and nearest.sprite is Sprite2D
+	return {"entry": nearest, "valid": valid, "observation": {"candidates": rows, "winner_id": winner_id,
+		"visible_count": visible, "timer_left": left, "valid_original_chest": valid,
+		"room": g.cur_room, "process_frame": Engine.get_process_frames(), "physics_frame": Engine.get_physics_frames()}}
+
+
+func _world_prompt_style(label: Label) -> Dictionary:
+	return {"size": _v(label.size), "font": label.get_theme_font("font").get_instance_id(),
+		"font_size": label.get_theme_font_size("font_size"), "outline": label.get_theme_constant("outline_size"),
+		"pill": label.get_theme_stylebox("normal").get_instance_id(), "z": label.z_index,
+		"clip": label.clip_text, "ratio": label.visible_ratio, "lines": label.max_lines_visible,
+		"text": label.text, "authored": String(label.get_meta("interaction_authored_copy", ""))}
+
+
+func _world_prompt_economy() -> Dictionary:
+	return {"gold": p.gold, "backpack": p.backpack.duplicate(true), "materials": p.materials.duplicate(true),
+		"consumables": p.consumables.duplicate(true), "equipment": p.equipment.duplicate(true),
+		"curse_flag": g.get_flag(g._curse_flag(g.cur_room), false), "curse_pending": g.curse_pending.duplicate(true)}
+
+
+func _world_prompt_find(node: Node, text: String, button: bool) -> Control:
+	if button and node is Button and node.is_visible_in_tree() and not node.disabled and node.text.strip_edges() == text: return node
+	if not button and node is Label and node.is_visible_in_tree() and node.text == text: return node
+	for child in node.get_children():
+		var found: Control = _world_prompt_find(child, text, button)
+		if found != null: return found
+	return null
+
+
+func _world_prompt_click(at: Vector2) -> void:
+	var move := InputEventMouseMotion.new(); move.position = at; move.global_position = at
+	Input.parse_input_event(move); Input.flush_buffered_events()
+	for down in [true, false]:
+		var event := InputEventMouseButton.new()
+		event.position = at; event.global_position = at; event.button_index = MOUSE_BUTTON_LEFT
+		event.button_mask = MOUSE_BUTTON_MASK_LEFT if down else 0; event.pressed = down
+		Input.parse_input_event(event); Input.flush_buffered_events()
+
+
+func _world_prompt_cancel_cleanup() -> void:
+	_release()
+	if g.menus.current != "confirm": return
+	held = KEY_ESCAPE; _key(held, true)
+	await r.frames(2)
+	_release()
+	await r.frames(2)
+	world_prompt["cleanup_confirm_closed"] = not g.menus.is_open()
+
+
+func _world_prompt_capture(name: String) -> void:
+	var path: String = r.shot(name)
+	var record := {"path": path, "state": name, "exists": FileAccess.file_exists(path), "scope": "live cursed-chest prompt and native cancel probe"}
+	originals.append(record)
+	_world_prompt_check("capture." + name, bool(record.exists), record)
+
+
+func _world_prompt_check(id: String, passed: bool, detail: Variant) -> bool:
+	if not passed: world_prompt.failures = int(world_prompt.failures) + 1
+	return _check("world_prompt." + id, passed, detail)
+
+
+func _world_prompt_end(error: String) -> String:
+	_release()
+	world_prompt.error = error if error != "" else "World prompt strict findings; inspect native evidence" if int(world_prompt.failures) > 0 else ""
+	world_prompt.complete = String(world_prompt.error) == ""
+	_check("world_prompt.complete", bool(world_prompt.complete), world_prompt)
+	return String(world_prompt.error)

@@ -1005,8 +1005,8 @@ func interaction_prompt_bounds(prompt: Label) -> Rect2:
 	return bounds
 
 
-## One bounded presentation move for the selected factory citizen. The earlier
-## tracker hook reserves authored anchors; this later hook tests its final HUD.
+## Bounded placement for the selected factory citizen or scenery prompt.
+## The earlier tracker hook reserves authored anchors; test its final HUD here.
 ## Conservative sprite cells avoid image readback and include carried body art.
 func _position_npc_prompt() -> void:
 	# Menus hide labels, but dialogue can leave one visible. Hold its last
@@ -1037,16 +1037,55 @@ func _position_npc_prompt() -> void:
 		var current: Rect2 = prompt.get_global_transform_with_canvas() * bounds
 		var gap := Balance.NPC_PROMPT_BODY_GAP
 		if not body.has_area() or not hero.has_area() or not current.has_area(): return
-		if not current.intersects(body.grow(gap)) and not current.intersects(hero.grow(gap)): return
-		var shift := Vector2(0.0, minf(body.position.y, hero.position.y) - gap - current.end.y)
-		var moved := Rect2(current.position + shift, current.size)
-		# No-fit fallback keeps the complete authored pill; never hide or fade it.
-		if not get_viewport().get_visible_rect().grow(-gap).encloses(moved): return
-		for blocker in hud.tracker_clearance.prompt_blockers():
-			if moved.intersects(blocker.grow(gap)): return
+		var blockers: Array[Rect2] = hud.tracker_clearance.prompt_blockers()
+		blockers.append(body)
+		blockers.append(hero)
+		var screen: Rect2 = get_viewport().get_visible_rect().grow(-gap)
+		var occupied := body.merge(hero)
+		# First preserve the exact authored anchor, then the existing NPC
+		# above-both-bodies lane. Side/below alternatives keep the full text.
+		var candidates: Array[Vector2] = [current.position,
+			Vector2(current.position.x, occupied.position.y - gap - current.size.y),
+			Vector2(occupied.end.x + gap, current.position.y),
+			Vector2(occupied.position.x - gap - current.size.x, current.position.y),
+			Vector2(current.position.x, occupied.end.y + gap)]
 		var parent_canvas := prompt.get_parent() as CanvasItem
-		if parent_canvas != null:
-			prompt.position += parent_canvas.get_global_transform_with_canvas().affine_inverse().basis_xform(shift)
+		if parent_canvas == null: return
+		var parent_transform: Transform2D = parent_canvas.get_global_transform_with_canvas()
+		if is_zero_approx(parent_transform.determinant()): return
+		for attempt in [0, 1]:
+			for candidate in candidates:
+				var moved := Rect2(candidate, current.size)
+				if not screen.encloses(moved): continue
+				var clear := true
+				for blocker in blockers:
+					if moved.intersects(blocker.grow(gap)):
+						clear = false
+						break
+				if clear:
+					prompt.position += parent_transform.affine_inverse().basis_xform(candidate - current.position)
+					return
+			if attempt == 1: break
+			# If those lanes are blocked, slide either side along nearby HUD
+			# edges. At fixed X, a free vertical interval starts/ends at one
+			# blocker edge or viewport edge; no world scan or pixel search.
+			candidates.clear()
+			if current.size.y > screen.size.y: return
+			for side_x in [occupied.end.x + gap, occupied.position.x - gap - current.size.x]:
+				if side_x < screen.position.x or side_x + current.size.x > screen.end.x: continue
+				candidates.append(Vector2(side_x, clampf(current.position.y, screen.position.y, screen.end.y - current.size.y)))
+				for blocker in blockers:
+					var padded := blocker.grow(gap)
+					if side_x >= padded.end.x or side_x + current.size.x <= padded.position.x: continue
+					for side_y in [padded.position.y - current.size.y, padded.end.y]:
+						var candidate := Vector2(side_x, side_y)
+						if screen.encloses(Rect2(candidate, current.size)) and not candidates.has(candidate):
+							candidates.append(candidate)
+			candidates.sort_custom(func(a: Vector2, b: Vector2) -> bool:
+				var da := a.distance_squared_to(current.position)
+				var db := b.distance_squared_to(current.position)
+				return a.x > b.x if da == db else da < db)
+		# No-fit fallback keeps the complete authored pill; never hide or fade it.
 		return
 
 
