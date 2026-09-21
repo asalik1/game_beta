@@ -49,6 +49,11 @@ only source clearance loaned. It is not an earned encounter or combat victory.
 Use fresh isolated
 APPDATA under `build/qa/session-sept20/claude-shortcuts`, `--timeout=360`,
 and optional `--mobile --renderer=gl_compatibility` for host mobile source.
+Arrival presentation adds `--arrival-readability` to hot/lazy corridor and
+solo-control modes. Lazy `--arrival-rebuild-controls` checks default full-fade
+entry; `--arrival-ownership-controls` adds overlapping card/dim/end-screen
+controls. Solo records actual save/load fade and per-poll crossing diagnostics.
+These use the existing strict runner; see ARRIVAL_READABILITY.md for limits.
 Slots 96/97/98 are restored on normal return. All are controlled fixtures;
 inspect their original images and receipts. The ordinary journey remains a
 separate unshipped experiment. See EARNED_SHORTCUTS.md for current acceptance.

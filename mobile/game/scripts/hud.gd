@@ -77,6 +77,10 @@ var zone_label: Label
 var quest_label: Label
 var title_label: Label
 var subtitle_label: Label
+# Shared labels and the screen overlay have separate animation owners.
+# A new live card replaces the labels without restarting an owned fade.
+var _title_tw: Tween = null
+var _overlay_tw: Tween = null
 
 # boss bar
 var boss_box: Control
@@ -3807,9 +3811,11 @@ func boss_banner(boss_name: String) -> void:
 	title_label.add_theme_color_override("font_color", Color(1.0, 0.32, 0.26))
 	title_label.text = boss_name
 	subtitle_label.text = ""
+	_kill_title_anim()
 	title_label.pivot_offset = Vector2(640, 22)
 	title_label.scale = Vector2(1.5, 1.5)
-	var tween := create_tween()
+	_title_tw = create_tween()
+	var tween := _title_tw
 	tween.tween_property(title_label, "modulate:a", 1.0, 0.1)
 	tween.parallel().tween_property(title_label, "scale", Vector2.ONE, 0.14) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
@@ -3827,29 +3833,56 @@ const TITLE_RISE := 14.0        # px above rest the title starts / ends
 const TITLE_SUB_DELAY := 0.12   # s the sub-line lags the title
 const TITLE_REST_Y := 200.0
 const SUBTITLE_REST_Y := 265.0
-func flash_title(text: String, sub := "", hold := 1.6, overlay_fade := true) -> void:
+
+
+## Retire the previous card and reset transforms that a mid-flight kill can strand.
+## Overlay ownership is separate; live room titles leave existing fades alone.
+func _kill_title_anim() -> void:
+	if _title_tw != null and _title_tw.is_valid():
+		_title_tw.kill()
+	_title_tw = null
+	title_label.scale = Vector2.ONE
+	title_label.position.y = TITLE_REST_Y
+	subtitle_label.position.y = SUBTITLE_REST_Y
+	title_label.modulate.a = 0.0
+	subtitle_label.modulate.a = 0.0
+
+
+func _kill_overlay_anim() -> void:
+	if _overlay_tw != null and _overlay_tw.is_valid():
+		_overlay_tw.kill()
+	_overlay_tw = null
+
+
+func flash_title(text: String, sub := "", hold := Balance.TITLE_HOLD, overlay_fade := true) -> void:
 	# Every arrival is a fresh run for boss-splash purposes: a replayed
 	# chapter's bosses get their entrance flash again.
 	_boss_splash_shown.clear()
 	# show_end_screen stamps its own colour on this shared label (victory gold,
 	# PvP red) and has no exit path of its own — so every card after one wore
 	# it. Reclaim the built white here, the way boss_banner's tween does.
+	_kill_title_anim()
 	title_label.add_theme_color_override("font_color", Color(1, 1, 1))
 	title_label.text = text
 	subtitle_label.text = sub
 	title_label.position.y = TITLE_REST_Y - TITLE_RISE
 	subtitle_label.position.y = SUBTITLE_REST_Y - TITLE_RISE * 0.6
-	var tween := create_tween()
 	if overlay_fade:
 		# Every arrival (boot, load, replay, next chapter) fades in from
 		# black instead of cutting — the title rises out of the dark.
 		# overlay_fade=false leaves the overlay to the caller (the death
-		# beat runs its own ramping dim that this snap would clobber).
+		# beat runs its own ramping dim that this snap would clobber, and a
+		# live room_title rides room_dip's short settle).
+		# The fade rides its own tracked tween: a later card must be able to
+		# take the labels without cutting an in-flight fade short, and a
+		# fresh full fade retires the previous one before re-snapping black.
+		_kill_overlay_anim()
 		overlay.color = Color(0, 0, 0, 1)
-		tween.tween_property(overlay, "color:a", 0.0, 0.55)
-		tween.parallel().tween_property(title_label, "modulate:a", 1.0, 0.4)
-	else:
-		tween.tween_property(title_label, "modulate:a", 1.0, 0.4)
+		_overlay_tw = create_tween()
+		_overlay_tw.tween_property(overlay, "color:a", 0.0, 0.55)
+	_title_tw = create_tween()
+	var tween := _title_tw
+	tween.tween_property(title_label, "modulate:a", 1.0, 0.4)
 	# Title-card motion (2026-08-19): the card no longer just alpha-pops — the
 	# title SETTLES down a few px as it appears (cubic ease-out), the sub-line
 	# follows a beat later, and both drift up a touch as they leave.
@@ -3883,18 +3916,36 @@ func pulse_gold() -> void:
 ## first frame after the door (and after any room-build stall) was the new
 ## room at full brightness. A short dip from part-black settles the cut and
 ## hides the stall's discontinuity behind a fade the eye reads as intent.
-## First visits keep flash_title's full fade-from-black + card. Never on
+## Rebuild arrivals keep flash_title's full fade-from-black + card. Never on
 ## headless (tests read frames), never over a fade already in flight (a title
 ## flash / the death dim own the overlay then).
 func room_dip() -> void:
 	if DisplayServer.get_name() == "headless" or overlay.color.a > 0.0:
 		return
+	_kill_overlay_anim()
 	overlay.color = Color(0, 0, 0, Balance.ROOM_DIP_A)
-	create_tween().tween_property(overlay, "color:a", 0.0, Balance.ROOM_DIP_T) \
+	_overlay_tw = create_tween()
+	_overlay_tw.tween_property(overlay, "color:a", 0.0, Balance.ROOM_DIP_T) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 
+## In-run first-visit title (2026-09-20): a room reached by WALKING (or a
+## pocket hop) is already simulating — enemies under a full blackout can
+## still act, so the card must not own the overlay. The cut settles with the
+## same dip a revisit gets (room_dip's headless and overlay-in-flight guards
+## apply); boot/load/replay/net arrivals keep flash_title's full fade.
+func room_title(text: String) -> void:
+	room_dip()
+	flash_title(text, "", Balance.TITLE_HOLD, false)
+
+
 func show_end_screen(text: String, sub: String, color: Color) -> void:
+	# Terminal card: nothing may fade it later. A PvP "YOU FELL" / arrival
+	# card can still be mid-hold when the match or chapter ends — retire the
+	# title tween, and retire our arrival fade so it cannot erase the 0.75
+	# dim stamped below. The alpha/scale resets are re-stamped just under.
+	_kill_title_anim()
+	_kill_overlay_anim()
 	overlay.color = Color(0, 0, 0, 0.75)
 	title_label.add_theme_color_override("font_color", color)
 	title_label.text = text
@@ -4062,6 +4113,7 @@ func hide_results() -> void:
 
 
 func dim(amount: float) -> void:
+	_kill_overlay_anim()
 	overlay.color = Color(0, 0, 0, amount)
 
 
@@ -4069,9 +4121,10 @@ func dim(amount: float) -> void:
 ## gathering dark instead of behind an instant black flash. Cleared by the
 ## respawn's dim(0.0).
 func death_dim(amount: float, ramp: float) -> void:
+	_kill_overlay_anim()
 	overlay.color = Color(0, 0, 0, overlay.color.a)
-	var tween := create_tween()
-	tween.tween_property(overlay, "color:a", amount, ramp)
+	_overlay_tw = create_tween()
+	_overlay_tw.tween_property(overlay, "color:a", amount, ramp)
 
 
 ## Inverse-telegraph dread (readability pass, 2026-07-07): while a

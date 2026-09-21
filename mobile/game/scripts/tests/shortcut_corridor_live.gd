@@ -15,12 +15,19 @@ var originals: Array = []
 var camera_defaults: Dictionary = {}
 var observed_source := -1
 var observed_destination := -1
+var arrival_failures: Array = []
+var arrival_controls: Array = []
+var arrival_boot: Dictionary = {}
 
 static func run(rig: ShotRig) -> String:
 	var q := new()
 	q.r = rig
 	rig.add_child(q)
 	var error: String = await q._run()
+	if error == "" and rig.flag("arrival-readability"):
+		if rig.flag("arrival-rebuild-controls"): await q._arrival_default_control()
+		if rig.flag("arrival-ownership-controls"): await q._arrival_ownership_controls()
+		if not q.arrival_failures.is_empty(): error = "Arrival readability findings; inspect named strict rows"
 	q._release()
 	if is_instance_valid(q.p): q.p.clear_local_intents()
 	q._check("runtime.completed", error == "", error)
@@ -29,9 +36,12 @@ static func run(rig: ShotRig) -> String:
 		"hot_arrival": rig.flag("corridor-hot"), "planned_walks": 1 if rig.flag("corridor-hot") else 4,
 		"camera_accepted": false, "navigation_complete": q.walks.size() == (1 if rig.flag("corridor-hot") else 4) and q.walks.all(func(w: Dictionary) -> bool: return bool(w.get("reached", false)) and w.get("error", "") == ""),
 		"error": error, "selection": q.selected,
+		"arrival_readability": rig.flag("arrival-readability"), "arrival_ownership": rig.flag("arrival-ownership-controls"), "arrival_failures": q.arrival_failures,
+		"arrival_controls": q.arrival_controls, "arrival_boot": q.arrival_boot,
+		"arrival_scope": "Optional per-render live-entry observations. Default-entry control erases only current cleared-room visited metadata, calls ordinary one-argument _enter_room and restores visited after passive settling. The default-entry control refills the ordinary room potion budget and is not a boot/load substitute. A separate passive real boot observation is recorded here; actual load observations are in the optional solo-controls receipt. No guest/pocket claim. No title/overlay writes during walks. Optional ownership controls run only after every walk completes and make deliberate production HUD calls; each arrival_controls row carries its own scope.",
 		"checks": q.checks, "walks": q.walks, "originals": q.originals,
 		"initial_camera": q.camera_defaults, "cleanup": {"key_released": q.held == 0,
-		"no_signal_observer_installed": true, "disposable_world_not_restored": true},
+		"no_signal_observer_installed": not RenderingServer.frame_post_draw.is_connected(q._arrival_boot_frame), "disposable_world_not_restored": true},
 		"scope": "Controlled solo Warrior HOT arrival: ONE forward original unlocked corridor, source-only cleared/zero-alive loan, unbuilt/unvisited/uncleared authored combat destination. No shortcut-open flag loan, no enemy spawn/freeze/aggro/HP/god manipulation. Normal entry spawns real enemies; native movement continues to120px inside destination. Pose before walk and terrain-timer suppression remain controlled setup. Default camera and live AI; no ordinary-campaign, combat-balance, save, ENet or physical-device claim." if rig.flag("corridor-hot") else "Controlled solo Warrior, first qualifying seeded axis-specific shortcut and original unlocked connector; rooms pre-cleared, shortcut flag loaned, poses only before each walk. Default camera/framing/zoom/smoothing/lead/shake; native W/S or A/D continuously held through inset corridor to 120px inside destination play rect. Terrain event timer held high during setup and each rendered observation. No ordinary campaign, earned unlock, combat, save, ENet or physical-device claim.",
 		"measurement_limits": ["HudClearance body_rect is an authored body proxy, NOT exact painted alpha bounds.",
 		"HUD intersections are visible Control rectangles, NOT opaque pixel occlusion.",
@@ -50,14 +60,28 @@ static func run(rig: ShotRig) -> String:
 	return error
 
 func _run() -> String:
+	if r.flag("arrival-readability") and not (r.flag("corridor-hot") or r.flag("corridor-lazy")):
+		return "arrival-readability requires hot or lazy corridor mode"
+	if r.flag("arrival-rebuild-controls") and (not r.flag("arrival-readability") or r.flag("corridor-hot")):
+		return "rebuild control requires arrival-readability with cleared lazy mode"
+	if r.flag("arrival-ownership-controls") and (not r.flag("arrival-readability") or not r.flag("corridor-lazy") or r.flag("corridor-hot")):
+		return "ownership controls require arrival-readability with cleared lazy mode"
 	var home: String = ProjectSettings.globalize_path("user://").replace("\\", "/").to_lower()
 	if not home.contains("/build/qa/session-sept20/claude-shortcuts/") or r.flag("no-capture"):
 		return "isolated shortcut QA profile and native captures required"
 	selected = _select()
 	if selected.is_empty(): return "no qualifying first seed in 1000..1199"
+	if r.flag("arrival-readability"): RenderingServer.frame_post_draw.connect(_arrival_boot_frame)
 	await r.boot("warrior", "ch1", false)
 	g = r.game; p = g.local_player
-	if not await r._until(func() -> bool: return g.play_started and not g.input_overlay_up(), 8.0):
+	var boot_ready: bool = await r._until(func() -> bool: return g.play_started and not g.input_overlay_up(), 8.0)
+	if r.flag("arrival-readability"):
+		# The intro completion is deferred beyond ShotRig.boot's return.
+		# Keep the passive observer attached through the first playable draw.
+		if boot_ready: await RenderingServer.frame_post_draw
+		RenderingServer.frame_post_draw.disconnect(_arrival_boot_frame)
+		_arrival_check("arrival.boot_observed", not arrival_boot.is_empty(), arrival_boot)
+	if not boot_ready:
 		return "boot did not become playable"
 	if not g.no_saves or g.net_online() or g.guest_world or g.dev_god: return "unexpected boot mode"
 	p.set_physics_process(false)
@@ -229,6 +253,11 @@ func _walk(label: String, source: int, destination: int, direction: String) -> S
 	await r.get_tree().create_timer(1.0).timeout
 	if not await r._until(func() -> bool: return g.hud.title_label.modulate.a <= 0.01 and g.hud.subtitle_label.modulate.a <= 0.01 and g.hud.overlay.color.a <= 0.01, 8.0):
 		return label + ": room presentation did not settle"
+	if r.flag("arrival-readability"):
+		var source_clear: bool = await r._until(func() -> bool: return (g.hud.title_label.modulate.a == 0.0
+			and g.hud.subtitle_label.modulate.a == 0.0 and g.hud.overlay.color.a == 0.0), 8.0)
+		_arrival_check(label + ".arrival_source_clear", source_clear, _arrival_presentation())
+		if not source_clear: return label + ": source presentation did not fully settle"
 	var row: Dictionary = {"label": label, "source": source, "destination": destination, "direction": direction,
 		"source_play_rect": _rect(g.play_rect(source)), "destination_play_rect": _rect(g.play_rect(destination)),
 		"mouth": _v(mouth), "far_mouth": _v(far_mouth), "cell_boundary": _v(g.door_pos(source, direction)),
@@ -236,6 +265,10 @@ func _walk(label: String, source: int, destination: int, direction: String) -> S
 		"fully_outside_frames": 0, "partially_clipped_frames": 0, "max_offscreen_observed_ms": 0,
 		"min_signed_margin": 1000000.0, "error": ""}
 	walks.append(row)
+	if r.flag("arrival-readability"):
+		row["arrival"] = {"first_visit": not bool(g.visited.get(destination, false)),
+			"world_id": g.world.get_instance_id(), "entry": {}, "max_overlay": 0.0,
+			"title_peak": 0.0, "title_seen": false, "expected_title": String(g.zones[destination]["name"])}
 	if r.flag("corridor-hot"):
 		var hot_initial: Dictionary = _destination_state(destination)
 		if not _check(label + ".fresh_after_source_entry", not hot_initial.built and not hot_initial.visited and not hot_initial.cleared
@@ -270,6 +303,11 @@ func _walk(label: String, source: int, destination: int, direction: String) -> S
 		g.terrain_event_t = 10000.0
 		var sample: Dictionary = _sample(Time.get_ticks_msec() - started)
 		row.samples.append(sample)
+		if r.flag("arrival-readability"):
+			_arrival_observe(row.arrival, sample)
+			if row.arrival.entry.is_empty() and int(sample.cur_room) == destination:
+				row.arrival.entry = sample.duplicate(true)
+				if not _shot(row, "first_entry", sample): row.error = "first entry capture missing"; break
 		if r.flag("corridor-hot") and not row.has("first_hot") and int(sample.cur_room) == destination and bool(sample.destination_hot) and int(sample.destination_alive) > 0:
 			var first: Dictionary = sample.duplicate(true)
 			first["before_destination_mouth"] = (p.global_position - far_mouth).dot(axis) < 0.0
@@ -315,6 +353,7 @@ func _walk(label: String, source: int, destination: int, direction: String) -> S
 	_check(label + ".continuous_route", reached and mid_written and row.error == "", {"reached": reached, "mid_written": mid_written, "samples": row.samples.size(), "error": row.error})
 	# Physics stays enabled after release; let ordinary movement/camera settle.
 	await r.get_tree().create_timer(1.0).timeout
+	if r.flag("arrival-readability"): _arrival_observe(row.arrival, _sample(Time.get_ticks_msec() - started))
 	var presentation_settled: bool = await r._until(func() -> bool: return g.hud.title_label.modulate.a <= 0.01 and g.hud.subtitle_label.modulate.a <= 0.01 and g.hud.overlay.color.a <= 0.01, 8.0)
 	if not _check(label + ".terminal_presentation", presentation_settled, "passive title/subtitle/overlay wait after key release"):
 		row.error = "terminal presentation did not settle"
@@ -327,6 +366,7 @@ func _walk(label: String, source: int, destination: int, direction: String) -> S
 		if not _shot(row, "settled_arrival" if reached and presentation_settled else "failure", _sample(Time.get_ticks_msec() - started)):
 			row.error = "terminal capture missing"
 	if not _check(label + ".camera_unchanged", _camera_policy() == camera_defaults, _camera_policy()): row.error = "camera policy changed"
+	if r.flag("arrival-readability"): _arrival_finalize(row)
 	return "" if row.error == "" else label + ": " + String(row.error)
 
 func _sample(elapsed: int) -> Dictionary:
@@ -337,7 +377,7 @@ func _sample(elapsed: int) -> Dictionary:
 	var ratio: float = intersection.get_area() / area if area > 0.0 else 0.0
 	var margins: Array = [body.position.x - viewport.position.x, body.position.y - viewport.position.y,
 		viewport.end.x - body.end.x, viewport.end.y - body.end.y]
-	return {"t_ms": elapsed, "process_frame": Engine.get_process_frames(), "physics_frame": Engine.get_physics_frames(),
+	var sample: Dictionary = {"t_ms": elapsed, "process_frame": Engine.get_process_frames(), "physics_frame": Engine.get_physics_frames(),
 		"position": _v(p.global_position), "velocity": _v(p.velocity), "cur_room": g.cur_room,
 		"hp": p.hp, "max_hp": p.max_hp, "since_hurt": p.since_hurt, "hurt_cd": p.hurt_cd,
 		"hero_incapacitated": p.dead or p.downed or p.ghost, "destination_cleared": g.cleared.get(observed_destination, false),
@@ -351,6 +391,8 @@ func _sample(elapsed: int) -> Dictionary:
 		"body_empty": area <= 0.0, "visible_ratio": ratio, "fully_outside": area > 0.0 and ratio <= 0.0,
 		"margins_left_top_right_bottom": margins, "minimum_margin": margins.min(),
 		"hud_rect_intersections": _hud_intersections(body), "native_key_held": held != 0 and Input.is_physical_key_pressed(held)}
+	if r.flag("arrival-readability"): sample["presentation"] = _arrival_presentation()
+	return sample
 
 func _sprite_rect() -> Array:
 	# Actual Sprite2D draw rectangle including transparent texels, not alpha bounds.
@@ -403,3 +445,277 @@ func _check(id: String, passed: bool, actual: Variant) -> bool:
 
 func _v(value: Vector2) -> Array: return [value.x, value.y]
 func _rect(value: Rect2) -> Array: return [value.position.x, value.position.y, value.size.x, value.size.y]
+
+
+func _arrival_presentation() -> Dictionary:
+	return {"overlay_alpha": g.hud.overlay.color.a,
+		"title": g.hud.title_label.text, "title_alpha": g.hud.title_label.modulate.a,
+		"title_visible": g.hud.title_label.is_visible_in_tree(), "title_position": _v(g.hud.title_label.position),
+		"subtitle": g.hud.subtitle_label.text, "subtitle_alpha": g.hud.subtitle_label.modulate.a,
+		"subtitle_visible": g.hud.subtitle_label.is_visible_in_tree(), "subtitle_position": _v(g.hud.subtitle_label.position),
+		"world_id": g.world.get_instance_id(), "room": g.cur_room,
+		"process_frame": Engine.get_process_frames(), "physics_frame": Engine.get_physics_frames()}
+
+func _arrival_observe(arrival: Dictionary, sample: Dictionary) -> void:
+	var view: Dictionary = sample.presentation
+	arrival.max_overlay = maxf(float(arrival.max_overlay), float(view.overlay_alpha))
+	if bool(view.title_visible):
+		arrival.title_peak = maxf(float(arrival.title_peak), float(view.title_alpha))
+		if float(view.title_alpha) > 0.01 and String(view.title) == String(arrival.expected_title):
+			arrival.title_seen = true
+
+func _arrival_check(id: String, passed: bool, actual: Variant) -> void:
+	_check(id, passed, actual)
+	if not passed: arrival_failures.append(id)
+
+func _arrival_finalize(row: Dictionary) -> void:
+	var a: Dictionary = row.arrival
+	var entry: Dictionary = a.entry
+	var id: String = String(row.label)
+	_arrival_check(id + ".arrival_entry", not entry.is_empty() and bool(entry.get("native_key_held", false))
+		and int(entry.get("cur_room", -1)) == int(row.destination)
+		and int(entry.get("presentation", {}).get("world_id", -1)) == int(a.world_id), entry)
+	# Compare in Color's storage precision, the same representation as the overlay;
+	# this is not an epsilon around the existing dip policy.
+	var dip_bound: float = Color(0, 0, 0, Balance.ROOM_DIP_A).a
+	_arrival_check(id + ".arrival_no_blackout", float(a.max_overlay) <= dip_bound,
+		{"first_visit": a.first_visit, "max_overlay": a.max_overlay, "dip_bound": dip_bound})
+	_arrival_check(id + ".arrival_title", bool(a.title_seen) if bool(a.first_visit) else float(a.title_peak) <= 0.01,
+		{"first_visit": a.first_visit, "title_seen": a.title_seen, "title_peak": a.title_peak, "expected_title": a.expected_title})
+
+func _arrival_default_control() -> void:
+	# Cleared lazy fixture only; no enemy/pawn/overlay loans and no live-entry API substitution.
+	var zi: int = g.cur_room
+	var ready: bool = bool(g.cleared.get(zi, false)) and not g._room_hot(zi) and g.hud.overlay.color.a == 0.0
+	_arrival_check("arrival.default_setup", ready, {"room": zi, "cleared": g.cleared.get(zi), "hot": g._room_hot(zi)})
+	if not ready: return
+	var had_visited: bool = g.visited.has(zi)
+	var visited_before: Variant = g.visited.get(zi)
+	g.visited.erase(zi)
+	g._enter_room(zi)
+	var synchronous: Dictionary = _arrival_presentation()
+	_arrival_check("arrival.default_full_fade", float(synchronous.overlay_alpha) == 1.0
+		and String(synchronous.title) == String(g.zones[zi]["name"]), synchronous)
+	await RenderingServer.frame_post_draw
+	var early: Dictionary = _arrival_presentation()
+	var row: Dictionary = {"label": "default_entry", "captures": []}
+	_arrival_check("arrival.default_original", _shot(row, "early", early), early)
+	await r.get_tree().create_timer(0.25).timeout
+	var later: Dictionary = _arrival_presentation()
+	_arrival_check("arrival.default_interpolation", float(later.overlay_alpha) < float(synchronous.overlay_alpha)
+		and float(later.overlay_alpha) >= 0.0 and float(later.title_alpha) > 0.01, later)
+	var settled: bool = await r._until(func() -> bool: return (g.hud.title_label.modulate.a <= 0.01
+		and g.hud.subtitle_label.modulate.a <= 0.01 and g.hud.overlay.color.a == 0.0), 8.0)
+	if had_visited: g.visited[zi] = visited_before
+	else: g.visited.erase(zi)
+	_arrival_check("arrival.default_settled", settled, _arrival_presentation())
+	_arrival_check("arrival.default_visited_restored", g.visited.has(zi) == had_visited
+		and g.visited.get(zi) == visited_before, {"before": visited_before, "after": g.visited.get(zi)})
+	arrival_controls.append({"synchronous": synchronous, "early": early, "later": later,
+		"scope": "One-argument current-room entry with visited erase/restoration. Does not establish boot/load/online behavior."})
+
+
+func _arrival_boot_frame() -> void:
+	# Passive observer around the unchanged ShotRig.boot/real intro callback.
+	# No captured world/hero: boot can replace the current world synchronously.
+	if not arrival_boot.is_empty() or not is_instance_valid(r.game) or not r.game.play_started: return
+	g = r.game
+	arrival_boot = _arrival_presentation()
+	arrival_boot["expected_title"] = String(g.zones[g.cur_room]["name"])
+	arrival_boot["expected_subtitle"] = String(Story.chapter(g.chapter_id)["name"])
+	arrival_boot["scope"] = "First post-draw observed after real initial intro callback; not synchronous alpha=1 or tween duration proof."
+	_arrival_check("arrival.boot_full_fade", float(arrival_boot.overlay_alpha) > Color(0, 0, 0, Balance.ROOM_DIP_A).a
+		and String(arrival_boot.title) == String(arrival_boot.expected_title)
+		and String(arrival_boot.subtitle) == String(arrival_boot.expected_subtitle), arrival_boot)
+	var row: Dictionary = {"label": "boot", "captures": []}
+	_arrival_check("arrival.boot_original", _shot(row, "first_render", arrival_boot), arrival_boot)
+
+
+## Ownership controls: deliberately controlled production HUD calls that pit a
+## previous shared-title/overlay owner against a replacing owner. Presentation
+## ownership only: no cleared/zone_alive writes, no spawn/HP/god/camera
+## mutation, and NOT native movement, real death or end-game proof - the
+## preceding native walks are the movement evidence. Bounded independent
+## checks; a failed settle between controls stops further controls after its
+## strict row is recorded, with no metadata left mutated.
+func _arrival_ownership_controls() -> void:
+	if not await _ownership_settled("ownership.baseline_settled"): return
+	await _ownership_live_entry()
+	if not await _ownership_settled("ownership.live_entry_settled"): return
+	await _ownership_boss_replace()
+	if not await _ownership_settled("ownership.boss_replace_settled"): return
+	await _ownership_end_screen()
+	if not await _ownership_settled("ownership.end_screen_settled"): return
+	await _ownership_death_dim()
+
+
+func _ownership_settled(id: String) -> bool:
+	# Storage-exact endpoints: every production owner tweens or stamps these
+	# exact final values, so no tolerance is applied at settle.
+	var settled: bool = await r._until(func() -> bool: return (g.hud.title_label.modulate.a == 0.0
+		and g.hud.subtitle_label.modulate.a == 0.0 and g.hud.overlay.color.a == 0.0), 8.0)
+	_arrival_check(id, settled, _arrival_presentation())
+	return settled
+
+
+## Control 1: a short previous card owns a genuine full fade; an immediate
+## live first-visit entry must take the shared labels without cutting that
+## owned overlay fade short. Erases ONLY the current cleared room's visited
+## metadata and restores it synchronously right after the entry call (no
+## failure path can escape the restore); built is never erased, and the live
+## entry refills the ordinary room potion budget on this disposable cleared
+## QA fixture. World identity is asserted unchanged.
+func _ownership_live_entry() -> void:
+	var zi: int = g.cur_room
+	var ready: bool = bool(g.cleared.get(zi, false)) and not g._room_hot(zi)
+	_arrival_check("ownership.live_entry_setup", ready, {"room": zi, "cleared": g.cleared.get(zi), "hot": g._room_hot(zi)})
+	if not ready: return
+	var expected_title: String = String(g.zones[zi]["name"])
+	var world_before: int = g.world.get_instance_id()
+	var had_visited: bool = g.visited.has(zi)
+	var visited_before: Variant = g.visited.get(zi)
+	g.visited.erase(zi)
+	g.hud.flash_title("PREVIOUS ARRIVAL", "", 0.05)
+	var started: int = Time.get_ticks_msec()
+	var held_deadline: SceneTreeTimer = r.get_tree().create_timer(1.5)
+	var fade_deadline: SceneTreeTimer = r.get_tree().create_timer(2.0)
+	g._enter_room(zi, true)
+	var synchronous: Dictionary = _arrival_presentation()
+	if had_visited: g.visited[zi] = visited_before
+	else: g.visited.erase(zi)
+	_arrival_check("ownership.live_entry_visited_restored", g.visited.has(zi) == had_visited
+		and g.visited.get(zi) == visited_before, {"had": had_visited, "before": visited_before, "after": g.visited.get(zi)})
+	_arrival_check("ownership.live_entry_synchronous", float(synchronous.overlay_alpha) == 1.0
+		and String(synchronous.title) == expected_title, synchronous)
+	var row: Dictionary = {"label": "ownership_live_entry", "captures": []}
+	await RenderingServer.frame_post_draw
+	var first: Dictionary = _arrival_presentation()
+	_arrival_check("ownership.live_entry_owned_fade_original", _shot(row, "owned_fade", first), first)
+	# Passive per-render observation only; the fade alpha is never written to.
+	var fade_samples: Array = [{"t_ms": Time.get_ticks_msec() - started, "overlay_alpha": float(first.overlay_alpha)}]
+	var monotone: bool = true
+	var completed: bool = false
+	var previous: float = float(first.overlay_alpha)
+	while fade_deadline.time_left > 0.0:
+		await RenderingServer.frame_post_draw
+		var alpha: float = g.hud.overlay.color.a
+		fade_samples.append({"t_ms": Time.get_ticks_msec() - started, "overlay_alpha": alpha})
+		if alpha > previous: monotone = false
+		previous = alpha
+		if alpha == 0.0:
+			completed = true
+			break
+	_arrival_check("ownership.live_entry_owned_fade", monotone and completed,
+		{"monotone": monotone, "completed": completed, "samples": fade_samples.size(), "last_alpha": previous})
+	# The replaced short card would have finished leaving by ~1.32s; the live
+	# room card holds TITLE_HOLD and is still fully up at 1.5s. Transform and
+	# text together catch old-tween interference, not just a text swap.
+	# Use the scene clock that drives the tweens; PNG conversion can stall the
+	# main thread and wall time alone would test the replacement too early.
+	if held_deadline.time_left > 0.0: await held_deadline.timeout
+	var held_card: Dictionary = _arrival_presentation()
+	# Animated Vector2 components can retain float residue (e.g. 199.99905
+	# for a 200px rest position). Use the engine's float comparison for the
+	# transform only; title opacity and identity remain exact.
+	_arrival_check("ownership.live_entry_card_held", float(held_card.title_alpha) == 1.0
+		and String(held_card.title) == expected_title
+		and is_equal_approx(float(held_card.title_position[1]), g.hud.TITLE_REST_Y)
+		and g.hud.title_label.scale == Vector2.ONE
+		and int(held_card.world_id) == world_before, held_card)
+	_arrival_check("ownership.live_entry_card_original", _shot(row, "held_card", held_card), held_card)
+	arrival_controls.append({"control": "live_entry_ownership", "room": zi,
+		"before": synchronous, "after": held_card, "fade_samples": fade_samples, "captures": row.captures,
+		"scope": "Deliberate full-fade flash_title immediately replaced by live _enter_room on the current cleared room; only visited metadata was erased and synchronously restored. Entry refills the ordinary room potion budget on this disposable cleared fixture; no world rebuild. Shared-label/overlay ownership only; alpha alone does not establish pixel brightness - captures are reviewed separately."})
+
+
+## Control 2: a boss banner owns the shared title with its own scale/fade
+## tween; an immediate live room_title must take the labels and hold them,
+## and the retired banner tween must not fade or rescale the replacement.
+func _ownership_boss_replace() -> void:
+	var zi: int = g.cur_room
+	var expected_title: String = String(g.zones[zi]["name"])
+	g.hud.boss_banner("CONTROL BOSS")
+	var held_deadline: SceneTreeTimer = r.get_tree().create_timer(1.9)
+	g.hud.room_title(expected_title)
+	var synchronous: Dictionary = _arrival_presentation()
+	var row: Dictionary = {"label": "ownership_boss_replace", "captures": []}
+	await r.get_tree().create_timer(0.9).timeout
+	var resting: Dictionary = _arrival_presentation()
+	_arrival_check("ownership.boss_replace_resting", float(resting.title_alpha) == 1.0
+		and String(resting.title) == expected_title
+		and is_equal_approx(float(resting.title_position[1]), g.hud.TITLE_REST_Y)
+		and g.hud.title_label.scale == Vector2.ONE, resting)
+	# The replaced banner would already be leaving by ~1.64s; the live card
+	# holds TITLE_HOLD and must still be fully up at ~1.9s.
+	if held_deadline.time_left > 0.0: await held_deadline.timeout
+	var held_card: Dictionary = _arrival_presentation()
+	_arrival_check("ownership.boss_replace_card_held", float(held_card.title_alpha) == 1.0
+		and String(held_card.title) == expected_title, held_card)
+	_arrival_check("ownership.boss_replace_original", _shot(row, "held_card", held_card), held_card)
+	var overlay_settled: bool = await r._until(func() -> bool: return g.hud.overlay.color.a == 0.0, 8.0)
+	_arrival_check("ownership.boss_replace_overlay_settled", overlay_settled, _arrival_presentation())
+	arrival_controls.append({"control": "boss_banner_replaced_by_room_title", "room": zi,
+		"before": synchronous, "resting": resting, "after": held_card, "captures": row.captures,
+		"scope": "Deliberate boss_banner immediately replaced by the new room_title production API using the real current room name. Shared-label ownership only; no boss fight, combat or campaign claim."})
+
+
+## Control 3: show_end_screen is terminal presentation; an in-flight short
+## card and its owned overlay fade must not later fade the end labels or
+## erase the stamped end dim.
+func _ownership_end_screen() -> void:
+	g.hud.flash_title("OLD CARD", "", 0.05)
+	g.hud.show_end_screen("CONTROL END", "Controlled presentation", Color.GOLD)
+	var synchronous: Dictionary = _arrival_presentation()
+	var end_alpha: float = Color(0, 0, 0, 0.75).a
+	var row: Dictionary = {"label": "ownership_end_screen", "captures": []}
+	await r.get_tree().create_timer(1.5).timeout
+	var held: Dictionary = _arrival_presentation()
+	_arrival_check("ownership.end_screen_held", float(held.title_alpha) == 1.0
+		and float(held.subtitle_alpha) == 1.0
+		and String(held.title) == "CONTROL END" and String(held.subtitle) == "Controlled presentation"
+		and float(held.title_position[1]) == g.hud.TITLE_REST_Y
+		and float(held.subtitle_position[1]) == g.hud.SUBTITLE_REST_Y
+		and g.hud.title_label.scale == Vector2.ONE
+		and g.hud.overlay.color.a == end_alpha, held)
+	_arrival_check("ownership.end_screen_original", _shot(row, "held_end", held), held)
+	# Production reset only; text identity is deliberately not asserted here.
+	g.hud.dim(0.0)
+	g.hud.flash_title("", "", 0.0, false)
+	var cleared_after: bool = await r._until(func() -> bool: return (g.hud.title_label.modulate.a == 0.0
+		and g.hud.subtitle_label.modulate.a == 0.0 and g.hud.overlay.color.a == 0.0), 8.0)
+	_arrival_check("ownership.end_screen_cleared", cleared_after, _arrival_presentation())
+	arrival_controls.append({"control": "end_screen_ownership",
+		"before": synchronous, "after": held, "end_overlay_alpha": end_alpha, "captures": row.captures,
+		"scope": "Deliberate short flash_title immediately replaced by show_end_screen, then cleared through production dim(0.0) and an empty no-overlay flash_title. Controlled presentation only; not a real victory or defeat flow claim."})
+
+
+## Control 4: explicit controlled HUD calls for the death beat - NOT an
+## actual death. An arrival full fade must yield the overlay to death_dim's
+## ramp, dim(0.0) must clear it durably, and dim(0.0) must also cancel a
+## ramp mid-flight so no retired tween re-dims afterwards.
+func _ownership_death_dim() -> void:
+	var target_alpha: float = Color(0, 0, 0, Balance.DEATH_DIM).a
+	g.hud.flash_title("PRE-DEATH ARRIVAL", "", 0.05)
+	g.hud.death_dim(Balance.DEATH_DIM, Balance.DEATH_DIM_RAMP)
+	g.hud.flash_title("YOU DIED", "Controlled presentation", 1.4, false)
+	var synchronous: Dictionary = _arrival_presentation()
+	var row: Dictionary = {"label": "ownership_death_dim", "captures": []}
+	await r.get_tree().create_timer(maxf(float(Balance.DEATH_DIM_RAMP), 0.55) + 0.3).timeout
+	var dimmed: Dictionary = _arrival_presentation()
+	_arrival_check("ownership.death_dim_target", g.hud.overlay.color.a == target_alpha,
+		{"target": target_alpha, "presentation": dimmed})
+	_arrival_check("ownership.death_dim_original", _shot(row, "death_dim", dimmed), dimmed)
+	g.hud.dim(0.0)
+	await r.get_tree().create_timer(0.6).timeout
+	var after_clear: Dictionary = _arrival_presentation()
+	_arrival_check("ownership.death_dim_cleared", g.hud.overlay.color.a == 0.0, after_clear)
+	g.hud.death_dim(Balance.DEATH_DIM, Balance.DEATH_DIM_RAMP)
+	g.hud.dim(0.0)
+	await r.get_tree().create_timer(float(Balance.DEATH_DIM_RAMP) + 0.1).timeout
+	var cancelled: Dictionary = _arrival_presentation()
+	_arrival_check("ownership.death_dim_cancelled", g.hud.overlay.color.a == 0.0, cancelled)
+	var settled: bool = await _ownership_settled("ownership.death_dim_final_settled")
+	arrival_controls.append({"control": "death_dim_ownership", "settled": settled,
+		"before": synchronous, "dimmed": dimmed, "after_clear": after_clear, "cancelled": cancelled,
+		"death_target_alpha": target_alpha, "captures": row.captures,
+		"scope": "Explicit controlled flash_title/death_dim/dim calls; not an actual death, respawn, game_flow reset or end-game claim."})

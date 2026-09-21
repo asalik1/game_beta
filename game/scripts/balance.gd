@@ -374,11 +374,13 @@ const DIALOG_TYPE_CPS := 42.0
 const DEATH_STAIN_A := 0.34
 const DEATH_STAIN_LIFE := 28.0
 const DEATH_STAIN_MAX := 48
-# Room-enter dip (2026-08-19): a REVISITED room eases in from part-black
-# instead of jump-cutting (first visits keep the full fade + title card).
+# Room-enter dip: live first visits and revisits ease in from part-black.
+# Boot/load/rebuild arrivals retain the full fade + title card.
 # 0 alpha = off. Never on headless; never over a fade already in flight.
 const ROOM_DIP_A := 0.55
 const ROOM_DIP_T := 0.28
+# Existing title-card hold shared by default and live-arrival presentations.
+const TITLE_HOLD := 1.6
 # HUD: the controls-hint lines fade out after this many seconds of play
 # (they return when a menu opens).
 const HINT_FADE_AFTER := 75.0

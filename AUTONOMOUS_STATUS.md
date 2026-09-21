@@ -190,13 +190,39 @@ Follow-up priorities and preserved experiments:
   gem-ui-fidelity-commit-receipt.json under build/qa/session-sept20.
   All46 unrelated files and the old status tail remain byte-identical; the
   session remains active through September21 21UTC, feature cutoff20UTC.
-- Additional private arrival controls from actual Claude session
-  b08e34eb-7110-470d-8db7-eddf73955bfb are under
-  arrival-readability/claude-controls-v4. Eight anchors matched; private copies
-  only, no canonical integration or engine validation. Root flagged dropped
-  crossing-capture receipt metadata and an untested first-visit-under-owned-fade
-  branch. Map/pocket controls remain absent. V3 remains the prior private QA
-  candidate; raw V4 does not supersede it as accepted work.
+- Checkpoint 7 accepted: readable live room arrivals and owned HUD animations.
+  Walking first visits now show the room card over the existing brief partial
+  dim; boot/load/rebuild defaults retain full fades. Map/pocket callsites use
+  live entry, source-reviewed only. Shared title and overlay tweens have separate
+  owners; replacement room/boss cards reset interrupted transforms, while end
+  cards and explicit/death dims cancel old overlay writes. No art/economy/save
+  format, actor simulation, camera or chroma changes.
+  Actual Claude production/ownership QA and DeepSeek observation drafts were
+  independently corrected. Raw drafts, unsafe metadata-reset proposal, invalid
+  lambda/boot-observer attempts and negative animation controls remain retained.
+  Desktop compile/quick/full, scoped mobile sync/import/compile/strict quick,
+  fourteen native episodes and all seven strict preflight categories pass (22
+  stages). Per project: hot S/E 20 each; lazy S 80, lazy E 57; solo save/load 38;
+  paired ENet 33. Defeat/recovery 30 desktop/26 touch-mobile. All 178 originals
+  opened: actual Claude 154, root remaining 24 after Fable and Opus max both hit
+  their session limit. Root also inspected selected provider-reviewed originals.
+  A false title-oscillation finding came from alphabetical image order; root
+  checked original frames and capture counters proving midcorridor came first.
+  Provider semantic errors and one path typo are documented, raw outputs kept.
+  First final V1 south-return timeout remains unexplained. Failure/trace logging
+  added without changing gameplay, timeout or crossing predicate. Diagnostic,
+  fixed two-run repeat experiment and complete final V2 pass; no causal fix is
+  claimed. Earlier failing evidence is preserved, not reclassified as passing.
+  Controlled fixtures, host-rendered mobile/emulated touch, not ordinary earned
+  progression or physical devices. ENet regression does not measure every guest
+  fade. Pocket/map interactions and external game_flow resets remain uncovered.
+  Existing shutdown diagnostics, chest/prompt/foliage overlap, faint initial
+  subtitle, transient minimap status and boundary HUD masking remain disclosed.
+  ARRIVAL_READABILITY.md describes exact scope. Evidence: arrival-readability/
+  acceptance.json; final commit/state: arrival-readability-commit-receipt.json
+  under build/qa/session-sept20. All 46 unrelated files and old status tail kept.
+  This checkpoint does not close the session; deadline remains Sep21 21UTC.
+
 - The next chest/NPC prompt candidate is private in prompt-clearance-next/.
   Fresh actual Fable session fc855b69-495c-4689-ade2-a0f578763a7c read/reasoned
   but timed out without a patch; raw provider/session and failed receipt kept.
@@ -205,19 +231,14 @@ Follow-up priorities and preserved experiments:
   checkpoint; its HUD coverage limits and native QA plan need review. V2 keeps
   authored elevated victory-gate labels out of the generic anchor reset; the
   original V1 regression and independent QA adaptation are retained.
-- Arrival readability is another private candidate: actual tools-disabled
-  Fable returned a three-file live-entry implementation in arrival-readability/
-  claude-v1. Boot/load/network transition ownership needs independent review;
-  no canonical integration or runtime validation yet. Avoid blanket removal
-  of fades: network snapshot _enter_room also owns its arrival transition.
-  The reviewed four-file derivative centralizes the existing title hold in
-  Balance. Source reviews pass. Actual DeepSeek QA3 is frozen under
-  arrival-readability/native-qa-v1/reviewed-v3, adding optional strict live,
-  revisit, boot and actual-load observations to existing helpers; runtime is
-  still pending. Existing overlay-tween ownership limits remain explicit.
-  Actual Claude also supplied a separate prompt QA draft; its corrected private
-  derivative is prompt-clearance-next/qa-claude-v1/reviewed-local-v2. Actual
-  victory-arch/remapped-input and generic-chest fixtures remain unfinished.
+- The earlier private arrival drafts are superseded by checkpoint 7; raw versions
+  remain under arrival-readability. Its unused controls are not extra acceptance.
+  Actual Claude supplied separate prompt QA; the corrected private derivative is
+  prompt-clearance-next/qa-claude-v1/reviewed-local-v2. Actual victory-arch/remapped
+  input and generic-chest fixtures remain unfinished. Both private production
+  and QA patches still apply cleanly by read-only check; neither is integrated.
+  Another source observation: pending theme notifications still use full fades;
+  room-arrival fixes are not a claim that every in-play notification is fixed.
 - Earlier Claude web-hit/root candidate under `claude-combat/` stays parked;
   raw QA has blockers. Earlier DeepSeek continuity-only drafts are superseded.
 - Initial Warrior hunt: 35.352s, HP minimum 113.467/130, +120 gold, five originals

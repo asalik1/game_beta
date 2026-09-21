@@ -222,6 +222,9 @@ static func _run(r, receipt: Dictionary, state: Dictionary) -> String:
 		var reload_from: int = g.world.get_instance_id()
 		g.load_save(SLOT)
 		g.player.set_physics_process(false)
+		if r.flag("arrival-readability"):
+			var arrival_error: String = await _arrival_reload(r, g, receipt, mode, reload_from)
+			if arrival_error != "": return arrival_error
 		await r.frames(3)
 		if g.world.get_instance_id() == reload_from or g.wander_seed != seed_value or g.shortcut_edge != edge \
 				or not bool(g.get_flag(String(edge.flag), false)) or not g._edge_unlocked(a, b) or _graph(g) != graph:
@@ -421,8 +424,33 @@ static func _cross(r, g: Game, receipt: Dictionary, state: Dictionary, mode: Str
 	g.player.set_physics_process(true)
 	var key: int = Party.MOVE_KEY[direction]
 	Party._key_event(state, key, true)
-	var crossed: bool = await r._until(func() -> bool: return g.room_at_pos(g.player.global_position) == to_room \
-		and g.cur_room == to_room and (g.player.global_position - to_mouth).dot(axis) > 80.0, 8.0)
+	var started: int = Time.get_ticks_msec()
+	var samples: Array = []
+	var observe := func() -> bool:
+		samples.append({"t_ms": Time.get_ticks_msec() - started, "physics_frame": Engine.get_physics_frames(),
+			"process_frame": Engine.get_process_frames(), "position": _v(g.player.global_position),
+			"velocity": _v(g.player.velocity), "cur_room": g.cur_room,
+			"key_held": Input.is_physical_key_pressed(key), "input_overlay": g.input_overlay_up(),
+			"game_state": g.state, "pad_active": g.gamepad.active, "pad_focused": g.gamepad.focused})
+		return (g.room_at_pos(g.player.global_position) == to_room
+			and g.cur_room == to_room and (g.player.global_position - to_mouth).dot(axis) > 80.0)
+	var crossed: bool = await r._until(observe, 8.0)
+	# Retain a failed crossing before releasing input. A bare timeout cannot
+	# distinguish lost intent, a physical obstruction or a blocked game state.
+	if not crossed:
+		var failed_pose: Dictionary = {"complete": false, "from": from_room, "to": to_room,
+			"direction": direction, "end": _v(g.player.global_position), "velocity": _v(g.player.velocity),
+			"room_at_pos": g.room_at_pos(g.player.global_position), "cur_room": g.cur_room,
+			"to_mouth": _v(to_mouth), "progress_past_mouth": (g.player.global_position - to_mouth).dot(axis),
+			"key_held": Input.is_physical_key_pressed(key), "input_overlay": g.input_overlay_up(),
+			"game_state": g.state, "paused": r.get_tree().paused, "dead": g.player.dead,
+			"downed": g.player.downed, "ghost": g.player.ghost,
+			"physics_enabled": g.player.is_physics_processing(), "in_wall": g._pos_in_wall(g.player.global_position),
+			"edge_open": g._edge_unlocked(from_room, to_room), "pose": _pose(g), "samples": samples}
+		_note(receipt, mode + "/cross_failed_" + direction, failed_pose)
+		await RenderingServer.frame_post_draw
+		var failure_path: String = r.shot("solo_" + mode + "_cross_failed_" + direction)
+		receipt.originals.append(failure_path)
 	Party._key_event(state, key, false)
 	g.player.set_physics_process(false)
 	g.player.velocity = Vector2.ZERO
@@ -430,7 +458,7 @@ static func _cross(r, g: Game, receipt: Dictionary, state: Dictionary, mode: Str
 		return mode + ": ordinary WASD did not cross opened edge " + direction
 	_note(receipt, mode + "/cross_" + direction, {"from": from_room, "to": to_room,
 		"end": _v(g.player.global_position), "cur_room": g.cur_room, "boundary": _v(boundary),
-		"from_mouth": _v(from_mouth), "to_mouth": _v(to_mouth)})
+		"from_mouth": _v(from_mouth), "to_mouth": _v(to_mouth), "samples": samples})
 	await _shot(r, receipt, mode + "_cross_" + direction)
 	return ""
 
@@ -545,3 +573,34 @@ static func _shot(r, receipt: Dictionary, name: String) -> void:
 
 static func _v(point: Vector2) -> Array:
 	return [point.x, point.y]
+
+
+static func _arrival_reload_view(g: Game) -> Dictionary:
+	return {"overlay_alpha": g.hud.overlay.color.a, "title": g.hud.title_label.text,
+		"subtitle": g.hud.subtitle_label.text, "title_alpha": g.hud.title_label.modulate.a,
+		"subtitle_alpha": g.hud.subtitle_label.modulate.a, "title_visible": g.hud.title_label.is_visible_in_tree(),
+		"subtitle_visible": g.hud.subtitle_label.is_visible_in_tree(), "world_id": g.world.get_instance_id(),
+		"room": g.cur_room, "physics_frame": Engine.get_physics_frames(), "process_frame": Engine.get_process_frames()}
+
+static func _arrival_reload(r, g: Game, receipt: Dictionary, mode: String, old_world: int) -> String:
+	# Reuses the existing genuine autosave/load97 and byte-exact file cleanup.
+	# Player physics was already disabled by this fixture; no new overlay/HP writes.
+	var now: Dictionary = _arrival_reload_view(g)
+	var expected: String = String(g.zones[g.cur_room]["name"])
+	var full: bool = (float(now.overlay_alpha) == 1.0 and String(now.title) == expected
+		and String(now.subtitle) == "The tale continues" and int(now.world_id) != old_world)
+	_note(receipt, mode + "/arrival_load_full_fade", {"complete": full, "synchronous": now})
+	await RenderingServer.frame_post_draw
+	var early: Dictionary = _arrival_reload_view(g)
+	var path: String = r.shot("solo_" + mode + "_load_early")
+	receipt.originals.append(path)
+	var captured: bool = FileAccess.file_exists(path)
+	_note(receipt, mode + "/arrival_load_original", {"complete": captured, "path": path, "early": early})
+	await r.get_tree().create_timer(0.25).timeout
+	var later: Dictionary = _arrival_reload_view(g)
+	var interpolated: bool = (float(later.overlay_alpha) < 1.0 and float(later.overlay_alpha) >= 0.0
+		and float(later.title_alpha) > 0.01 and bool(later.title_visible)
+		and String(later.title) == expected and String(later.subtitle) == "The tale continues")
+	_note(receipt, mode + "/arrival_load_interpolation", {"complete": interpolated, "later": later,
+		"scope": "Actual load_save97 in existing posed save fixture; synchronous full overlay then first render and later interpolation. No exact tween-duration, ordinary campaign or physical-device claim."})
+	return "" if full and captured and interpolated else mode + ": actual load arrival control failed"

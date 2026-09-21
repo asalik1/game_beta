@@ -809,7 +809,7 @@ func _process(delta: float) -> void:
 			player.global_position.x = clampf(player.global_position.x, pr.position.x + 52.0, pr.end.x - 52.0)
 			player.global_position.y = clampf(player.global_position.y, pr.position.y + 62.0, pr.end.y - 62.0)
 		else:
-			_enter_room(zi)
+			_enter_room(zi, true)
 	hud.set_zone(zones[cur_room]["name"])
 	# MP: the sim gate follows every player, every frame (remote players
 	# move between the local room transitions above). Solo: {cur_room}.

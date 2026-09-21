@@ -795,7 +795,7 @@ func _enter_pocket(origin: int) -> void:
 	sfx("blink")
 	_build_room(pocket_room)
 	local_player.global_position = free_spawn_pos(preload("res://scripts/pocket_trial.gd").point(self, pocket_room) + Balance.POCKET_ARRIVAL_OFFSET, room_center(pocket_room))
-	_enter_room(pocket_room)
+	_enter_room(pocket_room, true)
 	burst(local_player.global_position, Color(0.6, 0.8, 1.0), 14)
 
 
@@ -815,7 +815,7 @@ func _pocket_return() -> void:
 	var at := clamp_to_zone(room_center(origin) + offset, room_center(origin))
 	sfx("blink")
 	local_player.global_position = free_spawn_pos(at, room_center(origin))
-	_enter_room(origin)
+	_enter_room(origin, true)
 	burst(local_player.global_position, Color(0.6, 0.8, 1.0), 14)
 
 
@@ -1017,7 +1017,11 @@ func _install_shortcut() -> void:
 
 ## Make room i the live room: build it on first entry, clamp the camera
 ## to it, wake the mood, autosave. Only the live room simulates.
-func _enter_room(i: int) -> void:
+## `live` marks in-run travel by an already-playing local player (the
+## _process boundary poll, pocket hops, map travel): a first visit then shows
+## its card over live gameplay instead of fading from black. Rebuild-time
+## callers (boot, load, chapter switch, net snapshot, respawn) keep default.
+func _enter_room(i: int, live := false) -> void:
 	if i < 0 or i >= zone_count:
 		return
 	var prev := cur_room
@@ -1065,7 +1069,10 @@ func _enter_room(i: int) -> void:
 	elif not rogue_boss:
 		set_music(terrain.get("music", "village"))
 	if play_started and first_visit:
-		hud.flash_title(zones[i]["name"])
+		if live:
+			hud.room_title(zones[i]["name"])
+		else:
+			hud.flash_title(zones[i]["name"])
 		# The cursed chest's bargain is offered at the door, once,
 		# while the pack still stands (playtest 2026-07-07).
 		_offer_cursed_chest(i)
@@ -2203,7 +2210,7 @@ func fast_travel(i: int) -> void:
 	sfx("blink")
 	burst(player.global_position, Color(0.7, 0.8, 1.0), 12)
 	player.global_position = room_arrival_pos(i)
-	_enter_room(i)
+	_enter_room(i, true)
 	burst(player.global_position, Color(0.7, 0.8, 1.0), 12)
 
 ## Where the mill's chimney mouth sits on its sprite: x as a fraction of the
