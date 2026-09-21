@@ -2783,6 +2783,7 @@ func _ensure_down_ui() -> void:
 		return
 	down_banner = _label(Vector2(0, 330), 26, Color(1.0, 0.42, 0.36), 1280, HORIZONTAL_ALIGNMENT_CENTER)
 	down_banner.visible = false
+	_connect_down_mark_placement.call_deferred()
 	for i in 8:
 		var root := Control.new()
 		root.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -2872,20 +2873,187 @@ func _revive_progress(p: Player, q) -> float:
 
 
 func _place_down_mark(idx: int, xf: Transform2D, at: Vector2, text: String, prog: float) -> int:
+	# Keep the existing world-space lift and channel width; inset is canvas pixels.
+	const HEAD_OFFSET := Vector2(0, -74)  # world-space head lift; xf applies zoom
+	const EDGE_INSET := 4.0  # breathing room so outline ink never touches the edge
+	const BAR_FILL_W := 60.0  # channel bar fill width at prog == 1.0
 	if idx >= down_marks.size():
 		return idx
 	var m: Dictionary = down_marks[idx]
 	var root := m["root"] as Control
+	var view: Rect2 = game.get_viewport().get_visible_rect()
+	var anchor: Vector2 = xf * at
+	# Feet anchor outside the INCLUSIVE visible bounds: the party edge arrows
+	# already point at that ally, so draw nothing here — but still return idx so
+	# the caller's cleanup loop hides this root and a later visible actor reuses
+	# the same slot. Prevents a second, clamped copy of an offscreen mark.
+	if anchor.x < view.position.x or anchor.x > view.end.x \
+			or anchor.y < view.position.y or anchor.y > view.end.y:
+		root.visible = false
+		return idx
 	root.visible = true
-	root.position = xf * (at + Vector2(0, -74))
-	(m["label"] as Label).text = text
+	root.position = xf * (at + HEAD_OFFSET)
+	var lab := m["label"] as Label
+	lab.text = text
 	var show_bar: bool = prog >= 0.0
-	(m["bg"] as ColorRect).visible = show_bar
+	var bg := m["bg"] as ColorRect
 	var fill := m["fill"] as ColorRect
+	bg.visible = show_bar
 	fill.visible = show_bar
 	if show_bar:
-		fill.size.x = 60.0 * clampf(prog, 0.0, 1.0)
+		fill.size.x = BAR_FILL_W * clampf(prog, 0.0, 1.0)
+	# Include the native text minimum and outline, plus visible channel geometry.
+	# These are the existing parented controls; no temporary nodes are created.
+	var outline := float(lab.get_theme_constant("outline_size"))
+	var lab_size: Vector2 = lab.get_combined_minimum_size().max(lab.size)
+	var bounds := Rect2(lab.position - Vector2(outline, outline),
+		lab_size + Vector2(outline, outline) * 2.0)
+	if show_bar:
+		bounds = bounds.merge(Rect2(bg.position, bg.size))
+		bounds = bounds.merge(Rect2(fill.position, fill.size))
+	m["world_at"] = at
+	m["local_bounds"] = bounds
+	bounds.position += root.position  # root-local -> viewport canvas space
+	# Minimal per-axis translation of the WHOLE root (interior layout, and hence
+	# the centred head position, is untouched).
+	var limit := view.grow(-EDGE_INSET)
+	var shift := Vector2.ZERO
+	if bounds.size.x >= limit.size.x or bounds.position.x < limit.position.x:
+		# Too wide for a degenerate/tiny viewport, or past the left edge: pin left.
+		shift.x = limit.position.x - bounds.position.x
+	elif bounds.end.x > limit.end.x:
+		shift.x = limit.end.x - bounds.end.x
+	if bounds.size.y >= limit.size.y or bounds.position.y < limit.position.y:
+		shift.y = limit.position.y - bounds.position.y
+	elif bounds.end.y > limit.end.y:
+		shift.y = limit.end.y - bounds.end.y
+	root.position += shift
 	return idx + 1
+
+
+## Deferred from the lazy build: Game registers its prompt hook after Hud ready.
+func _connect_down_mark_placement() -> void:
+	if not is_inside_tree() or is_queued_for_deletion(): return
+	if not RenderingServer.frame_pre_draw.is_connected(_place_down_marks_clear):
+		RenderingServer.frame_pre_draw.connect(_place_down_marks_clear)
+
+
+func _exit_tree() -> void:
+	if RenderingServer.frame_pre_draw.is_connected(_place_down_marks_clear):
+		RenderingServer.frame_pre_draw.disconnect(_place_down_marks_clear)
+
+
+## Reuse the existing painted-control walker, never a world/art traversal.
+func _down_mark_blockers() -> Array[Rect2]:
+	var out: Array[Rect2] = tracker_clearance.prompt_blockers()
+	# World identity labels remain readable beside displaced status marks.
+	for tag in party_names: tracker_clearance._drawn(out, tag)
+	for box in slot_boxes:
+		for key in ["border", "bg", "key", "cost", "name", "num"]:
+			tracker_clearance._drawn(out, box[key])
+	for box in buff_slots:
+		for key in ["border", "icon", "time_bg", "time", "fill"]: tracker_clearance._drawn(out, box[key])
+	for hint in hint_labels: tracker_clearance._drawn(out, hint)
+	var touch: TouchHud = game._touch_hud as TouchHud
+	if is_instance_valid(touch) and touch.visible:
+		for button in touch._btns.values(): tracker_clearance._drawn(out, button.panel)
+		for control in [touch._joy_base, touch._joy_knob, touch._info]:
+			if is_instance_valid(control): tracker_clearance._drawn(out, control)
+	# Read the final visible prompt after Game's pre-draw hook moved it.
+	for entry in game.interactables:
+		var node: Variant = entry.get("node")
+		var prompt: Variant = entry.get("prompt")
+		if not is_instance_valid(node) or not is_instance_valid(game.world) or not game.world.is_ancestor_of(node): continue
+		if not is_instance_valid(prompt) or not prompt is Label or not prompt.is_visible_in_tree() or prompt.text.is_empty(): continue
+		# Reserve the whole styled pill plus its outline, including unused label space.
+		var pill := Rect2(Vector2.ZERO, prompt.size).grow(float(prompt.get_theme_constant("outline_size")))
+		var bounds := game.interaction_prompt_bounds(prompt).merge(pill)
+		out.append(prompt.get_global_transform_with_canvas() * bounds)
+	# Parent panels usually contain their children: retain only maximal bounds.
+	var compact: Array[Rect2] = []
+	for rect in out:
+		if not rect.has_area(): continue
+		var covered := false
+		for prior in compact: covered = covered or prior.encloses(rect)
+		if covered: continue
+		for index in range(compact.size() - 1, -1, -1):
+			if rect.encloses(compact[index]): compact.remove_at(index)
+		compact.append(rect)
+	return compact
+
+
+## Keep complete status clear of final HUD geometry and earlier placed marks.
+func _place_down_marks_clear() -> void:
+	if not is_inside_tree() or is_queued_for_deletion() or not visible or _cinematic_mode: return
+	if not is_instance_valid(game) or not game.net_online() or not is_instance_valid(tracker_clearance): return
+	var active := false
+	for mark in down_marks: active = active or (mark.root as Control).visible
+	if not active: return
+	const EDGE_INSET := 4.0  # match the ordinary viewport containment pass
+	const CLEAR_GAP := 3.0  # separate outlined status ink from other HUD ink
+	const HEAD_OFFSET := Vector2(0, -74)  # preserve the authored world-space lift
+	var view: Rect2 = game.get_viewport().get_visible_rect()
+	var limit := view.grow(-EDGE_INSET)
+	var xf: Transform2D = game.get_viewport().canvas_transform
+	var blockers := _down_mark_blockers()  # once for the entire visible batch
+	for index in blockers.size(): blockers[index] = blockers[index].grow(CLEAR_GAP)
+	for mark in down_marks:
+		var root := mark.root as Control
+		if not root.visible or not mark.has("world_at"): continue
+		var at: Vector2 = mark.world_at
+		var feet := xf * at
+		if feet.x < view.position.x or feet.x > view.end.x or feet.y < view.position.y or feet.y > view.end.y:
+			root.hide()
+			continue
+		var local: Rect2 = mark.local_bounds
+		var wanted := Rect2(xf * (at + HEAD_OFFSET) + local.position, local.size)
+		var result := _down_mark_clear_position(wanted, limit, blockers)
+		root.position = result.position - local.position
+		root.set_meta("down_mark_no_fit", not bool(result.fits))
+		blockers.append(Rect2(result.position, local.size).grow(CLEAR_GAP))
+
+
+## Exact nearest free origin among rectangular reservations: at a nearest
+## solution X is the requested/clamped X or a blocker/viewport edge. For each
+## finite X, merge forbidden Y intervals and project onto the remaining gaps.
+## This is bounded by HUD rectangles, not pixels or a Cartesian candidate grid.
+func _down_mark_clear_position(wanted: Rect2, limit: Rect2, blockers: Array[Rect2]) -> Dictionary:
+	var high := limit.end - wanted.size
+	var fallback := Vector2(clampf(wanted.position.x, limit.position.x, maxf(limit.position.x, high.x)),
+		clampf(wanted.position.y, limit.position.y, maxf(limit.position.y, high.y)))
+	var ordinary := Rect2(fallback, wanted.size)
+	var clear := limit.encloses(ordinary)
+	for obstacle in blockers: clear = clear and not ordinary.intersects(obstacle)
+	if clear: return {"position": fallback, "fits": true}
+	if high.x < limit.position.x or high.y < limit.position.y:
+		return {"position": fallback, "fits": false}
+	var xs: Array[float] = [fallback.x, limit.position.x, high.x]
+	for obstacle in blockers:
+		for edge in [obstacle.position.x - wanted.size.x, obstacle.end.x]:
+			var x := clampf(edge, limit.position.x, high.x)
+			if not xs.has(x): xs.append(x)
+	var best := fallback
+	var distance := INF
+	for x in xs:
+		var intervals: Array[Vector2] = []
+		for obstacle in blockers:
+			if x < obstacle.end.x and x + wanted.size.x > obstacle.position.x:
+				intervals.append(Vector2(obstacle.position.y - wanted.size.y, obstacle.end.y))
+		intervals.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
+		var cursor := limit.position.y
+		# Sentinel closes the last free interval without another placement path.
+		intervals.append(Vector2(high.y, high.y))
+		for interval in intervals:
+			var ceiling := minf(interval.x, high.y)
+			if cursor <= ceiling:
+				var candidate := Vector2(x, clampf(wanted.position.y, cursor, ceiling))
+				var delta := candidate.distance_squared_to(wanted.position)
+				if delta < distance:
+					distance = delta
+					best = candidate
+			cursor = maxf(cursor, interval.y)
+			if cursor > high.y: break
+	return {"position": best, "fits": distance < INF}
 
 
 # ------------------------------------------------------- party UI (MP-14 §5.6) ---

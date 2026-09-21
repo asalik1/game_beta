@@ -1077,6 +1077,7 @@ func _party_name_checks() -> String:
 	for index in range(1, 4): pair.readers[index].local_player.global_position = originals[index - 1]
 	await pair._settle(0.3)
 	_check("party_names.roster_and_economy_preserved", _roster_snapshot() == before_roster and pair._personal(g) == before_host_economy, _roster_snapshot())
+	await _down_mark_edge_suite(pids)
 	await _party_identity_lifecycle(String(names[2]), int(pids[2]))
 	return ""
 
@@ -1396,3 +1397,281 @@ func _party_identity_lifecycle(full_name: String, departing_peer: int) -> void:
 		_check(id + ".real_peer_departure_closed", removed and not is_instance_valid(g.hud.hud_popover)
 			and pair.apis[0].get_peers().size() == 2, {"removed": removed, "remaining": pair.apis[0].get_peers().size(), "popup": str(g.hud.hud_popover)})
 		if not r.flag("no-capture"): r.shot("names_lifecycle_peer_departed", "intentional final isolated guest transport teardown; stale-party-popup lifecycle, not kick action")
+
+
+## Controlled owner poses and reliable down-state fanout in the existing four
+## real ENet worlds. Display channel/time are fixtures, not an earned revive.
+func _down_mark_edge_suite(pids: Array) -> void:
+	var snapshots: Array[Dictionary] = []
+	var fields: Array[String] = ["downed", "ghost", "dead", "down_t", "hp", "being_revived_by", "revive_bar_ms", "global_position"]
+	for reader in pair.readers:
+		for actor in reader.players:
+			var values := {}
+			for field in fields: values[field] = actor.get(field)
+			snapshots.append({"actor": actor, "values": values})
+	var last_down_room: int = pair.wires[0]._last_down_room
+	var roster := _roster_snapshot()
+	var economy: Dictionary = pair._personal(g)
+	var states: Array[int] = [1, 2, 1]
+	for index in 3:
+		var owner: Player = pair.readers[index + 1].local_player
+		owner.downed = states[index] == 1
+		owner.ghost = states[index] == 2
+		owner.dead = false
+		owner.down_t = 7.0
+		pair.wires[index + 1].send_down_state(states[index])
+	await pair._settle(0.3)
+	var labels: Array[String] = ["DOWNED 7s", "GHOST", "REVIVING"]
+	var prior_touch: bool = bool(g.settings.get("touch_controls", false))
+	var prior_names_alpha: float = g.hud.party_names_alpha
+	var phases: Array[String] = ["clear_center", "center", "left", "right", "top", "bottom", "outside_left", "outside_right", "outside_top", "outside_bottom", "touch_right"]
+	for phase in phases:
+		# Explicit unobstructed control; ordinary center retains visible identities.
+		g.hud.party_names_alpha = 0.0 if phase == "clear_center" else prior_names_alpha
+		if phase == "touch_right":
+			_touch_mode(true)
+			await r.frames(3)
+			_check("party_names.down_marks.touch_right.mode", g.touch_mode and g._touch_hud.visible, "actual touch setting/controls enabled; host rendering only")
+		var viewport: Rect2 = g.get_viewport().get_visible_rect()
+		var targets := _down_mark_targets(phase, viewport)
+		var inverse: Transform2D = g.get_viewport().canvas_transform.affine_inverse()
+		for index in 3:
+			pair.readers[index + 1].local_player.global_position = inverse * targets[index]
+		await pair._settle(1.2)
+		var present := true
+		for index in 3:
+			var remote: Player = pair._shell(0, int(pids[index]))
+			present = present and remote != null
+			if remote != null:
+				remote.down_t = 7.0  # explicit countdown display fixture after real fanout
+				remote.being_revived_by = int(pids[1]) if index == 2 else 0
+				if index == 2: remote.revive_bar_ms = Time.get_ticks_msec() - 1200
+		_check("party_names.down_marks." + phase + ".peers", present, pids)
+		var countdown_before: float = pair._shell(0, int(pids[0])).down_t if present else -1.0
+		var before_ms: int = Time.get_ticks_msec()
+		await r.frames(2)
+		await RenderingServer.frame_post_draw
+		var after_ms: int = Time.get_ticks_msec()
+		var outside: bool = phase.begins_with("outside_")
+		var visible_marks: Array[Dictionary] = []
+		for mark in g.hud.down_marks:
+			if (mark.root as Control).is_visible_in_tree(): visible_marks.append(mark)
+		_check("party_names.down_marks." + phase + ".count", visible_marks.size() == (0 if outside else 3),
+			{"visible": visible_marks.size(), "outside": outside})
+		for index in 3:
+			var id := "party_names.down_marks.%s.%d" % [phase, index]
+			var remote: Player = pair._shell(0, int(pids[index]))
+			if remote == null: continue  # peers check already fails; preserve report/restore
+			var xf: Transform2D = g.get_viewport().canvas_transform
+			var feet: Vector2 = xf * remote.global_position
+			_check(id + ".transport_pose", feet.distance_to(targets[index]) <= 2.0,
+				{"actual_feet": feet, "planned_feet": targets[index], "transform": str(xf)})
+			_check(id + ".state", remote.downed == (states[index] == 1) and remote.ghost == (states[index] == 2)
+				and remote.being_revived_by == (int(pids[1]) if index == 2 else 0),
+				{"downed": remote.downed, "ghost": remote.ghost, "reviver": remote.being_revived_by, "channel": remote.REVIVE_CHANNEL})
+			if outside: continue
+			var expected_texts: Array[String] = [labels[index]]
+			if index == 0:
+				expected_texts.clear()
+				# The shell ticks independently; permit only exact countdown values
+				# observed across this draw, never an unbounded prefix match.
+				for second in range(int(ceil(remote.down_t)), int(ceil(countdown_before)) + 1):
+					expected_texts.append("DOWNED %ds" % second)
+			var found: Dictionary = {}
+			for mark in visible_marks:
+				if expected_texts.has((mark.label as Label).text): found = mark
+			if not _check(id + ".text_present", not found.is_empty(), {"exact_allowed": expected_texts, "countdown_before": countdown_before, "countdown_after": remote.down_t}): continue
+			_down_mark_geometry(id, found, viewport)
+			var bg: ColorRect = found.bg
+			var fill: ColorRect = found.fill
+			var low: float = clampf(float(before_ms - remote.revive_bar_ms) / (remote.REVIVE_CHANNEL * 1000.0), 0.0, 1.0)
+			var high: float = clampf(float(after_ms - remote.revive_bar_ms) / (remote.REVIVE_CHANNEL * 1000.0), 0.0, 1.0)
+			_check(id + ".progress", bg.visible == (index == 2) and fill.visible == (index == 2)
+				and (index != 2 or (fill.size.x >= 60.0 * low - 0.5 and fill.size.x <= 60.0 * high + 0.5)),
+				{"fill_px": fill.size.x, "before_progress": low, "after_progress": high, "channel_seconds": remote.REVIVE_CHANNEL,
+				"bg_visible": bg.visible, "fill_visible": fill.visible})
+			if phase == "clear_center":
+				_check(id + ".interior_anchor", (found.root as Control).position.distance_to(xf * (remote.global_position + Vector2(0, -74))) <= 0.5,
+					{"actual": (found.root as Control).position, "authored_head": xf * (remote.global_position + Vector2(0, -74))})
+		if outside:
+			var arrows := 0
+			for arrow in g.hud.party_arrows: arrows += int(arrow.is_visible_in_tree())
+			_check("party_names.down_marks." + phase + ".arrows", arrows == 3, arrows)
+		_down_mark_hud_clear(phase, visible_marks)
+		if not r.flag("no-capture"): r.shot("down_marks_" + phase, "controlled owner poses over real ENet; three reliable down states; channel/countdown display fixtures, not earned revive")
+	g.hud.party_names_alpha = prior_names_alpha
+	_check("party_names.down_marks.names_setting_restored", g.hud.party_names_alpha == prior_names_alpha, prior_names_alpha)
+	_touch_mode(prior_touch)
+	_check("party_names.down_marks.touch_setting_restored", bool(g.settings.get("touch_controls", false)) == prior_touch, prior_touch)
+	# Restore every reader's existing actor state; reliable owner reset first,
+	# exact saved presentation values afterward, including shell countdowns.
+	for index in 3:
+		var owner: Player = pair.readers[index + 1].local_player
+		for snapshot in snapshots:
+			if snapshot.actor == owner:
+				for field in fields: owner.set(field, snapshot.values[field])
+		pair.wires[index + 1].send_down_state(1 if owner.downed else (2 if owner.ghost else 0))
+	await pair._settle(0.3)
+	for snapshot in snapshots:
+		if is_instance_valid(snapshot.actor):
+			for field in fields: snapshot.actor.set(field, snapshot.values[field])
+			snapshot.actor._refresh_down_visual()
+	pair.wires[0]._last_down_room = last_down_room
+	g.hud._hide_down_ui()
+	var hidden := true
+	for mark in g.hud.down_marks: hidden = hidden and not (mark.root as Control).visible
+	_check("party_names.down_marks.hide", hidden, "controlled existing hide API; normal update resumes next frame")
+	var restored_fields := true
+	var restoration: Array[Dictionary] = []
+	for snapshot in snapshots:
+		if not is_instance_valid(snapshot.actor):
+			restored_fields = false
+			continue
+		for field in fields:
+			var same: bool = snapshot.actor.get(field) == snapshot.values[field]
+			if field == "global_position": same = snapshot.actor.global_position == snapshot.values[field]
+			restored_fields = restored_fields and same
+			if not same: restoration.append({"peer": snapshot.actor.peer_id, "field": field, "actual": snapshot.actor.get(field), "saved": snapshot.values[field]})
+	_check("party_names.down_marks.actor_fields_restored", restored_fields and pair.wires[0]._last_down_room == last_down_room, restoration)
+	await r.frames(3)
+	await RenderingServer.frame_post_draw
+	var visible := 0
+	for mark in g.hud.down_marks: visible += int((mark.root as Control).is_visible_in_tree())
+	_check("party_names.down_marks.restored", visible == 0 and _roster_snapshot() == roster and pair._personal(g) == economy,
+		{"visible_marks": visible, "roster": _roster_snapshot(), "economy_unchanged": pair._personal(g) == economy})
+
+
+func _down_mark_targets(phase: String, viewport: Rect2) -> Array[Vector2]:
+	var targets: Array[Vector2] = []
+	for index in 3:
+		var point := viewport.position + Vector2(viewport.size.x * (0.375 + index * 0.125), viewport.size.y * 0.58)
+		if phase.ends_with("left") or phase.ends_with("right"):
+			point.y = viewport.position.y + viewport.size.y * (0.375 + index * 0.18)
+		if phase == "left": point.x = viewport.position.x + 2.0
+		elif phase == "right" or phase == "touch_right": point.x = viewport.end.x - 2.0
+		elif phase == "top": point.y = viewport.position.y + 2.0
+		elif phase == "bottom": point.y = viewport.end.y - 2.0
+		elif phase == "outside_left": point.x = viewport.position.x - 12.0
+		elif phase == "outside_right": point.x = viewport.end.x + 12.0
+		elif phase == "outside_top": point.y = viewport.position.y - 12.0
+		elif phase == "outside_bottom": point.y = viewport.end.y + 12.0
+		targets.append(point)
+	return targets
+
+
+func _down_mark_geometry(id: String, mark: Dictionary, viewport: Rect2) -> void:
+	var label: Label = mark.label
+	var rect: Rect2 = label.get_global_rect()
+	var allowed := viewport
+	var ancestor: Node = label
+	while ancestor != null:
+		if ancestor is Control and ancestor.clip_contents: allowed = allowed.intersection(ancestor.get_global_rect())
+		ancestor = ancestor.get_parent()
+	var outline: int = label.get_theme_constant("outline_size")
+	var cells: Array[Rect2] = []
+	var missing: Array[int] = []
+	var contained := allowed.grow(0.5).encloses(rect.grow(outline))
+	for index in label.text.length():
+		if label.text.substr(index, 1).strip_edges() == "": continue
+		var cell: Rect2 = label.get_character_bounds(index)
+		if not cell.has_area(): missing.append(index)
+		else:
+			var global_cell := Rect2(rect.position + cell.position, cell.size)
+			cells.append(global_cell)
+			contained = contained and allowed.grow(0.5).encloses(global_cell.grow(outline))
+	var bars: Array[Rect2] = []
+	for control in [mark.bg, mark.fill]:
+		if control.is_visible_in_tree():
+			var bar: Rect2 = control.get_global_rect()
+			bars.append(bar)
+			contained = contained and viewport.grow(0.5).encloses(bar)
+	_check(id + ".geometry", contained and missing.is_empty() and not cells.is_empty()
+		and label.visible_characters == -1 and label.lines_skipped == 0 and label.max_lines_visible == -1,
+		{"text": label.text, "label_rect": rect, "cells": cells, "missing": missing, "outline": outline,
+		"bars": bars, "viewport": viewport, "allowed": allowed})
+
+
+## Independent post-draw collision oracle: native painted HUD Controls, never
+## the production placement candidate list or its clamp/slide algorithm.
+func _down_mark_hud_clear(phase: String, visible_marks: Array[Dictionary]) -> void:
+	if phase.begins_with("outside_"): return
+	var painted: Array[Dictionary] = []
+	var roots := {"vitals": g.hud.vitals_panel, "info": g.hud.info_panel,
+		"minimap": g.hud.minimap_root, "zone": g.hud.zone_label,
+		"tracker_panel": g.hud.quest_panel, "quest": g.hud.quest_label,
+		"wayfinder_quest": g.hud.wayfinder.quest_root,
+		"boss": g.hud.boss_box, "mob": g.hud.mob_box, "rival": g.hud.rival_box}
+	for key in roots:
+		if is_instance_valid(roots[key]): _down_mark_paint_walk(painted, String(key), roots[key])
+	for tag in g.hud.party_names:
+		_down_mark_paint_walk(painted, "world_name", tag)
+	var party_cards := 0
+	for slot in g.hud.party_slots:
+		if is_instance_valid(slot.root) and (slot.root as Control).is_visible_in_tree():
+			var card: Rect2 = _party_name_card(slot)
+			if card.has_area():
+				party_cards += 1
+				painted.append({"id": "party_card", "path": str(slot.root.get_path()), "rect": card})
+	var action_panels := 0
+	if g.touch_mode:
+		for key in g._touch_hud._btns:
+			var panel: Control = g._touch_hud._btns[key].panel
+			if panel.is_visible_in_tree() and panel.size.x > 0.0 and panel.size.y > 0.0:
+				action_panels += 1
+				_down_mark_paint_walk(painted, "touch_" + String(key), panel)
+	else:
+		for slot in g.hud.slot_boxes:
+			if (slot.bg as Control).is_visible_in_tree(): action_panels += 1
+			for key in ["border", "bg", "icon", "key", "name", "cost"]:
+				_down_mark_paint_walk(painted, "hotbar_" + String(key), slot[key])
+	# Current selected world prompt is an actual Label in world canvas space.
+	# Read its native screen transform, not the production prompt solver.
+	for entry in g.interactables:
+		var prompt: Variant = entry.get("prompt")
+		if not is_instance_valid(prompt) or not prompt is Label or not prompt.is_visible_in_tree() or prompt.text.is_empty(): continue
+		var box := Rect2(Vector2.ZERO, prompt.size).grow(float(prompt.get_theme_constant("outline_size")))
+		painted.append({"id": "interaction", "path": str(prompt.get_path()), "rect": prompt.get_global_transform_with_canvas() * box})
+	var categories := {}
+	for item in painted: categories[item.id] = int(categories.get(item.id, 0)) + 1
+	var id := "party_names.down_marks." + phase + ".hud_clear"
+	_check(id + ".blockers_present", categories.has("vitals") and categories.has("info")
+		and categories.has("minimap") and categories.has("zone") and party_cards == 3 and action_panels >= 5,
+		{"categories": categories, "party_cards": party_cards, "action_panels": action_panels, "touch": g.touch_mode})
+	var expected_names := 0 if phase == "clear_center" or phase == "top" else 3
+	_check(id + ".world_names_present", int(categories.get("world_name", 0)) == expected_names,
+		{"actual": int(categories.get("world_name", 0)), "expected": expected_names, "names_alpha": g.hud.party_names_alpha})
+	var envelopes: Array[Rect2] = []
+	for index in visible_marks.size():
+		var mark: Dictionary = visible_marks[index]
+		var label: Label = mark.label
+		var envelope: Rect2 = label.get_global_rect().grow(float(label.get_theme_constant("outline_size")))
+		for control in [mark.bg, mark.fill]:
+			if control.is_visible_in_tree(): envelope = envelope.merge(control.get_global_rect())
+		var collisions: Array[Dictionary] = []
+		for item in painted:
+			if envelope.intersects(item.rect): collisions.append(item)
+		_check(id + ".mark%d" % index, collisions.is_empty(),
+			{"text": label.text, "mark_rect": envelope, "collisions": collisions, "painted_count": painted.size()})
+		var peers: Array[Rect2] = []
+		for earlier in envelopes:
+			if envelope.intersects(earlier): peers.append(earlier)
+		if index > 0:
+			_check(id + ".pair%d" % index, peers.is_empty(), {"mark_rect": envelope, "earlier_overlaps": peers})
+		envelopes.append(envelope)
+
+
+func _down_mark_paint_walk(out: Array[Dictionary], tag: String, node: Node) -> void:
+	if node is CanvasItem and (not node.is_visible_in_tree() or node.modulate.a <= 0.01): return
+	# Size-zero grouping Controls may own painted children; never prune them.
+	if node is Control and node.size.x > 0.0 and node.size.y > 0.0:
+		var painted: bool = node.self_modulate.a > 0.01
+		if node is Label: painted = painted and not node.text.is_empty()
+		if painted:
+			var rect: Rect2 = node.get_global_rect()
+			if node is Label: rect = rect.grow(float(node.get_theme_constant("outline_size")))
+			var ancestor: Node = node.get_parent()
+			while ancestor != null:
+				if ancestor is Control and ancestor.clip_contents: rect = rect.intersection(ancestor.get_global_rect())
+				ancestor = ancestor.get_parent()
+			if rect.has_area(): out.append({"id": tag, "path": str(node.get_path()), "rect": rect})
+	for child in node.get_children(): _down_mark_paint_walk(out, tag, child)

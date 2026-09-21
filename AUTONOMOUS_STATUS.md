@@ -17,8 +17,8 @@ ACTIVE heartbeat: `crownless-september-20-21-authorized-improvements`.
 Pause ONLY this heartbeat when this session closes; it expires at the deadline.
 This UI checkpoint does not close the broader session.
 
-Latest validated checkpoint: **20 — complete long announcement text**.
-Evidence: `build/qa/session-sept20/announcement-wrap/checkpoint-validation.json`;
+Latest validated checkpoint: **21 — readable downed and revive status**.
+Evidence: `build/qa/session-sept20/down-mark/checkpoint-validation.json`;
 its `commit-receipt.json` records the resulting local HEAD and worktree state.
 
 Checkpoint 1 — focused Professions workshop (validated; commit receipt below):
@@ -576,6 +576,35 @@ Follow-up priorities and preserved experiments:
   player/tool scope: WARD_VIGILS.md and PARTY_IDENTITY_READABILITY.md. All 46
   unrelated files and the old status tail remain byte-identical. Session stays
   active; no new push. Older paused automations remain untouched.
+
+- Checkpoint 21 validated: complete downed/ghost/revive status at screen edges.
+  Native label/outline/bar bounds remain inside the viewport for visible feet;
+  late placement clears the actual HUD, ally names, selected prompt and earlier
+  marks. Offscreen feet retain existing party-arrow guidance. Unobstructed
+  anchors remain authored; names can require a small interior lift. No-fit uses
+  explicit fallback/metadata, not a universal overlap guarantee. State, timing,
+  protocol, resources and art are unchanged.
+  Actual Claude initial production and DeepSeek QA proposals were reviewed and
+  corrected independently. Claude's later correction timed out with no code;
+  independent integration supplied the HUD/name placement. Raw outputs retained.
+  Old code failed 13/359; a green359 viewport pilot was visually rejected and
+  strengthened QA reproduced 11/414 HUD collisions. A later pilot failed three
+  prompt-envelope checks. Another green414 pilot was visually rejected for a
+  status hidden by an ally name; expanded QA reproduces it before the final fix.
+  Clear-center now hides/restores names to exercise exact authored anchors;
+  three old center-anchor IDs explicitly migrate to that phase. No silent waiver.
+  Compile/quick/full, mobile sync/import/compile/strict quick, 445 name/down-mark,
+  560 HUD, 64 paired UI and 149 pause checks pass on each renderer; strict
+  seven-category preflight passes. All152 accepted native originals reviewed,
+  17 by root. Two canonical sources and their mobile mirrors changed.
+  Controlled real-ENet poses/channel/countdown displays are not earned combat or
+  revival; mobile is host-rendered Compatibility, not a physical device. No
+  arbitrary viewport/zoom, dynamic tracker stress or performance benchmark claim.
+  Separate debts: world-name overlap/vertical edges, controller identity-reader
+  access, compact feed truncation and stale queued departure semantics.
+  Evidence: down-mark/checkpoint-validation.json and commit-receipt.json; design
+  scope: PARTY_IDENTITY_READABILITY.md. All46 unrelated files and the exact old
+  status tail are preserved. Session remains active; no additional push.
 
 - Owner-requested backup completed September 21 at 05:39 UTC: origin branch
   codex/crownless-wayfinder matches d8e5b74355229cf956c764a45b981384aff94f0d.
