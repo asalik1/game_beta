@@ -78,6 +78,13 @@ L5/L15 access is lent without recalculating starting stats; outputs go in
 `payload/`. `--payload --baseline` requires exactly three old cross-cast findings;
 extra controls run only in strict mode. See COMBAT_CLOCKS.md for fixture limits.
 
+Add `--trial-transitions` alone for actual initial Crucible pause/resume, strict
+stale-run/controller/world callback probes and a controlled room-clear Depths
+advance with native pause/resume. Five originals; no baseline waiver. Pending
+rewards for the Depths clear are controlled and not banked; low-level survival
+is protected for that timing phase. Use the same isolated muted runner and host
+mobile flags. See COMBAT_CLOCKS.md for exact limits and source-bound evidence.
+
 Exploration QA: `shot.bat exploration_friction --competition --endpoint-contracts
 --field-notes --timeout=300` exercises actual hunt-sign input, nearest eligible
 selection, shared dash landings and Codex reading. Add `--tumble` for Archer's

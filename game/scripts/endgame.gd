@@ -24,6 +24,8 @@ var game: Game
 
 var mode := ""                 # "crucible" | "depths" | ""
 var active := false            # a run is live (guards deferred advance timers)
+var _run_generation := 0        # invalidates beats from a previous start
+var _run_world_id := 0          # avoids retaining a freed arena reference
 var arena_room := 0            # the single arena zone index
 
 # progress
@@ -53,6 +55,7 @@ var _camp_merchant: Node2D = null  # depths: the prep merchant, freed on the fir
 ## Begin a run. Builds the arena world, resets the run clock, and kicks off the
 ## first fight (Crucible) or the prep camp (Depths).
 func start(m: String) -> void:
+	_run_generation += 1
 	mode = m
 	active = true
 	index = 0
@@ -70,6 +73,7 @@ func start(m: String) -> void:
 
 	game.switch_chapter(m, true)   # tear down the campaign world, build the arena
 	arena_room = game.cur_room
+	_run_world_id = game.world.get_instance_id()
 	game.run_time = 0.0            # this run's clock feeds the leaderboard PB
 	game.run_deaths = 0
 
@@ -565,11 +569,28 @@ func _mob_pool() -> Array:
 
 # ----------------------------------------------------------------- utils ---
 
-## Deferred advance, cancelled if the run ends (cash-out/death) mid-delay.
+## The beat follows paused, time-scaled gameplay; old runs/worlds cannot resume it.
 func _advance_after(delay: float, fn: Callable) -> void:
-	get_tree().create_timer(delay).timeout.connect(func() -> void:
-		if active and is_instance_valid(game):
-			fn.call())
+	if not is_inside_tree() or is_queued_for_deletion() or not active:
+		return
+	get_tree().create_timer(delay, false).timeout.connect(
+		_on_advance_due.bind(fn, _run_generation, _run_world_id))
+
+
+## A bound method disconnects when this controller is freed; queued nodes also stop.
+func _on_advance_due(fn: Callable, generation: int, world_id: int) -> void:
+	if not active or generation != _run_generation or is_queued_for_deletion():
+		return
+	if not is_instance_valid(game) or game.is_queued_for_deletion():
+		return
+	if game.endgame != self or get_parent() != game or not game.endgame_active:
+		return
+	if not is_instance_valid(game.world) or game.world.is_queued_for_deletion():
+		return
+	if game.world.get_instance_id() != world_id:
+		return
+	if fn.is_valid():
+		fn.call()
 
 func _shuffle(arr: Array) -> void:
 	for i in range(arr.size() - 1, 0, -1):

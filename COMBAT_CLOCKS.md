@@ -13,6 +13,65 @@ holds this clock with survival; online menus advance it. Last-fall snapshots,
 mitigation, overkill clipping, recovery and memory bounds retain their contracts.
 The report and Codex explain gameplay time. No save or network format changes.
 
+## Trial transitions (September 21, checkpoint 16)
+
+Trial transition delays follow solo pause and retain their existing durations
+and gameplay time scale. Initial/next Crucible spawns, Depths advances and the
+final Crucible results delay share one scheduler. A callback belongs to its run
+generation, current controller and arena world; ending/replacing them invalidates
+old callbacks. Reward math, settlement and save behavior remain unchanged.
+
+Actual Claude supplied the scheduling draft, with independent ownership/world
+corrections. Actual DeepSeek supplied an existing-combat-clocks fixture extension;
+incomplete output and rejected source drafts remain preserved. Independent QA
+adds a controlled real Depths advance. Evidence lives in
+`build/qa/session-sept20/trial-transition/`; raw providers and reviewed patches
+remain in `trial-transition-candidate/`.
+
+Final acceptance uses 16 successful serial stages: compile-first desktop quick
+and full, normal project-specific UID imports, scoped mobile source sync,
+mobile compile/strict quick, native trial 30/30 and default combat clocks 30/30
+per project, actual paired ENet UI 64/64 per renderer, and early/final strict
+preflight. The original orchestration stopped after six successful desktop
+stages because a new helper UID had not been imported; normal Godot import
+and the remaining stages resumed without repeating or replacing evidence.
+UIDs are project-specific and are not copied across projects.
+All 36 final native originals received visual review (root 22, peer 24,
+ten overlapping trial views). Source and evidence hashes are bound in
+`trial-transition/checkpoint-validation.json`; the exact commit and preserved
+worktree state are in `commit-receipt.json` there.
+
+The timing behavior is accepted; screenshots also retain separate presentation
+debt. Rapid controlled world restarts leave a queued Crucible announcement
+visible in Depths; camp guidance is truncated in the compact notification feed,
+and Bog/Gorged Tick artwork is visibly pixelated beside the hero and terrain. These
+are recorded follow-ups, not blanket visual approval. The first pilot captured
+an actual boss-intro painting; final QA waits for its normal completion before
+the resumed-play screenshot. The pilot and rejected old-runtime evidence remain.
+Host-mobile uses Compatibility rendering, not physical devices. Paired ENet
+UI checks do not prove persistence roundtrips. Existing negative-codec and
+shutdown diagnostics remain under unchanged strict runner verdicts.
+
+Use `shot.bat combat_clocks --trial-transitions --timeout=300` with isolated
+APPDATA under build/qa. This strict mode rejects baseline waivers and other
+clock modes. It starts a real Crucible and pauses natively before first spawn,
+waits beyond its delay, then resumes and requires exactly one actual boss.
+Synthetic counters exercise inactive/reused-run/controller/world cancellation
+and a fresh positive. A loaned cleared trash depth invokes the actual room-clear
+scheduler, accrues a controlled pending award, then verifies pause and exactly
+one next-wave advance in the same world after native Resume. Five originals
+show held/resumed transitions and the fresh camp. The Depths phase temporarily
+protects the low-level hero with the existing hurt cooldown, restored afterward;
+AI is frozen after each spawn observation. These are timing tests, not victories.
+
+The unchanged runtime failed four strict checks: first boss appeared under
+pause, and reused-run/controller/world callbacks fired. Its three originals
+and receipts remain retained. The amended Depths case was added afterward.
+No ordinary earned trial, final delayed payout, save-write, exact remaining
+milliseconds or physical-device proof is claimed. Same-controller restart also
+replaces its world; that case does not independently isolate the generation
+guard. Native freed-owner and nondefault-time-scale behavior remain untested.
+
 ## Validation
 
 Accepted evidence is under `build/qa/session-sept17/`. Desktop/mobile gates,

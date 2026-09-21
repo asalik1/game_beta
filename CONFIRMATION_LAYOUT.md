@@ -48,9 +48,10 @@ cash-out. Original missing-controller cases and all earlier checks remain.
 
 This is controlled preview/cancel validation, not an earned trial, payout,
 abandon reload or save-write test. Foreign/queued-controller guards receive
-source review only. Existing deferred trial transition timers can still advance
-during pause; the synthetic controller fixture does not prove arbitrary actual
-trial-transition conservation. Their separate fix candidate remains unaccepted.
+source review only. At checkpoint 15, deferred trial transitions could still
+advance during pause. Checkpoint 16 fixes their shared scheduler, with separate
+native timing coverage recorded in COMBAT_CLOCKS.md; this synthetic preview
+fixture itself does not prove arbitrary actual trial-transition conservation.
 Host-rendered mobile checks are not physical-device tests.
 
 ## Trial reward and return clarity (checkpoint 14)

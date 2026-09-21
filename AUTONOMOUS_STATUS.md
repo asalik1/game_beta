@@ -414,23 +414,52 @@ Follow-up priorities and preserved experiments:
   QA uses controlled paused Endgame balances and actual open/Cancel input,
   checking pending/economy/mail/meta/RNG/world/controller conservation. No earned
   trial, settlement, abandon reload, save-write or physical-device claim.
-  Existing deferred transitions can still advance during pause; this fixture
-  does not establish conservation for arbitrary actual trial transitions.
+  At checkpoint 15, deferred transitions could advance during pause; checkpoint
+  16 fixes the scheduler separately. The preview fixture alone does not prove
+  conservation for arbitrary actual trial transitions.
   Mobile is host Compatibility; ENet UI-only is not persistence proof. Known
   negative-codec/shutdown diagnostics remain under unchanged suite verdicts.
   Evidence: build/qa/session-sept20/trial-reward-preview/checkpoint-validation.json;
   commit-receipt.json records resulting HEAD and state. All46 unrelated files
   and exact old status tail preserved. Session active; no additional push.
 
-- Private future candidate: pause-aware trial transition timers with generation,
-  current-owner and world guards. Source review found Endgame._advance_after
-  currently uses timers that continue during solo pause. Actual Claude runtime
-  and DeepSeek existing-combat-clocks QA drafts are independently corrected in
-  build/qa/session-sept20/trial-transition-candidate/. Read README.md and
-  review-receipt.json; patches only, never whole-file replacement. No canonical
-  integration, compile or native validation yet. Delayed settlement and Depths
-  auto-descent are outside the proposed native coverage. Keep all failed raw
-  provider attempts. Consider only after checkpoint 15 is committed.
+- Checkpoint 16 accepted: trial transitions now follow solo pause and belong to
+  the current run, controller and arena. First/next boss, Depths descent and final
+  results share the scheduler; delays, reward math and settlement are unchanged.
+  Actual Claude implementation and DeepSeek existing-rig QA drafts received
+  independent corrections/review; raw failed/incomplete attempts remain preserved.
+  Unchanged runtime failed four strict checks. The final candidate passes all
+  16 serial stages: desktop compile/quick/full, scoped mobile source sync and
+  project-specific imports/compile/strict quick, native trial 30/30 and default
+  clocks 30/30 on both projects, paired ENet UI 64/64 each, strict preflight.
+  An initial orchestration UID guard stopped after six passing desktop stages;
+  normal import and pending mobile stages resumed. No failed engine pass claimed.
+  All 36 final originals reviewed: root22, peer24 (ten overlapping trial views).
+  The actual first spawn and controlled Depths room-clear schedule hold under
+  native pause and fire once after Resume. Cancellation uses synthetic counters
+  across real run/world changes. Controlled pending reward/survival loans are
+  explicit; no ordinary earned victory, payout, save or physical-mobile proof.
+  Final settlement, freed-owner and nondefault-time-scale behavior are source
+  reviewed only; restart also replaces world, so generation is not isolated.
+  Final native images retain separate presentation debt: queued Crucible notice
+  in Depths after rapid restarts, clipped camp guidance and pixelated Bog/Gorged Tick.
+  No blanket UI/art approval. Final QA waits for actual boss intro completion;
+  the obscured pilot and old-code failures remain preserved.
+  Evidence: build/qa/session-sept20/trial-transition/checkpoint-validation.json;
+  commit-receipt.json binds exact HEAD and clean owned paths. All46 unrelated
+  files and exact old status tail preserved. Session active; no additional push.
+- Private pause-layout follow-up remains unimplemented. Actual Claude Opus5 max
+  timed out at its480-second bound without usable production output; raw stream
+  and timeout receipt remain in pause-layout-candidate/provider/. Independently
+  corrected actual DeepSeek QA patch passes apply-check only, not compile/native.
+  README records a measured all-platform scroll layout proposal, required full
+  party/long-name/input checks and exact limitations. No canonical changes from it.
+- Next source-backed priority: Depths `_mob_pool` admits non-boss sprites without
+  excluding `placeholder`. `content/pc_extra_mobs.gd` explicitly marks all five
+  ticks retired, unplaced placeholders; the random controlled native waves
+  exposed Bog/Gorged Tick. Inspect tick-art-audit/ for the read-only diagnosis.
+  Prefer a bounded eligibility correction with strict regression coverage over
+  repurposing/repainting retired content. No pool change is accepted in CP16.
 
 - Owner-requested backup completed September 21 at 05:39 UTC: origin branch
   codex/crownless-wayfinder matches d8e5b74355229cf956c764a45b981384aff94f0d.

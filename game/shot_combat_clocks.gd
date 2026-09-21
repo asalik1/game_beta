@@ -12,7 +12,10 @@ func _ready() -> void:
 	native.r = self
 	native.g = game
 	native.m = game.menus
-	if flag("payload"):
+	if flag("trial-transitions"):
+		shot_dir = shot_dir.path_join("trial_transitions")
+		await preload("res://scripts/tests/trial_transition_live.gd").run(self)
+	elif flag("payload"):
 		shot_dir = shot_dir.path_join("payload")
 		await preload("res://scripts/tests/ability_payload_live.gd").run(self)
 	elif flag("lifetime"):
@@ -35,8 +38,8 @@ func _ready() -> void:
 	var report := {"baseline": flag("baseline"), "rows": rows, "failures": failures,
 		"findings": findings, "key_taps": native.key_taps, "mouse_clicks": native.mouse_clicks,
 		"touch_taps": native.touch_taps,
-		"mode": "payload" if flag("payload") else "lifetime" if flag("lifetime") else "effects" if flag("effects") else "history",
-		"scope": "Posed actors with borrowed kit state, direct production ability/effect calls, world pause and optional real chapter replay. No ordinary class play, skin unlock, replication or physical-device claim." if flag("payload") or flag("effects") or flag("lifetime") else "Posed frozen enemy, direct production damage/cast entry, real menu key/click input. No ordinary combat or physical-device claim."}
+		"mode": "trial-transitions" if flag("trial-transitions") else "payload" if flag("payload") else "lifetime" if flag("lifetime") else "effects" if flag("effects") else "history",
+		"scope": "Controlled no-save trial start, native pause/resume, and synthetic callbacks across real run/world changes. No ordinary reward, settlement, replication or physical-device proof." if flag("trial-transitions") else "Posed actors with borrowed kit state, direct production ability/effect calls, world pause and optional real chapter replay. No ordinary class play, skin unlock, replication or physical-device claim." if flag("payload") or flag("effects") or flag("lifetime") else "Posed frozen enemy, direct production damage/cast entry, real menu key/click input. No ordinary combat or physical-device claim."}
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(shot_dir))
 	var file := FileAccess.open(shot_dir.path_join("report.json"), FileAccess.WRITE)
 	if file == null:
