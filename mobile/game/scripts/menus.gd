@@ -63,6 +63,9 @@ func is_open() -> bool:
 ## nothing waits on them: input is live the same frame.
 const SHELL_IN := 0.13
 const SHELL_OUT := 0.10
+## _open's VBox inset inside the panel frame (x per side, y top and bottom).
+## Shared so a screen that re-heights its shell lands on the same geometry.
+const SHELL_INSET := Vector2(28.0, 20.0)
 ## Rigs and the headless suite shoot/measure a screen the frame it opens —
 ## they turn the motion off (ShotRig.boot does; headless never eases).
 var shell_motion := true
@@ -201,13 +204,16 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 	# UITheme owns the shell and all stock-widget styling.
 	UITheme.apply(root)
 	_shell_rect = Rect2(Vector2(640 - w / 2 - 3, 360 - h / 2 - 3), Vector2(w + 6, h + 6))
-	UITheme.panel(root, _shell_rect.position, _shell_rect.size)
+	var frame := UITheme.panel(root, _shell_rect.position, _shell_rect.size)
 
 	var vbox := VBoxContainer.new()
-	vbox.position = Vector2(640 - w / 2, 360 - h / 2) + Vector2(28, 20)
-	vbox.size = Vector2(w - 56, h - 40)
+	vbox.position = Vector2(640 - w / 2, 360 - h / 2) + SHELL_INSET
+	vbox.size = Vector2(w, h) - SHELL_INSET * 2.0
 	vbox.add_theme_constant_override("separation", 10)
 	root.add_child(vbox)
+	# Sizing hook for _reheight_shell: the two nodes whose geometry IS the
+	# shell's. Nothing else reads them, so no other screen's layout changes.
+	vbox.set_meta("shell_frame", frame)
 
 	var tl := Label.new()
 	tl.text = title
@@ -237,6 +243,7 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 			game.sfx("ui_click")
 			controller_back())
 		root.add_child(xbtn)
+		vbox.set_meta("shell_close", xbtn)
 	# Enable content drag after callers populate their scroll containers.
 	call_deferred("_enable_all_touch_scroll", root)
 	return vbox
@@ -644,17 +651,36 @@ func open_pause() -> void:
 		_hint(vbox, "ESC, ✕, or click anywhere outside to resume")
 
 
-## A single yes/cancel gate in front of destructive actions.
+## The confirm gate's two proportions that are NOT measured from content: an
+## 18px body (the shell's 15px read tiny on the prompt that asks for a
+## destructive yes) and a 190x48 action button — past the 44px touch minimum
+## on the shared 1280x720 logical canvas, desktop and mobile alike. The
+## ceiling is the panel height the canvas can hold with the shell's margins.
+const CONFIRM_BODY_PX := 18
+const CONFIRM_ACTION_MIN := Vector2(190.0, 48.0)
+const CONFIRM_MAX_H := 600.0
+
+
+## A single yes/cancel gate in front of destructive actions. Opened at the
+## ceiling, then measured and shrunk onto its own content in the SAME call,
+## so the first drawn frame is already the final size. Dismissing the closable
+## panel is cancellation.
 func open_confirm(msg: String, on_yes: Callable, on_cancel := Callable()) -> void:
-	# Size to the message; dismissing the closable panel is cancellation.
-	var est_lines: int = int(ceil(msg.length() / 46.0)) + msg.count("\n")
-	var vbox := _open("Are you sure?", 680, clampf(300.0 + est_lines * 24.0, 320.0, 600.0), true)
+	var vbox := _open("Are you sure?", 680, CONFIRM_MAX_H, true)
 	current = "confirm"
 	_confirm_cancel = on_cancel
 	var shell := root
-	var l := _lbl(vbox, msg, 15, Color(0.9, 0.9, 0.9))
-	l.custom_minimum_size = Vector2(600, 0)
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# The message scrolls only once it cannot fit the ceiling; the actions and
+	# the hint under it never leave the panel. RESERVE keeps the scrollbar
+	# gutter in BOTH states, so the width the body is measured at is the width
+	# it is finally laid out at.
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_RESERVE
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(scroll)
+	var body := _lbl(scroll, msg, CONFIRM_BODY_PX, Color(0.9, 0.9, 0.9))
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL  # or it collapses to its 1px wrap minimum
 	var yes := func() -> void:
 		if root != shell:
 			return
@@ -663,9 +689,75 @@ func open_confirm(msg: String, on_yes: Callable, on_cancel := Callable()) -> voi
 	var no := func() -> void:
 		if root == shell:
 			controller_back()
-	_btn(vbox, "  Yes — do it  ", yes, Color(1.0, 0.6, 0.5))
-	_btn(vbox, "  Cancel  ", no, Color(0.8, 0.85, 0.9))
+	# Cancel sits left of the destructive Yes; neither is focused on open.
+	var actions := HBoxContainer.new()
+	actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	actions.add_theme_constant_override("separation", 18)
+	vbox.add_child(actions)
+	var choices: Array[Button] = [
+		_btn(actions, "  Cancel  ", no, Color(0.8, 0.85, 0.9)),
+		_btn(actions, "  Yes — do it  ", yes, Color(1.0, 0.6, 0.5)),
+	]
+	for b in choices:
+		b.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		b.custom_minimum_size = CONFIRM_ACTION_MIN
+		b.add_theme_font_size_override("font_size", CONFIRM_BODY_PX)
 	_hint(vbox, "ESC to cancel")
+	_fit_confirm_shell(vbox, scroll, body)
+
+
+## Shrink the open confirm shell onto the content it just built. Every row is
+## measured from the LIVE, themed, in-tree control at the width its container
+## will hand it, so wrapping, hard newlines and an over-long unbroken word are
+## all accounted for by the text server itself — no line arithmetic, no font
+## constants. Past the ceiling the body scrolls instead of the panel growing.
+func _fit_confirm_shell(vbox: VBoxContainer, scroll: ScrollContainer, body: Label) -> void:
+	var inner := vbox.size.x
+	var pad := Vector2.ZERO
+	if scroll.has_theme_stylebox("panel"):
+		pad = scroll.get_theme_stylebox("panel").get_minimum_size()
+	# Exactly the width ScrollContainer takes back for the reserved bar.
+	var gutter: float = scroll.get_v_scroll_bar().get_combined_minimum_size().x + pad.x
+	var content: float = _measured_child_height(body, inner - gutter) + pad.y
+	var rows := 0
+	for child in vbox.get_children():
+		if not (child is Control) or not (child as Control).visible:
+			continue
+		rows += 1  # BoxContainer separates VISIBLE rows only
+		if child != scroll:
+			content += _measured_child_height(child as Control, inner)
+	content += float(vbox.get_theme_constant("separation") * maxi(rows - 1, 0))
+	_reheight_shell(vbox, minf(content + SHELL_INSET.y * 2.0, CONFIRM_MAX_H))
+
+
+## The height `c` takes once its container hands it `width`. Assigning the
+## width first is what makes a wrapping Label shape at the real line width;
+## set_size() fills the minimum-size cache from the OLD width on its way
+## through, so that cache is dropped before the read — which then reshapes
+## synchronously. Whole pixels, because BoxContainer lays rows out in integers.
+func _measured_child_height(c: Control, width: float) -> float:
+	c.size.x = width
+	c.update_minimum_size()
+	return ceilf(c.get_combined_minimum_size().y)
+
+
+## Re-height an already-open shell around measured content, keeping _open's
+## centering: the frame, the VBox and the ✕ move together and _shell_rect
+## (what popovers anchor to) follows. Pause, dim, theme, close wiring and the
+## stale-shell guard remain _open's — this touches geometry only, and only
+## for the caller that asks.
+func _reheight_shell(vbox: VBoxContainer, h: float) -> void:
+	var w: float = vbox.size.x + SHELL_INSET.x * 2.0
+	_shell_rect = Rect2(Vector2(640 - w / 2 - 3, 360 - h / 2 - 3), Vector2(w + 6, h + 6))
+	var frame: Variant = vbox.get_meta("shell_frame", null)
+	if frame is Panel:
+		(frame as Panel).position = _shell_rect.position
+		(frame as Panel).size = _shell_rect.size
+	var closer: Variant = vbox.get_meta("shell_close", null)
+	if closer is Button:
+		(closer as Button).position = Vector2(_shell_rect.end.x - 46, _shell_rect.position.y + 2)
+	vbox.position = Vector2(640 - w / 2, 360 - h / 2) + SHELL_INSET
+	vbox.size = Vector2(w, h) - SHELL_INSET * 2.0
 
 
 ## Every cancellation gesture uses the caller's return path exactly once.

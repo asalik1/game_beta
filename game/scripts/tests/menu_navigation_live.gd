@@ -23,6 +23,7 @@ static func run(rig: Node) -> Dictionary:
 	var binds: Dictionary = probe.g.binds.duplicate(true)
 	var language: String = Loc.lang
 	var touch_emulation: bool = Input.emulate_mouse_from_touch
+	var touch_capability: bool = Input.emulate_touch_from_mouse
 	# Match the shipped touch GUI path while keeping the owner's preferences intact.
 	Input.emulate_mouse_from_touch = true
 	probe.g.settings["touch_controls"] = false
@@ -36,6 +37,7 @@ static func run(rig: Node) -> Dictionary:
 	probe.g.settings = settings
 	Loc.lang = language
 	Input.emulate_mouse_from_touch = touch_emulation
+	Input.emulate_touch_from_mouse = touch_capability
 	probe.g.refresh_touch_mode()
 	probe.g._apply_touch_mode()
 	if probe.m.is_open():
@@ -50,6 +52,8 @@ static func run(rig: Node) -> Dictionary:
 func _run() -> String:
 	if not _check("fixture.isolated", g.no_saves and not g.net_online(), "no_saves solo Game"):
 		return "requires isolated solo Game"
+	if r.flag("confirm-layout"):
+		return await _confirm_layout()
 	if r.flag("potion-slots"):
 		return await _potion_slots()
 	r.step("title cover and roster settings exits")
@@ -698,3 +702,366 @@ func _report() -> Dictionary:
 		result.failures += 1
 		print("MENU CHECK report.write: FAIL")
 	return result
+
+## Controlled native confirmation proof. Actual caller copy and callbacks are
+## exercised against a loaned solo character; this is not ordinary progression.
+func _confirm_layout() -> String:
+	if not _check("confirm_layout.fixture", g.no_saves and not g.net_online()
+			and not r.flag("baseline") and not r.flag("no-capture"), "strict isolated solo; original captures required"):
+		return "confirmation proof requires strict solo capture"
+	m.pick_chapter("ch1")
+	await r.frames(3)
+	m.pick_class("warrior")
+	await r.frames(5)
+	await r.skip_dialogue()
+	g.play_started = true
+	g.dev_god = true
+	g.hud.visible = true
+	await r.frames(3)
+	var economy: Dictionary = _confirm_economy()
+	await _confirm_actual_callers()
+	await _confirm_first_draw()
+	await _confirm_long_stress()
+	await _confirm_native_routes()
+	await _confirm_stale_callable()
+	await _callback_lifetime()
+	_check("confirm_layout.economy_unchanged", _confirm_economy() == economy, _confirm_economy())
+	return ""
+
+
+func _confirm_actual_callers() -> void:
+	r.step("actual mail deletion, pause exit and both endgame rules; controlled character and parcel")
+	var before: Array = g.mailbox.duplicate(true)
+	var letter := {"subject": "Confirm-layout parcel", "body": "Unclaimed loot must survive cancellation.",
+		"items": [{"kind": "material", "family": "metal", "grade": "F", "count": 2}],
+		"sent_at": g.trusted_now(), "read": true}
+	var expected: Dictionary = letter.duplicate(true)
+	g.mailbox = [letter]
+	UIMailbox.open_letter(m, letter)
+	await r.frames(3)
+	if await _button("Delete letter"):
+		_confirm_geometry("mail", "Delete this letter AND its unclaimed loot?", true)
+		await _capture("10_confirm_mail_delete")
+		await _button("Cancel")
+		_check("confirm_layout.mail.return", m.current == "mail_letter" and _has_label(m.root, "Confirm-layout parcel"), _state())
+		_check("confirm_layout.mail.intact", g.mailbox == [expected], g.mailbox)
+	g.mailbox = before
+	m.open_pause()
+	await r.frames(3)
+	if await _button("Exit to title"):
+		_confirm_geometry("pause", "Exit to the title screen? Your progress is saved.", true)
+		await _capture("11_confirm_pause_exit")
+		await _key(KEY_ESCAPE)
+		_check("confirm_layout.pause.return", m.current == "pause" and g.get_tree().paused, _state())
+	for mode in ["crucible", "depths"]:
+		var title: String = "The Crucible" if mode == "crucible" else "The Waking Depths"
+		var rules: String = "Ten bosses back to back, each with an elite affix — HP and MP carry over between them. Bonus spoils at 3 / 6 / 10 kills." if mode == "crucible" else "An endless descent where DEPTH IS THE MONSTERS' LEVEL — the ladder starts at 40, or at your deepest cleared checkpoint. A boss guards every 5th depth, a checkpoint boss every 10th; past 100 the dark only deepens. Rewards pay when you fall or cash out."
+		var pb: Dictionary = g.endgame_pb(mode, g.local_player.cls)
+		var best := ""
+		if not pb.is_empty():
+			best = "\n\nYour best: %d bosses." % int(pb.get("kills", 0)) if mode == "crucible" else "\n\nYour deepest: depth %d." % int(pb.get("depth", 0))
+		var message := "Enter %s?\n\n%s%s\n\nYour campaign is saved — you'll return to the title when the run ends." % [title, rules, best]
+		m.confirm_endgame(mode)
+		await r.frames(4)
+		_confirm_geometry("endgame_" + mode, message, false)
+		await _capture("12_confirm_endgame_" + mode)
+		await _button("Cancel")
+		_check("confirm_layout.endgame." + mode + ".return", not m.is_open() and not g.endgame_active and not g.get_tree().paused, _state())
+
+
+func _confirm_first_draw() -> void:
+	r.step("first drawn short shell and immediate replacement before deferred layout")
+	# An already open parent removes the unrelated gameplay shell-entry tween.
+	m.open_inventory()
+	await r.frames(3)
+	var message := "QA: short confirmation copy."
+	m.open_confirm(message, func() -> void: yes_calls += 1)
+	await RenderingServer.frame_post_draw
+	var first: Dictionary = _confirm_geometry("short_first_draw", message, true)
+	_check("confirm_layout.short.safe_initial_focus", m.get_viewport().gui_get_focus_owner() != _find_button(m.root, "Yes — do it", true), "destructive action never auto-focused")
+	r.shot("13_confirm_short_first_draw", "controlled confirmation; first frame_post_draw after open; no size metadata trusted")
+	await r.frames(5)
+	await RenderingServer.frame_post_draw
+	var settled: Dictionary = _confirm_geometry("short_settled", message, true)
+	_check("confirm_layout.short.no_layout_jump", first == settled, {"first": first, "settled": settled})
+	r.shot("14_confirm_short_settled", "controlled short confirmation; settled original")
+	await _button("Cancel")
+	m.open_inventory()
+	await r.frames(4)
+	var reference: Rect2 = _confirm_panel_rect()
+	m.open_confirm("QA: replaced before its deferred layout runs.", func() -> void: yes_calls += 1)
+	m.open_inventory()
+	var destination: Control = m.root
+	await RenderingServer.frame_post_draw
+	var first_successor: Rect2 = _confirm_panel_rect()
+	await r.frames(6)
+	_check("confirm_layout.deferred_successor_untouched", m.root == destination and m.current == "inventory"
+		and reference == first_successor and reference == _confirm_panel_rect(),
+		{"reference": str(reference), "first": str(first_successor), "later": str(_confirm_panel_rect()), "menu": m.current})
+
+
+func _confirm_long_stress() -> void:
+	r.step("controlled long copy: all glyphs shaped, native wheel and touch reach, fixed visible actions")
+	# Match the existing settings_touch_live desktop capability fixture: Godot
+	# enables ScrollContainer touch dragging through both emulation flags.
+	var capability_before: bool = Input.emulate_touch_from_mouse
+	var mode_before: bool = g.settings.get("touch_controls", false)
+	Input.emulate_touch_from_mouse = true
+	g.settings["touch_controls"] = true
+	g.refresh_touch_mode()
+	g._apply_touch_mode()
+	_check("confirm_layout.long.touch_capability", DisplayServer.is_touchscreen_available()
+		and Input.emulate_mouse_from_touch and g.touch_mode, "host touch-capability emulation, not physical hardware")
+	var body := ""
+	for index in range(22):
+		body += "Paragraph %d: Read the complete terms before choosing. Cancelling keeps your character and rewards unchanged.\n\n" % index
+	body += "FINAL TERMS: This is the end of the controlled scroll test."
+	m.open_confirm(body, func() -> void: yes_calls += 1)
+	await RenderingServer.frame_post_draw
+	_confirm_geometry("long_first_draw", body, false, true)
+	r.shot("15_confirm_long_first_draw", "controlled synthetic stress copy; first drawn frame")
+	await r.frames(4)
+	var label: Label = _confirm_label(body)
+	var scroll: ScrollContainer = _confirm_body_scroll(label)
+	if not _check("confirm_layout.long.scroller", scroll != null and label != null, "native ancestor ScrollContainer required"):
+		Input.emulate_touch_from_mouse = capability_before
+		g.settings["touch_controls"] = mode_before
+		g.refresh_touch_mode()
+		g._apply_touch_mode()
+		return
+	var actions: Rect2 = _confirm_actions_rect()
+	_check("confirm_layout.long.overflow", scroll.get_v_scroll_bar().max_value > scroll.get_v_scroll_bar().page
+		and not _confirm_tail_visible(label, scroll), {"max": scroll.get_v_scroll_bar().max_value, "page": scroll.get_v_scroll_bar().page})
+	var wheel_count := 0
+	while wheel_count < 180 and not _confirm_tail_visible(label, scroll):
+		await _wheel(MOUSE_BUTTON_WHEEL_DOWN, scroll.get_global_rect().get_center())
+		wheel_count += 1
+	_check("confirm_layout.long.wheel_reaches_tail", _confirm_tail_visible(label, scroll), {"wheel_events": wheel_count, "scroll": scroll.scroll_vertical})
+	_confirm_geometry("long_wheel_end", body, false, true)
+	_check("confirm_layout.long.actions_fixed_wheel", actions == _confirm_actions_rect(), str(_confirm_actions_rect()))
+	await _capture("16_confirm_long_wheel_end")
+	var up_count := 0
+	while up_count < 180 and scroll.scroll_vertical > 0:
+		await _wheel(MOUSE_BUTTON_WHEEL_UP, scroll.get_global_rect().get_center())
+		up_count += 1
+	_check("confirm_layout.long.native_reset_top", scroll.scroll_vertical == 0 and not _confirm_tail_visible(label, scroll), scroll.scroll_vertical)
+	var drag_count := 0
+	while drag_count < 32 and not _confirm_tail_visible(label, scroll):
+		var rect: Rect2 = scroll.get_global_rect()
+		await _confirm_touch_drag(Vector2(rect.position.x + 8.0, rect.position.y + rect.size.y * 0.85),
+			Vector2(rect.position.x + 8.0, rect.position.y + rect.size.y * 0.15))
+		drag_count += 1
+	_check("confirm_layout.long.touch_reaches_tail", _confirm_tail_visible(label, scroll), {"drag_gestures": drag_count, "scroll": scroll.scroll_vertical})
+	_confirm_geometry("long_touch_end", body, false, true)
+	_check("confirm_layout.long.actions_fixed_touch", actions == _confirm_actions_rect(), str(_confirm_actions_rect()))
+	await _capture("17_confirm_long_touch_end")
+	await _button("Cancel")
+	_check("confirm_layout.long.cancel_return", m.current == "pause", _state())
+	Input.emulate_touch_from_mouse = capability_before
+	g.settings["touch_controls"] = mode_before
+	g.refresh_touch_mode()
+	g._apply_touch_mode()
+
+
+func _confirm_native_routes() -> void:
+	r.step("real mouse, Escape, controller and raw-touch cancellation; harmless native Yes")
+	var accidental_yes := [0]
+	m.open_confirm("QA: Enter before choosing must never accept.", func() -> void: accidental_yes[0] += 1)
+	await r.frames(3)
+	await _key(KEY_ENTER)
+	_check("confirm_layout.unselected_enter_safe", accidental_yes[0] == 0, accidental_yes[0])
+	m.open_inventory()
+	await r.frames(3)
+	for route in ["mouse", "escape", "controller", "raw_touch"]:
+		cancel_calls = 0
+		yes_calls = 0
+		m.open_confirm("QA: once-only " + route, func() -> void: yes_calls += 1, func() -> void:
+			cancel_calls += 1
+			m.open_inventory())
+		await r.frames(4)
+		match route:
+			"mouse": await _button("Cancel")
+			"escape": await _key(KEY_ESCAPE)
+			"controller": await _joy_back()
+			"raw_touch":
+				var emulation: bool = Input.emulate_mouse_from_touch
+				Input.emulate_mouse_from_touch = false
+				await _touch(Vector2(12, 12))
+				Input.emulate_mouse_from_touch = emulation
+		await r.frames(3)
+		_check("confirm_layout.cancel_once." + route, cancel_calls == 1 and yes_calls == 0 and m.current == "inventory", {"cancel": cancel_calls, "yes": yes_calls, "menu": m.current})
+		m.open_settings("pause")
+		await r.frames(3)
+		await _key(KEY_ESCAPE)
+		_check("confirm_layout.cancel_detached." + route, cancel_calls == 1 and yes_calls == 0 and m.current == "pause", _state())
+	cancel_calls = 0
+	yes_calls = 0
+	m.open_confirm("QA: harmless positive callback.", func() -> void:
+		yes_calls += 1
+		m.open_inventory(), func() -> void: cancel_calls += 1)
+	await r.frames(3)
+	await _button("Yes — do it")
+	_check("confirm_layout.yes_once", yes_calls == 1 and cancel_calls == 0 and m.current == "inventory", {"yes": yes_calls, "cancel": cancel_calls, "menu": m.current})
+	await _key(KEY_ESCAPE)
+	_check("confirm_layout.yes_cancel_detached", yes_calls == 1 and cancel_calls == 0 and not m.is_open(), _state())
+
+
+func _confirm_stale_callable() -> void:
+	r.step("retained actual action Callables cannot change a successor shell")
+	cancel_calls = 0
+	yes_calls = 0
+	m.open_confirm("QA: stale callable probe", func() -> void: yes_calls += 1, func() -> void: cancel_calls += 1)
+	await r.frames(3)
+	var callbacks: Array[Callable] = []
+	for caption in ["Yes — do it", "Cancel"]:
+		var button: Button = _find_button(m.root, caption)
+		if not _check("confirm_layout.stale.button." + caption, button != null, caption): return
+		var links: Array[Dictionary] = button.get_signal_connection_list("pressed")
+		if not _check("confirm_layout.stale.connections." + caption, links.size() == 2, links.size()): return
+		var callback: Callable = links[1].callable
+		if not _check("confirm_layout.stale.callable." + caption, callback.is_valid(), caption): return
+		callbacks.append(callback)
+	m.open_inventory()
+	var destination: Control = m.root
+	# Same-frame callbacks reproduce the queued-old-action hazard while captured
+	# nodes still exist. Only Callables are invoked; no freed-button signal emit.
+	for callback in callbacks: callback.call()
+	await r.frames(5)
+	_check("confirm_layout.stale.no_effect", yes_calls == 0 and cancel_calls == 0 and m.root == destination and m.current == "inventory", {"yes": yes_calls, "cancel": cancel_calls, "menu": m.current})
+
+
+func _confirm_geometry(id: String, message: String, compact: bool, scrolling := false) -> Dictionary:
+	var label: Label = _confirm_label(message)
+	var yes: Button = _find_button(m.root, "Yes — do it", true)
+	var cancel: Button = _find_button(m.root, "Cancel", true)
+	var panel: Rect2 = _confirm_panel_rect()
+	var viewport: Rect2 = m.get_viewport().get_visible_rect()
+	var result := {"panel": str(panel), "viewport": str(viewport)}
+	if not _check("confirm_layout." + id + ".nodes", m.current == "confirm" and label != null and yes != null and cancel != null and panel.has_area(), "exact message and action labels; actual Panel"):
+		return result
+	var body: Rect2 = label.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, label.size)
+	var yes_rect: Rect2 = yes.get_global_rect()
+	var cancel_rect: Rect2 = cancel.get_global_rect()
+	var scroll: ScrollContainer = _confirm_body_scroll(label)
+	var visible_body: Rect2 = body.intersection(scroll.get_global_rect()) if scroll != null else body
+	result.merge({"body": str(body), "visible_body": str(visible_body), "yes": str(yes_rect), "cancel": str(cancel_rect)})
+	_check("confirm_layout." + id + ".shell_in_viewport", viewport.grow(0.5).encloses(panel), result)
+	_check("confirm_layout." + id + ".readable_body", label.get_theme_font_size("font_size") >= 18, label.get_theme_font_size("font_size"))
+	_check("confirm_layout." + id + ".full_shaped_copy", _confirm_glyphs_complete(label), {"message": message, "size": str(label.size), "lines": label.get_line_count()})
+	_check("confirm_layout." + id + ".body_in_shell", panel.grow(0.5).encloses(visible_body) and (scrolling or body == visible_body), result)
+	for button in [yes, cancel]:
+		var rect: Rect2 = button.get_global_rect()
+		var font: Font = button.get_theme_font("font")
+		var text_size: Vector2 = font.get_string_size(button.text, HORIZONTAL_ALIGNMENT_LEFT, -1, button.get_theme_font_size("font_size"))
+		var style: StyleBox = button.get_theme_stylebox("normal")
+		_check("confirm_layout." + id + ".target." + button.text.strip_edges(), rect.size.x >= 44.0 and rect.size.y >= 44.0
+			and viewport.grow(0.5).encloses(rect) and panel.grow(0.5).encloses(rect)
+			and rect.size.x + 0.5 >= text_size.x + style.get_minimum_size().x
+			and rect.size.y + 0.5 >= text_size.y + style.get_minimum_size().y, {"rect": str(rect), "text": str(text_size)})
+	_check("confirm_layout." + id + ".no_overlap", not yes_rect.intersects(cancel_rect)
+		and not yes_rect.intersects(visible_body) and not cancel_rect.intersects(visible_body), result)
+	var text_issues: Array[String] = []
+	var nodes: Array[Node] = [m.root]
+	while not nodes.is_empty():
+		var node: Node = nodes.pop_back()
+		for child in node.get_children(): nodes.append(child)
+		if node is Label and node != label and node.is_visible_in_tree() and not node.text.is_empty():
+			var rect: Rect2 = node.get_global_rect()
+			if not _confirm_glyphs_complete(node) or not panel.grow(0.5).encloses(rect) \
+					or rect.intersects(visible_body) or rect.intersects(yes_rect) or rect.intersects(cancel_rect):
+				text_issues.append(node.text)
+	_check("confirm_layout." + id + ".other_text_clear", text_issues.is_empty(), text_issues)
+	if scroll != null:
+		_check("confirm_layout." + id + ".actions_outside_scroll", not scroll.is_ancestor_of(yes) and not scroll.is_ancestor_of(cancel)
+			and not scroll.get_global_rect().intersects(yes_rect) and not scroll.get_global_rect().intersects(cancel_rect), result)
+	if compact:
+		var gap: float = minf(yes_rect.position.y, cancel_rect.position.y) - body.end.y
+		_check("confirm_layout." + id + ".compact", panel.size.y <= 360.0 and gap >= 0.0 and gap <= 48.0, {"height": panel.size.y, "body_to_actions": gap})
+	return result
+
+
+func _confirm_label(message: String) -> Label:
+	var nodes: Array[Node] = [m.root]
+	while not nodes.is_empty():
+		var node: Node = nodes.pop_back()
+		if not is_instance_valid(node): continue
+		if node is Label and node.is_visible_in_tree() and node.text == message: return node
+		for child in node.get_children(): nodes.append(child)
+	return null
+
+
+func _confirm_panel_rect() -> Rect2:
+	var result := Rect2()
+	var nodes: Array[Node] = [m.root]
+	while not nodes.is_empty():
+		var node: Node = nodes.pop_back()
+		if not is_instance_valid(node): continue
+		if node is Panel and node.is_visible_in_tree():
+			var rect: Rect2 = node.get_global_rect()
+			if rect.get_area() > result.get_area(): result = rect
+		for child in node.get_children(): nodes.append(child)
+	return result
+
+
+func _confirm_glyphs_complete(label: Label) -> bool:
+	if label.clip_text or label.visible_ratio < 1.0 or label.max_lines_visible != -1 or label.get_visible_line_count() != label.get_line_count(): return false
+	var local := Rect2(Vector2.ZERO, label.size).grow(0.5)
+	var count := 0
+	for index in label.text.length():
+		if label.text.substr(index, 1).strip_edges().is_empty(): continue
+		var glyph: Rect2 = label.get_character_bounds(index)
+		if not glyph.has_area() or not local.encloses(glyph): return false
+		count += 1
+	return count > 0
+
+
+func _confirm_body_scroll(label: Label) -> ScrollContainer:
+	if label == null: return null
+	var node: Node = label.get_parent()
+	while node != null and node != m.root:
+		if node is ScrollContainer: return node
+		node = node.get_parent()
+	return null
+
+
+func _confirm_tail_visible(label: Label, scroll: ScrollContainer) -> bool:
+	var local: Rect2 = label.get_character_bounds(label.text.length() - 1)
+	var glyph: Rect2 = label.get_global_transform_with_canvas() * local
+	return local.has_area() and scroll.get_global_rect().grow(0.5).encloses(glyph)
+
+
+func _confirm_actions_rect() -> Rect2:
+	var yes: Button = _find_button(m.root, "Yes — do it", true)
+	var cancel: Button = _find_button(m.root, "Cancel", true)
+	return yes.get_global_rect().merge(cancel.get_global_rect()) if yes != null and cancel != null else Rect2()
+
+
+func _confirm_economy() -> Dictionary:
+	return {"gold": g.local_player.gold, "backpack": g.local_player.backpack.duplicate(true),
+		"materials": g.local_player.materials.duplicate(true), "consumables": g.local_player.consumables.duplicate(true)}
+
+
+func _confirm_touch_drag(from: Vector2, to: Vector2) -> void:
+	var press := InputEventScreenTouch.new()
+	press.index = 0
+	press.position = from
+	press.pressed = true
+	Input.parse_input_event(press)
+	Input.flush_buffered_events()
+	await r.frames(1)
+	for index in range(1, 9):
+		var drag := InputEventScreenDrag.new()
+		drag.index = 0
+		drag.position = from.lerp(to, float(index) / 8.0)
+		drag.relative = (to - from) / 8.0
+		Input.parse_input_event(drag)
+		Input.flush_buffered_events()
+		await r.frames(1)
+	var release := InputEventScreenTouch.new()
+	release.index = 0
+	release.position = to
+	release.pressed = false
+	Input.parse_input_event(release)
+	Input.flush_buffered_events()
+	touch_taps += 1
+	await r.frames(3)

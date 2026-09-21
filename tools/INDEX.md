@@ -338,6 +338,15 @@ APPDATA; add `--mobile --renderer=gl_compatibility` for mobile-source rendering.
 `--baseline` records known defects only; acceptance omits it. See
 `MENU_NAVIGATION.md` for the controlled-fixture scope and evidence.
 
+Confirmation layout QA: `shot.bat menu_navigation --confirm-layout --timeout=300`
+uses actual mail, Pause and endgame callers, full-glyph geometry, first-frame
+stability, safe Enter, stale callbacks, native cancellation and bounded wheel/
+touch reading. Requires fresh APPDATA under `build/qa`, exclusive strict captures.
+Add `--mobile --renderer=gl_compatibility` for host mobile sources. Paired ENet
+confirmation input uses existing `shot.bat brewing_persistence --ui-only` with
+APPDATA inside `brewing-persistence-candidate`. See CONFIRMATION_LAYOUT.md for
+scope, retained failures and final acceptance evidence.
+
 Settings layout QA: add `--settings-touch --desktop-comfort --timeout=180` to
 the same menu rig. It checks 68 content targets across desktop and touch
 Settings-family screens, captions, clipped bounds, slider-edge input, actual

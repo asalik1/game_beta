@@ -257,9 +257,41 @@ Follow-up priorities and preserved experiments:
   prompt-clearance-commit-receipt.json under build/qa/session-sept20.
   All 46 unrelated files and the exact old status tail remain unchanged.
   Session remains active through September 21 21:00 UTC, cutoff 20:00 UTC.
-- Candidate follow-ups from native review: content-sized confirmation dialogs
-  and ordinary prop grounding/occlusion. Neither has been implemented here;
-  inspect ordinary gameplay before choosing the next scope.
+- Checkpoint 9 accepted: confirmations fit actual rendered copy, with readable
+  18px bodies, aligned 190x48 Cancel/Yes actions and bounded long-copy scrolling.
+  Short prompts are compact; complete real trial/curse warnings fit; long terms
+  keep actions and dismissal hints visible. First/settled geometry is stable,
+  destructive Yes is not auto-focused, and stale actions cannot affect successors.
+  Actual Claude Opus supplied measured production after a Fable estimate draft
+  was rejected and Fable credits exhausted. Actual DeepSeek QA/collector drafts
+  were independently corrected; raw outputs and rejected attempts are retained.
+  All19 final stages pass: desktop compile/quick/full, mobile sync/import/compile/
+  strict quick, ten native episodes and all7 strict preflight categories. Per
+  project: confirmation147, navigation158, Alchemy391, paired ENet UI28 and chest37.
+  Actual Claude opened all76 originals; root independently opened12 key originals
+  and disposed every finding. This is scoped acceptance, not whole-game approval.
+  Old layout17/102 failures, pilot1 missing touch capability, and the final chest
+  wrapper profile rejection remain preserved. The corrected chest profile passes
+  on unchanged sources. One provider schema nesting error was structurally copied
+  without changing raw image findings; failed verification is retained.
+  Controlled fixture characters/mail/resources and22paragraph stress copy are
+  not ordinary earned progression. Mobile is host Compatibility/touch emulation,
+  not a physical device. ENet UI-only does not prove persistence or the older
+  unaccepted child-scene retained-release disconnect experiment. No separate
+  unbroken-word or native gamepad-scroll proof. Known shutdown diagnostics remain.
+  Generic labels/online technical wording, Alchemy disclosure/metadata density,
+  compact controls and faint secondary world/HUD text remain follow-up.
+  CONFIRMATION_LAYOUT.md gives scope. Evidence: confirmation-layout/
+  checkpoint-validation.json; final commit/state: confirmation-layout/
+  commit-receipt.json under build/qa/session-sept20. All46 unrelated files and
+  exact older status tail preserved. Session remains active until Sep21 21UTC.
+- Private next candidate: contextual-confirmations/deepseek-v1 has an actual
+  DeepSeek-derived source patch for named actions and a single-action online
+  trial notice; deepseek-qa-v1 contains the independently corrected QA candidate.
+  Both patches are source-reviewed/applyable only, without canonical integration
+  or runtime acceptance. Preserve as unfinished work after checkpoint9.
+- Candidate follow-up: inspect ordinary prop grounding/occlusion in actual
+  gameplay before choosing the next scope. No grounding change started here.
 - Older private prompt drafts are superseded by checkpoint 8; all originals
   remain under prompt-clearance-next. Pending theme notifications still use
   full fades; this is not a claim that every in-play notification is fixed.

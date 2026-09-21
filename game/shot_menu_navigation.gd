@@ -1,10 +1,17 @@
 extends ShotRig
 ## Native menu input and cancellation regression proof.
-## shot.bat menu_navigation --timeout=300 [--baseline] [--no-capture] [--potion-slots]
+## shot.bat menu_navigation --timeout=300 [--baseline] [--no-capture] [--potion-slots] [--confirm-layout]
 ## Baseline records known navigation defects; input/fixture failures stay fatal.
 
 
 func _ready() -> void:
+	if flag("confirm-layout"):
+		var confirm_user_root := ProjectSettings.globalize_path("user://").replace("\\", "/").to_lower()
+		if not confirm_user_root.contains("/build/qa/") or flag("baseline") or flag("no-capture") \
+				or flag("potion-slots") or flag("comfort-retention") or flag("quest-guardian") or flag("settings-touch"):
+			print("CONFIRM LAYOUT FAILED: isolated build/qa APPDATA and exclusive strict capture mode required")
+			finish(1)
+			return
 	if flag("comfort-retention"):
 		var comfort_user_root := ProjectSettings.globalize_path("user://").replace("\\", "/").to_lower()
 		if not comfort_user_root.contains("/build/qa/"):
@@ -41,6 +48,8 @@ func _ready() -> void:
 	shot_dir += "/" + ("before" if flag("baseline") else "after")
 	if flag("potion-slots"):
 		shot_dir += "/potion_slots"
+	if flag("confirm-layout"):
+		shot_dir += "/confirm_layout"
 	var result: Dictionary
 	if flag("settings-touch") and not flag("potion-slots"):
 		shot_dir += "/settings_touch"

@@ -70,6 +70,7 @@ func _network_ui() -> String:
 	await pair._settle(0.15)
 	_check("enet_ui.input_positive_control", p.global_position.distance_to(before_pos) > 4.0,
 		{"distance": p.global_position.distance_to(before_pos), "physics": p.is_physics_processing()})
+	await _confirmation_overlay()
 	# Parent opening is a named fixture seam; entering/selecting is actual GUI.
 	g._hub_action("professions")
 	await r.frames(3)
@@ -189,6 +190,58 @@ func _network_ui() -> String:
 	await _capture_online("ui_03_travel_rejects_held_order")
 	await _disconnect_diagnostic()
 	return ""
+
+
+func _confirmation_overlay() -> void:
+	# Actual solo-trial admission caller on a real ENet guest. Its confirmation
+	# must block hero input while the shared world clock continues to advance.
+	var before_pos := p.global_position
+	var before_world := g.world.get_instance_id()
+	var before_economy := _economy()
+	var previous_god := g.dev_god
+	var previous_cd: float = p.cds.a1
+	g.dev_god = false
+	p.cds.a1 = 2.5
+	_key_held(int(g.binds.a1), true)
+	await pair._settle(0.12)
+	_check("enet_ui.confirm_ability_input_positive_control", p.intent_a1 and p.cds.a1 > 0.0,
+		{"held_ability_intent": p.intent_a1, "cooldown": p.cds.a1})
+	m.confirm_endgame("crucible")
+	await r.frames(3)
+	var anim_before := p.anim_t
+	_key_held(KEY_D, true)
+	_key_held(int(g.binds.a1), true)
+	await pair._settle(0.35)
+	var ability_intent_during_hold: bool = p.intent_a1
+	_key_held(KEY_D, false)
+	_key_held(int(g.binds.a1), false)
+	_check("enet_ui.confirm_live_world_blocks_keyboard", m.current == "confirm"
+		and not r.get_tree().paused and p.is_physics_processing()
+		and not ability_intent_during_hold and p.anim_t > anim_before and p.cds.a1 > 0.0 and p.cds.a1 < 2.5
+		and p.global_position.distance_to(before_pos) <= 0.5 and p.intent_move == Vector2.ZERO,
+		{"menu": m.current, "distance": p.global_position.distance_to(before_pos),
+		"animation_delta": p.anim_t - anim_before, "cooldown": p.cds.a1, "held_ability_intent": ability_intent_during_hold})
+	_touch_mode(true)
+	await r.frames(3)
+	# Drag inside the dialog, away from either action and the outside dimmer.
+	var at: Vector2 = m._shell_rect.get_center()
+	_finger(true, at)
+	_drag(at + Vector2(36, -18), Vector2(36, -18))
+	await pair._settle(0.15)
+	var mi: Node = g.get_node("/root/MobileInput")
+	_check("enet_ui.confirm_blocks_touch", m.current == "confirm"
+		and not g._touch_hud._enabled and g._touch_hud._move_touch == -1
+		and mi.move == Vector2.ZERO and p.global_position.distance_to(before_pos) <= 0.5,
+		{"menu": m.current, "distance": p.global_position.distance_to(before_pos), "move": str(mi.move)})
+	_finger(false, at + Vector2(36, -18))
+	await _capture_online("ui_00_guest_confirmation")
+	await native._joy_back()
+	_check("enet_ui.confirm_cancel_keeps_session", not m.is_open() and not r.get_tree().paused
+		and g.net_guest() and pair.wires[1].world_ready and g.world.get_instance_id() == before_world
+		and _economy() == before_economy, {"menu": m.current, "chapter": g.chapter_id})
+	_touch_mode(false)
+	g.dev_god = previous_god
+	p.cds.a1 = previous_cd
 
 
 func _touch_gate() -> void:
