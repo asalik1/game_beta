@@ -312,14 +312,30 @@ Follow-up priorities and preserved experiments:
   and owned-state audit: contextual-confirmations/commit-receipt.json under
   build/qa/session-sept20. All46 unrelated files and exact older tail preserved.
   Session remains active; no automatic push of this or subsequent commits.
-- Next priority: private actual-DeepSeek Alchemy detail-readability V2 candidate
-  moves essential recipe metadata out of optional help scrolling and removes
-  collapsed empty space. reviewed-v2.patch and V2_NOTES.md under
-  alchemy-detail-readability-candidate preserve first/settled geometry and actual
-  touch-movement probes. It is NOT integrated, compiled or accepted; inspect
-  first-frame movement and native desktop/mobile results before keeping it.
-  Private semantic-action-color patch and source-backed abandon-copy research
-  remain under confirmation-action-semantics-candidate, also unvalidated.
+- Checkpoint 11 — readable Alchemy recipe details (validated; commit receipt below):
+  Essential recipe metadata and learning explanation stay above optional source
+  help; Learn and Brew share a row outside scrolling. Empty help leaves no blank
+  viewport. Sources has readable normal text and an active fill. Native layout
+  and deferred restoration eliminate first-to-settled rail/focus movement.
+  Actual DeepSeek supplied the initial candidate; root and peers corrected it.
+  Three failed pilots and a passed final-v1 later rejected by actual Claude
+  visual review remain preserved. Claude caught hidden Learn and weak Sources
+  contrast; root corrected both. Its earlier code attempt timed out incomplete.
+  Final-v2 passes all 13 serial gates: compile/quick/full, scoped mobile sync,
+  mobile import/compile/quick, strict preflight, 563 Alchemy and 64 paired real
+  ENet UI checks on each renderer. Root opened 25 originals and all eight frame
+  pairs; actual Claude opened all 54 originals. Three raw advisory findings were
+  explicitly resolved against native images and exact fixture behavior.
+  Host mobile is Compatibility rendering on Windows, not physical-device QA;
+  resources are controlled loans, and ENet UI-only is not persistence proof.
+  Optional scroll-edge clipping, secondary contrast, footer alignment and large
+  ungrouped prices remain polish debt. Known shutdown diagnostics remain.
+  Evidence: build/qa/session-sept20/alchemy-detail-readability/;
+  checkpoint-validation.json binds acceptance; commit-receipt.json records HEAD
+  and the local state. All 46 unrelated files and the old status tail remain intact.
+  Private action-color and bench-money candidates are separate and unvalidated.
+  This checkpoint continues the active session; no new push is authorized.
+
 - Owner-requested backup completed September 21 at 05:39 UTC: origin branch
   codex/crownless-wayfinder matches d8e5b74355229cf956c764a45b981384aff94f0d.
   Original history and main are unchanged; both temporary transport branches

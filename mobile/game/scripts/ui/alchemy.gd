@@ -82,7 +82,9 @@ static func open(m: Menus, notice := "", notice_color := Color(0.72, 0.92, 0.76)
 	note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	m._hint(box, "ESC / controller Back / X / outside returns to Professions", "Tap X or outside to return to Professions")
 	_watch(m, shell)
-	_restore(m, shell, state)
+	# Container sorting and wrapped minimum sizes settle in the idle queue.
+	# Restore in that queue before drawing, without spending a visible frame.
+	_restore.call_deferred(m, shell, state)
 
 
 static func _recipe_rail(m: Menus, parent: Control, shell: Control, state: Dictionary) -> void:
@@ -144,10 +146,11 @@ static func _recipe_rail(m: Menus, parent: Control, shell: Control, state: Dicti
 	source.custom_minimum_size.x = 270
 	var help := m._btn(rail, "Ingredient sources", func() -> void:
 		if _owns(m, shell):
-			_reopen(m, shell, {"sources": not bool(state.get("sources", false)), "detail_scroll": 0}), UITheme.TEXT_MUTED)
+			_reopen(m, shell, {"sources": not bool(state.get("sources", false)), "detail_scroll": 0}), TEXT)
 	help.name = "AlchemySources"
+	help.tooltip_text = "Hide ingredient sources." if bool(state.get("sources", false)) else "Show where carried herbs and reagents are found."
+	UITheme.tab(help, bool(state.get("sources", false)))
 	help.custom_minimum_size.y = 44
-	help.tooltip_text = "Show where carried herbs and reagents are found."
 
 
 static func _recipe_detail(m: Menus, parent: Control, shell: Control, state: Dictionary, order: RefCounted,
@@ -167,27 +170,10 @@ static func _recipe_detail(m: Menus, parent: Control, shell: Control, state: Dic
 		button.name = "AlchemyGrade_" + grade
 		button.custom_minimum_size = Vector2(56, 44)
 		button.tooltip_text = "%s grade · %s mastery" % [grade, _required_band(grade)]
-	var scroll := ScrollContainer.new()
-	scroll.name = "AlchemyDetailScroll"
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	column.add_child(scroll)
-	var details := VBoxContainer.new()
-	details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	details.add_theme_constant_override("separation", 8)
-	scroll.add_child(details)
 	var item: Dictionary = quote.get("item", {})
 	var grade := String(state.grade)
-	if bool(state.get("sources", false)):
-		m._lbl(details, "Ingredient sources", 16, UITheme.GOLD_BRIGHT)
-		m._lbl(details, "Carry herbs and reagents at the recipe's exact grade. Claim mailed ingredients before brewing.", 14, UITheme.TEXT_MUTED)
-		if grade == "A":
-			m._lbl(details, "A-grade ingredients come from NG+ boss supplies: Chapter 4 onward in NG+1, or Chapter 1 onward in NG+2. The first journey's creatures and supply chests do not provide A ingredients.", 14, UITheme.TEXT_MUTED)
-		elif grade in ["C", "B"]:
-			m._lbl(details, "Boss supply chests and bundles can contain C/B herbs and reagents. Creature drops remain F/E, or E/D from elites.", 14, UITheme.TEXT_MUTED)
-		else:
-			m._lbl(details, "For F/E herbs, hunt plant and fungal creatures in Sporewood or the Blooming Deep; their elites yield E/D. Beasts, humanoids and void creatures can yield reagents at those grades. Boss supplies can also contain both ingredients.", 14, UITheme.TEXT_MUTED)
-	var card := UITheme.card(details, Items.GRADE_COLOR[grade])
+	# Core recipe information must remain readable while optional help scrolls.
+	var card := UITheme.card(column, Items.GRADE_COLOR[grade])
 	var product := HBoxContainer.new()
 	product.add_theme_constant_override("separation", 16)
 	card.add_child(product)
@@ -207,21 +193,43 @@ static func _recipe_detail(m: Menus, parent: Control, shell: Control, state: Dic
 		requirement += " · Blueprint known" if bool(quote.get("blueprint_known", false)) else " · Blueprint not learned"
 	else:
 		requirement += " · No blueprint needed"
-	m._lbl(details, requirement, 14, UITheme.TEXT_MUTED).name = "AlchemyRequirements"
+	m._lbl(column, requirement, 14, UITheme.TEXT_MUTED).name = "AlchemyRequirements"
+	var learning: Dictionary = {}
+	var learn_order: RefCounted
 	if grade in Items.BLUEPRINT_GRADES and not bool(quote.get("blueprint_known", false)):
-		var learn_order: RefCounted = Alchemy.prepare(m.game, String(state.shape), grade, "blueprint")
-		var learning: Dictionary = learn_order.view()
-		var learn := m._btn(details, "Learn blueprint — %d gold" % int(learning.fee), func() -> void:
-			if _owns(m, shell) and not action_used[0]:
-				action_used[0] = true
-				_learn(m, learn_order, required), UITheme.GOLD_BRIGHT, bool(learning.allowed))
-		learn.name = "AlchemyLearnBlueprint"
-		learn.custom_minimum_size.y = 44
+		learn_order = Alchemy.prepare(m.game, String(state.shape), grade, "blueprint")
+		learning = learn_order.view()
 		var learn_note := "Learn now; %s mastery is needed to brew. Bosses can also drop this recipe." % required
 		if not bool(learning.allowed):
 			learn_note = String(learning.reason)
-		m._lbl(details, learn_note, 13, UITheme.TEXT_MUTED)
-	UITheme.rule(column)
+		m._lbl(column, learn_note, 13, UITheme.TEXT_MUTED).name = "AlchemyLearnNote"
+	var scroll := ScrollContainer.new()
+	scroll.name = "AlchemyDetailScroll"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_RESERVE
+	# Native containers allocate the remaining height to optional text.
+	# Hide the whole viewport when optional ingredient help is collapsed.
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	column.add_child(scroll)
+	var inset := MarginContainer.new()
+	inset.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inset.add_theme_constant_override("margin_bottom", 8)
+	scroll.add_child(inset)
+	var details := VBoxContainer.new()
+	details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	details.add_theme_constant_override("separation", 8)
+	inset.add_child(details)
+	if bool(state.get("sources", false)):
+		m._lbl(details, "Ingredient sources", 16, UITheme.GOLD_BRIGHT)
+		m._lbl(details, "Carry herbs and reagents at the recipe's exact grade. Claim mailed ingredients before brewing.", 14, UITheme.TEXT_MUTED)
+		if grade == "A":
+			m._lbl(details, "A-grade ingredients come from NG+ boss supplies: Chapter 4 onward in NG+1, or Chapter 1 onward in NG+2. The first journey's creatures and supply chests do not provide A ingredients.", 14, UITheme.TEXT_MUTED).name = "AlchemySourceTail"
+		elif grade in ["C", "B"]:
+			m._lbl(details, "Boss supply chests and bundles can contain C/B herbs and reagents. Creature drops remain F/E, or E/D from elites.", 14, UITheme.TEXT_MUTED).name = "AlchemySourceTail"
+		else:
+			m._lbl(details, "For F/E herbs, hunt plant and fungal creatures in Sporewood or the Blooming Deep; their elites yield E/D. Beasts, humanoids and void creatures can yield reagents at those grades. Boss supplies can also contain both ingredients.", 14, UITheme.TEXT_MUTED).name = "AlchemySourceTail"
+	scroll.visible = details.get_child_count() > 0
+	UITheme.rule(column).name = "AlchemyIngredientRule"
 	_ingredient(m, column, "herb", grade, int(quote.get("herbs_have", 0)), int(quote.get("herbs", 0)))
 	_ingredient(m, column, "reagent", grade, int(quote.get("reagents_have", 0)), int(quote.get("reagents", 0)))
 	var fee := int(quote.get("fee", 0))
@@ -230,7 +238,19 @@ static func _recipe_detail(m: Menus, parent: Control, shell: Control, state: Dic
 	if discount > 0:
 		fee_text += " · Kesh favor: %d%% fee discount" % discount
 	m._lbl(column, fee_text, 14, UITheme.GOLD_BRIGHT).name = "AlchemyFee"
-	var brew := m._btn(column, "Brew one — %d gold" % fee, func() -> void:
+	var actions := HBoxContainer.new()
+	actions.name = "AlchemyActions"
+	actions.add_theme_constant_override("separation", 12)
+	column.add_child(actions)
+	if not learning.is_empty():
+		var learn := m._btn(actions, "Learn blueprint — %d gold" % int(learning.fee), func() -> void:
+			if _owns(m, shell) and not action_used[0]:
+				action_used[0] = true
+				_learn(m, learn_order, required), UITheme.GOLD_BRIGHT, bool(learning.allowed))
+		learn.name = "AlchemyLearnBlueprint"
+		learn.custom_minimum_size.y = 44
+		learn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var brew := m._btn(actions, "Brew one — %d gold" % fee, func() -> void:
 		if not _owns(m, shell) or action_used[0]:
 			return
 		action_used[0] = true
@@ -239,6 +259,7 @@ static func _recipe_detail(m: Menus, parent: Control, shell: Control, state: Dic
 		_settled(m, result), UITheme.GOLD_BRIGHT, bool(quote.get("allowed", false)))
 	brew.name = "AlchemyBrew"
 	brew.custom_minimum_size.y = 44
+	brew.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var message := notice
 	var color := notice_color
 	if not bool(quote.get("allowed", false)):
@@ -250,6 +271,7 @@ static func _recipe_detail(m: Menus, parent: Control, shell: Control, state: Dic
 	var result_line := m._lbl(column, message, 14, color)
 	result_line.name = "AlchemyResult"
 	result_line.custom_minimum_size.y = 38
+
 
 
 static func _ingredient(m: Menus, parent: Control, family: String, grade: String, have: int, need: int) -> void:
@@ -359,7 +381,12 @@ static func _remember(m: Menus) -> Dictionary:
 
 
 static func _restore(m: Menus, shell: Control, state: Dictionary) -> void:
-	await m.get_tree().process_frame
+	if not _owns(m, shell):
+		return
+	_restore_input.call_deferred(m, shell, state)
+
+
+static func _restore_input(m: Menus, shell: Control, state: Dictionary) -> void:
 	if not _owns(m, shell):
 		return
 	var focus := shell.find_child(String(state.focus), true, false) as Control

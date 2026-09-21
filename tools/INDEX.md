@@ -215,12 +215,17 @@ scope; no character-save, complete quest or physical-device claim is made.
 Actual QA3 results, final strict preflight and resulting commit:
 `build/qa/session-sept17/interaction-copy-checkpoint-validation.json`.
 
-Alchemy UI QA: `shot.bat alchemy --timeout=240` checks the real recipe bench,
+Alchemy UI QA: `shot.bat alchemy --timeout=300` checks the real recipe bench,
 39 recipe previews, exact paid actions, input, live quotes, cancelled learning,
-overflow and reading/focus continuity. Seven native views cover novice, learned
-and unknown recipes, source help and touch. Use isolated APPDATA; add `--mobile
---renderer=gl_compatibility` for the mobile source. Resources are fixture loans.
-The quick/full suites also run the shared Alchemy domain checks. See `ALCHEMY.md`.
+overflow and reading/focus continuity. It retains the blueprint-confirmation
+original and adds actual Sources toggles, essential-glyph clipping bounds,
+first/settled layout observations, fixed blueprint actions, Sources-label contrast
+and positive native wheel/touch scroll evidence.
+Original images and measured movement require review; functional success alone
+is not visual acceptance. Use isolated APPDATA; add `--mobile
+--renderer=gl_compatibility` for mobile sources on the host. Resources are fixture
+loans. Quick/full suites also run the shared Alchemy domain checks.
+See `ALCHEMY.md` and `ALCHEMY_DETAIL_READABILITY.md`.
 
 Professions callback QA: `shot.bat profession_lifetime --timeout=240` checks
 the original lock/swap/craft/learn shell and character/world ownership, duplicate
