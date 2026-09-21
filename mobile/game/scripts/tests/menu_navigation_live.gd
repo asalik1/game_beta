@@ -882,8 +882,8 @@ func _confirm_actual_callers() -> void:
 			var title: String = "Restart chapter?" if action == "restart" else ("Bank your rewards?" if action == "cashout" else "Abandon this run?")
 			var accept: String = "Restart chapter" if action == "restart" else ("Cash out" if action == "cashout" else "Abandon run")
 			var message: String = "Restart '%s' from the beginning? Story progress in this chapter resets — your character, gear and Resonance stay." % Story.chapter(g.chapter_id)["name"]
-			if action == "cashout": message = "Cash out now? You keep everything you've earned this run and return to the title."
-			if action == "abandon": message = "Exit to the title screen? Your progress is saved.\n\nThis ABANDONS the current endgame run — its rewards are forfeit."
+			if action == "cashout": message = "Collect this trial's rewards and end the run?\n\nGold is added to your character; any gems and gear are sent to your mailbox. You'll review the results before choosing Return to Crownfall."
+			if action == "abandon": message = "Abandon this trial and return to the title?\n\nUnclaimed gold, gems and gear from this trial will be lost.\n\nTo collect them, cancel and choose Cash out & bank rewards from the pause menu."
 			_confirm_geometry("pause_" + action, message, false, false, title, accept)
 			await _capture("20_contextual_" + action)
 			await _button("Cancel")
@@ -897,7 +897,7 @@ func _confirm_actual_callers() -> void:
 		var best := ""
 		if not pb.is_empty():
 			best = "\n\nYour best: %d bosses." % int(pb.get("kills", 0)) if mode == "crucible" else "\n\nYour deepest: depth %d." % int(pb.get("depth", 0))
-		var message := "Enter %s?\n\n%s%s\n\nYour campaign is saved — you'll return to the title when the run ends." % [title, rules, best]
+		var message := "Enter %s?\n\n%s%s\n\nWhen you cash out, fall, or complete the trial, a results screen offers a return to Crownfall." % [title, rules, best]
 		m.confirm_endgame(mode)
 		await r.frames(4)
 		_confirm_geometry("endgame_" + mode, message, false, false, "Enter %s?" % title, "Enter trial")

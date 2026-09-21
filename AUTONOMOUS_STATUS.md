@@ -381,11 +381,31 @@ Follow-up priorities and preserved experiments:
   Raw providers, the first Claude timeout and the earlier pilot remain retained.
   Session heartbeat remains active; this checkpoint is local, not pushed.
 
-- Private next candidate: abandon/cash-out/trial-entry confirmation copy now
-  has actual Claude runtime and DeepSeek QA drafts, independently corrected.
-  Raw output and patches: build/qa/session-sept20/abandon-clarity-candidate/.
-  None applied or natively validated; do not claim reward/save behavior changed.
-  Reviewed copy explains pending reward loss versus results and Crownfall.
+- Checkpoint 14 validated: trial reward and return warnings distinguish pending
+  gold, gems and gear lost by abandoning from retained character progress.
+  Cash-out explains wallet gold, mailed spoils, results and Return to Crownfall;
+  trial entry names the results route. Callbacks, ordinary exit and tones remain.
+  Actual Claude supplied runtime copy and DeepSeek the three QA expectations;
+  independent corrections and raw providers remain in abandon-clarity-candidate/.
+  All 13 serial final stages pass: desktop compile/quick/full, scoped mobile
+  sync/import/compile/strict quick, native confirmations 260/260 and actual paired
+  ENet UI 64/64 on each renderer, early/final strict preflight. Root opened 22
+  originals and peer 36; together all 50 final originals were reviewed.
+  Trial native checks cancel the actions; routing is separately source-verified.
+  No new payout/save-write, ordinary progression or physical-device claim.
+  Mobile is host Compatibility; ENet UI-only is not a persistence roundtrip.
+  Shared entry completion wording applies to Crucible; Depths remains endless.
+  Known shutdown diagnostics and earlier rejected evidence remain preserved.
+  Evidence: build/qa/session-sept20/abandon-clarity/checkpoint-validation.json;
+  commit-receipt.json records final HEAD and local state. All 46 unrelated files
+  and the exact old status tail remain preserved. Session active; no new push.
+
+- Private future candidate: exact pending trial reward preview in cash-out/
+  abandon warnings. Actual Claude implementation and DeepSeek native QA drafts
+  are independently corrected under trial-reward-preview-candidate/ in this
+  session's build/qa directory. Read REVIEW.md and handoff.json; apply patches
+  only if selected after checkpoint 14. No canonical integration, compile or
+  native acceptance yet. No reward/save/callback or trial-entry changes proposed.
 
 - Owner-requested backup completed September 21 at 05:39 UTC: origin branch
   codex/crownless-wayfinder matches d8e5b74355229cf956c764a45b981384aff94f0d.

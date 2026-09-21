@@ -610,7 +610,7 @@ func open_pause() -> void:
 			_btn(vbox, "  ✕  Remove %s from the party" % pname, kick, Color(1.0, 0.6, 0.55))
 	if game.endgame_active:
 		var cash := func() -> void:
-			open_confirm("Cash out now? You keep everything you've earned this run and return to the title.",
+			open_confirm("Collect this trial's rewards and end the run?\n\nGold is added to your character; any gems and gear are sent to your mailbox. You'll review the results before choosing Return to Crownfall.",
 				func() -> void:
 					close()
 					if game.endgame:
@@ -627,8 +627,12 @@ func open_pause() -> void:
 		_btn(vbox, "  ↺  Restart chapter  (keeps your character)", restart, Color(1.0, 0.8, 0.5))
 		_btn(vbox, "  ⚑  Chapter select  (replay any chapter)", func() -> void: open_chapter_select(true), Color(1.0, 0.8, 0.5))
 	var to_title := func() -> void:
-		open_confirm("Exit to the title screen? Your progress is saved." +
-			("\n\nThis ABANDONS the current endgame run — its rewards are forfeit." if game.endgame_active else ""),
+		# Abandoning leaves the trial UNSETTLED: exit_to_title only autosaves and
+		# reloads, so the pending gold/gems/gear held on Endgame are never paid.
+		var exit_msg := "Exit to the title screen? Your progress is saved."
+		if game.endgame_active:
+			exit_msg = "Abandon this trial and return to the title?\n\nUnclaimed gold, gems and gear from this trial will be lost.\n\nTo collect them, cancel and choose Cash out & bank rewards from the pause menu."
+		open_confirm(exit_msg,
 			func() -> void: game.exit_to_title(),
 			Callable(),
 			({"title": "Abandon this run?", "accept_label": "Abandon run"} if game.endgame_active
@@ -1012,7 +1016,7 @@ func confirm_endgame(mode: String) -> void:
 	if not pb.is_empty():
 		best = ("\n\nYour best: %d bosses." % int(pb.get("kills", 0))) if mode == "crucible" \
 			else ("\n\nYour deepest: depth %d." % int(pb.get("depth", 0)))
-	open_confirm("Enter %s?\n\n%s%s\n\nYour campaign is saved — you'll return to the title when the run ends." % [mname, rules, best],
+	open_confirm("Enter %s?\n\n%s%s\n\nWhen you cash out, fall, or complete the trial, a results screen offers a return to Crownfall." % [mname, rules, best],
 		func() -> void: _start_endgame(mode),
 		func() -> void: close(),
 		{"title": "Enter %s?" % mname, "accept_label": "Enter trial", "accept_tone": "primary"})
@@ -1060,8 +1064,8 @@ func _start_endgame(mode: String) -> void:
 	game.enter_endgame(mode)
 
 ## The settlement card shown when an endgame run ends (cash-out, death, or a full
-## Crucible clear). Rewards are already banked/mailed by the controller; the only
-## exit is back to the title.
+## Crucible clear). Rewards are already banked/mailed by the controller; the
+## return action goes to Crownfall.
 func open_endgame_result(summary: Dictionary) -> void:
 	var died: bool = summary.get("died", false)
 	var completed: bool = summary.get("completed", false)

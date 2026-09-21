@@ -13,6 +13,37 @@ Caller messages, transaction callbacks and cancellation destinations are preserv
 A replaced dialog cannot invoke its actions against the next screen. Yes receives
 no automatic focus, and Enter before choosing does not accept the confirmation.
 
+## Trial reward and return clarity (checkpoint 14)
+
+The trial pause warning names the unclaimed gold, gems and gear lost by
+abandoning to the title. It tells players how to cancel and choose the existing
+Cash out & bank rewards action. Cash-out describes gold payment, mailed spoils,
+results and the player's Return to Crownfall choice. Trial entry also names the
+results-to-Crownfall route after cash-out, defeat or completion.
+
+These are copy changes. Confirmation callbacks, cancellation destinations,
+primary/destructive action tones, ordinary campaign exit text and the reward,
+checkpoint and save implementations remain unchanged. The wording makes no
+unconditional save guarantee or claim that all character progress is erased.
+The Codex has no conflicting trial-return wording requiring a change here.
+
+Actual Claude supplied the initial copy implementation; independent review
+corrected indentation, reward scope, destination wording and an outdated result
+comment. Actual DeepSeek adapted only three expected message literals in the
+existing actual-caller QA. Raw drafts, corrections and source evidence remain
+under `build/qa/session-sept20/abandon-clarity-candidate/`. Final evidence belongs
+under `build/qa/session-sept20/abandon-clarity/`. All 13 final serial stages pass:
+desktop compile/quick/full, scoped mobile sync/import/compile/strict quick,
+confirmation 260/260 and paired ENet UI 64/64 on each renderer, plus early and
+final strict preflight. Root opened 22 originals, peer 36; their union covers all
+50 final images. `checkpoint-validation.json` binds source hashes, runtime
+reports and review receipts; `commit-receipt.json` records HEAD and local state.
+Mobile is host Compatibility rendering, not physical-device testing.
+
+The existing confirmation rig inspects actual pause and trial-entry messages,
+full glyph containment and cancellation. Its trial actions are cancelled: no
+new native reward settlement, successful save-write or ordinary run is claimed.
+
 ## Contextual choices (checkpoint 10)
 
 Production prompts now name the decision in their title and affirmative action:
@@ -47,8 +78,8 @@ The first hot-chest pilot lost native held input before the dialog and is reject
 its cause is unproven. Isolated rerun and final desktop/mobile episodes pass the
 unchanged strict guard with focus/physics diagnostics. The earlier Claude source
 review timed out and remains incomplete, separate from final visual reviews.
-Shared coral styling on ordinary actions and the inherited abandon warning's
-saved-progress wording remain explicit follow-up, not additional accepted changes.
+Those historical follow-ups were addressed separately: checkpoint 12 introduced
+primary gold action styling, and checkpoint 14 clarified the abandon warning.
 
 ## Reproduction and validation
 
