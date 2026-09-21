@@ -19,3 +19,15 @@ Access checks capture first-visible and settled reader geometry, complete body t
 Retained evidence is under `build/qa/session-sept20/party-names/`. `old-code-v1` had 30 failures: 18 name/edge defects and 12 overly strict whole-HP-Control enclosure checks. The corrected `old-code-v2` retained all 18 genuine failures (81 checks, 63 passing); exact HP values/fills and native ink remained readable. `pilot-v1` was rejected (219 checks, 12 failures): mouse opening immediately dismissed through generated touch. Root reused the inventory original-device event rule; pilot-v2 passes all 232 checks, with 20 original images retained. Final validation uses the same four party-name source hashes. The separate appearance rig now waits up to 15 seconds for the actual ENet handshake predicate; final-v1 retained its premature 0.7-second handshake failure. The next compile gate caught a helper-name collision with another inherited fixture; its rejected log is retained in final-v2, and the final helper has an appearance-specific name. None of these failures is an acceptance waiver.
 
 Actual Claude implementation inputs/outputs and independent corrections remain in `party-name-candidate/`; actual DeepSeek QA requests/responses remain in `party-name-qa-candidate/provider/` and `provider-correction/`. The first DeepSeek attempt exhausted its output on reasoning; the second implementation required independent syntax, transport-oracle and lifecycle corrections. Raw drafts and all rejected originals remain intact. Established renderer RID/RenderingServer shutdown diagnostics and suite ObjectDB exit warnings remain in retained logs; runner verdicts are preserved. The final native departure view retains a separate known defect: an extreme unbroken name can clip in the announcement and truncate before its consequence in the compact event feed. No announcement redesign or general UI approval is claimed.
+
+
+The subsequent announcement-wrapping checkpoint sizes the actual parented
+Labels before their first draw, so the complete 64-character departure notice
+fits its plaque. Its separate strict reward fixtures also cover unbroken and
+mixed detail text and title/detail separation. The compact feed can still
+truncate before the consequence, and queued departure notices can remain after
+reconnection; those are separate from text containment. See WARD_VIGILS.md,
+“Complete long announcement text,” and
+`build/qa/session-sept20/announcement-wrap/checkpoint-validation.json` for the
+new source-bound validation and its limits. The checkpoint-19 native
+frames described above remain unchanged historical evidence.

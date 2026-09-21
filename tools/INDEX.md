@@ -552,18 +552,23 @@ tooltip findings. Six captures; isolated APPDATA, `--timeout=300`, and the same
 mobile/touch flags above. Pools are lent, not earned; scroll placement is setup.
 This mode is mutually exclusive with other focused dossier modes.
 
-Reward plaque QA: `shot.bat hud_dossier --reward-plaques --timeout=180`
-uses controlled production HUD calls and real UI clocks. The current twelve
-originals retain the six boss/cast/title/queue controls and add entrance/settled
-blight, short VICTORY and disclosed synthetic wrapped title/detail controls.
-`--baseline` expects exactly the blight entrance containment finding; all other
-checks remain strict. Early samples require the actual 0.18–0.55s tween window.
-Default dossier is a separate 22-original regression; check counts come from
-the actual bound receipts. Mobile reward adds `--mobile
+Reward plaque QA: `shot.bat hud_dossier --reward-plaques --timeout=300`
+uses controlled production HUD calls and real UI clocks. Twenty-two originals
+retain the twelve boss/cast/title/queue and blight/VICTORY/wrapped-title controls,
+then add first-post-draw/settled views for authored Ward Vigil copy, 16- and 64-character
+departure names, and unbroken/mixed details. New cases require exact
+full copy, native character containment, separated title/detail and stable
+local geometry on every observed entrance draw. First captures can still fade;
+actual alpha/clock are recorded. The actual menu gate also holds the active
+identity, reading clock and queued line, then resumes naturally.
+`--baseline` still expects only the historical blight entrance finding; all new
+cases remain strict. Original early samples require the actual 0.18–0.55s
+window. Default dossier is a separate 22-original regression. Counts and exact
+source hashes come from the bound receipts. Mobile reward adds `--mobile
 --renderer=gl_compatibility` without `--touch`; mobile default adds `--touch`.
-Use fresh isolated APPDATA and the bound sequential validator. Original
-September 10 counts remain historical in WARD_VIGILS.md; current acceptance
-and controlled/host-rendered limits are in its Plaque entrance section.
+Use fresh isolated APPDATA and the bound sequential validator. See WARD_VIGILS.md
+for historical results, current wrapping evidence and controlled/host-rendered
+limits. No ordinary earned reward or physical-device coverage is implied.
 
 Focused menu QA reuses this rig. `--online-menu --port=0` saves six native
 frames for actual solo/empty-loopback-host menu entry/return and a synthetic

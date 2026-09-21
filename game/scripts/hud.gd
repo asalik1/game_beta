@@ -1607,9 +1607,8 @@ func _show_announcement(text: String, color: Color, hold: float, kind: String) -
 			break
 	_ann_stack = 1
 	# The box FITS its text (owner 2026-08-19: a short line in the fixed 560 px
-	# plaque was mostly whitespace). Measure the title at its SETTLED spacing
-	# and the sub-line, and take
-	# the larger; clamp so a one-word line still reads as a plaque.
+	# plaque was mostly whitespace). The fonts below settle the plaque WIDTH only;
+	# every height comes from the real Labels once they hang under this HUD.
 	var icon_name := String(ANN_ICONS.get(kind, ""))
 	var text_x: float = 60.0 if icon_name != "" else 22.0
 	var base: Font = UITheme.header_font()
@@ -1618,30 +1617,23 @@ func _show_announcement(text: String, color: Color, hold: float, kind: String) -
 	fv.spacing_glyph = ANN_SPACING_REST
 	var title_size := 20 if title.length() <= 28 else 16
 	var title_text := title.to_upper() if title.length() <= 40 else title
-	var need: float = fv.get_string_size(title_text, HORIZONTAL_ALIGNMENT_LEFT, -1, title_size).x
-	if sub != "":
-		need = maxf(need, ThemeDB.fallback_font.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x)
-	var pw: float = clampf(text_x + need + 26.0, 280.0, ANN_W)
-	var available := pw - text_x - 18.0
-	# A paragraph must wrap inside the plaque, including long reward details.
-	# Keep settled spacing on wrapped titles so the entrance cannot reflow them.
-	var wraps := need > available
-	var title_h := maxf(34.0, fv.get_multiline_string_size(title_text, HORIZONTAL_ALIGNMENT_LEFT, available, title_size).y + 4.0)
 	var sub_font: Font = UITheme.body_font()
 	if sub_font == null:
 		sub_font = ThemeDB.fallback_font
-	var sub_h := maxf(18.0, sub_font.get_multiline_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, available, 13).y + 4.0) if sub != "" else 0.0
-	# A fitted one-line title must stay one line throughout the entrance.
-	# Wider tracking can otherwise wrap below the settled-height plaque.
-	fv.spacing_glyph = ANN_SPACING_IN
-	var entrance_need: float = fv.get_string_size(title_text, HORIZONTAL_ALIGNMENT_LEFT, -1, title_size).x
-	if wraps or entrance_need > available:
-		fv.spacing_glyph = ANN_SPACING_REST
+	var need: float = fv.get_string_size(title_text, HORIZONTAL_ALIGNMENT_LEFT, -1, title_size).x
+	if sub != "":
+		need = maxf(need, sub_font.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x)
+	var pw: float = clampf(text_x + need + 26.0, 280.0, ANN_W)
+	var available := pw - text_x - 18.0
+	# Parent before measuring so the Labels resolve their overridden theme fonts.
+	# Finish the same nodes at their final width before this call can draw.
 	var plaque := Panel.new()
 	plaque.name = "AnnouncementPlaque"
 	plaque.set_meta("message", text)
 	_ann_active = plaque
 	plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plaque.clip_contents = true
+	plaque.modulate.a = 0.0
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.05, 0.045, 0.04, 0.86)
 	sb.border_color = Color(UITheme.GOLD, 0.85)
@@ -1650,13 +1642,62 @@ func _show_announcement(text: String, color: Color, hold: float, kind: String) -
 	sb.shadow_color = Color(0, 0, 0, 0.55)
 	sb.shadow_size = 10
 	plaque.add_theme_stylebox_override("panel", sb)
-	var h := maxf(ANN_H, 22.0 + title_h + (sub_h + 4.0 if sub != "" else 0.0))
-	plaque.size = Vector2(pw, h)
+	plaque.size = Vector2(pw, ANN_H)
 	plaque.position = Vector2(640.0 - pw * 0.5, ANN_Y)
 	plaque.pivot_offset = plaque.size * 0.5
-	plaque.clip_contents = true
 	add_child(plaque)
-	# hairline rules top + bottom (the plaque's "engraving")
+	# title: header face, caps, letter-spaced (FontVariation.spacing_glyph eases in)
+	var tl := Label.new()
+	tl.name = "AnnouncementTitle"
+	tl.text = title_text
+	tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if icon_name == "" else HORIZONTAL_ALIGNMENT_LEFT
+	tl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	tl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tl.add_theme_font_override("font", fv)
+	tl.add_theme_font_size_override("font_size", title_size)
+	tl.add_theme_color_override("font_color", color.lightened(0.15))
+	tl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	tl.add_theme_constant_override("outline_size", 3)
+	tl.size = Vector2(available, 0.0)
+	plaque.add_child(tl)
+	# Settled spacing first: a 64-character name breaks MID-WORD under
+	# AUTOWRAP_WORD_SMART; measure with the resolved theme and final width.
+	var title_h := _ann_text_height(tl, available, 34.0)
+	var wraps := need > available
+	var sl: Label = null
+	var sub_h := 0.0
+	if sub != "":
+		sl = Label.new()
+		sl.name = "AnnouncementDetail"
+		sl.text = sub
+		sl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		sl.horizontal_alignment = tl.horizontal_alignment
+		sl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		sl.add_theme_font_override("font", sub_font)
+		sl.add_theme_font_size_override("font_size", 13)
+		sl.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9))
+		sl.size = Vector2(available, 0.0)
+		plaque.add_child(sl)
+		sub_h = _ann_text_height(sl, available, 18.0)
+	# A fitted one-line title must stay one line throughout the entrance.
+	# Wider tracking can otherwise wrap below the settled-height plaque.
+	fv.spacing_glyph = ANN_SPACING_IN
+	var entrance_need: float = fv.get_string_size(title_text, HORIZONTAL_ALIGNMENT_LEFT, -1, title_size).x
+	if wraps or entrance_need > available:
+		fv.spacing_glyph = ANN_SPACING_REST
+	var h := maxf(ANN_H, 22.0 + title_h + (sub_h + 4.0 if sub != "" else 0.0))
+	plaque.size = Vector2(pw, h)
+	plaque.pivot_offset = plaque.size * 0.5
+	tl.position = Vector2(text_x, 10)
+	tl.size = Vector2(available, title_h)
+	if sl != null:
+		sl.position = Vector2(text_x, 10 + title_h + 4)
+		sl.size = Vector2(available, sub_h)
+	# hairline rules top + bottom (the plaque's "engraving") and the icon glyph.
+	# Built after the text because they ride the measured height, then moved BELOW
+	# the labels so the drawing order (rules, icon, title, detail, sweep) stands.
+	var back := 0
 	for ry in [6.0, h - 7.0]:
 		var rule := ColorRect.new()
 		rule.color = Color(UITheme.GOLD, 0.32)
@@ -1664,7 +1705,8 @@ func _show_announcement(text: String, color: Color, hold: float, kind: String) -
 		rule.size = Vector2(pw * 0.72, 1)
 		rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		plaque.add_child(rule)
-	# icon glyph
+		plaque.move_child(rule, back)
+		back += 1
 	if icon_name != "":
 		var icon := TextureRect.new()
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE   # before the texture (size clamp)
@@ -1675,35 +1717,7 @@ func _show_announcement(text: String, color: Color, hold: float, kind: String) -
 		icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		plaque.add_child(icon)
-	# title: header face, caps, letter-spaced (FontVariation.spacing_glyph eases in)
-	var tl := Label.new()
-	tl.name = "AnnouncementTitle"
-	tl.text = title_text
-	tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	tl.position = Vector2(text_x, 10)
-	tl.size = Vector2(available, title_h)
-	tl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if icon_name == "" else HORIZONTAL_ALIGNMENT_LEFT
-	tl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	tl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	tl.add_theme_font_override("font", fv)
-	tl.add_theme_font_size_override("font_size", title_size)
-	tl.add_theme_color_override("font_color", color.lightened(0.15))
-	tl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
-	tl.add_theme_constant_override("outline_size", 3)
-	plaque.add_child(tl)
-	if sub != "":
-		var sl := Label.new()
-		sl.name = "AnnouncementDetail"
-		sl.text = sub
-		sl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		sl.add_theme_font_override("font", sub_font)
-		sl.position = Vector2(text_x, 10 + title_h + 4)
-		sl.size = Vector2(available, sub_h)
-		sl.horizontal_alignment = tl.horizontal_alignment
-		sl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		sl.add_theme_font_size_override("font_size", 13)
-		sl.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9))
-		plaque.add_child(sl)
+		plaque.move_child(icon, back)
 	# light sweep: a soft pale band that crosses the plaque once
 	var sweep := TextureRect.new()
 	sweep.texture = Art.tex("softshadow")
@@ -1755,6 +1769,14 @@ func _show_announcement(text: String, color: Color, hold: float, kind: String) -
 		_ann_tween = null
 		if is_instance_valid(plaque):
 			plaque.queue_free())
+
+
+# Read native WORD_SMART height after the actual Label has resolved its theme
+# in the tree. The final width is set synchronously before the plaque can draw.
+func _ann_text_height(label: Label, width: float, floor_h: float) -> float:
+	label.size = Vector2(width, 0.0)
+	var shaped: float = label.get_minimum_size().y
+	return maxf(floor_h, shaped + 4.0)
 
 
 # ---------------------------------------------------------- event log ---

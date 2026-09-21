@@ -1,6 +1,6 @@
 extends RefCounted
 ## Controlled presentation only: production HUD builders, authored controls and
-## one explicitly synthetic long-title/detail stress case; no earned reward.
+## bounded synthetic name/title/detail stress cases; no earned reward.
 ## No achievement is awarded and no normal encounter or input is simulated.
 const Geometry := preload("res://scripts/tests/hud_alignment_geometry.gd")
 const CastReadout := preload("res://scripts/ui/boss_cast.gd")
@@ -256,7 +256,7 @@ func _entrance_cases() -> String:
 	if r.baseline:
 		expected.append("reward/07_blight/entrance_text_contained")
 	r._check("reward/entrance_exact_findings", actual == expected, {"actual": actual, "expected": expected})
-	return ""
+	return await _wrap_cases()
 
 
 func _entrance_case(case: Dictionary) -> String:
@@ -276,13 +276,18 @@ func _entrance_case(case: Dictionary) -> String:
 		if not is_instance_valid(plaque) or not motion.is_valid():
 			return "entrance plaque retired before settled capture: " + String(case.id)
 		var sample := _entrance_shape(plaque)
+		if bool(case.get("wrap_probe", false)):
+			_wrap_observe(plaque, case, sample)
 		sample["clock"] = motion.get_total_elapsed_time()
 		sample["process_frame"] = Engine.get_process_frames()
 		samples.append(sample)
+		if bool(case.get("wrap_probe", false)) and samples.size() == 1:
+			_entrance_capture(String(case.id) + "_first", sample)
 		if not bool(sample.contained) or (bool(case.single) and int(sample.title_lines) != 1):
 			bad.append(sample)
 		if not early and float(sample.clock) >= 0.18:
-			_entrance_capture(String(case.id) + "_early", sample)
+			if not bool(case.get("wrap_probe", false)):
+				_entrance_capture(String(case.id) + "_early", sample)
 			early_clock = float(sample.clock)
 			early = true
 		elif early and float(sample.clock) >= 0.70:
@@ -319,6 +324,16 @@ func _entrance_case(case: Dictionary) -> String:
 		r._check("reward/09_long/wrapped_title_and_detail", wrapped_detail, details)
 	if String(case.id) == "08_short" and samples.size() >= 2:
 		r._check("reward/08_short/tracking_animates", float(samples[0].spacing) > float(samples[-1].spacing))
+	if bool(case.get("wrap_probe", false)):
+		var stable := not samples.is_empty()
+		for sample in samples:
+			stable = stable and sample.wrap_layout == samples[0].wrap_layout
+		r._check("reward/" + String(case.id) + "/native_layout_stable", stable,
+			{"first": samples[0] if not samples.is_empty() else {}, "settled": samples[-1] if not samples.is_empty() else {},
+			"qualification": "local allocated rectangles; global scale/position and fading remain the real entrance animation"})
+		r._check("reward/" + String(case.id) + "/first_draw_observed", not samples.is_empty()
+			and float(samples[0].clock) < 0.18 and int(samples[0].process_frame) <= int(samples[-1].process_frame),
+			{"first": samples[0] if not samples.is_empty() else {}, "qualification": "first post-draw may still be fading; never relabel settled as first"})
 	r._write_report()
 	return "" if early and settled else "entrance sampling timeout: " + String(case.id)
 
@@ -341,6 +356,12 @@ func _entrance_shape(plaque: Panel) -> Dictionary:
 			result.title_lines = label.get_line_count()
 			result.spacing = (label.get_theme_font("font") as FontVariation).spacing_glyph
 	result.contained = bool(result.contained) and result.labels.has("AnnouncementTitle")
+	if result.labels.has("AnnouncementTitle") and result.labels.has("AnnouncementDetail"):
+		var title_cells: Rect2 = Geometry.to_rect(result.labels.AnnouncementTitle.shape.cells)
+		var detail_cells: Rect2 = Geometry.to_rect(result.labels.AnnouncementDetail.shape.cells)
+		var separated := not title_cells.intersects(detail_cells)
+		result["title_detail_separated"] = separated
+		result.contained = bool(result.contained) and separated
 	return result
 
 
@@ -450,3 +471,98 @@ func _cleanup() -> void:
 	h.boss_cast_readout.set_process(bool(keep.cast_process))
 	h.process_mode = int(keep.process_mode)
 	Geometry.restore(h, keep.geometry)
+
+
+## Bounded copy fixtures through the real announcer; no quest/reward/disconnect
+## is earned. Existing twelve originals/checks run unchanged before these.
+func _wrap_cases() -> String:
+	var w16 := "W".repeat(16)
+	var w64 := "W".repeat(64)
+	var w96 := "W".repeat(96)
+	var reward := "Three waves held. The Lamplighter title is yours; Mara in Emberfall should hear of this."
+	var cases: Array[Dictionary] = [
+		{"id": "10_ward_vigil", "text": "The tower answers — " + reward, "kind": "note", "single": true,
+			"title": "THE TOWER ANSWERS", "detail": reward, "title_lines_min": 1, "detail_lines_min": 1},
+		{"id": "11_name16", "text": w16 + " left the party", "kind": "party", "single": false,
+			"title": w16 + " LEFT THE PARTY", "detail": "", "title_lines_min": 1, "detail_lines_min": 0},
+		{"id": "12_name64", "text": w64 + " left the party", "kind": "party", "single": false,
+			"title": w64 + " left the party", "detail": "", "title_lines_min": 2, "detail_lines_min": 0},
+		{"id": "13_unbroken_detail", "text": "Supply record\n" + w96, "kind": "item", "single": true,
+			"title": "SUPPLY RECORD", "detail": w96, "title_lines_min": 1, "detail_lines_min": 2},
+		{"id": "14_mixed_detail", "text": "Supply record\n" + reward + " " + w64, "kind": "item", "single": true,
+			"title": "SUPPLY RECORD", "detail": reward + " " + w64, "title_lines_min": 1, "detail_lines_min": 2},
+	]
+	for case: Dictionary in cases:
+		case["wrap_probe"] = true
+		var error: String = await _entrance_case(case)
+		if error != "": return error
+		if String(case.id) == "14_mixed_detail":
+			await _wrap_menu_clock(String(case.text))
+		if not await _drain(12.0):
+			return "wrap plaque and log did not retire naturally: " + String(case.id)
+	r._check("reward/twenty_two_originals", r.views.size() == 22)
+	return ""
+
+
+## Extend the existing native shaped-cell observation, not the production
+## Font-based size calculation. Record line metrics; glyph cells are the oracle.
+func _wrap_observe(plaque: Panel, case: Dictionary, sample: Dictionary) -> void:
+	var layout := {"plaque_size": plaque.size, "labels": {}}
+	var valid: bool = bool(sample.contained)
+	var viewport: Rect2 = h.get_viewport().get_visible_rect()
+	for name: String in ["AnnouncementTitle", "AnnouncementDetail"]:
+		var expected: String = String(case.title if name == "AnnouncementTitle" else case.detail)
+		var minimum_lines: int = int(case.title_lines_min if name == "AnnouncementTitle" else case.detail_lines_min)
+		var label := plaque.get_node_or_null(name) as Label
+		if expected.is_empty():
+			valid = valid and label == null
+			continue
+		if label == null:
+			valid = false
+			continue
+		var shape: Dictionary = sample.labels[name].shape
+		var cells: Rect2 = Geometry.to_rect(shape.cells)
+		var allowed := viewport
+		var clips: Array[Dictionary] = []
+		var parent: Node = label.get_parent()
+		while parent != null:
+			if parent is Control and parent.clip_contents:
+				var clip: Rect2 = parent.get_global_rect()
+				allowed = allowed.intersection(clip)
+				clips.append({"name": parent.name, "rect": Geometry.rect(clip)})
+			parent = parent.get_parent()
+		var font_height: float = label.get_theme_font("font").get_height(label.get_theme_font_size("font_size"))
+		var label_ok: bool = label.text == expected and label.lines_skipped == 0 and label.visible_characters == -1 \
+			and label.get_line_count() >= minimum_lines and allowed.grow(0.5).encloses(cells)
+		valid = valid and label_ok
+		sample.labels[name]["wrap_copy_ok"] = label_ok
+		sample.labels[name]["expected"] = expected
+		sample.labels[name]["allowed"] = Geometry.rect(allowed)
+		sample.labels[name]["clipping_ancestors"] = clips
+		sample.labels[name]["font_height_times_lines"] = font_height * label.get_line_count()
+		layout.labels[name] = {"position": label.position, "size": label.size, "lines": label.get_line_count()}
+	sample["contained"] = valid
+	sample["wrap_layout"] = layout
+	sample["viewport"] = Geometry.rect(viewport)
+
+
+## Real menu gate, controlled entry: preserve the active identity/reading clock
+## and a queued line, then observe natural resume. No menu input claim.
+func _wrap_menu_clock(text: String) -> void:
+	var plaque: Panel = h._ann_active
+	var motion: Tween = h._ann_tween
+	g.menus.open_pause()
+	await r.frames(2)
+	var clock_before: float = motion.get_total_elapsed_time()
+	var queued := "VICTORY"
+	h.announce(queued, Color.WHITE, 2.2, "victory")
+	await _wait(0.25)
+	r._check("reward/wrap_menu/clock_and_queue_held", g.menus.is_open() and h._ann_active == plaque
+		and not plaque.visible and not motion.is_running() and absf(motion.get_total_elapsed_time() - clock_before) < 0.03
+		and _queue() == [queued] and String(plaque.get_meta("message", "")) == text,
+		{"before": clock_before, "after": motion.get_total_elapsed_time(), "queue": _queue()})
+	g.menus.close()
+	r.get_tree().paused = true # restore this fixture's pre-menu world freeze
+	await _wait(0.25)
+	r._check("reward/wrap_menu/resumed_same_identity", h._ann_active == plaque and _visible_message(text)
+		and motion.is_running() and motion.get_total_elapsed_time() > clock_before and _queue() == [queued])

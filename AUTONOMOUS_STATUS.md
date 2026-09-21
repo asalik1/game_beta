@@ -17,6 +17,10 @@ ACTIVE heartbeat: `crownless-september-20-21-authorized-improvements`.
 Pause ONLY this heartbeat when this session closes; it expires at the deadline.
 This UI checkpoint does not close the broader session.
 
+Latest validated checkpoint: **20 — complete long announcement text**.
+Evidence: `build/qa/session-sept20/announcement-wrap/checkpoint-validation.json`;
+its `commit-receipt.json` records the resulting local HEAD and worktree state.
+
 Checkpoint 1 — focused Professions workshop (validated; commit receipt below):
 - Owner rejected the old cluttered Professions ledger and pixel potion art.
   Replaced it with a trade rail, Craft/Blueprint tabs, slot/grade selection,
@@ -538,6 +542,40 @@ Follow-up priorities and preserved experiments:
   Evidence: party-names/checkpoint-validation.json and commit-receipt.json;
   player/tool scope: PARTY_IDENTITY_READABILITY.md. All 46 unrelated files and
   the old status tail remain unchanged; session stays active, no new push.
+
+- Checkpoint 20 validated: complete long announcement titles and details.
+  Plaques measure their actual parented WORD_SMART Labels at final width before
+  the first draw, including resolved fonts, adaptive word breaks and line
+  spacing. Long party departures and unbroken/mixed details now fit; title and
+  detail stay separated. Short controls keep their exact settled geometry and
+  available entrance tracking; body-font width now fits ordinary detail copy.
+  Queue, reading clocks, overlay gates, callbacks and input remain unchanged.
+  Actual Claude Opus 5 supplied two production drafts; actual DeepSeek supplied
+  the QA draft. Root and peers reviewed the source and native originals. The
+  corrected old-code fixture reproduces six real clipping failures; its first
+  version's two-line Ward expectation was rejected because the full copy fits
+  one line. The first production pilot still used stale off-tree font caches:
+  six checks failed and screenshot review found another title/detail overlap.
+  That rejected evidence remains. Common native separation now covers the old
+  wrapped-title control too; a disclosed posthoc comparison finds 0/22 old-code
+  versus 22/22 rejected-pilot intersections. No new baseline waiver was added.
+  Strict pilot-v3 passes 102 checks. Fourteen final serial stages plus two
+  identical-source pilot stages pass: desktop compile/quick/full; scoped mobile
+  sync/import/compile/strict quick; 102 plaque, 560 default HUD and 232 real ENet
+  party-name checks on both renderers; quality and seven-category preflight.
+  All 160 accepted original screenshots were reviewed, 16 by root. Only two
+  canonical source files and their mobile copies changed; exact frozen pins,
+  provider outputs, rejected attempts and review receipts remain retained.
+  Controlled notices/names/positions/down state and loopback ENet are not earned
+  rewards, ordinary co-op/combat/revival or persistence-roundtrip evidence.
+  Mobile is host Compatibility/emulated touch, not a physical device. First
+  frames may still fade; clocks and alpha are explicit. Compact feed truncation,
+  stale queued departure semantics, controller identity-reader access and
+  overlapping/vertical-edge overhead names remain separate issues.
+  Evidence: announcement-wrap/checkpoint-validation.json and commit-receipt.json;
+  player/tool scope: WARD_VIGILS.md and PARTY_IDENTITY_READABILITY.md. All 46
+  unrelated files and the old status tail remain byte-identical. Session stays
+  active; no new push. Older paused automations remain untouched.
 
 - Owner-requested backup completed September 21 at 05:39 UTC: origin branch
   codex/crownless-wayfinder matches d8e5b74355229cf956c764a45b981384aff94f0d.

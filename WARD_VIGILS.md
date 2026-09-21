@@ -146,6 +146,60 @@ Exact sources, receipts, original-image review hashes, project-specific
 unchanged UIDs, preserved files and serialized commit are recorded in
 `build/qa/session-sept17/plaque-entrance-checkpoint-validation.json`.
 
+### Complete long announcement text
+
+Plaques size their height from the actual native WORD_SMART Labels after
+parenting them to the real plaque, before the first draw. This resolves the
+actual font theme and includes breaks inside unbroken names/details and native
+line spacing. Detail width uses the same body font that renders it. Short fitted
+notices retain their existing typography and entrance tracking where it fits;
+queue, deduplication, overlay gates, sweep, scale/fade and reading clocks keep
+their existing rules.
+
+The focused fixture now retains its original twelve views and adds ten first/
+settled originals: authored Ward Vigil copy, 16- and 64-character wide-name
+party notices, a 96-character unbroken detail and mixed prose/unbroken detail.
+Each sampled draw checks exact full copy, native shaped character containment,
+clipping ancestors, title/detail separation and stable local layout. First
+views may still be fading; actual alpha and tween time remain in the report.
+The existing entrance timing windows are unchanged. New cases stay strict even
+in historical baseline mode. A controlled real Pause entry also verifies the
+active notice/queue/reading clock survive hiding and resume naturally.
+
+The authored Ward detail fits one line: the first QA candidate's two-line
+minimum was incorrect. That rejected run is preserved separately from the
+corrected old-code reproduction of clipped 64-character departure and long
+unbroken/mixed details. Actual Claude Opus 5 supplied the production draft;
+actual DeepSeek supplied the QA draft. Both outputs were independently reviewed
+and corrected through native validation; raw provider evidence is retained.
+The first production pilot still measured off-tree font caches and was rejected:
+six clipping checks failed, and original-image review also caught a detail line
+overlapping its title. The final shared observer checks separation for the
+older wrapped-title control too. Retained native cell observations show no
+overlap in that original old-code control and overlap in every sampled frame
+of the rejected production draft; this posthoc comparison is not a new engine
+run of the rejected source.
+
+This is bounded presentation coverage, not an unlimited-string guarantee.
+Injected reward/departure copy is not earned gameplay or a network event;
+the separate party-name regression uses real loopback ENet with controlled
+identities/positions/down state. Mobile is host Compatibility rendering, not a
+physical device. Compact feed truncation, stale queued departure semantics,
+controller access to the identity reader and overhead-label overlap/vertical
+edges remain separate issues. No economy, art or protocol change is included.
+
+Validated desktop compile/quick/full and mobile import/compile/strict quick;
+scoped source synchronization and all seven strict preflight categories pass.
+Both renderers pass 102 focused plaque and 560 default dossier checks, existing
+quality regressions, and 232 real loopback party-name checks. All 160 accepted
+originals were opened and reviewed, 16 by root. The final 14 serial stages
+reuse two passing desktop pilot stages only at identical frozen source hashes;
+there are no pending gameplay-source edits after those gates.
+
+Exact acceptance, source pins, rejected evidence and original-image reviews:
+`build/qa/session-sept20/announcement-wrap/checkpoint-validation.json`.
+The serialized commit and final local state are in `commit-receipt.json` there.
+
 ## Verification
 
 `test_ward_vigil.gd` checks invalid snapshots, caller validation, content
