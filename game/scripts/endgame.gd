@@ -555,12 +555,12 @@ func _pick_depth_boss() -> String:
 	_last_boss = kind
 	return kind
 
-## Non-boss enemy kinds — the Depths trash pool.
+## Non-boss enemy kinds, excluding explicit placeholders — the Depths trash pool.
 func _mob_pool() -> Array:
 	var pool: Array = []
 	for kind in Story.ALL_ENEMIES:
 		var d: Dictionary = Story.ALL_ENEMIES[kind]
-		if not d.get("boss", false) and d.has("sprite"):
+		if not d.get("boss", false) and not d.get("placeholder", false) and d.has("sprite"):
 			pool.append(kind)
 	if pool.is_empty():
 		pool = ["wolf"]   # never spawn an empty wave

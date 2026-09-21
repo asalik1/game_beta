@@ -80,7 +80,9 @@ extra controls run only in strict mode. See COMBAT_CLOCKS.md for fixture limits.
 
 Add `--trial-transitions` alone for actual initial Crucible pause/resume, strict
 stale-run/controller/world callback probes and a controlled room-clear Depths
-advance with native pause/resume. Five originals; no baseline waiver. Pending
+advance with native pause/resume. It also rejects explicit placeholders in the
+actual full mob pool and records eligible living wave kinds/count; a randomly
+clean wave alone is not proof. Five originals; no baseline waiver. Pending
 rewards for the Depths clear are controlled and not banked; low-level survival
 is protected for that timing phase. Use the same isolated muted runner and host
 mobile flags. See COMBAT_CLOCKS.md for exact limits and source-bound evidence.

@@ -146,6 +146,26 @@ func _run() -> void:
 	_check("depths_descended_once", trial.depth == cleared_depth + 1 and trial.wave_active
 		and g.zone_alive.get(trial.arena_room, 0) == Balance.DEPTHS_WAVE_SIZE
 		and g.world.get_instance_id() == depths_world, {"depth": trial.depth, "wave": trial.wave_active, "alive": g.zone_alive.get(trial.arena_room, 0)})
+	# Deterministic old-code rejection; a randomly clean wave is not proof.
+	var live_pool: Array = trial._mob_pool()
+	var leaked_placeholders: Array[String] = []
+	for pool_kind in live_pool:
+		var pool_def: Dictionary = Story.ALL_ENEMIES.get(pool_kind, {})
+		if pool_def.get("placeholder", false): leaked_placeholders.append(String(pool_kind))
+	_check("depths_pool_no_placeholders", leaked_placeholders.is_empty(), {"pool_count": live_pool.size(), "placeholder_kinds": leaked_placeholders})
+	_check("depths_pool_wolf_retained", "wolf" in live_pool, {"pool_count": live_pool.size()})
+	var actual_kind_ids: Array[String] = []
+	var invalid_kinds: Array[String] = []
+	for enemy in g.get_tree().get_nodes_in_group("enemies"):
+		if enemy is Enemy and enemy.hp > 0.0 and not enemy.is_queued_for_deletion() \
+				and enemy.game == g and enemy.zone_idx == trial.arena_room and g.world.is_ancestor_of(enemy):
+			var ekind: String = enemy.kind
+			actual_kind_ids.append(ekind)
+			var edef: Dictionary = Story.ALL_ENEMIES.get(ekind, {})
+			if edef.is_empty() or edef.get("boss", false) or edef.get("placeholder", false):
+				invalid_kinds.append(ekind)
+	_check("depths_wave_size_unchanged", actual_kind_ids.size() == Balance.DEPTHS_WAVE_SIZE, {"actual": actual_kind_ids.size(), "expected": Balance.DEPTHS_WAVE_SIZE, "kinds": actual_kind_ids})
+	_check("depths_wave_kinds_eligible", not actual_kind_ids.is_empty() and invalid_kinds.is_empty(), {"kinds": actual_kind_ids, "invalid": invalid_kinds})
 	for enemy in g.get_tree().get_nodes_in_group("enemies"):
 		enemy.set_physics_process(false)
 	r.shot("trial_05_depths_resumed", "actual descend spawned next wave after native resume; controlled prior clear, AI now frozen")

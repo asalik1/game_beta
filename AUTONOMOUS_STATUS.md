@@ -454,12 +454,46 @@ Follow-up priorities and preserved experiments:
   corrected actual DeepSeek QA patch passes apply-check only, not compile/native.
   README records a measured all-platform scroll layout proposal, required full
   party/long-name/input checks and exact limitations. No canonical changes from it.
-- Next source-backed priority: Depths `_mob_pool` admits non-boss sprites without
+- Checkpoint 17 origin: Depths `_mob_pool` admitted non-boss sprites without
   excluding `placeholder`. `content/pc_extra_mobs.gd` explicitly marks all five
   ticks retired, unplaced placeholders; the random controlled native waves
   exposed Bog/Gorged Tick. Inspect tick-art-audit/ for the read-only diagnosis.
-  Prefer a bounded eligibility correction with strict regression coverage over
-  repurposing/repainting retired content. No pool change is accepted in CP16.
+  The bounded eligibility correction is now accepted in checkpoint 17 below.
+  CP16 itself did not change the pool or art.
+
+- Checkpoint 17 accepted: Depths waves now exclude explicitly placeholder-flagged
+  enemy kinds. Ten retired/future entries removed from the current 58-kind pool;
+  48 eligible real entries remain, with original eligibility/order otherwise
+  preserved. No broader placement filter, art deletion/replacement, reward,
+  wave-count or timer change. Codex Future already reflects their status.
+  Actual DeepSeek runtime/full-test/native drafts received independent review;
+  raw outputs and rejected derivatives remain in depths-pool-candidate/.
+  Root corrected nonexistent Enemy.dead in QA to hp > 0. Old-v1 is rejected
+  (29 rows/four originals/script error); corrected old-v2 completes 34 with one
+  deterministic pool failure and all other checks passing. Its random wave was
+  clean, so the complete-pool assertion is essential failing-before evidence.
+  All 12 final serial stages pass: desktop compile/quick/full, scoped mobile
+  sync/import/compile/strict quick, trial 34/34 and actual paired ENet UI 64/64
+  each, strict preflight. All 24 final originals reviewed: root 10 trial views,
+  peer all 24. Current wave count is four; every observed kind is eligible.
+  Native descent follows a controlled cleared-depth/survival loan, not ordinary
+  earned play, payout or save proof. Mobile is host Compatibility, not a physical
+  device; ENet UI is not persistence proof. Existing queued wrong-trial notice,
+  truncated guidance and shutdown/negative-codec diagnostics remain recorded.
+  Evidence: depths-pool/checkpoint-validation.json; commit-receipt.json binds
+  exact HEAD and owned-clean state. All 46 unrelated files and old status tail
+  are unchanged. Session active, no additional push.
+- Pause-layout continuation: a second actual Claude Opus5 medium attempt returned
+  usable private code in 66 seconds (the prior timeout remains). Reviewed patch
+  and callback/copy evidence are in pause-layout-candidate/provider-v2/; it is
+  not applied or runtime-validated. Native multiline Button first-draw sizing
+  and real full-party/long-name reach still need proof; source review identifies
+  Button draw-time width and paired-reader session lookup risks. Private QA
+  follow-up is under qa-v3/. Actual Claude returned a private ENet draft in
+  297 seconds under enet-v1/; provider output guessed roster labels instead of
+  actual buttons and remains under independent correction/review. No canonical
+  application, compile or gameplay proof yet. Do not count these as completed
+  UI improvements.
 
 - Owner-requested backup completed September 21 at 05:39 UTC: origin branch
   codex/crownless-wayfinder matches d8e5b74355229cf956c764a45b981384aff94f0d.

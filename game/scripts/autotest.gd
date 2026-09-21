@@ -7112,11 +7112,11 @@ func _drag_ev(th: TouchHud, pos: Vector2, rel: Vector2) -> void:
 	th._input(e)
 
 
-## Endgame boss pools must never roll a PLACEHOLDER enemy. The dev-only
+## Endgame boss and mob pools must never roll a PLACEHOLDER enemy. The dev-only
 ## placeholder bosses (pc_bosses.gd) were removed 2026-08-20, but the guard
 ## stays: pc_extra_mobs still ships placeholder-flagged mobs, and a dev-panel
 ## kill of any placeholder ("tick") must not ride record_boss into the pool.
-## Covers the _boss_pool() thin-record fallback and the earned-kills path.
+## Covers boss fallback/earned paths and the actual Depths mob roster.
 func _test_endgame_no_placeholder_bosses() -> void:
 	var kept_records: Dictionary = game.boss_records.duplicate(true)
 	# One recorded kill (< 3) forces _boss_pool onto the full-roster fallback.
@@ -7130,6 +7130,7 @@ func _test_endgame_no_placeholder_bosses() -> void:
 	var rec := {"ttk": 30.0, "dps": 100.0, "kills": 1}
 	game.boss_records = {"fangmaw": rec, "morwen": rec, "vargoth": rec, "tick": rec}
 	var earned: Array = eg._boss_pool()
+	var actual_mob_pool: Array = eg._mob_pool()
 	eg.free()
 	game.boss_records = kept_records
 	if roster.is_empty() or pool.is_empty():
@@ -7139,7 +7140,33 @@ func _test_endgame_no_placeholder_bosses() -> void:
 	for kind in roster + pool + earned:
 		if Story.ALL_ENEMIES.get(kind, {}).get("placeholder", false):
 			return _fail("endgame pools: placeholder boss '%s' leaked into the arena pool" % kind)
+	if actual_mob_pool.is_empty():
+		return _fail("endgame mob pool: empty")
+	var seen_mob: Dictionary = {}
+	for kind in actual_mob_pool:
+		if seen_mob.has(kind):
+			return _fail("endgame mob pool: duplicate kind '%s' (%s)" % [kind, actual_mob_pool])
+		seen_mob[kind] = true
+	for tick_kind in ["tick", "tick_green", "tick_pale", "tick_cyan", "tick_orange"]:
+		if tick_kind in actual_mob_pool:
+			return _fail("endgame mob pool: retired tick '%s' admitted" % tick_kind)
+	# Known real kinds span base and extra content; missing entries never skip.
+	var previous_index := -1
+	for required_kind in ["wolf", "spider", "bogspider", "bloated_dead"]:
+		var retained_index: int = actual_mob_pool.find(required_kind)
+		if retained_index <= previous_index:
+			return _fail("endgame mob pool: real subset missing or reordered (%s)" % [actual_mob_pool])
+		previous_index = retained_index
+	for kind in actual_mob_pool:
+		var d: Dictionary = Story.ALL_ENEMIES.get(kind, {})
+		if d.is_empty():
+			return _fail("endgame mob pool: unknown kind '%s' returned" % kind)
+		if d.get("boss", false):
+			return _fail("endgame mob pool: boss '%s' admitted" % kind)
+		if d.get("placeholder", false):
+			return _fail("endgame mob pool: placeholder '%s' admitted" % kind)
 	print("ok: endgame boss pools exclude placeholder bosses (roster + fallback + earned kills)")
+	print("ok: Depths mob pool excludes placeholders and retains real mob ordering")
 
 
 # ---- CONTENT: pc_curios — quest-item curios + codex Curios tab -----------

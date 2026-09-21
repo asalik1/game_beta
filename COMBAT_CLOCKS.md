@@ -72,6 +72,55 @@ milliseconds or physical-device proof is claimed. Same-controller restart also
 replaces its world; that case does not independently isolate the generation
 guard. Native freed-owner and nondefault-time-scale behavior remain untested.
 
+## Depths roster eligibility (September 21, checkpoint 17)
+
+Depths waves exclude enemy definitions explicitly marked `placeholder:true`.
+This removes ten retired/future entries from the current 58-kind pool: five
+ticks, three Verdant gallery mobs and two library scholars. Their definitions
+and archived artwork remain intact. The 48 other non-boss sprite entries keep
+their eligibility and ordering; no chapter-placement restriction was added.
+Random selection still uses the same algorithm over the smaller eligible pool,
+so a given seed can now draw different enemies. Wave count, stats, affixes,
+reward rules and the checkpoint-16 transition scheduler are unchanged.
+
+Native CP16 screenshots first exposed 32px tick placeholders beside the painted
+hero. `tick-art-audit/` traced the actual imported assets and `scope-review.json`
+confirmed that all ten excluded entries remain intended future content. This
+is a roster correction, not generated/replaced art or approval of every other
+mob. The Codex already places flagged/unplaced entries on its Future shelf;
+no new player-facing entry was needed.
+
+Actual DeepSeek supplied a bounded runtime/full-test/native-test draft. Raw
+outputs and corrected derivatives remain in `depths-pool-candidate/`. Root
+corrected its nonexistent `Enemy.dead` property to actual HP before acceptance.
+The partial old-code-v1 run is rejected (29 rows, four originals, script error).
+Corrected old-code-v2 completes 34 strict rows: 33 pass and exactly one pool
+failure listing all ten placeholders. Its random four-enemy wave was clean,
+showing why a lucky screenshot alone cannot establish pool eligibility.
+
+The existing full-tier pool test retains boss fallback/earned-record checks,
+restores records before assertions, and checks valid, unique, non-placeholder
+mob results plus ordered known-real membership. The existing native trial mode
+adds deterministic actual-pool rejection and records every living current-world
+wave kind; the expected four actors and all prior 30 timing checks remain.
+There is no new screenshot runner or baseline waiver.
+
+All 12 final serial stages pass: desktop compile/quick/full, scoped four-source
+mobile sync/import/compile/strict quick, native trial 34/34 and paired ENet UI
+64/64 per renderer, then all seven strict preflight categories. Root reviewed
+ten final trial originals; peer reviewed all 24 final trial/ENet originals.
+Evidence: `build/qa/session-sept20/depths-pool/checkpoint-validation.json` and
+`commit-receipt.json`. The old failure and every rejected draft remain retained.
+
+The wave follows a synthetic cleared-depth loan and actual production scheduling,
+with temporary survival protection; it is not an ordinarily earned trial,
+victory, payout or save-write test. Host Compatibility mobile is not physical
+device testing, and UI-only real ENet is not persistence roundtrip proof.
+Other unflagged unplaced mobs remain outside this fix. Existing stale queued
+Crucible announcements after rapid restarts and truncated camp-feed guidance
+remain visible and separate. Known renderer shutdown/negative-codec diagnostics
+are retained under unchanged suite verdicts.
+
 ## Validation
 
 Accepted evidence is under `build/qa/session-sept17/`. Desktop/mobile gates,

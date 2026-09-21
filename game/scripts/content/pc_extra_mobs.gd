@@ -57,8 +57,8 @@ const ENEMIES := {
 	# ART_QUALITY_REPORT.md). The retired art reads honestly as a tick, so the WHOLE
 	# five-color set is kept here as spare mobs for future repurposing rather than
 	# discarded. All UNPLACED on purpose -> dev-launcher only, tagged [placeholder]
-	# in the codex. "placeholder": true documents intent (mob placeholder is derived
-	# from being unplaced; the key is inert for mobs but future-proofs the def). Stats
+	# in the codex. "placeholder": true also excludes them from random Depths waves;
+	# being unplaced keeps them on the codex's Future shelf. Stats
 	# cloned from the old Marsh Spider, web trait dropped. Sprites: tick (amber base) +
 	# tick_green/tick_pale/tick_cyan/tick_orange (old bog_lurker/casket_creeper/
 	# deep_stalker/vent_skitter recolors, restored under new names).
