@@ -1,10 +1,16 @@
-# Active session — September 20–21, 2026
+# Closed session — September 20–21, 2026
 
-The owner authorized this NEW session through September 21 at **21:00 UTC /
-17:00 America/New_York**. Stop starting features and asset batches at **20:00 UTC**;
-reserve the final hour for validation, fixes, documentation, commits and handoff.
-Check UTC before work and after interruptions. Older closed sessions and their
-paused automations remain unchanged.
+This authorized session closed at **2026-09-21 19:52:52 UTC**, before its September 21
+21:00 UTC /17:00 America/New_York deadline. **Do not resume development under
+this closed session; a new owner authorization is required.** All 22 gameplay
+checkpoints are committed and validated. Final game source:
+`636f6282d5ccc7afd791cf1b849d57ac79a7eecf`.
+
+See `SESSION_HANDOFF_2026_09_21.md` for delivered work, exact validation limits,
+remaining issues and backup scope. Closing evidence and final documentation
+commit/state: `build/qa/session-sept20/session-close/`. Checkpoint entries below
+are historical records; later checkpoints supersede the earlier issues they name.
+Older closed sessions and their paused automations remain unchanged.
 
 Workspace: `C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder`.
 Branch: `codex/crownless-wayfinder`. Starting HEAD:
@@ -13,9 +19,8 @@ All 46 unrelated/unfinished files remain byte-identical to
 `build/qa/session-sept20/initial-preservation.json`. The exact previous status
 is preserved as this file's tail and `previous-autonomous-status.md` there.
 
-ACTIVE heartbeat: `crownless-september-20-21-authorized-improvements`.
-Pause ONLY this heartbeat when this session closes; it expires at the deadline.
-This UI checkpoint does not close the broader session.
+PAUSED heartbeat: `crownless-september-20-21-authorized-improvements`.
+Only this session heartbeat was paused; the four older automations remain unchanged.
 
 Latest validated checkpoint: **22 — clear allied world names**.
 Evidence: `build/qa/session-sept20/party-overlays/checkpoint-validation.json`;
@@ -452,12 +457,12 @@ Follow-up priorities and preserved experiments:
   Evidence: build/qa/session-sept20/trial-transition/checkpoint-validation.json;
   commit-receipt.json binds exact HEAD and clean owned paths. All46 unrelated
   files and exact old status tail preserved. Session active; no additional push.
-- Private pause-layout follow-up remains unimplemented. Actual Claude Opus5 max
-  timed out at its480-second bound without usable production output; raw stream
-  and timeout receipt remain in pause-layout-candidate/provider/. Independently
-  corrected actual DeepSeek QA patch passes apply-check only, not compile/native.
-  README records a measured all-platform scroll layout proposal, required full
-  party/long-name/input checks and exact limitations. No canonical changes from it.
+- Preserved checkpoint-16 pause-layout attempt: actual Claude Opus5 max timed
+  out at its 480-second bound without usable production output; raw stream and
+  timeout receipt remain in pause-layout-candidate/provider/. The initial
+  DeepSeek QA derivative was then apply-check-only. Checkpoint 18 subsequently
+  implemented and validated the later reviewed layout. These earlier artifacts
+  remain historical rejected evidence, not an unimplemented current feature.
 - Checkpoint 17 origin: Depths `_mob_pool` admitted non-boss sprites without
   excluding `placeholder`. `content/pc_extra_mobs.gd` explicitly marks all five
   ticks retired, unplaced placeholders; the random controlled native waves
