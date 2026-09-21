@@ -16,6 +16,19 @@ Engine binary for every headless command: `tools\Godot_v4.4.1-stable_win64_conso
 
 ## Gates & suites (run these, in this order — CLAUDE.md "Testing")
 
+Party identity QA: `shot.bat brewing_persistence --party-names --timeout=450`
+requires fresh isolated APPDATA inside `brewing-persistence-candidate` and is
+exclusive of `--party-pause` / `--ui-only`. One real ENet host and three guests
+exercise controlled short/16-wide/64-character names, finite card/world labels,
+exact identities/HP, viewport edges and downed display. Native host/guest mouse,
+raw-touch and emulated-touch routes check the full-name reader's first/settled
+geometry, input ownership, lifecycle and actual peer departure. Existing party
+and UI modes remain separate regression gates. Add
+`--mobile --renderer=gl_compatibility` for host-rendered mobile sources. No
+controller-reader access, physical-device, ordinary typing/combat or positive
+ability-cast claim. See `PARTY_IDENTITY_READABILITY.md` for fixture limits,
+retained rejected evidence and exact validation limits.
+
 Inventory readability QA: `shot.bat material_ui --inventory-readability
 --timeout=300` uses the existing muted, compile-gated runner and a fresh APPDATA
 under `build/qa/`. Eight native views cover empty/occupied equipment, maximum

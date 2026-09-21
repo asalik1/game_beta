@@ -910,3 +910,489 @@ func _party_focus_detail() -> Dictionary:
 		"outer": str(outer.get_path()) if outer != null else "none",
 		"next_matches_tab": InputMap.event_is_action(key, "ui_focus_next"),
 		"focus_mode": local.focus_mode if local != null else -1}
+
+
+## Exclusive party-name presentation probe; no existing episode is replaced.
+static func run_party_names(fixture: Node) -> String:
+	var proof := new()
+	proof.pair = fixture
+	proof.r = fixture
+	proof.g = fixture.readers[0]
+	proof.m = proof.g.menus
+	proof.native = NativeInput.new()
+	proof.native.r = fixture
+	proof.native.g = proof.g
+	proof.native.m = proof.m
+	var language := Loc.lang
+	Loc.lang = "en"
+	var original_input: Array[bool] = []
+	for reader in fixture.readers: original_input.append(reader.get_viewport().gui_disable_input)
+	var error: String = await proof._party_name_checks()
+	var restored := true
+	for index in fixture.readers.size():
+		fixture.readers[index].get_viewport().gui_disable_input = original_input[index]
+		restored = restored and fixture.readers[index].get_viewport().gui_disable_input == original_input[index]
+	proof._check("party_names.viewport_input_restored", restored, original_input)
+	Loc.lang = language
+	proof._check("party_names.completed", error == "", error)
+	var failures := 0
+	for row in proof.rows:
+		failures += int(not bool(row.passed))
+	fixture.report["party_names"] = {"checks": proof.rows.size(), "failures": failures,
+		"rows": proof.rows,
+		"qualification": "Host plus three real ENet guest worlds in one engine; production snapshots, host roster and native HUD geometry. Character names/slots are controlled fixtures; no ordinary collection, combat, persistence-roundtrip claim. Native host/guest full-name access uses the reviewed PartyIdentityHit/Body interface with mouse, raw touch and emulated touch; physical devices remain untested."}
+	return error if error != "" else ("Party names strict checks failed" if failures > 0 else "")
+
+
+func _party_name_checks() -> String:
+	r.step("party names fixture: real host and three real ENet guest worlds in one capital")
+	if pair.readers.size() != 4 or pair.transports.size() != 4:
+		return "party names requires the host plus three guest readers"
+	if not _check("party_names.shell_motion_disabled", not m.shell_motion, "inherited paired reader disables normal shell tween"):
+		return "party reader must disable shell entry tween before first-draw observation"
+	var names: Array = ["Ada", "W".repeat(16), "W".repeat(64)]
+	for index in 4:
+		pair.readers[index].switch_chapter("capital", true)
+		await pair._quiet(index)
+		pair.readers[index].settings["touch_controls"] = false
+		pair.readers[index].refresh_touch_mode()
+		pair.readers[index]._apply_touch_mode()
+	if pair.transports[0].create_server(0, 3) != OK:
+		return "party names ENet server bind failed"
+	pair.apis[0].multiplayer_peer = pair.transports[0]
+	for slot_index in 3:
+		var guest: Game = pair.readers[slot_index + 1]
+		guest.player.char_name = String(names[slot_index])
+		guest.save_slot = int(pair.PARTY_SLOTS[slot_index])
+		guest.no_saves = false
+		SaveGame.write(guest, guest.save_slot)
+		if not await pair._connect_party_guest(slot_index + 1, String(names[slot_index])):
+			return "guest %d real ENet join/snapshot timed out" % (slot_index + 1)
+		await pair._quiet(slot_index + 1)
+	pair._show(0)
+	var input_routes: Array[Dictionary] = []
+	var host_input_only := true
+	for index in pair.readers.size():
+		var viewport: Viewport = pair.readers[index].get_viewport()
+		viewport.gui_disable_input = index != 0
+		input_routes.append({"index": index, "viewport": str(viewport.get_path()),
+			"disabled": viewport.gui_disable_input, "visible": pair.screens[index].visible})
+		host_input_only = host_input_only and viewport.gui_disable_input == (index != 0)
+	_check("party_names.host_input_only", host_input_only and pair.screens[0].visible, input_routes)
+	p = g.local_player
+	var pids: Array = []
+	var roster_ok := true
+	var roster_detail := {}
+	for index in range(1, 4):
+		var pid: int = pair.apis[index].get_unique_id()
+		var guest: Game = pair.readers[index]
+		var shell: Player = pair._shell(0, pid)
+		var block: Dictionary = pair.wires[0].peer_chars.get(pid, {})
+		var seen_host: bool = pair._shell(index, 1) != null
+		var ok: bool = pid > 1 and not pids.has(pid) and pair.apis[0].get_peers().has(pid) \
+			and shell != null and shell.peer_id == pid and String(block.get("name", "")) == String(names[index - 1]) \
+			and guest.net_guest() and guest.guest_world and bool(pair.wires[index].world_ready) and seen_host
+		roster_ok = roster_ok and ok
+		roster_detail[str(pid)] = {"name": block.get("name", ""), "avatar": shell != null,
+			"connected": pair.apis[0].get_peers().has(pid), "world_ready": bool(pair.wires[index].world_ready),
+			"sees_host": seen_host}
+		pids.append(pid)
+	_check("party_names.real_host_roster", roster_ok and pair.wires[0].peer_chars.size() == 3
+		and pair.apis[0].get_peers().size() == 3, roster_detail)
+	var cross := true
+	for index in range(1, 4):
+		for other in range(1, 4):
+			if other == index: continue
+			cross = cross and pair._shell(index, int(pids[other - 1])) != null
+	_check("party_names.guest_snapshots_cross_visible", cross, roster_detail)
+	if not roster_ok:
+		return "real host roster did not contain three connected guests"
+	var before_roster := _roster_snapshot()
+	var before_host_economy: Dictionary = pair._personal(g)
+	# Controlled owner positions travel over the existing live ENet state path.
+	# Identity is never assigned to a remote shell or synthetic roster.
+	var originals: Array[Vector2] = []
+	var inverse: Transform2D = g.get_viewport().canvas_transform.affine_inverse()
+	for index in range(1, 4):
+		var owner: Player = pair.readers[index].local_player
+		originals.append(owner.global_position)
+		owner.global_position = inverse * Vector2(380 + index * 150, 370) + Vector2(0, 54)
+	await pair._settle(1.2)
+	await RenderingServer.frame_post_draw
+	_party_name_observe("initial", names, pids)
+	if not r.flag("no-capture"): r.shot("names_01_initial", "controlled owner positions; real transport; first observed HUD draw after snapshot settlement")
+	await r.frames(4)
+	await RenderingServer.frame_post_draw
+	_party_name_observe("settled", names, pids)
+	if not r.flag("no-capture"): r.shot("names_02_settled", "controlled owner positions; actual compact labels; visual review required")
+	# Concrete reviewed HUD interface; every route uses native injected input.
+	for reader_index in [0, 1]:
+		await _party_identity_access(reader_index, String(names[2]), "reader_%d_mouse" % reader_index, false, false)
+		await _party_identity_access(reader_index, String(names[2]), "reader_%d_raw_touch" % reader_index, true, false)
+		await _party_identity_access(reader_index, String(names[2]), "reader_%d_emulated_touch" % reader_index, true, true)
+	inverse = g.get_viewport().canvas_transform.affine_inverse()
+	# Near-edge head projections exercise bounded name rectangles, not an
+	# overlap solver. All three identities remain actual connected players.
+	for index in range(1, 4):
+		var owner: Player = pair.readers[index].local_player
+		owner.global_position = inverse * Vector2([12.0, 640.0, 1268.0][index - 1], 380) + Vector2(0, 54)
+	await pair._settle(1.2)
+	await RenderingServer.frame_post_draw
+	_party_name_observe("edges", names, pids)
+	if not r.flag("no-capture"): r.shot("names_03_edges", "posed edge positions through ENet; not world traversal")
+	# Real reliable state fanout, deliberately posed owner down state rather
+	# than claiming combat. All temporary owner and host display state restores.
+	var owner: Player = pair.readers[3].local_player
+	var remote: Player = pair._shell(0, int(pids[2]))
+	var saved := {"downed": owner.downed, "ghost": owner.ghost, "dead": owner.dead,
+		"down_t": owner.down_t, "hp": owner.hp, "reviver": remote.being_revived_by}
+	owner.downed = true
+	owner.down_t = 9.0
+	pair.wires[3].send_down_state(1)
+	await pair._settle(0.2)
+	remote.down_t = 9.0
+	remote.being_revived_by = 1  # explicit display fixture; not a real revive channel
+	await r.frames(2)
+	await RenderingServer.frame_post_draw
+	_party_name_observe("downed", names, pids)
+	var down_slot: Dictionary = _party_name_slot(String(names[2]))
+	if _check("party_names.downed.slot", not down_slot.is_empty(), "exact retained full-name Label.text"):
+		var label: Label = down_slot.state
+		var nm: Label = down_slot.name
+		var glyph: Vector2 = label.get_theme_font("font").get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, label.get_theme_font_size("font_size"))
+		var rect: Rect2 = label.get_global_rect()
+		_check("party_names.downed.state_visible", remote.downed and label.is_visible_in_tree() and not nm.visible
+			and label.text.begins_with("DOWNED ") and label.text.ends_with("reviving")
+			and glyph.x <= rect.size.x + 0.5 and _party_name_card(down_slot).grow(0.5).encloses(rect),
+			{"text": label.text, "glyph_size": glyph, "rect": rect})
+	if not r.flag("no-capture"): r.shot("names_04_downed", "posed down/reviving display; not combat or revive acceptance")
+	await _party_identity_access(0, String(names[2]), "downed_mouse", false, false)
+	owner.downed = bool(saved.downed)
+	owner.ghost = bool(saved.ghost)
+	owner.dead = bool(saved.dead)
+	owner.down_t = float(saved.down_t)
+	owner.hp = float(saved.hp)
+	pair.wires[3].send_down_state(0)
+	remote.being_revived_by = int(saved.reviver)
+	for index in range(1, 4): pair.readers[index].local_player.global_position = originals[index - 1]
+	await pair._settle(0.3)
+	_check("party_names.roster_and_economy_preserved", _roster_snapshot() == before_roster and pair._personal(g) == before_host_economy, _roster_snapshot())
+	await _party_identity_lifecycle(String(names[2]), int(pids[2]))
+	return ""
+
+
+func _party_name_slot(full_name: String) -> Dictionary:
+	for slot in g.hud.party_slots:
+		var label: Label = slot.name
+		if label.text == full_name and (slot.root as Control).is_visible_in_tree(): return slot
+	return {}
+
+
+func _party_name_card(slot: Dictionary) -> Rect2:
+	# The existing root is size-zero. Its first ColorRect is the actual card
+	# backdrop; the accent/fill are smaller later siblings, not card geometry.
+	for child in (slot.root as Control).get_children():
+		if child is ColorRect: return child.get_global_rect()
+	return Rect2()
+
+
+func _party_name_observe(phase: String, names: Array, pids: Array) -> void:
+	var viewport: Rect2 = g.get_viewport().get_visible_rect()
+	for index in names.size():
+		var expected := String(names[index])
+		var pid := int(pids[index])
+		var remote: Player = pair._shell(0, pid)
+		var slot := _party_name_slot(expected)
+		var id := "party_names.%s.%d" % [phase, index]
+		_check(id + ".identity", remote != null and String(remote.get_meta("net_name", "")) == expected
+			and String(pair.wires[0].peer_chars.get(pid, {}).get("name", "")) == expected
+			and String(pair.readers[index + 1].local_player.char_name) == expected,
+			{"expected": expected, "peer": pid, "remote_name": remote.get_meta("net_name", "") if remote != null else "missing"})
+		if not _check(id + ".slot", not slot.is_empty(), expected): continue
+		if remote == null: continue  # strict identity failure already recorded; preserve report
+		var label: Label = slot.name
+		var card: Rect2 = _party_name_card(slot)
+		var rect: Rect2 = label.get_global_rect()
+		_check(id + ".compact_name", label.text == expected and card.has_area()
+			and card.grow(0.5).encloses(rect) and viewport.grow(0.5).encloses(rect)
+			and rect.size.x <= 164.5, {"name": label.text, "name_rect": rect, "card_rect": card, "visible": label.visible})
+		var hp: Label = slot.hp_text
+		var fill: ColorRect = slot.hp_fill
+		var expected_hp := "%d/%d" % [int(remote.hp), int(remote.max_hp)]
+		var expected_width: float = float(fill.get_meta("full_w")) * clampf(remote.hp / maxf(1.0, remote.max_hp), 0.0, 1.0)
+		var hp_rect: Rect2 = hp.get_global_rect()
+		# The existing centered 10px HP ink fits its bar even though the Label
+		# retains a taller pre-font-override minimum. Do not turn unrelated old
+		# Control bounds into a name-containment defect; preserve exact vitals.
+		_check(id + ".vitals", hp.text == expected_hp and absf(fill.size.x - expected_width) <= 0.5
+			and hp.is_visible_in_tree() and viewport.grow(0.5).encloses(hp_rect)
+			and hp_rect.position.x >= card.position.x - 0.5 and hp_rect.end.x <= card.end.x + 0.5,
+			{"text": hp.text, "expected": expected_hp, "fill": fill.size.x, "expected_fill": expected_width,
+			"hp_control_rect": hp_rect, "card_rect": card, "font_px": hp.get_theme_font_size("font_size")})
+		var found := false
+		for tag in g.hud.party_names:
+			if not tag.is_visible_in_tree() or tag.text != expected: continue
+			found = true
+			var world_rect: Rect2 = tag.get_global_rect()
+			_check(id + ".world_containment", world_rect.size.x <= 160.5 and viewport.grow(0.5).encloses(world_rect)
+				and tag.mouse_filter == Control.MOUSE_FILTER_IGNORE, {"name": tag.text, "rect": world_rect, "viewport": viewport})
+		_check(id + ".world_visible", found, "visible exact full-name world Label required; posed on-screen head")
+
+
+## Native pointer access on the concrete reviewed HUD interface. Guest access
+## is required; host-only removal controls are not a full-name fallback.
+func _party_identity_access(reader_index: int, full_name: String, phase: String, touch: bool, emulate: bool) -> void:
+	var host_game: Game = g
+	var host_menu: Menus = m
+	var host_player: Player = p
+	var before_roster := _roster_snapshot()
+	var before_host_economy: Dictionary = pair._personal(g)
+	var previous_emulation := Input.emulate_mouse_from_touch
+	var previous_touch_emulation := Input.emulate_touch_from_mouse
+	g = pair.readers[reader_index]
+	m = g.menus
+	p = g.local_player
+	native.g = g
+	native.m = m
+	pair._show(reader_index)
+	for index in pair.readers.size(): pair.readers[index].get_viewport().gui_disable_input = index != reader_index
+	var prior_touch: bool = bool(g.settings.get("touch_controls", false))
+	var prior_physics := p.is_physics_processing()
+	var prior_god: bool = g.dev_god
+	g.dev_god = false
+	var prior_position := p.global_position
+	var prior_velocity := p.velocity
+	_touch_mode(touch)
+	p.set_physics_process(true)
+	Input.emulate_mouse_from_touch = emulate
+	Input.emulate_touch_from_mouse = true
+	await r.frames(3)
+	var id := "party_names.access." + phase
+	_check(id + ".capability", not touch or (g.touch_mode and (not emulate or (Input.emulate_mouse_from_touch and DisplayServer.is_touchscreen_available()))),
+		{"touch": g.touch_mode, "emulated_mouse": Input.emulate_mouse_from_touch, "touch_from_mouse": Input.emulate_touch_from_mouse, "native_touch_capability": DisplayServer.is_touchscreen_available()})
+	var slot: Dictionary = _party_name_slot(full_name)
+	var card: Control = slot.get("hit") as Control
+	if _check(id + ".card_present", card != null, "actual PartyIdentityHit in exact full-name ally slot"):
+		var card_rect: Rect2 = card.get_global_rect()
+		_check(id + ".target", card.is_visible_in_tree() and card_rect.size.y >= 44.0
+			and g.get_viewport().get_visible_rect().encloses(card_rect), card_rect)
+		var ally = g.hud._ally_by_peer(int(card.get_meta("peer", -1)))
+		_check(id + ".identity_target", ally != null and String(ally.get_meta("net_name", "")) == full_name,
+			{"reader": reader_index, "peer": card.get_meta("peer", -1), "name": full_name})
+		# A positive touch joystick control precedes the protected card press.
+		var mobile: Node = g.get_node("/root/MobileInput")
+		if touch:
+			_finger(true, Vector2(180, 560))
+			_drag(Vector2(240, 560), Vector2(60, 0))
+			await r.frames(2)
+			_check(id + ".touch_positive", mobile.move.length() > 0.2 and g._touch_hud._move_touch == 0, str(mobile.move))
+			_finger(false, Vector2(240, 560))
+			await r.frames(2)
+		var position_before := p.global_position
+		var clock_before := p.anim_t
+		var mana_before: float = p.mp
+		var cooldowns_before: Dictionary = p.cds.duplicate()
+		var dialogue_before: bool = g.hud.dialogue_active
+		if touch: _finger(true, card_rect.get_center())
+		else: _pointer(true, card_rect.get_center())
+		await RenderingServer.frame_post_draw
+		var expected_body: String = full_name + "\n" + (String(ally.cls).capitalize() if ally != null else "missing")
+		var first_geometry := _party_identity_geometry(id + ".first", expected_body)
+		if not r.flag("no-capture"): r.shot("names_access_" + phase + "_first", "first native popup draw after actual press; no prior settling frames")
+		var leaked := false
+		var sampled: Array[Dictionary] = []
+		for sample in 3:
+			await r.get_tree().physics_frame
+			var cast := p.mp < mana_before - 0.01
+			for ability in cooldowns_before: cast = cast or float(p.cds[ability]) > float(cooldowns_before[ability]) + 0.05
+			var active: bool = mobile.move.length() > 0.01 or mobile.a1 or mobile.a2 or mobile.a3 or mobile.ult or mobile.interact
+			leaked = leaked or cast or active or g.hud.dialogue_active != dialogue_before or p.intent_interact
+			sampled.append({"sample": sample, "cast_witness": cast, "mobile_active": active, "mana": p.mp, "dialogue": g.hud.dialogue_active})
+		_check(id + ".physics_samples_no_new_action", not leaked, sampled)
+		_check(id + ".press_no_input_leak", p.global_position.distance_to(position_before) < 1.0
+			and p.intent_move.length() < 0.01 and not p.intent_a1 and not p.intent_a2 and not p.intent_a3 and not p.intent_ult
+			and mobile.move.length() < 0.01 and not mobile.a1 and not mobile.a2 and not mobile.a3 and not mobile.ult,
+			{"distance": p.global_position.distance_to(position_before), "move": str(mobile.move), "touch": touch, "emulation": emulate})
+		if touch: _finger(false, card_rect.get_center())
+		else: _pointer(false, card_rect.get_center())
+		await r.frames(3)
+		await RenderingServer.frame_post_draw
+		var settled_geometry := _party_identity_geometry(id + ".settled", expected_body)
+		_check(id + ".first_settled_geometry", not first_geometry.is_empty() and first_geometry == settled_geometry, {"first": first_geometry, "settled": settled_geometry})
+		var pop: Control = g.hud.hud_popover
+		var body: Label = pop.find_child("PartyIdentityBody", true, false) as Label if is_instance_valid(pop) else null
+		var one_popup := 0
+		for child in g.hud.get_children():
+			if child is Control and child.has_meta("party_peer") and child.is_visible_in_tree(): one_popup += 1
+		_check(id + ".one_persistent_popup", one_popup == 1 and is_instance_valid(body), {"count": one_popup, "body": str(body)})
+		if is_instance_valid(body) and ally != null:
+			var expected: String = full_name + "\n" + String(ally.cls).capitalize()
+			var allowed: Rect2 = g.get_viewport().get_visible_rect()
+			var ancestor: Node = body.get_parent()
+			while ancestor != null:
+				if ancestor is Control and ancestor.clip_contents: allowed = allowed.intersection(ancestor.get_global_rect())
+				ancestor = ancestor.get_parent()
+			var rect: Rect2 = body.get_global_rect()
+			var line_height: float = body.get_theme_font("font").get_height(body.get_theme_font_size("font_size"))
+			_check(id + ".complete_identity", body.text == expected and body.is_visible_in_tree()
+				and body.visible_characters == -1 and body.lines_skipped == 0 and body.max_lines_visible == -1
+				and allowed.grow(0.5).encloses(rect) and rect.size.y + 0.5 >= line_height * body.get_line_count()
+				and body.get_theme_font_size("font_size") >= 16,
+				{"text": body.text, "expected": expected, "rect": rect, "clip": allowed, "lines": body.get_line_count(), "line_height": line_height})
+			_check(id + ".same_peer", int(pop.get_meta("party_peer", -1)) == int(ally.peer_id), pop.get_meta("party_peer", -1))
+			if ally.downed:
+				_check(id + ".downed_still_visible", (slot.state as Label).is_visible_in_tree() and not (slot.name as Label).visible,
+					(slot.state as Label).text)
+		_check(id + ".world_running", not r.get_tree().paused and p.anim_t > clock_before,
+			{"paused": r.get_tree().paused, "before": clock_before, "after": p.anim_t})
+		if not r.flag("no-capture"): r.shot("names_access_" + phase, "actual native full-name read; real ENet reader; controlled name/capital fixture")
+		# Popup reserves the whole screen for pointer dismissal. No keyboard
+		# movement-block claim: this is an information reader in a running world.
+		position_before = p.global_position
+		if touch: await native._touch(Vector2(20, 600))
+		else: await native._mouse(Vector2(20, 600))
+		await r.frames(3)
+		_check(id + ".dismissed_without_input_leak", not is_instance_valid(g.hud.hud_popover)
+			and p.global_position.distance_to(position_before) < 1.0 and mobile.move.length() < 0.01,
+			{"popup": str(g.hud.hud_popover), "distance": p.global_position.distance_to(position_before)})
+	# No early-return path skips capability/reader restoration.
+	_pointer(false, Vector2(20, 600))
+	_finger(false, Vector2(20, 600))
+	p.set_physics_process(prior_physics)
+	g.dev_god = prior_god
+	p.global_position = prior_position
+	p.velocity = prior_velocity
+	_touch_mode(prior_touch)
+	Input.emulate_mouse_from_touch = previous_emulation
+	Input.emulate_touch_from_mouse = previous_touch_emulation
+	g = host_game
+	m = host_menu
+	p = host_player
+	native.g = g
+	native.m = m
+	pair._show(0)
+	for index in pair.readers.size(): pair.readers[index].get_viewport().gui_disable_input = index != 0
+	await pair._settle(0.25)  # owner position and camera settle before next edge fixture
+	_check(id + ".identity_world_economy_preserved", _roster_snapshot() == before_roster and pair._personal(g) == before_host_economy, _roster_snapshot())
+
+
+func _party_identity_geometry(id: String, expected: String) -> Dictionary:
+	var pop: Control = g.hud.hud_popover
+	var body: Label = pop.find_child("PartyIdentityBody", true, false) as Label if is_instance_valid(pop) else null
+	if not _check(id + ".body_present", body != null, "actual first/settled native party reader"): return {}
+	var rect: Rect2 = body.get_global_rect()
+	var allowed: Rect2 = g.get_viewport().get_visible_rect()
+	var panel: Control = body.get_parent().get_parent()
+	var ancestor: Node = body.get_parent()
+	while ancestor != null:
+		if ancestor is Control and ancestor.clip_contents: allowed = allowed.intersection(ancestor.get_global_rect())
+		ancestor = ancestor.get_parent()
+	var line_height: float = body.get_theme_font("font").get_height(body.get_theme_font_size("font_size"))
+	_check(id + ".whole_body", body.text == expected and body.is_visible_in_tree()
+		and body.visible_characters == -1 and body.lines_skipped == 0 and body.max_lines_visible == -1
+		and allowed.grow(0.5).encloses(rect) and rect.size.y + 0.5 >= line_height * body.get_line_count(),
+		{"text": body.text, "expected": expected, "rect": rect, "clip": allowed, "lines": body.get_line_count(), "line_height": line_height})
+	return {"body": rect, "panel": panel.get_global_rect(), "text": body.text}
+
+
+func _party_identity_native_open(full_name: String, id: String) -> bool:
+	var slot := _party_name_slot(full_name)
+	var card: Control = slot.get("hit") as Control
+	if not _check(id + ".card", card != null, full_name): return false
+	await native._mouse(card.get_global_rect().get_center())
+	await r.frames(2)
+	return _check(id + ".opened", is_instance_valid(g.hud.hud_popover)
+		and g.hud.hud_popover.has_meta("party_peer"), str(g.hud.hud_popover))
+
+
+## Controlled lifecycle calls supplement real pointer entry. Disconnect is last:
+## it intentionally ends one isolated guest transport, never kicks a real user.
+func _party_identity_lifecycle(full_name: String, departing_peer: int) -> void:
+	var id := "party_names.lifecycle"
+	var prior_touch: bool = bool(g.settings.get("touch_controls", false))
+	var old_mouse := Input.emulate_mouse_from_touch
+	var old_touch := Input.emulate_touch_from_mouse
+	var prior_physics := p.is_physics_processing()
+	var prior_god: bool = g.dev_god
+	g.dev_god = false
+	var prior_pos := p.global_position
+	var prior_velocity := p.velocity
+	var prior_cd: float = p.cds.a1
+	_touch_mode(true)
+	Input.emulate_mouse_from_touch = false
+	Input.emulate_touch_from_mouse = false  # separate mouse must not steal finger0
+	p.set_physics_process(true)
+	await r.frames(3)
+	var mobile: Node = g.get_node("/root/MobileInput")
+	_finger(true, Vector2(180, 560))
+	_drag(Vector2(240, 560), Vector2(60, 0))
+	await r.frames(2)
+	_check(id + ".held_stick_positive", mobile.move.length() > 0.2 and g._touch_hud._move_touch == 0, str(mobile.move))
+	if await _party_identity_native_open(full_name, id + ".stick"):
+		_check(id + ".stick_not_stolen", g._touch_hud._move_touch == 0, g._touch_hud._move_touch)
+	_finger(false, Vector2(240, 560))
+	await r.frames(3)
+	_check(id + ".stick_release_clean", mobile.move.length() < 0.01 and g._touch_hud._move_touch == -1, str(mobile.move))
+	await native._mouse(Vector2(20, 600))
+	var ability: Dictionary = g._touch_hud._btns.a1
+	var center: Vector2 = (ability.panel as Control).get_global_rect().get_center()
+	p.cds.a1 = 2.5  # explicit cooldown guard: this phase proves intent release, not a cast
+	_finger(true, center)
+	await r.frames(1)
+	_check(id + ".held_button_positive", g._touch_hud._btn_touch.get(0, "") == "a1", g._touch_hud._btn_touch)
+	await _party_identity_native_open(full_name, id + ".button")
+	_check(id + ".button_not_stolen", g._touch_hud._btn_touch.get(0, "") == "a1", g._touch_hud._btn_touch)
+	_check(id + ".release_cooldown_guard", not g.dev_god and p.cds.a1 > 0.5, {"god": g.dev_god, "cooldown": p.cds.a1})
+	_finger(false, center)
+	_check(id + ".legitimate_release_pulse", mobile.a1 and g._touch_hud._pulse.has("a1") and not g._touch_hud._btn_touch.has(0),
+		{"ability": mobile.a1, "pulse": g._touch_hud._pulse.duplicate(), "touches": g._touch_hud._btn_touch.duplicate()})
+	await pair._settle(0.35)
+	_finger(false, center)  # redundant release cannot create a second tap pulse
+	await r.frames(1)
+	_check(id + ".button_release_clean", not mobile.a1 and not g._touch_hud._pulse.has("a1")
+		and not g._touch_hud._btn_touch.has(0) and not g._touch_hud._press_start.has(0), "no stuck claim/pulse or duplicate release pulse")
+	if not r.flag("no-capture"): r.shot("names_lifecycle_held_release", "actual held-touch release with read-only party popup; cooldown-guarded intent test, not ability cast")
+	await native._mouse(Vector2(20, 600))
+	p.set_physics_process(prior_physics)
+	g.dev_god = prior_god
+	p.global_position = prior_pos
+	p.velocity = prior_velocity
+	p.cds.a1 = prior_cd
+	_touch_mode(prior_touch)
+	Input.emulate_mouse_from_touch = old_mouse
+	Input.emulate_touch_from_mouse = old_touch
+	await pair._settle(0.2)
+	for action in ["hide", "reset", "menu"]:
+		if not await _party_identity_native_open(full_name, id + "." + action): continue
+		if action == "hide": g.hud._hide_party_ui()
+		elif action == "reset": g.hud.reset_party_ui()
+		else: await native._key(KEY_ESCAPE)
+		await r.frames(3)
+		_check(id + ".owned_closed_" + action, not is_instance_valid(g.hud.hud_popover), str(g.hud.hud_popover))
+		if action == "menu":
+			_check(id + ".native_pause_open", m.is_open() and m.current == "pause", m.current)
+			await native._key(KEY_ESCAPE)
+	# Existing non-party popover is deliberately opened through its fixture API;
+	# party-specific hide/reset must not broaden ownership to close this reader.
+	for action in ["hide", "reset"]:
+		g.hud._open_hud_popover("QA reader", "Unrelated HUD information", Vector2(300, 300))
+		await r.frames(2)
+		var untagged: Control = g.hud.hud_popover
+		if action == "hide": g.hud._hide_party_ui()
+		else: g.hud.reset_party_ui()
+		await r.frames(3)
+		_check(id + ".untagged_preserved_" + action, is_instance_valid(untagged) and g.hud.hud_popover == untagged
+			and not untagged.has_meta("party_peer"), str(g.hud.hud_popover))
+		await native._mouse(Vector2(20, 600))
+	if await _party_identity_native_open(full_name, id + ".departing"):
+		pair.transports[3].close()
+		pair.apis[3].multiplayer_peer = null
+		pair.roots[3].online = false
+		pair.readers[3].qa_online = false
+		pair.wires[3].set_physics_process(false)
+		pair.wires[3]._on_session_ended("party identity fixture disconnect")
+		var removed: bool = await pair._until(func() -> bool: return not pair.apis[0].get_peers().has(departing_peer) and pair._shell(0, departing_peer) == null)
+		await r.frames(3)
+		_check(id + ".real_peer_departure_closed", removed and not is_instance_valid(g.hud.hud_popover)
+			and pair.apis[0].get_peers().size() == 2, {"removed": removed, "remaining": pair.apis[0].get_peers().size(), "popup": str(g.hud.hud_popover)})
+		if not r.flag("no-capture"): r.shot("names_lifecycle_peer_departed", "intentional final isolated guest transport teardown; stale-party-popup lifecycle, not kick action")

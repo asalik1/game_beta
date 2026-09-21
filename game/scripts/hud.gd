@@ -200,6 +200,20 @@ var down_marks: Array = []        # pooled overhead tags [{root,bg,fill,label}]
 const PARTY_MAX := 3
 const PARTY_FRAME_W := 214.0
 const PARTY_FRAME_H := 42.0
+const PARTY_GAP := 6.0                        # vertical space between cards
+## Finite text boxes. A name row that sizes itself to its text pushes the card
+## open, so both the card row and the world tag are fixed-width and clip with
+## an ellipsis. Label.text (and net_name) always keep the exact full value.
+const PARTY_NAME_W := PARTY_FRAME_W - 50.0    # 164px name column in the card
+const PARTY_NAME_H := 16.0
+const PARTY_TAG_W := 160.0                    # overhead world tag box
+const PARTY_TAG_H := 16.0
+const PARTY_TAG_MARGIN := 3.0                 # = the tag's outline_size
+## Identity tap target on a card: the 42px card plus 2 of the 6px gap reaches
+## 44px for touch without reaching the next card.
+const PARTY_HIT_H := PARTY_FRAME_H + 2.0
+const PARTY_POP_FONT_SIZE := 16              # readable full-identity body
+const PARTY_POP_TITLE := "Ally"               # fixed short title; name is body
 ## Per-class accent (arrow color, frame rail, name tag). No class color lives
 ## in Classes.CLASSES, so the party UI carries its own legible-at-a-glance set.
 const CLASS_TINT := {
@@ -1253,7 +1267,7 @@ func _click_to_popover(c: Control, title: String, anchor_to_control := false) ->
 ## The live-HUD twin of Menus._open_detail_popover: an opaque box at the
 ## cursor with a transparent full-screen catcher behind it (click anywhere
 ## off the box to dismiss). Info-only, so no buttons; the game keeps running.
-func _open_hud_popover(title: String, text: String, origin := Vector2(-1, -1)) -> void:
+func _open_hud_popover(title: String, text: String, origin := Vector2(-1, -1), party_peer := 0) -> void:
 	if text.strip_edges() == "":
 		return
 	if hud_popover:
@@ -1262,7 +1276,22 @@ func _open_hud_popover(title: String, text: String, origin := Vector2(-1, -1)) -
 	var overlay := Control.new()
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	# As with inventory cards, the original pointer event owns this reader.
+	# Consume generated mouse/touch echoes so one press cannot also dismiss it.
+	if party_peer > 0:
+		overlay.set_meta("party_peer", party_peer)
 	overlay.gui_input.connect(func(e: InputEvent) -> void:
+		if party_peer > 0:
+			if hud_popover != overlay:
+				return
+			if e.device == InputEvent.DEVICE_ID_EMULATION:
+				overlay.accept_event()
+				return
+			if e is InputEventScreenTouch:
+				overlay.accept_event()
+				if e.pressed and not e.canceled:
+					_close_hud_popover()
+				return
 		if e is InputEventMouseButton and e.pressed:
 			_close_hud_popover())
 	add_child(overlay)
@@ -1297,7 +1326,9 @@ func _open_hud_popover(title: String, text: String, origin := Vector2(-1, -1)) -
 	il.text = text
 	il.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	il.custom_minimum_size = Vector2(430, 0)
-	il.add_theme_font_size_override("font_size", 14)
+	il.add_theme_font_size_override("font_size", PARTY_POP_FONT_SIZE if party_peer > 0 else 14)
+	if party_peer > 0:
+		il.name = "PartyIdentityBody"
 	il.add_theme_color_override("font_color", Color(0.85, 0.85, 0.92))
 	vbox.add_child(il)
 
@@ -1305,7 +1336,7 @@ func _open_hud_popover(title: String, text: String, origin := Vector2(-1, -1)) -
 	# callers retain the cursor placement when they have no control anchor.
 	pop.position = (origin if origin.x >= 0.0 else pop.get_global_mouse_position()) + Vector2(14, 8)
 	await get_tree().process_frame
-	if not is_instance_valid(pop):
+	if not is_instance_valid(pop) or (party_peer > 0 and hud_popover != overlay):
 		return
 	pop.reset_size()
 	var sz := pop.size
@@ -3064,6 +3095,64 @@ func _ally_by_peer(pid: int):
 	return null
 
 
+## Full-identity read-out for one ally card: host and guest, mouse and touch.
+## The card's name row is clipped by design, so this is where the exact name
+## lives. Read-only and snapshot-free of anything that decays: name and class
+## only, so a lingering box can never show stale HP or state.
+func _open_party_identity(pid: int, anchor: Control) -> void:
+	if game.menus.is_open():
+		return
+	var q = _ally_by_peer(pid)
+	if q == null or not is_instance_valid(anchor) or not anchor.is_visible_in_tree():
+		return
+	var nm := String(q.get_meta("net_name", ""))
+	var cls := String(q.cls)
+	if nm == "":
+		nm = "Ally %d" % pid
+	var body := nm if cls == "" else "%s\n%s" % [nm, cls.capitalize()]
+	_open_hud_popover(PARTY_POP_TITLE, body, anchor.get_global_rect().end, pid)
+	# Ownership tag: only the party popup carries it, so invalidating an
+	# identity closes this box and never an unrelated HUD popover.
+	if hud_popover != null:
+		hud_popover.set_meta("party_identity", [nm, cls])
+
+
+## Close the ally popover when the identity behind it is gone (slot freed,
+## session ended, HUD hidden). Untagged popovers are left alone.
+func _close_party_identity() -> void:
+	if hud_popover != null and hud_popover.has_meta("party_peer"):
+		_close_hud_popover()
+
+
+## Per-frame staleness check: the owning peer must still be in the party data.
+func _party_popover_tick(data: Array) -> void:
+	if hud_popover == null or not hud_popover.has_meta("party_peer"):
+		return
+	var pid := int(hud_popover.get_meta("party_peer"))
+	for d in data:
+		if int(d["peer"]) == pid:
+			var nm := String(d["name"])
+			if nm == "":
+				nm = "Ally %d" % pid
+			if hud_popover.get_meta("party_identity", []) == [nm, String(d["cls"])]:
+				return
+			break
+	_close_hud_popover()
+
+
+## TouchHUD handles raw touch before GUI dispatch. Reserve only this new
+## reader's actual hit regions so its taps do not start the floating joystick.
+## Existing movement touches still receive their releases in TouchHUD.
+func party_pointer_owns(pos: Vector2) -> bool:
+	if hud_popover != null and hud_popover.has_meta("party_peer"):
+		return true  # its full-screen dismissal catcher owns this press
+	for slot in party_slots:
+		var hit := slot["hit"] as Control
+		if hit.is_visible_in_tree() and hit.get_global_rect().has_point(pos):
+			return true
+	return false
+
+
 func _ensure_party_ui() -> void:
 	if party_root != null:
 		return
@@ -3071,7 +3160,7 @@ func _ensure_party_ui() -> void:
 	party_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(party_root)
 	for i in PARTY_MAX:
-		var y := _party_top() + i * (PARTY_FRAME_H + 6.0)
+		var y := _party_top() + i * (PARTY_FRAME_H + PARTY_GAP)
 		party_slots.append(_build_party_frame(Vector2(12, y)))
 	# Offscreen-ally arrows (pooled triangles) + on-screen name tags.
 	for i in PARTY_MAX:
@@ -3085,6 +3174,11 @@ func _ensure_party_ui() -> void:
 		tag.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 		tag.add_theme_constant_override("outline_size", 3)
 		tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		# Finite box: clip_text keeps the native minimum size off the text, so a
+		# 64-character name ellipsises inside PARTY_TAG_W instead of spilling.
+		tag.clip_text = true
+		tag.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		tag.custom_minimum_size = Vector2(PARTY_TAG_W, PARTY_TAG_H)
 		tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		tag.visible = false
 		add_child(tag)
@@ -3117,7 +3211,11 @@ func _build_party_frame(pos: Vector2) -> Dictionary:
 	root.add_child(icon)
 	var nm := Label.new()
 	nm.position = Vector2(44, 2)
-	nm.size = Vector2(PARTY_FRAME_W - 50, 16)
+	nm.size = Vector2(PARTY_NAME_W, PARTY_NAME_H)
+	# Fixed column; the full name stays in .text and reads out in the popover.
+	nm.clip_text = true
+	nm.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	nm.custom_minimum_size = Vector2(PARTY_NAME_W, PARTY_NAME_H)
 	nm.add_theme_font_size_override("font_size", 13)
 	nm.add_theme_color_override("font_color", Color(0.92, 0.92, 0.98))
 	nm.add_theme_color_override("font_outline_color", Color(0, 0, 0))
@@ -3157,8 +3255,36 @@ func _build_party_frame(pos: Vector2) -> Dictionary:
 	state.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	state.visible = false
 	root.add_child(state)
+	# Identity hit region, added last so it sits on top of the card's visuals
+	# (all of which stay MOUSE_FILTER_IGNORE). It covers the downed/ghost rows
+	# too, so the full name is discoverable exactly when the state text has
+	# taken the name row. accept_event() keeps the press off gameplay.
+	var hit := Control.new()
+	hit.name = "PartyIdentityHit"
+	hit.size = Vector2(PARTY_FRAME_W, PARTY_HIT_H)
+	hit.mouse_filter = Control.MOUSE_FILTER_STOP
+	hit.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	hit.tooltip_text = "Ally details"
+	hit.gui_input.connect(func(e: InputEvent) -> void:
+		if e.device == InputEvent.DEVICE_ID_EMULATION:
+			hit.accept_event()
+			return
+		var tap := false
+		if e is InputEventMouseButton and e.pressed and not e.canceled \
+				and (e as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+			tap = true
+		elif e is InputEventScreenTouch:
+			# Raw fingers own their action; generated events were consumed above.
+			hit.accept_event()
+			tap = e.pressed and not e.canceled
+		if not tap:
+			return
+		_open_party_identity(int(hit.get_meta("peer", 0)), hit)
+		hit.accept_event())
+	root.add_child(hit)
 	return {"root": root, "accent": accent, "icon": icon, "name": nm,
-		"hp_bg": hp_bg, "hp_fill": hp_fill, "hp_text": hp_text, "state": state, "cls": ""}
+		"hp_bg": hp_bg, "hp_fill": hp_fill, "hp_text": hp_text, "state": state,
+		"hit": hit, "cls": ""}
 
 
 ## Per-frame from update_stats: p is the LOCAL player (unused here — the frames
@@ -3196,11 +3322,15 @@ func _update_party_ui(_p: Player) -> void:
 			nm = "Ally %d" % int(d["peer"])
 		var name_l := slot["name"] as Label
 		name_l.text = nm   # colour is a build-time constant (_build_party_frame)
+		var hit := slot["hit"] as Control
+		if int(hit.get_meta("peer", 0)) != int(d["peer"]):
+			hit.set_meta("peer", int(d["peer"]))  # rebind only on slot reassign
 		_set_fill(slot["hp_fill"], clampf(float(d["hp"]) / maxf(1.0, float(d["max_hp"])), 0.0, 1.0))
 		(slot["hp_text"] as Label).text = "%d/%d" % [int(d["hp"]), int(d["max_hp"])]
 		_apply_frame_state(slot, String(d["state"]), _ally_by_peer(int(d["peer"])))
 	_update_party_arrows(data)
 	_update_party_names(data)
+	_party_popover_tick(data)
 
 
 ## Fold MP-12's ally state into the frame (the charter's "the FRAME shows the
@@ -3320,9 +3450,14 @@ func _update_party_names(data: Array) -> void:
 			var nm := String(d["name"])
 			if nm == "":
 				nm = "Ally %d" % int(d["peer"])
-			tag.text = nm
-			tag.size = Vector2(160, 16)
-			tag.position = screen - Vector2(80, 8)
+			tag.text = nm  # full value; the fixed box clips it with an ellipsis
+			tag.size = Vector2(PARTY_TAG_W, PARTY_TAG_H)
+			# Centered on the ally, then nudged inside the viewport so a wide tag
+			# near an edge stays readable (outline width as the margin).
+			tag.position = Vector2(
+				clampf(screen.x - PARTY_TAG_W * 0.5, PARTY_TAG_MARGIN,
+					get_viewport().get_visible_rect().size.x - PARTY_TAG_W - PARTY_TAG_MARGIN),
+				screen.y - PARTY_TAG_H * 0.5)
 			var tint: Color = CLASS_TINT.get(String(d["cls"]), Color(0.85, 0.85, 0.9))
 			_set_font_color(tag, tint.lerp(Color(1, 1, 1), 0.4))
 			tag.modulate = Color(1, 1, 1, party_names_alpha)
@@ -3333,6 +3468,7 @@ func _update_party_names(data: Array) -> void:
 
 
 func _hide_party_ui() -> void:
+	_close_party_identity()
 	if party_root != null:
 		party_root.visible = false
 	for a in party_arrows:
@@ -3454,6 +3590,7 @@ func _update_meter(show: bool) -> void:
 ## Freed on session end (§5.6: solo never allocates; a closed session frees
 ## the frames). Called from net_session._on_session_ended.
 func reset_party_ui() -> void:
+	_close_party_identity()
 	if meter_root != null:
 		meter_root.queue_free()
 		meter_root = null

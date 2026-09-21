@@ -176,6 +176,15 @@ func _settle(seconds := 0.7) -> void:
 		await get_tree().create_timer(0.02, true).timeout
 
 
+# Wait for observed transport readiness; slow native startup must not become a false failure.
+func _wait_appearance_transport(predicate: Callable, seconds := 15.0) -> bool:
+	var deadline := Time.get_ticks_msec() + int(seconds * 1000.0)
+	while Time.get_ticks_msec() < deadline:
+		if bool(predicate.call()): return true
+		await get_tree().create_timer(0.03, true).timeout
+	return bool(predicate.call())
+
+
 func _shell(index: int, pid: int) -> Player:
 	for p in readers[index].players:
 		if is_instance_valid(p) and p != readers[index].local_player and p.peer_id == pid:
@@ -212,8 +221,7 @@ func _checks() -> String:
 	if transports[1].create_client("127.0.0.1", transports[0].host.get_local_port()) != OK:
 		return "appearance ENet guest connect failed"
 	apis[1].multiplayer_peer = transports[1]
-	await _settle()
-	if apis[0].get_peers().is_empty():
+	if not await _wait_appearance_transport(func() -> bool: return not apis[0].get_peers().is_empty() and apis[1].get_unique_id() > 1):
 		return "appearance ENet handshake timed out"
 	var pid := apis[1].get_unique_id()
 	roots[0].peers[pid] = {}

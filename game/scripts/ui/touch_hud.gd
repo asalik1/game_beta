@@ -288,6 +288,11 @@ func _input(event: InputEvent) -> void:
 
 func _on_touch(e: InputEventScreenTouch) -> void:
 	if e.pressed:
+		# Ally identity cards/popovers receive GUI touch after this _input pass.
+		# Do not claim their press as joystick/ability input; releases of any
+		# already-active movement/ability touch still follow the normal path.
+		if not _edit_mode and game.hud != null and game.hud.party_pointer_owns(e.position):
+			return
 		if _edit_mode:
 			_drag_id = _button_at(e.position)   # grab an ability button to reposition
 			if _drag_id == "" and _near_joystick(e.position):

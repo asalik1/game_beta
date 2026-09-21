@@ -510,6 +510,35 @@ Follow-up priorities and preserved experiments:
   stays active; no additional push. Party-name containment is a future scope
   documented in party-name-audit, not an implemented part of this checkpoint.
 
+- Checkpoint 19 validated: finite party names and complete identity reader.
+  Party-card and overhead names now ellipsise within finite native labels;
+  world labels stay inside horizontal viewport edges. Full names remain exact
+  in network data and Label.text. Click/tap a 44px card target to read the
+  complete name and class in a wrapped 16px Ally popup on host or guest.
+  Original-device input owns opening/dismissal; touch presses cannot start a
+  new joystick/action. Existing held touches still release. Party hide/reset,
+  menu opening and actual peer departure close stale readers.
+  Actual Claude Opus 5 supplied the production draft and actual DeepSeek the
+  QA draft. Independent corrections and raw outputs remain retained. Corrected
+  old-code QA reproduced 18 name/edge failures; the first integrated pilot
+  exposed 12 mouse-popup failures from generated touch. Strict pilot-v2 and
+  final desktop/mobile each pass 232 name checks. Existing paired UI 64 and
+  party-pause 149 checks, appearance and controller regressions pass on both.
+  Desktop compile/quick/full, mobile import/compile/strict quick, scoped sync
+  and seven-category strict preflight pass. All 124 final native originals
+  reviewed, 15 by root; five frozen canonical/mobile source hashes match. The appearance fixture
+  now awaits an actual handshake predicate (15s bound); its earlier fixed 0.7s
+  timing failure remains preserved in final-v1.
+  Controlled names/positions/down state and real loopback transport, not
+  ordinary co-op/combat/revival, save roundtrips or physical-device testing.
+  Controller cannot open this reader. Held ability release uses a cooldown
+  guard, not an actual cast; same-peer rename/class replacement source-reviewed.
+  Separate extreme-name departure announcement/feed clipping remains recorded;
+  overlapping world labels and vertical-edge behavior are not solved here.
+  Evidence: party-names/checkpoint-validation.json and commit-receipt.json;
+  player/tool scope: PARTY_IDENTITY_READABILITY.md. All 46 unrelated files and
+  the old status tail remain unchanged; session stays active, no new push.
+
 - Owner-requested backup completed September 21 at 05:39 UTC: origin branch
   codex/crownless-wayfinder matches d8e5b74355229cf956c764a45b981384aff94f0d.
   Original history and main are unchanged; both temporary transport branches

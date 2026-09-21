@@ -29,7 +29,10 @@ func run() -> int:
 	if flag("party-pause") and flag("ui-only"):
 		push_error("Run party-pause and ui-only separately; neither substitutes for the other")
 		return 1
-	var backup := _save_bytes([SLOT, HOST_SLOT, OTHER_SLOT] + (PARTY_SLOTS if flag("party-pause") else []))
+	if flag("party-names") and (flag("party-pause") or flag("ui-only")):
+		push_error("Run party-names exclusively; it does not substitute for party-pause or ui-only")
+		return 1
+	var backup := _save_bytes([SLOT, HOST_SLOT, OTHER_SLOT] + (PARTY_SLOTS if (flag("party-pause") or flag("party-names")) else []))
 	await _reader("warrior", "Host")
 	await _reader("mage", "Guest")
 	var error: String
@@ -43,6 +46,12 @@ func run() -> int:
 		await _reader("archer", "Guest2")
 		await _reader("assassin", "Guest3")
 		error = await preload("res://scripts/tests/alchemy_enet_ui.gd").run_party_pause(self)
+	elif flag("party-names"):
+		# Exclusive opt-in branch: two additional real ENet guest worlds in one engine.
+		shot_dir += "/party_names"
+		await _reader("archer", "Guest2")
+		await _reader("assassin", "Guest3")
+		error = await preload("res://scripts/tests/alchemy_enet_ui.gd").run_party_names(self)
 	else:
 		error = await _checks()
 	if error != "":
@@ -67,9 +76,14 @@ func run() -> int:
 		qualification = "Controlled paired capital fixture; real ENet award/travel transport and actual Alchemy input. UI-only branch skips domain persistence checks; see UI rows and qualified child-scene disconnect diagnostic."
 	elif flag("party-pause"):
 		qualification = "Host plus three real ENet guest worlds in one engine; production snapshots, host roster and native pause input. Character names/slots are controlled fixtures; no ordinary collection, combat or persistence-roundtrip claim. Guest slots are backed up and byte-restored with the other fixture slots."
+	elif flag("party-names"):
+		qualification = "Host plus three real ENet guest worlds in one engine; production snapshots, host roster and native HUD geometry. Character names/slots are controlled fixtures; no ordinary collection, combat, persistence-roundtrip claim. Actual native host/guest full-name access, pointer ownership and controlled HUD lifecycle are separate party_names rows; one isolated guest deliberately disconnects at the end."
 	report.merge({"checks": accepted, "error": error, "fixture_save_bytes_restored": restored,
-		"ordinary_input_gameplay": false, "real_file_roundtrip": not flag("ui-only") and not flag("party-pause"),
+		"ordinary_input_gameplay": false, "real_file_roundtrip": not flag("ui-only") and not flag("party-pause") and not flag("party-names"),
 		"real_enet_transport": true, "qualification": qualification}, true)
+	if flag("party-names"):
+		report["party_names"] = report.get("party_names", {})
+		report["party_names"]["real_file_roundtrip"] = false
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(shot_dir))
 	var file := FileAccess.open(shot_dir + "/acceptance.json", FileAccess.WRITE)
 	if file != null:
@@ -670,9 +684,11 @@ func _print_report_summary(error: String, restored: bool) -> void:
 	var ui: Dictionary = report.get("ui", {})
 	var boundary: Dictionary = report.get("home_dispatch_boundary", {})
 	print("BREWING PERSISTENCE: ", JSON.stringify({"milestones": accepted.size(), "error": error,
-		"fixture_save_bytes_restored": restored, "real_file_roundtrip": not flag("ui-only") and not flag("party-pause"),
+		"fixture_save_bytes_restored": restored, "real_file_roundtrip": not flag("ui-only") and not flag("party-pause") and not flag("party-names"),
 		"real_enet_transport": true, "ui_checks": int(ui.get("checks", 0)),
 		"ui_failures": int(ui.get("failures", 0)),
+		"party_names_checks": int(report.get("party_names", {}).get("checks", 0)),
+		"party_names_failures": int(report.get("party_names", {}).get("failures", 0)),
 		"party_pause_checks": int(report.get("party_pause", {}).get("checks", 0)),
 		"party_pause_failures": int(report.get("party_pause", {}).get("failures", 0)),
 		"pre_dispatch_full_writes": int(boundary.get("explained_full_writes", 0)),
