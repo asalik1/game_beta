@@ -616,7 +616,7 @@ func open_pause() -> void:
 					if game.endgame:
 						game.endgame.cash_out(),
 				Callable(),
-				{"title": "Bank your rewards?", "accept_label": "Cash out"})
+				{"title": "Bank your rewards?", "accept_label": "Cash out", "accept_tone": "primary"})
 		_btn(vbox, "  💰  Cash out & bank rewards", cash, Color(1.0, 0.85, 0.4))
 	else:
 		var restart := func() -> void:
@@ -706,11 +706,13 @@ func open_confirm(msg: String, on_yes: Callable, on_cancel := Callable(), option
 	var notice: bool = bool(options.get("notice", false))
 	var cancel_label: String = String(options.get("cancel_label", "Cancel"))
 	var accept_label: String = String(options.get("accept_label", "Yes — do it"))
+	var accept_tone: String = String(options.get("accept_tone", "destructive"))
+	var accept_color: Color = UITheme.GOLD_BRIGHT if accept_tone == "primary" else Color(1.0, 0.6, 0.5)
 	var choices: Array[Button] = [
 		_btn(actions, "  %s  " % cancel_label, no, Color(0.8, 0.85, 0.9)),
 	]
 	if not notice:
-		choices.append(_btn(actions, "  %s  " % accept_label, yes, Color(1.0, 0.6, 0.5)))
+		choices.append(_btn(actions, "  %s  " % accept_label, yes, accept_color))
 	for b in choices:
 		b.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		b.custom_minimum_size = CONFIRM_ACTION_MIN
@@ -1013,7 +1015,7 @@ func confirm_endgame(mode: String) -> void:
 	open_confirm("Enter %s?\n\n%s%s\n\nYour campaign is saved — you'll return to the title when the run ends." % [mname, rules, best],
 		func() -> void: _start_endgame(mode),
 		func() -> void: close(),
-		{"title": "Enter %s?" % mname, "accept_label": "Enter trial"})
+		{"title": "Enter %s?" % mname, "accept_label": "Enter trial", "accept_tone": "primary"})
 
 
 ## The endgame mode picker (ACT2_DESIGN.md §II) — reached from the pause menu

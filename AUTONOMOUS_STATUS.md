@@ -336,6 +336,29 @@ Follow-up priorities and preserved experiments:
   Private action-color and bench-money candidates are separate and unvalidated.
   This checkpoint continues the active session; no new push is authorized.
 
+- Checkpoint 12 — clear prices and confirmation roles (validated):
+  Alchemy/Professions prices, balances and paid receipts now use the existing
+  thousands formatter. Learn/Cash out/Enter trial/Buy skin confirmations use
+  gold normal text; destructive actions keep coral. Hover/focus stay shared.
+  Actual DeepSeek supplied both drafts; root/peer source review preserved all
+  transaction rules and existing test assertions. Compile/quick/full, scoped
+  mobile sync/import/compile/quick and both strict preflights passed. Each
+  renderer passed 260 confirmation, 28 workshop, 1,043 Professions, 563 Alchemy
+  and 64 actual paired ENet UI checks. Root reviewed 14 originals, peer 18 with
+  overlap: representative changed states, not all 122 emitted originals.
+  No new clipping/overlap found. Buy skin is source-only; mobile is host
+  Compatibility, and controlled resources/network UI do not prove physical
+  devices or ordinary earned progression. Existing shutdown diagnostics remain.
+  Evidence: build/qa/session-sept20/purchase-clarity/checkpoint-validation.json;
+  commit-receipt.json there records exact HEAD/state.46unrelated files and the
+  old status tail remain intact. No new push; session heartbeat stays active.
+  Follow-up private candidate: alchemy-source-reading-candidate/reviewed.patch
+  plus qa-v1/reviewed.patch. Actual Claude implementation and DeepSeek QA were
+  independently corrected but remain uncompiled/unvalidated. Apply patches
+  only: complete candidate files predate the grouped prices and primary tone.
+  First Claude max-effort attempt timed out; focused successful attempt/raw
+  outputs remain. Do not claim candidate acceptance or run multiple engines.
+
 - Owner-requested backup completed September 21 at 05:39 UTC: origin branch
   codex/crownless-wayfinder matches d8e5b74355229cf956c764a45b981384aff94f0d.
   Original history and main are unchanged; both temporary transport branches

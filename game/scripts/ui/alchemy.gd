@@ -233,7 +233,7 @@ static func _recipe_detail(m: Menus, parent: Control, shell: Control, state: Dic
 	_ingredient(m, column, "herb", grade, int(quote.get("herbs_have", 0)), int(quote.get("herbs", 0)))
 	_ingredient(m, column, "reagent", grade, int(quote.get("reagents_have", 0)), int(quote.get("reagents", 0)))
 	var fee := int(quote.get("fee", 0))
-	var fee_text := "Fee %d gold · Have %d gold · +%d Alchemist mastery" % [fee, m.game.local_player.gold, int(quote.get("mastery_gain", 0))]
+	var fee_text := "Fee %s gold · Have %s gold · +%d Alchemist mastery" % [m._fmt_gold(fee), m._fmt_gold(m.game.local_player.gold), int(quote.get("mastery_gain", 0))]
 	var discount := roundi((1.0 - float(quote.get("favor_multiplier", 1.0))) * 100.0)
 	if discount > 0:
 		fee_text += " · Kesh favor: %d%% fee discount" % discount
@@ -243,14 +243,14 @@ static func _recipe_detail(m: Menus, parent: Control, shell: Control, state: Dic
 	actions.add_theme_constant_override("separation", 12)
 	column.add_child(actions)
 	if not learning.is_empty():
-		var learn := m._btn(actions, "Learn blueprint — %d gold" % int(learning.fee), func() -> void:
+		var learn := m._btn(actions, "Learn blueprint — %s gold" % m._fmt_gold(int(learning.fee)), func() -> void:
 			if _owns(m, shell) and not action_used[0]:
 				action_used[0] = true
 				_learn(m, learn_order, required), UITheme.GOLD_BRIGHT, bool(learning.allowed))
 		learn.name = "AlchemyLearnBlueprint"
 		learn.custom_minimum_size.y = 44
 		learn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var brew := m._btn(actions, "Brew one — %d gold" % fee, func() -> void:
+	var brew := m._btn(actions, "Brew one — %s gold" % m._fmt_gold(fee), func() -> void:
 		if not _owns(m, shell) or action_used[0]:
 			return
 		action_used[0] = true
@@ -319,8 +319,8 @@ static func _learn(m: Menus, order: RefCounted, required: String) -> void:
 	var used: Array[bool] = [false]
 	# open_confirm checks its own exact shell BEFORE closing and invoking Yes.
 	# Its cancellation callback restores this recipe and never commits the order.
-	m.open_confirm("Learn the %s-grade %s blueprint for %d gold?\n\n%s mastery is needed to brew it. Learning never grants mastery or a bottle." % [
-		String(quote.grade), String(Items.POTION_ACCORD_NOUN[String(quote.shape)]), int(quote.fee), required],
+	m.open_confirm("Learn the %s-grade %s blueprint for %s gold?\n\n%s mastery is needed to brew it. Learning never grants mastery or a bottle." % [
+		String(quote.grade), String(Items.POTION_ACCORD_NOUN[String(quote.shape)]), m._fmt_gold(int(quote.fee)), required],
 		func() -> void:
 			if used[0]:
 				return
@@ -330,7 +330,7 @@ static func _learn(m: Menus, order: RefCounted, required: String) -> void:
 			if not used[0]:
 				used[0] = true
 				open(m),
-		{"title": "Learn blueprint?", "accept_label": "Learn blueprint"})
+		{"title": "Learn blueprint?", "accept_label": "Learn blueprint", "accept_tone": "primary"})
 
 
 static func _settled(m: Menus, result: Dictionary) -> void:
@@ -339,11 +339,11 @@ static func _settled(m: Menus, result: Dictionary) -> void:
 		return
 	m.game.sfx("chest")
 	if result.has("blueprint"):
-		open(m, "Learned %s. Paid %d gold." % [String(result.blueprint.name), int(result.fee)])
+		open(m, "Learned %s. Paid %s gold." % [String(result.blueprint.name), m._fmt_gold(int(result.fee))])
 	else:
 		var where := "Sent to your mailbox." if bool(result.mailed) else "Added to your pack."
-		open(m, "Brewed %s. %s Paid %d gold; +%d mastery." % [
-			String(result.item.name), where, int(result.fee), int(result.mastery_gain)])
+		open(m, "Brewed %s. %s Paid %s gold; +%d mastery." % [
+			String(result.item.name), where, m._fmt_gold(int(result.fee)), int(result.mastery_gain)])
 
 
 static func _owns(m: Menus, shell: Control) -> bool:

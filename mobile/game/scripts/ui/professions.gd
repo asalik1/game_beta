@@ -77,7 +77,7 @@ static func open(m: Menus, msg := "", msg_color := Color(0.8, 0.85, 1.0), slot :
 	notice.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	notice.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	notice.custom_minimum_size = Vector2(520, 40)
-	var purse := m._lbl(foot, "Gold %d   ·   Pack %d / %d" % [p.gold, p.bag_used(), p.bag_capacity()],
+	var purse := m._lbl(foot, "Gold %s   ·   Pack %d / %d" % [m._fmt_gold(p.gold), p.bag_used(), p.bag_capacity()],
 		16, Color(1.0, 0.85, 0.35))
 	purse.name = "ProfPurse"
 	purse.autowrap_mode = TextServer.AUTOWRAP_OFF
@@ -396,7 +396,7 @@ static func _trade_header(m: Menus, column: VBoxContainer, p: Player, at_capital
 		var free_lock := p.profession == ""
 		var cost := 0 if free_lock else Professions.swap_cost(p)
 		var caption := "Choose %s — free" % Professions.trade_name(trade) if free_lock \
-			else "Activate — %d gold" % cost
+			else "Activate — %s gold" % m._fmt_gold(cost)
 		var enabled := at_capital and (free_lock or p.gold >= cost)
 		var act := m._btn(head, caption, _lock_cb(m, trade, state),
 			UITheme.GOLD_BRIGHT if enabled else UITheme.TEXT_MUTED, enabled)
@@ -518,7 +518,7 @@ static func _craft_pane(m: Menus, column: VBoxContainer, shell: Control, token: 
 	counts.autowrap_mode = TextServer.AUTOWRAP_OFF
 	counts.custom_minimum_size.x = 180
 	counts.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var costs := m._lbl(words, "Fee %d gold · +%d mastery" % [fee, gain],
+	var costs := m._lbl(words, "Fee %s gold · +%d mastery" % [m._fmt_gold(fee), gain],
 		16, UITheme.GOLD_BRIGHT)
 	costs.name = "ProfCosts"
 	costs.custom_minimum_size.x = 460
@@ -529,7 +529,7 @@ static func _craft_pane(m: Menus, column: VBoxContainer, shell: Control, token: 
 		reason.name = "ProfBlocked"
 		reason.custom_minimum_size.x = 460
 
-	var craft := m._btn(column, "Craft %s %s — %d gold" % [grade, cslot.capitalize(), fee],
+	var craft := m._btn(column, "Craft %s %s — %s gold" % [grade, cslot.capitalize(), m._fmt_gold(fee)],
 		_craft_cb(m, cslot, grade, state), UITheme.GOLD_BRIGHT if enabled else UITheme.TEXT_MUTED, enabled)
 	_primary_style(craft)
 	craft.name = "ProfCraft"
@@ -537,8 +537,8 @@ static func _craft_pane(m: Menus, column: VBoxContainer, shell: Control, token: 
 	craft.custom_minimum_size = Vector2(320, 46)
 	craft.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	craft.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	craft.tooltip_text = "Spends %d %s (grade %s) and %d gold. The piece goes to your pack, or your mailbox if the pack is full." \
-		% [need, fam, grade, fee]
+	craft.tooltip_text = "Spends %d %s (grade %s) and %s gold. The piece goes to your pack, or your mailbox if the pack is full." \
+		% [need, fam, grade, m._fmt_gold(fee)]
 
 
 ## Deterministic class-fit noun for the DETAIL ART only (first entry of the
@@ -577,7 +577,7 @@ static func _blueprint_pane(m: Menus, column: VBoxContainer, p: Player, at_capit
 	m._lbl(words, "Unlocks grade-%s %s crafting. Requires %s mastery to craft." %
 		[grade, bslot.to_lower(), _required_band(grade)], 16, TEXT_BODY)
 	m._lbl(words, "Learn at the bench or find the blueprint on a boss.", 16, TEXT_BODY)
-	m._lbl(words, "Price %d gold" % price, 16, UITheme.GOLD_BRIGHT)
+	m._lbl(words, "Price %s gold" % m._fmt_gold(price), 16, UITheme.GOLD_BRIGHT)
 	if known:
 		var label := m._lbl(words, "Known · ready when your mastery permits", 16, GOOD)
 		label.name = "ProfKnown_" + grade
@@ -586,9 +586,9 @@ static func _blueprint_pane(m: Menus, column: VBoxContainer, p: Player, at_capit
 		if not at_capital:
 			reason = "Visit the Crownfall benches to learn blueprints."
 		elif mine:
-			reason = "Needs %d gold." % price
+			reason = "Needs %s gold." % m._fmt_gold(price)
 		m._lbl(words, reason, 16, BAD)
-	var learn := m._btn(column, "Blueprint known" if known else "Learn blueprint — %d gold" % price,
+	var learn := m._btn(column, "Blueprint known" if known else "Learn blueprint — %s gold" % m._fmt_gold(price),
 		_buy_cb(m, bslot, grade, state), UITheme.GOLD_BRIGHT if enabled else UITheme.TEXT_MUTED, enabled)
 	_primary_style(learn)
 	learn.name = "ProfLearn"
@@ -635,7 +635,7 @@ static func _lock_cb(m: Menus, trade: String, state: Dictionary) -> Callable:
 			return
 		m.game.sfx("equip")
 		m.game.autosave()
-		var paid := "" if int(r["cost"]) == 0 else "   (-%d gold)" % int(r["cost"])
+		var paid := "" if int(r["cost"]) == 0 else "   (-%s gold)" % m._fmt_gold(int(r["cost"]))
 		open(m, "Locked %s.%s" % [Professions.trade_name(trade), paid], GOOD, "", view)
 
 
@@ -687,7 +687,7 @@ static func _buy_cb(m: Menus, bslot: String, grade: String, state: Dictionary) -
 			return
 		m.game.sfx("chest")
 		m.game.autosave()
-		open(m, "Learned Generic %s %s.   (-%d gold)" % [grade, bslot.capitalize(), int(r["cost"])],
+		open(m, "Learned Generic %s %s.   (-%s gold)" % [grade, bslot.capitalize(), m._fmt_gold(int(r["cost"]))],
 			GOOD, "", view)
 
 
