@@ -285,11 +285,47 @@ Follow-up priorities and preserved experiments:
   checkpoint-validation.json; final commit/state: confirmation-layout/
   commit-receipt.json under build/qa/session-sept20. All46 unrelated files and
   exact older status tail preserved. Session remains active until Sep21 21UTC.
-- Private next candidate: contextual-confirmations/deepseek-v1 has an actual
-  DeepSeek-derived source patch for named actions and a single-action online
-  trial notice; deepseek-qa-v1 contains the independently corrected QA candidate.
-  Both patches are source-reviewed/applyable only, without canonical integration
-  or runtime acceptance. Preserve as unfinished work after checkpoint9.
+- Checkpoint 10 validated: contextual confirmation titles/action labels and a
+  single-action online Solo trials notice with Back to game. Costs, warnings,
+  transaction callbacks and cancellation destinations remain intact. Actual
+  DeepSeek source/QA drafts were independently corrected and integrated.
+  All 19 final stages pass: desktop compile/quick/full, scoped mobile sync,
+  import/compile/strict quick, ten native episodes and seven-category strict
+  preflight. Per project: confirmation260, navigation158, Alchemy397, paired
+  real ENet UI64 and chest48. Actual Claude opened all100 final originals;
+  root directly inspected17 and disposed every finding across24 review batches.
+  Ten frozen runtime sources match their executed desktop/mobile copies.
+  Controlled fixtures and host-rendered Compatibility mobile, not ordinary
+  earned progression or physical-device testing. Host kick, shrine offering,
+  skin purchase and weekly challenge have source-only callsite coverage.
+  Restart/cash-out/abandon probes cancel; no payout/reset claim. ENet UI-only
+  does not validate persistence or the older rejected disconnect experiment.
+  First hot-chest pilot lost held input before the dialog, cause unproven;
+  isolated rerun and final desktop/mobile pass unchanged strict guards with
+  added focus/physics observations. The earlier Claude source review timed out
+  at600seconds and remains incomplete; final visual reviews are separate.
+  One visual response needed six exact syntax-only token removals; raw output,
+  initial parser failure and pinned normalization remain. A continuation-wrapper
+  file-glob bug happened after both final providers finished; their existing
+  output was verified without rerunning a provider. All failures remain retained.
+  Evidence: contextual-confirmations/checkpoint-validation.json; resulting HEAD
+  and owned-state audit: contextual-confirmations/commit-receipt.json under
+  build/qa/session-sept20. All46 unrelated files and exact older tail preserved.
+  Session remains active; no automatic push of this or subsequent commits.
+- Next priority: private actual-DeepSeek Alchemy detail-readability V2 candidate
+  moves essential recipe metadata out of optional help scrolling and removes
+  collapsed empty space. reviewed-v2.patch and V2_NOTES.md under
+  alchemy-detail-readability-candidate preserve first/settled geometry and actual
+  touch-movement probes. It is NOT integrated, compiled or accepted; inspect
+  first-frame movement and native desktop/mobile results before keeping it.
+  Private semantic-action-color patch and source-backed abandon-copy research
+  remain under confirmation-action-semantics-candidate, also unvalidated.
+- Owner-requested backup completed September 21 at 05:39 UTC: origin branch
+  codex/crownless-wayfinder matches d8e5b74355229cf956c764a45b981384aff94f0d.
+  Original history and main are unchanged; both temporary transport branches
+  were removed. Receipt: build/qa/session-sept20/push-backup/push-receipt.json.
+  Uncommitted candidates and ignored evidence remain local. This one-time backup
+  does not authorize automatically pushing subsequent commits.
 - Candidate follow-up: inspect ordinary prop grounding/occlusion in actual
   gameplay before choosing the next scope. No grounding change started here.
 - Older private prompt drafts are superseded by checkpoint 8; all originals

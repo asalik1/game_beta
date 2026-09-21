@@ -1674,7 +1674,8 @@ func _cursed_chest_node(i: int, pos: Vector2) -> void:
 					spawn_text(player.global_position + Vector2(0, -78),
 						"THE PACK STIRS, CRUELER — purge the room to claim the hoard",
 						Color(0.85, 0.6, 1.0), 3.5)
-				_remove_interactable(npc), func() -> void: pass)
+				_remove_interactable(npc), func() -> void: pass,
+			{"title": "Accept the chest's curse?", "accept_label": "Accept the curse"})
 
 
 ## The accepted curse: every living pack member in the room hits harder
@@ -1708,7 +1709,8 @@ func _gamble_shrine_node(i: int, pos: Vector2) -> void:
 				set_flag(_shrine_flag(room))
 				player.gold -= cost
 				_shrine_outcome(cost)
-				_remove_interactable(npc), func() -> void: pass)
+				_remove_interactable(npc), func() -> void: pass,
+			{"title": "Make an offering?", "accept_label": "Offer %d gold" % cost})
 
 
 ## The gamble resolves — a true roll (loot_rng), not seeded: blessings

@@ -236,7 +236,8 @@ static func _buy_btn(m: Menus, row: HBoxContainer, kind: String, id: String, ent
 	else:
 		b = m._btn(row, "  Buy  ◈ %d  " % price, func() -> void:
 			m.open_confirm("Buy the %s skin '%s' for %d Renown?" % [String(entry.get("tier", "elite")),
-				String(entry["name"]), price], do_buy, func() -> void: open(m)), Color(0.7, 1.0, 0.7))
+				String(entry["name"]), price], do_buy, func() -> void: open(m),
+				{"title": "Buy skin?", "accept_label": "Buy skin"}), Color(0.7, 1.0, 0.7))
 	b.disabled = not afford
 	if not afford:
 		b.tooltip_text = "Not enough Renown (you have %d)" % g.renown()

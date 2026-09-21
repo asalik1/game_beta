@@ -398,7 +398,8 @@ func _sample(elapsed: int) -> Dictionary:
 		"smoothing": g.camera.position_smoothing_enabled, "sprite_draw_rect": _sprite_rect(), "body_proxy": _rect(body), "viewport": _rect(viewport),
 		"body_empty": area <= 0.0, "visible_ratio": ratio, "fully_outside": area > 0.0 and ratio <= 0.0,
 		"margins_left_top_right_bottom": margins, "minimum_margin": margins.min(),
-		"hud_rect_intersections": _hud_intersections(body), "native_key_held": held != 0 and Input.is_physical_key_pressed(held)}
+		"hud_rect_intersections": _hud_intersections(body), "native_key_held": held != 0 and Input.is_physical_key_pressed(held),
+		"window_focused": g.get_window().has_focus(), "player_physics_processing": p.is_physics_processing()}
 	if r.flag("arrival-readability"): sample["presentation"] = _arrival_presentation()
 	return sample
 
@@ -811,6 +812,13 @@ func _world_prompt_probe() -> String:
 		return _world_prompt_end("native interaction did not open confirmation")
 	var message := "The chest whispers promises. Open it, and every monster in this room grows CRUELER (+%d%% damage, faster) until the room is purged — but the purge unlocks its hoard: a golden chest and a gem, guaranteed. Open it?" % int((Balance.CURSE_DMG_MULT - 1.0) * 100)
 	_world_prompt_check("confirm_message", _world_prompt_find(g.menus.root, message, false) != null, message)
+	var probe = preload("res://scripts/tests/menu_navigation_live.gd").new()
+	probe.r = r
+	probe.g = g
+	probe.m = g.menus
+	probe._confirm_geometry("chest", message, false, false, "Accept the chest's curse?", "Accept the curse")
+	for row in probe.rows:
+		_world_prompt_check("native." + String(row.id), bool(row.passed), row.actual)
 	await RenderingServer.frame_post_draw
 	_world_prompt_capture("world_prompt_confirmation")
 	var cancel: Button = _world_prompt_find(g.menus.root, "Cancel", true) as Button

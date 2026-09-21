@@ -725,8 +725,124 @@ func _confirm_layout() -> String:
 	await _confirm_native_routes()
 	await _confirm_stale_callable()
 	await _callback_lifetime()
+	await _notice_suite()
 	_check("confirm_layout.economy_unchanged", _confirm_economy() == economy, _confirm_economy())
 	return ""
+
+
+## Controlled callback fixtures; actual online admission is in alchemy_enet_ui.
+func _notice_suite() -> void:
+	r.step("controlled notice: single safe action and native cancellation routes")
+	for route in ["mouse", "escape", "controller", "raw_touch"]:
+		yes_calls = 0
+		cancel_calls = 0
+		m.open_notice("Controlled notice", "Controlled notice body. No affirmative action is exposed.",
+			func() -> void:
+				cancel_calls += 1
+				m.open_inventory())
+		await RenderingServer.frame_post_draw
+		var initial: Rect2 = _confirm_panel_rect()
+		_notice_geometry("controlled_" + route, "Controlled notice", "Controlled notice body. No affirmative action is exposed.")
+		await r.frames(3)
+		_check("notice.first_frame_stable." + route, _confirm_panel_rect() == initial, str(initial))
+		await _capture("21_notice_" + route)
+		match route:
+			"mouse": await _button("Back to game")
+			"escape": await _key(KEY_ESCAPE)
+			"controller": await _joy_back()
+			"raw_touch":
+				var emulation: bool = Input.emulate_mouse_from_touch
+				Input.emulate_mouse_from_touch = false
+				await _touch(Vector2(12, 12))
+				Input.emulate_mouse_from_touch = emulation
+		await r.frames(3)
+		_check("notice.close_once." + route, cancel_calls == 1 and yes_calls == 0 and m.current == "inventory", _state())
+		m.open_settings("pause")
+		await r.frames(3)
+		await _key(KEY_ESCAPE)
+		_check("notice.no_extra_lifetime." + route, cancel_calls == 1 and yes_calls == 0 and m.current == "pause", _state())
+	m.open_notice("Controlled notice", "Default close returns to gameplay.")
+	await r.frames(3)
+	await _key(KEY_ESCAPE)
+	_check("notice.default_close_no_pause", not m.is_open() and not g.get_tree().paused, _state())
+	cancel_calls = 0
+	m.open_notice("Controlled notice", "Retained close callback probe.", func() -> void: cancel_calls += 1)
+	await r.frames(3)
+	var button: Button = _find_button(m.root, "Back to game", true)
+	if not _check("notice.retained.button", button != null, "Back to game"): return
+	var links: Array[Dictionary] = button.get_signal_connection_list("pressed")
+	if not _check("notice.retained.connections", links.size() == 2, links.size()): return
+	var old_callable: Callable = links[1].callable
+	if not _check("notice.retained.callable_valid", old_callable.is_valid(), "sfx then action"): return
+	m.open_inventory()
+	var destination: Control = m.root
+	# Invoke before queue_free drains, as in the existing confirmation lifetime test.
+	old_callable.call()
+	await r.frames(4)
+	_check("notice.retained.no_effect", cancel_calls == 0 and m.root == destination and m.current == "inventory", _state())
+	var successor_rect: Rect2 = m._shell_rect
+	await r.frames(3)
+	_check("notice.retained.successor_stable", m.root == destination and m._shell_rect == successor_rect, str(successor_rect))
+	await _capture("22_notice_successor")
+	cancel_calls = 0
+	m.open_notice("Controlled notice", "Enter without a selection must not invoke an action.", func() -> void: cancel_calls += 1)
+	await r.frames(3)
+	_notice_geometry("enter", "Controlled notice", "Enter without a selection must not invoke an action.")
+	_check("notice.safe_initial_focus", _find_button(m.root, "Back to game", true) != m.get_viewport().gui_get_focus_owner(), "no action initially focused")
+	await _key(KEY_ENTER)
+	_check("notice.enter_safe", m.current == "confirm" and cancel_calls == 0 and yes_calls == 0, _state())
+	await _key(KEY_ESCAPE)
+	_check("notice.enter_then_escape_once", not m.is_open() and cancel_calls == 1 and yes_calls == 0, _state())
+
+
+## Exact visible single-action contract, independent of production sizing helpers.
+func _notice_geometry(id: String, title: String, message: String) -> Dictionary:
+	var heading: Label = _confirm_label(title)
+	var body: Label = _confirm_label(message)
+	var panel: Rect2 = _confirm_panel_rect()
+	var viewport: Rect2 = m.get_viewport().get_visible_rect()
+	var result := {"panel": str(panel), "viewport": str(viewport)}
+	var contents: Array[Button] = []
+	var nodes: Array[Node] = [m.root]
+	while not nodes.is_empty():
+		var node: Node = nodes.pop_back()
+		for child in node.get_children(): nodes.append(child)
+		if node is Button and node.is_visible_in_tree() and node.text.strip_edges() != "✕": contents.append(node)
+	if not _check("notice." + id + ".nodes", m.current == "confirm" and heading != null and body != null
+			and panel.has_area() and contents.size() == 1, {"title": title, "body": message, "content_buttons": contents.size()}): return result
+	var back: Button = contents[0]
+	_check("notice." + id + ".single_safe_action", back.text.strip_edges() == "Back to game" and not back.disabled, back.text)
+	var heading_rect: Rect2 = heading.get_global_rect()
+	var body_rect: Rect2 = body.get_global_rect()
+	var back_rect: Rect2 = back.get_global_rect()
+	_check("notice." + id + ".full_text", _confirm_glyphs_complete(heading) and _confirm_glyphs_complete(body)
+		and heading.get_theme_font_size("font_size") >= 18 and body.get_theme_font_size("font_size") >= 18, message)
+	_check("notice." + id + ".bounds", viewport.grow(0.5).encloses(panel)
+		and panel.grow(0.5).encloses(heading_rect) and panel.grow(0.5).encloses(body_rect)
+		and panel.grow(0.5).encloses(back_rect), result)
+	var font: Font = back.get_theme_font("font")
+	var text_size: Vector2 = font.get_string_size(back.text, HORIZONTAL_ALIGNMENT_LEFT, -1, back.get_theme_font_size("font_size"))
+	var style: StyleBox = back.get_theme_stylebox("normal")
+	_check("notice." + id + ".target44", back_rect.size.x >= 44.0 and back_rect.size.y >= 44.0
+		and back_rect.size.x + 0.5 >= text_size.x + style.get_minimum_size().x
+		and back_rect.size.y + 0.5 >= text_size.y + style.get_minimum_size().y, str(back_rect))
+	_check("notice." + id + ".no_overlap", not heading_rect.intersects(body_rect)
+		and not heading_rect.intersects(back_rect) and not body_rect.intersects(back_rect), result)
+	var scroll: ScrollContainer = _confirm_body_scroll(body)
+	if scroll != null:
+		_check("notice." + id + ".body_visible_actions_outside", scroll.get_global_rect().grow(0.5).encloses(body_rect)
+			and not scroll.is_ancestor_of(back) and not scroll.get_global_rect().intersects(back_rect), result)
+	var text_issues: Array[String] = []
+	nodes = [m.root]
+	while not nodes.is_empty():
+		var node: Node = nodes.pop_back()
+		for child in node.get_children(): nodes.append(child)
+		if node is Label and node != heading and node != body and node.is_visible_in_tree() and not node.text.is_empty():
+			var rect: Rect2 = node.get_global_rect()
+			if not _confirm_glyphs_complete(node) or not panel.grow(0.5).encloses(rect) or rect.intersects(heading_rect) or rect.intersects(body_rect) or rect.intersects(back_rect):
+				text_issues.append(node.text)
+	_check("notice." + id + ".other_text_clear", text_issues.is_empty(), text_issues)
+	return result
 
 
 func _confirm_actual_callers() -> void:
@@ -740,7 +856,7 @@ func _confirm_actual_callers() -> void:
 	UIMailbox.open_letter(m, letter)
 	await r.frames(3)
 	if await _button("Delete letter"):
-		_confirm_geometry("mail", "Delete this letter AND its unclaimed loot?", true)
+		_confirm_geometry("mail", "Delete this letter AND its unclaimed loot?", true, false, "Delete this letter?", "Delete letter")
 		await _capture("10_confirm_mail_delete")
 		await _button("Cancel")
 		_check("confirm_layout.mail.return", m.current == "mail_letter" and _has_label(m.root, "Confirm-layout parcel"), _state())
@@ -749,10 +865,31 @@ func _confirm_actual_callers() -> void:
 	m.open_pause()
 	await r.frames(3)
 	if await _button("Exit to title"):
-		_confirm_geometry("pause", "Exit to the title screen? Your progress is saved.", true)
+		_confirm_geometry("pause", "Exit to the title screen? Your progress is saved.", true, false, "Return to title?", "Return to title")
 		await _capture("11_confirm_pause_exit")
 		await _key(KEY_ESCAPE)
 		_check("confirm_layout.pause.return", m.current == "pause" and g.get_tree().paused, _state())
+	# Availability is controlled; these are actual pause callers, cancellation only.
+	var endgame_before: bool = g.endgame_active
+	var world_before: int = g.world.get_instance_id()
+	var economy_before: Dictionary = _confirm_economy()
+	for action in ["restart", "cashout", "abandon"]:
+		g.endgame_active = action != "restart"
+		m.open_pause()
+		await r.frames(3)
+		var target: String = "Restart chapter" if action == "restart" else ("Cash out & bank rewards" if action == "cashout" else "Exit to title")
+		if await _button(target):
+			var title: String = "Restart chapter?" if action == "restart" else ("Bank your rewards?" if action == "cashout" else "Abandon this run?")
+			var accept: String = "Restart chapter" if action == "restart" else ("Cash out" if action == "cashout" else "Abandon run")
+			var message: String = "Restart '%s' from the beginning? Story progress in this chapter resets — your character, gear and Resonance stay." % Story.chapter(g.chapter_id)["name"]
+			if action == "cashout": message = "Cash out now? You keep everything you've earned this run and return to the title."
+			if action == "abandon": message = "Exit to the title screen? Your progress is saved.\n\nThis ABANDONS the current endgame run — its rewards are forfeit."
+			_confirm_geometry("pause_" + action, message, false, false, title, accept)
+			await _capture("20_contextual_" + action)
+			await _button("Cancel")
+			_check("confirm_layout." + action + ".cancel", m.current == "pause" and g.get_tree().paused
+				and g.world.get_instance_id() == world_before and _confirm_economy() == economy_before, _state())
+	g.endgame_active = endgame_before
 	for mode in ["crucible", "depths"]:
 		var title: String = "The Crucible" if mode == "crucible" else "The Waking Depths"
 		var rules: String = "Ten bosses back to back, each with an elite affix — HP and MP carry over between them. Bonus spoils at 3 / 6 / 10 kills." if mode == "crucible" else "An endless descent where DEPTH IS THE MONSTERS' LEVEL — the ladder starts at 40, or at your deepest cleared checkpoint. A boss guards every 5th depth, a checkpoint boss every 10th; past 100 the dark only deepens. Rewards pay when you fall or cash out."
@@ -763,7 +900,7 @@ func _confirm_actual_callers() -> void:
 		var message := "Enter %s?\n\n%s%s\n\nYour campaign is saved — you'll return to the title when the run ends." % [title, rules, best]
 		m.confirm_endgame(mode)
 		await r.frames(4)
-		_confirm_geometry("endgame_" + mode, message, false)
+		_confirm_geometry("endgame_" + mode, message, false, false, "Enter %s?" % title, "Enter trial")
 		await _capture("12_confirm_endgame_" + mode)
 		await _button("Cancel")
 		_check("confirm_layout.endgame." + mode + ".return", not m.is_open() and not g.endgame_active and not g.get_tree().paused, _state())
@@ -930,15 +1067,18 @@ func _confirm_stale_callable() -> void:
 	_check("confirm_layout.stale.no_effect", yes_calls == 0 and cancel_calls == 0 and m.root == destination and m.current == "inventory", {"yes": yes_calls, "cancel": cancel_calls, "menu": m.current})
 
 
-func _confirm_geometry(id: String, message: String, compact: bool, scrolling := false) -> Dictionary:
+func _confirm_geometry(id: String, message: String, compact: bool, scrolling := false,
+		expected_title := "Are you sure?", accept_label := "Yes — do it") -> Dictionary:
 	var label: Label = _confirm_label(message)
-	var yes: Button = _find_button(m.root, "Yes — do it", true)
+	var yes: Button = _find_button(m.root, accept_label, true)
 	var cancel: Button = _find_button(m.root, "Cancel", true)
 	var panel: Rect2 = _confirm_panel_rect()
 	var viewport: Rect2 = m.get_viewport().get_visible_rect()
 	var result := {"panel": str(panel), "viewport": str(viewport)}
 	if not _check("confirm_layout." + id + ".nodes", m.current == "confirm" and label != null and yes != null and cancel != null and panel.has_area(), "exact message and action labels; actual Panel"):
 		return result
+	var title: Label = _confirm_label(expected_title)
+	_check("confirm_layout." + id + ".title", title != null and _confirm_glyphs_complete(title), expected_title)
 	var body: Rect2 = label.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, label.size)
 	var yes_rect: Rect2 = yes.get_global_rect()
 	var cancel_rect: Rect2 = cancel.get_global_rect()

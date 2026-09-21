@@ -344,8 +344,11 @@ stability, safe Enter, stale callbacks, native cancellation and bounded wheel/
 touch reading. Requires fresh APPDATA under `build/qa`, exclusive strict captures.
 Add `--mobile --renderer=gl_compatibility` for host mobile sources. Paired ENet
 confirmation input uses existing `shot.bat brewing_persistence --ui-only` with
-APPDATA inside `brewing-persistence-candidate`. See CONFIRMATION_LAYOUT.md for
-scope, retained failures and final acceptance evidence.
+APPDATA inside `brewing-persistence-candidate`. The menu mode covers contextual
+confirmation titles/actions and single-action notice cancellation; the paired
+ENet mode covers the actual online Solo trials notice. Existing Alchemy captures
+the actual Learn blueprint dialog before purchase. See CONFIRMATION_LAYOUT.md
+for scope, retained failures and final acceptance evidence.
 
 Settings layout QA: add `--settings-touch --desktop-comfort --timeout=180` to
 the same menu rig. It checks 68 content targets across desktop and touch

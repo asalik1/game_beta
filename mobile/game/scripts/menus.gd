@@ -604,7 +604,9 @@ func open_pause() -> void:
 				open_confirm("Remove %s from the party? They keep everything they've earned — but the lobby is locked mid-run, so they can't rejoin until you host again." % pname,
 					func() -> void:
 						kick_sess.host_kick(pid)
-						close())
+						close(),
+					Callable(),
+					{"title": "Remove player?", "accept_label": "Remove player"})
 			_btn(vbox, "  ✕  Remove %s from the party" % pname, kick, Color(1.0, 0.6, 0.55))
 	if game.endgame_active:
 		var cash := func() -> void:
@@ -612,18 +614,25 @@ func open_pause() -> void:
 				func() -> void:
 					close()
 					if game.endgame:
-						game.endgame.cash_out())
+						game.endgame.cash_out(),
+				Callable(),
+				{"title": "Bank your rewards?", "accept_label": "Cash out"})
 		_btn(vbox, "  💰  Cash out & bank rewards", cash, Color(1.0, 0.85, 0.4))
 	else:
 		var restart := func() -> void:
 			open_confirm("Restart '%s' from the beginning? Story progress in this chapter resets — your character, gear and Resonance stay." % Story.chapter(game.chapter_id)["name"],
-				func() -> void: game.replay_chapter(game.chapter_id))
+				func() -> void: game.replay_chapter(game.chapter_id),
+				Callable(),
+				{"title": "Restart chapter?", "accept_label": "Restart chapter"})
 		_btn(vbox, "  ↺  Restart chapter  (keeps your character)", restart, Color(1.0, 0.8, 0.5))
 		_btn(vbox, "  ⚑  Chapter select  (replay any chapter)", func() -> void: open_chapter_select(true), Color(1.0, 0.8, 0.5))
 	var to_title := func() -> void:
 		open_confirm("Exit to the title screen? Your progress is saved." +
 			("\n\nThis ABANDONS the current endgame run — its rewards are forfeit." if game.endgame_active else ""),
-			func() -> void: game.exit_to_title())
+			func() -> void: game.exit_to_title(),
+			Callable(),
+			({"title": "Abandon this run?", "accept_label": "Abandon run"} if game.endgame_active
+				else {"title": "Return to title?", "accept_label": "Return to title"}))
 	_btn(vbox, "  ⇦  Exit to title  (switch character)", to_title, Color(1.0, 0.65, 0.55))
 	var quit_game := func() -> void:
 		game.autosave()
@@ -665,8 +674,8 @@ const CONFIRM_MAX_H := 600.0
 ## ceiling, then measured and shrunk onto its own content in the SAME call,
 ## so the first drawn frame is already the final size. Dismissing the closable
 ## panel is cancellation.
-func open_confirm(msg: String, on_yes: Callable, on_cancel := Callable()) -> void:
-	var vbox := _open("Are you sure?", 680, CONFIRM_MAX_H, true)
+func open_confirm(msg: String, on_yes: Callable, on_cancel := Callable(), options: Dictionary = {}) -> void:
+	var vbox := _open(String(options.get("title", "Are you sure?")), 680, CONFIRM_MAX_H, true)
 	current = "confirm"
 	_confirm_cancel = on_cancel
 	var shell := root
@@ -694,16 +703,37 @@ func open_confirm(msg: String, on_yes: Callable, on_cancel := Callable()) -> voi
 	actions.alignment = BoxContainer.ALIGNMENT_CENTER
 	actions.add_theme_constant_override("separation", 18)
 	vbox.add_child(actions)
+	var notice: bool = bool(options.get("notice", false))
+	var cancel_label: String = String(options.get("cancel_label", "Cancel"))
+	var accept_label: String = String(options.get("accept_label", "Yes — do it"))
 	var choices: Array[Button] = [
-		_btn(actions, "  Cancel  ", no, Color(0.8, 0.85, 0.9)),
-		_btn(actions, "  Yes — do it  ", yes, Color(1.0, 0.6, 0.5)),
+		_btn(actions, "  %s  " % cancel_label, no, Color(0.8, 0.85, 0.9)),
 	]
+	if not notice:
+		choices.append(_btn(actions, "  %s  " % accept_label, yes, Color(1.0, 0.6, 0.5)))
 	for b in choices:
 		b.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		b.custom_minimum_size = CONFIRM_ACTION_MIN
 		b.add_theme_font_size_override("font_size", CONFIRM_BODY_PX)
-	_hint(vbox, "ESC to cancel")
+	_hint(vbox, "ESC to close" if notice else "ESC to cancel")
 	_fit_confirm_shell(vbox, scroll, body)
+
+
+## An informational, single-action notice. Reuses the measured confirm shell
+## and the ONE cancellation stream (_cancel_confirmation): Escape, ✕, an
+## outside click and gamepad Back all simply close, never perform an action.
+## No affirmative action is exposed; closing without a supplied callback
+## still returns to gameplay instead of the confirmation fallback pause menu.
+func open_notice(title: String, msg: String, on_close := Callable(), close_label: String = "Back to game") -> void:
+	var dismiss: Callable = on_close
+	if not dismiss.is_valid():
+		# _cancel_confirmation closes the shell before invoking this no-op.
+		dismiss = func() -> void: pass
+	open_confirm(msg, Callable(), dismiss, {
+		"title": title,
+		"cancel_label": close_label,
+		"notice": true,
+	})
 
 
 ## Shrink the open confirm shell onto the content it just built. Every row is
@@ -967,8 +997,8 @@ func confirm_endgame(mode: String) -> void:
 	# machine. This is the player-facing gate; game_flow.enter_endgame carries
 	# the hard backstop.
 	if game.net_online():
-		open_confirm("Endgame trials are SOLO for now — a shared arena needs its own netcode.\n\nLeave the co-op session first; the trials will be waiting.",
-			func() -> void: close(),
+		open_notice("Solo trials",
+			"These trials are played solo.\n\nLeave your co-op session before entering a trial. You can keep playing with your party for now.",
 			func() -> void: close())
 		return
 	var cls: String = game.local_player.cls
@@ -982,7 +1012,8 @@ func confirm_endgame(mode: String) -> void:
 			else ("\n\nYour deepest: depth %d." % int(pb.get("depth", 0)))
 	open_confirm("Enter %s?\n\n%s%s\n\nYour campaign is saved — you'll return to the title when the run ends." % [mname, rules, best],
 		func() -> void: _start_endgame(mode),
-		func() -> void: close())
+		func() -> void: close(),
+		{"title": "Enter %s?" % mname, "accept_label": "Enter trial"})
 
 
 ## The endgame mode picker (ACT2_DESIGN.md §II) — reached from the pause menu

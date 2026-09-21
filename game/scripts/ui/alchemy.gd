@@ -307,7 +307,8 @@ static func _learn(m: Menus, order: RefCounted, required: String) -> void:
 			_settled(m, result), func() -> void:
 			if not used[0]:
 				used[0] = true
-				open(m))
+				open(m),
+		{"title": "Learn blueprint?", "accept_label": "Learn blueprint"})
 
 
 static func _settled(m: Menus, result: Dictionary) -> void:

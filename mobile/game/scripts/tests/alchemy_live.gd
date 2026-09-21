@@ -130,6 +130,15 @@ func _run() -> String:
 	return ""
 
 
+func _check_blueprint_contract(id: String) -> void:
+	var title: Label = native._confirm_label("Learn blueprint?")
+	var learn: Button = native._find_button(m.root, "Learn blueprint", true)
+	var cancel: Button = native._find_button(m.root, "Cancel", true)
+	_check("blueprint.contextual." + id, m.current == "confirm" and title != null
+		and native._confirm_glyphs_complete(title) and learn != null and cancel != null
+		and native._find_button(m.root, "Yes — do it", true) == null, "Learn blueprint? / Learn blueprint / Cancel")
+
+
 func _blueprints() -> void:
 	r.step("real blueprint gate: Cancel, Escape, X, outside and purchase")
 	await _named("AlchemyGrade_B")
@@ -137,6 +146,7 @@ func _blueprints() -> void:
 		var before := _economy()
 		await _named("AlchemyLearnBlueprint")
 		_check("blueprint.confirm." + route, m.current == "confirm", m.current)
+		_check_blueprint_contract(route)
 		await _exit(route)
 		_check("blueprint.cancel." + route, m.current == "alchemy" and _economy() == before
 			and String(_view().get("shape", "")) == "renewal" and String(_view().get("grade", "")) == "B", _view())
@@ -144,7 +154,9 @@ func _blueprints() -> void:
 	var before := _economy()
 	var quote: Dictionary = Alchemy.quote(g, "renewal", "A", "blueprint")
 	await _named("AlchemyLearnBlueprint")
-	await _text_button("Yes — do it")
+	_check_blueprint_contract("purchase")
+	await _capture("03b_renewal_A_blueprint_confirm")
+	await _text_button("Learn blueprint")
 	_check("blueprint.purchase_returns", m.current == "alchemy" and _text("AlchemyResult").begins_with("Learned "), _text("AlchemyResult"))
 	_check("blueprint.purchase_exact", p.gold == int(before.gold) - int(quote.fee)
 		and p.has_blueprint(Items.potion_blueprint_slot("renewal"), "A")
@@ -235,7 +247,8 @@ func _stale_input() -> void:
 		and Professions.points(p, "alchemist") == int(before.mastery.get("alchemist", 0)) + int(quote.mastery_gain), _text("AlchemyResult"))
 	await _named("AlchemyGrade_B")
 	await _named("AlchemyLearnBlueprint")
-	var yes: Button = native._find_button(m.root, "Yes — do it")
+	_check_blueprint_contract("stale")
+	var yes: Button = native._find_button(m.root, "Learn blueprint", true)
 	before = _economy()
 	_escape_now()
 	destination = m.root

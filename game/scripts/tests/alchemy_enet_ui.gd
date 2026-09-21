@@ -192,6 +192,15 @@ func _network_ui() -> String:
 	return ""
 
 
+func _notice_contract(id: String) -> void:
+	var start: int = native.rows.size()
+	native._notice_geometry("enet_" + id, "Solo trials",
+		"These trials are played solo.\n\nLeave your co-op session before entering a trial. You can keep playing with your party for now.")
+	for index in range(start, native.rows.size()):
+		var row: Dictionary = native.rows[index]
+		_check("enet_ui." + String(row.id), bool(row.passed), row.actual)
+
+
 func _confirmation_overlay() -> void:
 	# Actual solo-trial admission caller on a real ENet guest. Its confirmation
 	# must block hero input while the shared world clock continues to advance.
@@ -208,6 +217,7 @@ func _confirmation_overlay() -> void:
 		{"held_ability_intent": p.intent_a1, "cooldown": p.cds.a1})
 	m.confirm_endgame("crucible")
 	await r.frames(3)
+	_notice_contract("controller")
 	var anim_before := p.anim_t
 	_key_held(KEY_D, true)
 	_key_held(int(g.binds.a1), true)
@@ -242,6 +252,25 @@ func _confirmation_overlay() -> void:
 	_touch_mode(false)
 	g.dev_god = previous_god
 	p.cds.a1 = previous_cd
+	for route in ["mouse", "escape", "raw_touch"]:
+		before_world = g.world.get_instance_id()
+		before_economy = _economy()
+		m.confirm_endgame("depths")
+		await r.frames(3)
+		_notice_contract(route)
+		await _capture_online("ui_00_notice_" + route)
+		match route:
+			"mouse": await _text_button("Back to game")
+			"escape": await native._key(KEY_ESCAPE)
+			"raw_touch":
+				var emulation: bool = Input.emulate_mouse_from_touch
+				Input.emulate_mouse_from_touch = false
+				await native._touch(Vector2(12, 12))
+				Input.emulate_mouse_from_touch = emulation
+		await r.frames(3)
+		_check("enet_ui.notice_cancel_keeps_session." + route, not m.is_open() and not r.get_tree().paused
+			and g.net_guest() and pair.wires[1].world_ready and g.world.get_instance_id() == before_world
+			and _economy() == before_economy, {"menu": m.current, "chapter": g.chapter_id})
 
 
 func _touch_gate() -> void:

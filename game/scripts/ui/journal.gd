@@ -502,7 +502,8 @@ static func _weekly(m: Menus, list: VBoxContainer) -> void:
 			m.open_confirm(
 				"Begin this week's challenge? It restarts %s from its beginning on the week's fixed map, with '%s' live (%s). Your character, gear and Resonance carry in — chapter story progress resets, like any replay." %
 					[chname, String(mod["name"]), String(mod["desc"])],
-				func() -> void: g.start_weekly()), PURPLE)
+				func() -> void: g.start_weekly(), Callable(),
+				{"title": "Begin weekly challenge?", "accept_label": "Begin challenge"}), PURPLE)
 		start.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		start.custom_minimum_size = Vector2(0, 44)
 
