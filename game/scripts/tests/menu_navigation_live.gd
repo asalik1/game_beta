@@ -720,6 +720,7 @@ func _confirm_layout() -> String:
 	await r.frames(3)
 	var economy: Dictionary = _confirm_economy()
 	await _confirm_actual_callers()
+	await _confirm_trial_preview()
 	await _confirm_first_draw()
 	await _confirm_long_stress()
 	await _confirm_native_routes()
@@ -904,6 +905,93 @@ func _confirm_actual_callers() -> void:
 		await _capture("12_confirm_endgame_" + mode)
 		await _button("Cancel")
 		_check("confirm_layout.endgame." + mode + ".return", not m.is_open() and not g.endgame_active and not g.get_tree().paused, _state())
+
+
+func _confirm_trial_preview() -> void:
+	# Controlled pending balances on an actual paused Endgame, never earned rewards.
+	r.step("actual trial reward preview; controlled balances, native callers and cancellation")
+	var original_endgame: Endgame = g.endgame
+	var original_active: bool = g.endgame_active
+	var was_paused: bool = g.get_tree().paused
+	m.open_pause()
+	await r.frames(3)
+	_check("confirm_layout.trial_preview.paused_setup", g.get_tree().paused, _state())
+	var trial := Endgame.new()
+	trial.game = g
+	trial.mode = "crucible"
+	g.add_child(trial)
+	g.endgame = trial
+	g.endgame_active = true
+	var cases := [
+		{"id": "populated", "gold": 1234567, "gems": [1, 2], "gear": ["F"], "active": true,
+			"token": "1,234,567 gold, 2 gems and 1 gear piece."},
+		{"id": "zero", "gold": 0, "gems": [], "gear": [], "active": true,
+			"token": "0 gold, 0 gems and 0 gear pieces."},
+		{"id": "inactive", "gold": 999, "gems": [1], "gear": ["F"], "active": false,
+			"token": ""}]
+	for sample: Dictionary in cases:
+		trial.pending_gold = int(sample.gold)
+		trial.pending_gems = sample.gems.duplicate()
+		trial.pending_gear = sample.gear.duplicate()
+		trial.active = bool(sample.active)
+		for action in ["cashout", "abandon"]:
+			var id: String = "trial_preview." + String(sample.id) + "." + action
+			var cash: bool = action == "cashout"
+			var question: String = "Collect this trial's rewards and end the run?" if cash else "Abandon this trial and return to the title?"
+			var lead: String = "To bank:" if cash else "Lost if you abandon:"
+			m.open_pause()
+			await r.frames(3)
+			var before: Dictionary = _trial_preview_state(trial)
+			if await _button("Cash out & bank rewards" if cash else "Exit to title"):
+				var body: Label = _trial_find_body(question)
+				if _check("confirm_layout." + id + ".rendered_body", body != null, question):
+					if bool(sample.active):
+						_check("confirm_layout." + id + ".tally", body.text.count(lead + " " + String(sample.token)) == 1, body.text)
+					else:
+						_check("confirm_layout." + id + ".tally_absent", not body.text.contains("To bank:")
+							and not body.text.contains("Lost if you abandon:"), body.text)
+					_confirm_geometry(id, body.text, false, false,
+						"Bank your rewards?" if cash else "Abandon this run?", "Cash out" if cash else "Abandon run")
+					if sample.id == "populated" or (sample.id == "zero" and cash):
+						await _capture("23_trial_preview_" + String(sample.id) + "_" + action)
+				_check("confirm_layout." + id + ".open_read_only", _trial_preview_state(trial) == before, _trial_preview_state(trial))
+				await _button("Cancel")
+				_check("confirm_layout." + id + ".cancel_returns_pause", m.current == "pause" and g.get_tree().paused, _state())
+			_check("confirm_layout." + id + ".cancel_read_only", _trial_preview_state(trial) == before, _trial_preview_state(trial))
+	# No early return: restore the original controller before any unpaused frame.
+	m.close()
+	g.endgame = original_endgame
+	g.endgame_active = original_active
+	trial.active = false
+	trial.queue_free()
+	g.request_pause(was_paused)
+	_check("confirm_layout.trial_preview.controller_restored", g.endgame == original_endgame
+		and g.endgame_active == original_active and g.get_tree().paused == was_paused, _state())
+	_check("confirm_layout.trial_preview.original_survives", original_endgame == null
+		or (is_instance_valid(original_endgame) and not original_endgame.is_queued_for_deletion()), "original controller retained")
+	await r.frames(3)
+
+
+func _trial_preview_state(trial: Endgame) -> Dictionary:
+	return {"economy": _confirm_economy(), "mailbox": g.mailbox.duplicate(true),
+		"meta": g._meta.duplicate(true), "loot_rng": g.loot_rng.state, "trial_rng": trial._rng.state,
+		"gold": trial.pending_gold, "gems": trial.pending_gems.duplicate(true),
+		"gear": trial.pending_gear.duplicate(true), "active": trial.active,
+		"controller": g.endgame.get_instance_id(), "available": g.endgame_active,
+		"world": g.world.get_instance_id(), "paused": g.get_tree().paused}
+
+
+func _trial_find_body(question: String) -> Label:
+	var nodes: Array[Node] = [m.root]
+	var hits: Array[Label] = []
+	while not nodes.is_empty():
+		var node: Node = nodes.pop_back()
+		if not is_instance_valid(node): continue
+		if node is Label and node.is_visible_in_tree() and node.text.begins_with(question):
+			hits.append(node)
+		for child in node.get_children(): nodes.append(child)
+	return hits[0] if hits.size() == 1 else null
+
 
 
 func _confirm_first_draw() -> void:

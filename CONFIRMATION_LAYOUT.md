@@ -13,6 +13,46 @@ Caller messages, transaction callbacks and cancellation destinations are preserv
 A replaced dialog cannot invoke its actions against the next screen. Yes receives
 no automatic focus, and Enter before choosing does not accept the confirmation.
 
+## Pending trial reward preview (checkpoint 15)
+
+Cash-out and abandon confirmations include a snapshot of the current trial's
+pending gold, gem count and gear count. Amounts use the existing digit grouping;
+zero is shown explicitly. An unavailable or inactive controller contributes no
+tally. The count describes queued rewards, not rolled item identities. Only a
+valid, active controller owned directly by this Game is eligible.
+
+The preview adds text to the existing measured body. It does not roll rewards,
+settle a trial, mutate random state, save or change action callbacks. Existing
+trial-entry copy, actions, colors and cancellation routes remain intact.
+
+Actual Claude provided the implementation draft; actual DeepSeek extended the
+existing native confirmation fixture. Independent review reduced the helper,
+clarified prospective wording, added parent ownership, and corrected draft QA
+state assertions. Raw drafts and corrections remain under
+`build/qa/session-sept20/trial-reward-preview-candidate/`. Active validation is
+under `build/qa/session-sept20/trial-reward-preview/`. All 13 final serial
+stages pass: compile-first desktop quick/full, scoped mobile sync/import/compile/
+strict quick, native confirmation 371/371 and paired ENet UI 64/64 per renderer,
+and early/final strict preflight. Root opened 20 originals and peer 42; together
+all 56 final images were reviewed. Full copy and actions remain readable.
+`checkpoint-validation.json` binds exact sources and reports; `commit-receipt.json`
+records HEAD, clean owned paths and the preserved unrelated work.
+
+The added fixture attaches a real Endgame controller with controlled pending
+balances while paused. Both actual pause-menu callers are opened and cancelled
+for populated, zero and inactive cases. It checks rendered tallies, full-copy
+geometry and immediate-open/post-cancel conservation of economy, pending
+rewards, mailbox, metadata, both relevant random states and world/controller
+identity. Three captures show populated cash-out, populated abandon and zero
+cash-out. Original missing-controller cases and all earlier checks remain.
+
+This is controlled preview/cancel validation, not an earned trial, payout,
+abandon reload or save-write test. Foreign/queued-controller guards receive
+source review only. Existing deferred trial transition timers can still advance
+during pause; the synthetic controller fixture does not prove arbitrary actual
+trial-transition conservation. Their separate fix candidate remains unaccepted.
+Host-rendered mobile checks are not physical-device tests.
+
 ## Trial reward and return clarity (checkpoint 14)
 
 The trial pause warning names the unclaimed gold, gems and gear lost by

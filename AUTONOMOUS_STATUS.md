@@ -400,12 +400,37 @@ Follow-up priorities and preserved experiments:
   commit-receipt.json records final HEAD and local state. All 46 unrelated files
   and the exact old status tail remain preserved. Session active; no new push.
 
-- Private future candidate: exact pending trial reward preview in cash-out/
-  abandon warnings. Actual Claude implementation and DeepSeek native QA drafts
-  are independently corrected under trial-reward-preview-candidate/ in this
-  session's build/qa directory. Read REVIEW.md and handoff.json; apply patches
-  only if selected after checkpoint 14. No canonical integration, compile or
-  native acceptance yet. No reward/save/callback or trial-entry changes proposed.
+- Checkpoint 15 validated: cash-out and abandon show exact pending trial gold,
+  gem count and gear count with grouped digits and correct singular/plural copy.
+  Real zero balances remain visible; missing/inactive/unowned controllers omit
+  the tally. This is a read-only snapshot, with no reward/save/callback change.
+  Actual Claude supplied implementation and DeepSeek existing-rig QA drafts;
+  independently corrected derivatives and raw attempts remain preserved under
+  trial-reward-preview-candidate/. All 13 serial stages pass: compile-first
+  desktop quick/full, scoped mobile sync/import/compile/strict quick, confirmations
+  371/371 and actual paired ENet UI 64/64 per renderer, early/final strict preflight.
+  Root directly reviewed20 originals and peer42; all56 final originals covered.
+  Full18px copy and actions fit in both renderers, including populated abandon.
+  QA uses controlled paused Endgame balances and actual open/Cancel input,
+  checking pending/economy/mail/meta/RNG/world/controller conservation. No earned
+  trial, settlement, abandon reload, save-write or physical-device claim.
+  Existing deferred transitions can still advance during pause; this fixture
+  does not establish conservation for arbitrary actual trial transitions.
+  Mobile is host Compatibility; ENet UI-only is not persistence proof. Known
+  negative-codec/shutdown diagnostics remain under unchanged suite verdicts.
+  Evidence: build/qa/session-sept20/trial-reward-preview/checkpoint-validation.json;
+  commit-receipt.json records resulting HEAD and state. All46 unrelated files
+  and exact old status tail preserved. Session active; no additional push.
+
+- Private future candidate: pause-aware trial transition timers with generation,
+  current-owner and world guards. Source review found Endgame._advance_after
+  currently uses timers that continue during solo pause. Actual Claude runtime
+  and DeepSeek existing-combat-clocks QA drafts are independently corrected in
+  build/qa/session-sept20/trial-transition-candidate/. Read README.md and
+  review-receipt.json; patches only, never whole-file replacement. No canonical
+  integration, compile or native validation yet. Delayed settlement and Depths
+  auto-descent are outside the proposed native coverage. Keep all failed raw
+  provider attempts. Consider only after checkpoint 15 is committed.
 
 - Owner-requested backup completed September 21 at 05:39 UTC: origin branch
   codex/crownless-wayfinder matches d8e5b74355229cf956c764a45b981384aff94f0d.

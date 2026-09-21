@@ -355,6 +355,10 @@ confirmation titles/actions and single-action notice cancellation; the paired
 ENet mode covers the actual online Solo trials notice. Existing Alchemy captures
 the actual Learn blueprint dialog before purchase. See CONFIRMATION_LAYOUT.md
 for scope, retained failures and final acceptance evidence.
+The same strict confirmation run also opens/cancels actual trial pause callers
+with controlled populated, zero and inactive pending-reward states; checks
+read-only reward/RNG/mail/world conservation; and captures three reward-preview
+views. This does not execute a settlement or an ordinarily earned trial.
 
 Settings layout QA: add `--settings-touch --desktop-comfort --timeout=180` to
 the same menu rig. It checks 68 content targets across desktop and touch

@@ -569,6 +569,23 @@ func open_benchmark_roster() -> void:
 	_hint(vbox, "ESC to go back")
 
 
+## Snapshot only a current, owned active trial; a bare availability flag has no tally.
+func _trial_reward_line(lead: String) -> String:
+	if not is_instance_valid(game) or not game.endgame_active:
+		return ""
+	var trial: Endgame = game.endgame
+	if not is_instance_valid(trial) or trial.is_queued_for_deletion():
+		return ""
+	if trial.game != game or trial.get_parent() != game or not trial.active:
+		return ""
+	# Pending entries are levels/grades, not rolled items. Never settle to preview them.
+	var gems: int = trial.pending_gems.size()
+	var gear: int = trial.pending_gear.size()
+	return "\n\n%s %s gold, %s gem%s and %s gear piece%s." % [lead,
+		_fmt_gold(trial.pending_gold), _fmt_gold(gems), "" if gems == 1 else "s",
+		_fmt_gold(gear), "" if gear == 1 else "s"]
+
+
 # ---------------------------------------------------------------- pause ---
 
 ## The in-game system menu.
@@ -610,7 +627,9 @@ func open_pause() -> void:
 			_btn(vbox, "  ✕  Remove %s from the party" % pname, kick, Color(1.0, 0.6, 0.55))
 	if game.endgame_active:
 		var cash := func() -> void:
-			open_confirm("Collect this trial's rewards and end the run?\n\nGold is added to your character; any gems and gear are sent to your mailbox. You'll review the results before choosing Return to Crownfall.",
+			open_confirm("Collect this trial's rewards and end the run?"
+				+ _trial_reward_line("To bank:")
+				+ "\n\nGold is added to your character; any gems and gear are sent to your mailbox. You'll review the results before choosing Return to Crownfall.",
 				func() -> void:
 					close()
 					if game.endgame:
@@ -631,7 +650,9 @@ func open_pause() -> void:
 		# reloads, so the pending gold/gems/gear held on Endgame are never paid.
 		var exit_msg := "Exit to the title screen? Your progress is saved."
 		if game.endgame_active:
-			exit_msg = "Abandon this trial and return to the title?\n\nUnclaimed gold, gems and gear from this trial will be lost.\n\nTo collect them, cancel and choose Cash out & bank rewards from the pause menu."
+			exit_msg = "Abandon this trial and return to the title?" \
+				+ _trial_reward_line("Lost if you abandon:") \
+				+ "\n\nUnclaimed gold, gems and gear from this trial will be lost.\n\nTo collect them, cancel and choose Cash out & bank rewards from the pause menu."
 		open_confirm(exit_msg,
 			func() -> void: game.exit_to_title(),
 			Callable(),
