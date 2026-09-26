@@ -21,6 +21,7 @@ var gestures: Array = []
 var reach_runs: Array = []
 var owned_pickups: Array = []
 var timings: Array = []
+var equipment_frames: Dictionary = {}
 
 static func run(rig: ShotRig) -> Dictionary:
 	var q := new()
@@ -85,11 +86,15 @@ func _exercise() -> String:
 			{"touch_mode": g.touch_mode, "touchscreen": DisplayServer.is_touchscreen_available(),
 			"touch_from_mouse": Input.emulate_touch_from_mouse, "mouse_from_touch": Input.emulate_mouse_from_touch}):
 		return "Touch fixture requires host touchscreen capability"
+	p.gold = 1234567  # Controlled display loan; existing POCKETS restore and ledger checks retain ownership.
 	var rng := RandomNumberGenerator.new(); rng.seed = 20260920
 	p.equipment = {}; p.backpack = []; p.gem_bag = []; p.consumables = []; p.materials = []; p.loose_bags = []
 	p.bags = []; p.potion_rotation = []
 	for i in Balance.MAX_BAGS: p.bags.append(Items.make_bag("S"))
 	await _open("all")
+	var money_title: Label = _label(m.root, "Inventory — 1,234,567 gold")
+	_check("readability.gold.grouped", money_title != null and _visible(money_title),
+		{"expected": "Inventory — 1,234,567 gold", "gold": p.gold})
 	var previous_y := -INF
 	for slot in Items.SLOTS:
 		var label: Label = _label(m.root, String(slot).capitalize() + " — empty")
@@ -99,12 +104,13 @@ func _exercise() -> String:
 			and card.global_position.y > previous_y, Geo.rect(card.get_global_rect()) if card != null else [])
 		previous_y = card.global_position.y if card != null else previous_y
 		if not await _reach(card): return "empty slot cannot be reached: " + slot
+		_readability_label(label, "readability.empty." + slot, 14)
 	await _open("all")
 	await _capture(VIEWS[0])
 	for i in Items.SLOTS.size():
 		var slot: String = Items.SLOTS[i]
 		p.equipment[slot] = Items.roll_item_of(slot, "F" if i % 2 == 0 else "S", rng, "warrior")
-	await _open("all")
+	await _open("all", true)
 	await _capture(VIEWS[1])
 	var primary: Color = Color.TRANSPARENT
 	for slot in Items.SLOTS:
@@ -121,6 +127,7 @@ func _exercise() -> String:
 			"contrast": _contrast(color), "rect": Geo.rect(label.get_global_rect()), "text": label.text,
 			"ellipsis_allowed": label.clip_text})
 		_probe_equipped_icon(card, p.equipment[slot], "occupied." + slot)
+		_readability_equipped(card, p.equipment[slot], "readability.equipped." + slot)
 	await _capture(VIEWS[2])
 	# Legal dense bag, with a real last cell that must become reachable by input.
 	p.materials = [Items.make_material("bone", "F", 2)]
@@ -188,6 +195,7 @@ func _exercise() -> String:
 		_check("action." + text + ".separate", _visible(button) and m._shell_rect.grow(0.5).encloses(button.get_global_rect()) and not filter_band.intersects(button.get_global_rect())
 			and button.global_position.y >= filter_band.end.y, {"filter_band": Geo.rect(filter_band), "button": Geo.rect(button.get_global_rect())})
 		_check("action." + text + ".target", button.size.y >= (44.0 if g.touch_mode else 28.0) and (not g.touch_mode or button.size.x >= 44))
+	_readability_bag()
 	await _capture(VIEWS[4])
 	if not await _click(native._find_button(m.root, "Materials", true), "cancel.filter"): return "cancel filter failed"
 	if not await _click(_material(), "cancel.material"): return "material open failed"
@@ -426,11 +434,18 @@ func _popover(count: int, prefix: String) -> bool:
 	_check(prefix + ".viewport", _visible(m._popover_box), Geo.rect(m._popover_box.get_global_rect()))
 	return true
 
-func _open(category: String) -> void:
+func _open(category: String, observe_equipment: bool = false) -> void:
 	var start: int = Time.get_ticks_usec()
 	m.open_inventory("gear", category)
 	var dispatched: int = Time.get_ticks_usec()
+	if observe_equipment:
+		await RenderingServer.frame_post_draw
+		equipment_frames.first = _readability_frame()
 	await r.frames(4)
+	if observe_equipment:
+		await RenderingServer.frame_post_draw
+		equipment_frames.settled = _readability_frame()
+		_readability_frame_checks(equipment_frames.first, equipment_frames.settled)
 	# Diagnostic samples only — no invented thresholds; root holds the baseline.
 	timings.append({"category": category, "bag_count": p.bag_used(), "gear_count": p.backpack.size(),
 		"dispatch_usec": dispatched - start, "settled_usec": Time.get_ticks_usec() - start})
@@ -636,13 +651,136 @@ func _check(id: String, ok: bool, actual: Variant = null) -> bool:
 	rows.append({"id": id, "passed": ok, "actual": actual})
 	return ok
 
+## Actual DeepSeek draft, independently corrected: TextLine.add_string is bool,
+## summaries wrap, repeated bag chips must be distinct, and reached rows are
+## inspected before another native gesture moves them outside the viewport.
+func _readability_label(label: Label, prefix: String, floor_px: int, full: bool = true) -> void:
+	if not _check(prefix + ".present", is_instance_valid(label)): return
+	_check(prefix + ".font", label.get_theme_font_size("font_size") >= floor_px,
+		{"text": label.text, "actual": label.get_theme_font_size("font_size"), "minimum": floor_px})
+	_check(prefix + ".visible", _visible(label), Geo.rect(label.get_global_rect()))
+	if not full: return  # Names retain exact data but authored visual ellipsis is allowed.
+	var shape: Dictionary = Geo.shaped(label)
+	_check(prefix + ".complete", not label.clip_text and label.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING
+		and label.visible_ratio >= 1.0 and label.max_lines_visible == -1
+		and label.get_line_count() == label.get_visible_line_count()
+		and shape.missing.is_empty() and int(shape.count) > 0, shape)
+	_check(prefix + ".cells", label.get_global_rect().grow(0.5).encloses(Geo.to_rect(shape.cells)), shape)
+
+func _readability_equipped(card: Control, item: Dictionary, prefix: String) -> void:
+	var expected: String = Items.describe(item, false)
+	var summary: Label = _label(card, expected)
+	var name_label: Label = _label(card, Items.title(item))
+	_readability_label(name_label, prefix + ".name", 16, false)
+	_readability_label(summary, prefix + ".summary", 14)
+	_check(prefix + ".exact_summary", summary != null and summary.text == expected,
+		{"expected": expected, "actual": summary.text if summary != null else ""})
+	if summary == null or name_label == null: return
+	var shape: Dictionary = Geo.shaped(summary)
+	var cells: Rect2 = Geo.to_rect(shape.cells)
+	var card_rect: Rect2 = card.get_global_rect()
+	_check(prefix + ".summary_in_card", card_rect.grow(0.5).encloses(cells), {"card": Geo.rect(card_rect), "cells": shape.cells})
+	_check(prefix + ".name_summary_clear", not name_label.get_global_rect().intersects(cells),
+		{"name": Geo.rect(name_label.get_global_rect()), "summary": shape.cells})
+	var sockets: Array = card.find_children("*", "Button", true, false)
+	_check(prefix + ".socket_count", sockets.size() == int(item.get("gem_slots", 0)),
+		{"expected": item.get("gem_slots", 0), "actual": sockets.size()})
+	for i in sockets.size():
+		var socket: Button = sockets[i] as Button
+		var rect: Rect2 = socket.get_global_rect()
+		_check(prefix + ".socket%d_attached" % i, _visible(socket) and card_rect.grow(0.5).encloses(rect)
+			and not rect.intersects(cells) and not rect.intersects(name_label.get_global_rect()),
+			{"socket": Geo.rect(rect), "card": Geo.rect(card_rect), "summary": shape.cells,
+			"name": Geo.rect(name_label.get_global_rect())})
+	var icon: TextureRect = _equipped_icon(card)
+	_check(prefix + ".icon_clear", icon != null and not icon.get_global_rect().intersects(cells)
+		and not icon.get_global_rect().intersects(name_label.get_global_rect()),
+		{"icon": Geo.rect(icon.get_global_rect()) if icon != null else [], "summary": shape.cells})
+
+func _readability_button(button: Button, prefix: String) -> void:
+	if not _check(prefix + ".present", is_instance_valid(button)): return
+	var font_px: int = button.get_theme_font_size("font_size")
+	var line := TextLine.new()
+	line.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	var added: bool = line.add_string(button.text, button.get_theme_font("font"), font_px, button.language)
+	var style: StyleBox = button.get_theme_stylebox("normal")
+	var margins := Vector2(style.get_margin(SIDE_LEFT) + style.get_margin(SIDE_RIGHT),
+		style.get_margin(SIDE_TOP) + style.get_margin(SIDE_BOTTOM))
+	var need: Vector2 = line.get_size() + margins
+	_check(prefix + ".font", font_px >= 14, {"text": button.text, "actual": font_px, "minimum": 14})
+	_check(prefix + ".native_text_fits", added and not button.text.is_empty() and button.icon == null
+		and button.size.x + 0.5 >= need.x and button.size.y + 0.5 >= need.y and _visible(button),
+		{"text": button.text, "native_need": [need.x, need.y], "rect": Geo.rect(button.get_global_rect()),
+		"added": added, "font": font_px})
+
+func _readability_bag() -> void:
+	_readability_label(_label(m.root, "%d / %d slots" % [p.bag_used(), p.bag_capacity()]), "readability.bag.capacity", 14)
+	_readability_label(_label(m.root, "%d/%d bags" % [p.bags.size(), Balance.MAX_BAGS]), "readability.bag.count", 14)
+	var used: Array = []
+	for i in p.bags.size():
+		var bag: Dictionary = p.bags[i]
+		var expected: String = "%s · %d slots" % [String(bag.get("grade", "F")), int(bag.get("slots", 0))]
+		var found: Label = null
+		for node in m.root.find_children("*", "Label", true, false):
+			if node.text == expected and not used.has(node.get_instance_id()):
+				found = node as Label
+				break
+		if found != null: used.append(found.get_instance_id())
+		_readability_label(found, "readability.bag.chip%d" % i, 14)
+		var chip: Control = _panel(found) if found != null else null
+		_check("readability.bag.chip%d.touch_target" % i, chip != null and (not g.touch_mode
+			or (chip.size.x >= 44.0 and chip.size.y >= 44.0)),
+			{"touch": g.touch_mode, "rect": Geo.rect(chip.get_global_rect()) if chip != null else []})
+	_check("readability.bag.distinct_chips", used.size() == p.bags.size(), {"ids": used, "expected": p.bags.size()})
+	for text in FILTERS:
+		_readability_button(native._find_button(m.root, text, true), "readability.filter." + text)
+	for text in ["Auto-synthesize", "Order:", "Auto-equip"]:
+		_readability_button(native._find_button(m.root, text), "readability.action." + text)
+
+## First post-draw and settled observations of the SAME occupied shell. Local
+## rectangles exclude the existing outer shell-entry scale animation. Offscreen
+## rows are layout observations here; _readability_equipped proves viewport and
+## clipping-ancestor clearance only after the existing real input reaches them.
+func _readability_frame() -> Dictionary:
+	var result := {}
+	for slot in Items.SLOTS:
+		var item: Dictionary = p.equipment[slot]
+		var title: Label = _label(m.root, Items.title(item))
+		if title == null: result[slot] = {"missing": "title"}; continue
+		var card: Control = _panel(title)
+		var summary: Label = _label(card, Items.describe(item, false)) if card != null else null
+		if card == null or summary == null: result[slot] = {"missing": "card_or_summary"}; continue
+		result[slot] = {"card": Geo.rect(Rect2(card.position, card.size)),
+			"name": Geo.rect(Rect2(title.position, title.size)), "text": summary.text,
+			"summary": Geo.rect(Rect2(summary.position, summary.size)),
+			"font": summary.get_theme_font_size("font_size"), "lines": summary.get_line_count(),
+			"visible_lines": summary.get_visible_line_count(), "shape": Geo.shaped(summary)}
+	return result
+
+func _readability_frame_checks(first: Dictionary, settled: Dictionary) -> void:
+	for slot in Items.SLOTS:
+		var a: Dictionary = first.get(slot, {})
+		var b: Dictionary = settled.get(slot, {})
+		var complete: bool = not a.has("missing") and not b.has("missing") and a.has("card") and b.has("card")
+		_check("readability.frame." + slot + ".present", complete, {"first": a, "settled": b})
+		if not complete: continue
+		_check("readability.frame." + slot + ".stable", a.card == b.card and a.name == b.name
+			and a.summary == b.summary and a.text == b.text and a.font == b.font and a.lines == b.lines,
+			{"first": a, "settled": b})
+		for phase in ["first", "settled"]:
+			var obs: Dictionary = a if phase == "first" else b
+			var shape: Dictionary = obs.shape
+			_check("readability.frame." + slot + "." + phase + "_complete", shape.missing.is_empty()
+				and int(shape.count) > 0 and int(obs.lines) == int(obs.visible_lines)
+				and Geo.to_rect(shape.control).grow(0.5).encloses(Geo.to_rect(shape.cells)), obs)
+
 func _report() -> Dictionary:
 	var failures := 0
 	for row in rows:
 		if not bool(row.passed): failures += 1
 	var result := {"checks": rows.size(), "passed": rows.size() - failures, "findings": 0, "failures": failures,
 		"rows": rows, "shots": views, "gestures": gestures, "reach_runs": reach_runs, "mouse_clicks": native.mouse_clicks, "touch_taps": native.touch_taps,
-		"timings": timings,
+		"timings": timings, "equipment_frames": equipment_frames,
 		"scope": "Isolated factory loans; native GUI and scroll events; two real single-unit material discards. Codex icon fidelity by byte-equal pixels against the live four-arg resolver at exact 46/38, 48, 44/36 and 40 px geometry; world-resolver dims witnessed as 32 or 42, not asserted uniform. Optional gear-fidelity gallery loans one named unique for card/worn/paperdoll views via native input with disclosed direct equipment assignment, restored. _open dispatch/settled timings recorded without thresholds. Host touch capability is explicitly enabled for --touch and restored; raw touch gestures, no physical device, controller, socket drag/drop, crafting, sale, save, merchant/world/held renderer, whole-art-corpus, or ordinary-progression acceptance. Equipped names may retain authored ellipsis; selected material detail full text checked. Geometry supports original-image review, never replaces it."}
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(r.shot_dir))
 	var file := FileAccess.open(r.shot_dir + "/report.json", FileAccess.WRITE)

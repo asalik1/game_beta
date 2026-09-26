@@ -45,6 +45,10 @@ single-unit material drops. Add `--touch` or host mobile
 host touch capability; it never substitutes wheel events for the touch branch.
 No baseline waiver or combination with other material modes is accepted.
 See INVENTORY_READABILITY.md for controlled loans and exact validation limits.
+The September 26 extension checks native text floors, complete wrapped stats,
+first-postdraw/settled row geometry, socket clearance, distinct bag captions and
+grouped gold. Touch bag drop targets must retain 44px minimum dimensions.
+Original gameplay, input, discard-ledger and eight-image checks remain strict.
 Add `--gear-fidelity` for the four named-gear detail/Stats views and strict
 painted-texture checks; see GEAR_UI_FIDELITY.md. This flag requires the
 Inventory readability mode and does not waive its original eight views.

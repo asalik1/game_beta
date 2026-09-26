@@ -2384,9 +2384,20 @@ func _potion_icon(pid: String) -> Texture2D:
 
 # --------------------------------------------------------------- inventory ---
 
+## Inventory typography: summaries stay complete and wrap inside the existing
+## independently scrolling equipment column; browse chrome stays compact.
+const INV_SECTION_FONT := 16
+const INV_NAME_FONT := 16
+const INV_STAT_FONT := 15
+const INV_CAPTION_FONT := 14
+const INV_CONTROL_MIN_H := 28.0
+const INV_TOUCH_MIN_H := 44.0
+const INV_TEXT_SEPARATION := 3
+
+
 func open_inventory(tab := "gear", cat := "all") -> void:
 	inv_cat = cat  # remembered so an item-panel underlay rebuild keeps the filter
-	var vbox := _open("Inventory — %d gold" % game.local_player.gold, 1120, 640, true)
+	var vbox := _open("Inventory — %s gold" % _fmt_gold(game.local_player.gold), 1120, 640, true)
 	current = "inventory"
 
 	# Gear management, character sheet, and potion planning.
@@ -2423,10 +2434,10 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	var eq_head := HBoxContainer.new()
 	eq_head.add_theme_constant_override("separation", 10)
 	left.add_child(eq_head)
-	var eq_title := _lbl(eq_head, "EQUIPPED", 16, Color(0.95, 0.85, 0.5))
+	var eq_title := _lbl(eq_head, "EQUIPPED", INV_SECTION_FONT, Color(0.95, 0.85, 0.5))
 	UITheme.header(eq_title)
 	eq_title.custom_minimum_size = Vector2(120, 0)
-	var eq_hint := _lbl(eq_head, "Select gear · sockets on the right", 13, Color(0.72, 0.74, 0.8))
+	var eq_hint := _lbl(eq_head, "Select gear · sockets on the right", INV_CAPTION_FONT, Color(0.72, 0.74, 0.8))
 	eq_hint.custom_minimum_size = Vector2(300, 0)
 	eq_hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	# One card per slot, in the paper-doll order (2026-08-15 polish): icon
@@ -2434,7 +2445,7 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	# slots keep their place as dimmed cards so the seven never shuffle.
 	for slot in Items.SLOTS:
 		_equipped_row(left, String(slot), cat)
-	_lbl(left, "Full character sheet in the Stats tab.", 12, Color(0.68, 0.68, 0.74))
+	_lbl(left, "Full character sheet in the Stats tab.", INV_CAPTION_FONT, Color(0.68, 0.68, 0.74))
 
 	var right := VBoxContainer.new()
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -2447,14 +2458,14 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	head.add_theme_constant_override("separation", 12)
 	right.add_child(head)
 	if inventory_notice != "":
-		_lbl(right, inventory_notice, 13, Color(0.64, 0.95, 0.75))
+		_lbl(right, inventory_notice, INV_CAPTION_FONT, Color(0.64, 0.95, 0.75))
 		inventory_notice = ""
 	var best_grade: String = String(p.bags[0].get("grade", "F")) if not p.bags.is_empty() else "F"
 	for bb in p.bags:
 		var bg: String = String(bb.get("grade", "F"))
 		if Items.GRADES.find(bg) > Items.GRADES.find(best_grade):
 			best_grade = bg
-	var bh := _lbl(head, "BAG", 16, Items.GRADE_COLOR[best_grade])
+	var bh := _lbl(head, "BAG", INV_SECTION_FONT, Items.GRADE_COLOR[best_grade])
 	UITheme.header(bh)
 	bh.custom_minimum_size = Vector2(44, 0)
 	# Capacity as a bar + fraction — the number that decides whether loot
@@ -2475,12 +2486,13 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	cap_fill.position = Vector2(1, 1)
 	cap_fill.size = Vector2(148.0 * cap_frac, 8)
 	cap_bar.add_child(cap_fill)
-	var cap_lbl := _lbl(head, "%d / %d slots" % [used_n, cap_n], 13,
+	# Single-line captions reserve their native shaped width at the larger font.
+	var cap_lbl := _lbl(head, "%d / %d slots" % [used_n, cap_n], INV_CAPTION_FONT,
 		Color(1.0, 0.6, 0.5) if used_n >= cap_n else Color(0.85, 0.87, 0.92))
-	cap_lbl.custom_minimum_size = Vector2(90, 0)
+	cap_lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
 	cap_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var bags_lbl := _lbl(head, "%d/%d bags" % [p.bags.size(), Balance.MAX_BAGS], 12, UITheme.TEXT_MUTED)
-	bags_lbl.custom_minimum_size = Vector2(70, 0)
+	var bags_lbl := _lbl(head, "%d/%d bags" % [p.bags.size(), Balance.MAX_BAGS], INV_CAPTION_FONT, UITheme.TEXT_MUTED)
+	bags_lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
 	bags_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	# Bag chips wrap so a full loadout never widens the panel.
 	var chips := HFlowContainer.new()
@@ -2528,8 +2540,11 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		bic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		bic.mouse_filter = Control.MOUSE_FILTER_IGNORE  # let the chip own the drop hover
 		crow.add_child(bic)
-		var clbl := _lbl(crow, "%s · %d slots" % [bg2, int(bb2.get("slots", 0))], 12, Items.GRADE_COLOR[bg2])
-		clbl.custom_minimum_size = Vector2(74, 0)  # HBox label-collapse trap
+		var clbl := _lbl(crow, "%s · %d slots" % [bg2, int(bb2.get("slots", 0))], INV_CAPTION_FONT, Items.GRADE_COLOR[bg2])
+		# Native single-line width sizes each caption; the existing flow wraps chips.
+		clbl.autowrap_mode = TextServer.AUTOWRAP_OFF
+		if game.touch_mode:
+			chip.custom_minimum_size.y = INV_TOUCH_MIN_H
 		clbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	# Browse filters wrap independently from the bag action toolbar.
 	var catrow := HFlowContainer.new()
@@ -2545,9 +2560,10 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		UITheme.tab(cb, cat == cid)
 		# Category filters are a browse control, separate from the transactional
 		# action row below. Touch row needs ≥44; desktop stays compact ≥28.
-		cb.custom_minimum_size = Vector2(44.0, 44.0) if game.touch_mode else Vector2(0, 28)
+		cb.custom_minimum_size = Vector2(INV_TOUCH_MIN_H, INV_TOUCH_MIN_H) if game.touch_mode \
+			else Vector2(0.0, INV_CONTROL_MIN_H)
 		cb.focus_mode = Control.FOCUS_NONE
-		cb.add_theme_font_size_override("font_size", 13)
+		cb.add_theme_font_size_override("font_size", INV_CAPTION_FONT)
 		for st in ["normal", "hover", "pressed"]:
 			var csb2 := cb.get_theme_stylebox(String(st)).duplicate() as StyleBoxFlat
 			if csb2 != null:
@@ -2570,8 +2586,8 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			inventory_notice = "%d gem upgrade%s." % [n, "" if n == 1 else "s"] if n > 0 else "No available gem upgrades."
 			open_inventory("gear", cat)
 		var ab := _btn(actrow, "⚒ Auto-synthesize", auto_cb, Color(0.72, 0.94, 1.0))
-		ab.add_theme_font_size_override("font_size", 13)
-		ab.custom_minimum_size.y = 44.0 if game.touch_mode else 28.0
+		ab.add_theme_font_size_override("font_size", INV_CAPTION_FONT)
+		ab.custom_minimum_size.y = INV_TOUCH_MIN_H if game.touch_mode else INV_CONTROL_MIN_H
 		ab.tooltip_text = "Merge every 3-of-a-kind until nothing can be merged.\nIn Crownfall, equipped gems level up FIRST, using two matching\nbag gems, up to their gear grade's gem limit. On the road only\nthe bag merges — socketed work waits for the Lapidary."
 	if not p.backpack.is_empty():
 		var order_button := _btn(actrow, "Order: " + String({"found": "Found", "grade": "Grade", "slot": "Slot", "kept": "Kept first"}[inventory_order]), func() -> void:
@@ -2579,15 +2595,15 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			inventory_order = orders[(orders.find(inventory_order) + 1) % orders.size()]
 			open_inventory("gear", cat), Color(0.82, 0.9, 0.98))
 		order_button.name = "GearOrder"
-		order_button.add_theme_font_size_override("font_size", 13)
-		order_button.custom_minimum_size.y = 44.0 if game.touch_mode else 28.0
+		order_button.add_theme_font_size_override("font_size", INV_CAPTION_FONT)
+		order_button.custom_minimum_size.y = INV_TOUCH_MIN_H if game.touch_mode else INV_CONTROL_MIN_H
 		var equip_all_cb := func() -> void:
 			var n: int = game.local_player.auto_equip()
 			inventory_notice = "%d upgrade%s equipped." % [n, "" if n == 1 else "s"] if n > 0 else "No strict upgrades. Kept gear stays where you put it."
 			open_inventory("gear", cat)
 		var eb := _btn(actrow, "⚖ Auto-equip", equip_all_cb, Color(0.72, 1.0, 0.72))
-		eb.add_theme_font_size_override("font_size", 13)
-		eb.custom_minimum_size.y = 44.0 if game.touch_mode else 28.0
+		eb.add_theme_font_size_override("font_size", INV_CAPTION_FONT)
+		eb.custom_minimum_size.y = INV_TOUCH_MIN_H if game.touch_mode else INV_CONTROL_MIN_H
 		eb.tooltip_text = "Fill empty slots and take strict upgrades from the bag.\nKept gear stays where you put it. Socketed gems, unique passives\nand side-grades are protected by the comparison rules."
 
 	var scroll := ScrollContainer.new()
@@ -2816,7 +2832,7 @@ func _equipped_row(left: VBoxContainer, slot: String, cat: String) -> void:
 	var item: Dictionary = p.equipment[slot] if has else {}
 	var color: Color = Items.GRADE_COLOR[item["grade"]] if has else Color(0.62, 0.58, 0.48)
 	# Keep all seven slot positions; empty rows use a smaller well and padding.
-	# Occupied icon, stat and socket geometry stays unchanged.
+	# The icon well stays fixed while native wrapped labels determine row height.
 	var card := UITheme.card(left, color if has else Color(0.40, 0.37, 0.30), 8.0 if has else 4.0)
 	if not has:
 		card.custom_minimum_size.y = 44.0 if game.touch_mode else 36.0
@@ -2868,25 +2884,25 @@ func _equipped_row(left: VBoxContainer, slot: String, cat: String) -> void:
 	var text := VBoxContainer.new()
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	text.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	text.add_theme_constant_override("separation", 1)
+	text.add_theme_constant_override("separation", INV_TEXT_SEPARATION)
 	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(text)
 	var socket_n: int = int(item.get("gem_slots", 0)) if has else 0
 	var text_w: float = 260.0 - (socket_n * 38.0 if has else 0.0)
 	if has:
-		var nm := _lbl(text, Items.title(item), 14, Color(0.9, 0.9, 0.94))
+		var nm := _lbl(text, Items.title(item), INV_NAME_FONT, Color(0.9, 0.9, 0.94))
 		nm.autowrap_mode = TextServer.AUTOWRAP_OFF
 		nm.clip_text = true
 		nm.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		nm.custom_minimum_size = Vector2(text_w, 0)
 		nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var dl := _lbl(text, Items.describe(item, false), 11, Color(0.68, 0.7, 0.76))
+		var dl := _lbl(text, Items.describe(item, false), INV_STAT_FONT, Color(0.68, 0.7, 0.76))
 		dl.custom_minimum_size = Vector2(text_w, 0)
 		# (No overrun trim here: with autowrap it collapses the label's minimum
 		# height to 1px and the line vanishes — Godot 4.4.)
 		dl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	else:
-		var el := _lbl(text, "%s — empty" % slot.capitalize(), 13, Color(0.78, 0.78, 0.82))
+		var el := _lbl(text, "%s — empty" % slot.capitalize(), INV_CAPTION_FONT, Color(0.78, 0.78, 0.82))
 		el.custom_minimum_size = Vector2(text_w, 0)
 		el.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Sockets, on the row's right — the whole card is also a drop target.

@@ -1,3 +1,61 @@
+# Completed round — September 26, 2026
+
+The owner's new September 26 improvement round is complete at 2026-09-26 22:37:11 UTC.
+This was fresh authorization; all older sessions remain closed. No new deadline
+or recurring continuation was requested or created. All five older automations
+remain paused and byte-identical to the opening inventory.
+
+Workspace: `C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder`.
+Branch: `codex/crownless-wayfinder`; starting HEAD:
+`6b89c6e06cc7e2d6e631f7b45aca9ae2a09afcaf`. Resulting commit and exact local
+worktree state are recorded in `build/qa/session-sept26/commit-receipt.json`.
+The index began empty. All 46 unrelated files remain byte-identical to
+`build/qa/session-sept26/initial-preservation.json`. Older status bytes remain
+unchanged below and in that folder's `previous-autonomous-status.md`.
+
+Delivered checkpoint — readable Inventory equipment and controls:
+
+- Equipped names are 16px and complete stat summaries 15px; native wrapping
+  expands row height. All seven slots remain reachable with real scrolling.
+- Bag capacity, captions, filters, actions and empty labels use 14px text.
+  Single-line bag captions reserve native width; touch bag targets are 44px tall.
+  Gold totals use the existing grouped-number formatter.
+- Existing icon wells, sockets, callbacks, gestures and resource behavior remain.
+  Actual Claude Opus 5 implemented the production proposal; actual DeepSeek
+  v4-pro implemented QA additions. Independently corrected raw drafts, prompts,
+  provider receipts and rejected alternatives are retained locally under
+  `build/qa/session-sept26/claude-inventory` and `deepseek-inventory`.
+
+Validation: compile/quick/full; scoped mobile sync/import/compile/strict quick;
+strict preflight; native Inventory, equipment gestures, gem synthesis and paired
+ENet UI all pass. Inventory has 570 unique checks and 12 originals per platform;
+equipment has 70 unique checks and five originals per platform; gem synthesis
+has 175/179 passing row instances (169/171 distinct IDs) and ten originals;
+paired ENet UI has 64 unique checks and seven originals per platform. Existing
+repeated gem-fixture/input IDs are explicitly counted in the acceptance record.
+All 68 final originals were inspected at original resolution, with root spot
+review. Exact executed sources, images, reports and gates are pinned in
+`build/qa/session-sept26/acceptance.json`. QA-only old-production validation
+retains 49 expected failures (48 font floors and grouped gold), while all 245
+original Inventory checks passed. The later ten touch-target checks and optional
+45-check gear gallery are additional final coverage, not claimed in that red run.
+
+Limits: native scenarios lend legal factory stock; they do not prove ordinary
+progression. Mobile means host-rendered Compatibility and emulated input, not a
+physical device. ENet UI-only does not validate persistence; its retained
+child-scene disconnect diagnostic remains unaccepted. Stat labels can still wrap
+before their values; coarse legacy bag art and smaller item-detail metadata
+remain polish debt. Ten touch bag targets trade grid height for usable target
+size; native scrolling still reaches the final cell. Existing negative-test and
+engine shutdown diagnostics remain in logs under unchanged verdict rules.
+
+Only the seven explicit owned source/mobile/documentation paths are committed.
+No push, merge, protected-art edits, chroma work or older automation changes.
+Evidence under ignored `build/qa/` is retained locally. No new unfinished game
+candidate or continuation is left running.
+
+---
+
 # Closed session — September 20–21, 2026
 
 This authorized session closed at **2026-09-21 19:52:52 UTC**, before its September 21

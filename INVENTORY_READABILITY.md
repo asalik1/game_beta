@@ -1,5 +1,35 @@
 # Inventory readability
 
+September 26 typography revision: equipment names use 16px text and complete stat
+summaries use 15px text. Native wrapped-label height expands occupied rows;
+all seven slots remain reachable through the existing independent scroll.
+Only names retain intentional ellipsis. Capacity, bag labels, filters, actions
+and empty rows use 14px text. Single-line bag captions reserve their native
+text width. Equipped bag drop targets have 44px height in touch mode. Inventory
+gold uses the existing grouped-number formatter. The 46px equipment wells,
+40px sockets and existing callbacks/gesture ownership are unchanged.
+
+The extended native probe adds first-postdraw/settled layout observations,
+full character-cell and clipping checks after reaching each occupied row,
+attached socket clearance, ten distinct bag captions, actual button-text fit,
+and a restored 1,234,567-gold display loan. These checks use native controls and
+independent readability floors; they do not prove visual quality on their own.
+Actual Claude implemented the production proposal and actual DeepSeek proposed
+the QA additions; both were independently reviewed and corrected. Raw outputs,
+rejected drafts, exact source pins and new validation are retained under
+`build/qa/session-sept26/`.
+
+Validated: compile/quick/full, scoped mobile import/compile/strict quick,
+and strict preflight pass. Inventory passes 570 unique checks and 12 native
+originals on each platform. Separate equipment, synthesis and paired ENet UI
+regressions pass; all 68 final originals were reviewed. The old-production
+QA run retains 49 expected typography/grouping failures with all 245 original
+checks green. See `build/qa/session-sept26/acceptance.json` for exact bindings.
+Stat-token/value wrapping, coarse bag art and smaller item-detail metadata
+remain polish debt. These are controlled host tests, not physical-device or
+ordinary-progression acceptance. Older records below describe their original
+checkpoints.
+
 Inventory keeps its seven equipment positions. Empty rows are compact, while
 occupied rows retain their icon, socket and gesture geometry. Primary item names
 use a readable neutral color; grade remains visible in the frame or accent.
