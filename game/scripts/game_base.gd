@@ -185,6 +185,9 @@ const ST_VICTORY := 3
 # (Zone tint and weather now come from the terrain registry — terrains.gd.)
 
 var state := ST_PLAYING
+# Bumped when a victory ends a pending death beat (game_flow._enter_victory);
+# the beat's respawn compares it after its timer and stands down.
+var death_epoch := 0
 # --------------------------------------------------- player registry (MP) ---
 # Phase 0 groundwork (MULTIPLAYER.md §6): the game tracks a REGISTRY of
 # players. Solo holds exactly one entry — kept in sync by the `player`

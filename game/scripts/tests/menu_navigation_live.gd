@@ -64,6 +64,7 @@ func _run() -> String:
 	await _key(KEY_SPACE)
 	if not _check("title.cover_to_roster", m.current == "title" and m.title_stage == "slots", _state()):
 		return "title input did not reach the roster"
+	await _roster_delete()
 	for method in ["back", "escape", "x", "outside", "touch_outside"]:
 		m.open_slots()
 		await r.frames(3)
@@ -541,6 +542,73 @@ func _exit(method: String) -> void:
 	await r.frames(3)
 
 
+func _roster_delete() -> void:
+	# Preserve all slot files, even on a failed assertion in the helper.
+	var files := {}
+	var path := SaveGame.path(SaveGame.MAX_SLOTS)
+	for suffix in ["", ".bak", ".tmp"]:
+		var file: String = path + suffix
+		files[file] = FileAccess.get_file_as_bytes(file) if FileAccess.file_exists(file) else null
+	var fixture := {"version": SaveGame.VERSION, "saved_at": 0,
+		"character": {"name": "Roster Safety", "cls": "warrior", "level": 7},
+		"world": {"quest_key": "talk"}}
+	for suffix in ["", ".bak", ".tmp"]:
+		var f := FileAccess.open(path + suffix, FileAccess.WRITE)
+		f.store_string(JSON.stringify(fixture))
+		f.close()
+	await _roster_delete_checks(path)
+	for file: String in files:
+		if files[file] == null:
+			if FileAccess.file_exists(file):
+				DirAccess.remove_absolute(file)
+		else:
+			var f := FileAccess.open(file, FileAccess.WRITE)
+			f.store_buffer(files[file])
+			f.close()
+	m.open_slots()
+	await r.frames(3)
+
+
+func _roster_delete_checks(path: String) -> void:
+	for action in ["escape", "cancel", "accept"]:
+		m.open_slots()
+		await r.frames(3)
+		var hero: Button = _find_button(m.root, "Roster Safety")
+		if not _check("roster.delete.hero." + action, hero != null, _state()):
+			return
+		var erase: Button = _find_button(hero.get_parent(), "✕", true)
+		if not _check("roster.delete.button." + action, erase != null, _state()):
+			return
+		# Native click on this hero's row, never the shell's similarly named X.
+		var ancestor: Node = hero.get_parent()
+		while ancestor != null and ancestor != m.root:
+			if ancestor is ScrollContainer:
+				ancestor.ensure_control_visible(erase)
+				await r.frames(2)
+			ancestor = ancestor.get_parent()
+		await _mouse(erase.get_global_rect().get_center())
+		await r.frames(3)
+		if not _check("roster.delete.confirm." + action, m.current == "confirm" and SaveGame.exists(SaveGame.MAX_SLOTS), _state()):
+			return
+		_confirm_geometry("roster_delete_" + action,
+			"Delete Roster Safety (Warrior Lv 7)? This cannot be undone.", true, false, "Delete hero?", "Delete hero")
+		_check("roster.delete.safe_focus." + action,
+			m.get_viewport().gui_get_focus_owner() == _find_button(m.root, "Cancel", true), "Cancel owns initial focus")
+		_check("roster.delete.boot_pause." + action, g.get_tree().paused and not g.hud.visible, _state())
+		if action == "escape":
+			await _capture("01a_roster_delete_confirm")
+			await _key(KEY_ESCAPE)
+		elif action == "cancel":
+			await _button("Cancel")
+		else:
+			await _button("Delete hero")
+		_check("roster.delete.return." + action,
+			m.current == "title" and m.title_stage == "slots" and g.get_tree().paused and not g.hud.visible, _state())
+		for suffix in ["", ".bak", ".tmp"]:
+			_check("roster.delete.file." + action + suffix,
+				FileAccess.file_exists(path + suffix) == (action != "accept"), path + suffix)
+
+
 func _button(label: String) -> bool:
 	var button: Button = _find_button(m.root, label)
 	if not _check("input.button.%d" % rows.size(), button != null, label):
@@ -720,6 +788,14 @@ func _confirm_layout() -> String:
 	g.dev_god = true
 	g.hud.visible = true
 	await r.frames(3)
+	# The opener's resonance choice pays its reward as world coins that magnet
+	# in over the next moments. Take the ledger baseline only once they land,
+	# or the invariant below races the collection (gold 15 before, 47 after).
+	var coin_deadline := Time.get_ticks_msec() + 5000
+	while _loose_coins() > 0 and Time.get_ticks_msec() < coin_deadline:
+		await r.frames(2)
+	_check("confirm_layout.opening_coins_collected", _loose_coins() == 0,
+		{"loose_coins": _loose_coins(), "paused": g.get_tree().paused})
 	var economy: Dictionary = _confirm_economy()
 	await _confirm_actual_callers()
 	await _confirm_trial_preview()
@@ -729,7 +805,7 @@ func _confirm_layout() -> String:
 	await _confirm_stale_callable()
 	await _callback_lifetime()
 	await _notice_suite()
-	_check("confirm_layout.economy_unchanged", _confirm_economy() == economy, _confirm_economy())
+	_check("confirm_layout.economy_unchanged", _confirm_economy() == economy, {"before": economy, "after": _confirm_economy()})
 	return ""
 
 
@@ -895,12 +971,13 @@ func _confirm_actual_callers() -> void:
 	g.endgame_active = endgame_before
 	for mode in ["crucible", "depths"]:
 		var title: String = "The Crucible" if mode == "crucible" else "The Waking Depths"
-		var rules: String = "Ten bosses back to back, each with an elite affix — HP and MP carry over between them. Bonus spoils at 3 / 6 / 10 kills." if mode == "crucible" else "An endless descent where DEPTH IS THE MONSTERS' LEVEL — the ladder starts at 40, or at your deepest cleared checkpoint. A boss guards every 5th depth, a checkpoint boss every 10th; past 100 the dark only deepens. Rewards pay when you fall or cash out."
+		var rules: String = "Ten bosses back to back, each with an elite affix. HP and MP carry over between them. Bonus spoils at 3 / 6 / 10 kills." if mode == "crucible" else "An endless descent where depth is the monsters' level. The ladder starts at 40, or at your deepest cleared checkpoint. A boss guards every 5th depth, a checkpoint boss every 10th; past 100 the dark only deepens."
 		var pb: Dictionary = g.endgame_pb(mode, g.local_player.cls)
 		var best := ""
 		if not pb.is_empty():
 			best = "\n\nYour best: %d bosses." % int(pb.get("kills", 0)) if mode == "crucible" else "\n\nYour deepest: depth %d." % int(pb.get("depth", 0))
-		var message := "Enter %s?\n\n%s%s\n\nWhen you cash out, fall, or complete the trial, a results screen offers a return to Crownfall." % [title, rules, best]
+		var ending: String = "When you cash out, fall, or clear all ten bosses, a results screen offers a return to Crownfall." if mode == "crucible" else "When you cash out or fall, your rewards pay out and a results screen offers a return to Crownfall."
+		var message := "Enter %s?\n\n%s%s\n\n%s" % [title, rules, best, ending]
 		m.confirm_endgame(mode)
 		await r.frames(4)
 		_confirm_geometry("endgame_" + mode, message, false, false, "Enter %s?" % title, "Enter trial")
@@ -1264,6 +1341,16 @@ func _confirm_actions_rect() -> Rect2:
 	var yes: Button = _find_button(m.root, "Yes — do it", true)
 	var cancel: Button = _find_button(m.root, "Cancel", true)
 	return yes.get_global_rect().merge(cancel.get_global_rect()) if yes != null and cancel != null else Rect2()
+
+
+## Unclaimed gold coins lying in the world (Pickup.drop_gold parents them to Game).
+func _loose_coins() -> int:
+	var count := 0
+	for child in g.get_children():
+		var coin := child as Pickup
+		if coin != null and not coin.claimed and coin.loot.is_empty() and not coin.goldrush:
+			count += 1
+	return count
 
 
 func _confirm_economy() -> Dictionary:

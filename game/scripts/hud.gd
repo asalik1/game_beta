@@ -443,7 +443,7 @@ func _ready() -> void:
 	mail_btn.position = Vector2(16, HUD_ICON_Y)
 	mail_btn.size = HUD_ICON_BUTTON
 	mail_btn.pressed.connect(func() -> void:
-		if game.play_started and not game.menus.is_open():
+		if _utility_menu_ok():
 			game.menus.open_mailbox())
 	add_child(mail_btn)
 
@@ -491,7 +491,7 @@ func _ready() -> void:
 	daily_btn.size = HUD_ICON_BUTTON
 	daily_btn.visible = false
 	daily_btn.pressed.connect(func() -> void:
-		if game.play_started and not game.menus.is_open():
+		if _utility_menu_ok():
 			game.menus.open_daily())
 	add_child(daily_btn)
 	daily_btn.add_child(daily_glow)
@@ -534,7 +534,7 @@ func _ready() -> void:
 	quest_btn.position = Vector2(16 + HUD_ICON_STEP, HUD_ICON_Y)
 	quest_btn.size = HUD_ICON_BUTTON
 	quest_btn.pressed.connect(func() -> void:
-		if game.play_started and not game.menus.is_open():
+		if _utility_menu_ok():
 			game.refresh_contracts()
 			game.menus.open_journal("activities" if game.activity_claims_ready() > 0 else ""))
 	add_child(quest_btn)
@@ -579,7 +579,7 @@ func _ready() -> void:
 	inv_btn.position = Vector2(16 + 2 * HUD_ICON_STEP, HUD_ICON_Y)
 	inv_btn.size = HUD_ICON_BUTTON
 	inv_btn.pressed.connect(func() -> void:
-		if game.play_started and not game.menus.is_open():
+		if _utility_menu_ok():
 			game.menus.open_inventory())
 	add_child(inv_btn)
 	codex_btn = Button.new()
@@ -591,7 +591,7 @@ func _ready() -> void:
 	codex_btn.position = Vector2(16 + 3 * HUD_ICON_STEP, HUD_ICON_Y)
 	codex_btn.size = HUD_ICON_BUTTON
 	codex_btn.pressed.connect(func() -> void:
-		if game.play_started and not game.menus.is_open():
+		if _utility_menu_ok():
 			game.menus.open_codex())
 	add_child(codex_btn)
 	# Skill tree + menu(gear) icons — the two core screens that had no on-screen
@@ -607,7 +607,7 @@ func _ready() -> void:
 	skills_btn.position = Vector2(16 + 5 * HUD_ICON_STEP, HUD_ICON_Y)
 	skills_btn.size = HUD_ICON_BUTTON
 	skills_btn.pressed.connect(func() -> void:
-		if game.play_started and not game.menus.is_open():
+		if _utility_menu_ok():
 			game.menus.open_skills())
 	add_child(skills_btn)
 	skills_badge = Panel.new()
@@ -636,7 +636,7 @@ func _ready() -> void:
 	settings_btn.position = Vector2(16 + 6 * HUD_ICON_STEP, HUD_ICON_Y)
 	settings_btn.size = HUD_ICON_BUTTON
 	settings_btn.pressed.connect(func() -> void:
-		if game.play_started and not game.menus.is_open():
+		if _utility_menu_ok(true):
 			game.menus.open_pause())
 	add_child(settings_btn)
 	# A session persists when its lobby panel closes, so it needs a durable way
@@ -652,7 +652,7 @@ func _ready() -> void:
 	party_btn.size = HUD_ICON_BUTTON
 	party_btn.visible = false
 	party_btn.pressed.connect(func() -> void:
-		if game.play_started and game.net_online() and not game.menus.is_open():
+		if _utility_menu_ok() and game.net_online():
 			game.menus.open_party())
 	add_child(party_btn)
 	for hud_button: Button in [mail_btn, quest_btn, inv_btn, codex_btn, daily_btn,
@@ -4929,7 +4929,7 @@ func _process(_delta: float) -> void:
 	# AUTO drives line advance while dialogue is up (never through a choice or an
 	# open backlog). The HUD processes even while the tree is paused, which is
 	# exactly when a convo is showing, so real delta accrues here.
-	if not _auto_on or not dialogue_active or choices_active:
+	if not _auto_on or not dialogue_active or choices_active or game.menus.is_open():
 		return
 	if log_panel != null and log_panel.visible:
 		return
@@ -5420,6 +5420,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			_advance_dialogue()
 		get_viewport().set_input_as_handled()
+
+
+## Utility icons obey overlay state even when the shared world cannot pause.
+## The Menu icon alone also serves the settled victory card (victory_card):
+## Escape rejects that state, so the icon is the card's route to the game menu
+## (MENU_CLARITY.md, shot_hud_dossier --online-menu).
+func _utility_menu_ok(victory_card := false) -> bool:
+	if not game.play_started or game.input_overlay_up():
+		return false
+	return game.state == Game.ST_PLAYING or (victory_card and game.state == Game.ST_VICTORY)
 
 
 ## ESC opens the system menu (menus.gd owns closing it again).
