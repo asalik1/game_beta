@@ -1011,6 +1011,29 @@ Evidence and final acceptance:
 
 ## In-engine shot rigs (windowed, boot the real game, screenshot to disk)
 
+`shot.bat` never runs a rig on the owner's real profile. When APPDATA is unset or
+is the real roaming folder, import, compile gate and rig all run on this
+checkout's `build/qa/shot_profile/`, so a plain run's `user://` is
+`build/qa/shot_profile/Godot/app_userdata/Crownless/`. Before each run that
+`user://` is emptied except `shots/`, `shader_cache/` and `vulkan/`: settings,
+keybinds, their sidecars, saves and meta always start from script defaults,
+screenshots build up in one place across runs (csdemo classes, polish GIF
+beats), and boots keep a warm shader cache. A second `shot.bat` running at the
+same time in the same checkout gets a throwaway profile under
+`build/qa/shot_runs/` (the newest few are kept) instead of wiping the first one's
+files. Any other APPDATA, such as a `<name>-candidate` directory, is the
+caller's own isolation and is used exactly as given. Runner logs stay in
+`%TEMP%\crownless_shots`. The runner prints the shots dir and exits 8 with
+`ISOLATION BREACH` if a rig's `user://` resolves outside the APPDATA it was given.
+Downstream tools (`build_csdemo.py`, `gif_from_frames.py`, `mobqa_filmstrip.py`)
+read `build/qa/shot_profile` by default and never the owner's profile; after a
+caller-supplied APPDATA run, pass them the printed shots dir (`--src`/`--shots`).
+`powershell -NoProfile -ExecutionPolicy Bypass -File tools/tests/shot_isolation_tests.ps1`
+checks all of this with a fake engine (11 fixtures: success with import,
+nonzero exit, watchdog, outer kill, gate failure, legacy rig, unset APPDATA,
+caller candidate, busy profile, breach, and two runs in one session); preflight
+runs it with `shot_verdict_tests.ps1` whenever the runner or its tests change.
+
 `shot.bat wayfinder --timeout=240` — local tactical map, observed frontiers,
 route bearing, real encounter population, revealed loot, explored atlas at two
 zoom levels, the atlas/HUD with touch controls, and a real room clear followed
@@ -1067,6 +1090,7 @@ SERIES per beat (forest/keep/HUD fights with a LIVE pack and the hero driven thr
 input path, road/magma/keep-wall walks) into `gif_<beat>/`; run with the runner's new
 `--fixed-fps=30` so each frame is a deterministic 1/30 s; then
 `python tools/art/gif_from_frames.py [--width 800] [--out ~/Downloads/crownless_polish_gifs]`
+(reads `build/qa/shot_profile`'s `shots/polish` by default; `--src` for any other shots dir)
 stitches 15 fps GIFs with one shared palette per GIF (owner review artefacts).
 `--beats=forest,keep,forest_hud,road,magma,keep_wall` selects a subset for slow
 renderers; `--no-capture --passes=3 --seed=907` runs the same live inputs and
@@ -1101,8 +1125,9 @@ game/+mobile/, `status` = progress) ·
 `player.use_ability` at a frozen immortal wolf pack and dumps every frame
 (`shot.bat csdemo --fixed-fps=30 --class=assassin`; fixed-fps is REQUIRED — the
 per-frame viewport readback drops the wall-clock rate to ~7 fps, fixed-fps makes
-each frame exactly 1/30 s) into `user://shots/csdemo/<class>_<slot>/f###.png`;
-then `python tools/art/build_csdemo.py [class ...]` ffmpeg-encodes them (crop to
+each frame exactly 1/30 s) into `user://shots/csdemo/<class>_<slot>/f###.png`
+(one run per class; they build up in `build/qa/shot_profile`);
+then `python tools/art/build_csdemo.py [class ...] [--src <shots/csdemo>]` ffmpeg-encodes them (crop to
 the action, scale 640x396, libtheora q6, ~130-260 KB each) into
 `game/assets/videos/csdemo_<class>_<slot>.ogv` (+ mobile mirror) — the class
 selector's stage plays these full in-game takes (`menus._cs_play_demo`) instead

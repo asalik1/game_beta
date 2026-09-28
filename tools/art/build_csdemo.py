@@ -7,16 +7,23 @@ every platform included. The stage shows them at 640x400-ish, so the encode
 crops the rig's 1280x720 to the action (a 840x520 window biased toward the
 hero+pack midpoint the rig framed on) and scales to 640x396 (theora wants /4).
 
-Usage: python tools/art/build_csdemo.py [class ...]   (default: all six)
+Usage: python tools/art/build_csdemo.py [class ...] [--src <shots/csdemo>]
+       (default: all six classes)
+
+shot.bat runs rigs on this checkout's own profile (tools/shot_rig.ps1), never
+the owner's real %APPDATA%, and keeps its shots/ across runs, so one
+`shot.bat csdemo --class=<id>` per class builds up the set in SHOTS below.
+A run with a caller-supplied APPDATA prints its own RIG SHOTS DIR: pass it
+as --src.
 """
 from __future__ import annotations
 
+import argparse
 import subprocess
-import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
-SHOTS = Path.home() / "AppData/Roaming/Godot/app_userdata/Crownless/shots/csdemo"
+SHOTS = REPO / "build/qa/shot_profile/Godot/app_userdata/Crownless/shots/csdemo"
 OUT = REPO / "game/assets/videos"
 MOBILE_OUT = REPO / "mobile/game/assets/videos"
 CLASSES = ["warrior", "archer", "mage", "assassin", "paladin", "warlock"]
@@ -31,8 +38,8 @@ CROP = "960:600:160:60"   # w:h:x:y  (1.6 aspect, matches 640x400)
 SCALE = "640x400"
 
 
-def encode(cls: str, slot: str) -> bool:
-    src = SHOTS / f"{cls}_{slot}"
+def encode(shots: Path, cls: str, slot: str) -> bool:
+    src = shots / f"{cls}_{slot}"
     if not src.is_dir() or not any(src.glob("f*.png")):
         print(f"SKIP {cls}_{slot}: no frames under {src}")
         return False
@@ -63,11 +70,19 @@ def encode(cls: str, slot: str) -> bool:
 
 
 def main() -> int:
-    classes = sys.argv[1:] or CLASSES
+    ap = argparse.ArgumentParser(description="Encode shot_csdemo frames into class-select videos.")
+    ap.add_argument("classes", nargs="*", help="class ids (default: all six)")
+    ap.add_argument("--src", type=Path, default=SHOTS,
+                    help="the rig's shots/csdemo folder (default: this checkout's shot profile)")
+    a = ap.parse_args()
+    if not a.src.is_dir():
+        print(f"no csdemo frames at {a.src}: run `shot.bat csdemo --fixed-fps=30 --class=<id>` "
+              "first, or pass --src with the RIG SHOTS DIR the runner printed")
+        return 1
     done = 0
-    for cls in classes:
+    for cls in a.classes or CLASSES:
         for slot in SLOTS:
-            if encode(cls, slot):
+            if encode(a.src, cls, slot):
                 done += 1
     print(f"done: {done} videos")
     return 0 if done else 1

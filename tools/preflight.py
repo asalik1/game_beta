@@ -36,6 +36,10 @@ Checks:
             clips when it animates -- they existed but nothing ran them on a
             diff, so capital_portal_depths shipped drifting. IMPORT findings
             are left to the IMPORT check above.
+  SHOTRUN   diff-scoped: when tools/shot_rig.ps1, tools/shot_verdict.ps1 or
+            their tools/tests/shot_*_tests.ps1 change, runs both fixture
+            files (fake engine, no Godot, ~40s). A runner edit that drops the
+            owner-profile isolation or the verdict rules FAILs here.
 
 Exit code 1 on any FAIL. WARNs exit 0 unless --strict.
 """
@@ -322,6 +326,30 @@ def check_anim_art() -> None:
             WARN.append(raw[5:] + "  (changed sprite; verify_art.py)")
 
 
+# --------------------------------------------------------------- SHOTRUN
+SHOT_RUNNER_FILES = ("tools/shot_rig.ps1", "tools/shot_verdict.ps1",
+                     "tools/tests/shot_verdict_tests.ps1", "tools/tests/shot_isolation_tests.ps1")
+
+
+def check_shot_runner() -> None:
+    """Run the shot runner's fixture files when the runner or its tests change.
+    Both are plain PowerShell with a fake engine, so a green quick suite says
+    nothing about them; without this they only ran when someone remembered."""
+    status = subprocess.run(["git", "status", "--porcelain", "--", *SHOT_RUNNER_FILES],
+                            capture_output=True, text=True, cwd=ROOT,
+                            encoding="utf-8", errors="replace").stdout or ""
+    if not status.strip():
+        return
+    for test in ("tools/tests/shot_verdict_tests.ps1", "tools/tests/shot_isolation_tests.ps1"):
+        r = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", test],
+                           capture_output=True, text=True, cwd=ROOT,
+                           encoding="utf-8", errors="replace")
+        if r.returncode != 0:
+            tail = "\n         ".join(((r.stdout or "") + (r.stderr or "")).strip().splitlines()[-6:])
+            fail("SHOTRUN", f"{test} failed (exit {r.returncode}):\n         {tail}",
+                 f"powershell -NoProfile -ExecutionPolicy Bypass -File {test}, then fix the runner")
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     ap = argparse.ArgumentParser(description="Crownless preflight trap checks")
@@ -334,6 +362,7 @@ def main() -> int:
     check_diff_lints()
     check_rigs()
     check_anim_art()
+    check_shot_runner()
     if not args.fast:
         check_codex_data()
 
@@ -341,7 +370,7 @@ def main() -> int:
         print("FAIL " + f)
     for w in WARN:
         print("WARN " + w)
-    n_checks = "IMPORT MODULES BALANCE PHYSICS RIGS ARTQA" + ("" if args.fast else " CODEX")
+    n_checks = "IMPORT MODULES BALANCE PHYSICS RIGS ARTQA SHOTRUN" + ("" if args.fast else " CODEX")
     if not FAIL and not WARN:
         print(f"PREFLIGHT OK ({n_checks})")
     else:

@@ -9,6 +9,10 @@ one GIF: every `step`-th frame kept (30 -> 15 fps), scaled to `--width`, a
 
   python tools/art/gif_from_frames.py [--src <shots/polish>] [--out <dir>]
                                       [--width 960] [--step 2] [--only beat,beat]
+
+shot.bat runs rigs on this checkout's own profile (tools/shot_rig.ps1), never
+the owner's real %APPDATA%, so --src defaults to that profile's shots/polish.
+A run with a caller-supplied APPDATA prints its own RIG SHOTS DIR: pass it.
 """
 import argparse
 import glob
@@ -17,7 +21,8 @@ import sys
 
 from PIL import Image
 
-DEFAULT_SRC = os.path.join(os.environ.get("APPDATA", ""), "Godot", "app_userdata", "Crownless", "shots", "polish")
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DEFAULT_SRC = os.path.join(REPO, "build", "qa", "shot_profile", "Godot", "app_userdata", "Crownless", "shots", "polish")
 DEFAULT_OUT = os.path.join(os.path.expanduser("~"), "Downloads", "crownless_polish_gifs")
 
 
@@ -52,6 +57,10 @@ def main() -> int:
     ap.add_argument("--fps", type=int, default=30, help="capture rate of the frame series")
     ap.add_argument("--only", default="", help="comma list of beats (folder names without gif_)")
     a = ap.parse_args()
+    if not os.path.isdir(a.src):
+        print("no frame series at", a.src, "-- run `shot.bat polish --gif --fixed-fps=30` first,"
+              " or pass --src with the RIG SHOTS DIR the runner printed")
+        return 1
     os.makedirs(a.out, exist_ok=True)
     only = set(x for x in a.only.split(",") if x)
     made = 0

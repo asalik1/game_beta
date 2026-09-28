@@ -4,13 +4,15 @@ in-engine result of a strip install can be eyeballed the way the owner sees it:
 same camera, same _apply_strip path, feet line drawn from the idle frame so a
 body that jumps, shrinks or vanishes on walk/attack is obvious.
 
-Run the rig first (windowed):
-  tools\\Godot_v4.4.1-stable_win64_console.exe --path game res://shot_mobqa.tscn
+Run the rig first, through the runner (muted, isolated from the owner's profile):
+  shot.bat mobqa [--kinds beastkin_raider,frost_husk]
 Then:
-  python tools/art/mobqa_filmstrip.py [--out <dir>] [--half W] [--zoom Z]
+  python tools/art/mobqa_filmstrip.py [--shots <dir>] [--out <dir>] [--half W] [--zoom Z]
 
 Reads user://shots/mobqa/{idle,walk,attack}_f{0..3}.png + mobqa_index.txt
 (one "kind sprite_key screen_x screen_y" line per mob, written by the rig).
+shot.bat's user:// is this checkout's build/qa/shot_profile, the --shots
+default; a run with a caller-supplied APPDATA prints its own RIG SHOTS DIR.
 Writes <out>/mobqa_<sprite_key>.png (default out = the shots dir).
 """
 import argparse
@@ -20,7 +22,8 @@ import sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-SHOTS = os.path.join(os.environ.get("APPDATA", ""), "Godot", "app_userdata",
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+SHOTS = os.path.join(REPO, "build", "qa", "shot_profile", "Godot", "app_userdata",
                      "Crownless", "shots", "mobqa")
 STATES = ("idle", "walk", "attack")
 
