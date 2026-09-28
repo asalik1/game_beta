@@ -3,6 +3,24 @@ extends RefCounted
 ## No timers/frames or shared combat state advance while the pointers are loaned.
 
 
+class ConvoSession extends "res://scripts/net/net_session.gd":
+	var gathered := true
+	var barks := 0
+	func _ready() -> void: pass
+	func _physics_process(_delta: float) -> void: pass
+	func _party_gathered() -> bool: return gathered
+	func _busy_bark() -> void: barks += 1
+	func _beat_waiting_bark() -> void: pass
+	func _guest_boss_gone() -> void: pass
+
+
+## Stand-in NetworkManager for one end of a private ENet pair (net_session._net()).
+class WireRoot extends Node:
+	var peers: Array[int] = []
+	var online := true
+	func is_online() -> bool: return online
+
+
 static func run(t: Node) -> String:
 	var g: Game = t.game
 	var archive := g.convo_log.duplicate(true)
@@ -131,6 +149,9 @@ static func _checks(g: Game, fail_early: bool) -> String:
 		return "closing a menu released the choice pause"
 	h.cancel_conversation()
 	g.request_pause(false)
+	var online_error := _cinematic_online(g, h)
+	if online_error != "":
+		return online_error
 	var cinematic_error := _cinematic_finish(g, h)
 	if cinematic_error != "":
 		return cinematic_error
@@ -211,6 +232,265 @@ static func _cinematic_finish(g: Game, h: Hud) -> String:
 	g.menus.close()
 	g.request_pause(false)
 	return error
+
+
+## Private session, real routing and Cutscene cleanup. No frames elapse while
+## the online flag, roster and session pointer are borrowed.
+static func _cinematic_online(g: Game, h: Hud) -> String:
+	var net: Node = g.get_node("/root/NetworkManager")
+	var saved := {"online": net._session_active, "session": net.session,
+		"players": g.players, "cutscene": g.cutscene, "paused": g.get_tree().paused,
+		"broadcasting": g.beat_broadcasting}
+	var id := "__overlay_cinematic_fixture"
+	# A fixture chapter, so its opener id and seen flag touch no real content.
+	var chapter_key := "__overlay_chapter"
+	var opener_id := chapter_key + "_opening_" + String(g.player.cls)
+	var seen_flag := "saw_chapter_opening_" + chapter_key
+	var borrowed := {}
+	for key in [id, opener_id]:
+		if Story.ALL_CONVOS.has(key):
+			borrowed[key] = Story.ALL_CONVOS[key]
+	var had_seen := g.flags.has(seen_flag)
+	var prior_seen: Variant = g.flags.get(seen_flag)
+	var session := ConvoSession.new()
+	net.add_child(session)
+	session.game = g
+	net.session = session
+	net._session_active = true
+	g.beat_broadcasting = false
+	g.get_tree().paused = false
+	g.cutscene = null
+	var error := ""
+	for mode in ["busy", "gather", "cancel_active", "accepted", "opener", "lone_abort", "lone_accepted"]:
+		var convo_id := opener_id if mode == "opener" else id
+		Story.ALL_CONVOS[convo_id] = _fixture_convo()
+		if mode == "gather":
+			Story.ALL_CONVOS[id].nodes.start["quest"] = "unused_refused_beat"
+		var roster: Array[Player] = [g.local_player]
+		if not mode.begins_with("lone"):
+			roster.append(g.local_player)
+		g.players = roster
+		session.gathered = mode != "gather"
+		# Busy: another hero holds this NPC. Opener: another hero of the same
+		# class is reading the very same opener id.
+		session._convo_claims = {convo_id: 2} if mode in ["busy", "opener"] else {}
+		session.barks = 0
+		var completed := [0]
+		if mode == "opener":
+			g.flags.erase(seen_flag)
+			g.run_chapter_opener_if_needed(chapter_key, func() -> void: completed[0] += 1)
+		else:
+			g.run_convo_id(id, func() -> void: completed[0] += 1)
+		var art: Cutscene = g.cutscene
+		if mode in ["cancel_active", "lone_abort"]:
+			session.cancel_local_convo()
+			h.cancel_conversation()
+		elif mode in ["accepted", "opener", "lone_accepted"]:
+			error = _finish_read(g, h, art, completed, mode)
+		if error == "" and session.barks != (1 if mode == "busy" else 0):
+			error = "online cinematic barked the wrong number of times: " + mode
+		if error == "" and (g.cutscene != null or h._cinematic_mode or h.cinematic_finishing() or g.input_overlay_up()):
+			error = "online cinematic stranded its storybook or input gate: " + mode
+		if error == "" and mode not in ["accepted", "opener", "lone_accepted"] and completed[0] != 0:
+			error = "refused or aborted cinematic ran its quest completion: " + mode
+		if error == "" and g.get_tree().paused:
+			error = "online cinematic paused the shared world: " + mode
+		# Cleanup is unconditional, including the regression's old failure path.
+		if is_instance_valid(g.cutscene):
+			g.cutscene.free()
+		g.cutscene = null
+		h.cancel_conversation()
+		if error != "":
+			break
+	session.free()
+	if error == "":
+		Story.ALL_CONVOS[id] = _fixture_convo()
+		error = _cinematic_guest(g, h, id)
+	for key in [id, opener_id]:
+		if borrowed.has(key):
+			Story.ALL_CONVOS[key] = borrowed[key]
+		else:
+			Story.ALL_CONVOS.erase(key)
+	if had_seen:
+		g.flags[seen_flag] = prior_seen
+	else:
+		g.flags.erase(seen_flag)
+	net.session = saved.session
+	net._session_active = saved.online
+	g.players = saved.players
+	g.cutscene = saved.cutscene
+	g.beat_broadcasting = saved.broadcasting
+	g.get_tree().paused = saved.paused
+	if error == "":
+		print("ok: online cinematics (busy, gathering, active/lone abort, accepted fade, same-class opener, no completion on refusal)")
+	return error
+
+
+static func _fixture_convo() -> Dictionary:
+	return {"cinematic": true, "start": "start",
+		"nodes": {"start": {"who": "Narrator", "text": "Online cinematic fixture."}}}
+
+
+## Read an accepted cinematic to its end: the dialogue sits over the art, the
+## last page starts the normal fade, and completion runs once after it.
+static func _finish_read(g: Game, h: Hud, art: Cutscene, completed: Array, label: String) -> String:
+	if not is_instance_valid(art) or not h.dialogue_active or completed[0] != 0:
+		return "accepted cinematic did not keep its dialogue and storybook: " + label
+	var error := ""
+	var done := h.dialogue_done
+	h.cancel_conversation()
+	var prior_tweens := g.get_tree().get_processed_tweens()
+	done.call()
+	if not is_instance_valid(art) or not art.finishing() or completed[0] != 0:
+		error = "accepted cinematic skipped its normal finishing fade: " + label
+	for tween: Tween in g.get_tree().get_processed_tweens():
+		if tween not in prior_tweens:
+			tween.custom_step(1.0)
+	if error == "" and (completed[0] != 1 or not art.is_queued_for_deletion()):
+		error = "accepted cinematic did not complete exactly once after its fade: " + label
+	if is_instance_valid(art):
+		art.free()
+	return error
+
+
+## The real guest route over a private ENet pair: net_session's own request,
+## deny, grant and release RPCs, plus its session-end cleanup. Both ends are
+## polled by hand, so no frame runs while NetworkManager is borrowed.
+static func _cinematic_guest(g: Game, h: Hud, id: String) -> String:
+	var net: Node = g.get_node("/root/NetworkManager")
+	var hr := WireRoot.new()
+	var gr := WireRoot.new()
+	hr.name = "OverlayHost"
+	gr.name = "OverlayGuest"
+	g.add_child(hr)
+	g.add_child(gr)
+	var ha := MultiplayerAPI.create_default_interface()
+	var ga := MultiplayerAPI.create_default_interface()
+	g.get_tree().set_multiplayer(ha, hr.get_path())
+	g.get_tree().set_multiplayer(ga, gr.get_path())
+	var host := ConvoSession.new()
+	var guest := ConvoSession.new()
+	host.name = "Session"
+	guest.name = "Session"
+	hr.add_child(host)
+	gr.add_child(guest)
+	host.game = g
+	guest.game = g
+	net.session = guest
+	var roster: Array[Player] = [g.local_player, g.local_player]
+	g.players = roster
+	var apis := [ha, ga]
+	var server := ENetMultiplayerPeer.new()
+	var client := ENetMultiplayerPeer.new()
+	var error := ""
+	if server.create_server(0, 2) != OK:
+		error = "guest cinematic ENet bind failed"
+	else:
+		ha.multiplayer_peer = server
+		if client.create_client("127.0.0.1", server.host.get_local_port()) != OK:
+			error = "guest cinematic ENet connect failed"
+		else:
+			ga.multiplayer_peer = client
+			if not _pump(apis, func() -> bool: return not ha.get_peers().is_empty() and not ga.get_peers().is_empty()):
+				error = "guest cinematic ENet handshake timed out"
+	if error == "":
+		hr.peers.append(ga.get_unique_id())
+		error = _guest_modes(g, h, id, host, guest, gr, apis)
+	if is_instance_valid(g.cutscene):
+		g.cutscene.free()
+	g.cutscene = null
+	h.cancel_conversation()
+	ha.multiplayer_peer = null
+	ga.multiplayer_peer = null
+	client.close()
+	server.close()
+	g.get_tree().set_multiplayer(null, hr.get_path())
+	g.get_tree().set_multiplayer(null, gr.get_path())
+	hr.free()
+	gr.free()
+	return error
+
+
+static func _guest_modes(g: Game, h: Hud, id: String, host: ConvoSession,
+		guest: ConvoSession, gr: WireRoot, apis: Array) -> String:
+	var pid: int = guest.multiplayer.get_unique_id()
+	# The two session-end cases run last: they take the guest end offline.
+	for mode in ["deny", "cancel", "finish", "end_active", "end_pending"]:
+		# The host itself holds the claim in "deny"; everything else is granted.
+		host._convo_claims = {id: 1} if mode == "deny" else {}
+		gr.online = true
+		guest.barks = 0
+		var completed := [0]
+		g.run_convo_id(id, func() -> void: completed[0] += 1)
+		var art: Cutscene = g.cutscene
+		var request: Dictionary = guest._pending_convo
+		var cleanup: Callable = request.get("on_abort", Callable())
+		var error := ""
+		if not is_instance_valid(art) or String(request.get("id", "")) != id or not cleanup.is_valid():
+			error = "the guest's request did not carry its storybook cleanup: " + mode
+		elif mode == "deny":
+			guest._rpc_convo_deny("unrelated_request")
+			if not is_instance_valid(art) or not h._cinematic_mode:
+				error = "an unrelated denial removed the waiting storybook"
+			guest.barks = 0
+			if error == "" and not _pump(apis, func() -> bool: return guest._pending_convo.is_empty()):
+				error = "the host's denial never reached the guest"
+			elif error == "" and guest.barks != 1:
+				error = "a denied guest did not hear the busy bark"
+		elif mode == "end_pending":
+			# The session ends before the host answers. Only the session's own
+			# convo cleanup is under test, so the game-side teardown is skipped.
+			guest.game = null
+			gr.online = false
+			guest._on_session_ended("overlay fixture")
+			guest.game = g
+		elif not _pump(apis, func() -> bool: return guest._active_convo_id == id):
+			error = "the host's grant never reached the guest: " + mode
+		elif int(host._convo_claims.get(id, 0)) != pid or not guest._active_convo_abort.is_valid():
+			error = "a granted guest convo lost its claim or storybook cleanup: " + mode
+		elif mode == "cancel":
+			guest.cancel_local_convo()
+			h.cancel_conversation()
+		elif mode == "end_active":
+			guest.game = null
+			gr.online = false
+			guest._on_session_ended("overlay fixture")
+			guest.game = g
+			# The convo already on screen keeps its art and finishes offline.
+			if not is_instance_valid(art) or not h._cinematic_mode or not h.dialogue_active:
+				error = "a session end removed the storybook under a running convo"
+			else:
+				error = _finish_read(g, h, art, completed, mode)
+		else:
+			error = _finish_read(g, h, art, completed, mode)
+		if error == "" and mode in ["cancel", "finish"] \
+				and not _pump(apis, func() -> bool: return host._convo_claims.is_empty()):
+			error = "the guest's release never freed the host claim: " + mode
+		if error == "" and (g.cutscene != null or h._cinematic_mode or h.cinematic_finishing() or g.input_overlay_up()):
+			error = "guest cinematic stranded its storybook or input gate: " + mode
+		if error == "" and completed[0] != (1 if mode in ["finish", "end_active"] else 0):
+			error = "guest cinematic ran its completion the wrong number of times: " + mode
+		if error == "" and g.get_tree().paused:
+			error = "guest cinematic paused the shared world: " + mode
+		if is_instance_valid(g.cutscene):
+			g.cutscene.free()
+		g.cutscene = null
+		h.cancel_conversation()
+		if error != "":
+			return error
+	return ""
+
+
+## Hand-poll both ends of the private pair until `done` holds (bounded).
+static func _pump(apis: Array, done: Callable) -> bool:
+	var deadline := Time.get_ticks_msec() + 3000
+	while not done.call():
+		if Time.get_ticks_msec() > deadline:
+			return false
+		for api: MultiplayerAPI in apis:
+			api.poll()
+		OS.delay_msec(1)
+	return true
 
 
 ## A win that lands inside the death beat ends it: the hero rises at once and

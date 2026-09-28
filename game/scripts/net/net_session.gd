@@ -168,6 +168,7 @@ var _pending_convo := {}
 ## MP-13: the convo id this machine is currently RUNNING — the claim to free
 ## when its overlay closes. "" = none.
 var _active_convo_id := ""
+var _active_convo_abort := Callable()
 ## MP-13 (§5.4): a chapter-critical beat starts only once every living party
 ## member stands in the initiator's room OR within this radius of it — a
 ## generous half-room gather so nobody misses the story (taste default,
@@ -696,6 +697,9 @@ func _on_peer_left(id: int) -> void:
 
 
 func _on_session_ended(reason: String) -> void:
+	# A pending request can never be answered now: retire its storybook. A
+	# convo already on screen keeps running offline and dissolves normally.
+	_abort_convo_art(false)
 	world_ready = false
 	if game != null:
 		# MP-16: restore a FALLEN guest to a safe, ALIVE state BEFORE the
@@ -1484,7 +1488,7 @@ func _rpc_player_hit(amount: float, dmg_type: String, attacker_id: int, heavy: b
 ## aura chill) — the owner applies the REAL state. Chill refreshes every
 ## FRAME while an aura holds (enemy.gd) — throttle it; its 0.35 s local
 ## duration bridges the gaps. One-shots (freeze/root) always pass.
-func host_player_status(pid: int, kind: String, a: float, b := 0.0) -> void:
+func host_player_status(pid: int, kind: String, a: float, b := 0.0, reason := "") -> void:
 	if not _net().is_online() or not multiplayer.is_server():
 		return
 	if not (pid in _net().peers):
@@ -1495,11 +1499,11 @@ func host_player_status(pid: int, kind: String, a: float, b := 0.0) -> void:
 		if now - int(_status_throttle.get(key, -9999)) < 150:
 			return
 		_status_throttle[key] = now
-	_rpc_player_status.rpc_id(pid, kind, a, b)
+	_rpc_player_status.rpc_id(pid, kind, a, b, reason)
 
 
 @rpc("authority", "call_remote", "reliable")
-func _rpc_player_status(kind: String, a: float, b: float) -> void:
+func _rpc_player_status(kind: String, a: float, b: float, reason := "") -> void:
 	if game == null or multiplayer.is_server():
 		return
 	var p: Node = game.local_player
@@ -1508,9 +1512,9 @@ func _rpc_player_status(kind: String, a: float, b: float) -> void:
 	var da := _finpos(a, Balance.NET_MAX_STATUS_DUR)
 	match kind:
 		"freeze":
-			p.apply_freeze(da)
+			p.apply_freeze(da, reason)
 		"root":
-			p.apply_root(da)
+			p.apply_root(da, reason)
 		"chill":
 			p.apply_chill(da, maxf(0.05, _finpos(b, Balance.NET_MAX_STATUS_DUR)))
 
@@ -2688,11 +2692,17 @@ func _rpc_vigil_state(chapter: String, phase: int, wave: int, hp: float, timer: 
 ## local overlay — the etiquette below only matters with company. Flag
 ## routing is independent (set_flag), so a lone host's story still syncs on
 ## the next join.
-func begin_convo(id: String, convo: Dictionary, on_done: Callable) -> void:
+func begin_convo(id: String, convo: Dictionary, on_done: Callable, on_abort := Callable()) -> void:
 	if game == null:
+		if on_abort.is_valid():
+			on_abort.call()
 		return
 	if game.players.size() <= 1:
-		game.run_convo(convo, on_done)
+		_active_convo_abort = on_abort
+		game.run_convo(convo, func() -> void:
+			_active_convo_abort = Callable()
+			if on_done.is_valid():
+				on_done.call())
 		return
 	var is_beat: bool = game._convo_is_beat(convo)
 	var me := multiplayer.get_unique_id()
@@ -2701,16 +2711,20 @@ func begin_convo(id: String, convo: Dictionary, on_done: Callable) -> void:
 	if multiplayer.is_server() and _convo_claims.has(id) \
 			and int(_convo_claims[id]) != me:
 		_busy_bark()
+		if on_abort.is_valid():
+			on_abort.call()
 		return
 	# Beats wait for the party to gather (initiator-local — every machine
 	# sees every player's position through the movement sync).
 	if is_beat and not _party_gathered():
 		_beat_waiting_bark()
+		if on_abort.is_valid():
+			on_abort.call()
 		return
 	if multiplayer.is_server():
-		_grant_convo(id, me, convo, on_done, is_beat)
+		_grant_convo(id, me, convo, on_done, is_beat, on_abort)
 	else:
-		_pending_convo = {"id": id, "convo": convo, "on_done": on_done, "is_beat": is_beat}
+		_pending_convo = {"id": id, "convo": convo, "on_done": on_done, "is_beat": is_beat, "on_abort": on_abort}
 		_rpc_convo_request.rpc_id(1, id, is_beat)
 
 
@@ -2733,11 +2747,11 @@ func _rpc_convo_request(id: String, is_beat: bool) -> void:
 
 
 ## HOST self-grant (the host is the initiator): no round trip.
-func _grant_convo(id: String, pid: int, convo: Dictionary, on_done: Callable, is_beat: bool) -> void:
+func _grant_convo(id: String, pid: int, convo: Dictionary, on_done: Callable, is_beat: bool, on_abort := Callable()) -> void:
 	_convo_claims[id] = pid
 	if is_beat:
 		_begin_beat_spectate(id, pid)
-	_execute_convo(id, convo, on_done, is_beat)
+	_execute_convo(id, convo, on_done, is_beat, on_abort)
 
 
 ## GUEST: the host granted our claim — run the convo locally now.
@@ -2747,29 +2761,35 @@ func _rpc_convo_grant(id: String) -> void:
 		return
 	var convo: Dictionary = _pending_convo.get("convo", {})
 	var on_done: Callable = _pending_convo.get("on_done", Callable())
+	var on_abort: Callable = _pending_convo.get("on_abort", Callable())
 	var is_beat: bool = bool(_pending_convo.get("is_beat", false))
 	_pending_convo = {}
-	_execute_convo(id, convo, on_done, is_beat)
+	_execute_convo(id, convo, on_done, is_beat, on_abort)
 
 
 ## GUEST: the NPC was already taken — a local busy bark, no dialogue.
 @rpc("authority", "call_remote", "reliable")
 func _rpc_convo_deny(id: String) -> void:
 	if String(_pending_convo.get("id", "")) == id:
+		var on_abort: Callable = _pending_convo.get("on_abort", Callable())
 		_pending_convo = {}
+		if on_abort.is_valid():
+			on_abort.call()
 	_busy_bark()
 
 
 ## Run the claimed convo on THIS machine (host self, or a granted guest). The
 ## bound end handler frees the claim and closes the mirror when it ends.
-func _execute_convo(id: String, convo: Dictionary, on_done: Callable, is_beat: bool) -> void:
+func _execute_convo(id: String, convo: Dictionary, on_done: Callable, is_beat: bool, on_abort := Callable()) -> void:
 	_active_convo_id = id
+	_active_convo_abort = on_abort
 	if is_beat:
 		game.beat_broadcasting = true
 	game.run_convo(convo, _on_convo_ended.bind(id, is_beat, on_done))
 
 
 func _on_convo_ended(id: String, is_beat: bool, on_done: Callable) -> void:
+	_active_convo_abort = Callable()
 	if is_beat and game != null:
 		game.beat_broadcasting = false
 		_rpc_beat_end.rpc()
@@ -2792,6 +2812,7 @@ func _on_convo_ended(id: String, is_beat: bool, on_done: Callable) -> void:
 func cancel_local_convo() -> void:
 	var active_id := _active_convo_id
 	var pending_id := String(_pending_convo.get("id", ""))
+	_abort_convo_art()
 	_pending_convo = {}
 	if game != null and game.beat_broadcasting:
 		game.beat_broadcasting = false
@@ -2803,6 +2824,19 @@ func cancel_local_convo() -> void:
 		_release_convo(active_id)
 	if pending_id != "" and pending_id != active_id:
 		_release_convo(pending_id)
+
+
+## Retire only presentation cleanup, never the old quest completion callback.
+## `include_active` false spares the convo already on screen (session end).
+func _abort_convo_art(include_active := true) -> void:
+	var active := _active_convo_abort
+	var pending: Callable = _pending_convo.get("on_abort", Callable())
+	_active_convo_abort = Callable()
+	_pending_convo.erase("on_abort")
+	if include_active and active.is_valid():
+		active.call()
+	if pending.is_valid():
+		pending.call()
 
 
 ## Free a claim when its overlay closes (host erases; guest tells the host).

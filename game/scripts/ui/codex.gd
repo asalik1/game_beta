@@ -1890,6 +1890,10 @@ static func _status_effects() -> Array:
 			"You can't move or cast until you thaw."]],
 		["Rooted", Color(0.5, 0.8, 0.6), [
 			"You can't move, but you can still cast."]],
+		["Asleep", Color(0.6, 0.85, 1.0), [
+			"You can't move or cast until you wake up."]],
+		["Staggered", Color(0.5, 0.8, 0.6), [
+			"You can't move while you recover, but you can still cast."]],
 		["Chilled", Color(0.8, 0.92, 1.0), [
 			"You move slower. A Frostbound monster's aura slows you by %d%%, and the chill keeps refreshing while you stay inside it." % int(round((1.0 - Balance.MOB_FROST_SLOW) * 100.0)),
 			"A bursting Rimeheart slows you by %d%% for %s seconds. If both catch you, the stronger slow wins." % [

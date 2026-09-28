@@ -1188,10 +1188,13 @@ const BUFF_ICONS := {
 	"goldrush": "buff_goldrush",
 	"storm": "buff_storm",
 	"damp": "buff_damp",
-	# Impairments borrow talent art no other chip uses (mage Permafrost's ice
-	# block, archer Second Breath's vine swirl, mage Windborne's gale), so
-	# they can never pass for Ward, Guard or Damp. The test enforces it.
+	# Impairments borrow 64px talent art no other chip uses (mage Permafrost's
+	# ice block, archer Second Breath's vine swirl, mage Windborne's gale,
+	# assassin Phantom's dreaming face, archer Piercer's shattered strike), so
+	# they can never pass for Ward, Guard or Damp, nor for an ability button
+	# on the bar just below. The test enforces it.
 	"frozen": "talent_m31", "rooted": "talent_a11", "chilled": "talent_m32",
+	"asleep": "talent_s31", "staggered": "talent_a22",
 }
 
 ## A pooled row of active-effect chips sitting just above the ability
@@ -1410,10 +1413,20 @@ func _active_buffs() -> Array:
 	# chips and ahead of every timed buff, so even a full row always shows
 	# why we can't move, while a flickering chill never shoves the
 	# persistent chips around.
-	if p.frozen_time > 0.0: out.append({"id": "frozen", "glyph": "ab_snow", "color": Color(0.6, 0.85, 1.0), "t": p.frozen_time,
-		"tip": "Frozen: you can't move or cast until you thaw."})
-	if p.rooted_time > 0.0: out.append({"id": "rooted", "glyph": "ab_chain", "color": Color(0.5, 0.8, 0.6), "t": p.rooted_time,
-		"tip": "Rooted: you can't move, but you can still cast."})
+	if p.frozen_time > 0.0:
+		if p.freeze_reason == "asleep":
+			out.append({"id": "asleep", "glyph": "ab_snow", "color": Color(0.6, 0.85, 1.0), "t": p.frozen_time,
+				"tip": "Asleep: you can't move or cast until you wake up."})
+		else:
+			out.append({"id": "frozen", "glyph": "ab_snow", "color": Color(0.6, 0.85, 1.0), "t": p.frozen_time,
+				"tip": "Frozen: you can't move or cast until you thaw."})
+	if p.rooted_time > 0.0:
+		if p.root_reason == "staggered":
+			out.append({"id": "staggered", "glyph": "ab_chain", "color": Color(0.5, 0.8, 0.6), "t": p.rooted_time,
+				"tip": "Staggered: you can't move while you recover, but you can still cast."})
+		else:
+			out.append({"id": "rooted", "glyph": "ab_chain", "color": Color(0.5, 0.8, 0.6), "t": p.rooted_time,
+				"tip": "Rooted: you can't move, but you can still cast."})
 	if p.chill_time > 0.0: out.append({"id": "chilled", "glyph": "ab_whirl", "color": Color(0.8, 0.92, 1.0), "t": p.chill_time,
 		"tip": "Chilled: move speed is reduced by %d%%. Frost auras refresh the timer while you're inside." % int(round((1.0 - p.chill_mult) * 100.0))})
 	# Timed buffs.
