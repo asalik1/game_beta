@@ -568,6 +568,8 @@ func _spawn_remote(pid: int, block: Dictionary) -> void:
 		nm = nm.substr(0, 64)
 	p.set_meta("net_name", nm)
 	Appearance.apply_remote(game, pid, block.get("appearance"))
+	if game.hud != null:
+		game.hud.discard_announcement(_departure_notice(String(block.get("name", ""))))
 
 
 ## The character block this machine announces to the session (MP-08):
@@ -640,6 +642,10 @@ func _rpc_appearance(pid: int, raw: Variant) -> void:
 
 # -------------------------------------------------------- peer lifecycle ---
 
+static func _departure_notice(who: String) -> String:
+	return "%s left the party" % (who if who != "" else "A hero")
+
+
 func _on_peer_left(id: int) -> void:
 	# MP-16: name the leaver for the party toast BEFORE the roster erases it.
 	var gone_name := ""
@@ -685,9 +691,8 @@ func _on_peer_left(id: int) -> void:
 	# remaining machine — host and sibling guests alike.
 	if game != null and bool(game.play_started) \
 			and game.local_player != null and is_instance_valid(game.local_player):
-		var who := gone_name if gone_name != "" else "A hero"
 		game.spawn_text(game.local_player.global_position + Vector2(0, -92),
-			"%s left the party" % who, Color(1.0, 0.8, 0.55), 2.5)
+			_departure_notice(gone_name), Color(1.0, 0.8, 0.55), 2.5)
 
 
 func _on_session_ended(reason: String) -> void:

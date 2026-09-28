@@ -1575,12 +1575,14 @@ func announce(text: String, color: Color, hold := 0.0, kind := "") -> void:
 	if kind == "":
 		kind = announce_kind(text)
 	log_event(text, color, kind)
+	_drop_stale_announcements()
 	if is_instance_valid(_ann_active) and String(_ann_active.get_meta("message", "")) == text:
 		return
 	for pending in _ann_queue:
 		if pending["text"] == text:
 			return
-	_ann_queue.append({"text": text, "color": color, "hold": hold, "kind": kind})
+	var token := _announcement_run_token() if kind != "achievement" else ""
+	_ann_queue.append({"text": text, "color": color, "hold": hold, "kind": kind, "run_token": token})
 	while _ann_queue.size() > ANN_QUEUE_MAX:
 		# Keep earned achievements ahead of incidental overflow; every message
 		# still has its event-log entry and every feat remains in the Codex.
@@ -1596,6 +1598,7 @@ func announce(text: String, color: Color, hold := 0.0, kind := "") -> void:
 ## One plaque, one reading position. Reading time pauses behind a menu,
 ## dialogue or arrival title; simultaneous events remain available in the log.
 func _tick_announcements() -> void:
+	_drop_stale_announcements()
 	var readable := game.play_started and game.state == Game.ST_PLAYING \
 		and not game.input_overlay_up() and title_label.modulate.a < 0.05 \
 		and subtitle_label.modulate.a < 0.05 \
@@ -1611,10 +1614,56 @@ func _tick_announcements() -> void:
 				_ann_tween.pause()
 	elif readable and not _ann_queue.is_empty():
 		var next: Dictionary = _ann_queue.pop_front()
-		_show_announcement(next["text"], next["color"], next["hold"], next["kind"])
+		_show_announcement(next["text"], next["color"], next["hold"], next["kind"], String(next.get("run_token", "")))
 
 
-func _show_announcement(text: String, color: Color, hold: float, kind: String) -> void:
+## Retract transient presentation only; the event feed retains the history.
+func discard_announcement(text: String) -> void:
+	for i in range(_ann_queue.size() - 1, -1, -1):
+		if String(_ann_queue[i].text) == text:
+			_ann_queue.remove_at(i)
+	if is_instance_valid(_ann_active) and String(_ann_active.get_meta("message", "")) == text:
+		_retire_announcement()
+
+
+func _announcement_run_token() -> String:
+	if game.endgame_active and is_instance_valid(game.endgame):
+		return game.endgame.run_token()
+	return ""
+
+
+func _drop_stale_announcements() -> void:
+	# Runs every HUD frame: resolve the controller token only while a
+	# trial-scoped notice is actually pending or on screen.
+	var scoped := is_instance_valid(_ann_active) and String(_ann_active.get_meta("run_token", "")) != ""
+	for pending in _ann_queue:
+		if scoped: break
+		scoped = String(pending.get("run_token", "")) != ""
+	if not scoped:
+		return
+	var current := _announcement_run_token()
+	for i in range(_ann_queue.size() - 1, -1, -1):
+		var token := String(_ann_queue[i].get("run_token", ""))
+		if token != "" and token != current:
+			_ann_queue.remove_at(i)
+	if is_instance_valid(_ann_active):
+		var token := String(_ann_active.get_meta("run_token", ""))
+		if token != "" and token != current:
+			_retire_announcement()
+
+
+func _retire_announcement() -> void:
+	if _ann_tween != null and _ann_tween.is_valid():
+		_ann_tween.kill()
+	if is_instance_valid(_ann_active):
+		_ann_active.hide()
+		_ann_active.queue_free()
+	_ann_active = null
+	_ann_tween = null
+	_ann_stack = 0
+
+
+func _show_announcement(text: String, color: Color, hold: float, kind: String, run_token := "") -> void:
 	# A long line ("X UNLOCKED — replay any chapter at the new tier") splits at
 	# its dash: the loud part is the title, the rest the sub-line.
 	var title := text
@@ -1650,6 +1699,7 @@ func _show_announcement(text: String, color: Color, hold: float, kind: String) -
 	var plaque := Panel.new()
 	plaque.name = "AnnouncementPlaque"
 	plaque.set_meta("message", text)
+	plaque.set_meta("run_token", run_token)
 	_ann_active = plaque
 	plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	plaque.clip_contents = true

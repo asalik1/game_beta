@@ -13,15 +13,19 @@ static func run(t: Node) -> String:
 	var old_xp := g.player.xp
 	var run_xp := g.run_xp
 	var capped := g.xp_capped_noted
+	var stack := h._ann_stack
 	h._ann_queue = []
 	h._ann_active = null
 	h._ann_tween = null
 	h._log_lines = []
 	g.play_started = false
 	h.dialogue_active = true
-	var error := _checks(g)
+	var error := _lifecycle(g)
+	if error == "":
+		error = _checks(g)
 	if error == "":
 		error = _readability(g)
+	h._retire_announcement()
 	for row in h._log_lines:
 		if is_instance_valid(row):
 			var tw: Tween = row.get_meta("tween", null)
@@ -32,6 +36,7 @@ static func run(t: Node) -> String:
 	h._ann_queue = queue
 	h._ann_active = active
 	h._ann_tween = motion
+	h._ann_stack = stack
 	g.play_started = started
 	h.dialogue_active = dialogue
 	g.player.xp = old_xp
@@ -72,6 +77,229 @@ static func _checks(g: Game) -> String:
 	if g.player.xp != amount_before or h._log_lines.size() != feed_before:
 		return "nonpositive XP changed progress or produced a reward popup"
 	return ""
+
+
+## Remote shells for the real leave/rejoin path: two originals, then each
+## name rejoining under a fresh peer id (as a real reconnect does).
+const REJOIN_PEERS := [9101, 9102, 9103, 9104]
+const REJOIN_NAMES := ["QA rejoiner", "QA wanderer"]
+
+
+## Loan only presentation/controller state, restoring even on assertion failure.
+## No world rebuild or rewards: the live trial rig covers actual start/travel.
+static func _lifecycle(g: Game) -> String:
+	var h := g.hud
+	var saved := {"endgame": g.endgame, "endgame_active": g.endgame_active,
+		"state": g.state, "started": g.play_started, "dialogue": h.dialogue_active,
+		"choices": h.choices_active, "chat": h.chat_active, "menu": g.menus.root,
+		"finale": g.chapter_finale.active,
+		"title": h.title_label.modulate, "subtitle": h.subtitle_label.modulate,
+		"boss": h.boss_box.visible, "cast": h.boss_cast_readout.visible}
+	var session: Node = g.net_session()
+	var saved_session := {}
+	if session != null:
+		saved_session = {"peers": session.peer_chars.duplicate(true),
+			"lobby": session.lobby_chars.duplicate(true), "wipe": session._wipe_fired}
+	var trial := preload("res://scripts/endgame.gd").new()
+	trial.game = g
+	g.add_child(trial)
+	g.endgame = trial
+	g.endgame_active = true
+	trial.active = true
+	trial.mode = "crucible"
+	trial._run_world_id = g.world.get_instance_id()
+	# A second, never-parented controller for the replaced-owner case.
+	var other := preload("res://scripts/endgame.gd").new()
+	other.game = g
+	h.choices_active = false
+	h.chat_active = false
+	g.menus.root = null
+	g.chapter_finale.active = false
+	var error := _lifecycle_checks(g, trial, other)
+	if error == "":
+		error = _rejoin_checks(g, session)
+	h._retire_announcement()
+	h._ann_queue = []
+	for pid in REJOIN_PEERS:
+		g.unregister_player(pid)
+	if session != null:
+		session.peer_chars = saved_session.peers
+		session.lobby_chars = saved_session.lobby
+		session._wipe_fired = saved_session.wipe
+	g.endgame = saved.endgame
+	g.endgame_active = saved.endgame_active
+	g.state = saved.state
+	g.play_started = saved.started
+	h.dialogue_active = saved.dialogue
+	h.choices_active = saved.choices
+	h.chat_active = saved.chat
+	g.menus.root = saved.menu
+	g.chapter_finale.active = saved.finale
+	h.title_label.modulate = saved.title
+	h.subtitle_label.modulate = saved.subtitle
+	h.boss_box.visible = saved.boss
+	h.boss_cast_readout.visible = saved.cast
+	trial.free()
+	other.free()
+	if error == "":
+		print("ok: trial notice run/world/controller expiry with feed retained, campaign/achievement retention, and real session leave/rejoin departure retraction")
+	return error
+
+
+static func _lifecycle_checks(g: Game, trial: Node, other: Node) -> String:
+	var h := g.hud
+	# Same copy in a new run must replace stale copy BEFORE duplicate suppression.
+	h.announce("Trial queued", Color.WHITE)
+	trial._run_generation += 1
+	h.announce("Trial queued", Color.WHITE)
+	if h._ann_queue.size() != 1 or String(h._ann_queue[0].get("run_token", "")) != trial.run_token():
+		return "same-mode restart retained or suppressed the wrong run's notice"
+	trial.active = false
+	var feed := h._log_lines.duplicate()
+	h._tick_announcements()
+	if not h._ann_queue.is_empty(): return "settled trial retained queued notice behind overlay"
+	if h._log_lines != feed or not _feed_has(h, "Trial queued"):
+		return "settled trial expiry changed the event feed"
+	trial.active = true
+	h.announce("World queued", Color.WHITE)
+	trial._run_world_id = 0
+	feed = h._log_lines.duplicate()
+	h._tick_announcements()
+	if not h._ann_queue.is_empty(): return "replaced arena retained queued notice"
+	if h._log_lines != feed or not _feed_has(h, "World queued"):
+		return "replaced arena expiry changed the event feed"
+	trial._run_world_id = g.world.get_instance_id()
+	h.announce("Owner queued", Color.WHITE)
+	# Same mode, run and arena under a different controller: only the owner
+	# identity differs, so this pins the controller part of the token.
+	other.mode = trial.mode
+	other._run_generation = trial._run_generation
+	other._run_world_id = trial._run_world_id
+	other.active = true
+	g.endgame = other
+	if h._ann_queue.size() != 1 or other.run_token() == "":
+		return "replacement controller precondition: live token or queued owner notice missing"
+	feed = h._log_lines.duplicate()
+	h._tick_announcements()
+	if not h._ann_queue.is_empty(): return "replaced controller retained queued notice"
+	if h._log_lines != feed or not _feed_has(h, "Owner queued"):
+		return "replaced controller expiry changed the event feed"
+	other.active = false
+	g.endgame = trial
+	# A real active tween hidden by results must be killed, not later resumed.
+	g.play_started = true
+	g.state = Game.ST_PLAYING
+	h.dialogue_active = false
+	h.title_label.modulate.a = 0.0
+	h.subtitle_label.modulate.a = 0.0
+	h.boss_box.hide()
+	h.boss_cast_readout.hide()
+	h.announce("THE CRUCIBLE CONQUERED", Color.WHITE)
+	if not is_instance_valid(h._ann_active): return "controlled trial plaque did not activate"
+	var old_motion := h._ann_tween
+	var old_plaque := h._ann_active
+	g.state = Game.ST_VICTORY
+	h._tick_announcements()
+	trial.active = false
+	feed = h._log_lines.duplicate()
+	h._tick_announcements()
+	# kill() stops immediately; is_valid() stays true until the tree's next tick.
+	if is_instance_valid(h._ann_active) or old_motion.is_running() or h._ann_tween != null \
+			or h._ann_stack != 0 or old_plaque.visible or not old_plaque.is_queued_for_deletion():
+		return "settled trial left paused active plaque or tween alive"
+	if h._log_lines != feed or not _feed_has(h, "THE CRUCIBLE CONQUERED"):
+		return "retiring the settled trial plaque changed the event feed"
+	g.endgame_active = false
+	h.announce("Campaign tier unlocked", Color.WHITE)
+	g.endgame_active = true
+	trial.active = true
+	h.announce("Earned trial feat", Color.WHITE, 0.0, "achievement")
+	h.announce("Expired trial copy", Color.WHITE)
+	trial._run_generation += 1
+	h._tick_announcements()
+	if h._ann_queue.size() != 2: return "run change lost campaign/achievement notice or retained trial copy"
+	g.state = Game.ST_PLAYING
+	h._tick_announcements()
+	if not is_instance_valid(h._ann_active) or h._ann_active.get_meta("message") != "Campaign tier unlocked":
+		return "campaign notice did not survive victory and trial switch"
+	h.discard_announcement("Campaign tier unlocked")
+	h._tick_announcements()
+	if not is_instance_valid(h._ann_active) or h._ann_active.get_meta("message") != "Earned trial feat":
+		return "achievement notice did not survive trial switch"
+	h.discard_announcement("Earned trial feat")
+	g.endgame_active = false
+	h.boss_box.show()
+	h.announce("Ally left the party", Color.WHITE)
+	h.announce("Other ally left the party", Color.WHITE)
+	feed = h._log_lines.duplicate()
+	h.discard_announcement("Ally left the party")
+	if h._ann_queue.size() != 1 or h._ann_queue[0].text != "Other ally left the party" or h._log_lines != feed:
+		return "queued departure retraction changed another notice or its event history"
+	h.boss_box.hide()
+	h._tick_announcements()
+	if not is_instance_valid(h._ann_active) or h._ann_active.get_meta("message") != "Other ally left the party":
+		return "departure without rejoin failed to appear after boss gate"
+	old_motion = h._ann_tween
+	old_plaque = h._ann_active
+	h.discard_announcement("Other ally left the party")
+	if is_instance_valid(h._ann_active) or old_motion.is_running() or h._ann_tween != null \
+			or old_plaque.visible or not old_plaque.is_queued_for_deletion() or h._log_lines != feed:
+		return "active departure retraction retained its tween or removed history"
+	return ""
+
+
+## The shipped call sites on the real (offline) session: _on_peer_left posts
+## the departure and _spawn_remote retracts it when the same name rejoins,
+## queued or on screen, while the feed keeps the line. Another ally's
+## departure is the negative control. Shells and roster restore in the caller.
+static func _rejoin_checks(g: Game, session: Node) -> String:
+	var h := g.hud
+	if session == null or session.game != g:
+		return "no production session bound to this game"
+	g.state = Game.ST_VICTORY  # unreadable; also keeps the offline wipe census idle
+	for i in REJOIN_NAMES.size():
+		var block := {"name": REJOIN_NAMES[i], "cls": "warrior", "level": 1}
+		session._spawn_remote(REJOIN_PEERS[i], block)
+		session.peer_chars[REJOIN_PEERS[i]] = block
+	for i in REJOIN_NAMES.size():
+		session._on_peer_left(REJOIN_PEERS[i])
+	var left := "QA rejoiner left the party"
+	var stays := "QA wanderer left the party"
+	if not _has_notice(h, left) or not _has_notice(h, stays) \
+			or not _feed_has(h, left) or not _feed_has(h, stays):
+		return "real peer departures did not queue and log their party notices"
+	var feed := h._log_lines.duplicate()
+	session._spawn_remote(REJOIN_PEERS[2], {"name": REJOIN_NAMES[0], "cls": "warrior", "level": 1})
+	if _has_notice(h, left):
+		return "real rejoin left its departure notice queued"
+	if not _has_notice(h, stays) or h._log_lines != feed:
+		return "rejoin retracted another ally's departure or changed the event feed"
+	g.state = Game.ST_PLAYING
+	h._tick_announcements()
+	if not is_instance_valid(h._ann_active) or h._ann_active.get_meta("message") != stays:
+		return "departure without a rejoin did not appear once readable"
+	var motion := h._ann_tween
+	var plaque := h._ann_active
+	session._spawn_remote(REJOIN_PEERS[3], {"name": REJOIN_NAMES[1], "cls": "warrior", "level": 1})
+	if is_instance_valid(h._ann_active) or motion.is_running() or plaque.visible \
+			or not plaque.is_queued_for_deletion() or h._log_lines != feed:
+		return "real rejoin left the showing departure plaque up or changed the event feed"
+	return ""
+
+
+static func _has_notice(h: Node, text: String) -> bool:
+	if is_instance_valid(h._ann_active) and h._ann_active.get_meta("message", "") == text:
+		return true
+	for notice in h._ann_queue:
+		if notice.text == text: return true
+	return false
+
+
+static func _feed_has(h: Node, text: String) -> bool:
+	for row in h._log_lines:
+		if is_instance_valid(row) and (row.get_meta("label") as Label).text == text:
+			return true
+	return false
 
 
 ## One synchronous loan; all early check failures return through this restore.

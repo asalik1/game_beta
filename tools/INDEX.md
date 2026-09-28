@@ -29,7 +29,9 @@ offscreen directions and touch-right. Independent native envelopes check
 viewport/HUD/name/prompt clearance, exact status/progress and fixture restoration.
 The four offscreen views also check each painted ally arrow against the viewport,
 the native HUD (portrait included) and the other arrows.
-It emits 33 originals and 636 checks. Two additional views compare separated
+It emits 33 originals and 639 checks. The departure phase then rejoins the
+same name and checks that the host and both sibling guests take back the held
+"left the party" plaque while their event feeds keep it. Two additional views compare separated
 and colocated transported allies; independent name envelopes check exact identity,
 viewport/HUD/pairwise clearance and unobstructed authored anchors. Clear-center temporarily hides world names
 to prove the unobstructed authored anchor; normal center keeps identities visible. Add

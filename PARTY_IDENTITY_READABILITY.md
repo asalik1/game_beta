@@ -25,8 +25,10 @@ The subsequent announcement-wrapping checkpoint sizes the actual parented
 Labels before their first draw, so the complete 64-character departure notice
 fits its plaque. Its separate strict reward fixtures also cover unbroken and
 mixed detail text and title/detail separation. The compact feed can still
-truncate before the consequence, and queued departure notices can remain after
-reconnection; those are separate from text containment. See WARD_VIGILS.md,
+truncate before the consequence; that is separate from text containment. A
+same-name rejoin now takes back a queued or showing "left the party" plaque on
+the host and on sibling guests, while the event feed keeps the line (live
+`--party-names` departure phase and the quick-tier reward feedback check). See WARD_VIGILS.md,
 “Complete long announcement text,” and
 `build/qa/session-sept20/announcement-wrap/checkpoint-validation.json` for the
 new source-bound validation and its limits. The checkpoint-19 native
@@ -50,7 +52,7 @@ Desktop compile/quick/full, mobile scoped sync/import/compile/strict quick and a
 
 Checkpoint 22 places visible ally names before downed/revive status, sharing the same final painted HUD reservations. Names retain their full identity, native ellipsis, tint and opacity; their complete outlined boxes move to the nearest free position clear of the fixed HUD, selected prompt and earlier names. The status pass then reserves around those final name positions. Every draw starts from a fresh world anchor, so displacement cannot accumulate. Unobstructed interior names retain their authored position. Existing offscreen eligibility and party arrows remain in use.
 
-The bounded solver has an explicit no-fit fallback; this is not a universal overlap guarantee for arbitrary viewport sizes or crowds. Labels can move away from the actor to clear an obstruction. In the touch-right fixture, the downed text can move above the minimap while its name remains below it, and revive status can move to the bottom edge; grouping actor, name and status is unresolved. These controlled views establish text readability, not unambiguous body/name association during ordinary crowded combat. Controller access to the full-name reader, compact-feed truncation, queued departure semantics and arrows overlapping HUD remain separate issues.
+The bounded solver has an explicit no-fit fallback; this is not a universal overlap guarantee for arbitrary viewport sizes or crowds. Labels can move away from the actor to clear an obstruction. In the touch-right fixture, the downed text can move above the minimap while its name remains below it, and revive status can move to the bottom edge; grouping actor, name and status is unresolved. These controlled views establish text readability, not unambiguous body/name association during ordinary crowded combat. Controller access to the full-name reader, compact-feed truncation and arrows overlapping HUD remain separate issues (queued departure notices are now taken back on rejoin; see above).
 
 Actual Claude supplied the production implementation and actual DeepSeek supplied the expanded QA, with raw requests/results in `party-overlays-candidate/` and `party-overlays-qa-candidate/`. Independent review corrected authored-anchor details, QA placeholders, restoration and transport geometry before integration. No protocol, economy, combat, art or identity value changed.
 
