@@ -4893,6 +4893,12 @@ func _test_mob_strip_anchor_consistency() -> void:
 ## wall decals (Lane 2), animated scenery props (Lane 3). Each is verified at
 ## the seam so a regression that re-freezes an asset lane fails the gate.
 func _test_asset_seams() -> void:
+	var illumination_error := preload("res://scripts/tests/test_prop_illumination.gd").run(self)
+	if illumination_error != "":
+		return _fail(illumination_error)
+	illumination_error = preload("res://scripts/tests/test_prop_illumination.gd").run_world(game)
+	if illumination_error != "":
+		return _fail(illumination_error)
 	# --- Lane 1: ground tile seam -------------------------------------
 	# An absent override leaves the procedural floor untouched...
 	if not Art._ground_tileset("no_such_ground_zzz").is_empty():

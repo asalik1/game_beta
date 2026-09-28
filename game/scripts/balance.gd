@@ -4112,6 +4112,15 @@ const DOOR_TORCH_HEIGHT := 64.0
 const DOOR_TORCH_PAIR_OFFSET := 26.0
 const DOOR_TORCH_GROUND_CLEARANCE := 6.0
 const DOOR_TORCH_FOOT_BAND := 0.25
+const DOOR_TORCH_HALO_SCALE := 2.5
+
+# One restrained envelope for prop illumination. A 4% energy dip leaves
+# headroom for authored strip luminance and HDR bloom under the 12% contract.
+const PROP_LIGHT_LOW := 0.96
+const PROP_LIGHT_PERIOD := 2.4  # static sources; animated sources use their strip duration
+# Hazard pools retain their separate, existing telegraph rhythm.
+const HAZARD_GLOW_PULSE_LOW := 0.72
+const HAZARD_GLOW_PULSE_PERIOD := Vector2(1.1, 1.6)
 
 # Shared field/Inventory potion eligibility (preserves held-input thresholds).
 const POTION_DRINK_COOLDOWN := 0.6

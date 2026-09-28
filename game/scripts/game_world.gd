@@ -209,6 +209,11 @@ func _seal_portal(body: Node2D) -> void:
 	for child in body.get_children():
 		if child.has_meta("cast_shadow"):
 			continue
+		# A lit strip is driven by its shared light clock (prop_illumination.gd),
+		# not by its own playback: freeze that clock too or the gate keeps cycling.
+		var clock = child.get_node_or_null("Illumination")
+		if clock != null:
+			clock.freeze()
 		if child is AnimatedSprite2D:
 			(child as AnimatedSprite2D).stop()
 			(child as AnimatedSprite2D).frame = 0
@@ -3653,6 +3658,7 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 
 	# Extra composited parts (a tower beside a gate, a roof over a wall). Each
 	# is a fraction of the base width, offset in world px from the anchor.
+	var part_visuals: Array[Node2D] = []
 	for part in def.get("parts", []):
 		var ps := _structure_sprite(String(part["sprite"]),
 			target_w * float(part.get("scale", 1.0)), part.get("wind", false))
@@ -3680,6 +3686,7 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 			ps.position = poff
 			ps.z_index = pz
 		body.add_child(ps)
+		part_visuals.append(ps)
 
 	# Footprint collider(s): a composite of rects/circles. Default = one rect
 	# spanning ~62% of the base width, matching _add_building.
@@ -3727,12 +3734,23 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 			lt.texture_scale = float(d.get("light_scale", 0.7))
 			lt.position = d.get("off", Vector2.ZERO)
 			body.add_child(lt)
+			# The clock sits on the art that actually burns: the decal itself, or
+			# for a bare glow the base (or the named part the glow hangs over).
+			var light_source: Node2D = ds
+			if d.has("source_part"):
+				light_source = part_visuals[int(d["source_part"])]
+			elif String(d["sprite"]) == "glow":
+				light_source = base_spr
+			var illumination := preload("res://scripts/prop_illumination.gd").attach(light_source, pos + lt.position)
+			illumination.bind(lt)
+			if String(d["sprite"]) == "glow":
+				illumination.bind(ds)
 			# ...and a floor pool the light can't make on a dark floor (see
 			# _floor_glow): the torch's warmth lands on the ground around it.
 			if szi >= 0:
 				var g := _floor_glow(body, lt.position + STRUCT_GLOW_DROP, lcol,
 					STRUCT_GLOW_RADIUS * lt.texture_scale,
-					STRUCT_GLOW_STRENGTH * float(d.get("light_energy", 0.8)), szi)
+					STRUCT_GLOW_STRENGTH * float(d.get("light_energy", 0.8)), szi, true, illumination)
 				g.z_as_relative = false
 				g.z_index = -8   # over the floor, under the structure's own sprites
 
@@ -3747,10 +3765,13 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 		lt.texture_scale = float(light.get("scale", 0.7))
 		lt.position = light.get("off", Vector2.ZERO)
 		body.add_child(lt)
+		var light_source: Node2D = part_visuals[int(light["source_part"])] if light.has("source_part") else base_spr
+		var illumination := preload("res://scripts/prop_illumination.gd").attach(light_source, pos + lt.position)
+		illumination.bind(lt)
 		if szi >= 0:
 			var g2 := _floor_glow(body, lt.position + STRUCT_GLOW_DROP, lt.color,
 				STRUCT_GLOW_RADIUS * lt.texture_scale,
-				STRUCT_GLOW_STRENGTH * float(light.get("energy", 0.8)), szi)
+				STRUCT_GLOW_STRENGTH * float(light.get("energy", 0.8)), szi, true, illumination)
 			g2.z_as_relative = false
 			g2.z_index = -8
 
@@ -4897,8 +4918,6 @@ const HAZARD_STRIP_OFFSET := {
 # (The glow texture peaks at 0.55 alpha and falls off squared, so an additive
 # pool needs strength well above 1 to be seen at the pool's rim.)
 const GLOW_TEX_PX := 48.0                       # Art "glow" texture edge
-const GLOW_PULSE_LOW := 0.72                    # pulse floor as a fraction of strength
-const GLOW_PULSE_PERIOD := Vector2(1.1, 1.6)    # seconds per half-pulse (random in band)
 const STRUCT_GLOW_RADIUS := 120.0               # px at light_scale 1 (structure decal / socket lights)
 const STRUCT_GLOW_STRENGTH := 0.9               # per unit light energy
 const STRUCT_GLOW_DROP := Vector2(0, 10.0)      # pool sits a little below the flame
@@ -4928,7 +4947,7 @@ func _zone_light_mult(zi: int) -> float:
 ## for the void). Scaled by the terrain's light budget so daylight zones
 ## don't bloom; a slow pulse keeps it alive. Returns the sprite.
 func _floor_glow(parent: Node, pos: Vector2, color: Color, radius_px: float,
-		strength: float, zi: int, pulse := true) -> Sprite2D:
+		strength: float, zi: int, pulse := true, illumination: Node = null, hazard := false) -> Sprite2D:
 	var g := Sprite2D.new()
 	g.texture = Art.tex("glow")
 	g.position = pos
@@ -4944,12 +4963,17 @@ func _floor_glow(parent: Node, pos: Vector2, color: Color, radius_px: float,
 	g.material = m
 	g.z_index = -8   # over the floor and the road, under hazards/props/actors
 	parent.add_child(g)
-	if pulse:
+	if pulse and not hazard:
+		if illumination == null:
+			illumination = preload("res://scripts/prop_illumination.gd").attach(g, g.global_position)
+		illumination.bind(g)
+	elif pulse:
+		# Hazard telegraphs deliberately retain their old independent rhythm.
 		var tw := g.create_tween().set_loops()
-		tw.tween_property(g, "modulate:a", a * GLOW_PULSE_LOW,
-			randf_range(GLOW_PULSE_PERIOD.x, GLOW_PULSE_PERIOD.y)).set_trans(Tween.TRANS_SINE)
+		tw.tween_property(g, "modulate:a", a * Balance.HAZARD_GLOW_PULSE_LOW,
+			randf_range(Balance.HAZARD_GLOW_PULSE_PERIOD.x, Balance.HAZARD_GLOW_PULSE_PERIOD.y)).set_trans(Tween.TRANS_SINE)
 		tw.tween_property(g, "modulate:a", a,
-			randf_range(GLOW_PULSE_PERIOD.x, GLOW_PULSE_PERIOD.y)).set_trans(Tween.TRANS_SINE)
+			randf_range(Balance.HAZARD_GLOW_PULSE_PERIOD.x, Balance.HAZARD_GLOW_PULSE_PERIOD.y)).set_trans(Tween.TRANS_SINE)
 	return g
 
 
@@ -4989,7 +5013,7 @@ func _add_hazard(zi: int, type: String, pos: Vector2, radius: float, duration :=
 	if HAZARD_GLOW.has(type):
 		var gspec: Array = HAZARD_GLOW[type]
 		var g := _floor_glow(spr, Vector2.ZERO, Art.hdr(gspec[0], EMISSIVE_BLOOM_LIFT * 1.15),
-			radius * float(gspec[2]), float(gspec[1]), zi)
+			radius * float(gspec[2]), float(gspec[1]), zi, true, null, true)
 		g.z_index = -1
 		g.z_as_relative = true
 	hazards.append({"zone": zi, "type": type, "pos": pos, "radius": radius,

@@ -17,7 +17,7 @@ West/east plinth centers are symmetric around the lane. North placement clears t
 
 Each pillar sorts as one unit with ordinary actors. The root is 22px above its painted front foot, matching `Player.HERO_FEET_ANCHOR`; the sprite compensates locally, preserving its painted position. Existing `PropShadow` supplies the contact rim and follows source frames. Standard structure-occlusion metadata makes the player's existing clipped silhouette available behind the stone.
 
-Existing flame and floor glows move with the sprite while retaining their textures, colors, scales, pulse timing, random-number consumption and light budgets. Weak references protect retirement callbacks. This adds no collider or PointLight and changes no wall, gate or admission rule. Separately authored large `Terrains.STRUCTURES.torch_pillar` structures retain their own placement.
+The flame halo and floor glow sit with the sprite and keep their textures, colors and light budgets. Since the light-coherence pass (T29) the halo holds a fixed `Balance.DOOR_TORCH_HALO_SCALE` (2.5) instead of pumping between 2.4 and 3.1. The flame strip, the halo alpha and the floor-pool alpha all run on one clock (`prop_illumination.gd`): the strip's own loop, a phase seeded from the torch's position, and the restrained `Balance.PROP_LIGHT_LOW` envelope. The torch lights no longer draw from the global random-number generator. Weak references protect retirement callbacks. This adds no collider or PointLight and changes no wall, gate or admission rule. Separately authored large `Terrains.STRUCTURES.torch_pillar` structures retain their own placement.
 
 ## Baseline evidence
 
