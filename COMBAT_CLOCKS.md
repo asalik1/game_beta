@@ -54,15 +54,25 @@ shutdown diagnostics remain under unchanged strict runner verdicts.
 
 Use `shot.bat combat_clocks --trial-transitions --timeout=300` with isolated
 APPDATA under build/qa. This strict mode rejects baseline waivers and other
-clock modes. It starts a real Crucible and pauses natively before first spawn,
-waits beyond its delay, then resumes and requires exactly one actual boss.
-Synthetic counters exercise inactive/reused-run/controller/world cancellation
-and a fresh positive. A loaned cleared trash depth invokes the actual room-clear
-scheduler, accrues a controlled pending award, then verifies pause and exactly
-one next-wave advance in the same world after native Resume. Five originals
-show held/resumed transitions and the fresh camp. The Depths phase temporarily
-protects the low-level hero with the existing hurt cooldown, restored afterward;
-AI is frozen after each spawn observation. These are timing tests, not victories.
+clock modes. It first waits for the boot opening fade, which owns Escape until
+it finishes, so the first native pause is not swallowed. It starts a real
+Crucible and pauses natively before first spawn, waits beyond its delay, then
+resumes and requires exactly one actual boss. Synthetic counters exercise
+inactive/reused-run/controller/world cancellation and a fresh positive. The
+Depths camp's unopened-shop warning (September 28) is then driven through the
+real camp interactions with a borrowed trash entry checkpoint: the first descend
+shows the confirm with Cancel focused, native Cancel keeps the camp, shop and
+ledger, a retry still asks, native accept descends and removes the camp,
+browsing the shop without buying goes straight down, and a new run warns again
+(Escape returns to camp). Checkpoint, hurt cooldown and shop stock are restored
+afterward. A loaned cleared trash depth invokes the actual room-clear scheduler,
+accrues a controlled pending award, then verifies pause and exactly one
+next-wave advance in the same world after native Resume. Six originals show
+held/resumed transitions, the fresh camp and the shop warning with Cancel
+focused. The Depths phases temporarily protect the low-level hero with the
+existing hurt cooldown, restored afterward; AI is frozen after each spawn
+observation. The timing phases are timing tests, not victories; the camp phase
+is a UI consent check, not a purchase test.
 
 The unchanged runtime failed four strict checks: first boss appeared under
 pause, and reused-run/controller/world callbacks fired. Its three originals

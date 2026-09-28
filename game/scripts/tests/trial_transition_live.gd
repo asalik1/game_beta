@@ -1,6 +1,7 @@
 extends RefCounted
 ## Controlled transition timing; real trial start and native pause/resume.
 ## Cancellation probes schedule counters, not earned rewards or settlement.
+## Also the regression check for the Depths camp's unopened-shop warning.
 var r: Node
 var g: Game
 var counts: Dictionary = {}
@@ -52,6 +53,12 @@ func _run() -> void:
 	g.settings["hit_stop"] = false
 	g.camera.position_smoothing_enabled = false
 	g.player.set_physics_process(false)
+	# Boot skips the opening lines, but their finishing fade still owns Escape.
+	# Wait before starting the trial's timed beat, without bypassing that gate.
+	var opening_deadline: int = Time.get_ticks_msec() + 8000
+	while g.hud.cinematic_finishing() and Time.get_ticks_msec() < opening_deadline:
+		await _wall(0.1)
+	_check("opening_finished", not g.hud.cinematic_finishing(), "opening fade released native Escape")
 	r.step("actual Crucible first beat behind native pause")
 	g.enter_endgame("crucible")
 	var trial: Endgame = g.endgame
@@ -135,6 +142,7 @@ func _run() -> void:
 	await _world_wait(0.6)
 	_check("fresh_once", int(counts.get("fresh", 0)) == 1, counts.duplicate())
 	r.shot("trial_03_fresh_positive", "real Depths camp after controlled stale/fresh callback probes; no rewards earned")
+	await _camp_shop_warning(trial)
 	r.step("controlled Depths room-clear beat behind native pause")
 	# This timing probe is not a level1-versus-depth42 combat/survival test.
 	var saved_hurt_cd: float = g.player.hurt_cd
@@ -202,6 +210,80 @@ func _run() -> void:
 	await r.skip_dialogue()
 	g.request_pause(false)
 	_check("cleanup", g.no_saves and not g.endgame_active and not g.get_tree().paused and g.chapter_id == "capital", "coherent capital; no old-world restoration claim")
+
+
+## Real camp actions and native dialog buttons. Each case starts a fresh run;
+## the borrowed trash entry avoids boss introductions/combat in this UI probe.
+func _camp_shop_warning(trial: Endgame) -> void:
+	var saved_checkpoint: int = g.player.depths_checkpoint
+	var saved_hurt_cd: float = g.player.hurt_cd
+	var saved_hurt_heavy: bool = g.player.hurt_was_heavy
+	var saved_stock: Dictionary = g.shop_stock.duplicate(true)
+	var saved_bags: Dictionary = g.shop_bags.duplicate(true)
+	g.player.depths_checkpoint = Balance.DEPTHS_ENTRY_FLOOR + 1
+	g.player.hurt_cd = 100.0
+	g.player.hurt_was_heavy = true
+	await _camp_shop_warning_cases(trial)
+	g.menus.close()
+	g.player.depths_checkpoint = saved_checkpoint
+	trial.start("depths")
+	g.player.hurt_cd = saved_hurt_cd
+	g.player.hurt_was_heavy = saved_hurt_heavy
+	g.shop_stock = saved_stock
+	g.shop_bags = saved_bags
+
+
+func _camp_action(node: Node2D) -> void:
+	for interaction in g.interactables:
+		if is_instance_valid(node) and interaction.node == node:
+			interaction.action.call()
+			return
+	_check("camp_action_found", false, "missing real camp interaction")
+
+
+func _camp_shop_warning_cases(trial: Endgame) -> void:
+	r.step("camp warns before losing its unopened shop")
+	trial.start("depths")
+	var before := _ledger(trial)
+	_camp_action(trial._camp_prompt)
+	_check("camp_unvisited_confirm", g.menus.current == "confirm" and trial.depth == 0,
+		{"menu": g.menus.current, "depth": trial.depth})
+	if g.menus.current != "confirm":
+		return # Old behavior fails above; never click unrelated UI or fight the wave.
+	var cancel: Button = r.native._find_button(g.menus.root, "Cancel")
+	_check("camp_cancel_focused", cancel != null and cancel.has_focus(), "safe initial choice")
+	await r.frames(3)
+	r.shot("trial_06_camp_shop_warning", "unopened shop warning with Cancel focused")
+	_check("camp_cancel_click", await r._button("Cancel"), "native Cancel")
+	_check("camp_cancel_stays_safe", trial.depth == 0 and not trial.wave_active
+		and is_instance_valid(trial._camp_merchant) and is_instance_valid(trial._camp_prompt)
+		and not g.menus.is_open() and not g.get_tree().paused, "camp and shop remain usable")
+	_check("camp_cancel_ledger", _ledger(trial) == before, _ledger(trial))
+	_camp_action(trial._camp_prompt)
+	_check("camp_cancel_not_consent", g.menus.current == "confirm", "retry still needs consent")
+	_check("camp_accept_click", await r._button("Descend anyway"), "native accept")
+	_check("camp_accept_descends", trial.depth == g.player.depths_checkpoint and trial.wave_active
+		and not is_instance_valid(trial._camp_merchant) and not is_instance_valid(trial._camp_prompt)
+		and not g.menus.is_open(), "accepted first dive removes camp")
+
+	r.step("browsing the camp shop skips the warning without a purchase")
+	trial.start("depths")
+	before = _ledger(trial)
+	_camp_action(trial._camp_merchant)
+	_check("camp_shop_opened", g.menus.current == "shop", g.menus.current)
+	await r.native._key(KEY_ESCAPE)
+	_camp_action(trial._camp_prompt)
+	_check("camp_shopped_straight_down", trial.depth == g.player.depths_checkpoint
+		and trial.wave_active and not g.menus.is_open(), {"menu": g.menus.current, "depth": trial.depth})
+	_check("camp_browse_no_purchase", _ledger(trial) == before, _ledger(trial))
+
+	r.step("a new run forgets the previous shop visit")
+	trial.start("depths")
+	_camp_action(trial._camp_prompt)
+	_check("camp_new_run_warns", g.menus.current == "confirm" and trial.depth == 0, g.menus.current)
+	await r.native._key(KEY_ESCAPE)
+	_check("camp_escape_stays_safe", trial.depth == 0 and not g.menus.is_open()
+		and not g.get_tree().paused, "Escape returns to camp")
 
 
 func _has_notice(text: String) -> bool:

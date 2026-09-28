@@ -111,12 +111,17 @@ extra controls run only in strict mode. See COMBAT_CLOCKS.md for fixture limits.
 
 Add `--trial-transitions` alone for actual initial Crucible pause/resume, strict
 stale-run/controller/world callback probes and a controlled room-clear Depths
-advance with native pause/resume. It also rejects explicit placeholders in the
-actual full mob pool and records eligible living wave kinds/count; a randomly
-clean wave alone is not proof. Five originals; no baseline waiver. Pending
-rewards for the Depths clear are controlled and not banked; low-level survival
-is protected for that timing phase. Use the same isolated muted runner and host
-mobile flags. See COMBAT_CLOCKS.md for exact limits and source-bound evidence.
+advance with native pause/resume. It waits for the boot opening fade to release
+Escape before the first native pause. It is also the regression check for the
+Depths camp's unopened-shop warning: real camp actions show the confirm with
+Cancel focused, native Cancel keeps the camp and shop, native accept descends,
+a shop visit (no purchase) skips it and a new run resets it. It also rejects
+explicit placeholders in the actual full mob pool and records eligible living
+wave kinds/count; a randomly clean wave alone is not proof. Six originals; no
+baseline waiver. Pending rewards for the Depths clear are controlled and not
+banked; low-level survival is protected for that timing phase and the camp
+warning phase. Use the same isolated muted runner and host mobile flags. See
+COMBAT_CLOCKS.md for exact limits and source-bound evidence.
 
 Exploration QA: `shot.bat exploration_friction --competition --endpoint-contracts
 --field-notes --timeout=300` exercises actual hunt-sign input, nearest eligible
