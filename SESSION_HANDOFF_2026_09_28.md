@@ -3,7 +3,7 @@
 Owner-authorized orchestrator round on `codex/crownless-wayfinder`
 (`C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder`), 2026-09-28 from 07:00 UTC, before
 the 21:00 UTC (17:00 America/New_York) deadline. Starting HEAD `1282013`. The final state is at the end
-of this file. No push or merge. The 46 unrelated files (two tracked `shot_road_hunt.gd` edits and 44
+of this file. At the owner's request the branch was pushed to `origin` at the close (fast-forward, 52 commits including 15 from earlier rounds); no merge. The 46 unrelated files (two tracked `shot_road_hunt.gd` edits and 44
 untracked files) were left alone and verified byte-identical against
 `build/qa/session-sept26/initial-preservation.json`.
 

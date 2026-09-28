@@ -5,7 +5,7 @@ HEAD `1282013`. The root session only orchestrated. Codex implemented 25 tasks i
 Claude Workflow reviewers, fixers and independent verifiers reviewed and corrected every lane, and the
 root integrated and gated them. Delivered work, validation, owner review points, remaining follow-ups and
 the final state: `SESSION_HANDOFF_2026_09_28.md`. The multi-agent kit and its lessons:
-`tools/orchestration/README.md`. No push or merge. The 46 unrelated files remain byte-identical to
+`tools/orchestration/README.md`. Pushed to origin at the owner's request at the close; no merge. The 46 unrelated files remain byte-identical to
 `build/qa/session-sept26/initial-preservation.json`. Evidence is local under `build/qa/session-sept28/`.
 
 ---
