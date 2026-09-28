@@ -12,6 +12,18 @@ class_name Balance
 const HUD_LOG_TEXT_WIDTH := 400.0
 const HUD_LOG_HEIGHT_BUDGET := 140.0
 
+# Static enamel on resource bars; overlays preserve semantic fill colours.
+const HUD_BAR_TROUGH_DARKEN := 0.82
+const HUD_BAR_TROUGH_ALPHA := 0.94
+const HUD_BAR_FRAME_ALPHA := 0.95
+const HUD_BAR_SHADE_TOP := 0.20
+const HUD_BAR_SHADE_BOTTOM := 0.30
+const HUD_BAR_SHEEN_ALPHA := 0.13
+const HUD_BAR_SHEEN_STOP := 0.28
+const HUD_BAR_EDGE_ALPHA := 0.36
+const HUD_BAR_EDGE_WIDTH := 1.0
+const HUD_BAR_CAP_ALPHA := 0.10
+
 # Ambient life: compact village/darkwood rooms retain social pairs without
 # carrying the full-sized room's population. Full/ordinary combat rooms stay exact.
 const AMBIENT_COMPACT_AREA_MAX := 0.65

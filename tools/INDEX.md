@@ -446,6 +446,14 @@ Use isolated APPDATA under `build/qa`; add
 `--mobile --renderer=gl_compatibility --touch` for mobile-source rendering.
 `--baseline` records old presentation findings; acceptance omits it.
 
+HUD enamel bars QA: `shot.bat hud_dossier --enamel-bars --timeout=240` poses
+the shared resource-bar fill at empty/low/half/full plus a chip hold/drain/
+settle sequence, at 1280x720, desktop and touch. It captures 7 native views per
+layout (14 total) to `shots/hud_dossier/enamel_bars/` and checks the gradient/
+leading-edge dressing, bronze trough, unchanged tick/chip geometry and number
+contrast. Use isolated APPDATA under `build/qa`. Completion marker: "HUD
+ENAMEL BARS: N checks, 0 failures".
+
 Ground comet QA: `shot.bat tells --comet --fixed-fps=30 --timeout=240`
 captures early/mid/late warning phases on stone, ice and magma, shelters/decoys,
 intact prop markers and an actual falling fireball warning. It verifies live

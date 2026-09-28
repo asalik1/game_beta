@@ -2278,8 +2278,8 @@ func _bar(pos: Vector2, bar_size: Vector2, color: Color, parent: Node = null) ->
 	var host: Node = parent if parent != null else self
 	var frame := Panel.new()
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0, 0, 0, 0.72)
-	sb.border_color = Color(UITheme.BAR_FRAME, 0.95)
+	sb.bg_color = Color(UITheme.BRONZE.darkened(Balance.HUD_BAR_TROUGH_DARKEN), Balance.HUD_BAR_TROUGH_ALPHA)
+	sb.border_color = Color(UITheme.BRONZE, Balance.HUD_BAR_FRAME_ALPHA)
 	sb.set_border_width_all(2)
 	sb.set_corner_radius_all(3)
 	frame.add_theme_stylebox_override("panel", sb)
@@ -2294,10 +2294,39 @@ func _bar(pos: Vector2, bar_size: Vector2, color: Color, parent: Node = null) ->
 	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	host.add_child(fill)
 	fill.set_meta("full_w", bar_size.x - 2.0)
+	# Children stay within the original fill, including fractions narrower
+	# than the edge itself and zero. The ColorRect still owns colour/width;
+	# chips remain siblings below it, ticks and numbers remain above it.
+	fill.clip_contents = true
+	var gradient := Gradient.new()
+	gradient.offsets = PackedFloat32Array([0.0, Balance.HUD_BAR_SHEEN_STOP, 1.0])
+	gradient.colors = PackedColorArray([Color(0, 0, 0, Balance.HUD_BAR_SHADE_TOP),
+		Color(1, 1, 1, Balance.HUD_BAR_SHEEN_ALPHA), Color(0, 0, 0, Balance.HUD_BAR_SHADE_BOTTOM)])
+	var texture := GradientTexture2D.new()
+	texture.width = 2
+	texture.height = 32
+	texture.fill_from = Vector2.ZERO
+	texture.fill_to = Vector2(0, 1)
+	texture.gradient = gradient
+	var enamel := TextureRect.new()
+	enamel.name = "Enamel"
+	enamel.texture = texture
+	enamel.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	enamel.stretch_mode = TextureRect.STRETCH_SCALE
+	enamel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fill.add_child(enamel)
+	enamel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var edge := ColorRect.new()
+	edge.name = "LeadingEdge"
+	edge.color = Color(UITheme.GOLD_BRIGHT, Balance.HUD_BAR_EDGE_ALPHA)
+	edge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fill.add_child(edge)
+	edge.set_anchors_and_offsets_preset(Control.PRESET_RIGHT_WIDE)
+	edge.offset_left = -Balance.HUD_BAR_EDGE_WIDTH
 	# End-cap lips: a faint light catch at each end of the trough.
 	for cap_x: float in [pos.x + 1.0, pos.x + bar_size.x - 3.0]:
 		var cap := ColorRect.new()
-		cap.color = Color(1, 1, 1, 0.1)
+		cap.color = Color(UITheme.GOLD, Balance.HUD_BAR_CAP_ALPHA)
 		cap.position = Vector2(cap_x, pos.y + 1.0)
 		cap.size = Vector2(2, bar_size.y - 2.0)
 		cap.mouse_filter = Control.MOUSE_FILTER_IGNORE

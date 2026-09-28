@@ -4,6 +4,99 @@ extends RefCounted
 const Geometry := preload("res://scripts/tests/hud_alignment_geometry.gd")
 
 
+## One focused native run covers both layouts. Values and target visibility
+## are posed; chip timing uses a fresh production HealthTrail, not inherited
+## combat state. No damage, reward, player stats or network state is changed.
+static func run_bars(rig: Node) -> void:
+	var g: Game = rig.game
+	var h: Hud = g.hud
+	rig._check("bars/offline_fixture", not g.net_online() and g.no_saves)
+	if g.net_online(): return
+	var settings := g.settings.duplicate(true)
+	var saved := Geometry.snapshot(h)
+	var was_paused: bool = rig.get_tree().paused
+	var mode := h.process_mode
+	var window: Window = rig.get_window()
+	var window_size := window.size
+	rig.get_tree().paused = true
+	h.process_mode = Node.PROCESS_MODE_PAUSABLE
+	window.size = Vector2i(1280, 720)
+	for check in Geometry.bar_fractions(h).checks:
+		rig._check("bars/" + String(check.id), bool(check.passed), check.details)
+	for touch in [false, true]:
+		g.settings["touch_controls"] = touch
+		g.settings["touch_layout"] = {}
+		g.refresh_touch_mode()
+		g._apply_touch_mode()
+		rig.touch_run = touch
+		var prefix := "touch_" if touch else "desktop_"
+		rig._check(prefix + "mode", g.touch_mode == touch)
+		for row in [{"id": "empty", "value": 0.0, "target": "mob"},
+				{"id": "low", "value": 0.1, "target": "boss"},
+				{"id": "half", "value": 0.5, "target": "rival"},
+				{"id": "full", "value": 1.0, "target": "mob"}]:
+			var layout: Dictionary = Geometry.CASES[0].duplicate(true)
+			layout.target = row.target
+			Geometry.apply_case(h, layout)
+			pose_bars(h, float(row.value), float(row.value))
+			await capture_bars(rig, prefix + String(row.id))
+		var layout: Dictionary = Geometry.CASES[0].duplicate(true)
+		layout.target = "boss"
+		Geometry.apply_case(h, layout)
+		var trail := preload("res://scripts/health_trail.gd").new()
+		trail.step(1, 1.0, 0.0)
+		var held: float = trail.step(1, 0.25, 0.0)
+		pose_bars(h, 0.25, held)
+		rig._check(prefix + "chip_hold", held == 1.0)
+		await capture_bars(rig, prefix + "chip_hold")
+		var drained: float = trail.step(1, 0.25, Balance.TARGET_DAMAGE_HOLD + 0.25 / Balance.TARGET_DAMAGE_DRAIN)
+		pose_bars(h, 0.25, drained)
+		rig._check(prefix + "chip_draining", drained < held and drained > 0.25)
+		await capture_bars(rig, prefix + "chip_draining")
+		var settled: float = trail.step(1, 0.25, 1.0 / Balance.TARGET_DAMAGE_DRAIN)
+		pose_bars(h, 0.25, settled)
+		rig._check(prefix + "chip_settled", settled == 0.25)
+		await capture_bars(rig, prefix + "chip_settled")
+	g.settings = settings
+	g.refresh_touch_mode()
+	g._apply_touch_mode()
+	window.size = window_size
+	Geometry.restore(h, saved)
+	rig._check("bars/geometry_restored", Geometry.snapshot(h) == saved)
+	h.process_mode = mode
+	rig.get_tree().paused = was_paused
+
+
+static func pose_bars(h: Hud, fraction: float, trail: float) -> void:
+	for field: String in Geometry.BAR_FIELDS:
+		h._set_fill(h.get(field), fraction)
+	h._set_fill(h.hp_chip, trail)
+	for chip in h.target_chips.values():
+		h._set_fill(chip, trail)
+	h.hp_text.text = "%d / 100" % int(fraction * 100)
+	h.mp_text.text = "%d / 100" % int(fraction * 100)
+	h.boss_hp_num.text = "%d / 100" % int(fraction * 100)
+
+
+static func capture_bars(rig: Node, id: String) -> void:
+	await rig._capture(id, "Posed enamel bars at 1280x720; production target-chip clock, no combat", false)
+	var h: Hud = rig.game.hud
+	var result := {"checks": []}
+	for field: String in Geometry.BAR_FIELDS:
+		Geometry.inspect_bar(result, h.get(field), field)
+	for check in result.checks:
+		rig._check("bars/" + id + "/" + String(check.id), bool(check.passed), check.details)
+	# The existing shaped-text and clearance geometry assertions stay active.
+	for check in Geometry.inspect(h).checks:
+		rig._check("bars/" + id + "/layout/" + String(check.id), bool(check.passed), check.details)
+	for label in [h.hp_text, h.mp_text, h.boss_hp_num]:
+		rig._check("bars/" + id + "/number_contrast/" + str(label.get_path()),
+			label.get_theme_color("font_color").get_luminance() > 0.7
+			and label.get_theme_color("font_outline_color").get_luminance() < 0.1
+			and label.get_theme_constant("outline_size") > 0)
+	rig._check("bars/" + id + "/720p", h.get_viewport().get_visible_rect().size == Vector2(1280, 720))
+
+
 static func run(rig: Node) -> String:
 	var h: Hud = rig.game.hud
 	var saved := Geometry.snapshot(h)
