@@ -1540,7 +1540,7 @@ func hit_enemy(target: CharacterBody2D, mult: float, effects := {}) -> void:
 	e.take_damage(dmg, dir, is_crit)
 	# Hit FEEL (gameplay-polish 2026-08-18, P1 stack): on every landed
 	# single-target blow the world answers in three synchronized beats — a
-	# DIRECTIONAL camera kick along the hit vector (+ the old jitter), impact
+	# DIRECTIONAL camera kick along the hit vector (+ a light shake), impact
 	# sparks flung away from the striker, and on crits / kills / heavy blows a
 	# real-time HIT-STOP (solo only). AoE and echo sub-hits stay quiet — a
 	# crowd hit must not turn the screen to jelly; the ult/heavy shakes above

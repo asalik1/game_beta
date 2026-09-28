@@ -159,8 +159,8 @@ const GROUND_FIELD_PERIOD := {
 }
 # The neutral stone master needs a small exposure lift under keep lighting.
 const GROUND_FIELD_GAIN := {"stone": 1.28}
-# Hit feel: camera kick (px) per landed single-target blow / crit. The heavy
-# beats (ults, slams) sit at 5-9; these stay a whisper under them.
+# Hit feel: ambient shake amount per landed single-target blow / crit. The
+# heavy beats (ults, slams) sit at 5-14; these stay a whisper under them.
 const HIT_SHAKE := 1.4
 const HIT_SHAKE_CRIT := 3.0
 # Hit-feedback STACK (POLISH_TASKS P1, 2026-08-18): the three synchronized
@@ -172,6 +172,21 @@ const HIT_SHAKE_CRIT := 3.0
 # kills and heavy blows do, in that order of weight.
 const HIT_SHAKE_KICK := 3.0
 const HIT_SHAKE_KICK_DECAY := 14.0
+# Impact envelope (world px, Hz, 1/s). shake(amount) drives a smooth waveform
+# of amount * GAIN px per axis: one sine per axis, the vertical at RATIO times
+# the horizontal rate, so it rattles instead of looping and never draws
+# per-frame random noise. GAIN keeps the old random jitter's average energy,
+# so the heavy beats (shake 6-14) stay louder than an ordinary hit and keep
+# their tiers; DECAY lets a slam read for about 0.4 s. Stacked directional
+# kicks cap at KICK_MAX_PX, under the heaviest beats; the rendered sum caps at
+# MAX_PX. Motion under REST_PX (sub-pixel) snaps to still.
+const CAMERA_SHAKE_MAX_PX := 12.0
+const CAMERA_SHAKE_KICK_MAX_PX := 9.0
+const CAMERA_SHAKE_AMBIENT_GAIN := 0.8
+const CAMERA_SHAKE_FREQUENCY := 6.0
+const CAMERA_SHAKE_FREQUENCY_RATIO := 1.62
+const CAMERA_SHAKE_DECAY := 6.0
+const CAMERA_SHAKE_REST_PX := 0.05
 const HIT_SPARKS := 5
 const HIT_STOP_CRIT := 0.045
 const HIT_STOP_KILL := 0.07

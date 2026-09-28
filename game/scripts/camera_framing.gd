@@ -59,6 +59,4 @@ func tick(g: Game, delta: float) -> void:
 	# Ordinary lead follows room clamping; offset deliberately bypasses limits
 	# and is reserved for the owner's impact-shake preference.
 	g.camera.position = g._cam_look
-	g.camera.offset = (g._shake_kick \
-		+ Vector2(randf_range(-1, 1), randf_range(-1, 1)) * g.shake_amt) \
-		* float(g.settings.get("camera_shake", 1.0))
+	g.camera.offset = g._shake_offset()

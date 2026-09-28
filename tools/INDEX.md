@@ -706,6 +706,14 @@ Baseline permits only mirrored retreat findings; strict mode permits none.
 Use fresh APPDATA; mobile adds `--mobile --renderer=gl_compatibility --touch`
 (movement remains keyboard input). See TARGET_COMMITMENT.md.
 
+Camera impact QA: `shot.bat framing --impacts --timeout=180` renders the same
+scripted recoils, rapid hits, heaviest beat and boss footfalls at 30/60/144 Hz
+with comfort 100% and 0%. It asserts full-size first frames that match across
+rates, the displacement cap, a real hit-stop hold, heavy beat over hits and
+recovery; receipt `user://shots/framing/camera_impacts.json`. The envelope math
+(`test_framing.shake_contracts`) also runs in the quick/full systems tier.
+See COMBAT_FRAMING.md.
+
 Journal guardian QA: `shot.bat menu_navigation --quest-guardian --timeout=240`
 uses real reader input and controlled guardian metadata. Baseline requires exactly
 three false-clear strings and one missing reader rebuild; all other controls stay
@@ -1133,7 +1141,8 @@ cancellation, nearby-enemy gate, touch and repaint cleanup.
 `shot.bat fishing --timeout=200`; 7 captures in `user://shots/fishing`) ·
 `shot_framing` (`ShotRig`: target camera before/after east/north, damage trails,
 exploration and comfort controls. `--fault-probe` runs the finite-motion
-regression only. `shot.bat framing --timeout=240`) ·
+regression only; `--impacts` runs the camera impact capture (see Camera impact
+QA). `shot.bat framing --timeout=240`) ·
 `shot_quality` (`ShotRig`: paused/resumed/cancelled ground attacks and guest
 visual-only damage contracts; keep-floor before/after; early/late warnings on
 four terrains; targeted foliage restoration; queued announcements across

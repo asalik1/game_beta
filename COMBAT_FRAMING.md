@@ -172,3 +172,20 @@ capture. Hunt panels, notices and decorative labels retain their documented
 overlap limits. Evidence and the resulting commit are pinned in
 `build/qa/session-sept17/camera-lead-checkpoint-validation.json`.
 All 46 unrelated preserved files remain unchanged.
+
+## Impact shake — September 29
+
+Shake no longer samples a fresh random offset every frame. `shake(amount)`
+drives a smooth two-rate waveform with an exponential decay, the directional
+hit kick decays on its own clock, stacked kicks and the rendered sum have hard
+caps, and the comfort slider scales the result last (0% is exactly still).
+Impulses wait for the camera tick, which decays the older motion first, so a
+hit shows at full size on its first rendered frame at any frame rate and a
+hit-stop holds it there. Heavy beats (ults, slams, getting hit) keep their
+tiers and stay louder than an ordinary hit. Knobs: `Balance.CAMERA_SHAKE_*`.
+
+`test_framing.shake_contracts` (quick and full systems tier) covers the caps,
+linear comfort, frozen time, the full-size first frame at 30/60/144 fps, the
+heavy-beat order and the camera tick wiring.
+`shot.bat framing --impacts --timeout=180` renders the scripted sequence at
+30/60/144 Hz and writes `user://shots/framing/camera_impacts.json`.
