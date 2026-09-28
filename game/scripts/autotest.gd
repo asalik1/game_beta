@@ -2002,6 +2002,9 @@ func _run_systems() -> void:
 	var road_choice_error: String = preload("res://scripts/tests/test_road_choices.gd").run(self)
 	if road_choice_error != "":
 		return _fail(road_choice_error)
+	var dedicated_story_error: String = await preload("res://scripts/tests/test_dedicated_story.gd").run(self)
+	if dedicated_story_error != "":
+		return _fail(dedicated_story_error)
 	var road_hunt_error: String = preload("res://scripts/tests/test_road_hunt.gd").run(self)
 	if road_hunt_error != "":
 		return _fail(road_hunt_error)

@@ -1922,12 +1922,15 @@ func _check_side_quests() -> void:
 			continue
 		flags["sq_paid_" + sid] = true  # direct: no gate/quest re-entry
 		var reward: Dictionary = q.get("reward", {})
-		var gold := int(ceil(float(reward.get("gold", 0)) * Balance.daily_gold_mult(player.level)))
-		if gold > 0:
-			player.gold += gold
-		var standing: Dictionary = reward.get("standing", {})
-		for fac in standing:
-			player.faction_standing[fac] = int(player.faction_standing.get(fac, 0)) + int(standing[fac])
+		# The server settles world progress without owning a character payout.
+		var gold := 0
+		if has_local_player():
+			gold = int(ceil(float(reward.get("gold", 0)) * Balance.daily_gold_mult(player.level)))
+			if gold > 0:
+				player.gold += gold
+			var standing: Dictionary = reward.get("standing", {})
+			for fac in standing:
+				player.faction_standing[fac] = int(player.faction_standing.get(fac, 0)) + int(standing[fac])
 		# Beyond coins + standing (2026-08-17 quest-verb pass, PROPOSALS/
 		# DYNAMIC_WORLD.md §3.2): a quest may also pay an ITEM (a chapter-band
 		# gear roll for the wearer's class, like a chest), a GEM (chapter drop
@@ -1958,11 +1961,12 @@ func _check_side_quests() -> void:
 					got_extra += "  + " + String(ks.get("name", "a keepsake"))
 		if reward.has("kept"):
 			set_flag(String(reward["kept"]))  # persistent per-character mark
-		sfx("levelup")
-		spawn_text(player.global_position + Vector2(0, -70),
-			"SIDE QUEST COMPLETE — %s%s%s" % [String(q["name"]),
-				"  (+%d gold)" % gold if gold > 0 else "", got_extra],
-			Color(1.0, 0.85, 0.35), 4.0)
+		if has_local_player():
+			sfx("levelup")
+			spawn_text(player.global_position + Vector2(0, -70),
+				"SIDE QUEST COMPLETE — %s%s%s" % [String(q["name"]),
+					"  (+%d gold)" % gold if gold > 0 else "", got_extra],
+				Color(1.0, 0.85, 0.35), 4.0)
 
 ## A kill toward any accepted, unfinished KILL-step quest (2026-08-17
 ## quest-verb pass): a step with `kind:"kill"` names a `target` enemy kind and

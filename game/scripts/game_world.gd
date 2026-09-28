@@ -1230,7 +1230,16 @@ func _host_ensure_active_rooms() -> void:
 		return
 	for r in active_rooms:
 		var i := int(r)
-		if i < 0 or i >= zone_count or built.get(i, false):
+		if i < 0 or i >= zone_count:
+			continue
+		if built.get(i, false):
+			# DEDICATED: solo and the listen host re-arm a built arena on every
+			# local entry (_enter_room), which a server never runs. An arena
+			# whose pack died while nobody stood in it (a kill from across the
+			# door line, a hazard tick) arms here once a guest occupies it.
+			# Cheap and idempotent: _try_spawn_boss keeps every other guard.
+			if dedicated:
+				_try_spawn_boss(i)
 			continue
 		_build_room(i)            # walls/scenery + _spawn_room_enemies (host spawns)
 		_try_spawn_boss(i, true)  # arm a boss room a guest reached ahead of the
@@ -4251,7 +4260,7 @@ func _on_boss_trigger(zi: int) -> void:
 		_spawn_boss(zi, kind)  # breach echo / Unlisted / pocket: rogue path, no story beat
 		return
 	var beat: Array = Story.beat_for("pre_" + kind,
-		Story.res_band(player.resonance), flags)
+		Story.res_band(player.resonance if has_local_player() else 0.0), flags)
 	if beat.is_empty():
 		_spawn_boss(zi, kind)
 	else:
@@ -4342,7 +4351,11 @@ func _try_spawn_boss(zi: int, force := false) -> void:
 	# unarmed until the host walked in. Force skips ONLY that guard; every other
 	# precondition (built, room purged, not already done/spawned) still holds.
 	# Local entry passes force=false, so solo/normal behavior is unchanged.
-	if not built.get(zi, false) or zone_alive.get(zi, 0) > 0 or (zi != cur_room and not force):
+	# A dedicated authority never enters rooms locally. A guest's occupied
+	# arena must also arm when its last pack dies, after the initial build.
+	var occupied_on_server: bool = dedicated and active_rooms.has(zi)
+	if not built.get(zi, false) or zone_alive.get(zi, 0) > 0 \
+			or (zi != cur_room and not force and not occupied_on_server):
 		return
 	var kind: String = zones[zi].get("boss", "")
 	if kind == "" or _boss_room_resolved(zi) or boss_spawned.get(zi, false):
