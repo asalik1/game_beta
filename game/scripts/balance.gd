@@ -374,6 +374,10 @@ const NPC_SHADOW_CONTACT_ALPHA := 0.15
 #  DIALOG_TYPE_CPS — dialogue lines WRITE themselves at this many characters a
 #    second (first confirm completes the line, the next advances). 0 = pop whole.
 const DIALOG_TYPE_CPS := 42.0
+# The dialogue and choice panels' gold outline, drawn without gold beneath
+# their translucent fill.
+const DIALOG_FRAME_BORDER_WIDTH := 3
+const DIALOG_FRAME_COLOR := Color(0.9, 0.8, 0.5)
 #  DEATH_STAIN_*   — a kill leaves a soft floor blotch in the creature's palette
 #    (game_base.death_stain) that fades over LIFE seconds; MAX caps live stains.
 #    A = 0 turns it off.

@@ -121,14 +121,14 @@ var minimap_root: Control
 
 # dialogue
 var dialogue_box: Control
-var dialogue_frame: ColorRect      # outer border — repositioned as the box grows
+var dialogue_frame: Panel          # border only — repositioned as the box grows
 var dialogue_inner: ColorRect      # dark fill — ditto
 var portrait_box: Control          # speaker portrait (right side of the box)
 var portrait_rect: TextureRect
 var _portrait_cache := {}          # speaker name -> sprite name ("" = none)
 # choice dialogue (the branching-conversation engine lives in game.gd)
 var choice_panel: Control
-var choice_frame: ColorRect
+var choice_frame: Panel            # border only, like dialogue_frame
 var choice_inner: ColorRect
 var choice_option_labels: Array = []
 var choice_hover_rects: Array = []  # per-row mouse-hover highlight
@@ -865,8 +865,8 @@ void fragment() {
 	# The box grows UPWARD from a fixed bottom edge (648, clearing the
 	# quickbar): tall enough that a long paragraph (5-6 wrapped lines) fits
 	# instead of clipping its last line against the bottom border.
-	dialogue_frame = ColorRect.new()
-	dialogue_frame.color = Color(0.9, 0.8, 0.5)
+	dialogue_frame = Panel.new()
+	dialogue_frame.add_theme_stylebox_override("panel", _dialogue_border_style())
 	dialogue_frame.position = Vector2(138, 448)
 	dialogue_frame.size = Vector2(1004, 200)
 	dialogue_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -995,8 +995,8 @@ void fragment() {
 	choice_panel = Control.new()
 	choice_panel.visible = false
 	add_child(choice_panel)
-	choice_frame = ColorRect.new()
-	choice_frame.color = Color(0.9, 0.8, 0.5)
+	choice_frame = Panel.new()
+	choice_frame.add_theme_stylebox_override("panel", _dialogue_border_style())
 	choice_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	choice_panel.add_child(choice_frame)
 	choice_inner = ColorRect.new()
@@ -1033,6 +1033,8 @@ void fragment() {
 	choice_panel.visibility_changed.connect(_layout_dialogue_reader)
 	for button: Button in [dlg_log_btn, dlg_skip_btn, dlg_auto_btn]:
 		button.resized.connect(_layout_dialogue_reader)
+	get_viewport().size_changed.connect(_fit_dialogue_width)
+	_fit_dialogue_width()
 
 	# --------------------------------------------------- controls hint ---
 	# Two short lines on the far left so they never collide with the
@@ -5024,6 +5026,32 @@ func _fit_speaker_splash() -> void:
 	splash_rect.size = Vector2(side, side)
 
 
+## Translate the authored dialogue contents together; leave the full-screen
+## splash and the parent entrance tween in their existing coordinate space.
+## The choice panel (a HUD sibling whose rows dialogue_choice lays out in its
+## own local space) moves by the same amount, so options stay on the box.
+## Measuring the current frame center makes repeated resizes idempotent.
+func _fit_dialogue_width() -> void:
+	var shift := get_viewport().get_visible_rect().get_center().x \
+		- (dialogue_frame.position.x + dialogue_frame.size.x * 0.5)
+	for control: Control in [dialogue_frame, dialogue_inner, speaker_label,
+			text_label, dialogue_hint, portrait_box, choice_panel]:
+		control.position.x += shift
+	_layout_dialogue_reader()
+
+
+## The gold outline of the dialogue and choice panels. HDR2D blends in linear
+## light: a filled gold rect shows through a translucent inner panel as olive,
+## so only the original square outline is drawn.
+func _dialogue_border_style() -> StyleBoxFlat:
+	var border := StyleBoxFlat.new()
+	border.draw_center = false
+	border.anti_aliasing = false
+	border.border_color = Balance.DIALOG_FRAME_COLOR
+	border.set_border_width_all(Balance.DIALOG_FRAME_BORDER_WIDTH)
+	return border
+
+
 ## Show `who`'s splash full-bleed (CQ framing) if art exists, else fall back to
 ## the small portrait slot. Tunes box translucency so the art reads through.
 func _set_splash(who: String) -> void:
@@ -5214,8 +5242,8 @@ func _fit_dialogue_box() -> float:
 	var frame_top := text_top - DIALOG_HEADER
 	dialogue_frame.position.y = frame_top
 	dialogue_frame.size.y = box_bottom - frame_top
-	dialogue_inner.position.y = frame_top + 3.0
-	dialogue_inner.size.y = (box_bottom - 3.0) - (frame_top + 3.0)
+	dialogue_inner.position.y = frame_top + Balance.DIALOG_FRAME_BORDER_WIDTH
+	dialogue_inner.size.y = box_bottom - frame_top - Balance.DIALOG_FRAME_BORDER_WIDTH * 2.0
 	_layout_dialogue_reader()
 	return frame_top
 
@@ -5507,8 +5535,8 @@ func dialogue_choice(who: String, text: String, options: Array, cb: Callable) ->
 	var panel_top := box_top - 6 - total  # 6px above the (possibly grown) box top
 	choice_frame.position = Vector2(138, panel_top)
 	choice_frame.size = Vector2(1004, total)
-	choice_inner.position = choice_frame.position + Vector2(3, 3)
-	choice_inner.size = choice_frame.size - Vector2(6, 6)
+	choice_inner.position = choice_frame.position + Vector2.ONE * Balance.DIALOG_FRAME_BORDER_WIDTH
+	choice_inner.size = choice_frame.size - Vector2.ONE * Balance.DIALOG_FRAME_BORDER_WIDTH * 2.0
 	var y := panel_top + PANEL_PAD
 	for i in choice_option_labels.size():
 		var opt: Label = choice_option_labels[i]
