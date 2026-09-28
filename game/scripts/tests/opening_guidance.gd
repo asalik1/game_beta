@@ -3,6 +3,25 @@ extends RefCounted
 ## runs its asserts in a helper and restores in the entry itself: a runtime
 ## error inside the asserts aborts only the helper, so no held key, lent HUD
 ## state or story flag can leak into the next autotest section.
+##
+## Callers arrive straight from the opener's last dialogue line, while its
+## storybook art is still dissolving (Cutscene.finish). That fade holds the
+## shared input gate (input_overlay_up), which rightly silences gate guidance,
+## so await play_handoff first: the checks belong to the fresh village.
+
+
+## Wait (sim time, the fade's own clock) for the opener fade to hand play to
+## the hero. Returns "" once play has started with no input overlay up.
+static func play_handoff(g: Game) -> String:
+	var waited := 0.0
+	while g.hud.cinematic_finishing() and waited < 5.0:
+		await g.get_tree().create_timer(0.1).timeout
+		waited += 0.1
+	if g.hud.cinematic_finishing():
+		return "opening storybook fade never handed play back to the hero"
+	if not g.play_started or g.input_overlay_up():
+		return "opening hand-off left play unstarted or an input overlay up"
+	return ""
 
 
 static func run(g: Game) -> String:
@@ -131,6 +150,10 @@ static func gate_checks(g: Game) -> String:
 	var dir: String = preload("res://scripts/ui/navigation.gd").direction(g, 0, 2)
 	if dir == "" or not g.edge_locks.has(key) or not g.gates.has(key):
 		return "fresh village is missing its barred road edge"
+	# Every overlay (a cinematic fade included) silences guidance: without
+	# this, a caller that skipped play_handoff reads as eight guidance bugs.
+	if g.input_overlay_up():
+		return "gate guidance checks started under an input overlay"
 	var p: Player = g.local_player
 	var pos_before := p.global_position
 	var intents_before := {}

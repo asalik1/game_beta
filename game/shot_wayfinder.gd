@@ -105,7 +105,9 @@ func _ready() -> void:
 
 ## Fresh opening and a real held movement key against the barred village gate.
 func _opening_guidance() -> void:
-	var error := preload("res://scripts/tests/opening_guidance.gd").run(game)
+	var error: String = await preload("res://scripts/tests/opening_guidance.gd").play_handoff(game)
+	if error == "":
+		error = preload("res://scripts/tests/opening_guidance.gd").run(game)
 	if error == "":
 		error = preload("res://scripts/tests/opening_guidance.gd").gate_checks(game)
 	if error != "":

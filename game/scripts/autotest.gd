@@ -200,7 +200,11 @@ func _run_systems() -> void:
 		return _fail("opening choice did not move resonance / set its flag")
 	await _skip_dialogue()  # Bren's reply + closing narration
 	print("ok: class select + warrior opening (owned the harm)")
-	var guidance_error: String = preload("res://scripts/tests/opening_guidance.gd").run(game)
+	# The opener art is still fading out here and holds the input gate.
+	var guidance_error: String = await preload("res://scripts/tests/opening_guidance.gd").play_handoff(game)
+	if guidance_error != "":
+		return _fail(guidance_error)
+	guidance_error = preload("res://scripts/tests/opening_guidance.gd").run(game)
 	if guidance_error != "":
 		return _fail(guidance_error)
 	guidance_error = preload("res://scripts/tests/opening_guidance.gd").gate_checks(game)
