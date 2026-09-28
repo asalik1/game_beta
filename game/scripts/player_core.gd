@@ -2738,7 +2738,11 @@ func _use_potion(c: Dictionary, gate_key: String) -> String:
 			game.sfx("potion", 1.15)
 			game.spawn_text(global_position + Vector2(0, -56), "RENEWED", Color(0.5, 1.0, 0.6))
 	_apply_potion_sting(c.get("sting", {}))
-	consumables.remove_at(preload("res://scripts/gear_care.gd").index_of(consumables, c))
+	var idx: int = preload("res://scripts/gear_care.gd").index_of(consumables, c)
+	if idx >= 0:
+		consumables.remove_at(idx)
+	# The effect and sting already landed. Keep the spent allowance/cooldown
+	# and success result even if a sting callback removed this unit first.
 	return DRINK_OK
 
 

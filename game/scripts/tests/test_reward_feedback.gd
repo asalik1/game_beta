@@ -276,11 +276,20 @@ static func _bag_checks(g: Game) -> String:
 	var arrows := 0
 	var stars := 0
 	var tipped := true
+	var readable := true
+	var badge_metrics := ""
 	for node in menu.root.find_children("*", "Label", true, false):
 		if node.get_parent() is Button:
 			if node.text == "▲":
 				arrows += 1
 				tipped = tipped and String(node.get_parent().tooltip_text).contains(" · Upgrade")
+				# Pin a full-size glyph independent of the inherited menu face;
+				# the native reward_feedback capture checks its painted footprint.
+				readable = readable and node.get_theme_font("font") == ThemeDB.fallback_font \
+					and node.get_theme_font_size("font_size") >= Balance.GEAR_UPGRADE_BADGE_FONT_SIZE \
+					and -node.offset_top >= node.get_minimum_size().y
+				badge_metrics = "font=%s size=%d top=%s minimum=%s" % [node.get_theme_font("font") == ThemeDB.fallback_font,
+					node.get_theme_font_size("font_size"), node.offset_top, node.get_minimum_size()]
 			if node.text == "★": stars += 1
 	menu.free()
 	g.get_tree().paused = paused
@@ -289,6 +298,8 @@ static func _bag_checks(g: Game) -> String:
 		if is_instance_valid(prompt): prompt.visible = prompts[prompt]
 	if not tipped:
 		return "bag upgrade badge has no tooltip explanation"
+	if not readable:
+		return "bag upgrade badge inherited a tiny glyph or clipped its font height: " + badge_metrics
 	return "" if arrows == 1 and stars == 1 else "bag upgrade badge missing or kept-star precedence changed"
 
 

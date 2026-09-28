@@ -272,6 +272,10 @@ func finish(cb: Callable) -> void:
 	if _finish_started:
 		return
 	_finish_started = true
+	# game.cutscene and the dialogue flags are already clear by now, so the HUD
+	# needs this handle to keep menus and world input shut until the handoff.
+	if is_instance_valid(game) and is_instance_valid(game.hud):
+		game.hud.cinematic_fade = self
 	if _sequence_tween != null and _sequence_tween.is_valid():
 		_sequence_tween.kill()
 	var tw := create_tween()
@@ -281,6 +285,14 @@ func finish(cb: Callable) -> void:
 		queue_free()
 		if cb.is_valid():
 			cb.call())
+
+
+## True from finish() until the fade hands off to its callback: the art still
+## covers the screen and the callback (a chapter start, the victory card) has
+## not run yet. Bounded by the fade, unlike cinematic mode, which a layer keeps
+## until it leaves the tree.
+func finishing() -> bool:
+	return _finish_started and not is_queued_for_deletion()
 
 
 # ---------------------------------------------------------- frame player ---

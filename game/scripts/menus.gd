@@ -3096,6 +3096,7 @@ func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color
 		cb: Callable) -> Button:
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(48, 48)
+	grid.add_child(b)
 	if icon != null:
 		b.icon = icon
 		b.expand_icon = true
@@ -3106,7 +3107,8 @@ func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color
 			badge.add_theme_font_size_override("font_size", 11)
 			badge.add_theme_color_override("font_color", Color(1, 1, 1))
 			if glyph == "▲":
-				badge.add_theme_font_size_override("font_size", Balance.GEAR_UPGRADE_FONT_SIZE)
+				badge.add_theme_font_override("font", ThemeDB.fallback_font)
+				badge.add_theme_font_size_override("font_size", Balance.GEAR_UPGRADE_BADGE_FONT_SIZE)
 				badge.add_theme_color_override("font_color", Balance.GEAR_UPGRADE_COLOR)
 			badge.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 			badge.add_theme_constant_override("outline_size", 4)
@@ -3119,6 +3121,9 @@ func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color
 			badge.offset_bottom = -1
 			badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			b.add_child(badge)
+			if glyph == "▲":
+				# Measure after mounting: detached labels have no resolved line height.
+				badge.offset_top = -badge.get_minimum_size().y + badge.offset_bottom
 	else:
 		b.text = glyph
 		b.add_theme_font_size_override("font_size", 17)
@@ -3138,7 +3143,6 @@ func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color
 	else:
 		b.disabled = true
 		b.add_theme_stylebox_override("disabled", sb)
-	grid.add_child(b)
 	return b
 
 

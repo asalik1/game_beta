@@ -791,7 +791,10 @@ func request_pause(on: bool) -> void:
 func input_overlay_up() -> bool:
 	if hud == null or menus == null:
 		return false
-	return chapter_finale.active or hud.dialogue_active or hud.choices_active or hud.chat_active or menus.is_open()
+	# A cinematic's finishing fade counts too: its callback may raise the
+	# victory card, and every menu path (HUD icons, hotkeys, pad) reads this.
+	return chapter_finale.active or hud.dialogue_active or hud.choices_active or hud.chat_active \
+		or menus.is_open() or hud.cinematic_finishing()
 
 
 ## NG+ tier governing THIS run's spawns and drops (0 = Normal;

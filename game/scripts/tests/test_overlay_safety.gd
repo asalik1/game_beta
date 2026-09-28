@@ -5,12 +5,37 @@ extends RefCounted
 
 static func run(t: Node) -> String:
 	var g: Game = t.game
+	var archive := g.convo_log.duplicate(true)
+	var order := g.convo_log_order.duplicate(true)
+	var key := g.quest_key if g.quest_key != "" else "wanders_" + g.chapter_id
+	var error := ""
+	# Control both archive cases: mutate an existing nested line array, then
+	# create a new key/order entry on a deliberately early failure path.
+	for fail_early in [false, true]:
+		g.convo_log = {} if fail_early else {key: {"chapter": g.chapter_id, "lines": [["Narrator", "Keep this line."]]}}
+		g.convo_log_order = [] if fail_early else [key]
+		var expected := g.convo_log.duplicate(true)
+		var expected_order := g.convo_log_order.duplicate(true)
+		var result := _fixture(g, fail_early)
+		if g.convo_log != expected or g.convo_log_order != expected_order:
+			error = "overlay fixture leaked story archive state (failure path: %s)" % fail_early
+		elif result != ("archive failure probe" if fail_early else ""):
+			error = result if result != "" else "archive failure probe did not fail"
+		if error != "":
+			break
+	g.convo_log = archive
+	g.convo_log_order = order
+	return error
+
+
+static func _fixture(g: Game, fail_early: bool) -> String:
 	var saved := {"hud": g.hud, "menus": g.menus, "state": g.state,
 		"paused": g.get_tree().paused, "started": g.play_started,
 		"no_saves": g.no_saves, "talk_cd": g.talk_cd,
 		"finale": g.chapter_finale.active, "chapter": g.chapter_id,
 		"gates": g.victory_gates_up, "player": g.local_player, "touch": g._touch_hud,
-		"death_epoch": g.death_epoch}
+		"death_epoch": g.death_epoch, "convo_log": g.convo_log.duplicate(true),
+		"convo_log_order": g.convo_log_order.duplicate(true)}
 	var prompts := {}
 	for entry: Dictionary in g.interactables:
 		var prompt: Variant = entry.get("prompt")
@@ -26,7 +51,7 @@ static func run(t: Node) -> String:
 	g.menus.shell_motion = false
 	g.add_child(g.menus)
 	g.no_saves = true
-	var error := _checks(g)
+	var error := _checks(g, fail_early)
 	# Restore on failure as well as success, including the original UI instances.
 	g.menus.free()
 	g.hud.free()
@@ -40,6 +65,8 @@ static func run(t: Node) -> String:
 	g.chapter_id = saved.chapter
 	g.victory_gates_up = saved.gates
 	g.death_epoch = saved.death_epoch
+	g.convo_log = saved.convo_log
+	g.convo_log_order = saved.convo_log_order
 	g.local_player = saved.player
 	g._touch_hud = saved.touch
 	for prompt: CanvasItem in prompts:
@@ -51,12 +78,14 @@ static func run(t: Node) -> String:
 	return error
 
 
-static func _checks(g: Game) -> String:
+static func _checks(g: Game, fail_early: bool) -> String:
 	var h: Hud = g.hud
 	g.play_started = true
 	g.state = Game.ST_PLAYING
 	g.chapter_finale.active = false
 	h.dialogue([["Narrator", "Overlay safety fixture."]])
+	if fail_early:
+		return "archive failure probe"
 	for context in ["dialogue", "choices", "chat", "finale", "dead", "victory", "boot"]:
 		h.dialogue_active = context == "dialogue"
 		h.choices_active = context == "choices"
@@ -102,6 +131,9 @@ static func _checks(g: Game) -> String:
 		return "closing a menu released the choice pause"
 	h.cancel_conversation()
 	g.request_pause(false)
+	var cinematic_error := _cinematic_finish(g, h)
+	if cinematic_error != "":
+		return cinematic_error
 	h.inv_btn.pressed.emit()
 	if g.menus.current != "inventory":
 		return "ordinary inventory shortcut stopped opening"
@@ -115,6 +147,69 @@ static func _checks(g: Game) -> String:
 	var p := Player.new()
 	var error := _victory_during_death(g, h, p)
 	p.free()
+	return error
+
+
+## Exercise the real Cutscene lifetime with no elapsed frames/shared-state
+## ticking. The production callback has already cleared game.cutscene when
+## finish runs; the shared overlay gate must hold every menu path (HUD icons,
+## Escape/pad Start, menu hotkeys) until the fade hands off to that callback.
+static func _cinematic_finish(g: Game, h: Hud) -> String:
+	var scene := Cutscene.new(g)
+	h.add_child(scene)
+	var prior_tweens := g.get_tree().get_processed_tweens()
+	var completed := [false]
+	scene.finish(func() -> void: completed[0] = true)
+	var error := ""
+	var inventory_key := int(g.binds.get("inventory", KEY_I))
+	for state in [Game.ST_PLAYING, Game.ST_VICTORY]:
+		g.state = state
+		if not g.input_overlay_up():
+			error = "the shared overlay gate stayed open during the cinematic finishing fade"
+		if h._utility_menu_ok() or h._utility_menu_ok(true):
+			error = "utility gate opened during the cinematic finishing fade"
+		for button: Button in [h.inv_btn, h.codex_btn, h.skills_btn, h.settings_btn,
+				h.mail_btn, h.quest_btn, h.daily_btn, h.party_btn]:
+			button.pressed.emit()
+			if g.menus.is_open():
+				error = "HUD icon opened a menu during the cinematic finishing fade"
+				g.menus.close()
+		# Escape (and pad Start, which calls the same handler) and the menu
+		# hotkeys; talk_cd is cleared so only the fade can refuse them.
+		g.talk_cd = 0.0
+		h._on_escape()
+		if g.menus.is_open():
+			error = "Escape opened %s during the cinematic finishing fade" % g.menus.current
+			g.menus.close()
+		g.talk_cd = 0.0
+		g._menu_shortcut_event(inventory_key)
+		if g.menus.is_open():
+			error = "a menu hotkey opened %s during the cinematic finishing fade" % g.menus.current
+			g.menus.close()
+	# Advance only finish's new tween, keeping the fixture synchronous.
+	for tween: Tween in g.get_tree().get_processed_tweens():
+		if tween not in prior_tweens:
+			tween.custom_step(1.0)
+	if not completed[0] or not scene.is_queued_for_deletion():
+		error = "cinematic fade did not complete its callback"
+	if h.cinematic_finishing() or g.input_overlay_up():
+		error = "the overlay gate still held after the fade handed off"
+	scene.free()
+	if h._cinematic_mode or not h._utility_menu_ok(true):
+		error = "settled victory card did not regain its Menu shortcut"
+	# The same paths work again once the fade is over (the refusals were real).
+	g.state = Game.ST_PLAYING
+	g.talk_cd = 0.0
+	h._on_escape()
+	if g.menus.current != "pause":
+		error = "Escape stopped opening the game menu after a cinematic"
+	g.menus.close()
+	g.talk_cd = 0.0
+	g._menu_shortcut_event(inventory_key)
+	if g.menus.current != "inventory":
+		error = "the inventory hotkey stopped opening after a cinematic"
+	g.menus.close()
+	g.request_pause(false)
 	return error
 
 

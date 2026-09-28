@@ -579,6 +579,7 @@ const LOW_HP_WARN_FRAC := 0.3
 const LOW_HP_PULSE_RATE := 0.008 # radians per millisecond, shared with the vignette
 const POTION_URGENT_COLOR := Color(1.0, 0.72, 0.3)
 const GEAR_UPGRADE_FONT_SIZE := 15
+const GEAR_UPGRADE_BADGE_FONT_SIZE := 18  # corner triangle; full-size sans glyph, not the menu face
 const GEAR_UPGRADE_COLOR := Color(0.5, 1.0, 0.6)
 const SKILL_POINTS_PER_LEVEL := 1
 const ATTR_POINTS_PER_LEVEL := 1   # attributes AND substats spend from this pool

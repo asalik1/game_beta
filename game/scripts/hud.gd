@@ -146,6 +146,7 @@ var _hint_play_t := 0.0         # play seconds since the last menu (hint fade cl
 var _hint_faded := false
 var _touch_mode := false        # mobile: keyboard-only chrome stays hidden (touch_hud replaces it)
 var _cinematic_mode := false    # party chrome must stay hidden on later refreshes too
+var cinematic_fade: Cutscene = null  # storybook layer dissolving out (Cutscene.finish)
 var dialogue_hint: Label = null # desktop advance keys vs touch tap-to-continue
 var minimap_title: Label = null # desktop hotkey suffix is omitted on touch
 var dialogue_lines: Array = []
@@ -5618,9 +5619,17 @@ func _unhandled_input(event: InputEvent) -> void:
 ## Escape rejects that state, so the icon is the card's route to the game menu
 ## (MENU_CLARITY.md, shot_hud_dossier --online-menu).
 func _utility_menu_ok(victory_card := false) -> bool:
+	# input_overlay_up includes a cinematic's finishing fade (cinematic_finishing).
 	if not game.play_started or game.input_overlay_up():
 		return false
 	return game.state == Game.ST_PLAYING or (victory_card and game.state == Game.ST_VICTORY)
+
+
+## An illustrated cutscene is dissolving out. game.cutscene and the dialogue
+## flags have already cleared, but its callback (the solo victory card, a
+## chapter start) has not run, so a menu opened now would land over it.
+func cinematic_finishing() -> bool:
+	return is_instance_valid(cinematic_fade) and cinematic_fade.finishing()
 
 
 ## ESC opens the system menu (menus.gd owns closing it again).
@@ -5633,7 +5642,7 @@ func _on_escape() -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if game.chapter_finale.active or dialogue_active or choices_active or not game.play_started \
-			or game.state != game.ST_PLAYING or game.menus.is_open():
+			or game.state != game.ST_PLAYING or game.menus.is_open() or cinematic_finishing():
 		return
 	game.menus.open_pause()
 	get_viewport().set_input_as_handled()

@@ -10358,7 +10358,7 @@ func _test_consumable_actions() -> void:
 	p.equipment = {}
 	p.bags = [Items.make_bag("F")]
 	var errors: Array[String] = []
-	for check in [_cons_action_drinks, _cons_action_drops, _cons_action_recall, _cons_action_shop]:
+	for check in [_cons_action_drinks, _cons_action_missing_unit, _cons_action_drops, _cons_action_recall, _cons_action_shop]:
 		var why: String = await check.call(m)
 		if why != "":
 			errors.append(why)
@@ -10379,6 +10379,59 @@ func _test_consumable_actions() -> void:
 	if not errors.is_empty():
 		return _fail("consumable actions: " + "; ".join(errors))
 	print("ok: consumable actions (shared field/Inventory potion rules + codes, field-only notices/throttles, bag Health slot, seal, exact one-use stock, stale Use/Drop, in-panel recall reasons, in-panel full-bag potion/scroll/gem/gamble/black-market refusals)")
+
+
+## Force re-entrant stock removal at the true-damage seam without loaning the
+## real hero's death/combat state. The potion effects/gate/sting remain real.
+class PotionRemovalProbe extends "res://scripts/player_core.gd":
+	var drinking: Dictionary
+	var hits := 0
+	func _ready() -> void:
+		pass
+	func take_damage(amount: float, kind: String) -> void:
+		if kind == "true":
+			hits += 1
+			hp -= amount
+			var idx: int = preload("res://scripts/gear_care.gd").index_of(consumables, drinking)
+			if idx >= 0:
+				consumables.remove_at(idx)
+
+
+func _cons_action_missing_unit(_m: Menus) -> String:
+	var p := PotionRemovalProbe.new()
+	p.game = game
+	p.process_mode = Node.PROCESS_MODE_DISABLED
+	add_child(p)
+	game.pvp_active = false
+	var error := ""
+	for keep_twin in [true, false]:
+		var bottle := Items.make_potion("mana", "instant", "F", "accord")
+		bottle["sting"] = {"type": "true_dmg", "amt": 0.1}
+		var twin := bottle.duplicate(true)
+		var id := String(bottle.id)
+		p.drinking = bottle
+		p.consumables = [bottle, twin] if keep_twin else [bottle]
+		p.room_potions = {id: 2}
+		p.potion_cd = 0.0
+		p.max_hp = 100.0
+		p.hp = 100.0
+		p.max_mp = 100.0
+		p.mp = 40.0
+		p.hits = 0
+		var result := p.use_consumable(bottle)
+		if p.consumables.size() != (1 if keep_twin else 0) \
+				or (keep_twin and not is_same(p.consumables[0], twin)):
+			error = "a potion removed during its sting consumed another bag unit"
+		elif result != "" or p.hits != 1 or p.hp != 90.0 \
+				or not is_equal_approx(p.mp, 40.0 + 60.0 * float(bottle.amt)) \
+				or int(p.room_potions[id]) != 1 or p.potion_cd != Balance.POTION_DRINK_COOLDOWN:
+			error = "a potion removed during its sting lost successful-drink accounting"
+		elif p.use_consumable(bottle) == "" or p.hits != 1 or int(p.room_potions[id]) != 1:
+			error = "a removed potion could be drunk again"
+		if error != "":
+			break
+	p.free()
+	return error
 
 
 func _cons_action_find(node: Node, predicate: Callable) -> Node:
