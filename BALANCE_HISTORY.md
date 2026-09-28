@@ -4,6 +4,15 @@ The chronological record of every balance/pacing round: the trigger, the numbers
 
 ## Tuning rounds (newest first)
 
+- **Spell damage wiring (2026-09-28):** Mage Blink and Meteor impacts now honor
+  equipment cast bonuses, including Starfall, Firmament's second meteor and
+  skin impacts; a 20% bonus adds 20%, with Starfall's 0.6 theme multiplier and
+  0.4 repeat-target falloff unchanged. Wind Cuts wounds use physical resistance
+  and physical penetration (120 resistance halves the wound); the bolt remains
+  magical. Warlock damage entries now independently control Shadowbolt 1.0,
+  Hex 0.5 and Dark Pact 1.5 ATK, preserving live coefficients and correcting
+  their scaling text.
+
 - **Tower vigil (2026-09-08):** optional three-wave level-7 defense at the
   Collapsed Tower. Integrity 100; guard/heart radii 280/125; absent drain 5/s,
   enemy pressure 3/s each (three max); four-second warning and 15 integrity

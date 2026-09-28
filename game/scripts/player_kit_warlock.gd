@@ -27,7 +27,7 @@ func _use_warlock(slot: String, f: float) -> void:
 			if not cast_current or dead or downed or ghost:
 				_dismiss_eldritch_cast_eye(cast_eye)
 				return
-			_cast_shadowbolt(aim_dir(), 1.0 * f, cast_eye)
+			_cast_shadowbolt(aim_dir(), ability_coeff("a1") * f, cast_eye)
 		"a2": _hex(f)
 		"a3": _dark_pact(f)
 		"ult": _void_rift(f)
@@ -311,7 +311,7 @@ func _hex(f := 1.0) -> void:
 	for e in _enemies_within(center, radius):
 		# A dark tendril lashes from the curse's heart to each victim.
 		_beam_fx(center, e.global_position, col, 0.16)
-		hit_enemy(e, ability_coeff("a1") * f, eff.duplicate())
+		hit_enemy(e, ability_coeff("a2") * f, eff.duplicate())
 		if not e.dying:
 			# The PERSISTENT hex (wither ramp, contagion, death-burst) stays
 			# enemy-only (duel refactor v1): a rival eats the curse's direct
@@ -569,7 +569,7 @@ func _dark_pact(f := 1.0) -> void:
 	var eff := {"aoe": true}
 	if _tfx.get("pull", 0):
 		eff["pull"] = 1
-	var pact_mult: float = ability_coeff("a2") * f
+	var pact_mult: float = ability_coeff("a3") * f
 	if s_passive() == "veinroot" and current_atk() > 0.0:
 		# Veinroot: the blast draws extra force from your reserve — a flat
 		# max-HP bite folded in as coeff (the holy_charge idiom: atk cancels).

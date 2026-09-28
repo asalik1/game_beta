@@ -185,9 +185,9 @@ const CLASSES := {
 		# Rift). Pairs with the caster haste bonus for the endgame-scaling falloff.
 		"atk": 12.5, "atk_lvl": 3.4, "speed": 258.0,
 		"abilities": {
-			"a1": {"name": "Shadowbolt", "cd": 0.5,  "mp": 1,  "dmg": {"coeff": 0.5, "base": 0.0}, "desc": "Hurl a bolt of hungry darkness at the nearest enemy."},
-			"a2": {"name": "Hex",        "cd": 7.0,  "mp": 16, "dmg": {"coeff": 1.5, "base": 0.0, "aoe": true}, "riders": {"notes": ["Expose (+dmg taken)", "Explodes on death", "Ramps while held"]}, "desc": "Curse enemies around your target: withered and EXPOSED — cursed enemies EXPLODE on death. A MAINTAINED curse deepens: the longer it holds, the harder your every hit bites."},
-			"a3": {"name": "Dark Pact",  "cd": 9.0,  "mp": 0,  "riders": {"notes": ["−12% max HP", "Lifesteal surge 5s"]}, "desc": "Sacrifice 12% max HP for a soul-drain blast; for 5s your lifesteal surges."},
+			"a1": {"name": "Shadowbolt", "cd": 0.5,  "mp": 1,  "dmg": {"coeff": 1.0, "base": 0.0}, "desc": "Hurl a bolt of hungry darkness at the nearest enemy."},
+			"a2": {"name": "Hex",        "cd": 7.0,  "mp": 16, "dmg": {"coeff": 0.5, "base": 0.0, "aoe": true}, "riders": {"notes": ["Expose (+dmg taken)", "Explodes on death", "Ramps while held"]}, "desc": "Curse enemies around your target: withered and EXPOSED — cursed enemies EXPLODE on death. A MAINTAINED curse deepens: the longer it holds, the harder your every hit bites."},
+			"a3": {"name": "Dark Pact",  "cd": 9.0,  "mp": 0,  "dmg": {"coeff": 1.5, "base": 0.0, "aoe": true}, "riders": {"notes": ["−12% max HP", "Lifesteal surge 5s"]}, "desc": "Sacrifice 12% max HP for a soul-drain blast; for 5s your lifesteal surges."},
 			"ult": {"name": "Void Rift", "cd": 50.0, "mp": 35, "dmg": {"coeff": 6.5, "base": 0.0, "aoe": true, "crit_cursed": true}, "riders": {"notes": ["Pulls enemies in", "Curses on burst", "ALWAYS crits cursed foes"]}, "desc": "Tear a rift under the nearest enemy: it drags everything inward, then BURSTS — and a cursed victim is ALWAYS crit."},
 		},
 	},

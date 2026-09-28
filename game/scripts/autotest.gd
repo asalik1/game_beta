@@ -510,6 +510,9 @@ func _run_systems() -> void:
 	game.player.tree_points = {}
 	game.player.recalc()
 	print("ok: mage Wind Cuts (wind-only bleed, bites + refreshes)")
+	await _test_spell_damage_wiring()
+	if _failed:
+		return
 
 	# Assassin STAB SURGE (round 25): a connecting cut buffs lifesteal,
 	# bigger the lower your health sits.
@@ -11027,3 +11030,255 @@ func _cons_action_shop(m: Menus) -> String:
 		if not _cons_action_label(m, "Bag full!"):
 			return "full-bag purchase refusal missing inside the panel: " + title
 	return ""
+
+
+## Classes.CLASSES is recursively read-only. Lend the production kit a mutable
+## copy through its existing coefficient reader; no gameplay methods are mocked.
+class SpellDamageProbe extends Player:
+	var damage_abilities: Dictionary = Classes.CLASSES["warlock"]["abilities"].duplicate(true)
+
+	func ability_coeff(slot: String) -> float:
+		if cls == "warlock":
+			return float(damage_abilities[slot].get("dmg", {}).get("coeff", 1.0))
+		return super.ability_coeff(slot)
+
+
+## T19: real cast dispatch and hit funnel, with disposable actors and fixed stats.
+## The caller restores shared state even when a probe reports a failure.
+func _test_spell_damage_wiring() -> void:
+	await _frames(1) # flush the preceding section's queued combat cleanup
+	var saved_stats := game.party_stats.duplicate(true)
+	var saved_fight := game.fight_stats.duplicate(true)
+	var saved_hit_stop: Variant = game.settings.get("hit_stop", true)
+	var saved_modes := {}
+	for node in [game, game.player] + get_tree().get_nodes_in_group("enemies"):
+		saved_modes[node] = [node.is_processing(), node.is_physics_processing(), node.is_in_group("enemies")]
+		node.set_process(false)
+		node.set_physics_process(false)
+		if node.is_in_group("enemies"):
+			node.remove_from_group("enemies")
+	game.settings["hit_stop"] = false
+	var p := SpellDamageProbe.new()
+	p.game = game
+	p.cls = "mage"
+	game.add_child(p)
+	p.set_process(false)
+	p.set_physics_process(false)
+	# The kit loop's open anchor, not wherever earlier sections left the hero:
+	# Blink dashes from here and every dummy is placed relative to it.
+	p.global_position = game.room_center(0)
+	p.equipment = {}
+	p.atk = 100.0
+	p.crit = 0.0
+	p.magpen = 0.0
+	p.physpen = 0.0
+	p.max_hp = 10000.0
+	p.hp = p.max_hp
+	p.max_mp = 10000.0
+	p.mp = p.max_mp
+	var errors: Array[String] = []
+	await _probe_mage_cast_damage(p, errors)
+	_probe_wind_wound(p, errors)
+	await _probe_warlock_coefficients(p, errors)
+	p.queue_free()
+	await _frames(1)
+	game.party_stats = saved_stats
+	game.fight_stats = saved_fight
+	game.settings["hit_stop"] = saved_hit_stop
+	for node in saved_modes:
+		node.set_process(saved_modes[node][0])
+		node.set_physics_process(saved_modes[node][1])
+		if saved_modes[node][2]:
+			node.add_to_group("enemies")
+	if not errors.is_empty():
+		return _fail("spell damage wiring: " + "; ".join(errors))
+	print("ok: spell damage wiring (Mage gear, Starfall, Firmament, skins; physical Wind Cuts; independent Warlock knobs)")
+
+
+func _spell_damage_dummy(p: Player) -> Enemy:
+	var e := Enemy.make(game, "wolf", p.global_position + Vector2(100, 0), -1, 1.0)
+	game.add_enemy(e)
+	e.set_process(false)
+	e.set_physics_process(false)
+	e.max_hp = 100000.0
+	e.hp = e.max_hp
+	e.physres = 0.0
+	e.magres = 0.0
+	e.eva = 0.0
+	e.critres = 0.0
+	e.traits = {}
+	e.gold_value = 0
+	p.locked_target = e
+	p.soft_target = null
+	return e
+
+
+func _spell_damage_expect(errors: Array[String], actual: float, expected: float, label: String) -> void:
+	if absf(actual - expected) > 0.03:
+		errors.append("%s: got %.3f, expected %.3f" % [label, actual, expected])
+
+
+func _probe_mage_cast_damage(p: Player, errors: Array[String]) -> void:
+	var origin := p.global_position
+	# Expected multipliers come from the knobs themselves, so a retune of the
+	# gear, passive or Starfall numbers does not read as a wiring failure.
+	var slip_amp := 1.0 + float(Balance.uniq("mage_pants_Cs").get("amp", 0.0))
+	var advance := 1.0 + float(Balance.uniq("pants_aggr").get("bonus", 0.0))
+	var firmament := 1.0 + float(Balance.uniq("skyfall").get("second", 0.0))
+	var starfall := Classes.ability_fx("mage", "ult", "wind")
+	var starfall_mult := float(starfall.get("dmg_mult", 1.0))
+	var starfall_falloff := float(starfall.get("stack_falloff", 0.4))
+	var starfall_count := int(starfall.get("meteors", 1))
+	if slip_amp <= 1.0 or advance <= 1.0:
+		errors.append("precondition: Blink/Meteor gear bonuses must be positive to test")
+	# Every case runs through use_ability, including the actual equipment hook.
+	for entry in [
+			["a3", "", "", ""], ["ult", "", "", ""],
+			["ult", "", "crystal_archmage", ""],
+			["ult", "wind", "", ""], ["ult", "wind", "crystal_archmage", ""],
+			["ult", "", "", "skyfall"], ["ult", "", "crystal_archmage", "skyfall"]]:
+		var baseline: Array[float] = []
+		for boosted in [false, true]:
+			p.global_position = origin
+			p.facing = Vector2.RIGHT
+			p.skin = entry[2]
+			p.equipment = {} if entry[3] == "" else {"weapon": {"passive": entry[3]}}
+			p.ability_theme = {"a1": "", "a2": "", "a3": "", "ult": entry[1]}
+			p.uniq_armor = (["mage_pants_Cs"] if entry[0] == "a3" else ["pants_aggr"]) if boosted else []
+			p.uniq_t = {"slipamp": 3.0, "pants_aggr": 3.0} if boosted else {}
+			p.cds[entry[0]] = 0.0
+			p.mp = p.max_mp
+			var e := _spell_damage_dummy(p)
+			var before := e.hp
+			p.use_ability(entry[0])
+			# Another cast can replace the transient payload before Meteor lands.
+			p._tfx = {}
+			var impacts: Array[float] = []
+			var count := starfall_count if entry[1] == "wind" else 1
+			var deadline := Time.get_ticks_msec() + 4000
+			while impacts.size() < count and Time.get_ticks_msec() < deadline:
+				if e.hp < before:
+					impacts.append(before - e.hp)
+					before = e.hp
+				else:
+					await get_tree().create_timer(0.01).timeout
+			var label := "%s/%s/%s/%s bonus=%s" % [entry[0], entry[1], entry[2], entry[3], boosted]
+			if impacts.size() != count:
+				errors.append(label + " missing impacts")
+			var boost := slip_amp if entry[0] == "a3" else advance
+			for i in impacts.size():
+				var expected := p.atk * p.ability_coeff(entry[0])
+				if entry[1] == "wind":
+					# existing theme reduction and repeat-target falloff, applied once
+					expected *= starfall_mult * pow(starfall_falloff, i)
+				if entry[3] == "skyfall":
+					expected *= firmament # primary plus Firmament's half-weight echo on the same target
+				if boosted:
+					expected *= boost
+					if i < baseline.size():
+						_spell_damage_expect(errors, impacts[i], baseline[i] * boost, label + " ratio")
+				_spell_damage_expect(errors, impacts[i], expected, label + " impact %d" % i)
+			if not boosted:
+				baseline = impacts
+			elif entry[0] == "ult" and p.uniq_on("pants_aggr"):
+				errors.append(label + " did not consume Advance")
+			e.free()
+	p.global_position = origin
+	p.skin = ""
+	p.equipment = {}
+	p.uniq_armor = []
+	p.uniq_t = {}
+
+
+func _probe_wind_wound(p: Player, errors: Array[String]) -> void:
+	p.ability_theme = {"a1": "wind"}
+	p.bolt_bleed = 0.125
+	p._tfx = {}
+	# phys res, magic res, phys pen, magic pen, shred, ignore, wound mitigation
+	for row in [[0, 0, 0, 0, 0, 0.0, 1.0], [120, 0, 0, 0, 0, 0.0, 0.5],
+			[0, 120, 0, 0, 0, 0.0, 1.0], [120, 120, 120, 0, 0, 0.0, 1.0],
+			[120, 120, 0, 120, 0, 0.0, 0.5], [120, 0, 240, 0, 0, 0.0, 1.0],
+			[180, 0, 0, 0, 60, 0.0, 0.5], [240, 0, 0, 0, 0, 0.5, 0.5]]:
+		var e := _spell_damage_dummy(p)
+		e.physres = row[0]
+		e.magres = row[1]
+		p.physpen = row[2]
+		p.magpen = row[3]
+		e.res_shred = row[4]
+		p._cast_bolt(Vector2.RIGHT, 0.94)
+		for node in get_tree().get_nodes_in_group("projectiles"):
+			if node is Projectile and node.source_player == p and not node.is_queued_for_deletion():
+				var fx: Dictionary = node.fx.duplicate()
+				fx["pen_ignore"] = row[5]
+				p.hit_enemy(e, node.hit_player_mult, fx)
+				node.queue_free()
+		var label := "Wind Cuts %s" % str(row)
+		# The wound is sized off the whole twin cast (x2) and spread over its 3s.
+		_spell_damage_expect(errors, e.bleed_dps, p.atk * p.bolt_bleed * 0.94 * 2.0 / 3.0 * row[6], label)
+		var magic_res := maxf(0.0, float(row[1]) - float(row[4])) * (1.0 - float(row[5]))
+		var direct := Stats.resolve(p.atk * 0.94, "magic", 0.0, p.crit_dmg, p.magpen, p.dex, magic_res, 0.0, 0.0)
+		_spell_damage_expect(errors, e.max_hp - e.hp, direct["dmg"], label + " magical bolt")
+		e.free()
+	p.bolt_bleed = 0.0
+	p.physpen = 0.0
+	p.magpen = 0.0
+
+
+func _probe_warlock_coefficients(p: SpellDamageProbe, errors: Array[String]) -> void:
+	p.cls = "warlock"
+	p.ability_theme = {}
+	var abilities: Dictionary = p.damage_abilities
+	var baseline: Array[float] = []
+	for slot in ["a1", "a2", "a3"]:
+		baseline.append(await _spell_warlock_damage(p, slot))
+	# Pin only the live coefficients (Shadowbolt 1.0, Hex 0.5, Dark Pact 1.5).
+	# Hex's direct hit receives its own Exposed rider, read off a fresh dummy;
+	# no DoT ticks in this probe.
+	var exposed_probe := _spell_damage_dummy(p)
+	var exposed := exposed_probe.vuln_mult
+	exposed_probe.free()
+	var live: Array[float] = [p.atk * 1.0, p.atk * 0.5 * exposed, p.atk * 1.5]
+	for i in 3:
+		_spell_damage_expect(errors, baseline[i], live[i], "Warlock live coefficient a%d" % (i + 1))
+	for changed in ["a1", "a2", "a3"]:
+		var had_damage: bool = abilities[changed].has("dmg")
+		var saved: Dictionary = abilities[changed].get("dmg", {}).duplicate(true)
+		var altered := saved.duplicate(true)
+		altered["coeff"] = float(saved.get("coeff", 1.5)) * 2.0
+		abilities[changed]["dmg"] = altered
+		var samples: Array[float] = []
+		for slot in ["a1", "a2", "a3"]:
+			samples.append(await _spell_warlock_damage(p, slot))
+		# Restore after EACH variation, before evaluating any assertions.
+		if had_damage:
+			abilities[changed]["dmg"] = saved
+		else:
+			abilities[changed].erase("dmg")
+		for i in 3:
+			var slot: String = ["a1", "a2", "a3"][i]
+			_spell_damage_expect(errors, samples[i], baseline[i] * (2.0 if slot == changed else 1.0),
+				"Warlock %s knob -> %s" % [changed, slot])
+
+
+func _spell_warlock_damage(p: Player, slot: String) -> float:
+	p.hp = p.max_hp
+	p._tfx = {}
+	p._cast_base = 0.0
+	p.hexed = {}
+	p.wither = {}
+	var e := _spell_damage_dummy(p)
+	await p._use_warlock(slot, 1.0)
+	if slot == "a2":
+		var deadline := Time.get_ticks_msec() + 2000
+		while e.hp == e.max_hp and Time.get_ticks_msec() < deadline:
+			await get_tree().create_timer(0.01).timeout
+	if slot == "a1":
+		for node in get_tree().get_nodes_in_group("projectiles"):
+			if node is Projectile and node.source_player == p and not node.is_queued_for_deletion():
+				p.hit_enemy(e, node.hit_player_mult, node.fx.duplicate())
+				node.queue_free()
+	var damage := e.max_hp - e.hp
+	p.hexed = {}
+	p.wither = {}
+	e.free()
+	return damage

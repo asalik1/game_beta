@@ -61,8 +61,8 @@ func _use_mage(slot: String, f: float) -> void:
 				else:
 					_cast_bolt(release_dir, ability_coeff("a1") * f)
 		"a2": _frost_nova(f)
-		"a3": _blink()
-		"ult": _meteor()
+		"a3": _blink(f)
+		"ult": _meteor(f)
 
 
 func _cast_bolt(dir: Vector2, mult: float) -> void:
@@ -618,7 +618,7 @@ func _crystal_lotus_shatter_beat(col: Color) -> void:
 	game.hud.flash_screen(Color(col, 1.0), 0.08, 0.14)
 
 
-func _blink() -> void:
+func _blink(f := 1.0) -> void:
 	if veil_shield > 0.0:
 		# Permafrost (talent): the cast sheathes you in ice — a non-stacking
 		# max-HP shield (Transfusion buffer rail; decays, never banks).
@@ -627,7 +627,7 @@ func _blink() -> void:
 	if _tfx.has("freeze_path"):
 		eff["stun"] = float(_tfx["freeze_path"])  # Frostwalk
 	var start := global_position
-	var blink_coeff := ability_coeff("a3")
+	var blink_coeff := ability_coeff("a3") * f
 	if s_passive() == "breathless" and uniq_take("breathless"):
 		# Breathless: the post-evade Blink's shock strikes doubled.
 		blink_coeff *= 1.0 + uniq_k("blink_bonus")
@@ -766,14 +766,14 @@ func _void_weaver_blink_visual(start: Vector2, finish: Vector2) -> void:
 			_skin_ambient.modulate.a = 1.0)
 
 
-func _meteor() -> void:
+func _meteor(f := 1.0) -> void:
 	_ult_sfx()
 	var count := int(_tfx.get("meteors", 1))
 	if count <= 1:
 		# Fire / Ice: a single meteor on the aimed target.
 		var target := auto_aim()
 		var impact := target.global_position if target else global_position + facing * 150.0
-		_meteor_at(impact)
+		_meteor_at(impact, 1.0, Callable(), f)
 		if s_passive() == "skyfall":
 			# Firmament: heaven answers twice — a second, half-weight meteor
 			# falls on the next-nearest enemy (or re-strikes the same point).
@@ -785,13 +785,13 @@ func _meteor() -> void:
 					if d < best:
 						best = d
 						second = n
-			_meteor_at(second.global_position if second != null else impact, uniq_k("second"))
+			_meteor_at(second.global_position if second != null else impact, uniq_k("second"), Callable(), f)
 	else:
 		# Starfall (wind): comets fall in SEQUENCE on the lowest-health
 		# priority. Stacked hits on one target diminish, but a target's DEATH
 		# hands the next comet a fresh priority at FULL power (execute and
 		# cascade) — it concentrates where Fire's Meteor spreads and burns.
-		_starfall_comet(count, float(_tfx.get("stack_falloff", 0.4)), null, 0)
+		_starfall_comet(count, float(_tfx.get("stack_falloff", 0.4)), null, 0, f)
 	# Wind ult TAILWIND: Blink and Frost Nova cool down quicker for a window —
 	# tempo for tight rotations (Fire's Meteor still out-bursts and AoE-burns).
 	if _tfx.has("haste_dur"):
@@ -804,7 +804,7 @@ func _meteor() -> void:
 ## seek the lowest-health target, diminish a repeat hit on the SAME target,
 ## but reset to FULL when the priority changes — a kill cascades the salvo
 ## onward at full power onto the next threat.
-func _starfall_comet(remaining: int, falloff: float, last: CharacterBody2D, stack: int) -> void:
+func _starfall_comet(remaining: int, falloff: float, last: CharacterBody2D, stack: int, f: float) -> void:
 	if remaining <= 0 or dead:
 		return
 	var tgt := _lowest_hp_enemy(560.0)
@@ -821,7 +821,7 @@ func _starfall_comet(remaining: int, falloff: float, last: CharacterBody2D, stac
 		var a := auto_aim()
 		pos = a.global_position if a else global_position + facing * 150.0
 	_meteor_at(pos, scale, func() -> void:
-		_starfall_comet(remaining - 1, falloff, tgt, stack))
+		_starfall_comet(remaining - 1, falloff, tgt, stack, f), f)
 
 
 ## The lowest-health live target within range — Starfall's priority pick
@@ -834,17 +834,18 @@ func _lowest_hp_enemy(radius: float) -> CharacterBody2D:
 	return best
 
 
+## `f` already includes theme and equipment bonuses from use_ability; apply once.
 ## `scale` diminishes a comet's damage (Starfall stacks on one target).
 ## `on_land` fires after the comet resolves — Starfall chains its next comet
 ## from here, so a kill is already registered when the next target is picked.
-func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable()) -> void:
+func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable(), f := 1.0) -> void:
 	var fx_copy := _tfx.duplicate()
 	var col := _tcolor if _themed else Color(1.0, 0.6, 0.2)
 	# The Archmage calls down pure crystal (skin wins over theme).
 	if skin == "crystal_archmage":
 		col = Color(0.78, 0.92, 1.00)
 	if skin == "crystal_archmage":
-		_crystal_archmage_ult_scene(pos, scale, on_land, fx_copy, col)
+		_crystal_archmage_ult_scene(pos, scale, on_land, fx_copy, col, f)
 		return
 
 	# Growing impact shadow on the ground — you can feel it coming.
@@ -937,7 +938,7 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable()) -> void:
 			if fx_copy.has("freeze"):
 				eff["stun"] = float(fx_copy["freeze"])  # glacial comet
 			eff["true_frac"] = ability_true_frac("ult")  # Meteor: a quarter lands as true
-			hit_enemy(e, ability_coeff("ult") * float(fx_copy.get("dmg_mult", 1.0)) * scale, eff)
+			hit_enemy(e, ability_coeff("ult") * f * scale, eff)
 		# on_land BEFORE the restore: Starfall's next comet snapshots _tfx in
 		# its own _meteor_at, so the whole salvo inherits the ULT's payload.
 		if on_land.is_valid():
@@ -965,7 +966,7 @@ func _mage_ult_mark(pos: Vector2, col: Color, radius: float) -> Sprite2D:
 
 
 func _void_weaver_ult_scene(pos: Vector2, hit_scale: float, on_land: Callable,
-		fx_copy: Dictionary, col: Color) -> void:
+		fx_copy: Dictionary, col: Color, f := 1.0) -> void:
 	var world_id := game.world.get_instance_id()
 	var radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
 	var mark := _mage_ult_mark(pos, col, radius)
@@ -998,7 +999,7 @@ func _void_weaver_ult_scene(pos: Vector2, hit_scale: float, on_land: Callable,
 			mark.queue_free()
 		if not _cast_world_current(world_id):
 			return
-		_resolve_mage_skin_ult(pos, hit_scale, on_land, fx_copy, col, "void"))
+		_resolve_mage_skin_ult(pos, hit_scale, on_land, fx_copy, col, "void", f))
 
 
 func _spawn_void_thread_band(center: Vector2, radius: float,
@@ -1047,7 +1048,7 @@ func _spawn_void_thread_band(center: Vector2, radius: float,
 
 
 func _crystal_archmage_ult_scene(pos: Vector2, hit_scale: float,
-		on_land: Callable, fx_copy: Dictionary, col: Color) -> void:
+		on_land: Callable, fx_copy: Dictionary, col: Color, f := 1.0) -> void:
 	var world_id := game.world.get_instance_id()
 	var radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
 	var mark := _mage_ult_mark(pos, col, radius)
@@ -1115,7 +1116,7 @@ func _crystal_archmage_ult_scene(pos: Vector2, hit_scale: float,
 		crystal_mat.shader = MAGE_ELEMENT_HUE_SHADER
 		crystal_mat.set_shader_parameter("target_hue", col.h)
 		_meteor_impact_fx(pos, radius, col, crystal_mat)
-		_resolve_mage_skin_ult(pos, hit_scale, on_land, fx_copy, col, "crystal")
+		_resolve_mage_skin_ult(pos, hit_scale, on_land, fx_copy, col, "crystal", f)
 		var dissolve := sequence.create_tween()
 		# Hold the verdict long enough to read as a lotus on the impact itself;
 		# only the later frame is the rapid refracted disintegration.
@@ -1126,7 +1127,7 @@ func _crystal_archmage_ult_scene(pos: Vector2, hit_scale: float,
 
 
 func _resolve_mage_skin_ult(pos: Vector2, hit_scale: float, on_land: Callable,
-		fx_copy: Dictionary, col: Color, kind: String) -> void:
+		fx_copy: Dictionary, col: Color, kind: String, f := 1.0) -> void:
 	game.sfx("meteor")
 	game.shake(14.0)
 	if kind == "void":
@@ -1145,7 +1146,7 @@ func _resolve_mage_skin_ult(pos: Vector2, hit_scale: float, on_land: Callable,
 		if fx_copy.has("freeze"):
 			eff["stun"] = float(fx_copy["freeze"])
 		eff["true_frac"] = ability_true_frac("ult")
-		hit_enemy(e, ability_coeff("ult") * float(fx_copy.get("dmg_mult", 1.0)) * hit_scale, eff)
+		hit_enemy(e, ability_coeff("ult") * f * hit_scale, eff)
 	if on_land.is_valid():
 		on_land.call()
 	_tfx = saved

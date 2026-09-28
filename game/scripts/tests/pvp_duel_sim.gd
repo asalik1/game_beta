@@ -88,11 +88,13 @@ const KIT := {
 		{"n": "Leap", "k": "gap", "cd": 5.0, "mp": 0, "rng": 380.0, "moveto": true, "iframe": 0.2},
 	],
 	"warlock": [
-		{"n": "Shadowbolt", "k": "atk", "coeff": 0.5, "cd": 0.5, "mp": 1, "rng": 520.0},
-		{"n": "Hex", "k": "atk", "coeff": 1.5, "cd": 7.0, "mp": 16, "rng": 420.0,
+		# Coeffs mirror classes.gd (Shadowbolt 1.0, Hex 0.5, Dark Pact's 170px blast 1.5).
+		{"n": "Shadowbolt", "k": "atk", "coeff": 1.0, "cd": 0.5, "mp": 1, "rng": 520.0},
+		{"n": "Hex", "k": "atk", "coeff": 0.5, "cd": 7.0, "mp": 16, "rng": 420.0,
 			"amp": 0.2, "amp_dur": 6.0, "dot": 0.35, "dot_dur": 6.0},
 		{"n": "VoidRift", "k": "atk", "coeff": 6.5, "cd": 50.0, "mp": 35, "rng": 380.0, "always_crit": true},
-		{"n": "DarkPact", "k": "buff", "cd": 8.0, "mp": 0, "buff_ls": 0.25, "buff_dur": 5.0},
+		{"n": "DarkPact", "k": "buff", "coeff": 1.5, "cd": 8.0, "mp": 0, "rng": 170.0,
+			"buff_ls": 0.25, "buff_dur": 5.0},
 	],
 }
 
