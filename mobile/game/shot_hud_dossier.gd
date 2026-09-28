@@ -271,9 +271,37 @@ func _online_menu_run() -> String:
 	if error != "":
 		return error
 	game.state = Game.ST_PLAYING
+	error = await _party_gate_case()
+	if error != "":
+		return error
 	_stop_party()
 	await frames(4)
 	_check("online_menu/host_retired", not game.net_online() and not get_tree().paused)
+	return ""
+
+
+## The Party icon shares the HUD utility gate. In a real session the tree pause
+## cannot stand in for it, so actual input during the death beat or a story
+## line must not open the lobby, while settled play still does (the control).
+func _party_gate_case() -> String:
+	var button: Control = game.hud.party_btn
+	for context in ["death_beat", "dialogue", "settled"]:
+		await _close_overlay() # setup only; the measured entry is an actual tap
+		game.state = Game.ST_DEAD if context == "death_beat" else Game.ST_PLAYING
+		if context == "dialogue":
+			game.hud.dialogue([["Narrator", "Party gate check."]])
+		if not button.is_visible_in_tree():
+			game.hud.cancel_conversation()
+			game.state = Game.ST_PLAYING
+			return "party gate: HUD Party button is not visible"
+		await _tap(button.get_global_rect().get_center())
+		var opened: bool = game.menus.is_open() and game.menus.current == "lobby"
+		_check("online_menu/party_gate/" + context, opened == (context == "settled"),
+			{"input": "ScreenTouch" if touch_run else "mouse", "state": game.state,
+			"menu": game.menus.current, "dialogue": game.hud.dialogue_active})
+		game.hud.cancel_conversation()
+		game.state = Game.ST_PLAYING
+	await _close_overlay()
 	return ""
 
 

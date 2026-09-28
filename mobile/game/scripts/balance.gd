@@ -573,6 +573,13 @@ const XP_PER_LEVEL := 22
 # next finale. Uncompleted chapters pay as authored; NG+ tiers stay zero-XP.
 const REPLAY_XP_OVER := 3
 const ACT_XP_CAP := 40
+# Reward reading time and linked low-health / potion cue (presentation only).
+const LEVEL_UP_HOLD := 2.4
+const LOW_HP_WARN_FRAC := 0.3
+const LOW_HP_PULSE_RATE := 0.008 # radians per millisecond, shared with the vignette
+const POTION_URGENT_COLOR := Color(1.0, 0.72, 0.3)
+const GEAR_UPGRADE_FONT_SIZE := 15
+const GEAR_UPGRADE_COLOR := Color(0.5, 1.0, 0.6)
 const SKILL_POINTS_PER_LEVEL := 1
 const ATTR_POINTS_PER_LEVEL := 1   # attributes AND substats spend from this pool
 const STARTER_BAG_GRADE := "F"     # legacy single-bag default (save migration fallback)
@@ -3663,6 +3670,9 @@ const HUD_TRACKER_TARGET_GAP := 10.0
 const HUD_TRACKER_BODY_GAP := 6.0
 const HUD_TRACKER_CLEARANCE_RELEASE := 0.25
 const HUD_TRACKER_CLEARANCE_BOTTOM := 428.0 # reserve encounter/notice/buff/action lanes
+const HUD_ALLY_ARROW_INSET := 42.0
+const HUD_ALLY_ARROW_GAP := 3.0
+const HUD_ALLY_ARROW_PULSE_SCALE := 0.28
 
 const HUD_INFO_COVER_ALPHA := 0.12
 const HUD_INFO_COVER_FADE_SPEED := 6.0

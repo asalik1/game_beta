@@ -53,14 +53,25 @@ func refresh_hints() -> void:
 			hints.text = "%s: cast / strike / hold to reel   •   Left stick + %s: select lure   •   %s: leave" % [pad.label("a1"), pad.label("interact"), pad.label("cancel")]
 		elif get_viewport().gui_get_focus_owner() is LineEdit:
 			hints.text += "   •   %s: keyboard" % pad.label("potion")
+	elif g.hud != null and g.hud.ready_card_active() and not g.hud.choices_active and not g.hud.dialogue_active:
+		# Open chat keeps B for closing itself (gamepad.ready_b_declines).
+		hints.text = "%s: Ready · %s: %s" % [pad.label("potion_next"), pad.label("cancel"),
+			"Decline" if pad.ready_b_declines() else "close chat"]
 	elif g.hud != null and g.hud.choices_active:
-		hints.text = "D-pad ↑ ↓: choose   •   %s: confirm" % pad.label("interact")
+		hints.text = ("D-pad ↑ ↓: choose   •   %s: confirm" % pad.label("interact")) + _ready_hint_tail(g)
 	elif g.hud != null and g.hud.dialogue_active:
-		hints.text = "%s: reveal / continue" % pad.label("interact")
+		hints.text = ("%s: reveal / continue" % pad.label("interact")) + _ready_hint_tail(g)
 	else:
 		hints.text = "R3: lock / cycle · Right stick: choose · %s: release\nD-pad: map / bag / skills / codex · %s: pause" % [pad.label("cancel"), pad.label("pause")]
 	if g.hud != null and g.hud.dialogue_hint != null:
 		g.hud.dialogue_hint.text = "%s ▸" % pad.label("interact") if pad.active else ("TAP ▸" if g.touch_mode else "SPACE / click ▸")
+	if g.hud != null:
+		g.hud.refresh_ready_copy()
+
+
+## Choice prompts and dialogue keep their own hints; Y still answers a ready check.
+func _ready_hint_tail(g: Game) -> String:
+	return ("   •   %s: Ready" % pad.label("potion_next")) if g.hud.ready_card_active() else ""
 
 
 func context_changed() -> void:

@@ -99,7 +99,8 @@ func close() -> void:
 	# (MP-08) is boot-context too until a session begins play.
 	if not (current in ["class_select", "title"]) \
 			and not (current == "chapter_select" and not chapter_replay) \
-			and not (current == "lobby" and not game.play_started):
+			and not (current == "lobby" and not game.play_started) \
+			and not (game.hud != null and (game.hud.dialogue_active or game.hud.choices_active)):
 		game.request_pause(false)
 	current = ""
 	# Boot menus keep the HUD hidden.
@@ -532,7 +533,11 @@ func open_slots() -> void:
 		var erase := func() -> void:
 			SaveGame.delete(slot)
 			open_slots()  # stay on the roster — empty is a valid state now
-		_btn(row, " ✕ ", erase, Color(1, 0.5, 0.5))
+		var confirm_erase := func() -> void:
+			open_confirm("Delete %s (%s Lv %d)? This cannot be undone." % [dname, cname, s["level"]],
+				erase, open_slots, {"title": "Delete hero?", "accept_label": "Delete hero",
+				"accept_tone": "destructive", "focus_cancel": true})
+		_btn(row, " ✕ ", confirm_erase, Color(1, 0.5, 0.5))
 
 	_btn(vbox, "  🔊  Settings  ", func() -> void: open_settings("title"), Color(0.8, 0.85, 0.9))
 	_dev_roster_row(vbox)
@@ -595,6 +600,7 @@ func _trial_reward_line(lead: String) -> String:
 const PAUSE_MAX_H := 650.0
 const PAUSE_ACTION_MIN_H := 44.0
 const PAUSE_ACTION_FONT := 18
+const PAUSE_PARTY_FONT := 16 # read-only ally identities in the action scroller
 const PAUSE_GROUP_GAP := 6.0
 
 
@@ -675,6 +681,21 @@ func open_pause() -> void:
 	actions.add_theme_constant_override("separation", 10)
 	actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(actions)
+	# Read-only full ally identities (the party cards clip names). Remote
+	# players only, so solo and a lone online host get no empty section.
+	var allies: Array = game.hud.party_frame_data() if online else []
+	if not allies.is_empty():
+		UITheme.header(_lbl(actions, "Party", PAUSE_PARTY_FONT, Color(0.95, 0.85, 0.5)))
+		for ally in allies:
+			var ally_name := String(ally.name)
+			if ally_name == "":
+				ally_name = "Ally %d" % int(ally.peer) # same fallback as the ally reader
+			var cls := String(ally.cls)
+			var identity := "%s - %s" % [ally_name, String(Classes.CLASSES.get(cls, {}).get("name", cls.capitalize()))]
+			if String(ally.state) != "up":
+				identity += " (%s)" % String(ally.state)
+			_lbl(actions, identity, PAUSE_PARTY_FONT)
+		_pause_gap(actions)
 	_pause_action(_btn(actions, "Combat report — recent damage & last fall", func() -> void:
 		preload("res://scripts/ui/combat_report.gd").open(self), Color(0.95, 0.75, 0.60)))
 	_pause_action(_btn(actions, "  🔊  " + Loc.t("settings"), func() -> void: open_settings(), Color(0.9, 0.9, 0.95)))
@@ -793,7 +814,7 @@ func open_confirm(msg: String, on_yes: Callable, on_cancel := Callable(), option
 	var no := func() -> void:
 		if root == shell:
 			controller_back()
-	# Cancel sits left of the destructive Yes; neither is focused on open.
+	# Cancel sits left of the destructive Yes; callers can focus the safe choice.
 	var actions := HBoxContainer.new()
 	actions.alignment = BoxContainer.ALIGNMENT_CENTER
 	actions.add_theme_constant_override("separation", 18)
@@ -814,6 +835,8 @@ func open_confirm(msg: String, on_yes: Callable, on_cancel := Callable(), option
 		b.add_theme_font_size_override("font_size", CONFIRM_BODY_PX)
 	_hint(vbox, "ESC to close" if notice else "ESC to cancel")
 	_fit_confirm_shell(vbox, scroll, body)
+	if bool(options.get("focus_cancel", false)):
+		choices[0].grab_focus()
 
 
 ## An informational, single-action notice. Reuses the measured confirm shell
@@ -1104,13 +1127,15 @@ func confirm_endgame(mode: String) -> void:
 	var cls: String = game.local_player.cls
 	var pb := game.endgame_pb(mode, cls)
 	var mname := "The Crucible" if mode == "crucible" else "The Waking Depths"
-	var rules := "Ten bosses back to back, each with an elite affix — HP and MP carry over between them. Bonus spoils at 3 / 6 / 10 kills." if mode == "crucible" \
-		else "An endless descent where DEPTH IS THE MONSTERS' LEVEL — the ladder starts at 40, or at your deepest cleared checkpoint. A boss guards every 5th depth, a checkpoint boss every 10th; past 100 the dark only deepens. Rewards pay when you fall or cash out."
+	var rules := "Ten bosses back to back, each with an elite affix. HP and MP carry over between them. Bonus spoils at 3 / 6 / 10 kills." if mode == "crucible" \
+		else "An endless descent where depth is the monsters' level. The ladder starts at 40, or at your deepest cleared checkpoint. A boss guards every 5th depth, a checkpoint boss every 10th; past 100 the dark only deepens."
 	var best := ""
 	if not pb.is_empty():
 		best = ("\n\nYour best: %d bosses." % int(pb.get("kills", 0))) if mode == "crucible" \
 			else ("\n\nYour deepest: depth %d." % int(pb.get("depth", 0)))
-	open_confirm("Enter %s?\n\n%s%s\n\nWhen you cash out, fall, or complete the trial, a results screen offers a return to Crownfall." % [mname, rules, best],
+	var ending := "When you cash out, fall, or clear all ten bosses, a results screen offers a return to Crownfall." if mode == "crucible" \
+		else "When you cash out or fall, your rewards pay out and a results screen offers a return to Crownfall."
+	open_confirm("Enter %s?\n\n%s%s\n\n%s" % [mname, rules, best, ending],
 		func() -> void: _start_endgame(mode),
 		func() -> void: close(),
 		{"title": "Enter %s?" % mname, "accept_label": "Enter trial", "accept_tone": "primary"})
@@ -2642,10 +2667,12 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			var it: Dictionary = item
 			if cat != "all" and String(it["slot"]) != cat:
 				continue
-			var cell := _bag_slot(grid, _gear_codex_icon(it), "★" if GearCare.kept(it) else "", Items.GRADE_COLOR[it["grade"]],
+			var mark := "★" if GearCare.kept(it) else ("▲" if p.would_auto_equip(it) else "")
+			var cell := _bag_slot(grid, _gear_codex_icon(it), mark, Items.GRADE_COLOR[it["grade"]],
 				func() -> void: UIGearInspect.open(self, it, cat))
 			cell.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-			cell.tooltip_text = Items.title(it) + (" · Kept" if GearCare.kept(it) else "") + "\n" + _diff_tip(it)
+			cell.tooltip_text = Items.title(it) + (" · Kept" if mark == "★" else (" · Upgrade" if mark == "▲" else "")) \
+				+ "\n" + _diff_tip(it)
 			cell.set_drag_forwarding(Callable(), sock_can, sock_drop)
 	if show_cons:
 		# Consumables stack by id for display; using one consumes one.
@@ -3078,6 +3105,9 @@ func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color
 			badge.text = glyph.strip_edges()
 			badge.add_theme_font_size_override("font_size", 11)
 			badge.add_theme_color_override("font_color", Color(1, 1, 1))
+			if glyph == "▲":
+				badge.add_theme_font_size_override("font_size", Balance.GEAR_UPGRADE_FONT_SIZE)
+				badge.add_theme_color_override("font_color", Balance.GEAR_UPGRADE_COLOR)
 			badge.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 			badge.add_theme_constant_override("outline_size", 4)
 			badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT

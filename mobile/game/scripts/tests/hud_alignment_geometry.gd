@@ -299,6 +299,7 @@ static func suite(h: Hud) -> String:
 				if before[key] != after.get(key):
 					changes.append("%s %s: %s -> %s" % [before.node.get_path(), key, before[key], after.get(key)])
 		error = "HUD alignment fixture did not restore its borrowed control geometry/text: " + str(changes)
+	if error.is_empty(): error = ally_arrows(h)
 	return error
 
 
@@ -319,3 +320,369 @@ static func rect(value: Rect2) -> Array:
 
 static func to_rect(value: Array) -> Rect2:
 	return Rect2(float(value[0]), float(value[1]), float(value[2]), float(value[3]))
+
+
+## Quick-tier production arrow checks. Borrow live HUD controls synchronously,
+## so no gameplay/touch processing runs against the synthetic roster or window.
+## Solo never allocates the party UI or damage meter: whatever this builds is
+## freed again, on the failure paths too.
+static func ally_arrows(h: Hud) -> String:
+	var had_party := h.party_root != null
+	var had_meter := h.meter_root != null
+	var hooked := RenderingServer.frame_pre_draw.is_connected(h._place_down_marks_clear)
+	h._ensure_party_ui()
+	h._ensure_meter_ui()
+	var saved := snapshot(h)
+	var g := h.game
+	var window := h.get_window()
+	var window_size := window.size
+	var content_size := window.content_scale_size
+	var players := g.players.duplicate()
+	var old_touch: Node = g._touch_hud
+	var touch_mode := h._touch_mode
+	var settings := g.settings.duplicate(true)
+	var names_alpha := h.party_names_alpha
+	g.settings["touch_layout"] = {}
+	var items: Array[Dictionary] = []
+	for arrow in h.party_arrows:
+		items.append(_stash_item(arrow, ["party_arrow_world_at", "party_arrow_urgent"]))
+	for tag in h.party_names:
+		items.append(_stash_item(tag, ["party_name_world_at", "party_name_no_fit", "fcol"]))
+	var ally := Player.new()
+	ally.peer_id = 987654
+	var second := Player.new()
+	second.peer_id = 987655
+	g.players.assign([g.local_player, ally, second])
+	var touch := TouchHud.new()
+	touch.game = g
+	g.add_child(touch)
+	g._touch_hud = touch
+	var error := _ally_arrow_checks(h, ally, second, touch)
+	g.players.assign(players)
+	g._touch_hud = old_touch
+	touch.free()
+	ally.free()
+	second.free()
+	g.settings = settings
+	h.party_names_alpha = names_alpha
+	window.size = window_size
+	window.content_scale_size = content_size
+	h.set_touch_mode(touch_mode)
+	restore(h, saved)
+	for row in items: _unstash_item(row)
+	_drop_fixture_party_ui(h, had_party, had_meter, hooked)
+	if error.is_empty():
+		print("ok: ally arrows (8 directions + party-column aims x 3 live viewport sizes x desktop/touch x up/downed/ghost through the pre-draw pass, independent painted-HUD oracle incl. portrait/damage meter, name-tag avoidance, no stacking with rescue priority, name handoff at the live edge, nearest edge and no-fit)")
+	return error
+
+
+static func _stash_item(item: CanvasItem, metas: Array) -> Dictionary:
+	var row := {"node": item, "visible": item.visible, "modulate": item.modulate, "metas": {}, "meta_keys": metas}
+	if item is Node2D:
+		row.transform = (item as Node2D).transform
+	if item is Polygon2D:
+		row.color = (item as Polygon2D).color
+	if item is Label:
+		row.font_override = item.has_theme_color_override("font_color")
+		row.font_color = item.get_theme_color("font_color")
+	for key in metas:
+		if item.has_meta(key): row.metas[key] = item.get_meta(key)
+	return row
+
+
+static func _unstash_item(row: Dictionary) -> void:
+	var item: CanvasItem = row.node
+	item.visible = row.visible
+	item.modulate = row.modulate
+	if row.has("transform"): (item as Node2D).transform = row.transform
+	if row.has("color"): (item as Polygon2D).color = row.color
+	if row.has("font_override"):
+		if row.font_override: item.add_theme_color_override("font_color", row.font_color)
+		else: item.remove_theme_color_override("font_color")
+	for key in row.meta_keys:
+		if row.metas.has(key): item.set_meta(key, row.metas[key])
+		elif item.has_meta(key): item.remove_meta(key)
+
+
+## Free what the fixture allocated. The lazy party build queued a deferred
+## pre-draw hook connection; a later deferred call undoes it in FIFO order.
+static func _drop_fixture_party_ui(h: Hud, had_party: bool, had_meter: bool, hooked: bool) -> void:
+	if not had_meter and is_instance_valid(h.meter_root):
+		h.meter_root.queue_free()
+		h.meter_root = null
+		h.meter_rows.clear()
+	if not had_party:
+		# reset_party_ui also frees the meter; keep one that predates the fixture.
+		var meter := h.meter_root
+		var rows := h.meter_rows.duplicate()
+		h.meter_root = null
+		h.reset_party_ui()
+		h.meter_root = meter
+		h.meter_rows.assign(rows)
+	if not hooked:
+		var unhook := func() -> void:
+			if is_instance_valid(h) and RenderingServer.frame_pre_draw.is_connected(h._place_down_marks_clear):
+				RenderingServer.frame_pre_draw.disconnect(h._place_down_marks_clear)
+		unhook.call_deferred()
+
+
+static func _arrow_rect(arrow: Polygon2D) -> Rect2:
+	var bounds := Rect2(arrow.global_transform * arrow.polygon[0], Vector2.ZERO)
+	for point in arrow.polygon:
+		bounds = bounds.expand(arrow.global_transform * point)
+	return bounds
+
+
+## Independent painted-HUD oracle: native rects of the HUD an edge arrow must
+## never cover, walked here rather than read from the production reservation
+## list the placement itself avoids.
+static func _arrow_hud_rects(h: Hud, touch: TouchHud) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	for node in [h.avatar_root, h.vitals_panel, h.info_panel, h.minimap_root, h.quest_panel,
+			h.zone_label, h.quest_label, h.wayfinder.quest_root, h.meter_root]:
+		if is_instance_valid(node): _paint_walk(out, node)
+	for slot in h.party_slots: _paint_walk(out, slot.root)
+	for box in h.slot_boxes:
+		for key in ["border", "bg", "icon", "key", "name", "cost"]:
+			if box.has(key) and is_instance_valid(box[key]): _paint_walk(out, box[key])
+	for box in h.buff_slots:
+		for key in ["border", "icon", "time_bg", "time", "fill"]:
+			if box.has(key) and is_instance_valid(box[key]): _paint_walk(out, box[key])
+	for hint in h.hint_labels: _paint_walk(out, hint)
+	for tag in h.party_names: _paint_walk(out, tag)
+	if touch.visible:
+		for button in touch._btns.values(): _paint_walk(out, button.panel)
+		for control in [touch._joy_base, touch._joy_knob, touch._info]:
+			if is_instance_valid(control): _paint_walk(out, control)
+	return out
+
+
+static func _paint_walk(out: Array[Rect2], node: Node) -> void:
+	if node is CanvasItem and (not node.is_visible_in_tree() or node.modulate.a <= 0.01): return
+	if node is Control and node.size.x > 0.0 and node.size.y > 0.0 and node.self_modulate.a > 0.01 \
+			and not (node is Label and node.text.is_empty()):
+		var rect: Rect2 = node.get_global_rect()
+		if node is Label: rect = rect.grow(float(node.get_theme_constant("outline_size")))
+		out.append(rect)
+	for child in node.get_children(): _paint_walk(out, child)
+
+
+## Check one arrow the real pre-draw placement put down, at its pulse peak.
+static func _arrow_case(arrow: Polygon2D, target: Vector2, urgent: bool, view: Rect2,
+		hud_rects: Array[Rect2], label: String) -> String:
+	if not arrow.visible:
+		return "ally arrow hidden despite a clear screen edge: " + label
+	# Force the animation peak: coverage must hold at every pulse phase.
+	if urgent: arrow.scale = Vector2.ONE * (1.0 + Balance.HUD_ALLY_ARROW_PULSE_SCALE)
+	var bounds := _arrow_rect(arrow)
+	if not view.encloses(bounds):
+		return "ally arrow escaped live viewport: %s: %s" % [label, bounds]
+	for rect in hud_rects:
+		if bounds.intersects(rect):
+			return "ally arrow overlaps visible HUD: %s: %s vs %s" % [label, bounds, rect]
+	var pointing := Vector2.UP.rotated(arrow.rotation)
+	var from_center := target - view.get_center()
+	if pointing.dot((target - arrow.position).normalized()) < 0.999 \
+			or (absf(from_center.x) > 1.0 and signf(pointing.x) != signf(from_center.x)) \
+			or (absf(from_center.y) > 1.0 and signf(pointing.y) != signf(from_center.y)):
+		return "displaced ally arrow lost the ally direction: " + label
+	var edge := view.grow(-Balance.HUD_ALLY_ARROW_INSET)
+	if not (is_equal_approx(arrow.position.x, edge.position.x) or is_equal_approx(arrow.position.x, edge.end.x) \
+			or is_equal_approx(arrow.position.y, edge.position.y) or is_equal_approx(arrow.position.y, edge.end.y)):
+		return "ally arrow did not use the live screen edge: " + label
+	return ""
+
+
+static func _ally_arrow_checks(h: Hud, ally: Player, second: Player, touch: TouchHud) -> String:
+	h.visible = true
+	h.party_root.show()
+	for slot in h.party_slots:
+		slot.root.show()
+		slot.name.text = "A visible ally"
+		slot.state.hide()
+	for tag in h.party_names: tag.hide()
+	# The co-op left column below the frames: a damage meter with one inked row.
+	h.meter_root.show()
+	var meter_row: Dictionary = h.meter_rows[0]
+	(meter_row.root as Control).show()
+	(meter_row.name as Label).text = "A visible ally"
+	(meter_row.val as Label).text = "1.2k"
+	if not h.avatar_root.is_visible_in_tree() or not h.meter_root.is_visible_in_tree():
+		return "ally arrow fixture has no visible portrait/damage meter to avoid"
+	var directions := [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN,
+		Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]
+	var inset := Balance.HUD_ALLY_ARROW_INSET
+	for size in [Vector2i(1280, 720), Vector2i(1600, 900), Vector2i(900, 900)]:
+		h.get_window().size = size
+		h.get_window().content_scale_size = size
+		var view := h.get_viewport().get_visible_rect()
+		if not view.size.is_equal_approx(Vector2(size)):
+			return "ally arrow fixture did not change the live viewport: " + str(view)
+		var center := view.get_center()
+		var inverse: Transform2D = h.game.get_viewport().canvas_transform.affine_inverse()
+		# Rays whose ideal edge point lands on each party card and in the gap
+		# between the first two: the old placement drew right on the frames.
+		var cards: Array[Rect2] = []
+		for slot in h.party_slots:
+			# The slot root is a size-zero group: merge the card's painted parts.
+			var parts: Array[Rect2] = []
+			_paint_walk(parts, slot.root)
+			var card := Rect2()
+			for part in parts: card = part if not card.has_area() else card.merge(part)
+			cards.append(card)
+		var column: Array[Vector2] = []
+		for y in [cards[0].get_center().y, (cards[0].end.y + cards[1].position.y) * 0.5,
+				cards[1].get_center().y, cards[2].get_center().y]:
+			var aim := Vector2(view.position.x + inset, y)
+			var hit := false
+			for card in cards: hit = hit or card.intersects(Rect2(aim - Vector2(9, 9), Vector2(18, 18)))
+			if not hit:
+				return "party-column aim does not reach a party card at %s: %s" % [size, aim]
+			column.append(center + (aim - center) * 3.0)
+		for use_touch in [false, true]:
+			h.set_touch_mode(use_touch)
+			for hint in h.hint_labels: hint.visible = not use_touch
+			touch.visible = use_touch
+			touch._layout()
+			# Exercise a painted floating joystick as well as the right buttons.
+			touch._place_joystick(Vector2(80, size.y - 100), Vector2(80, size.y - 100))
+			touch._joy_base.show()
+			touch._joy_knob.show()
+			var hud_rects := _arrow_hud_rects(h, touch)
+			var present: Control = touch._btns.values()[0].panel if use_touch else h.hint_labels[0]
+			if not present.is_visible_in_tree():
+				return "ally arrow fixture has no visible hints/touch controls to avoid"
+			var targets: Array[Vector2] = []
+			# Aspect-scaled diagonals exit at the actual four corners.
+			for direction in directions: targets.append(center + direction * view.size * 2.0)
+			targets.append_array(column)
+			for state in ["up", "downed", "ghost"]:
+				for index in targets.size():
+					var target := targets[index]
+					var label := "%s/touch %s/%s/%s" % [size, use_touch, state, target]
+					ally.global_position = inverse * target
+					h._update_party_arrows([{"peer": ally.peer_id, "state": state, "cls": "warrior"}])
+					h._place_party_overlays_clear()
+					var arrow: Polygon2D = h.party_arrows[0]
+					var error := _arrow_case(arrow, target, state != "up", view, hud_rects, label)
+					if not error.is_empty(): return error
+					# Everything above the column is HUD too: the slide stays on its edge.
+					if index >= directions.size() and not is_equal_approx(arrow.position.x, view.position.x + inset):
+						return "party-column arrow left the left edge: %s: %s" % [label, arrow.position]
+			# Two allies in one direction: no stacking, and the downed one listed
+			# second still claims the nearest spot.
+			var shared := center + Vector2.RIGHT * view.size * 2.0
+			ally.global_position = inverse * shared
+			second.global_position = inverse * shared
+			h._update_party_arrows([{"peer": second.peer_id, "state": "up", "cls": "mage"},
+				{"peer": ally.peer_id, "state": "downed", "cls": "warrior"}])
+			h._place_party_overlays_clear()
+			var calm: Polygon2D = h.party_arrows[0]
+			var rescue: Polygon2D = h.party_arrows[1]
+			var shared_label := "%s/touch %s/shared" % [size, use_touch]
+			var calm_error := _arrow_case(calm, shared, false, view, hud_rects, shared_label)
+			if not calm_error.is_empty(): return calm_error
+			var rescue_error := _arrow_case(rescue, shared, true, view, hud_rects, shared_label)
+			if not rescue_error.is_empty(): return rescue_error
+			if _arrow_rect(calm).intersects(_arrow_rect(rescue)):
+				return "two allies in one direction stacked their arrows: " + shared_label
+			var ideal := h._edge_point(center, shared - center, view.position + Vector2.ONE * inset, view.end - Vector2.ONE * inset)
+			if rescue.position.distance_to(ideal) > calm.position.distance_to(ideal) + 0.01:
+				return "downed ally's arrow lost the nearest spot to an upright ally: " + shared_label
+			# An ally inside the enlarged live screen gets its name tag, not a stale 720p arrow.
+			h.party_names_alpha = 0.85
+			ally.global_position = inverse * (view.end - Vector2(20, 20))
+			var edge_data := [{"peer": ally.peer_id, "state": "up", "cls": "warrior", "name": "Edge ally"}]
+			h._update_party_arrows(edge_data)
+			h._update_party_names(edge_data)
+			if (h.party_arrows[0] as Polygon2D).visible:
+				return "on-screen ally received an off-screen arrow"
+			if not (h.party_names[0] as Label).visible:
+				return "on-screen ally at the live screen edge got neither an arrow nor a name tag: %s/touch %s" % [size, use_touch]
+			(h.party_names[0] as Label).hide()
+	# The real pre-draw order at 720p: names are placed first, then an arrow
+	# whose ideal edge spot sits on that final name tag slides clear of it.
+	h.get_window().size = Vector2i(1280, 720)
+	h.get_window().content_scale_size = Vector2i(1280, 720)
+	h.set_touch_mode(false)
+	for hint in h.hint_labels: hint.visible = true
+	touch.visible = false
+	var view := h.get_viewport().get_visible_rect()
+	var center := view.get_center()
+	var inverse: Transform2D = h.game.get_viewport().canvas_transform.affine_inverse()
+	var spot := Vector2(view.position.x + inset, view.position.y + view.size.y * 0.75)
+	var far := center + (spot - center) * 3.0
+	ally.global_position = inverse * far
+	second.global_position = inverse * (spot + Vector2(18, 54))  # head on the spot
+	var both := [{"peer": second.peer_id, "state": "up", "cls": "mage", "name": "Named ally"},
+		{"peer": ally.peer_id, "state": "up", "cls": "warrior", "name": "Far ally"}]
+	h._update_party_names(both)
+	h._update_party_arrows(both)
+	h._place_party_overlays_clear()
+	var tag: Label = h.party_names[0]
+	var tag_rect := tag.get_global_rect().grow(float(tag.get_theme_constant("outline_size")))
+	if not tag.visible or not tag_rect.intersects(Rect2(spot - Vector2(9, 9), Vector2(18, 18))):
+		return "name-tag fixture did not put the tag on the arrow's ideal edge spot: %s" % tag_rect
+	var named_arrow: Polygon2D = h.party_arrows[0]
+	var named_error := _arrow_case(named_arrow, far, false, view, _arrow_hud_rects(h, touch), "720p/name tag")
+	if not named_error.is_empty(): return named_error
+	# No clear spot anywhere: the production placement hides the arrow.
+	var full: Array[Rect2] = [view]
+	h._place_party_arrows_clear(view, h.game.get_viewport().canvas_transform, full)
+	if named_arrow.visible:
+		return "ally arrow stayed visible with no clear edge spot"
+	# Exact nearest-slide contract, and a genuinely full perimeter.
+	view = Rect2(0, 0, 1280, 720)
+	var local := Rect2(-14, -14, 28, 28)
+	var obstacle := Rect2(0, 320, 100, 100)
+	var blockers: Array[Rect2] = [obstacle]
+	var result: Dictionary = h._party_arrow_clear_position(view, Vector2.LEFT, local, blockers)
+	if not result.fits or not (result.position as Vector2).is_equal_approx(Vector2(42, 306)):
+		return "ally arrow did not slide to the nearest clear point on its edge"
+	blockers.assign([view])
+	if h._party_arrow_clear_position(view, Vector2.LEFT, local, blockers).fits:
+		return "ally arrow claimed a fit with every edge blocked"
+	blockers.clear()
+	for direction in directions:
+		var expected := h._edge_point(view.get_center(), direction, Vector2(42, 42), Vector2(1238, 678))
+		result = h._party_arrow_clear_position(view, direction, local, blockers)
+		if not result.fits or not (result.position as Vector2).is_equal_approx(expected):
+			return "unobstructed ally arrow changed its authored placement"
+	return _ally_arrow_cost(h)
+
+
+## Cost guard: placement runs per arrow on every online frame, and the shared
+## solver is quadratic in the reservations it is handed. With each arrow's own
+## edge blocked at its ideal spot (so every arrow searches), mid-screen
+## reservations (world names, prompts, status marks) must neither move an arrow
+## nor slow it down. The unfiltered search took about 75 ms on this layout.
+static func _ally_arrow_cost(h: Hud) -> String:
+	const DECOYS := 200
+	const BUDGET_MS := 10.0  # three arrows, fastest of five runs
+	var view := Rect2(0, 0, 1280, 720)
+	var local := Rect2(-14, -14, 28, 28)
+	# A top banner, a bottom bar, a left column and a corner map.
+	var hud: Array[Rect2] = [Rect2(300, 0, 680, 70), Rect2(300, 650, 680, 70),
+		Rect2(0, 100, 230, 500), Rect2(1050, 0, 230, 230)]
+	var crowded: Array[Rect2] = []
+	crowded.append_array(hud)
+	var middle := view.grow(-120.0)
+	for i in DECOYS:
+		# Distinct x per rect, all well clear of every edge lane.
+		crowded.append(Rect2(middle.position + Vector2(fmod(i * 53.0, middle.size.x - 20.0),
+			fmod(i * 29.0, middle.size.y - 12.0)), Vector2(20, 12)))
+	var directions := [Vector2.UP, Vector2.DOWN, Vector2.LEFT]
+	for direction in directions:
+		var plain: Dictionary = h._party_arrow_clear_position(view, direction, local, hud)
+		var busy: Dictionary = h._party_arrow_clear_position(view, direction, local, crowded)
+		if not plain.fits or busy.fits != plain.fits or busy.position != plain.position:
+			return "mid-screen reservations moved an ally arrow: %s: %s vs %s" % [direction, plain, busy]
+	var fastest := INF
+	for _run in 5:
+		var began := Time.get_ticks_usec()
+		for direction in directions: h._party_arrow_clear_position(view, direction, local, crowded)
+		fastest = minf(fastest, (Time.get_ticks_usec() - began) / 1000.0)
+	if fastest > BUDGET_MS:
+		return "ally arrow placement slowed down with %d mid-screen reservations: %.2f ms for 3 arrows (budget %.1f)" % [DECOYS, fastest, BUDGET_MS]
+	print("ok: ally arrow cost guard (%d mid-screen reservations: same spots, %.2f ms for 3 searching arrows)" % [DECOYS, fastest])
+	return ""

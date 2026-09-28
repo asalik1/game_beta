@@ -251,6 +251,8 @@ const CHAT_COLOR := Color(0.78, 0.86, 1.0)
 # MP-20 in-session ready-check card (the advance gate's surface; a check
 # raised while the LOBBY UI is open renders there instead). Lazy build.
 var ready_root: PanelContainer = null
+var ready_yes: Button = null
+var ready_no: Button = null
 var ready_body: VBoxContainer = null
 
 # MP-13 (§5.4): read-only mirror of a chapter beat another player is driving.
@@ -443,7 +445,7 @@ func _ready() -> void:
 	mail_btn.position = Vector2(16, HUD_ICON_Y)
 	mail_btn.size = HUD_ICON_BUTTON
 	mail_btn.pressed.connect(func() -> void:
-		if game.play_started and not game.menus.is_open():
+		if _utility_menu_ok():
 			game.menus.open_mailbox())
 	add_child(mail_btn)
 
@@ -491,7 +493,7 @@ func _ready() -> void:
 	daily_btn.size = HUD_ICON_BUTTON
 	daily_btn.visible = false
 	daily_btn.pressed.connect(func() -> void:
-		if game.play_started and not game.menus.is_open():
+		if _utility_menu_ok():
 			game.menus.open_daily())
 	add_child(daily_btn)
 	daily_btn.add_child(daily_glow)
@@ -534,7 +536,7 @@ func _ready() -> void:
 	quest_btn.position = Vector2(16 + HUD_ICON_STEP, HUD_ICON_Y)
 	quest_btn.size = HUD_ICON_BUTTON
 	quest_btn.pressed.connect(func() -> void:
-		if game.play_started and not game.menus.is_open():
+		if _utility_menu_ok():
 			game.refresh_contracts()
 			game.menus.open_journal("activities" if game.activity_claims_ready() > 0 else ""))
 	add_child(quest_btn)
@@ -579,7 +581,7 @@ func _ready() -> void:
 	inv_btn.position = Vector2(16 + 2 * HUD_ICON_STEP, HUD_ICON_Y)
 	inv_btn.size = HUD_ICON_BUTTON
 	inv_btn.pressed.connect(func() -> void:
-		if game.play_started and not game.menus.is_open():
+		if _utility_menu_ok():
 			game.menus.open_inventory())
 	add_child(inv_btn)
 	codex_btn = Button.new()
@@ -591,7 +593,7 @@ func _ready() -> void:
 	codex_btn.position = Vector2(16 + 3 * HUD_ICON_STEP, HUD_ICON_Y)
 	codex_btn.size = HUD_ICON_BUTTON
 	codex_btn.pressed.connect(func() -> void:
-		if game.play_started and not game.menus.is_open():
+		if _utility_menu_ok():
 			game.menus.open_codex())
 	add_child(codex_btn)
 	# Skill tree + menu(gear) icons — the two core screens that had no on-screen
@@ -607,7 +609,7 @@ func _ready() -> void:
 	skills_btn.position = Vector2(16 + 5 * HUD_ICON_STEP, HUD_ICON_Y)
 	skills_btn.size = HUD_ICON_BUTTON
 	skills_btn.pressed.connect(func() -> void:
-		if game.play_started and not game.menus.is_open():
+		if _utility_menu_ok():
 			game.menus.open_skills())
 	add_child(skills_btn)
 	skills_badge = Panel.new()
@@ -636,7 +638,7 @@ func _ready() -> void:
 	settings_btn.position = Vector2(16 + 6 * HUD_ICON_STEP, HUD_ICON_Y)
 	settings_btn.size = HUD_ICON_BUTTON
 	settings_btn.pressed.connect(func() -> void:
-		if game.play_started and not game.menus.is_open():
+		if _utility_menu_ok(true):
 			game.menus.open_pause())
 	add_child(settings_btn)
 	# A session persists when its lobby panel closes, so it needs a durable way
@@ -652,7 +654,7 @@ func _ready() -> void:
 	party_btn.size = HUD_ICON_BUTTON
 	party_btn.visible = false
 	party_btn.pressed.connect(func() -> void:
-		if game.play_started and game.net_online() and not game.menus.is_open():
+		if _utility_menu_ok() and game.net_online():
 			game.menus.open_party())
 	add_child(party_btn)
 	for hud_button: Button in [mail_btn, quest_btn, inv_btn, codex_btn, daily_btn,
@@ -2424,6 +2426,13 @@ func _update_hint_labels() -> void:
 	_layout_log()
 
 
+## The low-health pulse (0..1) the vignette and both potion buttons share. With
+## impact flashes off it holds steady at the midpoint instead of oscillating.
+func low_hp_pulse() -> float:
+	var flashes: float = clampf(float(game.settings.get("impact_flashes", 1.0)), 0.0, 1.0)
+	return 0.5 + 0.5 * flashes * sin(Time.get_ticks_msec() * Balance.LOW_HP_PULSE_RATE)
+
+
 func update_stats(p: Player) -> void:
 	_update_hint_labels()
 	# A menu opened (e.g. via hotkey) over an open HUD popover — dismiss it so
@@ -2432,11 +2441,11 @@ func update_stats(p: Player) -> void:
 		_close_hud_popover()
 	_update_down_ui(p)  # MP-12 §5.3: downed banner + overhead revive bars
 	_update_party_ui(p)  # MP-14 §5.6: ally frames + offscreen arrows + name tags
-	# Low-HP warning: the screen edges pulse red below 30% health.
+	# Low-HP warning: the screen edges pulse red below LOW_HP_WARN_FRAC health.
 	var hp_frac := p.hp / p.max_hp
-	if hp_frac < 0.3 and not p.dead:
-		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.008)
-		vignette.modulate = Color(1.0 + pulse * 0.6, 1.0 - pulse * 0.5, 1.0 - pulse * 0.5, 1.0 + pulse * 0.6)
+	var hp_pulse := low_hp_pulse()
+	if hp_frac < Balance.LOW_HP_WARN_FRAC and not p.dead:
+		vignette.modulate = Color(1.0 + hp_pulse * 0.6, 1.0 - hp_pulse * 0.5, 1.0 - hp_pulse * 0.5, 1.0 + hp_pulse * 0.6)
 	else:
 		vignette.modulate = Color(1, 1, 1)
 	_set_fill(hp_fill, hp_frac)
@@ -2591,6 +2600,8 @@ func update_stats(p: Player) -> void:
 		var box: Dictionary = slot_boxes[i]
 		if slot == "potion":
 			box["key"].text = game.control_hint("potion", "Potion").trim_prefix("[").trim_suffix("]")
+			box["border"].set_meta("urgent", false)
+			box["key"].modulate = Color.WHITE
 			box["cd"].value = 0.0
 			box["cost"].text = ""
 			# The potion isn't a variant — a dim neutral glow, matching a bare
@@ -2607,6 +2618,11 @@ func update_stats(p: Player) -> void:
 				_set_ability_ring(box,
 					(Color(0.75, 0.35, 0.35) if p.potion_count() > 0 else Color(0.3, 0.15, 0.15)) \
 					if left > 0 else Color(0.18, 0.12, 0.12))
+				var urgent := p.potion_urgent()
+				box["border"].set_meta("urgent", urgent)
+				if urgent:
+					_set_ability_ring(box, Color(0.75, 0.35, 0.35).lerp(Balance.POTION_URGENT_COLOR, hp_pulse))
+					box["key"].modulate = Color.WHITE.lerp(Balance.POTION_URGENT_COLOR, hp_pulse)
 				_set_tip(box["border"],
 					"Health Potion — mends a grade-scaled %% of your MISSING health (x%d carried; drinks the cheapest first — the chapter gift, then up the grades). Bought from any merchant (Accord shelf F→A) or found; each takes a bag slot. ROOM BUDGET: %d of your %d loadout slots left — it refills next room. %s cycles the loadout; open the inventory and select a potion to plan the exact bottle." % [
 						p.potion_count(),
@@ -2987,11 +3003,18 @@ func _down_mark_blockers(include_names: bool = true) -> Array[Rect2]:
 func _place_down_marks_clear() -> void:
 	if not is_inside_tree() or is_queued_for_deletion() or not visible or _cinematic_mode: return
 	if not is_instance_valid(game) or not game.net_online() or not is_instance_valid(tracker_clearance): return
+	_place_party_overlays_clear()
+
+
+## The online pre-draw body; the solo geometry test drives it directly.
+func _place_party_overlays_clear() -> void:
 	var active := false
 	for mark in down_marks: active = active or (mark.root as Control).visible
 	var named := false
 	for tag in party_names: named = named or (tag as Control).visible
-	if not active and not named: return
+	var pointed := false
+	for arrow in party_arrows: pointed = pointed or (arrow as Polygon2D).visible
+	if not active and not named and not pointed: return
 	const EDGE_INSET := 4.0  # match the ordinary viewport containment pass
 	const CLEAR_GAP := 3.0  # separate outlined status ink from other HUD ink
 	const HEAD_OFFSET := Vector2(0, -74)  # preserve the authored world-space lift
@@ -3003,7 +3026,6 @@ func _place_down_marks_clear() -> void:
 	# Names first: identity outranks the status mark, which then reserves around
 	# the boxes the names actually ended up in.
 	if named: _place_party_names_clear(view, xf, blockers, EDGE_INSET, CLEAR_GAP)
-	if not active: return
 	for mark in down_marks:
 		var root := mark.root as Control
 		if not root.visible or not mark.has("world_at"): continue
@@ -3018,6 +3040,8 @@ func _place_down_marks_clear() -> void:
 		root.position = result.position - local.position
 		root.set_meta("down_mark_no_fit", not bool(result.fits))
 		blockers.append(Rect2(result.position, local.size).grow(CLEAR_GAP))
+	# Arrows read the final tracker, prompt, name and status placement too.
+	if pointed: _place_party_arrows_clear(view, xf, blockers)
 
 
 ## Place the <=3 visible world name tags against the fixed HUD and each other,
@@ -3126,11 +3150,22 @@ func _on_proposal_changed() -> void:
 
 
 func _hide_ready_card() -> void:
+	ready_yes = null
+	ready_no = null
 	if ready_root != null:
 		ready_root.visible = false
 
 
+func ready_card_active() -> bool:
+	return visible and is_instance_valid(ready_root) and ready_root.is_visible_in_tree() \
+		and is_instance_valid(ready_yes) and is_instance_valid(ready_no) \
+		and ready_yes.is_visible_in_tree() and ready_no.is_visible_in_tree() \
+		and not ready_yes.disabled and not ready_no.disabled
+
+
 func _show_ready_card(sess: Node, data: Dictionary) -> void:
+	ready_yes = null
+	ready_no = null
 	if ready_root == null:
 		ready_root = PanelContainer.new()
 		var sb := StyleBoxFlat.new()
@@ -3194,6 +3229,25 @@ func _show_ready_card(sess: Node, data: Dictionary) -> void:
 		no.text = "  ✕  Decline  "
 		no.pressed.connect(func() -> void: sess.answer_ready(false))
 		row.add_child(no)
+		ready_yes = yes
+		ready_no = no
+		refresh_ready_copy()
+
+
+## While a controller is the active device, the answer buttons name the pad
+## buttons that press them (gamepad._button). B only while it really declines
+## (not under chat, a choice or dialogue). Rerun by the pad hints refresh.
+func refresh_ready_copy() -> void:
+	if not is_instance_valid(ready_yes) or not is_instance_valid(ready_no):
+		return
+	var pad: Node = game.gamepad if game != null else null
+	var on: bool = pad != null and pad.active
+	var yes_text := "  %s  Ready  " % (pad.label("potion_next") if on else "✓")
+	var no_text := "  %s  Decline  " % (pad.label("cancel") if on and pad.ready_b_declines() else "✕")
+	if ready_yes.text != yes_text:
+		ready_yes.text = yes_text
+	if ready_no.text != no_text:
+		ready_no.text = no_text
 
 
 # ---- party chat (MP-19) ----
@@ -3603,11 +3657,12 @@ func _apply_frame_state(slot: Dictionary, st: String, q) -> void:
 
 ## A thin edge arrow per OFFSCREEN living ally, class-colored, pointing toward
 ## them from screen center — with a pulse when they're down/ghost (finding your
-## downed friend is the #1 use). Cheap per-frame math (a viewport transform + a
-## ray-to-rect clamp per ally).
+## downed friend is the #1 use). This sets state only: the online pre-draw pass
+## (_place_party_arrows_clear) positions each arrow against the final HUD.
 func _update_party_arrows(data: Array) -> void:
 	var xf: Transform2D = game.get_viewport().canvas_transform
-	var center := Vector2(640, 360)
+	var view := get_viewport().get_visible_rect()
+	var center := view.get_center()
 	var used := 0
 	for d in data:
 		if String(d["state"]) == "dead":
@@ -3616,7 +3671,7 @@ func _update_party_arrows(data: Array) -> void:
 		if q == null:
 			continue
 		var screen: Vector2 = xf * q.global_position
-		if screen.x >= 0.0 and screen.x <= 1280.0 and screen.y >= 0.0 and screen.y <= 720.0:
+		if screen.x >= view.position.x and screen.x <= view.end.x and screen.y >= view.position.y and screen.y <= view.end.y:
 			continue  # on-screen: the name tag covers it
 		if used >= party_arrows.size():
 			break
@@ -3624,15 +3679,16 @@ func _update_party_arrows(data: Array) -> void:
 		if dir.length() < 1.0:
 			continue
 		var arrow := party_arrows[used] as Polygon2D
-		arrow.position = _edge_point(center, dir, Vector2(42, 42), Vector2(1238, 678))
+		arrow.set_meta("party_arrow_world_at", q.global_position)
 		arrow.rotation = dir.angle() + PI / 2.0  # the triangle points 'up' at 0
 		var st := String(d["state"])
+		arrow.set_meta("party_arrow_urgent", st == "downed" or st == "ghost")
 		var tint: Color = CLASS_TINT.get(String(d["cls"]), Color(0.7, 0.7, 0.75))
 		if st == "downed" or st == "ghost":
 			var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.008)
 			arrow.color = Color(1.0, 0.4, 0.4) if st == "downed" else Color(0.6, 0.82, 1.0)
 			arrow.modulate = Color(1, 1, 1, 0.5 + 0.5 * pulse)
-			arrow.scale = Vector2.ONE * (1.0 + 0.28 * pulse)
+			arrow.scale = Vector2.ONE * (1.0 + Balance.HUD_ALLY_ARROW_PULSE_SCALE * pulse)
 		else:
 			arrow.color = tint
 			arrow.modulate = Color(1, 1, 1, 0.85)
@@ -3641,6 +3697,89 @@ func _update_party_arrows(data: Array) -> void:
 		used += 1
 	for i in range(used, party_arrows.size()):
 		(party_arrows[i] as Polygon2D).visible = false
+
+
+## Reserve the polygon at maximum pulse size in every rotation, so its tip and
+## wings never grow into the HUD, its position does not jitter with the pulse,
+## and it can be re-aimed from wherever it lands. Downed/ghost arrows claim the
+## nearest spot first; each placed arrow then reserves its own box, so several
+## allies in one direction never stack. Arrows have no caption; on-screen
+## identity labels use the shared name placement.
+func _place_party_arrows_clear(view: Rect2, xf: Transform2D, blockers: Array[Rect2]) -> void:
+	var reserved: Array[Rect2] = []
+	reserved.append_array(blockers)  # the caller's list stays unchanged
+	_party_arrow_extra_blockers(reserved)
+	for urgent in [true, false]:
+		for entry in party_arrows:
+			var arrow := entry as Polygon2D
+			if not arrow.visible or not arrow.has_meta("party_arrow_world_at"): continue
+			if bool(arrow.get_meta("party_arrow_urgent", false)) != urgent: continue
+			var target: Vector2 = xf * (arrow.get_meta("party_arrow_world_at") as Vector2)
+			var reach := 0.0
+			for point in arrow.polygon: reach = maxf(reach, point.length())
+			# Whole painted pixels keep exact perimeter lanes stable through the
+			# shared solver's rectangle-size subtraction.
+			var half := ceilf(reach * (1.0 + Balance.HUD_ALLY_ARROW_PULSE_SCALE)) + Balance.HUD_ALLY_ARROW_GAP
+			var local := Rect2(-half, -half, half * 2.0, half * 2.0)
+			var result := _party_arrow_clear_position(view, target - view.get_center(), local, reserved)
+			arrow.position = result.position
+			arrow.visible = result.fits
+			if not result.fits: continue
+			# Point from the spot actually used: a slid arrow still aims at the ally.
+			arrow.rotation = (target - arrow.position).angle() + PI / 2.0
+			reserved.append(Rect2(arrow.position + local.position, local.size))
+
+
+## Left-column co-op HUD the shared prompt/status reservations predate: the
+## hero portrait (drawn above the arrows), the damage meter and party chat.
+## Faded chat lines keep their node until trimmed, so only inked lines count.
+func _party_arrow_extra_blockers(out: Array[Rect2]) -> void:
+	for node in [avatar_root, meter_root, chat_input]:
+		if is_instance_valid(node): tracker_clearance._drawn(out, node)
+	if is_instance_valid(chat_lines_box) and chat_lines_box.is_visible_in_tree():
+		for line in chat_lines_box.get_children():
+			if line is CanvasItem and (line as CanvasItem).modulate.a > 0.01:
+				tracker_clearance._drawn(out, line)
+
+
+## Sweep the complete footprint along each screen edge using the same exact
+## rectangle-clearance solver as names/status marks. A zero-width/height anchor
+## lane constrains that solver to the perimeter; the nearest clear point wins.
+## This runs per arrow on every online frame and the solver grows with the
+## square of its input, so each lane only sees the reservations that touch it
+## (one clear of the lane cannot touch a footprint inside it), and a lane whose
+## nearest point is no closer than the best spot so far is skipped. Neither
+## shortcut changes where an arrow lands.
+func _party_arrow_clear_position(view: Rect2, dir: Vector2, local: Rect2,
+		blockers: Array[Rect2]) -> Dictionary:
+	var low := view.position + Vector2.ONE * Balance.HUD_ALLY_ARROW_INSET
+	var high := view.end - Vector2.ONE * Balance.HUD_ALLY_ARROW_INSET
+	low = low.max(view.position - local.position)
+	high = high.min(view.end - local.end)
+	if high.x < low.x or high.y < low.y:
+		return {"position": view.get_center(), "fits": false}
+	var ideal := _edge_point(view.get_center(), dir, low, high)
+	var wanted := Rect2(ideal + local.position, local.size)
+	var best := ideal
+	var distance := INF
+	var near: Array[Rect2] = []
+	for edge in [Rect2(low, Vector2(0, high.y - low.y)),
+		Rect2(Vector2(high.x, low.y), Vector2(0, high.y - low.y)),
+		Rect2(low, Vector2(high.x - low.x, 0)),
+		Rect2(Vector2(low.x, high.y), Vector2(high.x - low.x, 0))]:
+		if ideal.distance_squared_to(ideal.clamp(edge.position, edge.end)) >= distance: continue
+		var lane := Rect2(edge.position + local.position, edge.size + local.size)
+		near.clear()
+		for rect in blockers:
+			if rect.intersects(lane): near.append(rect)
+		var result := _down_mark_clear_position(wanted, lane, near)
+		if not result.fits: continue
+		var candidate: Vector2 = result.position - local.position
+		var delta := ideal.distance_squared_to(candidate)
+		if delta < distance:
+			distance = delta
+			best = candidate
+	return {"position": best, "fits": distance < INF}
 
 
 ## Where the ray center->dir exits the on-screen rect [minv, maxv].
@@ -3663,6 +3802,10 @@ func _edge_point(center: Vector2, dir: Vector2, minv: Vector2, maxv: Vector2) ->
 ## arrows' job). party_names_alpha is the §5.6 knob.
 func _update_party_names(data: Array) -> void:
 	var xf: Transform2D = game.get_viewport().canvas_transform
+	# The same live screen the arrows use. Names gate on the head and arrows on
+	# the feet (an older split), so an ally whose feet alone reach inside the
+	# top edge still gets neither.
+	var view := get_viewport().get_visible_rect()
 	var used := 0
 	if party_names_alpha > 0.01:
 		for d in data:
@@ -3673,7 +3816,7 @@ func _update_party_names(data: Array) -> void:
 				continue
 			var head: Vector2 = q.global_position + Vector2(0, -54)
 			var screen: Vector2 = xf * head
-			if screen.x < 0.0 or screen.x > 1280.0 or screen.y < 0.0 or screen.y > 720.0:
+			if screen.x < view.position.x or screen.x > view.end.x or screen.y < view.position.y or screen.y > view.end.y:
 				continue  # offscreen: the arrow points the way instead
 			if used >= party_names.size():
 				break
@@ -3687,7 +3830,7 @@ func _update_party_names(data: Array) -> void:
 			# near an edge stays readable (outline width as the margin).
 			tag.position = Vector2(
 				clampf(screen.x - PARTY_TAG_W * 0.5, PARTY_TAG_MARGIN,
-					get_viewport().get_visible_rect().size.x - PARTY_TAG_W - PARTY_TAG_MARGIN),
+					view.size.x - PARTY_TAG_W - PARTY_TAG_MARGIN),
 				screen.y - PARTY_TAG_H * 0.5)
 			# The WORLD anchor, never this (possibly displaced) screen position, is
 			# what the pre-draw hook reprojects: displacement never accumulates.
@@ -4166,9 +4309,27 @@ func loot_banner(item: Dictionary, bonus_gold: int) -> void:
 	var lines: int = l.text.count("\n") + 1
 	l.size = Vector2(380, lines * 21.0 + 2.0)
 	box.add_child(l)
+	var banner_height := lines * 21.0
+	# Only for a piece that reached the bag: a full bag leaves it on the ground,
+	# where neither the bag nor Auto-equip can reach it yet.
+	var owner_p: Player = game.local_player if game.has_local_player() else null
+	if owner_p != null and preload("res://scripts/gear_care.gd").index_of(owner_p.backpack, item) >= 0 \
+			and owner_p.would_auto_equip(item):
+		var upgrade := Label.new()
+		banner_height = maxf(banner_height, l.get_minimum_size().y)
+		upgrade.position = Vector2(l.position.x, l.position.y + banner_height)
+		upgrade.add_theme_font_size_override("font_size", Balance.GEAR_UPGRADE_FONT_SIZE)
+		upgrade.add_theme_color_override("font_color", Balance.GEAR_UPGRADE_COLOR)
+		_outline(upgrade)
+		var bag := game.control_suffix("inventory")
+		upgrade.text = _wrap_tip("▲ Empty slot! Put it on from your bag%s" % bag
+			if not owner_p.equipment.has(String(item["slot"]))
+			else "▲ Upgrade! Hit Auto-equip in your bag%s" % bag, 46)
+		box.add_child(upgrade)
+		banner_height += upgrade.get_minimum_size().y
 	# Banners stack from under the minimap (2026-08-19: they used to start at
 	# y 110 and lie across the minimap + the boss bar zone).
-	banner_y = LOOT_BANNER_Y if banner_y > 440.0 else banner_y + maxf(52.0, lines * 21.0 + 10.0)
+	banner_y = LOOT_BANNER_Y if banner_y > 440.0 else banner_y + maxf(52.0, banner_height + 10.0)
 	var tween := box.create_tween()
 	tween.tween_interval(3.2)
 	tween.tween_property(box, "modulate:a", 0.0, 0.6)
@@ -4929,7 +5090,7 @@ func _process(_delta: float) -> void:
 	# AUTO drives line advance while dialogue is up (never through a choice or an
 	# open backlog). The HUD processes even while the tree is paused, which is
 	# exactly when a convo is showing, so real delta accrues here.
-	if not _auto_on or not dialogue_active or choices_active:
+	if not _auto_on or not dialogue_active or choices_active or game.menus.is_open():
 		return
 	if log_panel != null and log_panel.visible:
 		return
@@ -5420,6 +5581,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			_advance_dialogue()
 		get_viewport().set_input_as_handled()
+
+
+## Utility icons obey overlay state even when the shared world cannot pause.
+## The Menu icon alone also serves the settled victory card (victory_card):
+## Escape rejects that state, so the icon is the card's route to the game menu
+## (MENU_CLARITY.md, shot_hud_dossier --online-menu).
+func _utility_menu_ok(victory_card := false) -> bool:
+	if not game.play_started or game.input_overlay_up():
+		return false
+	return game.state == Game.ST_PLAYING or (victory_card and game.state == Game.ST_VICTORY)
 
 
 ## ESC opens the system menu (menus.gd owns closing it again).

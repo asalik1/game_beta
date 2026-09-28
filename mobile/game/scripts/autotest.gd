@@ -1927,6 +1927,9 @@ func _run_systems() -> void:
 	var combat_history_error: String = preload("res://scripts/tests/test_combat_history.gd").run(self)
 	if combat_history_error != "":
 		return _fail("combat history: " + combat_history_error)
+	var overlay_error: String = preload("res://scripts/tests/test_overlay_safety.gd").run(self)
+	if overlay_error != "":
+		return _fail("overlay safety: " + overlay_error)
 	var quality_error: String = await preload("res://scripts/tests/test_quality.gd").run(self)
 	if quality_error != "":
 		return _fail("quality: " + quality_error)

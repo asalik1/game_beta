@@ -1179,7 +1179,7 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 			var res: Dictionary = run_results() if has_local_player() else {}
 			if weekly_active and has_local_player():
 				_finish_weekly(res)   # autosaves the ledger, still ST_PLAYING
-			state = ST_VICTORY
+			_enter_victory()
 			set_music("")
 			sfx("victory")
 			# Results card + personal bests (retention roadmap #1): grade the
@@ -1881,8 +1881,30 @@ func on_player_died() -> void:
 	var p: Player = player  # solo: THE player (co-op: the one who fell)
 	var death_room := cur_room
 	_death_begin(p)
+	var beat := death_epoch
 	await get_tree().create_timer(Balance.DEATH_BEAT_SECS).timeout
-	_death_respawn(p, death_room)
+	_finish_death_beat(p, death_room, beat)
+
+
+## The chapter is won: freeze into ST_VICTORY. A win can land inside the death
+## beat (a lingering burn fells the final boss while you lie dead), so it ends
+## that beat here: the hero rises where they fell and the pending respawn
+## stands down. Dismissing the card early, leaving for Crownfall or the
+## server's own move-on then never meets a corpse or a stale respawn.
+func _enter_victory() -> void:
+	if state == ST_DEAD:
+		death_epoch += 1
+		if has_local_player() and local_player.dead:
+			local_player.revive()
+	state = ST_VICTORY
+
+
+## The death beat's timer ran out: respawn, unless a victory already ended
+## the beat (_enter_victory) and the world has moved on without it.
+func _finish_death_beat(p: Player, death_room: int, beat: int, forced_room := -1) -> void:
+	if beat != death_epoch:
+		return
+	_death_respawn(p, death_room, forced_room)
 
 
 ## Death phase 1 — the fall: freeze play (ST_DEAD), pay the tithe, mourn.
@@ -1957,6 +1979,12 @@ func _death_world_reset(death_room: int) -> void:
 
 
 func _death_respawn(p: Player, death_room: int, forced_room := -1) -> void:
+	# A lingering hit can win during the death beat. _enter_victory normally
+	# retires the beat first; a direct caller still keeps the victory card and
+	# its world intact, and dismissal owns the return to play.
+	if state == ST_VICTORY:
+		p.revive()
+		return
 	_death_world_reset(death_room)
 
 	# Respawn at the nearest pacified room to where you fell — a cleared
@@ -2007,17 +2035,28 @@ func net_wipe(death_room: int, safe_room: int) -> void:
 		state = ST_DEAD
 		run_deaths += 1
 		fight_wipe()
+		var server_beat := death_epoch
 		await get_tree().create_timer(Balance.DEATH_BEAT_SECS).timeout
-		_death_world_reset(death_room)
-		state = ST_PLAYING
-		autosave()  # a wipe is a world event — persist it (step B)
+		_finish_server_wipe(death_room, server_beat)
 		return
 	p.hp = 0.0
 	p.dead = true
 	p.play_death_anim()
 	_death_begin(p)
+	var beat := death_epoch
 	await get_tree().create_timer(Balance.DEATH_BEAT_SECS).timeout
-	_death_respawn(p, death_room, safe_room)
+	_finish_death_beat(p, death_room, beat, safe_room)
+
+
+## DEDICATED wipe, after the beat: the authoritative world resets and play
+## resumes. If the final boss fell during the beat, the victory owns the world
+## instead and _server_after_victory moves it on.
+func _finish_server_wipe(death_room: int, beat: int) -> void:
+	if beat != death_epoch:
+		return
+	_death_world_reset(death_room)
+	state = ST_PLAYING
+	autosave()  # a wipe is a world event — persist it (step B)
 
 
 ## MP-14 (§5.4/§5.7), GUEST: the host's final boss fell — show the SAME
@@ -2056,7 +2095,7 @@ func _present_network_victory(vtext: String, res: Dictionary, pb: Dictionary,
 
 
 func _network_victory_card(vtext: String, res: Dictionary, pb: Dictionary, next_ch: String) -> void:
-	state = ST_VICTORY
+	_enter_victory()
 	set_music("")
 	sfx("victory")
 	if has_local_player():

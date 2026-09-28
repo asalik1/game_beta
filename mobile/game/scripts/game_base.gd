@@ -164,6 +164,14 @@ func control_hint(action: String, touch_label: String) -> String:
 	if touch_mode:
 		return touch_label
 	return "[%s]" % OS.get_keycode_string(binds.get(action, KEY_NONE))
+
+
+## For copy that already names the HUD icon ("Skills", "your bag"): " [T]" on
+## keyboard or pad, nothing on touch, where that named icon is what you tap.
+## Keeps a template from doubling its noun ("Skills Skills").
+func control_suffix(action: String) -> String:
+	var hint := control_hint(action, "")
+	return "" if hint == "" else " " + hint
 const OPP := {"N": "S", "S": "N", "E": "W", "W": "E"}
 
 # ------------------------------------------------------------- chapters ---
@@ -185,6 +193,9 @@ const ST_VICTORY := 3
 # (Zone tint and weather now come from the terrain registry — terrains.gd.)
 
 var state := ST_PLAYING
+# Bumped when a victory ends a pending death beat (game_flow._enter_victory);
+# the beat's respawn compares it after its timer and stands down.
+var death_epoch := 0
 # --------------------------------------------------- player registry (MP) ---
 # Phase 0 groundwork (MULTIPLAYER.md §6): the game tracks a REGISTRY of
 # players. Solo holds exactly one entry — kept in sync by the `player`

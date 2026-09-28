@@ -26,6 +26,7 @@ const JOY_BASE_D := 236.0
 const JOY_KNOB_D := 108.0
 const BTN_D := 104.0                       # ability-button diameter
 const BTN_SD := 80.0                       # secondary-button diameter
+const BTN_BORDER := Color(0.5, 0.55, 0.7, 0.7) # resting button rim (the potion rim pulses from it)
 const LOCK_SWIPE_OFF := 66.0               # drag this far off the lock button = release, not lock
 const LONG_PRESS := 0.45                    # hold a button this long = show its info (instead of using it)
 const TAP_PULSE := 0.12                     # how long a tap holds its intent flag true (so the sim polls it)
@@ -115,7 +116,7 @@ func _circle(diam: float, fill: Color, border_col: Color, border_w: float) -> Pa
 
 func _make_button(id: String) -> void:
 	var diam: float = BTN_D if ABILITY_SLOTS.has(id) else BTN_SD
-	var pnl := _circle(diam, Color(0.06, 0.07, 0.11, 0.72), Color(0.5, 0.55, 0.7, 0.7), 3.0)
+	var pnl := _circle(diam, Color(0.06, 0.07, 0.11, 0.72), BTN_BORDER, 3.0)
 	add_child(pnl)
 	# Variant glow behind the icon (ability slots only), tinted per frame by the
 	# equipped theme — mirrors the desktop bar. Added before the icon so it sits
@@ -284,6 +285,14 @@ func _refresh_ability_icons() -> void:
 	var carried: int = p.potion_count() if p.active_potion == "health" else p.consumable_count(p.active_potion)
 	plbl.text = "x%d" % carried if left > 0 else "—"
 	picon.modulate = Color(1, 1, 1, 1) if left > 0 else Color(0.4, 0.4, 0.4, 0.8)
+	# Low health with a drinkable bottle: the rim and stock label pulse with the
+	# vignette, the same cue the keyboard ability bar's potion slot carries.
+	var pnl := pb["panel"] as Panel
+	var urgent: bool = p.potion_urgent()
+	var pulse: float = game.hud.low_hp_pulse() if urgent else 0.0
+	pnl.set_meta("urgent", urgent)
+	(pnl.get_theme_stylebox("panel") as StyleBoxFlat).border_color = BTN_BORDER.lerp(Balance.POTION_URGENT_COLOR, pulse)
+	plbl.modulate = Color.WHITE.lerp(Balance.POTION_URGENT_COLOR, pulse)
 
 
 # ------------------------------------------------------------------ input ------
