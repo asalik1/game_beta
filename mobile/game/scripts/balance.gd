@@ -2019,6 +2019,13 @@ const CHEST_GRADE_TINT := 0.12
 # shows for FRAME_T.
 const CHEST_OPEN_HOLD := 2.4
 const CHEST_OPEN_FRAME_T := 0.07
+# Stand-up loot recheck: a fallen hero keeps collision layer 2, so getting up
+# fires no new body_entered and the coin/chest re-checks its existing overlap.
+# Area2D overlap lists lag a teleport (the death respawn) by a physics step, so
+# the recheck also needs the hero within contact reach: loot radius (coin 14,
+# chest 26) + hero radius 13 + a few px of slack for one tick of motion.
+const COIN_RECHECK_REACH := 32.0
+const CHEST_RECHECK_REACH := 44.0
 
 # River wading (terrain mechanic, Graphics & Ambience track): speed
 # multiplier in the water for player AND enemies; the bridge is dry.
@@ -4050,3 +4057,10 @@ const DOOR_TORCH_HEIGHT := 64.0
 const DOOR_TORCH_PAIR_OFFSET := 26.0
 const DOOR_TORCH_GROUND_CLEARANCE := 6.0
 const DOOR_TORCH_FOOT_BAND := 0.25
+
+# Shared field/Inventory potion eligibility (preserves held-input thresholds).
+const POTION_DRINK_COOLDOWN := 0.6
+const POTION_EMPTY_COOLDOWN := 0.3
+const POTION_MANA_FULL_MARGIN := 0.5
+const POTION_TONIC_REFRESH_WINDOW := 0.5
+const POTION_BUFF_REFRESH_WINDOW := 1.0

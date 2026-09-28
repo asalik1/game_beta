@@ -2122,16 +2122,24 @@ func net_session_over() -> void:
 		net.leave()
 
 
+## Why a recall is refused right now ("" = allowed). The Inventory shows it
+## in its panel before spending the scroll; recall_to_safe shows it in world.
+func recall_error() -> String:
+	if pvp_active:
+		# The duel's gates ARE the structure — no scroll skips them.
+		return "No recalling in the proving grounds"
+	if barrier_active:
+		return "You can't recall during a fight"
+	return ""
+
+
 ## Scroll of Recall: whisk the LIVING player back to the last safe room.
 ## Refused while a room is HOT (doors sealed mid-combat) — returns false so
 ## the scroll isn't consumed. Returns true on a successful recall.
 func recall_to_safe() -> bool:
-	if pvp_active:
-		# The duel's gates ARE the structure — no scroll skips them.
-		spawn_text(player.global_position + Vector2(0, -56), "No recall in the proving grounds!", Color(1.0, 0.6, 0.4))
-		return false
-	if barrier_active:
-		spawn_text(player.global_position + Vector2(0, -56), "Can't recall in combat!", Color(1.0, 0.6, 0.4))
+	var why := recall_error()
+	if why != "":
+		spawn_text(player.global_position + Vector2(0, -56), why, Color(1.0, 0.6, 0.4))
 		return false
 	player.global_position = room_arrival_pos(last_safe_room)
 	_enter_room(last_safe_room)

@@ -146,14 +146,23 @@ func bury() -> void:
 
 func _physics_process(_delta: float) -> void:
 	if not buried:
-		set_physics_process(false)
+		# A downed hero stays on layer 2 after recovery: retry that existing
+		# overlap, then sleep again as soon as it ends or the chest opens.
+		# The overlap list lags a respawn teleport by a physics step, so the
+		# hero must also really be in reach.
+		var hero: Player = game.local_player
+		if opened or hero == null or not overlaps_body(hero) \
+				or global_position.distance_to(hero.global_position) >= Balance.CHEST_RECHECK_REACH:
+			set_physics_process(false)
+		else:
+			_on_body_entered(hero)
 		return
 	var p: Player = game.player
 	if p != null and not p.dead \
 			and global_position.distance_to(p.global_position) < 150.0:
 		buried = false
 		visible = true
-		set_physics_process(false)
+		# Leave processing on for one overlap recheck after the reveal.
 		game.sfx("ward", 0.85, 0.0, -6.0)
 		game.burst(global_position, Color(1.0, 0.95, 0.6), 12)
 		game.spawn_text(global_position + Vector2(0, -46), "Something glints...",
@@ -163,9 +172,13 @@ func _physics_process(_delta: float) -> void:
 func _on_body_entered(body: Node) -> void:
 	if opened or buried or not body is Player:
 		return
-	if body != game.local_player or body.dead or body.downed or body.ghost:
+	if body != game.local_player:
+		return
+	if body.dead or body.downed or body.ghost:
+		set_physics_process(true)
 		return
 	opened = true
+	set_physics_process(false)
 	game.sfx("chest")
 	game.burst(global_position, Color(1.0, 0.85, 0.3), 14)
 	if on_open.is_valid():

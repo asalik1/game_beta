@@ -51,6 +51,21 @@ static func retire_live(g: Game) -> void:
 			node.queue_free()
 
 
+## World-bound offers are never earned spoils. Run AFTER recovery/overflow
+## mail, before changing chapter_id, so stale contacts cannot discover a
+## cache in the new chapter or pay out a second copy after a restart.
+static func retire_world_bound(g: Game) -> void:
+	for node in g.get_children():
+		if node.is_queued_for_deletion():
+			continue
+		if node is Chest and node.game == g:
+			node.opened = true
+			node.queue_free()
+		elif node is Pickup and node.game == g and node.goldrush:
+			node.claimed = true
+			node.queue_free()
+
+
 static func recover_saved(g: Game, raw: Variant) -> Dictionary:
 	var saved := clean(raw)
 	if not g.has_local_player() or (saved.items.is_empty() and saved.gold <= 0):

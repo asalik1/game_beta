@@ -1013,58 +1013,29 @@ func use_ability(slot: String) -> void:
 func drink_potion() -> void:
 	if potion_cd > 0.0 or dead or downed or ghost:
 		return
-	if preload("res://scripts/pocket_trial.gd").potions_locked(game, self):
-		_drink_gate(active_potion)  # explain the seal before recording a drink
-		return
-	# PVP v1 (owner spec): the duel has no stakes, so it takes no stock either —
-	# potions are BARRED (drinking real bottles into a zero-reward mode would be
-	# pure loss, and sustain in a 1v1 is its own balance question for later).
-	if game != null and game.pvp_active:
-		potion_cd = 0.6
-		game.spawn_text(global_position + Vector2(0, -40),
-			"Potions are barred in the proving grounds", Color(0.8, 0.85, 1.0))
-		return
-	# Per-room budget (playtest 2026-07-07 v2): every drink spends a
-	# loadout slot; a spent loadout locks Q until the next room.
-	if room_potions_left() <= 0:
-		potion_cd = 0.6
-		game.spawn_text(global_position + Vector2(0, -40),
-			"No potions left this room", Color(0.85, 0.7, 0.5))
-		return
-	if int(room_potions.get(active_potion, 0)) <= 0:
+	# Shared eligibility (also the Inventory's), plus the held-Q refresh windows.
+	var why := _drink_error(active_potion, Items.potion_by_id(active_potion), true)
+	if why == DRINK_UNPLANNED:
 		cycle_potion()  # active type spent: fall to the next budgeted one
+		return
+	if why != DRINK_OK:
+		_drink_refusal(why)  # notice + re-press throttle; full bars stay silent
 		return
 	# Health drinks are now GRADED bag items (CONSUMABLE_GRADES). The generic
 	# "health" loadout token auto-pours the cheapest carried Health Potion (gift
 	# first) through the SAME drink gate as everything else, keyed "health".
 	if active_potion == "health":
-		if hp >= max_hp:
-			return
 		var pot := next_health_potion()
 		if pot.is_empty():
-			potion_cd = 0.3
+			potion_cd = Balance.POTION_EMPTY_COOLDOWN
 			cycle_potion()  # no health bottle to pour — swap to whatever else is planned
 			return
-		game.fight_note_potion()
-		use_consumable(pot, "health")
+		if use_consumable(pot, "health") == "":
+			game.fight_note_potion()
 		if int(room_potions.get("health", 0)) <= 0 or next_health_potion().is_empty():
 			cycle_potion()
 		return
-	# A specifically-slotted graded potion. use_consumable's _drink_gate owns the
-	# cd + budget spend (2026-07-21). Held-Q waste guards, generalised by effect.
-	var eff := String(Items.potion_by_id(active_potion).get("effect", ""))
-	if (eff == "heal_instant" or eff == "renewal") and hp >= max_hp:
-		return
-	if eff == "mana_instant" and mp >= max_mp - 0.5:
-		return
-	if eff == "mana_tonic" and mana_tonic_time > 0.5:
-		return
-	if eff == "heal_tonic" and heal_tonic_time > 0.5:
-		return
-	if eff == "might" and elixir_time > 1.0:
-		return
-	if eff == "ward" and dr_time > 1.0:
-		return
+	# A specifically slotted bottle shares eligibility and the single spend.
 	for c in consumables:
 		if String(c.get("id", "")) == active_potion:
 			use_consumable(c)
@@ -1072,7 +1043,7 @@ func drink_potion() -> void:
 					or consumable_count(active_potion) <= 0:
 				cycle_potion()  # slot spent or stock dry: next potion
 			return
-	potion_cd = 0.6
+	potion_cd = Balance.POTION_DRINK_COOLDOWN
 	cycle_potion()  # nothing left of this type — swap instead of sulking
 
 

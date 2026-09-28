@@ -2540,43 +2540,115 @@ func potion_short_name(id: String) -> String:
 	return potion_display_name(id)
 
 
-## Shared drink gate (2026-07-21): EVERY budgeted drink — Q-rotation or a bag
-## click — passes here. The bag path used to skip the per-room budget entirely
-## (a renewal chain was unlimited in-fight healing, gold the only gate, which
-## un-designed the potion-investment round), and the Q path double-managed the
-## cd/spend (arming potion_cd BEFORE use_consumable made the renewal branch
-## no-op while still eating the slot). ONE owner now: gate the drink cd,
-## require + spend a budgeted slot of this drink type, arm the cd. A type not
-## in this room's loadout refuses — planning is the skill, from the bag too.
-func _drink_gate(kind: String) -> bool:
+## Potion refusals: _drink_error returns one of these codes, never display
+## text, so a copy pass can reword DRINK_TEXT without changing which rule
+## fired. The field notice and the Inventory both read DRINK_TEXT.
+const DRINK_OK := ""
+const DRINK_SEALED := "sealed"
+const DRINK_DOWN := "down"
+const DRINK_COOLDOWN := "cooldown"
+const DRINK_DUEL := "duel"
+const DRINK_UNPLANNED := "unplanned"
+const DRINK_SPENT := "spent"
+const DRINK_HP_FULL := "hp_full"
+const DRINK_MP_FULL := "mp_full"
+const DRINK_ACTIVE := "active"
+const DRINK_TEXT := {
+	DRINK_SEALED: "Bottles sealed until the guardian falls",
+	DRINK_DOWN: "You can't drink while you're down",
+	# Only the Inventory can hit this (held input waits out the cooldown), and a
+	# solo menu pauses the clock, so the honest advice is to close it first.
+	DRINK_COOLDOWN: "Your next drink needs a moment. Close the menu, then try again",
+	DRINK_DUEL: "Potions are barred in the proving grounds",
+	DRINK_UNPLANNED: "Not in this room's plan",
+	DRINK_SPENT: "No potions left this room",
+	DRINK_HP_FULL: "Health is already full",
+	DRINK_MP_FULL: "Mana is already full",
+	DRINK_ACTIVE: "That effect is still running",
+}
+
+
+func drink_refusal_text(code: String) -> String:
+	return String(DRINK_TEXT.get(code, ""))
+
+
+## Eligibility shared by field input and Inventory, checked before any spend or
+## effect. `c` may be an empty/template bottle (the field's stock preflight).
+## `held` adds the held-Q anti-spam windows: a deliberate Inventory drink may
+## still refresh or upgrade a running tonic/elixir, as it always could.
+func _drink_error(kind: String, c: Dictionary = {}, held := false) -> String:
 	if preload("res://scripts/pocket_trial.gd").potions_locked(game, self):
-		if potion_cd <= 0.0:
-			game.spawn_text(global_position + Vector2(0, -56), "Bottles sealed until the guardian falls", Color(0.68, 0.85, 1.0))
-		potion_cd = Balance.POCKET_SEAL_NOTICE_COOLDOWN
-		return false
-	if potion_cd > 0.0 or dead or downed or ghost:
-		return false
+		return DRINK_SEALED
+	if dead or downed or ghost:
+		return DRINK_DOWN
+	if potion_cd > 0.0:
+		return DRINK_COOLDOWN
+	if game != null and game.pvp_active:
+		return DRINK_DUEL
 	if int(room_potions.get(kind, 0)) <= 0:
-		potion_cd = 0.3
-		game.spawn_text(global_position + Vector2(0, -40),
-			"Not in this room's plan" if room_potions_left() > 0 else "No potions left this room",
-			Color(0.85, 0.7, 0.5))
-		return false
+		return DRINK_UNPLANNED if room_potions_left() > 0 else DRINK_SPENT
+	var effect := String(c.get("effect", ""))
+	# Tonics bank a share of what is MISSING, so a full bar banks nothing.
+	if (kind == "health" or effect in ["heal_instant", "heal_tonic", "renewal"]) and hp >= max_hp:
+		return DRINK_HP_FULL
+	if effect in ["mana_instant", "mana_tonic"] and mp >= max_mp - Balance.POTION_MANA_FULL_MARGIN:
+		return DRINK_MP_FULL
+	if held and ((effect == "mana_tonic" and mana_tonic_time > Balance.POTION_TONIC_REFRESH_WINDOW)
+			or (effect == "heal_tonic" and heal_tonic_time > Balance.POTION_TONIC_REFRESH_WINDOW)
+			or (effect == "might" and elixir_time > Balance.POTION_BUFF_REFRESH_WINDOW)
+			or (effect == "ward" and dr_time > Balance.POTION_BUFF_REFRESH_WINDOW)):
+		return DRINK_ACTIVE
+	return DRINK_OK
+
+
+## Field-input refusal feedback: the world notice plus its re-press throttle.
+## The Inventory shows the reason in its panel instead, and must not arm a
+## cooldown that a paused solo menu can never run down.
+func _drink_refusal(code: String) -> void:
+	if code == DRINK_SEALED:
+		if potion_cd <= 0.0:
+			game.spawn_text(global_position + Vector2(0, -56), drink_refusal_text(code), Color(0.68, 0.85, 1.0))
+		potion_cd = Balance.POCKET_SEAL_NOTICE_COOLDOWN
+	elif code == DRINK_DUEL or code == DRINK_SPENT:
+		potion_cd = Balance.POTION_DRINK_COOLDOWN
+		game.spawn_text(global_position + Vector2(0, -40), drink_refusal_text(code),
+			Color(0.8, 0.85, 1.0) if code == DRINK_DUEL else Color(0.85, 0.7, 0.5))
+
+
+## The single spend: an eligible drink takes one budgeted slot of `kind` and
+## arms the drink cooldown. A refusal changes nothing and returns its code.
+func _drink_gate(kind: String, c: Dictionary) -> String:
+	var why := _drink_error(kind, c)
+	if why != DRINK_OK:
+		return why
 	room_potions[kind] = int(room_potions[kind]) - 1
-	potion_cd = 0.6
-	return true
+	potion_cd = Balance.POTION_DRINK_COOLDOWN
+	return DRINK_OK
+
+
+## The budget key a bag drink spends: the bottle's own slot when the plan
+## names it, otherwise a Health Potion pours from the default Health slots,
+## exactly the bottles Q's Health slot would pour (_health_potions_ordered).
+func _bag_gate_key(c: Dictionary) -> String:
+	var id := String(c.get("id", ""))
+	if int(room_potions.get(id, 0)) <= 0 and int(room_potions.get("health", 0)) > 0 \
+			and String(c.get("family", "")) == "health" and String(c.get("shape", "")) == "instant":
+		return "health"
+	return id
 
 
 ## Use a consumable from the bag (the bag UI calls this). Graded potions
 ## (kind "potion") dispatch through _use_potion; `gate_key` overrides the
-## room-budget key (the generic "health" fill passes "health", a specifically
-## slotted bottle passes its own id — the default when gate_key is "").
-func use_consumable(c: Dictionary, gate_key := "") -> void:
-	if not consumables.has(c):
-		return
+## room-budget key (the generic "health" fill passes "health"; left "", the
+## key comes from _bag_gate_key). Returns "" when used, otherwise the refusal
+## sentence the Inventory shows in its panel.
+func use_consumable(c: Dictionary, gate_key := "") -> String:
+	var idx: int = preload("res://scripts/gear_care.gd").index_of(consumables, c)
+	if idx < 0:
+		return "That consumable is no longer in your bag."
 	if String(c.get("kind", "")) == "potion":
-		_use_potion(c, gate_key if gate_key != "" else String(c.get("id", "")))
-		return
+		var why := _use_potion(c, gate_key if gate_key != "" else _bag_gate_key(c))
+		return "" if why == DRINK_OK else drink_refusal_text(why) + "."
 	match str(c.get("id", "")):
 		"reset_stone":
 			var refunded := 0
@@ -2584,7 +2656,7 @@ func use_consumable(c: Dictionary, gate_key := "") -> void:
 				refunded += int(attr_points[attr])
 				attr_points[attr] = 0
 			unspent_attr += refunded
-			consumables.erase(c)
+			consumables.remove_at(idx)
 			recalc()
 			game.sfx("levelup")
 			game.spawn_text(global_position + Vector2(0, -56),
@@ -2596,24 +2668,31 @@ func use_consumable(c: Dictionary, gate_key := "") -> void:
 			tree_points.clear()
 			skill_points += back
 			sync_active_talent_loadout()
-			consumables.erase(c)
+			consumables.remove_at(idx)
 			recalc()
 			game.sfx("levelup")
 			game.spawn_text(global_position + Vector2(0, -56),
 				"SKILL TREE RESET — %d points refunded (open Skills)" % back, Color(0.6, 0.9, 1.0))
 		"recall_scroll":
+			var why: String = game.recall_error()
+			if why != "":
+				return why + "."
 			if game.recall_to_safe():
-				consumables.erase(c)
+				consumables.remove_at(idx)
 				game.sfx("blink")
+		_:
+			return "This can't be used from the bag."
+	return ""
 
 
 ## Drink a graded potion: spend the drink gate on `gate_key`, apply the
 ## family/shape/grade effect, then the laced sting, then consume the unit.
 ## Constancy resonance still multiplies HEALTH healing (instant, tonic drip,
 ## renewal). Tonics bank a TOTAL and drip it over the grade-scaled window.
-func _use_potion(c: Dictionary, gate_key: String) -> void:
-	if not _drink_gate(gate_key):
-		return
+func _use_potion(c: Dictionary, gate_key: String) -> String:
+	var why := _drink_gate(gate_key, c)
+	if why != DRINK_OK:
+		return why
 	var effect := String(c.get("effect", ""))
 	var amt := float(c.get("amt", 0.0))
 	var dur := float(c.get("dur", 0.0))
@@ -2651,7 +2730,8 @@ func _use_potion(c: Dictionary, gate_key: String) -> void:
 			game.sfx("potion", 1.15)
 			game.spawn_text(global_position + Vector2(0, -56), "RENEWED", Color(0.5, 1.0, 0.6))
 	_apply_potion_sting(c.get("sting", {}))
-	consumables.erase(c)
+	consumables.remove_at(preload("res://scripts/gear_care.gd").index_of(consumables, c))
+	return DRINK_OK
 
 
 ## Apply a laced (black-market) sting as a timed self-debuff (or an instant
@@ -2810,6 +2890,16 @@ func sell_gear(selection: Array) -> Dictionary:
 		gain_gold(value)
 		game.sfx("potion")
 	return {"count": count, "gold": gold_yield(value)}
+
+
+## Remove the exact owned unit before creating a ground payload.
+func discard_consumable(c: Dictionary) -> bool:
+	var idx: int = preload("res://scripts/gear_care.gd").index_of(consumables, c)
+	if idx < 0:
+		return false
+	consumables.remove_at(idx)
+	game.discard_to_ground({"kind": "stone", "stone": c})
+	return true
 
 
 func discard_gear(item: Dictionary) -> bool:
