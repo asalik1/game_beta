@@ -698,7 +698,108 @@ func _party_pause() -> String:
 	_check("party_pause.party_intact_after", _roster_snapshot() == roster_before and _economy() == economy,
 		_roster_snapshot())
 	await _capture_online("party_04_party_intact")
+	await _party_readonly_views()
 	return ""
+
+
+## Every real reader can use the pad Pause route to read all remote identities.
+## State loans are synchronous and restored before any network/physics frame.
+func _party_readonly_views() -> void:
+	var prior_game := g
+	var prior_menu := m
+	var viewport_inputs: Array[bool] = []
+	for reader in pair.readers:
+		viewport_inputs.append(reader.get_viewport().gui_disable_input)
+	for index in pair.readers.size():
+		g = pair.readers[index]
+		m = g.menus
+		native.g = g
+		native.m = m
+		pair._show(index)
+		for route in pair.readers.size():
+			pair.readers[route].get_viewport().gui_disable_input = route != index
+		if m.is_open(): m.close()
+		var active: bool = g.gamepad.active
+		g.gamepad.active = true
+		# Each reader leaves one ally up (the plain row players see most) and
+		# rotates downed/ghost/dead over the other two, so all four readers
+		# together cover every state.
+		var states: Array = []
+		var loaned := 0
+		for ally in g.players:
+			if ally == g.local_player: continue
+			var pose := "up"
+			if states.size() != index % 3:
+				pose = ["downed", "ghost", "dead"][(index + loaned) % 3]
+				loaned += 1
+			states.append([ally, ally.downed, ally.ghost, ally.dead])
+			ally.downed = pose == "downed"
+			ally.ghost = pose == "ghost"
+			ally.dead = pose == "dead"
+		var expected: Array = g.hud.party_frame_data()
+		g.gamepad._button(JOY_BUTTON_START, true)
+		for state in states:
+			state[0].downed = state[1]
+			state[0].ghost = state[2]
+			state[0].dead = state[3]
+		await r.frames(4)
+		var id := "party_pause.readonly.%d" % index
+		_check(id + ".pad_open", m.current == "pause" and not r.get_tree().paused, m.current)
+		var labels: Array[Label] = []
+		if m.root != null:
+			for node in m.root.find_children("*", "Label", true, false):
+				labels.append(node as Label)
+		var headings := 0
+		for candidate in labels:
+			if candidate.text == "Party": headings += 1
+		_check(id + ".heading", headings == 1, headings)
+		var found := 0
+		var healthy := 0
+		var scroll: ScrollContainer = null
+		for ally in expected:
+			var caption := "%s - %s" % [String(ally.name), String(Classes.CLASSES[ally.cls]["name"])]
+			if String(ally.state) != "up":
+				caption += " (%s)" % String(ally.state)
+			var label: Label = null
+			for candidate in labels:
+				if candidate.text == caption: label = candidate
+			_check(id + ".exact_identity.%s" % ally.peer, label != null, caption)
+			if label == null: continue
+			found += 1
+			if String(ally.state) == "up":
+				healthy += 1
+				_check(id + ".up_plain.%s" % ally.peer, not label.text.ends_with(")"), label.text)
+			scroll = _party_scroll([label])
+			var reached := await _party_reach_button(label)
+			_check(id + ".readable.%s" % ally.peer, reached and label.autowrap_mode == TextServer.AUTOWRAP_WORD_SMART
+				and label.get_theme_font_size("font_size") == 16 and not label.clip_text
+				and label.size.y >= label.get_minimum_size().y and label.focus_mode == Control.FOCUS_NONE,
+				{"text": label.text, "rect": str(label.get_global_rect()), "lines": label.get_line_count()})
+			if String(ally.name).length() == 64:
+				_check(id + ".long_name_wraps.%s" % ally.peer, label.get_line_count() > 1, label.get_line_count())
+		_check(id + ".all_allies", found == 3 and found == expected.size(), found)
+		_check(id + ".one_ally_up", healthy == 1, healthy)
+		var kick_count := 0
+		if m.root != null:
+			for node in m.root.find_children("*", "Button", true, false):
+				if "Remove " in node.text: kick_count += 1
+		_check(id + ".host_only_kicks", kick_count == (3 if index == 0 else 0), kick_count)
+		await _capture_online("party_readonly_%d" % index)
+		if scroll != null:
+			var resume: Button = native._find_button(m.root, "Return to game", true)
+			_check(id + ".fixed_resume", resume != null and not scroll.is_ancestor_of(resume)
+				and m._shell_rect.encloses(resume.get_global_rect()), "Return to game outside Party scroller")
+			var tail: Button = native._find_button(m.root, "Save and quit game")
+			_check(id + ".tail_reachable", tail != null and await _party_reach_button(tail), "scroll to final action without activating")
+		m.close()
+		g.gamepad.active = active
+	for index in pair.readers.size():
+		pair.readers[index].get_viewport().gui_disable_input = viewport_inputs[index]
+	pair._show(0)
+	g = prior_game
+	m = prior_menu
+	native.g = g
+	native.m = m
 
 
 ## Actual removal caller: Cancel and every safe close must never remove or kick.
@@ -805,7 +906,7 @@ func _party_row_checks(phase: String, geometry: Array) -> void:
 		# proved separately after genuine input reaches each actual Button.
 
 
-func _party_button_visible(button: Button, scroll: ScrollContainer) -> bool:
+func _party_button_visible(button: Control, scroll: ScrollContainer) -> bool:
 	var allowed: Rect2 = m.get_viewport().get_visible_rect().intersection(m._shell_rect)
 	var ancestor: Node = button.get_parent()
 	while ancestor != null:
@@ -814,7 +915,7 @@ func _party_button_visible(button: Button, scroll: ScrollContainer) -> bool:
 	return button.is_visible_in_tree() and allowed.has_area() and allowed.grow(0.5).encloses(button.get_global_rect())
 
 
-func _party_reach_button(button: Button) -> bool:
+func _party_reach_button(button: Control) -> bool:
 	var scroll: ScrollContainer = _party_scroll([button])
 	if scroll == null: return false
 	for attempt in range(60):

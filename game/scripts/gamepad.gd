@@ -20,6 +20,7 @@ var ui: CanvasLayer
 var choice_index := 0
 var _context := ""
 var _target_ready := true
+var _ready_answer_held := false
 var _triggers := {"a1": false, "a2": false}
 
 
@@ -56,6 +57,8 @@ func stick(right := false) -> Vector2:
 func held(action: String) -> bool:
 	if not active or not focused or rearm or game.input_overlay_up():
 		return false
+	if action == "potion_next" and (_ready_answer_held or (game.hud != null and game.hud.ready_card_active())):
+		return false
 	if action in ["a1", "a2"]:
 		return bool(_triggers[action])
 	for button in BUTTON_ACTIONS:
@@ -74,6 +77,7 @@ func _neutral() -> bool:
 
 
 func cancel_held() -> void:
+	_ready_answer_held = false
 	buttons.clear()
 	axes.clear()
 	_triggers = {"a1": false, "a2": false}
@@ -177,7 +181,18 @@ func _can_play() -> bool:
 		and not game.local_player.downed and not game.local_player.ghost and not game.input_overlay_up()
 
 
+## B declines an open ready check only when no party chat, choice prompt or
+## dialogue is up: players press B there to back out, and one decline cancels
+## the check for the whole party.
+func ready_b_declines() -> bool:
+	var h: Hud = game.hud
+	return h != null and h.ready_card_active() and not h.chat_active \
+		and not h.choices_active and not h.dialogue_active
+
+
 func _button(button: int, down: bool) -> void:
+	if button == JOY_BUTTON_Y and not down:
+		_ready_answer_held = false
 	if ui.keyboard_open():
 		ui.menu_button(button, down)
 		return
@@ -194,6 +209,18 @@ func _button(button: int, down: bool) -> void:
 	if not down:
 		return
 	var h: Hud = game.hud
+	# Ready checks are nonmodal: A still interacts/revives. Menu and keyboard
+	# input above keeps priority, including B's normal Back behavior. Y answers
+	# from any play state (victory results, downed, chat, dialogue); B follows
+	# ready_b_declines.
+	if h.ready_card_active():
+		if button == JOY_BUTTON_Y:
+			_ready_answer_held = true # keep Y consumed even if answering rebuilds the card
+			h.ready_yes.pressed.emit()
+			return
+		if button == JOY_BUTTON_B and ready_b_declines():
+			h.ready_no.pressed.emit()
+			return
 	if h.chat_active:
 		if button == JOY_BUTTON_B:
 			h._close_chat()

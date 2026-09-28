@@ -600,6 +600,7 @@ func _trial_reward_line(lead: String) -> String:
 const PAUSE_MAX_H := 650.0
 const PAUSE_ACTION_MIN_H := 44.0
 const PAUSE_ACTION_FONT := 18
+const PAUSE_PARTY_FONT := 16 # read-only ally identities in the action scroller
 const PAUSE_GROUP_GAP := 6.0
 
 
@@ -680,6 +681,21 @@ func open_pause() -> void:
 	actions.add_theme_constant_override("separation", 10)
 	actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(actions)
+	# Read-only full ally identities (the party cards clip names). Remote
+	# players only, so solo and a lone online host get no empty section.
+	var allies: Array = game.hud.party_frame_data() if online else []
+	if not allies.is_empty():
+		UITheme.header(_lbl(actions, "Party", PAUSE_PARTY_FONT, Color(0.95, 0.85, 0.5)))
+		for ally in allies:
+			var ally_name := String(ally.name)
+			if ally_name == "":
+				ally_name = "Ally %d" % int(ally.peer) # same fallback as the ally reader
+			var cls := String(ally.cls)
+			var identity := "%s - %s" % [ally_name, String(Classes.CLASSES.get(cls, {}).get("name", cls.capitalize()))]
+			if String(ally.state) != "up":
+				identity += " (%s)" % String(ally.state)
+			_lbl(actions, identity, PAUSE_PARTY_FONT)
+		_pause_gap(actions)
 	_pause_action(_btn(actions, "Combat report — recent damage & last fall", func() -> void:
 		preload("res://scripts/ui/combat_report.gd").open(self), Color(0.95, 0.75, 0.60)))
 	_pause_action(_btn(actions, "  🔊  " + Loc.t("settings"), func() -> void: open_settings(), Color(0.9, 0.9, 0.95)))

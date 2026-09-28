@@ -19,6 +19,15 @@ when touched; a controller does not change the saved touch preference.
 | Menu / View | Pause / inventory |
 | L3 | Party chat in co-op |
 
+During a ready check, Y answers Ready and B declines. A still interacts or
+revives. Close any menu or on-screen keyboard first to answer the card.
+While party chat, a choice prompt or dialogue is up, B never declines (it
+still closes chat); Y still answers Ready. While the controller is active the
+card's buttons show the Y label, and the B label whenever B declines.
+Open Pause with Menu to read the Party list, including full ally names,
+classes and their state when the menu opened. A lone host with no one
+joined sees no Party list.
+
 Menus use a local cursor: left stick moves, D-pad snaps to visible buttons
 and cards, A clicks or holds a drag, and right stick scrolls at the cursor.
 Over the atlas, scrolling zooms. B follows the same back path as Escape.

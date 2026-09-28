@@ -393,6 +393,11 @@ func _test_pause_menu() -> void:
 		return _fail("one ESC press did not open the pause menu (got '%s')" % game.menus.current)
 	if not get_tree().paused:
 		return _fail("pause menu did not pause the game")
+	# The read-only co-op Party list never appears in a solo pause menu.
+	for node in game.menus.root.find_children("*", "Label", true, false):
+		if (node as Label).text == "Party":
+			game.menus.close()
+			return _fail("solo pause menu showed the co-op Party section")
 	game.menus.close()
 	await _frames(1)
 	if get_tree().paused:

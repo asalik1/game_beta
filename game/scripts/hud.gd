@@ -251,6 +251,8 @@ const CHAT_COLOR := Color(0.78, 0.86, 1.0)
 # MP-20 in-session ready-check card (the advance gate's surface; a check
 # raised while the LOBBY UI is open renders there instead). Lazy build.
 var ready_root: PanelContainer = null
+var ready_yes: Button = null
+var ready_no: Button = null
 var ready_body: VBoxContainer = null
 
 # MP-13 (§5.4): read-only mirror of a chapter beat another player is driving.
@@ -3148,11 +3150,22 @@ func _on_proposal_changed() -> void:
 
 
 func _hide_ready_card() -> void:
+	ready_yes = null
+	ready_no = null
 	if ready_root != null:
 		ready_root.visible = false
 
 
+func ready_card_active() -> bool:
+	return visible and is_instance_valid(ready_root) and ready_root.is_visible_in_tree() \
+		and is_instance_valid(ready_yes) and is_instance_valid(ready_no) \
+		and ready_yes.is_visible_in_tree() and ready_no.is_visible_in_tree() \
+		and not ready_yes.disabled and not ready_no.disabled
+
+
 func _show_ready_card(sess: Node, data: Dictionary) -> void:
+	ready_yes = null
+	ready_no = null
 	if ready_root == null:
 		ready_root = PanelContainer.new()
 		var sb := StyleBoxFlat.new()
@@ -3216,6 +3229,25 @@ func _show_ready_card(sess: Node, data: Dictionary) -> void:
 		no.text = "  ✕  Decline  "
 		no.pressed.connect(func() -> void: sess.answer_ready(false))
 		row.add_child(no)
+		ready_yes = yes
+		ready_no = no
+		refresh_ready_copy()
+
+
+## While a controller is the active device, the answer buttons name the pad
+## buttons that press them (gamepad._button). B only while it really declines
+## (not under chat, a choice or dialogue). Rerun by the pad hints refresh.
+func refresh_ready_copy() -> void:
+	if not is_instance_valid(ready_yes) or not is_instance_valid(ready_no):
+		return
+	var pad: Node = game.gamepad if game != null else null
+	var on: bool = pad != null and pad.active
+	var yes_text := "  %s  Ready  " % (pad.label("potion_next") if on else "✓")
+	var no_text := "  %s  Decline  " % (pad.label("cancel") if on and pad.ready_b_declines() else "✕")
+	if ready_yes.text != yes_text:
+		ready_yes.text = yes_text
+	if ready_no.text != no_text:
+		ready_no.text = no_text
 
 
 # ---- party chat (MP-19) ----
