@@ -79,7 +79,7 @@ static func _checks(r: Node) -> String:
 	var shown_price := false
 	var expected := int(80.0 * Balance.daily_gold_mult(guest.player.level))
 	for label in guest.menus.root.find_children("*", "Label", true, false):
-		if String(label.text).begins_with("Reward  ·  %d gold" % expected):
+		if String(label.text).begins_with("Reward  ·  %s gold" % guest.menus._fmt_gold(expected)):
 			shown_price = true
 	if not shown_price:
 		failures.append("contract card does not quote its actual level-scaled gold")

@@ -99,7 +99,7 @@ static func run(r: Node) -> String:
 		return "live reward quote refresh did not rebuild or preserve journal scrolling"
 	var quote_seen := false
 	for label in g.menus.root.find_children("*", "Label", true, false):
-		if String(label.text).begins_with("Reward  ·  %d gold" % g.activity_gold(int(chosen.gold))):
+		if String(label.text).begins_with("Reward  ·  %s gold" % g.menus._fmt_gold(g.activity_gold(int(chosen.gold)))):
 			quote_seen = true
 	if not quote_seen:
 		return "open journal kept a stale level-scaled reward quote"

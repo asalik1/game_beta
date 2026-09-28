@@ -305,7 +305,7 @@ static func _mail_claim_checks(t: Node) -> String:
 			DirAccess.remove_absolute(path + suffix)
 	g.free()
 	if error == "":
-		print("ok: mail zero/exact/partial fit, full bag existing/new stacks, repeated claims, mixed attachments and disposable save/reload conserve every unit")
+		print("ok: mail zero/exact/partial fit, full bag existing/new stacks, repeated claims, mixed attachments, short grouped notices and disposable save/reload conserve every unit")
 	return error
 
 
@@ -342,8 +342,12 @@ static func _mail_claim_asserts(g: Game, path: String) -> String:
 		if p.material_count("metal", "F") != row[0] + row[3] or _mail_units(mail) != row[1] - row[3] \
 				or p.material_count("metal", "F") + _mail_units(mail) != total:
 			return "mail fit/conservation failed: %s" % [row]
-		if not notice.begins_with("Claimed %d item" % row[3]) or notice.contains("—") \
-				or (not mail.items.is_empty() and not notice.contains("%d left here" % (row[1] - row[3]))):
+		var expected := "Nothing fits yet. Free some pack space or use some materials, then claim again."
+		if row[3] > 0:
+			expected = "Took %d Rusted Scrap. " % row[3]
+			var left: int = row[1] - row[3]
+			expected += "Nothing left in this letter." if left == 0 else "%d %s still in this letter." % [left, "is" if left == 1 else "are"]
+		if notice != expected:
 			return "mail notice did not report units taken and left: " + notice
 		if int(original[0].count) != row[1]:
 			return "mail claim mutated a borrowed attachment"
@@ -372,10 +376,32 @@ static func _mail_claim_asserts(g: Game, path: String) -> String:
 	# Multiple attachments for one stack compete for the same remaining space.
 	p.gem_bag = []
 	p.materials = [Items.make_material("metal", "F", cap - 3)]
+	var mixed_gem := Items.make_gem("crit", 1)
 	var mixed := {"items": [{"kind": "material", "family": "metal", "grade": "F", "count": 2},
 		{"kind": "material", "family": "metal", "grade": "F", "count": 2},
-		{"kind": "gem", "gem": Items.make_gem("crit", 1)}]}
-	UIMailbox._claim_contents(g, mixed)
+		{"kind": "gem", "gem": mixed_gem}]}
+	var mixed_notice := UIMailbox._claim_contents(g, mixed)
+	if mixed_notice != "Took 3 Rusted Scrap, %s. 1 Rusted Scrap is still in this letter." % Items.gem_title(mixed_gem):
+		return "mixed claim confused material units and attachments: " + mixed_notice
 	if p.material_count("metal", "F") != cap or _mail_units(mixed) != 1 or p.gem_bag.size() != 1:
 		return "mixed claim lost a remainder or changed non-material receiving"
+	# A Dropped Loot letter carries one attachment per overflowed drop, so one
+	# material can arrive as dozens: the notice groups by name and stays short.
+	p.gem_bag = []
+	p.materials = [Items.make_material("metal", "F", cap - 5)]
+	while p.bag_used() < p.bag_capacity():
+		p.gem_bag.append(Items.make_gem("crit", 1))
+	var big_items: Array = []
+	for _i in 40:
+		big_items.append({"kind": "material", "family": "metal", "grade": "F", "count": 2})
+	for lvl in [1, 1, 2, 3, 4, 5]:
+		big_items.append({"kind": "gem", "gem": Items.make_gem("crit", lvl)})
+	var big := {"items": big_items}
+	var big_notice := UIMailbox._claim_contents(g, big)
+	var big_expected := "Took 5 Rusted Scrap. Still in this letter: 75 Rusted Scrap, %s x2, %s and 3 more." % [
+		Items.gem_title(Items.make_gem("crit", 1)), Items.gem_title(Items.make_gem("crit", 2))]
+	if big_notice != big_expected or big_notice.length() > 160:
+		return "large letter notice repeated names or ran long: " + big_notice
+	if p.material_count("metal", "F") != cap or _mail_units(big) != 75 or big.items.size() != 44:
+		return "large letter claim lost or duplicated a remainder"
 	return ""

@@ -33,7 +33,9 @@ static func run(t: Node) -> String:
 	g.menus.game = g
 	g.add_child(g.menus)
 	g.menus.shell_motion = false
-	var error := _checks(g)
+	var error := _gold_checks(g)
+	if error == "":
+		error = _checks(g)
 	g.menus.close()
 	g.player = null
 	p.free()
@@ -167,3 +169,43 @@ static func _checks(g: Game) -> String:
 	if not npc.is_queued_for_deletion() or _wallet(g) != before:
 		return "an unrelated menu held the offer, or an expired offer still paid"
 	return ""
+
+
+## Isolated wallet and real controls: formatting must not change any amount.
+static func _gold_checks(g: Game) -> String:
+	var gold := g.player.gold
+	var level := g.player.level
+	g.player.gold = 1234567
+	g.player.level = 100  # level-scaled option amounts reach four digits
+	var npc := _actor(g)
+	g._road_courier(0, npc)
+	var error := ""
+	if not _has_label(g.menus.root, "Purse: 1,234,567 gold"):
+		error = "road choice purse did not group gold"
+	var loot := int(ceil(Balance.ROAD_COURIER_ROB_GOLD * Balance.daily_gold_mult(g.player.level)))
+	if not _has_label(g.menus.root, "Take %s gold before bonuses" % g.menus._fmt_gold(loot)):
+		error = "road choice option amount did not match the grouped purse"
+	g.menus.open_wager(1234567, func(_pick: int) -> void: pass)
+	if not _has_label(g.menus.root, "1,234,567 gold says your eye") \
+			or not _has_label(g.menus.root, "Win: +1,234,567 gold before bonuses. Lose: -1,234,567 gold."):
+		error = "shell game stake did not group both outcomes"
+	UISynthesis.open(g.menus)
+	if not _has_label(g.menus.root, "Your gold: 1,234,567"):
+		error = "synthesis wallet did not group gold"
+	var fee := g.menus._fmt_gold(int(Balance.SYNTHESIS_FEE))
+	if not _has_label(g.menus.root, "the laced A + %s gold" % fee) 			or not _has_label(g.menus.root, "synthesis fee %s gold" % fee) 			or _button(g.menus.root, "Alkahest Codex  —  %s gold" % g.menus._fmt_gold(int(Balance.ALKAHEST_CODEX_PRICE))) == null:
+		error = "synthesis panel showed its gold amounts in two formats"
+	if g.player.gold != 1234567:
+		error = "formatting a wallet changed its amount"
+	g.menus.close()
+	npc.free()
+	g.player.gold = gold
+	g.player.level = level
+	return error
+
+
+static func _has_label(node: Node, text: String) -> bool:
+	for label in node.find_children("*", "Label", true, false):
+		if text in String(label.text):
+			return true
+	return false

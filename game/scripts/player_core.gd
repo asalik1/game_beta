@@ -603,6 +603,7 @@ var burn_time := 0.0    # DoT riders parked on the rival (pvp.gd forwards ticks)
 var burn_dps := 0.0
 var bleed_time := 0.0
 var bleed_dps := 0.0
+var bleed_pen := 0.0    # the striker's physical pen, snapshot with the wound (forwarded per tick)
 var slow_time := 0.0    # synergy window (Killing Frost); the real CC rides the wire
 var stun_time := 0.0
 var brittle := 0        # ice-stack synergy, attacker-side
@@ -634,11 +635,16 @@ func apply_toxin(dps: float, dur: float, _color := Color(0.5, 1.2, 0.5), _src = 
 	apply_burn(dps, dur)   # toxin deepens enemy burns; vs a rival it's one DoT lane
 
 
-func apply_bleed(dps: float, dur: float, _src = null) -> void:
+func apply_bleed(dps: float, dur: float, src = null) -> void:
 	if not _rival_shell():
 		return
 	bleed_dps = maxf(bleed_dps, dps)
 	bleed_time = maxf(bleed_time, dur)
+	# The wound is physical: its ticks cut our armor by the striker's physical
+	# pen, snapshot at application like the PvE wound (player_combat hit_enemy).
+	var striker := src as Player
+	if striker != null:
+		bleed_pen = striker.physpen
 
 
 func apply_slow(mult: float, dur: float) -> void:

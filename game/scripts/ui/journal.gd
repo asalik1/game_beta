@@ -272,7 +272,7 @@ static func _quest_card(m: Menus, list: VBoxContainer, id: String, q: Dictionary
 	var reward: Dictionary = q.get("reward", {})
 	var rewards: Array[String] = []
 	if int(reward.get("gold", 0)) > 0:
-		rewards.append("%d gold" % int(ceil(float(reward.gold) * Balance.daily_gold_mult(g.player.level))))
+		rewards.append("%s gold" % m._fmt_gold(int(ceil(float(reward.gold) * Balance.daily_gold_mult(g.player.level)))))
 	if reward.has("item"):
 		rewards.append("equipment")
 	if reward.has("gem"):
@@ -403,7 +403,7 @@ static func _contract_card(m: Menus, list: VBoxContainer, c: Dictionary, selecte
 	_wrap(title)
 	_meter(m, card, int(c.progress), int(c.target), GREEN if done else Color(0.7, 0.78, 0.6),
 		"PROGRESS", "%d / %d" % [int(c.progress), int(c.target)])
-	m._lbl(card, "Reward  ·  %d gold  + %d %s standing%s" % [g.activity_gold(int(c.gold)),
+	m._lbl(card, "Reward  ·  %s gold  + %d %s standing%s" % [m._fmt_gold(g.activity_gold(int(c.gold))),
 		Balance.WARD_CONTRACT_STANDING, wname, "  + %d Kesh favor" % g.favor_gain(Balance.WARD_CONTRACT_FAVOR) if Balance.WARD_CONTRACT_FAVOR_NPC.has(ward) else ""], 12, Color(0.9, 0.82, 0.58))
 	if done and not claimed:
 		var claim := m._btn(card, "  ◆  CLAIM  " if can_claim else "  Today's choices are used · new board tomorrow  ", func() -> void:
@@ -438,7 +438,7 @@ static func _bounties(m: Menus, list: VBoxContainer) -> void:
 			_meter(m, card, int(b["progress"]), int(b["target"]),
 				GREEN if done else (BLUE if scope == "daily" else PURPLE),
 				"PROGRESS", "%d / %d" % [int(b["progress"]), int(b["target"])])
-			var reward := "%d gold" % m.game.activity_gold(int(b["gold"]))
+			var reward := "%s gold" % m._fmt_gold(m.game.activity_gold(int(b["gold"])))
 			if int(b["gems"]) > 0:
 				reward += "  + %d gem%s" % [int(b["gems"]), "" if int(b["gems"]) == 1 else "s"]
 			if int(b.get("renown", 0)) > 0:

@@ -36,8 +36,8 @@ static func open(m: Menus, msg := "", msg_color := Color(0.8, 0.85, 1.0)) -> voi
 
 	_recipe_section(m, list, p, at_capital)
 
-	m._lbl(vbox, "Your gold: %d   ·   synthesis fee %d gold per Grand" %
-		[p.gold, int(Balance.SYNTHESIS_FEE)], 13, Color(1.0, 0.85, 0.35))
+	m._lbl(vbox, "Your gold: %s   ·   synthesis fee %s gold per Grand" %
+		[m._fmt_gold(p.gold), m._fmt_gold(int(Balance.SYNTHESIS_FEE))], 13, Color(1.0, 0.85, 0.35))
 	m._hint(vbox)
 
 
@@ -51,7 +51,7 @@ static func _header(m: Menus, vbox: VBoxContainer, p: Player, at_capital: bool) 
 			15, Color(0.95, 0.9, 0.6))
 		var price := int(Balance.ALKAHEST_CODEX_PRICE)
 		var can_buy := at_capital and p.gold >= price
-		m._btn(vbox, "Learn the Alkahest Codex  —  %d gold" % price, _learn_cb(m),
+		m._btn(vbox, "Learn the Alkahest Codex  —  %s gold" % m._fmt_gold(price), _learn_cb(m),
 			Color(1.0, 0.92, 0.66) if can_buy else Color(0.5, 0.5, 0.55), can_buy)
 	if not at_capital:
 		m._lbl(vbox, "The alembic is in Crownfall — travel to the capital (⌂) to learn the Codex or synthesise.",
@@ -67,14 +67,14 @@ static func _learn_cb(m: Menus) -> Callable:
 			return
 		m.game.sfx("chest")
 		m.game.autosave()
-		open(m, "Learned the Alkahest Codex.   (-%d gold)" % int(r["cost"]), Color(0.6, 1.0, 0.6))
+		open(m, "Learned the Alkahest Codex.   (-%s gold)" % m._fmt_gold(int(r["cost"])), Color(0.6, 1.0, 0.6))
 
 
 # ------------------------------------------------------------------ recipes ---
 
 static func _recipe_section(m: Menus, list: VBoxContainer, p: Player, at_capital: bool) -> void:
-	m._lbl(list, "— Recipes  (a clean S + the laced A + %d gold → a Grand potion) —" %
-		int(Balance.SYNTHESIS_FEE), 15, Color(0.85, 0.8, 0.7))
+	m._lbl(list, "— Recipes  (a clean S + the laced A + %s gold → a Grand potion) —" %
+		m._fmt_gold(int(Balance.SYNTHESIS_FEE)), 15, Color(0.85, 0.8, 0.7))
 	if not p.knows_alkahest:
 		m._lbl(list, "   Learn the Codex above to unlock the recipes.", 13, Color(0.6, 0.6, 0.65))
 		return
@@ -115,5 +115,5 @@ static func _synth_cb(m: Menus, fs: String) -> Callable:
 		p.recalc()
 		g.autosave()
 		var mailed := "" if banked else "   (mailed — bag was full)"
-		open(m, "Synthesised %s.   (-%d gold)%s" % [String(item.get("name", "")), int(r["fee"]), mailed],
+		open(m, "Synthesised %s.   (-%s gold)%s" % [String(item.get("name", "")), m._fmt_gold(int(r["fee"])), mailed],
 			Color(1.0, 0.92, 0.6))
