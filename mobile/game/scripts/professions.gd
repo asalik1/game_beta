@@ -91,7 +91,7 @@ static func craft_blocked(p: Player, slot: String, grade: String) -> String:
 		return "Needs %d %s (grade %s); have %d." % [need, fam, grade, p.material_count(fam, grade)]
 	var fee := int(Balance.CRAFT_GOLD_FEE.get(grade, 0))
 	if p.gold < fee:
-		return "Needs %d gold; have %d." % [fee, p.gold]
+		return "Needs %s gold; have %s." % [UIDaily._thousands(fee), UIDaily._thousands(p.gold)]
 	return ""
 
 ## The craft transaction. Validates (craft_blocked), spends materials + the gold
@@ -139,7 +139,7 @@ static func buy_blueprint(p: Player, slot: String, grade: String) -> Dictionary:
 		return {"ok": false, "cost": 0, "reason": "Already known."}
 	var cost := Balance.blueprint_price(slot, grade)
 	if p.gold < cost:
-		return {"ok": false, "cost": cost, "reason": "Needs %d gold." % cost}
+		return {"ok": false, "cost": cost, "reason": "Needs %s gold." % UIDaily._thousands(cost)}
 	p.gold -= cost
 	p.learn_blueprint(slot, grade)
 	return {"ok": true, "cost": cost, "reason": ""}
@@ -177,7 +177,7 @@ static func lock_trade(p: Player, trade: String) -> Dictionary:
 	var free_lock := p.profession == ""
 	var cost := 0 if free_lock else swap_cost(p)
 	if not free_lock and p.gold < cost:
-		return {"ok": false, "cost": cost, "reason": "Needs %d gold to swap." % cost}
+		return {"ok": false, "cost": cost, "reason": "Needs %s gold to swap." % UIDaily._thousands(cost)}
 	if not free_lock:
 		p.gold -= cost
 		p.swap_cost_step += 1
@@ -207,7 +207,7 @@ static func buy_codex(p: Player) -> Dictionary:
 		return {"ok": false, "cost": 0, "reason": "The Alkahest Codex is already learned."}
 	var cost := int(Balance.ALKAHEST_CODEX_PRICE)
 	if p.gold < cost:
-		return {"ok": false, "cost": cost, "reason": "Needs %d gold; have %d." % [cost, p.gold]}
+		return {"ok": false, "cost": cost, "reason": "Needs %s gold; have %s." % [UIDaily._thousands(cost), UIDaily._thousands(p.gold)]}
 	p.gold -= cost
 	p.learn_alkahest()
 	return {"ok": true, "cost": cost, "reason": ""}
@@ -225,7 +225,7 @@ static func synth_blocked(p: Player, fs: String) -> String:
 		return "Needs the laced A %s." % Items.potion_name(fs, "A", "black")
 	var fee := int(Balance.SYNTHESIS_FEE)
 	if p.gold < fee:
-		return "Needs %d gold; have %d." % [fee, p.gold]
+		return "Needs %s gold; have %s." % [UIDaily._thousands(fee), UIDaily._thousands(p.gold)]
 	return ""
 
 ## The synthesis transaction. Validates (synth_blocked), consumes the clean S +

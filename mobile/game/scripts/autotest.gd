@@ -9539,6 +9539,13 @@ func _test_professions() -> void:
 					[slot, grade, Balance.blueprint_price(slot, grade), want])
 	if Balance.blueprint_price("helmet", "A") != 75000 or Balance.blueprint_price("weapon", "A") != 150000:
 		return _prof_fail(snap, "blueprint baseline/weapon off (want helmet-A 75k, weapon-A 150k)")
+	p.gold = 1234
+	var refused_blueprint := Professions.buy_blueprint(p, "weapon", "A")
+	if refused_blueprint["ok"] or refused_blueprint["reason"] != "Needs 150,000 gold." \
+			or int(refused_blueprint["cost"]) != Balance.blueprint_price("weapon", "A") \
+			or p.gold != 1234 or p.has_blueprint("weapon", "A"):
+		return _prof_fail(snap, "blueprint refusal must group its price without spending or learning")
+	p.gold = 10000000
 
 	# (b) first lock is FREE; the swap curve doubles from 5k; mastery persists.
 	var r0 := Professions.lock_trade(p, "blacksmith")
@@ -9547,6 +9554,13 @@ func _test_professions() -> void:
 	p.mastery["blacksmith"] = 250
 	if Professions.swap_cost(p) != 5000:
 		return _prof_fail(snap, "first swap should cost the 5k base, got %d" % Professions.swap_cost(p))
+	p.gold = 1234
+	var refused_swap := Professions.lock_trade(p, "tailor")
+	if refused_swap["ok"] or refused_swap["reason"] != "Needs 5,000 gold to swap." \
+			or int(refused_swap["cost"]) != 5000 or p.gold != 1234 \
+			or p.profession != "blacksmith" or p.swap_cost_step != 0:
+		return _prof_fail(snap, "trade refusal must group its price without spending or switching")
+	p.gold = 10000000
 	var r1 := Professions.lock_trade(p, "tailor")
 	if not r1["ok"] or int(r1["cost"]) != 5000 or p.swap_cost_step != 1:
 		return _prof_fail(snap, "swap #1 should cost 5k and bump the weekly step")
@@ -9605,6 +9619,12 @@ func _test_professions() -> void:
 	if not buy["ok"] or not p.has_blueprint("weapon", "A"):
 		return _prof_fail(snap, "buying the A blueprint failed")
 	p.add_material("metal", "A", 40)
+	var funded_gold := p.gold
+	p.gold = 1234
+	if not _grouped_gold_refusal(Professions.craft_blocked(p, "weapon", "A"),
+			int(Balance.CRAFT_GOLD_FEE["A"]), "1,234"):
+		return _prof_fail(snap, "craft refusal must group both the fee and wallet")
+	p.gold = funded_gold
 	var block_a := Professions.craft_blocked(p, "weapon", "A")
 	if block_a != "":
 		return _prof_fail(snap, "A should craft with blueprint + mats + gold: %s" % block_a)
@@ -9650,6 +9670,26 @@ func _prof_restore(snap: Dictionary) -> void:
 func _prof_fail(snap: Dictionary, msg: String) -> void:
 	_prof_restore(snap)
 	_fail(msg)
+
+
+## A "Needs <fee> gold; have <wallet>." refusal must print `fee` in
+## thousands-grouped digits. Checked here without the formatter under test, so
+## retuning a price knob never reads as a grouping failure. `wallet` is the
+## caller's pinned grouped wallet text (e.g. "1,234").
+func _grouped_gold_refusal(reason: String, fee: int, wallet: String) -> bool:
+	var tail := " gold; have %s." % wallet
+	if not reason.begins_with("Needs ") or not reason.ends_with(tail) \
+			or reason.length() <= 6 + tail.length():
+		return false
+	var amount := reason.substr(6, reason.length() - 6 - tail.length())
+	if amount.replace(",", "") != str(fee):
+		return false
+	var groups := amount.split(",")
+	for i in groups.size():
+		var digits: int = String(groups[i]).length()
+		if digits > 3 or digits < (1 if i == 0 else 3):
+			return false
+	return true
 
 
 # ---- Synthesis: the Alkahest Codex + the Grand potions (CONSUMABLE_GRADES §9) ----
@@ -9721,6 +9761,13 @@ func _test_synthesis() -> void:
 		return _synth_fail(snap, "buy_codex must refuse when already learned")
 	# buy_codex from scratch charges the price and learns it.
 	p.knows_alkahest = false
+	p.gold = 1234
+	var refused_codex := Professions.buy_codex(p)
+	if refused_codex["ok"] \
+			or not _grouped_gold_refusal(String(refused_codex["reason"]), int(Balance.ALKAHEST_CODEX_PRICE), "1,234") \
+			or int(refused_codex["cost"]) != Balance.ALKAHEST_CODEX_PRICE or p.gold != 1234 or p.knows_alkahest:
+		return _synth_fail(snap, "Codex refusal must group price and wallet without spending or learning")
+	p.gold = 10000000
 	var buy := Professions.buy_codex(p)
 	if not buy["ok"] or int(buy["cost"]) != int(Balance.ALKAHEST_CODEX_PRICE) or not p.knows_alkahest:
 		return _synth_fail(snap, "buy_codex should learn the Codex for its price")
@@ -9736,6 +9783,14 @@ func _test_synthesis() -> void:
 		return _synth_fail(snap, "synthesis must refuse with only the clean S")
 	var a_bottle := Items.make_potion("health", "instant", "A", "black")
 	p.consumables.append(a_bottle)
+	var funded_gold := p.gold
+	p.gold = 1234
+	if not _grouped_gold_refusal(Professions.synth_blocked(p, fs0), int(Balance.SYNTHESIS_FEE), "1,234"):
+		return _synth_fail(snap, "synthesis refusal must group both the fee and wallet")
+	p.gold = 0
+	if not _grouped_gold_refusal(Professions.synth_blocked(p, fs0), int(Balance.SYNTHESIS_FEE), "0"):
+		return _synth_fail(snap, "synthesis refusal must keep a zero wallet readable")
+	p.gold = funded_gold
 	if Professions.synth_blocked(p, fs0) != "":
 		return _synth_fail(snap, "synthesis should proceed with S + A + fee: %s" % Professions.synth_blocked(p, fs0))
 	var gold_before := p.gold
@@ -11115,7 +11170,7 @@ func _test_spell_damage_wiring() -> void:
 			node.add_to_group("enemies")
 	if not errors.is_empty():
 		return _fail("spell damage wiring: " + "; ".join(errors))
-	print("ok: spell damage wiring (Mage gear, Starfall, Firmament, skins; physical Wind Cuts; independent Warlock knobs)")
+	print("ok: spell damage wiring (Mage gear, Starfall, Firmament, skins; physical Wind Cuts; duel burn/toxin penetration; independent Warlock knobs)")
 
 
 func _spell_damage_dummy(p: Player) -> Enemy:
@@ -11305,6 +11360,37 @@ func _probe_wind_wound_duel(p: Player, errors: Array[String]) -> void:
 	duel._clear_rival_riders()
 	if q.bleed_time != 0.0 or q.bleed_dps != 0.0 or q.bleed_pen != 0.0:
 		errors.append("duel round reset kept a bleed or its pen")
+	# Exercise every magical rider through the real rival hit funnel, including
+	# toxin's shared burn lane. Changing gear after application cannot change it.
+	p.atk = 100.0
+	for effect in [{"dot": 0.2}, {"dot": 0.2, "toxin": 1}, {"burn": 20.0}]:
+		duel._clear_rival_riders()
+		p.magpen = 85.0
+		p.physpen = 120.0
+		p.hit_enemy(q, 1.0, effect.duplicate())
+		_spell_damage_expect(errors, q.burn_dps, 20.0, "duel magic rider DPS")
+		_spell_damage_expect(errors, q.burn_pen, 85.0, "duel magic rider applied pen")
+		p.magpen = 0.0
+		recorder.strikes.clear()
+		for tick in 2:
+			duel._tick_rival_riders(0.5)
+		if recorder.strikes.size() != 2:
+			errors.append("duel magic rider did not send two ticks: %s" % effect)
+		for strike: Array in recorder.strikes:
+			if int(strike[0]) != q.peer_id or strike[2] != "magic":
+				errors.append("duel burn/toxin tick lost its rival or magic damage type")
+			_spell_damage_expect(errors, float(strike[1]), 20.0 * 0.5 * Balance.PVP_DMG_MULT, "duel magic rider tick")
+			_spell_damage_expect(errors, float(strike[3]), 85.0, "duel magic rider snapshot pen")
+		duel._tick_rival_riders(5.0)
+		duel._tick_rival_riders(0.1)
+		if q.burn_time > 0.0 or q.burn_dps != 0.0 or q.burn_pen != 0.0:
+			errors.append("duel burn/toxin pen outlived its rider")
+		p.magpen = 60.0
+		p.hit_enemy(q, 1.0, effect.duplicate())
+		_spell_damage_expect(errors, q.burn_pen, 60.0, "duel magic rider fresh pen")
+		duel._clear_rival_riders()
+		if q.burn_time != 0.0 or q.burn_dps != 0.0 or q.burn_pen != 0.0:
+			errors.append("duel round reset kept a burn/toxin rider or its pen")
 	game.pvp = saved_pvp
 	net.session = saved_session
 	p.bolt_bleed = 0.0

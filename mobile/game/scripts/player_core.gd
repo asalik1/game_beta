@@ -603,6 +603,7 @@ var vuln_time := 0.0    # EXPOSED window on the rival (attacker-side amp)
 var vuln_mult := 1.5
 var burn_time := 0.0    # DoT riders parked on the rival (pvp.gd forwards ticks)
 var burn_dps := 0.0
+var burn_pen := 0.0     # the striker's magic pen, shared by burn/toxin ticks
 var bleed_time := 0.0
 var bleed_dps := 0.0
 var bleed_pen := 0.0    # the striker's physical pen, snapshot with the wound (forwarded per tick)
@@ -626,15 +627,18 @@ func _rival_shell() -> bool:
 # On a rival's shell they park/forward as documented above; anywhere else they
 # no-op. Signatures mirror enemy.gd's so call sites stay type-agnostic.
 
-func apply_burn(dps: float, dur: float, _color := Color(1.4, 0.8, 0.6), _src = null) -> void:
+func apply_burn(dps: float, dur: float, _color := Color(1.4, 0.8, 0.6), src = null) -> void:
 	if not _rival_shell():
 		return
 	burn_dps = maxf(burn_dps, dps)   # refresh-don't-stack (enemy.gd semantics)
 	burn_time = maxf(burn_time, dur)
+	var striker := src as Player
+	if striker != null:
+		burn_pen = striker.magpen
 
 
-func apply_toxin(dps: float, dur: float, _color := Color(0.5, 1.2, 0.5), _src = null) -> void:
-	apply_burn(dps, dur)   # toxin deepens enemy burns; vs a rival it's one DoT lane
+func apply_toxin(dps: float, dur: float, color := Color(0.5, 1.2, 0.5), src = null) -> void:
+	apply_burn(dps, dur, color, src)   # toxin and burn share one rival DoT lane
 
 
 func apply_bleed(dps: float, dur: float, src = null) -> void:
