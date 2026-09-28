@@ -144,16 +144,44 @@ static func open_letter(m: Menus, mail: Dictionary, notice := "") -> void:
 
 ## Move as much loot as fits into the bag; the rest stays in the letter.
 static func _claim(m: Menus, mail: Dictionary) -> void:
-	var leftover: Array = []
-	for pl in mail["items"]:
-		if not m.game._try_receive(pl):
-			leftover.append(pl)
-	mail["items"] = leftover
+	var notice := _claim_contents(m.game, mail)
 	m.game.autosave()
-	if leftover.is_empty():
+	if mail["items"].is_empty():
 		m.game.sfx("chest")
-	var notice := "All contents claimed." if leftover.is_empty() else "The rest stayed here. Free pack space or use some of a full material stack, then claim again."
 	open_letter(m, mail, notice)
+
+
+## Split material attachments here only; every other receive stays atomic.
+static func _claim_contents(g: Game, mail: Dictionary) -> String:
+	var leftover: Array = []
+	var taken := 0
+	var remaining := 0
+	for pl in mail["items"]:
+		var count := int(pl.get("count", 1)) if pl.get("kind", "") == "material" else 1
+		var received := 0
+		if pl.get("kind", "") == "material":
+			var family := String(pl.get("family", ""))
+			var grade := String(pl.get("grade", "F"))
+			var fits := mini(count, maxi(0, Items.MATERIAL_STACK_MAX - g.player.material_count(family, grade)))
+			var portion: Dictionary = pl.duplicate(true)
+			portion["count"] = fits
+			if fits > 0 and g._try_receive(portion):
+				received = fits
+		else:
+			if g._try_receive(pl):
+				received = count
+		taken += received
+		if received < count:
+			var rest: Dictionary = pl
+			if pl.get("kind", "") == "material":
+				rest = pl.duplicate(true)
+				rest["count"] = count - received
+			leftover.append(rest)
+			remaining += count - received
+	mail["items"] = leftover
+	if remaining == 0:
+		return "Claimed %d item%s. Nothing left in this letter." % [taken, "" if taken == 1 else "s"]
+	return "Claimed %d item%s. %d left here. Free pack space or use some materials, then claim again." % [taken, "" if taken == 1 else "s", remaining]
 
 ## All six inventory payloads use the same art and names as the bag. Materials
 ## and potions used to fall through to a blank reset-stone icon in letters.

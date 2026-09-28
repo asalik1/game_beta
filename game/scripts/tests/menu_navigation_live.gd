@@ -141,6 +141,7 @@ func _run() -> String:
 	await _key(KEY_ESCAPE)
 	_check("codex.escape_closes", not m.is_open(), _state())
 	await _mail_cancellation()
+	await _grouped_gold()
 	await _callback_lifetime()
 	m.open_inventory()
 	await r.frames(3)
@@ -1592,3 +1593,58 @@ func _pause_action_snapshot(id: String) -> Dictionary:
 			_check("pause_layout." + id + ".full_text." + node.text.strip_edges(), bool(fit.passed), fit)
 			result[String(node.get_path())] = {"rect": str(node.get_global_rect()), "text": node.text, "fit": fit}
 	return result
+
+
+func _grouped_gold() -> void:
+	r.step("grouped trial settlement and merchant/forge gold; controlled wallet loan")
+	var gold := g.player.gold
+	var chapter := g.chapter_id
+	var smith_message := m._smith_msg
+	var reforge_message := m._reforge_msg
+	m._smith_msg = ""
+	m._reforge_msg = ""
+	g.player.gold = 1234567
+	m.open_endgame_result({"name": "The Crucible", "mode": "crucible", "gold": g.player.gold})
+	await r.frames(3)
+	_check("gold.trial_result", _has_label(m.root, "Gold banked:  " + m._fmt_gold(g.player.gold)), "1,234,567 banked")
+	await _capture("06a_grouped_trial_gold")
+	for source in ["fence", "smuggler"]:
+		m.open_black_market(source)
+		await r.frames(3)
+		_check("gold.header." + source, _has_label(m.root, ("The Sable Court Fence" if source == "fence" else "A Road Smuggler") + " — you have 1,234,567 gold"), source)
+		await _capture("06b_grouped_" + source)
+	# The card parser must preserve grouping when moving a quote to its price column.
+	var box := m._open("Merchant price QA", 720, 400)
+	var grid := m._shop_grid(box)
+	m._shop_card(grid, null, "Price display fixture", "1,234,567 gold", Color.WHITE, true, func() -> void: pass)
+	_check("gold.merchant_card", _has_label(m.root, "1,234,567 g"), "grouped quote survives card extraction")
+	await r.frames(3)
+	await _capture("06c_grouped_merchant_price")
+	g.chapter_id = "capital"
+	box = m._open("Forge price QA", 900, 600)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 15
+	var item := Items.roll_item_of("weapon", "A", rng, "warrior")
+	item.subs = {"crit": 0.01}
+	m._item_reforge_tab(box, item)
+	var price_pattern := RegEx.new()
+	price_pattern.compile("([0-9][0-9,]*) gold")
+	var big_prices := 0
+	var price_buttons := 0
+	for button in m.root.find_children("*", "Button", true, false):
+		var price := price_pattern.search(button.text)
+		if price != null:
+			var number := int(price.get_string(1).replace(",", ""))
+			_check("gold.forge_price." + str(price_buttons), price.get_string(1) == m._fmt_gold(number), button.text)
+			price_buttons += 1
+			if number >= 1000:
+				big_prices += 1
+	_check("gold.forge_big_prices", big_prices >= 3, big_prices)
+	await r.frames(3)
+	_check("gold.forge_wallet", _has_label(m.root, "Your gold: 1,234,567"), "grouped forge wallet")
+	await _capture("06d_grouped_forge_gold")
+	m.close()
+	g.player.gold = gold
+	g.chapter_id = chapter
+	m._smith_msg = smith_message
+	m._reforge_msg = reforge_message

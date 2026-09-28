@@ -17,8 +17,9 @@ bonus once, with the same per-coin rounding as collection.
 The mailbox now displays the actual material and potion art, names and stack
 counts. Attachments scroll independently of claim/delete/back controls. Pack
 capacity and “Claim what fits” explain partial collection. A full material stack
-refuses an incoming payload without consuming excess units; the whole payload
-stays in its letter or on the ground until it fits. The Codex also corrects its
+refuses an incoming payload without consuming excess units. Ground pickups stay
+whole until they fit; a mailbox claim moves the units that fit into the stack and
+leaves the exact remainder in the letter. The Codex also corrects its
 obsolete claim that extra bags sell themselves automatically.
 
 Implementation: scripts/loot_recovery.gd, chest.gd, save.gd, world teardown,

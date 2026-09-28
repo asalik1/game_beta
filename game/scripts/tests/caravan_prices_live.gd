@@ -18,7 +18,7 @@ static func _price(button: Button) -> int:
 	if button != null:
 		for label in button.find_children("*", "Label", true, false):
 			if String(label.text).ends_with(" g"):
-				return String(label.text).trim_suffix(" g").to_int()
+				return String(label.text).trim_suffix(" g").replace(",", "").to_int()
 	return -1
 
 
@@ -82,7 +82,7 @@ static func _checks(r: Node, room: int) -> String:
 	gear_card.pressed.emit()
 	await r.frames(3)
 	var buy := g.menus.root.find_child("BuyGear", true, false) as Button
-	if buy == null or buy.disabled or not buy.text.contains(str(quoted)):
+	if buy == null or buy.disabled or not buy.text.contains(g.menus._fmt_gold(quoted)):
 		return "gear purchase confirmation did not match the shelf quote"
 	await r._capture("prices_01_discounted_gear_confirmation")
 	var money := p.gold
