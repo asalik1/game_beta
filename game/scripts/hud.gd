@@ -1165,7 +1165,8 @@ const BUFF_W := 48.0
 const BUFF_H := 48.0
 const BUFF_ICON := 42.0
 
-## Authored status-icon override per active-buff id (assets/icons/buff_*.png).
+## Authored status-icon override per active-buff id (assets/icons/<name>.png,
+## mostly buff_*).
 ## Every id emitted by _active_buffs must live here; the systems test parses
 ## that function and rejects missing mappings or missing PNGs.
 const BUFF_ICONS := {
@@ -1179,6 +1180,10 @@ const BUFF_ICONS := {
 	"goldrush": "buff_goldrush",
 	"storm": "buff_storm",
 	"damp": "buff_damp",
+	# Impairments borrow talent art no other chip uses (mage Permafrost's ice
+	# block, archer Second Breath's vine swirl, mage Windborne's gale), so
+	# they can never pass for Ward, Guard or Damp. The test enforces it.
+	"frozen": "talent_m31", "rooted": "talent_a11", "chilled": "talent_m32",
 }
 
 ## A pooled row of active-effect chips sitting just above the ability
@@ -1393,6 +1398,16 @@ func _active_buffs() -> Array:
 		out.append({"id": "second_wind", "glyph": "ic_hp", "color": Color(0.55, 1.0, 0.65), "t": -1.0,
 			"tip": "Second Wind — untouched for %.1fs: recovering +%.0f%% max HP/s. Taking a hit resets the clock." % [
 				p.sw_delay, p.sw_regen * 100.0]})
+	# Movement impairments come right after the (at most four) persistent
+	# chips and ahead of every timed buff, so even a full row always shows
+	# why we can't move, while a flickering chill never shoves the
+	# persistent chips around.
+	if p.frozen_time > 0.0: out.append({"id": "frozen", "glyph": "ab_snow", "color": Color(0.6, 0.85, 1.0), "t": p.frozen_time,
+		"tip": "Frozen: you can't move or cast until you thaw."})
+	if p.rooted_time > 0.0: out.append({"id": "rooted", "glyph": "ab_chain", "color": Color(0.5, 0.8, 0.6), "t": p.rooted_time,
+		"tip": "Rooted: you can't move, but you can still cast."})
+	if p.chill_time > 0.0: out.append({"id": "chilled", "glyph": "ab_whirl", "color": Color(0.8, 0.92, 1.0), "t": p.chill_time,
+		"tip": "Chilled: move speed is reduced by %d%%. Frost auras refresh the timer while you're inside." % int(round((1.0 - p.chill_mult) * 100.0))})
 	# Timed buffs.
 	if p.berserk_time > 0.0: out.append({"id": "berserk", "glyph": "ab_fist", "color": Color(1.0, 0.3, 0.2), "t": p.berserk_time,
 		"tip": "Berserk — +%d%% damage, +25%% move speed, +15%% lifesteal." % int(p.berserk_bonus * 100.0)})

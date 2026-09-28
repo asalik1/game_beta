@@ -1886,6 +1886,14 @@ static func _notes_gems(m: Menus, list: VBoxContainer) -> void:
 ## Balance so the codex can never drift from the actual combat tuning.
 static func _status_effects() -> Array:
 	return [
+		["Frozen", Color(0.6, 0.85, 1.0), [
+			"You can't move or cast until you thaw."]],
+		["Rooted", Color(0.5, 0.8, 0.6), [
+			"You can't move, but you can still cast."]],
+		["Chilled", Color(0.8, 0.92, 1.0), [
+			"You move slower. A Frostbound monster's aura slows you by %d%%, and the chill keeps refreshing while you stay inside it." % int(round((1.0 - Balance.MOB_FROST_SLOW) * 100.0)),
+			"A bursting Rimeheart slows you by %d%% for %s seconds. If both catch you, the stronger slow wins." % [
+				int(round((1.0 - Balance.REACTIVE_CHILL_MULT) * 100.0)), String.num(Balance.REACTIVE_CHILL_DURATION)]]],
 		["Stun", Color(1.0, 0.85, 0.4), [
 			"The target can't move or act for a moment.",
 			"Bosses are CC-immune: a stun that would hit them lands as CONCUSSION instead — bonus damage of duration × ATK × %d%%, so stun-themed abilities keep their value in boss fights." % int(Balance.CONCUSSION_MULT * 100)]],
@@ -1909,9 +1917,13 @@ static func _status_effects() -> Array:
 static func _statuses(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
 	var intro := m._lbl(list,
-		"What you inflict on enemies (most ride your talent-themed abilities) — and, in hazard terrain, suffer yourself.",
+		"What you inflict on enemies (most ride your talent-themed abilities), and what bosses, monsters and hazard terrain can put on you.",
 		13, Color(0.7, 0.72, 0.78))
 	intro.custom_minimum_size = Vector2(PAGE_W, 0)
+	var row_note := m._lbl(list,
+		"When you're Frozen, Rooted or Chilled, a chip on the status row above your abilities shows it and counts down the time left. These chips come before ordinary buffs, so even a full row shows them, and each one disappears when its effect ends.",
+		13, Color(0.7, 0.72, 0.78))
+	row_note.custom_minimum_size = Vector2(PAGE_W, 0)
 	for e in _status_effects():
 		var info := VBoxContainer.new()
 		info.add_theme_constant_override("separation", 2)

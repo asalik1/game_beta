@@ -2285,6 +2285,9 @@ func _run_systems() -> void:
 	await _frames(2)
 	print("ok: shop, codex, records, journal, daily, skill tree, theme, stats, map, dev UI")
 	_test_status_icon_coverage()
+	var impairment_error: String = await preload("res://scripts/tests/hud_impairments.gd").suite(game)
+	if impairment_error != "":
+		return _fail(impairment_error)
 	_test_hud_icon_integrity()
 	var alignment_error := preload("res://scripts/tests/hud_alignment_geometry.gd").suite(game.hud)
 	if alignment_error != "":
