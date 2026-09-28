@@ -1,0 +1,155 @@
+extends RefCounted
+## Systems/quick regression: expand must not expose gameplay beyond a cover.
+## A disposable HUD controls lazy FX preconditions without disturbing live tweens.
+
+const BOSS_NAME := "Covers Probe the Ashen"
+const BOSS_ART := "splash_ashpriest"
+
+
+static func suite(game: Game) -> String:
+	var tree := game.get_tree()
+	var window := tree.root
+	var kept_size := window.size
+	var kept_aspect := window.content_scale_aspect
+	var kept_mode := game.process_mode
+	var kept_hud := game.hud
+	game.process_mode = Node.PROCESS_MODE_DISABLED
+	window.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
+	window.size = Vector2i(1560, 720)
+	await tree.process_frame
+	var hud := Hud.new()
+	hud.game = game
+	game.hud = hud
+	game.add_child(hud)
+	hud.set_process(false)
+	hud.danger_ramp(1.0)
+	hud.flash_screen(Color.WHITE)
+	var cinematic := Cutscene.new(game)
+	hud.add_child(cinematic)
+	hud.move_child(cinematic, hud.dialogue_box.get_index())
+	# A real plate is larger than its authored display frame. Texture minimum
+	# sizing must not silently enlarge it beyond the centered art stack.
+	var plate := cinematic._make_frame(cinematic._frame_texture("chapters/opening_ch2_0"))
+	cinematic.art_stack.add_child(plate)
+	var errors: Array[String] = []
+	_check(hud, cinematic, Vector2(1560, 720), errors)
+	# Resize the SAME mounted controls, including returning to the desktop size.
+	for dimensions in [Vector2i(1280, 720), Vector2i(1560, 720), Vector2i(1600, 720),
+			Vector2i(1280, 960), Vector2i(2400, 1080), Vector2i(1280, 720)]:
+		window.size = dimensions
+		await tree.process_frame
+		var expected := Vector2(1600, 720) if dimensions == Vector2i(2400, 1080) else Vector2(dimensions)
+		_check(hud, cinematic, expected, errors)
+	window.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
+	window.size = Vector2i(2400, 1080)
+	await tree.process_frame
+	_check(hud, cinematic, Vector2(1280, 720), errors)
+	# Leaving the opener ends cinematic mode, so the boss entrance plate may mount.
+	cinematic.free()
+	# The boss plate marks its art as seen; put the gallery memory back after.
+	var had_seen := game.splashes_seen.has(BOSS_ART)
+	var kept_meta: Dictionary = game._meta.duplicate(true)
+	var kept_meta_loaded := game._meta_loaded
+	window.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
+	for dimensions in [Vector2i(2400, 1080), Vector2i(1280, 960), Vector2i(1280, 720)]:
+		window.size = dimensions
+		await tree.process_frame
+		var expected := Vector2(1600, 720) if dimensions == Vector2i(2400, 1080) else Vector2(dimensions)
+		_check_boss_splash(hud, expected, errors)
+	if not had_seen:
+		game.splashes_seen.erase(BOSS_ART)
+	game._meta = kept_meta
+	game._meta_loaded = kept_meta_loaded
+	# No assertion exits before restoring the borrowed window and game state.
+	hud.free()
+	game.hud = kept_hud
+	window.content_scale_aspect = kept_aspect
+	window.size = kept_size
+	await tree.process_frame
+	game.process_mode = kept_mode
+	return "full-screen covers: " + "; ".join(errors) if not errors.is_empty() else ""
+
+
+static func _check(hud: Hud, cinematic: Cutscene, expected: Vector2, errors: Array[String]) -> void:
+	var visible := hud.get_viewport().get_visible_rect()
+	if not visible.size.is_equal_approx(expected):
+		errors.append("fixture visible rect %s, expected %s" % [visible.size, expected])
+		return
+	var covers := {
+		"death/fade overlay": hud.overlay,
+		"splash scrim": hud.splash_scrim,
+		"log click-eater": hud.log_panel.get_child(0),
+		"danger rim": hud.danger_rect,
+		"impact flash": hud.flash_rect,
+		"cutscene root": cinematic,
+		"cutscene backdrop": cinematic.get_child(0),
+		"cutscene wash": cinematic.get_child(3),
+		"cutscene vignette": cinematic.get_child(4),
+		"cutscene fade": cinematic.fade_rect,
+	}
+	for label in covers:
+		var cover: Control = covers[label]
+		# Exact bounds also catch an oversized danger texture whose rim ends up offscreen.
+		if not cover.get_global_rect().is_equal_approx(visible):
+			errors.append("%s does not match the viewport at %s" % [label, expected])
+	if hud.dialogue_box.mouse_filter != Control.MOUSE_FILTER_IGNORE \
+			or hud.log_panel.get_child(0).mouse_filter != Control.MOUSE_FILTER_STOP:
+		errors.append("cover layout changed dialogue/log input handling")
+	var art := cinematic.art_stack.get_global_rect()
+	if art.size != Vector2(1280, 720) or cinematic.art_stack.scale != Vector2.ONE:
+		errors.append("authored art was resized at %s" % expected)
+	if art.get_center().distance_to(visible.get_center()) > 1.0:
+		errors.append("authored art is not centered at %s" % expected)
+	var plate: TextureRect = cinematic.art_stack.get_child(0)
+	if plate.size != Vector2(1300, 732) or plate.pivot_offset != plate.size / 2.0:
+		errors.append("source texture minimum overrode the authored plate frame")
+	# The camera push overscans the plate; only the screen edge clipped it at 16:9.
+	if not cinematic.art_stack.clip_contents:
+		errors.append("plate overscan can spill into the dark bars at %s" % expected)
+	var motes := cinematic.ash.get_parent() as Control
+	if motes == null or motes == cinematic or not motes.clip_contents \
+			or not motes.get_global_rect().is_equal_approx(art):
+		errors.append("ash motes are not framed with the authored art at %s" % expected)
+	# Square speaker art stays width-fit and top-aligned across the whole screen.
+	var side := maxf(visible.size.x, visible.size.y)
+	if not hud.splash_rect.get_global_rect().is_equal_approx(Rect2(Vector2.ZERO, Vector2(side, side))):
+		errors.append("speaker splash leaves part of the screen uncovered at %s" % expected)
+
+
+## The boss entrance plate covers the screen too: its art, foot shade and
+## title must follow the visible screen, not the 16:9 design frame.
+static func _check_boss_splash(hud: Hud, expected: Vector2, errors: Array[String]) -> void:
+	var visible := hud.get_viewport().get_visible_rect()
+	if not visible.size.is_equal_approx(expected):
+		errors.append("fixture visible rect %s, expected %s" % [visible.size, expected])
+		return
+	if not Art.has_sprite(BOSS_ART):
+		errors.append("boss splash fixture art %s is missing" % BOSS_ART)
+		return
+	hud._boss_splash_shown.erase(BOSS_NAME)
+	hud._splash_cache[BOSS_NAME] = BOSS_ART
+	hud._boss_splash_intro(BOSS_NAME)
+	var layer := hud._boss_splash_layer
+	if not is_instance_valid(layer):
+		errors.append("boss splash did not mount at %s" % expected)
+		return
+	var art: TextureRect = layer.get_child(0)
+	var foot: TextureRect = layer.get_child(2)
+	var title: Label = layer.get_child(3)
+	var rule: ColorRect = layer.get_child(4)
+	var epithet: Label = layer.get_child(6)
+	# Half a pixel of slack: an exact cover scale can round a hair under the edge.
+	if not layer.get_global_rect().is_equal_approx(visible) \
+			or not Rect2(art.position, art.size).grow(0.5).encloses(visible):
+		errors.append("boss splash art leaves part of the screen uncovered at %s" % expected)
+	if not Rect2(foot.position, foot.size).end.is_equal_approx(visible.end) \
+			or not is_equal_approx(foot.size.x, visible.size.x) or foot.position.x != 0.0:
+		errors.append("boss splash foot shade is not full width at the bottom at %s" % expected)
+	if title.position.x != 0.0 or not is_equal_approx(title.size.x, visible.size.x) \
+			or epithet.position.x != 0.0 or not is_equal_approx(epithet.size.x, visible.size.x) \
+			or not is_equal_approx(rule.position.x, visible.size.x * 0.5):
+		errors.append("boss splash title is not centered at %s" % expected)
+	if not is_equal_approx(visible.size.y - title.position.y, 720.0 - 548.0):
+		errors.append("boss splash title lost its spacing from the bottom at %s" % expected)
+	layer.free()
+	hud._boss_splash_layer = null

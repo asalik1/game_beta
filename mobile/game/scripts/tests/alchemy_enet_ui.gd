@@ -1489,6 +1489,14 @@ func _party_identity_lifecycle(full_name: String, departing_peer: int) -> void:
 			and not untagged.has_meta("party_peer"), str(g.hud.hud_popover))
 		await native._mouse(Vector2(20, 600))
 	if await _party_identity_native_open(full_name, id + ".departing"):
+		# Hold the departure behind a controlled dialogue gate on the host and
+		# both sibling guests (each posts its own notice) while the real ENet
+		# transport closes and rejoins. Restore even if a check fails.
+		var watchers: Array = [pair.readers[0], pair.readers[1], pair.readers[2]]
+		var prior_dialogue: Array[bool] = []
+		for reader in watchers:
+			prior_dialogue.append(bool(reader.hud.dialogue_active))
+			reader.hud.dialogue_active = true
 		pair.transports[3].close()
 		pair.apis[3].multiplayer_peer = null
 		pair.roots[3].online = false
@@ -1500,6 +1508,53 @@ func _party_identity_lifecycle(full_name: String, departing_peer: int) -> void:
 		_check(id + ".real_peer_departure_closed", removed and not is_instance_valid(g.hud.hud_popover)
 			and pair.apis[0].get_peers().size() == 2, {"removed": removed, "remaining": pair.apis[0].get_peers().size(), "popup": str(g.hud.hud_popover)})
 		if not r.flag("no-capture"): r.shot("names_lifecycle_peer_departed", "intentional final isolated guest transport teardown; stale-party-popup lifecycle, not kick action")
+		var departure := "%s left the party" % full_name
+		_check(id + ".departure_queued", _party_has_notice(departure), "real disconnect held behind controlled dialogue")
+		_check(id + ".departure_logged", _party_feed_has(departure), departure)
+		for index in range(1, watchers.size()):
+			var sibling: Node = watchers[index].hud
+			var posted: bool = await pair._until(func() -> bool: return _party_has_notice(departure, sibling), 5.0)
+			_check("%s.sibling%d.departure_queued" % [id, index], posted, "relayed disconnect held behind controlled dialogue")
+			_check("%s.sibling%d.departure_logged" % [id, index], _party_feed_has(departure, sibling), departure)
+		var rejoined: bool = await pair._connect_party_guest(3, full_name)
+		_check(id + ".real_rejoin_retracts_departure", rejoined and not _party_has_notice(departure),
+			{"rejoined": rejoined, "message": departure})
+		_check(id + ".rejoin_keeps_departure_history", _party_feed_has(departure), departure)
+		# Siblings learn of the rejoin through the host's relayed spawn, a
+		# few frames after the host's own shell exists.
+		var rejoin_peer: int = pair.apis[3].get_unique_id() if rejoined else 0
+		for index in range(1, watchers.size()):
+			var sibling: Node = watchers[index].hud
+			var spawned := false
+			if rejoined:
+				spawned = await pair._until(func() -> bool: return pair._shell(index, rejoin_peer) != null, 5.0)
+			_check("%s.sibling%d.relayed_rejoin_retracts_departure" % [id, index], spawned and not _party_has_notice(departure, sibling),
+				{"spawned": spawned, "peer": rejoin_peer, "message": departure})
+			_check("%s.sibling%d.rejoin_keeps_departure_history" % [id, index], _party_feed_has(departure, sibling), departure)
+		for index in watchers.size():
+			watchers[index].hud.dialogue_active = prior_dialogue[index]
+			watchers[index].hud._tick_announcements()
+		_check(id + ".released_gate_has_no_stale_departure", not _party_has_notice(departure), "readability restored after real snapshot rejoin")
+		for index in range(1, watchers.size()):
+			_check("%s.sibling%d.released_gate_has_no_stale_departure" % [id, index], not _party_has_notice(departure, watchers[index].hud),
+				"sibling readability restored after relayed rejoin")
+
+
+func _party_has_notice(text: String, hud: Node = null) -> bool:
+	if hud == null: hud = g.hud
+	if is_instance_valid(hud._ann_active) and hud._ann_active.get_meta("message", "") == text:
+		return true
+	for notice in hud._ann_queue:
+		if notice.text == text: return true
+	return false
+
+
+func _party_feed_has(text: String, hud: Node = null) -> bool:
+	if hud == null: hud = g.hud
+	for row in hud._log_lines:
+		if is_instance_valid(row) and (row.get_meta("label") as Label).text == text:
+			return true
+	return false
 
 
 ## Controlled owner poses and reliable down-state fanout in the existing four

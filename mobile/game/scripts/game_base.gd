@@ -41,7 +41,7 @@ func refresh_touch_mode() -> void:
 
 
 ## Binding-aware instructions only at explicit quest/factory display sites.
-## Dialogue and other authored prose keep the existing touchify policy.
+## Dialogue and other authored prose use touchify's live control wording.
 func interaction_copy(s: String) -> String:
 	if touch_mode or (gamepad != null and gamepad.active):
 		return touchify(s)
@@ -97,9 +97,8 @@ func _size_factory_prompt(prompt: Label) -> void:
 	prompt.size = prompt.get_minimum_size().max(Vector2(96, 20))
 
 
-## Rewrite keyboard prompts ("press E/Q/Space") into touch wording in player-facing
-## strings when on a touchscreen — a no-op on desktop, so authored text keeps its
-## keyboard phrasing on PC. Applied at display points (quest line, dialogue). Menu
+## Rewrite authored prompts for the current controls, including keyboard remaps.
+## Applied at display points (quest line, dialogue). Menu
 ## close-hints are handled separately in menus._hint.
 func touchify(s: String) -> String:
 	if gamepad != null and gamepad.active:
@@ -110,7 +109,7 @@ func touchify(s: String) -> String:
 			s = _replace_key_prompt(s, "Hold " + spec[0], "Hold " + gamepad.label(spec[1]))
 		return s.replace("E — ", gamepad.label("interact") + " — ")
 	if not touch_mode:
-		return s
+		return keyboard_copy(s)
 	s = _replace_key_prompt(s, "Hold E", "Hold Act")
 	s = _replace_key_prompt(s, "hold E", "hold Act")
 	# Quest copy names the NPC with a gendered pronoun; keep the action copy
@@ -126,6 +125,24 @@ func touchify(s: String) -> String:
 	s = _replace_key_prompt(s, "press T", "tap Skills")
 	s = _replace_key_prompt(s, "Press T", "Tap Skills")
 	s = s.replace("E — ", "")   # NPC over-head prompts: "E — Talk" -> "Talk"
+	return s
+
+
+## Match original tokens in one pass so swapped bindings cannot cascade.
+## Space/ESC are fixed controls, not aliases for the remappable Interact key.
+func keyboard_copy(s: String) -> String:
+	var actions := {"E": "interact", "Q": "potion", "T": "skills"}
+	var pattern := RegEx.new()
+	pattern.compile("\\b([Pp]ress|[Hh]old) (E|Q|T)\\b")
+	var matches := pattern.search_all(s)
+	matches.reverse()
+	for hit: RegExMatch in matches:
+		var key_name := OS.get_keycode_string(int(binds[actions[hit.get_string(2)]])).to_upper()
+		# Insert literally: dollar and backslash are valid bindings too.
+		s = s.substr(0, hit.get_start()) + hit.get_string(1) + " " + key_name + s.substr(hit.get_end())
+	# Over-head prop prompts ("E — Fish the river") name Interact the same way.
+	if s.begins_with("E — "):
+		s = OS.get_keycode_string(int(binds["interact"])).to_upper() + s.substr(1)
 	return s
 
 
@@ -244,6 +261,7 @@ var binds := {
 var quest_key := "talk"
 var talked_to_elder := false
 var talk_cd := 0.0
+var gate_bump_cd := 0.0          # local guidance only; never replicated or saved
 var cur_room := 0                # the room YOUR player occupies (camera/music/ambience)
 var last_room := -1              # previous frame's room (change detection)
 # MP (MULTIPLAYER.md §4.3): the SIM gate — the union of every player's
@@ -791,7 +809,10 @@ func request_pause(on: bool) -> void:
 func input_overlay_up() -> bool:
 	if hud == null or menus == null:
 		return false
-	return chapter_finale.active or hud.dialogue_active or hud.choices_active or hud.chat_active or menus.is_open()
+	# A cinematic's finishing fade counts too: its callback may raise the
+	# victory card, and every menu path (HUD icons, hotkeys, pad) reads this.
+	return chapter_finale.active or hud.dialogue_active or hud.choices_active or hud.chat_active \
+		or menus.is_open() or hud.cinematic_finishing()
 
 
 ## NG+ tier governing THIS run's spawns and drops (0 = Normal;
@@ -1919,12 +1940,15 @@ func _check_side_quests() -> void:
 			continue
 		flags["sq_paid_" + sid] = true  # direct: no gate/quest re-entry
 		var reward: Dictionary = q.get("reward", {})
-		var gold := int(ceil(float(reward.get("gold", 0)) * Balance.daily_gold_mult(player.level)))
-		if gold > 0:
-			player.gold += gold
-		var standing: Dictionary = reward.get("standing", {})
-		for fac in standing:
-			player.faction_standing[fac] = int(player.faction_standing.get(fac, 0)) + int(standing[fac])
+		# The server settles world progress without owning a character payout.
+		var gold := 0
+		if has_local_player():
+			gold = int(ceil(float(reward.get("gold", 0)) * Balance.daily_gold_mult(player.level)))
+			if gold > 0:
+				player.gold += gold
+			var standing: Dictionary = reward.get("standing", {})
+			for fac in standing:
+				player.faction_standing[fac] = int(player.faction_standing.get(fac, 0)) + int(standing[fac])
 		# Beyond coins + standing (2026-08-17 quest-verb pass, PROPOSALS/
 		# DYNAMIC_WORLD.md §3.2): a quest may also pay an ITEM (a chapter-band
 		# gear roll for the wearer's class, like a chest), a GEM (chapter drop
@@ -1955,11 +1979,12 @@ func _check_side_quests() -> void:
 					got_extra += "  + " + String(ks.get("name", "a keepsake"))
 		if reward.has("kept"):
 			set_flag(String(reward["kept"]))  # persistent per-character mark
-		sfx("levelup")
-		spawn_text(player.global_position + Vector2(0, -70),
-			"SIDE QUEST COMPLETE — %s%s%s" % [String(q["name"]),
-				"  (+%d gold)" % gold if gold > 0 else "", got_extra],
-			Color(1.0, 0.85, 0.35), 4.0)
+		if has_local_player():
+			sfx("levelup")
+			spawn_text(player.global_position + Vector2(0, -70),
+				"SIDE QUEST COMPLETE — %s%s%s" % [String(q["name"]),
+					"  (+%d gold)" % gold if gold > 0 else "", got_extra],
+				Color(1.0, 0.85, 0.35), 4.0)
 
 ## A kill toward any accepted, unfinished KILL-step quest (2026-08-17
 ## quest-verb pass): a step with `kind:"kill"` names a `target` enemy kind and

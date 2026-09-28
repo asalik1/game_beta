@@ -200,6 +200,17 @@ func _run_systems() -> void:
 		return _fail("opening choice did not move resonance / set its flag")
 	await _skip_dialogue()  # Bren's reply + closing narration
 	print("ok: class select + warrior opening (owned the harm)")
+	# The opener art is still fading out here and holds the input gate.
+	var guidance_error: String = await preload("res://scripts/tests/opening_guidance.gd").play_handoff(game)
+	if guidance_error != "":
+		return _fail(guidance_error)
+	guidance_error = preload("res://scripts/tests/opening_guidance.gd").run(game)
+	if guidance_error != "":
+		return _fail(guidance_error)
+	guidance_error = preload("res://scripts/tests/opening_guidance.gd").gate_checks(game)
+	if guidance_error != "":
+		return _fail(guidance_error)
+	print("ok: opening objective marker + live dialogue keys")
 	# Capital rework (2026-07-25 §3): campaign chapters no longer OPEN with a
 	# shop — the village merchant is gone; you provision in Crownfall.
 	if not game.merchant_zones.is_empty():
@@ -279,6 +290,23 @@ func _run_systems() -> void:
 		return _fail("elder talk did not set met_elder")
 	if not game._edge_unlocked(0, village_exit) or game.gates.has(game._edge_key(0, village_exit)):
 		return _fail("village east gate did not open after elder talk")
+	for mk in game.quest_marks:
+		if mk.has("elder") and mk.node.visible:
+			return _fail("elder objective marker remained after the real conversation")
+	# Load reconciliation must refresh a previously visible marker even when
+	# met_elder is already present (set_flag is not called on this load path).
+	var saved_mark_visibility := {}
+	for mk in game.quest_marks:
+		if mk.has("elder"):
+			saved_mark_visibility[mk.node] = mk.node.visible
+			mk.node.visible = true
+	game.reconcile_after_load()
+	var load_mark_hidden := true
+	for mark: Label in saved_mark_visibility:
+		load_mark_hidden = load_mark_hidden and not mark.visible
+		mark.visible = saved_mark_visibility[mark]
+	if not load_mark_hidden:
+		return _fail("elder objective marker remained after load reconciliation")
 	print("ok: elder talk reads opening choice + village gate opens")
 
 	# 3. Fire every ability of every class against dummy wolves.
@@ -482,6 +510,9 @@ func _run_systems() -> void:
 	game.player.tree_points = {}
 	game.player.recalc()
 	print("ok: mage Wind Cuts (wind-only bleed, bites + refreshes)")
+	await _test_spell_damage_wiring()
+	if _failed:
+		return
 
 	# Assassin STAB SURGE (round 25): a connecting cut buffs lifesteal,
 	# bigger the lower your health sits.
@@ -1034,6 +1065,12 @@ func _run_systems() -> void:
 	# 3d16. Retention pass: chapter grades + PBs, weekly challenge fx,
 	# kill-count lore + titles, risk-event curse, loot fanfare bank.
 	await _test_retention()
+
+	# 3d16b. Enemy statuses: expired DoT potency/stacks reset, lethal DoT
+	# ticks cancel that frame's bite/shot, bleed shatters a ward.
+	_test_enemy_statuses()
+	if _failed:
+		return
 
 	# 3d17. Mob presence + identity traits (HP/dmg mults, self-heal,
 	# healer pulse, lunge, frenzy damage).
@@ -2002,6 +2039,9 @@ func _run_systems() -> void:
 	var road_choice_error: String = preload("res://scripts/tests/test_road_choices.gd").run(self)
 	if road_choice_error != "":
 		return _fail(road_choice_error)
+	var dedicated_story_error: String = await preload("res://scripts/tests/test_dedicated_story.gd").run(self)
+	if dedicated_story_error != "":
+		return _fail(dedicated_story_error)
 	var road_hunt_error: String = preload("res://scripts/tests/test_road_hunt.gd").run(self)
 	if road_hunt_error != "":
 		return _fail(road_hunt_error)
@@ -2285,11 +2325,18 @@ func _run_systems() -> void:
 	await _frames(2)
 	print("ok: shop, codex, records, journal, daily, skill tree, theme, stats, map, dev UI")
 	_test_status_icon_coverage()
+	var impairment_error: String = await preload("res://scripts/tests/hud_impairments.gd").suite(game)
+	if impairment_error != "":
+		return _fail(impairment_error)
 	_test_hud_icon_integrity()
 	var alignment_error := preload("res://scripts/tests/hud_alignment_geometry.gd").suite(game.hud)
 	if alignment_error != "":
 		return _fail(alignment_error)
 	print("ok: HUD alignment (shaped numeric baselines, quest/vitals/target clearance, full text, negative controls)")
+	var covers_error: String = await preload("res://scripts/tests/fullscreen_covers.gd").suite(game)
+	if covers_error != "":
+		return _fail(covers_error)
+	print("ok: full-screen HUD/cutscene covers, centered clipped art + motes, speaker/boss splash covers (wide phone, tablet, resize, desktop keep)")
 	await _test_tell_shapes()
 
 	# 5c. Endgame modes (ACT2_DESIGN.md §II): The Crucible + The Waking Depths.
@@ -4411,6 +4458,164 @@ func _test_retention() -> void:
 	g.player_title = keep_title
 	g.achievements = keep_ach
 	print("ok: retention pass (grades + PBs, weekly fx, lore titles, curse, fanfare)")
+
+
+## A deterministic player receiver: exercise real enemy ticks/AI/death without
+## player evasion, hurt immunity, level-ups or prior kit state masking a bite.
+class StatusTarget extends Player:
+	var xp_awards: Array[int] = []
+
+	func _ready() -> void:
+		pass
+
+	func take_damage(amount: float, _kind := "phys", _attacker: Node = null,
+			_heavy := false, _pen := 0.0, _dex := 0.0) -> void:
+		hp -= amount
+
+	func gain_xp(amount: int) -> void:
+		xp_awards.append(amount)
+
+
+## All probes run synchronously with explicit physics steps. Restore in the
+## caller even on assertion failure; no campaign actor or accumulated kit state
+## is a precondition. Deferred death callbacks use the encounter-owned loot gate.
+func _test_enemy_statuses() -> void:
+	var keep_player := game.player
+	var keep_players: Array[Player] = game.players.duplicate()
+	var keep_party: Dictionary = game.party_stats.duplicate(true)
+	var keep_fight: Dictionary = game.fight_stats.duplicate(true)
+	var receiver := StatusTarget.new()
+	receiver.game = game
+	receiver.crit = 0.0
+	receiver.hp = 10000.0
+	receiver.position = keep_player.global_position
+	receiver.process_mode = Node.PROCESS_MODE_DISABLED
+	game.add_child(receiver)
+	game.player = receiver
+	var probes: Array[Enemy] = []
+	var projectiles: Array = get_tree().get_nodes_in_group("projectiles")
+	var errors: Array[String] = []
+	_enemy_status_checks(receiver, probes, errors)
+	game.player = keep_player
+	game.players = keep_players
+	game.party_stats = keep_party
+	game.fight_stats = keep_fight
+	for e in probes:
+		e.queue_free()
+	for pr in get_tree().get_nodes_in_group("projectiles"):
+		if not projectiles.has(pr):
+			pr.queue_free()
+	receiver.queue_free()
+	if not errors.is_empty():
+		return _fail("enemy statuses: " + "; ".join(errors))
+	print("ok: enemy statuses (fresh/refresh burn+bleed, toxin restart, lethal bite+shot exits, single XP award, bleed shatters ward)")
+
+
+func _status_probe(probes: Array[Enemy], kind := "wolf") -> Enemy:
+	var e := Enemy.make(game, kind, game.player.global_position + Vector2(24, 0), -1, 1.0)
+	game.add_enemy(e)
+	e.set_physics_process(false)
+	e.traits = {}  # isolate status/attack ordering from random trait clocks
+	e.set_meta("ward_spawn", true)  # no campaign loot/counters from test deaths
+	e.hp = 10000.0
+	e.target = game.player
+	e.retarget_t = 10.0
+	e.force_aggro = true
+	e.xp_value = 7
+	probes.append(e)
+	return e
+
+
+func _enemy_status_checks(receiver: StatusTarget, probes: Array[Enemy], errors: Array[String]) -> void:
+	for effect in ["burn", "bleed"]:
+		var e := _status_probe(probes)
+		e.stun_time = 10.0  # no attacks while advancing expiry
+		if effect == "burn":
+			e.apply_burn(200.0, 0.1, Color.WHITE, receiver)
+		else:
+			e.apply_bleed(200.0, 0.1, receiver)
+		e.call("apply_" + effect, 10.0, 0.1)
+		if not is_equal_approx(float(e.get(effect + "_dps")), 200.0):
+			errors.append(effect + " active refresh lost strong potency")
+		if e.get(effect + "_src") != receiver:
+			errors.append(effect + " active refresh lost source")
+		e._physics_process(0.1)  # exactly the expiry boundary, no extra idle frame
+		if float(e.get(effect + "_dps")) != 0.0 or e.get(effect + "_src") != null:
+			errors.append(effect + " expiry retained potency/source")
+		e.call("apply_" + effect, 10.0, 1.0)
+		if not is_equal_approx(float(e.get(effect + "_dps")), 10.0) or e.get(effect + "_src") != null:
+			errors.append(effect + " fresh application inherited old potency/source")
+		# Also defend the apply path when time has expired outside the host tick
+		# (e.g. mirror bookkeeping), leaving stale fields until reapplication.
+		e.set(effect + "_time", 0.0)
+		e.set(effect + "_dps", 200.0)
+		e.set(effect + "_src", receiver)
+		e.call("apply_" + effect, 10.0, 1.0)
+		if not is_equal_approx(float(e.get(effect + "_dps")), 10.0) or e.get(effect + "_src") != null:
+			errors.append(effect + " application trusted expired fields")
+
+	var toxin_probe := _status_probe(probes)
+	toxin_probe.stun_time = 10.0
+	for i in Balance.TOXIN_MAX_STACKS:
+		toxin_probe.apply_toxin(200.0, 0.1, Color.GREEN, receiver)
+	if toxin_probe.toxin != Balance.TOXIN_MAX_STACKS:
+		errors.append("active toxin failed to stack")
+	toxin_probe._physics_process(0.1)
+	if toxin_probe.toxin != 0:
+		errors.append("toxin retained stacks at expiry")
+	toxin_probe.apply_toxin(10.0, 1.0)
+	if toxin_probe.toxin != 1 or not is_equal_approx(toxin_probe.burn_dps, 10.0 * (1.0 + Balance.TOXIN_PER_STACK)):
+		errors.append("expired toxin failed to rebuild from one weak stack")
+	toxin_probe.burn_time = 0.0
+	toxin_probe.apply_toxin(10.0, 1.0)
+	if toxin_probe.toxin != 1:
+		errors.append("toxin application trusted expired stack count")
+
+	# Both statuses must cancel both attack paths; living controls prove the
+	# bite deadline / firing lane actually work in this fixture.
+	for ranged_attack in [false, true]:
+		for effect in ["control", "burn", "bleed"]:
+			var e := _status_probe(probes, "cultist" if ranged_attack else "wolf")
+			e.ranged = ranged_attack
+			e.windup = 0.0 if ranged_attack else 0.01
+			e.attack_cd = 0.0
+			e.hp = 1.0
+			if effect == "burn":
+				e.apply_burn(200.0, 1.0)
+				# A second due status must never run after the first kills.
+				e.apply_bleed(200.0, 1.0)
+			elif effect == "bleed":
+				e.apply_bleed(200.0, 1.0)
+			var hp_before := receiver.hp
+			var shots_before: int = get_tree().get_nodes_in_group("projectiles").size()
+			var awards_before := receiver.xp_awards.size()
+			e._physics_process(0.02)
+			var shots_after: int = get_tree().get_nodes_in_group("projectiles").size()
+			var label: String = effect + (" ranged" if ranged_attack else " bite")
+			if effect == "control":
+				if (ranged_attack and shots_after <= shots_before) or (not ranged_attack and receiver.hp >= hp_before):
+					errors.append(label + " positive control did not attack")
+				continue
+			if not e.dying or receiver.hp != hp_before or shots_after != shots_before:
+				errors.append(label + " lethal tick did not stop attack")
+			e._physics_process(0.02)
+			e.take_damage(200.0, Vector2.ZERO, false, true)
+			if receiver.xp_awards.size() != awards_before + 1 or receiver.xp_awards.back() != e.xp_value:
+				errors.append(label + " death must award XP exactly once")
+
+	# Warded control and bleeding enemy both receive the same noncritical,
+	# sub-threshold chip. The SHATTERING hit itself must deal full damage.
+	for bleeding in [false, true]:
+		var ward := _status_probe(probes, "sun_bleached")
+		ward.traits = {"warded": true}
+		ward.hp = ward.max_hp
+		var chip := ward.max_hp * Balance.MOB_WARD_BREAK_HIT * 0.5
+		if bleeding:
+			ward.apply_bleed(10.0, 1.0)
+		ward.take_damage(chip, Vector2.ZERO, false, true)
+		var expected := chip if bleeding else chip * (1.0 - Balance.MOB_WARD_DR)
+		if ward.ward_broken != bleeding or absf(ward.max_hp - ward.hp - expected) > 0.001:
+			errors.append("bleed ward shatter/full hit" if bleeding else "unafflicted ward control")
 
 
 func _test_mob_traits() -> void:
@@ -10351,7 +10556,7 @@ func _test_consumable_actions() -> void:
 	p.equipment = {}
 	p.bags = [Items.make_bag("F")]
 	var errors: Array[String] = []
-	for check in [_cons_action_drinks, _cons_action_drops, _cons_action_recall, _cons_action_shop]:
+	for check in [_cons_action_drinks, _cons_action_missing_unit, _cons_action_drops, _cons_action_recall, _cons_action_shop]:
 		var why: String = await check.call(m)
 		if why != "":
 			errors.append(why)
@@ -10372,6 +10577,59 @@ func _test_consumable_actions() -> void:
 	if not errors.is_empty():
 		return _fail("consumable actions: " + "; ".join(errors))
 	print("ok: consumable actions (shared field/Inventory potion rules + codes, field-only notices/throttles, bag Health slot, seal, exact one-use stock, stale Use/Drop, in-panel recall reasons, in-panel full-bag potion/scroll/gem/gamble/black-market refusals)")
+
+
+## Force re-entrant stock removal at the true-damage seam without loaning the
+## real hero's death/combat state. The potion effects/gate/sting remain real.
+class PotionRemovalProbe extends "res://scripts/player_core.gd":
+	var drinking: Dictionary
+	var hits := 0
+	func _ready() -> void:
+		pass
+	func take_damage(amount: float, kind: String) -> void:
+		if kind == "true":
+			hits += 1
+			hp -= amount
+			var idx: int = preload("res://scripts/gear_care.gd").index_of(consumables, drinking)
+			if idx >= 0:
+				consumables.remove_at(idx)
+
+
+func _cons_action_missing_unit(_m: Menus) -> String:
+	var p := PotionRemovalProbe.new()
+	p.game = game
+	p.process_mode = Node.PROCESS_MODE_DISABLED
+	add_child(p)
+	game.pvp_active = false
+	var error := ""
+	for keep_twin in [true, false]:
+		var bottle := Items.make_potion("mana", "instant", "F", "accord")
+		bottle["sting"] = {"type": "true_dmg", "amt": 0.1}
+		var twin := bottle.duplicate(true)
+		var id := String(bottle.id)
+		p.drinking = bottle
+		p.consumables = [bottle, twin] if keep_twin else [bottle]
+		p.room_potions = {id: 2}
+		p.potion_cd = 0.0
+		p.max_hp = 100.0
+		p.hp = 100.0
+		p.max_mp = 100.0
+		p.mp = 40.0
+		p.hits = 0
+		var result := p.use_consumable(bottle)
+		if p.consumables.size() != (1 if keep_twin else 0) \
+				or (keep_twin and not is_same(p.consumables[0], twin)):
+			error = "a potion removed during its sting consumed another bag unit"
+		elif result != "" or p.hits != 1 or p.hp != 90.0 \
+				or not is_equal_approx(p.mp, 40.0 + 60.0 * float(bottle.amt)) \
+				or int(p.room_potions[id]) != 1 or p.potion_cd != Balance.POTION_DRINK_COOLDOWN:
+			error = "a potion removed during its sting lost successful-drink accounting"
+		elif p.use_consumable(bottle) == "" or p.hits != 1 or int(p.room_potions[id]) != 1:
+			error = "a removed potion could be drunk again"
+		if error != "":
+			break
+	p.free()
+	return error
 
 
 func _cons_action_find(node: Node, predicate: Callable) -> Node:
@@ -10772,3 +11030,255 @@ func _cons_action_shop(m: Menus) -> String:
 		if not _cons_action_label(m, "Bag full!"):
 			return "full-bag purchase refusal missing inside the panel: " + title
 	return ""
+
+
+## Classes.CLASSES is recursively read-only. Lend the production kit a mutable
+## copy through its existing coefficient reader; no gameplay methods are mocked.
+class SpellDamageProbe extends Player:
+	var damage_abilities: Dictionary = Classes.CLASSES["warlock"]["abilities"].duplicate(true)
+
+	func ability_coeff(slot: String) -> float:
+		if cls == "warlock":
+			return float(damage_abilities[slot].get("dmg", {}).get("coeff", 1.0))
+		return super.ability_coeff(slot)
+
+
+## T19: real cast dispatch and hit funnel, with disposable actors and fixed stats.
+## The caller restores shared state even when a probe reports a failure.
+func _test_spell_damage_wiring() -> void:
+	await _frames(1) # flush the preceding section's queued combat cleanup
+	var saved_stats := game.party_stats.duplicate(true)
+	var saved_fight := game.fight_stats.duplicate(true)
+	var saved_hit_stop: Variant = game.settings.get("hit_stop", true)
+	var saved_modes := {}
+	for node in [game, game.player] + get_tree().get_nodes_in_group("enemies"):
+		saved_modes[node] = [node.is_processing(), node.is_physics_processing(), node.is_in_group("enemies")]
+		node.set_process(false)
+		node.set_physics_process(false)
+		if node.is_in_group("enemies"):
+			node.remove_from_group("enemies")
+	game.settings["hit_stop"] = false
+	var p := SpellDamageProbe.new()
+	p.game = game
+	p.cls = "mage"
+	game.add_child(p)
+	p.set_process(false)
+	p.set_physics_process(false)
+	# The kit loop's open anchor, not wherever earlier sections left the hero:
+	# Blink dashes from here and every dummy is placed relative to it.
+	p.global_position = game.room_center(0)
+	p.equipment = {}
+	p.atk = 100.0
+	p.crit = 0.0
+	p.magpen = 0.0
+	p.physpen = 0.0
+	p.max_hp = 10000.0
+	p.hp = p.max_hp
+	p.max_mp = 10000.0
+	p.mp = p.max_mp
+	var errors: Array[String] = []
+	await _probe_mage_cast_damage(p, errors)
+	_probe_wind_wound(p, errors)
+	await _probe_warlock_coefficients(p, errors)
+	p.queue_free()
+	await _frames(1)
+	game.party_stats = saved_stats
+	game.fight_stats = saved_fight
+	game.settings["hit_stop"] = saved_hit_stop
+	for node in saved_modes:
+		node.set_process(saved_modes[node][0])
+		node.set_physics_process(saved_modes[node][1])
+		if saved_modes[node][2]:
+			node.add_to_group("enemies")
+	if not errors.is_empty():
+		return _fail("spell damage wiring: " + "; ".join(errors))
+	print("ok: spell damage wiring (Mage gear, Starfall, Firmament, skins; physical Wind Cuts; independent Warlock knobs)")
+
+
+func _spell_damage_dummy(p: Player) -> Enemy:
+	var e := Enemy.make(game, "wolf", p.global_position + Vector2(100, 0), -1, 1.0)
+	game.add_enemy(e)
+	e.set_process(false)
+	e.set_physics_process(false)
+	e.max_hp = 100000.0
+	e.hp = e.max_hp
+	e.physres = 0.0
+	e.magres = 0.0
+	e.eva = 0.0
+	e.critres = 0.0
+	e.traits = {}
+	e.gold_value = 0
+	p.locked_target = e
+	p.soft_target = null
+	return e
+
+
+func _spell_damage_expect(errors: Array[String], actual: float, expected: float, label: String) -> void:
+	if absf(actual - expected) > 0.03:
+		errors.append("%s: got %.3f, expected %.3f" % [label, actual, expected])
+
+
+func _probe_mage_cast_damage(p: Player, errors: Array[String]) -> void:
+	var origin := p.global_position
+	# Expected multipliers come from the knobs themselves, so a retune of the
+	# gear, passive or Starfall numbers does not read as a wiring failure.
+	var slip_amp := 1.0 + float(Balance.uniq("mage_pants_Cs").get("amp", 0.0))
+	var advance := 1.0 + float(Balance.uniq("pants_aggr").get("bonus", 0.0))
+	var firmament := 1.0 + float(Balance.uniq("skyfall").get("second", 0.0))
+	var starfall := Classes.ability_fx("mage", "ult", "wind")
+	var starfall_mult := float(starfall.get("dmg_mult", 1.0))
+	var starfall_falloff := float(starfall.get("stack_falloff", 0.4))
+	var starfall_count := int(starfall.get("meteors", 1))
+	if slip_amp <= 1.0 or advance <= 1.0:
+		errors.append("precondition: Blink/Meteor gear bonuses must be positive to test")
+	# Every case runs through use_ability, including the actual equipment hook.
+	for entry in [
+			["a3", "", "", ""], ["ult", "", "", ""],
+			["ult", "", "crystal_archmage", ""],
+			["ult", "wind", "", ""], ["ult", "wind", "crystal_archmage", ""],
+			["ult", "", "", "skyfall"], ["ult", "", "crystal_archmage", "skyfall"]]:
+		var baseline: Array[float] = []
+		for boosted in [false, true]:
+			p.global_position = origin
+			p.facing = Vector2.RIGHT
+			p.skin = entry[2]
+			p.equipment = {} if entry[3] == "" else {"weapon": {"passive": entry[3]}}
+			p.ability_theme = {"a1": "", "a2": "", "a3": "", "ult": entry[1]}
+			p.uniq_armor = (["mage_pants_Cs"] if entry[0] == "a3" else ["pants_aggr"]) if boosted else []
+			p.uniq_t = {"slipamp": 3.0, "pants_aggr": 3.0} if boosted else {}
+			p.cds[entry[0]] = 0.0
+			p.mp = p.max_mp
+			var e := _spell_damage_dummy(p)
+			var before := e.hp
+			p.use_ability(entry[0])
+			# Another cast can replace the transient payload before Meteor lands.
+			p._tfx = {}
+			var impacts: Array[float] = []
+			var count := starfall_count if entry[1] == "wind" else 1
+			var deadline := Time.get_ticks_msec() + 4000
+			while impacts.size() < count and Time.get_ticks_msec() < deadline:
+				if e.hp < before:
+					impacts.append(before - e.hp)
+					before = e.hp
+				else:
+					await get_tree().create_timer(0.01).timeout
+			var label := "%s/%s/%s/%s bonus=%s" % [entry[0], entry[1], entry[2], entry[3], boosted]
+			if impacts.size() != count:
+				errors.append(label + " missing impacts")
+			var boost := slip_amp if entry[0] == "a3" else advance
+			for i in impacts.size():
+				var expected := p.atk * p.ability_coeff(entry[0])
+				if entry[1] == "wind":
+					# existing theme reduction and repeat-target falloff, applied once
+					expected *= starfall_mult * pow(starfall_falloff, i)
+				if entry[3] == "skyfall":
+					expected *= firmament # primary plus Firmament's half-weight echo on the same target
+				if boosted:
+					expected *= boost
+					if i < baseline.size():
+						_spell_damage_expect(errors, impacts[i], baseline[i] * boost, label + " ratio")
+				_spell_damage_expect(errors, impacts[i], expected, label + " impact %d" % i)
+			if not boosted:
+				baseline = impacts
+			elif entry[0] == "ult" and p.uniq_on("pants_aggr"):
+				errors.append(label + " did not consume Advance")
+			e.free()
+	p.global_position = origin
+	p.skin = ""
+	p.equipment = {}
+	p.uniq_armor = []
+	p.uniq_t = {}
+
+
+func _probe_wind_wound(p: Player, errors: Array[String]) -> void:
+	p.ability_theme = {"a1": "wind"}
+	p.bolt_bleed = 0.125
+	p._tfx = {}
+	# phys res, magic res, phys pen, magic pen, shred, ignore, wound mitigation
+	for row in [[0, 0, 0, 0, 0, 0.0, 1.0], [120, 0, 0, 0, 0, 0.0, 0.5],
+			[0, 120, 0, 0, 0, 0.0, 1.0], [120, 120, 120, 0, 0, 0.0, 1.0],
+			[120, 120, 0, 120, 0, 0.0, 0.5], [120, 0, 240, 0, 0, 0.0, 1.0],
+			[180, 0, 0, 0, 60, 0.0, 0.5], [240, 0, 0, 0, 0, 0.5, 0.5]]:
+		var e := _spell_damage_dummy(p)
+		e.physres = row[0]
+		e.magres = row[1]
+		p.physpen = row[2]
+		p.magpen = row[3]
+		e.res_shred = row[4]
+		p._cast_bolt(Vector2.RIGHT, 0.94)
+		for node in get_tree().get_nodes_in_group("projectiles"):
+			if node is Projectile and node.source_player == p and not node.is_queued_for_deletion():
+				var fx: Dictionary = node.fx.duplicate()
+				fx["pen_ignore"] = row[5]
+				p.hit_enemy(e, node.hit_player_mult, fx)
+				node.queue_free()
+		var label := "Wind Cuts %s" % str(row)
+		# The wound is sized off the whole twin cast (x2) and spread over its 3s.
+		_spell_damage_expect(errors, e.bleed_dps, p.atk * p.bolt_bleed * 0.94 * 2.0 / 3.0 * row[6], label)
+		var magic_res := maxf(0.0, float(row[1]) - float(row[4])) * (1.0 - float(row[5]))
+		var direct := Stats.resolve(p.atk * 0.94, "magic", 0.0, p.crit_dmg, p.magpen, p.dex, magic_res, 0.0, 0.0)
+		_spell_damage_expect(errors, e.max_hp - e.hp, direct["dmg"], label + " magical bolt")
+		e.free()
+	p.bolt_bleed = 0.0
+	p.physpen = 0.0
+	p.magpen = 0.0
+
+
+func _probe_warlock_coefficients(p: SpellDamageProbe, errors: Array[String]) -> void:
+	p.cls = "warlock"
+	p.ability_theme = {}
+	var abilities: Dictionary = p.damage_abilities
+	var baseline: Array[float] = []
+	for slot in ["a1", "a2", "a3"]:
+		baseline.append(await _spell_warlock_damage(p, slot))
+	# Pin only the live coefficients (Shadowbolt 1.0, Hex 0.5, Dark Pact 1.5).
+	# Hex's direct hit receives its own Exposed rider, read off a fresh dummy;
+	# no DoT ticks in this probe.
+	var exposed_probe := _spell_damage_dummy(p)
+	var exposed := exposed_probe.vuln_mult
+	exposed_probe.free()
+	var live: Array[float] = [p.atk * 1.0, p.atk * 0.5 * exposed, p.atk * 1.5]
+	for i in 3:
+		_spell_damage_expect(errors, baseline[i], live[i], "Warlock live coefficient a%d" % (i + 1))
+	for changed in ["a1", "a2", "a3"]:
+		var had_damage: bool = abilities[changed].has("dmg")
+		var saved: Dictionary = abilities[changed].get("dmg", {}).duplicate(true)
+		var altered := saved.duplicate(true)
+		altered["coeff"] = float(saved.get("coeff", 1.5)) * 2.0
+		abilities[changed]["dmg"] = altered
+		var samples: Array[float] = []
+		for slot in ["a1", "a2", "a3"]:
+			samples.append(await _spell_warlock_damage(p, slot))
+		# Restore after EACH variation, before evaluating any assertions.
+		if had_damage:
+			abilities[changed]["dmg"] = saved
+		else:
+			abilities[changed].erase("dmg")
+		for i in 3:
+			var slot: String = ["a1", "a2", "a3"][i]
+			_spell_damage_expect(errors, samples[i], baseline[i] * (2.0 if slot == changed else 1.0),
+				"Warlock %s knob -> %s" % [changed, slot])
+
+
+func _spell_warlock_damage(p: Player, slot: String) -> float:
+	p.hp = p.max_hp
+	p._tfx = {}
+	p._cast_base = 0.0
+	p.hexed = {}
+	p.wither = {}
+	var e := _spell_damage_dummy(p)
+	await p._use_warlock(slot, 1.0)
+	if slot == "a2":
+		var deadline := Time.get_ticks_msec() + 2000
+		while e.hp == e.max_hp and Time.get_ticks_msec() < deadline:
+			await get_tree().create_timer(0.01).timeout
+	if slot == "a1":
+		for node in get_tree().get_nodes_in_group("projectiles"):
+			if node is Projectile and node.source_player == p and not node.is_queued_for_deletion():
+				p.hit_enemy(e, node.hit_player_mult, node.fx.duplicate())
+				node.queue_free()
+	var damage := e.max_hp - e.hp
+	p.hexed = {}
+	p.wither = {}
+	e.free()
+	return damage

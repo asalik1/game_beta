@@ -44,6 +44,8 @@ static func run(t: Node) -> String:
 	for key in kept:
 		p.set(key, kept[key])
 	if error == "":
+		error = _mail_claim_checks(t)
+	if error == "":
 		error = await _restart_checks(t)
 	if error == "":
 		print("ok: earned spoils freeze without opening/rerolling, exact per-coin gold, cache/owner/claim exclusion, recovery once, malformed records and typed mail attachments, chapter reward retirement, gift stash exclusion and gift-only Drop")
@@ -281,4 +283,99 @@ static func _gift_drop_checks(g: Game, m: Menus) -> String:
 					drops[title] = true
 		if drops != {str(gift.name): false, bought_title: true}:
 			return "Drop showed on the chapter gift or vanished from bought potions: %s" % drops
+	return ""
+
+
+## Disposable world/player and unique non-slot file: no campaign state or saves borrowed.
+static func _mail_claim_checks(t: Node) -> String:
+	var g := RewardWorld.new()
+	g.process_mode = Node.PROCESS_MODE_DISABLED
+	g.no_saves = true
+	g.player = RewardPlayer.new()
+	g.player.game = g
+	# Character load reapplies the skin even with campaign boot disabled.
+	g.player.sprite = Sprite2D.new()
+	g.player.add_child(g.player.sprite)
+	g.add_child(g.player)
+	t.get_tree().root.add_child(g)
+	var path := "user://mail_claim_qa_%d_%d.json" % [OS.get_process_id(), Time.get_ticks_usec()]
+	var error := _mail_claim_asserts(g, path)
+	for suffix in ["", ".tmp", ".bak"]:
+		if FileAccess.file_exists(path + suffix):
+			DirAccess.remove_absolute(path + suffix)
+	g.free()
+	if error == "":
+		print("ok: mail zero/exact/partial fit, full bag existing/new stacks, repeated claims, mixed attachments and disposable save/reload conserve every unit")
+	return error
+
+
+static func _mail_units(mail: Dictionary) -> int:
+	var count := 0
+	for pl in mail.items:
+		if pl.get("kind", "") == "material":
+			count += int(pl.get("count", 1))
+	return count
+
+
+static func _mail_claim_asserts(g: Game, path: String) -> String:
+	var p := g.player
+	var cap := Items.MATERIAL_STACK_MAX
+	# Each row resets ALL pockets; no reliance on loot or prior sections.
+	for row in [[cap, 2, false, 0], [cap - 2, 2, false, 2],
+			[cap - 1, 2, false, 1], [cap - 1, 2, true, 1],
+			[0, 2, true, 0], [0, cap + 2, false, cap]]:
+		p.backpack = []
+		p.gem_bag = []
+		p.loose_bags = []
+		p.consumables = []
+		p.bags = [Items.make_bag("F")]
+		p.materials = [Items.make_material("metal", "F", row[0])] if row[0] > 0 else []
+		if row[2]:
+			while p.bag_used() < p.bag_capacity():
+				p.gem_bag.append(Items.make_gem("crit", 1))
+		var mail := {"subject": "Material QA", "body": "", "read": false,
+			"sent_at": g.trusted_now(), "items": [{"kind": "material", "family": "metal", "grade": "F", "count": row[1]}]}
+		g.mailbox = [mail]
+		var original: Array = mail.items
+		var total: int = row[0] + row[1]
+		var notice := UIMailbox._claim_contents(g, mail)
+		if p.material_count("metal", "F") != row[0] + row[3] or _mail_units(mail) != row[1] - row[3] \
+				or p.material_count("metal", "F") + _mail_units(mail) != total:
+			return "mail fit/conservation failed: %s" % [row]
+		if not notice.begins_with("Claimed %d item" % row[3]) or notice.contains("—") \
+				or (not mail.items.is_empty() and not notice.contains("%d left here" % (row[1] - row[3]))):
+			return "mail notice did not report units taken and left: " + notice
+		if int(original[0].count) != row[1]:
+			return "mail claim mutated a borrowed attachment"
+		UIMailbox._claim_contents(g, mail)
+		if p.material_count("metal", "F") != row[0] + row[3] or p.material_count("metal", "F") + _mail_units(mail) != total:
+			return "repeated claim duplicated or lost material"
+		# Use production character serialization, disk writer/reader and load fixups.
+		if not SaveGame.atomic_store(path, JSON.stringify(SaveGame._character_section(g))):
+			return "mail roundtrip could not write disposable save"
+		p.materials = []
+		g.mailbox = []
+		SaveGame.apply_character(g, SaveGame.read_json(path), false)
+		if g.mailbox.size() != 1:
+			return "mail roundtrip lost the letter"
+		mail = g.mailbox[0]
+		if p.material_count("metal", "F") != row[0] + row[3] or p.material_count("metal", "F") + _mail_units(mail) != total:
+			return "mail roundtrip lost/duplicated material"
+		UIMailbox._claim_contents(g, mail)
+		if p.material_count("metal", "F") + _mail_units(mail) != total:
+			return "claim after reload lost/duplicated material"
+		if row[0] > 0 and row[3] == 1:
+			p.take_material("metal", "F", 1)
+			UIMailbox._claim_contents(g, mail)
+			if not mail.items.is_empty() or p.material_count("metal", "F") != total - 1:
+				return "freeing one unit did not claim the exact remainder"
+	# Multiple attachments for one stack compete for the same remaining space.
+	p.gem_bag = []
+	p.materials = [Items.make_material("metal", "F", cap - 3)]
+	var mixed := {"items": [{"kind": "material", "family": "metal", "grade": "F", "count": 2},
+		{"kind": "material", "family": "metal", "grade": "F", "count": 2},
+		{"kind": "gem", "gem": Items.make_gem("crit", 1)}]}
+	UIMailbox._claim_contents(g, mixed)
+	if p.material_count("metal", "F") != cap or _mail_units(mixed) != 1 or p.gem_bag.size() != 1:
+		return "mixed claim lost a remainder or changed non-material receiving"
 	return ""

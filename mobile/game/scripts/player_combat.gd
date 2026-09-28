@@ -1365,7 +1365,11 @@ func hit_enemy(target: CharacterBody2D, mult: float, effects := {}) -> void:
 		# Wind Cuts (mage): a 3s physical bleed, armor-mitigated and
 		# refresh-don't-stack. effects["bleed"] is the pre-mit TOTAL wound;
 		# spread it across the 3s window as dps.
-		e.apply_bleed(float(effects["bleed"]) * dot_mit / 3.0, 3.0, self)
+		var bleed_res := maxf(0.0, e.physres - e.res_shred)
+		if effects.has("pen_ignore"):
+			bleed_res *= 1.0 - clampf(float(effects["pen_ignore"]), 0.0, 1.0)
+		var bleed_mit := 1.0 - Stats.res_frac(maxf(0.0, bleed_res - physpen))
+		e.apply_bleed(float(effects["bleed"]) * bleed_mit / 3.0, 3.0, self)
 	if effects.has("slow"):
 		e.apply_slow(1.0 - effects["slow"] if effects["slow"] < 1.0 else 0.5, effects.get("slow_dur", 2.0))
 	if effects.has("stun"):

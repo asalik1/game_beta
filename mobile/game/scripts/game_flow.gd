@@ -1210,7 +1210,7 @@ func on_boss_died(kind: String, dead: Boss = null) -> void:
 		if net_host():
 			net_session().host_quest_progress()
 		var beat: Array = Story.beat_for("post_" + kind,
-			Story.res_band(player.resonance), flags)
+			Story.res_band(player.resonance if has_local_player() else 0.0), flags)
 		var proceed := func() -> void:
 			_recheck_gates()  # "boss" locks on this arena's edges open
 			refresh_quest()

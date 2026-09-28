@@ -91,7 +91,19 @@ func _run() -> void:
 	trial.active = true
 	trial._advance_after(0.5, func() -> void: _bump("old_run"))
 	var old_world: int = g.world.get_instance_id()
+	var dialogue_before: bool = g.hud.dialogue_active
+	g.hud.dialogue_active = true # controlled readability gate across synchronous start
+	g.endgame_active = false
+	g.hud.announce("QA campaign tier unlocked", Color.WHITE)
+	g.endgame_active = true
+	g.hud.announce("QA Crucible queued notice", Color.WHITE)
+	_check("notice_queued_precondition", _has_notice("QA Crucible queued notice") and _has_notice("QA campaign tier unlocked"), "controlled trial and token-less campaign entries")
 	trial.start("depths")
+	g.hud._tick_announcements()
+	_check("restart_notice_expired", not _has_notice("QA Crucible queued notice"), "real Crucible-to-Depths start while unreadable")
+	_check("campaign_notice_retained", _has_notice("QA campaign tier unlocked"), "campaign copy survives world switch")
+	g.hud.discard_announcement("QA campaign tier unlocked")
+	g.hud.dialogue_active = dialogue_before
 	_check("reuse_real_world", g.endgame == trial and g.world.get_instance_id() != old_world and trial.mode == "depths", "actual start replaces arena")
 	await _world_wait(0.9)
 	_check("old_run_cancelled", int(counts.get("old_run", 0)) == 0, counts.duplicate())
@@ -108,7 +120,10 @@ func _run() -> void:
 	r.step("real world replacement without restarting controller")
 	trial._advance_after(0.5, func() -> void: _bump("old_world"))
 	old_world = g.world.get_instance_id()
+	g.hud.announce("QA old arena notice", Color.WHITE)
 	g.switch_chapter("depths", true)
+	g.hud._tick_announcements()
+	_check("world_notice_expired", not _has_notice("QA old arena notice"), "real arena replacement without controller restart")
 	_check("world_rebuilt", g.world.get_instance_id() != old_world and g.endgame == trial, "actual switch_chapter; no fake Node world")
 	await _world_wait(0.9)
 	_check("old_world_cancelled", int(counts.get("old_world", 0)) == 0, counts.duplicate())
@@ -175,11 +190,23 @@ func _run() -> void:
 	g.player.hurt_cd = saved_hurt_cd
 	g.player.hurt_was_heavy = saved_hurt_heavy
 
+	g.hud.announce("QA trial exit notice", Color.WHITE)
+	_check("exit_notice_precondition", _has_notice("QA trial exit notice"), "trial copy exists before exit")
 	trial.active = false
 	g.endgame_active = false
 	g.player.set_physics_process(true)
 	g.menus.close()
 	g.enter_capital()
+	g.hud._tick_announcements()
+	_check("capital_notice_expired", not _has_notice("QA trial exit notice"), "Return to Crownfall cannot resume trial copy")
 	await r.skip_dialogue()
 	g.request_pause(false)
 	_check("cleanup", g.no_saves and not g.endgame_active and not g.get_tree().paused and g.chapter_id == "capital", "coherent capital; no old-world restoration claim")
+
+
+func _has_notice(text: String) -> bool:
+	if is_instance_valid(g.hud._ann_active) and g.hud._ann_active.get_meta("message", "") == text:
+		return true
+	for notice in g.hud._ann_queue:
+		if notice.text == text: return true
+	return false

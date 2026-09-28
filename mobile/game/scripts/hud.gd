@@ -146,6 +146,7 @@ var _hint_play_t := 0.0         # play seconds since the last menu (hint fade cl
 var _hint_faded := false
 var _touch_mode := false        # mobile: keyboard-only chrome stays hidden (touch_hud replaces it)
 var _cinematic_mode := false    # party chrome must stay hidden on later refreshes too
+var cinematic_fade: Cutscene = null  # storybook layer dissolving out (Cutscene.finish)
 var dialogue_hint: Label = null # desktop advance keys vs touch tap-to-continue
 var minimap_title: Label = null # desktop hotkey suffix is omitted on touch
 var dialogue_lines: Array = []
@@ -810,7 +811,7 @@ void fragment() {
 	# --------------------------------------------------------- overlay ---
 	overlay = ColorRect.new()
 	overlay.color = Color(0, 0, 0, 0)
-	overlay.size = Vector2(1280, 720)
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(overlay)
 	move_child(overlay, 1)  # above vignette, behind the labels
@@ -835,7 +836,9 @@ void fragment() {
 	# ---------------------------------------------------- dialogue box ---
 	dialogue_box = Control.new()
 	dialogue_box.visible = false
+	dialogue_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(dialogue_box)
+	dialogue_box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	# CQ-style speaker splash — built FIRST so it draws behind the box/portrait.
 	# The art is square painted key-art (1254²) with its own background; shown
@@ -845,19 +848,19 @@ void fragment() {
 	splash_layer.visible = false
 	splash_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dialogue_box.add_child(splash_layer)
+	splash_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	splash_rect = TextureRect.new()
-	splash_rect.position = Vector2.ZERO
-	splash_rect.size = Vector2(1280, 1280)
 	splash_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	splash_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	splash_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	splash_layer.add_child(splash_rect)
+	get_viewport().size_changed.connect(_fit_speaker_splash)
+	_fit_speaker_splash()
 	splash_scrim = ColorRect.new()
 	splash_scrim.color = Color(0.02, 0.02, 0.05, 0.34)
-	splash_scrim.position = Vector2.ZERO
-	splash_scrim.size = Vector2(1280, 720)
 	splash_scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	splash_layer.add_child(splash_scrim)
+	splash_scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	# The box grows UPWARD from a fixed bottom edge (648, clearing the
 	# quickbar): tall enough that a long paragraph (5-6 wrapped lines) fits
@@ -943,16 +946,16 @@ void fragment() {
 	log_panel = Control.new()
 	log_panel.visible = false
 	add_child(log_panel)
+	log_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var lback := ColorRect.new()   # full-screen shade; eats clicks so the box behind can't advance
 	lback.color = Color(0.0, 0.0, 0.0, 0.55)
-	lback.position = Vector2.ZERO
-	lback.size = Vector2(1280, 720)
 	lback.mouse_filter = Control.MOUSE_FILTER_STOP
 	lback.gui_input.connect(func(e: InputEvent) -> void:  # click off the panel closes the log
 		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
 			_toggle_log()
 			get_viewport().set_input_as_handled())
 	log_panel.add_child(lback)
+	lback.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var lframe := ColorRect.new()
 	lframe.color = Color(0.9, 0.8, 0.5)
 	lframe.position = Vector2(238, 96)
@@ -1165,7 +1168,8 @@ const BUFF_W := 48.0
 const BUFF_H := 48.0
 const BUFF_ICON := 42.0
 
-## Authored status-icon override per active-buff id (assets/icons/buff_*.png).
+## Authored status-icon override per active-buff id (assets/icons/<name>.png,
+## mostly buff_*).
 ## Every id emitted by _active_buffs must live here; the systems test parses
 ## that function and rejects missing mappings or missing PNGs.
 const BUFF_ICONS := {
@@ -1179,6 +1183,10 @@ const BUFF_ICONS := {
 	"goldrush": "buff_goldrush",
 	"storm": "buff_storm",
 	"damp": "buff_damp",
+	# Impairments borrow talent art no other chip uses (mage Permafrost's ice
+	# block, archer Second Breath's vine swirl, mage Windborne's gale), so
+	# they can never pass for Ward, Guard or Damp. The test enforces it.
+	"frozen": "talent_m31", "rooted": "talent_a11", "chilled": "talent_m32",
 }
 
 ## A pooled row of active-effect chips sitting just above the ability
@@ -1393,6 +1401,16 @@ func _active_buffs() -> Array:
 		out.append({"id": "second_wind", "glyph": "ic_hp", "color": Color(0.55, 1.0, 0.65), "t": -1.0,
 			"tip": "Second Wind — untouched for %.1fs: recovering +%.0f%% max HP/s. Taking a hit resets the clock." % [
 				p.sw_delay, p.sw_regen * 100.0]})
+	# Movement impairments come right after the (at most four) persistent
+	# chips and ahead of every timed buff, so even a full row always shows
+	# why we can't move, while a flickering chill never shoves the
+	# persistent chips around.
+	if p.frozen_time > 0.0: out.append({"id": "frozen", "glyph": "ab_snow", "color": Color(0.6, 0.85, 1.0), "t": p.frozen_time,
+		"tip": "Frozen: you can't move or cast until you thaw."})
+	if p.rooted_time > 0.0: out.append({"id": "rooted", "glyph": "ab_chain", "color": Color(0.5, 0.8, 0.6), "t": p.rooted_time,
+		"tip": "Rooted: you can't move, but you can still cast."})
+	if p.chill_time > 0.0: out.append({"id": "chilled", "glyph": "ab_whirl", "color": Color(0.8, 0.92, 1.0), "t": p.chill_time,
+		"tip": "Chilled: move speed is reduced by %d%%. Frost auras refresh the timer while you're inside." % int(round((1.0 - p.chill_mult) * 100.0))})
 	# Timed buffs.
 	if p.berserk_time > 0.0: out.append({"id": "berserk", "glyph": "ab_fist", "color": Color(1.0, 0.3, 0.2), "t": p.berserk_time,
 		"tip": "Berserk — +%d%% damage, +25%% move speed, +15%% lifesteal." % int(p.berserk_bonus * 100.0)})
@@ -1557,12 +1575,14 @@ func announce(text: String, color: Color, hold := 0.0, kind := "") -> void:
 	if kind == "":
 		kind = announce_kind(text)
 	log_event(text, color, kind)
+	_drop_stale_announcements()
 	if is_instance_valid(_ann_active) and String(_ann_active.get_meta("message", "")) == text:
 		return
 	for pending in _ann_queue:
 		if pending["text"] == text:
 			return
-	_ann_queue.append({"text": text, "color": color, "hold": hold, "kind": kind})
+	var token := _announcement_run_token() if kind != "achievement" else ""
+	_ann_queue.append({"text": text, "color": color, "hold": hold, "kind": kind, "run_token": token})
 	while _ann_queue.size() > ANN_QUEUE_MAX:
 		# Keep earned achievements ahead of incidental overflow; every message
 		# still has its event-log entry and every feat remains in the Codex.
@@ -1578,6 +1598,7 @@ func announce(text: String, color: Color, hold := 0.0, kind := "") -> void:
 ## One plaque, one reading position. Reading time pauses behind a menu,
 ## dialogue or arrival title; simultaneous events remain available in the log.
 func _tick_announcements() -> void:
+	_drop_stale_announcements()
 	var readable := game.play_started and game.state == Game.ST_PLAYING \
 		and not game.input_overlay_up() and title_label.modulate.a < 0.05 \
 		and subtitle_label.modulate.a < 0.05 \
@@ -1593,10 +1614,56 @@ func _tick_announcements() -> void:
 				_ann_tween.pause()
 	elif readable and not _ann_queue.is_empty():
 		var next: Dictionary = _ann_queue.pop_front()
-		_show_announcement(next["text"], next["color"], next["hold"], next["kind"])
+		_show_announcement(next["text"], next["color"], next["hold"], next["kind"], String(next.get("run_token", "")))
 
 
-func _show_announcement(text: String, color: Color, hold: float, kind: String) -> void:
+## Retract transient presentation only; the event feed retains the history.
+func discard_announcement(text: String) -> void:
+	for i in range(_ann_queue.size() - 1, -1, -1):
+		if String(_ann_queue[i].text) == text:
+			_ann_queue.remove_at(i)
+	if is_instance_valid(_ann_active) and String(_ann_active.get_meta("message", "")) == text:
+		_retire_announcement()
+
+
+func _announcement_run_token() -> String:
+	if game.endgame_active and is_instance_valid(game.endgame):
+		return game.endgame.run_token()
+	return ""
+
+
+func _drop_stale_announcements() -> void:
+	# Runs every HUD frame: resolve the controller token only while a
+	# trial-scoped notice is actually pending or on screen.
+	var scoped := is_instance_valid(_ann_active) and String(_ann_active.get_meta("run_token", "")) != ""
+	for pending in _ann_queue:
+		if scoped: break
+		scoped = String(pending.get("run_token", "")) != ""
+	if not scoped:
+		return
+	var current := _announcement_run_token()
+	for i in range(_ann_queue.size() - 1, -1, -1):
+		var token := String(_ann_queue[i].get("run_token", ""))
+		if token != "" and token != current:
+			_ann_queue.remove_at(i)
+	if is_instance_valid(_ann_active):
+		var token := String(_ann_active.get_meta("run_token", ""))
+		if token != "" and token != current:
+			_retire_announcement()
+
+
+func _retire_announcement() -> void:
+	if _ann_tween != null and _ann_tween.is_valid():
+		_ann_tween.kill()
+	if is_instance_valid(_ann_active):
+		_ann_active.hide()
+		_ann_active.queue_free()
+	_ann_active = null
+	_ann_tween = null
+	_ann_stack = 0
+
+
+func _show_announcement(text: String, color: Color, hold: float, kind: String, run_token := "") -> void:
 	# A long line ("X UNLOCKED — replay any chapter at the new tier") splits at
 	# its dash: the loud part is the title, the rest the sub-line.
 	var title := text
@@ -1632,6 +1699,7 @@ func _show_announcement(text: String, color: Color, hold: float, kind: String) -
 	var plaque := Panel.new()
 	plaque.name = "AnnouncementPlaque"
 	plaque.set_meta("message", text)
+	plaque.set_meta("run_token", run_token)
 	_ann_active = plaque
 	plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	plaque.clip_contents = true
@@ -4113,7 +4181,11 @@ func _boss_splash_intro(bname: String) -> void:
 	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	art.stretch_mode = TextureRect.STRETCH_SCALE
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var art_rect := _boss_splash_cover_rect(art.texture.get_size(), Vector2(1280, 720))
+	# Cover the whole visible screen (a wide phone or tablet included); the
+	# title block keeps its authored spacing from the bottom edge, centred.
+	var screen := get_viewport().get_visible_rect().size
+	var lift := screen.y - 720.0
+	var art_rect := _boss_splash_cover_rect(art.texture.get_size(), screen)
 	art.position = art_rect.position
 	art.size = art_rect.size
 	# Zoom from the painting's top-center. A centered pivot would briefly crop
@@ -4141,8 +4213,8 @@ func _boss_splash_intro(bname: String) -> void:
 	foot.texture = gt
 	foot.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	foot.stretch_mode = TextureRect.STRETCH_SCALE
-	foot.position = Vector2(0, 440)
-	foot.size = Vector2(1280, 280)
+	foot.position = Vector2(0, 440 + lift)
+	foot.size = Vector2(screen.x, 280)
 	foot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(foot)
 	# Title plate: NAME in the inscriptional face, tracked out and easing in,
@@ -4163,8 +4235,8 @@ func _boss_splash_intro(bname: String) -> void:
 	fv.spacing_glyph = 12
 	var nm := Label.new()
 	nm.text = name_main.to_upper()
-	nm.position = Vector2(0, 548 if epithet != "" else 566)
-	nm.size = Vector2(1280, 70)
+	nm.position = Vector2(0, (548 if epithet != "" else 566) + lift)
+	nm.size = Vector2(screen.x, 70)
 	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	nm.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	nm.add_theme_font_override("font", fv)
@@ -4181,7 +4253,7 @@ func _boss_splash_intro(bname: String) -> void:
 		var rule := ColorRect.new()
 		rule.color = Color(0.92, 0.78, 0.42, 0.85)
 		rule.size = Vector2(0, 1)
-		rule.position = Vector2(640.0, nm.position.y + 36.0)
+		rule.position = Vector2(screen.x * 0.5, nm.position.y + 36.0)
 		rule.pivot_offset = Vector2(0, 0)
 		rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		layer.add_child(rule)
@@ -4190,8 +4262,8 @@ func _boss_splash_intro(bname: String) -> void:
 	if epithet != "":
 		ep = Label.new()
 		ep.text = epithet.to_upper()
-		ep.position = Vector2(0, 612)
-		ep.size = Vector2(1280, 30)
+		ep.position = Vector2(0, 612 + lift)
+		ep.size = Vector2(screen.x, 30)
 		ep.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		var efv := FontVariation.new()
 		efv.base_font = fv.base_font
@@ -4215,7 +4287,7 @@ func _boss_splash_intro(bname: String) -> void:
 		var r: ColorRect = pair[0]
 		var side: int = pair[1]
 		var rule_w: float = 150.0
-		var target_x: float = 640.0 + side * half_w - (rule_w if side < 0 else 0.0)
+		var target_x: float = screen.x * 0.5 + side * half_w - (rule_w if side < 0 else 0.0)
 		tw.parallel().tween_property(r, "size:x", rule_w, 0.55) \
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT).set_delay(0.12)
 		tw.parallel().tween_property(r, "position:x", target_x, 0.55) \
@@ -4674,11 +4746,11 @@ func danger_ramp(dur: float) -> void:
 		# of your eye, which is exactly where this mechanic was dying.
 		danger_rect = TextureRect.new()
 		danger_rect.texture = Art.tex("dangerrim")
-		danger_rect.size = Vector2(1280, 720)
 		danger_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		danger_rect.stretch_mode = TextureRect.STRETCH_SCALE
 		danger_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(danger_rect)
+		danger_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		move_child(danger_rect, 0)  # under every HUD element
 	if danger_tw != null and danger_tw.is_valid():
 		danger_tw.kill()
@@ -4710,7 +4782,7 @@ func flash_screen(color: Color, strength := 0.4, dur := 0.3) -> void:
 	strength *= float(game.settings.get("impact_flashes", 1.0))
 	if flash_rect == null:
 		flash_rect = ColorRect.new()
-		flash_rect.size = Vector2(1280, 720)
+		flash_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		flash_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(flash_rect)
 	flash_rect.color = Color(color.r, color.g, color.b, strength)
@@ -4943,6 +5015,15 @@ func _splash_slug(s: String) -> String:
 	return out.trim_suffix("_")
 
 
+## The square speaker art stays width-fit and top-aligned on every screen shape:
+## a wide phone gets a wider square instead of a strip of live world beside it.
+func _fit_speaker_splash() -> void:
+	var view := get_viewport().get_visible_rect().size
+	var side := maxf(view.x, view.y)
+	splash_rect.position = Vector2.ZERO
+	splash_rect.size = Vector2(side, side)
+
+
 ## Show `who`'s splash full-bleed (CQ framing) if art exists, else fall back to
 ## the small portrait slot. Tunes box translucency so the art reads through.
 func _set_splash(who: String) -> void:
@@ -5051,14 +5132,16 @@ func _rebuild_log() -> void:
 		log_list.add_child(txt_l)
 
 
-func _log_push(who: String, text: String) -> void:
+func _log_push(who: String, text: String, authored := "") -> void:
 	_dialogue_history.append([who, text])
 	if _dialogue_history.size() > 80:
 		_dialogue_history = _dialogue_history.slice(_dialogue_history.size() - 80)
 	# Journal "Story So Far": every displayed line lands in the persistent
 	# archive too (this is the one choke point every path crosses — convo
-	# nodes, chapter beats, mirrored co-op beat lines).
-	game.log_story_line(who, text)
+	# nodes, chapter beats, mirrored co-op beat lines). The archive keeps the
+	# AUTHORED line: the journal rewrites key prompts when it shows it, and a
+	# second rewrite of an already-remapped key would name the wrong action.
+	game.log_story_line(who, authored if authored != "" else text)
 
 
 ## Clear CQ chrome when a conversation (or a choice) ends.
@@ -5186,7 +5269,7 @@ func _show_line() -> void:
 		_type_tw.tween_property(text_label, "visible_ratio", 1.0,
 			maxf(0.05, float(text_label.text.length()) / Balance.DIALOG_TYPE_CPS))
 	_set_splash(String(line[0]))
-	_log_push(String(line[0]), text_label.text)
+	_log_push(String(line[0]), text_label.text, String(line[1]))
 	_auto_t = 0.0
 	_auto_dwell = _dwell_for(text_label.text)
 	game.sfx("talk")
@@ -5588,9 +5671,17 @@ func _unhandled_input(event: InputEvent) -> void:
 ## Escape rejects that state, so the icon is the card's route to the game menu
 ## (MENU_CLARITY.md, shot_hud_dossier --online-menu).
 func _utility_menu_ok(victory_card := false) -> bool:
+	# input_overlay_up includes a cinematic's finishing fade (cinematic_finishing).
 	if not game.play_started or game.input_overlay_up():
 		return false
 	return game.state == Game.ST_PLAYING or (victory_card and game.state == Game.ST_VICTORY)
+
+
+## An illustrated cutscene is dissolving out. game.cutscene and the dialogue
+## flags have already cleared, but its callback (the solo victory card, a
+## chapter start) has not run, so a menu opened now would land over it.
+func cinematic_finishing() -> bool:
+	return is_instance_valid(cinematic_fade) and cinematic_fade.finishing()
 
 
 ## ESC opens the system menu (menus.gd owns closing it again).
@@ -5603,7 +5694,7 @@ func _on_escape() -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if game.chapter_finale.active or dialogue_active or choices_active or not game.play_started \
-			or game.state != game.ST_PLAYING or game.menus.is_open():
+			or game.state != game.ST_PLAYING or game.menus.is_open() or cinematic_finishing():
 		return
 	game.menus.open_pause()
 	get_viewport().set_input_as_handled()

@@ -55,8 +55,8 @@ static func open(m: Menus, item: Dictionary, category := "all", shop_zone := -1)
 	if shop_zone >= 0:
 		var cost := price(m, item, shop_zone)
 		var why := purchase_error(m, item, shop_zone)
-		feedback.text = why if why != "" else "%d gold · %d free bag slots" % [cost, maxi(0, p.bag_capacity() - p.bag_used())]
-		var buy := m._btn(actions, "Buy · %d gold" % cost, func() -> void:
+		feedback.text = why if why != "" else "%s gold · %d free bag slots" % [m._fmt_gold(cost), maxi(0, p.bag_capacity() - p.bag_used())]
+		var buy := m._btn(actions, "Buy · %s gold" % m._fmt_gold(cost), func() -> void:
 			if price(m, item, shop_zone) != cost:
 				m.open_shop(shop_zone, "buy")
 				return
@@ -131,5 +131,5 @@ static func purchase_error(m: Menus, item: Dictionary, zone: int) -> String:
 		return "Bag full. Free a slot before buying this item."
 	var cost := price(m, item, zone)
 	if p.gold < cost:
-		return "%d more gold needed." % (cost - p.gold)
+		return "%s more gold needed." % m._fmt_gold(cost - p.gold)
 	return ""

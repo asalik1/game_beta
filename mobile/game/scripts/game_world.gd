@@ -167,6 +167,7 @@ func switch_chapter(id: String, force := false) -> void:
 	elder = null
 	barrier_active = false
 	talked_to_elder = false
+	gate_bump_cd = 0.0
 	last_room = -1
 	gust_vec = Vector2.ZERO
 	terrain_by_zone.clear()
@@ -1230,7 +1231,16 @@ func _host_ensure_active_rooms() -> void:
 		return
 	for r in active_rooms:
 		var i := int(r)
-		if i < 0 or i >= zone_count or built.get(i, false):
+		if i < 0 or i >= zone_count:
+			continue
+		if built.get(i, false):
+			# DEDICATED: solo and the listen host re-arm a built arena on every
+			# local entry (_enter_room), which a server never runs. An arena
+			# whose pack died while nobody stood in it (a kill from across the
+			# door line, a hazard tick) arms here once a guest occupies it.
+			# Cheap and idempotent: _try_spawn_boss keeps every other guard.
+			if dedicated:
+				_try_spawn_boss(i)
 			continue
 		_build_room(i)            # walls/scenery + _spawn_room_enemies (host spawns)
 		_try_spawn_boss(i, true)  # arm a boss room a guest reached ahead of the
@@ -1330,6 +1340,7 @@ func _build_room(i: int) -> void:
 		elder = _make_npc("elder", origin + Vector2(660, 500), "E — Talk", func() -> void:
 			if not talked_to_elder:
 				talked_to_elder = true
+				refresh_quest_marks()
 				var after := func() -> void:
 					set_flag("met_elder")  # unbars the village's east gate
 					quest_key = "fangmaw"
@@ -1342,6 +1353,8 @@ func _build_room(i: int) -> void:
 			else:
 				hud.dialogue(Story.ALL_BEATS["elder_repeat"])
 		)
+		quest_marks.append({"node": _make_quest_mark(elder), "elder": true})
+		refresh_quest_marks()
 
 	# Merchants: SAFE rooms with a merchant spot keep one from the start
 	# (or one who already wandered in, restored from the save). Combat
@@ -2132,6 +2145,12 @@ func _mark_quest_giver(npc: Node2D, convo_id: String) -> void:
 	var offered: Array = Story.quests_offered_by(convo_id)
 	if offered.is_empty():
 		return
+	quest_marks.append({"node": _make_quest_mark(npc), "quests": offered})
+	refresh_quest_marks()  # a reloaded save may already hold this quest
+
+
+## Shared appearance for side-quest offers and Maren's opening objective.
+func _make_quest_mark(npc: Node2D) -> Label:
 	var mark := Label.new()
 	mark.text = "❢"
 	mark.position = Vector2(-40, -84)
@@ -2146,8 +2165,7 @@ func _mark_quest_giver(npc: Node2D, convo_id: String) -> void:
 	var tw := mark.create_tween().set_loops()
 	tw.tween_property(mark, "position:y", -90.0, 0.9).set_trans(Tween.TRANS_SINE)
 	tw.tween_property(mark, "position:y", -84.0, 0.9).set_trans(Tween.TRANS_SINE)
-	quest_marks.append({"node": mark, "quests": offered})
-	refresh_quest_marks()  # a reloaded save may already hold this quest
+	return mark
 
 
 ## Re-read every ❢ against the flags. Cheap (a handful of marks, two flag
@@ -2160,6 +2178,10 @@ func refresh_quest_marks() -> void:
 			quest_marks.erase(mk)
 			continue
 		var node: Label = mk["node"]
+		if mk.has("elder"):
+			node.visible = chapter_id == "ch1" and quest_key == "talk" \
+				and not talked_to_elder and not get_flag("met_elder", false)
+			continue
 		# Capital service marks poll their own state machine (capital rework).
 		if mk.has("cap"):
 			node.visible = _cap_mark_active(String(mk["cap"]))
@@ -4144,6 +4166,57 @@ func _post(i: int, wt: String, rect: Rect2, face: bool) -> void:
 func _door_torches(zi: int, pos: Vector2, vertical: bool) -> void:
 	preload("res://scripts/door_torch_mount.gd").build(self, zi, pos, vertical)
 
+## Local feedback uses the actual collider faces, including paired shortcuts.
+## PvP gatehouses open on the duel countdown, not the story, so they stay quiet.
+## A boss bar holds the notice plaque back until the kill that opens the gate,
+## so nothing is said while one is up (it would arrive stale).
+func _tick_gate_guidance(delta: float) -> void:
+	gate_bump_cd = maxf(0.0, gate_bump_cd - delta)
+	if gate_bump_cd > 0.0 or gates.is_empty() or not play_started or state != ST_PLAYING \
+			or not has_local_player() or local_player.dead or input_overlay_up() \
+			or pvp_active or Story.is_pvp(chapter_id) or not is_instance_valid(hud) \
+			or (is_instance_valid(hud.boss_box) and hud.boss_box.visible) \
+			or (is_instance_valid(hud.boss_cast_readout) and hud.boss_cast_readout.visible):
+		return
+	var move: Vector2 = local_player._move_dir()
+	if move.is_zero_approx():
+		return
+	var pos: Vector2 = local_player.global_position
+	var room := room_at_pos(pos)
+	for key in gates:
+		var parts: PackedStringArray = String(key).split("_")
+		var a := int(parts[0])
+		var b := int(parts[1])
+		if room not in [a, b] or _edge_unlocked(a, b):
+			continue
+		var gate: Node2D = gates[key]
+		if not is_instance_valid(gate) or gate.is_queued_for_deletion():
+			continue
+		for child in gate.get_children():
+			if not child is CollisionShape2D or child.disabled or not child.shape is RectangleShape2D:
+				continue
+			var rect := Rect2(child.global_position - child.shape.size * 0.5, child.shape.size)
+			var nearest := pos.clamp(rect.position, rect.end)
+			var toward := nearest - pos
+			if toward.length() > TILE * Balance.GATE_BUMP_RANGE_TILES \
+					or move.normalized().dot(toward.normalized()) < Balance.GATE_BUMP_MIN_DOT:
+				continue
+			var message: String = preload("res://scripts/ui/navigation.gd").lock_reason(self, a, b)
+			var info: Dictionary = edge_locks.get(key, {})
+			var lock := String(info.get("lock", ""))
+			if lock == "flag:met_elder" and chapter_id == "ch1" and quest_key == "talk":
+				message = "Gate barred. " + Story.quest_text(quest_key)
+			elif lock.begins_with("flag:shortcut_") and room == int(info.get("own", -1)):
+				# The latch stands in its own room, beside this very mouth.
+				message = "Use the winch beside this gate to open the shortcut." if room_pacified(room) \
+					else "Secure this room, then use the winch beside this gate to open the shortcut."
+			# Explicit neutral kind: every lock reason says "open", which the
+			# word classifier would badge as a victory.
+			hud.announce(interaction_copy(message), Balance.GATE_BUMP_COLOR, Balance.GATE_BUMP_HOLD, "note")
+			gate_bump_cd = Balance.GATE_BUMP_COOLDOWN
+			return
+
+
 ## A gate barring the doorway on room i's `dir` edge.
 func _build_gate(i: int, dir: String) -> Node2D:
 	# Earned shortcuts have two visible, physically matching room mouths.
@@ -4251,7 +4324,7 @@ func _on_boss_trigger(zi: int) -> void:
 		_spawn_boss(zi, kind)  # breach echo / Unlisted / pocket: rogue path, no story beat
 		return
 	var beat: Array = Story.beat_for("pre_" + kind,
-		Story.res_band(player.resonance), flags)
+		Story.res_band(player.resonance if has_local_player() else 0.0), flags)
 	if beat.is_empty():
 		_spawn_boss(zi, kind)
 	else:
@@ -4342,7 +4415,11 @@ func _try_spawn_boss(zi: int, force := false) -> void:
 	# unarmed until the host walked in. Force skips ONLY that guard; every other
 	# precondition (built, room purged, not already done/spawned) still holds.
 	# Local entry passes force=false, so solo/normal behavior is unchanged.
-	if not built.get(zi, false) or zone_alive.get(zi, 0) > 0 or (zi != cur_room and not force):
+	# A dedicated authority never enters rooms locally. A guest's occupied
+	# arena must also arm when its last pack dies, after the initial build.
+	var occupied_on_server: bool = dedicated and active_rooms.has(zi)
+	if not built.get(zi, false) or zone_alive.get(zi, 0) > 0 \
+			or (zi != cur_room and not force and not occupied_on_server):
 		return
 	var kind: String = zones[zi].get("boss", "")
 	if kind == "" or _boss_room_resolved(zi) or boss_spawned.get(zi, false):

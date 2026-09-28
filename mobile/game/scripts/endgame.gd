@@ -52,6 +52,19 @@ var _camp_merchant: Node2D = null  # depths: the prep merchant, freed on the fir
 
 # ------------------------------------------------------------------- start ---
 
+## Presentation belongs to this controller, run and arena, including same-mode
+## restarts. A settled run or replaced world must never resume its old plaques.
+func run_token() -> String:
+	if not active or is_queued_for_deletion() or not is_instance_valid(game):
+		return ""
+	if game.endgame != self or not game.endgame_active:
+		return ""
+	if not is_instance_valid(game.world) or game.world.is_queued_for_deletion() \
+			or game.world.get_instance_id() != _run_world_id:
+		return ""
+	return "%s:%d:%d:%d" % [mode, get_instance_id(), _run_generation, _run_world_id]
+
+
 ## Begin a run. Builds the arena world, resets the run clock, and kicks off the
 ## first fight (Crucible) or the prep camp (Depths).
 func start(m: String) -> void:

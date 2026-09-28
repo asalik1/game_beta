@@ -1206,7 +1206,7 @@ func open_endgame_result(summary: Dictionary) -> void:
 	if rec.get("new_kills", false) or rec.get("new_time", false) or rec.get("new_depth", false):
 		_lbl(vbox, "★  NEW PERSONAL RECORD", 16, Color(0.6, 1.0, 0.7))
 	_lbl(vbox, " ", 8)
-	_lbl(vbox, "Gold banked:  %d%s" % [int(summary.get("gold", 0)),
+	_lbl(vbox, "Gold banked:  %s%s" % [_fmt_gold(int(summary.get("gold", 0))),
 		"   (death tithe applied)" if died else ""], 15, Color(1.0, 0.85, 0.4))
 	var gems := int(summary.get("gems", 0))
 	var gear := int(summary.get("gear", 0))
@@ -3096,6 +3096,7 @@ func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color
 		cb: Callable) -> Button:
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(48, 48)
+	grid.add_child(b)
 	if icon != null:
 		b.icon = icon
 		b.expand_icon = true
@@ -3106,7 +3107,8 @@ func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color
 			badge.add_theme_font_size_override("font_size", 11)
 			badge.add_theme_color_override("font_color", Color(1, 1, 1))
 			if glyph == "▲":
-				badge.add_theme_font_size_override("font_size", Balance.GEAR_UPGRADE_FONT_SIZE)
+				badge.add_theme_font_override("font", ThemeDB.fallback_font)
+				badge.add_theme_font_size_override("font_size", Balance.GEAR_UPGRADE_BADGE_FONT_SIZE)
 				badge.add_theme_color_override("font_color", Balance.GEAR_UPGRADE_COLOR)
 			badge.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 			badge.add_theme_constant_override("outline_size", 4)
@@ -3119,6 +3121,9 @@ func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color
 			badge.offset_bottom = -1
 			badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			b.add_child(badge)
+			if glyph == "▲":
+				# Measure after mounting: detached labels have no resolved line height.
+				badge.offset_top = -badge.get_minimum_size().y + badge.offset_bottom
 	else:
 		b.text = glyph
 		b.add_theme_font_size_override("font_size", 17)
@@ -3138,7 +3143,6 @@ func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color
 	else:
 		b.disabled = true
 		b.add_theme_stylebox_override("disabled", sb)
-	grid.add_child(b)
 	return b
 
 
@@ -4057,8 +4061,8 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 			_lbl(body, "   %s: %s / %s — MAX ROLL" % [Items.STAT_LABEL.get(qs, qs),
 				String.num(cur, 2), String.num(float(band[1]), 2)], 12, Color(0.6, 0.85, 0.6))
 		else:
-			_btn(body, "   Quench %s: %s / %s  —  %d gold" % [Items.STAT_LABEL.get(qs, qs),
-				String.num(cur, 2), String.num(float(band[1]), 2), qcost], q_cb,
+			_btn(body, "   Quench %s: %s / %s  —  %s gold" % [Items.STAT_LABEL.get(qs, qs),
+				String.num(cur, 2), String.num(float(band[1]), 2), _fmt_gold(qcost)], q_cb,
 				Color(0.75, 0.85, 0.95) if p.gold >= qcost else Color(0.5, 0.5, 0.55))
 	# Reforge one selected substat slot.
 	var acost := int(ceil(Items.reforge_cost(item, "affix") * petra_mult))
@@ -4081,7 +4085,7 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 					game.sfx("equip")
 				game.local_player.recalc()
 				open_item_panel(item, Vector2(-1, -1), "reforge")
-		_btn(body, "   Reforge %s → ?  —  %d gold" % [Items.STAT_LABEL.get(rs, rs), acost], rf_cb,
+		_btn(body, "   Reforge %s → ?  —  %s gold" % [Items.STAT_LABEL.get(rs, rs), _fmt_gold(acost)], rf_cb,
 			Color(0.9, 0.82, 0.7) if p.gold >= acost else Color(0.5, 0.5, 0.55))
 	# Transmute redirects the main-stat budget without changing its roll.
 	if Items.can_transmute_main(item):
@@ -4102,8 +4106,8 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 						game.sfx("ward")
 					game.local_player.recalc()
 					open_item_panel(item, Vector2(-1, -1), "reforge")
-			_btn(body, "   %s → %s  —  %d gold" % [Items.STAT_LABEL.get(main_stat, main_stat),
-				Items.STAT_LABEL.get(tgt, tgt), tcost], t_cb,
+			_btn(body, "   %s → %s  —  %s gold" % [Items.STAT_LABEL.get(main_stat, main_stat),
+				Items.STAT_LABEL.get(tgt, tgt), _fmt_gold(tcost)], t_cb,
 				Color(0.85, 0.75, 0.95) if p.gold >= tcost else Color(0.5, 0.5, 0.55))
 	# Socket cutting is a one-time, tier-scaled action.
 	if Items.can_add_socket(item):
@@ -4119,9 +4123,9 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 				_reforge_msg = "Socket added — this is the only one this piece can take."
 				_reforge_msg_color = Color(0.6, 1.0, 0.6)
 				open_item_panel(item, Vector2(-1, -1), "reforge")
-		_btn(body, "Add gem socket (one-time)  —  %d gold" % ccost, sock_cb,
+		_btn(body, "Add gem socket (one-time)  —  %s gold" % _fmt_gold(ccost), sock_cb,
 			Color(0.6, 1.0, 0.6) if p.gold >= ccost else Color(0.5, 0.5, 0.55))
-	_lbl(body, "Your gold: %d" % p.gold, 13, Color(1.0, 0.85, 0.35))
+	_lbl(body, "Your gold: %s" % _fmt_gold(p.gold), 13, Color(1.0, 0.85, 0.35))
 
 
 ## The full socket row for an item: regular squares first, then the SPECIAL
@@ -5010,8 +5014,8 @@ func open_shop(zone: int, tab := "") -> void:
 ## Shared laced-potion shelf for the capital fence and road smuggler.
 func open_black_market(source := "fence") -> void:
 	var p: Player = game.local_player
-	var title := ("The Sable Court Fence — you have %d gold" if source == "fence"
-		else "A Road Smuggler — you have %d gold") % p.gold
+	var title := ("The Sable Court Fence — you have %s gold" if source == "fence"
+		else "A Road Smuggler — you have %s gold") % _fmt_gold(p.gold)
 	var vbox := _open(title, 1120, 600, true)
 	current = "black_market"
 	if source == "fence":
@@ -5048,7 +5052,7 @@ func open_black_market(source := "fence") -> void:
 					_smith_msg_color = Color(1.0, 0.6, 0.5)
 			open_black_market(source)
 		_shop_card(grid, Art.consumable_icon(made), String(made["name"]),
-			"%d gold   (%s)" % [bcost, made["desc"]],
+			"%s gold   (%s)" % [_fmt_gold(bcost), made["desc"]],
 			Items.GRADE_COLOR[made["grade"]], p.gold >= bcost, buy_cb)
 	_hint(vbox)
 
@@ -5109,7 +5113,7 @@ func _shop_card(grid: GridContainer, icon: Texture2D, title: String, detail: Str
 	var pm := re.search(detail)
 	if pm != null:
 		var num := int(pm.get_string(1).replace(",", ""))
-		price_text = "%d g" % num
+		price_text = "%s g" % _fmt_gold(num)
 		if game != null and game.has_local_player() and not detail.begins_with("sell "):
 			affordable = game.local_player.gold >= num
 		detail = (detail.substr(0, pm.get_start()) + detail.substr(pm.get_end())).strip_edges()
@@ -5246,7 +5250,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 		var open_cb := func() -> void:
 			UIGearInspect.open(self, it, "all", zone)
 		_shop_card(gear_grid, Art.icon_for(it), Items.title(it),
-			"%s — %d gold" % [Items.describe(it), cost],
+			"%s — %s gold" % [Items.describe(it), _fmt_gold(cost)],
 			Items.GRADE_COLOR[it["grade"]], true, open_cb)
 	# Nothing equipped (a fresh hero) = no dangling empty "Upgrade" shelf.
 	if not p.equipment.is_empty():
@@ -5278,9 +5282,9 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 					p.recalc()
 				open_shop(zone)
 			_shop_card(up_grid, Art.icon_for(item), Items.title(item),
-				"→ +%d  •  +%d%% all stats  •  %d%% success — %d gold" % [
+				"→ +%d  •  +%d%% all stats  •  %d%% success — %s gold" % [
 					int(item["plus"]) + 1, int(round(Balance.UPGRADE_PCT_PER_PLUS * 100.0)),
-					int(round(succ * 100.0)), cost],
+					int(round(succ * 100.0)), _fmt_gold(cost)],
 				Color(0.6, 0.9, 1.0), p.gold >= cost, do_upgrade)
 
 	# ========================================================= CONSUMABLES ===
@@ -5310,7 +5314,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 						_smith_msg_color = Color(1.0, 0.6, 0.5)
 				open_shop(zone)
 			_shop_card(acc_grid, Art.consumable_icon(made), String(made["name"]),
-				"%d gold   (%s)" % [pcost, made["desc"]],
+				"%s gold   (%s)" % [_fmt_gold(pcost), made["desc"]],
 				Items.GRADE_COLOR[made["grade"]], p.gold >= pcost, buy_cb)
 	var recall := Items.make_recall_scroll()
 	var rcost := int(ceil(float(Balance.consumable_price("recall_scroll", p.level)) * haggle))
@@ -5326,7 +5330,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				_smith_msg_color = Color(1.0, 0.6, 0.5)
 		open_shop(zone)
 	_shop_card(acc_grid, Art.consumable_icon(recall), String(recall["name"]),
-		"%d gold   (%s)" % [rcost, recall["desc"]], Items.GRADE_COLOR[recall["grade"]],
+		"%s gold   (%s)" % [_fmt_gold(rcost), recall["desc"]], Items.GRADE_COLOR[recall["grade"]],
 		p.gold >= rcost, buy_recall)
 	# Laced potions remain exclusive to black-market vendors.
 
@@ -5351,7 +5355,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 						_smith_msg = "Bag full!"
 						_smith_msg_color = Color(1.0, 0.6, 0.5)
 				open_shop(zone)
-			_shop_card(misc_grid, null, "💎 Gem — Lv%d" % gl, "random stat — %d gold" % gprice,
+			_shop_card(misc_grid, null, "💎 Gem — Lv%d" % gl, "random stat — %s gold" % _fmt_gold(gprice),
 				Color(0.6, 0.9, 1.0), p.gold >= gprice, buy_gem)
 
 	# Bags are low-cost capacity upgrades; buy_install_bag equips it (swapping out
@@ -5369,7 +5373,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				game.shop_bags[zone].erase(bit)
 				p.buy_install_bag(bit)
 			open_shop(zone)
-		var bdetail := "+%d slots — %d gold" % [int(bit["slots"]), bcost]
+		var bdetail := "+%d slots — %s gold" % [int(bit["slots"]), _fmt_gold(bcost)]
 		if not bimproves:
 			bdetail += "  (no gain — bags full & larger)"
 		_shop_card(misc_grid, Art.bag_icon(String(bit["grade"])), String(bit["name"]), bdetail,
@@ -5391,7 +5395,7 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 			game.spawn_text(p.global_position + Vector2(0, -60), "GAMBLED: %s" % Items.title(won),
 				Items.GRADE_COLOR[won["grade"]], 3.0)
 		open_shop(zone)
-	_shop_card(misc_grid, null, "🎲 Gamble — %d gold" % gcost,
+	_shop_card(misc_grid, null, "🎲 Gamble — %s gold" % _fmt_gold(gcost),
 		"a random BOSS-tier item for this chapter, sight unseen",
 		Color(0.85, 0.6, 1.0), p.gold >= gcost, gamble_cb)
 
@@ -5416,7 +5420,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 		var sell_all := func() -> void:
 			p.sell_gear(sellable)
 			open_shop(zone)
-		var allb := _btn(vbox, "Sell unkept gear (%d) — %d gold" % [sellable.size(), p.gold_yield(gear_total)],
+		var allb := _btn(vbox, "Sell unkept gear (%d) — %s gold" % [sellable.size(), _fmt_gold(p.gold_yield(gear_total))],
 			sell_all, Color(1.0, 0.9, 0.4), not sellable.is_empty())
 		allb.name = "SellUnkeptGear"
 		allb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -5446,7 +5450,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 		var sell_junk := func() -> void:
 			p.sell_gear(junk)
 			open_shop(zone)
-		var junkb := _btn(frow, "🧹  Sell ≤ %s  (%d) — %d gold" % [shop_junk_tier, junk_n, p.gold_yield(junk_total)],
+		var junkb := _btn(frow, "🧹  Sell ≤ %s  (%d) — %s gold" % [shop_junk_tier, junk_n, _fmt_gold(p.gold_yield(junk_total))],
 			sell_junk, Color(0.95, 0.82, 0.5) if junk_n > 0 else Color(0.5, 0.5, 0.55), junk_n > 0)
 		junkb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
@@ -5473,7 +5477,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				p.sell_gear([it])
 				open_shop(zone)
 			_shop_card(gear_grid, Art.icon_for(it), Items.title(it),
-				"★ Kept · protected" if GearCare.kept(it) else "sell for %d gold" % p.gold_yield(value),
+				"★ Kept · protected" if GearCare.kept(it) else "sell for %s gold" % _fmt_gold(p.gold_yield(value)),
 				Items.GRADE_COLOR[it["grade"]], not GearCare.kept(it), sell_one)
 
 	# --- loose gems ---
@@ -5497,7 +5501,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				game.sfx("potion")
 				open_shop(zone)
 			_shop_card(gem_grid, Art.gem_icon(Items.gem_color(g), int(g["lvl"])),
-				"%s%s" % [Items.gem_title(g), xn], "sell one for %d gold" % p.gold_yield(gval),
+				"%s%s" % [Items.gem_title(g), xn], "sell one for %s gold" % _fmt_gold(p.gold_yield(gval)),
 				Items.gem_color(g), true, sell_gem)
 
 	# --- marketable consumables; quest/utility items never appear here ---
@@ -5537,7 +5541,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				game.sfx("potion")
 				open_shop(zone)
 			_shop_card(cons_grid, Art.consumable_icon(cc), "%s%s" % [String(cc["name"]), xn2],
-				"sell one for %d gold" % p.gold_yield(cval), Items.GRADE_COLOR[String(cc.get("grade", "C"))],
+				"sell one for %s gold" % _fmt_gold(p.gold_yield(cval)), Items.GRADE_COLOR[String(cc.get("grade", "C"))],
 				true, sell_cons)
 
 	# --- materials: click sells one unit from the stack ---
@@ -5561,7 +5565,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				game.sfx("potion")
 				open_shop(zone)
 			_shop_card(mat_grid, Art.material_ui_icon(String(mm.get("family", "")), mgr),
-				"%s%s" % [String(mm.get("name", "")), xn3], "sell one for %d gold" % p.gold_yield(mval),
+				"%s%s" % [String(mm.get("name", "")), xn3], "sell one for %s gold" % _fmt_gold(p.gold_yield(mval)),
 				Items.GRADE_COLOR.get(mgr, Color(1, 1, 1)), true, sell_mat)
 
 	# --- loose bags: sell spare capacity for its (currently trivial) resale ---
@@ -5582,7 +5586,7 @@ func _shop_sell(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				open_shop(zone)
 			_shop_card(bag_grid, Art.bag_icon(lgr),
 				"%s (%d slots)" % [String(lb.get("name", Items.BAG_NAMES.get(lgr, "Bag"))), int(lb.get("slots", 0))],
-				"sell for %d gold" % Balance.BAG_SELL_GOLD, Items.GRADE_COLOR.get(lgr, Color(1, 1, 1)), true, sell_bag)
+				"sell for %s gold" % _fmt_gold(Balance.BAG_SELL_GOLD), Items.GRADE_COLOR.get(lgr, Color(1, 1, 1)), true, sell_bag)
 
 	if not sold_any:
 		_lbl(list, "Nothing to sell.", 13, Color(0.5, 0.5, 0.5))

@@ -112,7 +112,7 @@ const CONVOS := {
 			],
 			"next": "m2"},
 		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood are getting bold, and something twists them from the inside. A beast they call Fangmaw leads the pack. Kill it, and the road east is safe again.", "next": "m3"},
-		"m3": {"who": "Elder Maren", "text": "Take these potions. Press Q when your wounds are grave. And keep moving: a still knight is a dead knight."},
+		"m3": {"who": "Elder Maren", "text": "Keep that potion close. Press Q when your wounds are grave. And keep moving: a still knight is a dead knight."},
 	}},
 
 	# ---- Assassin opening: the theft that kept you alive.
@@ -144,7 +144,7 @@ const CONVOS := {
 			],
 			"next": "m2"},
 		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood are getting bold, and something twists them from the inside. A beast they call Fangmaw leads the pack. Kill it, and the road east is safe again.", "next": "m3"},
-		"m3": {"who": "Elder Maren", "text": "Take these potions. Press Q when your wounds are grave. And keep moving: a still blade is a caught blade."},
+		"m3": {"who": "Elder Maren", "text": "Keep that potion close. Press Q when your wounds are grave. And keep moving: a still blade is a caught blade."},
 	}},
 
 	# ---- Mage opening: the heal that went wrong.
@@ -176,7 +176,7 @@ const CONVOS := {
 			],
 			"next": "m2"},
 		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood are getting bold, and something twists them from the inside. A beast they call Fangmaw leads the pack. Kill it, and the road east is safe again.", "next": "m3"},
-		"m3": {"who": "Elder Maren", "text": "Take these potions. Press Q when your wounds are grave. And keep moving: a still spellwright is a spent one."},
+		"m3": {"who": "Elder Maren", "text": "Keep that potion close. Press Q when your wounds are grave. And keep moving: a still spellwright is a spent one."},
 	}},
 
 	# ---- Archer opening: the severed bond.
@@ -208,7 +208,7 @@ const CONVOS := {
 			],
 			"next": "m2"},
 		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood are getting bold, and something twists them from the inside. A beast they call Fangmaw leads the pack. Kill it, and the road east is safe again.", "next": "m3"},
-		"m3": {"who": "Elder Maren", "text": "Take these potions. Press Q when your wounds are grave. And keep moving: a still hawk is just a target."},
+		"m3": {"who": "Elder Maren", "text": "Keep that potion close. Press Q when your wounds are grave. And keep moving: a still hawk is just a target."},
 	}},
 
 	# ---- Paladin opening: the verdict (fight first, then the harder part).
@@ -240,7 +240,7 @@ const CONVOS := {
 			],
 			"next": "m2"},
 		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood are getting bold, and something twists them from the inside. A beast they call Fangmaw leads the pack. Kill it, and the road east is safe again.", "next": "m3"},
-		"m3": {"who": "Elder Maren", "text": "Take these potions. Press Q when your wounds are grave. And keep moving: a still shield shelters no one."},
+		"m3": {"who": "Elder Maren", "text": "Keep that potion close. Press Q when your wounds are grave. And keep moving: a still shield shelters no one."},
 	}},
 
 	# ---- Warlock opening: the pact you don't remember making.
@@ -272,7 +272,7 @@ const CONVOS := {
 			],
 			"next": "m2"},
 		"m2": {"who": "Elder Maren", "text": "The wolves of the Darkwood are getting bold, and something twists them from the inside. A beast they call Fangmaw leads the pack. Kill it, and the road east is safe again.", "next": "m3"},
-		"m3": {"who": "Elder Maren", "text": "Take these potions. Press Q when your wounds are grave. And keep moving: still things are what the creditor collects first."},
+		"m3": {"who": "Elder Maren", "text": "Keep that potion close. Press Q when your wounds are grave. And keep moving: still things are what the creditor collects first."},
 	}},
 
 	# ================================================= Chapter 1 room content
@@ -1443,7 +1443,7 @@ const BEATS := {
 	"elder": [
 		["Elder Maren", "Bearer! Thank the flame you came. The wolves of the Darkwood are getting bold, and something twists them from the inside."],
 		["Elder Maren", "A beast they call Fangmaw leads the pack. Kill it, and the road east will be safe again."],
-		["Elder Maren", "Take these potions. Press Q when your wounds are grave. And remember: keep moving. A still flame is a snuffed one."],
+		["Elder Maren", "Keep that potion close. Press Q when your wounds are grave. And remember: keep moving. A still flame is a snuffed one."],
 		["You", "I'll return with its pelt, Elder."],
 	],
 	"elder_repeat": [
