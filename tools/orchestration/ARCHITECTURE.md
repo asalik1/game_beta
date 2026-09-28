@@ -302,6 +302,7 @@ Template: `| Date | Experiment | Hypothesis | Setup | Metric | Result | Decision
 | 09-28 | Batch-only full gate vs quick on main | A batch full every 3-4 lanes is enough | Batch-only until 15:56; quick after each lane from 16:40 | main-red minutes | Batch-only: I6 found late, main red about 50 min, 0.27M to fix. Quick-on-main: 2-3 min per run, passed on ccdc2c9 and 416b516 | Train quick plus lane sync |
 | 09-28 | Conflict resolution site | Applying in main is fine | T08 via `git apply --3way` in main; T08m and T13m resolved by Codex medium in the lane | UU files in main | Main: UU files, manual revert. Lane: 12 and 6-7 min, clean afterwards | merge-tree check plus in-lane merges |
 | 09-28 | Opus vs Sonnet architect (same throughput lens) | Sonnet 5 matches Opus 5.5 on design analysis | Same prompt and inputs; one run each | grounding, correctness, novelty | See the table below | Sonnet for summaries and consensus checks, not design |
+| 09-28 | Implementer lock rule, early trial (n=1) | Removing baseline/preflight runs cuts implementer wall time without losing catches | T25 (3-part bundle, 19:26 UTC, idle lock) under §5.3: compile + one quick at the end | implementer wall, heavy runs, review findings | Codex 10 min, 1 heavy run (comparable v1 tasks: 20-60 min, 3-6 heavy runs); lite review 25 min, 2 real findings fixed, accepted round 1 | Adopt §5.3 now; confirm under load (the lock was idle, so this overstates the gain) |
 
 **Architect micro-test detail (n=1).**
 

@@ -8,7 +8,7 @@ untracked files) were left alone and verified byte-identical against
 `build/qa/session-sept26/initial-preservation.json`.
 
 ## How the work was done
-The root session acted only as orchestrator. Codex (headless `codex exec`) implemented 24 tasks, each in
+The root session acted only as orchestrator. Codex (headless `codex exec`) implemented 25 tasks, each in
 its own sparse lane worktree. Every lane then went through a Claude Workflow: independent read-only
 reviewers, a fixer that verified and applied their findings, and an independent verifier that re-ran the
 gates and could reject the lane for another fix round. Reviewers found and fixed real defects in most
@@ -38,7 +38,8 @@ tiering, and an experiment log to append each session.
   - The potion slot and touch potion button pulse at low HP when a drink is usable.
   - Green upgrade marks on the loot banner and in the bag.
   - Frozen, Rooted and Chilled chips with countdowns; sleep and stagger show as Asleep and Staggered.
-  - Grouped gold amounts across trial results, the forge, merchants, synthesis, road choices and the journal.
+  - Grouped gold amounts across trial results, the forge, merchants, synthesis, road choices, the journal
+    and every crafting "not enough gold" refusal.
 - **Co-op and controller** (`25963a1`, `2bf6e29`, `ad3c385`):
   - Off-screen ally arrows stay clear of the HUD at any screen size, at about 2 ms a frame.
   - Controller Y answers ready checks and B declines them.
@@ -47,7 +48,8 @@ tiering, and an experiment log to append each session.
 - **Dedicated server** (`566b24e`): story bosses rise, including in arenas cleared while empty, and side
   quests settle without a local player.
 - **Online cinematics** (`916fd04`): refused, cancelled or orphaned cinematic requests tear down their
-  storybook layer. Chapter openers play for every hero in a party, including two of the same class.
+  storybook layer. Chapter openers and quest scene cinematics play as personal cinematics, so every hero
+  sees them and the parent conversation always finishes (`789ae22`).
 - **Depths camp** (`eb88b92`): descending without opening the one-time camp shop asks "Leave the camp?"
   first, with Cancel focused.
 - **Onboarding** (`72248ff`, `08fa8ea`): Elder Maren gets an objective marker, barred gates explain what
@@ -60,6 +62,7 @@ tiering, and an experiment log to append each session.
   - The Wind Cuts wound uses armor in PvE, and in duels it keeps the striker's penetration.
   - Warlock spells read their own damage knobs; live values are unchanged.
   - A boss reset clears its burn and bleed.
+  - In duels, burn and toxin ticks carry the striker's magic penetration (`789ae22`).
   - BALANCE_HISTORY.md records the damage changes.
 - **Wide screens and cinematics** (`39a86c8`, `ccdc2c9`, `f9bddb2`): shades, the death dim, speaker and
   boss splashes and cinematic covers fill wide phones. Desktop plates now show the whole painting: a
@@ -79,8 +82,8 @@ Each lane ran the compile gate, the quick suite and its targeted rigs, through t
 the fixer and again by the independent verifier.
 
 On the integrated branch:
-- Full desktop suite PASS on `1a241e2`, `2bf6e29`, `e0c3d79` and the final HEAD.
-- Strict preflight PASS on `5d35470` and the final HEAD.
+- Full desktop suite PASS on `1a241e2`, `2bf6e29`, `e0c3d79`, `e092ab3`, `916fd04` and `789ae22` (the final code).
+- Strict preflight PASS on `5d35470`, `e092ab3`, `916fd04` and `789ae22`.
 - Mobile import, compile and quick PASS on every mobile sync.
 - Quick PASS after each late integration.
 
@@ -107,12 +110,10 @@ Limits:
 - **Impairment labels:** PvP stuns still show as Frozen. Sleep and stagger now have their own labels.
   The new "STAGGERED!" callout keeps the all-caps callout family; moving that family to sentence case
   would be a separate copy pass.
-- **Quest scene cinematics:** a refused quest "scene" cinematic still drops its parent conversation's
-  continuation. This is unlikely, since no scene convo is a beat.
 - **Layout:** on a 4:3 expand view the dialogue box keeps its authored y. On tall phone canvases the
   co-op chat still overlaps the top of the event feed.
-- **Gold and PvP DoTs:** profession refusal strings still show ungrouped gold. PvP burn and toxin ticks
-  still forward no penetration.
+- **Cancel paths:** a personal cinematic relies on ChapterFinale.cancel to free its storybook. Any new cancel
+  path must sweep Cutscene children the same way.
 - **Test gaps:** the dedicated boss path has no real multi-process ENet test yet (net_test stage 12
   could cover it). One road-choice test line lost its line continuations, which is a style nit only.
 
