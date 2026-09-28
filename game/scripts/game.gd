@@ -483,6 +483,7 @@ func reconcile_after_load() -> void:
 			zone_alive[zi] = 0
 			cleared[zi] = true
 	_recheck_gates()
+	refresh_quest_marks()
 	refresh_quest()
 
 # --- dev review controls (dev_mode ONLY): slow-mo + camera zoom, for
@@ -810,6 +811,7 @@ func _process(delta: float) -> void:
 			player.global_position.y = clampf(player.global_position.y, pr.position.y + 62.0, pr.end.y - 62.0)
 		else:
 			_enter_room(zi, true)
+	_tick_gate_guidance(delta)
 	hud.set_zone(zones[cur_room]["name"])
 	# MP: the sim gate follows every player, every frame (remote players
 	# move between the local room transitions above). Solo: {cur_room}.

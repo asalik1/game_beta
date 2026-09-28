@@ -15,6 +15,9 @@ func _ready() -> void:
 		await preload("res://scripts/tests/shortcut_domain_live.gd").run(self)
 		return
 	await boot("warrior", "ch1", false)
+	if flag("opening-guidance"):
+		await _opening_guidance()
+		return
 	game.dev_god = true
 	game.settings["touch_controls"] = false
 	game.refresh_touch_mode()
@@ -97,4 +100,36 @@ func _ready() -> void:
 	shot("11_return_route", "post-combat route back to a visited sanctuary")
 	if is_instance_valid(loot):
 		loot.queue_free()
+	finish()
+
+
+## Fresh opening and a real held movement key against the barred village gate.
+func _opening_guidance() -> void:
+	var error := preload("res://scripts/tests/opening_guidance.gd").run(game)
+	if error == "":
+		error = preload("res://scripts/tests/opening_guidance.gd").gate_checks(game)
+	if error != "":
+		push_error(error)
+		return finish(1)
+	game.camera.position_smoothing_enabled = false
+	game.player.global_position = game.elder.global_position + Vector2(100, 80)
+	await sim_wait(4.0) # let the arrival title clear both the NPC and the notice queue
+	shot("00_opening_maren", "Fresh objective marker before speaking to Maren")
+	var dir: String = preload("res://scripts/ui/navigation.gd").direction(game, 0, 2)
+	var forward_key: int = {"N": KEY_W, "S": KEY_S, "E": KEY_D, "W": KEY_A}[dir]
+	game.player.global_position = game.door_pos(0, dir) - Vector2(game.DIRS[dir]) * 90.0
+	game.gate_bump_cd = 0.0
+	preload("res://scripts/tests/opening_guidance.gd")._key(forward_key, true)
+	await sim_wait(0.5)
+	preload("res://scripts/tests/opening_guidance.gd")._key(forward_key, false)
+	var notices := 0
+	for row: Control in game.hud._log_lines:
+		if (row.get_meta("label") as Label).text.contains("Gate barred."):
+			notices += 1
+	if notices != 1:
+		push_error("Opening gate: expected one real movement notice, got %d" % notices)
+		return finish(1)
+	await sim_wait(0.8)
+	shot("01_opening_gate", "Real held movement, one local Maren guidance notice")
+	print("ok: opening guidance live movement + village marker")
 	finish()

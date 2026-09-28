@@ -200,6 +200,13 @@ func _run_systems() -> void:
 		return _fail("opening choice did not move resonance / set its flag")
 	await _skip_dialogue()  # Bren's reply + closing narration
 	print("ok: class select + warrior opening (owned the harm)")
+	var guidance_error: String = preload("res://scripts/tests/opening_guidance.gd").run(game)
+	if guidance_error != "":
+		return _fail(guidance_error)
+	guidance_error = preload("res://scripts/tests/opening_guidance.gd").gate_checks(game)
+	if guidance_error != "":
+		return _fail(guidance_error)
+	print("ok: opening objective marker + live dialogue keys")
 	# Capital rework (2026-07-25 §3): campaign chapters no longer OPEN with a
 	# shop — the village merchant is gone; you provision in Crownfall.
 	if not game.merchant_zones.is_empty():
@@ -279,6 +286,23 @@ func _run_systems() -> void:
 		return _fail("elder talk did not set met_elder")
 	if not game._edge_unlocked(0, village_exit) or game.gates.has(game._edge_key(0, village_exit)):
 		return _fail("village east gate did not open after elder talk")
+	for mk in game.quest_marks:
+		if mk.has("elder") and mk.node.visible:
+			return _fail("elder objective marker remained after the real conversation")
+	# Load reconciliation must refresh a previously visible marker even when
+	# met_elder is already present (set_flag is not called on this load path).
+	var saved_mark_visibility := {}
+	for mk in game.quest_marks:
+		if mk.has("elder"):
+			saved_mark_visibility[mk.node] = mk.node.visible
+			mk.node.visible = true
+	game.reconcile_after_load()
+	var load_mark_hidden := true
+	for mark: Label in saved_mark_visibility:
+		load_mark_hidden = load_mark_hidden and not mark.visible
+		mark.visible = saved_mark_visibility[mark]
+	if not load_mark_hidden:
+		return _fail("elder objective marker remained after load reconciliation")
 	print("ok: elder talk reads opening choice + village gate opens")
 
 	# 3. Fire every ability of every class against dummy wolves.

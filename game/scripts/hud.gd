@@ -5082,14 +5082,16 @@ func _rebuild_log() -> void:
 		log_list.add_child(txt_l)
 
 
-func _log_push(who: String, text: String) -> void:
+func _log_push(who: String, text: String, authored := "") -> void:
 	_dialogue_history.append([who, text])
 	if _dialogue_history.size() > 80:
 		_dialogue_history = _dialogue_history.slice(_dialogue_history.size() - 80)
 	# Journal "Story So Far": every displayed line lands in the persistent
 	# archive too (this is the one choke point every path crosses — convo
-	# nodes, chapter beats, mirrored co-op beat lines).
-	game.log_story_line(who, text)
+	# nodes, chapter beats, mirrored co-op beat lines). The archive keeps the
+	# AUTHORED line: the journal rewrites key prompts when it shows it, and a
+	# second rewrite of an already-remapped key would name the wrong action.
+	game.log_story_line(who, authored if authored != "" else text)
 
 
 ## Clear CQ chrome when a conversation (or a choice) ends.
@@ -5217,7 +5219,7 @@ func _show_line() -> void:
 		_type_tw.tween_property(text_label, "visible_ratio", 1.0,
 			maxf(0.05, float(text_label.text.length()) / Balance.DIALOG_TYPE_CPS))
 	_set_splash(String(line[0]))
-	_log_push(String(line[0]), text_label.text)
+	_log_push(String(line[0]), text_label.text, String(line[1]))
 	_auto_t = 0.0
 	_auto_dwell = _dwell_for(text_label.text)
 	game.sfx("talk")

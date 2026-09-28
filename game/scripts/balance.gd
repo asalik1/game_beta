@@ -78,6 +78,12 @@ const WAYFINDER_CLEAR_SECONDS := 3.0
 const WAYFINDER_ARRIVAL_SECONDS := 2.5
 const WAYFINDER_DOOR_INSET := 48.0
 const WAYFINDER_GUIDE_HIDE_DISTANCE := 32.0
+# Barred-door guidance: measure from the collider face, covering the full mouth.
+const GATE_BUMP_RANGE_TILES := 0.6
+const GATE_BUMP_MIN_DOT := 0.5
+const GATE_BUMP_COOLDOWN := 3.0
+const GATE_BUMP_HOLD := 3.0
+const GATE_BUMP_COLOR := Color(1.0, 0.88, 0.35)
 const ATLAS_MIN_ZOOM := 0.65
 const ATLAS_MAX_ZOOM := 2.6
 const ATLAS_ZOOM_STEP := 1.18
