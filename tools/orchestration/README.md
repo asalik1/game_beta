@@ -1,5 +1,7 @@
 # Multi-agent orchestration kit (Crownless, first used 2026-09-28)
 
+**Read `ARCHITECTURE.md` first**: the living architecture doc (v1 scorecard, the recommended v2, model tiering, lock and quality policy, adopt-next-session checklist and the experiment log). Append to it after every session. Evidence behind it is in `evidence/`.
+
 How one orchestrator session ran ~20 improvement tasks in parallel on this box: Codex (and, while its
 credit lasted, DeepSeek) implement in lightweight lane worktrees, Claude subagents review and fix, and the
 orchestrator integrates, gates and commits. The scripts here are the exact ones used; paths inside them
