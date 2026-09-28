@@ -931,7 +931,7 @@ func open_wager(stake: int, on_pick: Callable) -> void:
 	var vbox := _open("The Stranger's Wager", 680, 390, true)
 	current = "wager"
 	var shell := root
-	var l := _lbl(vbox, "A hooded figure crouches at a low fire, turning three walnut shells over the dirt. \"One hides the pea, traveler. %d gold says your eye isn't quick enough to follow it.\"" % stake, 15, Color(0.9, 0.88, 0.82))
+	var l := _lbl(vbox, "A hooded figure crouches at a low fire, turning three walnut shells over the dirt. \"One hides the pea, traveler. %s gold says your eye isn't quick enough to follow it.\"" % _fmt_gold(stake), 15, Color(0.9, 0.88, 0.82))
 	l.custom_minimum_size = Vector2(560, 0)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var row := HBoxContainer.new()
@@ -948,7 +948,7 @@ func open_wager(stake: int, on_pick: Callable) -> void:
 			on_pick.call(pick), Color(0.95, 0.85, 0.5))
 		shell_button.custom_minimum_size = Vector2(150, 72)
 		shell_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_lbl(vbox, "One winning shell out of three. Win: +%d gold before bonuses. Lose: -%d gold." % [stake, stake], 15)
+	_lbl(vbox, "One winning shell out of three. Win: +%s gold before bonuses. Lose: -%s gold." % [_fmt_gold(stake), _fmt_gold(stake)], 15)
 	var leave := _btn(vbox, "Leave — keep your stake", func() -> void:
 		if root == shell:
 			close())
@@ -2812,8 +2812,8 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			var material_button := _bag_slot(grid, micon, mglyph, mcol,
 				func() -> void:
 					var mval := maxi(1, int(Items.material_value(mgr) * Balance.MERCHANT_SELL_FRACTION))
-					var info := "%s material · grade %s\n\nStacks in your bag (up to %d per slot). A crafting input for the professions bench — sell spares at any merchant for %d gold each." % [
-						mfam.capitalize(), mgr, Items.MATERIAL_STACK_MAX, mval]
+					var info := "%s material · grade %s\n\nStacks in your bag (up to %d per slot). A crafting input for the professions bench — sell spares at any merchant for %s gold each." % [
+						mfam.capitalize(), mgr, Items.MATERIAL_STACK_MAX, _fmt_gold(mval)]
 					var drop_cb := func() -> void:
 						mm["count"] = int(mm.get("count", 1)) - 1
 						if int(mm.get("count", 0)) <= 0:
@@ -2941,7 +2941,7 @@ func _equipped_row(left: VBoxContainer, slot: String, cat: String) -> void:
 		nm.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		nm.custom_minimum_size = Vector2(text_w, 0)
 		nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var dl := _lbl(text, Items.describe(item, false), INV_STAT_FONT, Color(0.68, 0.7, 0.76))
+		var dl := _lbl(text, Items.describe(item, false, true), INV_STAT_FONT, Color(0.68, 0.7, 0.76))
 		dl.custom_minimum_size = Vector2(text_w, 0)
 		# (No overrun trim here: with autowrap it collapses the label's minimum
 		# height to 1px and the line vanishes — Godot 4.4.)
@@ -3308,8 +3308,8 @@ func _open_bag_popover(p: Player, idx: int, cat: String) -> void:
 	var lg := String(lb.get("grade", "F"))
 	var slots := int(lb.get("slots", 0))
 	var col: Color = Items.GRADE_COLOR.get(lg, Color(1, 1, 1))
-	var info := "%s-grade bag — %d carry slots.\n\nEquip it to add its slots to your capacity. When all %d bag slots are full, DRAG it onto an equipped bag to take that bag's place (the old bag drops back into your pack, never sold). Spare bags sell for %dg." % [
-		lg, slots, Balance.MAX_BAGS, Balance.BAG_SELL_GOLD]
+	var info := "%s-grade bag — %d carry slots.\n\nEquip it to add its slots to your capacity. When all %d bag slots are full, DRAG it onto an equipped bag to take that bag's place (the old bag drops back into your pack, never sold). Spare bags sell for %sg." % [
+		lg, slots, Balance.MAX_BAGS, _fmt_gold(Balance.BAG_SELL_GOLD)]
 	var actions: Array = []
 	if p.has_free_bag_slot():
 		actions.append(["  ◈  Equip  (+%d slots)  " % slots, col, func() -> void:
@@ -3326,7 +3326,7 @@ func _open_bag_popover(p: Player, idx: int, cat: String) -> void:
 				p.swap_loose_bag(idx, worst)
 				game.sfx("levelup")
 				open_inventory("gear", cat)])
-	actions.append(["  ⛃  Sell  (%d gold)  " % Balance.BAG_SELL_GOLD, Color(1.0, 0.9, 0.4), func() -> void:
+	actions.append(["  ⛃  Sell  (%s gold)  " % _fmt_gold(Balance.BAG_SELL_GOLD), Color(1.0, 0.9, 0.4), func() -> void:
 		p.sell_loose_bag(idx)
 		game.sfx("potion")
 		open_inventory("gear", cat)])

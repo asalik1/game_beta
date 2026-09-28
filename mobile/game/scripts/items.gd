@@ -2763,18 +2763,20 @@ static func passive_label(item: Dictionary) -> String:
 
 ## `show_sockets` off drops the ◆◇ glyph tail — for screens that render the
 ## REAL socket squares right below the text (inventory equipped column).
-static func describe(item: Dictionary, show_sockets := true) -> String:
+## `keep_tokens` binds each stat/value for narrow wrapped display summaries.
+static func describe(item: Dictionary, show_sockets := true, keep_tokens := false) -> String:
 	var bits: Array = []
 	var stats := stats_of(item)
+	var joiner := "\u00a0" if keep_tokens else " "
 	for stat in stats:
 		var v: float = stats[stat]
 		if stat in FLAT_STATS:
-			bits.append("%s +%d" % [STAT_LABEL.get(stat, stat), int(v)])
+			bits.append("%s%s+%d" % [STAT_LABEL.get(stat, stat), joiner, int(v)])
 		else:
-			bits.append("%s +%d%%" % [STAT_LABEL.get(stat, stat), int(round(v * 100))])
+			bits.append("%s%s+%d%%" % [STAT_LABEL.get(stat, stat), joiner, int(round(v * 100))])
 	var out := ", ".join(bits)
 	if item.has("passive"):
-		out += "  " + passive_label(item)
+		out += "  " + (passive_label(item).replace("\u2605 ", "\u2605" + joiner) if keep_tokens else passive_label(item))
 	var slots: int = item.get("gem_slots", 0)
 	if slots > 0 and show_sockets:
 		var used: int = item.get("gems", []).size()

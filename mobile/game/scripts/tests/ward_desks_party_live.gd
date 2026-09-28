@@ -224,7 +224,7 @@ static func _checks(r: Node) -> String:
 	error = _focus_and_scroll(g, claim_name, offset)
 	if error != "":
 		return error
-	if not ("Reward  ·  %d gold" % g.activity_gold(int(chosen.gold))) in _text(_card(g, chosen)):
+	if not ("Reward  ·  %s gold" % g.menus._fmt_gold(g.activity_gold(int(chosen.gold)))) in _text(_card(g, chosen)):
 		return "filtered card gold quote disagrees with its actual payout"
 	# Favor quotes must follow the same resonance rounding as the real reward.
 	for resonance in [Story.RES_BAND_AT, -Story.RES_BAND_AT, 0.0]:

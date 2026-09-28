@@ -11043,6 +11043,28 @@ class SpellDamageProbe extends Player:
 		return super.ability_coeff(slot)
 
 
+## A duel rival's shell, offline: the compat surface parks riders on it.
+class RivalShellProbe extends Player:
+	func _rival_shell() -> bool:
+		return true
+
+
+## The duel controller with the probe shell as its foe (no lobby, no wire).
+class DuelProbe extends PvpDuel:
+	var foe: Player
+	func _foe_shell() -> Player:
+		return foe
+
+
+## Stands in for the net session and records every strike sent to the rival.
+class StrikeRecorder extends Node:
+	var strikes: Array = []
+	func pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0, dex := 0.0) -> void:
+		strikes.append([target_pid, amount, dmg_type, pen, dex])
+	func pvp_status(_target_pid: int, _kind: String, _a: float, _b: float) -> void:
+		pass
+
+
 ## T19: real cast dispatch and hit funnel, with disposable actors and fixed stats.
 ## The caller restores shared state even when a probe reports a failure.
 func _test_spell_damage_wiring() -> void:
@@ -11079,6 +11101,7 @@ func _test_spell_damage_wiring() -> void:
 	var errors: Array[String] = []
 	await _probe_mage_cast_damage(p, errors)
 	_probe_wind_wound(p, errors)
+	_probe_wind_wound_duel(p, errors)
 	await _probe_warlock_coefficients(p, errors)
 	p.queue_free()
 	await _frames(1)
@@ -11222,6 +11245,74 @@ func _probe_wind_wound(p: Player, errors: Array[String]) -> void:
 	p.bolt_bleed = 0.0
 	p.physpen = 0.0
 	p.magpen = 0.0
+
+
+## The duel twin of the wound above: a real Wind Cuts bolt on a rival shell must
+## send its bleed ticks with the striker's PHYSICAL pen (the PvE wound cuts armor
+## by physpen), even though the bolt itself is magic, and that pen must not
+## outlive the wound or the round. The duel seam and the session are swapped in
+## for this synchronous block only and restored before anything else runs.
+func _probe_wind_wound_duel(p: Player, errors: Array[String]) -> void:
+	var net: Node = get_node_or_null("/root/NetworkManager")
+	if net == null:
+		errors.append("duel Wind Cuts precondition: no NetworkManager")
+		return
+	var q := RivalShellProbe.new()
+	q.game = game
+	game.add_child(q)
+	q.set_process(false)
+	q.set_physics_process(false)
+	q.global_position = p.global_position + Vector2(100, 0)
+	q.peer_id = 7
+	var duel := DuelProbe.new()
+	duel.game = game
+	duel.foe = q
+	duel.state = "fight"
+	var recorder := StrikeRecorder.new()
+	var saved_pvp: Node = game.pvp
+	var saved_session: Node = net.session
+	game.pvp = duel
+	net.session = recorder
+	p.ability_theme = {"a1": "wind"}
+	p.bolt_bleed = 0.125
+	p._tfx = {}
+	p.physpen = 120.0
+	p.magpen = 0.0
+	p._cast_bolt(Vector2.RIGHT, 0.94)
+	for node in get_tree().get_nodes_in_group("projectiles"):
+		if node is Projectile and node.source_player == p and not node.is_queued_for_deletion():
+			p.hit_enemy(q, node.hit_player_mult, node.fx.duplicate())
+			node.queue_free()
+	var wound := p.atk * p.bolt_bleed * 0.94 * 2.0 / 3.0
+	_spell_damage_expect(errors, q.bleed_dps, wound, "duel Wind Cuts wound")
+	_spell_damage_expect(errors, q.bleed_pen, p.physpen, "duel Wind Cuts wound pen")
+	var direct := recorder.strikes.filter(func(s: Array) -> bool: return s[2] == "magic")
+	if direct.is_empty() or float(direct[0][3]) != p.magpen:
+		errors.append("duel Wind Cuts bolt did not strike as magic with the magic pen")
+	recorder.strikes.clear()
+	duel._tick_rival_riders(0.5)
+	var ticks := recorder.strikes.filter(func(s: Array) -> bool: return s[2] == "phys")
+	if ticks.size() != 1 or int(ticks[0][0]) != q.peer_id:
+		errors.append("duel Wind Cuts bleed sent %d physical ticks to the rival, expected 1" % ticks.size())
+	else:
+		_spell_damage_expect(errors, float(ticks[0][1]), wound * 0.5 * Balance.PVP_DMG_MULT, "duel Wind Cuts tick")
+		_spell_damage_expect(errors, float(ticks[0][3]), p.physpen, "duel Wind Cuts tick pen")
+	duel._tick_rival_riders(5.0)
+	duel._tick_rival_riders(0.1)
+	if q.bleed_time > 0.0 or q.bleed_dps != 0.0 or q.bleed_pen != 0.0:
+		errors.append("duel Wind Cuts pen outlived its wound")
+	q.apply_bleed(10.0, 3.0, p)
+	duel._clear_rival_riders()
+	if q.bleed_time != 0.0 or q.bleed_dps != 0.0 or q.bleed_pen != 0.0:
+		errors.append("duel round reset kept a bleed or its pen")
+	game.pvp = saved_pvp
+	net.session = saved_session
+	p.bolt_bleed = 0.0
+	p.physpen = 0.0
+	p.magpen = 0.0
+	recorder.free()
+	duel.free()
+	q.queue_free()
 
 
 func _probe_warlock_coefficients(p: SpellDamageProbe, errors: Array[String]) -> void:

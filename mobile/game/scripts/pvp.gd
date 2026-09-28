@@ -120,9 +120,10 @@ func _tick_rival_riders(delta: float) -> void:
 		_bleed_acc += delta
 		if _bleed_acc >= 0.5 and not foe.dead:
 			_bleed_acc = 0.0
-			sess.pvp_strike(foe.peer_id, foe.bleed_dps * 0.5 * Balance.PVP_DMG_MULT, "phys")
+			sess.pvp_strike(foe.peer_id, foe.bleed_dps * 0.5 * Balance.PVP_DMG_MULT, "phys", foe.bleed_pen)
 	else:
 		foe.bleed_dps = 0.0
+		foe.bleed_pen = 0.0
 
 
 ## Drop every rider parked on the rival's shell (round reset / match end —
@@ -138,6 +139,7 @@ func _clear_rival_riders() -> void:
 	foe.burn_dps = 0.0
 	foe.bleed_time = 0.0
 	foe.bleed_dps = 0.0
+	foe.bleed_pen = 0.0
 	foe.slow_time = 0.0
 	foe.stun_time = 0.0
 	foe.brittle = 0

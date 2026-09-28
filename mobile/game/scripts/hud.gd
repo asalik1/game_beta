@@ -121,14 +121,14 @@ var minimap_root: Control
 
 # dialogue
 var dialogue_box: Control
-var dialogue_frame: ColorRect      # outer border — repositioned as the box grows
+var dialogue_frame: Panel          # border only — repositioned as the box grows
 var dialogue_inner: ColorRect      # dark fill — ditto
 var portrait_box: Control          # speaker portrait (right side of the box)
 var portrait_rect: TextureRect
 var _portrait_cache := {}          # speaker name -> sprite name ("" = none)
 # choice dialogue (the branching-conversation engine lives in game.gd)
 var choice_panel: Control
-var choice_frame: ColorRect
+var choice_frame: Panel            # border only, like dialogue_frame
 var choice_inner: ColorRect
 var choice_option_labels: Array = []
 var choice_hover_rects: Array = []  # per-row mouse-hover highlight
@@ -865,8 +865,8 @@ void fragment() {
 	# The box grows UPWARD from a fixed bottom edge (648, clearing the
 	# quickbar): tall enough that a long paragraph (5-6 wrapped lines) fits
 	# instead of clipping its last line against the bottom border.
-	dialogue_frame = ColorRect.new()
-	dialogue_frame.color = Color(0.9, 0.8, 0.5)
+	dialogue_frame = Panel.new()
+	dialogue_frame.add_theme_stylebox_override("panel", _dialogue_border_style())
 	dialogue_frame.position = Vector2(138, 448)
 	dialogue_frame.size = Vector2(1004, 200)
 	dialogue_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -956,8 +956,8 @@ void fragment() {
 			get_viewport().set_input_as_handled())
 	log_panel.add_child(lback)
 	lback.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var lframe := ColorRect.new()
-	lframe.color = Color(0.9, 0.8, 0.5)
+	var lframe := Panel.new()
+	lframe.add_theme_stylebox_override("panel", _dialogue_border_style())
 	lframe.position = Vector2(238, 96)
 	lframe.size = Vector2(804, 470)
 	lframe.mouse_filter = Control.MOUSE_FILTER_STOP  # eat clicks so the box doesn't advance
@@ -987,6 +987,9 @@ void fragment() {
 	log_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	log_list.add_theme_constant_override("separation", 10)
 	lscroll.add_child(log_list)
+	var log_controls: Array[Control] = [lframe, linner, ltitle, lclose, lscroll]
+	get_viewport().size_changed.connect(_fit_log_width.bind(log_controls))
+	_fit_log_width(log_controls)
 
 	# ------------------------------------------- choice options panel ---
 	# Sits directly above the dialogue box when a conversation offers a
@@ -995,8 +998,8 @@ void fragment() {
 	choice_panel = Control.new()
 	choice_panel.visible = false
 	add_child(choice_panel)
-	choice_frame = ColorRect.new()
-	choice_frame.color = Color(0.9, 0.8, 0.5)
+	choice_frame = Panel.new()
+	choice_frame.add_theme_stylebox_override("panel", _dialogue_border_style())
 	choice_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	choice_panel.add_child(choice_frame)
 	choice_inner = ColorRect.new()
@@ -1033,6 +1036,8 @@ void fragment() {
 	choice_panel.visibility_changed.connect(_layout_dialogue_reader)
 	for button: Button in [dlg_log_btn, dlg_skip_btn, dlg_auto_btn]:
 		button.resized.connect(_layout_dialogue_reader)
+	get_viewport().size_changed.connect(_fit_dialogue_width)
+	_fit_dialogue_width()
 
 	# --------------------------------------------------- controls hint ---
 	# Two short lines on the far left so they never collide with the
@@ -1850,7 +1855,7 @@ func _ann_text_height(label: Label, width: float, floor_h: float) -> float:
 
 
 # ---------------------------------------------------------- event log ---
-# The rolling feed (P7.A): the last few things that happened, as one line
+# The rolling feed (P7.A): the last few things that happened, as compact rows
 # each with a small icon chip, bottom-left above the controls hint, newest at
 # the bottom; every line fades after LOG_LIFE. Pickups ("+ Rusted Dagger"),
 # XP, gold, lore, quest steps — the "Personal: You got 92 EXP (+69)" feed of
@@ -1890,6 +1895,7 @@ func log_event(text: String, color: Color, kind := "") -> void:
 					last.queue_free()
 				_layout_log())
 			last.set_meta("tween", tw2)
+			_layout_log()
 			_tick_event_log()
 			return
 	var row := Control.new()
@@ -1919,12 +1925,11 @@ func log_event(text: String, color: Color, kind := "") -> void:
 		row.add_child(ic)
 	var l := Label.new()
 	l.text = text.replace("\n", " ")
-	l.clip_text = true
-	l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING   # every line shows; the budget retires older rows
 	l.position = Vector2(x, 0)
-	l.size = Vector2(400, LOG_LINE_H)
+	l.size = Vector2(Balance.HUD_LOG_TEXT_WIDTH, LOG_LINE_H)
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l.add_theme_font_size_override("font_size", 13)
 	l.add_theme_color_override("font_color", color.lightened(0.1))
@@ -1933,13 +1938,6 @@ func log_event(text: String, color: Color, kind := "") -> void:
 	row.add_child(l)
 	row.set_meta("label", l)
 	_log_lines.append(row)
-	while _log_lines.size() > LOG_MAX:
-		var old: Control = _log_lines.pop_front()
-		if is_instance_valid(old):
-			var otw: Tween = old.get_meta("tween", null)
-			if otw != null and otw.is_valid():
-				otw.kill()   # its own age-out must not fire on a freed row
-			old.queue_free()
 	_layout_log()
 	# slide in from the left a touch, then age out
 	row.modulate.a = 0.0
@@ -1996,11 +1994,41 @@ func _layout_log() -> void:
 	var bottom := LOG_BOTTOM
 	if hint_labels.size() == 2:
 		bottom = minf(bottom, (hint_labels[0] as Label).position.y - (HINT_ORIGIN.y - LOG_BOTTOM))
-	var n := _log_lines.size()
-	for i in n:
-		var row: Control = _log_lines[i]
-		if is_instance_valid(row):
-			row.position.y = bottom - LOG_LINE_H * (n - i)
+	# The stack never climbs past its height budget. Wrapped rows may grow past
+	# the classic LOG_MAX one-line footprint, but not into party chat lines that
+	# grow upward from above the feed. The chat anchors to the screen bottom
+	# while the feed keeps a fixed y, so on a taller mobile canvas (aspect
+	# "expand") the chat sits beside or below the feed: it never costs the
+	# classic rows there, and once it sits below the feed it is ignored.
+	var ceiling := bottom - Balance.HUD_LOG_HEIGHT_BUDGET
+	if is_instance_valid(chat_lines_box):
+		var chat_floor := chat_lines_box.get_global_rect().end.y + (HINT_ORIGIN.y - LOG_BOTTOM)
+		if chat_floor < bottom:
+			ceiling = maxf(ceiling, minf(chat_floor, bottom - LOG_MAX * LOG_LINE_H))
+	var height := 0.0
+	for row: Control in _log_lines:
+		var label: Label = row.get_meta("label")
+		# Parent/theme and wrap width must be resolved before reading native height.
+		label.size = Vector2(Balance.HUD_LOG_TEXT_WIDTH, 0.0)
+		var native_h: float = label.get_minimum_size().y
+		# One-line rows keep the LOG_LINE_H pitch; a wrapped row adds only the
+		# native height of its extra lines (line spacing included).
+		row.size.y = LOG_LINE_H
+		if label.get_line_count() > 1:
+			row.size.y += maxf(0.0, native_h - label.get_line_height(0))
+		label.size.y = row.size.y
+		height += row.size.y
+	while _log_lines.size() > LOG_MAX or (_log_lines.size() > 1 and bottom - height < ceiling):
+		var old: Control = _log_lines.pop_front()
+		height -= old.size.y
+		var motion: Tween = old.get_meta("tween", null)
+		if motion != null and motion.is_valid():
+			motion.kill() # its age-out must not fire on a retired row
+		old.queue_free()
+	var y := bottom - height
+	for row: Control in _log_lines:
+		row.position.y = y
+		y += row.size.y
 
 
 # ------------------------------------------------------------- helpers ---
@@ -3357,6 +3385,7 @@ func _ensure_chat() -> void:
 	var sess := _chat_session()
 	if sess != null and not sess.chat_line.is_connected(_on_chat_line):
 		sess.chat_line.connect(_on_chat_line)
+	_layout_log()   # the feed now stops below the chat lines
 
 
 ## Open the input line (desktop: ENTER in a session; mobile: the 💬 button).
@@ -5024,6 +5053,42 @@ func _fit_speaker_splash() -> void:
 	splash_rect.size = Vector2(side, side)
 
 
+## Translate the authored dialogue contents together; leave the full-screen
+## splash and the parent entrance tween in their existing coordinate space.
+## The choice panel (a HUD sibling whose rows dialogue_choice lays out in its
+## own local space) moves by the same amount, so options stay on the box.
+## Measuring the current frame center makes repeated resizes idempotent.
+func _fit_dialogue_width() -> void:
+	var shift := get_viewport().get_visible_rect().get_center().x \
+		- (dialogue_frame.position.x + dialogue_frame.size.x * 0.5)
+	for control: Control in [dialogue_frame, dialogue_inner, speaker_label,
+			text_label, dialogue_hint, portrait_box, choice_panel]:
+		control.position.x += shift
+	_layout_dialogue_reader()
+
+
+## Center the backlog as one authored block, leaving its full-screen shade
+## in place. Use the current frame center so repeated resizes never drift.
+func _fit_log_width(controls: Array[Control]) -> void:
+	var frame := controls[0]
+	var shift := get_viewport().get_visible_rect().get_center().x \
+		- (frame.position.x + frame.size.x * 0.5)
+	for control: Control in controls:
+		control.position.x += shift
+
+
+## The gold outline of the dialogue, choice and backlog panels. HDR2D blends in linear
+## light: a filled gold rect shows through a translucent inner panel as olive,
+## so only the original square outline is drawn.
+func _dialogue_border_style() -> StyleBoxFlat:
+	var border := StyleBoxFlat.new()
+	border.draw_center = false
+	border.anti_aliasing = false
+	border.border_color = Balance.DIALOG_FRAME_COLOR
+	border.set_border_width_all(Balance.DIALOG_FRAME_BORDER_WIDTH)
+	return border
+
+
 ## Show `who`'s splash full-bleed (CQ framing) if art exists, else fall back to
 ## the small portrait slot. Tunes box translucency so the art reads through.
 func _set_splash(who: String) -> void:
@@ -5214,8 +5279,8 @@ func _fit_dialogue_box() -> float:
 	var frame_top := text_top - DIALOG_HEADER
 	dialogue_frame.position.y = frame_top
 	dialogue_frame.size.y = box_bottom - frame_top
-	dialogue_inner.position.y = frame_top + 3.0
-	dialogue_inner.size.y = (box_bottom - 3.0) - (frame_top + 3.0)
+	dialogue_inner.position.y = frame_top + Balance.DIALOG_FRAME_BORDER_WIDTH
+	dialogue_inner.size.y = box_bottom - frame_top - Balance.DIALOG_FRAME_BORDER_WIDTH * 2.0
 	_layout_dialogue_reader()
 	return frame_top
 
@@ -5507,8 +5572,8 @@ func dialogue_choice(who: String, text: String, options: Array, cb: Callable) ->
 	var panel_top := box_top - 6 - total  # 6px above the (possibly grown) box top
 	choice_frame.position = Vector2(138, panel_top)
 	choice_frame.size = Vector2(1004, total)
-	choice_inner.position = choice_frame.position + Vector2(3, 3)
-	choice_inner.size = choice_frame.size - Vector2(6, 6)
+	choice_inner.position = choice_frame.position + Vector2.ONE * Balance.DIALOG_FRAME_BORDER_WIDTH
+	choice_inner.size = choice_frame.size - Vector2.ONE * Balance.DIALOG_FRAME_BORDER_WIDTH * 2.0
 	var y := panel_top + PANEL_PAD
 	for i in choice_option_labels.size():
 		var opt: Label = choice_option_labels[i]

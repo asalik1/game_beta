@@ -109,10 +109,24 @@ static func _damage_checks(g: Game, p: Player, b: Boss) -> String:
 	b.cast_window.step(Balance.BOSS_BREAK_EXPOSED)
 	if b.vuln_time != 5.0 or b.vuln_mult != 1.5:
 		return "cast exposure overwrote an existing class debuff"
+	b.apply_burn(200.0, 3.0, Color.WHITE, p)
+	b.apply_bleed(200.0, 3.0, p)
+	b.toxin = 2
+	b.burn_tick = 0.4
+	b.bleed_tick = 0.4
+	b.reset_fight()
+	if b.burn_time != 0.0 or b.burn_dps != 0.0 or b.burn_src != null or b.toxin != 0 \
+			or b.bleed_time != 0.0 or b.bleed_dps != 0.0 or b.bleed_src != null \
+			or b.burn_tick != 0.0 or b.bleed_tick != 0.0:
+		return "fight reset kept a damage-over-time timer, potency, source or tick"
+	b.apply_burn(10.0, 1.0)
+	b.apply_bleed(10.0, 1.0)
+	if b.burn_dps != 10.0 or b.bleed_dps != 10.0 or b.burn_src != null or b.bleed_src != null:
+		return "fresh retry inherited the previous attempt's stronger wound or source"
 	b.reset_fight()
 	if b.hp != b.max_hp or not b.hp_bar_fg.visible or not is_equal_approx(b.hp_bar_fg.size.x, Enemy.HP_BAR_W):
 		return "fight reset left a wounded overhead health bar"
-	if b.cast_window.phase != "" or b._fight_serial != 1:
+	if b.cast_window.phase != "" or b._fight_serial != 2:
 		return "fight reset kept an old cast or sequence alive"
 	if not b._begin_signature():
 		return "cast did not rearm after a fight reset"

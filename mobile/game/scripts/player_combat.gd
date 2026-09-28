@@ -1964,6 +1964,8 @@ func _hit_rival(q: Player, mult: float, effects := {}) -> void:
 		dmg *= crit_dmg
 	# Riders — the same vocabulary hit_enemy applies, on the compat surface.
 	# No dot_mit: rival armor is owner-side and mitigates each tick as it lands.
+	# The Wind Cuts bleed carries our PHYSICAL pen to those ticks (the PvE wound
+	# cuts armor by physpen too); shred and pen_ignore stay PvE-only, as for hits.
 	if effects.has("dot"):
 		var dot_dps: float = current_atk() * effects["dot"]
 		if effects.get("toxin", 0):
@@ -1973,7 +1975,7 @@ func _hit_rival(q: Player, mult: float, effects := {}) -> void:
 	if effects.has("burn"):
 		q.apply_burn(float(effects["burn"]), 3.0)
 	if effects.has("bleed"):
-		q.apply_bleed(float(effects["bleed"]) / 3.0, 3.0)
+		q.apply_bleed(float(effects["bleed"]) / 3.0, 3.0, self)
 	if effects.has("slow"):
 		q.apply_slow(1.0 - effects["slow"] if effects["slow"] < 1.0 else 0.5, effects.get("slow_dur", 2.0))
 	if effects.has("stun"):

@@ -1935,7 +1935,7 @@ func _road_hunt(room: int, npc: Variant) -> void:
 	var hunt := preload("res://scripts/road_hunt.gd")
 	var quarry_level: int = hunt.quarry_level(self, room, hunt.quarry_kind(self, room))
 	var busy := preload("res://scripts/encounter_context.gd").blocking_name(self, room)
-	var reward_line := "Earn %d gold before bonuses • Each participating hero earns their own purse" % purse
+	var reward_line := "Earn %s gold before bonuses • Each participating hero earns their own purse" % menus._fmt_gold(purse)
 	if busy != "":
 		reward_line += " • Finish %s first." % busy
 	preload("res://scripts/ui/road_choice.gd").open(menus, npc, room, "hunt",
@@ -2007,12 +2007,12 @@ func _road_toll(room: int, npc: Variant) -> void:
 	var paid := mini(cost, player.gold)
 	var low := mini(player.gold, int(round(cost * Balance.ROAD_TOLL_PURSE_MIN)))
 	var high := mini(player.gold, int(round(cost * Balance.ROAD_TOLL_PURSE_MAX)))
-	var pay_title := "Pay %d gold" % paid if paid == cost else ("Offer your last %d gold" % paid if paid > 0 else "Ask for passage")
+	var pay_title := "Pay %s gold" % menus._fmt_gold(paid) if paid == cost else ("Offer your last %s gold" % menus._fmt_gold(paid) if paid > 0 else "Ask for passage")
 	preload("res://scripts/ui/road_choice.gd").open(menus, npc, room, "toll",
 		"A roadside toll-collector watches the crossing. \"The bridge is the crown's. Pay what you can, traveler, and catch your breath.\"", [
-		{"title": pay_title, "detail": "Spend %d gold • Recover %d%% of maximum health • +%d Accord" % [paid, roundi(Balance.ROAD_TOLL_HEAL_FRACTION * 100), Balance.ROAD_TOLL_STANDING],
+		{"title": pay_title, "detail": "Spend %s gold • Recover %d%% of maximum health • +%d Accord" % [menus._fmt_gold(paid), roundi(Balance.ROAD_TOLL_HEAL_FRACTION * 100), Balance.ROAD_TOLL_STANDING],
 			"action": _road_toll_pay.bind(room, npc, cost)},
-		{"title": "Push past", "detail": "Lose %d–%d gold to his companions • -%d Accord" % [low, high, Balance.ROAD_TOLL_STANDING],
+		{"title": "Push past", "detail": "Lose %s–%s gold to his companions • -%d Accord" % [menus._fmt_gold(low), menus._fmt_gold(high), Balance.ROAD_TOLL_STANDING],
 			"color": Color(0.94, 0.72, 0.57), "action": _road_toll_refuse.bind(room, npc, cost)}])
 
 func _road_toll_pay(room: int, npc: Variant, cost: int) -> void:
@@ -2053,10 +2053,10 @@ func _road_courier(room: int, npc: Variant) -> void:
 	var loot := int(ceil(Balance.ROAD_COURIER_ROB_GOLD * m))
 	preload("res://scripts/ui/road_choice.gd").open(menus, npc, room, "courier",
 		"A king's rider slumps against a milestone, an arrow in his side. \"Please… I carry the crown's post. Help me buy a draught, and I will repay you.\"", [
-		{"title": "Buy treatment — %d gold" % heal,
-			"detail": "Spend %d gold • Receive %d gold before bonuses • +%d Accord" % [heal, gift, Balance.ROAD_COURIER_STANDING],
+		{"title": "Buy treatment — %s gold" % menus._fmt_gold(heal),
+			"detail": "Spend %s gold • Receive %s gold before bonuses • +%d Accord" % [menus._fmt_gold(heal), menus._fmt_gold(gift), Balance.ROAD_COURIER_STANDING],
 			"enabled": player.gold >= heal, "action": _road_courier_mend.bind(room, npc, heal, gift)},
-		{"title": "Rob his satchel", "detail": "Take %d gold before bonuses • -%d Accord" % [loot, Balance.ROAD_COURIER_STANDING],
+		{"title": "Rob his satchel", "detail": "Take %s gold before bonuses • -%d Accord" % [menus._fmt_gold(loot), Balance.ROAD_COURIER_STANDING],
 			"color": Color(0.94, 0.72, 0.57), "action": _road_courier_rob.bind(room, npc, loot)}])
 
 func _road_courier_mend(room: int, npc: Variant, heal: int, gift: int) -> void:

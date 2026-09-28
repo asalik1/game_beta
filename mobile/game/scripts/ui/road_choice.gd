@@ -52,7 +52,7 @@ static func open(m: Menus, actor: Node2D, room: int, id: String, body: String, o
 	words.add_theme_constant_override("separation", 12)
 	intro.add_child(words)
 	_copy(m, words, body, 17)
-	m._lbl(words, "Purse: %d gold" % m.game.player.gold, 15, UITheme.GOLD_BRIGHT)
+	m._lbl(words, "Purse: %s gold" % m._fmt_gold(m.game.player.gold), 15, UITheme.GOLD_BRIGHT)
 	UITheme.rule(box)
 	for option in options:
 		var action: Callable = option.action

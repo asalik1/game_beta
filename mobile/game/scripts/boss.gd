@@ -552,6 +552,12 @@ func reset_fight() -> void:
 	stun_time = 0.0
 	slow_time = 0.0
 	burn_time = 0.0
+	_clear_burn_potency()
+	burn_tick = 0.0
+	bleed_time = 0.0
+	bleed_dps = 0.0
+	bleed_src = null
+	bleed_tick = 0.0
 	vuln_time = 0.0
 	sprite.modulate = base_mod
 	speed = float(_stats_for(kind)["speed"])  # (T4) content bosses resolve here too
