@@ -29,13 +29,14 @@ var _confirm_cancel := Callable() # the current confirmation's return path
 var shop_zone := -1
 var shop_tab := "buy"             # shop: which full-width tab is showing (persists across refreshes)
 var shop_junk_tier := "F"         # sell tab: floor grade the one-click junk-sell dumps (that grade and below)
-var _smith_msg := ""              # smith: last upgrade result, shown once in the panel (no silent effects)
+var _smith_msg := ""              # shop/smith/black market: last purchase or upgrade result, shown once in the panel (no silent effects)
 var _smith_msg_color := Color.WHITE
 var _reforge_msg := ""            # reforge bench: last quench/craft result, shown in the item panel
 var _reforge_msg_color := Color.WHITE
 var inv_cat := "all"              # inventory: last bag category filter (survives item-panel rebuilds)
 var inventory_order := "found"
 var inventory_notice := ""
+var inventory_notice_color := INV_NOTICE_COLOR  # a refusal sets INV_REFUSAL_COLOR; reset after each display
 var title_stage := "cover"        # boot title: "cover" (splash) -> "slots" (roster)
 var chapter_replay := false       # chapter select opened from the pause menu
 var dev_boss_mode := 1            # dev panel boss spawn level: 0 story, 1 my Lv (default), 2 +10, 3 +20
@@ -2396,6 +2397,8 @@ const INV_CAPTION_FONT := 14
 const INV_CONTROL_MIN_H := 28.0
 const INV_TOUCH_MIN_H := 44.0
 const INV_TEXT_SEPARATION := 3
+const INV_NOTICE_COLOR := Color(0.64, 0.95, 0.75)
+const INV_REFUSAL_COLOR := Color(1.0, 0.70, 0.47)  # the gear popover's refusal orange
 
 
 func open_inventory(tab := "gear", cat := "all") -> void:
@@ -2461,8 +2464,9 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 	head.add_theme_constant_override("separation", 12)
 	right.add_child(head)
 	if inventory_notice != "":
-		_lbl(right, inventory_notice, INV_CAPTION_FONT, Color(0.64, 0.95, 0.75))
+		_lbl(right, inventory_notice, INV_CAPTION_FONT, inventory_notice_color)
 		inventory_notice = ""
+	inventory_notice_color = INV_NOTICE_COLOR
 	var best_grade: String = String(p.bags[0].get("grade", "F")) if not p.bags.is_empty() else "F"
 	for bb in p.bags:
 		var bg: String = String(bb.get("grade", "F"))
@@ -2673,11 +2677,15 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 				func() -> void:
 					var info := str(cc.get("desc", ""))
 					var use_cb := func() -> void:
-						game.local_player.use_consumable(cc)
+						var refusal: String = game.local_player.use_consumable(cc)
+						if refusal != "":
+							inventory_notice = refusal
+							inventory_notice_color = INV_REFUSAL_COLOR
 						open_inventory("gear", cat)
 					var drop_cb := func() -> void:
-						game.local_player.consumables.erase(cc)
-						game.discard_to_ground({"kind": "stone", "stone": cc})
+						if not game.local_player.discard_consumable(cc):
+							inventory_notice = "That consumable is no longer in your bag."
+							inventory_notice_color = INV_REFUSAL_COLOR
 						open_inventory("gear", cat)
 					var actions: Array = [["  Use  ", Color(0.6, 1.0, 0.8), use_cb]]
 					if Items.is_rotation_potion(cid):
@@ -4974,6 +4982,9 @@ func open_black_market(source := "fence") -> void:
 	else:
 		_lbl(vbox, "\"Long way from a chartered shelf out here. I've the cheap bottles; you've the desperation. Fair trade.\"", 14, Color(0.78, 0.6, 0.66))
 	_lbl(vbox, "Every laced bottle is cut with diluted blightwater — that's the discount, and that's the sting. No S here: legends can't be counterfeited.", 12, Color(0.62, 0.6, 0.66))
+	if _smith_msg != "":
+		_lbl(vbox, _smith_msg, 12, _smith_msg_color)
+		_smith_msg = ""
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -4996,7 +5007,8 @@ func open_black_market(source := "fence") -> void:
 					p.gold -= bcost
 					game.sfx("potion")
 				else:
-					game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
+					_smith_msg = "Bag full!"
+					_smith_msg_color = Color(1.0, 0.6, 0.5)
 			open_black_market(source)
 		_shop_card(grid, Art.consumable_icon(made), String(made["name"]),
 			"%d gold   (%s)" % [bcost, made["desc"]],
@@ -5169,6 +5181,9 @@ func _shop_card(grid: GridContainer, icon: Texture2D, title: String, detail: Str
 
 ## Scrollable Buy shelf.
 func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
+	if _smith_msg != "":
+		_lbl(vbox, _smith_msg, 12, _smith_msg_color)
+		_smith_msg = ""
 	var buy_scroll := ScrollContainer.new()
 	buy_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	buy_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -5199,9 +5214,6 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	# Nothing equipped (a fresh hero) = no dangling empty "Upgrade" shelf.
 	if not p.equipment.is_empty():
 		_shop_shelf(buy, "Upgrade equipped gear", Color(0.6, 0.82, 0.95))
-	if _smith_msg != "":
-		_lbl(buy, _smith_msg, 12, _smith_msg_color)
-		_smith_msg = ""
 	var up_grid := _shop_grid(buy)
 	for slot in Items.SLOTS:
 		if p.equipment.has(slot):
@@ -5257,7 +5269,8 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 						p.gold -= pcost
 						game.sfx("potion")
 					else:
-						game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
+						_smith_msg = "Bag full!"
+						_smith_msg_color = Color(1.0, 0.6, 0.5)
 				open_shop(zone)
 			_shop_card(acc_grid, Art.consumable_icon(made), String(made["name"]),
 				"%d gold   (%s)" % [pcost, made["desc"]],
@@ -5272,7 +5285,8 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 				p.gold -= rcost
 				game.sfx("potion")
 			else:
-				game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
+				_smith_msg = "Bag full!"
+				_smith_msg_color = Color(1.0, 0.6, 0.5)
 		open_shop(zone)
 	_shop_card(acc_grid, Art.consumable_icon(recall), String(recall["name"]),
 		"%d gold   (%s)" % [rcost, recall["desc"]], Items.GRADE_COLOR[recall["grade"]],
@@ -5297,7 +5311,8 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 						p.gold -= gprice
 						game.sfx("chest")
 					else:
-						game.spawn_text(p.global_position + Vector2(0, -50), "Bag full!", Color(1.0, 0.6, 0.5))
+						_smith_msg = "Bag full!"
+						_smith_msg_color = Color(1.0, 0.6, 0.5)
 				open_shop(zone)
 			_shop_card(misc_grid, null, "💎 Gem — Lv%d" % gl, "random stat — %d gold" % gprice,
 				Color(0.6, 0.9, 1.0), p.gold >= gprice, buy_gem)
@@ -5332,8 +5347,8 @@ func _shop_buy(vbox: VBoxContainer, zone: int, p: Player) -> void:
 	var gamble_cb := func() -> void:
 		var won: Dictionary = game.gamble(gamble_tier)
 		if won.is_empty():
-			game.spawn_text(p.global_position + Vector2(0, -50),
-				"Bag full!" if p.bag_used() >= p.bag_capacity() else "Not enough gold!", Color(1.0, 0.6, 0.5))
+			_smith_msg = "Bag full!" if p.bag_used() >= p.bag_capacity() else "Not enough gold!"
+			_smith_msg_color = Color(1.0, 0.6, 0.5)
 		else:
 			game.sfx("chest")
 			game.spawn_text(p.global_position + Vector2(0, -60), "GAMBLED: %s" % Items.title(won),

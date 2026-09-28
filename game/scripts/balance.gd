@@ -4050,3 +4050,10 @@ const DOOR_TORCH_HEIGHT := 64.0
 const DOOR_TORCH_PAIR_OFFSET := 26.0
 const DOOR_TORCH_GROUND_CLEARANCE := 6.0
 const DOOR_TORCH_FOOT_BAND := 0.25
+
+# Shared field/Inventory potion eligibility (preserves held-input thresholds).
+const POTION_DRINK_COOLDOWN := 0.6
+const POTION_EMPTY_COOLDOWN := 0.3
+const POTION_MANA_FULL_MARGIN := 0.5
+const POTION_TONIC_REFRESH_WINDOW := 0.5
+const POTION_BUFF_REFRESH_WINDOW := 1.0

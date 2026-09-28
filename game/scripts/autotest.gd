@@ -1001,6 +1001,7 @@ func _run_systems() -> void:
 
 	# 3d13. Consumables: mana draught, might elixir, recall scroll.
 	_test_consumables()
+	await _test_consumable_actions()
 
 	# 3d13b. Resonance band leans: conviction ramp, Hunger/Constancy sides.
 	_test_res_lean()
@@ -10291,3 +10292,477 @@ func _test_tell_shapes() -> void:
 		return _fail("boss tell windup crouch never reached the sprite scale")
 	print("ok: boss tell accents (inside the danger disc, %d styled bosses) + windup posture held"
 		% Balance.BOSS_TELL.size())
+
+
+## Consumable transactions through real field input and retained menu callbacks.
+## All exits restore the fixture; each case supplies its own stock/allowance.
+func _test_consumable_actions() -> void:
+	var p := game.player
+	var fields := ["process_mode", "consumables", "room_potions", "potion_rotation", "active_potion", "potion_cd",
+		"hp", "mp", "max_hp", "max_mp", "dead", "downed", "ghost", "heal_accum",
+		"heal_tonic_time", "heal_tonic_rate", "mana_tonic_time", "mana_tonic_rate",
+		"elixir_time", "elixir_atk", "dr_time", "dr_amt", "laced_dmg_in_time", "laced_dmg_in_amt",
+		"laced_heal_in_time", "laced_heal_in_amt", "debuff_heal_in", "uniq_heal_in", "resonance",
+		"backpack", "gem_bag", "materials", "loose_bags", "bags", "equipment", "gold"]
+	var saved := {}
+	for key in fields:
+		saved[key] = p.get(key)
+	var game_saved := {}
+	for key in ["pvp_active", "pocket_done", "pocket_id", "pocket_room", "barrier_active", "chapter_id",
+			"shop_stock", "shop_bags", "dropped_loot", "fight_active", "fight_potions", "party_stats", "fight_stats"]:
+		game_saved[key] = game.get(key)
+	var paused := get_tree().paused
+	var hud_visible: bool = game.hud.visible
+	var rng_state: int = game.loot_rng.state
+	var old_pickups := get_tree().get_nodes_in_group("loot_pickups")
+	var m := Menus.new()
+	m.game = game
+	add_child(m)
+	game.pocket_done = true
+	game.barrier_active = false
+	game.fight_active = false
+	game.party_stats = {}
+	game.fight_stats = {}
+	game.dropped_loot = []
+	game.chapter_id = "ch4"  # first chapter with the regular gem shelf
+	game.shop_stock = {0: []}
+	game.shop_bags = {0: []}
+	# The autotest scene processes ALWAYS; transaction fixtures must not tick.
+	p.process_mode = Node.PROCESS_MODE_DISABLED
+	p.max_hp = 100.0
+	p.max_mp = 100.0
+	p.dead = false
+	p.downed = false
+	p.ghost = false
+	p.resonance = 0.0
+	p.debuff_heal_in = 1.0
+	p.uniq_heal_in = 1.0
+	p.laced_heal_in_time = 0.0
+	p.backpack = []
+	p.gem_bag = []
+	p.materials = []
+	p.loose_bags = []
+	p.equipment = {}
+	p.bags = [Items.make_bag("F")]
+	var errors: Array[String] = []
+	for check in [_cons_action_drinks, _cons_action_drops, _cons_action_recall, _cons_action_shop]:
+		var why: String = await check.call(m)
+		if why != "":
+			errors.append(why)
+	# Free only fixture pickups, retaining the original discard ledger/objects.
+	for pickup in get_tree().get_nodes_in_group("loot_pickups"):
+		if pickup not in old_pickups:
+			pickup.free()
+	# Let the real popover/layout coroutines finish before freeing their Menus.
+	await _frames(2)
+	m.free()
+	for key in fields:
+		p.set(key, saved[key])
+	for key in game_saved:
+		game.set(key, game_saved[key])
+	game.loot_rng.state = rng_state
+	game.hud.visible = hud_visible
+	get_tree().paused = paused
+	if not errors.is_empty():
+		return _fail("consumable actions: " + "; ".join(errors))
+	print("ok: consumable actions (shared field/Inventory potion rules + codes, field-only notices/throttles, bag Health slot, seal, exact one-use stock, stale Use/Drop, in-panel recall reasons, in-panel full-bag potion/scroll/gem/gamble/black-market refusals)")
+
+
+func _cons_action_find(node: Node, predicate: Callable) -> Node:
+	if node == null:
+		return null
+	if predicate.call(node):
+		return node
+	for child in node.get_children():
+		var found := _cons_action_find(child, predicate)
+		if found != null:
+			return found
+	return null
+
+
+func _cons_action_label(m: Menus, text: String, color = null) -> bool:
+	return _cons_action_find(m.root, func(n: Node) -> bool:
+		return n is Label and n.text == text and n.is_visible_in_tree() \
+			and (color == null or n.get_theme_color("font_color") == color)) != null
+
+
+## Field refusal notices are world labels parented to the game. Returns the
+## live ones; pass an earlier result as `before` to count only new notices
+## (older labels may fade out meanwhile).
+func _cons_action_notes(before: Array = []) -> Array:
+	var out: Array = []
+	for child in game.get_children():
+		if child is Label and not child.is_queued_for_deletion() and child.text in Player.DRINK_TEXT.values() \
+				and not before.has(child):
+			out.append(child)
+	return out
+
+
+func _cons_action_button(m: Menus, action: String) -> Callable:
+	m.open_inventory("gear", "consumables")
+	await _frames(2)
+	var cell := _cons_action_find(m.root, func(n: Node) -> bool:
+		return n is Button and n.custom_minimum_size == Vector2(48, 48) and not n.disabled) as Button
+	if cell == null:
+		return Callable()
+	cell.pressed.emit()
+	await _frames(2)
+	var button := _cons_action_find(m.detail_popover, func(n: Node) -> bool:
+		return n is Button and action in n.text) as Button
+	if button == null:
+		return Callable()
+	# The action follows the UI-click sound connection; retain it past shell deletion.
+	return button.get_signal_connection_list("pressed")[-1]["callable"]
+
+
+func _cons_action_effects() -> Array:
+	var p := game.player
+	return [p.hp, p.mp, p.heal_tonic_time, p.heal_tonic_rate, p.mana_tonic_time, p.mana_tonic_rate,
+		p.elixir_time, p.elixir_atk, p.dr_time, p.dr_amt, p.laced_dmg_in_time, p.laced_dmg_in_amt]
+
+
+func _cons_action_drinks(m: Menus) -> String:
+	var p := game.player
+	var codes := {"full": "", "duel": Player.DRINK_DUEL, "exhausted": Player.DRINK_SPENT, "unplanned": Player.DRINK_UNPLANNED,
+		"cooldown": Player.DRINK_COOLDOWN, "downed": Player.DRINK_DOWN}
+	# Held input keeps its notice + re-press throttle; every other refusal is silent.
+	var field_cd := {"duel": Balance.POTION_DRINK_COOLDOWN, "exhausted": Balance.POTION_DRINK_COOLDOWN, "cooldown": 1.0}
+	var elsewhere := String(Items.make_potion("might", "buff", "C", "accord").id)
+	for family in ["health", "mana"]:
+		codes["full"] = Player.DRINK_HP_FULL if family == "health" else Player.DRINK_MP_FULL
+		for entry in ["field", "inventory"]:
+			for condition in ["full", "partial", "duel", "exhausted", "unplanned", "cooldown", "downed"]:
+				var bottle := Items.make_potion(family, "instant", "F", "accord")
+				# A sting makes rejected-drink effect leakage observable too.
+				bottle["sting"] = {"type": "dmg_taken", "amt": 0.1, "dur": 3.0}
+				var twin := bottle.duplicate(true)
+				var id := String(bottle.id)
+				p.consumables = [bottle, twin]
+				p.room_potions = {id: 2} if condition != "exhausted" else {id: 0}
+				if condition == "unplanned":
+					p.room_potions = {elsewhere: 1}  # budget left, none of it for this bottle
+				p.potion_rotation = [id]
+				p.active_potion = id
+				p.potion_cd = 1.0 if condition == "cooldown" else 0.0
+				p.downed = condition == "downed"
+				p.hp = 100.0 if condition == "full" else 40.0
+				p.mp = 100.0 if condition == "full" else 40.0
+				p.heal_tonic_time = 0.0
+				p.heal_tonic_rate = 0.0
+				p.mana_tonic_time = 0.0
+				p.mana_tonic_rate = 0.0
+				p.elixir_time = 0.0
+				p.elixir_atk = 0.0
+				p.dr_time = 0.0
+				p.dr_amt = 0.0
+				p.laced_dmg_in_time = 0.0
+				p.laced_dmg_in_amt = 0.0
+				game.pvp_active = condition == "duel"
+				var effects := _cons_action_effects()
+				var allowance := p.room_potions.duplicate()
+				var notes := _cons_action_notes()
+				var use: Callable
+				if entry == "inventory":
+					use = await _cons_action_button(m, "Use")
+					if not use.is_valid():
+						return "Inventory Use callback missing"
+					use.call()
+					await _frames(2)
+				else:
+					p.drink_potion()
+				var context := "%s %s %s" % [entry, family, condition]
+				if condition != "partial":
+					if p.consumables.size() != 2 or not is_same(p.consumables[0], bottle) \
+							or p.room_potions != allowance or _cons_action_effects() != effects:
+						return context + " refusal spent stock/allowance or applied effects"
+					# A refused Inventory drink arms nothing: a paused solo menu could
+					# never run a cooldown down, so the next valid Use must still work.
+					var want_cd: float = float(field_cd.get(condition, 0.0)) if entry == "field" \
+						else (1.0 if condition == "cooldown" else 0.0)
+					if not is_equal_approx(p.potion_cd, want_cd):
+						return context + " refusal left potion_cd %s (want %s)" % [p.potion_cd, want_cd]
+					var want_notes := 1 if entry == "field" and condition in ["duel", "exhausted"] else 0
+					var new_notes := _cons_action_notes(notes).size()
+					if new_notes != want_notes:
+						return context + " refusal world notices %d (want %d)" % [new_notes, want_notes]
+					if entry == "inventory" and not _cons_action_label(m,
+							p.drink_refusal_text(codes[condition]) + ".", Menus.INV_REFUSAL_COLOR):
+						return context + " refusal missing inside Inventory"
+					if entry == "field" and condition == "unplanned" and p.active_potion != id:
+						return context + " cycled to an unbudgeted type"
+					if entry == "inventory" and condition in ["unplanned", "duel"]:
+						# The refusal must not block the next valid drink in the same menu.
+						game.pvp_active = false
+						p.room_potions = {id: 1}
+						use.call()
+						await _frames(2)
+						if p.consumables.size() != 1 or int(p.room_potions[id]) != 0 \
+								or p.laced_dmg_in_time != 3.0:
+							return context + " refusal blocked the next valid Inventory drink"
+				else:
+					var expected := 40.0 + 60.0 * float(bottle.amt)
+					if p.consumables.size() != 1 or not is_same(p.consumables[0], twin) \
+							or int(p.room_potions[id]) != 1 or p.laced_dmg_in_time != 3.0 \
+							or not is_equal_approx(p.hp if family == "health" else p.mp, expected):
+						return context + " did not consume/apply exactly once (stock=%d, allowance=%s, hp=%s, mp=%s, expected=%s, sting=%s)" % [p.consumables.size(), p.room_potions, p.hp, p.mp, expected, p.laced_dmg_in_time]
+					var after := _cons_action_effects()
+					if use.is_valid():
+						p.potion_cd = 0.0  # stale Use must not eat the identical remaining unit
+						use.call()
+						await _frames(2)
+						if not _cons_action_label(m, "That consumable is no longer in your bag.", Menus.INV_REFUSAL_COLOR):
+							return context + " stale Use refusal missing inside Inventory"
+					else:
+						p.drink_potion()  # held input during cooldown
+					if p.consumables.size() != 1 or int(p.room_potions[id]) != 1 or _cons_action_effects() != after:
+						return context + " repeated action consumed twice"
+	game.pvp_active = false
+	p.downed = false
+	# Held Q never re-drinks over a running tonic/elixir; a deliberate bag drink
+	# may still refresh or upgrade one (an Inventory choice, not key repeat).
+	for spec in [["health", "tonic", "heal_tonic_time"], ["mana", "tonic", "mana_tonic_time"],
+			["might", "buff", "elixir_time"], ["ward", "buff", "dr_time"]]:
+		for entry in ["field", "inventory"]:
+			var bottle := Items.make_potion(spec[0], spec[1], "C", "accord")
+			var id := String(bottle.id)
+			p.consumables = [bottle]
+			p.room_potions = {id: 1}
+			p.potion_rotation = [id]
+			p.active_potion = id
+			p.potion_cd = 0.0
+			p.hp = 40.0
+			p.mp = 40.0
+			p.elixir_atk = 0.0
+			p.dr_amt = 0.0
+			p.set(spec[2], 7.25)
+			var effects := _cons_action_effects()
+			if entry == "inventory":
+				var use := await _cons_action_button(m, "Use")
+				if not use.is_valid():
+					return "active-effect Inventory Use callback missing"
+				use.call()
+				await _frames(2)
+				if not p.consumables.is_empty() or int(p.room_potions[id]) != 0 \
+						or not is_equal_approx(float(p.get(spec[2])), float(bottle.dur)):
+					return "Inventory could not refresh/upgrade a running " + String(spec[0])
+			else:
+				p.drink_potion()
+				if p.consumables.size() != 1 or int(p.room_potions[id]) != 1 \
+						or _cons_action_effects() != effects or p.potion_cd != 0.0:
+					return "held input spent an already-running " + String(spec[0]) + " drink"
+	# Tonics bank a share of what is missing, so a full bar would waste the bottle.
+	for spec in [["health", "hp", Player.DRINK_HP_FULL], ["mana", "mp", Player.DRINK_MP_FULL]]:
+		for entry in ["field", "inventory"]:
+			var bottle := Items.make_potion(spec[0], "tonic", "C", "accord")
+			var id := String(bottle.id)
+			p.consumables = [bottle]
+			p.room_potions = {id: 1}
+			p.potion_rotation = [id]
+			p.active_potion = id
+			p.potion_cd = 0.0
+			p.hp = 40.0
+			p.mp = 40.0
+			p.heal_tonic_time = 0.0
+			p.mana_tonic_time = 0.0
+			p.set(spec[1], 100.0)
+			var effects := _cons_action_effects()
+			if entry == "inventory":
+				var use := await _cons_action_button(m, "Use")
+				if not use.is_valid():
+					return "full-bar tonic Inventory Use callback missing"
+				use.call()
+				await _frames(2)
+				if not _cons_action_label(m, p.drink_refusal_text(spec[2]) + ".", Menus.INV_REFUSAL_COLOR):
+					return "full-bar " + String(spec[0]) + " tonic refusal missing inside Inventory"
+			else:
+				p.drink_potion()
+			if p.consumables.size() != 1 or int(p.room_potions[id]) != 1 or _cons_action_effects() != effects:
+				return entry + " wasted a " + String(spec[0]) + " tonic on a full bar"
+	# A bag Health Potion pours from the default Health slots, like Q does;
+	# other families still need their own slot.
+	for spec in [["health", true], ["mana", false]]:
+		var bottle := Items.make_potion(spec[0], "instant", "F", "accord")
+		var twin := bottle.duplicate(true)
+		p.consumables = [bottle, twin]
+		p.room_potions = {"health": 1}
+		p.potion_rotation = []
+		p.active_potion = "health"
+		p.potion_cd = 0.0
+		p.hp = 40.0
+		p.mp = 40.0
+		var use := await _cons_action_button(m, "Use")
+		if not use.is_valid():
+			return "Health-slot Inventory Use callback missing"
+		use.call()
+		await _frames(2)
+		if spec[1]:
+			if p.consumables.size() != 1 or not is_same(p.consumables[0], twin) \
+					or int(p.room_potions.health) != 0 or not is_equal_approx(p.hp, 40.0 + 60.0 * float(bottle.amt)):
+				return "bag Health Potion did not drink once from the Health allowance"
+		elif p.consumables.size() != 2 or int(p.room_potions.health) != 1 or p.mp != 40.0 \
+				or not _cons_action_label(m, p.drink_refusal_text(Player.DRINK_UNPLANNED) + "."):
+			return "bag Mana Potion drank from the Health allowance"
+	# Field: a spent specific Health bottle falls back to the Health slot.
+	var hbottle := Items.make_potion("health", "instant", "F", "accord")
+	var hid := String(hbottle.id)
+	p.consumables = [hbottle]
+	p.room_potions = {"health": 1}
+	p.potion_rotation = [hid, ""]  # slot 2 = the default Health fill
+	p.active_potion = hid
+	p.potion_cd = 0.0
+	p.hp = 40.0
+	p.drink_potion()
+	if p.consumables.size() != 1 or int(p.room_potions.health) != 1 or p.active_potion != "health" or p.potion_cd != 0.0:
+		return "field Q did not cycle an unbudgeted Health bottle to the Health slot"
+	# The generic health slot still spends its own allowance, with full-HP refusal.
+	for full in [true, false]:
+		p.consumables = [Items.make_potion("health", "instant", "F", "accord")]
+		p.room_potions = {"health": 1}
+		p.active_potion = "health"
+		p.potion_rotation = ["health"]
+		p.potion_cd = 0.0
+		p.hp = 100.0 if full else 40.0
+		p.drink_potion()
+		if p.consumables.size() != (1 if full else 0) or int(p.room_potions.health) != (1 if full else 0):
+			return "generic field health slot lost its full/partial HP behavior"
+	# The guardian's seal: explained in the panel from the bag, and in the world
+	# (with its notice throttle) from held input. Nothing is spent either way.
+	var room: int = game.room_at_pos(p.global_position)
+	if room < 0:
+		return "seal fixture needs the hero inside a room"
+	game.pocket_id = "still_larder"
+	game.pocket_room = room
+	game.pocket_done = false
+	for entry in ["inventory", "field"]:
+		var bottle := Items.make_potion("health", "instant", "F", "accord")
+		var id := String(bottle.id)
+		p.consumables = [bottle]
+		p.room_potions = {id: 1}
+		p.potion_rotation = [id]
+		p.active_potion = id
+		p.potion_cd = 0.0
+		p.hp = 40.0
+		var notes := _cons_action_notes()
+		if entry == "inventory":
+			var use := await _cons_action_button(m, "Use")
+			if not use.is_valid():
+				game.pocket_done = true
+				return "sealed Inventory Use callback missing"
+			use.call()
+			await _frames(2)
+			if not _cons_action_label(m, p.drink_refusal_text(Player.DRINK_SEALED) + ".", Menus.INV_REFUSAL_COLOR) \
+					or p.potion_cd != 0.0 or not _cons_action_notes(notes).is_empty():
+				game.pocket_done = true
+				return "sealed Inventory drink: no in-panel reason, or it armed the field notice"
+		else:
+			p.drink_potion()
+			if not is_equal_approx(p.potion_cd, Balance.POCKET_SEAL_NOTICE_COOLDOWN) or _cons_action_notes(notes).size() != 1:
+				game.pocket_done = true
+				return "sealed held input lost its world notice/throttle"
+		if p.consumables.size() != 1 or int(p.room_potions[id]) != 1 or p.hp != 40.0:
+			game.pocket_done = true
+			return entry + " drank through the guardian's seal"
+	game.pocket_done = true
+	return ""
+
+
+func _cons_action_drops(m: Menus) -> String:
+	var p := game.player
+	for already_gone in [false, true]:
+		var bottle := Items.make_recall_scroll()
+		var twin := bottle.duplicate(true)
+		p.consumables = [bottle, twin]
+		var drop := await _cons_action_button(m, "Drop one")
+		if not drop.is_valid():
+			return "Inventory Drop callback missing"
+		# Retain the callback across a panel rebuild and optional external removal.
+		m.open_inventory("gear", "consumables")
+		await _frames(2)
+		if already_gone:
+			p.consumables.remove_at(0)
+		var before := game.dropped_loot.size()
+		var pickups := get_tree().get_nodes_in_group("loot_pickups").size()
+		drop.call()
+		await _frames(2)
+		drop.call()
+		await _frames(2)
+		var added := 0 if already_gone else 1
+		if game.dropped_loot.size() != before + added \
+				or get_tree().get_nodes_in_group("loot_pickups").size() != pickups + added \
+				or p.consumables.size() != 1 or not is_same(p.consumables[0], twin):
+			return "stale Drop created extra loot or removed an identical unselected unit"
+		if not _cons_action_label(m, "That consumable is no longer in your bag.", Menus.INV_REFUSAL_COLOR):
+			return "stale Drop refusal missing inside Inventory"
+	return ""
+
+
+## A refused recall keeps the scroll and says why in the panel; a stale Use
+## of one of two identical scrolls never spends the twin.
+func _cons_action_recall(m: Menus) -> String:
+	var p := game.player
+	var scroll := Items.make_recall_scroll()
+	var twin := scroll.duplicate(true)
+	p.consumables = [scroll, twin]
+	var use := await _cons_action_button(m, "Use")
+	if not use.is_valid():
+		return "recall Inventory Use callback missing"
+	for spec in [["barrier_active", "You can't recall during a fight."],
+			["pvp_active", "No recalling in the proving grounds."]]:
+		game.barrier_active = spec[0] == "barrier_active"
+		game.pvp_active = spec[0] == "pvp_active"
+		use.call()
+		await _frames(2)
+		game.barrier_active = false
+		game.pvp_active = false
+		if p.consumables.size() != 2 or not is_same(p.consumables[0], scroll):
+			return "refused recall (%s) spent the scroll" % spec[0]
+		if not _cons_action_label(m, spec[1], Menus.INV_REFUSAL_COLOR):
+			return "refused recall (%s) gave no reason inside Inventory" % spec[0]
+	p.consumables.remove_at(0)
+	use.call()
+	await _frames(2)
+	if p.consumables.size() != 1 or not is_same(p.consumables[0], twin):
+		return "stale recall Use spent the identical twin"
+	if not _cons_action_label(m, "That consumable is no longer in your bag.", Menus.INV_REFUSAL_COLOR):
+		return "stale recall Use refusal missing inside Inventory"
+	return ""
+
+
+func _cons_action_shop(m: Menus) -> String:
+	var p := game.player
+	p.gold = 1000000
+	p.consumables = []
+	for i in p.bag_capacity():
+		p.consumables.append(Items.make_recall_scroll())
+	var stock := game.shop_stock.duplicate(true)
+	var bags := game.shop_bags.duplicate(true)
+	var laced: Dictionary = Items.black_market_stock()[0]
+	# [screen, card title, match the title as a prefix (the Gamble card carries its price)]
+	for shelf in [["buy", String(Items.make_potion("health", "instant", "F", "accord").name), false],
+			["buy", String(Items.make_recall_scroll().name), false], ["buy", "💎 Gem — Lv1", false],
+			["buy", "🎲 Gamble", true], ["black_market", String(laced.name), false]]:
+		var title: String = shelf[1]
+		var prefix: bool = shelf[2]
+		if shelf[0] == "buy":
+			m.open_shop(0, "buy")
+		else:
+			m.open_black_market("fence")
+		await _frames(2)
+		var label := _cons_action_find(m.root, func(n: Node) -> bool:
+			return n is Label and (n.text == title or (prefix and String(n.text).begins_with(title))))
+		if label == null:
+			return "purchase fixture shelf missing: " + title
+		var button: Node = label
+		while button != null and not button is Button:
+			button = button.get_parent()
+		if button == null or button.disabled:
+			return "purchase fixture has no enabled card: " + title
+		var count := p.consumables.size()
+		button.pressed.emit()
+		await _frames(2)
+		if p.gold != 1000000 or p.consumables.size() != count or not p.gem_bag.is_empty() \
+				or not p.backpack.is_empty() or game.shop_stock != stock or game.shop_bags != bags:
+			return "full-bag purchase changed gold/stock: " + title
+		if not _cons_action_label(m, "Bag full!"):
+			return "full-bag purchase refusal missing inside the panel: " + title
+	return ""
