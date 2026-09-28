@@ -6,24 +6,47 @@ class RewardWorld extends Game:
 		pass  # isolated real chest/coin children; no second campaign boot
 
 
+# Exercise real switch_chapter teardown/layout with a quiet arrival: no mobs,
+# UI, or campaign boot. This fixture owns all mutable player/world state.
+class RestartWorld extends RewardWorld:
+	func _install_shortcut() -> void: pass
+	func _build_door_seals() -> void: pass
+	func _enter_room(i: int, _live := false) -> void: cur_room = i
+	func refresh_quest() -> void: pass
+
+class RewardPlayer extends Player:
+	func _ready() -> void: pass
+
+# A failed chest guard can pay the suite player's bag. Restore membership but
+# keep the original item dictionaries so their identity survives the restore.
+const ITEM_POCKETS := ["backpack", "gem_bag"]
+
+
 static func run(t: Node) -> String:
 	var p: Player = t.game.player
 	var kept := {}
-	for key in ["gold", "greed", "goldrush_time", "dead", "downed", "ghost", "materials"]:
+	for key in ["gold", "greed", "goldrush_time", "dead", "downed", "ghost", "materials", "consumables"] + ITEM_POCKETS:
 		var value = p.get(key)
-		kept[key] = value.duplicate(true) if value is Array else value
+		kept[key] = value.duplicate(not ITEM_POCKETS.has(key)) if value is Array else value
 	var g := RewardWorld.new()
 	g.process_mode = Node.PROCESS_MODE_DISABLED
 	g.player = p
 	g.chapter_id = "ch4"
+	g.no_saves = true
 	t.get_tree().root.add_child(g)
 	var error := _checks(g, t.game)
+	if error == "":
+		error = _stash_checks(g)
 	g.player = null
 	g.free()
+	if error == "":
+		error = await _gift_drop_ui(t.game)
 	for key in kept:
 		p.set(key, kept[key])
 	if error == "":
-		print("ok: earned spoils freeze without opening/rerolling, exact per-coin gold, cache/owner/claim exclusion, recovery once, malformed records and typed mail attachments")
+		error = await _restart_checks(t)
+	if error == "":
+		print("ok: earned spoils freeze without opening/rerolling, exact per-coin gold, cache/owner/claim exclusion, recovery once, malformed records and typed mail attachments, chapter reward retirement, gift stash exclusion and gift-only Drop")
 	return error
 
 
@@ -47,10 +70,15 @@ static func _checks(g: Game, other: Game) -> String:
 	var cache := Chest.drop(g, "wood", Vector2(1000, 500), {"grade": "F"})
 	cache.on_open = func() -> void: hooks[0] += 1
 	var hidden := Chest.drop(g, "wood", Vector2(1100, 500), {"grade": "F"})
-	hidden.bury()
+	hidden.bury()  # no hook: recovery must skip it for being buried alone
+	var buried_cache := Chest.drop(g, "wood", Vector2(1200, 500), {"grade": "F"})
+	buried_cache.bury()
+	buried_cache.on_open = func() -> void: hooks[0] += 1
 	_coin(g, 5)
 	_coin(g, 7)
-	_coin(g, 900, true)
+	var charged := _coin(g, 900, true)
+	var foreign_charged := _coin(g, 900, true)
+	foreign_charged.game = other
 	_coin(g, 900).claimed = true
 	_coin(g, 900).game = other
 	_coin(g, 900).loot = {"kind": "bag", "grade": "F"}
@@ -85,11 +113,27 @@ static func _checks(g: Game, other: Game) -> String:
 	if p.gold != 100 + expected_gold or g.mailbox.size() != 1 \
 		or g.mailbox[0].items.size() != saved.items.size() or paid.gold != expected_gold:
 		return "recovery lost contents or applied the owner's gold bonus twice"
-	if not chest.opened or not supply.opened or cache.opened or hidden.opened or hooks[0] != 0:
+	if not chest.opened or not supply.opened or cache.opened or hidden.opened or buried_cache.opened or hooks[0] != 0:
 		return "recovery consumed a cache or left earned chests claimable"
 	Recovery.recover_live(g)
 	if p.gold != 100 + expected_gold or g.mailbox.size() != 1:
 		return "a repeated teardown paid the same chest/coin twice"
+	Recovery.retire_world_bound(g)
+	for node in [chest, supply, cache, hidden, buried_cache]:
+		if not node.opened or not node.is_queued_for_deletion():
+			return "chapter teardown left an old chest live"
+	if not charged.claimed or not charged.is_queued_for_deletion() \
+		or foreign_charged.claimed or foreign_charged.is_queued_for_deletion():
+		return "chapter teardown retained Gold Rush or retired another owner's coin"
+	# Late contacts: buried chests count as already glinted awake, so only
+	# the retired `opened`/`claimed` state can refuse them.
+	hidden.buried = false
+	buried_cache.buried = false
+	for node in [cache, hidden, buried_cache, charged]:
+		node._on_body_entered(p)
+	Recovery.retire_world_bound(g)
+	if hooks[0] != 0 or p.gold != 100 + expected_gold or g.mailbox.size() != 1 or p.goldrush_time != 0.0:
+		return "retiring caches invoked discovery or paid unearned loot"
 	for raw in [null, [], "broken", {"gold": NAN}, {"gold": INF}, {"gold": -1}, {"gold": "200"}, {"items": {"bad": true}}]:
 		var bad := Recovery.clean(raw)
 		if not bad.items.is_empty() or bad.gold != 0:
@@ -112,4 +156,129 @@ static func _checks(g: Game, other: Game) -> String:
 		return "an exact-fit material stack was refused"
 	if p.add_material("metal", "E", Items.MATERIAL_STACK_MAX + 1) or p.material_count("metal", "E") != 0:
 		return "an oversized new material payload was silently truncated"
+	return ""
+
+
+static func _stash_checks(g: Game) -> String:
+	var gift := Items.make_gift_health_potion()
+	var normal := Items.make_potion("health", "instant", "F", "accord")
+	g.player.consumables = [gift, normal]
+	var before := g.stash.duplicate(true)
+	if g.stash_deposit_from_bag({"kind": "stone", "stone": gift}) \
+		or g.player.consumables.size() != 2 or not g.player.consumables.has(gift) or g.stash != before:
+		return "chapter gift escaped into the account stash"
+	var entries: Array = UIStash._bag_entries(g.player)
+	for entry in entries:
+		if entry.get("kind", "") == "stone" and entry.stone.get("gift", false):
+			return "stash UI offered a chapter gift for deposit"
+	if not entries.has({"kind": "stone", "stone": normal}) \
+		or not g.stash_deposit_from_bag({"kind": "stone", "stone": normal}) \
+		or g.player.consumables != [gift] or g.stash.size() != before.size() + 1:
+		return "blocking gifts also blocked an ordinary potion"
+	return ""
+
+
+static func _restart_checks(t: Node) -> String:
+	var g := RestartWorld.new()
+	g.process_mode = Node.PROCESS_MODE_DISABLED
+	g.no_saves = true
+	g.player = RewardPlayer.new()
+	g.player.gold = 0
+	g.player.game = g
+	g.add_child(g.player)
+	g.ambient = CanvasModulate.new()
+	g.add_child(g.ambient)
+	t.get_tree().root.add_child(g)
+	var error: String = await _restart_asserts(g, t.get_tree())
+	g.free()
+	if error == "":
+		print("ok: real chapter restart retires old caches, buried chests and Gold Rush after mailing earned loot")
+	return error
+
+
+static func _restart_asserts(g: Game, tree: SceneTree) -> String:
+	g.chapter_id = "ch2"  # authored coordinates; restart rebuilds the same map
+	g.world = Node2D.new()
+	g.add_child(g.world)
+	var cache := Chest.drop(g, "wood", Vector2.ZERO, {"grade": "F"})
+	cache.on_open = func() -> void:
+		g.set_flag(g._cache_flag(0))
+		g.run_secrets += 1
+	var hidden := Chest.drop(g, "wood", Vector2.ZERO, {"grade": "F"})
+	hidden.on_open = func() -> void: g.set_flag(g._hidden_flag(0))
+	hidden.bury()
+	var earned := Chest.drop(g, "wood", Vector2.ZERO, {"grade": "F"})
+	var expected := earned.sealed_contents().duplicate(true)
+	var charged := _coin(g, 900, true)
+	var flags_before := g.flags.duplicate(true)
+	g.switch_chapter(g.chapter_id, true)
+	if g.mailbox.size() != 1 or g.mailbox[0].items != expected.items \
+		or g.player.gold != int(expected.gold):
+		return "restart lost earned chest contents or paid world-bound rewards"
+	var old: Array = [cache, hidden, earned, charged]
+	for node in old:
+		if not is_instance_valid(node) or not node.is_queued_for_deletion():
+			return "restart left an old-world reward live"
+	# Contacts in the rebuilt chapter before the frame ends (the buried cache
+	# already glinted awake) must not discover its caches or pay a coin.
+	hidden.buried = false
+	for node in old:
+		node._on_body_entered(g.player)
+	if g.flags != flags_before or g.run_secrets != 0 or g.mailbox.size() != 1 \
+		or g.player.gold != int(expected.gold) or g.player.goldrush_time != 0.0:
+		return "restart let a stale cache or Gold Rush coin pay out in the rebuilt chapter"
+	# The first flush can run after this frame's process signal.
+	await tree.process_frame
+	await tree.process_frame
+	for node in old:
+		if is_instance_valid(node):
+			return "restart retained a reward from the old world"
+	return ""
+
+
+## The chapter gift stacks apart from bought twins, so hiding its Drop never
+## hides Drop on potions the player paid for, whichever arrived first.
+static func _gift_drop_ui(g: Game) -> String:
+	var m: Menus = g.menus
+	if m.is_open() or g.local_player != g.player:
+		return "gift Drop check needs closed menus and the solo suite player"
+	var cat: String = m.inv_cat
+	var error: String = await _gift_drop_checks(g, m)
+	m.close()
+	m.inv_cat = cat
+	return error
+
+
+static func _gift_drop_checks(g: Game, m: Menus) -> String:
+	var gift := Items.make_gift_health_potion()
+	var bought := Items.make_potion("health", "instant", "F", "accord")
+	var bought_title := "%s  x2" % bought.name
+	for order in [[gift, bought, bought], [bought, gift, bought]]:
+		g.player.consumables = order.duplicate(true)
+		m.open_inventory("gear", "consumables")
+		# Let this shell's deferred touch-scroll setup run before it is replaced.
+		await g.get_tree().process_frame
+		var cells: Array = []
+		for grid in m.root.find_children("*", "GridContainer", true, false):
+			if (grid as GridContainer).columns == 11:
+				cells = grid.get_children()
+		if cells.size() != 2:
+			return "the bag merged the chapter gift into a bought potion stack"
+		var drops := {}
+		for cell in cells:
+			(cell as Button).pressed.emit()
+			var title := ""
+			var explained := false
+			for label in m.detail_popover.find_children("*", "Label", true, false):
+				if (label as Label).text in [str(gift.name), bought_title]:
+					title = (label as Label).text
+				explained = explained or (label as Label).text.contains("you can't drop, sell or store it")
+			if explained != (title == str(gift.name)):
+				return "only the chapter gift's card should explain why it has no Drop"
+			drops[title] = false
+			for button in m.detail_popover.find_children("*", "Button", true, false):
+				if (button as Button).text.contains("Drop one"):
+					drops[title] = true
+		if drops != {str(gift.name): false, bought_title: true}:
+			return "Drop showed on the chapter gift or vanished from bought potions: %s" % drops
 	return ""

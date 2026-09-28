@@ -52,8 +52,8 @@ func net_apply_boss_intro(kind: String) -> void:
 			hud.dialogue(beat)
 
 ## Tear the world down and rebuild it from another chapter's data.
-## Only ever called before play starts (chapter select) or on load —
-## dynamic entities (chests, pickups, projectiles) don't exist then.
+## Also used by restarts and travel: Game-owned rewards must retire before
+## the old world and its chapter-scoped discovery hooks are replaced.
 func switch_chapter(id: String, force := false) -> void:
 	if not (Story.CHAPTER_LIST.has(id) or Story.is_endgame(id) or Story.is_standalone(id) or Story.is_pvp(id)) or (id == chapter_id and not force):
 		return
@@ -62,6 +62,7 @@ func switch_chapter(id: String, force := false) -> void:
 	# fresh chests in-world for the opening moment until the player leaves.
 	preload("res://scripts/loot_recovery.gd").recover_live(self)
 	flush_dropped_loot()
+	preload("res://scripts/loot_recovery.gd").retire_world_bound(self)
 	cancel_ground_attacks()
 	chapter_id = id
 	# NG+ tier snapshot: the RUN owns its tier from launch to clear. The
@@ -1641,25 +1642,38 @@ func _cursed_chest_node(i: int, pos: Vector2) -> void:
 	npc.modulate = Color(0.72, 0.5, 0.95)  # wrong-colored gold: clearly a bargain
 	burst(pos, Color(0.7, 0.4, 1.0), 12)   # it ARRIVES — the window is open
 	# Ten breaths to decide, then the bargain withdraws. The timer is a
-	# CHILD of the chest: it pauses with the tree (menus don't eat the
-	# window) and dies with the room (no lambda firing into a freed
+	# CHILD of the chest: it pauses with the tree solo, but online menus
+	# leave the window ticking. It dies with the room (no lambda into a freed
 	# world on chapter switches).
 	var ticker := Timer.new()
 	ticker.wait_time = Balance.CURSE_OFFER_WINDOW
 	ticker.one_shot = true
 	ticker.autostart = true
 	npc.add_child(ticker)
+	# The confirm shell this offer opened, so a lapse closes only its own dialog.
+	var asked := {"shell": null}
 	ticker.timeout.connect(func() -> void:
 		if is_instance_valid(npc) and not get_flag(_curse_flag(room), false):
 			burst(npc.global_position, Color(0.5, 0.3, 0.7), 10)
 			sfx("gate", 0.7, 0.0, -6.0)
-			_remove_interactable(npc))
-	# The action needs the npc handle, so it's bound after creation.
+			_remove_interactable(npc)
+			if is_instance_valid(asked["shell"]) and menus.root == asked["shell"]:
+				menus.close()
+				_curse_offer_withdrawn())
+	# A weak capture survives expiry without Godot reading a freed lambda
+	# capture before the acceptance guard can run.
+	var offer: WeakRef = weakref(npc)
 	interactables[-1]["action"] = func() -> void:
 		menus.open_confirm(
 			"The chest whispers promises. Open it, and every monster in this room grows CRUELER (+%d%% damage, faster) until the room is purged — but the purge unlocks its hoard: a golden chest and a gem, guaranteed. Open it?"
 				% int((Balance.CURSE_DMG_MULT - 1.0) * 100),
 			func() -> void:
+				# Co-op keeps ticking under confirm; timeout or travel can retire
+				# the offer before this click (including the queue-free frame).
+				var chest: Node2D = offer.get_ref()
+				if not is_instance_valid(chest) or chest.is_queued_for_deletion():
+					_curse_offer_withdrawn()
+					return
 				set_flag(_curse_flag(room))
 				curse_pending[room] = true
 				_apply_room_curse(room)
@@ -1669,13 +1683,21 @@ func _cursed_chest_node(i: int, pos: Vector2) -> void:
 				if net_host():
 					net_session().host_curse_applied(room)
 				sfx("gate", 1.2)
-				burst(npc.global_position, Color(0.7, 0.4, 1.0), 18)
+				burst(chest.global_position, Color(0.7, 0.4, 1.0), 18)
 				if is_instance_valid(player):
 					spawn_text(player.global_position + Vector2(0, -78),
 						"THE PACK STIRS, CRUELER — purge the room to claim the hoard",
 						Color(0.85, 0.6, 1.0), 3.5)
-				_remove_interactable(npc), func() -> void: pass,
+				_remove_interactable(chest), func() -> void: pass,
 			{"title": "Accept the chest's curse?", "accept_label": "Accept the curse"})
+		asked["shell"] = menus.root
+
+
+## A lapsed cursed-chest offer tells the player why their choice did nothing.
+func _curse_offer_withdrawn() -> void:
+	if has_local_player():
+		spawn_text(player.global_position + Vector2(0, -78), "The bargain has withdrawn",
+			Color(0.85, 0.6, 1.0), 2.5)
 
 
 ## The accepted curse: every living pack member in the room hits harder

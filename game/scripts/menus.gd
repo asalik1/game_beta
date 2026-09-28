@@ -2654,6 +2654,10 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		for c in p.consumables:
 			var cc0: Dictionary = c
 			var gid := String(cc0.get("id", cc0.get("name", "?")))
+			# The chapter gift shares its id with a bought Defective Health
+			# Potion. Its own stack keeps Drop on the bottles the player paid for.
+			if bool(cc0.get("gift", false)):
+				gid += "#gift"
 			if not cgroups.has(gid):
 				cgroups[gid] = {"c": cc0, "count": 0}
 				corder.append(gid)
@@ -2670,12 +2674,14 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 							Items.GRADE_COLOR[str(cc.get("grade", "B"))], str(cc.get("desc", "")), [])).set_drag_forwarding(Callable(), sock_can, sock_drop)
 				continue
 			var cicon: Texture2D = Art.consumable_icon(cc)
-			var cid := String(gid)
+			var cid := String(cc.get("id", cc.get("name", "?")))  # loadouts key by id
 			var slotted: int = p.potion_rotation.count(cid)
 			_bag_slot(grid, cicon, "" if cicon != null else "⟲",
 				Color(0.6, 1.0, 0.8) if slotted > 0 else Items.GRADE_COLOR[str(cc.get("grade", "B"))],
 				func() -> void:
 					var info := str(cc.get("desc", ""))
+					if bool(cc.get("gift", false)):
+						info += "\n\nA free gift for this chapter. It fades when you leave the chapter, and you can't drop, sell or store it."
 					var use_cb := func() -> void:
 						var refusal: String = game.local_player.use_consumable(cc)
 						if refusal != "":
@@ -2702,7 +2708,8 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 						actions.append(["  ＋  Add to room loadout  ", Color(0.7, 0.9, 1.0), slot_cb])
 						if slotted > 0:
 							actions.append(["  －  Remove from loadout  ", Color(0.7, 0.82, 0.95), unslot_cb])
-					actions.append(["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb])
+					if not bool(cc.get("gift", false)):
+						actions.append(["  ✖  Drop one  (throw out, free a slot)  ", Color(1.0, 0.55, 0.45), drop_cb])
 					_open_detail_popover(cicon, str(cc["name"]) + xn,
 						Color(0.6, 1.0, 0.8) if slotted > 0 else Items.GRADE_COLOR[str(cc.get("grade", "B"))],
 						info, actions, GearFlavor.of(cc))).set_drag_forwarding(Callable(), sock_can, sock_drop)

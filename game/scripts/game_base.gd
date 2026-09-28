@@ -1668,7 +1668,7 @@ func stash_deposit_from_bag(payload: Dictionary) -> bool:
 		"stone":
 			pocket = local_player.consumables
 			entry = payload.get("stone", {})
-			if String(entry.get("kind", "")) == "quest":
+			if String(entry.get("kind", "")) == "quest" or bool(entry.get("gift", false)):
 				return false
 		_:
 			return false

@@ -1951,7 +1951,7 @@ func _run_systems() -> void:
 	var pocket_error: String = preload("res://scripts/tests/test_pocket_trials.gd").run(self)
 	if pocket_error != "":
 		return _fail("portal trials: " + pocket_error)
-	var recovery_error: String = preload("res://scripts/tests/test_loot_recovery.gd").run(self)
+	var recovery_error: String = await preload("res://scripts/tests/test_loot_recovery.gd").run(self)
 	if recovery_error != "":
 		return _fail("earned spoils: " + recovery_error)
 	var standup_error: String = await preload("res://scripts/tests/test_loot_standup.gd").run(self)
