@@ -3,9 +3,16 @@ extends ShotRig
 ## cinematic for a set of chapters, and screenshots the authored plate at each
 ## narrator beat so the reskinned paladin art can be eyeballed in-engine.
 ##   shot.bat palopener [--chapters=ch2,ch8,ch11] [--timeout=180]
+##   Add --expand for a 2400x1080 phone-aspect opener and death-dim check.
 
 func _ready() -> void:
+	if flag("expand"):
+		get_tree().root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
+		get_tree().root.size = Vector2i(2400, 1080)
 	await boot("paladin", "ch1")
+	if flag("expand"):
+		# Let the boot opener's exit finish before it can reset cinematic HUD state.
+		await sim_wait(0.6)
 	var chapters := arg("chapters", "ch1,ch2,ch8,ch11").split(",", false)
 	for chid in chapters:
 		step("opener " + chid)
@@ -32,4 +39,10 @@ func _ready() -> void:
 			else: game.hud._advance_dialogue()
 			await frames(2); guard += 1
 		await sim_wait(0.3)
+	if flag("expand"):
+		# Exercise the death shade after the illustrated layer has fully left.
+		await sim_wait(0.6)
+		game.hud.death_dim(0.65, 0.2)
+		await sim_wait(0.3)
+		shot("expand_death_dim")
 	finish()

@@ -810,7 +810,7 @@ void fragment() {
 	# --------------------------------------------------------- overlay ---
 	overlay = ColorRect.new()
 	overlay.color = Color(0, 0, 0, 0)
-	overlay.size = Vector2(1280, 720)
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(overlay)
 	move_child(overlay, 1)  # above vignette, behind the labels
@@ -835,7 +835,9 @@ void fragment() {
 	# ---------------------------------------------------- dialogue box ---
 	dialogue_box = Control.new()
 	dialogue_box.visible = false
+	dialogue_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(dialogue_box)
+	dialogue_box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	# CQ-style speaker splash — built FIRST so it draws behind the box/portrait.
 	# The art is square painted key-art (1254²) with its own background; shown
@@ -845,19 +847,19 @@ void fragment() {
 	splash_layer.visible = false
 	splash_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dialogue_box.add_child(splash_layer)
+	splash_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	splash_rect = TextureRect.new()
-	splash_rect.position = Vector2.ZERO
-	splash_rect.size = Vector2(1280, 1280)
 	splash_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	splash_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	splash_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	splash_layer.add_child(splash_rect)
+	get_viewport().size_changed.connect(_fit_speaker_splash)
+	_fit_speaker_splash()
 	splash_scrim = ColorRect.new()
 	splash_scrim.color = Color(0.02, 0.02, 0.05, 0.34)
-	splash_scrim.position = Vector2.ZERO
-	splash_scrim.size = Vector2(1280, 720)
 	splash_scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	splash_layer.add_child(splash_scrim)
+	splash_scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	# The box grows UPWARD from a fixed bottom edge (648, clearing the
 	# quickbar): tall enough that a long paragraph (5-6 wrapped lines) fits
@@ -943,16 +945,16 @@ void fragment() {
 	log_panel = Control.new()
 	log_panel.visible = false
 	add_child(log_panel)
+	log_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var lback := ColorRect.new()   # full-screen shade; eats clicks so the box behind can't advance
 	lback.color = Color(0.0, 0.0, 0.0, 0.55)
-	lback.position = Vector2.ZERO
-	lback.size = Vector2(1280, 720)
 	lback.mouse_filter = Control.MOUSE_FILTER_STOP
 	lback.gui_input.connect(func(e: InputEvent) -> void:  # click off the panel closes the log
 		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
 			_toggle_log()
 			get_viewport().set_input_as_handled())
 	log_panel.add_child(lback)
+	lback.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var lframe := ColorRect.new()
 	lframe.color = Color(0.9, 0.8, 0.5)
 	lframe.position = Vector2(238, 96)
@@ -4128,7 +4130,11 @@ func _boss_splash_intro(bname: String) -> void:
 	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	art.stretch_mode = TextureRect.STRETCH_SCALE
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var art_rect := _boss_splash_cover_rect(art.texture.get_size(), Vector2(1280, 720))
+	# Cover the whole visible screen (a wide phone or tablet included); the
+	# title block keeps its authored spacing from the bottom edge, centred.
+	var screen := get_viewport().get_visible_rect().size
+	var lift := screen.y - 720.0
+	var art_rect := _boss_splash_cover_rect(art.texture.get_size(), screen)
 	art.position = art_rect.position
 	art.size = art_rect.size
 	# Zoom from the painting's top-center. A centered pivot would briefly crop
@@ -4156,8 +4162,8 @@ func _boss_splash_intro(bname: String) -> void:
 	foot.texture = gt
 	foot.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	foot.stretch_mode = TextureRect.STRETCH_SCALE
-	foot.position = Vector2(0, 440)
-	foot.size = Vector2(1280, 280)
+	foot.position = Vector2(0, 440 + lift)
+	foot.size = Vector2(screen.x, 280)
 	foot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(foot)
 	# Title plate: NAME in the inscriptional face, tracked out and easing in,
@@ -4178,8 +4184,8 @@ func _boss_splash_intro(bname: String) -> void:
 	fv.spacing_glyph = 12
 	var nm := Label.new()
 	nm.text = name_main.to_upper()
-	nm.position = Vector2(0, 548 if epithet != "" else 566)
-	nm.size = Vector2(1280, 70)
+	nm.position = Vector2(0, (548 if epithet != "" else 566) + lift)
+	nm.size = Vector2(screen.x, 70)
 	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	nm.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	nm.add_theme_font_override("font", fv)
@@ -4196,7 +4202,7 @@ func _boss_splash_intro(bname: String) -> void:
 		var rule := ColorRect.new()
 		rule.color = Color(0.92, 0.78, 0.42, 0.85)
 		rule.size = Vector2(0, 1)
-		rule.position = Vector2(640.0, nm.position.y + 36.0)
+		rule.position = Vector2(screen.x * 0.5, nm.position.y + 36.0)
 		rule.pivot_offset = Vector2(0, 0)
 		rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		layer.add_child(rule)
@@ -4205,8 +4211,8 @@ func _boss_splash_intro(bname: String) -> void:
 	if epithet != "":
 		ep = Label.new()
 		ep.text = epithet.to_upper()
-		ep.position = Vector2(0, 612)
-		ep.size = Vector2(1280, 30)
+		ep.position = Vector2(0, 612 + lift)
+		ep.size = Vector2(screen.x, 30)
 		ep.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		var efv := FontVariation.new()
 		efv.base_font = fv.base_font
@@ -4230,7 +4236,7 @@ func _boss_splash_intro(bname: String) -> void:
 		var r: ColorRect = pair[0]
 		var side: int = pair[1]
 		var rule_w: float = 150.0
-		var target_x: float = 640.0 + side * half_w - (rule_w if side < 0 else 0.0)
+		var target_x: float = screen.x * 0.5 + side * half_w - (rule_w if side < 0 else 0.0)
 		tw.parallel().tween_property(r, "size:x", rule_w, 0.55) \
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT).set_delay(0.12)
 		tw.parallel().tween_property(r, "position:x", target_x, 0.55) \
@@ -4689,11 +4695,11 @@ func danger_ramp(dur: float) -> void:
 		# of your eye, which is exactly where this mechanic was dying.
 		danger_rect = TextureRect.new()
 		danger_rect.texture = Art.tex("dangerrim")
-		danger_rect.size = Vector2(1280, 720)
 		danger_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		danger_rect.stretch_mode = TextureRect.STRETCH_SCALE
 		danger_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(danger_rect)
+		danger_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		move_child(danger_rect, 0)  # under every HUD element
 	if danger_tw != null and danger_tw.is_valid():
 		danger_tw.kill()
@@ -4725,7 +4731,7 @@ func flash_screen(color: Color, strength := 0.4, dur := 0.3) -> void:
 	strength *= float(game.settings.get("impact_flashes", 1.0))
 	if flash_rect == null:
 		flash_rect = ColorRect.new()
-		flash_rect.size = Vector2(1280, 720)
+		flash_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		flash_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(flash_rect)
 	flash_rect.color = Color(color.r, color.g, color.b, strength)
@@ -4956,6 +4962,15 @@ func _splash_slug(s: String) -> String:
 			out += "_"
 			prev_us = true
 	return out.trim_suffix("_")
+
+
+## The square speaker art stays width-fit and top-aligned on every screen shape:
+## a wide phone gets a wider square instead of a strip of live world beside it.
+func _fit_speaker_splash() -> void:
+	var view := get_viewport().get_visible_rect().size
+	var side := maxf(view.x, view.y)
+	splash_rect.position = Vector2.ZERO
+	splash_rect.size = Vector2(side, side)
 
 
 ## Show `who`'s splash full-bleed (CQ framing) if art exists, else fall back to

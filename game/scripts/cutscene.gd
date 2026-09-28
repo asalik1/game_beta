@@ -99,22 +99,33 @@ func _init(g: Node2D) -> void:
 	game = g
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	size = Vector2(1280, 720)
 
 	var backdrop := ColorRect.new()
 	backdrop.color = Color(0.012, 0.009, 0.02)
-	backdrop.size = size
 	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(backdrop)
+	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	art_stack = Control.new()
-	art_stack.size = size
+	# Keep the authored 16:9 framing; anchors recenter it on viewport resize.
+	art_stack.size = Vector2(1280, 720)
 	art_stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# The camera push overscans the frame. Clip it here, as the screen edge
+	# does at 16:9, so wider screens keep clean dark bars beside the art.
+	art_stack.clip_contents = true
 	add_child(art_stack)
+	art_stack.set_anchors_and_offsets_preset(Control.PRESET_CENTER, Control.PRESET_MODE_KEEP_SIZE)
 
 	# Render authored plates directly. Their source color is already correct;
 	# camera tracks and cross-dissolves provide motion without color processing.
-	# A few slow motes bind the painted frames together.
+	# A few slow motes bind the painted frames together, so they share the
+	# plates' centred, clipped frame instead of the full screen.
+	var mote_frame := Control.new()
+	mote_frame.size = art_stack.size
+	mote_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mote_frame.clip_contents = true
+	add_child(mote_frame)
+	mote_frame.set_anchors_and_offsets_preset(Control.PRESET_CENTER, Control.PRESET_MODE_KEEP_SIZE)
 	ash = CPUParticles2D.new()
 	ash.amount = 24
 	ash.lifetime = 4.2
@@ -129,30 +140,30 @@ func _init(g: Node2D) -> void:
 	ash.scale_amount_min = 0.7
 	ash.scale_amount_max = 1.6
 	ash.color = Color(0.95, 0.72, 0.34, 0.38)
-	add_child(ash)
+	mote_frame.add_child(ash)
 
 	var wash := ColorRect.new()
 	wash.color = Color(0.018, 0.012, 0.035, 0.10)
-	wash.size = size
 	wash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(wash)
+	wash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	var vignette := TextureRect.new()
 	vignette.texture = Art.tex("vignette")
 	vignette.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	vignette.stretch_mode = TextureRect.STRETCH_SCALE
-	vignette.size = size
 	vignette.modulate = Color(1, 1, 1, 0.62)
 	vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(vignette)
+	vignette.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	# The last narration fades into darkness, not back to visible gameplay
 	# beneath the still-open dialogue box.
 	fade_rect = ColorRect.new()
 	fade_rect.color = Color(0.008, 0.006, 0.014, 0.0)
-	fade_rect.size = size
 	fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(fade_rect)
+	fade_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	modulate.a = 0.0
 	var intro := create_tween()
@@ -161,6 +172,7 @@ func _init(g: Node2D) -> void:
 
 
 func _ready() -> void:
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	game.hud.set_cinematic(true)
 
 
@@ -325,11 +337,12 @@ func _frame_texture(frame_name: String) -> Texture2D:
 func _make_frame(texture: Texture2D) -> TextureRect:
 	var frame := TextureRect.new()
 	frame.texture = texture
+	# Disable the source texture's minimum size before applying authored framing.
+	frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	# A tiny overscan leaves room for the push without exposing an edge.
 	frame.position = Vector2(-10, -6)
 	frame.size = Vector2(1300, 732)
 	frame.pivot_offset = frame.size / 2.0
-	frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	frame.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	frame.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE

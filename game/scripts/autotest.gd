@@ -2293,6 +2293,10 @@ func _run_systems() -> void:
 	if alignment_error != "":
 		return _fail(alignment_error)
 	print("ok: HUD alignment (shaped numeric baselines, quest/vitals/target clearance, full text, negative controls)")
+	var covers_error: String = await preload("res://scripts/tests/fullscreen_covers.gd").suite(game)
+	if covers_error != "":
+		return _fail(covers_error)
+	print("ok: full-screen HUD/cutscene covers, centered clipped art + motes, speaker/boss splash covers (wide phone, tablet, resize, desktop keep)")
 	await _test_tell_shapes()
 
 	# 5c. Endgame modes (ACT2_DESIGN.md §II): The Crucible + The Waking Depths.
