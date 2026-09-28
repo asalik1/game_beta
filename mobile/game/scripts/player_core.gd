@@ -551,7 +551,9 @@ var hazard_speed := 1.0        # terrain patch effect (ice boosts, void slows)
 # can't move OR cast (Serane's Flash Freeze, Halla's sleep); ROOTED =
 # can't move but MAY still cast (Serane's Shatter Lance, ch6 roots).
 var frozen_time := 0.0
+var freeze_reason := "frozen"
 var rooted_time := 0.0
+var root_reason := "rooted"
 var chill_time := 0.0          # mob frost-aura: movement slowed while > 0
 var chill_mult := 1.0          # the active chill slow factor (rebuilt each frame)
 var aegis_time := 0.0          # paladin Aegis: the shield is up

@@ -26,7 +26,7 @@ func queue_ability(slot: String) -> void:
 	action_buffer.press(slot, Time.get_ticks_msec() * 0.001)
 	var reason := ""
 	if frozen_time > 0.0:
-		reason = "Frozen"
+		reason = freeze_reason.capitalize()
 	elif mp < ability_cost(slot):
 		reason = "Not enough mana"
 	elif cds[slot] > Balance.ABILITY_BUFFER_SECONDS:
@@ -553,33 +553,37 @@ func _remote_present(delta: float) -> void:
 
 ## FROZEN: can't move OR cast for `dur` (Serane's Flash Freeze, Halla's
 ## sleep). Dodging AND acting are denied — the punish for being caught in
-## the open. A no-op if already frozen longer.
-func apply_freeze(dur: float) -> void:
+## the open. A shorter application keeps the longer effect's timer and label.
+func apply_freeze(dur: float, reason := "frozen") -> void:
 	if not is_locally_controlled():
 		# MP-10: control on a shell rides to the owner (§4.1 damage row).
 		if game != null and game.net_host():
-			game.net_session().host_player_status(peer_id, "freeze", dur)
+			game.net_session().host_player_status(peer_id, "freeze", dur, 0.0, reason)
 		return
 	if dead:
 		return
+	if dur * uniq_cc_mult >= frozen_time:
+		freeze_reason = "asleep" if reason == "asleep" else "frozen"
 	frozen_time = maxf(frozen_time, dur * uniq_cc_mult)  # pants_ward: grounded
 	_uniq_grounded_beat()
-	game.spawn_text(global_position + Vector2(0, -50), "FROZEN!", Color(0.6, 0.85, 1.0))
+	game.spawn_text(global_position + Vector2(0, -50), freeze_reason.to_upper() + "!", Color(0.6, 0.85, 1.0))
 	game.burst(global_position, Color(0.7, 0.9, 1.0), 14)
 
 
 ## ROOTED: can't move for `dur`, but may still cast (Serane's Shatter
 ## Lance, ch6 vine roots). The kite is denied; the kit is not.
-func apply_root(dur: float) -> void:
+func apply_root(dur: float, reason := "rooted") -> void:
 	if not is_locally_controlled():
 		if game != null and game.net_host():
-			game.net_session().host_player_status(peer_id, "root", dur)
+			game.net_session().host_player_status(peer_id, "root", dur, 0.0, reason)
 		return
 	if dead:
 		return
+	if dur * uniq_cc_mult >= rooted_time:
+		root_reason = "staggered" if reason == "staggered" else "rooted"
 	rooted_time = maxf(rooted_time, dur * uniq_cc_mult)  # pants_ward: grounded
 	_uniq_grounded_beat()
-	game.spawn_text(global_position + Vector2(0, -50), "ROOTED!", Color(0.5, 0.8, 0.6))
+	game.spawn_text(global_position + Vector2(0, -50), root_reason.to_upper() + "!", Color(0.5, 0.8, 0.6))
 
 
 ## CHILLED: movement slowed to `mult` while inside a mob's frost aura.

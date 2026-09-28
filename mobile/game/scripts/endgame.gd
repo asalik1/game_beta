@@ -48,6 +48,7 @@ var reached_milestones := {}   # milestone mark -> true (once each)
 
 var _camp_prompt: Node2D = null    # depths: the "descend" interactable, freed on the first dive
 var _camp_merchant: Node2D = null  # depths: the prep merchant, freed on the first dive
+var _camp_shop_acknowledged := false  # browsed the shop or accepted its closure this run
 
 
 # ------------------------------------------------------------------- start ---
@@ -81,6 +82,7 @@ func start(m: String) -> void:
 	pending_gear = []
 	reached_milestones = {}
 	_last_boss = ""
+	_camp_shop_acknowledged = false
 	_rng.randomize()
 	_clear_player_debuffs()        # a fresh run starts unburdened
 
@@ -148,9 +150,37 @@ func _make_camp() -> void:
 	# The prep merchant: potions, consumables and gear. The ONLY shop of the run
 	# — once you descend it's combat all the way down (freed on the first dive).
 	_camp_merchant = game._make_npc("merchant", c + Vector2(-220, 20),
-		"E — Shop", func() -> void: game.menus.open_shop(arena_room))
+		"E — Shop", _open_camp_shop)
 	_camp_prompt = game._make_npc("tombstone", c + Vector2(0, -40),
-		"E — Descend into the dark (Depth %d)" % _entry_depth(), func() -> void: descend())
+		"E — Descend into the dark (Depth %d)" % _entry_depth(), _request_camp_descent)
+
+
+func _open_camp_shop() -> void:
+	game.menus.open_shop(arena_room)
+	_camp_shop_acknowledged = true
+
+
+## Only the local camp interaction asks. Automatic room advances retain their
+## existing path, and the trial's solo-only entry gates remain unchanged.
+func _request_camp_descent() -> void:
+	var token := run_token()
+	if token.is_empty() or mode != "depths" or depth != 0 or game.menus.is_open():
+		return
+	if _camp_shop_acknowledged:
+		descend()
+		return
+	game.menus.open_confirm(
+		"This camp's shop closes for good when you go down. Descend anyway?",
+		_confirm_camp_descent.bind(token), func() -> void: pass,
+		{"title": "Leave the camp?", "accept_label": "Descend anyway", "focus_cancel": true})
+
+
+func _confirm_camp_descent(token: String) -> void:
+	# An open dialog must not launch a later run or a replacement arena.
+	if token != run_token() or depth != 0:
+		return
+	_camp_shop_acknowledged = true
+	descend()
 
 ## Where this character's next run enters the ladder: the highest earned
 ## checkpoint, floored at the ladder's start. Depth == content level, so

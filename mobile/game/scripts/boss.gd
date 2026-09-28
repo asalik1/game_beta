@@ -2419,8 +2419,11 @@ func _sleepkeeper(player: Player, to_player: Vector2, dist: float, delta: float)
 		if dz >= 5:
 			acc = 0.0
 			dz = 0
-			p.apply_freeze(3.0)
-			game.spawn_text(p.global_position + Vector2(0, -50), "ASLEEP!", FROST)
+			p.apply_freeze(3.0, "asleep")
+			# The owner gets its callout from apply_freeze; keep the host's
+			# existing callout over a remote player as well.
+			if not p.is_locally_controlled():
+				game.spawn_text(p.global_position + Vector2(0, -50), "ASLEEP!", FROST)
 		still_map[pid] = acc
 		dz_max = maxi(dz_max, dz)
 	drowse = dz_max

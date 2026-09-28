@@ -2,17 +2,35 @@ extends RefCounted
 ## Quick systems tier: real applications and physics clocks, then the actual
 ## pooled HUD controls. All borrowed state is restored on failure as well.
 const EFFECTS := {"frozen": "frozen_time", "rooted": "rooted_time", "chilled": "chill_time"}
+const REASONS := {"asleep": "frozen_time", "staggered": "rooted_time"}
 const BUFFS := ["berserk_time", "aegis_time", "dr_time", "pact_time",
 	"theme_guard_time", "theme_speed_time", "elixir_time", "goldrush_time", "dodge_time"]
 ## Chips that hold their slot at the head of the row (Hud._active_buffs).
 const PERSISTENT := ["ng_tier", "holy", "retri", "grit", "second_wind"]
 
 
+class WireRoot extends Node:
+	var peers: Array[int] = []
+	func is_online() -> bool: return true
+
+class WireSession extends "res://scripts/net/net_session.gd":
+	func _ready() -> void: pass
+	func _physics_process(_delta: float) -> void: pass
+
+class HostGame extends Game:
+	var bridge: Node
+	func net_host() -> bool: return true
+	func net_session() -> Node: return bridge
+
+class HostShell extends Player:
+	func is_locally_controlled() -> bool: return false
+
+
 static func suite(g: Game) -> String:
 	var p: Player = g.local_player
 	var saved := {}
 	var fields: Array = EFFECTS.values() + BUFFS + ["chill_mult", "uniq_cc_mult", "uniq_armor", "dead",
-		"grit_stacks", "grit_time"]
+		"grit_stacks", "grit_time", "freeze_reason", "root_reason"]
 	for field in fields:
 		saved[field] = p.get(field)
 	var paused: bool = g.get_tree().paused
@@ -32,6 +50,10 @@ static func suite(g: Game) -> String:
 	p.grit_time = 10.0
 	g.get_tree().paused = false
 	var error: String = await _checks(g, p)
+	if error == "":
+		error = await _reason_checks(g, p)
+	if error == "":
+		error = await _forwarded_reasons(g, p)
 	for field in fields:
 		p.set(field, saved[field])
 	g.get_tree().paused = paused
@@ -126,17 +148,152 @@ static func _chip_error(h: Hud, p: Player, id: String) -> String:
 		return "persistent-chip fixture is missing from the row"
 	for i in active.size():
 		var other: String = String(active[i].id)
-		if i < index and other not in PERSISTENT and not EFFECTS.has(other):
+		if i < index and other not in PERSISTENT and not EFFECTS.has(other) and not REASONS.has(other):
 			return "ordinary buff %s sits ahead of impairment %s" % [other, id]
 		if i > index and other in PERSISTENT:
 			return "impairment %s pushed persistent chip %s down the row" % [id, other]
-	if not is_equal_approx(float(entry.t), float(p.get(EFFECTS[id]))) or float(entry.t) <= 0.0:
+	if not is_equal_approx(float(entry.t), float(p.get(EFFECTS.get(id, REASONS.get(id))))) or float(entry.t) <= 0.0:
 		return "impairment chip has the wrong remaining time: " + id
 	var slot: Dictionary = h.buff_slots[index]
 	if not slot.border.visible or not slot.icon.visible or slot.icon.texture == null \
 			or String(slot.border.get_meta("tip_raw", "")) != String(entry.tip):
 		return "impairment chip is not painted with its icon and detail: " + id
+	# The chip draws at BUFF_ICON px: smaller art is upscaled soft, and an
+	# ability button's art would read as that ability right above its button.
+	if String(Hud.BUFF_ICONS.get(id, "")).begins_with("ability_") \
+			or slot.icon.texture.get_width() < int(Hud.BUFF_ICON):
+		return "impairment chip art is an ability button or smaller than the chip: " + id
 	var time_text: String = "%.0f" % ceil(float(entry.t)) if float(entry.t) >= 1.0 else "%.1f" % float(entry.t)
 	if not slot.time.visible or slot.time.text != time_text or slot.fill.size.x <= 0.0:
 		return "impairment chip countdown or drain is missing: " + id
 	return ""
+
+
+static func _reason_checks(g: Game, p: Player) -> String:
+	var h: Hud = g.hud
+	p.frozen_time = 0.0
+	p.rooted_time = 0.0
+	p.apply_freeze(1.6, "asleep")
+	p.apply_root(2.0, "staggered")
+	for id in REASONS:
+		var error := _chip_error(h, p, id)
+		if error != "": return error
+		for other in Hud.BUFF_ICONS:
+			if other != id and Hud.BUFF_ICONS[other] == Hud.BUFF_ICONS[id]:
+				return "named impairment shares its icon: " + id
+	if not _entry(h, "frozen").is_empty() or not _entry(h, "rooted").is_empty():
+		return "sleep or stagger still shows the generic chip"
+	if not String(_entry(h, "asleep").tip).begins_with("Asleep:") or "can't move or cast" not in String(_entry(h, "asleep").tip):
+		return "sleep detail has the wrong name or restrictions"
+	if not String(_entry(h, "staggered").tip).begins_with("Staggered:") or "can still cast" not in String(_entry(h, "staggered").tip):
+		return "stagger detail has the wrong name or restrictions"
+	if not is_equal_approx(float(_entry(h, "asleep").t), 0.8) or not is_equal_approx(float(_entry(h, "staggered").t), 1.0):
+		return "named impairments ignored CC duration reduction"
+	# A shorter incoming effect must not rename the longer live one.
+	p.apply_freeze(0.2)
+	p.apply_root(0.2)
+	if _entry(h, "asleep").is_empty() or _entry(h, "staggered").is_empty():
+		return "shorter generic effects renamed sleep or stagger"
+	p.apply_freeze(2.0)
+	p.apply_root(2.4)
+	if _entry(h, "frozen").is_empty() or _entry(h, "rooted").is_empty():
+		return "default freeze/root did not restore their labels on refresh"
+	p.apply_freeze(0.2, "asleep")
+	p.apply_root(0.2, "staggered")
+	if not _entry(h, "asleep").is_empty() or not _entry(h, "staggered").is_empty():
+		return "shorter named effects renamed freeze or root"
+	# Control expiry independently of the preceding refresh section.
+	p.frozen_time = 0.0
+	p.rooted_time = 0.0
+	p.apply_freeze(0.4, "asleep")
+	p.apply_root(0.4, "staggered")
+	h._update_buffs()
+	var deadline := Time.get_ticks_msec() + 4000
+	while (p.frozen_time > 0.0 or p.rooted_time > 0.0) and Time.get_ticks_msec() < deadline:
+		await g.get_tree().create_timer(0.05).timeout
+	h._update_buffs()
+	for id in REASONS:
+		if not _entry(h, id).is_empty() or h._buff_peak.has(id):
+			return "expired named impairment retained its chip or drain: " + id
+	p.apply_freeze(0.4)
+	p.apply_root(0.4)
+	if _entry(h, "frozen").is_empty() or _entry(h, "rooted").is_empty():
+		return "a fresh generic effect retained an expired reason"
+	print("ok: HUD sleep/stagger (names, restrictions, art, reduced time, overlap, refresh, expiry, defaults)")
+	return ""
+
+
+## Two private ENet branches exercise shell -> host status RPC -> guest owner.
+## Only the owner's effect clocks are borrowed; suite() restores them even on failure.
+static func _forwarded_reasons(g: Game, p: Player) -> String:
+	var hr := WireRoot.new()
+	var gr := WireRoot.new()
+	hr.name = "ImpairmentHost"
+	gr.name = "ImpairmentGuest"
+	g.add_child(hr)
+	g.add_child(gr)
+	var ha := MultiplayerAPI.create_default_interface()
+	var ga := MultiplayerAPI.create_default_interface()
+	g.get_tree().set_multiplayer(ha, hr.get_path())
+	g.get_tree().set_multiplayer(ga, gr.get_path())
+	var server := ENetMultiplayerPeer.new()
+	var client := ENetMultiplayerPeer.new()
+	var error := ""
+	if server.create_server(0, 2) != OK:
+		error = "impairment ENet bind failed"
+	else:
+		ha.multiplayer_peer = server
+		if client.create_client("127.0.0.1", server.host.get_local_port()) != OK:
+			error = "impairment ENet connect failed"
+		else:
+			ga.multiplayer_peer = client
+	var host := WireSession.new()
+	var guest := WireSession.new()
+	host.name = "Session"
+	guest.name = "Session"
+	hr.add_child(host)
+	gr.add_child(guest)
+	guest.game = g
+	var shell := HostShell.new()
+	var bridge := HostGame.new()
+	bridge.bridge = host
+	shell.game = bridge
+	if error == "":
+		var deadline := Time.get_ticks_msec() + 3000
+		while ha.get_peers().is_empty() and Time.get_ticks_msec() < deadline:
+			await g.get_tree().create_timer(0.02).timeout
+		if ha.get_peers().is_empty():
+			error = "impairment ENet handshake timed out"
+		else:
+			shell.peer_id = ga.get_unique_id()
+			hr.peers.append(shell.peer_id)
+			for named in [true, false]:
+				p.frozen_time = 0.0
+				p.rooted_time = 0.0
+				if named:
+					shell.apply_freeze(2.0, "asleep")
+					shell.apply_root(2.0, "staggered")
+				else:
+					shell.apply_freeze(2.0)
+					shell.apply_root(2.0)
+				deadline = Time.get_ticks_msec() + 3000
+				while (p.frozen_time <= 0.0 or p.rooted_time <= 0.0) and Time.get_ticks_msec() < deadline:
+					await g.get_tree().create_timer(0.02).timeout
+				for id in (["asleep", "staggered"] if named else ["frozen", "rooted"]):
+					var chip_error := _chip_error(g.hud, p, id)
+					if chip_error != "":
+						error = "forwarded status: " + chip_error
+				if error != "": break
+	shell.free()
+	bridge.free()
+	ha.multiplayer_peer = null
+	ga.multiplayer_peer = null
+	client.close()
+	server.close()
+	g.get_tree().set_multiplayer(null, hr.get_path())
+	g.get_tree().set_multiplayer(null, gr.get_path())
+	hr.free()
+	gr.free()
+	if error == "":
+		print("ok: HUD sleep/stagger ENet forwarding (host shell to guest owner, named and default labels)")
+	return error

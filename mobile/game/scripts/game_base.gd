@@ -2144,7 +2144,7 @@ func _convo_reachable(convo_id: String) -> bool:
 func get_flag(flag_name: String, def = false):
 	return flags.get(flag_name, def)
 
-func run_convo_id(id: String, on_done := Callable()) -> void:
+func run_convo_id(id: String, on_done := Callable(), on_abort := Callable()) -> void:
 	var convo: Dictionary = Story.ALL_CONVOS[id]
 	# Illustrated opt-in (2026-08-17 quest-illustration pass): a convo flagged
 	# `"cinematic": true` plays through the storybook layer (Cutscene) exactly
@@ -2163,7 +2163,7 @@ func run_convo_id(id: String, on_done := Callable()) -> void:
 	if net_online():
 		var s: Node = net_session()
 		if s != null:
-			s.begin_convo(id, convo, on_done)
+			s.begin_convo(id, convo, on_done, on_abort)
 			return
 	run_convo(convo, on_done)
 
@@ -2171,7 +2171,8 @@ func run_convo_id(id: String, on_done := Callable()) -> void:
 ## Mount the illustrated storybook beneath the existing CQ dialogue chrome,
 ## run one authored conversation, then dissolve the art before continuing.
 ## Both the class prologue and chapter entries use this single seam.
-func run_cinematic_convo(id: String, on_done := Callable()) -> void:
+## `personal` (chapter openers) reads locally, like chapter_finale's closers.
+func run_cinematic_convo(id: String, on_done := Callable(), personal := false) -> void:
 	if not Story.ALL_CONVOS.has(id):
 		if on_done.is_valid():
 			on_done.call()
@@ -2180,13 +2181,28 @@ func run_cinematic_convo(id: String, on_done := Callable()) -> void:
 	hud.add_child(cutscene)
 	# Above gameplay HUD (bars/quest/abilities), beneath the CQ dialogue box.
 	hud.move_child(cutscene, hud.dialogue_box.get_index())
-	run_convo_id(id, func() -> void:
-		if cutscene:
-			var illustrated_entry := cutscene
-			cutscene = null
+	var illustrated_entry := cutscene
+	var finished := func() -> void:
+		if is_instance_valid(illustrated_entry):
+			if cutscene == illustrated_entry:
+				cutscene = null
 			illustrated_entry.finish(on_done)
 		elif on_done.is_valid():
-			on_done.call())
+			on_done.call()
+	if personal:
+		# A chapter opener is passive and personal: every hero reads their own,
+		# so it never takes an NPC claim. Two heroes of the same class share the
+		# opener id, and a claim would refuse the second one's chapter entry.
+		run_convo(Story.ALL_CONVOS[id], finished)
+		return
+	var abort := func() -> void:
+		# Refusal/cancellation is not quest completion. Free immediately so an
+		# old exit hook cannot restore the HUD over the next chapter's opener.
+		if is_instance_valid(illustrated_entry):
+			if cutscene == illustrated_entry:
+				cutscene = null
+			illustrated_entry.free()
+	run_convo_id(id, finished, abort)
 
 
 ## First-entry chapter opener. The persistent per-character marker means
@@ -2205,7 +2221,7 @@ func run_chapter_opener_if_needed(chapter_key: String,
 			on_done.call()
 		return
 	set_flag(seen_flag)
-	run_cinematic_convo(convo_id, on_done)
+	run_cinematic_convo(convo_id, on_done, true)
 
 
 func run_convo(convo: Dictionary, on_done := Callable(), still_current := Callable()) -> void:

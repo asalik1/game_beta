@@ -2529,7 +2529,7 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 	if counter_t > 0.0 and not silent and is_instance_valid(striker):
 		var pushback := (striker.global_position - global_position).normalized()
 		striker.take_damage(dmg * 0.5, dmg_type, self)
-		striker.apply_root(Balance.MOB_COUNTER_STAGGER)
+		striker.apply_root(Balance.MOB_COUNTER_STAGGER, "staggered")
 		amount *= 0.3  # the blow mostly rang off the guard
 		counter_t = 0.0
 		sprite.modulate = base_mod
