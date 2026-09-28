@@ -240,14 +240,15 @@ static func _cinematic_online(g: Game, h: Hud) -> String:
 	var net: Node = g.get_node("/root/NetworkManager")
 	var saved := {"online": net._session_active, "session": net.session,
 		"players": g.players, "cutscene": g.cutscene, "paused": g.get_tree().paused,
-		"broadcasting": g.beat_broadcasting}
+		"broadcasting": g.beat_broadcasting, "resonance": g.player.resonance}
 	var id := "__overlay_cinematic_fixture"
+	var scene_id := id + "_scene"
 	# A fixture chapter, so its opener id and seen flag touch no real content.
 	var chapter_key := "__overlay_chapter"
 	var opener_id := chapter_key + "_opening_" + String(g.player.cls)
 	var seen_flag := "saw_chapter_opening_" + chapter_key
 	var borrowed := {}
-	for key in [id, opener_id]:
+	for key in [id, opener_id, scene_id]:
 		if Story.ALL_CONVOS.has(key):
 			borrowed[key] = Story.ALL_CONVOS[key]
 	var had_seen := g.flags.has(seen_flag)
@@ -261,7 +262,7 @@ static func _cinematic_online(g: Game, h: Hud) -> String:
 	g.get_tree().paused = false
 	g.cutscene = null
 	var error := ""
-	for mode in ["busy", "gather", "cancel_active", "accepted", "opener", "lone_abort", "lone_accepted"]:
+	for mode in ["busy", "gather", "cancel_active", "accepted", "opener", "scene_busy", "lone_abort", "lone_accepted"]:
 		var convo_id := opener_id if mode == "opener" else id
 		Story.ALL_CONVOS[convo_id] = _fixture_convo()
 		if mode == "gather":
@@ -274,6 +275,15 @@ static func _cinematic_online(g: Game, h: Hud) -> String:
 		# Busy: another hero holds this NPC. Opener: another hero of the same
 		# class is reading the very same opener id.
 		session._convo_claims = {convo_id: 2} if mode in ["busy", "opener"] else {}
+		if mode == "scene_busy":
+			# The old scene route is refused by this other hero's claim. The
+			# personal route must keep the parent's claim until its fade ends.
+			Story.ALL_CONVOS[scene_id] = _fixture_convo()
+			Story.ALL_CONVOS[id] = {"start": "start", "nodes": {"start": {
+				"who": "Narrator", "text": "Read the scene.",
+				"choices": [{"text": "Read", "scene": scene_id}]}}}
+			session._convo_claims = {scene_id: 2}
+			g.player.resonance = 0.0
 		session.barks = 0
 		var completed := [0]
 		if mode == "opener":
@@ -281,17 +291,29 @@ static func _cinematic_online(g: Game, h: Hud) -> String:
 			g.run_chapter_opener_if_needed(chapter_key, func() -> void: completed[0] += 1)
 		else:
 			g.run_convo_id(id, func() -> void: completed[0] += 1)
+		if mode == "scene_busy":
+			var choose := h.choice_cb
+			h.cancel_conversation()
+			if not choose.is_valid():
+				error = "scene parent did not offer its choice"
+			else:
+				choose.call(0)
+			if error == "" and (session._active_convo_id != id or not session._convo_claims.has(id)):
+				error = "scene released or replaced its parent's NPC claim before completion"
 		var art: Cutscene = g.cutscene
 		if mode in ["cancel_active", "lone_abort"]:
 			session.cancel_local_convo()
 			h.cancel_conversation()
-		elif mode in ["accepted", "opener", "lone_accepted"]:
+		elif error == "" and mode in ["accepted", "opener", "scene_busy", "lone_accepted"]:
 			error = _finish_read(g, h, art, completed, mode)
+		if error == "" and mode == "scene_busy" \
+				and (completed[0] != 1 or session._active_convo_id != "" or session._convo_claims != {scene_id: 2}):
+			error = "busy scene lost its parent continuation or failed to release only the parent's claim"
 		if error == "" and session.barks != (1 if mode == "busy" else 0):
 			error = "online cinematic barked the wrong number of times: " + mode
 		if error == "" and (g.cutscene != null or h._cinematic_mode or h.cinematic_finishing() or g.input_overlay_up()):
 			error = "online cinematic stranded its storybook or input gate: " + mode
-		if error == "" and mode not in ["accepted", "opener", "lone_accepted"] and completed[0] != 0:
+		if error == "" and mode not in ["accepted", "opener", "scene_busy", "lone_accepted"] and completed[0] != 0:
 			error = "refused or aborted cinematic ran its quest completion: " + mode
 		if error == "" and g.get_tree().paused:
 			error = "online cinematic paused the shared world: " + mode
@@ -306,7 +328,7 @@ static func _cinematic_online(g: Game, h: Hud) -> String:
 	if error == "":
 		Story.ALL_CONVOS[id] = _fixture_convo()
 		error = _cinematic_guest(g, h, id)
-	for key in [id, opener_id]:
+	for key in [id, opener_id, scene_id]:
 		if borrowed.has(key):
 			Story.ALL_CONVOS[key] = borrowed[key]
 		else:
@@ -320,9 +342,10 @@ static func _cinematic_online(g: Game, h: Hud) -> String:
 	g.players = saved.players
 	g.cutscene = saved.cutscene
 	g.beat_broadcasting = saved.broadcasting
+	g.player.resonance = saved.resonance
 	g.get_tree().paused = saved.paused
 	if error == "":
-		print("ok: online cinematics (busy, gathering, active/lone abort, accepted fade, same-class opener, no completion on refusal)")
+		print("ok: online cinematics (busy, gathering, active/lone abort, accepted fade, same-class opener, busy scene parent continuation, no completion on refusal)")
 	return error
 
 

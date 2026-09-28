@@ -2362,7 +2362,8 @@ func _convo_node(convo: Dictionary, node_id: String, on_done: Callable, still_cu
 				var scene_id := String(c["scene"])
 				var chain := done_after
 				done_after = func() -> void:
-					run_cinematic_convo(scene_id, chain)
+					# The parent already owns the NPC claim; this beat is personal.
+					run_cinematic_convo(scene_id, chain, true)
 			# MP-13 (§5.4): resonance, standings, keepsakes and coins above all
 			# hit `player` = local_player, so a GUEST's choice moves only the
 			# guest — owner-side by construction (§5.4). The one SHARED

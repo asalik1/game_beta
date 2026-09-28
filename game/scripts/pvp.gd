@@ -112,9 +112,10 @@ func _tick_rival_riders(delta: float) -> void:
 		_burn_acc += delta
 		if _burn_acc >= 0.5 and not foe.dead:
 			_burn_acc = 0.0
-			sess.pvp_strike(foe.peer_id, foe.burn_dps * 0.5 * Balance.PVP_DMG_MULT, "magic")
+			sess.pvp_strike(foe.peer_id, foe.burn_dps * 0.5 * Balance.PVP_DMG_MULT, "magic", foe.burn_pen)
 	else:
 		foe.burn_dps = 0.0
+		foe.burn_pen = 0.0
 	if foe.bleed_time > 0.0:
 		foe.bleed_time -= delta
 		_bleed_acc += delta
@@ -137,6 +138,7 @@ func _clear_rival_riders() -> void:
 	foe.vuln_time = 0.0
 	foe.burn_time = 0.0
 	foe.burn_dps = 0.0
+	foe.burn_pen = 0.0
 	foe.bleed_time = 0.0
 	foe.bleed_dps = 0.0
 	foe.bleed_pen = 0.0

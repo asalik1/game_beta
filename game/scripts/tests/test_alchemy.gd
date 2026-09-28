@@ -213,6 +213,13 @@ static func _checks(g: BrewGame) -> String:
 	_stock(g)
 	if Professions.buy_blueprint(p, Items.potion_blueprint_slot("health_instant"), "B").ok:
 		return "a potion recipe bypassed its own transaction through gear blueprint pricing"
+	# A short wallet refuses in the same grouped gold the bench prints beside it.
+	p.gold = 1234
+	var unfunded := Alchemy.prepare(g, "health_instant", "B", "blueprint")
+	if String(unfunded.view().reason) != "Needs 30,000 gold; have 1,234." \
+			or not _unchanged_failure(g, unfunded):
+		return "a short-funded potion blueprint did not refuse with grouped gold"
+	p.gold = 1000000
 	result = Alchemy.commit(Alchemy.prepare(g, "health_instant", "B", "blueprint"))
 	if not bool(result.ok) or int(result.fee) != 30000 or p.gold != 970000 \
 			or not p.has_blueprint("potion/health_instant", "B") or Professions.points(p) != 0:

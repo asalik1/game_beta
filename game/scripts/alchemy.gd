@@ -144,7 +144,7 @@ static func quote(g: Game, fs: String, grade: String, action := "brew") -> Dicti
 		if out.reason == "" and not bool(stock.ok):
 			out.reason = String(stock.reason)
 	if out.reason == "" and p.gold < fee:
-		out.reason = "Needs %d gold; have %d." % [fee, p.gold]
+		out.reason = "Needs %s gold; have %s." % [UIDaily._thousands(fee), UIDaily._thousands(p.gold)]
 	out.allowed = out.reason == ""
 	return out
 

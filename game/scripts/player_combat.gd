@@ -1969,11 +1969,11 @@ func _hit_rival(q: Player, mult: float, effects := {}) -> void:
 	if effects.has("dot"):
 		var dot_dps: float = current_atk() * effects["dot"]
 		if effects.get("toxin", 0):
-			q.apply_toxin(dot_dps, 3.0)
+			q.apply_toxin(dot_dps, 3.0, Color(0.5, 1.2, 0.5), self)
 		else:
-			q.apply_burn(dot_dps, 3.0)
+			q.apply_burn(dot_dps, 3.0, Color(1.4, 0.8, 0.6), self)
 	if effects.has("burn"):
-		q.apply_burn(float(effects["burn"]), 3.0)
+		q.apply_burn(float(effects["burn"]), 3.0, Color(1.4, 0.8, 0.6), self)
 	if effects.has("bleed"):
 		q.apply_bleed(float(effects["bleed"]) / 3.0, 3.0, self)
 	if effects.has("slow"):
