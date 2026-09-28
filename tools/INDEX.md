@@ -856,6 +856,7 @@ chill, chain timing, pause, touch interaction and two-peer ENet state/request fl
 | tool | what it does |
 |---|---|
 | `tools/safe_commit.py` | path-scoped commit guard: declare YOUR paths, it stages/commits only those and lists sibling-staged work instead of swallowing it. `--all-staged --confirm` for a deliberate full-index commit. Refuses attribution trailers. (No commits unless the user asks — CLAUDE.md.) |
+| `tools/orchestration/` | (2026-09-28) the multi-agent kit one orchestrator used to land ~20 reviewed tasks in a day: sparse lane worktrees with hardlinked assets (`lane.sh`, `farm.py`), the machine-wide one-heavy-Godot-run lock with FIFO per-lane fairness and pass-marker verdicts (`glock.py --suite quick|full|preflight`), Codex/DeepSeek agent drivers (`cx_agent.py`, `ds_agent.py`), Claude review+fix Workflow scripts (`review_fix.js`, `review_lite.js`, `fix_verify.js`), squash integration (`integrate.sh`) and the mobile gate. Paths are hard-coded to this worktree; read `tools/orchestration/README.md` (incl. the junction-deleted-assets incident) before reusing. |
 
 ## Mobile
 
