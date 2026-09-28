@@ -1954,6 +1954,9 @@ func _run_systems() -> void:
 	var recovery_error: String = preload("res://scripts/tests/test_loot_recovery.gd").run(self)
 	if recovery_error != "":
 		return _fail("earned spoils: " + recovery_error)
+	var standup_error: String = await preload("res://scripts/tests/test_loot_standup.gd").run(self)
+	if standup_error != "":
+		return _fail("stand-up loot: " + standup_error)
 	var travel_error: String = preload("res://scripts/tests/test_loot_travel.gd").run(self)
 	if travel_error != "":
 		return _fail("loot travel: " + travel_error)

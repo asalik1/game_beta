@@ -23,6 +23,7 @@ var goldrush := false  # charged coin: surges greed on touch instead of paying
 var retry_cd := 0.0   # full-bag claim retry throttle
 var pickup_delay := 0.0  # discard-throw: ignore all claims until this elapses
 var claimed := false   # queue_free is deferred; each reward can pay only once
+var _retry_contact := false  # a fallen local hero already overlaps this coin
 
 
 # Coin presentation (P7.B, 2026-08-19; owner: "the coins don't look polished
@@ -277,6 +278,16 @@ func _physics_process(delta: float) -> void:
 	pickup_delay = maxf(0.0, pickup_delay - delta)
 	var d := global_position.distance_to(p.global_position)
 	if loot.is_empty():
+		# Standing up preserves collision layer 2, so there is no new ENTER.
+		# Only rejected contacts need an overlap query; distant coins do not.
+		# The overlap list lags a respawn teleport by a physics step, so the
+		# hero must also really be in reach.
+		if _retry_contact:
+			_retry_contact = overlaps_body(p)
+			if _retry_contact and d < Balance.COIN_RECHECK_REACH:
+				_on_body_entered(p)
+				if claimed:
+					return
 		# Coin: magnet toward the player.
 		if d < 110.0:
 			magnet = true
@@ -298,7 +309,10 @@ func _on_body_entered(body: Node) -> void:
 	# game.local_player, so this line never fires.
 	if body != game.local_player:
 		return
-	if claimed or body.dead or body.downed or body.ghost:
+	if claimed:
+		return
+	if body.dead or body.downed or body.ghost:
+		_retry_contact = loot.is_empty()
 		return
 	if goldrush:
 		claimed = true
