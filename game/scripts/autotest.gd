@@ -1005,6 +1005,9 @@ func _run_systems() -> void:
 	var alchemy_error: String = preload("res://scripts/tests/test_alchemy.gd").run(self)
 	if alchemy_error != "":
 		return _fail(alchemy_error)
+	var potion_save_error: String = preload("res://scripts/tests/test_potion_save.gd").run(self)
+	if potion_save_error != "":
+		return _fail(potion_save_error)
 	var ward_desk_error: String = await preload("res://scripts/tests/test_ward_desks.gd").run(self)
 	if ward_desk_error != "":
 		return _fail(ward_desk_error)
