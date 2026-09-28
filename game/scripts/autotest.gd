@@ -1063,6 +1063,12 @@ func _run_systems() -> void:
 	# kill-count lore + titles, risk-event curse, loot fanfare bank.
 	await _test_retention()
 
+	# 3d16b. Enemy statuses: expired DoT potency/stacks reset, lethal DoT
+	# ticks cancel that frame's bite/shot, bleed shatters a ward.
+	_test_enemy_statuses()
+	if _failed:
+		return
+
 	# 3d17. Mob presence + identity traits (HP/dmg mults, self-heal,
 	# healer pulse, lunge, frenzy damage).
 	await _test_mob_traits()
@@ -4449,6 +4455,164 @@ func _test_retention() -> void:
 	g.player_title = keep_title
 	g.achievements = keep_ach
 	print("ok: retention pass (grades + PBs, weekly fx, lore titles, curse, fanfare)")
+
+
+## A deterministic player receiver: exercise real enemy ticks/AI/death without
+## player evasion, hurt immunity, level-ups or prior kit state masking a bite.
+class StatusTarget extends Player:
+	var xp_awards: Array[int] = []
+
+	func _ready() -> void:
+		pass
+
+	func take_damage(amount: float, _kind := "phys", _attacker: Node = null,
+			_heavy := false, _pen := 0.0, _dex := 0.0) -> void:
+		hp -= amount
+
+	func gain_xp(amount: int) -> void:
+		xp_awards.append(amount)
+
+
+## All probes run synchronously with explicit physics steps. Restore in the
+## caller even on assertion failure; no campaign actor or accumulated kit state
+## is a precondition. Deferred death callbacks use the encounter-owned loot gate.
+func _test_enemy_statuses() -> void:
+	var keep_player := game.player
+	var keep_players: Array[Player] = game.players.duplicate()
+	var keep_party: Dictionary = game.party_stats.duplicate(true)
+	var keep_fight: Dictionary = game.fight_stats.duplicate(true)
+	var receiver := StatusTarget.new()
+	receiver.game = game
+	receiver.crit = 0.0
+	receiver.hp = 10000.0
+	receiver.position = keep_player.global_position
+	receiver.process_mode = Node.PROCESS_MODE_DISABLED
+	game.add_child(receiver)
+	game.player = receiver
+	var probes: Array[Enemy] = []
+	var projectiles: Array = get_tree().get_nodes_in_group("projectiles")
+	var errors: Array[String] = []
+	_enemy_status_checks(receiver, probes, errors)
+	game.player = keep_player
+	game.players = keep_players
+	game.party_stats = keep_party
+	game.fight_stats = keep_fight
+	for e in probes:
+		e.queue_free()
+	for pr in get_tree().get_nodes_in_group("projectiles"):
+		if not projectiles.has(pr):
+			pr.queue_free()
+	receiver.queue_free()
+	if not errors.is_empty():
+		return _fail("enemy statuses: " + "; ".join(errors))
+	print("ok: enemy statuses (fresh/refresh burn+bleed, toxin restart, lethal bite+shot exits, single XP award, bleed shatters ward)")
+
+
+func _status_probe(probes: Array[Enemy], kind := "wolf") -> Enemy:
+	var e := Enemy.make(game, kind, game.player.global_position + Vector2(24, 0), -1, 1.0)
+	game.add_enemy(e)
+	e.set_physics_process(false)
+	e.traits = {}  # isolate status/attack ordering from random trait clocks
+	e.set_meta("ward_spawn", true)  # no campaign loot/counters from test deaths
+	e.hp = 10000.0
+	e.target = game.player
+	e.retarget_t = 10.0
+	e.force_aggro = true
+	e.xp_value = 7
+	probes.append(e)
+	return e
+
+
+func _enemy_status_checks(receiver: StatusTarget, probes: Array[Enemy], errors: Array[String]) -> void:
+	for effect in ["burn", "bleed"]:
+		var e := _status_probe(probes)
+		e.stun_time = 10.0  # no attacks while advancing expiry
+		if effect == "burn":
+			e.apply_burn(200.0, 0.1, Color.WHITE, receiver)
+		else:
+			e.apply_bleed(200.0, 0.1, receiver)
+		e.call("apply_" + effect, 10.0, 0.1)
+		if not is_equal_approx(float(e.get(effect + "_dps")), 200.0):
+			errors.append(effect + " active refresh lost strong potency")
+		if e.get(effect + "_src") != receiver:
+			errors.append(effect + " active refresh lost source")
+		e._physics_process(0.1)  # exactly the expiry boundary, no extra idle frame
+		if float(e.get(effect + "_dps")) != 0.0 or e.get(effect + "_src") != null:
+			errors.append(effect + " expiry retained potency/source")
+		e.call("apply_" + effect, 10.0, 1.0)
+		if not is_equal_approx(float(e.get(effect + "_dps")), 10.0) or e.get(effect + "_src") != null:
+			errors.append(effect + " fresh application inherited old potency/source")
+		# Also defend the apply path when time has expired outside the host tick
+		# (e.g. mirror bookkeeping), leaving stale fields until reapplication.
+		e.set(effect + "_time", 0.0)
+		e.set(effect + "_dps", 200.0)
+		e.set(effect + "_src", receiver)
+		e.call("apply_" + effect, 10.0, 1.0)
+		if not is_equal_approx(float(e.get(effect + "_dps")), 10.0) or e.get(effect + "_src") != null:
+			errors.append(effect + " application trusted expired fields")
+
+	var toxin_probe := _status_probe(probes)
+	toxin_probe.stun_time = 10.0
+	for i in Balance.TOXIN_MAX_STACKS:
+		toxin_probe.apply_toxin(200.0, 0.1, Color.GREEN, receiver)
+	if toxin_probe.toxin != Balance.TOXIN_MAX_STACKS:
+		errors.append("active toxin failed to stack")
+	toxin_probe._physics_process(0.1)
+	if toxin_probe.toxin != 0:
+		errors.append("toxin retained stacks at expiry")
+	toxin_probe.apply_toxin(10.0, 1.0)
+	if toxin_probe.toxin != 1 or not is_equal_approx(toxin_probe.burn_dps, 10.0 * (1.0 + Balance.TOXIN_PER_STACK)):
+		errors.append("expired toxin failed to rebuild from one weak stack")
+	toxin_probe.burn_time = 0.0
+	toxin_probe.apply_toxin(10.0, 1.0)
+	if toxin_probe.toxin != 1:
+		errors.append("toxin application trusted expired stack count")
+
+	# Both statuses must cancel both attack paths; living controls prove the
+	# bite deadline / firing lane actually work in this fixture.
+	for ranged_attack in [false, true]:
+		for effect in ["control", "burn", "bleed"]:
+			var e := _status_probe(probes, "cultist" if ranged_attack else "wolf")
+			e.ranged = ranged_attack
+			e.windup = 0.0 if ranged_attack else 0.01
+			e.attack_cd = 0.0
+			e.hp = 1.0
+			if effect == "burn":
+				e.apply_burn(200.0, 1.0)
+				# A second due status must never run after the first kills.
+				e.apply_bleed(200.0, 1.0)
+			elif effect == "bleed":
+				e.apply_bleed(200.0, 1.0)
+			var hp_before := receiver.hp
+			var shots_before: int = get_tree().get_nodes_in_group("projectiles").size()
+			var awards_before := receiver.xp_awards.size()
+			e._physics_process(0.02)
+			var shots_after: int = get_tree().get_nodes_in_group("projectiles").size()
+			var label: String = effect + (" ranged" if ranged_attack else " bite")
+			if effect == "control":
+				if (ranged_attack and shots_after <= shots_before) or (not ranged_attack and receiver.hp >= hp_before):
+					errors.append(label + " positive control did not attack")
+				continue
+			if not e.dying or receiver.hp != hp_before or shots_after != shots_before:
+				errors.append(label + " lethal tick did not stop attack")
+			e._physics_process(0.02)
+			e.take_damage(200.0, Vector2.ZERO, false, true)
+			if receiver.xp_awards.size() != awards_before + 1 or receiver.xp_awards.back() != e.xp_value:
+				errors.append(label + " death must award XP exactly once")
+
+	# Warded control and bleeding enemy both receive the same noncritical,
+	# sub-threshold chip. The SHATTERING hit itself must deal full damage.
+	for bleeding in [false, true]:
+		var ward := _status_probe(probes, "sun_bleached")
+		ward.traits = {"warded": true}
+		ward.hp = ward.max_hp
+		var chip := ward.max_hp * Balance.MOB_WARD_BREAK_HIT * 0.5
+		if bleeding:
+			ward.apply_bleed(10.0, 1.0)
+		ward.take_damage(chip, Vector2.ZERO, false, true)
+		var expected := chip if bleeding else chip * (1.0 - Balance.MOB_WARD_DR)
+		if ward.ward_broken != bleeding or absf(ward.max_hp - ward.hp - expected) > 0.001:
+			errors.append("bleed ward shatter/full hit" if bleeding else "unafflicted ward control")
 
 
 func _test_mob_traits() -> void:

@@ -233,7 +233,7 @@ const TRAIT_DESC := {
 	"pounce":  "Pounces — a telegraphed leap that OVERSHOOTS. Sidestep the crouch and it sails past, exposed.",
 	"web":     "Webs — its shot ROOTS you for a beat. Watch for a pounce to follow.",
 	"channel_heal": "Mends the faithful — heals allies only while CHANNELING (green beam, stands still). Interrupt it: hit it, or break line of sight.",
-	"warded":  "Guarded — nibbling barely dents it; a REAL blow shatters the guard for good. A crit, a heavy hit, or any status (burn, stun, slow, expose) all crack it.",
+	"warded":  "Guarded: nibbling barely dents it, but a real blow shatters the guard for good. A crit, a heavy hit, or any status (burn, poison, bleed, stun, slow, expose) cracks it.",
 	"bloat":   "Bloated — BURSTS into a lingering blight pool when slain. Kill it at range, or move.",
 	"martyr":  "Martyr — its death-wail HEALS and enrages nearby allies. Kill it LAST, or alone.",
 	"reflect": "Wardsmith — raises a shield that REFLECTS your damage back (telegraphed pulse). Pause your fire until it drops.",
@@ -907,15 +907,16 @@ func _physics_process(delta: float) -> void:
 				tick *= src.crit_dmg
 			stat_src = src  # battle-stats credit only — never aggro
 			take_damage(tick, Vector2.ZERO, false, true)
-			if not dying:
-				# Eldritch Warlock reacts to the authoritative DoT beat. This is
-				# presentation-only: the damage, cadence and curse lifetime above stay
-				# shared with every Warlock skin.
-				if src != null and src.skin == "eldritch_warlock" and src.hexed.has(self):
-					src._eldritch_curse_tick(self)
-				sprite.modulate = burn_color
-	else:
-		toxin = 0  # the stack dies with the burn
+			if dying:
+				return  # die() already ran; no second status, bite or AI this frame
+			# Eldritch Warlock reacts to the authoritative DoT beat. This is
+			# presentation-only: the damage, cadence and curse lifetime above stay
+			# shared with every Warlock skin.
+			if src != null and src.skin == "eldritch_warlock" and src.hexed.has(self):
+				src._eldritch_curse_tick(self)
+			sprite.modulate = burn_color
+	if burn_time <= 0.0:
+		_clear_burn_potency()
 
 	if bleed_time > 0.0:
 		# Wind Cuts bleed — a red physical DoT, independent of burn so it
@@ -930,8 +931,12 @@ func _physics_process(delta: float) -> void:
 				btick *= bsrc.crit_dmg
 			stat_src = bsrc  # battle-stats credit only — never aggro
 			take_damage(btick, Vector2.ZERO, false, true)
-			if not dying:
-				sprite.modulate = Color(1.5, 0.35, 0.4)  # crimson wound flash
+			if dying:
+				return  # death triggers/rewards are complete; cancel the pending attack
+			sprite.modulate = Color(1.5, 0.35, 0.4)  # crimson wound flash
+	if bleed_time <= 0.0:
+		bleed_dps = 0.0
+		bleed_src = null
 
 	if stun_time > 0.0:
 		windup = 0.0
@@ -2366,6 +2371,8 @@ func _mirror_status(kind: String, data: Dictionary) -> void:
 ## at tick time (solo: identical, there is only one player).
 func apply_burn(dps: float, dur: float, color := Color(1.4, 0.8, 0.6), src: Player = null) -> void:
 	_mirror_status("burn", {"dps": dps, "dur": dur, "color": color})
+	if burn_time <= 0.0:
+		_clear_burn_potency()
 	burn_dps = maxf(burn_dps, dps)
 	burn_time = maxf(burn_time, dur)
 	burn_color = color
@@ -2373,10 +2380,21 @@ func apply_burn(dps: float, dur: float, color := Color(1.4, 0.8, 0.6), src: Play
 		burn_src = src
 
 
+## Expired effects must not lend their damage, source or stacks to a fresh
+## application. Tick cadence is independent and retains its existing behavior.
+func _clear_burn_potency() -> void:
+	burn_dps = 0.0
+	burn_src = null
+	toxin = 0
+
+
 ## Wind Cuts (mage) bleed — a red physical DoT that REFRESHES, never stacks
 ## (keeps the stronger dps and the longer window, exactly like burn).
 func apply_bleed(dps: float, dur: float, src: Player = null) -> void:
 	_mirror_status("bleed", {"dps": dps, "dur": dur})
+	if bleed_time <= 0.0:
+		bleed_dps = 0.0
+		bleed_src = null
 	bleed_dps = maxf(bleed_dps, dps)
 	bleed_time = maxf(bleed_time, dur)
 	if src != null:
@@ -2388,9 +2406,10 @@ func apply_bleed(dps: float, dur: float, src: Player = null) -> void:
 ## Fast cadences ramp fast; the stack dies when the burn runs out.
 func apply_toxin(dps: float, dur: float, color := Color(0.5, 1.2, 0.5), src: Player = null) -> void:
 	_mirror_status("toxin", {"dps": dps, "dur": dur, "color": color})
-	toxin = mini(toxin + 1, Balance.TOXIN_MAX_STACKS)
+	var stacks := mini((toxin if burn_time > 0.0 else 0) + 1, Balance.TOXIN_MAX_STACKS)
 	_status_mute = true  # one "toxin" event carries the burn too (host restacks)
-	apply_burn(dps * (1.0 + toxin * Balance.TOXIN_PER_STACK), dur, color, src)
+	apply_burn(dps * (1.0 + stacks * Balance.TOXIN_PER_STACK), dur, color, src)
+	toxin = stacks  # apply_burn clears expired stacks before starting a fresh burn
 	_status_mute = false
 
 
@@ -2484,7 +2503,7 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 	# (control builds keep their shortcut). No build is walled: everyone
 	# lands one of those. The shattering blow itself connects at full.
 	if traits.has("warded") and not ward_broken:
-		var afflicted := burn_time > 0.0 or stun_time > 0.0 or slow_time > 0.0 or vuln_time > 0.0
+		var afflicted := burn_time > 0.0 or bleed_time > 0.0 or stun_time > 0.0 or slow_time > 0.0 or vuln_time > 0.0
 		if is_crit or afflicted or amount >= max_hp * Balance.MOB_WARD_BREAK_HIT:
 			ward_broken = true
 			if not silent:
