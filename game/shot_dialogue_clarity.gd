@@ -258,7 +258,7 @@ func _hidden_choice_probe(mechanism: String) -> bool:
 	else:
 		var opt: Label = h.choice_option_labels[0]
 		var point := opt.get_global_rect().get_center()
-		var log_frame: ColorRect = h.log_panel.get_child(1) as ColorRect
+		var log_frame := h.log_panel.get_child(1) as Control
 		if not _check(current_scope + "/pointer_negative_geometry", log_frame != null and log_frame.get_global_rect().has_point(point)):
 			return false
 		await _tap(point)

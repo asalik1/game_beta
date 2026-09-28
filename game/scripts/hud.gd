@@ -956,8 +956,8 @@ void fragment() {
 			get_viewport().set_input_as_handled())
 	log_panel.add_child(lback)
 	lback.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var lframe := ColorRect.new()
-	lframe.color = Color(0.9, 0.8, 0.5)
+	var lframe := Panel.new()
+	lframe.add_theme_stylebox_override("panel", _dialogue_border_style())
 	lframe.position = Vector2(238, 96)
 	lframe.size = Vector2(804, 470)
 	lframe.mouse_filter = Control.MOUSE_FILTER_STOP  # eat clicks so the box doesn't advance
@@ -987,6 +987,9 @@ void fragment() {
 	log_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	log_list.add_theme_constant_override("separation", 10)
 	lscroll.add_child(log_list)
+	var log_controls: Array[Control] = [lframe, linner, ltitle, lclose, lscroll]
+	get_viewport().size_changed.connect(_fit_log_width.bind(log_controls))
+	_fit_log_width(log_controls)
 
 	# ------------------------------------------- choice options panel ---
 	# Sits directly above the dialogue box when a conversation offers a
@@ -5064,7 +5067,17 @@ func _fit_dialogue_width() -> void:
 	_layout_dialogue_reader()
 
 
-## The gold outline of the dialogue and choice panels. HDR2D blends in linear
+## Center the backlog as one authored block, leaving its full-screen shade
+## in place. Use the current frame center so repeated resizes never drift.
+func _fit_log_width(controls: Array[Control]) -> void:
+	var frame := controls[0]
+	var shift := get_viewport().get_visible_rect().get_center().x \
+		- (frame.position.x + frame.size.x * 0.5)
+	for control: Control in controls:
+		control.position.x += shift
+
+
+## The gold outline of the dialogue, choice and backlog panels. HDR2D blends in linear
 ## light: a filled gold rect shows through a translucent inner panel as olive,
 ## so only the original square outline is drawn.
 func _dialogue_border_style() -> StyleBoxFlat:
