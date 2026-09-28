@@ -1190,11 +1190,13 @@ const BUFF_ICONS := {
 	"damp": "buff_damp",
 	# Impairments borrow 64px talent art no other chip uses (mage Permafrost's
 	# ice block, archer Second Breath's vine swirl, mage Windborne's gale,
-	# assassin Phantom's dreaming face, archer Piercer's shattered strike), so
+	# assassin Phantom's dreaming face, archer Piercer's shattered strike,
+	# warrior Sunderer's crushing impact), so
 	# they can never pass for Ward, Guard or Damp, nor for an ability button
 	# on the bar just below. The test enforces it.
 	"frozen": "talent_m31", "rooted": "talent_a11", "chilled": "talent_m32",
 	"asleep": "talent_s31", "staggered": "talent_a22",
+	"stunned": "talent_w32",
 }
 
 ## A pooled row of active-effect chips sitting just above the ability
@@ -1414,7 +1416,10 @@ func _active_buffs() -> Array:
 	# why we can't move, while a flickering chill never shoves the
 	# persistent chips around.
 	if p.frozen_time > 0.0:
-		if p.freeze_reason == "asleep":
+		if p.freeze_reason == "stunned":
+			out.append({"id": "stunned", "glyph": "ab_fist", "color": Color(0.6, 0.85, 1.0), "t": p.frozen_time,
+				"tip": "Stunned: you can't move or cast until you recover."})
+		elif p.freeze_reason == "asleep":
 			out.append({"id": "asleep", "glyph": "ab_snow", "color": Color(0.6, 0.85, 1.0), "t": p.frozen_time,
 				"tip": "Asleep: you can't move or cast until you wake up."})
 		else:

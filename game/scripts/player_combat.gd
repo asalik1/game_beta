@@ -1978,12 +1978,15 @@ func _hit_rival(q: Player, mult: float, effects := {}) -> void:
 		q.apply_bleed(float(effects["bleed"]) / 3.0, 3.0, self)
 	if effects.has("slow"):
 		q.apply_slow(1.0 - effects["slow"] if effects["slow"] < 1.0 else 0.5, effects.get("slow_dur", 2.0))
+	# An Ice package's stun riders are freezes and must read Frozen on the
+	# rival's HUD (Frostwalk, Glacial comet, the ice procs); others read Stunned.
+	var cc_reason: String = String(effects.get("cc_reason", "stunned"))
 	if effects.has("stun"):
-		q.apply_stun(effects["stun"])
+		q.apply_stun(effects["stun"], cc_reason)
 	if effects.has("stagger"):
 		q.apply_stun(effects["stagger"])
 	if effects.has("stun_chance") and randf() < effects["stun_chance"]:
-		q.apply_stun(0.5)
+		q.apply_stun(0.5, cc_reason)
 	if effects.has("vuln") and randf() < effects["vuln"]:
 		q.apply_vuln(3.0, float(effects.get("vuln_amp", -1.0)))
 		game.spawn_text(q.global_position + Vector2(0, -44), "EXPOSED", Color(1, 0.5, 0.3))

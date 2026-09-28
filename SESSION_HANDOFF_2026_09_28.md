@@ -107,9 +107,10 @@ Limits:
 ## Remaining follow-ups (found by reviewers, not done)
 - **Ally markers:** arrows and name tags use different eligibility points (feet vs head); this is a
   policy call. An ally straight above slides far along the edge, with no hysteresis.
-- **Impairment labels:** PvP stuns still show as Frozen. Sleep and stagger now have their own labels.
-  The new "STAGGERED!" callout keeps the all-caps callout family; moving that family to sentence case
-  would be a separate copy pass.
+- **Impairment labels:** done on Sept 29 (T27): PvP stuns now show Stunned, and an Ice mage's freezes
+  still show Frozen in duels. Sleep and stagger have their own labels too. The "STAGGERED!" and
+  "STUNNED!" callouts keep the all-caps callout family; moving that family to sentence case would be a
+  separate copy pass.
 - **Layout:** on a 4:3 expand view the dialogue box keeps its authored y. On tall phone canvases the
   co-op chat still overlaps the top of the event feed.
 - **Cancel paths:** a personal cinematic relies on ChapterFinale.cancel to free its storybook. Any new cancel

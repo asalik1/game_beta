@@ -660,11 +660,13 @@ func apply_slow(mult: float, dur: float) -> void:
 	game.net_session().pvp_status(peer_id, "chill", mult, dur)
 
 
-func apply_stun(dur: float) -> void:
+## `reason` only names the hard CC on the rival's HUD: a stun reads Stunned,
+## an Ice freeze passes "frozen" (the fx cc_reason). The mechanics are one.
+func apply_stun(dur: float, reason := "stunned") -> void:
 	if not _rival_shell():
 		return
 	stun_time = maxf(stun_time, dur)
-	game.net_session().pvp_status(peer_id, "freeze", dur, 0.0)
+	game.net_session().pvp_status(peer_id, "freeze", dur, 0.0, reason)
 
 
 func apply_vuln(dur: float, mult := -1.0) -> void:

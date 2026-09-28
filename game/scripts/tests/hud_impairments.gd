@@ -2,7 +2,7 @@ extends RefCounted
 ## Quick systems tier: real applications and physics clocks, then the actual
 ## pooled HUD controls. All borrowed state is restored on failure as well.
 const EFFECTS := {"frozen": "frozen_time", "rooted": "rooted_time", "chilled": "chill_time"}
-const REASONS := {"asleep": "frozen_time", "staggered": "rooted_time"}
+const REASONS := {"asleep": "frozen_time", "staggered": "rooted_time", "stunned": "frozen_time"}
 const BUFFS := ["berserk_time", "aegis_time", "dr_time", "pact_time",
 	"theme_guard_time", "theme_speed_time", "elixir_time", "goldrush_time", "dodge_time"]
 ## Chips that hold their slot at the head of the row (Hud._active_buffs).
@@ -52,6 +52,8 @@ static func suite(g: Game) -> String:
 	var error: String = await _checks(g, p)
 	if error == "":
 		error = await _reason_checks(g, p)
+	if error == "":
+		error = await _stun_checks(g, p)
 	if error == "":
 		error = await _forwarded_reasons(g, p)
 	for field in fields:
@@ -175,7 +177,7 @@ static func _reason_checks(g: Game, p: Player) -> String:
 	p.rooted_time = 0.0
 	p.apply_freeze(1.6, "asleep")
 	p.apply_root(2.0, "staggered")
-	for id in REASONS:
+	for id in ["asleep", "staggered"]:
 		var error := _chip_error(h, p, id)
 		if error != "": return error
 		for other in Hud.BUFF_ICONS:
@@ -223,6 +225,87 @@ static func _reason_checks(g: Game, p: Player) -> String:
 	return ""
 
 
+static func _stun_checks(g: Game, p: Player) -> String:
+	var h: Hud = g.hud
+	p.frozen_time = 0.0
+	p.rooted_time = 0.0
+	# Exercise the real PvP delivery branch, without borrowing a live duel.
+	var session := WireSession.new()
+	session.game = g
+	var children_before := g.get_child_count()
+	session._pvp_apply_status(1, "freeze", 1.6, 0.0)
+	session.free()
+	var error := _chip_error(h, p, "stunned")
+	if error != "": return error
+	if not _entry(h, "frozen").is_empty() or not String(_entry(h, "stunned").tip).begins_with("Stunned:") \
+			or "can't move or cast" not in String(_entry(h, "stunned").tip):
+		return "PvP stun still has a Frozen chip or incorrect restrictions"
+	if not is_equal_approx(p.frozen_time, 0.8):
+		return "stun label changed the reduced hard-CC duration"
+	var callout := false
+	for i in range(children_before, g.get_child_count()):
+		var child := g.get_child(i)
+		if child is Label and child.text == "STUNNED!":
+			callout = true
+	if not callout:
+		return "stun is missing the STUNNED! callout"
+	for other in Hud.BUFF_ICONS:
+		if other != "stunned" and Hud.BUFF_ICONS[other] == Hud.BUFF_ICONS.stunned:
+			return "stun shares another chip's icon"
+	await g.get_tree().create_timer(0.25).timeout
+	error = _chip_error(h, p, "stunned")
+	if error != "": return error
+	if p.frozen_time >= 0.8:
+		return "stun countdown did not advance"
+	p.apply_freeze(0.2)
+	if _entry(h, "stunned").is_empty():
+		return "shorter freeze renamed a longer stun"
+	p.apply_freeze(2.0)
+	p.apply_freeze(0.2, "stunned")
+	if _entry(h, "frozen").is_empty() or not _entry(h, "stunned").is_empty():
+		return "stun label overwrote a longer genuine freeze"
+	p.apply_freeze(2.4, "stunned")
+	if not is_equal_approx(float(_entry(h, "stunned").get("t", 0.0)), 1.2):
+		return "longer stun failed to refresh its label and timer"
+	# Expiry has its own precondition, independent of refresh above.
+	p.frozen_time = 0.0
+	p.apply_freeze(0.4, "stunned")
+	h._update_buffs()
+	var deadline := Time.get_ticks_msec() + 4000
+	while p.frozen_time > 0.0 and Time.get_ticks_msec() < deadline:
+		await g.get_tree().create_timer(0.05).timeout
+	h._update_buffs()
+	if not _entry(h, "stunned").is_empty() or h._buff_peak.has("stunned"):
+		return "expired stun retained its chip or drain"
+	p.apply_freeze(0.4)
+	if _entry(h, "frozen").is_empty():
+		return "fresh genuine freeze retained the expired stun label"
+	# The rider names its hard CC: an Ice freeze stays Frozen in a duel, and a
+	# peer-supplied label outside that pair falls back to Stunned.
+	for row in [["frozen", "frozen", "FROZEN!"], ["asleep", "stunned", "STUNNED!"], ["", "stunned", "STUNNED!"]]:
+		p.frozen_time = 0.0
+		session = WireSession.new()
+		session.game = g
+		children_before = g.get_child_count()
+		session._pvp_apply_status(1, "freeze", 1.6, 0.0, row[0])
+		session.free()
+		error = _chip_error(h, p, row[1])
+		if error != "": return "PvP label '%s': %s" % [row[0], error]
+		var wrong: String = "stunned" if row[1] == "frozen" else "frozen"
+		if not _entry(h, wrong).is_empty() or not _entry(h, "asleep").is_empty() \
+				or not is_equal_approx(p.frozen_time, 0.8):
+			return "PvP label '%s' showed the wrong chip or changed the duration" % row[0]
+		callout = false
+		for i in range(children_before, g.get_child_count()):
+			var child := g.get_child(i)
+			if child is Label and child.text == row[2]:
+				callout = true
+		if not callout:
+			return "PvP label '%s' is missing the %s callout" % [row[0], row[2]]
+	print("ok: HUD stun (Stunned chip, STUNNED! callout, reduced countdown, overlap, refresh, expiry, genuine freeze control, duel Frozen label, label whitelist)")
+	return ""
+
+
 ## Two private ENet branches exercise shell -> host status RPC -> guest owner.
 ## Only the owner's effect clocks are borrowed; suite() restores them even on failure.
 static func _forwarded_reasons(g: Game, p: Player) -> String:
@@ -257,6 +340,11 @@ static func _forwarded_reasons(g: Game, p: Player) -> String:
 	var shell := HostShell.new()
 	var bridge := HostGame.new()
 	bridge.bridge = host
+	bridge.local_player = p
+	bridge.pvp_active = true
+	bridge.pvp = PvpDuel.new()
+	bridge.pvp.state = "fight"
+	host.game = bridge
 	shell.game = bridge
 	if error == "":
 		var deadline := Time.get_ticks_msec() + 3000
@@ -284,7 +372,34 @@ static func _forwarded_reasons(g: Game, p: Player) -> String:
 					if chip_error != "":
 						error = "forwarded status: " + chip_error
 				if error != "": break
+			if error == "":
+				# Both duel directions: host attacker -> guest owner, then
+				# guest attacker -> host validation -> host owner. apply_stun
+				# is the production rider entry, retaining the same wire kind;
+				# an Ice freeze rides it with its own label and stays Frozen.
+				guest.game = bridge
+				for target_pid in [ga.get_unique_id(), 1]:
+					for frozen in [false, true]:
+						p.frozen_time = 0.0
+						shell.peer_id = target_pid
+						bridge.bridge = host if target_pid != 1 else guest
+						if frozen:
+							shell.apply_stun(2.0, "frozen")
+						else:
+							shell.apply_stun(2.0)   # the default every real stun sends
+						deadline = Time.get_ticks_msec() + 3000
+						while p.frozen_time <= 0.0 and Time.get_ticks_msec() < deadline:
+							await g.get_tree().create_timer(0.02).timeout
+						var label: String = "frozen" if frozen else "stunned"
+						error = _chip_error(g.hud, p, label)
+						if error != "": break
+						var other: String = "stunned" if frozen else "frozen"
+						if not _entry(g.hud, other).is_empty() or p.frozen_time > 1.0:
+							error = "forwarded PvP %s shows %s or has an unreduced duration" % [label, other]
+							break
+					if error != "": break
 	shell.free()
+	bridge.pvp.free()
 	bridge.free()
 	ha.multiplayer_peer = null
 	ga.multiplayer_peer = null
@@ -295,5 +410,5 @@ static func _forwarded_reasons(g: Game, p: Player) -> String:
 	hr.free()
 	gr.free()
 	if error == "":
-		print("ok: HUD sleep/stagger ENet forwarding (host shell to guest owner, named and default labels)")
+		print("ok: HUD impairment ENet forwarding (sleep/stagger/defaults, PvP stun and Ice freeze labels to guest and host owners)")
 	return error
