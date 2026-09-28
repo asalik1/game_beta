@@ -2291,6 +2291,10 @@ func _run_systems() -> void:
 	# 5d. The touch HUD's overlay gate (mobile x co-op — the suite is the ONLY
 	# thing that ever mounts a TouchHud headless; see the section's header).
 	await _test_touch_overlay_gate()
+	var touch_actions_error: String = await preload("res://scripts/tests/touch_actions.gd").suite(game)
+	if touch_actions_error != "":
+		return _fail(touch_actions_error)
+	print("ok: touch Act holds, tap/re-press, cancellation, and layout editor pause/settings/roster round-trip, ESC exit, menu-over exit")
 	# 5e. The keyboard twin: stale polled intents must die under any overlay
 	# (desktop x co-op — same forced-unpause simulation; see its header).
 	await _test_overlay_intent_gate()

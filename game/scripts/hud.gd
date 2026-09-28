@@ -5424,6 +5424,13 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## ESC opens the system menu (menus.gd owns closing it again).
 func _on_escape() -> void:
+	# The touch button editor is its own screen (also at boot): back leaves it
+	# the way Done does, returning to Settings, instead of pausing over it.
+	var touch: TouchHud = game._touch_hud as TouchHud
+	if touch != null and touch._edit_mode and not game.menus.is_open():
+		touch.exit_edit_mode()
+		get_viewport().set_input_as_handled()
+		return
 	if game.chapter_finale.active or dialogue_active or choices_active or not game.play_started \
 			or game.state != game.ST_PLAYING or game.menus.is_open():
 		return

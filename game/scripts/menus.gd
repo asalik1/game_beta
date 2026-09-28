@@ -1074,9 +1074,12 @@ func _settings_back() -> void:
 
 ## Enter the touch HUD layout editor.
 func _open_layout_editor() -> void:
+	if game._touch_hud == null:
+		return
+	var back := settings_return
 	close()
-	if game._touch_hud != null:
-		game._touch_hud.enter_edit_mode()
+	game.request_pause(true)  # solo editor is modal; shared worlds keep running
+	game._touch_hud.enter_edit_mode(open_settings.bind(back))
 
 
 # ---------------------------------------------------------- chapter select ---

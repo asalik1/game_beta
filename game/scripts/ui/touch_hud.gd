@@ -63,8 +63,10 @@ var _lock_moved := false
 var _edit_mode := false         # layout-customization: drag buttons to rearrange
 var _drag_id := ""              # button being dragged in edit mode
 var _edit_ui: Control = null    # the Done/Reset banner overlay
+var _edit_done := Callable()    # return to the Settings screen that opened the editor
+var _edit_state := -1           # game.state when the editor opened (a change ends it)
 # Tap-vs-hold: a quick tap USES a button (fires on release); a long hold EXPLAINS
-# it (shows an info card, no use). Firing is deferred to release for that split.
+# it (shows an info card, no use). Act instead holds interact for ally revives.
 var _press_start := {}          # finger index -> press time (secs) for held buttons/lock
 var _explained := {}            # finger index -> true once this press has shown its info
 var _pulse := {}                # id -> secs remaining to hold its MobileInput flag true (a tap)
@@ -197,15 +199,23 @@ func _process(delta: float) -> void:
 	# joystick zone (the whole left half, under the overlay's dim on layer 20)
 	# stayed live, so a drag inside a panel walked your hero mid-fight.
 	# `menus` is null-checked on purpose: game.gd mounts this HUD (_apply_touch_mode,
-	# ~L189) BEFORE it builds Menus (~L192). The layout editor closes the menu
-	# before calling enter_edit_mode, so it still runs with nothing open.
-	var on: bool = game != null and game.state == game.ST_PLAYING \
-		and not game.chapter_finale.active \
+	# ~L189) BEFORE it builds Menus (~L192).
+	var covered: bool = game != null and (game.chapter_finale.active \
+		or (game.menus != null and game.menus.is_open()) \
+		or (game.hud != null and (game.hud.dialogue_active or game.hud.choices_active \
+			or game.hud.chat_active)))
+	# The layout editor is a screen of its own (Settings closes before it opens,
+	# and it may run at boot, before play starts). Anything that takes the screen
+	# from it (a HUD icon, ESC or a pad button opening a menu, a line or prompt
+	# in a session, a run ending mid-edit) ends it WITHOUT reopening Settings:
+	# that screen owns the flow now, and closing it must never resume the world
+	# into an editor that swallows every touch.
+	if _edit_mode and (covered or game.state != _edit_state):
+		exit_edit_mode(false)
+	var on: bool = game != null and not covered and (_edit_mode or (game.play_started \
+		and game.state == game.ST_PLAYING \
 		and (game.gamepad == null or not game.gamepad.active) \
-		and game.local_player != null and is_instance_valid(game.local_player) \
-		and (game.menus == null or not game.menus.is_open()) \
-		and (game.hud == null or not (game.hud.dialogue_active or game.hud.choices_active \
-			or game.hud.chat_active))
+		and game.local_player != null and is_instance_valid(game.local_player)))
 	if on != _enabled:
 		_enabled = on
 		visible = on
@@ -302,8 +312,8 @@ func _on_touch(e: InputEventScreenTouch) -> void:
 			return   # a miss lets the Done/Reset buttons receive the tap
 		var id := _button_at(e.position)
 		if id != "":
-			# Firing is DEFERRED to release so a long hold can be told from a tap
-			# (hold shows the info card instead of using the button).
+			# Act holds immediately for revive channels. Other buttons defer
+			# firing to release so a long hold can show their info instead.
 			_press_start[e.index] = _now()
 			if id == "lock":
 				_lock_idx = e.index
@@ -312,6 +322,9 @@ func _on_touch(e: InputEventScreenTouch) -> void:
 			else:
 				_btn_touch[e.index] = id
 				_press_fx(id, true)
+				if id == "interact":
+					_mi.interact = true
+					_pulse.erase(id)  # a prior tap must not expire this new hold
 			_mark_active()
 			get_viewport().set_input_as_handled()
 		elif _move_touch == -1 and _in_joystick_zone(e.position):
@@ -364,6 +377,11 @@ func _on_touch(e: InputEventScreenTouch) -> void:
 						game.local_player.queue_ability(id)
 					_mi.set(id, true)
 					_pulse[id] = TAP_PULSE
+					if id == "interact":
+						# Act has held since the press, so the release only tops
+						# a quick tap up to one pulse. A longer press ends with
+						# the finger: a trailing pulse past talk_cd fires twice.
+						_pulse[id] = maxf(TAP_PULSE - (_now() - float(_press_start.get(e.index, _now()))), 0.0)
 			_press_fx(id, false)
 			_btn_touch.erase(e.index)
 		_press_start.erase(e.index)
@@ -424,6 +442,8 @@ func _update_holds(delta: float) -> void:
 	var t := _now()
 	# A button held past LONG_PRESS shows its info instead of using it on release.
 	for idx in _btn_touch:
+		if _btn_touch[idx] == "interact":
+			continue  # holding Act channels an ally revive, never an info card
 		if not _explained.has(idx) and t - float(_press_start.get(idx, t)) >= LONG_PRESS:
 			_explained[idx] = true
 			_explain(String(_btn_touch[idx]))
@@ -434,6 +454,8 @@ func _update_holds(delta: float) -> void:
 	# Tap pulses: hold each tapped intent true a few frames, then drop it (the sim
 	# is cooldown-gated, so this fires exactly once).
 	for id in _pulse.keys():
+		if id == "interact" and _btn_touch.values().has(id):
+			continue  # another finger can still be holding Act after a release
 		_pulse[id] = float(_pulse[id]) - delta
 		if float(_pulse[id]) <= 0.0:
 			_mi.set(id, false)
@@ -592,7 +614,9 @@ func _joy_home() -> Vector2:
 
 ## Enter layout-customization: buttons become draggable; a Done/Reset banner appears.
 ## Called from Settings > Customize Buttons (which closes the menu first).
-func enter_edit_mode() -> void:
+func enter_edit_mode(on_done := Callable()) -> void:
+	_edit_done = on_done
+	_edit_state = game.state if game != null else -1
 	_edit_mode = true
 	_release_everything()
 	_enabled = true
@@ -607,15 +631,24 @@ func enter_edit_mode() -> void:
 	_edit_ui.visible = true
 
 
-func exit_edit_mode() -> void:
+## Done (and ESC) returns to the Settings screen that opened the editor; a
+## screen that took over mid-edit passes back_to_settings=false and keeps the flow.
+func exit_edit_mode(back_to_settings := true) -> void:
+	if not _edit_mode:
+		return
 	_edit_mode = false
 	_drag_id = ""
-	_joy_base.visible = false   # the edit-mode preview; play hides it until a touch
-	_joy_knob.visible = false
+	_release_everything()
+	_enabled = false
+	visible = false
 	if _edit_ui != null:
 		_edit_ui.visible = false
 	if game != null:
 		game.save_settings()
+	var on_done := _edit_done
+	_edit_done = Callable()
+	if back_to_settings and on_done.is_valid():
+		on_done.call()
 
 
 func _reset_layout() -> void:
