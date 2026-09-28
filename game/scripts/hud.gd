@@ -3001,11 +3001,18 @@ func _down_mark_blockers(include_names: bool = true) -> Array[Rect2]:
 func _place_down_marks_clear() -> void:
 	if not is_inside_tree() or is_queued_for_deletion() or not visible or _cinematic_mode: return
 	if not is_instance_valid(game) or not game.net_online() or not is_instance_valid(tracker_clearance): return
+	_place_party_overlays_clear()
+
+
+## The online pre-draw body; the solo geometry test drives it directly.
+func _place_party_overlays_clear() -> void:
 	var active := false
 	for mark in down_marks: active = active or (mark.root as Control).visible
 	var named := false
 	for tag in party_names: named = named or (tag as Control).visible
-	if not active and not named: return
+	var pointed := false
+	for arrow in party_arrows: pointed = pointed or (arrow as Polygon2D).visible
+	if not active and not named and not pointed: return
 	const EDGE_INSET := 4.0  # match the ordinary viewport containment pass
 	const CLEAR_GAP := 3.0  # separate outlined status ink from other HUD ink
 	const HEAD_OFFSET := Vector2(0, -74)  # preserve the authored world-space lift
@@ -3017,7 +3024,6 @@ func _place_down_marks_clear() -> void:
 	# Names first: identity outranks the status mark, which then reserves around
 	# the boxes the names actually ended up in.
 	if named: _place_party_names_clear(view, xf, blockers, EDGE_INSET, CLEAR_GAP)
-	if not active: return
 	for mark in down_marks:
 		var root := mark.root as Control
 		if not root.visible or not mark.has("world_at"): continue
@@ -3032,6 +3038,8 @@ func _place_down_marks_clear() -> void:
 		root.position = result.position - local.position
 		root.set_meta("down_mark_no_fit", not bool(result.fits))
 		blockers.append(Rect2(result.position, local.size).grow(CLEAR_GAP))
+	# Arrows read the final tracker, prompt, name and status placement too.
+	if pointed: _place_party_arrows_clear(view, xf, blockers)
 
 
 ## Place the <=3 visible world name tags against the fixed HUD and each other,
@@ -3617,11 +3625,12 @@ func _apply_frame_state(slot: Dictionary, st: String, q) -> void:
 
 ## A thin edge arrow per OFFSCREEN living ally, class-colored, pointing toward
 ## them from screen center — with a pulse when they're down/ghost (finding your
-## downed friend is the #1 use). Cheap per-frame math (a viewport transform + a
-## ray-to-rect clamp per ally).
+## downed friend is the #1 use). This sets state only: the online pre-draw pass
+## (_place_party_arrows_clear) positions each arrow against the final HUD.
 func _update_party_arrows(data: Array) -> void:
 	var xf: Transform2D = game.get_viewport().canvas_transform
-	var center := Vector2(640, 360)
+	var view := get_viewport().get_visible_rect()
+	var center := view.get_center()
 	var used := 0
 	for d in data:
 		if String(d["state"]) == "dead":
@@ -3630,7 +3639,7 @@ func _update_party_arrows(data: Array) -> void:
 		if q == null:
 			continue
 		var screen: Vector2 = xf * q.global_position
-		if screen.x >= 0.0 and screen.x <= 1280.0 and screen.y >= 0.0 and screen.y <= 720.0:
+		if screen.x >= view.position.x and screen.x <= view.end.x and screen.y >= view.position.y and screen.y <= view.end.y:
 			continue  # on-screen: the name tag covers it
 		if used >= party_arrows.size():
 			break
@@ -3638,15 +3647,16 @@ func _update_party_arrows(data: Array) -> void:
 		if dir.length() < 1.0:
 			continue
 		var arrow := party_arrows[used] as Polygon2D
-		arrow.position = _edge_point(center, dir, Vector2(42, 42), Vector2(1238, 678))
+		arrow.set_meta("party_arrow_world_at", q.global_position)
 		arrow.rotation = dir.angle() + PI / 2.0  # the triangle points 'up' at 0
 		var st := String(d["state"])
+		arrow.set_meta("party_arrow_urgent", st == "downed" or st == "ghost")
 		var tint: Color = CLASS_TINT.get(String(d["cls"]), Color(0.7, 0.7, 0.75))
 		if st == "downed" or st == "ghost":
 			var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.008)
 			arrow.color = Color(1.0, 0.4, 0.4) if st == "downed" else Color(0.6, 0.82, 1.0)
 			arrow.modulate = Color(1, 1, 1, 0.5 + 0.5 * pulse)
-			arrow.scale = Vector2.ONE * (1.0 + 0.28 * pulse)
+			arrow.scale = Vector2.ONE * (1.0 + Balance.HUD_ALLY_ARROW_PULSE_SCALE * pulse)
 		else:
 			arrow.color = tint
 			arrow.modulate = Color(1, 1, 1, 0.85)
@@ -3655,6 +3665,89 @@ func _update_party_arrows(data: Array) -> void:
 		used += 1
 	for i in range(used, party_arrows.size()):
 		(party_arrows[i] as Polygon2D).visible = false
+
+
+## Reserve the polygon at maximum pulse size in every rotation, so its tip and
+## wings never grow into the HUD, its position does not jitter with the pulse,
+## and it can be re-aimed from wherever it lands. Downed/ghost arrows claim the
+## nearest spot first; each placed arrow then reserves its own box, so several
+## allies in one direction never stack. Arrows have no caption; on-screen
+## identity labels use the shared name placement.
+func _place_party_arrows_clear(view: Rect2, xf: Transform2D, blockers: Array[Rect2]) -> void:
+	var reserved: Array[Rect2] = []
+	reserved.append_array(blockers)  # the caller's list stays unchanged
+	_party_arrow_extra_blockers(reserved)
+	for urgent in [true, false]:
+		for entry in party_arrows:
+			var arrow := entry as Polygon2D
+			if not arrow.visible or not arrow.has_meta("party_arrow_world_at"): continue
+			if bool(arrow.get_meta("party_arrow_urgent", false)) != urgent: continue
+			var target: Vector2 = xf * (arrow.get_meta("party_arrow_world_at") as Vector2)
+			var reach := 0.0
+			for point in arrow.polygon: reach = maxf(reach, point.length())
+			# Whole painted pixels keep exact perimeter lanes stable through the
+			# shared solver's rectangle-size subtraction.
+			var half := ceilf(reach * (1.0 + Balance.HUD_ALLY_ARROW_PULSE_SCALE)) + Balance.HUD_ALLY_ARROW_GAP
+			var local := Rect2(-half, -half, half * 2.0, half * 2.0)
+			var result := _party_arrow_clear_position(view, target - view.get_center(), local, reserved)
+			arrow.position = result.position
+			arrow.visible = result.fits
+			if not result.fits: continue
+			# Point from the spot actually used: a slid arrow still aims at the ally.
+			arrow.rotation = (target - arrow.position).angle() + PI / 2.0
+			reserved.append(Rect2(arrow.position + local.position, local.size))
+
+
+## Left-column co-op HUD the shared prompt/status reservations predate: the
+## hero portrait (drawn above the arrows), the damage meter and party chat.
+## Faded chat lines keep their node until trimmed, so only inked lines count.
+func _party_arrow_extra_blockers(out: Array[Rect2]) -> void:
+	for node in [avatar_root, meter_root, chat_input]:
+		if is_instance_valid(node): tracker_clearance._drawn(out, node)
+	if is_instance_valid(chat_lines_box) and chat_lines_box.is_visible_in_tree():
+		for line in chat_lines_box.get_children():
+			if line is CanvasItem and (line as CanvasItem).modulate.a > 0.01:
+				tracker_clearance._drawn(out, line)
+
+
+## Sweep the complete footprint along each screen edge using the same exact
+## rectangle-clearance solver as names/status marks. A zero-width/height anchor
+## lane constrains that solver to the perimeter; the nearest clear point wins.
+## This runs per arrow on every online frame and the solver grows with the
+## square of its input, so each lane only sees the reservations that touch it
+## (one clear of the lane cannot touch a footprint inside it), and a lane whose
+## nearest point is no closer than the best spot so far is skipped. Neither
+## shortcut changes where an arrow lands.
+func _party_arrow_clear_position(view: Rect2, dir: Vector2, local: Rect2,
+		blockers: Array[Rect2]) -> Dictionary:
+	var low := view.position + Vector2.ONE * Balance.HUD_ALLY_ARROW_INSET
+	var high := view.end - Vector2.ONE * Balance.HUD_ALLY_ARROW_INSET
+	low = low.max(view.position - local.position)
+	high = high.min(view.end - local.end)
+	if high.x < low.x or high.y < low.y:
+		return {"position": view.get_center(), "fits": false}
+	var ideal := _edge_point(view.get_center(), dir, low, high)
+	var wanted := Rect2(ideal + local.position, local.size)
+	var best := ideal
+	var distance := INF
+	var near: Array[Rect2] = []
+	for edge in [Rect2(low, Vector2(0, high.y - low.y)),
+		Rect2(Vector2(high.x, low.y), Vector2(0, high.y - low.y)),
+		Rect2(low, Vector2(high.x - low.x, 0)),
+		Rect2(Vector2(low.x, high.y), Vector2(high.x - low.x, 0))]:
+		if ideal.distance_squared_to(ideal.clamp(edge.position, edge.end)) >= distance: continue
+		var lane := Rect2(edge.position + local.position, edge.size + local.size)
+		near.clear()
+		for rect in blockers:
+			if rect.intersects(lane): near.append(rect)
+		var result := _down_mark_clear_position(wanted, lane, near)
+		if not result.fits: continue
+		var candidate: Vector2 = result.position - local.position
+		var delta := ideal.distance_squared_to(candidate)
+		if delta < distance:
+			distance = delta
+			best = candidate
+	return {"position": best, "fits": distance < INF}
 
 
 ## Where the ray center->dir exits the on-screen rect [minv, maxv].
@@ -3677,6 +3770,10 @@ func _edge_point(center: Vector2, dir: Vector2, minv: Vector2, maxv: Vector2) ->
 ## arrows' job). party_names_alpha is the §5.6 knob.
 func _update_party_names(data: Array) -> void:
 	var xf: Transform2D = game.get_viewport().canvas_transform
+	# The same live screen the arrows use. Names gate on the head and arrows on
+	# the feet (an older split), so an ally whose feet alone reach inside the
+	# top edge still gets neither.
+	var view := get_viewport().get_visible_rect()
 	var used := 0
 	if party_names_alpha > 0.01:
 		for d in data:
@@ -3687,7 +3784,7 @@ func _update_party_names(data: Array) -> void:
 				continue
 			var head: Vector2 = q.global_position + Vector2(0, -54)
 			var screen: Vector2 = xf * head
-			if screen.x < 0.0 or screen.x > 1280.0 or screen.y < 0.0 or screen.y > 720.0:
+			if screen.x < view.position.x or screen.x > view.end.x or screen.y < view.position.y or screen.y > view.end.y:
 				continue  # offscreen: the arrow points the way instead
 			if used >= party_names.size():
 				break
@@ -3701,7 +3798,7 @@ func _update_party_names(data: Array) -> void:
 			# near an edge stays readable (outline width as the margin).
 			tag.position = Vector2(
 				clampf(screen.x - PARTY_TAG_W * 0.5, PARTY_TAG_MARGIN,
-					get_viewport().get_visible_rect().size.x - PARTY_TAG_W - PARTY_TAG_MARGIN),
+					view.size.x - PARTY_TAG_W - PARTY_TAG_MARGIN),
 				screen.y - PARTY_TAG_H * 0.5)
 			# The WORLD anchor, never this (possibly displaced) screen position, is
 			# what the pre-draw hook reprojects: displacement never accumulates.

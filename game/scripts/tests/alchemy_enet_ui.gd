@@ -1499,6 +1499,7 @@ func _down_mark_edge_suite(pids: Array) -> void:
 			var arrows := 0
 			for arrow in g.hud.party_arrows: arrows += int(arrow.is_visible_in_tree())
 			_check("party_names.down_marks." + phase + ".arrows", arrows == 3, arrows)
+			_down_mark_arrow_clear(phase, viewport)
 		_down_mark_hud_clear(phase, visible_marks)
 		var expected_world_names := 0 if phase in ["clear_center", "top", "outside_left", "outside_right", "outside_top"] else 3
 		_party_world_name_clear("down_" + phase, expected_world_names)
@@ -1630,6 +1631,31 @@ func _down_mark_hud_clear(phase: String, visible_marks: Array[Dictionary]) -> vo
 		if index > 0:
 			_check(id + ".pair%d" % index, peers.is_empty(), {"mark_rect": envelope, "earlier_overlaps": peers})
 		envelopes.append(envelope)
+
+
+## Independent post-draw arrow oracle for the real online pre-draw placement:
+## painted triangle bounds against native HUD Controls (plus the portrait,
+## which draws above arrows), the viewport and each other. Never the solver.
+func _down_mark_arrow_clear(phase: String, viewport: Rect2) -> void:
+	var painted: Array[Dictionary] = _party_overlay_painted().painted
+	_down_mark_paint_walk(painted, "portrait", g.hud.avatar_root)
+	var placed: Array[Rect2] = []
+	for index in g.hud.party_arrows.size():
+		var arrow: Polygon2D = g.hud.party_arrows[index]
+		if not arrow.is_visible_in_tree(): continue
+		var xf: Transform2D = arrow.global_transform
+		var bounds := Rect2(xf * arrow.polygon[0], Vector2.ZERO)
+		for point in arrow.polygon: bounds = bounds.expand(xf * point)
+		var collisions: Array[Dictionary] = []
+		for item in painted:
+			if bounds.intersects(item.rect): collisions.append(item)
+		var stacked: Array[Rect2] = []
+		for earlier in placed:
+			if bounds.intersects(earlier): stacked.append(earlier)
+		_check("party_names.down_marks.%s.arrow_clear.%d" % [phase, index],
+			viewport.encloses(bounds) and collisions.is_empty() and stacked.is_empty(),
+			{"arrow_rect": bounds, "viewport": viewport, "collisions": collisions, "stacked_on": stacked})
+		placed.append(bounds)
 
 
 func _down_mark_paint_walk(out: Array[Dictionary], tag: String, node: Node) -> void:
