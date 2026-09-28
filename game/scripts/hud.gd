@@ -2424,6 +2424,13 @@ func _update_hint_labels() -> void:
 	_layout_log()
 
 
+## The low-health pulse (0..1) the vignette and both potion buttons share. With
+## impact flashes off it holds steady at the midpoint instead of oscillating.
+func low_hp_pulse() -> float:
+	var flashes: float = clampf(float(game.settings.get("impact_flashes", 1.0)), 0.0, 1.0)
+	return 0.5 + 0.5 * flashes * sin(Time.get_ticks_msec() * Balance.LOW_HP_PULSE_RATE)
+
+
 func update_stats(p: Player) -> void:
 	_update_hint_labels()
 	# A menu opened (e.g. via hotkey) over an open HUD popover — dismiss it so
@@ -2432,11 +2439,11 @@ func update_stats(p: Player) -> void:
 		_close_hud_popover()
 	_update_down_ui(p)  # MP-12 §5.3: downed banner + overhead revive bars
 	_update_party_ui(p)  # MP-14 §5.6: ally frames + offscreen arrows + name tags
-	# Low-HP warning: the screen edges pulse red below 30% health.
+	# Low-HP warning: the screen edges pulse red below LOW_HP_WARN_FRAC health.
 	var hp_frac := p.hp / p.max_hp
-	if hp_frac < 0.3 and not p.dead:
-		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.008)
-		vignette.modulate = Color(1.0 + pulse * 0.6, 1.0 - pulse * 0.5, 1.0 - pulse * 0.5, 1.0 + pulse * 0.6)
+	var hp_pulse := low_hp_pulse()
+	if hp_frac < Balance.LOW_HP_WARN_FRAC and not p.dead:
+		vignette.modulate = Color(1.0 + hp_pulse * 0.6, 1.0 - hp_pulse * 0.5, 1.0 - hp_pulse * 0.5, 1.0 + hp_pulse * 0.6)
 	else:
 		vignette.modulate = Color(1, 1, 1)
 	_set_fill(hp_fill, hp_frac)
@@ -2591,6 +2598,8 @@ func update_stats(p: Player) -> void:
 		var box: Dictionary = slot_boxes[i]
 		if slot == "potion":
 			box["key"].text = game.control_hint("potion", "Potion").trim_prefix("[").trim_suffix("]")
+			box["border"].set_meta("urgent", false)
+			box["key"].modulate = Color.WHITE
 			box["cd"].value = 0.0
 			box["cost"].text = ""
 			# The potion isn't a variant — a dim neutral glow, matching a bare
@@ -2607,6 +2616,11 @@ func update_stats(p: Player) -> void:
 				_set_ability_ring(box,
 					(Color(0.75, 0.35, 0.35) if p.potion_count() > 0 else Color(0.3, 0.15, 0.15)) \
 					if left > 0 else Color(0.18, 0.12, 0.12))
+				var urgent := p.potion_urgent()
+				box["border"].set_meta("urgent", urgent)
+				if urgent:
+					_set_ability_ring(box, Color(0.75, 0.35, 0.35).lerp(Balance.POTION_URGENT_COLOR, hp_pulse))
+					box["key"].modulate = Color.WHITE.lerp(Balance.POTION_URGENT_COLOR, hp_pulse)
 				_set_tip(box["border"],
 					"Health Potion — mends a grade-scaled %% of your MISSING health (x%d carried; drinks the cheapest first — the chapter gift, then up the grades). Bought from any merchant (Accord shelf F→A) or found; each takes a bag slot. ROOM BUDGET: %d of your %d loadout slots left — it refills next room. %s cycles the loadout; open the inventory and select a potion to plan the exact bottle." % [
 						p.potion_count(),
@@ -4166,9 +4180,27 @@ func loot_banner(item: Dictionary, bonus_gold: int) -> void:
 	var lines: int = l.text.count("\n") + 1
 	l.size = Vector2(380, lines * 21.0 + 2.0)
 	box.add_child(l)
+	var banner_height := lines * 21.0
+	# Only for a piece that reached the bag: a full bag leaves it on the ground,
+	# where neither the bag nor Auto-equip can reach it yet.
+	var owner_p: Player = game.local_player if game.has_local_player() else null
+	if owner_p != null and preload("res://scripts/gear_care.gd").index_of(owner_p.backpack, item) >= 0 \
+			and owner_p.would_auto_equip(item):
+		var upgrade := Label.new()
+		banner_height = maxf(banner_height, l.get_minimum_size().y)
+		upgrade.position = Vector2(l.position.x, l.position.y + banner_height)
+		upgrade.add_theme_font_size_override("font_size", Balance.GEAR_UPGRADE_FONT_SIZE)
+		upgrade.add_theme_color_override("font_color", Balance.GEAR_UPGRADE_COLOR)
+		_outline(upgrade)
+		var bag := game.control_suffix("inventory")
+		upgrade.text = _wrap_tip("▲ Empty slot! Put it on from your bag%s" % bag
+			if not owner_p.equipment.has(String(item["slot"]))
+			else "▲ Upgrade! Hit Auto-equip in your bag%s" % bag, 46)
+		box.add_child(upgrade)
+		banner_height += upgrade.get_minimum_size().y
 	# Banners stack from under the minimap (2026-08-19: they used to start at
 	# y 110 and lie across the minimap + the boss bar zone).
-	banner_y = LOOT_BANNER_Y if banner_y > 440.0 else banner_y + maxf(52.0, lines * 21.0 + 10.0)
+	banner_y = LOOT_BANNER_Y if banner_y > 440.0 else banner_y + maxf(52.0, banner_height + 10.0)
 	var tween := box.create_tween()
 	tween.tween_interval(3.2)
 	tween.tween_property(box, "modulate:a", 0.0, 0.6)

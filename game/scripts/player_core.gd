@@ -2601,6 +2601,14 @@ func _drink_error(kind: String, c: Dictionary = {}, held := false) -> String:
 	return DRINK_OK
 
 
+## The low-health potion cue, shared by the ability-bar slot and the touch
+## potion button: health is low and the potion key would pour a health bottle
+## right now. Presentation only; drink_potion keeps its own gate.
+func potion_urgent() -> bool:
+	return active_potion == "health" and hp < max_hp * Balance.LOW_HP_WARN_FRAC \
+		and potion_count() > 0 and _drink_error("health", {}, true) == DRINK_OK
+
+
 ## Field-input refusal feedback: the world notice plus its re-press throttle.
 ## The Inventory shows the reason in its panel instead, and must not arm a
 ## cooldown that a paused solo menu can never run down.
@@ -3075,6 +3083,15 @@ func auto_synthesize() -> int:
 	return upgrades
 
 
+## Shared by auto-equip and its pickup/bag hints; protected builds stay a choice.
+func would_auto_equip(item: Dictionary) -> bool:
+	var slot := String(item.get("slot", ""))
+	return not preload("res://scripts/gear_care.gd").kept(item) \
+		and not preload("res://scripts/gear_care.gd").kept(equipment.get(slot, {})) \
+		and equip_error(item) == "" \
+		and Items.strictly_better(item, equipment.get(slot))
+
+
 ## One click, zero tedium (onboarding + inventory button): fill every empty
 ## gear slot from the bag and take STRICT upgrades only — never eject a piece
 ## a build might prefer (gems / a unique passive: Items.strictly_better guards
@@ -3088,12 +3105,7 @@ func auto_equip() -> int:
 		var did := false
 		for item in backpack.duplicate():
 			var slot := String(item.get("slot", ""))
-			if preload("res://scripts/gear_care.gd").kept(item) \
-					or preload("res://scripts/gear_care.gd").kept(equipment.get(slot, {})):
-				continue
-			if equip_error(item) != "":
-				continue
-			if not Items.strictly_better(item, equipment.get(slot)):
+			if not would_auto_equip(item):
 				continue
 			# Swap in (equip()'s core, minus the per-call recalc/visual/sfx).
 			backpack.remove_at(preload("res://scripts/gear_care.gd").index_of(backpack, item))
@@ -3212,7 +3224,12 @@ func gain_xp(amount: int) -> void:
 		# fast, and the resets made potions — and merchants — pointless.
 		# recalc() keeps your hp/mp FRACTION as the pools grow.
 		game.sfx("levelup")
-		game.spawn_text(global_position + Vector2(0, -72), "LEVEL UP!  Lv %d  (+1 skill, +1 attribute point — open Skills)" % level, Color(0.5, 0.9, 1.0))
+		game.spawn_text(global_position + Vector2(0, -72), "LEVEL UP!", Color(0.5, 0.9, 1.0))
+		if game.local_player == self:
+			game.hud.announce("LEVEL %d\n+%d talent point · +%d attribute point · spend them in Skills%s" % [
+				level, Balance.SKILL_POINTS_PER_LEVEL, Balance.ATTR_POINTS_PER_LEVEL,
+				game.control_suffix("skills")], Color(0.5, 0.9, 1.0), Balance.LEVEL_UP_HOLD, "victory")
+		game.burst(global_position, Color(0.5, 0.9, 1.0))
 		var unlocked := Classes.themes_unlocked(level)
 		if unlocked > themes_known:
 			themes_known = unlocked

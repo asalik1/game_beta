@@ -1834,7 +1834,7 @@ static func _notes_fangmoot(m: Menus, list: VBoxContainer) -> void:
 static func _notes_gear(m: Menus, list: VBoxContainer) -> void:
 	list.add_theme_constant_override("separation", 8)
 	UITheme.header(m._lbl(list, "COMPARE, KEEP AND SORT", 17, ACC_GEAR))
-	var care := m._lbl(list, "Select a piece in your bag or on a merchant's shelf to compare its stats with the same equipped slot. Green and red changes include upgrades and gems; signature passives remain separate. Keep a favourite to protect it from sales, dropping and Auto-equip. Kept pieces carry a star and stay kept when you save. Order the bag by grade, slot or kept pieces to find what you need.", 16, Color(0.78, 0.8, 0.86))
+	var care := m._lbl(list, "Select a piece in your bag or on a merchant's shelf to compare its stats with the same equipped slot. Green and red changes include upgrades and gems; signature passives remain separate. Keep a favourite to protect it from sales, dropping and Auto-equip. Kept pieces carry a star and stay kept when you save. A green ▲ marks a piece that fills an empty slot or beats what you're wearing, and Auto-equip will put it on. Order the bag by grade, slot or kept pieces to find what you need.", 16, Color(0.78, 0.8, 0.86))
 	care.custom_minimum_size.x = PAGE_W
 	# What a shape TAG means (2026-07-26). It used to mean "grants these stats"; a
 	# shape now only LEANS the roll, so the gallery needs saying out loud or

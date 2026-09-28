@@ -164,6 +164,14 @@ func control_hint(action: String, touch_label: String) -> String:
 	if touch_mode:
 		return touch_label
 	return "[%s]" % OS.get_keycode_string(binds.get(action, KEY_NONE))
+
+
+## For copy that already names the HUD icon ("Skills", "your bag"): " [T]" on
+## keyboard or pad, nothing on touch, where that named icon is what you tap.
+## Keeps a template from doubling its noun ("Skills Skills").
+func control_suffix(action: String) -> String:
+	var hint := control_hint(action, "")
+	return "" if hint == "" else " " + hint
 const OPP := {"N": "S", "S": "N", "E": "W", "W": "E"}
 
 # ------------------------------------------------------------- chapters ---

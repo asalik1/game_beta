@@ -2651,10 +2651,12 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 			var it: Dictionary = item
 			if cat != "all" and String(it["slot"]) != cat:
 				continue
-			var cell := _bag_slot(grid, _gear_codex_icon(it), "★" if GearCare.kept(it) else "", Items.GRADE_COLOR[it["grade"]],
+			var mark := "★" if GearCare.kept(it) else ("▲" if p.would_auto_equip(it) else "")
+			var cell := _bag_slot(grid, _gear_codex_icon(it), mark, Items.GRADE_COLOR[it["grade"]],
 				func() -> void: UIGearInspect.open(self, it, cat))
 			cell.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-			cell.tooltip_text = Items.title(it) + (" · Kept" if GearCare.kept(it) else "") + "\n" + _diff_tip(it)
+			cell.tooltip_text = Items.title(it) + (" · Kept" if mark == "★" else (" · Upgrade" if mark == "▲" else "")) \
+				+ "\n" + _diff_tip(it)
 			cell.set_drag_forwarding(Callable(), sock_can, sock_drop)
 	if show_cons:
 		# Consumables stack by id for display; using one consumes one.
@@ -3087,6 +3089,9 @@ func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color
 			badge.text = glyph.strip_edges()
 			badge.add_theme_font_size_override("font_size", 11)
 			badge.add_theme_color_override("font_color", Color(1, 1, 1))
+			if glyph == "▲":
+				badge.add_theme_font_size_override("font_size", Balance.GEAR_UPGRADE_FONT_SIZE)
+				badge.add_theme_color_override("font_color", Balance.GEAR_UPGRADE_COLOR)
 			badge.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 			badge.add_theme_constant_override("outline_size", 4)
 			badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT

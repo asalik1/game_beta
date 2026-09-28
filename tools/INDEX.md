@@ -651,6 +651,13 @@ stocked, empty, spent and selected mana states at native size. Use isolated
 APPDATA; add `--touch --mobile --renderer=gl_compatibility` for a real touch tap
 and the mobile source/renderer path.
 
+Reward feedback QA: `shot.bat reward_feedback --timeout=240` first runs the
+`tests/test_reward_feedback.gd` regressions (also in the quick tier), then
+captures five native views: the LEVEL 2 plaque over mobs at low health, the
+potion-slot pulse a beat later, the steady cue with impact flashes at 0, the
+empty-slot ▲ loot banner and the bag's ▲ badge. XP, potions and gear are lent
+fixtures, not earned. Use isolated APPDATA.
+
 Skills allocation QA: `shot.bat hud_dossier --skills-touch --touch
 --scroll-retention --skills-extra --timeout=240` measures the three tabs and
 20 allocation targets, real edge spending/drag reachability, both scroll
