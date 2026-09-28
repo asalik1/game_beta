@@ -5,6 +5,13 @@ class_name Balance
 ## monsters/zones) — this file is for the numbers you tweak, not the
 ## content you author.
 
+# Compact event feed: rows wrap in full (never cut short). The fixed
+# seven-line footprint holds two wide 64-character names plus their
+# consequence (three lines each); ordinary guidance uses two lines.
+# One-line rows keep Hud.LOG_LINE_H; wrapped rows add their extra lines.
+const HUD_LOG_TEXT_WIDTH := 400.0
+const HUD_LOG_HEIGHT_BUDGET := 140.0
+
 # Ambient life: compact village/darkwood rooms retain social pairs without
 # carrying the full-sized room's population. Full/ordinary combat rooms stay exact.
 const AMBIENT_COMPACT_AREA_MAX := 0.65

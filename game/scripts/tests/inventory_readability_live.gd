@@ -7,7 +7,7 @@ const Geo := preload("res://scripts/tests/hud_alignment_geometry.gd")
 const MaterialProbe := preload("res://scripts/tests/material_ui_live.gd")
 const POCKETS := ["gold", "equipment", "backpack", "gem_bag", "materials", "consumables", "bags", "loose_bags", "potion_rotation"]
 const FILTERS := ["All", "Weapons", "Helmets", "Armor", "Gloves", "Pants", "Boots", "Charms", "Gems", "Consumables", "Materials", "Bags"]
-const VIEWS := ["00_empty_slots", "01_occupied_top", "02_occupied_bottom", "03_dense_grid_bottom", "04_filters_and_actions", "05_material_cancel", "06_material_remaining", "07_material_removed"]
+const VIEWS := ["00_empty_slots", "01_occupied_top", "02_occupied_bottom", "03_dense_grid_bottom", "04_filters_and_actions", "05_material_cancel", "06_material_remaining", "07_material_removed", "08_narrow_summary"]
 const GALLERY := ["08_named_bag_card", "09_worn_card", "10_stats_paperdoll", "11_stats_detail"]
 var r: ShotRig
 var g: Game
@@ -110,6 +110,12 @@ func _exercise() -> String:
 	for i in Items.SLOTS.size():
 		var slot: String = Items.SLOTS[i]
 		p.equipment[slot] = Items.roll_item_of(slot, "F" if i % 2 == 0 else "S", rng, "warrior")
+	# Controlled narrow summary: four stats and all three socket columns.
+	p.equipment.weapon.main = {"atk_flat": 12.0}
+	p.equipment.weapon.subs = {"crit": 0.12, "hp_flat": 1234.0, "physres": 24.0}
+	p.equipment.weapon.gem_slots = 3
+	p.equipment.weapon.gems = []
+	p.equipment.weapon.passive = "kingsblade"
 	await _open("all", true)
 	await _capture(VIEWS[1])
 	var primary: Color = Color.TRANSPARENT
@@ -240,6 +246,7 @@ func _exercise() -> String:
 			await _capture(VIEWS[6])
 			await _tap(m._shell_rect.position + Vector2(5, 5))
 		else: await _capture(VIEWS[7])
+	await _narrow_summary()
 	if r.flag("gear-fidelity"):
 		var gallery_error: String = await _gallery(rng)
 		if gallery_error != "": return gallery_error
@@ -668,8 +675,10 @@ func _readability_label(label: Label, prefix: String, floor_px: int, full: bool 
 	_check(prefix + ".cells", label.get_global_rect().grow(0.5).encloses(Geo.to_rect(shape.cells)), shape)
 
 func _readability_equipped(card: Control, item: Dictionary, prefix: String) -> void:
-	var expected: String = Items.describe(item, false)
+	var expected: String = Items.describe(item, false, true)
 	var summary: Label = _label(card, expected)
+	# Keep the native geometry oracle usable against the old ordinary-space UI.
+	if summary == null: summary = _label(card, Items.describe(item, false))
 	var name_label: Label = _label(card, Items.title(item))
 	_readability_label(name_label, prefix + ".name", 16, false)
 	_readability_label(summary, prefix + ".summary", 14)
@@ -677,6 +686,7 @@ func _readability_equipped(card: Control, item: Dictionary, prefix: String) -> v
 		{"expected": expected, "actual": summary.text if summary != null else ""})
 	if summary == null or name_label == null: return
 	var shape: Dictionary = Geo.shaped(summary)
+	_summary_tokens(summary, item, prefix)
 	var cells: Rect2 = Geo.to_rect(shape.cells)
 	var card_rect: Rect2 = card.get_global_rect()
 	_check(prefix + ".summary_in_card", card_rect.grow(0.5).encloses(cells), {"card": Geo.rect(card_rect), "cells": shape.cells})
@@ -713,6 +723,61 @@ func _readability_button(button: Button, prefix: String) -> void:
 		{"text": button.text, "native_need": [need.x, need.y], "rect": Geo.rect(button.get_global_rect()),
 		"added": added, "font": font_px})
 
+## Desktop can allocate extra width. Exercise the production row at its
+## authored minimum separately, keeping the ordinary full-screen checks intact.
+func _narrow_summary() -> void:
+	await _open("all")
+	var fixture := VBoxContainer.new()
+	fixture.position = m._shell_rect.position + Vector2(580, 160)
+	m.root.add_child(fixture)
+	m._equipped_row(fixture, "weapon", "all")
+	await r.frames(4)
+	var card := fixture.get_child(0) as Control
+	_readability_equipped(card, p.equipment.weapon, "readability.narrow")
+	await _capture(VIEWS[8])
+	fixture.free()
+
+## Glyph cells, not string formatting, prove each stat/value occupies one line.
+func _summary_tokens(summary: Label, item: Dictionary, prefix: String) -> void:
+	var plain := summary.text.replace("\u00a0", " ")
+	var stats_text := Items.describe(item, false).split("  ")[0]
+	var offset := 0
+	for token: String in stats_text.split(", "):
+		var start := plain.find(token, offset)
+		var top := -INF
+		var together := start >= 0
+		if start >= 0:
+			for index in range(start, start + token.length()):
+				if plain.substr(index, 1) == " ": continue
+				var cell := summary.get_character_bounds(index)
+				if top == -INF: top = cell.position.y
+				together = together and cell.has_area() and is_equal_approx(cell.position.y, top)
+			offset = start + token.length()
+		_check(prefix + ".token." + token, together, {"token": token, "shape": Geo.shaped(summary)})
+	_check(prefix + ".plain_copy_preserved", plain == Items.describe(item, false))
+	if item.has("passive"):
+		var star := plain.find("\u2605 ")
+		_check(prefix + ".passive_marker_bound", star >= 0 and is_equal_approx(
+			summary.get_character_bounds(star).position.y, summary.get_character_bounds(star + 2).position.y))
+	if prefix == "readability.narrow":
+		_check(prefix + ".narrow_wrap_fixture", int(item.gem_slots) == 3 and Items.stats_of(item).size() >= 4
+			and summary.get_line_count() > 1 and summary.size.x <= 146.0, Geo.shaped(summary))
+		# Paired native negative control: the same width/font with old spaces
+		# must split HP from its value, so this fixture cannot pass vacuously.
+		var old := Label.new()
+		old.text = Items.describe(item, false)
+		old.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		old.add_theme_font_override("font", summary.get_theme_font("font"))
+		old.add_theme_font_size_override("font_size", summary.get_theme_font_size("font_size"))
+		old.visible = false
+		summary.add_child(old)
+		old.size = Vector2(summary.size.x, 0.0)
+		old.size.y = old.get_minimum_size().y
+		var hp := old.text.find("HP +")
+		_check(prefix + ".old_spaces_split_control", hp >= 0 and not is_equal_approx(
+			old.get_character_bounds(hp).position.y, old.get_character_bounds(hp + 3).position.y), Geo.shaped(old))
+		old.free()
+
 func _readability_bag() -> void:
 	_readability_label(_label(m.root, "%d / %d slots" % [p.bag_used(), p.bag_capacity()]), "readability.bag.capacity", 14)
 	_readability_label(_label(m.root, "%d/%d bags" % [p.bags.size(), Balance.MAX_BAGS]), "readability.bag.count", 14)
@@ -748,7 +813,7 @@ func _readability_frame() -> Dictionary:
 		var title: Label = _label(m.root, Items.title(item))
 		if title == null: result[slot] = {"missing": "title"}; continue
 		var card: Control = _panel(title)
-		var summary: Label = _label(card, Items.describe(item, false)) if card != null else null
+		var summary: Label = _label(card, Items.describe(item, false, true)) if card != null else null
 		if card == null or summary == null: result[slot] = {"missing": "card_or_summary"}; continue
 		result[slot] = {"card": Geo.rect(Rect2(card.position, card.size)),
 			"name": Geo.rect(Rect2(title.position, title.size)), "text": summary.text,

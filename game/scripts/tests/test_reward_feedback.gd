@@ -13,6 +13,8 @@ static func run(t: Node) -> String:
 	var old_xp := g.player.xp
 	var run_xp := g.run_xp
 	var capped := g.xp_capped_noted
+	var chat_owned := h.chat_root == null
+	var chat_y: float = 0.0 if chat_owned else h.chat_root.position.y
 	var stack := h._ann_stack
 	h._ann_queue = []
 	h._ann_active = null
@@ -26,12 +28,14 @@ static func run(t: Node) -> String:
 	if error == "":
 		error = _readability(g)
 	h._retire_announcement()
-	for row in h._log_lines:
-		if is_instance_valid(row):
-			var tw: Tween = row.get_meta("tween", null)
-			if tw != null and tw.is_valid():
-				tw.kill()
-			row.free()
+	_clear_feed(h)
+	if chat_owned and h.chat_root != null:
+		h.chat_root.free()
+		h.chat_root = null
+		h.chat_lines_box = null
+		h.chat_input = null
+	elif h.chat_root != null:
+		h.chat_root.position.y = chat_y
 	h._log_lines = lines
 	h._ann_queue = queue
 	h._ann_active = active
@@ -43,8 +47,18 @@ static func run(t: Node) -> String:
 	g.run_xp = run_xp
 	g.xp_capped_noted = capped
 	if error == "":
-		print("ok: achievement/quest queue sharing, earned-notice overflow, overlay log clocks, fixed-width feed and silent zero/negative XP")
+		print("ok: achievement/quest queue sharing, earned-notice overflow, overlay log clocks, complete fixed-width feed rows, tall-canvas chat keeping the classic rows and silent zero/negative XP")
 	return error
+
+
+static func _clear_feed(h: Hud) -> void:
+	for row in h._log_lines:
+		if is_instance_valid(row):
+			var tw: Tween = row.get_meta("tween", null)
+			if tw != null and tw.is_valid():
+				tw.kill()
+			row.free()
+	h._log_lines.clear()
 
 
 static func _checks(g: Game) -> String:
@@ -62,20 +76,53 @@ static func _checks(g: Game) -> String:
 		kept = kept or String(notice.kind) == "achievement"
 	if not kept:
 		return "incidental notices discarded the earned achievement"
+	var camp := "Stock up, then descend \u2014 this is the last safe ground. Rewards pay when you fall or cash out."
+	var departure := "W".repeat(64) + " left the party"
+	h.log_event(camp, Color.WHITE)
+	h.log_event(departure, Color.WHITE, "party")
+	h.log_event("+5 gold", Color.WHITE)
 	h._tick_event_log()
+	var height := 0.0
+	var wrapped := 0
 	for row in h._log_lines:
 		var tw: Tween = row.get_meta("tween")
 		var label: Label = row.get_meta("label")
 		if row.visible or tw.is_running():
 			return "event feed stayed live under dialogue"
-		if label.size.x > 400.0 or not label.clip_text:
-			return "long event text escaped the fixed feed column"
+		if label.size.x > Balance.HUD_LOG_TEXT_WIDTH or label.clip_text or label.text_overrun_behavior != TextServer.OVERRUN_NO_TRIMMING:
+			return "event feed must wrap inside its fixed column without clipping or ellipsis"
+		if label.text == "+5 gold" and not is_equal_approx(row.size.y, h.LOG_LINE_H):
+			return "a one-line feed row grew past the classic line pitch"
+		if label.text in [camp, departure]:
+			if label.get_line_count() < 2 or label.get_line_count() != label.get_visible_line_count():
+				return "camp guidance or party departure lost its consequence"
+			wrapped += 1
+		height += row.size.y
+	if wrapped != 2 or height > Balance.HUD_LOG_HEIGHT_BUDGET or h._log_lines.size() > h.LOG_MAX:
+		return "wrapped feed exceeded its budget or discarded the newest guidance"
 	var amount_before := g.player.xp
 	var feed_before := h._log_lines.size()
 	g.player.gain_xp(0)
 	g.player.gain_xp(-5)
 	if g.player.xp != amount_before or h._log_lines.size() != feed_before:
 		return "nonpositive XP changed progress or produced a reward popup"
+	# Rows are never cut short: a row past three lines keeps every line.
+	var long_text := "Rewards pay when you fall or cash out. ".repeat(7).strip_edges()
+	h.log_event(long_text, Color.WHITE)
+	var longest: Label = (h._log_lines[-1] as Control).get_meta("label")
+	if longest.text != long_text or longest.get_line_count() <= 3 or longest.get_line_count() != longest.get_visible_line_count():
+		return "a long event-feed row was cut short"
+	# Party chat anchors to the screen bottom while the feed keeps a fixed y, so
+	# a taller mobile canvas (1280 wide at 16:10, 3:2, 4:3; aspect "expand") puts
+	# the chat beside or below the feed. It must never cost the classic rows.
+	h._ensure_chat()
+	for canvas_h: float in [800.0, 853.0, 960.0]:
+		_clear_feed(h)
+		h.chat_root.position.y = canvas_h
+		for i in h.LOG_MAX:
+			h.log_event("Found a Rusted Dagger (%d)" % (i + 1), Color.WHITE, "note")
+		if h._log_lines.size() != h.LOG_MAX:
+			return "party chat on a %dpx-tall canvas cost the event feed its classic rows" % int(canvas_h)
 	return ""
 
 

@@ -43,9 +43,9 @@ original Inventory checks passed. The later ten touch-target checks and optional
 Limits: native scenarios lend legal factory stock; they do not prove ordinary
 progression. Mobile means host-rendered Compatibility and emulated input, not a
 physical device. ENet UI-only does not validate persistence; its retained
-child-scene disconnect diagnostic remains unaccepted. Stat labels can still wrap
-before their values; coarse legacy bag art and smaller item-detail metadata
-remain polish debt. Ten touch bag targets trade grid height for usable target
+child-scene disconnect diagnostic remains unaccepted. Stat labels could still wrap
+before their values (resolved September 28, see INVENTORY_READABILITY.md); coarse
+legacy bag art and smaller item-detail metadata remain polish debt. Ten touch bag targets trade grid height for usable target
 size; native scrolling still reaches the final cell. Existing negative-test and
 engine shutdown diagnostics remain in logs under unchanged verdict rules.
 

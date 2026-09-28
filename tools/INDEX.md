@@ -42,9 +42,9 @@ retained rejected evidence and exact validation limits.
 
 Inventory readability QA: `shot.bat material_ui --inventory-readability
 --timeout=300` uses the existing muted, compile-gated runner and a fresh APPDATA
-under `build/qa/`. Eight native views cover empty/occupied equipment, maximum
-legal bag capacity, actual scrolling, filter/action separation and two real
-single-unit material drops. Add `--touch` or host mobile
+under `build/qa/`. Nine native views cover empty/occupied equipment, maximum
+legal bag capacity, actual scrolling, filter/action separation, two real
+single-unit material drops and a narrow three-socket stat summary. Add `--touch` or host mobile
 `--mobile --renderer=gl_compatibility --touch`. The helper establishes and restores
 host touch capability; it never substitutes wheel events for the touch branch.
 No baseline waiver or combination with other material modes is accepted.
@@ -52,10 +52,13 @@ See INVENTORY_READABILITY.md for controlled loans and exact validation limits.
 The September 26 extension checks native text floors, complete wrapped stats,
 first-postdraw/settled row geometry, socket clearance, distinct bag captions and
 grouped gold. Touch bag drop targets must retain 44px minimum dimensions.
-Original gameplay, input, discard-ledger and eight-image checks remain strict.
+The September 28 view `08_narrow_summary` builds the production equipped row at
+its narrowest authored width and checks, by native glyph cells, that no stat
+name wraps away from its value; a paired control with the old spaces must split.
+Original gameplay, input, discard-ledger and nine-image checks remain strict.
 Add `--gear-fidelity` for the four named-gear detail/Stats views and strict
 painted-texture checks; see GEAR_UI_FIDELITY.md. This flag requires the
-Inventory readability mode and does not waive its original eight views.
+Inventory readability mode and does not waive its nine views.
 
 Earned shortcut QA: `shot.bat wayfinder --shortcut-domain --timeout=240`
 checks seeded graph invariants without building campaign worlds. The owned
@@ -568,10 +571,18 @@ mobile/touch flags above. Pools are lent, not earned; scroll placement is setup.
 This mode is mutually exclusive with other focused dossier modes.
 
 Reward plaque QA: `shot.bat hud_dossier --reward-plaques --timeout=300`
-uses controlled production HUD calls and real UI clocks. Twenty-two originals
+uses controlled production HUD calls and real UI clocks. Twenty-four originals
 retain the twelve boss/cast/title/queue and blight/VICTORY/wrapped-title controls,
 then add first-post-draw/settled views for authored Ward Vigil copy, 16- and 64-character
-departure names, and unbroken/mixed details. New cases require exact
+departure names, and unbroken/mixed details. `15_compact_feed` checks wrapped
+event-feed rows (camp guidance, a 64-character departure) for complete copy,
+the one-line 20px pitch, height-budget eviction, coalescing and a row past three
+lines kept whole; `16_feed_chat` binds every hint action to the widest key name
+(memory only), loans local chat widgets, fills the feed with two three-line
+departures and checks it stays a full hint gap below the party chat lines. It
+then moves the loaned chat root to where 1280x800/853/960 canvases anchor it and
+checks the feed keeps its five classic one-line rows (wrapped rows keep the full
+budget once the chat sits below the feed). New cases require exact
 full copy, native character containment, separated title/detail and stable
 local geometry on every observed entrance draw. First captures can still fade;
 actual alpha/clock are recorded. The actual menu gate also holds the active

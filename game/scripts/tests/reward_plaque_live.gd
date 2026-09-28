@@ -4,6 +4,14 @@ extends RefCounted
 ## No achievement is awarded and no normal encounter or input is simulated.
 const Geometry := preload("res://scripts/tests/hud_alignment_geometry.gd")
 const CastReadout := preload("res://scripts/ui/boss_cast.gd")
+const Hints := preload("res://scripts/tests/keyboard_hints_live.gd")
+# "On-screen keyboard" is the widest key name Godot reports. Binds store a bare
+# keycode (no modifiers) and allow duplicates, so all six on it bounds the hint wrap.
+const WIDEST_KEY := KEY_KEYBOARD
+# A 64-character departure wraps to three lines in the 400px feed column.
+const WIDEST_ROW_LINES := 3
+# 1280-wide mobile canvases at 16:10, 3:2 and 4:3 (stretch aspect "expand").
+const TALL_CANVAS_HEIGHTS := [800.0, 853.0, 960.0]
 const SCOPE := "controlled reward plaque / authored boss readout; paused world, real UI clocks; no earned achievement or combat"
 const GAME_LEDGER := ["flags", "achievements", "kill_counts", "boss_records", "mailbox", "dropped_loot", "chapter_id", "no_saves"]
 const PLAYER_LEDGER := ["gold", "xp", "level", "hp", "mp", "skill_points", "tree_points", "unspent_attr", "consumables", "materials", "mastery", "blueprints", "backpack", "equipment", "gem_bag", "bags", "loose_bags", "npc_favor", "profession", "potion_rotation", "active_potion", "room_potions", "cds", "potion_cd", "potion_swap_cd"]
@@ -256,7 +264,9 @@ func _entrance_cases() -> String:
 	if r.baseline:
 		expected.append("reward/07_blight/entrance_text_contained")
 	r._check("reward/entrance_exact_findings", actual == expected, {"actual": actual, "expected": expected})
-	return await _wrap_cases()
+	var wrap_error: String = await _wrap_cases()
+	if wrap_error != "": return wrap_error
+	return await _feed_cases()
 
 
 func _entrance_case(case: Dictionary) -> String:
@@ -566,3 +576,166 @@ func _wrap_menu_clock(text: String) -> void:
 	await _wait(0.25)
 	r._check("reward/wrap_menu/resumed_same_identity", h._ann_active == plaque and _visible_message(text)
 		and motion.is_running() and motion.get_total_elapsed_time() > clock_before and _queue() == [queued])
+
+
+## Fresh compact-feed rows, native glyph bounds, and the production hint gap.
+## Startup rows drain before this module; its existing cleanup owns these rows.
+func _feed_cases() -> String:
+	if not await _drain(12.0): return "feed precondition did not drain"
+	var camp := "Stock up, then descend \u2014 this is the last safe ground. Rewards pay when you fall or cash out."
+	var departure := "W".repeat(64) + " left the party"
+	for text: String in [camp, departure]: h.log_event(text, Color.WHITE, "party")
+	await _wait(0.35)
+	r._check("reward/feed/two_rows", h._log_lines.size() == 2)
+	_feed_geometry("guidance")
+	r.views.append({"view": "15_compact_feed", "path": r.shot("15_compact_feed", SCOPE), "scope": SCOPE})
+	# Fill with two-line rows so the height cap must evict before LOG_MAX.
+	for i in range(5): h.log_event(camp + " " + str(i), Color.WHITE, "note")
+	await r.frames(2)
+	r._check("reward/feed/height_eviction", h._log_lines.size() < h.LOG_MAX)
+	_feed_geometry("budget")
+	h.log_event("+12 XP", Color.WHITE)
+	h.log_event("+8 XP", Color.WHITE)
+	var newest: Control = h._log_lines[-1]
+	r._check("reward/feed/coalesced", (newest.get_meta("label") as Label).text == "+20 XP")
+	# One-line rows keep the classic pitch; only wrapped rows grow.
+	r._check("reward/feed/one_line_pitch", is_equal_approx(newest.size.y, h.LOG_LINE_H)
+		and is_equal_approx(newest.position.y + newest.size.y, _feed_bottom()), {"row": Geometry.rect(Rect2(newest.position, newest.size))})
+	_feed_geometry("coalesced")
+	# Rows are never cut short: a row past three lines keeps every line and
+	# older rows retire to hold the budget.
+	var long_text := "Rewards pay when you fall or cash out. ".repeat(7).strip_edges()
+	h.log_event(long_text, Color.WHITE, "note")
+	await r.frames(2)
+	var longest: Label = (h._log_lines[-1] as Control).get_meta("label")
+	r._check("reward/feed/long_row", longest.text == long_text and longest.get_line_count() > WIDEST_ROW_LINES, Geometry.shaped(longest))
+	_feed_geometry("long")
+	r._write_report()
+	if not await _drain(12.0): return "compact feed did not fade naturally"
+	r._check("reward/feed/natural_retirement", h._log_lines.is_empty())
+	return await _feed_chat_case()
+
+
+## Worst reachable pressure: the widest key name wraps both hint rows and
+## two three-line departures fill the feed; it must still stop a full hint gap
+## below the party chat lines. Binds are loaned in memory only (never saved)
+## and the production chat widgets locally, with no session or packet, as
+## keyboard_hints_live does.
+func _feed_chat_case() -> String:
+	var owned_chat: bool = h.chat_root == null
+	r._check("reward/feed_chat/fresh", owned_chat and h._log_lines.is_empty())
+	if not owned_chat: return "feed chat case requires solo without chat widgets"
+	var binds: Dictionary = g.binds.duplicate(true)
+	var hint_before: Vector2 = (h.hint_labels[0] as Label).position
+	for action: String in Hints.ACTIONS: g.binds[action] = WIDEST_KEY
+	h._update_hint_labels()
+	h._ensure_chat()
+	h._on_chat_line("Companion", "party", "The northern road is clear. Meet at the old watchtower.")
+	var departures := ["W".repeat(64) + " left the party", "V" + "W".repeat(63) + " left the party"]
+	for text: String in departures: h.log_event(text, Color.WHITE, "party")
+	await _wait(0.35)
+	var wrapped_hints := true
+	for label: Label in h.hint_labels: wrapped_hints = wrapped_hints and label.get_line_count() >= 2
+	r._check("reward/feed_chat/hints_wrapped", wrapped_hints,
+		{"hints": [Geometry.shaped(h.hint_labels[0]), Geometry.shaped(h.hint_labels[1])]})
+	r._check("reward/feed_chat/chat_lines", h.chat_lines_box.is_visible_in_tree() and h.chat_lines_box.get_global_rect().has_area(),
+		{"lines": Geometry.rect(h.chat_lines_box.get_global_rect())})
+	var full := _logs() == departures
+	for row: Control in h._log_lines:
+		full = full and (row.get_meta("label") as Label).get_line_count() == WIDEST_ROW_LINES
+	r._check("reward/feed_chat/max_pressure", full, {"logs": _logs(), "bottom": _feed_bottom(),
+		"top": (h._log_lines[0] as Control).position.y if not h._log_lines.is_empty() else -1.0})
+	_feed_geometry("chat")
+	r.views.append({"view": "16_feed_chat", "path": r.shot("16_feed_chat", SCOPE), "scope": SCOPE})
+	_clear_feed()
+	g.binds = binds
+	h._update_hint_labels()
+	await r.frames(2)
+	await _feed_tall_canvas()
+	h.chat_root.free()
+	h.chat_root = null; h.chat_lines_box = null; h.chat_input = null
+	await r.frames(2)
+	r._check("reward/feed_chat/restored", g.binds == binds and h.chat_root == null and not h.chat_active
+		and (h.hint_labels[0] as Label).position == hint_before and h._log_lines.is_empty())
+	r._write_report()
+	return ""
+
+
+## Party chat anchors to the screen bottom while the feed keeps a fixed y, so a
+## taller mobile canvas puts the chat beside or below the feed. This window stays
+## 1280x720; the loaned chat root moves to each taller canvas's anchored bottom
+## edge. The chat never costs the five classic one-line rows. Wrapped rows stay in
+## that classic footprint while the chat sits above the feed's bottom edge, and
+## keep the full budget once it sits below.
+func _feed_tall_canvas() -> void:
+	var anchored: float = h.chat_root.position.y
+	var camp := "Stock up, then descend \u2014 this is the last safe ground. Rewards pay when you fall or cash out."
+	for canvas_h: float in TALL_CANVAS_HEIGHTS:
+		h.chat_root.position.y = canvas_h
+		var tag := "tall_%d" % int(canvas_h)
+		var bottom := _feed_bottom()
+		var chat: Rect2 = h.chat_lines_box.get_global_rect()
+		var singles: Array = []
+		for i in h.LOG_MAX: singles.append("Found a Rusted Dagger (%d)" % (i + 1))
+		for text: String in singles: h.log_event(text, Color.WHITE, "note")
+		await r.frames(2)
+		r._check("reward/feed_tall/%d/classic_rows" % int(canvas_h), _logs() == singles,
+			{"logs": _logs(), "bottom": bottom, "chat": Geometry.rect(chat)})
+		_feed_geometry(tag + "_classic", false)
+		var guidance: Array = []
+		for i in 3: guidance.append(camp + " " + str(i + 1))
+		for text: String in guidance: h.log_event(text, Color.WHITE, "note")
+		await r.frames(2)
+		var chat_above := chat.end.y < bottom
+		var top: float = (h._log_lines[0] as Control).position.y if not h._log_lines.is_empty() else -1.0
+		var kept := _logs() == (guidance.slice(1) if chat_above else guidance)
+		if chat_above: kept = kept and top >= bottom - h.LOG_MAX * h.LOG_LINE_H - 0.5
+		r._check("reward/feed_tall/%d/wrapped_rows" % int(canvas_h), kept,
+			{"logs": _logs(), "top": top, "bottom": bottom, "chat": Geometry.rect(chat), "chat_above": chat_above})
+		_feed_geometry(tag + "_wrapped", false)
+		_clear_feed()
+	h.chat_root.position.y = anchored
+
+
+func _clear_feed() -> void:
+	for row: Control in h._log_lines:
+		var motion: Tween = row.get_meta("tween", null)
+		if motion != null and motion.is_valid(): motion.kill()
+		row.free()
+	h._log_lines.clear()
+
+
+## The production hint-gap rule: the newest row sits 10px above the hints.
+func _feed_bottom() -> float:
+	var bottom: float = h.LOG_BOTTOM
+	if h.hint_labels.size() == 2:
+		bottom = minf(bottom, (h.hint_labels[0] as Label).position.y - (h.HINT_ORIGIN.y - h.LOG_BOTTOM))
+	return bottom
+
+
+func _feed_geometry(id: String, chat_clear := true) -> void:
+	var bottom := _feed_bottom()
+	var chat := Rect2()
+	var chat_floor := -INF
+	if is_instance_valid(h.chat_lines_box):
+		chat = h.chat_lines_box.get_global_rect()
+		chat_floor = chat.end.y + (h.HINT_ORIGIN.y - h.LOG_BOTTOM)
+	var previous_end := -INF
+	var total := 0.0
+	for i in h._log_lines.size():
+		var row: Control = h._log_lines[i]
+		var label: Label = row.get_meta("label")
+		var shape := Geometry.shaped(label)
+		var cells := Geometry.to_rect(shape.cells)
+		var prefix := "reward/feed/%s/%d/" % [id, i]
+		r._check(prefix + "complete", not label.clip_text and label.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING
+			and label.get_line_count() == label.get_visible_line_count() and shape.missing.is_empty()
+			and label.get_global_rect().grow(0.5).encloses(cells) and row.get_global_rect().grow(0.5).encloses(cells), shape)
+		r._check(prefix + "separate", row.position.y >= previous_end and row.position.y + row.size.y <= bottom)
+		if chat_clear and chat_floor > -INF:
+			r._check(prefix + "chat_clear", row.position.y >= chat_floor and not row.get_global_rect().intersects(chat),
+				{"row": Geometry.rect(row.get_global_rect()), "chat": Geometry.rect(chat), "chat_floor": chat_floor})
+		if id == "guidance": r._check(prefix + "wrapped", label.get_line_count() >= 2 and label.get_line_count() <= WIDEST_ROW_LINES, shape)
+		previous_end = row.position.y + row.size.y
+		total += row.size.y
+	r._check("reward/feed/" + id + "/budget", total <= Balance.HUD_LOG_HEIGHT_BUDGET)

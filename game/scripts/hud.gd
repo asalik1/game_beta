@@ -1852,7 +1852,7 @@ func _ann_text_height(label: Label, width: float, floor_h: float) -> float:
 
 
 # ---------------------------------------------------------- event log ---
-# The rolling feed (P7.A): the last few things that happened, as one line
+# The rolling feed (P7.A): the last few things that happened, as compact rows
 # each with a small icon chip, bottom-left above the controls hint, newest at
 # the bottom; every line fades after LOG_LIFE. Pickups ("+ Rusted Dagger"),
 # XP, gold, lore, quest steps — the "Personal: You got 92 EXP (+69)" feed of
@@ -1892,6 +1892,7 @@ func log_event(text: String, color: Color, kind := "") -> void:
 					last.queue_free()
 				_layout_log())
 			last.set_meta("tween", tw2)
+			_layout_log()
 			_tick_event_log()
 			return
 	var row := Control.new()
@@ -1921,12 +1922,11 @@ func log_event(text: String, color: Color, kind := "") -> void:
 		row.add_child(ic)
 	var l := Label.new()
 	l.text = text.replace("\n", " ")
-	l.clip_text = true
-	l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING   # every line shows; the budget retires older rows
 	l.position = Vector2(x, 0)
-	l.size = Vector2(400, LOG_LINE_H)
+	l.size = Vector2(Balance.HUD_LOG_TEXT_WIDTH, LOG_LINE_H)
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l.add_theme_font_size_override("font_size", 13)
 	l.add_theme_color_override("font_color", color.lightened(0.1))
@@ -1935,13 +1935,6 @@ func log_event(text: String, color: Color, kind := "") -> void:
 	row.add_child(l)
 	row.set_meta("label", l)
 	_log_lines.append(row)
-	while _log_lines.size() > LOG_MAX:
-		var old: Control = _log_lines.pop_front()
-		if is_instance_valid(old):
-			var otw: Tween = old.get_meta("tween", null)
-			if otw != null and otw.is_valid():
-				otw.kill()   # its own age-out must not fire on a freed row
-			old.queue_free()
 	_layout_log()
 	# slide in from the left a touch, then age out
 	row.modulate.a = 0.0
@@ -1998,11 +1991,41 @@ func _layout_log() -> void:
 	var bottom := LOG_BOTTOM
 	if hint_labels.size() == 2:
 		bottom = minf(bottom, (hint_labels[0] as Label).position.y - (HINT_ORIGIN.y - LOG_BOTTOM))
-	var n := _log_lines.size()
-	for i in n:
-		var row: Control = _log_lines[i]
-		if is_instance_valid(row):
-			row.position.y = bottom - LOG_LINE_H * (n - i)
+	# The stack never climbs past its height budget. Wrapped rows may grow past
+	# the classic LOG_MAX one-line footprint, but not into party chat lines that
+	# grow upward from above the feed. The chat anchors to the screen bottom
+	# while the feed keeps a fixed y, so on a taller mobile canvas (aspect
+	# "expand") the chat sits beside or below the feed: it never costs the
+	# classic rows there, and once it sits below the feed it is ignored.
+	var ceiling := bottom - Balance.HUD_LOG_HEIGHT_BUDGET
+	if is_instance_valid(chat_lines_box):
+		var chat_floor := chat_lines_box.get_global_rect().end.y + (HINT_ORIGIN.y - LOG_BOTTOM)
+		if chat_floor < bottom:
+			ceiling = maxf(ceiling, minf(chat_floor, bottom - LOG_MAX * LOG_LINE_H))
+	var height := 0.0
+	for row: Control in _log_lines:
+		var label: Label = row.get_meta("label")
+		# Parent/theme and wrap width must be resolved before reading native height.
+		label.size = Vector2(Balance.HUD_LOG_TEXT_WIDTH, 0.0)
+		var native_h: float = label.get_minimum_size().y
+		# One-line rows keep the LOG_LINE_H pitch; a wrapped row adds only the
+		# native height of its extra lines (line spacing included).
+		row.size.y = LOG_LINE_H
+		if label.get_line_count() > 1:
+			row.size.y += maxf(0.0, native_h - label.get_line_height(0))
+		label.size.y = row.size.y
+		height += row.size.y
+	while _log_lines.size() > LOG_MAX or (_log_lines.size() > 1 and bottom - height < ceiling):
+		var old: Control = _log_lines.pop_front()
+		height -= old.size.y
+		var motion: Tween = old.get_meta("tween", null)
+		if motion != null and motion.is_valid():
+			motion.kill() # its age-out must not fire on a retired row
+		old.queue_free()
+	var y := bottom - height
+	for row: Control in _log_lines:
+		row.position.y = y
+		y += row.size.y
 
 
 # ------------------------------------------------------------- helpers ---
@@ -3359,6 +3382,7 @@ func _ensure_chat() -> void:
 	var sess := _chat_session()
 	if sess != null and not sess.chat_line.is_connected(_on_chat_line):
 		sess.chat_line.connect(_on_chat_line)
+	_layout_log()   # the feed now stops below the chat lines
 
 
 ## Open the input line (desktop: ENTER in a session; mobile: the 💬 button).

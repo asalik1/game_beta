@@ -24,11 +24,11 @@ Actual Claude implementation inputs/outputs and independent corrections remain i
 The subsequent announcement-wrapping checkpoint sizes the actual parented
 Labels before their first draw, so the complete 64-character departure notice
 fits its plaque. Its separate strict reward fixtures also cover unbroken and
-mixed detail text and title/detail separation. The compact feed can still
-truncate before the consequence; that is separate from text containment. A
-same-name rejoin now takes back a queued or showing "left the party" plaque on
-the host and on sibling guests, while the event feed keeps the line (live
-`--party-names` departure phase and the quick-tier reward feedback check). See WARD_VIGILS.md,
+mixed detail text and title/detail separation. Compact-feed truncation was
+resolved September 28 (see the end of this file). A same-name rejoin now takes
+back a queued or showing "left the party" plaque on the host and on sibling
+guests, while the event feed keeps the line (live `--party-names` departure
+phase and the quick-tier reward feedback check). See WARD_VIGILS.md,
 “Complete long announcement text,” and
 `build/qa/session-sept20/announcement-wrap/checkpoint-validation.json` for the
 new source-bound validation and its limits. The checkpoint-19 native
@@ -52,10 +52,26 @@ Desktop compile/quick/full, mobile scoped sync/import/compile/strict quick and a
 
 Checkpoint 22 places visible ally names before downed/revive status, sharing the same final painted HUD reservations. Names retain their full identity, native ellipsis, tint and opacity; their complete outlined boxes move to the nearest free position clear of the fixed HUD, selected prompt and earlier names. The status pass then reserves around those final name positions. Every draw starts from a fresh world anchor, so displacement cannot accumulate. Unobstructed interior names retain their authored position. Existing offscreen eligibility and party arrows remain in use.
 
-The bounded solver has an explicit no-fit fallback; this is not a universal overlap guarantee for arbitrary viewport sizes or crowds. Labels can move away from the actor to clear an obstruction. In the touch-right fixture, the downed text can move above the minimap while its name remains below it, and revive status can move to the bottom edge; grouping actor, name and status is unresolved. These controlled views establish text readability, not unambiguous body/name association during ordinary crowded combat. Controller access to the full-name reader, compact-feed truncation and arrows overlapping HUD remain separate issues (queued departure notices are now taken back on rejoin; see above).
+The bounded solver has an explicit no-fit fallback; this is not a universal overlap guarantee for arbitrary viewport sizes or crowds. Labels can move away from the actor to clear an obstruction. In the touch-right fixture, the downed text can move above the minimap while its name remains below it, and revive status can move to the bottom edge; grouping actor, name and status is unresolved. These controlled views establish text readability, not unambiguous body/name association during ordinary crowded combat. Controller access to the full-name reader and arrows overlapping HUD remain separate issues. Queued departure notices are now taken back on rejoin (see above), and compact-feed truncation was resolved September 28.
 
 Actual Claude supplied the production implementation and actual DeepSeek supplied the expanded QA, with raw requests/results in `party-overlays-candidate/` and `party-overlays-qa-candidate/`. Independent review corrected authored-anchor details, QA placeholders, restoration and transport geometry before integration. No protocol, economy, combat, art or identity value changed.
 
 The QA-only baseline against unchanged checkpoint-21 production reports 624 checks with 16 failures, all new name-clearance predicates; every previous 445 predicate remains passing. Baseline originals and rejected reports are retained. Two new views compare separated and colocated transported allies. Independent native control geometry checks visible identities, full outline bounds, HUD clearance and pairwise separation across the previous edge/status phases. Temporary actor poses and settings are restored. The tests do not use production placement helpers or no-fit metadata as an oracle.
 
 Desktop compile/quick/full, mobile scoped sync/import/compile/strict quick, and all seven strict preflight categories pass. Both renderers pass 624 name/status, 560 HUD dossier, 64 paired UI and 149 party-pause observations. All 156 accepted native originals were reviewed, 13 by root. Mobile is host-rendered Compatibility, not a physical device. Real ENet transport uses controlled poses/status displays; no ordinary earned revive, persistence roundtrip, arbitrary zoom/viewport stress or performance benchmark is claimed. Known renderer shutdown and ObjectDB diagnostics remain in raw logs. Exact pins, reviews, preserved baseline and limits: `build/qa/session-sept20/party-overlays/checkpoint-validation.json`; local commit/state: `commit-receipt.json` there.
+
+## Complete compact-feed lines
+
+September 28: bottom-left event-feed rows wrap instead of ending in an ellipsis,
+so a 64-character departure keeps "left the party" and the Depths camp guidance
+keeps its last sentence. Rows wrap at word boundaries and are never cut short.
+A one-line row keeps its 20px pitch and a wrapped row adds only its extra lines.
+The stack keeps its existing gap above the control hints, never grows past a
+140px budget, and in co-op wrapped rows never climb into the party chat lines;
+the oldest rows retire first when it would. Party chat anchors to the screen
+bottom while the feed keeps a fixed y, so on a taller mobile canvas (16:10, 3:2,
+4:3) the chat sits beside or below the feed: there it never costs the five
+classic one-line rows. Coalescing and fades are unchanged. Checks:
+`shot.bat hud_dossier --reward-plaques` views `15_compact_feed` and
+`16_feed_chat` (plus the tall-canvas chat cases), and the quick-tier reward
+feedback test.

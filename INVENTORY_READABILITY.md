@@ -25,10 +25,18 @@ originals on each platform. Separate equipment, synthesis and paired ENet UI
 regressions pass; all 68 final originals were reviewed. The old-production
 QA run retains 49 expected typography/grouping failures with all 245 original
 checks green. See `build/qa/session-sept26/acceptance.json` for exact bindings.
-Stat-token/value wrapping, coarse bag art and smaller item-detail metadata
-remain polish debt. These are controlled host tests, not physical-device or
+Coarse bag art and smaller item-detail metadata remain polish debt; the
+stat-token/value wrapping debt was resolved September 28 (below). These are controlled host tests, not physical-device or
 ordinary-progression acceptance. Older records below describe their original
 checkpoints.
+
+September 28: equipped stat summaries bind each stat name to its value (and the
+passive star to its name) with a nonbreaking space, so wrapping breaks only
+between stats; `Items.describe` keeps ordinary spaces for every other caller.
+The readability mode adds a ninth view, `08_narrow_summary`: the production
+equipped row at its narrowest authored width (three sockets, four stats). Native
+glyph cells prove every stat token stays on one line, and a paired control with
+the old spaces must split HP from its value at the same width and font.
 
 Inventory keeps its seven equipment positions. Empty rows are compact, while
 occupied rows retain their icon, socket and gesture geometry. Primary item names
@@ -47,7 +55,7 @@ The optional controlled native probe reuses the existing runner:
 `shot.bat material_ui --inventory-readability --timeout=300`.
 Use a fresh isolated APPDATA under `build/qa/`. Add `--touch` for host touch
 emulation, or `--mobile --renderer=gl_compatibility --touch` after scoped mobile
-sync/import/compile. This mode requires all eight captures and cannot be combined
+sync/import/compile. This mode requires all nine captures and cannot be combined
 with other material modes or a baseline waiver.
 
 The fixture lends maximum legal bag capacity, mixed stock, and F/S equipment.

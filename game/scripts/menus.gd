@@ -2941,7 +2941,7 @@ func _equipped_row(left: VBoxContainer, slot: String, cat: String) -> void:
 		nm.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		nm.custom_minimum_size = Vector2(text_w, 0)
 		nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var dl := _lbl(text, Items.describe(item, false), INV_STAT_FONT, Color(0.68, 0.7, 0.76))
+		var dl := _lbl(text, Items.describe(item, false, true), INV_STAT_FONT, Color(0.68, 0.7, 0.76))
 		dl.custom_minimum_size = Vector2(text_w, 0)
 		# (No overrun trim here: with autowrap it collapses the label's minimum
 		# height to 1px and the line vanishes — Godot 4.4.)
