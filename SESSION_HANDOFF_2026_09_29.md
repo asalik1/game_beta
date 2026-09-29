@@ -60,6 +60,14 @@ with zero loss. Session evidence, notes and ~466 owner-review captures are local
   their exact on-screen blend when advanced mid-dissolve and dissolve in register; painterly
   scenery samples linearly so it stops shimmering on pans.
 
+- **Menu reskin** (`21deb4b`, `c2a3d82`): every menu trades the flat navy dashboard for a
+  painted bronze frame kit generated against the cover chrome (two art rounds, gated by an
+  independent art review), with grade-tinted slot rims replacing the "[F]/[S]" prefix text, a
+  five-piece forged divider, compact slices that fit 25px controls, warm ground colors, and a
+  field-by-field flat fallback when textures are missing. Sliders and scrollbars stay
+  deliberately flat for affordance. Masters, prompts, rejected round 1 and both contact sheets
+  are in `art_src/ui_frame_2026-09-29/`.
+
 ## Delivered — correctness and UX
 - **Duels** (`6a385cf`, `c122089`): stuns show Stunned (Ice freezes stay Frozen); crits roll
   against the defender's real CritRes; Meteor's true portion survives evasion/resist; mixed
@@ -109,9 +117,19 @@ Captures for all of these are under `build/qa/session-sept29/owner-review/` (per
   vs cc_mult 0.5 mismatch.
 
 ## Final state
-- 28 commits this round: 25 reviewed tasks + 3 mobile syncs, ending at the close commit below.
-- Closing gates on the final tree: full desktop suite PASS (339s), mobile import/compile/quick
-  gate PASS, strict preflight PASS (169s). Quick suites passed after every integration train.
+- This round: 26 reviewed tasks (incl. the two-commit menu reskin) + 4 mobile syncs + the close
+  commits. A bonus round after the first close added the menu reskin (T52): art generated and
+  twice art-reviewed, wiring reviewed like every other lane.
+- Closing gates ran TWICE (once at the first close, again after the menu reskin): full desktop
+  suite PASS (357s final), mobile import/compile/quick gate PASS, strict preflight PASS (178s
+  final). Quick suites passed after every integration train.
+- Note for the next session: the workshop-preview geometry oracle
+  (professions_visual_geometry._texture) exempts only GradientTexture rules — it will flag the
+  forged divider's stretched AtlasTexture rails; add the exemption when that rig next runs.
+- One incident, contained: a round-1 art agent strayed into the owner's main MMO checkout and
+  committed there; the stray commit (art files only, unpushed tip) was removed with a mixed
+  reset and the checkout's own modifications left untouched. Briefs for main-worktree work now
+  pin the absolute working directory.
 - The 46 preserved unrelated files verified byte-identical against
   `build/qa/session-sept26/initial-preservation.json` (46/46, none missing, none changed); the
   two tracked `shot_road_hunt.gd` edits remain uncommitted working-tree modifications.
