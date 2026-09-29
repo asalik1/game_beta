@@ -322,7 +322,7 @@ func _body_point(item: Dictionary) -> Vector2:
 	# The item's name label center: on the card body, left of the socket HBox.
 	for raw in g.menus.root.find_children("*", "Label", true, false):
 		var label := raw as Label
-		if label.is_visible_in_tree() and label.text == Items.title(item):
+		if label.is_visible_in_tree() and label.text == UITheme.inventory_title(item):
 			if not g.get_viewport_rect().encloses(label.get_global_rect()): return Vector2(-1, -1)
 			return label.get_global_rect().get_center()
 	return Vector2(-1, -1)
@@ -331,7 +331,7 @@ func _body_point(item: Dictionary) -> Vector2:
 func _scroll_of(item: Dictionary) -> ScrollContainer:
 	for raw in g.menus.root.find_children("*", "Label", true, false):
 		var label := raw as Label
-		if label.is_visible_in_tree() and label.text == Items.title(item):
+		if label.is_visible_in_tree() and label.text == UITheme.inventory_title(item):
 			var parent: Node = label.get_parent()
 			while parent != null and not parent is ScrollContainer: parent = parent.get_parent()
 			return parent as ScrollContainer

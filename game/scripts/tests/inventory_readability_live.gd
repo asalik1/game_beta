@@ -120,7 +120,7 @@ func _exercise() -> String:
 	await _capture(VIEWS[1])
 	var primary: Color = Color.TRANSPARENT
 	for slot in Items.SLOTS:
-		var label: Label = _label(m.root, Items.title(p.equipment[slot]))
+		var label: Label = _label(m.root, UITheme.inventory_title(p.equipment[slot]))
 		if not _check("occupied." + slot + ".present", label != null): return "missing occupied row"
 		var card: Control = _panel(label)
 		if not _check("occupied." + slot + ".target", card != null and card.size.y >= (44.0 if g.touch_mode else 36.0)):
@@ -163,8 +163,9 @@ func _exercise() -> String:
 		# selector cannot find them; select by the tooltip's first (title) line.
 		var cell: Button = _gear_button(m.root, item, false)
 		if not _check("accent." + item.grade + ".cell", cell != null): return "grade cell missing"
-		var style: StyleBoxFlat = cell.get_theme_stylebox("normal") as StyleBoxFlat
-		_check("accent." + item.grade + ".preserved", style != null and style.border_color.is_equal_approx(Color(Items.GRADE_COLOR[item.grade], 0.9)))
+		var style := cell.get_theme_stylebox("normal") as StyleBoxTexture
+		var tint: Color = style.get_meta("slot_tint", Color.TRANSPARENT) if style != null else Color.TRANSPARENT
+		_check("accent." + item.grade + ".preserved", tint.is_equal_approx(Items.GRADE_COLOR[item.grade]))
 	# Codex fidelity probes: backpack indices 0..6 (one per Items.SLOTS from the
 	# roll cycle) plus the last GEAR cell — the grid's true last child is a
 	# material and stays with the reach gesture above. inventory_order is forced
@@ -308,7 +309,7 @@ func _gallery(rng: RandomNumberGenerator) -> String:
 	p.backpack.erase(unique)
 	p.equipment["weapon"] = unique
 	await _open("all")
-	var label: Label = _label(m.root, Items.title(unique))
+	var label: Label = _label(m.root, UITheme.inventory_title(unique))
 	if not _check("gallery.worn_row", label != null): return "worn unique row missing"
 	var card: Control = _panel(label)
 	if card == null or not await _reach(card): return "worn unique row unreachable"
@@ -375,7 +376,7 @@ func _probe_gear_cell(grid: GridContainer, index: int, item: Dictionary) -> Stri
 		{"world": _tex_size(world), "meta": meta})
 	return ""
 
-## Equipped-row fidelity. The TextureRect is selected by the 46px icon well,
+## Equipped-row fidelity. The TextureRect is selected by the 48px icon well,
 ## NOT by texture size — an unpatched 32/42 world texture is still found and
 ## its actual dimensions become the recorded old-art diagnostic.
 func _probe_equipped_icon(card: Control, item: Dictionary, prefix: String) -> void:
@@ -392,8 +393,8 @@ func _probe_equipped_icon(card: Control, item: Dictionary, prefix: String) -> vo
 	var well: Control = icon.get_parent() as Control
 	var well_rect: Rect2 = well.get_global_rect()
 	var icon_rect: Rect2 = icon.get_global_rect()
-	_check(prefix + ".geometry_46_38", is_equal_approx(well_rect.size.x, 46.0) and is_equal_approx(well_rect.size.y, 46.0)
-		and is_equal_approx(icon_rect.size.x, 38.0) and is_equal_approx(icon_rect.size.y, 38.0)
+	_check(prefix + ".geometry_48_36", is_equal_approx(well_rect.size.x, 48.0) and is_equal_approx(well_rect.size.y, 48.0)
+		and is_equal_approx(icon_rect.size.x, 36.0) and is_equal_approx(icon_rect.size.y, 36.0)
 		and well_rect.grow(0.5).encloses(icon_rect),
 		{"well": Geo.rect(well_rect), "icon": Geo.rect(icon_rect)})
 	var world: Texture2D = Art.icon_for(item)
@@ -491,7 +492,7 @@ func _grid() -> GridContainer:
 func _equipped_icon(card: Control) -> TextureRect:
 	for node in card.find_children("*", "Panel", true, false):
 		var well: Panel = node as Panel
-		if well == null or not well.custom_minimum_size.is_equal_approx(Vector2(46, 46)): continue
+		if well == null or not well.custom_minimum_size.is_equal_approx(Vector2(48, 48)): continue
 		for child in well.get_children():
 			if child is TextureRect: return child as TextureRect
 	return null
@@ -679,7 +680,7 @@ func _readability_equipped(card: Control, item: Dictionary, prefix: String) -> v
 	var summary: Label = _label(card, expected)
 	# Keep the native geometry oracle usable against the old ordinary-space UI.
 	if summary == null: summary = _label(card, Items.describe(item, false))
-	var name_label: Label = _label(card, Items.title(item))
+	var name_label: Label = _label(card, UITheme.inventory_title(item))
 	_readability_label(name_label, prefix + ".name", 16, false)
 	_readability_label(summary, prefix + ".summary", 14)
 	_check(prefix + ".exact_summary", summary != null and summary.text == expected,
@@ -810,7 +811,7 @@ func _readability_frame() -> Dictionary:
 	var result := {}
 	for slot in Items.SLOTS:
 		var item: Dictionary = p.equipment[slot]
-		var title: Label = _label(m.root, Items.title(item))
+		var title: Label = _label(m.root, UITheme.inventory_title(item))
 		if title == null: result[slot] = {"missing": "title"}; continue
 		var card: Control = _panel(title)
 		var summary: Label = _label(card, Items.describe(item, false, true)) if card != null else null
@@ -846,7 +847,7 @@ func _report() -> Dictionary:
 	var result := {"checks": rows.size(), "passed": rows.size() - failures, "findings": 0, "failures": failures,
 		"rows": rows, "shots": views, "gestures": gestures, "reach_runs": reach_runs, "mouse_clicks": native.mouse_clicks, "touch_taps": native.touch_taps,
 		"timings": timings, "equipment_frames": equipment_frames,
-		"scope": "Isolated factory loans; native GUI and scroll events; two real single-unit material discards. Codex icon fidelity by byte-equal pixels against the live four-arg resolver at exact 46/38, 48, 44/36 and 40 px geometry; world-resolver dims witnessed as 32 or 42, not asserted uniform. Optional gear-fidelity gallery loans one named unique for card/worn/paperdoll views via native input with disclosed direct equipment assignment, restored. _open dispatch/settled timings recorded without thresholds. Host touch capability is explicitly enabled for --touch and restored; raw touch gestures, no physical device, controller, socket drag/drop, crafting, sale, save, merchant/world/held renderer, whole-art-corpus, or ordinary-progression acceptance. Equipped names may retain authored ellipsis; selected material detail full text checked. Geometry supports original-image review, never replaces it."}
+		"scope": "Isolated factory loans; native GUI and scroll events; two real single-unit material discards. Codex icon fidelity by byte-equal pixels against the live four-arg resolver at exact 48/36, 48, 44/36 and 40 px geometry; world-resolver dims witnessed as 32 or 42, not asserted uniform. Optional gear-fidelity gallery loans one named unique for card/worn/paperdoll views via native input with disclosed direct equipment assignment, restored. _open dispatch/settled timings recorded without thresholds. Host touch capability is explicitly enabled for --touch and restored; raw touch gestures, no physical device, controller, socket drag/drop, crafting, sale, save, merchant/world/held renderer, whole-art-corpus, or ordinary-progression acceptance. Equipped names may retain authored ellipsis; selected material detail full text checked. Geometry supports original-image review, never replaces it."}
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(r.shot_dir))
 	var file := FileAccess.open(r.shot_dir + "/report.json", FileAccess.WRITE)
 	if file != null: file.store_string(JSON.stringify(result, "\t")); file.close()

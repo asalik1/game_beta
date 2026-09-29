@@ -277,8 +277,7 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 	_shell_rect = Rect2(Vector2(640 - w / 2 - 3, 360 - h / 2 - 3), Vector2(w + 6, h + 6))
 	var frame := UITheme.panel(root, _shell_rect.position, _shell_rect.size)
 	if boot_glass:
-		var glass: StyleBoxFlat = frame.get_theme_stylebox("panel").duplicate()
-		glass.bg_color.a = Balance.BOOT_PANEL_ALPHA
+		var glass := UITheme.with_opacity(frame.get_theme_stylebox("panel"), Balance.BOOT_PANEL_ALPHA)
 		frame.add_theme_stylebox_override("panel", glass)
 
 	var vbox := VBoxContainer.new()
@@ -297,7 +296,7 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 	UITheme.title(tl, 28)  # display font; ~26px optical in the pixel face
 	tl.add_theme_color_override("font_color", Color(0.95, 0.85, 0.5))
 	vbox.add_child(tl)
-	UITheme.rule(vbox)  # header underline: gold, fading right
+	UITheme.header_rule(vbox)  # forged rail + center boss on the old 2px footprint
 
 	if closable:
 		# Close control is added last so it stays above the shell.
@@ -1037,7 +1036,8 @@ func open_settings(from := "pause") -> void:
 	listening_action = ""  # leaving Keybinds must end capture before the next key
 	settings_return = from
 	# Touch controls get a scrollable body; desktop keeps its compact layout.
-	var vbox := _open("Settings", 700, 660 if game.touch_mode else 490, true)
+	# Desktop height fits the forged buttons' protected 9px rims (no scroller here).
+	var vbox := _open("Settings", 700, 660 if game.touch_mode else 520, true)
 	current = "settings"
 	var body := _settings_body(vbox)
 	for spec in [["Music volume", "music"], ["Sound effects", "sfx"]]:
@@ -2671,12 +2671,12 @@ func open_inventory(tab := "gear", cat := "all") -> void:
 		cb.focus_mode = Control.FOCUS_NONE
 		cb.add_theme_font_size_override("font_size", INV_CAPTION_FONT)
 		for st in ["normal", "hover", "pressed"]:
-			var csb2 := cb.get_theme_stylebox(String(st)).duplicate() as StyleBoxFlat
+			var csb2: StyleBox = cb.get_theme_stylebox(String(st)).duplicate()
 			if csb2 != null:
 				csb2.content_margin_left = 10.0
 				csb2.content_margin_right = 10.0
-				csb2.content_margin_top = 4.0
-				csb2.content_margin_bottom = 4.0
+				csb2.content_margin_top = UITheme.TAB_SLICE if csb2 is StyleBoxTexture else 4.0
+				csb2.content_margin_bottom = UITheme.TAB_SLICE if csb2 is StyleBoxTexture else 4.0
 				cb.add_theme_stylebox_override(String(st), csb2)
 	# Separate browse filters from the bag-wide action toolbar.
 	var actrow := HFlowContainer.new()
@@ -2963,16 +2963,11 @@ func _equipped_row(left: VBoxContainer, slot: String, cat: String) -> void:
 	row.add_theme_constant_override("separation", 10)
 	row.mouse_filter = Control.MOUSE_FILTER_PASS  # clicks fall through to the card
 	card.add_child(row)
-	# Icon well. Occupied keeps the 46px socket-sized well; empty shrinks it so
+	# Icon well. Occupied has a 36px well inside the 48px frame; empty shrinks so
 	# the seven rows stop eating the left column's height with blank chrome.
 	var well := Panel.new()
-	well.custom_minimum_size = Vector2(46, 46) if has else Vector2(28, 28)
-	var wsb := StyleBoxFlat.new()
-	wsb.bg_color = Color(0.05, 0.05, 0.07, 0.92)
-	wsb.border_color = Color(color, 0.85 if has else 0.5)
-	wsb.set_border_width_all(2)
-	wsb.set_corner_radius_all(4)
-	well.add_theme_stylebox_override("panel", wsb)
+	well.custom_minimum_size = Vector2.ONE * UITheme.SLOT_SIZE if has else Vector2(28, 28)
+	well.add_theme_stylebox_override("panel", UITheme.slot_style(color))
 	well.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	well.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(well)
@@ -2981,10 +2976,10 @@ func _equipped_row(left: VBoxContainer, slot: String, cat: String) -> void:
 		ic.texture = _gear_codex_icon(item)
 		ic.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		ic.set_anchors_preset(Control.PRESET_FULL_RECT)
-		ic.offset_left = 4
-		ic.offset_top = 4
-		ic.offset_right = -4
-		ic.offset_bottom = -4
+		ic.offset_left = UITheme.SLOT_SLICE
+		ic.offset_top = UITheme.SLOT_SLICE
+		ic.offset_right = -UITheme.SLOT_SLICE
+		ic.offset_bottom = -UITheme.SLOT_SLICE
 		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -3009,7 +3004,7 @@ func _equipped_row(left: VBoxContainer, slot: String, cat: String) -> void:
 	var socket_n: int = int(item.get("gem_slots", 0)) if has else 0
 	var text_w: float = 260.0 - (socket_n * 38.0 if has else 0.0)
 	if has:
-		var nm := _lbl(text, Items.title(item), INV_NAME_FONT, Color(0.9, 0.9, 0.94))
+		var nm := _lbl(text, UITheme.inventory_title(item), INV_NAME_FONT, Color(0.9, 0.9, 0.94))
 		nm.autowrap_mode = TextServer.AUTOWRAP_OFF
 		nm.clip_text = true
 		nm.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -3202,14 +3197,10 @@ func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color
 		b.text = glyph
 		b.add_theme_font_size_override("font_size", 17)
 	b.add_theme_color_override("font_color", color)
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.09, 0.09, 0.12, 0.92)
-	sb.border_color = Color(color, 0.9)
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(4)
+	var sb := UITheme.slot_style(color)
+	b.add_theme_constant_override("icon_max_width", UITheme.SLOT_WELL)
 	b.add_theme_stylebox_override("normal", sb)
-	var sbh: StyleBoxFlat = sb.duplicate()
-	sbh.bg_color = Color(0.17, 0.17, 0.23, 0.95)
+	var sbh := UITheme.slot_style(color, true)
 	b.add_theme_stylebox_override("hover", sbh)
 	b.add_theme_stylebox_override("pressed", sbh)
 	if cb.is_valid():
@@ -3225,12 +3216,7 @@ func _bag_slot(grid: GridContainer, icon: Texture2D, glyph: String, color: Color
 func _bag_empty(grid: GridContainer) -> Panel:
 	var pnl := Panel.new()
 	pnl.custom_minimum_size = Vector2(48, 48)
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.045, 0.045, 0.065, 0.92)
-	sb.border_color = Color(0.38, 0.32, 0.2, 0.9)  # visible socket, not a hairline
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(4)
-	pnl.add_theme_stylebox_override("panel", sb)
+	pnl.add_theme_stylebox_override("panel", UITheme.slot_style(UITheme.GOLD_DIM))
 	grid.add_child(pnl)
 	return pnl
 

@@ -4369,3 +4369,13 @@ const POTION_EMPTY_COOLDOWN := 0.3
 const POTION_MANA_FULL_MARGIN := 0.5
 const POTION_TONIC_REFRESH_WINDOW := 0.5
 const POTION_BUFF_REFRESH_WINDOW := 1.0
+
+
+# Forged UI chrome: source slice margins live with the asset geometry in UITheme.
+const UI_FRAME_IDLE_LIFT := 1.12
+const UI_FRAME_HOVER_LIFT := 1.18
+const UI_FRAME_PRESSED_LIFT := 1.3    # above hover: also a toggle's selected look
+const UI_FRAME_DISABLED_SHADE := 0.58
+const UI_FRAME_TAB_HEIGHT := 38.0
+const UI_FRAME_TAB_PAD_X := 9.0
+const UI_FRAME_DIVIDER_HEIGHT := 16.0

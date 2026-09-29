@@ -96,6 +96,13 @@ func _ready() -> void:
 		shot_dir = shot_dir.path_join("hud_diet")
 	if flag("skills-touch"):
 		shot_dir = shot_dir.path_join("skills_touch")
+	# Focused modes are appended here to avoid reshuffling the shared flag chain.
+	if flag("forged-frame"):
+		shot_dir = "user://shots/hud_dossier/forged_frame"
+		var frame_error: String = await preload("res://scripts/tests/ui_frame_live.gd").run(self)
+		if frame_error != "": print("FORGED FRAME FAILED: ", frame_error)
+		finish(0 if frame_error == "" else 1)
+		return
 	_snapshot_disk()
 	await boot("warrior", "ch1" if flag("attribute-readiness") or flag("skills-touch") else "ch3", false)
 	var error := await _run()

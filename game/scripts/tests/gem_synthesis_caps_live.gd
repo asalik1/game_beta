@@ -357,7 +357,7 @@ func _gear_card(item: Dictionary) -> bool:
 	var at := Vector2(-1, -1)
 	for raw in g.menus.root.find_children("*", "Label", true, false):
 		var label := raw as Label
-		if label.is_visible_in_tree() and label.text == Items.title(item):
+		if label.is_visible_in_tree() and label.text == UITheme.inventory_title(item):
 			at = label.get_global_rect().get_center()
 			break
 	if at.x < 0: return false
