@@ -24,7 +24,8 @@ class_name Terrains
 # pillars) merge into their ground. Darkness identity comes from the
 # GROUND palette in art.gd + macro floor features, NOT from the modulate.
 # (Graveyard at 0.78 avg deleted its own tombstones; void at 0.55/0.5/0.7
-# was the worst offender.)
+# was the worst offender.) Sanctioned LOCAL darkening: room_floor.vignette's
+# z -9 floor multiply (edges only, never below ROOM_FLOOR_VALUE_MIN).
 ## Real silhouette families for repeated ecology. A terrain can keep weighting
 ## the canonical key while every placement deterministically selects one of
 ## these authored variants. This prevents a grove from stamping one tree PNG.

@@ -29,6 +29,9 @@ func _build(g: Game) -> void:
 	var terrain: Dictionary = Terrains.get_terrain(terrain_id)
 	Floor.add_ground(g, self, room, terrain)
 	Floor.field(g, self, room, terrain)
+	# The same edge falloff the built room gets (one cached texture), so the
+	# floor does not darken the frame the room is really built.
+	Floor.vignette(g, self, room)
 	var full: Rect2 = g.room_rect(room)
 	var play: Rect2 = g.play_rect(room)
 	var lane: Vector2 = g.door_pos(room, entry)

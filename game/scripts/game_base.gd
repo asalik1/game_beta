@@ -387,6 +387,7 @@ var barrier_active := false
 var terrain_by_zone: Array = []       # terrain id per room
 var zone_grounds := {}                # room idx -> ground Sprite2D (repaintable)
 var zone_fields := {}                 # room idx -> GPU-tiled authored floor Polygon2D (native-res crisp base, see _apply_ground_field)
+var zone_floor_vignettes := {}        # room idx -> baked local multiply quad, rebuilt only with the floor
 var zone_road_marks := {}             # room idx -> worn-road overlay Sprite2Ds (see _mark_roads)
 var zone_scenery := {}                # room idx -> decor + obstacle nodes
 var zone_canopy := {}                 # room idx -> foreground canopy strips (P3 overhang)

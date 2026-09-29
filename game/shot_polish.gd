@@ -4,6 +4,12 @@ extends ShotRig
 ## contact shadows, light pools, hit numbers / HP bars / reticle, HUD text —
 ## in the rooms the trailer footage was shot in, at the trailer zoom (1.4) and
 ## native (1.0). Never touches shots/cine (own dir: user://shots/polish).
+## --room-lighting --capital --rooms=17,20 --compare --terrains=keep
+## bundles the floor/light regressions, keep/capital composition and floorfield
+## comparison in ONE engine session (scene handoff, no second Godot process).
+## Capital stays in polish: its holystone has no painterly comparison texture,
+## so a --terrains entry without a painted field is refused before any capture.
+## Views per room: centre, north, west, corner and a doorway approach.
 ##   shot.bat polish [--rooms=2,17,20] [--zoom=1.4] [--class=warrior] [--hud] [--world-read] [--timeout=180]
 ## --world-read: first runs test_world_read (road curve/crossings/prop
 ## clearance, stone rim, fortress palette, arcade grounding) plus its RENDER
@@ -55,6 +61,29 @@ func _ready() -> void:
 	if flag("damage-numbers"):
 		await _damage_numbers()
 		return
+	if flag("room-lighting"):
+		if flag("compare"):
+			# The chained floorfield --compare needs a painted master per terrain;
+			# refuse up front instead of after every capture (capital_civic's
+			# holystone has none, so it can never pass that compare).
+			for tid in arg("terrains", "village,darkwood,desert,ice").split(",", false):
+				var kind := String(Terrains.get_terrain(tid).get("ground", ""))
+				if not ResourceLoader.exists("res://assets/sprites/ground_field_%s_painterly.png" % kind):
+					print("RIG FAIL: --terrains=%s has no painted field for its ground (%s); floorfield --compare needs one, use --terrains=keep" % [tid, kind])
+					finish(1)
+					return
+		var tests := preload("res://scripts/tests/test_prop_illumination.gd")
+		var error: String = tests.run(self)
+		if error == "": error = tests.run_world(game)
+		if error != "":
+			print("RIG FAIL: " + error)
+			finish(1)
+			return
+		for room_id in arg("rooms", "17,20").split(",", false):
+			await _goto(int(room_id))
+			if not await _room_light_views("keep_%s" % room_id):
+				finish(1)
+				return
 	if flag("illumination"):
 		# Native 1x prop/light loops, rendered luminance and stationary geometry.
 		var error: String = await preload("res://scripts/dev/prop_illumination_capture.gd").run(self)
@@ -105,7 +134,18 @@ func _ready() -> void:
 		finish()
 		return
 	if flag("capital"):
-		await _capital_shots()
+		if not await _capital_shots():
+			finish(1)
+			return
+		if flag("room-lighting"):
+			print("ok: room lighting polish captures and regression checks; handing off to floorfield --compare")
+			# Free the polish scene/game before floorfield boots its own fixture.
+			# The runner's outer watchdog continues across the scene handoff.
+			var next := get_tree().change_scene_to_file("res://shot_floorfield.tscn")
+			if next != OK:
+				print("RIG FAIL: floorfield handoff failed")
+				finish(1)
+			return
 		finish()
 		return
 	if flag("review"):
@@ -177,8 +217,37 @@ func _ready() -> void:
 	await sim_wait(0.4)
 	shot("magma_room", "lava pools + glow")
 	if flag("world-read"):
-		await _capital_shots()
+		if not await _capital_shots():
+			finish(1)
+			return
 	finish()
+
+
+func _room_light_views(prefix: String) -> bool:
+	var error := preload("res://scripts/tests/test_prop_illumination.gd").check_room(game, game.cur_room)
+	if error != "":
+		print("RIG FAIL: " + error)
+		return false
+	var zi: int = game.cur_room
+	var rect := game.play_rect(zi)
+	var views := {"centre": rect.get_center(),
+		"north": Vector2(rect.get_center().x, rect.position.y + 190.0),
+		"west": Vector2(rect.position.x + 230.0, rect.get_center().y),
+		"corner": rect.position + Vector2(230, 190)}
+	# A doorway approach: the camera opens onto the corridor (and the unbuilt
+	# neighbour's preview floor), where a play-rect-only falloff left a seam.
+	for side in ["W", "E", "S", "N"]:
+		if game.rooms[zi]["exits"].has(side) and game.neighbor(zi, side) >= 0:
+			var lane: Vector2 = game.door_pos(zi, side)
+			views["door"] = Vector2(clampf(lane.x, rect.position.x + 60.0, rect.end.x - 60.0),
+				clampf(lane.y, rect.position.y + 90.0, rect.end.y - 60.0))
+			break
+	for label: String in views:
+		game.player.global_position = views[label]
+		game.camera.global_position = views[label]
+		await sim_wait(0.5)
+		shot(prefix + "_" + label, "local floor falloff + fire contact/pools")
+	return true
 
 
 ## --review (2026-08-19): the in-world beats of the owner review pack.
@@ -571,7 +640,7 @@ func _motion_beat(beat: String) -> bool:
 
 
 ## --world-read bundles road/palette regressions, rooms, magma and capital.
-func _capital_shots() -> void:
+func _capital_shots() -> bool:
 	# The Wayfinder Sanctum's endgame gates: SEALED (fresh hero) vs OPEN
 	# (chapter 7 cleared) — the owner's locked-state ruling made visible.
 	game.enter_capital()
@@ -603,6 +672,10 @@ func _capital_shots() -> void:
 		game.camera.global_position = game.room_pos(em, 1056, 600)
 		await sim_wait(0.4)
 		shot("capital_emberward_muster", "the muster point (no duplicate leave door)")
+	if flag("room-lighting"):
+		if wf < 0 or em < 0 or not await _room_light_views("capital"):
+			print("RIG FAIL: capital room composition unavailable")
+			return false
 	var plaza := _room_by_name("crown_plaza")
 	if plaza >= 0:
 		game.fast_travel(plaza)
@@ -611,6 +684,7 @@ func _capital_shots() -> void:
 		game.camera.global_position = game.room_pos(plaza, 1056, 450)
 		await sim_wait(0.8)
 		shot("capital_arcade_grounding", "arcade plinth, open arch and contact shadows")
+	return true
 
 
 ## One bounded mode combines deterministic regression with the requested burst capture.

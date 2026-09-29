@@ -4181,6 +4181,22 @@ const DOOR_TORCH_HALO_SCALE := 2.5
 # headroom for authored strip luminance and HDR bloom under the 12% contract.
 const PROP_LIGHT_LOW := 0.96
 const PROP_LIGHT_PERIOD := 2.4  # static sources; animated sources use their strip duration
+
+# Local floor composition, never a CanvasModulate or whole-frame grade
+# (room_floor.vignette, z -9 multiply over the whole cell). The falloff eases
+# in from the walls' inner faces; its grayscale multiply stays >= 0.75 in
+# DISPLAY terms (8-bit sRGB texels, same on HDR 2D and the phone renderer),
+# including overlapping corner falloff, and holds 0.75 in door corridors.
+const ROOM_EDGE_WIDTH := 260.0
+const ROOM_EDGE_DARKEN := 0.25
+const ROOM_CORNER_DARKEN := 0.08
+const ROOM_FLOOR_VALUE_MIN := 0.75
+const ROOM_FALLOFF_TEX_SIZE := 129
+const FIRE_POOL_LIGHT_MIN := 0.55
+const FIRE_CONTACT_ALPHA := 0.16
+const FIRE_CONTACT_INNER := 0.40
+const FIRE_CONTACT_PEAK := 0.68
+const FIRE_CONTACT_TEX_SIZE := 128
 # Hazard pools retain their separate, existing telegraph rhythm.
 const HAZARD_GLOW_PULSE_LOW := 0.72
 const HAZARD_GLOW_PULSE_PERIOD := Vector2(1.1, 1.6)

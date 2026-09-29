@@ -154,6 +154,7 @@ func switch_chapter(id: String, force := false) -> void:
 	hazards.clear()
 	zone_grounds.clear()
 	zone_fields.clear()
+	zone_floor_vignettes.clear()
 	zone_road_marks.clear()
 	zone_scenery.clear()
 	shop_stock.clear()
@@ -3284,6 +3285,10 @@ func _add_building(sprite_name: String, pos: Vector2) -> StaticBody2D:
 	body.add_child(cs)
 	if sprite_name.begins_with("cottage") or sprite_name == "camp_bonfire":
 		_attach_fire_audio(body)  # hearth / camp fire crackles as you pass
+	if sprite_name == "camp_bonfire":
+		# Only a visible flame lights the floor. A cottage hearth burns indoors,
+		# so a pool on its daylight doorstep would be an unexplained bloom.
+		_add_fire_pool(body, spr, pos)
 	if sprite_name.begins_with("cottage"):
 		var smoke := CPUParticles2D.new()
 		smoke.amount = 8
@@ -3384,8 +3389,21 @@ func _add_obstacle(sprite_name: String, pos: Vector2, visual_variation := 1.0) -
 	body.add_child(spr)
 	if sprite_name == "camp_bonfire":
 		_attach_fire_audio(body)  # an open camp fire crackles like a hearth
+	if sprite_name in ["camp_bonfire", "keep_brazier", "torch_pillar"]:
+		_add_fire_pool(body, spr, pos)
 	world.add_child(body)
 	return body
+
+
+## Small standalone fires use the same floor treatment as structure sockets.
+func _add_fire_pool(body: Node2D, source: Node2D, pos: Vector2) -> void:
+	var zi := room_at_pos(pos)
+	if zi < 0:
+		return
+	var illumination := preload("res://scripts/prop_illumination.gd").attach(source, pos)
+	var pool := _floor_glow(body, STRUCT_GLOW_DROP, TORCH_GLOW_COLOR,
+		STRUCT_GLOW_RADIUS, TORCH_GLOW_STRENGTH, zi, true, illumination, false, true)
+	pool.z_as_relative = false
 
 
 ## Shared scenery shadow geometry: broad painted footprints keep a contact rim;
@@ -3781,9 +3799,14 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 			# ...and a floor pool the light can't make on a dark floor (see
 			# _floor_glow): the torch's warmth lands on the ground around it.
 			if szi >= 0:
-				var g := _floor_glow(body, lt.position + STRUCT_GLOW_DROP, lcol,
+				var floor_at := lt.position + STRUCT_GLOW_DROP
+				if def.get("fire", false):
+					# Project raised fire onto the structure's grounding line; a
+					# pool behind the painted pillar/facade cannot light flagstones.
+					floor_at.y = STRUCT_GLOW_DROP.y
+				var g := _floor_glow(body, floor_at, lcol,
 					STRUCT_GLOW_RADIUS * lt.texture_scale,
-					STRUCT_GLOW_STRENGTH * float(d.get("light_energy", 0.8)), szi, true, illumination)
+					STRUCT_GLOW_STRENGTH * float(d.get("light_energy", 0.8)), szi, true, illumination, false, def.get("fire", false))
 				g.z_as_relative = false
 				g.z_index = -8   # over the floor, under the structure's own sprites
 
@@ -3802,9 +3825,12 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 		var illumination := preload("res://scripts/prop_illumination.gd").attach(light_source, pos + lt.position)
 		illumination.bind(lt)
 		if szi >= 0:
-			var g2 := _floor_glow(body, lt.position + STRUCT_GLOW_DROP, lt.color,
+			var floor_at := lt.position + STRUCT_GLOW_DROP
+			if def.get("fire", false):
+				floor_at.y = STRUCT_GLOW_DROP.y
+			var g2 := _floor_glow(body, floor_at, lt.color,
 				STRUCT_GLOW_RADIUS * lt.texture_scale,
-				STRUCT_GLOW_STRENGTH * float(light.get("energy", 0.8)), szi, true, illumination)
+				STRUCT_GLOW_STRENGTH * float(light.get("energy", 0.8)), szi, true, illumination, false, def.get("fire", false))
 			g2.z_as_relative = false
 			g2.z_index = -8
 
@@ -4703,8 +4729,12 @@ func _setup_ambient_fx(terrain_id: String) -> void:
 ## which, for a field kind, carries only the boundary walls, wall shadow and the
 ## _mark_roads band. Kinds with no field tile keep the pure procedural floor (the
 ## poly is removed). Reads the CanvasModulate tint like every world child, so no
-## manual tint. Cheap: one small shared texture, no per-room native bake.
+## manual tint. Cheap: one small shared field texture, plus the room's local
+## edge falloff quad (room_floor.vignette), whose small bake is cached per wall
+## layout so a repaint or a same-shaped room reuses it.
 func _apply_ground_field(zi: int, terrain: Dictionary) -> void:
+	zone_floor_vignettes[zi] = preload("res://scripts/room_floor.gd").vignette(
+		self, world, zi, zone_floor_vignettes.get(zi))
 	var field: Polygon2D = preload("res://scripts/room_floor.gd").field(self, world, zi, terrain, zone_fields.get(zi))
 	if field == null:
 		zone_fields.erase(zi)
@@ -5127,13 +5157,17 @@ func _zone_light_mult(zi: int) -> float:
 ## tinted floors a lava pool lit NOTHING and read as a sticker; an additive
 ## sprite adds light regardless (the halo-pool trick refresh_ambience uses
 ## for the void). Scaled by the terrain's light budget so daylight zones
-## don't bloom; a slow pulse keeps it alive. Returns the sprite.
+## don't bloom. Fire keeps a minimum pool budget on bright stone; its contact
+## ring shares the pool's lifetime and restrained illumination envelope.
 func _floor_glow(parent: Node, pos: Vector2, color: Color, radius_px: float,
-		strength: float, zi: int, pulse := true, illumination: Node = null, hazard := false) -> Sprite2D:
+		strength: float, zi: int, pulse := true, illumination: Node = null, hazard := false, fire := false) -> Sprite2D:
 	var g := Sprite2D.new()
 	g.texture = Art.tex("glow")
 	g.position = pos
-	var a := strength * _zone_light_mult(zi)
+	var budget := _zone_light_mult(zi)
+	if fire:
+		budget = maxf(budget, Balance.FIRE_POOL_LIGHT_MIN)
+	var a := strength * budget
 	g.modulate = Color(color.r, color.g, color.b, a)
 	var s := radius_px * 2.0 / GLOW_TEX_PX
 	g.scale = Vector2(s, s)
@@ -5145,6 +5179,16 @@ func _floor_glow(parent: Node, pos: Vector2, color: Color, radius_px: float,
 	g.material = m
 	g.z_index = -8   # over the floor and the road, under hazards/props/actors
 	parent.add_child(g)
+	if fire:
+		var contact := Sprite2D.new()
+		contact.name = "FireContact"
+		contact.texture = preload("res://scripts/room_floor.gd").fire_contact_texture()
+		contact.scale = Vector2.ONE * GLOW_TEX_PX / Balance.FIRE_CONTACT_TEX_SIZE
+		contact.show_behind_parent = true
+		var contact_material := CanvasItemMaterial.new()
+		contact_material.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+		contact.material = contact_material
+		g.add_child(contact)
 	if pulse and not hazard:
 		if illumination == null:
 			illumination = preload("res://scripts/prop_illumination.gd").attach(g, g.global_position)
