@@ -2349,6 +2349,9 @@ func _run_systems() -> void:
 	if impairment_error != "":
 		return _fail(impairment_error)
 	_test_hud_icon_integrity()
+	var diet_error := preload("res://scripts/tests/hud_diet.gd").suite(game)
+	if diet_error != "":
+		return _fail(diet_error)
 	var alignment_error := preload("res://scripts/tests/hud_alignment_geometry.gd").suite(game.hud)
 	if alignment_error != "":
 		return _fail(alignment_error)

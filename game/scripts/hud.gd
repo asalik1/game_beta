@@ -13,6 +13,7 @@ var vitals_panel: Panel
 var quest_panel: Panel
 var clearance: Node
 var tracker_clearance: Node
+var diet: Node
 
 # bars
 var hp_fill: ColorRect
@@ -832,6 +833,9 @@ void fragment() {
 	tracker_clearance = preload("res://scripts/ui/tracker_clearance.gd").new()
 	tracker_clearance.hud = self
 	add_child(tracker_clearance)
+	diet = preload("res://scripts/ui/hud_diet.gd").new()
+	diet.hud = self
+	add_child(diet)
 
 	# ---------------------------------------------------- dialogue box ---
 	dialogue_box = Control.new()
@@ -1901,19 +1905,29 @@ func log_event(text: String, color: Color, kind := "") -> void:
 		kind = announce_kind(text)
 	# Streams of the same currency ("+12 XP" per kill, "+3 gold" per coin)
 	# COALESCE into the newest line instead of flooding the feed: "+12 XP" →
-	# "+24 XP", its fade restarted.
+	# "+24 XP", its fade restarted. Any other line repeated back to back
+	# counts up in place instead: "THE BLIGHT BREAKS x3".
 	var agg := _log_agg_key(text)
-	if agg != "" and not _log_lines.is_empty():
+	if not _log_lines.is_empty():
 		var last: Control = _log_lines[-1]
-		if is_instance_valid(last) and String(last.get_meta("agg_key", "")) == agg:
-			var total: int = int(last.get_meta("agg_total", 0)) + _log_agg_amount(text)
-			last.set_meta("agg_total", total)
+		var same_currency := agg != "" and is_instance_valid(last) and String(last.get_meta("agg_key", "")) == agg
+		var same_text := agg == "" and is_instance_valid(last) and last.has_meta("event_text") \
+			and String(last.get_meta("event_text")) == text
+		if same_currency or same_text:
 			var ll: Label = last.get_meta("label")
-			ll.text = "+%d %s" % [total, agg]
+			if same_currency:
+				var total: int = int(last.get_meta("agg_total", 0)) + _log_agg_amount(text)
+				last.set_meta("agg_total", total)
+				ll.text = "+%d %s" % [total, agg]
+			else:
+				var count: int = int(last.get_meta("event_count", 1)) + 1
+				last.set_meta("event_count", count)
+				ll.text = "%s x%d" % [text.replace("\n", " "), count]
 			var old_tw: Tween = last.get_meta("tween")
 			if old_tw != null and old_tw.is_valid():
 				old_tw.kill()
 			last.modulate.a = 1.0
+			last.position.x = LOG_X
 			var tw2 := create_tween()
 			tw2.tween_interval(LOG_LIFE)
 			tw2.tween_property(last, "modulate:a", 0.0, 0.8)
@@ -1932,6 +1946,9 @@ func log_event(text: String, color: Color, kind := "") -> void:
 	if agg != "":
 		row.set_meta("agg_key", agg)
 		row.set_meta("agg_total", _log_agg_amount(text))
+	else:
+		row.set_meta("event_text", text)
+		row.set_meta("event_count", 1)
 	add_child(row)
 	# The icon column is ALWAYS reserved (owner flag 2026-08-19: a "+21 XP" line
 	# with no glyph started at the panel edge while its neighbours were indented

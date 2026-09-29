@@ -344,9 +344,12 @@ static func _has_notice(h: Node, text: String) -> bool:
 	return false
 
 
+## A line repeated back to back collapses in place ("Trial queued x2") and
+## keeps its event text, so the history still holds it.
 static func _feed_has(h: Node, text: String) -> bool:
 	for row in h._log_lines:
-		if is_instance_valid(row) and (row.get_meta("label") as Label).text == text:
+		if is_instance_valid(row) and ((row.get_meta("label") as Label).text == text \
+				or String(row.get_meta("event_text", "")) == text):
 			return true
 	return false
 

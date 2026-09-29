@@ -1,3 +1,34 @@
+# HUD diet (T43, September 29)
+
+`scripts/ui/hud_diet.gd` trims the combat HUD without moving anything:
+
+- The seven menu shortcut icons under the name line fade out while the room
+  is sealed for a fight (`Game.barrier_active`) or a duel round is live. They
+  come back when the pointer is over the portrait block, a menu (including
+  the pause menu) is open, or the fight ends. Solo dialogue pauses the tree
+  but is not a reveal, so solo and co-op match. While hidden the icons ignore
+  the mouse; keyboard and pad menu keys work as before. Touch layouts always
+  show them. The navy info box keeps its full size, so its lower band is empty
+  during fights; resizing that box is left to a later art-direction pass.
+- The Wayfinder tracked-quest panel and the tactical map fade to
+  `HUD_SIDE_COVER_ALPHA` when they cover the local hero's body proxy
+  (`body_rect` above, not the origin near the boots), with input and
+  rectangles unchanged. Entry needs the authored rectangle; release needs
+  `HUD_SIDE_RELEASE_PX` of clearance, so a hero on the edge does not flicker.
+  This uses the HUD visibility preference and `enabled()` gates, so turning
+  HUD visibility off keeps both panels opaque.
+- The escort's ONE MORE MILE card is an encounter panel and already yields
+  over the hero and target through `encounter_status.gd`. Its fade is rate
+  limited (`ENCOUNTER_COVER_FADE_SPEED`), so it gets no extra pixel margin;
+  `encounter_clearance_live.gd` covers its placements.
+- Repeated identical event feed lines update in place with an x2/x3 count.
+  Currency streams keep their running total instead ("+12 XP" twice reads
+  "+24 XP").
+
+Tests: `tests/hud_diet.gd` in the quick systems tier, plus
+`shot.bat hud_dossier --hud-diet --timeout=240` for combat, hover and
+tracked-quest overlap captures with keyboard/pad dispatch checks.
+
 # Quest and target clearance — September 17 validated checkpoint
 
 The complete quest/target family now moves down when it covers the local hero,
@@ -60,8 +91,9 @@ block cover a hero near the north-west room boundary. The baseline screenshot
 rig reproduces this with normal health and camera settings. The new UI module
 fades only the information backdrop and its identity/gold/Combat Rating/
 Resonance display when it covers the hero or current visible target. Health,
-mana, experience, party frames and all utility/action buttons stay visible.
-The information returns when the character moves clear or an overlay opens.
+mana, experience, party frames and all utility/action buttons stay visible
+through this fade. (Since T43 the menu shortcut row tucks away during fights
+for its own reason; see "HUD diet" above.) The information returns when the character moves clear or an overlay opens.
 Combat & comfort includes a HUD visibility toggle.
 
 The geometry uses the hero renderer's class body height and +22px foot anchor,

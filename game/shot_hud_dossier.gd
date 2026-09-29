@@ -9,6 +9,7 @@ extends ShotRig
 ## --attribute-readiness checks lent point pools with real allocation input.
 ## --skills-touch measures allocation targets and real touch spending/scrolling.
 ## --enamel-bars captures fraction boundaries and chip drain at 720p, desktop/touch.
+## --hud-diet bundles quick-tier regressions and combat/hover/objective captures.
 const NetMgr := preload("res://scripts/net/net_manager.gd")
 
 const GAME_FIELDS := ["settings", "touch_mode", "dev_god", "player_title", "mailbox", "daily_last_day", "daily_streak",
@@ -91,6 +92,8 @@ func _ready() -> void:
 		shot_dir = shot_dir.path_join("reward_plaques")
 	elif flag("attribute-readiness"):
 		shot_dir = shot_dir.path_join("attribute_readiness")
+	elif flag("hud-diet"):
+		shot_dir = shot_dir.path_join("hud_diet")
 	if flag("skills-touch"):
 		shot_dir = shot_dir.path_join("skills_touch")
 	_snapshot_disk()
@@ -106,8 +109,8 @@ func _ready() -> void:
 
 
 func _run() -> String:
-	if int(flag("online-menu")) + int(flag("cosmetic-ui")) + int(flag("alignment")) + int(flag("reward-plaques")) + int(flag("attribute-readiness")) + int(flag("skills-touch")) > 1:
-		return "Choose one focused mode: online-menu, cosmetic-ui, alignment, reward-plaques, attribute-readiness or skills-touch"
+	if int(flag("online-menu")) + int(flag("cosmetic-ui")) + int(flag("alignment")) + int(flag("reward-plaques")) + int(flag("attribute-readiness")) + int(flag("skills-touch")) + int(flag("hud-diet")) > 1:
+		return "Choose one focused mode: online-menu, cosmetic-ui, alignment, reward-plaques, attribute-readiness, skills-touch or hud-diet"
 	if game == null or not game.has_local_player():
 		return "No local hero after boot"
 	net = get_node_or_null("/root/NetworkManager")
@@ -152,6 +155,8 @@ func _run() -> String:
 		return await preload("res://scripts/tests/skills_touch_live.gd").run(self)
 	if flag("attribute-readiness"):
 		return await preload("res://scripts/tests/attribute_readiness_live.gd").run(self)
+	if flag("hud-diet"):
+		return await preload("res://scripts/tests/hud_diet.gd").run(self)
 	await _capture("01_ordinary", "Unmodified character values after ordinary safe-room boot")
 	var p: Player = game.local_player
 	p.char_name = "Alexandria Ember" # the current 16-character name-entry limit

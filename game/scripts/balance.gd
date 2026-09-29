@@ -38,6 +38,11 @@ const DAMAGE_NUM_ALLY_ALPHA := 0.65
 # One-line rows keep Hud.LOG_LINE_H; wrapped rows add their extra lines.
 const HUD_LOG_TEXT_WIDTH := 400.0
 const HUD_LOG_HEIGHT_BUDGET := 140.0
+const HUD_MENU_HIDDEN_ALPHA := 0.0
+const HUD_MENU_FADE_SECONDS := 0.16
+const HUD_SIDE_COVER_ALPHA := 0.15
+const HUD_SIDE_FADE_SECONDS := 0.18
+const HUD_SIDE_RELEASE_PX := 20.0
 const HUD_CHAT_FEED_GAP := 10.0
 const HUD_CHAT_HISTORY_GAP := 6.0
 # Dialogue follows the centered authored art on expand canvases.

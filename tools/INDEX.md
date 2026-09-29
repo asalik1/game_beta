@@ -454,6 +454,14 @@ leading-edge dressing, bronze trough, unchanged tick/chip geometry and number
 contrast. Use isolated APPDATA under `build/qa`. Completion marker: "HUD
 ENAMEL BARS: N checks, 0 failures".
 
+HUD diet QA: `shot.bat hud_dossier --hud-diet --timeout=240` first runs the
+quick-tier `tests/hud_diet.gd` checks (menu row hide/reveal, feed x2/x3 and
+currency totals, side-panel body fade with hysteresis, live HUD visibility
+gate), then captures combat, portrait hover and tracked-quest overlap to
+`shots/hud_dossier/hud_diet/` and dispatches the inventory by keyboard and
+pad while the row is hidden. Completion marker: "HUD DIET PASS". See
+HUD_CLEARANCE.md "HUD diet".
+
 Ground comet QA: `shot.bat tells --comet --fixed-fps=30 --timeout=240`
 captures early/mid/late warning phases on stone, ice and magma, shelters/decoys,
 intact prop markers and an actual falling fireball warning. It verifies live
