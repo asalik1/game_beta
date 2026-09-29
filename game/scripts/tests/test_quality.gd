@@ -2,6 +2,9 @@ extends RefCounted
 
 
 static func run(t: Node) -> String:
+	var rim_error := enemy_rims(t)
+	if rim_error != "":
+		return rim_error
 	var g: Game = t.game
 	var p: Player = g.local_player
 	var saved := {"hp": p.hp, "root": p.rooted_time, "physics": p.is_physics_processing(),
@@ -36,6 +39,201 @@ static func run(t: Node) -> String:
 	if error == "":
 		print("ok: ground warnings pause/resume/cancel, guest effects cannot hurt, targeted foliage restores")
 	return error
+
+
+## Isolated production bodies; no AI, damage, network registration or timers.
+## Old behavior fails at the first missing EnemyRim child, not a derived value.
+static func enemy_rims(t: Node) -> String:
+	var g: Game = t.game
+	var terrain_before: Array = g.terrain_by_zone.duplicate()
+	var window := t.get_tree().root
+	var window_before := window.size
+	var holder := Node2D.new()
+	# In the tree for the per-frame path; disabled so no AI, physics or timers run.
+	var live := Node2D.new()
+	live.process_mode = Node.PROCESS_MODE_DISABLED
+	t.add_child(live)
+	var error := _enemy_rim_contracts(g, holder)
+	if error == "":
+		error = _enemy_rim_follow(g, live)
+	# All failure paths restore the terrain and window and free every fixture.
+	g.terrain_by_zone = terrain_before
+	if window.size != window_before:
+		window.size = window_before
+	holder.free()
+	live.free()
+	if error == "":
+		print("ENEMY RIM PASS: hostile/boss/decoy/mirror routing by the body's own room, friendly exclusions, room luminance, material composition, per-frame follow and window-stretch width")
+	return error
+
+
+## Two rooms other than the player's: the body's own floor, and one for a stale
+## zone_idx. Fixtures give cur_room and the stale room the OPPOSITE floor, so
+## only routing by the body's position passes.
+static func _enemy_rim_rooms(g: Game) -> Array[int]:
+	var rooms: Array[int] = []
+	for i in g.terrain_by_zone.size():
+		if i != g.cur_room and g.room_at_pos(g.room_center(i)) == i:
+			rooms.append(i)
+			if rooms.size() == 2:
+				break
+	return rooms
+
+
+static func _enemy_rim_floor(g: Game, own: int, others: Array[int], terrain: String, dark: bool) -> void:
+	g.terrain_by_zone[own] = terrain
+	for i in others:
+		if i >= 0 and i < g.terrain_by_zone.size():
+			g.terrain_by_zone[i] = "capital_civic" if dark else "void"
+
+
+static func _enemy_rim_contracts(g: Game, holder: Node2D) -> String:
+	var rim_script := preload("res://scripts/enemy_rim.gd")
+	var rooms := _enemy_rim_rooms(g)
+	if rooms.size() < 2:
+		return "enemy rim fixtures need two rooms besides the current one"
+	var own: int = rooms[0]
+	var others: Array[int] = [rooms[1], g.cur_room]
+	var at := g.room_center(own)
+	var enemy := Enemy.make(null, "wolf", at, -1, 1.0)
+	var boss := Boss.new()
+	boss._setup(null, "fangmaw", at)
+	var mirror := Enemy.make(null, "blightwolf", at, -1, 1.0)
+	mirror.net_mirror = true
+	# Echo's Unnaming copies share his art and size; a boss add in its own art does not.
+	var echo := Boss.new()
+	echo._setup(null, "unnamed_echo", at)
+	var copy := Enemy.make(null, "echo_clone", at, -1, 1.0)
+	var add := Enemy.make(null, "choir_censer", at, -1, 1.0)
+	var hostiles: Array[Enemy] = [enemy, boss, mirror, echo, copy, add]
+	for actor in hostiles:
+		holder.add_child(actor)
+		actor.game = g
+		actor.zone_idx = rooms[1]  # deliberately stale: position's room must win
+	for actor in hostiles:
+		if not actor.sprite.has_node("EnemyRim"):
+			return "hostile factory did not attach its rim: " + actor.kind
+		var rim: Sprite2D = actor.sprite.get_node("EnemyRim")
+		if not rim.material is ShaderMaterial or rim.material.shader != rim_script.RIM_SHADER:
+			return "hostile has no enemy_rim shader material"
+		var dark_strength := 0.0
+		for terrain: String in ["keep", "crystal", "void", "capital_civic", "holy", "keep"]:
+			var dark: bool = terrain in ["keep", "crystal", "void"]
+			_enemy_rim_floor(g, own, others, terrain, dark)
+			rim.sync()
+			var actual: float = rim.material.get_shader_parameter("rim_strength")
+			if dark:
+				if actual < 0.3 or actual > 0.45:
+					return "dark floor rim outside the subtle-light range (read the player's or a stale room?): " + terrain
+				dark_strength = actual
+			elif actual >= dark_strength * 0.15:
+				return "bright floor did not suppress the hostile rim (read the player's or a stale room?): " + terrain
+		# Existing body effects must survive both updates and material swaps.
+		var effect := ShaderMaterial.new()
+		effect.shader = preload("res://shaders/silhouette.gdshader")
+		actor.sprite.material = effect
+		actor.sprite.modulate = Color(3, 0.7, 0.4, 0.25)
+		actor.sprite.self_modulate.a = 0.5
+		actor.sprite.flip_h = true
+		actor.sprite.frame = actor.sprite.hframes - 1
+		actor.sprite.offset += Vector2(3, -4)
+		rim.sync()
+		if actor.sprite.material != effect or actor.sprite.modulate != Color(3, 0.7, 0.4, 0.25):
+			return "rim overwrote a body material or hit/tell tint"
+		if rim.texture != actor.sprite.texture or rim.frame != actor.sprite.frame \
+				or rim.flip_h != actor.sprite.flip_h or rim.offset != actor.sprite.offset \
+				or rim.self_modulate.a != 0.5 or rim.get_parent() != actor.sprite:
+			return "rim lost the body's frame, transform inheritance or fade"
+		actor.sprite.material = null
+		rim.sync()
+		if actor.sprite.material != null or rim.material == null:
+			return "clearing a body effect removed the independent rim"
+	var normal: float = enemy.sprite.get_node("EnemyRim").material.get_shader_parameter("rim_strength")
+	var stronger: float = boss.sprite.get_node("EnemyRim").material.get_shader_parameter("rim_strength")
+	if stronger <= normal or not is_equal_approx(stronger, normal * Balance.ENEMY_RIM_BOSS_MULT):
+		return "boss did not receive the stronger rim"
+	var guest_strength: float = mirror.sprite.get_node("EnemyRim").material.get_shader_parameter("rim_strength")
+	if not is_equal_approx(guest_strength, normal):
+		return "guest mirror did not receive the same floor response as the host"
+	var real_echo: float = echo.sprite.get_node("EnemyRim").material.get_shader_parameter("rim_strength")
+	var copy_echo: float = copy.sprite.get_node("EnemyRim").material.get_shader_parameter("rim_strength")
+	if not is_equal_approx(real_echo, stronger) or not is_equal_approx(copy_echo, real_echo):
+		return "Echo's Unnaming copies wear a different rim from the real Echo (it gives him away)"
+	var add_strength: float = add.sprite.get_node("EnemyRim").material.get_shader_parameter("rim_strength")
+	if not is_equal_approx(add_strength, normal):
+		return "a boss add in its own art took the boss rim"
+	# Every friendly joins the holder before any assertion, so every exit frees it.
+	var dummy := Dummy.new()
+	holder.add_child(dummy)
+	dummy._setup(null, "skeleton", Vector2.ZERO)
+	var bodies: Array[Sprite2D] = []
+	# Node2D = the NPC factory's actor type (its art is a child Sprite2D).
+	for friendly: Node2D in [dummy, Node2D.new(), Ambience.Critter.new(), Player.new(),
+			preload("res://scripts/pet_visual.gd").new()]:
+		if friendly.get_parent() == null:
+			holder.add_child(friendly)
+		var body := Sprite2D.new()
+		friendly.add_child(body)
+		bodies.append(body)
+	for body in bodies:
+		if rim_script.attach(body.get_parent(), body) != null or body.has_node("EnemyRim"):
+			return "friendly entity acquired a hostile rim"
+	if dummy.sprite.has_node("EnemyRim"):
+		return "training dummy's production body acquired a hostile rim"
+	# Luminance response must be monotone through its transition, not just
+	# a terrain-name allowlist. These authored tints lie between dark and civic.
+	if rim_script.strength("capital_wayfinder", false) < rim_script.strength("capital_civic", false):
+		return "luminance response increased on a brighter floor"
+	return ""
+
+
+## The per-frame path through the rim's own _process (the engine's process
+## notification), never sync() by hand. Headless keeps it off (a --server
+## world draws nothing); a real window must keep it on.
+static func _enemy_rim_follow(g: Game, live: Node2D) -> String:
+	var rim_script := preload("res://scripts/enemy_rim.gd")
+	var rooms := _enemy_rim_rooms(g)
+	var wolf := Enemy.make(null, "wolf", g.room_center(rooms[0]), -1, 1.0)
+	wolf.remove_from_group("enemies")  # unseen by room-clear, targeting and AI
+	live.add_child(wolf)
+	wolf.game = g
+	var rim: Sprite2D = wolf.sprite.get_node("EnemyRim")
+	if rim.is_processing() == Enemy._is_headless():
+		return "rim per-frame follow runs headless, or is off in a real window"
+	var player_room: Array[int] = [g.cur_room]
+	_enemy_rim_floor(g, rooms[0], player_room, "capital_civic", false)
+	g.terrain_by_zone[rooms[1]] = "void"
+	rim.notification(Node.NOTIFICATION_PROCESS)
+	var bright: float = rim.material.get_shader_parameter("rim_strength")
+	# Headless has no real window: stretch the fixture canvas 1.5x (1080p).
+	var window := wolf.get_tree().root
+	if Enemy._is_headless():
+		window.size = Vector2i(Vector2(window.content_scale_size) * 1.5)
+	# Walk into the dark room, turn, step the animation and fade.
+	wolf.global_position = g.room_center(rooms[1])
+	wolf.sprite.flip_h = not wolf.sprite.flip_h
+	wolf.sprite.frame = (wolf.sprite.frame + 1) % (wolf.sprite.hframes * wolf.sprite.vframes)
+	wolf.sprite.self_modulate.a = 0.4
+	rim.notification(Node.NOTIFICATION_PROCESS)
+	if rim.flip_h != wolf.sprite.flip_h or rim.frame != wolf.sprite.frame \
+			or not is_equal_approx(rim.self_modulate.a, 0.4):
+		return "rim did not follow the body's turn, frame or fade on its own process step"
+	var dark: float = rim.material.get_shader_parameter("rim_strength")
+	if dark <= bright or not is_equal_approx(dark, rim_script.strength("void", false)):
+		return "rim kept the old room's floor after the body walked into another room"
+	var stretch: float = rim.get_viewport().get_final_transform().get_scale().y
+	if Enemy._is_headless() and not is_equal_approx(stretch, 1.5):
+		return "fixture window did not stretch the canvas (got %.3f)" % stretch
+	var width: float = rim.material.get_shader_parameter("rim_offset_px")
+	if not is_equal_approx(width, Balance.ENEMY_RIM_OFFSET_PX * stretch):
+		return "rim width stayed in raw pixels instead of following the canvas stretch"
+	# A hidden body (burrowed, dev-morph driver) skips the per-frame work.
+	wolf.sprite.visible = false
+	wolf.sprite.flip_h = not wolf.sprite.flip_h
+	rim.notification(Node.NOTIFICATION_PROCESS)
+	if rim.flip_h == wolf.sprite.flip_h:
+		return "a hidden body still paid for the per-frame rim sync"
+	return ""
 
 
 static func _ground_contracts(t: Node) -> String:

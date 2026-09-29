@@ -58,6 +58,9 @@ func _ready() -> void:
 	var z := float(arg("zoom", "1.4"))
 	zoom(z)
 	await sim_wait(1.5)   # title card clears
+	if flag("enemy-rims"):
+		await _enemy_rims()
+		return
 	if flag("damage-numbers"):
 		await _damage_numbers()
 		return
@@ -84,6 +87,13 @@ func _ready() -> void:
 			if not await _room_light_views("keep_%s" % room_id):
 				finish(1)
 				return
+		await _after_room_lighting(cls, z)
+		return
+	await _after_room_lighting(cls, z)
+
+
+# Continue the base capture flow after the optional room-lighting checks.
+func _after_room_lighting(cls: String, z: float) -> void:
 	if flag("illumination"):
 		# Native 1x prop/light loops, rendered luminance and stationary geometry.
 		var error: String = await preload("res://scripts/dev/prop_illumination_capture.gd").run(self)
@@ -99,6 +109,13 @@ func _ready() -> void:
 			push_error(error)
 			finish(1)
 			return
+		await _capture_views(cls, z)
+		return
+	await _capture_views(cls, z)
+
+
+# Shared captures also complete world-read and the capital/floorfield handoff.
+func _capture_views(cls: String, z: float) -> void:
 	if arg("menu", "") != "":
 		# --menu=stats|bag|class: one shot of a menu screen (review pack, P7.E/F/G)
 		game.hud.visible = true
@@ -221,6 +238,182 @@ func _ready() -> void:
 			finish(1)
 			return
 	finish()
+
+
+## One bundled run: strict routing regression, a real-renderer check of the
+## shader's own output, and matched rim-on/off captures over real repainted
+## room floors, then keep again on a 1.5x window. --enemy-rims --no-import --timeout=300
+func _enemy_rims() -> void:
+	var error: String = preload("res://scripts/tests/test_quality.gd").enemy_rims(self)
+	if error == "":
+		error = await _rim_shader_output()
+	if error != "":
+		print("ENEMY RIM FAIL: " + error)
+		finish(1)
+		return
+	var room := 2
+	await _goto(room)
+	var terrain_before: String = game.terrain_by_zone[room]
+	var ambient_before := game.ambient.color
+	var window_before := get_window().size
+	var center := game.room_center(room)
+	game.player.global_position = center + Vector2(-220, 100)
+	game.player.set_physics_process(false)
+	game.camera.global_position = center
+	zoom(1.0)
+	for terrain: String in ["crystal", "keep", "void", "capital_civic"]:
+		# keep is the authored night-dark keep tint; void is in the Depths rotation.
+		error = await _rim_pass(room, center, terrain, terrain)
+		if error != "":
+			break
+	if error == "":
+		# Fullscreen 1080p: the edge must keep its canvas width. The OS may clamp
+		# the window; each SHOT line reports the stretch actually used.
+		get_window().size = Vector2i(Vector2(get_window().content_scale_size) * 1.5)
+		await frames(3)
+		error = await _rim_pass(room, center, "keep", "keep_1080p")
+	get_window().size = window_before
+	get_tree().paused = false
+	apply_terrain(terrain_before, room)
+	game.ambient.color = ambient_before
+	game.player.set_physics_process(true)
+	if error != "":
+		print("ENEMY RIM FAIL: " + error)
+		finish(1)
+		return
+	print("ENEMY RIM CAPTURES PASS: crystal, keep, Depths void and capital at 720p, keep at 1080p; 15 originals")
+	finish()
+
+
+## wolf / blightwolf / fangmaw on one repainted floor: the rim must follow its
+## body on its own frame and track the window stretch, then an on/off pair
+## taken with the world paused (identical frames apart from the rim) and a
+## 2x camera-zoom close-up.
+func _rim_pass(room: int, center: Vector2, terrain: String, tag: String) -> String:
+	step("enemy rims: " + tag)
+	apply_terrain(terrain, room)
+	await frames(3)
+	for i in 3:
+		var pos := center + Vector2(-120 + i * 150, 0)
+		var e: Enemy
+		if i == 2:
+			e = Boss.make_boss(game, "fangmaw", pos)
+			game.add_enemy(e)
+		else:
+			e = spawn_enemy("wolf" if i == 0 else "blightwolf", pos)
+		e.set_physics_process(false)
+		e.set_process(false)
+		e.hp_bar_bg.hide()
+		e.hp_bar_fg.hide()
+		_mobs.append(e)
+	await frames(3)
+	# The mobs' own processing is off, so only the rim's per-frame step can follow.
+	var probe: Enemy = _mobs[0]
+	var rim: Sprite2D = probe.sprite.get_node("EnemyRim")
+	for _turn in 2:
+		probe.sprite.flip_h = not probe.sprite.flip_h
+		await frames(2)
+		if rim.flip_h != probe.sprite.flip_h:
+			return "rim did not follow its turning body on the next frames (%s)" % tag
+	var stretch: float = get_viewport().get_final_transform().get_scale().y
+	var width: float = rim.material.get_shader_parameter("rim_offset_px")
+	if not is_equal_approx(width, Balance.ENEMY_RIM_OFFSET_PX * stretch):
+		return "rim width %.2f px did not follow the window stretch %.3f (%s)" % [width, stretch, tag]
+	var info := "stretch %.2f, rim offset %.2f framebuffer px" % [stretch, width]
+	# Camera framing and ambient life hold still while paused: the pair differs only by the rim.
+	get_tree().paused = true
+	await frames(2)
+	await RenderingServer.frame_post_draw
+	shot("rim_" + tag + "_on", "wolf / blightwolf / fangmaw; no HP bars; camera 1x; " + info)
+	for e: Enemy in _mobs:
+		e.sprite.get_node("EnemyRim").hide()
+	await frames(2)
+	await RenderingServer.frame_post_draw
+	shot("rim_" + tag + "_off", "same paused frame with the rim hidden")
+	for e: Enemy in _mobs:
+		e.sprite.get_node("EnemyRim").show()
+	get_tree().paused = false
+	# Close view: camera zoom must not change the edge's width.
+	zoom(2.0)
+	await frames(2)
+	await RenderingServer.frame_post_draw
+	shot("rim_" + tag + "_close", "2x camera zoom; edge stays %.1f canvas px; %s" % [Balance.ENEMY_RIM_OFFSET_PX, info])
+	zoom(1.0)
+	_clear()
+	await frames(2)
+	return ""
+
+
+## The shader's own output on the real renderer, which the headless routing
+## test cannot see: a black opaque square body in a SubViewport. Light may only
+## appear as warm additive gain on the lower-right inside edge. Misnamed
+## uniforms (no light, or a whole-body fill), light on the wrong side, and the
+## premultiplied COLOR trap (black texture times rim color = no light) all fail.
+func _rim_shader_output() -> String:
+	step("enemy rims: shader output")
+	var half := 12
+	var side := half * 2
+	var vp := SubViewport.new()
+	vp.size = Vector2i(64, 64)
+	vp.transparent_bg = false
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	add_child(vp)
+	var e := Enemy.make(null, "wolf", Vector2(32, 32), -1, 1.0)
+	e.remove_from_group("enemies")  # unseen by room-clear, targeting and AI
+	e.process_mode = Node.PROCESS_MODE_DISABLED  # nothing moves between the two renders
+	vp.add_child(e)
+	var square := Image.create(side, side, false, Image.FORMAT_RGBA8)
+	square.fill(Color.BLACK)
+	var body := e.sprite
+	body.texture = ImageTexture.create_from_image(square)
+	body.hframes = 1
+	body.vframes = 1
+	body.frame = 0
+	body.region_enabled = false
+	body.centered = true
+	body.offset = Vector2.ZERO
+	body.transform = Transform2D.IDENTITY
+	body.flip_h = false
+	body.flip_v = false
+	body.modulate = Color.WHITE
+	body.self_modulate = Color.WHITE
+	body.material = null
+	var rim: Sprite2D = body.get_node("EnemyRim")
+	rim.sync()
+	rim.material.set_shader_parameter("rim_strength", Balance.ENEMY_RIM_STRENGTH)
+	await frames(2)
+	await RenderingServer.frame_post_draw
+	var lit := vp.get_texture().get_image()
+	rim.hide()
+	await frames(2)
+	await RenderingServer.frame_post_draw
+	var unlit := vp.get_texture().get_image()
+	vp.queue_free()
+	if lit == null or unlit == null or lit.is_empty() or unlit.is_empty():
+		return "shader check could not read its SubViewport back"
+	var origin := Vector2i(32 - half, 32 - half)
+	var gain := Vector3.ZERO
+	var peak := 0.0
+	var upper_left := 0.0
+	for y in side:
+		for x in side:
+			var a := lit.get_pixelv(origin + Vector2i(x, y))
+			var b := unlit.get_pixelv(origin + Vector2i(x, y))
+			var d := Vector3(a.r - b.r, a.g - b.g, a.b - b.b)
+			gain += d
+			peak = maxf(peak, d.x)
+			if x < half and y < half:
+				upper_left += absf(d.x)
+	var numbers := "peak red gain %.3f, summed gain r %.2f g %.2f b %.2f, upper-left %.2f" % [peak, gain.x, gain.y, gain.z, upper_left]
+	# A fully lit edge pixel gains rim_color.r * strength (0.36) in red.
+	if peak < Balance.ENEMY_RIM_STRENGTH * 0.5:
+		return "rim adds no light (uniform names or the COLOR.a rule broke): " + numbers
+	if gain.x < 2.0 * maxf(gain.y, gain.z):
+		return "rim light is not warm: " + numbers
+	if upper_left > 0.1 * gain.x:
+		return "rim lights the upper-left or fills the body instead of the lower-right edge: " + numbers
+	print("ENEMY RIM SHADER PASS: " + numbers)
+	return ""
 
 
 func _room_light_views(prefix: String) -> bool:

@@ -449,6 +449,7 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1,
 		var big: bool = art_scale * render_mult >= 6.0
 		game.cast_shadow_for(self, sprite, 0.7 if big else 1.0)
 	add_child(sprite)
+	preload("res://scripts/enemy_rim.gd").attach(self, sprite)
 
 	# Small HP bar above the head, shown once the monster is damaged.
 	# Near-opaque bg = a full 1px dark outline all round the fill, so the bar

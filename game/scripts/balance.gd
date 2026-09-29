@@ -453,6 +453,18 @@ const TARGET_DAMAGE_DRAIN := 0.6        # bar fractions / second after hold
 #    every PERIOD seconds; N chips, alpha A. 0 period = off.
 const CHAR_GROUND_AO := 0.30
 const CHAR_GROUND_AO_W := 1.7
+# Hostile back-light (EnemyRim): no expanded/black contour. OFFSET_PX is in
+# canvas pixels (the 1280x720 design space); EnemyRim multiplies it by the
+# window stretch so the edge keeps its width at 1080p/1440p/4K, and camera
+# zoom never changes it. The room tint's mean luminance matches
+# _zone_light_mult's proxy (crystal ~.927, keep .82, capital civic ~.953).
+# Bright floors get only a trace of warm light.
+const ENEMY_RIM_COLOR := Color(1.0, 0.28, 0.12, 1.0)
+const ENEMY_RIM_STRENGTH := 0.36
+const ENEMY_RIM_OFFSET_PX := 1.5
+const ENEMY_RIM_BOSS_MULT := 1.2
+const ENEMY_RIM_DARK_LUMA := 0.93
+const ENEMY_RIM_BRIGHT_LUMA := 0.96
 const CAST_SHADOW_A := 0.30
 const CAST_SHADOW_SKEW := 0.55
 const CAST_SHADOW_SQUASH := 0.45
