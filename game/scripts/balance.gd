@@ -38,6 +38,10 @@ const DAMAGE_NUM_ALLY_ALPHA := 0.65
 # One-line rows keep Hud.LOG_LINE_H; wrapped rows add their extra lines.
 const HUD_LOG_TEXT_WIDTH := 400.0
 const HUD_LOG_HEIGHT_BUDGET := 140.0
+const HUD_CHAT_FEED_GAP := 10.0
+const HUD_CHAT_HISTORY_GAP := 6.0
+# Dialogue follows the centered authored art on expand canvases.
+const DIALOG_DESIGN_HEIGHT := 720.0
 
 # Static enamel on resource bars; overlays preserve semantic fill colours.
 const HUD_BAR_TROUGH_DARKEN := 0.82

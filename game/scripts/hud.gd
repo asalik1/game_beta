@@ -958,7 +958,7 @@ void fragment() {
 	lback.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var lframe := Panel.new()
 	lframe.add_theme_stylebox_override("panel", _dialogue_border_style())
-	lframe.position = Vector2(238, 96)
+	lframe.position = Vector2(238, LOG_PANEL_TOP)
 	lframe.size = Vector2(804, 470)
 	lframe.mouse_filter = Control.MOUSE_FILTER_STOP  # eat clicks so the box doesn't advance
 	log_panel.add_child(lframe)
@@ -1037,6 +1037,7 @@ void fragment() {
 	for button: Button in [dlg_log_btn, dlg_skip_btn, dlg_auto_btn]:
 		button.resized.connect(_layout_dialogue_reader)
 	get_viewport().size_changed.connect(_fit_dialogue_width)
+	get_viewport().size_changed.connect(_layout_log)
 	_fit_dialogue_width()
 
 	# --------------------------------------------------- controls hint ---
@@ -1048,6 +1049,9 @@ void fragment() {
 	for label: Label in hint_labels:
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		label.custom_minimum_size.x = HINT_WIDTH
+		# Draw under the dialogue reader: on a tall expand canvas the centered
+		# box sits over these rows.
+		move_child(label, dialogue_box.get_index())
 	_update_hint_labels()
 	# The hint lines fade out after the first stretch of play (2026-08-18):
 	# a permanent "WASD move · TAB lock…" strip reads as a debug overlay.
@@ -1273,11 +1277,17 @@ func _set_buff_slot_visible(slot: Dictionary, vis: bool) -> void:
 ## popover — the same click-to-reveal model the inventory uses. The text
 ## lives in meta rather than tooltip_text so there's no redundant hover.
 ## accept_event() stops the click also falling through to dialogue-advance.
+## While a dialogue or choice is up a PASS control (ability ring, buff chip)
+## leaves the click alone: the reader draws over them (fully on a 4:3 expand
+## canvas), and a click on its text must still advance the line. STOP labels
+## (stats, gold, CR, Resonance, portrait) keep their popover.
 ## `title` may be "".
 func _click_to_popover(c: Control, title: String, anchor_to_control := false) -> void:
 	c.gui_input.connect(func(e: InputEvent) -> void:
 		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
 			if game.menus.is_open():
+				return
+			if (dialogue_active or choices_active) and c.mouse_filter == Control.MOUSE_FILTER_PASS:
 				return
 			var origin := c.get_global_rect().end if anchor_to_control else Vector2(-1, -1)
 			_open_hud_popover(title, String(c.get_meta("tip", "")), origin)
@@ -2012,17 +2022,9 @@ func _layout_log() -> void:
 	var bottom := LOG_BOTTOM
 	if hint_labels.size() == 2:
 		bottom = minf(bottom, (hint_labels[0] as Label).position.y - (HINT_ORIGIN.y - LOG_BOTTOM))
-	# The stack never climbs past its height budget. Wrapped rows may grow past
-	# the classic LOG_MAX one-line footprint, but not into party chat lines that
-	# grow upward from above the feed. The chat anchors to the screen bottom
-	# while the feed keeps a fixed y, so on a taller mobile canvas (aspect
-	# "expand") the chat sits beside or below the feed: it never costs the
-	# classic rows there, and once it sits below the feed it is ignored.
+	# Chat yields to the reserved feed footprint, including its input line.
+	# A tall expand canvas must not slide bottom-anchored chat through the feed.
 	var ceiling := bottom - Balance.HUD_LOG_HEIGHT_BUDGET
-	if is_instance_valid(chat_lines_box):
-		var chat_floor := chat_lines_box.get_global_rect().end.y + (HINT_ORIGIN.y - LOG_BOTTOM)
-		if chat_floor < bottom:
-			ceiling = maxf(ceiling, minf(chat_floor, bottom - LOG_MAX * LOG_LINE_H))
 	var height := 0.0
 	for row: Control in _log_lines:
 		var label: Label = row.get_meta("label")
@@ -2047,6 +2049,18 @@ func _layout_log() -> void:
 	for row: Control in _log_lines:
 		row.position.y = y
 		y += row.size.y
+	_layout_chat(minf(ceiling, bottom - height))
+
+
+func _layout_chat(feed_top: float) -> void:
+	if not is_instance_valid(chat_input):
+		return
+	# Reserve the input even while closed, so opening it never moves history.
+	var input_bottom := chat_input.position.y + chat_input.size.y
+	# Only the root moves: the history keeps the bottom edge _ensure_chat seated
+	# and grows or shrinks upward from it with its lines.
+	chat_root.position.y = minf(get_viewport().get_visible_rect().end.y,
+		feed_top - Balance.HUD_CHAT_FEED_GAP - input_bottom)
 
 
 # ------------------------------------------------------------- helpers ---
@@ -3413,11 +3427,14 @@ func _ensure_chat() -> void:
 	chat_lines_box.add_theme_constant_override("separation", 2)
 	chat_lines_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	chat_lines_box.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	chat_lines_box.position = Vector2(0, -206)
 	chat_root.add_child(chat_lines_box)
 	chat_input = LineEdit.new()
 	chat_input.custom_minimum_size = Vector2(360, 30)
 	chat_input.position = Vector2(0, -200)
+	# Seat the history's bottom edge once, while the box is still empty. Setting
+	# its position after lines arrive would store the grown height in its
+	# offsets, and a shorter history would then float above the input.
+	chat_lines_box.position = Vector2(0, chat_input.position.y - Balance.HUD_CHAT_HISTORY_GAP)
 	chat_input.placeholder_text = "party chat…  (Return sends · tap outside closes)" if game.touch_mode \
 		else "party chat…  (ENTER sends · ESC closes)"
 	chat_input.max_length = 120
@@ -3432,7 +3449,8 @@ func _ensure_chat() -> void:
 	var sess := _chat_session()
 	if sess != null and not sess.chat_line.is_connected(_on_chat_line):
 		sess.chat_line.connect(_on_chat_line)
-	_layout_log()   # the feed now stops below the chat lines
+	chat_input.resized.connect(_layout_log)
+	_layout_log()
 
 
 ## Open the input line (desktop: ENTER in a session; mobile: the 💬 button).
@@ -5104,24 +5122,29 @@ func _fit_speaker_splash() -> void:
 ## splash and the parent entrance tween in their existing coordinate space.
 ## The choice panel (a HUD sibling whose rows dialogue_choice lays out in its
 ## own local space) moves by the same amount, so options stay on the box.
-## Measuring the current frame center makes repeated resizes idempotent.
+## Measuring the current frame center and choice-parent offset makes repeated
+## resizes idempotent; the vertical shift also survives text-height refits.
 func _fit_dialogue_width() -> void:
-	var shift := get_viewport().get_visible_rect().get_center().x \
-		- (dialogue_frame.position.x + dialogue_frame.size.x * 0.5)
+	var center := get_viewport().get_visible_rect().get_center()
+	var shift := Vector2(center.x - (dialogue_frame.position.x + dialogue_frame.size.x * 0.5),
+		center.y - Balance.DIALOG_DESIGN_HEIGHT * 0.5 - choice_panel.position.y)
 	for control: Control in [dialogue_frame, dialogue_inner, speaker_label,
 			text_label, dialogue_hint, portrait_box, choice_panel]:
-		control.position.x += shift
+		control.position += shift
 	_layout_dialogue_reader()
 
 
 ## Center the backlog as one authored block, leaving its full-screen shade
-## in place. Use the current frame center so repeated resizes never drift.
+## in place. It follows the dialogue reader's vertical canvas offset, so it
+## opens over the centered art on a tall canvas too. Measuring the current
+## frame position makes repeated resizes idempotent.
 func _fit_log_width(controls: Array[Control]) -> void:
 	var frame := controls[0]
-	var shift := get_viewport().get_visible_rect().get_center().x \
-		- (frame.position.x + frame.size.x * 0.5)
+	var center := get_viewport().get_visible_rect().get_center()
+	var shift := Vector2(center.x - (frame.position.x + frame.size.x * 0.5),
+		center.y - Balance.DIALOG_DESIGN_HEIGHT * 0.5 - (frame.position.y - LOG_PANEL_TOP))
 	for control: Control in controls:
-		control.position.x += shift
+		control.position += shift
 
 
 ## The gold outline of the dialogue, choice and backlog panels. HDR2D blends in linear
@@ -5307,6 +5330,7 @@ const DIALOG_READER_GAP := 6.0     # reader clearance above/inside its panel
 const DIALOG_HINT_TOP := 618.0     # original advance-hint position
 const DIALOG_HINT_GAP := 6.0       # clearance below the complete wrapped text
 const DIALOG_FOOTER_PAD := 8.0     # frame space below a displaced advance hint
+const LOG_PANEL_TOP := 96.0        # backlog frame top on the 720px design canvas
 
 ## Fit the complete wrapped text upward from its original bottom; extend only
 ## the footer when the advance hint needs more space. Returns the frame top so
@@ -5316,12 +5340,13 @@ func _fit_dialogue_box() -> float:
 	# line_count * line_height omits that spacing and under-sizes long text.
 	var wrapped_h := text_label.get_minimum_size().y
 	var text_h: float = maxf(wrapped_h, DIALOG_TEXT_MIN_H)
-	var text_top := DIALOG_TEXT_BOTTOM - text_h
+	var canvas_y := choice_panel.position.y
+	var text_top := DIALOG_TEXT_BOTTOM + canvas_y - text_h
 	text_label.position.y = text_top
 	text_label.size.y = text_h
 	speaker_label.position.y = text_top - DIALOG_SPEAKER_GAP
-	dialogue_hint.position.y = maxf(DIALOG_HINT_TOP, text_top + wrapped_h + DIALOG_HINT_GAP)
-	var box_bottom := maxf(DIALOG_BOX_BOTTOM,
+	dialogue_hint.position.y = maxf(DIALOG_HINT_TOP + canvas_y, text_top + wrapped_h + DIALOG_HINT_GAP)
+	var box_bottom := maxf(DIALOG_BOX_BOTTOM + canvas_y,
 		dialogue_hint.position.y + dialogue_hint.get_minimum_size().y + DIALOG_FOOTER_PAD)
 	var frame_top := text_top - DIALOG_HEADER
 	dialogue_frame.position.y = frame_top
@@ -5329,7 +5354,7 @@ func _fit_dialogue_box() -> float:
 	dialogue_inner.position.y = frame_top + Balance.DIALOG_FRAME_BORDER_WIDTH
 	dialogue_inner.size.y = box_bottom - frame_top - Balance.DIALOG_FRAME_BORDER_WIDTH * 2.0
 	_layout_dialogue_reader()
-	return frame_top
+	return frame_top - canvas_y  # choice rows use their shifted parent's local space
 
 
 ## LOG/SKIP/AUTO share a row, above the highest visible dialogue panel.

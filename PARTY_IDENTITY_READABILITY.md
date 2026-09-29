@@ -67,11 +67,12 @@ so a 64-character departure keeps "left the party" and the Depths camp guidance
 keeps its last sentence. Rows wrap at word boundaries and are never cut short.
 A one-line row keeps its 20px pitch and a wrapped row adds only its extra lines.
 The stack keeps its existing gap above the control hints, never grows past a
-140px budget, and in co-op wrapped rows never climb into the party chat lines;
-the oldest rows retire first when it would. Party chat anchors to the screen
-bottom while the feed keeps a fixed y, so on a taller mobile canvas (16:10, 3:2,
-4:3) the chat sits beside or below the feed: there it never costs the five
-classic one-line rows. Coalescing and fades are unchanged. Checks:
+140px budget, and the oldest rows retire first when it would. September 29:
+party chat now sits above the feed's reserved 140px footprint on every canvas
+(16:9, 16:10, 3:2, 4:3, tall phones), re-seated on every feed change and screen
+resize. Its input line is reserved even while closed, so opening chat never
+moves the history and neither surface covers the other; the feed keeps its full
+budget under the chat. Coalescing and fades are unchanged. Checks:
 `shot.bat hud_dossier --reward-plaques` views `15_compact_feed` and
-`16_feed_chat` (plus the tall-canvas chat cases), and the quick-tier reward
-feedback test.
+`16_feed_chat` (plus the tall-canvas chat cases), the quick-tier reward
+feedback test, and the resized chat/feed cases in `fullscreen_covers`.

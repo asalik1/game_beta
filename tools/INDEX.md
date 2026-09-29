@@ -592,10 +592,11 @@ event-feed rows (camp guidance, a 64-character departure) for complete copy,
 the one-line 20px pitch, height-budget eviction, coalescing and a row past three
 lines kept whole; `16_feed_chat` binds every hint action to the widest key name
 (memory only), loans local chat widgets, fills the feed with two three-line
-departures and checks it stays a full hint gap below the party chat lines. It
-then moves the loaned chat root to where 1280x800/853/960 canvases anchor it and
-checks the feed keeps its five classic one-line rows (wrapped rows keep the full
-budget once the chat sits below the feed). New cases require exact
+departures and checks it stays a full hint gap below the party chat lines and
+its reserved input line. It then loans 1280x800/853/960 as the window's logical
+canvas (restored after) and checks the resize alone re-seats the chat above the
+feed's reserved footprint, on screen, and the feed keeps its five classic
+one-line rows and the full budget for wrapped rows. New cases require exact
 full copy, native character containment, separated title/detail and stable
 local geometry on every observed entrance draw. First captures can still fade;
 actual alpha/clock are recorded. The actual menu gate also holds the active

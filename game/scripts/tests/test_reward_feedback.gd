@@ -47,7 +47,7 @@ static func run(t: Node) -> String:
 	g.run_xp = run_xp
 	g.xp_capped_noted = capped
 	if error == "":
-		print("ok: achievement/quest queue sharing, earned-notice overflow, overlay log clocks, complete fixed-width feed rows, tall-canvas chat keeping the classic rows and silent zero/negative XP")
+		print("ok: achievement/quest queue sharing, earned-notice overflow, overlay log clocks, complete fixed-width feed rows, party chat clear of a full feed and silent zero/negative XP")
 	return error
 
 
@@ -112,17 +112,19 @@ static func _checks(g: Game) -> String:
 	var longest: Label = (h._log_lines[-1] as Control).get_meta("label")
 	if longest.text != long_text or longest.get_line_count() <= 3 or longest.get_line_count() != longest.get_visible_line_count():
 		return "a long event-feed row was cut short"
-	# Party chat anchors to the screen bottom while the feed keeps a fixed y, so
-	# a taller mobile canvas (1280 wide at 16:10, 3:2, 4:3; aspect "expand") puts
-	# the chat beside or below the feed. It must never cost the classic rows.
+	# Party chat sits above the feed's reserved footprint, its input line
+	# included even while closed, so it never costs the classic rows or covers
+	# them. fullscreen_covers resizes the real canvas (16:10, 4:3, tall phones).
 	h._ensure_chat()
-	for canvas_h: float in [800.0, 853.0, 960.0]:
-		_clear_feed(h)
-		h.chat_root.position.y = canvas_h
-		for i in h.LOG_MAX:
-			h.log_event("Found a Rusted Dagger (%d)" % (i + 1), Color.WHITE, "note")
-		if h._log_lines.size() != h.LOG_MAX:
-			return "party chat on a %dpx-tall canvas cost the event feed its classic rows" % int(canvas_h)
+	_clear_feed(h)
+	for i in h.LOG_MAX:
+		h.log_event("Found a Rusted Dagger (%d)" % (i + 1), Color.WHITE, "note")
+	if h._log_lines.size() != h.LOG_MAX:
+		return "party chat cost the event feed its classic rows"
+	var feed_top: float = (h._log_lines[0] as Control).get_global_rect().position.y
+	for surface: Control in [h.chat_lines_box, h.chat_input]:
+		if surface.get_global_rect().end.y + Balance.HUD_CHAT_FEED_GAP > feed_top:
+			return "party chat history or input overlaps the event feed"
 	return ""
 
 
