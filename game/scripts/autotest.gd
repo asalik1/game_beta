@@ -11156,6 +11156,7 @@ func _test_spell_damage_wiring() -> void:
 	await _probe_warlock_coefficients(p, errors)
 	p.queue_free()
 	await _frames(1)
+	await _probe_archer_storm_damage(errors)
 	game.party_stats = saved_stats
 	game.fight_stats = saved_fight
 	game.settings["hit_stop"] = saved_hit_stop
@@ -11166,7 +11167,102 @@ func _test_spell_damage_wiring() -> void:
 			node.add_to_group("enemies")
 	if not errors.is_empty():
 		return _fail("spell damage wiring: " + "; ".join(errors))
-	print("ok: spell damage wiring (Mage gear, Starfall, Firmament, skins; physical Wind Cuts; duel burn/toxin penetration; duel Frozen vs Stunned labels; independent Warlock knobs)")
+	print("ok: spell damage wiring (Mage gear, Starfall, Firmament, skins; physical Wind Cuts; duel burn/toxin penetration; duel Frozen vs Stunned labels; independent Warlock knobs; Arrow Storm skins, Bulwark, Advance and Moonturn)")
+
+
+## T40: real casts and skin strike paths, fixed stats and one isolated victim.
+## The enclosing spell-wiring section restores shared state on failure too.
+func _probe_archer_storm_damage(errors: Array[String]) -> void:
+	var advance := 1.0 + float(Balance.uniq("archer_boots_As")["bonus"])
+	var echo_mult := float(Balance.uniq("moonturn")["echo_mult"])
+	for skin_id in ["", "frostfall_ranger", "voidwraith"]:
+		for gloves in ["", "archer_gloves_Es", "archer_gloves_Ea"]:  # S grip halves storm arrows; A grip keeps full bulk
+			for empowered in [false, true]:
+				if gloves == "archer_gloves_Ea" and empowered:
+					continue
+				# Fresh actors: no stats, procs or wounds inherited from prior cases.
+				var p := Player.new()
+				p.game = game
+				p.cls = "archer"
+				game.add_child(p)
+				p.set_process(false)
+				p.set_physics_process(false)
+				p.global_position = game.room_center(0)
+				p.skin = skin_id
+				p.equipment = {"weapon": {"passive": "moonturn"}}
+				p.ability_theme = {}
+				p.tree_points = {}
+				p.atk = 100.0
+				p.crit = 0.0
+				p.magpen = 0.0
+				p.physpen = 0.0
+				p.combo = 0.0
+				p.max_hp = 10000.0
+				p.hp = p.max_hp
+				p.max_mp = 10000.0
+				p.mp = p.max_mp
+				p.uniq_armor = ["archer_boots_As"]
+				if gloves != "":
+					p.uniq_armor.append(gloves)
+					# Lend the recalc cache from fixed HP, using the real gear knob.
+					p.uniq_hit_flat = p.max_hp / p.uniq_gk("glove_bulwark", "hp_per")
+				var label := "Arrow Storm skin=%s gloves=%s Advance=%s" % [skin_id, gloves, empowered]
+				if empowered:
+					p.use_ability("a3")
+					if not p.uniq_on("pants_aggr"):
+						errors.append(label + " Tumble did not arm Advance")
+				var e := _spell_damage_dummy(p)
+				var base_hit := p.atk * p.ability_coeff("ult")
+				var bulk := p.uniq_hit_flat * (1.0 if gloves.ends_with("a") else 0.5)
+				var cast_mult := advance if empowered else 1.0
+				await _spell_storm_cast(p, errors, label)
+				if p.uniq_on("pants_aggr"):
+					errors.append(label + " did not consume Advance")
+				# A later ability's transient payload must not contaminate either
+				# the next rain tick or the echo, nor be overwritten by a hit.
+				p._tfx = {"dmg_mult": 7.0, "dot": 9.0}
+				for tick in 2:
+					var before := e.hp
+					p._storm_strike()
+					_spell_damage_expect(errors, before - e.hp, base_hit * cast_mult + bulk,
+						label + " tick %d" % tick)
+					if p._tfx != {"dmg_mult": 7.0, "dot": 9.0} or e.burn_time > 0.0:
+						errors.append(label + " storm payload leaked")
+				# Expire the scheduled echo through the real player clock. Its first
+				# strike occurs in this same tick; only the wait is shortened.
+				p.storm_time = 0.0
+				p.uniq_t["moonturn_echo"] = 0.01
+				var before_echo := e.hp
+				p._physics_process(0.01)
+				_spell_damage_expect(errors, before_echo - e.hp, base_hit * cast_mult * echo_mult + bulk,
+					label + " Moonturn echo")
+				_spell_damage_expect(errors, p.storm_time, p.uniq_k("echo_dur") - 0.01, label + " echo duration")
+				# Recast without another Tumble: neither Advance nor echo scaling
+				# may leak into the next ordinary storm.
+				await _spell_storm_cast(p, errors, label + " next cast")
+				var before_next := e.hp
+				p._storm_strike()
+				_spell_damage_expect(errors, before_next - e.hp, base_hit + bulk, label + " next cast")
+				e.free()
+				# Voidwraith tentacles live under game, not the player: free them
+				# now so they cannot outlive this case into later sections.
+				for t in p.void_tentacles:
+					if is_instance_valid(t):
+						t.free()
+				p.void_tentacles.clear()
+				p.queue_free()
+				await _frames(1)
+
+
+func _spell_storm_cast(p: Player, errors: Array[String], label: String) -> void:
+	p.storm_time = 0.0
+	p.cds["ult"] = 0.0
+	p.use_ability("ult")
+	var deadline := Time.get_ticks_msec() + 2000
+	while p.storm_time <= 0.0 and Time.get_ticks_msec() < deadline:
+		await get_tree().create_timer(0.01).timeout
+	if p.storm_time <= 0.0:
+		errors.append(label + " did not start")
 
 
 func _spell_damage_dummy(p: Player) -> Enemy:

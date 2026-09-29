@@ -1309,7 +1309,7 @@ func hit_enemy(target: CharacterBody2D, mult: float, effects := {}) -> void:
 	# (the grip carrier's amp doubles it under its condition).
 	var base_amt: float = current_atk() * mult + _cast_base \
 		+ uniq_hit_flat * uniq_amp(uniq_gear("glove_bulwark")) \
-		* (0.5 if effects.get("uniq_storm", 0) else 1.0)  # Arrow Storm carries HALF (the card's printed rate)
+		* _storm_bulk_scale(effects)  # S-lane Arrow Storm arrows carry HALF (the card's printed rate)
 	var result := Stats.resolve(base_amt * (1.0 - true_frac), dmg_type,
 		crit, crit_dmg, pen, dex, e_res, e_eva, e.critres, crit_exempt)
 	if result["miss"] and true_frac <= 0.0:
@@ -1940,7 +1940,7 @@ func _hit_rival(q: Player, mult: float, effects := {}) -> void:
 		crit_exempt += void_crit
 	var true_frac: float = effects.get("true_frac", 0.0)
 	var base_amt: float = current_atk() * mult + _cast_base \
-		+ uniq_hit_flat * (0.5 if effects.get("uniq_storm", 0) else 1.0)
+		+ uniq_hit_flat * _storm_bulk_scale(effects)
 	# Resolve crit/graze against NEUTRAL defenses with pen=0: the defender's
 	# resistance (and our pen against it) is applied owner-side in their
 	# take_damage — pen crosses the wire below. Passing our pen here would double-

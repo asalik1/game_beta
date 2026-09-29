@@ -63,6 +63,7 @@ func _use_archer(slot: String, f: float) -> void:
 			storm_time = 3.0
 			storm_tick = 0.0
 			storm_fx = _tfx.duplicate()
+			storm_cast_mult = f
 			storm_mult = 1.0
 			if s_passive() == "moonturn":
 				# Moonturn: night returns — the half-strength echo storm is
@@ -668,24 +669,17 @@ func _storm_strike() -> void:
 				"fade": 0.06}) == null:
 			game.burst(strike_at, storm_col)
 			_ring_fx(strike_at, storm_col, 42.0))
-	var eff := storm_fx.duplicate()
-	eff["aoe"] = true
-	# The storm rains for 3s while the archer keeps casting — resolve each
-	# arrow with the ULT's payload snapshot, not whatever _tfx holds now
-	# (the Consecration save-restore idiom).
-	var saved := _tfx
-	_tfx = storm_fx
-	hit_enemy(e, ability_coeff("ult") * storm_mult, eff)
-	_tfx = saved
+	_apply_archer_storm_hit(e)
 
 
 func _apply_archer_storm_hit(enemy: CharacterBody2D) -> void:
 	var effects := storm_fx.duplicate()
 	effects["aoe"] = true
 	effects["uniq_storm"] = 1  # glove_bulwark: storm arrows carry HALF the bulk (the card's rate)
+	# All skins use the ULT's snapshot while other casts replace _tfx.
 	var saved := _tfx
 	_tfx = storm_fx
-	hit_enemy(enemy, ability_coeff("ult") * storm_mult, effects)
+	hit_enemy(enemy, ability_coeff("ult") * storm_cast_mult * storm_mult, effects)
 	_tfx = saved
 
 
