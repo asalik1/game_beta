@@ -69,7 +69,7 @@ var net_combat_cue := 0   # current target instruction, carried in state flags 5
 # MP-10 combat tell (Wave-2 co-op fix #2): the host broadcasts each trait-window
 # tint (bite windup, pounce crouch, guard, reflect) so a guest reads the same
 # warning its sim aims — a mirror shows the tint for the window, then reverts to
-# base_mod exactly like the host (a hit-flash may stomp it early on BOTH sides).
+# base_mod exactly like the host. Hit highlights have their own material channel.
 var _net_tell_t := 0.0     # mirror: seconds of tell tint left (drives the revert)
 # MP-10: the striking PLAYER for the current take_damage call — hit_enemy
 # sets it before every player hit, and the host's hit RPC sets the guest's
@@ -144,8 +144,21 @@ var sprite: Sprite2D
 # Resting body tint (def "tint" key, e.g. void_shade's value-floor lift —
 # art audit 2026-07-10: the shade vanished on dark ground). Every place
 # that used to reset the body to plain white must reset HERE instead, or
-# a single hit flash strips the identity tint for good.
+# the first tell/status revert strips the identity tint for good.
 var base_mod := Color(1, 1, 1)
+# Hit highlights live in the body's own ShaderMaterial (enemy_hit.gdshader):
+# one replaceable envelope that never reads or writes modulate.
+var _hit_highlight_tween: Tween
+# Status tint layer (T50 review). Burn/toxin, bleed and frost slow paint the
+# body while they run. The old whole-sprite hit flash tweened back to base_mod
+# and was the only thing that ever cleared those colours; now each status
+# clears its own paint when it ends (_settle_status_tint).
+const SLOW_TINT := Color(0.6, 0.8, 1.3)
+const BLEED_TINT := Color(1.5, 0.35, 0.4)   # crimson wound flash
+const TETHER_RESTORE_TINT := Color(0.6, 1.4, 0.5)
+var _status_paint := ""                # "burn" / "bleed" / "slow": whose colour the body wears
+var _status_color := Color(1, 1, 1)    # that colour, to spot a later writer (tell, enrage, reset)
+var _status_under := Color(1, 1, 1)    # what the body wore before the first status paint
 var hp_bar_bg: ColorRect
 var hp_bar_fg: ColorRect
 var hp_bar_cap: ColorRect  # 1px darker end-cap: the remaining-HP edge stays crisp
@@ -441,6 +454,11 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1,
 	if def_tint is Color:
 		base_mod = def_tint
 	sprite.modulate = base_mod
+	# The rim owns a separate child material; this body pass preserves modulate
+	# for tells/statuses and alpha for spawn/death. Each enemy owns its envelope.
+	var hit_material := ShaderMaterial.new()
+	hit_material.shader = preload("res://shaders/enemy_hit.gdshader")
+	sprite.material = hit_material
 	# CAST shadow (owner flag 2026-08-19): the figure on the floor, not just the
 	# contact ellipse — mirrors the sprite's strip/frame/flip each frame. Big
 	# bodies (bosses) cast a little lighter so a 400 px silhouette doesn't
@@ -498,7 +516,7 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1,
 
 	# Kill-priority mobs wear a colored RING underfoot — the same "this
 	# one's special" language as the elite gold ring, so priority reads at
-	# a glance (a child sprite survives the white damage flashes).
+	# a glance (a child sprite survives every body tint and hit highlight).
 	# Green = channel-healer / martyr (support you focus); the ward
 	# shimmer and reflect shield are drawn live in their own windows.
 	var ring_col := Color(0, 0, 0, 0)
@@ -915,7 +933,7 @@ func _physics_process(delta: float) -> void:
 			# shared with every Warlock skin.
 			if src != null and src.skin == "eldritch_warlock" and src.hexed.has(self):
 				src._eldritch_curse_tick(self)
-			sprite.modulate = burn_color
+			_paint_status("burn", burn_color)
 	if burn_time <= 0.0:
 		_clear_burn_potency()
 
@@ -934,10 +952,11 @@ func _physics_process(delta: float) -> void:
 			_take_dot_damage(btick)
 			if dying:
 				return  # death triggers/rewards are complete; cancel the pending attack
-			sprite.modulate = Color(1.5, 0.35, 0.4)  # crimson wound flash
+			_paint_status("bleed", BLEED_TINT)
 	if bleed_time <= 0.0:
 		bleed_dps = 0.0
 		bleed_src = null
+	_settle_status_tint()
 
 	if stun_time > 0.0:
 		windup = 0.0
@@ -1344,6 +1363,8 @@ func _refresh_body_furniture() -> void:
 func _play_death_anim() -> float:
 	if sprite == null:
 		return 0.0
+	# The hit envelope is left running: the killing blow's highlight decays
+	# inside the death hold, and the fade below owns only modulate.a.
 	_end_squash()
 	_pose_x = 0.0
 	_pose_y = 0.0
@@ -1495,8 +1516,8 @@ func _net_mirror_tick(delta: float) -> void:
 	_varo_phase_sprite()  # guests flip throne->standing off replicated hp
 	_render_tail(delta, net_walk)
 	# Wave-2 fix #2: hold a combat-tell tint for its window, then revert to
-	# base_mod ONCE (no per-frame re-assert — matches the host, where the tint
-	# is set once and a hit-flash may stomp it early). net_apply_tell set it.
+	# base_mod ONCE (no per-frame re-assert — matches the host).
+	# net_apply_tell owns the tint; hit highlights never write it.
 	if _net_tell_t > 0.0:
 		_net_tell_t = maxf(0.0, _net_tell_t - delta)
 		if _net_tell_t <= 0.0 and sprite != null:
@@ -1523,6 +1544,7 @@ func _net_mirror_tick(delta: float) -> void:
 	if burn_time <= 0.0:
 		toxin = 0
 	bleed_time = maxf(0.0, bleed_time - delta)
+	_settle_status_tint()  # a guest-applied slow paints this mirror; clear it on expiry
 
 
 ## MP-09: apply one host state sample to this MIRROR — position target,
@@ -1555,8 +1577,7 @@ func net_apply_state(pos: Vector2, flip: bool, walk: bool, hp_frac: float, untar
 
 ## Wave-2 fix #2: apply a combat-tell tint to this MIRROR for `dur` seconds
 ## (the host set the same tint at its call site). Held once, reverted to
-## base_mod on expiry in _net_mirror_tick — matching how the host holds it
-## (a hit-flash tween may stomp it early on either side; that's consistent).
+## base_mod on expiry in _net_mirror_tick — matching how the host holds it.
 func net_apply_tell(color: Color, dur: float) -> void:
 	_net_tell_t = maxf(_net_tell_t, dur)
 	if sprite != null:
@@ -2199,7 +2220,8 @@ func _martyr_wail() -> void:
 
 ## Hit FEEL (gameplay-polish 2026-08-18): a quick squash-and-recover of the
 ## body on every non-silent hit, so a blow visibly LANDS instead of only
-## flashing white. Purely visual, local, co-op-safe (no time_scale). Any strip
+## lighting up (_play_hit_highlight's shader). Purely visual, local,
+## co-op-safe (no time_scale). Any strip
 ## swap that rewrites sprite.scale first kills a running squash (see
 ## _apply_strip / morph) so a mid-squash idle->walk can never end on a stale
 ## scale.
@@ -2325,8 +2347,8 @@ func promote_elite() -> void:
 	gold_value *= Balance.ELITE_GOLD_MULT
 	art_scale *= Balance.ELITE_SPRITE_MULT
 	_rescale_body()
-	# A gold ring underfoot marks the rank at a glance (body tints reset
-	# on damage flashes, so a child sprite is the durable marker).
+	# A gold ring underfoot marks the rank at a glance (tells and statuses
+	# repaint the body tint, so a child sprite is the durable marker).
 	var ring := Sprite2D.new()
 	ring.texture = Art.tex("ring")
 	ring.modulate = Color(1.0, 0.8, 0.3, 0.75)
@@ -2457,7 +2479,7 @@ func apply_slow(mult: float, dur: float) -> void:
 		return
 	slow_mult = minf(slow_mult, mult) if slow_time > 0.0 else mult
 	slow_time = maxf(slow_time, dur)
-	sprite.modulate = Color(0.6, 0.8, 1.3)
+	_paint_status("slow", SLOW_TINT)
 
 
 # --------------------------------------------------------------- damage ---
@@ -2581,9 +2603,7 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 		# it, so solo/offline is untouched; the striker showed its own big.
 		if game.net_host():
 			game.net_session().host_fan_damage(net_id, int(amount), is_crit, striker)
-		sprite.modulate = Color(3, 3, 3)
-		var tween := create_tween()
-		tween.tween_property(sprite, "modulate", base_mod, 0.15)
+		_play_hit_highlight()
 		_hit_squash(is_crit)
 	# Show and update the overhead HP bar once damaged.
 	if hp_bar_bg and hp < max_hp and not dying:
@@ -2620,14 +2640,100 @@ func _net_mirror_hit(amount: float, from_dir: Vector2, is_crit: bool, silent: bo
 	hp -= shown  # optimistic (kill-window reads: executes, dash refunds)
 	game.sfx("ehit", 1.0, 0.0, 4.0)
 	game.spawn_damage_number(self, int(shown), is_crit)
-	sprite.modulate = Color(3, 3, 3)
-	var tween := create_tween()
-	tween.tween_property(sprite, "modulate", base_mod, 0.15)
+	_play_hit_highlight()
 	_hit_squash(is_crit)
 	if hp_bar_bg and hp < max_hp:
 		hp_bar_bg.visible = true
 		hp_bar_fg.visible = true
 		_update_hp_fill()
+
+
+## One replaceable envelope, shared by authoritative and optimistic guest hits.
+## Never capture a tint: it can change or expire while this envelope is running.
+func _play_hit_highlight() -> void:
+	_end_hit_highlight()
+	var mat := sprite.material as ShaderMaterial
+	if mat == null:
+		return  # a test/dev effect swapped the body material: no channel to light
+	mat.set_shader_parameter("hit_strength", Balance.MOB_HIT_HIGHLIGHT_STRENGTH)
+	_hit_highlight_tween = create_tween()
+	_hit_highlight_tween.tween_property(mat, "shader_parameter/hit_strength",
+		0.0, Balance.MOB_HIT_HIGHLIGHT_TIME)
+
+
+func _end_hit_highlight() -> void:
+	if _hit_highlight_tween != null:
+		_hit_highlight_tween.kill()
+		_hit_highlight_tween = null
+	if sprite != null and sprite.material is ShaderMaterial:
+		(sprite.material as ShaderMaterial).set_shader_parameter("hit_strength", 0.0)
+
+
+## Status paint (see _status_paint). Remembers what the body wore under the
+## FIRST status colour, so a boss's enrage or a martyr's rage comes back when
+## the burn ends; a second status painting over the first keeps that memory.
+func _paint_status(kind: String, color: Color) -> void:
+	if sprite == null:
+		return
+	if _status_paint == "" or not _body_wears(_status_color):
+		_status_under = sprite.modulate
+	_status_paint = kind
+	_status_color = color
+	sprite.modulate = color
+
+
+func _body_wears(color: Color) -> bool:
+	var m := sprite.modulate
+	return is_equal_approx(m.r, color.r) and is_equal_approx(m.g, color.g) \
+		and is_equal_approx(m.b, color.b)
+
+
+func _status_running(kind: String) -> bool:
+	match kind:
+		"burn": return burn_time > 0.0
+		"bleed": return bleed_time > 0.0
+		"slow": return slow_time > 0.0
+	return false
+
+
+## Per-tick (host and mirror): once the status whose colour the body wears has
+## ended, hand the body to a status still running (the host paints DoTs; a
+## mirror paints only slows), else to what it wore before. Only when the body
+## still shows that paint: a tell, enrage or reset written since owns the colour
+## and reverts it on its own clock.
+func _settle_status_tint() -> void:
+	if _status_paint == "" or _status_running(_status_paint) or sprite == null:
+		return
+	_status_paint = ""
+	if not _body_wears(_status_color):
+		return
+	var next := ""
+	var color := _status_under
+	if burn_time > 0.0 and not net_mirror:
+		next = "burn"
+		color = burn_color
+	elif bleed_time > 0.0 and not net_mirror:
+		next = "bleed"
+		color = BLEED_TINT
+	elif slow_time > 0.0:
+		next = "slow"
+		color = SLOW_TINT
+	_status_paint = next
+	_status_color = color
+	sprite.modulate = Color(color.r, color.g, color.b, sprite.modulate.a)
+
+
+## A one-off tint that clears itself after `dur` unless something repainted
+## the body first (the old hit flash used to be what cleared these).
+func _flash_body_tint(color: Color, dur: float) -> Tween:
+	sprite.modulate = color
+	var clear := func() -> void:
+		if not dying and _body_wears(color):
+			sprite.modulate = Color(base_mod.r, base_mod.g, base_mod.b, sprite.modulate.a)
+	var tw := create_tween()
+	tw.tween_interval(dur)
+	tw.tween_callback(clear)
+	return tw
 
 
 func die() -> void:
@@ -2667,7 +2773,8 @@ func die() -> void:
 		var tp := tether_partner
 		tp.hp = tp.max_hp
 		tp.refresh_hp_bar()
-		tp.sprite.modulate = Color(0.6, 1.4, 0.5)
+		# A one-off heal flash, not a state: timed, so it can't linger as a toxin green.
+		tp._flash_body_tint(TETHER_RESTORE_TINT, Balance.MOB_TETHER_RESTORE_TINT_T)
 		game.spawn_text(tp.global_position + Vector2(0, -60),
 			"THE BOND RESTORES IT", Color(0.5, 1.0, 0.5), 2.5)
 		game.burst(tp.global_position, Color(0.5, 1.0, 0.5), 18)

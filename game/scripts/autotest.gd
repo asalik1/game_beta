@@ -4511,6 +4511,7 @@ func _test_enemy_statuses() -> void:
 	var projectiles: Array = get_tree().get_nodes_in_group("projectiles")
 	var errors: Array[String] = []
 	_enemy_status_checks(receiver, probes, errors)
+	_enemy_hit_visual_checks(receiver, probes, errors)
 	game.player = keep_player
 	game.players = keep_players
 	game.party_stats = keep_party
@@ -4524,6 +4525,235 @@ func _test_enemy_statuses() -> void:
 	if not errors.is_empty():
 		return _fail("enemy statuses: " + "; ".join(errors))
 	print("ok: enemy statuses (fresh/refresh burn+bleed, toxin restart, lethal bite+shot exits, single XP award, bleed shatters ward)")
+	print("ok: hit highlights (host/mirror repeated hits, windup/guard/burn/enrage tints, envelope replacement, freeze, status tints end with their status, enrage tint fanned to and held by guests, killing-blow highlight, tether flash, rim isolation)")
+
+
+## State rig in the quick tier. Explicit tween steps keep the test independent
+## of headless frame speed; the enclosing fixture restores all shared stats.
+func _enemy_hit_visual_checks(receiver: StatusTarget, probes: Array[Enemy], errors: Array[String]) -> void:
+	for mirror in [false, true]:
+		for cue in ["windup", "guard", "burn", "enrage", "freeze"]:
+			var e: Enemy
+			if cue == "enrage":
+				var boss := Boss.make_boss(game, "vargoth", receiver.global_position + Vector2(300, 0))
+				game.world.add_child(boss)
+				boss.set_physics_process(false)
+				boss.traits = {}
+				boss.hp = boss.max_hp * 0.25
+				probes.append(boss)
+				# Host AI enrages, then hands its tint to the co-op tell event.
+				boss._vargoth(receiver, Vector2.LEFT, 1000.0)
+				var fanned := boss._enrage_tell_color()
+				boss._sync_enrage_tint()
+				if not boss.enraged or not boss._enrage_fanned or fanned.is_equal_approx(boss.base_mod) \
+						or not fanned.is_equal_approx(boss.sprite.modulate):
+					errors.append("host enrage did not fan its tint to guests")
+				e = boss
+				if mirror:
+					# A guest's boss never runs the AI: its tint arrives only through
+					# the tell handler, with no window (held until the next tint).
+					var guest := Boss.make_boss(game, "vargoth", receiver.global_position + Vector2(300, 60))
+					game.world.add_child(guest)
+					guest.set_physics_process(false)
+					guest.traits = {}
+					guest.net_mirror = true
+					guest.hp = guest.max_hp * 0.25
+					probes.append(guest)
+					guest.net_apply_tell(fanned, 0.0)
+					e = guest
+			else:
+				e = _status_probe(probes)
+				match cue:
+					"windup":
+						e.attack_cd = 0.0
+						e._think(0.0) # Actual melee entry owns tint + warning duration.
+					"guard": e._raise_guard()
+					"burn":
+						e.attack_cd = 10.0 # Keep the burn beat from starting a bite.
+						e.apply_burn(1.0, 5.0, Color(1.4, 0.8, 0.6), receiver)
+						e._physics_process(0.01) # Actual DoT beat paints burn tint.
+					"freeze":
+						e.apply_stun(2.0)
+						e.apply_slow(0.5, 2.0)
+			var tint := e.sprite.modulate
+			var duration := e.windup if cue == "windup" else 2.0
+			if cue == "windup" and duration <= 0.0:
+				errors.append("hit visual fixture failed to start melee warning")
+				duration = 0.27
+			e.net_mirror = mirror
+			e.net_target = e.global_position
+			if mirror and cue in ["windup", "guard"]:
+				e.net_apply_tell(tint, duration)
+			var rim: Sprite2D = e.sprite.get_node("EnemyRim")
+			var rim_material := rim.material
+			var rim_strength: float = rim_material.get_shader_parameter("rim_strength")
+			if cue == "guard":
+				# Isolate presentation from the counter's intentional consumption.
+				for repeat in range(3):
+					e._play_hit_highlight()
+					e._hit_highlight_tween.pause()
+					e._hit_highlight_tween.custom_step(Balance.MOB_HIT_HIGHLIGHT_TIME * 0.5)
+					if not e.sprite.modulate.is_equal_approx(tint) or e.counter_t != Balance.MOB_COUNTER_TIME:
+						errors.append("highlight erased an active guard")
+			for hit in range(3):
+				var previous := e._hit_highlight_tween
+				var hp_before := e.hp
+				var windup_before := e.windup
+				var tell_before := e._net_tell_t
+				var status_before := Vector3(e.burn_time, e.stun_time, e.slow_time)
+				var expected_damage := 1.0
+				# The authoritative counter intentionally consumes its blue guard
+				# on contact. Subsequent flashes must preserve the resulting base.
+				if cue == "guard" and not mirror and hit == 0:
+					expected_damage = 0.3
+					tint = e.base_mod
+				e.take_damage(1.0, Vector2.ZERO)
+				if not e.sprite.modulate.is_equal_approx(tint):
+					errors.append("%s mirror=%s: hit overwrote combat tint" % [cue, mirror])
+				if not is_equal_approx(hp_before - e.hp, expected_damage) \
+						or e.windup != windup_before or e._net_tell_t != tell_before \
+						or Vector3(e.burn_time, e.stun_time, e.slow_time) != status_before:
+					errors.append("hit changed damage or warning duration")
+				# A killed tween may remain valid until SceneTree's next sweep.
+				# Test the ownership contract: it cannot advance or write a stale
+				# endpoint over the newly restarted peak, even when stepped here.
+				if previous != null:
+					var old_advanced := previous.custom_step(Balance.MOB_HIT_HIGHLIGHT_TIME * 2.0)
+					var peak: float = e.sprite.material.get_shader_parameter("hit_strength")
+					if old_advanced or not is_equal_approx(peak, Balance.MOB_HIT_HIGHLIGHT_STRENGTH):
+						errors.append("repeated hit left a competing envelope")
+				if e._hit_highlight_tween == null:
+					errors.append("hit has no independent highlight envelope")
+					break
+				e._hit_highlight_tween.pause()
+				var strength: float = e.sprite.material.get_shader_parameter("hit_strength")
+				if not is_equal_approx(strength, Balance.MOB_HIT_HIGHLIGHT_STRENGTH):
+					errors.append("repeated hit did not restart at peak")
+				e._hit_highlight_tween.custom_step(Balance.MOB_HIT_HIGHLIGHT_TIME * 0.5)
+				var decayed: float = e.sprite.material.get_shader_parameter("hit_strength")
+				if decayed <= 0.0 or decayed >= strength:
+					errors.append("highlight did not decay independently")
+			if e._hit_highlight_tween == null:
+				continue
+			e._hit_highlight_tween.custom_step(Balance.MOB_HIT_HIGHLIGHT_TIME)
+			if not e.sprite.modulate.is_equal_approx(tint) \
+					or not is_zero_approx(float(e.sprite.material.get_shader_parameter("hit_strength"))):
+				errors.append("highlight expiry failed to leave combat tint intact")
+			if rim.material != rim_material or rim.material == e.sprite.material \
+					or rim_material.get_shader_parameter("rim_strength") != rim_strength:
+				errors.append("hit replaced or altered the independent rim pass")
+			for other in probes:
+				if other != e and other.sprite.material == e.sprite.material:
+					errors.append("enemy hit materials are shared across actors")
+			# Expire a tell DURING the next envelope: no stale tint may return.
+			if cue == "windup":
+				e._play_hit_highlight()
+				e._hit_highlight_tween.pause()
+				var receiver_hp := receiver.hp
+				if mirror:
+					e._net_mirror_tick(duration)
+				else:
+					e._physics_process(duration)
+				if not e.sprite.modulate.is_equal_approx(e.base_mod) \
+						or (mirror and receiver.hp != receiver_hp) \
+						or (not mirror and not is_equal_approx(receiver_hp - receiver.hp, e._hit_dmg())):
+					errors.append("windup expiry changed tint, bite damage or guest authority")
+				e._hit_highlight_tween.custom_step(Balance.MOB_HIT_HIGHLIGHT_TIME * 2.0)
+				if not e.sprite.modulate.is_equal_approx(e.base_mod):
+					errors.append("expired flash restored a stale warning")
+			# Hits never reset the body now, so each status must clear its own
+			# paint when it ends (host tick and mirror tick alike).
+			_status_expiry_checks(e, cue, mirror, tint, receiver, errors)
+			# Alpha never belongs to the hit envelope, including a mid-fade hit.
+			e.sprite.modulate.a = 0.4
+			e._play_hit_highlight()
+			e._hit_highlight_tween.pause()
+			e._hit_highlight_tween.custom_step(Balance.MOB_HIT_HIGHLIGHT_TIME * 2.0)
+			if not is_equal_approx(e.sprite.modulate.a, 0.4):
+				errors.append("hit restored fade alpha")
+			e._play_hit_highlight()
+			var hold := e._play_death_anim()
+			var expected_hold := Balance.MOB_DEATH_COLLAPSE_T * 0.7
+			if not e._strip_action.is_empty():
+				expected_hold = Balance.MOB_DEATH_HOLD + float(e.anim_frames) / Balance.MOB_DEATH_FPS
+			if e._hit_highlight_tween == null or not e._hit_highlight_tween.is_valid() \
+					or not is_equal_approx(hold, expected_hold) \
+					or not is_equal_approx(float(e.sprite.material.get_shader_parameter("hit_strength")),
+						Balance.MOB_HIT_HIGHLIGHT_STRENGTH):
+				errors.append("death cut the hit envelope or changed its hold timing")
+		# A real killing blow: its highlight plays out inside the death hold while
+		# the fade still owns alpha alone (host kill, and the guest's optimistic
+		# hit followed by the host's death event).
+		var victim := _status_probe(probes)
+		victim.hp = 1.0
+		victim.net_mirror = mirror
+		victim.take_damage(5.0, Vector2.ZERO)
+		if mirror:
+			victim.net_mirror_die()
+		var envelope := victim._hit_highlight_tween
+		if not victim.dying or envelope == null or not envelope.is_valid() \
+				or not is_equal_approx(float(victim.sprite.material.get_shader_parameter("hit_strength")),
+					Balance.MOB_HIT_HIGHLIGHT_STRENGTH):
+			errors.append("mirror=%s: the killing blow lost its hit highlight" % mirror)
+		else:
+			envelope.pause()
+			envelope.custom_step(Balance.MOB_HIT_HIGHLIGHT_TIME)
+			if not is_zero_approx(float(victim.sprite.material.get_shader_parameter("hit_strength"))) \
+					or not is_equal_approx(victim.sprite.modulate.a, 1.0):
+				errors.append("killing-blow highlight did not decay under an untouched fade")
+	# The tether's one-off heal flash times itself out instead of lingering as
+	# a toxin-green; a tint written over it in the meantime is left alone.
+	for repainted in [false, true]:
+		var twin := _status_probe(probes)
+		var flash := twin._flash_body_tint(Enemy.TETHER_RESTORE_TINT, Balance.MOB_TETHER_RESTORE_TINT_T)
+		flash.pause()
+		if repainted:
+			twin._raise_guard()
+		var shown := twin.sprite.modulate
+		flash.custom_step(Balance.MOB_TETHER_RESTORE_TINT_T * 1.01)
+		var want: Color = shown if repainted else twin.base_mod
+		if not twin.sprite.modulate.is_equal_approx(want):
+			errors.append("tether flash %s" % ("stomped a later tell" if repainted else "outlived its window"))
+
+
+## Status paint must end with its status. `tint` is what the cue left on the
+## body; attack_cd holds off a bite so no new tell repaints mid-step.
+func _status_expiry_checks(e: Enemy, cue: String, mirror: bool, tint: Color,
+		receiver: StatusTarget, errors: Array[String]) -> void:
+	var burn_tint := Color(1.4, 0.8, 0.6)
+	match cue:
+		"burn", "freeze":
+			var paint: String = "burn" if cue == "burn" else "slow"
+			if e._status_paint != paint:
+				errors.append("%s mirror=%s: status paint not tracked" % [cue, mirror])
+			e.attack_cd = 10.0
+			if mirror:
+				e._net_mirror_tick(5.0)
+			else:
+				e._physics_process(5.0)
+			if not e.sprite.modulate.is_equal_approx(e.base_mod) or e._status_paint != "":
+				errors.append("%s mirror=%s: status tint outlived its status" % [cue, mirror])
+		"enrage":
+			if mirror:
+				e._net_mirror_tick(30.0)
+				if not e.sprite.modulate.is_equal_approx(tint):
+					errors.append("guest dropped the held enrage tint")
+			else:
+				# Burn repaints over the enrage; its expiry hands the enrage back.
+				e.apply_burn(1.0, 0.3, burn_tint, receiver)
+				e.burn_tick = 0.0
+				e._physics_process(0.01)
+				var burning := e.sprite.modulate.is_equal_approx(burn_tint)
+				e._physics_process(0.3)
+				if not burning or not e.sprite.modulate.is_equal_approx(tint):
+					errors.append("burn over an enrage did not hand the enrage tint back")
+				# Un-enraging (reset_fight) fans the resting tint back to guests.
+				var boss := e as Boss
+				boss.enraged = false
+				var rest := boss._enrage_tell_color()
+				boss._sync_enrage_tint()
+				if not rest.is_equal_approx(boss.base_mod) or boss._enrage_fanned:
+					errors.append("un-enrage did not fan the resting tint back")
 
 
 func _status_probe(probes: Array[Enemy], kind := "wolf") -> Enemy:

@@ -411,6 +411,13 @@ const MOB_GAIT_VAR := 0.06        # mobs: per-instance stride-rate personality (
 #  MOB_DEATH_* — a mob with a <sprite>_death strip plays it (fps below, last
 #    frame held) then fades; sheetless bodies collapse feet-pinned instead of
 #    inflating. MOB_SPAWN_IN_T — mid-fight summons grow out of the ground.
+#  MOB_HIT_HIGHLIGHT_* — peak and decay of the per-enemy hit highlight shader
+#    (enemy_hit.gdshader): a brightness gain of 1 + STRENGTH on the painted
+#    colours that never touches modulate, so tell/status/enrage tints stay
+#    readable through hits. 0.35 read only side by side on screen
+#    (shot.bat hit_highlight: ~+11/255 mean at the peak); 0.6 is a clear pulse.
+#  MOB_TETHER_RESTORE_TINT_T — how long the surviving twin wears the green
+#    "the bond restores it" flash before returning to its own palette.
 const MOB_WALK_CLOCK := 2.0
 const MOB_WALK_BOUNCE_FRAC := 0.014
 const MOB_WALK_LEAN_RAD := 0.04
@@ -433,6 +440,9 @@ const MOB_POUNCE_LEAN_RAD := 0.12
 const MOB_DEATH_FPS := 9.0
 const MOB_DEATH_HOLD := 0.25
 const MOB_DEATH_FADE := 0.35
+const MOB_HIT_HIGHLIGHT_STRENGTH := 0.6
+const MOB_HIT_HIGHLIGHT_TIME := 0.15
+const MOB_TETHER_RESTORE_TINT_T := 0.6
 const MOB_DEATH_COLLAPSE_T := 0.4
 const MOB_SPAWN_IN_T := 0.28
 # BOSS TELL STYLE (visual overhaul 2026-09-03) — the answer to "boss attacks all

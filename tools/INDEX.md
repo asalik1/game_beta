@@ -1112,6 +1112,15 @@ damage bearings, lethal hit/recovery, combat report, comparison/keep/buy/stash
 transactions, comfort settings and live enemy/boss cues (18 shots). Includes
 duplicate-event assertions; outputs to `user://shots/autonomy/` through `ShotRig`.
 
+`shot.bat hit_highlight [--renderer=gl_compatibility]` — the enemy hit highlight
+(`enemy_hit.gdshader`) on the real renderer, which the headless quick tier never
+compiles. Measures wolf and void_shade bodies in an isolated SubViewport: strength 0
+renders exactly like the default material, the peak brightens without shifting the
+painted hue, the bite tell's own tint factor is unchanged, and alpha stays put
+(prints `HIT HIGHLIGHT NUMBERS`). Then rest/peak stills of wolf, void_shade and
+Cinderhide on keep and void floors, plain and under the tell, to
+`user://shots/hit_highlight/` (8 shots).
+
 **Runner + base class (2026-08-15) — use these for any new rig or run:**
 
 | tool | what it does |

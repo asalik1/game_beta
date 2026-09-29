@@ -610,6 +610,10 @@ fans at the 4 tint sites (enemy.gd:797 pounce, :803 windup, `_raise_guard`, `_ra
 sets the mirror's `modulate` for the window; `_net_mirror_tick` (enemy.gd:633-638) reverts to `base_mod`
 on expiry — held ONCE, not re-asserted, so a hit-flash may stomp it early exactly like the host. The two
 PUNISH windows also fan their warn text (`GUARD`/`WARDED`) through the new `spawn_text_all`.
+UPDATE 2026-09-29 (T50): hits no longer touch `modulate`. They light a separate per-enemy shader
+channel (`enemy_hit.gdshader`, `Enemy._play_hit_highlight`), so a tell now holds for its full window on
+both sides and nothing stomps it early. Status tints (burn, bleed, slow) clear themselves when the status
+ends (`Enemy._settle_status_tint`), which the old hit flash used to do as a side effect.
 
 ### 3 — MEDIUM: plate_dr absent on guest mirrors → inflated optimism + execute/refund misfire
 FINDING: `_cinderhide` sets `plate_dr=0.82` host-side (boss.gd:1328/1354); the mirror's think never runs
@@ -702,6 +706,11 @@ Cinderhide enrage banners LEFT host-local — see review.
   hit-flash tween reverts it to `base_mod`), so it's low-value to sync. `play_action("enrage")` already
   mirrors the enrage ANIMATION for most bosses. Remaining non-Ordo/Vargoth/Cinderhide enrage BANNERS
   follow the same one-line swap (`spawn_text`→`spawn_text_all`) if the owner wants full parity.
+  UPDATE 2026-09-29 (T50): that premise is gone. Hits no longer revert the body tint, so an enrage
+  tint now holds for its phase on the host. `Boss._sync_enrage_tint` fans it once through the existing
+  `host_enemy_tell` event with no window (`dur` 0 = held until the next tint), and fans `base_mod` back
+  when `reset_fight` un-enrages. Only `enraged` phases ride it; other one-off phase tints (core exposed,
+  plate shed, Kaethra) stay host-only as before.
 
 
 ## Wave 8 — the party layer (owner spec 2026-07-24: "the standard coop interface for making/disbanding/communicating/ready check/changing host is missing")
