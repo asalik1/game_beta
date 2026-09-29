@@ -1,0 +1,370 @@
+{
+  "task": "T52a",
+  "date": "2026-09-29",
+  "worktree": "C:/Users/asali/Projects/MMO",
+  "branch": "main",
+  "starting_head": "7fd27a4",
+  "generator": "authorized built-in image_gen.imagegen",
+  "model": "not exposed by tool",
+  "generation_calls": 8,
+  "generation_execution": "strictly serial, one asset per call, no Godot runs",
+  "source_policy": "Self-generated art. Existing project cover/splash images inspected as references; no downloaded third-party assets.",
+  "references": [
+    {
+      "path": "game/assets/sprites/cover.png",
+      "sha256": "ba6374366f10ababeb570c58dcfe17728b9f0c91b15c1b64a38ed7a7a01b9384",
+      "size": [
+        2560,
+        1440
+      ],
+      "role": "primary painted metal style"
+    },
+    {
+      "path": "game/assets/sprites/cover_2.png",
+      "sha256": "ca08f9e2332474008394919efff85de44df8ef9611bc86d5c9bdae8c3e86e2aa",
+      "size": [
+        2560,
+        1440
+      ],
+      "role": "visually inspected supporting reference"
+    },
+    {
+      "path": "game/assets/sprites/class_splash_warrior.png",
+      "sha256": "082ed9ca817fc018e81f60d507342ee52f075718e89089633d32e901e0c04e5f",
+      "size": [
+        1254,
+        1254
+      ],
+      "role": "visually inspected supporting reference"
+    },
+    {
+      "path": "game/assets/sprites/class_splash_mage.png",
+      "sha256": "70f252c4e1a0b640c4ab57d21c45521c91e7d36f87d4ec72b060d0a38a8ea103",
+      "size": [
+        1254,
+        1254
+      ],
+      "role": "visually inspected supporting reference"
+    }
+  ],
+  "reference_crop": {
+    "source": "game/assets/sprites/cover.png",
+    "box_xyxy": [
+      990,
+      458,
+      1555,
+      746
+    ],
+    "saved_as": "cover_chrome_reference.png"
+  },
+  "editing_references": {
+    "tab_idle.prompt.txt": "masters/tab_active_v1.png",
+    "tab_idle.reroll-1.prompt.txt": "masters/tab_idle_v1_rejected.png"
+  },
+  "processing": {
+    "alpha": "Native generated RGBA, no chroma key. Alpha <=16 set to 0 to remove faint stray colored pixels. Alpha >=245 set to 255 to make nearly-opaque interiors opaque; intermediate edge alpha retained. Zero-alpha RGB cleared.",
+    "trim": "Crop to resulting alpha bounding box (per-piece coordinates retained).",
+    "frame_resize": "Nine-region Lanczos resampling: equal source slice margins map to equal final slice margins on all four sides; corners resize uniformly, center/edge strips stretch. No painted geometry replacement, mirroring, color grading, or procedural ornament added.",
+    "divider_resize": "Aspect-preserving thumbnail of trimmed art into 508x44, centered on transparent 512x48 canvas.",
+    "border_definition": "The listed border is the EXACT protected nine-slice margin, including corner ornaments and a small quiet guard band. It is not a claim that every painted metal pixel fills that entire margin. Brush/antialias edges naturally vary slightly.",
+    "reproducibility": "processing_metrics.json retains native dimensions, crop rectangles, source and destination slice margins and final hashes."
+  },
+  "assets": {
+    "panel": {
+      "master": "masters/panel_v1.png",
+      "raw_size": [
+        1254,
+        1254
+      ],
+      "trim_box_xyxy": [
+        50,
+        56,
+        1203,
+        1191
+      ],
+      "source_slice_margin_px": 132,
+      "final_size": [
+        768,
+        768
+      ],
+      "slice_margins_ltrb_px": [
+        72,
+        72,
+        72,
+        72
+      ],
+      "sha256": "4321542114c3408c7e0c8ccae68488d67609ae6def2fe7cbc64dba92a52bbc2b",
+      "green_rim_pixels": 0,
+      "center_alpha_min": 255,
+      "prompts": [
+        "panel.prompt.txt"
+      ],
+      "rerolls": 0,
+      "reroll_reason": null,
+      "final_path": "game/assets/ui/frame/panel.png",
+      "master_sha256": "11a139ba8cbe17ea005f9a695b2f7ee94a4cf194d85db84db654989cb3978bfa",
+      "visual_review": "Accepted after viewing generated master and final dark/mid-background contact sheet; painterly warm materials, coherent mirrored corner forms, straight consistent rails and quiet center.",
+      "suggested_2x_base_draw_size": [
+        384,
+        384
+      ]
+    },
+    "card": {
+      "master": "masters/card_v2.png",
+      "raw_size": [
+        1254,
+        1254
+      ],
+      "trim_box_xyxy": [
+        63,
+        62,
+        1191,
+        1188
+      ],
+      "source_slice_margin_px": 112,
+      "final_size": [
+        384,
+        384
+      ],
+      "slice_margins_ltrb_px": [
+        36,
+        36,
+        36,
+        36
+      ],
+      "sha256": "ca5a8044dc3877f3be22edae32af9062c2802f46c95f1f79c89c4218ce775da9",
+      "green_rim_pixels": 0,
+      "center_alpha_min": 255,
+      "prompts": [
+        "card.prompt.txt",
+        "card.reroll-1.prompt.txt"
+      ],
+      "rerolls": 1,
+      "reroll_reason": "First generation had different top/bottom corner plate geometry. Re-rolled with four identical square diamond plates.",
+      "final_path": "game/assets/ui/frame/card.png",
+      "master_sha256": "5b00252b812db750bfdc62fbc1ffd9a00ea5b0415f738cf2f155fde57cc63eec",
+      "visual_review": "Accepted after viewing generated master and final dark/mid-background contact sheet; painterly warm materials, coherent mirrored corner forms, straight consistent rails and quiet center.",
+      "suggested_2x_base_draw_size": [
+        192,
+        192
+      ]
+    },
+    "tab_active": {
+      "master": "masters/tab_active_v1.png",
+      "raw_size": [
+        1942,
+        809
+      ],
+      "trim_box_xyxy": [
+        53,
+        99,
+        1891,
+        707
+      ],
+      "source_slice_margin_px": 112,
+      "final_size": [
+        384,
+        160
+      ],
+      "slice_margins_ltrb_px": [
+        28,
+        28,
+        28,
+        28
+      ],
+      "sha256": "d980100ad8ae139d0184487c0fe4cb1bb66f19dd2916b01538951f0f69986552",
+      "green_rim_pixels": 0,
+      "center_alpha_min": 255,
+      "prompts": [
+        "tab_active.prompt.txt"
+      ],
+      "rerolls": 0,
+      "reroll_reason": null,
+      "final_path": "game/assets/ui/frame/tab_active.png",
+      "master_sha256": "7c00e8216d8d89abb7b1142f1323a24321ac830eef641468d1cf9c9bf032273b",
+      "visual_review": "Accepted after viewing generated master and final dark/mid-background contact sheet; painterly warm materials, coherent mirrored corner forms, straight consistent rails and quiet center.",
+      "suggested_2x_base_draw_size": [
+        192,
+        80
+      ]
+    },
+    "tab_idle": {
+      "master": "masters/tab_idle_v2.png",
+      "raw_size": [
+        1945,
+        809
+      ],
+      "trim_box_xyxy": [
+        48,
+        93,
+        1898,
+        710
+      ],
+      "source_slice_margin_px": 112,
+      "final_size": [
+        384,
+        160
+      ],
+      "slice_margins_ltrb_px": [
+        28,
+        28,
+        28,
+        28
+      ],
+      "sha256": "2bc42a18cf2917081c52b87b157d81952b2813c0b542d9bb21bdc50efb21249f",
+      "green_rim_pixels": 0,
+      "center_alpha_min": 255,
+      "prompts": [
+        "tab_idle.prompt.txt",
+        "tab_idle.reroll-1.prompt.txt"
+      ],
+      "rerolls": 1,
+      "reroll_reason": "First generated idle was less gold but too close to active in brightness. Re-rolled to dark bronze; final rail mean luma is 47.79 vs active 71.27 (about 33% lower).",
+      "final_path": "game/assets/ui/frame/tab_idle.png",
+      "master_sha256": "d831ac5cee927a4f397af805cdbc3b465723e1d58a6f91e9be3eb800b752d46e",
+      "visual_review": "Accepted after viewing generated master and final dark/mid-background contact sheet; painterly warm materials, coherent mirrored corner forms, straight consistent rails and quiet center.",
+      "suggested_2x_base_draw_size": [
+        192,
+        80
+      ]
+    },
+    "slot": {
+      "master": "masters/slot_v1.png",
+      "raw_size": [
+        1254,
+        1254
+      ],
+      "trim_box_xyxy": [
+        56,
+        53,
+        1199,
+        1190
+      ],
+      "source_slice_margin_px": 164,
+      "final_size": [
+        192,
+        192
+      ],
+      "slice_margins_ltrb_px": [
+        20,
+        20,
+        20,
+        20
+      ],
+      "sha256": "0da4aea09d281f393b9ab88a5a16864b9b93d8dcd6ba145ab466b4d8f8dc1db3",
+      "green_rim_pixels": 0,
+      "center_alpha_min": 255,
+      "prompts": [
+        "slot.prompt.txt"
+      ],
+      "rerolls": 0,
+      "reroll_reason": null,
+      "final_path": "game/assets/ui/frame/slot.png",
+      "master_sha256": "a28db44be02b8442924bdf855980b528932219505aae1bc5af5fd44eae369bf6",
+      "visual_review": "Accepted after viewing generated master and final dark/mid-background contact sheet; painterly warm materials, coherent mirrored corner forms, straight consistent rails and quiet center.",
+      "suggested_2x_base_draw_size": [
+        96,
+        96
+      ]
+    },
+    "divider": {
+      "master": "masters/divider_v1.png",
+      "raw_size": [
+        1774,
+        887
+      ],
+      "trim_box_xyxy": [
+        44,
+        384,
+        1731,
+        500
+      ],
+      "source_slice_margin_px": 0,
+      "final_size": [
+        512,
+        48
+      ],
+      "slice_margins_ltrb_px": null,
+      "sha256": "2f55a5f61074e6033fcdced359a91dd89414993fc3ec61aa8c97d0708392920f",
+      "green_rim_pixels": 0,
+      "center_alpha_min": null,
+      "prompts": [
+        "divider.prompt.txt"
+      ],
+      "rerolls": 0,
+      "reroll_reason": null,
+      "final_path": "game/assets/ui/frame/divider.png",
+      "master_sha256": "826dc6a724feba4cff53e41085544e70720c1bcc99229d28393717975fda6745",
+      "visual_review": "Accepted visual design. Centered diamond and quiet mirrored rails; fixed-aspect use or split-rail stretching required.",
+      "stretch_contract": {
+        "ordinary_nine_slice_supported": false,
+        "reason": "One conventional nine-slice cannot preserve both endcaps and an ornament in its stretchable center. Keep center fixed and stretch the two undecorated rails independently.",
+        "regions_xywh": {
+          "left_cap": [
+            0,
+            0,
+            16,
+            48
+          ],
+          "left_rail": [
+            16,
+            0,
+            216,
+            48
+          ],
+          "center": [
+            232,
+            0,
+            48,
+            48
+          ],
+          "right_rail": [
+            280,
+            0,
+            216,
+            48
+          ],
+          "right_cap": [
+            496,
+            0,
+            16,
+            48
+          ]
+        },
+        "nominal_rail_thickness_px": 8,
+        "suggested_2x_base_draw_size": [
+          256,
+          24
+        ]
+      }
+    }
+  },
+  "rejected_masters": [
+    {
+      "path": "masters/card_v1_rejected.png",
+      "reason": "First generation had different top/bottom corner plate geometry. Re-rolled with four identical square diamond plates."
+    },
+    {
+      "path": "masters/tab_idle_v1_rejected.png",
+      "reason": "First generated idle was less gold but too close to active in brightness. Re-rolled to dark bronze; final rail mean luma is 47.79 vs active 71.27 (about 33% lower)."
+    }
+  ],
+  "verification": {
+    "all_final_pngs_rgba": true,
+    "all_five_frame_centers_alpha_255": true,
+    "all_six_green_rim_counts": 0,
+    "green_predicate": "alpha>0 and G>max(R,B)+20; checked on all visible final pixels (stricter than just rim)",
+    "visual_contact_sheet": "contact_sheet.png",
+    "offline_stretch_previews": [
+      "panel 700x165 / 36px display margins",
+      "card 700x92 / 18px display margins",
+      "tabs 340x62 / 14px display margins"
+    ],
+    "godot_runs": 0
+  },
+  "limitations": [
+    "Divider is not suitable for ordinary single-nine-slice width expansion with its central ornament preserved. Its exact five horizontal atlas regions are specified above.",
+    "Actual in-game display sizes and import behavior were not verified; exports are intended as 2x assets at the listed base draw sizes.",
+    "Weakest piece: slot has extra tiny corner facets; these soften at 48-96px display and are less restrained than the card. Palette remains neutral bronze."
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "panel": {
+    "master": "masters/panel_v1.png",
+    "raw_size": [
+      1254,
+      1254
+    ],
+    "trim_box_xyxy": [
+      50,
+      56,
+      1203,
+      1191
+    ],
+    "source_slice_margin_px": 132,
+    "final_size": [
+      768,
+      768
+    ],
+    "slice_margins_ltrb_px": [
+      72,
+      72,
+      72,
+      72
+    ],
+    "sha256": "4321542114c3408c7e0c8ccae68488d67609ae6def2fe7cbc64dba92a52bbc2b",
+    "green_rim_pixels": 0,
+    "center_alpha_min": 255
+  },
+  "card": {
+    "master": "masters/card_v2.png",
+    "raw_size": [
+      1254,
+      1254
+    ],
+    "trim_box_xyxy": [
+      63,
+      62,
+      1191,
+      1188
+    ],
+    "source_slice_margin_px": 112,
+    "final_size": [
+      384,
+      384
+    ],
+    "slice_margins_ltrb_px": [
+      36,
+      36,
+      36,
+      36
+    ],
+    "sha256": "ca5a8044dc3877f3be22edae32af9062c2802f46c95f1f79c89c4218ce775da9",
+    "green_rim_pixels": 0,
+    "center_alpha_min": 255
+  },
+  "tab_active": {
+    "master": "masters/tab_active_v1.png",
+    "raw_size": [
+      1942,
+      809
+    ],
+    "trim_box_xyxy": [
+      53,
+      99,
+      1891,
+      707
+    ],
+    "source_slice_margin_px": 112,
+    "final_size": [
+      384,
+      160
+    ],
+    "slice_margins_ltrb_px": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "sha256": "d980100ad8ae139d0184487c0fe4cb1bb66f19dd2916b01538951f0f69986552",
+    "green_rim_pixels": 0,
+    "center_alpha_min": 255
+  },
+  "tab_idle": {
+    "master": "masters/tab_idle_v2.png",
+    "raw_size": [
+      1945,
+      809
+    ],
+    "trim_box_xyxy": [
+      48,
+      93,
+      1898,
+      710
+    ],
+    "source_slice_margin_px": 112,
+    "final_size": [
+      384,
+      160
+    ],
+    "slice_margins_ltrb_px": [
+      28,
+      28,
+      28,
+      28
+    ],
+    "sha256": "2bc42a18cf2917081c52b87b157d81952b2813c0b542d9bb21bdc50efb21249f",
+    "green_rim_pixels": 0,
+    "center_alpha_min": 255
+  },
+  "slot": {
+    "master": "masters/slot_v1.png",
+    "raw_size": [
+      1254,
+      1254
+    ],
+    "trim_box_xyxy": [
+      56,
+      53,
+      1199,
+      1190
+    ],
+    "source_slice_margin_px": 164,
+    "final_size": [
+      192,
+      192
+    ],
+    "slice_margins_ltrb_px": [
+      20,
+      20,
+      20,
+      20
+    ],
+    "sha256": "0da4aea09d281f393b9ab88a5a16864b9b93d8dcd6ba145ab466b4d8f8dc1db3",
+    "green_rim_pixels": 0,
+    "center_alpha_min": 255
+  },
+  "divider": {
+    "master": "masters/divider_v1.png",
+    "raw_size": [
+      1774,
+      887
+    ],
+    "trim_box_xyxy": [
+      44,
+      384,
+      1731,
+      500
+    ],
+    "source_slice_margin_px": 0,
+    "final_size": [
+      512,
+      48
+    ],
+    "slice_margins_ltrb_px": null,
+    "sha256": "2f55a5f61074e6033fcdced359a91dd89414993fc3ec61aa8c97d0708392920f",
+    "green_rim_pixels": 0,
+    "center_alpha_min": null
+  }
+}

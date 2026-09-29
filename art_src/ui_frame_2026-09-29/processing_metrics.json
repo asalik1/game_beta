@@ -1,0 +1,236 @@
+{
+  "panel": {
+    "master": "masters/panel_r2.png",
+    "master_sha256": "03da7e02fbb1926fc72a8bc16ea5c6a3a418ed5b0ea0b7e1c87c50c703c5e0d9",
+    "raw_size": [
+      1254,
+      1254
+    ],
+    "crop_xyxy": [
+      81,
+      96,
+      1172,
+      1158
+    ],
+    "source_margins_ltrb": [
+      150,
+      150,
+      150,
+      150
+    ],
+    "size": [
+      768,
+      768
+    ],
+    "margins_ltrb_px": [
+      16,
+      16,
+      16,
+      16
+    ],
+    "border_hsv": {
+      "hue_degrees": 25.59,
+      "saturation": 0.8167,
+      "value": 0.3784,
+      "sample_pixels": 42049
+    },
+    "center_alpha_min": 255,
+    "sha256": "3cbe349d9ee76a1b3d4ebf3d435e6535596f58839eec50c675a40427292390ce"
+  },
+  "card": {
+    "master": "masters/card_r2_color2.png",
+    "master_sha256": "918f21615452eab4ea750a2f9ef17c5e8c04b6e2caa5722db2f8f0e4b0c737d6",
+    "raw_size": [
+      1254,
+      1254
+    ],
+    "crop_xyxy": [
+      80,
+      101,
+      1176,
+      1155
+    ],
+    "source_margins_ltrb": [
+      110,
+      110,
+      110,
+      110
+    ],
+    "size": [
+      256,
+      128
+    ],
+    "margins_ltrb_px": [
+      9,
+      9,
+      9,
+      9
+    ],
+    "border_hsv": {
+      "hue_degrees": 31.83,
+      "saturation": 0.83,
+      "value": 0.5314,
+      "sample_pixels": 6037
+    },
+    "center_alpha_min": 255,
+    "sha256": "3ad9b7ed4f9ef4665b4d3530bd9643499581114a0b022ef8b2e58fbbf5b0376a"
+  },
+  "tab_active": {
+    "master": "masters/tab_active_r2_color.png",
+    "master_sha256": "a227c2af102747a121a45ac6484f47dde3ffbfdd054db566412bab7ac86a47a2",
+    "raw_size": [
+      2170,
+      725
+    ],
+    "crop_xyxy": [
+      48,
+      179,
+      2121,
+      565
+    ],
+    "source_margins_ltrb": [
+      80,
+      84,
+      80,
+      59
+    ],
+    "size": [
+      160,
+      32
+    ],
+    "margins_ltrb_px": [
+      5,
+      5,
+      5,
+      5
+    ],
+    "border_hsv": {
+      "hue_degrees": 30.04,
+      "saturation": 0.8088,
+      "value": 0.4624,
+      "sample_pixels": 1499
+    },
+    "center_alpha_min": 255,
+    "sha256": "a80c2c1a6f426e5f2ed3ec53a33eb95636979f313ad4cfdafbfeaa3f09733601"
+  },
+  "tab_idle": {
+    "master": "masters/tab_idle_r2_color3.png",
+    "master_sha256": "c0818ec00a9e047ac8c98d92d05331589104e149c410c0c55b676a59649e92a6",
+    "raw_size": [
+      2170,
+      725
+    ],
+    "crop_xyxy": [
+      43,
+      164,
+      2127,
+      568
+    ],
+    "source_margins_ltrb": [
+      80,
+      84,
+      80,
+      59
+    ],
+    "size": [
+      160,
+      32
+    ],
+    "margins_ltrb_px": [
+      5,
+      5,
+      5,
+      5
+    ],
+    "border_hsv": {
+      "hue_degrees": 25.01,
+      "saturation": 0.5086,
+      "value": 0.2843,
+      "sample_pixels": 1594
+    },
+    "center_alpha_min": 255,
+    "sha256": "5c21fcbee57c6f3401a70dba33fa279bac78155f19482c69240d1be46271e13d"
+  },
+  "slot": {
+    "master": "masters/slot_r2_color.png",
+    "master_sha256": "4a1ae5dfc5d4d6b0a2911f1018505777e12919dd8b3643186e740c3b6f145c9d",
+    "raw_size": [
+      1254,
+      1254
+    ],
+    "crop_xyxy": [
+      74,
+      92,
+      1180,
+      1160
+    ],
+    "source_margins_ltrb": [
+      115,
+      115,
+      115,
+      115
+    ],
+    "size": [
+      48,
+      48
+    ],
+    "margins_ltrb_px": [
+      6,
+      6,
+      6,
+      6
+    ],
+    "border_hsv": {
+      "hue_degrees": 29.81,
+      "saturation": 0.8138,
+      "value": 0.4849,
+      "sample_pixels": 919
+    },
+    "center_alpha_min": 255,
+    "sha256": "f0645aa0123c604d78748d0cedff055ab3f242b2d3fe4ee836cdfbf434fa296e"
+  },
+  "divider": {
+    "master": "masters/divider_r2_color2.png",
+    "crop_xyxy": [
+      37,
+      433,
+      1551,
+      556
+    ],
+    "master_sha256": "a7763e6eeb2a345aae2588bffc148f8e89caf2591367510443a9a296155654e5",
+    "size": [
+      512,
+      32
+    ],
+    "margins_ltrb_px": null,
+    "border_hsv": {
+      "hue_degrees": 31.35,
+      "saturation": 0.8465,
+      "value": 0.4738,
+      "sample_pixels": 3028
+    },
+    "sha256": "c2088cdda27d915099421d49b965e66198cdf766d0a6900ad3ab19f706ba5988",
+    "horizontal_regions_x_width": [
+      [
+        0,
+        16
+      ],
+      [
+        16,
+        216
+      ],
+      [
+        232,
+        48
+      ],
+      [
+        280,
+        216
+      ],
+      [
+        496,
+        16
+      ]
+    ]
+  }
+}

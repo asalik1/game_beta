@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "png_count": 6,
+  "green_rim_pixels": 0,
+  "opaque_frame_centers": true,
+  "non_idle_saturation_range": [
+    0.75,
+    0.85
+  ],
+  "idle_reductions": {
+    "saturation": 0.3711671612265083,
+    "value": 0.3851643598615917
+  },
+  "tab_vertical_margins_total_px": 10,
+  "slot_clear_center_px": [
+    36,
+    36
+  ]
+}
