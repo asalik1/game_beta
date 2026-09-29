@@ -1,5 +1,10 @@
 # MULTIPLAYER.md — Crownless 4-Player Co-op: Design & Architecture
 
+**Duel defense (2026-09-29, build 0.3.19):** vitals and the join block carry CritRes, so
+duel crits roll against the rival's current value once. Duel strikes carry their true-damage
+subset, which skips evasion, resistance and DR on the owner. Widened RPCs:
+`_rpc_pvp_strike`, `_rpc_player_hit`, `_rpc_vitals`. Both peers must update. Details in §11.
+
 **Personal history (2026-09-08, build 0.3.11):** character history is saved and
 restored separately from host world flags, before NPC construction and after
 full load. Host snapshots omit personal flags and per-head cache/shrine claims;
@@ -644,11 +649,15 @@ session, owner-applied damage). No new netcode class — the duel is a mode ON t
   v1 phantom proxy-Enemy):** the rival's SHELL is a first-class combat target. Targeting,
   sweeps and the hit funnel take the union (`CharacterBody2D` — the shared base): in a live
   duel `player_combat._strike_candidates()` adds the shell to every scan, `hit_enemy`
-  dispatches Players to `_hit_rival` (attacker-side offense vs neutral defenses), and friendly
+  dispatches Players to `_hit_rival` (attacker-side offense; the crit roll uses the rival's
+  CritRes as synced in vitals and the join block, res/eva stay 0 there), and friendly
   projectiles mask layer 2 in duel worlds and resolve `body is Player` hits through the same
   funnel. Damage lands via `net_session.pvp_strike` (host-validated against `combat_live`)
   as the rival's OWN owner-side `take_damage` — their armor/evasion mitigate, the enemy→guest
-  doctrine. Player carries a rider-compat surface (`player_core`, "rival-target" block):
+  doctrine. Since 2026-09-29 a strike also carries its true-damage subset (Meteor's quarter,
+  any ability `true_frac`): the owner evades, resists and DR-cuts only the typed part, then
+  adds the true part back before shields as one hit with one number. A dodge that still
+  lands true damage shows no DODGE! and fires no evade beats. Player carries a rider-compat surface (`player_core`, "rival-target" block):
   DoTs park on the shell (attacker-side bookkeeping, `pvp.gd` forwards 0.5 s ticks over the
   strike wire), **stun/slow now CROSS the wire** (`pvp_status` → owner-applied freeze/chill),
   and the synergy windows (vuln/brittle/crush/slow) feed the same kit reads they feed on
@@ -660,7 +669,10 @@ session, owner-applied damage). No new netcode class — the duel is a mode ON t
 - **No stakes (owner call):** no rewards, no tithe, no saves (`autosave` writes nothing under
   `pvp_active`), potions barred at the drink gate. Iron out the system before spoils exist.
 - **Wire:** `pvp_strike`/`pvp_died` up, `pvp_round`/`pvp_fight`/`pvp_kill`/`pvp_end` fans down —
-  all in `net_session.gd`. NET_VERSION bumped 0.2.0 → 0.3.0.
+  all in `net_session.gd`. NET_VERSION bumped 0.2.0 → 0.3.0. Duel defense (2026-09-29,
+  0.3.18 → 0.3.19): `_rpc_pvp_strike` and `_rpc_player_hit` gained a trailing true-damage
+  arg and `_rpc_vitals` a trailing CritRes arg. The new args default, so an older sender
+  still lands, but an older receiver rejects the longer call, hence the bump.
 - **Bring-up finding (2026-08-02, co-op-wide):** a mistyped noray code used to fail SILENTLY —
   the server's refusal rides the `connect` verb with no host:port payload, which crashed the
   vendored parser (local patch in `addons/netfox.noray/noray.gd`, marked LOCAL PATCH) and left

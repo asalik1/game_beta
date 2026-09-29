@@ -562,6 +562,10 @@ func _spawn_remote(pid: int, block: Dictionary) -> void:
 	# nothing else reads these. Absent (dev {cls,level} block) keeps the default.
 	p.crit = clampf(_df(block, "crit", p.crit), 0.0, 1.0e6)
 	p.crit_dmg = clampf(_df(block, "crit_dmg", p.crit_dmg), 1.0, 1.0e6)
+	# Duel crit rolls read the shell's CritRes. Vitals refresh it only when it
+	# changes, and a packet that arrived before this shell existed was dropped,
+	# so the join block seeds the owner's current value (same bound as vitals).
+	p.critres = clampf(_df(block, "critres", p.critres), 0.0, Balance.NET_MAX_VITAL)
 	# The owner's display name rides as metadata until name labels land
 	# (§5.6, phase 3) — nothing renders it yet, everything can reach it.
 	var nm := String(block.get("name", ""))
@@ -589,6 +593,7 @@ func _char_block() -> Dictionary:
 			"hp": float(p.hp), "max_hp": float(p.max_hp),
 			"mp": float(p.mp), "max_mp": float(p.max_mp),
 			"crit": float(p.crit), "crit_dmg": float(p.crit_dmg),
+			"critres": float(p.critres),
 			"appearance": Appearance.from_player(p)}
 	return Appearance.character({"cls": String(local_char.get("cls", "warrior")),
 		"level": int(local_char.get("level", 1)), "name": nm})
@@ -1456,16 +1461,16 @@ func _rpc_enemy_status(id: int, kind: String, d: Dictionary) -> void:
 ## hurt_cd (incl. the heavy-pierce rule) and death happen on the machine
 ## that owns the stats. attacker_id names the enemy so the owner resolves
 ## crit/pen/dex/Enfeeble against its own mirror, exactly like solo.
-func host_player_hit(pid: int, amount: float, dmg_type: String, attacker_id: int, heavy: bool, pvp_pen := 0.0, pvp_dex := 0.0) -> void:
+func host_player_hit(pid: int, amount: float, dmg_type: String, attacker_id: int, heavy: bool, pvp_pen := 0.0, pvp_dex := 0.0, pvp_true := 0.0) -> void:
 	if not _net().is_online() or not multiplayer.is_server():
 		return
 	if not (pid in _net().peers):
 		return
-	_rpc_player_hit.rpc_id(pid, amount, dmg_type, attacker_id, heavy, pvp_pen, pvp_dex)
+	_rpc_player_hit.rpc_id(pid, amount, dmg_type, attacker_id, heavy, pvp_pen, pvp_dex, pvp_true)
 
 
 @rpc("authority", "call_remote", "reliable")
-func _rpc_player_hit(amount: float, dmg_type: String, attacker_id: int, heavy: bool, pvp_pen := 0.0, pvp_dex := 0.0) -> void:
+func _rpc_player_hit(amount: float, dmg_type: String, attacker_id: int, heavy: bool, pvp_pen := 0.0, pvp_dex := 0.0, pvp_true := 0.0) -> void:
 	if game == null or multiplayer.is_server():
 		return
 	var p: Node = game.local_player
@@ -1476,11 +1481,14 @@ func _rpc_player_hit(amount: float, dmg_type: String, attacker_id: int, heavy: b
 		var m: Enemy = net_enemies.get(attacker_id)
 		if m != null and is_instance_valid(m) and not m.dying:
 			attacker = m  # the mirror: real kind/level stats resolve the hit
+	# pvp_true is a SUBSET of amount, not a second hit. Optional trailing args
+	# retain the old call shape, just like the status reason label.
 	# pvp_pen/pvp_dex are the PvP striker's forwarded penetration and DEX (0 for
 	# enemy hits, whose pen/dex resolve attacker-side against the mirror above).
 	# Bound them all finite.
 	p.take_damage(_finpos(amount, Balance.NET_MAX_HIT), dmg_type, attacker, heavy,
-		_fin(pvp_pen, 1.0e6, 0.0), _fin(pvp_dex, 1.0e6, 0.0))
+		_fin(pvp_pen, 1.0e6, 0.0), _fin(pvp_dex, 1.0e6, 0.0),
+		minf(_finpos(pvp_true, Balance.NET_MAX_HIT), _finpos(amount, Balance.NET_MAX_HIT)))
 
 
 ## HOST -> OWNER: a control effect a host-side source put on the shell
@@ -1521,30 +1529,33 @@ func _rpc_player_status(kind: String, a: float, b: float, reason := "") -> void:
 
 # ---- vitals sync (owner broadcasts, shells display) ----
 
-## Owner-side: broadcast {hp, max_hp, mp} when they changed — capped at
+## Owner-side: broadcast {hp, max_hp, mp, critres} when they changed — capped at
 ## VITALS_EVERY, except a DROP in hp (damage) which sends immediately.
 ## Shells apply it for bars, host-side threshold reads, and the `dead`
-## flag that steers enemy AI off a fallen guest. ~25 B reliable.
+## flag that steers enemy AI off a fallen guest. CritRes feeds duel crit rolls;
+## stat-only changes must broadcast too (gear/buffs can leave bars unchanged).
 func _tick_vitals(delta: float, p: Node) -> void:
 	_vitals_accum += delta
 	var hp := float(p.hp)
 	var mhp := float(p.max_hp)
 	var mpv := float(p.mp)
+	var cr := float(p.critres)
 	var dropped: bool = _vitals_sent.has("hp") and hp < float(_vitals_sent["hp"]) - 0.01
 	if _vitals_accum < VITALS_EVERY and not dropped:
 		return
 	if not dropped and _vitals_sent.has("hp") \
 			and absf(hp - float(_vitals_sent["hp"])) < 0.5 \
 			and absf(mhp - float(_vitals_sent["max_hp"])) < 0.5 \
-			and absf(mpv - float(_vitals_sent["mp"])) < 1.0:
+			and absf(mpv - float(_vitals_sent["mp"])) < 1.0 \
+			and cr == float(_vitals_sent.get("critres", -1.0)):
 		return  # nothing worth a packet changed
 	_vitals_accum = 0.0
-	_vitals_sent = {"hp": hp, "max_hp": mhp, "mp": mpv}
-	_rpc_vitals.rpc(hp, mhp, mpv)
+	_vitals_sent = {"hp": hp, "max_hp": mhp, "mp": mpv, "critres": cr}
+	_rpc_vitals.rpc(hp, mhp, mpv, cr)
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _rpc_vitals(hp: float, max_hp: float, mp: float) -> void:
+func _rpc_vitals(hp: float, max_hp: float, mp: float, critres := 0.0) -> void:
 	if game == null:
 		return
 	var pid := multiplayer.get_remote_sender_id()
@@ -1558,6 +1569,7 @@ func _rpc_vitals(hp: float, max_hp: float, mp: float) -> void:
 	q.max_hp = clampf(_fin(max_hp, Balance.NET_MAX_VITAL, 1.0), 1.0, Balance.NET_MAX_VITAL)
 	q.hp = clampf(_fin(hp, Balance.NET_MAX_VITAL), 0.0, q.max_hp)
 	q.mp = _finpos(mp, Balance.NET_MAX_VITAL)
+	q.critres = _finpos(critres, Balance.NET_MAX_VITAL)
 	# MP-12: a DOWNED/GHOST shell is NOT dead — the §5.3 state (which the
 	# owner broadcasts before this hp=0 lands on the same reliable channel)
 	# already steers AI off it via nearest_player's downed filter. `dead`
@@ -3494,18 +3506,19 @@ func _rpc_session_over() -> void:
 
 ## ANY MACHINE: my proxy resolved a hit on the rival — route it to the host,
 ## which validates the fight is live and applies it to the target's owner.
-func pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0, dex := 0.0) -> void:
+## true_amount is the true subset of the total, carried in the same hit.
+func pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0, dex := 0.0, true_amount := 0.0) -> void:
 	if game == null or not _net().is_online() or not bool(game.pvp_active):
 		return
 	if multiplayer.is_server():
 		if game.pvp != null and bool(game.pvp.combat_live()):
-			_pvp_apply_strike(target_pid, amount, dmg_type, pen, dex)
+			_pvp_apply_strike(target_pid, amount, dmg_type, pen, dex, true_amount)
 	else:
-		_rpc_pvp_strike.rpc_id(1, target_pid, amount, dmg_type, pen, dex)
+		_rpc_pvp_strike.rpc_id(1, target_pid, amount, dmg_type, pen, dex, true_amount)
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _rpc_pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0, dex := 0.0) -> void:
+func _rpc_pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0, dex := 0.0, true_amount := 0.0) -> void:
 	if not multiplayer.is_server() or game == null or not bool(game.pvp_active):
 		return
 	var pid := multiplayer.get_remote_sender_id()
@@ -3513,24 +3526,25 @@ func _rpc_pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.
 		return
 	if game.pvp == null or not bool(game.pvp.combat_live()):
 		return  # gates closed on the HOST's clock — late/early blows fizzle
-	_pvp_apply_strike(target_pid, amount, dmg_type, pen, dex)
+	_pvp_apply_strike(target_pid, amount, dmg_type, pen, dex, true_amount)
 
 
 ## HOST: land a validated strike on the target's owner. The host's own hero
 ## takes it directly; a guest's rides the existing owner-applied hit RPC.
-func _pvp_apply_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0, dex := 0.0) -> void:
+func _pvp_apply_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0, dex := 0.0, true_amount := 0.0) -> void:
 	# Guest-forwarded strike values reach here — bound them all finite (CR-002).
 	amount = _finpos(amount, Balance.NET_MAX_HIT)
 	pen = _fin(pen, 1.0e6, 0.0)
 	dex = _fin(dex, 1.0e6, 0.0)
+	true_amount = minf(_finpos(true_amount, Balance.NET_MAX_HIT), amount)
 	if amount <= 0.0:
 		return
 	if target_pid == 1:
 		var p: Player = game.local_player
 		if p != null and is_instance_valid(p) and not p.dead:
-			p.take_damage(amount, dmg_type, null, false, pen, dex)
+			p.take_damage(amount, dmg_type, null, false, pen, dex, true_amount)
 	else:
-		host_player_hit(target_pid, amount, dmg_type, 0, false, pen, dex)
+		host_player_hit(target_pid, amount, dmg_type, 0, false, pen, dex, true_amount)
 
 
 ## ANY MACHINE: a control rider landed on the rival (duel refactor 2026-08-02

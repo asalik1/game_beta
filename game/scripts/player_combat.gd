@@ -1910,7 +1910,7 @@ func _uniq_clause_call(_pos: Vector2, _scale: float) -> void:
 
 ## hit_enemy's PLAYER branch (duel refactor 2026-08-02 — replaces the phantom
 ## proxy-Enemy). ATTACKER-side offense only, mirroring hit_enemy's head: our
-## atk/crit/pen resolve against NEUTRAL defenses (0 res/eva/critres) and the
+## atk/crit/pen resolve against synced CritRes (0 res/eva) and the
 ## DEFENDER's own take_damage applies their real evasion/resists owner-side
 ## when the strike lands over the wire (net_session.pvp_strike, host-gated on
 ## combat_live). Riders map honestly: DoTs park on the shell and pvp.gd
@@ -1941,14 +1941,15 @@ func _hit_rival(q: Player, mult: float, effects := {}) -> void:
 	var true_frac: float = effects.get("true_frac", 0.0)
 	var base_amt: float = current_atk() * mult + _cast_base \
 		+ uniq_hit_flat * _storm_bulk_scale(effects)
-	# Resolve crit/graze against NEUTRAL defenses with pen=0: the defender's
+	# Resolve crit against the owner's synced CritRes exactly once. Guaranteed
+	# crits below still override this roll. Resolve with res/eva/pen=0: the defender's
 	# resistance (and our pen against it) is applied owner-side in their
 	# take_damage — pen crosses the wire below. Passing our pen here would double-
 	# dip as the 0-res "excess pen" flat bonus (the PvE armor-stack rule), which
 	# in a duel is just free damage the defender never gets to resist.
 	var result := Stats.resolve(base_amt * (1.0 - true_frac), dmg_type,
-		crit, crit_dmg, 0.0, dex, 0.0, 0.0, 0.0, crit_exempt)
-	var dmg: float = float(result["dmg"]) + base_amt * true_frac
+		crit, crit_dmg, 0.0, dex, 0.0, 0.0, q.critres, crit_exempt)
+	var dmg: float = float(result["dmg"])
 	var is_crit: bool = result["crit"]
 	if effects.get("marked_crit", 0) and dmg_type != "true" \
 			and not is_crit and q.vuln_time > 0.0:
@@ -1962,6 +1963,11 @@ func _hit_rival(q: Player, mult: float, effects := {}) -> void:
 	if effects.get("force_crit", 0) and dmg_type != "true" and not is_crit:
 		is_crit = true
 		dmg *= crit_dmg
+	# True damage cannot crit, including guaranteed crits. Keep its share of
+	# the combined hit through the common amps below, then send it atomically.
+	var true_dmg := base_amt * true_frac
+	dmg += true_dmg
+	var true_share := true_dmg / dmg if dmg > 0.0 else 0.0
 	# Riders — the same vocabulary hit_enemy applies, on the compat surface.
 	# No dot_mit: rival armor is owner-side and mitigates each tick as it lands.
 	# The Wind Cuts bleed carries our PHYSICAL pen to those ticks (the PvE wound
@@ -2030,7 +2036,7 @@ func _hit_rival(q: Player, mult: float, effects := {}) -> void:
 	# vitals re-truth the bars), then the wire.
 	game.sfx("ehit", 1.0, 0.0, 4.0)
 	game.spawn_damage_number(q, int(dmg), is_crit)
-	game.net_session().pvp_strike(q.peer_id, dmg, dmg_type, pen, dex)
+	game.net_session().pvp_strike(q.peer_id, dmg, dmg_type, pen, dex, dmg * true_share)
 
 
 ## DoT rate mitigated by the target's res (class damage type) minus our

@@ -525,6 +525,9 @@ func _run_systems() -> void:
 	await _test_spell_damage_wiring()
 	if _failed:
 		return
+	var defense_error: String = await preload("res://scripts/tests/duel_defense.gd").suite(game)
+	if defense_error != "":
+		return _fail("duel defense: " + defense_error)
 
 	# Assassin STAB SURGE (round 25): a connecting cut buffs lifesteal,
 	# bigger the lower your health sits.
@@ -4474,7 +4477,7 @@ class StatusTarget extends Player:
 		pass
 
 	func take_damage(amount: float, _kind := "phys", _attacker: Node = null,
-			_heavy := false, _pen := 0.0, _dex := 0.0) -> void:
+			_heavy := false, _pen := 0.0, _dex := 0.0, _true := 0.0) -> void:
 		hp -= amount
 
 	func gain_xp(amount: int) -> void:
@@ -11127,8 +11130,8 @@ class DuelProbe extends PvpDuel:
 class StrikeRecorder extends Node:
 	var strikes: Array = []
 	var statuses: Array = []
-	func pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0, dex := 0.0) -> void:
-		strikes.append([target_pid, amount, dmg_type, pen, dex])
+	func pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0, dex := 0.0, true_amount := 0.0) -> void:
+		strikes.append([target_pid, amount, dmg_type, pen, dex, true_amount])
 	func pvp_status(target_pid: int, kind: String, a: float, _b: float, reason := "") -> void:
 		statuses.append([target_pid, kind, a, reason])
 
