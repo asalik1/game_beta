@@ -479,10 +479,11 @@ func _aegis_after(dur: float) -> void:
 		var frac: float = _tfx["aegis_heal"]
 		get_tree().create_timer(dur, false).timeout.connect(func() -> void:
 			if not dead:
-				hp = minf(max_hp, hp + max_hp * frac)
+				var aegis_amt := healing_received(max_hp * frac)
+				hp = minf(max_hp, hp + aegis_amt)
 				game.sfx("potion")
 				_soft_burst(global_position + Vector2(0, -30), Color(1.0, 0.95, 0.6), 12, 0.14, 100.0, 0.7, 0.55, 40.0)
-				game.spawn_text(global_position + Vector2(0, -50), "+%d" % int(max_hp * frac), Color(0.5, 1.0, 0.5)))
+				game.spawn_text(global_position + Vector2(0, -50), "+%d" % int(aegis_amt), Color(0.5, 1.0, 0.5)))
 
 
 ## Conviction (round 48): the paladin's "ult" is a STANCE SWAP, not a nuke —

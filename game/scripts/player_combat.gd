@@ -1519,7 +1519,7 @@ func hit_enemy(target: CharacterBody2D, mult: float, effects := {}) -> void:
 	# Lifesteal (AoE hits only steal a third).
 	var ls := current_lifesteal() * (0.33 if effects.get("aoe", false) else 1.0)
 	if ls > 0.0:
-		var ls_amt := dmg * ls
+		var ls_amt := healing_received(dmg * ls)
 		var ls_before := hp
 		hp = minf(max_hp, hp + ls_amt)
 		# Pool verb: lifesteal overflow fills the shield — the fill the
@@ -2022,7 +2022,7 @@ func _hit_rival(q: Player, mult: float, effects := {}) -> void:
 	# rides gain_hp and is scaled there. Toughness already dilutes ls on the ×N bar.
 	var ls := current_lifesteal() * (0.33 if effects.get("aoe", false) else 1.0)
 	if ls > 0.0:
-		var ls_amt := dmg * ls * Balance.PVP_HEAL_MULT
+		var ls_amt := healing_received(dmg * ls * Balance.PVP_HEAL_MULT)
 		var ls_before := hp
 		hp = minf(max_hp, hp + ls_amt)
 		_uniq_pool_overflow(ls_amt - (hp - ls_before))

@@ -2007,6 +2007,18 @@ func recalc() -> void:
 	mp = clampf(max_mp * mp_frac, 0.0, max_mp)
 
 
+## Numerical Rust/ward modifiers shared by visible heals and silent sustain.
+## Keep feedback, mode-specific scalars and overflow rewards at each call site.
+func healing_received(amount: float, apply_laced: bool = true) -> float:
+	# Laced Rust sting: cheap stitching reduces healing received (§3). The Tonic
+	# that inflicted it delivers its OWN drip through apply_laced=false, so the
+	# bottle keeps its promised total; every OTHER heal is docked for the window.
+	if apply_laced and laced_heal_in_time > 0.0:
+		amount *= 1.0 - laced_heal_in_amt
+	amount *= uniq_heal_in     # pants_ward A BARGAIN: deep-grounded pays in mending
+	return amount
+
+
 ## Heal that SHOWS: raise HP and bank the real (clamped) amount for the
 ## throttled green tick in _physics_process. Use for discrete mends the
 ## player should SEE; continuous lifesteal/regen stay silent by design.
@@ -2016,12 +2028,7 @@ func gain_hp(amount: float, apply_laced := true) -> void:
 	amount *= debuff_heal_in   # endgame Depths −healing-received debuff (1.0 off-run)
 	if game != null and game.pvp_active:
 		amount *= Balance.PVP_HEAL_MULT   # PvP healing scalar (PROPOSALS/PVP_BALANCE.md §3.3)
-	# Laced Rust sting: cheap stitching reduces healing received (§3). The Tonic
-	# that inflicted it delivers its OWN drip through apply_laced=false, so the
-	# bottle keeps its promised total; every OTHER heal is docked for the window.
-	if apply_laced and laced_heal_in_time > 0.0:
-		amount *= 1.0 - laced_heal_in_amt
-	amount *= uniq_heal_in     # pants_ward A BARGAIN: deep-grounded pays in mending
+	amount = healing_received(amount, apply_laced)
 	var before := hp
 	hp = minf(max_hp, hp + amount)
 	heal_accum += hp - before

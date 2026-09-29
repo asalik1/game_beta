@@ -2029,7 +2029,7 @@ func _road_toll_pay(room: int, npc: Variant, cost: int) -> void:
 	player.gold -= paid
 	add_standing("accord", Balance.ROAD_TOLL_STANDING)
 	if is_instance_valid(player):
-		player.hp = minf(player.max_hp, player.hp + player.max_hp * Balance.ROAD_TOLL_HEAL_FRACTION)
+		player.hp = minf(player.max_hp, player.hp + player.healing_received(player.max_hp * Balance.ROAD_TOLL_HEAL_FRACTION))
 	_road_resolve(room, npc,
 		"The toll is paid. He waves you across with a nod, and you catch your breath. (+%d accord)"
 			% Balance.ROAD_TOLL_STANDING, Color(0.75, 0.9, 0.7))

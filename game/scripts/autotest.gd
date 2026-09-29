@@ -11173,6 +11173,7 @@ func _test_spell_damage_wiring() -> void:
 	p.max_mp = 10000.0
 	p.mp = p.max_mp
 	var errors: Array[String] = []
+	_probe_healing_received(errors)
 	await _probe_mage_cast_damage(p, errors)
 	_probe_wind_wound(p, errors)
 	_probe_wind_wound_duel(p, errors)
@@ -11192,6 +11193,190 @@ func _test_spell_damage_wiring() -> void:
 	if not errors.is_empty():
 		return _fail("spell damage wiring: " + "; ".join(errors))
 	print("ok: spell damage wiring (Mage gear, Starfall, Firmament, skins; physical Wind Cuts; duel burn/toxin penetration; duel Frozen vs Stunned labels; independent Warlock knobs; Arrow Storm skins, Bulwark, Advance and Moonturn)")
+
+
+## T48: only device input is stubbed; survival, healing and both hit funnels run live.
+class HealingReceivedProbe extends Player:
+	func _poll_local_intents() -> void:
+		clear_local_intents()
+
+
+## Runs inside spell-wiring's frozen world/stat snapshot. Disposable actors ensure
+## every case starts wounded/full by construction, never from an earlier section.
+func _probe_healing_received(errors: Array[String]) -> void:
+	var net: Node = get_node_or_null("/root/NetworkManager")
+	if net == null:
+		errors.append("healing received precondition: no NetworkManager")
+		return
+	var saved_pvp: Node = game.pvp
+	var saved_active: bool = game.pvp_active
+	var saved_session: Node = net.session
+	var q := RivalShellProbe.new()
+	q.game = game
+	game.add_child(q)
+	q.set_process(false)
+	q.set_physics_process(false)
+	q.peer_id = 7
+	var duel := DuelProbe.new()
+	duel.game = game
+	duel.foe = q
+	duel.state = "fight"
+	var recorder := StrikeRecorder.new()
+	net.session = recorder
+	var rust := Items.make_potion("health", "tonic", "A", "black")
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 48
+	var ward := Items.roll_item_of("pants", "A", rng, "warrior")
+	ward["passive"] = "warrior_pants_Aa"
+	var first_error := errors.size()
+	for wearing in [false, true]:
+		for stung in [false, true]:
+			game.pvp_active = false
+			game.pvp = saved_pvp
+			var p := HealingReceivedProbe.new()
+			p.game = game
+			p.cls = "warrior"
+			game.add_child(p)
+			p.set_process(false)
+			p.set_physics_process(false)
+			p.global_position = game.room_center(0)
+			q.global_position = p.global_position + Vector2(100, 0)
+			p.equipment = {"pants": ward} if wearing else {}
+			p.recalc()
+			var ward_mult := 1.0 - float(Balance.uniq("warrior_pants_Aa")["heal_tax"]) if wearing else 1.0
+			_healing_expect(errors, p.uniq_heal_in, ward_mult, "equipped ward tax")
+			p.max_hp = 1000.0
+			p.atk = 100.125
+			# Plate resistance also scales current_atk, including true damage.
+			# Pin it after recalc so ward rolls cannot alter the fixed hit.
+			p.physres = 0.0
+			p.magres = 0.0
+			p.crit = 0.0
+			p.combo = 0.0
+			p.lifesteal = 0.125
+			p.regen_pct = 0.017
+			p.sw_regen = 0.013
+			p.sw_delay = 0.0
+			p.grit_regen = 0.007
+			p.transfusion = 0.08
+			p.heal_fx_cd = 100.0
+			p.heal_accum = 0.0
+			var e := _spell_damage_dummy(p)
+			var factor := ward_mult
+			if stung:
+				p._apply_potion_sting(rust["sting"])
+				factor = (1.0 - float(rust["sting"]["amt"])) * ward_mult
+			# Fixed dt and true damage eliminate clock/randomness variance. Every
+			# source also checks carrier gating, capped overflow and quiet feedback.
+			for source in ["regen", "pve", "pvp"]:
+				for aoe in [false, true]:
+					if source == "regen" and aoe:
+						continue
+					for pool in [false, true]:
+						for starting_hp in [123.456, 999.0, 1000.0]:
+							var label := "healing %s ward=%s Rust=%s AoE=%s pool=%s HP=%s" % [source, wearing, stung, aoe, pool, starting_hp]
+							p.uniq_armor = ["warrior_pants_Aa"] if wearing else []
+							if pool:
+								p.uniq_armor.append("helm_bulwark")
+							p.hp = starting_hp
+							p.shield = 0.0
+							p.holy_charge = 0.0
+							p.grit_stacks = 2
+							p.grit_time = 10.0
+							p.laced_heal_in_time = 10.0 if stung else 0.0
+							game.pvp_active = source == "pvp"
+							game.pvp = duel if source == "pvp" else saved_pvp
+							var raw := p.max_hp * (p.regen_pct + p.sw_regen + p.grit_regen * p.grit_stacks) * 0.125
+							if source == "regen":
+								p._physics_process(0.125)
+							else:
+								raw = p.atk * (p.current_lifesteal() * (0.33 if aoe else 1.0))
+								if source == "pvp":
+									raw *= Balance.PVP_HEAL_MULT
+								p.hit_enemy(q if source == "pvp" else e, 1.0, {"type": "true", "aoe": aoe})
+							var amount := raw
+							if stung:
+								amount *= 1.0 - float(rust["sting"]["amt"])
+							amount *= ward_mult
+							var expected := minf(p.max_hp, starting_hp + amount)
+							_healing_expect(errors, p.hp, expected, label)
+							if not wearing and not stung and var_to_bytes(p.hp) != var_to_bytes(minf(p.max_hp, starting_hp + raw)):
+								errors.append(label + " changed unpenalized HP bits")
+							var overflow: float = amount - (expected - starting_hp)
+							_healing_expect(errors, p.shield, minf(p.max_hp * p.transfusion, maxf(0.0, overflow)) if pool else 0.0, label + " overflow")
+							if p.heal_accum != 0.0 or p.holy_charge != 0.0:
+								errors.append(label + " gained discrete-heal feedback/charge")
+			# Expire Rust through the real clock, then measure both hit funnels.
+			game.pvp_active = false
+			game.pvp = saved_pvp
+			p.hp = 100.0
+			p.laced_heal_in_time = 0.125
+			p._physics_process(0.125)
+			var regen := p.max_hp * (p.regen_pct + p.sw_regen + p.grit_regen * p.grit_stacks) * 0.125
+			_healing_expect(errors, p.hp, 100.0 + regen * ward_mult, "Rust expiry regen")
+			_healing_expect(errors, p.laced_heal_in_time, 0.0, "Rust clock expired")
+			for rival in [false, true]:
+				game.pvp_active = rival
+				game.pvp = duel if rival else saved_pvp
+				p.hp = 100.0
+				p.hit_enemy(q if rival else e, 1.0, {"type": "true"})
+				_healing_expect(errors, p.hp, 100.0 + p.atk * p.current_lifesteal() * (Balance.PVP_HEAL_MULT if rival else 1.0) * ward_mult, "Rust expiry lifesteal")
+			# Discrete heals retain Depths/PvP scalars and their existing rewards.
+			p.cls = "paladin"
+			p.debuff_heal_in = 0.75
+			p.laced_heal_in_time = 10.0 if stung else 0.0
+			# Wounded discrete heal: Rust and ward must dock ordinary gain_hp heals.
+			p.hp = 100.0
+			p.shield = 0.0
+			p.holy_charge = 0.0
+			p.gain_hp(40.0)
+			_healing_expect(errors, p.hp, 100.0 + 40.0 * p.debuff_heal_in * factor, "discrete wounded heal")
+			# Unsaturated overflow (50 is far under the shield and Holy Charge caps),
+			# so the pooled amounts depend on Rust/ward/Depths instead of the caps.
+			p.hp = p.max_hp
+			p.shield = 0.0
+			p.holy_charge = 0.0
+			p.gain_hp(50.0)
+			var discrete := 50.0 * p.debuff_heal_in * factor
+			_healing_expect(errors, p.shield, discrete, "discrete shield overflow")
+			_healing_expect(errors, p.holy_charge, discrete * Balance.PALADIN_OVERHEAL_DMG, "discrete Holy Charge")
+			# A tonic tick must skip Rust ONLY; ward, Depths and PvP still apply.
+			p.regen_pct = 0.0
+			p.sw_regen = 0.0
+			p.grit_stacks = 0
+			p.heal_tonic_rate = 80.0
+			p.heal_tonic_time = 1.0
+			p.heal_accum = 0.0   # the wounded gain_hp above banked its own tick
+			p.hp = 100.0
+			p._physics_process(0.125)
+			var tonic := 80.0 * 0.125 * p.debuff_heal_in * Balance.PVP_HEAL_MULT * ward_mult
+			_healing_expect(errors, p.hp, 100.0 + tonic, "tonic Rust exemption")
+			_healing_expect(errors, p.heal_accum, tonic, "tonic visible feedback bank")
+			# Pact hex detonation (a synchronous direct-write heal): docked by ward and
+			# Rust, and Depths/PvP scalars stay off it. Detonate far from every foe.
+			# (Aegis release, Berserk, healing ground and road toll take the same
+			# healing_received() call but sit behind timers/scenes; left to code review.)
+			p.hex_fx = {"hex_heal": 0.08}
+			p.lifesteal = 0.0
+			p.hp = 100.0
+			p._hex_detonate(p.global_position + Vector2(9000.0, 9000.0))
+			_healing_expect(errors, p.hp, 100.0 + p.max_hp * 0.08 * factor, "Pact hex heal")
+			p.hex_fx = {}
+			e.free()
+			p.queue_free()
+	game.pvp = saved_pvp
+	game.pvp_active = saved_active
+	net.session = saved_session
+	q.queue_free()
+	duel.free()
+	recorder.free()
+	if errors.size() == first_error:
+		print("ok: healing received (ward + Rust, fixed regen/Second Wind/Grit, PvE/PvP lifesteal + AoE, expiry, tonic exemption, quiet/capped/carrier-gated overflow, unpenalized HP bits)")
+
+
+func _healing_expect(errors: Array[String], actual: float, expected: float, label: String) -> void:
+	if not is_finite(actual) or absf(actual - expected) > 0.000001:
+		errors.append("%s: got %.9f, expected %.9f" % [label, actual, expected])
 
 
 ## T40: real casts and skin strike paths, fixed stats and one isolated victim.

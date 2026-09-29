@@ -197,7 +197,7 @@ func _physics_process(delta: float) -> void:
 	if grit_stacks > 0:
 		regen_now += grit_regen * grit_stacks  # Grit: the beating IS the mending
 	if regen_now > 0.0 and not dead and hp > 0.0:
-		var regen_amt := max_hp * regen_now * delta
+		var regen_amt := healing_received(max_hp * regen_now * delta)
 		var regen_before := hp
 		hp = minf(max_hp, hp + regen_amt)
 		# Pool verb: regen/Second Wind/Grit overflow fills the shield — the

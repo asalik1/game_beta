@@ -2377,7 +2377,7 @@ func _apply_hazards() -> void:
 					lp.hazard_speed = 0.7
 				"heal":
 					if lp.hp < lp.max_hp:
-						lp.hp = minf(lp.max_hp, lp.hp + lp.max_hp * 0.02)
+						lp.hp = minf(lp.max_hp, lp.hp + lp.healing_received(lp.max_hp * 0.02))
 		# Enemies share physical patches (ice, slow, lava).
 		if htype in HAZARD_PHYSICAL:
 			for node in mobs:
