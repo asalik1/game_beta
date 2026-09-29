@@ -156,7 +156,7 @@ static func _payload(raw: Variant) -> Dictionary:
 			for key in ["family", "shape", "grade", "lane"]:
 				if not pot.get(key, "") is String:
 					return {}
-			var made := Items.make_potion(String(pot.get("family", "")), String(pot.get("shape", "")),
+			var made := Items.rebuild_potion(String(pot.get("family", "")), String(pot.get("shape", "")),
 				String(pot.get("grade", "")), String(pot.get("lane", "")))
 			if not made.is_empty():
 				return {"kind": "potion", "potion": made}

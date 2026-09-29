@@ -737,14 +737,8 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 			continue
 		var cc: Dictionary = rawc
 		if String(cc.get("kind", "")) == "potion":
-			var np: Dictionary
-			if String(cc.get("grade", "")) == Items.POTION_GRAND_GRADE and String(cc.get("lane", "")) == "grand":
-				# Existing saves already contain these tags; Grand is outside the
-				# ordinary grade ladder and must retain its synthesis-only rules.
-				np = Items.make_grand_potion(Items.potion_shapekey(String(cc.get("family", "")), String(cc.get("shape", ""))))
-			else:
-				np = Items.make_potion(String(cc.get("family", "")), String(cc.get("shape", "")),
-					String(cc.get("grade", "")), String(cc.get("lane", "")))
+			var np := Items.rebuild_potion(String(cc.get("family", "")), String(cc.get("shape", "")),
+				String(cc.get("grade", "")), String(cc.get("lane", "")))
 			if not np.is_empty():
 				if bool(cc.get("gift", false)):
 					np["gift"] = true

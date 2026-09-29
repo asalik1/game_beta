@@ -1657,6 +1657,13 @@ static func potion_sting_desc(sting: Dictionary) -> String:
 # sentinel "Grand" (Items.GRADE_COLOR carries its radiant tint).
 const POTION_GRAND_GRADE := "Grand"
 
+## Rebuild saved identity tags using current balance, including synthesis-only bottles.
+static func rebuild_potion(family: String, shape: String, grade: String, lane: String) -> Dictionary:
+	if grade == POTION_GRAND_GRADE and lane == "grand":
+		return make_grand_potion(potion_shapekey(family, shape))
+	return make_potion(family, shape, grade, lane)
+
+
 ## The Grand potion for a POTION_SHAPES key ({} if the family has no S / Grand).
 ## Name is "Grand " + the family's S unique (Grand Heartsblood, Grand Stormglass,
 ## …). Sprite = the dedicated grand_<stem> icon (radiant gilded flask, Codex-generated

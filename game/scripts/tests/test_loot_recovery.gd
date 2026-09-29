@@ -17,6 +17,10 @@ class RestartWorld extends RewardWorld:
 class RewardPlayer extends Player:
 	func _ready() -> void: pass
 
+class PotionWorld extends RewardWorld:
+	# No campaign geometry; this fixture tests payload recovery and claims.
+	func resolve_drop_pos(pos: Vector2) -> Vector2: return pos
+
 # A failed chest guard can pay the suite player's bag. Restore membership but
 # keep the original item dictionaries so their identity survives the restore.
 const ITEM_POCKETS := ["backpack", "gem_bag"]
@@ -35,6 +39,8 @@ static func run(t: Node) -> String:
 	g.no_saves = true
 	t.get_tree().root.add_child(g)
 	var error := _checks(g, t.game)
+	if error == "":
+		error = _potion_checks(t)
 	if error == "":
 		error = _stash_checks(g)
 	g.player = null
@@ -59,6 +65,72 @@ static func _coin(g: Game, amount: int, charged := false) -> Pickup:
 	c.goldrush = charged
 	g.add_child(c)
 	return c
+
+
+static func _potion_checks(t: Node) -> String:
+	# Own all mutable state; teardown runs even on a failed assertion.
+	var g := PotionWorld.new()
+	g.process_mode = Node.PROCESS_MODE_DISABLED
+	g.no_saves = true
+	g.player = RewardPlayer.new()
+	g.player.game = g
+	g.player.bags = [Items.make_bag("F")]
+	g.add_child(g.player)
+	t.get_tree().root.add_child(g)
+	var error := _potion_asserts(g)
+	g.free()
+	return error
+
+
+static func _potion_asserts(g: Game) -> String:
+	var expected: Array = []
+	for fs in Balance.POT_GRAND_FAMILIES:
+		var grand := Items.make_grand_potion(String(fs))
+		if grand.is_empty():
+			return "Grand recovery fixture missing family %s" % fs
+		# This is the old recovery factory: it dropped every Grand. No chest source produces a Grand today, so this guards future Grand payloads.
+		if not Items.make_potion(grand.family, grand.shape, grand.grade, grand.lane).is_empty():
+			return "Grand recovery regression no longer exercises an unsupported ordinary grade"
+		for bottle in [grand, grand.duplicate(true)]:
+			expected.append({"kind": "potion", "potion": bottle})
+	for spec in Items.potion_specs():
+		expected.append({"kind": "potion", "potion": Items.make_potion(spec.family, spec.shape, spec.grade, spec.lane)})
+	# Match the save wire format; compare the entire payload (identity, amount,
+	# duration, sting, price and no_sell), normalized just like test_potion_save.
+	var decoded: Dictionary = JSON.parse_string(JSON.stringify({"items": expected}))
+	var untouched := decoded.duplicate(true)
+	var cleaned := Recovery.clean(decoded)
+	if JSON.parse_string(JSON.stringify(cleaned.items)) != decoded.items:
+		return "loot recovery lost/changed a Grand, ordinary or laced potion or duplicate count"
+	# Pin this section's state instead of asserting against earlier rewards.
+	g.mailbox = []
+	Recovery.recover_saved(g, decoded)
+	if g.mailbox.size() != 1 or JSON.parse_string(JSON.stringify(g.mailbox[0].items)) != decoded.items:
+		return "recovered potion letter lost identity, counts or synthesis restrictions"
+	if decoded != untouched:
+		return "potion recovery mutated the saved loot snapshot"
+	# The recovered payload must also remain a claimable ground-loot marker.
+	# Claim each bottle independently so capacity cannot depend on prior loot.
+	for payload in cleaned.items:
+		g.player.consumables = []
+		var pickup := Pickup.drop_loot(g, payload.duplicate(true), Vector2.ZERO)
+		g.player.dead = true
+		pickup._try_claim(g.player)
+		if pickup.claimed or not g.player.consumables.is_empty():
+			return "a fallen hero claimed a recovered potion"
+		g.player.dead = false
+		pickup._try_claim(g.player)
+		if not pickup.claimed or g.player.consumables.size() != 1 \
+			or JSON.parse_string(JSON.stringify(g.player.consumables[0])) != JSON.parse_string(JSON.stringify(payload.potion)):
+			return "recovered potion marker could not return its exact bottle to the bag"
+	# A Grand grade alone must not bypass the ordinary factory's validation.
+	for lane in ["accord", "black", ""]:
+		if not Items.rebuild_potion("health", "instant", Items.POTION_GRAND_GRADE, lane).is_empty():
+			return "Grand recovery accepted a non-Grand lane"
+	if not Items.rebuild_potion("missing", "instant", Items.POTION_GRAND_GRADE, "grand").is_empty():
+		return "Grand recovery accepted a missing family"
+	print("ok: potion loot recovery preserves every Grand/ordinary/laced bottle, duplicate counts, full payload, no_sell and ground-marker claims")
+	return ""
 
 
 static func _checks(g: Game, other: Game) -> String:
