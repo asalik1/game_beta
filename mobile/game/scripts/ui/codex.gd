@@ -222,21 +222,14 @@ static func _rail_button(m: Menus, col: VBoxContainer, s: Dictionary) -> Button:
 	b.add_theme_font_size_override("font_size", 13)
 	b.add_theme_color_override("font_color", UITheme.GOLD_BRIGHT if active else MUTED)
 	b.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.7))
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color(accent, 0.11) if active else Color(0, 0, 0, 0)
-	normal.border_color = Color(accent, 0.9) if active else Color(0, 0, 0, 0)
-	normal.border_width_left = 3
-	normal.corner_radius_top_right = 6
-	normal.corner_radius_bottom_right = 6
-	normal.content_margin_left = 9.0
-	normal.content_margin_right = 34.0  # room for the count
-	normal.content_margin_top = 2.0
-	normal.content_margin_bottom = 2.0
-	var hover: StyleBoxFlat = normal.duplicate()
-	hover.bg_color = Color(accent, 0.16) if active else Color(1, 1, 1, 0.04)
-	b.add_theme_stylebox_override("normal", normal)
-	b.add_theme_stylebox_override("hover", hover)
-	b.add_theme_stylebox_override("pressed", hover)
+	UITheme.tab(b, active, accent)
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.custom_minimum_size.y = 28 if m.game.touch_mode else 25
+	if b.get_theme_stylebox("normal") is StyleBoxTexture:
+		for state in ["normal", "hover", "pressed"]:
+			b.get_theme_stylebox(state).content_margin_right = 34.0 # room for count
+	else:
+		_flat_rail_styles(b, active, accent)
 	col.add_child(b)
 	var n := _section_count(m, id)
 	if n > 0:
@@ -257,6 +250,26 @@ static func _rail_button(m: Menus, col: VBoxContainer, s: Dictionary) -> Button:
 		m.game.sfx("ui_click")
 		m.open_codex(id))
 	return b
+
+
+## The rail's own look when the frame art is absent: transparent while idle,
+## a 3px accent edge when open, and a slim 2px vertical pad.
+static func _flat_rail_styles(b: Button, active: bool, accent: Color) -> void:
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(accent, 0.11) if active else Color(0, 0, 0, 0)
+	normal.border_color = Color(accent, 0.9) if active else Color(0, 0, 0, 0)
+	normal.border_width_left = 3
+	normal.corner_radius_top_right = 6
+	normal.corner_radius_bottom_right = 6
+	normal.content_margin_left = 9.0
+	normal.content_margin_right = 34.0  # room for the count
+	normal.content_margin_top = 2.0
+	normal.content_margin_bottom = 2.0
+	var hover: StyleBoxFlat = normal.duplicate()
+	hover.bg_color = Color(accent, 0.16) if active else Color(1, 1, 1, 0.04)
+	b.add_theme_stylebox_override("normal", normal)
+	b.add_theme_stylebox_override("hover", hover)
+	b.add_theme_stylebox_override("pressed", hover)
 
 
 ## The rail badge: how many entries a collection holds (0 = no badge).
@@ -368,12 +381,12 @@ static func _chip(m: Menus, parent: Control, text: String, active: bool, accent:
 	b.focus_mode = Control.FOCUS_NONE
 	b.add_theme_font_size_override("font_size", 12)
 	for st in ["normal", "hover", "pressed"]:
-		var sb := b.get_theme_stylebox(String(st)) as StyleBoxFlat
+		var sb := b.get_theme_stylebox(String(st))
 		if sb != null:
 			sb.content_margin_left = 9.0
 			sb.content_margin_right = 9.0
-			sb.content_margin_top = 3.0
-			sb.content_margin_bottom = 3.0
+			sb.content_margin_top = UITheme.TAB_SLICE if sb is StyleBoxTexture else 3.0
+			sb.content_margin_bottom = UITheme.TAB_SLICE if sb is StyleBoxTexture else 3.0
 	return b
 
 

@@ -37,7 +37,9 @@ static func run(t: Node) -> String:
 	g.add_child(g.menus)
 	g.play_started = true
 	g.state = g.ST_PLAYING
-	var error := await _forge(g)
+	var error := await preload("res://scripts/tests/test_ui_frame.gd").run(g)
+	if error == "":
+		error = await _forge(g)
 	if error == "":
 		error = await _daily(g)
 	if error == "":

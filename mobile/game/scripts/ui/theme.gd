@@ -51,11 +51,23 @@ const GOLD := Color(0.88, 0.67, 0.28)
 const GOLD_BRIGHT := Color(1.0, 0.82, 0.42)
 const GOLD_DIM := Color(0.52, 0.43, 0.27)
 const BRONZE := Color(0.36, 0.31, 0.24)
-const PANEL_BG := Color(0.035, 0.042, 0.06, 0.985)
-const SURFACE := Color(0.075, 0.085, 0.12, 0.96)
-const SURFACE_RAISED := Color(0.105, 0.115, 0.16, 0.98)
-const BORDER := Color(0.28, 0.30, 0.38, 0.72)
+const PANEL_BG := Color(0.070, 0.047, 0.030, 0.985)
+const SURFACE := Color(0.115, 0.079, 0.049, 0.96)
+const SURFACE_RAISED := Color(0.170, 0.120, 0.074, 0.98)
+const BORDER := Color(0.36, 0.27, 0.17, 0.72)
 const TEXT_MUTED := Color(0.62, 0.65, 0.73)
+
+# Protected source geometry, NOT appearance tuning: never scale these slices.
+const FRAME_ROOT := "res://assets/ui/frame/"
+const PANEL_SLICE := 16.0
+const CARD_SLICE := 9.0
+const TAB_SLICE := 5.0
+const SLOT_SLICE := 6.0
+const SLOT_SIZE := 48.0
+const SLOT_WELL := 36
+const DIVIDER_REGIONS := [Rect2(0, 0, 16, 32), Rect2(16, 0, 216, 32),
+	Rect2(232, 0, 48, 32), Rect2(280, 0, 216, 32), Rect2(496, 0, 16, 32)]
+const HEADER_RULE_FOOTPRINT := 2.0   # the pre-forge rule's height, kept for layout
 
 static var _font: Font = null
 static var _font_missing := false
@@ -63,6 +75,10 @@ static var _logo_font: Font = null
 static var _logo_font_missing := false
 static var _theme: Theme = null
 static var _face_cache := {}   # "world"/"body"/"body_bold" -> Font or null (resolved once)
+## Folder the builders read the frame kit from. Only tests repoint it (at a
+## missing folder) to drive every builder down its flat fallback.
+static var frame_root := FRAME_ROOT
+static var _slot_rims := {}    # "<path>|<tint html>" -> rim-tinted slot texture
 
 
 ## Resolve the first present font in a path list; null if none ships. A
@@ -195,10 +211,7 @@ static func apply(c: Control) -> void:
 	c.theme = _build()
 
 
-## The dressed panel every menu screen sits in: near-black rounded rect,
-## 2px gold border, a 1px bronze bevel line inset inside it, a soft
-## top-edge sheen, and small gem-diamonds on the bottom corners (echoing
-## the cover crown). Returns the outer Panel.
+## Shared forged panel; the original flat construction remains the fallback.
 static func panel(parent: Control, pos: Vector2, sz: Vector2) -> Panel:
 	var p := Panel.new()
 	var sb := StyleBoxFlat.new()
@@ -209,26 +222,81 @@ static func panel(parent: Control, pos: Vector2, sz: Vector2) -> Panel:
 	sb.shadow_color = Color(0, 0, 0, 0.68)
 	sb.shadow_size = 22
 	sb.shadow_offset = Vector2(0, 8)
-	p.add_theme_stylebox_override("panel", sb)
+	var frame := frame_style(frame_root + "panel.png", PANEL_SLICE, sb)
+	p.add_theme_stylebox_override("panel", frame)
 	p.position = pos
 	p.size = sz
 	parent.add_child(p)
 
-	# A short accent line gives the panel a clear top without boxing every edge.
-	# ColorRect is deliberate: TextureRect enforces its generated texture's
-	# minimum height and turned this three-pixel accent into a 64px banner.
-	var accent := ColorRect.new()
-	accent.color = Color(GOLD, 0.9)
-	accent.position = Vector2(18, 0)
-	accent.size = Vector2(minf(210.0, sz.x * 0.3), 3)
-	accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_child(accent)
+	if frame is StyleBoxFlat:
+		# A short accent line gives the panel a clear top without boxing every edge.
+		# ColorRect is deliberate: TextureRect enforces its generated texture's
+		# minimum height and turned this three-pixel accent into a 64px banner.
+		var accent := ColorRect.new()
+		accent.color = Color(GOLD, 0.9)
+		accent.position = Vector2(18, 0)
+		accent.size = Vector2(minf(210.0, sz.x * 0.3), 3)
+		accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		p.add_child(accent)
 
 	return p
 
 
-## Title underline: gold fading out to the right (replaces the flat rule).
+## Five atlas pieces preserve the boss and caps while only the rails stretch.
 static func rule(parent: Node) -> Control:
+	var texture := _frame_texture(frame_root + "divider.png")
+	if texture == null:
+		return _flat_rule(parent)
+	var row := HBoxContainer.new()
+	row.name = "ForgedDivider"
+	row.add_theme_constant_override("separation", 0)
+	row.custom_minimum_size.y = Balance.UI_FRAME_DIVIDER_HEIGHT
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for i in DIVIDER_REGIONS.size():
+		var region: Rect2 = DIVIDER_REGIONS[i]
+		var atlas := AtlasTexture.new()
+		atlas.atlas = texture
+		atlas.region = region
+		var piece := TextureRect.new()
+		piece.texture = atlas
+		piece.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		piece.stretch_mode = TextureRect.STRETCH_SCALE
+		piece.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if i == 1 or i == 3:
+			piece.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		else:
+			piece.custom_minimum_size.x = region.size.x * Balance.UI_FRAME_DIVIDER_HEIGHT / region.size.y
+		row.add_child(piece)
+	parent.add_child(row)
+	return row
+
+
+## Shell-title variant: the same forged divider, drawn centered over the old
+## 2px rule's layout footprint so its boss rides in the title/content gaps
+## instead of pushing every shell's content 14px down. The parent's separation
+## must be at least half the divider height minus one (menus' shells use 10).
+static func header_rule(parent: Node) -> Control:
+	if _frame_texture(frame_root + "divider.png") == null:
+		return _flat_rule(parent)
+	var slot := Control.new()
+	slot.name = "ForgedHeaderRule"
+	slot.custom_minimum_size.y = HEADER_RULE_FOOTPRINT
+	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(slot)
+	var row := rule(slot)
+	row.anchor_left = 0.0
+	row.anchor_right = 1.0
+	row.anchor_top = 0.5
+	row.anchor_bottom = 0.5
+	row.offset_left = 0.0
+	row.offset_right = 0.0
+	row.offset_top = -Balance.UI_FRAME_DIVIDER_HEIGHT * 0.5
+	row.offset_bottom = Balance.UI_FRAME_DIVIDER_HEIGHT * 0.5
+	return slot
+
+
+## Original rule retained for absent frame art.
+static func _flat_rule(parent: Node) -> Control:
 	var r := TextureRect.new()
 	var g := Gradient.new()
 	g.set_color(0, Color(GOLD, 0.62))
@@ -247,9 +315,10 @@ static func rule(parent: Node) -> Control:
 	return r
 
 
-## Shared content card. A narrow accent edge carries semantic color without
-## outlining the whole card in it; this promotes the journal's strongest
-## visual pattern to the rest of the interface.
+## Shared forged card with content kept inside the protected nine-pixel rim.
+## `accent` only colors the flat fallback's narrow edge: the forged art is
+## never recolored, so a meaning the accent carried (grade, faction) must also
+## show in the card's content.
 static func card(parent: Node, accent := GOLD_DIM, padding := 12.0) -> PanelContainer:
 	var card_box := PanelContainer.new()
 	card_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -265,17 +334,24 @@ static func card(parent: Node, accent := GOLD_DIM, padding := 12.0) -> PanelCont
 	sb.content_margin_right = padding
 	sb.content_margin_top = padding - 2.0
 	sb.content_margin_bottom = padding - 2.0
-	card_box.add_theme_stylebox_override("panel", sb)
+	var frame := frame_style(frame_root + "card.png", CARD_SLICE, sb)
+	if frame is StyleBoxTexture:
+		frame.content_margin_left = maxf(CARD_SLICE, sb.content_margin_left)
+		frame.content_margin_right = maxf(CARD_SLICE, sb.content_margin_right)
+		frame.content_margin_top = maxf(CARD_SLICE, sb.content_margin_top)
+		frame.content_margin_bottom = maxf(CARD_SLICE, sb.content_margin_bottom)
+	card_box.add_theme_stylebox_override("panel", frame)
 	parent.add_child(card_box)
 	return card_box
 
 
 ## Selected/unselected tab treatment shared by codex, inventory and shops.
-## The active state reads from shape and fill, not color alone.
+## The active state reads from shape and fill, not color alone. As with
+## card(), `accent` tints only the flat fallback; the forged tabs keep their art.
 static func tab(button: Button, active: bool, accent := GOLD) -> Button:
 	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	button.custom_minimum_size.y = 38.0
-	var normal := _flat(Color(0.05, 0.06, 0.085, 0.72), Color(BORDER, 0.62), 1, 8)
+	button.custom_minimum_size.y = Balance.UI_FRAME_TAB_HEIGHT
+	var normal := _fallback_flat(Color(PANEL_BG, 0.72), Color(BORDER, 0.62), 1, 8)
 	normal.content_margin_left = 13.0
 	normal.content_margin_right = 13.0
 	normal.content_margin_top = 6.0
@@ -287,15 +363,128 @@ static func tab(button: Button, active: bool, accent := GOLD) -> Button:
 	var hover: StyleBoxFlat = normal.duplicate()
 	hover.bg_color = Color(accent, 0.18 if active else 0.10)
 	hover.border_color = Color(accent, 0.92)
-	button.add_theme_stylebox_override("normal", normal)
-	button.add_theme_stylebox_override("hover", hover)
-	button.add_theme_stylebox_override("pressed", hover)
+	var path := frame_root + ("tab_active.png" if active else "tab_idle.png")
+	var framed := frame_style(path, TAB_SLICE, normal)
+	var hovered := frame_style(path, TAB_SLICE, hover)
+	if framed is StyleBoxTexture:
+		framed.modulate_color = Color.WHITE if active else Color(Balance.UI_FRAME_IDLE_LIFT, Balance.UI_FRAME_IDLE_LIFT, Balance.UI_FRAME_IDLE_LIFT)
+		hovered.modulate_color = framed.modulate_color * Color(Balance.UI_FRAME_HOVER_LIFT, Balance.UI_FRAME_HOVER_LIFT, Balance.UI_FRAME_HOVER_LIFT, 1.0)
+		for box in [framed, hovered]:
+			box.content_margin_left = Balance.UI_FRAME_TAB_PAD_X
+			box.content_margin_right = Balance.UI_FRAME_TAB_PAD_X
+			# 25px codex rail leaves 15px for its shaped text, outside both rims.
+			box.content_margin_top = TAB_SLICE
+			box.content_margin_bottom = TAB_SLICE
+	button.add_theme_stylebox_override("normal", framed)
+	button.add_theme_stylebox_override("hover", hovered)
+	button.add_theme_stylebox_override("pressed", hovered)
 	return button
 
 
 # --------------------------------------------------------- widget skin ---
 
-static func _flat(bg: Color, border: Color, bw: int, radius: int) -> StyleBoxFlat:
+## Missing paths resolve quietly; a failed load also keeps the old flat skin.
+static func _frame_texture(path: String) -> Texture2D:
+	if not ResourceLoader.exists(path):
+		return null
+	return load(path) as Texture2D
+
+
+static func frame_style(path: String, slice_margin: float, fallback: StyleBoxFlat) -> StyleBox:
+	var texture := _frame_texture(path)
+	if texture == null:
+		return fallback
+	return _sliced(texture, slice_margin)
+
+
+static func _sliced(texture: Texture2D, slice_margin: float) -> StyleBoxTexture:
+	var sb := StyleBoxTexture.new()
+	sb.texture = texture
+	for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
+		sb.set_texture_margin(side, slice_margin)
+		sb.set_content_margin(side, slice_margin)
+	return sb
+
+
+## Boot shells fade their panel without assuming which skin is available.
+static func with_opacity(style: StyleBox, alpha: float) -> StyleBox:
+	var copy: StyleBox = style.duplicate()
+	if copy is StyleBoxTexture:
+		copy.modulate_color.a = alpha
+	elif copy is StyleBoxFlat:
+		copy.bg_color.a = alpha
+	return copy
+
+
+## Grade/semantic socket: only slot.png's six-pixel rim takes the color, and
+## it takes it exactly (a gold rim multiplied by blue reads olive). The well
+## inside keeps the art's own interior, so icons sit on the same clear ground
+## at every grade.
+static func slot_style(color: Color, hovered := false) -> StyleBox:
+	var fallback := _fallback_flat(SURFACE_RAISED if hovered else SURFACE, color, 2, 4)
+	fallback.set_content_margin_all(SLOT_SLICE)
+	var rim := _slot_rim(frame_root + "slot.png", color)
+	if rim == null:
+		return fallback
+	var sb := _sliced(rim, SLOT_SLICE)
+	if hovered:
+		sb.modulate_color = Color(Balance.UI_FRAME_HOVER_LIFT, Balance.UI_FRAME_HOVER_LIFT, Balance.UI_FRAME_HOVER_LIFT)
+	sb.set_meta("slot_tint", color)
+	return sb
+
+
+## slot.png with its rim band recolored, cached per tint. Each rim pixel keeps
+## its brightness relative to the brightest rim pixel, so the forged relief
+## survives while the hue is exactly `color`; the brightest pixel IS `color`.
+static func _slot_rim(path: String, color: Color) -> Texture2D:
+	var key := path + "|" + color.to_html()
+	if _slot_rims.has(key):
+		return _slot_rims[key]
+	var texture := _frame_texture(path)
+	if texture == null:
+		return null
+	var source := texture.get_image()
+	if source == null or source.is_empty():
+		return null
+	# A copy: the headless renderer hands back the image it keeps for the texture.
+	var img: Image = source.duplicate()
+	if img.is_compressed() and img.decompress() != OK:
+		return null
+	img.convert(Image.FORMAT_RGBA8)
+	var band := int(SLOT_SLICE)
+	var rim_px: Array[Vector2i] = []
+	var peak := 0.0
+	for y in img.get_height():
+		for x in img.get_width():
+			if mini(mini(x, y), mini(img.get_width() - 1 - x, img.get_height() - 1 - y)) < band:
+				rim_px.append(Vector2i(x, y))
+				peak = maxf(peak, img.get_pixelv(Vector2i(x, y)).get_luminance())
+	if peak <= 0.0:
+		return null
+	for at in rim_px:
+		var px := img.get_pixelv(at)
+		var lit := px.get_luminance() / peak
+		img.set_pixelv(at, Color(color.r * lit, color.g * lit, color.b * lit, px.a))
+	var tinted := ImageTexture.create_from_image(img)
+	_slot_rims[key] = tinted
+	return tinted
+
+
+static func inventory_title(item: Dictionary) -> String:
+	return Items.title(item).trim_prefix("[%s] " % item["grade"])
+
+
+## Framed widget chrome (buttons, text fields). Callers set content margins;
+## slices remain exactly 9px. Slider and scrollbar parts stay flat: a 4-8px
+## track cannot hold a 9px slice, and their fill/thumb read only by color.
+static func _flat(bg: Color, border: Color, bw: int, radius: int) -> StyleBox:
+	var sb := frame_style(frame_root + "card.png", CARD_SLICE, _fallback_flat(bg, border, bw, radius))
+	if sb is StyleBoxTexture:
+		sb.set_content_margin_all(0)
+	return sb
+
+
+static func _fallback_flat(bg: Color, border: Color, bw: int, radius: int) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg
 	sb.border_color = border
@@ -330,22 +519,19 @@ static func _build() -> Theme:
 	# --- Buttons: real bordered chrome with a hover state. The SEMANTIC
 	# font colors (green resume / red quit / grade colors) stay untouched —
 	# they're per-button overrides; this is just the box under them.
-	var bn := _flat(Color(0.065, 0.075, 0.105, 0.88), Color(BORDER, 0.72), 1, 8)
+	var bn := _flat(Color(SURFACE, 0.88), Color(BORDER, 0.72), 1, 8)
 	bn.content_margin_left = 12.0
 	bn.content_margin_right = 12.0
-	bn.content_margin_top = 6.0
-	bn.content_margin_bottom = 6.0
+	bn.content_margin_top = CARD_SLICE if bn is StyleBoxTexture else 6.0
+	bn.content_margin_bottom = CARD_SLICE if bn is StyleBoxTexture else 6.0
 	t.set_stylebox("normal", "Button", bn)
-	var bh: StyleBoxFlat = bn.duplicate()
-	bh.bg_color = SURFACE_RAISED
-	bh.border_color = Color(GOLD, 0.72)
+	var bh := _widget_state(bn, SURFACE_RAISED, Color(GOLD, 0.72), Balance.UI_FRAME_HOVER_LIFT)
 	t.set_stylebox("hover", "Button", bh)
-	var bp: StyleBoxFlat = bh.duplicate()
-	bp.bg_color = Color(0.045, 0.05, 0.075, 0.98)
+	# Pressed is also a toggle's SELECTED look (journal ward filters): it must
+	# read brighter than an idle button, as the flat skin's gold rim did.
+	var bp := _widget_state(bh, PANEL_BG, Color(GOLD, 0.72), Balance.UI_FRAME_PRESSED_LIFT)
 	t.set_stylebox("pressed", "Button", bp)
-	var bd: StyleBoxFlat = bn.duplicate()
-	bd.bg_color = Color(0.06, 0.065, 0.085, 0.46)
-	bd.border_color = Color(BORDER, 0.32)
+	var bd := _widget_state(bn, Color(PANEL_BG, 0.46), Color(BORDER, 0.32), Balance.UI_FRAME_DISABLED_SHADE)
 	t.set_stylebox("disabled", "Button", bd)
 	# Focus overlays the existing chrome without changing its fill or layout.
 	# Local Atlas and Codex focus styles retain their own overrides.
@@ -353,31 +539,31 @@ static func _build() -> Theme:
 	focus.draw_center = false
 	focus.border_color = GOLD_BRIGHT
 	focus.set_border_width_all(2)
-	focus.set_corner_radius_all(bn.corner_radius_top_left)
+	focus.set_corner_radius_all(8)
 	focus.set_content_margin_all(0)
 	t.set_stylebox("focus", "Button", focus)
 
 	# Text fields share the same neutral surface and use the accent only while
 	# focused, keeping name entry and chat consistent with menu controls.
-	var field := _flat(Color(0.035, 0.042, 0.062, 0.96), BORDER, 1, 8)
+	var field := _flat(PANEL_BG, BORDER, 1, 8)
 	field.content_margin_left = 12.0
 	field.content_margin_right = 12.0
-	field.content_margin_top = 8.0
-	field.content_margin_bottom = 8.0
+	field.content_margin_top = CARD_SLICE if field is StyleBoxTexture else 8.0
+	field.content_margin_bottom = CARD_SLICE if field is StyleBoxTexture else 8.0
 	for cls in ["LineEdit", "TextEdit"]:
 		t.set_stylebox("normal", cls, field)
-		var field_focus: StyleBoxFlat = field.duplicate()
-		field_focus.border_color = Color(GOLD, 0.86)
+		var field_focus := _widget_state(field, PANEL_BG, Color(GOLD, 0.86), Balance.UI_FRAME_HOVER_LIFT)
 		t.set_stylebox("focus", cls, field_focus)
 
-	# --- HSlider: dark groove, gold fill, diamond grabber.
-	var groove := _flat(Color(0.05, 0.05, 0.08, 0.95), Color(0.4, 0.35, 0.22, 0.8), 1, 2)
+	# --- HSlider: dark groove, gold fill, diamond grabber. Flat on purpose (see
+	# _flat): the fill is told from the groove by color alone.
+	var groove := _fallback_flat(PANEL_BG, Color(0.4, 0.35, 0.22, 0.8), 1, 2)
 	groove.content_margin_top = 4.0
 	groove.content_margin_bottom = 4.0
 	t.set_stylebox("slider", "HSlider", groove)
-	var area := _flat(Color(0.85, 0.72, 0.38), Color(0.85, 0.72, 0.38), 0, 2)
+	var area := _fallback_flat(Color(0.85, 0.72, 0.38), Color(0.85, 0.72, 0.38), 0, 2)
 	t.set_stylebox("grabber_area", "HSlider", area)
-	var area_hi := _flat(GOLD_BRIGHT, GOLD_BRIGHT, 0, 2)
+	var area_hi := _fallback_flat(GOLD_BRIGHT, GOLD_BRIGHT, 0, 2)
 	t.set_stylebox("grabber_area_highlight", "HSlider", area_hi)
 	var grb := _diamond(15, Color(0.85, 0.72, 0.38), Color(0.24, 0.18, 0.08))
 	var grb_hi := _diamond(15, GOLD_BRIGHT, Color(0.35, 0.27, 0.1))
@@ -385,13 +571,14 @@ static func _build() -> Theme:
 	t.set_icon("grabber_highlight", "HSlider", grb_hi)
 	t.set_icon("grabber_disabled", "HSlider", _diamond(15, Color(0.35, 0.33, 0.3), Color(0.18, 0.17, 0.15)))
 
-	# --- ScrollBars: thin dark track, gold-dim thumb that wakes on hover.
+	# --- ScrollBars: thin dark track, gold-dim thumb that wakes on hover. Flat
+	# on purpose (see _flat): the thumb is told from the track by color alone.
 	for cls in ["VScrollBar", "HScrollBar"]:
-		var track := _flat(Color(0.04, 0.04, 0.07, 0.85), Color(0.3, 0.27, 0.2, 0.5), 1, 3)
+		var track := _fallback_flat(Color(PANEL_BG, 0.85), Color(0.3, 0.27, 0.2, 0.5), 1, 3)
 		track.set_content_margin_all(2.0)
 		t.set_stylebox("scroll", cls, track)
 		t.set_stylebox("scroll_focus", cls, track.duplicate())
-		var thumb := _flat(Color(GOLD_DIM, 0.75), Color(GOLD_DIM, 0.75), 0, 3)
+		var thumb := _fallback_flat(Color(GOLD_DIM, 0.75), Color(GOLD_DIM, 0.75), 0, 3)
 		thumb.set_content_margin_all(3.0)
 		t.set_stylebox("grabber", cls, thumb)
 		var thumb_hi: StyleBoxFlat = thumb.duplicate()
@@ -403,3 +590,14 @@ static func _build() -> Theme:
 
 	_theme = t
 	return t
+
+
+## State changes support both the forged art and the unchanged flat fallback.
+static func _widget_state(base: StyleBox, bg: Color, border: Color, brightness: float) -> StyleBox:
+	var sb: StyleBox = base.duplicate()
+	if sb is StyleBoxFlat:
+		sb.bg_color = bg
+		sb.border_color = border
+	elif sb is StyleBoxTexture:
+		sb.modulate_color = Color(brightness, brightness, brightness, 1.0)
+	return sb

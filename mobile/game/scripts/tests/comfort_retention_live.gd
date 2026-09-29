@@ -236,14 +236,18 @@ func _focus_capture(mode: String, stage: String, caption: String) -> void:
 		native._check(prefix + "/visible", _visible(target), _state(caption))
 		var style: StyleBox = target.get_theme_stylebox("focus")
 		var flat := style as StyleBoxFlat
-		var normal := target.get_theme_stylebox("normal") as StyleBoxFlat
+		var normal := target.get_theme_stylebox("normal")
 		var outline_ok := flat != null and normal != null
 		if outline_ok:
 			outline_ok = not flat.draw_center and flat.border_color == UITheme.GOLD_BRIGHT
 			outline_ok = outline_ok and [flat.border_width_left, flat.border_width_top, flat.border_width_right, flat.border_width_bottom] == [2, 2, 2, 2]
 			for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
 				outline_ok = outline_ok and flat.get_content_margin(side) == 0.0
-			outline_ok = outline_ok and [flat.corner_radius_top_left, flat.corner_radius_top_right, flat.corner_radius_bottom_left, flat.corner_radius_bottom_right] == [normal.corner_radius_top_left, normal.corner_radius_top_right, normal.corner_radius_bottom_left, normal.corner_radius_bottom_right]
+			var radii := [flat.corner_radius_top_left, flat.corner_radius_top_right, flat.corner_radius_bottom_left, flat.corner_radius_bottom_right]
+			if normal is StyleBoxFlat:
+				outline_ok = outline_ok and radii == [normal.corner_radius_top_left, normal.corner_radius_top_right, normal.corner_radius_bottom_left, normal.corner_radius_bottom_right]
+			else:
+				outline_ok = outline_ok and normal is StyleBoxTexture and radii == [8, 8, 8, 8]
 			outline_ok = outline_ok and flat.get_minimum_size() == Vector2.ZERO
 		native._check(prefix + "/outline", outline_ok, _style_metrics(style))
 	var metrics := {}

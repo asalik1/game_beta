@@ -292,10 +292,12 @@ static func _primary_style(button: Button) -> void:
 
 static func _detail_card(parent: Control, accent: Color) -> PanelContainer:
 	var card := UITheme.card(parent, accent)
-	var style: StyleBoxFlat = card.get_theme_stylebox("panel").duplicate()
-	style.border_width_top = 0
-	style.border_width_right = 0
-	style.border_width_bottom = 0
+	var style: StyleBox = card.get_theme_stylebox("panel").duplicate()
+	# Keep the forged card intact; the border reduction is only for the flat fallback.
+	if style is StyleBoxFlat:
+		style.border_width_top = 0
+		style.border_width_right = 0
+		style.border_width_bottom = 0
 	card.add_theme_stylebox_override("panel", style)
 	return card
 
