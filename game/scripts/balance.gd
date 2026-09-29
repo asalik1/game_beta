@@ -5,6 +5,28 @@ class_name Balance
 ## monsters/zones) — this file is for the numbers you tweak, not the
 ## content you author.
 
+# Boot painting: generous crop reserve, a barely perceptible 80-second orbit.
+const BOOT_NIGHT := Color(0.02, 0.015, 0.045)
+const BOOT_OVERSCAN := 0.035
+const BOOT_DRIFT_RANGE := Vector2(0.009, 0.006)
+const BOOT_DRIFT_PERIOD := 80.0
+const BOOT_COVER_HOLD := 24.0
+const BOOT_COVER_FADE := 3.0
+const BOOT_EMBER_COUNT := 12
+const BOOT_EMBER_LIFE := 24.0
+const BOOT_EMBER_SPEED := Vector2(6.0, 14.0)
+const BOOT_EMBER_SCALE := Vector2(0.2, 0.45)
+const BOOT_EMBER_SPREAD := 10.0
+const BOOT_EMBER_ORIGIN := Vector2(0.5, 0.8)
+const BOOT_EMBER_EXTENTS := Vector2(0.5, 0.2)
+const BOOT_EMBER_COLOR := Color(1.0, 0.58, 0.25, 0.5)
+const BOOT_EMBER_FADE_IN := 0.18
+const BOOT_EMBER_FADE_OUT := 0.72
+const BOOT_PANEL_DIM := 0.28
+const BOOT_PANEL_ALPHA := 0.80
+const BOOT_NAV_TIME := 0.18
+const BOOT_NAV_SLIDE := 8.0
+
 # Target damage columns: outline + crit pop need a full 44px row at world scale.
 const FLOAT_NUM_MAX := 22
 const DAMAGE_NUM_MERGE := 0.35

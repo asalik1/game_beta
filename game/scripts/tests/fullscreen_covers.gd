@@ -2,6 +2,7 @@ extends RefCounted
 ## Systems/quick regression: expand must not expose gameplay beyond a cover.
 ## A disposable HUD controls lazy FX preconditions without disturbing live tweens.
 
+const BootBackdrop := preload("res://scripts/ui/boot_backdrop.gd")
 const BOSS_NAME := "Covers Probe the Ashen"
 const BOSS_ART := "splash_ashpriest"
 const PROBE_TEXT := "Dialogue layout probe."
@@ -40,8 +41,14 @@ static func suite(game: Game) -> String:
 	# sizing must not silently enlarge it beyond the centered art stack.
 	var plate := cinematic._make_frame(cinematic._frame_texture("chapters/opening_ch2_0"))
 	cinematic.art_stack.add_child(plate)
+	# The boot painting (T44) on its own disposable layer, freed with the HUD.
+	var boot_layer := CanvasLayer.new()
+	hud.add_child(boot_layer)
+	var boot_setting: BootBackdrop = BootBackdrop.new()
+	boot_layer.add_child(boot_setting)
 	var errors: Array[String] = []
 	_check(hud, cinematic, Vector2(1560, 720), errors)
+	_check_boot_backdrop(boot_setting, Vector2(1560, 720), errors)
 	# Resize the SAME mounted controls, including returning to the desktop size.
 	for dimensions in [Vector2i(1280, 720), Vector2i(1560, 720), Vector2i(1600, 720),
 			Vector2i(1280, 800), Vector2i(1280, 960), Vector2i(1280, 2276),
@@ -55,10 +62,12 @@ static func suite(game: Game) -> String:
 			_check_chat_clear(hud, "after a resize", errors)
 		await _check_chat_feed(hud, errors)
 		_check(hud, cinematic, expected, errors)
+		_check_boot_backdrop(boot_setting, expected, errors)
 	window.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
 	window.size = Vector2i(2400, 1080)
 	await tree.process_frame
 	_check(hud, cinematic, Vector2(1280, 720), errors)
+	_check_boot_backdrop(boot_setting, Vector2(1280, 720), errors)
 	hud.cancel_conversation()
 	tree.paused = kept_paused
 	# Leaving the opener ends cinematic mode, so the boss entrance plate may mount.
@@ -137,6 +146,24 @@ static func _check(hud: Hud, cinematic: Cutscene, expected: Vector2, errors: Arr
 	var side := maxf(visible.size.x, visible.size.y)
 	if not hud.splash_rect.get_global_rect().is_equal_approx(Rect2(Vector2.ZERO, Vector2(side, side))):
 		errors.append("speaker splash leaves part of the screen uncovered at %s" % expected)
+
+
+## The boot painting fills every canvas the resize produces, and its overscan
+## still hides the edges at both extremes of the drift orbit.
+static func _check_boot_backdrop(backdrop: BootBackdrop, expected: Vector2, errors: Array[String]) -> void:
+	var visible := backdrop.get_viewport().get_visible_rect()
+	if not visible.size.is_equal_approx(expected):
+		return  # _check already reported the fixture
+	if not backdrop.get_global_rect().is_equal_approx(visible):
+		errors.append("boot backdrop does not match the viewport at %s" % expected)
+	var kept := backdrop.elapsed
+	for phase in [0.0, 0.25, 0.5, 0.75]:
+		backdrop.elapsed = Balance.BOOT_DRIFT_PERIOD * phase
+		backdrop._drift()
+		if not backdrop.painting.get_global_rect().encloses(visible):
+			errors.append("boot painting exposes an edge at %s, orbit phase %s" % [expected, phase])
+	backdrop.elapsed = kept
+	backdrop._drift()
 
 
 ## Preserve the authored desktop rectangles and translate the whole reader

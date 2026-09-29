@@ -16,7 +16,7 @@ text-to-image model — it also broke `tools/art/flux_draft.py` and polligen's
 
 | Asset | State |
 |---|---|
-| **Cover** | **DONE** — both variants installed and CYCLING (`cover.png` pixel + `cover_2.png` painterly, crossfade every 10s; cover.gd probes `cover_2..cover_8`, so a 3rd just drops in). |
+| **Cover** | **DONE** — both variants installed and CYCLING (`cover.png` pixel + `cover_2.png` painterly, held 24s then a 3s crossfade (`Balance.BOOT_COVER_HOLD`/`BOOT_COVER_FADE`); cover.gd probes `cover_2..cover_8`, so a 3rd just drops in). |
 | **Wordmark** | **MOOT — do not generate.** Engine-drawn now, in Cinzel Decorative. See below. |
 | `ward_elixir`, `renewal_draught` | **DONE** — installed. |
 | **All 24 ability icons** | **DONE** — installed 2026-07-17. Every class is on real art; the glyph table is now fallback-only. |

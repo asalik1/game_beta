@@ -177,12 +177,24 @@ func _run_systems() -> void:
 	# 1. Chapter select -> class select -> opening.
 	if not (game.menus.is_open() and game.menus.current == "chapter_select"):
 		return _fail("chapter select did not open")
+	# T44: one painted boot setting spans the pre-play shells, then play frees it.
+	if not is_instance_valid(game.menus.boot_backdrop):
+		return _fail("boot menus lost the painted title backdrop")
+	var boot_setting_id := game.menus.boot_backdrop.get_instance_id()
 	game.menus.pick_chapter("ch1")
 	await _frames(2)
 	if not (game.menus.is_open() and game.menus.current == "class_select"):
 		return _fail("class select did not open")
+	if not is_instance_valid(game.menus.boot_backdrop) \
+			or game.menus.boot_backdrop.get_instance_id() != boot_setting_id:
+		return _fail("class select rebuilt the boot backdrop instead of keeping it")
 	game.menus.pick_class("warrior")
 	await _frames(5)
+	for child in game.menus.get_children():
+		if child.get_script() == Menus.BootBackdrop:
+			return _fail("the boot backdrop outlived the class pick into play")
+	if game.menus.boot_backdrop != null:
+		return _fail("menus still reference the boot backdrop in play")
 	if not game.hud.dialogue_active:
 		return _fail("warrior opening scene did not start after class select")
 	# The dialogue box lives UNDER the hud: if the menus left the hud hidden,

@@ -389,6 +389,16 @@ APPDATA; add `--mobile --renderer=gl_compatibility` for mobile-source rendering.
 `--baseline` records known defects only; acceptance omits it. See
 `MENU_NAVIGATION.md` for the controlled-fixture scope and evidence.
 
+Boot backdrop QA: `shot.bat menu_navigation --boot-backdrop --timeout=300`
+walks cover -> roster -> class select -> roster at 1280x720 and 960x640 on one
+persistent painted backdrop: node identity, instant refreshes, retired-shell
+input/focus, expand-aspect resize coverage, Delete hero? confirm returns and
+release on close. Seven captures (title/roster/class per size, plus
+`class_expand` on the taller expand-aspect canvas) under
+`shots/menu_navigation/boot_backdrop`. Pass marker: `BOOT BACKDROP ... failures=0`.
+The headless boot tier and `fullscreen_covers.gd` (quick) cover play-start
+release and expand-canvas coverage.
+
 Pause layout QA: `shot.bat menu_navigation --pause-layout --timeout=300`
 uses six controlled campaign/capital/trial-availability cases with strict
 first/settled action geometry, safe entry focus, fixed Resume/hint, native

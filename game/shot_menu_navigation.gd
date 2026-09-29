@@ -5,6 +5,13 @@ extends ShotRig
 
 
 func _ready() -> void:
+	if flag("boot-backdrop"):
+		await boot_game()
+		shot_dir += "/boot_backdrop"
+		var boot_result: Dictionary = await preload("res://scripts/tests/menu_navigation_live.gd").run_boot_backdrop(self)
+		print("BOOT BACKDROP: checks=%d passed=%d failures=%d" % [boot_result.checks, boot_result.passed, boot_result.failures])
+		finish(1 if int(boot_result.failures) > 0 else 0)
+		return
 	if flag("pause-layout"):
 		var pause_user_root := ProjectSettings.globalize_path("user://").replace("\\", "/").to_lower()
 		if not pause_user_root.contains("/build/qa/") or flag("baseline") or flag("no-capture") \
