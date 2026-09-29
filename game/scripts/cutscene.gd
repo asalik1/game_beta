@@ -79,11 +79,37 @@ const KNOWN_CUES := [
 const CLOSER_CHAPTERS := ["ch1", "ch2", "ch3", "ch4", "ch5", "ch6", "ch7"]
 const CLOSER_ROOT := "closing/"
 
-const FRAME_DISSOLVE := 0.82
-const FRAME_HOLD := 1.55
-const CAMERA_START_SCALE := Vector2(1.012, 1.012)
-const CAMERA_END_SCALE := Vector2(1.042, 1.042)
-const CAMERA_TRACK_X := 7.0
+const FRAME_DISSOLVE := Balance.STORY_FRAME_DISSOLVE
+const FRAME_HOLD := Balance.STORY_FRAME_HOLD
+const CAMERA_START_SCALE := Balance.STORY_CAMERA_START_SCALE
+const CAMERA_END_SCALE := Balance.STORY_CAMERA_END_SCALE
+const CAMERA_TRACK_X := Balance.STORY_CAMERA_TRACK
+
+# Normalized painting focus (zoom pivot), then camera travel toward the subject.
+# Unlisted chapter/quest/closer plates retain the centered, alternating track.
+const PLATE_MOTION := {
+	"opening_crown_0": [Vector2(0.61, 0.62), Vector2(0.4, 0.0)], # empty throne
+	"opening_crown_1": [Vector2(0.62, 0.24), Vector2(0.0, -0.7)], # hovering crown
+	"opening_crown_2": [Vector2(0.62, 0.31), Vector2(0.0, -0.5)], # crowned apparition
+	"opening_warrior_0": [Vector2(0.30, 0.43), Vector2(-0.7, 0.0)], # swordsman
+	"opening_warrior_1": [Vector2(0.55, 0.50), Vector2(0.7, 0.0)], # strike arc
+	"opening_warrior_2": [Vector2(0.34, 0.43), Vector2(-0.5, -0.2)], # survivor
+	"opening_assassin_0": [Vector2(0.54, 0.59), Vector2(0.6, 0.2)], # campfire and hand
+	"opening_assassin_1": [Vector2(0.43, 0.43), Vector2(-0.4, -0.3)], # tether at the chest
+	"opening_assassin_2": [Vector2(0.46, 0.40), Vector2(0.4, -0.2)], # green vial
+	"opening_mage_0": [Vector2(0.63, 0.55), Vector2(0.7, 0.1)], # healing hand
+	"opening_mage_1": [Vector2(0.66, 0.57), Vector2(0.5, 0.1)], # sickbed glow
+	"opening_mage_2": [Vector2(0.67, 0.56), Vector2(0.3, 0.0)], # altered patient
+	"opening_archer_0": [Vector2(0.43, 0.30), Vector2(0.6, 0.0)], # thread between family
+	"opening_archer_1": [Vector2(0.52, 0.30), Vector2(0.5, 0.0)], # taut thread
+	"opening_archer_2": [Vector2(0.56, 0.43), Vector2(0.3, 0.4)], # falling severed thread
+	"opening_paladin_0": [Vector2(0.37, 0.32), Vector2(-0.5, -0.2)], # listening paladin
+	"opening_paladin_1": [Vector2(0.29, 0.40), Vector2(-0.6, 0.0)], # raised hammer and chain
+	"opening_paladin_2": [Vector2(0.62, 0.45), Vector2(0.6, 0.1)], # chained petitioner
+	"opening_warlock_0": [Vector2(0.58, 0.70), Vector2(0.5, 0.3)], # closed tome
+	"opening_warlock_1": [Vector2(0.69, 0.56), Vector2(0.6, -0.2)], # opening pages
+	"opening_warlock_2": [Vector2(0.69, 0.48), Vector2(0.3, -0.5)], # violet plume
+}
 
 var game: Game
 var art_stack: Control
@@ -300,13 +326,23 @@ func finishing() -> bool:
 func _play_sequence(frame_names: Array) -> void:
 	if _sequence_tween != null and _sequence_tween.is_valid():
 		_sequence_tween.kill()
-	_collapse_stack()
+	# The camera continues from the painting that dominates the frozen picture.
+	var anchor := _collapse_stack()
 
 	_sequence_tween = create_tween()
 	_sequence_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	_sequence_tween.set_trans(Tween.TRANS_SINE)
 	_sequence_tween.set_ease(Tween.EASE_IN_OUT)
 
+	# The pose each new plate dissolves over: the retained painting's live pose,
+	# then each plate's own end pose (its main move is over before the next
+	# plate starts to dissolve).
+	var has_prev := anchor != null
+	var prev_position: Vector2 = anchor.position if has_prev else Vector2.ZERO
+	var prev_pivot: Vector2 = anchor.pivot_offset if has_prev else Vector2.ZERO
+	var prev_scale: Vector2 = anchor.scale if has_prev else Vector2.ONE
+	var last_frame: TextureRect = null
+	var last_track := Vector2.ZERO
 	for frame_index in range(frame_names.size()):
 		var frame_name: String = String(frame_names[frame_index])
 		var texture: Texture2D = _frame_texture(String(frame_name))
@@ -314,23 +350,77 @@ func _play_sequence(frame_names: Array) -> void:
 			continue
 		var frame := _make_frame(texture)
 		frame.modulate.a = 0.0
-		var track_direction := -1.0 if frame_index % 2 == 0 else 1.0
-		frame.position.x += CAMERA_TRACK_X * track_direction
 		frame.scale = CAMERA_START_SCALE
+		var rest := frame.position
+		var start := rest
+		var track := Vector2.ZERO
+		if PLATE_MOTION.has(frame_name):
+			var motion: Array = PLATE_MOTION[frame_name]
+			frame.pivot_offset = frame.size * Vector2(motion[0])
+			track = Vector2(motion[1]).limit_length()
+		if has_prev:
+			# Dissolve in register: this painting's center starts where the
+			# previous pose drew its own, so a shared scene never doubles up.
+			start = _registered_position(frame, prev_position, prev_pivot, prev_scale)
+		if not PLATE_MOTION.has(frame_name):
+			# Unlisted plates keep the centered horizontal recipe: each travels
+			# back across its rest position, which alternates like the old
+			# parity rule within a cue and stays bounded across cues.
+			var side := signf(start.x - rest.x)
+			if side == 0.0:
+				side = -1.0 if frame_index % 2 == 0 else 1.0
+			track = Vector2(side, 0.0)
+		if not has_prev:
+			start = rest + track * CAMERA_TRACK_X
+		frame.position = _covering_position(frame, start, CAMERA_START_SCALE)
+		var end := _covering_position(frame,
+			frame.position - track * CAMERA_TRACK_X * 2.0, CAMERA_END_SCALE)
 		art_stack.add_child(frame)
+		last_frame = frame
+		last_track = track
 
-		# Each authored plate dissolves over its predecessor while tracking in the
-		# opposite direction. Shared chapter cues therefore read as two connected
-		# story beats; one-plate class cues still have a deliberate moving hold.
+		# Preserve beat timing; only the painting's camera direction is authored.
 		var move_duration := FRAME_DISSOLVE + FRAME_HOLD
 		_sequence_tween.tween_property(frame, "modulate:a", 1.0, FRAME_DISSOLVE)
 		_sequence_tween.parallel().tween_property(
 			frame, "scale", CAMERA_END_SCALE, move_duration)
 		_sequence_tween.parallel().tween_property(
-			frame, "position:x",
-			frame.position.x - CAMERA_TRACK_X * track_direction * 2.0,
-			move_duration)
+			frame, "position", end, move_duration)
 		_sequence_tween.tween_interval(FRAME_HOLD)
+		has_prev = true
+		prev_position = end
+		prev_pivot = frame.pivot_offset
+		prev_scale = CAMERA_END_SCALE
+
+	# Continue alongside the final hold, then settle at a bounded endpoint.
+	# This remains in the cue tween so advance/fade/finish cancel it together.
+	if last_frame != null:
+		_sequence_tween.parallel().tween_property(last_frame, "scale",
+			Balance.STORY_READING_END_SCALE, Balance.STORY_READING_DRIFT_SECONDS)
+		_sequence_tween.parallel().tween_property(last_frame, "position",
+			_covering_position(last_frame,
+				prev_position - last_track * Balance.STORY_READING_TRACK,
+				Balance.STORY_READING_END_SCALE),
+			Balance.STORY_READING_DRIFT_SECONDS)
+
+
+## Where `frame` (pivot and scale already set) must sit so its painting center
+## lands exactly where a plate at the given pose draws its own center. This is
+## the registration the old alternating recipe had (end pose == next start).
+func _registered_position(frame: TextureRect, at: Vector2, pivot: Vector2,
+		zoom: Vector2) -> Vector2:
+	var center := frame.size / 2.0
+	var drawn := at + pivot + (center - pivot) * zoom
+	return drawn - frame.pivot_offset - (center - frame.pivot_offset) * frame.scale
+
+
+## Clamp a plate position so the painting, scaled by `zoom` about its pivot,
+## still covers the clipped art frame. Position and scale tween together on
+## one curve, so covering both ends of a move covers every frame between.
+func _covering_position(frame: TextureRect, at: Vector2, zoom: Vector2) -> Vector2:
+	var pivot := frame.pivot_offset
+	return at.clamp(art_stack.size - pivot - (frame.size - pivot) * zoom,
+		pivot * (zoom - Vector2.ONE))
 
 
 func _frame_texture(frame_name: String) -> Texture2D:
@@ -362,27 +452,32 @@ func _make_frame(texture: Texture2D) -> TextureRect:
 
 
 ## A player may advance the prose before a multi-frame sequence completes.
-## Freeze the most-visible plate as the next dissolve's base and discard the
-## unfinished stack, preventing a late tween from drawing over the new cue.
-func _collapse_stack() -> void:
-	var keep_texture: Texture2D = null
+## Freeze the picture exactly as it stands: every plate that still shows keeps
+## its live position, scale, pivot and opacity, so the next cue dissolves over
+## what was on screen (a half-finished blend stays a blend). Plates that cannot
+## be seen, queued ones still at zero or ones fully covered from above, are
+## discarded so no late tween draws over the new cue. Returns the plate that
+## dominates the frozen picture, or null when nothing is showing yet.
+func _collapse_stack() -> TextureRect:
+	var anchor: TextureRect = null
+	var anchor_weight := 0.0
+	var uncovered := 1.0  # share of the picture no plate above has covered
 	var children := art_stack.get_children()
 	for idx in range(children.size() - 1, -1, -1):
-		var frame := children[idx] as TextureRect
-		if frame != null and frame.texture != null and frame.modulate.a >= 0.45:
-			keep_texture = frame.texture
-			break
-	if keep_texture == null and not children.is_empty():
-		var fallback := children.back() as TextureRect
-		if fallback != null:
-			keep_texture = fallback.texture
-	for child in children:
-		child.queue_free()
-	if keep_texture != null:
-		var base := _make_frame(keep_texture)
-		base.modulate.a = 1.0
-		base.scale = CAMERA_END_SCALE
-		art_stack.add_child(base)
+		var child: Node = children[idx]
+		var frame := child as TextureRect
+		var weight := 0.0
+		if frame != null and frame.texture != null:
+			weight = frame.modulate.a * uncovered
+		if weight < Balance.STORY_RETAIN_MIN_WEIGHT:
+			art_stack.remove_child(child)
+			child.queue_free()
+			continue
+		if weight > anchor_weight:
+			anchor = frame
+			anchor_weight = weight
+		uncovered *= 1.0 - frame.modulate.a
+	return anchor
 
 
 func _tint_motes(id: String) -> void:

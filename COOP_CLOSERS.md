@@ -59,6 +59,12 @@ conversation-claim and advance RPCs. Its host-loss check invokes the actual
 production teardown callback after an ENet run; it is not a transport-loss
 simulation or mobile hardware test.
 
+Story plate camera (T49): `scripts/tests/story_plate_motion.gd` runs headless
+in every quick suite. `shot.bat coop_closers --plate-motion --timeout=300`
+runs the same checks on the host reader before the ENet checks and saves
+`plate_<case>_before/_after` shots of each advance (look for
+`STORY PLATE MOTION PASS` in the log).
+
 
 Final validation: desktop 190-script compile, 114
 quick checks and 194 full checks; mobile editor import,

@@ -2378,6 +2378,10 @@ func _run_systems() -> void:
 	if covers_error != "":
 		return _fail(covers_error)
 	print("ok: full-screen HUD/cutscene covers, centered clipped art + motes, speaker/boss splash covers (wide phone, tablet, resize, desktop keep)")
+	var plates_error: String = await preload("res://scripts/tests/story_plate_motion.gd").suite(game)
+	if plates_error != "":
+		return _fail(plates_error)
+	print("ok: story plates (advance keeps the on-screen blend, registered dissolves, focal envelopes, bounded drift, SKIP/guarded finish)")
 	await _test_tell_shapes()
 
 	# 5c. Endgame modes (ACT2_DESIGN.md §II): The Crucible + The Waking Depths.

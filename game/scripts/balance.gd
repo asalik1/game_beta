@@ -45,6 +45,20 @@ const BOOT_PANEL_ALPHA := 0.80
 const BOOT_NAV_TIME := 0.18
 const BOOT_NAV_SLIDE := 8.0
 
+# Story plates: preserve the original dissolve/beat timing and camera envelope.
+const STORY_FRAME_DISSOLVE := 0.82
+const STORY_FRAME_HOLD := 1.55
+const STORY_CAMERA_START_SCALE := Vector2(1.012, 1.012)
+const STORY_CAMERA_END_SCALE := Vector2(1.042, 1.042)
+const STORY_CAMERA_TRACK := 7.0
+# Advancing freezes the on-screen blend; a plate showing through less than
+# one 8-bit step is invisible and dropped from the frozen stack.
+const STORY_RETAIN_MIN_WEIGHT := 1.0 / 255.0
+# One finite, quieter continuation for readers who linger on the final plate.
+const STORY_READING_DRIFT_SECONDS := 24.0
+const STORY_READING_END_SCALE := Vector2(1.052, 1.052)
+const STORY_READING_TRACK := 3.0
+
 # Target damage columns: outline + crit pop need a full 44px row at world scale.
 const FLOAT_NUM_MAX := 22
 const DAMAGE_NUM_MERGE := 0.35

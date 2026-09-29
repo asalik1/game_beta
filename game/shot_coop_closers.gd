@@ -50,7 +50,14 @@ func _ready() -> void:
 		pair[0].game = pair[1]
 		pair[1].qa_bridge = pair[0]
 		pair[2].add_child(pair[0])
-	var error := await _connect_and_check()
+	var error := ""
+	# The plate checks also run headless in every quick suite; this flag adds
+	# the rendered plate_<case>_before/_after shots on a real reader.
+	if flag("plate-motion"):
+		_show(host)
+		error = await preload("res://scripts/tests/story_plate_motion.gd").suite(host, self)
+	if error == "":
+		error = await _connect_and_check()
 	if error != "":
 		shot("diagnostic_before_cleanup")
 	get_tree().paused = false

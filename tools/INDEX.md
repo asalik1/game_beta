@@ -840,7 +840,11 @@ and two ENet API scopes in one engine. It checks actual host boss death,
 per-class art, queued reward ordering, independent reading, duplicate records,
 pending/active NPC claims, menu/chat waits, travel/fade cancellation, touch and
 the production host-loss save callback. Use `--mobile --renderer=gl_compatibility`
-for the mobile source/renderer path on this development host.
+for the mobile source/renderer path on this development host. Add `--plate-motion`
+to first run the story plate camera checks (advance keeps the on-screen blend,
+registered dissolves, focal envelopes, bounded drift, SKIP/guarded finish) on the
+host reader and save `plate_<case>_before/_after` shots; the same checks run
+headless in every quick suite (`scripts/tests/story_plate_motion.gd`).
 
 First-conquest QA: `shot.bat first_conquest --timeout=230` kills a real final
 boss through the production death callback and checks first/replay payouts,
