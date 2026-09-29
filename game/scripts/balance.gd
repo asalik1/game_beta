@@ -2031,6 +2031,7 @@ const NET_MAX_HIT := 1.0e9            # one guest→enemy hit (pre-mitigation)
 const NET_MAX_DPS := 1.0e8            # burn/toxin/bleed DPS from the wire
 const NET_MAX_STATUS_DUR := 60.0      # any wire status/effect duration (s)
 const NET_MAX_VITAL := 1.0e9          # remote hp/mp/max-hp/max-mp ceiling
+const NET_MAX_DOT_STAT := 1.0e6       # remote sheet crit/crit damage (join + live updates)
 const NET_LEVEL_CAP := 999            # remote player level clamp (real cap is LEVEL_CAP)
 const NET_MAX_POS := 1.0e7            # |x|,|y| a wire position may claim (world units)
 const NET_MAX_FLAG_LEN := 96          # longest world-flag name a guest may set

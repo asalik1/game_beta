@@ -671,7 +671,7 @@ session, owner-applied damage). No new netcode class — the duel is a mode ON t
 - **Wire:** `pvp_strike`/`pvp_died` up, `pvp_round`/`pvp_fight`/`pvp_kill`/`pvp_end` fans down —
   all in `net_session.gd`. NET_VERSION bumped 0.2.0 → 0.3.0. Duel defense (2026-09-29,
   0.3.18 → 0.3.19): `_rpc_pvp_strike` and `_rpc_player_hit` gained a trailing true-damage
-  arg and `_rpc_vitals` a trailing CritRes arg. The new args default, so an older sender
+  arg and `_rpc_vitals` defaulted CritRes and changed-only DoT combat-stats args. The new args default, so an older sender
   still lands, but an older receiver rejects the longer call, hence the bump.
 - **Bring-up finding (2026-08-02, co-op-wide):** a mistyped noray code used to fail SILENTLY —
   the server's refusal rides the `connect` verb with no host:port payload, which crashed the

@@ -2363,6 +2363,9 @@ func _run_systems() -> void:
 	var impairment_error: String = await preload("res://scripts/tests/hud_impairments.gd").suite(game)
 	if impairment_error != "":
 		return _fail(impairment_error)
+	var dot_stats_error: String = await preload("res://scripts/tests/net_dot_stats.gd").suite(game)
+	if dot_stats_error != "":
+		return _fail(dot_stats_error)
 	_test_hud_icon_integrity()
 	var diet_error := preload("res://scripts/tests/hud_diet.gd").suite(game)
 	if diet_error != "":

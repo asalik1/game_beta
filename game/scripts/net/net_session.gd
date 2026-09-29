@@ -560,8 +560,7 @@ func _spawn_remote(pid: int, block: Dictionary) -> void:
 	# its crit off the RIGHT sheet. Offensive-only — the shell never resolves its
 	# own attacks or defense host-side (incoming hits forward to the owner), so
 	# nothing else reads these. Absent (dev {cls,level} block) keeps the default.
-	p.crit = clampf(_df(block, "crit", p.crit), 0.0, 1.0e6)
-	p.crit_dmg = clampf(_df(block, "crit_dmg", p.crit_dmg), 1.0, 1.0e6)
+	_apply_dot_stats(p, block)
 	# Duel crit rolls read the shell's CritRes. Vitals refresh it only when it
 	# changes, and a packet that arrived before this shell existed was dropped,
 	# so the join block seeds the owner's current value (same bound as vitals).
@@ -1529,11 +1528,11 @@ func _rpc_player_status(kind: String, a: float, b: float, reason := "") -> void:
 
 # ---- vitals sync (owner broadcasts, shells display) ----
 
-## Owner-side: broadcast {hp, max_hp, mp, critres} when they changed — capped at
-## VITALS_EVERY, except a DROP in hp (damage) which sends immediately.
-## Shells apply it for bars, host-side threshold reads, and the `dead`
-## flag that steers enemy AI off a fallen guest. CritRes feeds duel crit rolls;
-## stat-only changes must broadcast too (gear/buffs can leave bars unchanged).
+## Owner-side: broadcast vitals, duel CritRes and changed sheet DoT stats,
+## capped at VITALS_EVERY, except a DROP in hp which sends immediately.
+## Shells use bars/dead for display and AI, and CritRes for duel crit rolls.
+## Stat-only changes also broadcast; combat fields only ride when changed,
+## ordered before later statuses on the same reliable channel.
 func _tick_vitals(delta: float, p: Node) -> void:
 	_vitals_accum += delta
 	var hp := float(p.hp)
@@ -1543,23 +1542,52 @@ func _tick_vitals(delta: float, p: Node) -> void:
 	var dropped: bool = _vitals_sent.has("hp") and hp < float(_vitals_sent["hp"]) - 0.01
 	if _vitals_accum < VITALS_EVERY and not dropped:
 		return
-	if not dropped and _vitals_sent.has("hp") \
+	# Compare in place: this idle path runs every frame once the cadence
+	# elapses, so the combat payload is only built when a packet will go out.
+	var crit := float(p.crit)
+	var crit_dmg := float(p.crit_dmg)
+	var crit_changed: bool = not _vitals_sent.has("crit") or crit != float(_vitals_sent["crit"])
+	var crit_dmg_changed: bool = not _vitals_sent.has("crit_dmg") \
+			or crit_dmg != float(_vitals_sent["crit_dmg"])
+	if not dropped and not crit_changed and not crit_dmg_changed and _vitals_sent.has("hp") \
 			and absf(hp - float(_vitals_sent["hp"])) < 0.5 \
 			and absf(mhp - float(_vitals_sent["max_hp"])) < 0.5 \
 			and absf(mpv - float(_vitals_sent["mp"])) < 1.0 \
 			and cr == float(_vitals_sent.get("critres", -1.0)):
 		return  # nothing worth a packet changed
 	_vitals_accum = 0.0
-	_vitals_sent = {"hp": hp, "max_hp": mhp, "mp": mpv, "critres": cr}
-	_rpc_vitals.rpc(hp, mhp, mpv, cr)
+	var combat := {}
+	if crit_changed:
+		combat["crit"] = crit
+	if crit_dmg_changed:
+		combat["crit_dmg"] = crit_dmg
+	_vitals_sent.merge({"hp": hp, "max_hp": mhp, "mp": mpv, "critres": cr}, true)
+	_vitals_sent.merge(combat, true)
+	if combat.is_empty():
+		_rpc_vitals.rpc(hp, mhp, mpv, cr)
+	else:
+		_rpc_vitals.rpc(hp, mhp, mpv, cr, combat)
+
+
+## Join and refresh share the existing character validation envelope. Enemy
+## burn/toxin/bleed read only these source stats; penetration is not used by
+## PvE ticks, and duel riders already carry their own penetration snapshot.
+func _apply_dot_stats(p: Player, block: Dictionary) -> void:
+	p.crit = clampf(_df(block, "crit", p.crit), 0.0, Balance.NET_MAX_DOT_STAT)
+	p.crit_dmg = clampf(_df(block, "crit_dmg", p.crit_dmg), 1.0, Balance.NET_MAX_DOT_STAT)
+	if peer_chars.has(p.peer_id):
+		peer_chars[p.peer_id]["crit"] = p.crit
+		peer_chars[p.peer_id]["crit_dmg"] = p.crit_dmg
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _rpc_vitals(hp: float, max_hp: float, mp: float, critres := 0.0) -> void:
+func _rpc_vitals(hp: float, max_hp: float, mp: float, critres := 0.0, combat: Dictionary = {}) -> void:
 	if game == null:
 		return
 	var pid := multiplayer.get_remote_sender_id()
 	if pid <= 0:
+		return
+	if multiplayer.is_server() and not (pid in _net().peers):
 		return
 	var q: Player = _player_of(pid)
 	if q == null or q == game.local_player:
@@ -1570,6 +1598,7 @@ func _rpc_vitals(hp: float, max_hp: float, mp: float, critres := 0.0) -> void:
 	q.hp = clampf(_fin(hp, Balance.NET_MAX_VITAL), 0.0, q.max_hp)
 	q.mp = _finpos(mp, Balance.NET_MAX_VITAL)
 	q.critres = _finpos(critres, Balance.NET_MAX_VITAL)
+	_apply_dot_stats(q, combat)
 	# MP-12: a DOWNED/GHOST shell is NOT dead — the §5.3 state (which the
 	# owner broadcasts before this hp=0 lands on the same reliable channel)
 	# already steers AI off it via nearest_player's downed filter. `dead`
