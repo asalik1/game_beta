@@ -2061,6 +2061,9 @@ func _run_systems() -> void:
 	if terrain_error != "":
 		_fail(terrain_error)
 		return
+	var world_read_error: String = preload("res://scripts/tests/test_world_read.gd").run(self)
+	if world_read_error != "":
+		return _fail(world_read_error)
 	var boss_cast_error: String = preload("res://scripts/tests/test_boss_cast.gd").run(self)
 	if boss_cast_error != "":
 		return _fail("boss casts: " + boss_cast_error)
@@ -5375,7 +5378,7 @@ func _test_asset_seams() -> void:
 					strip_left_edge = maxf(strip_left_edge, cx + rs.size.x * 0.5)
 				else:
 					strip_right_edge = minf(strip_right_edge, cx - rs.size.x * 0.5)
-		else:
+		elif child.name != "BackdropGrounding":
 			arcade_visuals += 1
 	if arcade_bodies != 1 or arcade_visuals != 1:
 		arcade.queue_free()

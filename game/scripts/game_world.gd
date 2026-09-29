@@ -1289,8 +1289,8 @@ func _build_room(i: int) -> void:
 	var ground: Sprite2D = preload("res://scripts/room_floor.gd").add_ground(self, world, i, terrain)
 	zone_grounds[i] = ground
 	_apply_ground_field(i, terrain)  # crisp native-res floor under the -10 detail
-	_mark_roads(i)
-	_decide_river(i)   # river FIRST so hazards + scenery avoid the water
+	_decide_river(i)   # river FIRST so the road, hazards + scenery respect the water
+	_mark_roads(i)     # (the road holds its straight lane over the bridge)
 	_spawn_patches(i)
 	zone_scenery[i] = []
 	_spawn_scenery(i)
@@ -2683,6 +2683,9 @@ func _spawn_scenery(zi: int) -> void:
 	# there and the door gaps sit there). With asymmetric insets (P5.2) they
 	# are no longer at pw/2, ph/2.
 	var lane := lane_local(zi)
+	# The painted road bends off those lanes: colliding props keep off both
+	# (_lane_blocked), so a prop never stands on the drawn road.
+	var road := road_layout(zi)
 	var area_frac := (pw * ph) / float(ROOM_W * ROOM_H)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = zi * 77 + terrain_by_zone[zi].hash() % 1000
@@ -2921,10 +2924,9 @@ func _spawn_scenery(zi: int) -> void:
 			# toadstool cap; the same mushroom already collided when a terrain
 			# listed it as an accent). Patch/clump placement is unchanged.
 			if Terrains.SOLID_DECOR.has(decor_base):
-				var dlocal := dpos - origin
 				# Stickers could squat the road band and door lane; a collider
-				# there blocks the path (same margins as the accent placer).
-				if absf(dlocal.y - lane.y) < 90.0 or absf(dlocal.x - lane.x) < 130.0:
+				# there blocks the path (same rule as the obstacle/accent placers).
+				if _lane_blocked(road, dpos - origin):
 					continue
 				zone_scenery[zi].append(_add_obstacle(decor_name, dpos,
 					rng.randf_range(Balance.SCENERY_SCALE_JITTER.x,
@@ -3058,10 +3060,8 @@ func _spawn_scenery(zi: int) -> void:
 			var sp := _scatter_point(rng, pw, ph, 90.0, max_x, 100.0, ph - 100.0, hug)
 			var pos: Vector2 = sp[0]
 			side = sp[1]
-			if pos.y > lane.y - 90.0 and pos.y < lane.y + 90.0:
-				continue  # the road / east-west door lane stays open
-			if absf(pos.x - lane.x) < 130.0:
-				continue  # the north-south door lane stays open
+			if _lane_blocked(road, pos):
+				continue  # the road and both door lanes stay open
 			var ok := not _reserved_blocks(reserved, pos)
 			for other in placed:
 				if pos.distance_to(other) < Balance.SCENERY_MIN_SPACING:
@@ -3090,9 +3090,7 @@ func _spawn_scenery(zi: int) -> void:
 				mpos = center + _clump_jitter(rng, side)   # stretched along a hugged wall
 				mpos.x = clampf(mpos.x, 90.0, max_x)
 				mpos.y = clampf(mpos.y, 100.0, ph - 100.0)
-				if mpos.y > lane.y - 90.0 and mpos.y < lane.y + 90.0:
-					continue
-				if absf(mpos.x - lane.x) < 130.0:
+				if _lane_blocked(road, mpos):
 					continue
 				# The jitter reaches further than the clearance the accepted centre
 				# had, so a member can land back inside a reservation.
@@ -3135,9 +3133,7 @@ func _spawn_scenery(zi: int) -> void:
 		var group_radius := float(spec.get("radius", Balance.SCENERY_ACCENT_GROUP_RADIUS))
 		for attempt in Balance.SCENERY_PLACE_TRIES:
 			var acenter := Vector2(rng.randf_range(90.0, max_x), rng.randf_range(100.0, ph - 100.0))
-			if acenter.y > lane.y - 90.0 and acenter.y < lane.y + 90.0:
-				continue
-			if absf(acenter.x - lane.x) < 130.0:
+			if _lane_blocked(road, acenter):
 				continue
 			var aok := true
 			# Same reservation the obstacle loop honours: an authored landmark's
@@ -3168,9 +3164,7 @@ func _spawn_scenery(zi: int) -> void:
 						apos = acenter + Vector2.from_angle(angle) * distance
 						apos.x = clampf(apos.x, 90.0, max_x)
 						apos.y = clampf(apos.y, 100.0, ph - 100.0)
-						if apos.y > lane.y - 90.0 and apos.y < lane.y + 90.0:
-							continue
-						if absf(apos.x - lane.x) < 130.0:
+						if _lane_blocked(road, apos):
 							continue
 						# Members are thrown up to `group_radius` off the centre —
 						# re-roll one the centre's clearance does not cover.
@@ -3514,6 +3508,40 @@ func _art_pad_bottom(tex: Texture2D, key: String) -> int:
 	return pad
 
 
+## Ground the opaque baseline, splitting around the PAINTED arch opening
+## (`arch` = its [left, right] in layer px; zero = no arch). Visual children
+## only; the collider strip keeps its own, wider lane_gap cut.
+func _backdrop_grounding(layer: Node2D, width: float, center_x: float, arch: Vector2) -> void:
+	var contact := Node2D.new()
+	contact.name = "BackdropGrounding"
+	contact.z_index = -1
+	layer.add_child(contact)
+	var left := center_x - width * 0.5
+	var right := center_x + width * 0.5
+	var spans: Array[Vector2] = [Vector2(left, right)]
+	if arch.y > arch.x:
+		spans = [Vector2(left, minf(right, arch.x)), Vector2(maxf(left, arch.y), right)]
+	for span in spans:
+		if span.y <= span.x:
+			continue
+		var shadow := Sprite2D.new()
+		shadow.name = "ContactShadow"
+		shadow.texture = Art.tex("softshadow")
+		shadow.centered = false
+		shadow.position = Vector2(span.x, Balance.BACKDROP_BASE_Y + Balance.BACKDROP_FOUNDATION_HEIGHT)
+		shadow.scale = Vector2(span.y - span.x, Balance.BACKDROP_SHADOW_HEIGHT) / shadow.texture.get_size()
+		shadow.modulate.a = Balance.BACKDROP_SHADOW_ALPHA
+		contact.add_child(shadow)
+		var base := Sprite2D.new()
+		base.name = "Foundation"
+		base.texture = Art.tex("white")
+		base.centered = false
+		base.position = Vector2(span.x, Balance.BACKDROP_BASE_Y)
+		base.scale = Vector2(span.y - span.x, Balance.BACKDROP_FOUNDATION_HEIGHT) / base.texture.get_size()
+		base.modulate = Balance.BACKDROP_FOUNDATION_COLOR
+		contact.add_child(base)
+
+
 func _add_backdrop(name: String, pos: Vector2, target_w: float) -> Node2D:
 	var def: Dictionary = Terrains.STRUCTURES.get(name, {})
 	var layer := Node2D.new()
@@ -3523,13 +3551,17 @@ func _add_backdrop(name: String, pos: Vector2, target_w: float) -> Node2D:
 		String(def.get("sprite", name)), target_w, false)
 	var height: float = float(visual.get_meta("hpx"))
 	visual.position = Vector2(
-		float(def.get("visual_x", 0.0)), -height * 0.5 + 12.0)
+		float(def.get("visual_x", 0.0)), -height * 0.5 + Balance.BACKDROP_BASE_Y)
 	var bprobe: Texture2D = Art.tex(String(def.get("sprite", name)))
 	if bprobe != null:
 		visual.position.y += float(_art_pad_bottom(bprobe, String(def.get("sprite", name)))) \
 			* (height / maxf(1.0, float(bprobe.get_height())))
 	visual.set_meta("occlusion_sort_y", pos.y)
 	visual.add_to_group("structure_occluders")
+	# Def px -> rendered px (the art shrinks with room_scale).
+	var bscale: float = float(visual.get_meta("wpx")) / maxf(1.0, float(def.get("w", target_w)))
+	_backdrop_grounding(layer, float(visual.get_meta("wpx")), visual.position.x,
+		(def.get("arch_span", Vector2.ZERO) as Vector2) * bscale + Vector2.ONE * visual.position.x)
 	layer.add_child(visual)
 	# The silhouette's authored base strip (owner report 2026-07-25): the
 	# room walls were supposed to own this edge but don't reach it — without
@@ -3542,7 +3574,6 @@ func _add_backdrop(name: String, pos: Vector2, target_w: float) -> Node2D:
 	# door x) is cut out of every rect it crosses. Unscaled on purpose: the
 	# door lane and the hero are fixed-size while the arcade shrinks with
 	# room_scale, so a scaled gap closes below the lane in a 0.72 room.
-	var bscale: float = float(visual.get_meta("wpx")) / maxf(1.0, float(def.get("w", target_w)))
 	var lane_gap: float = float(def.get("lane_gap", 0.0))
 	var bdef: Array = def.get("colliders", [])
 	if not bdef.is_empty():
@@ -4689,11 +4720,10 @@ func apply_terrain(zi: int, terrain_id: String) -> void:
 		return  # unbuilt rooms pick the new terrain up at build time
 	var terrain := Terrains.get_terrain(terrain_id)
 	if is_instance_valid(zone_grounds.get(zi)):
-		zone_grounds[zi].texture = Art.ground(terrain["ground"], terrain["path"], TILES_W, TILES_H,
-			zi * 1000 + 7, rooms[zi]["exits"].keys())
+		preload("res://scripts/room_floor.gd").repaint_ground(self, zone_grounds[zi], zi, terrain)
 	_apply_ground_field(zi, terrain)
-	_mark_roads(zi)
-	_decide_river(zi)   # river FIRST so hazards + scenery avoid the water
+	_decide_river(zi)   # river FIRST so the road, hazards + scenery respect the water
+	_mark_roads(zi)     # (the road holds its straight lane over the bridge)
 	_spawn_patches(zi)  # hazards BEFORE scenery so props/critters reserve off them
 	_spawn_scenery(zi)  # tombstones, snowy pines, crystals...
 	# Retexture the room's walls to this terrain's tile (colliders unchanged,
@@ -4732,85 +4762,235 @@ func apply_terrain(zi: int, terrain_id: String) -> void:
 ## leaves the road transparent, so this band is the ONLY road it gets: a
 ## faint worn tone for same-kind paths, a path-colored track for a
 ## contrasting one (e.g. a dirt walk over a grass field).
-## Geometry mirrors Art.ground's arm rects (16px ground space at 3x).
+## Geometry + curve: road_layout() (Art.ground's arm rects, seeded bends).
 func _mark_roads(zi: int) -> void:
 	for s in zone_road_marks.get(zi, []):
 		if is_instance_valid(s):
 			s.queue_free()
 	zone_road_marks[zi] = []
 	var terrain := Terrains.get_terrain(terrain_by_zone[zi])
+	var worn := _road_wear(terrain)
+	if worn.a <= 0.0:
+		return  # no band for this terrain (see _road_wear)
 	var gk := String(terrain["ground"])
 	var pk := String(terrain["path"])
-	if not Art.GROUND.has(gk):
-		return
-	var has_field: bool = Art.has_ground_field(gk)
-	var worn: Color
-	if pk == gk:
-		# Worn tone: dark floors polish LIGHTER underfoot, light floors tread
-		# DARKER — a whisper (presentation constants, not tuning). A touch
-		# stronger than the old flat band: the feathered edge spends part of it.
-		var base_c: Color = Art.GROUND[gk][0]
-		var lum: float = 0.2126 * base_c.r + 0.7152 * base_c.g + 0.0722 * base_c.b
-		worn = Color(1, 1, 1, 0.085) if lum < 0.45 else Color(0, 0, 0, 0.12)
-	elif has_field:
-		# Contrasting path over a crisp field: ground() baked no dirt road, so
-		# lay the path color as a worn track so the walkway still reads.
-		var pc: Color = Art.GROUND.get(pk, Art.GROUND[gk])[0]
-		worn = Color(pc.r, pc.g, pc.b, 0.72)
-		if bool(terrain.get("bright", false)):
-			# A BRIGHT floor (the capital's holystone plaza) under a dark stone
-			# path at 0.72 read as one huge shadow wedge across the square once
-			# the edges were feathered (rig tour 2026-08-18) — the walkway is a
-			# tone there, not a shadow.
-			worn.a = 0.30
-	else:
-		return  # procedural kind, contrasting path: the baked road already reads
-	# Art.ground's arm rects, scaled to world px (16px ground tile * 3 = TILE).
 	# gameplay-polish 2026-08-18: the arms run THROUGH the centre (no separate
 	# plaza square) and are drawn by ONE shader quad (shaders/road_band) as a
 	# union with rounded, feathered, noise-wobbled edges — the old per-arm white
 	# sprites were hard-edged tint rectangles, the single loudest "beta" tell in
 	# the trailer footage. One quad also means the arms never double up.
-	var path_top := float((TILES_H / 2 - 1) * TILE - 24)
-	var band := 3.0 * TILE
-	var vleft := float(ROOM_W / 2 - 72)
-	var arms: Array = []
-	var exits: Array = rooms[zi]["exits"].keys()
-	if "W" in exits:
-		arms.append(Rect2(0, path_top, vleft + band, band))
-	if "E" in exits:
-		arms.append(Rect2(vleft, path_top, ROOM_W - vleft, band))
-	if "N" in exits:  # vertical arms stop at the painted top/bottom wall row
-		arms.append(Rect2(vleft, TILE, band, path_top - TILE + band))
-	if "S" in exits:
-		arms.append(Rect2(vleft, path_top, band, ROOM_H - path_top - TILE))
-	if arms.is_empty():
-		arms.append(Rect2(vleft, path_top, band, band))  # a sealed room keeps its plaza
-	var origin: Vector2 = rooms[zi]["origin"]
 	var s := Sprite2D.new()
 	s.texture = Art.tex("white")
 	s.centered = false
-	s.position = origin
+	s.position = rooms[zi]["origin"]
 	s.scale = Vector2(ROOM_W, ROOM_H) / 8.0  # white tex is 8x8 -> one room-sized quad
 	s.modulate = worn                          # strength rides modulate.a
 	s.z_index = -10  # same layer as the ground, added after -> on top
 	var mat := ShaderMaterial.new()
 	mat.shader = _road_shader()
-	mat.set_shader_parameter("arm_count", arms.size())
-	var packed := PackedVector4Array()
-	for i in 6:
-		if i < arms.size():
-			var r: Rect2 = arms[i]
-			packed.append(Vector4(r.position.x, r.position.y, r.size.x, r.size.y))
-		else:
-			packed.append(Vector4.ZERO)
-	mat.set_shader_parameter("arms", packed)
-	mat.set_shader_parameter("room_size", Vector2(ROOM_W, ROOM_H))
+	road_uniforms(mat, road_layout(zi))
+	if String(terrain_by_zone[zi]).begins_with("capital_") and (gk == "holystone" or pk == "holystone"):
+		mat.set_shader_parameter("stone_edge_px", Balance.ROAD_STONE_EDGE_PX)
+		mat.set_shader_parameter("stone_edge_darken", Balance.ROAD_STONE_EDGE_DARKEN)
 	mat.set_shader_parameter("path_color", Color(worn.r, worn.g, worn.b))
 	mat.set_shader_parameter("noise_tex", Art.tex("noise"))
 	s.material = mat
 	world.add_child(s)
 	zone_road_marks[zi].append(s)
+
+
+## The worn band's colour for a terrain, strength in alpha (0 = no band).
+static func _road_wear(terrain: Dictionary) -> Color:
+	var gk := String(terrain["ground"])
+	var pk := String(terrain["path"])
+	if not Art.GROUND.has(gk):
+		return Color(0, 0, 0, 0)
+	if pk == gk:
+		# White polish reads as smoke over basalt. Dark ground only darkens.
+		var base_c: Color = Art.GROUND[gk][0]
+		var lum: float = 0.2126 * base_c.r + 0.7152 * base_c.g + 0.0722 * base_c.b
+		return Balance.ROAD_DARK_WEAR if lum < Balance.ROAD_DARK_LUMA else (
+			Balance.ROAD_MID_WEAR if lum < Balance.ROAD_LIGHT_LUMA else Balance.ROAD_LIGHT_WEAR)
+	if not Art.has_ground_field(gk):
+		return Color(0, 0, 0, 0)  # procedural kind, contrasting path: the baked road reads
+	# Contrasting path over a crisp field: ground() baked no dirt road, so
+	# lay the path color as a worn track so the walkway still reads.
+	var pc: Color = Art.GROUND.get(pk, Art.GROUND[gk])[0]
+	var worn := Color(pc.r, pc.g, pc.b, Balance.ROAD_PATH_ALPHA)
+	if bool(terrain.get("bright", false)):
+		# A BRIGHT floor (the capital's holystone plaza) under a dark stone
+		# path at 0.72 read as one huge shadow wedge across the square once
+		# the edges were feathered (rig tour 2026-08-18) — the walkway is a
+		# tone there, not a shadow.
+		worn.a = Balance.ROAD_BRIGHT_PATH_ALPHA
+	return worn
+
+
+const ROAD_PIN_SLOTS := 4   # road_band.gdshader's pins[] size
+
+## The worn road in ROOM-local px: Art.ground's arm rects (16px ground tile
+## * 3 = TILE), centred on the door lanes, plus the seeded curve the band
+## shader bends them along. The one source for the shader (_mark_roads) and
+## for scenery clearance (_lane_blocked), so the painted road and the ground
+## kept clear of props always agree. Seeded per chapter + room: identical on
+## every rebuild and every peer, and it never advances gameplay RNG.
+## Needs rivers[zi] decided first: a crossing holds the road straight.
+func road_layout(zi: int) -> Dictionary:
+	var band := Balance.ROAD_WIDTH_TILES * TILE
+	var lane := ROOM_CENTER   # the door lanes are the cell's centre lines
+	var near := lane - Vector2(band, band) * 0.5
+	var far := lane + Vector2(band, band) * 0.5
+	var open := float(maxi(ROOM_W, ROOM_H))
+	var arms: Array = []
+	var phases := PackedFloat32Array()
+	# How far the laid-stone rim runs on past each end (start, end): doorway
+	# ends only, so the rim never draws a bar across a doorway.
+	var doors := PackedVector2Array()
+	var exits: Array = rooms[zi]["exits"].keys()
+	if "W" in exits:
+		arms.append(Rect2(0, near.y, far.x, band))
+		phases.append(0.0)
+		doors.append(Vector2(open, 0.0))
+	if "E" in exits:
+		arms.append(Rect2(near.x, near.y, ROOM_W - near.x, band))
+		phases.append(Balance.ROAD_ARM_PHASE)
+		doors.append(Vector2(0.0, open))
+	if "N" in exits:  # vertical arms stop at the painted top/bottom wall row
+		arms.append(Rect2(near.x, TILE, band, far.y - TILE))
+		phases.append(2.0 * Balance.ROAD_ARM_PHASE)
+		doors.append(Vector2(open, 0.0))
+	if "S" in exits:
+		arms.append(Rect2(near.x, near.y, band, ROOM_H - TILE - near.y))
+		phases.append(3.0 * Balance.ROAD_ARM_PHASE)
+		doors.append(Vector2(0.0, open))
+	if arms.is_empty():
+		arms.append(Rect2(near, Vector2(band, band)))  # a sealed room keeps its plaza
+		phases.append(0.0)
+		doors.append(Vector2.ZERO)
+	var origin: Vector2 = rooms[zi]["origin"]
+	var pr := play_rect(zi)
+	# Real crossings hold the straight lane. A pin = (0 east-west arms /
+	# 1 north-south arms, held span start, end, unused) along the arm's axis.
+	var pins: Array = []
+	if rivers.has(zi):
+		# The bridge is built on the straight lane (_spawn_scenery).
+		var water: Rect2 = rivers[zi]["rect"]
+		var lo := water.position.x - origin.x - Balance.ROAD_CROSSING_PAD_PX
+		var hi := water.end.x - origin.x + Balance.ROAD_CROSSING_PAD_PX
+		pins.append(Vector4(0.0, lo, hi, 0.0))
+		# A north-south arm whose swing could reach the channel stays straight.
+		var reach := Balance.ROAD_MEANDER_PX + band * 0.5 * (1.0 + Balance.ROAD_WIDTH_VARIATION)
+		if lo < lane.x + reach and hi > lane.x - reach:
+			pins.append(Vector4(1.0, -open, 2.0 * open, 0.0))
+	for backdrop in zones[zi].get("backdrops", []):
+		# An arched backdrop frames the north road on the straight lane, and
+		# its collider strip is cut there (lane_gap): straight from the north
+		# door, through the arch, past its contact shadow.
+		var bdef: Dictionary = Terrains.STRUCTURES.get(String(backdrop.get("name", "")), {})
+		if float(bdef.get("lane_gap", 0.0)) <= 0.0:
+			continue
+		var base_y := room_pos(zi, float(backdrop.get("x", ROOM_CENTER.x)),
+			float(backdrop.get("y", ROOM_CENTER.y))).y - origin.y
+		pins.append(Vector4(1.0, -open, base_y + Balance.BACKDROP_BASE_Y
+			+ Balance.BACKDROP_FOUNDATION_HEIGHT + Balance.BACKDROP_SHADOW_HEIGHT, 0.0))
+	if pins.size() > ROAD_PIN_SLOTS:
+		pins.resize(ROAD_PIN_SLOTS)
+	var road_rng := RandomNumberGenerator.new()
+	road_rng.seed = (chapter_id + ":" + str(zi)).hash()
+	var curved := not exits.is_empty() \
+		and _road_wear(Terrains.get_terrain(terrain_by_zone[zi])).a > 0.0
+	return {"arms": arms, "phases": phases, "doors": doors, "pins": pins,
+		"seed": road_rng.randf() * TAU,
+		"meander": Balance.ROAD_MEANDER_PX if curved else 0.0,
+		"bounds": Vector4(pr.position.x - origin.x, pr.position.y - origin.y,
+			pr.end.x - origin.x, pr.end.y - origin.y),
+		"lane": lane, "band": band, "inset": pr.position - origin}
+
+
+## Push a road_layout() into a road_band material.
+static func road_uniforms(mat: ShaderMaterial, road: Dictionary) -> void:
+	var arms: Array = road["arms"]
+	var packed := PackedVector4Array()
+	for arm in arms:
+		var r: Rect2 = arm
+		packed.append(Vector4(r.position.x, r.position.y, r.size.x, r.size.y))
+	packed.resize(6)
+	var phases := PackedFloat32Array(road["phases"])
+	phases.resize(6)
+	var doors := PackedVector2Array(road["doors"])
+	doors.resize(6)
+	var pins := PackedVector4Array()
+	for pin in road["pins"]:
+		pins.append(pin)
+	pins.resize(ROAD_PIN_SLOTS)
+	mat.set_shader_parameter("arm_count", arms.size())
+	mat.set_shader_parameter("arms", packed)
+	mat.set_shader_parameter("arm_offsets", phases)
+	mat.set_shader_parameter("arm_doors", doors)
+	mat.set_shader_parameter("pin_count", mini((road["pins"] as Array).size(), ROAD_PIN_SLOTS))
+	mat.set_shader_parameter("pins", pins)
+	mat.set_shader_parameter("room_seed", float(road["seed"]))
+	mat.set_shader_parameter("meander_px", float(road["meander"]))
+	mat.set_shader_parameter("meander_cycles", Balance.ROAD_MEANDER_CYCLES)
+	mat.set_shader_parameter("width_variation", Balance.ROAD_WIDTH_VARIATION)
+	mat.set_shader_parameter("door_settle_px", Balance.ROAD_DOOR_SETTLE_PX)
+	mat.set_shader_parameter("pin_settle_px", Balance.ROAD_PIN_SETTLE_PX)
+	mat.set_shader_parameter("play_bounds", road["bounds"])
+	mat.set_shader_parameter("room_size", Vector2(ROOM_W, ROOM_H))
+
+
+## Centreline offset (x: px across the arm, off the lane) and width scale (y)
+## of arm `arm` at `along` room-local px down its long axis. MIRRORS
+## road_band.gdshader's fragment(): change the two together (the world-read
+## render check compares the drawn road against this).
+static func road_curve(road: Dictionary, arm: int, along: float) -> Vector2:
+	var a: Rect2 = road["arms"][arm]
+	var horizontal := a.size.x > a.size.y
+	var start := a.position.x if horizontal else a.position.y
+	var span := a.size.x if horizontal else a.size.y
+	var t := clampf((along - start) / span, 0.0, 1.0)
+	var bounds: Vector4 = road["bounds"]
+	var door_start := bounds.x if horizontal else bounds.y
+	var door_end := bounds.z if horizontal else bounds.w
+	var envelope := sin(t * PI) * smoothstep(0.0, Balance.ROAD_DOOR_SETTLE_PX,
+		minf(along - door_start, door_end - along))
+	var axis := 0.0 if horizontal else 1.0
+	for pin in road["pins"]:
+		var p: Vector4 = pin
+		if absf(p.x - axis) < 0.5:
+			envelope *= smoothstep(0.0, Balance.ROAD_PIN_SETTLE_PX, maxf(p.y - along, along - p.z))
+	var phase: float = float(road["seed"]) + float(road["phases"][arm])
+	var wave := sin(t * TAU * Balance.ROAD_MEANDER_CYCLES + phase)
+	return Vector2(float(road["meander"]) * envelope * wave,
+		1.0 + Balance.ROAD_WIDTH_VARIATION * envelope * cos(t * TAU + phase))
+
+
+## A colliding prop may not stand within ROAD_PROP_CLEAR of the straight door
+## lanes, nor of the painted road's curved centreline (the reach widened with
+## the band). `local` is play-rect-local, like _spawn_scenery's scatter points.
+static func _lane_blocked(road: Dictionary, local: Vector2) -> bool:
+	var p: Vector2 = local + (road["inset"] as Vector2)
+	var lane: Vector2 = road["lane"]
+	var clear := Balance.ROAD_PROP_CLEAR
+	if absf(p.y - lane.y) < clear.y or absf(p.x - lane.x) < clear.x:
+		return true   # the straight road / door lanes stay open
+	if float(road["meander"]) <= 0.0:
+		return false
+	var arms: Array = road["arms"]
+	var half: float = float(road["band"]) * 0.5
+	for i in arms.size():
+		var a: Rect2 = arms[i]
+		var horizontal := a.size.x > a.size.y
+		var along := p.x if horizontal else p.y
+		if along < (a.position.x if horizontal else a.position.y) \
+				or along > (a.end.x if horizontal else a.end.y):
+			continue
+		var curve := road_curve(road, i, along)
+		var across := p.y - lane.y if horizontal else p.x - lane.x
+		var reach := (clear.y if horizontal else clear.x) + half * (curve.y - 1.0)
+		if absf(across - curve.x) < reach:
+			return true
+	return false
 
 
 static var _road_shader_res: Shader = null

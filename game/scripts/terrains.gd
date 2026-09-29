@@ -145,7 +145,7 @@ const DATA := {
 		"patches": [], "event": "", "ecology": ["marsh_islet"],
 		"river": {"chance": 0.45, "color": Color(0.10, 0.20, 0.19, 0.82)}},
 	"keep": {"name": "Vargoth's Keep", "ground": "stone", "path": "stone",
-		"tint": Color(0.8, 0.78, 0.88), "ambient": "embers", "music": "keep",
+		"tint": Color(0.86, 0.82, 0.78), "ambient": "embers", "music": "keep",
 		"obstacles": ["ruin_pillar", "ruin_pillar", "rock", "rock2", "boulder", "rock3", "boulder2"], "decor": ["crack", "pebble", "rubble"], "accents": ["bones", "keep_brazier", "keep_arch", "castle_statue"], "count": 10,
 		"patches": [], "event": "", "ecology": ["keep_courtyard"]},
 	# ------------------------------------------------- new terrains ---
@@ -229,7 +229,7 @@ const DATA := {
 		"patches": [], "event": "", "bright": true},
 	"capital_wayfinder": {"name": "Crownfall Wayfinder Ward",
 		"ground": "stone", "path": "holystone",
-		"tint": Color(0.90, 0.92, 1.0), "ambient": "embers", "music": "keep",
+		"tint": Color(0.98, 0.94, 0.90), "ambient": "embers", "music": "keep",
 		"obstacles": [], "decor": [], "accents": [], "count": 0,
 		"patches": [], "event": ""},
 	"capital_wildfang": {"name": "Crownfall Wildfang Enclave",
@@ -239,7 +239,7 @@ const DATA := {
 		"patches": [], "event": "", "bright": true},
 	"capital_choir": {"name": "Crownfall Hollow Choir",
 		"ground": "gravedirt", "path": "stone",
-		"tint": Color(0.90, 0.90, 1.0), "ambient": "mist", "music": "graveyard",
+		"tint": Color(0.96, 0.94, 0.90), "ambient": "mist", "music": "graveyard",
 		"obstacles": [], "decor": [], "accents": [], "count": 0,
 		"patches": [], "event": ""},
 	"capital_accord": {"name": "Crownfall Accord Ward",
@@ -254,7 +254,7 @@ const DATA := {
 		"patches": [], "event": ""},
 	"capital_approach": {"name": "Crownfall Emberward",
 		"ground": "stone", "path": "holystone",
-		"tint": Color(0.94, 0.95, 1.0), "ambient": "embers", "music": "keep",
+		"tint": Color(1.0, 0.96, 0.93), "ambient": "embers", "music": "keep",
 		"obstacles": [], "decor": [], "accents": [], "count": 0,
 		"patches": [], "event": "", "structures": ["keep_courtyard"]},
 	# ---- promoted unassigned biomes (2026-07-27 environment polish) ----
@@ -1199,8 +1199,11 @@ const STRUCTURES := {
 	# _add_backdrop) = the 144-px door lane + the hero's 26-px body + 10 slack.
 	# Without it the strip ran straight across the arch and every arcade
 	# room's north door was sealed off from the room (owner report 2026-08-17).
+	# "arch_span" is the PAINTED opening at the art's base (def px from the art
+	# centre, scaled with the art): the foundation band and contact shadow stop
+	# there, so the piers either side of the arch stay grounded.
 	"capital_city_arcade": {"sprite": "capital_city_arcade", "w": 1653.75,
-		"lane_gap": 180.0,
+		"lane_gap": 180.0, "arch_span": Vector2(-42.5, 50.0),
 		"colliders": [{"shape": "rect", "size": Vector2(1680, 26), "off": Vector2(0, -8)}]},
 	# Collider-vs-art rule (owner 2026-07-25, the fangmoot "invisible wall"):
 	# a capital collider's SOUTH edge must sit at the art's lowest opaque row

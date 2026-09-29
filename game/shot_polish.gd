@@ -4,7 +4,11 @@ extends ShotRig
 ## contact shadows, light pools, hit numbers / HP bars / reticle, HUD text —
 ## in the rooms the trailer footage was shot in, at the trailer zoom (1.4) and
 ## native (1.0). Never touches shots/cine (own dir: user://shots/polish).
-##   shot.bat polish [--rooms=2,17,20] [--zoom=1.4] [--class=warrior] [--hud] [--timeout=180]
+##   shot.bat polish [--rooms=2,17,20] [--zoom=1.4] [--class=warrior] [--hud] [--world-read] [--timeout=180]
+## --world-read: first runs test_world_read (road curve/crossings/prop
+## clearance, stone rim, fortress palette, arcade grounding) plus its RENDER
+## check of the real road shader against road_curve(); fails the rig on any
+## miss. Then the usual room frames, and the capital frames at the end.
 ## Per room: "<room>_room" (hero mid-room with a wolf pack, three hits landed so
 ## numbers/bars/flash are live), "<room>_wall" (hero at the north wall: face,
 ## shadow, road arm, door torches). --hud adds a HUD-on shot per room.
@@ -58,6 +62,14 @@ func _ready() -> void:
 			print("ILLUMINATION FAIL: " + error)
 		finish(0 if error == "" else 1)
 		return
+	if flag("world-read"):
+		var error: String = preload("res://scripts/tests/test_world_read.gd").run(self)
+		if error == "":
+			error = await preload("res://scripts/tests/test_world_read.gd").rendered(self)
+		if error != "":
+			push_error(error)
+			finish(1)
+			return
 	if arg("menu", "") != "":
 		# --menu=stats|bag|class: one shot of a menu screen (review pack, P7.E/F/G)
 		game.hud.visible = true
@@ -93,37 +105,7 @@ func _ready() -> void:
 		finish()
 		return
 	if flag("capital"):
-		# The Wayfinder Sanctum's endgame gates: SEALED (fresh hero) vs OPEN
-		# (chapter 7 cleared) — the owner's locked-state ruling made visible.
-		game.enter_capital()
-		await frames(10)
-		await skip_dialogue()
-		var wf := _room_by_name("wayfinder_sanctum")
-		if wf >= 0:
-			game.fast_travel(wf)
-			await sim_wait(1.2)
-			game.player.global_position = game.room_pos(wf, 1056, 800)
-			game.camera.global_position = game.room_pos(wf, 1056, 560)
-			await sim_wait(0.4)
-			shot("capital_gates_sealed", "crucible + depths sealed (fresh hero)")
-			game.set_flag("completed_ch7")
-			game.switch_chapter("capital", true)
-			await frames(10)
-			await skip_dialogue()
-			game.fast_travel(wf)
-			await sim_wait(1.2)
-			game.player.global_position = game.room_pos(wf, 1056, 800)
-			game.camera.global_position = game.room_pos(wf, 1056, 560)
-			await sim_wait(0.4)
-			shot("capital_gates_open", "all three gates live (ch7 cleared)")
-		var em := _room_by_name("the_emberward_gate")
-		if em >= 0:
-			game.fast_travel(em)
-			await sim_wait(1.2)
-			game.player.global_position = game.room_pos(em, 1056, 820)
-			game.camera.global_position = game.room_pos(em, 1056, 600)
-			await sim_wait(0.4)
-			shot("capital_emberward_muster", "the muster point (no duplicate leave door)")
+		await _capital_shots()
 		finish()
 		return
 	if flag("review"):
@@ -194,6 +176,8 @@ func _ready() -> void:
 	game.camera.global_position = p2.global_position
 	await sim_wait(0.4)
 	shot("magma_room", "lava pools + glow")
+	if flag("world-read"):
+		await _capital_shots()
 	finish()
 
 
@@ -584,6 +568,49 @@ func _motion_beat(beat: String) -> bool:
 		return false
 	var requested := arg("beats", "")
 	return requested.is_empty() or requested.split(",").has(beat)
+
+
+## --world-read bundles road/palette regressions, rooms, magma and capital.
+func _capital_shots() -> void:
+	# The Wayfinder Sanctum's endgame gates: SEALED (fresh hero) vs OPEN
+	# (chapter 7 cleared) — the owner's locked-state ruling made visible.
+	game.enter_capital()
+	await frames(10)
+	await skip_dialogue()
+	var wf := _room_by_name("wayfinder_sanctum")
+	if wf >= 0:
+		game.fast_travel(wf)
+		await sim_wait(1.2)
+		game.player.global_position = game.room_pos(wf, 1056, 800)
+		game.camera.global_position = game.room_pos(wf, 1056, 560)
+		await sim_wait(0.4)
+		shot("capital_gates_sealed", "crucible + depths sealed (fresh hero)")
+		game.set_flag("completed_ch7")
+		game.switch_chapter("capital", true)
+		await frames(10)
+		await skip_dialogue()
+		game.fast_travel(wf)
+		await sim_wait(1.2)
+		game.player.global_position = game.room_pos(wf, 1056, 800)
+		game.camera.global_position = game.room_pos(wf, 1056, 560)
+		await sim_wait(0.4)
+		shot("capital_gates_open", "all three gates live (ch7 cleared)")
+	var em := _room_by_name("the_emberward_gate")
+	if em >= 0:
+		game.fast_travel(em)
+		await sim_wait(1.2)
+		game.player.global_position = game.room_pos(em, 1056, 820)
+		game.camera.global_position = game.room_pos(em, 1056, 600)
+		await sim_wait(0.4)
+		shot("capital_emberward_muster", "the muster point (no duplicate leave door)")
+	var plaza := _room_by_name("crown_plaza")
+	if plaza >= 0:
+		game.fast_travel(plaza)
+		await skip_dialogue()
+		game.player.global_position = game.room_pos(plaza, 1056, 600)
+		game.camera.global_position = game.room_pos(plaza, 1056, 450)
+		await sim_wait(0.8)
+		shot("capital_arcade_grounding", "arcade plinth, open arch and contact shadows")
 
 
 ## One bounded mode combines deterministic regression with the requested burst capture.

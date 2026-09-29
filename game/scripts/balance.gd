@@ -194,6 +194,38 @@ const CHAR_RENDER_SCALE := 1.7
 const WORLD_CONTRAST := 1.0
 const WORLD_SATURATION := 1.06
 const FLOOR_LAYER_MODULATE := Color(0.94, 0.94, 0.965)
+# Keep/capital stone loses the extra blue cast without regrading other biomes.
+const FORTRESS_FLOOR_MODULATE := Color(0.96, 0.95, 0.935)
+const ROAD_WIDTH_TILES := 3.0
+const ROAD_MEANDER_PX := 64.0
+const ROAD_MEANDER_CYCLES := 0.85
+const ROAD_WIDTH_VARIATION := 0.20
+const ROAD_DOOR_SETTLE_PX := 200.0
+# A road holds its straight lane where the lane is a real crossing (a river's
+# bridge, an arcade's arch): this far past the banks, then eases back into
+# its curve over ROAD_PIN_SETTLE_PX.
+const ROAD_CROSSING_PAD_PX := 30.0
+const ROAD_PIN_SETTLE_PX := 120.0
+# Colliding scenery keeps this far off the road's centreline: x = off a
+# north-south arm, y = off an east-west arm. Measured from the straight lane
+# AND from the drawn curve (widened with the band), so props never stand on
+# the painted road.
+const ROAD_PROP_CLEAR := Vector2(130.0, 90.0)
+const ROAD_ARM_PHASE := 2.4
+const ROAD_DARK_LUMA := 0.30
+const ROAD_LIGHT_LUMA := 0.45
+const ROAD_DARK_WEAR := Color(0, 0, 0, 0.045)
+const ROAD_MID_WEAR := Color(1, 1, 1, 0.085)
+const ROAD_LIGHT_WEAR := Color(0, 0, 0, 0.12)
+const ROAD_PATH_ALPHA := 0.72
+const ROAD_BRIGHT_PATH_ALPHA := 0.30
+const ROAD_STONE_EDGE_PX := 8.0
+const ROAD_STONE_EDGE_DARKEN := 0.55
+const BACKDROP_BASE_Y := 12.0
+const BACKDROP_SHADOW_HEIGHT := 50.0
+const BACKDROP_SHADOW_ALPHA := 0.50
+const BACKDROP_FOUNDATION_HEIGHT := 8.0
+const BACKDROP_FOUNDATION_COLOR := Color(0.22, 0.20, 0.17, 0.72)
 # World-pixel repeat periods for high-resolution floor masters. Unlisted
 # fields retain their authored native scale; the keep's stones stay human-sized.
 const GROUND_FIELD_PERIOD := {

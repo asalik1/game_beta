@@ -1,17 +1,29 @@
 extends RefCounted
 ## Shared presentation only: callers own registration and room lifecycle.
 
+static func floor_modulate(terrain: Dictionary) -> Color:
+	if terrain == Terrains.DATA["keep"] or String(terrain.get("name", "")).begins_with("Crownfall "):
+		return Balance.FORTRESS_FLOOR_MODULATE
+	return Balance.FLOOR_LAYER_MODULATE
+
+
 static func add_ground(g: Game, parent: Node2D, zi: int, terrain: Dictionary) -> Sprite2D:
 	var ground := Sprite2D.new()
-	ground.texture = Art.ground(terrain["ground"], terrain["path"], g.TILES_W, g.TILES_H,
-		zi * 1000 + 7, g.rooms[zi]["exits"].keys())
+	repaint_ground(g, ground, zi, terrain)
 	ground.centered = false
 	ground.position = g.rooms[zi]["origin"]
 	ground.scale = Vector2(3, 3)
 	ground.z_index = -10
-	ground.modulate = Balance.FLOOR_LAYER_MODULATE
 	parent.add_child(ground)
 	return ground
+
+
+## Texture and floor modulate travel together, so a terrain repaint never
+## keeps the previous terrain's cast (keep/capital stone is warmer).
+static func repaint_ground(g: Game, ground: Sprite2D, zi: int, terrain: Dictionary) -> void:
+	ground.texture = Art.ground(terrain["ground"], terrain["path"], g.TILES_W, g.TILES_H,
+		zi * 1000 + 7, g.rooms[zi]["exits"].keys())
+	ground.modulate = floor_modulate(terrain)
 
 
 static func field(g: Game, parent: Node2D, zi: int, terrain: Dictionary, existing: Polygon2D = null) -> Polygon2D:
@@ -28,8 +40,8 @@ static func field(g: Game, parent: Node2D, zi: int, terrain: Dictionary, existin
 		poly.polygon = PackedVector2Array([
 			Vector2.ZERO, Vector2(g.ROOM_W, 0),
 			Vector2(g.ROOM_W, g.ROOM_H), Vector2(0, g.ROOM_H)])
-		poly.modulate = Balance.FLOOR_LAYER_MODULATE
 		parent.add_child(poly)
+	poly.modulate = floor_modulate(terrain)
 	poly.texture = tex
 	var gain := float(Balance.GROUND_FIELD_GAIN.get(gk, 1.0))
 	poly.self_modulate = Color(gain, gain, gain)
