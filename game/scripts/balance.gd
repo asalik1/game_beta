@@ -193,6 +193,21 @@ const CHAR_RENDER_SCALE := 1.7
 # 1.0 / 1.0 / white = the old look. Judge in-game (art-ingame-tonemap).
 const WORLD_CONTRAST := 1.0
 const WORLD_SATURATION := 1.06
+# Safe-zone screen cue: a quiet edge pulse and saturation-only world drain.
+# The rim rises over the first RISE_FRACTION of the fuse, then breathes (alpha
+# dips by PULSE_DEPTH once per PULSE_SECONDS, well under strobe rates) so the
+# pulse reads inside the 2.0-2.2 s boss fuses; the drain spans the whole fuse.
+# impact_flashes scales the pulse depth and the drain, never the rim itself.
+const DANGER_RIM_START := 0.68
+const DANGER_RIM_MASK_ALPHA := 0.85
+const DANGER_RIM_ALPHA := 0.55
+const DANGER_RIM_COLOR := Color(1.3, 0.25, 0.3)
+const DANGER_RIM_RISE_FRACTION := 0.35
+const DANGER_RIM_PULSE_SECONDS := 1.0
+const DANGER_RIM_PULSE_DEPTH := 0.30
+const DANGER_SATURATION := 0.70
+const DANGER_RELEASE_SECONDS := 0.35
+const DANGER_SAFE_COLOR := Color(0.5, 1.3, 0.7)
 const FLOOR_LAYER_MODULATE := Color(0.94, 0.94, 0.965)
 # Keep/capital stone loses the extra blue cast without regrading other biomes.
 const FORTRESS_FLOOR_MODULATE := Color(0.96, 0.95, 0.935)

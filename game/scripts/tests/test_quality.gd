@@ -41,6 +41,13 @@ static func run(t: Node) -> String:
 static func _ground_contracts(t: Node) -> String:
 	var g: Game = t.game
 	var p: Player = g.local_player
+	var danger_error := await danger_rim(t)
+	if danger_error != "":
+		return danger_error
+	# The real game's grade: every shelter ending below must hand it back.
+	g.settings["impact_flashes"] = 1.0  # run() restores settings
+	var env: Environment = g.glow_env.environment
+	var grade := env.adjustment_saturation
 	for safe in [false, true]:
 		if safe:
 			g.telegraph_safe([p.global_position + Vector2(400, 0)], 60, 0.22, 0)
@@ -49,6 +56,8 @@ static func _ground_contracts(t: Node) -> String:
 		var attack: Node2D = g._ground_attacks.back()
 		var clock: Node2D = attack.get_node("GroundTellClock")
 		await t.get_tree().create_timer(0.06).timeout
+		if safe and env.adjustment_saturation >= grade:
+			return "shelter fuse did not drain the real world saturation"
 		t.get_tree().paused = true
 		var progress: float = clock.progress
 		var rim := g.hud.danger_rect.modulate.a if safe else 0.0
@@ -61,18 +70,25 @@ static func _ground_contracts(t: Node) -> String:
 		await t.get_tree().create_timer(0.26).timeout
 		if is_instance_valid(clock):
 			return "ground warning failed to resolve after unpausing"
+		if not is_equal_approx(env.adjustment_saturation, grade):
+			return "resolved shelter fuse left the real world saturation drained"
 		g.cancel_ground_attacks()
 		await t.get_tree().process_frame
 	# Cancel both attacks before their callbacks, including a falling sprite and
 	# safe shelter. The stale callbacks must not apply their root to the hero.
 	g.telegraph(p.global_position, 90, 0.15, 0, {"root": 2.0, "fireball": true})
 	g.telegraph_safe([p.global_position + Vector2(400, 0)], 60, 0.15, 0, {"root": 2.0})
+	await t.get_tree().create_timer(0.05).timeout
 	g.cancel_ground_attacks()
-	await t.get_tree().create_timer(0.25).timeout
+	if not is_equal_approx(env.adjustment_saturation, grade):
+		return "cancelled shelter fuse left the real world saturation drained"
+	await t.get_tree().create_timer(0.2).timeout
 	if p.rooted_time > 0.0 or not g._ground_attacks.is_empty():
 		return "cancelled ground attack retained its visual or applied a status"
 	if g.hud.danger_rect.modulate.a > 0.001:
 		return "cancelled shelter left a danger wash behind"
+	if not is_equal_approx(env.adjustment_saturation, grade):
+		return "cancelled shelter fuse drained the real world saturation afterwards"
 	# Mirrors must still show the marker but cannot apply local damage/statuses.
 	var hp := p.hp
 	g.telegraph(p.global_position, 90, 0.1, 9999, {"net_visual": true, "root": 2.0})
@@ -380,3 +396,153 @@ static func _live_damage_contracts(g: Game, e: Enemy) -> String:
 	if g._damage_columns.has(e.get_instance_id()):
 		return "a dead wolf's column outlived its numbers"
 	return ""
+
+
+## Shared by the quick safe-zone section and floorfield's one-run visual bundle.
+## A disposable HUD/environment controls the starting grade and restores borrowed
+## state even when a contract fails. No campaign loot/earlier-section dependency.
+static func danger_rim(t: Node) -> String:
+	var g: Game = t.game
+	var p: Player = g.local_player
+	var saved := {"hud": g.hud, "env": g.glow_env.environment,
+		"settings": g.settings.duplicate(true), "room": g.cur_room,
+		"state": g.state, "dead": p.dead, "downed": p.downed, "ghost": p.ghost,
+		"mode": g.process_mode, "paused": t.get_tree().paused}
+	g.process_mode = Node.PROCESS_MODE_DISABLED
+	t.get_tree().paused = false
+	g.state = Game.ST_PLAYING
+	p.dead = false
+	p.downed = false
+	p.ghost = false
+	g.settings["impact_flashes"] = 1.0
+	var env := Environment.new()
+	env.adjustment_saturation = 0.93  # deliberately not WORLD_SATURATION
+	env.adjustment_contrast = 1.0
+	g.glow_env.environment = env
+	var hud := Hud.new()
+	hud.game = g
+	g.hud = hud
+	g.add_child(hud)
+	hud.set_process(false)
+	var error := await _danger_contracts(t, hud, env)
+	hud.free()  # actual tree exit mid-fuse must restore the borrowed resource
+	if not is_equal_approx(env.adjustment_saturation, 0.93):
+		error = "HUD teardown left saturation drained"
+	g.hud = saved["hud"]
+	g.glow_env.environment = saved["env"]
+	g.settings = saved["settings"]
+	g.cur_room = saved["room"]
+	g.state = saved["state"]
+	p.dead = saved["dead"]
+	p.downed = saved["downed"]
+	p.ghost = saved["ghost"]
+	g.process_mode = saved["mode"]
+	t.get_tree().paused = saved["paused"]
+	if error == "":
+		print("DANGER RIM PASS: mask, pulse, comfort, pause, end/cancel, room/death/teardown restore")
+	return error
+
+
+static func _danger_contracts(t: Node, hud: Hud, env: Environment) -> String:
+	var g: Game = t.game
+	var mask := Art._make_dangerrim()
+	# At 60% of a half-axis the old 45% square mask was already red.
+	if mask.get_pixel(256, 90).a > 0.001 or mask.get_pixel(160, 90).a > 0.001:
+		return "danger rim reaches into the readable centre"
+	if mask.get_pixel(256, 144).a <= 0.0:
+		return "danger rim is not elliptical"
+	for ending in ["caught", "sheltered", "cancel", "room", "dead", "downed", "ghost", "victory"]:
+		var interrupted: bool = ending not in ["caught", "sheltered"]
+		hud.danger_ramp(0.2 if interrupted else 0.12)
+		await t.get_tree().create_timer(0.08 if interrupted else 0.18).timeout
+		if env.adjustment_saturation >= 0.93:
+			return "safe-zone fuse did not drain saturation: " + ending
+		if not interrupted and not is_equal_approx(env.adjustment_saturation, Balance.DANGER_SATURATION):
+			return "completed safe-zone fuse missed its saturation target"
+		if hud.danger_rect.modulate.a > 0.55 or hud.danger_rect.modulate.r > 1.3:
+			return "danger rim exceeded its alpha/HDR cap"
+		if ending == "caught" or ending == "sheltered":
+			hud.danger_end(ending == "sheltered")
+		elif ending == "cancel":
+			hud.danger_cancel()
+		else:
+			# Through real frames: only Hud._process notices these, so this
+			# also proves the lifetime check is hooked into it.
+			var room := g.cur_room
+			if ending == "room": g.cur_room += 1
+			if ending == "dead": g.local_player.dead = true
+			if ending == "downed": g.local_player.downed = true
+			if ending == "ghost": g.local_player.ghost = true
+			if ending == "victory": g.state = Game.ST_VICTORY
+			hud.set_process(true)
+			# process_frame fires BEFORE the frame's _process: the second resume
+			# guarantees one whole HUD process pass ran in between.
+			await t.get_tree().process_frame
+			await t.get_tree().process_frame
+			hud.set_process(false)
+			g.cur_room = room
+			g.local_player.dead = false
+			g.local_player.downed = false
+			g.local_player.ghost = false
+			g.state = Game.ST_PLAYING
+		if not is_equal_approx(env.adjustment_saturation, 0.93):
+			return "safe-zone saturation failed to restore: " + ending
+		if interrupted:
+			# Outlast the rest of the killed ramp: a stale tween would drain again.
+			await t.get_tree().create_timer(0.2).timeout
+			if not is_equal_approx(env.adjustment_saturation, 0.93):
+				return "stale fuse drained saturation after " + ending
+	# Live pause and replacement must preserve the captured original grade.
+	hud.danger_ramp(0.2)
+	await t.get_tree().create_timer(0.08).timeout
+	t.get_tree().paused = true
+	var grade := env.adjustment_saturation
+	var alpha := hud.danger_rect.modulate.a
+	await t.get_tree().create_timer(0.18, true).timeout
+	if not is_equal_approx(env.adjustment_saturation, grade) or not is_equal_approx(hud.danger_rect.modulate.a, alpha):
+		return "danger grade/pulse advanced while paused"
+	t.get_tree().paused = false
+	hud.danger_ramp(0.12)
+	await t.get_tree().create_timer(0.18).timeout
+	hud.danger_cancel()
+	if not is_equal_approx(env.adjustment_saturation, 0.93):
+		return "replacement fuse captured the already drained grade"
+	# The pulse must read inside the shipped boss fuses (boss.gd: 2.0 and 2.2 s).
+	# Walk the tween's own clock (elapsed 0..fuse) by hand, without wall-clock
+	# races: the rim must visibly dip at least once at full comfort strength.
+	# Impact flashes calm the pulse and the drain but never hide the warning.
+	var dips := {}
+	for fuse in [2.0, 2.2]:
+		for strength in [1.0, 0.5, 0.0]:
+			g.settings["impact_flashes"] = strength
+			hud.danger_ramp(fuse)
+			hud.danger_tw.pause()
+			var high := 0.0
+			var dip := 0.0
+			var steps := ceili(fuse / 0.05)
+			for i in steps + 1:
+				hud._danger_step(minf(i * 0.05, fuse), fuse)
+				var a := hud.danger_rect.modulate.a
+				if a > Balance.DANGER_RIM_ALPHA + 0.001:
+					return "danger rim exceeded its alpha cap"
+				high = maxf(high, a)
+				dip = maxf(dip, high - a)
+			dips[strength] = dip
+			var drained := lerpf(0.93, Balance.DANGER_SATURATION, strength)
+			if not is_equal_approx(env.adjustment_saturation, drained):
+				return "danger saturation ignored impact-flash comfort (%d%%)" % roundi(strength * 100)
+			# The rim still reads near its cap by the fuse's end at every setting.
+			if high < 0.45 or hud.danger_rect.modulate.a < 0.4:
+				return "impact-flash comfort hid the safe-zone rim (%d%%, %.1f s)" % [roundi(strength * 100), fuse]
+		# A visible breath (0.1 of alpha) at full strength, none at 0%.
+		if dips[1.0] < 0.1:
+			return "danger rim pulse is not visible within a %.1f s fuse" % fuse
+		if dips[0.0] > 0.001 or not (dips[0.0] < dips[0.5] and dips[0.5] < dips[1.0]):
+			return "impact-flash comfort did not calm the danger pulse"
+	if Balance.DANGER_RIM_PULSE_SECONDS < 0.5:
+		return "danger pulse is faster than a slow breath (strobe risk)"
+	if not is_equal_approx(env.adjustment_contrast, 1.0):
+		return "danger changed HDR2D contrast"
+	g.settings["impact_flashes"] = 1.0
+	hud._danger_step(1.0, 1.0)
+	return ""  # caller frees this actively drained HUD to test teardown

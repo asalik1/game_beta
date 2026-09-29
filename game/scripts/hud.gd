@@ -3112,6 +3112,7 @@ func _connect_down_mark_placement() -> void:
 
 
 func _exit_tree() -> void:
+	danger_cancel()
 	if RenderingServer.frame_pre_draw.is_connected(_place_down_marks_clear):
 		RenderingServer.frame_pre_draw.disconnect(_place_down_marks_clear)
 
@@ -4825,19 +4826,19 @@ func death_dim(amount: float, ramp: float) -> void:
 	_overlay_tw.tween_property(overlay, "color:a", amount, ramp)
 
 
-## Inverse-telegraph dread (readability pass, 2026-07-07): while a
-## safe-zone mechanic is airborne the WHOLE arena is lethal — show it.
-## A red wash builds over the window even if the player never sees the
-## quiet circle; danger_end resolves it (soft green blink sheltered,
-## hard red slam caught). Driven by game.telegraph_safe.
+## Safe-zone dread stays at the edge; only saturation drains from the world.
+## Keep the original Environment resource/value so teardown restores even if
+## the game's environment has already been replaced. No contrast adjustment.
 var danger_rect: TextureRect = null
 var danger_tw: Tween = null
+var _danger_env: Environment = null
+var _danger_saturation := 1.0
+var _danger_room := -1
+var _danger_active := false
 
 func danger_ramp(dur: float) -> void:
+	danger_cancel()
 	if danger_rect == null:
-		# An EDGE vignette, not a flat wash: the screen's rim floods red
-		# while the center stays readable — danger you see in the corner
-		# of your eye, which is exactly where this mechanic was dying.
 		danger_rect = TextureRect.new()
 		danger_rect.texture = Art.tex("dangerrim")
 		danger_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -4846,29 +4847,72 @@ func danger_ramp(dur: float) -> void:
 		add_child(danger_rect)
 		danger_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		move_child(danger_rect, 0)  # under every HUD element
-	if danger_tw != null and danger_tw.is_valid():
-		danger_tw.kill()
-	danger_rect.modulate = Color(1.9, 0.25, 0.3, 0.0)  # HDR red rim
+	_danger_active = true
+	_danger_room = game.cur_room
+	if is_instance_valid(game.glow_env):
+		_danger_env = game.glow_env.environment
+		if _danger_env != null:
+			_danger_saturation = _danger_env.adjustment_saturation
+	danger_rect.modulate = Balance.DANGER_RIM_COLOR
+	danger_rect.modulate.a = 0.0
 	danger_tw = create_tween()
 	danger_tw.set_pause_mode(Tween.TWEEN_PAUSE_STOP)
-	danger_tw.tween_property(danger_rect, "modulate:a", 0.9, dur)
+	# One fuse clock drives both the slow sinusoid and the saturation tween.
+	# Read comfort strength each step so changing settings takes effect live.
+	danger_tw.tween_method(_danger_step.bind(dur), 0.0, dur, dur)
 
-func danger_cancel() -> void:
+
+func _danger_step(elapsed: float, dur: float) -> void:
+	var progress := clampf(elapsed / maxf(dur, 0.001), 0.0, 1.0)
+	var rise := clampf(progress / Balance.DANGER_RIM_RISE_FRACTION, 0.0, 1.0)
+	# The rim is the warning, so comfort never hides it: impact flashes scale
+	# only the breathing and the world drain (at 0% the rim holds steady, the
+	# low_hp_pulse rule).
+	var strength := clampf(float(game.settings.get("impact_flashes", 1.0)), 0.0, 1.0)
+	var dip := 0.5 * (1.0 - cos(TAU * elapsed / Balance.DANGER_RIM_PULSE_SECONDS))
+	var pulse := 1.0 - Balance.DANGER_RIM_PULSE_DEPTH * strength * dip
+	danger_rect.modulate.a = Balance.DANGER_RIM_ALPHA * rise * pulse
+	if _danger_env != null:
+		_danger_env.adjustment_saturation = lerpf(_danger_saturation, Balance.DANGER_SATURATION, progress * strength)
+
+
+func _danger_restore() -> void:
+	_danger_active = false
 	if danger_tw != null and danger_tw.is_valid():
 		danger_tw.kill()
+	if _danger_env != null:
+		_danger_env.adjustment_saturation = _danger_saturation
+		_danger_env = null
+
+
+func danger_cancel() -> void:
+	_danger_restore()
 	if is_instance_valid(danger_rect):
 		danger_rect.modulate.a = 0.0
 
 
 func danger_end(sheltered: bool) -> void:
-	if danger_rect == null:
+	_danger_restore()
+	if not is_instance_valid(danger_rect):
 		return
-	if danger_tw != null and danger_tw.is_valid():
-		danger_tw.kill()
 	if sheltered:
-		danger_rect.modulate = Color(0.5, 1.6, 0.7, minf(danger_rect.modulate.a, 0.5))
+		var alpha := danger_rect.modulate.a
+		danger_rect.modulate = Balance.DANGER_SAFE_COLOR
+		danger_rect.modulate.a = alpha
 	danger_tw = create_tween()
-	danger_tw.tween_property(danger_rect, "modulate:a", 0.0, 0.35)
+	danger_tw.set_pause_mode(Tween.TWEEN_PAUSE_STOP)
+	danger_tw.tween_property(danger_rect, "modulate:a", 0.0, Balance.DANGER_RELEASE_SECONDS)
+
+
+## The HUD runs while paused. Cancel local presentation on every interrupted
+## fuse without cancelling authoritative attacks that other players still face.
+func _tick_danger_lifetime() -> void:
+	if not _danger_active:
+		return
+	var p: Player = game.local_player
+	if game.cur_room != _danger_room or game.state != Game.ST_PLAYING \
+			or not is_instance_valid(p) or p.dead or p.downed or p.ghost:
+		danger_cancel()
 
 
 ## One-frame impact flash over the whole screen (ults, meteor strikes).
@@ -5303,6 +5347,7 @@ func cancel_conversation() -> void:
 
 
 func _process(_delta: float) -> void:
+	_tick_danger_lifetime()
 	_tick_announcements()
 	_tick_event_log()
 	# AUTO drives line advance while dialogue is up (never through a choice or an

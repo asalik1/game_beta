@@ -3031,7 +3031,7 @@ static func light(color: Color, radius_px: float, energy := 1.0) -> PointLight2D
 
 ## A WHITE edge vignette for danger rims (the ambient vignette is black,
 ## which modulate can't tint — black x red = black). White base, deeper
-## edge reach than the ambient one: modulate paints it any danger color.
+## elliptical edge band: modulate paints it any danger color.
 static func _make_dangerrim() -> Image:
 	var w := 320
 	var h := 180
@@ -3040,9 +3040,9 @@ static func _make_dangerrim() -> Image:
 		for x in w:
 			var dx := absf(x + 0.5 - w / 2.0) / (w / 2.0)
 			var dy := absf(y + 0.5 - h / 2.0) / (h / 2.0)
-			var d := maxf(dx, dy)
-			var a := clampf((d - 0.45) / 0.55, 0.0, 1.0)
-			image.set_pixel(x, y, Color(1, 1, 1, a * a * 0.85))
+			var d := Vector2(dx, dy).length()
+			var a := clampf((d - Balance.DANGER_RIM_START) / (1.0 - Balance.DANGER_RIM_START), 0.0, 1.0)
+			image.set_pixel(x, y, Color(1, 1, 1, a * a * Balance.DANGER_RIM_MASK_ALPHA))
 	return image
 
 
