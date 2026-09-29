@@ -1,0 +1,635 @@
+{
+  "before_summary": {
+    "scanned": 5350,
+    "verdicts": {
+      "clean": 4698,
+      "content": 604,
+      "HALO": 22,
+      "trace": 26
+    },
+    "protected": 1785,
+    "errors": []
+  },
+  "after_summary": {
+    "scanned": 5350,
+    "verdicts": {
+      "clean": 4704,
+      "content": 604,
+      "HALO": 16,
+      "trace": 26
+    },
+    "protected": 1785,
+    "errors": []
+  },
+  "method": "Whole corpus scanned once; pre-repair counts for the six replaced trees restored from saved original measurements. Other sprites unchanged by T57.",
+  "candidates_before": [
+    {
+      "path": "game/assets/sprites/auroch_minotaur_walk_codex_n.png",
+      "rim_partial": 46570,
+      "pale_rim": 7629,
+      "light_interior": 6593,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/camp_bonfire.png",
+      "rim_partial": 2654,
+      "pale_rim": 523,
+      "light_interior": 15,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/camp_bonfire_anim.png",
+      "rim_partial": 10717,
+      "pale_rim": 2294,
+      "light_interior": 35,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/camp_furnace.png",
+      "rim_partial": 4383,
+      "pale_rim": 649,
+      "light_interior": 154,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/camp_furnace_anim.png",
+      "rim_partial": 17532,
+      "pale_rim": 2596,
+      "light_interior": 616,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/fangmaw_anim_codex.png",
+      "rim_partial": 56244,
+      "pale_rim": 8106,
+      "light_interior": 3371,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/fx/void_contact.png",
+      "rim_partial": 4483,
+      "pale_rim": 391,
+      "light_interior": 252,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/grave_deadtree.png",
+      "rim_partial": 22625,
+      "pale_rim": 4978,
+      "light_interior": 476,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/halla_walk_codex_e.png",
+      "rim_partial": 41618,
+      "pale_rim": 8135,
+      "light_interior": 6970,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/halla_walk_codex_ne.png",
+      "rim_partial": 41618,
+      "pale_rim": 8135,
+      "light_interior": 6970,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/halla_walk_codex_se.png",
+      "rim_partial": 41618,
+      "pale_rim": 8135,
+      "light_interior": 6970,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/station_alchemy_t3.png",
+      "rim_partial": 5322,
+      "pale_rim": 757,
+      "light_interior": 140,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/station_alchemy_t3_anim.png",
+      "rim_partial": 21288,
+      "pale_rim": 2994,
+      "light_interior": 676,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_teal.png",
+      "rim_partial": 29800,
+      "pale_rim": 7165,
+      "light_interior": 2007,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_teal2.png",
+      "rim_partial": 12950,
+      "pale_rim": 2057,
+      "light_interior": 74,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_teal2_anim.png",
+      "rim_partial": 55116,
+      "pale_rim": 8087,
+      "light_interior": 293,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_teal3.png",
+      "rim_partial": 22481,
+      "pale_rim": 5784,
+      "light_interior": 1194,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_teal_anim.png",
+      "rim_partial": 125537,
+      "pale_rim": 29352,
+      "light_interior": 8376,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/void_monolith.png",
+      "rim_partial": 3013,
+      "pale_rim": 347,
+      "light_interior": 219,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/void_monolith_anim.png",
+      "rim_partial": 12052,
+      "pale_rim": 1401,
+      "light_interior": 949,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/void_obelisk.png",
+      "rim_partial": 3631,
+      "pale_rim": 334,
+      "light_interior": 33,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/void_obelisk_anim.png",
+      "rim_partial": 14524,
+      "pale_rim": 1394,
+      "light_interior": 170,
+      "verdict": "HALO",
+      "protected": false
+    }
+  ],
+  "tree_findings": [
+    {
+      "path": "game/assets/sprites/deadtree.png",
+      "rim_partial": 36714,
+      "pale_rim": 288,
+      "light_interior": 1219,
+      "verdict": "content",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/deadtree2.png",
+      "rim_partial": 0,
+      "pale_rim": 0,
+      "light_interior": 0,
+      "verdict": "clean",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/deadtree3.png",
+      "rim_partial": 0,
+      "pale_rim": 0,
+      "light_interior": 0,
+      "verdict": "clean",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/grave_deadtree.png",
+      "rim_partial": 22625,
+      "pale_rim": 4978,
+      "light_interior": 476,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_autumn.png",
+      "rim_partial": 11798,
+      "pale_rim": 8,
+      "light_interior": 65,
+      "verdict": "clean",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_autumn2.png",
+      "rim_partial": 8314,
+      "pale_rim": 46,
+      "light_interior": 247,
+      "verdict": "clean",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_autumn2_anim.png",
+      "rim_partial": 33260,
+      "pale_rim": 184,
+      "light_interior": 988,
+      "verdict": "content",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_autumn3.png",
+      "rim_partial": 33742,
+      "pale_rim": 17,
+      "light_interior": 242,
+      "verdict": "clean",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_autumn_anim.png",
+      "rim_partial": 46972,
+      "pale_rim": 32,
+      "light_interior": 259,
+      "verdict": "clean",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_gnarled.png",
+      "rim_partial": 22982,
+      "pale_rim": 247,
+      "light_interior": 1289,
+      "verdict": "content",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_gnarled2.png",
+      "rim_partial": 34458,
+      "pale_rim": 212,
+      "light_interior": 1489,
+      "verdict": "content",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_gnarled3.png",
+      "rim_partial": 30989,
+      "pale_rim": 272,
+      "light_interior": 521,
+      "verdict": "content",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_green.png",
+      "rim_partial": 6551,
+      "pale_rim": 13,
+      "light_interior": 66,
+      "verdict": "clean",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_green2.png",
+      "rim_partial": 17692,
+      "pale_rim": 11,
+      "light_interior": 3,
+      "verdict": "clean",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_green2_anim.png",
+      "rim_partial": 70665,
+      "pale_rim": 55,
+      "light_interior": 15,
+      "verdict": "clean",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_green3.png",
+      "rim_partial": 5825,
+      "pale_rim": 3,
+      "light_interior": 549,
+      "verdict": "clean",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_green3_anim.png",
+      "rim_partial": 23261,
+      "pale_rim": 15,
+      "light_interior": 2202,
+      "verdict": "clean",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_green4.png",
+      "rim_partial": 32053,
+      "pale_rim": 33,
+      "light_interior": 3,
+      "verdict": "clean",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_green4_anim.png",
+      "rim_partial": 129787,
+      "pale_rim": 134,
+      "light_interior": 11,
+      "verdict": "trace",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_green_anim.png",
+      "rim_partial": 26438,
+      "pale_rim": 52,
+      "light_interior": 256,
+      "verdict": "clean",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_snow.png",
+      "rim_partial": 9478,
+      "pale_rim": 69,
+      "light_interior": 17849,
+      "verdict": "content",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_snow2.png",
+      "rim_partial": 5724,
+      "pale_rim": 8,
+      "light_interior": 24552,
+      "verdict": "clean",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_snow2_anim.png",
+      "rim_partial": 20806,
+      "pale_rim": 14,
+      "light_interior": 97402,
+      "verdict": "clean",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_snow3.png",
+      "rim_partial": 8103,
+      "pale_rim": 8,
+      "light_interior": 34768,
+      "verdict": "clean",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_spore.png",
+      "rim_partial": 12766,
+      "pale_rim": 182,
+      "light_interior": 3680,
+      "verdict": "content",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_spore2.png",
+      "rim_partial": 15562,
+      "pale_rim": 828,
+      "light_interior": 3,
+      "verdict": "trace",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_spore2_anim.png",
+      "rim_partial": 70349,
+      "pale_rim": 3272,
+      "light_interior": 12,
+      "verdict": "trace",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_spore3.png",
+      "rim_partial": 14619,
+      "pale_rim": 276,
+      "light_interior": 11278,
+      "verdict": "content",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_spore_anim.png",
+      "rim_partial": 51631,
+      "pale_rim": 760,
+      "light_interior": 14357,
+      "verdict": "content",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_stump.png",
+      "rim_partial": 1556,
+      "pale_rim": 4,
+      "light_interior": 0,
+      "verdict": "clean",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_teal.png",
+      "rim_partial": 29800,
+      "pale_rim": 7165,
+      "light_interior": 2007,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_teal2.png",
+      "rim_partial": 12950,
+      "pale_rim": 2057,
+      "light_interior": 74,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_teal2_anim.png",
+      "rim_partial": 55116,
+      "pale_rim": 8087,
+      "light_interior": 293,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_teal3.png",
+      "rim_partial": 22481,
+      "pale_rim": 5784,
+      "light_interior": 1194,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_teal_anim.png",
+      "rim_partial": 125537,
+      "pale_rim": 29352,
+      "light_interior": 8376,
+      "verdict": "HALO",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_winter.png",
+      "rim_partial": 14671,
+      "pale_rim": 610,
+      "light_interior": 4746,
+      "verdict": "content",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_winter2.png",
+      "rim_partial": 14930,
+      "pale_rim": 613,
+      "light_interior": 21296,
+      "verdict": "content",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_winter2_anim.png",
+      "rim_partial": 59709,
+      "pale_rim": 2454,
+      "light_interior": 85158,
+      "verdict": "content",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_winter3.png",
+      "rim_partial": 14618,
+      "pale_rim": 467,
+      "light_interior": 34566,
+      "verdict": "content",
+      "protected": false
+    },
+    {
+      "path": "game/assets/sprites/tree_winter_anim.png",
+      "rim_partial": 58900,
+      "pale_rim": 2142,
+      "light_interior": 18377,
+      "verdict": "content",
+      "protected": false
+    }
+  ],
+  "repairs": [
+    {
+      "path": "game/assets/sprites/grave_deadtree.png",
+      "changed_rgb": 51609,
+      "alpha_changed": 0,
+      "opaque_changed": 0,
+      "idempotent": true,
+      "mobile_identical": true,
+      "before_sha256": "351be1f6dab406f66f7226e835c1529ce9263d159f58c58d024140c9dacf82f4",
+      "after_sha256": "177ca6e5d92dbe49a652c5fc2140868883711e7fdd8df6f33750266aaf4a3023",
+      "after": {
+        "path": "game/assets/sprites/grave_deadtree.png",
+        "rim_partial": 22625,
+        "pale_rim": 0,
+        "light_interior": 476,
+        "verdict": "clean",
+        "protected": false
+      }
+    },
+    {
+      "path": "game/assets/sprites/tree_teal.png",
+      "changed_rgb": 51962,
+      "alpha_changed": 0,
+      "opaque_changed": 0,
+      "idempotent": true,
+      "mobile_identical": true,
+      "before_sha256": "c45395ca6bede0d2da7e8451c5ae41352713ae45b3f9dacc4a41f0a790eb65e2",
+      "after_sha256": "95c54bcb8e8fab17c952d65508bb77f3fbc5261e44db2653d5c6c96ea8df83df",
+      "after": {
+        "path": "game/assets/sprites/tree_teal.png",
+        "rim_partial": 29800,
+        "pale_rim": 0,
+        "light_interior": 2007,
+        "verdict": "clean",
+        "protected": false
+      }
+    },
+    {
+      "path": "game/assets/sprites/tree_teal2.png",
+      "changed_rgb": 26961,
+      "alpha_changed": 0,
+      "opaque_changed": 0,
+      "idempotent": true,
+      "mobile_identical": true,
+      "before_sha256": "f9999147f72759b17bfa0d5b47a6f0ceab92e6a11d2382faac6c9808ace9aa32",
+      "after_sha256": "a91fd401120a551050c8716fd995e81b35ab83dc420db54c19bf58e5fb1a1730",
+      "after": {
+        "path": "game/assets/sprites/tree_teal2.png",
+        "rim_partial": 12950,
+        "pale_rim": 0,
+        "light_interior": 74,
+        "verdict": "clean",
+        "protected": false
+      }
+    },
+    {
+      "path": "game/assets/sprites/tree_teal2_anim.png",
+      "changed_rgb": 111463,
+      "alpha_changed": 0,
+      "opaque_changed": 0,
+      "idempotent": true,
+      "mobile_identical": true,
+      "before_sha256": "ceead7d39bfe02f2a7f3fbc1050f2b4cae8e11729517331a66b88bd524e03879",
+      "after_sha256": "fc6e50d557630371cb12161703b5e97569c96ed64cbaf8771bdf9b8dc46cd8f9",
+      "after": {
+        "path": "game/assets/sprites/tree_teal2_anim.png",
+        "rim_partial": 55116,
+        "pale_rim": 0,
+        "light_interior": 293,
+        "verdict": "clean",
+        "protected": false
+      }
+    },
+    {
+      "path": "game/assets/sprites/tree_teal3.png",
+      "changed_rgb": 46071,
+      "alpha_changed": 0,
+      "opaque_changed": 0,
+      "idempotent": true,
+      "mobile_identical": true,
+      "before_sha256": "cb08cfbe9554ce5f443ed129af274ba37bcd3f352f58ec014046a4a5e5fe1542",
+      "after_sha256": "c3126be87cdeea89b6bb894832f43a4e53b14d5efe329e16f4df14467cb64cae",
+      "after": {
+        "path": "game/assets/sprites/tree_teal3.png",
+        "rim_partial": 22481,
+        "pale_rim": 0,
+        "light_interior": 1194,
+        "verdict": "clean",
+        "protected": false
+      }
+    },
+    {
+      "path": "game/assets/sprites/tree_teal_anim.png",
+      "changed_rgb": 211133,
+      "alpha_changed": 0,
+      "opaque_changed": 0,
+      "idempotent": true,
+      "mobile_identical": true,
+      "before_sha256": "170435c36f43555cb6885cb4cbc5cd1923551bf85434dd736b204fa93162bfc8",
+      "after_sha256": "f058a471ad1b7523539490f6e19255f164f05bccf4dd029c6ac17e78550bb903",
+      "after": {
+        "path": "game/assets/sprites/tree_teal_anim.png",
+        "rim_partial": 125537,
+        "pale_rim": 0,
+        "light_interior": 8376,
+        "verdict": "clean",
+        "protected": false
+      }
+    }
+  ]
+}
