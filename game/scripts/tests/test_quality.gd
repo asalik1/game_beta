@@ -2,6 +2,9 @@ extends RefCounted
 
 
 static func run(t: Node) -> String:
+	var weather_error: String = preload("res://scripts/tests/test_weather_depth.gd").run(t.game)
+	if weather_error != "":
+		return weather_error
 	var rim_error := enemy_rims(t)
 	if rim_error != "":
 		return rim_error

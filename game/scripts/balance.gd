@@ -548,6 +548,27 @@ const FOOT_DUST_A := 0.55
 #    get it. 0 = off.
 const GROUND_FOG_A := 0.14
 const GROUND_FOG_AMBIENTS := ["mist"]
+
+# Weather depth: quality scales the EXISTING terrain budget, never adds to it.
+# settings.weather_quality: low / medium / high, or "auto" (default): medium in
+# touch mode, high on desktop.
+const WEATHER_QUALITY_BUDGET := {"low": 0.5, "medium": 0.75, "high": 1.0}
+const WEATHER_NEAR_SHARE := 0.25
+const WEATHER_DISTANT_Z := -5 # above floor/wear (-8), below actors (0)
+const WEATHER_NEAR_Z := 12
+const WEATHER_DISTANT_SCALE := 0.65
+const WEATHER_NEAR_SCALE := 1.25
+const WEATHER_DISTANT_SPEED := 0.65
+const WEATHER_NEAR_SPEED := 1.2
+const WEATHER_DISTANT_ALPHA := 0.8
+const WEATHER_NEAR_ALPHA := 0.45 # always restrained, including during combat
+const WEATHER_FADE := 0.12 # fraction of a particle's life spent fading in and out
+const WEATHER_COVERAGE_PAD := Vector2(120, 100)
+const WEATHER_LIFETIME := 9.0
+const WEATHER_RAIN_LIFETIME := 1.5
+const WEATHER_PREPROCESS := 6.0
+const WEATHER_SPREAD := 30.0
+
 #  NPC_BREATH_PX   — single-frame roster NPCs rise/settle this many px per
 #    breath (random rest between breaths). 0 = frozen villagers.
 const NPC_BREATH_PX := 1.0

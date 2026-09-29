@@ -375,7 +375,8 @@ var sound_groups: Dictionary = {}       # semantic key -> sorted stream keys
 var sound_group_last: Dictionary = {}   # semantic key -> last chosen index
 var sfx_rng := RandomNumberGenerator.new()
 var loot_rng := RandomNumberGenerator.new()
-var ambient_fx: CPUParticles2D = null
+var ambient_fx: CPUParticles2D = null # near layer (or the original mist wisps)
+var ambient_fx_distant: CPUParticles2D = null
 var ground_fog: Sprite2D = null        # the misty terrains' floor-fog quad (atmosphere pass 2026-08-19)
 var npc_emote_t := 4.0
 # Battle seals: while the current room is HOT (an aggroed pack or a live
@@ -437,7 +438,7 @@ var settings := {"music": 1.0, "sfx": 1.0, "fullscreen": false, "lang": "en", "t
 	"joystick_locked": false, "joystick_sensitivity": 1.0, "touch_layout": {},
 	"camera_shake": 1.0, "camera_lead": 1.0, "impact_flashes": 1.0,
 	"hit_stop": true, "damage_bearings": true, "combat_foliage": true, "combat_framing": true,
-	"hud_clearance": true,
+	"hud_clearance": true, "weather_quality": "auto",
 	"pad_deadzone": Balance.PAD_DEADZONE, "pad_cursor_speed": Balance.PAD_CURSOR_DEFAULT, "pad_labels": "auto"}
 	# user://settings.json ("touch_layout": id -> [x,y] custom offset; "joystick_pos": [x,y] custom home)
 var music_gain_db := -16.0            # base+tune of the current track

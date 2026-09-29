@@ -4611,51 +4611,127 @@ func _ground_fog(zi: int, terrain_id: String) -> void:
 	ground_fog = s
 
 
-## Weather particles driven by the terrain's ambient preset.
+## Weather particles driven by the terrain's ambient preset. Mist keeps its
+## original wisps and floor-fog recipe; all other presets share two depths.
 func _setup_ambient_fx(terrain_id: String) -> void:
-	if is_instance_valid(ambient_fx):
-		ambient_fx.queue_free()
+	for emitter in [ambient_fx, ambient_fx_distant]:
+		if is_instance_valid(emitter):
+			# Stop drawing/simulating immediately, even if rebuilt twice this frame.
+			emitter.emitting = false
+			remove_child(emitter)
+			emitter.queue_free()
+	ambient_fx = null
+	ambient_fx_distant = null
 	_ground_fog(cur_room, terrain_id)
-	var spec: Dictionary = Terrains.AMBIENTS.get(
-		Terrains.get_terrain(terrain_id).get("ambient", "leaves_green"), {})
+	var akey := String(Terrains.get_terrain(terrain_id).get("ambient", "leaves_green"))
+	var spec: Dictionary = Terrains.AMBIENTS.get(akey, {})
 	if spec.is_empty():
-		ambient_fx = null
 		return
-	ambient_fx = CPUParticles2D.new()
-	ambient_fx.amount = spec["amount"]
-	ambient_fx.lifetime = 9.0
-	ambient_fx.preprocess = 6.0
-	ambient_fx.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 	ambient_above = spec["above"]
-	ambient_fx.emission_rect_extents = Vector2(760, 60) if ambient_above else Vector2(760, 340)
-	ambient_fx.spread = 30.0
-	ambient_fx.z_index = 12
-	ambient_fx.color = spec["color"]
-	ambient_fx.direction = spec["dir"]
-	ambient_fx.gravity = spec["gravity"]
-	ambient_fx.initial_velocity_min = spec["vel"][0]
-	ambient_fx.initial_velocity_max = spec["vel"][1]
+	if akey == "mist":
+		ambient_fx = _ambient_emitter(spec, akey, int(spec["amount"]))
+		add_child(ambient_fx)
+	else:
+		var quality := String(settings.get("weather_quality", "auto"))
+		if quality == "auto":
+			quality = "medium" if touch_mode else "high"
+		var budget := mini(int(spec["amount"]), maxi(2, int(floor(float(spec["amount"])
+			* float(Balance.WEATHER_QUALITY_BUDGET.get(quality, 1.0))))))
+		var near_count := clampi(int(round(budget * Balance.WEATHER_NEAR_SHARE)), 1, budget - 1)
+		ambient_fx = _ambient_emitter(spec, akey, near_count)
+		ambient_fx_distant = _ambient_emitter(spec, akey, budget - near_count)
+		for emitter in [ambient_fx_distant, ambient_fx]:
+			var distant: bool = emitter == ambient_fx_distant
+			var size_ratio: float = Balance.WEATHER_DISTANT_SCALE if distant else Balance.WEATHER_NEAR_SCALE
+			var speed_ratio: float = Balance.WEATHER_DISTANT_SPEED if distant else Balance.WEATHER_NEAR_SPEED
+			emitter.z_index = Balance.WEATHER_DISTANT_Z if distant else Balance.WEATHER_NEAR_Z
+			emitter.local_coords = false # moving the source never moves living particles
+			emitter.scale_amount_min *= size_ratio
+			emitter.scale_amount_max *= size_ratio
+			emitter.initial_velocity_min *= speed_ratio
+			emitter.initial_velocity_max *= speed_ratio
+			emitter.gravity *= speed_ratio
+			emitter.color.a *= Balance.WEATHER_DISTANT_ALPHA if distant else Balance.WEATHER_NEAR_ALPHA
+			emitter.color_ramp = _weather_fade_ramp() # spawns inside the view fade in, not pop
+			add_child(emitter)
+	# Position before the first particle simulation/preprocess, including rebuilds.
+	_update_ambient_fx()
+
+
+## Where the camera will rest for the hero's current spot: the target position
+## clamped into the room limits. Smoothing lags behind this after a teleport, so
+## seeding the weather at the smoothed center would land it where the glide starts.
+func _ambient_view_center() -> Vector2:
+	if not camera.is_inside_tree():
+		return player.global_position
+	var half := get_viewport_rect().size / camera.zoom * 0.5
+	var center := camera.get_target_position()
+	var lo := Vector2(camera.limit_left, camera.limit_top) + half
+	var hi := Vector2(camera.limit_right, camera.limit_bottom) - half
+	center.x = clampf(center.x, lo.x, hi.x) if lo.x <= hi.x else (lo.x + hi.x) * 0.5
+	center.y = clampf(center.y, lo.y, hi.y) if lo.y <= hi.y else (lo.y + hi.y) * 0.5
+	return center
+
+
+func _update_ambient_fx() -> void:
+	# Dedicated hosts have no local hero and never render camera weather.
+	if not is_instance_valid(ambient_fx) or not is_instance_valid(player):
+		return
+	if not is_instance_valid(ambient_fx_distant):
+		# Mist's original wisps are intentionally unchanged.
+		ambient_fx.global_position = player.global_position + Vector2(0, -380.0 if ambient_above else 0.0)
+		return
+	var center := _ambient_view_center()
+	var coverage := get_viewport_rect().size / camera.zoom * 0.5 + Balance.WEATHER_COVERAGE_PAD
+	for emitter in [ambient_fx_distant, ambient_fx]:
+		# Emit throughout the visible field: a top-only band leaves slow distant
+		# flakes absent for seconds on lateral travel. Padding covers the edges.
+		emitter.global_position = center
+		emitter.emission_rect_extents = coverage
+
+
+func _weather_fade_ramp() -> Gradient:
+	var fade := Balance.WEATHER_FADE
+	var ramp := Gradient.new()
+	ramp.offsets = PackedFloat32Array([0.0, fade, 1.0 - fade, 1.0])
+	ramp.colors = PackedColorArray([Color(1, 1, 1, 0), Color.WHITE, Color.WHITE, Color(1, 1, 1, 0)])
+	return ramp
+
+
+func _ambient_emitter(spec: Dictionary, akey: String, count: int) -> CPUParticles2D:
+	var emitter := CPUParticles2D.new()
+	emitter.amount = count
+	emitter.lifetime = Balance.WEATHER_RAIN_LIFETIME if akey == "rain" else Balance.WEATHER_LIFETIME
+	emitter.preprocess = Balance.WEATHER_PREPROCESS
+	emitter.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	emitter.emission_rect_extents = Vector2(760, 60) if ambient_above else Vector2(760, 340)
+	emitter.spread = Balance.WEATHER_SPREAD
+	emitter.z_index = Balance.WEATHER_NEAR_Z
+	emitter.color = spec["color"]
+	emitter.direction = spec["dir"]
+	emitter.gravity = spec["gravity"]
+	emitter.initial_velocity_min = spec["vel"][0]
+	emitter.initial_velocity_max = spec["vel"][1]
 	# Soft particle art (P3, 2026-08-18): the layer used to draw the engine's
 	# 1px square scaled 1.2-7x — literal squares drifting past the hero. Now
 	# leaves are spinning soft ellipses, rain is streaks, everything else a
 	# soft chip; the AMBIENTS scale numbers still mean "about that many px".
-	var akey := String(Terrains.get_terrain(terrain_id).get("ambient", "leaves_green"))
 	var chip := 6.0   # a 12px chip at scale 1/6 = the old 2px footprint, softened
 	if akey.begins_with("leaves"):
-		ambient_fx.texture = Art.tex("leaf")
+		emitter.texture = Art.tex("leaf")
 		chip = 4.0
-		ambient_fx.angle_min = -180.0
-		ambient_fx.angle_max = 180.0
-		ambient_fx.angular_velocity_min = -90.0
-		ambient_fx.angular_velocity_max = 90.0
+		emitter.angle_min = -180.0
+		emitter.angle_max = 180.0
+		emitter.angular_velocity_min = -90.0
+		emitter.angular_velocity_max = 90.0
 	elif akey == "rain":
-		ambient_fx.texture = Art.tex("streak")
+		emitter.texture = Art.tex("streak")
 		chip = 1.2
 	else:
-		ambient_fx.texture = Art.tex("spark")
-	ambient_fx.scale_amount_min = float(spec["scale"][0]) / chip
-	ambient_fx.scale_amount_max = float(spec["scale"][1]) / chip
-	add_child(ambient_fx)
+		emitter.texture = Art.tex("spark")
+	emitter.scale_amount_min = float(spec["scale"][0]) / chip
+	emitter.scale_amount_max = float(spec["scale"][1]) / chip
+	return emitter
 
 
 # ================================================================= terrain
