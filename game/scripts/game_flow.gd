@@ -433,10 +433,30 @@ func add_renown(n: int) -> void:
 	if first:
 		_meta["renown_hint"] = true
 	_meta_write()
-	if has_local_player():
+	# sync_daily_renown also pays from save/load paths, which can run with no
+	# HUD built (the wallet is already written above either way).
+	if has_local_player() and is_instance_valid(hud):
 		hud.log_event("+%d RENOWN" % n, Balance.RENOWN_COLOR)
 		if first:
 			hud.log_event("Spend Renown on skins in the Wardrobe.", Balance.RENOWN_COLOR)
+
+
+## Called only with a successfully saved or loaded character. The account
+## watermark and wallet share one atomic meta write; replay after either
+## side of that write is safe, including loading an older character backup.
+func sync_daily_renown(character: Dictionary) -> void:
+	var id := String(character.get("daily_renown_id", ""))
+	var total := int(character.get("daily_renown_total", 0))
+	if id.is_empty() or total <= 0:
+		return
+	_load_meta()
+	var paid: Dictionary = _meta.get("daily_renown_paid", {})
+	var amount := total - int(paid.get(id, 0))
+	if amount <= 0:
+		return
+	paid[id] = total
+	_meta["daily_renown_paid"] = paid
+	add_renown(amount)
 
 
 ## Spend Renown; false (and no charge) when the balance is short.

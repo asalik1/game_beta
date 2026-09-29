@@ -472,6 +472,9 @@ var clock_anchor := 0          # highest unix time ever seen (persisted, monoton
 # --- daily login reward (trusted-clock day index; -1 = never claimed) ---
 var daily_last_day := -1       # day index of the last claim
 var daily_streak := 0          # consecutive-day claim count
+var daily_renown_id := ""      # stable receipt owner, independent of slot/name
+var daily_renown_total := 0    # lifetime daily Renown owed by this character
+var _daily_claiming := false  # no nested save may bank a partial delivery
 
 # --- records & achievements (persisted) ---
 var achievements := {}         # achievement id -> true (unlocked)
@@ -1024,7 +1027,7 @@ func gamble(tier: String) -> Dictionary:
 ## Guesting in another world (MP-08, §5.7): only the character block
 ## travels home — the host's world must never colonize the guest's save.
 func autosave() -> void:
-	if no_saves or restoring_save:
+	if no_saves or restoring_save or _daily_claiming:
 		return
 	# PVP (v1, 2026-08-01): the duel has NO stakes — nothing earned, nothing
 	# risked, so nothing is written from an arena world. (A guest's session-end
@@ -1065,11 +1068,13 @@ func trusted_now() -> int:
 
 ## Deliver a letter. items = loot payloads ({"kind": "item"/"gem"/
 ## "stone", ...}); body may be "" ("Dropped Loot" letters have none).
-## Also the dev/event gift API.
-func send_mail(subject: String, body: String, items: Array) -> void:
+## Also the dev/event gift API. `quiet` skips the world float and chime for
+## a caller whose own panel already says where the letter went (the daily
+## claim receipt); the HUD envelope's unread badge still lights.
+func send_mail(subject: String, body: String, items: Array, quiet := false) -> void:
 	mailbox.append({"subject": subject, "body": body, "items": items,
 		"sent_at": trusted_now(), "read": false})
-	if play_started and is_instance_valid(player):
+	if not quiet and play_started and is_instance_valid(player):
 		sfx("chest")
 		spawn_text(player.global_position + Vector2(0, -64),
 			"NEW MAIL — see the pause menu", Color(0.8, 0.9, 1.0))
@@ -1107,16 +1112,30 @@ func daily_reward_for(streak: int) -> Dictionary:
 	return Balance.daily_reward_at(streak)
 
 
-## Claim today's reward: advance the streak, grant the loot, persist.
+## A claim must be saved the moment it lands (Renown is only paid from a
+## saved character), and autosave skips a fallen hero. So a downed or ghost
+## co-op hero waits until they stand; solo never sets either flag.
+func daily_claim_waits() -> bool:
+	return is_instance_valid(player) and (player.dead or player.downed or player.ghost)
+
+
+## Deliver and advance in one synchronous batch, then persist together.
+## A crash before that write leaves the old claim available; after it, every
+## item is in the saved bag/mail and account Renown has a replayable receipt.
 ## Returns human-readable lines of what was granted (for the panel/fx).
 func claim_daily() -> Array:
-	if not daily_available():
+	if _daily_claiming or not daily_available() or daily_claim_waits():
 		return []
-	daily_streak = daily_next_streak()
-	daily_last_day = daily_day_index()
+	var streak := daily_next_streak()
+	var day := daily_day_index()
+	_daily_claiming = true
+	var lines := _grant_daily_reward(streak)
+	daily_streak = streak
+	daily_last_day = day
+	_daily_claiming = false
+	# This achievement autosaves: it must only see the complete delivery.
 	if daily_streak >= 7:
 		unlock_achievement("streak_7")
-	var lines := _grant_daily_reward(daily_streak)
 	if is_instance_valid(player):
 		sfx("chest")
 		spawn_text(player.global_position + Vector2(0, -70),
@@ -1125,11 +1144,12 @@ func claim_daily() -> Array:
 	return lines
 
 
-## Hand over one day's reward. Gold scales with level; gems route through
-## give_loot so a full bag drops them safely (never silently lost).
+## Hand over one day's reward. Overflow goes directly to character-owned mail.
+## Renown is credited only from a durable character snapshot (see save.gd).
 func _grant_daily_reward(streak: int) -> Array:
 	var r := daily_reward_for(streak)
 	var lines: Array = []
+	var overflow: Array = []
 	if r.has("gold"):
 		var g := int(float(r["gold"]) * Balance.daily_gold_mult(player.level))
 		player.gold += g
@@ -1138,21 +1158,35 @@ func _grant_daily_reward(streak: int) -> Array:
 		var pc := int(r["potions"])
 		var got := 0
 		for i in pc:
-			# Graded bag items now (CONSUMABLE_GRADES): a low-grade clean Health
-			# Potion per unit, routed through add_consumable (a full bag stops it).
-			if player.add_consumable(Items.make_potion("health", "instant", "E", "accord")):
+			var potion := Items.make_potion("health", "instant", "E", "accord")
+			if player.add_consumable(potion):
 				got += 1
+			else:
+				overflow.append({"kind": "potion", "potion": potion})
 		if got > 0:
 			lines.append("%d Health Potion%s" % [got, "" if got == 1 else "s"])
+		if got < pc:
+			lines.append("%d Health Potion%s sent to Mailbox" % [pc - got, "" if pc - got == 1 else "s"])
 	if r.has("gems"):
 		var gc := int(r["gems"])
 		var lvl := int(r.get("gem_lvl", 1))
+		var mailed := 0
 		for i in gc:
-			give_loot({"kind": "gem", "gem": drop_gem(lvl)},
-				player.global_position + Vector2(-30.0 + 30.0 * i, 40.0))
-		lines.append("%d Lv%d gem%s" % [gc, lvl, "" if gc == 1 else "s"])
+			var gem := drop_gem(lvl)
+			if not player.gain_gem(gem):
+				overflow.append({"kind": "gem", "gem": gem})
+				mailed += 1
+		lines.append("%d Lv%d gem%s%s" % [gc, lvl, "" if gc == 1 else "s",
+			" (%d sent to Mailbox)" % mailed if mailed > 0 else ""])
+	if not overflow.is_empty():
+		# Quiet: the claim receipt names what went to the Mailbox, and a second
+		# world float would land on top of the streak line below.
+		send_mail("Daily Reward - Day %d" % streak,
+			"Your pack was full. Free some space, then claim your daily rewards here.", overflow, true)
 	if r.has("renown"):
-		call("add_renown", int(r["renown"]))  # wallet lives in the game_flow layer
+		if daily_renown_id.is_empty():
+			daily_renown_id = Crypto.new().generate_random_bytes(16).hex_encode()
+		daily_renown_total += int(r["renown"])
 		lines.append("%d Renown" % int(r["renown"]))
 	return lines
 

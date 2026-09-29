@@ -2302,6 +2302,17 @@ func _run_systems() -> void:
 	await _frames(2)
 	if game.menus.current != "daily":
 		return _fail("daily reward screen did not open")
+	# The claim receipt (no claim state touched): overflow names the Mailbox
+	# and points at the HUD envelope; a claim that all fit does not.
+	UIDaily.open(game.menus, ["1 Health Potion", "1 Health Potion sent to Mailbox", "5 Renown"])
+	await _frames(2)
+	if not _tree_has_label_text(game.menus.root, "sent to Mailbox") \
+			or not _tree_has_label_text(game.menus.root, "the envelope on your HUD"):
+		return _fail("daily claim receipt did not say where the overflow went")
+	UIDaily.open(game.menus, ["120 gold", "5 Renown"])
+	await _frames(2)
+	if _tree_has_label_text(game.menus.root, "Mailbox"):
+		return _fail("daily claim receipt pointed at the Mailbox when nothing was mailed")
 	game.menus.open_dev("world")
 	await _frames(2)
 	var dev_world_copy: String = _tree_ui_text(game.menus.root)
@@ -2957,39 +2968,9 @@ func _test_mailbox() -> void:
 
 # ---- CORE: daily login reward (new-day claim, streak advance/reset) -----
 func _test_daily() -> void:
-	var keep_last: int = game.daily_last_day
-	var keep_streak: int = game.daily_streak
-	var keep_gold: int = game.player.gold
-	var keep_cons_daily: Array = game.player.consumables.duplicate()
-	var today: int = game.daily_day_index()
-
-	# A new day since the last claim: reward is available.
-	game.daily_last_day = today - 1
-	game.daily_streak = 3
-	if not game.daily_available():
-		return _fail("daily reward not available on a new day")
-	var lines: Array = game.claim_daily()
-	if game.daily_streak != 4:
-		return _fail("consecutive-day claim did not advance the streak (%d)" % game.daily_streak)
-	if game.daily_available():
-		return _fail("daily still claimable the same day")
-	if game.player.gold <= keep_gold or lines.is_empty():
-		return _fail("daily claim granted nothing")
-
-	# A missed day resets the streak to 1.
-	game.player.gold = keep_gold
-	game.daily_last_day = today - 3
-	game.daily_streak = 9
-	game.claim_daily()
-	if game.daily_streak != 1:
-		return _fail("a missed day did not reset the streak to 1 (%d)" % game.daily_streak)
-
-	# Restore.
-	game.daily_last_day = keep_last
-	game.daily_streak = keep_streak
-	game.player.gold = keep_gold
-	game.player.consumables = keep_cons_daily
-	print("ok: daily login reward (new-day claim, streak advance + reset)")
+	var error: String = preload("res://scripts/tests/test_daily.gd").run(self)
+	if error != "":
+		_fail(error)
 
 
 # ---- CORE: records + achievements (best-time keeping, idempotent unlock) -
