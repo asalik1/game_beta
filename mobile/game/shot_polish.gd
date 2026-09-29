@@ -48,6 +48,13 @@ func _ready() -> void:
 	var z := float(arg("zoom", "1.4"))
 	zoom(z)
 	await sim_wait(1.5)   # title card clears
+	if flag("illumination"):
+		# Native 1x prop/light loops, rendered luminance and stationary geometry.
+		var error: String = await preload("res://scripts/dev/prop_illumination_capture.gd").run(self)
+		if error != "":
+			print("ILLUMINATION FAIL: " + error)
+		finish(0 if error == "" else 1)
+		return
 	if arg("menu", "") != "":
 		# --menu=stats|bag|class: one shot of a menu screen (review pack, P7.E/F/G)
 		game.hud.visible = true

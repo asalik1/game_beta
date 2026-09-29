@@ -16,6 +16,85 @@ const CASES := [
 ]
 const EPSILON := 0.5
 const CLEARANCE := 4.0
+const BAR_FIELDS := ["hp_fill", "mp_fill", "xp_fill", "mob_fill", "boss_fill", "rival_fill"]
+# Control resolves offsets in float32. Subpixel widths at target-bar X
+# coordinates lose a few millionths of a pixel through subtraction.
+const BAR_SIZE_EPSILON := 0.0001
+
+
+## Presentation contracts also run in the quick suite. No borrowed gameplay
+## values: each fraction is set explicitly and every fill size is restored.
+static func bar_fractions(h: Hud) -> Dictionary:
+	var result := {"checks": []}
+	for field: String in BAR_FIELDS:
+		var fill: ColorRect = h.get(field)
+		var kept := fill.size
+		var pos := fill.position
+		var full: float = fill.get_meta("full_w")
+		for fraction: float in [-1.0, 0.0, 0.001, 0.1, 0.5, 1.0, 2.0]:
+			h._set_fill(fill, fraction)
+			var wanted := full * clampf(fraction, 0.0, 1.0)
+			add(result, field + "/fraction/" + str(fraction),
+				absf(fill.size.x - wanted) <= BAR_SIZE_EPSILON
+				and fill.size.y == kept.y and fill.position == pos
+				and fill.get_combined_minimum_size() == Vector2.ZERO,
+				{"width": fill.size.x, "expected": wanted, "size": str(fill.size),
+					"position": str(fill.position), "minimum": str(fill.get_combined_minimum_size())})
+			inspect_bar(result, fill, field + "/" + str(fraction))
+		fill.size = kept
+		add(result, field + "/restored", fill.size == kept and fill.position == pos)
+	# A deliberate missing dressing must be caught (the former flat fill has
+	# neither child). Restore even when the negative control is not detected.
+	var enamel := h.hp_fill.get_node_or_null("Enamel") as TextureRect
+	if enamel != null:
+		var shown := enamel.visible
+		enamel.visible = false
+		var negative := {"checks": []}
+		inspect_bar(negative, h.hp_fill, "negative")
+		enamel.visible = shown
+		add(result, "flat_fill_detected", failed(negative, "negative/dressing"))
+	return result
+
+
+static func inspect_bar(result: Dictionary, fill: ColorRect, id: String) -> void:
+	var enamel := fill.get_node_or_null("Enamel") as TextureRect
+	var edge := fill.get_node_or_null("LeadingEdge") as ColorRect
+	add(result, id + "/dressing", enamel != null and edge != null
+		and enamel.visible and edge.visible and fill.clip_contents)
+	if enamel == null or edge == null: return
+	var texture := enamel.texture as GradientTexture2D
+	add(result, id + "/vertical_shading", texture != null and texture.fill_from.x == texture.fill_to.x
+		and texture.fill_from.y < texture.fill_to.y
+		and texture.gradient.sample(0.0) != texture.gradient.sample(Balance.HUD_BAR_SHEEN_STOP)
+		and texture.gradient.sample(1.0) != texture.gradient.sample(Balance.HUD_BAR_SHEEN_STOP))
+	add(result, id + "/contained", enamel.position == Vector2.ZERO and enamel.size == fill.size
+		and is_equal_approx(edge.position.x + edge.size.x, fill.size.x)
+		and edge.position.y == 0.0 and edge.size.y == fill.size.y
+		and edge.size.x == Balance.HUD_BAR_EDGE_WIDTH
+		and enamel.mouse_filter == Control.MOUSE_FILTER_IGNORE and edge.mouse_filter == Control.MOUSE_FILTER_IGNORE)
+	# Existing sibling order is frame, optional chip, fill, two caps, three
+	# quarter ticks. Decorations must never move those markers or cover them.
+	var host := fill.get_parent()
+	var frame_index := fill.get_index() - 1
+	if host.get_child(frame_index) is ColorRect:
+		var chip := host.get_child(frame_index) as ColorRect
+		add(result, id + "/chip_below", chip.position == fill.position and chip.get_child_count() == 0)
+		frame_index -= 1
+	var frame := host.get_child(frame_index) as Panel
+	var full: float = fill.get_meta("full_w")
+	add(result, id + "/frame_geometry", frame != null
+		and frame.position == fill.position - Vector2(3, 3)
+		and frame.size == Vector2(full + 6, fill.size.y + 6))
+	if frame != null:
+		var style := frame.get_theme_stylebox("panel") as StyleBoxFlat
+		add(result, id + "/bronze_trough", style != null
+			and style.bg_color == Color(UITheme.BRONZE.darkened(Balance.HUD_BAR_TROUGH_DARKEN), Balance.HUD_BAR_TROUGH_ALPHA)
+			and style.border_color == Color(UITheme.BRONZE, Balance.HUD_BAR_FRAME_ALPHA))
+	for i in [1, 2, 3]:
+		var tick := host.get_child(fill.get_index() + 2 + i) as ColorRect
+		add(result, id + "/tick/" + str(i), tick != null
+			and tick.position == fill.position + Vector2(full * 0.25 * i, 0)
+			and tick.size == Vector2(1, fill.size.y))
 
 
 static func inspect(h: Hud, resolved_panels: Dictionary = {}) -> Dictionary:
@@ -278,6 +357,9 @@ static func suite(h: Hud) -> String:
 	var saved := snapshot(h)
 	h.visible = true
 	var error := ""
+	for check in bar_fractions(h).checks:
+		if not check.passed and error.is_empty():
+			error = "HUD enamel bar: " + String(check.id)
 	for row in CASES:
 		apply_case(h, row)
 		for check in inspect(h).checks:

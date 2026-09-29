@@ -56,7 +56,6 @@ const SURFACE := Color(0.075, 0.085, 0.12, 0.96)
 const SURFACE_RAISED := Color(0.105, 0.115, 0.16, 0.98)
 const BORDER := Color(0.28, 0.30, 0.38, 0.72)
 const TEXT_MUTED := Color(0.62, 0.65, 0.73)
-const BAR_FRAME := Color(0.35, 0.37, 0.44)
 
 static var _font: Font = null
 static var _font_missing := false

@@ -64,38 +64,27 @@ static func build(g, zi: int, doorway: Vector2, vertical: bool) -> void:
 		source.set_meta("occlusion_radius", (Vector2(measured["used"].size) * source.scale.abs()).length() * 0.5)
 		source.add_to_group("structure_occluders")
 		g._prop_cast_shadow(root, source)
-		if not info.is_empty():
-			var per: float = 1.0 / maxf(1.0, float(info.get("fps", 6.0)))
-			var anim := source.create_tween().set_loops()
-			var source_ref: WeakRef = weakref(source)
-			for frame in int(info["frames"]):
-				anim.tween_interval(per)
-				anim.tween_callback(func() -> void:
-					var live := source_ref.get_ref() as Sprite2D
-					if live != null:
-						live.frame = (live.frame + 1) % live.hframes)
-		# Keep the original world-space light topology and RNG consumption. Both
-		# glow layers translate with the actual flame sprite; budgets do not change.
+		var illumination := preload("res://scripts/prop_illumination.gd").attach(
+			source, anchor, float(info.get("fps", 0.0)))
+		# Fixed geometry, one illumination envelope shared with the flame clock.
 		var source_at: Vector2 = g.world.to_local(source.global_position)
 		var glow := Sprite2D.new()
 		glow.texture = Art.tex("glow")
 		glow.modulate = Color(1.0, 0.6, 0.2, 0.5)
 		glow.position = source_at + Vector2(0, -12)
-		glow.scale = Vector2(2.5, 2.5)
+		glow.scale = Vector2.ONE * Balance.DOOR_TORCH_HALO_SCALE
 		glow.z_index = 1
 		g.world.add_child(glow)
-		# The world owns both independent light layers; retire them with this mount.
+		illumination.bind(glow)
+		# The world owns both light layers; retire them with this mount.
 		var glow_ref: WeakRef = weakref(glow)
 		root.tree_exiting.connect(func() -> void:
 			var live := glow_ref.get_ref() as Node
 			if live != null:
 				live.queue_free())
-		var tween := glow.create_tween().set_loops()
-		tween.tween_property(glow, "scale", Vector2(3.1, 3.1), 0.5 + randf() * 0.3)
-		tween.tween_property(glow, "scale", Vector2(2.4, 2.4), 0.5 + randf() * 0.3)
 		if zi >= 0:
 			var floor_glow: Node2D = g._floor_glow(g.world, source_at + Game.TORCH_GLOW_DROP,
-				Game.TORCH_GLOW_COLOR, Game.TORCH_GLOW_RADIUS, Game.TORCH_GLOW_STRENGTH, zi)
+				Game.TORCH_GLOW_COLOR, Game.TORCH_GLOW_RADIUS, Game.TORCH_GLOW_STRENGTH, zi, true, illumination)
 			if floor_glow != null:
 				var floor_ref: WeakRef = weakref(floor_glow)
 				root.tree_exiting.connect(func() -> void:

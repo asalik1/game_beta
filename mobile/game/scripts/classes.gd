@@ -17,6 +17,8 @@ class_name Classes
 ##   splash       AoE splash around the target (fraction)
 ##   speed_buff   move-speed buff for 2.5s after casting
 ##   guard_buff   +physres/magres for 2.5s after casting
+##   cc_reason    how a duel rival's HUD names this package's stun riders:
+##                "frozen" for Ice's freezes (absent = Stunned); label only
 
 # Levels at which a new theme unlocks (raise these for a bigger world).
 # 2026-07-17: [4, 8, 12] -> [5, 15, 25]. The old cadence handed out every
@@ -45,7 +47,7 @@ const THEMES := {
 			"fx": {"dot": 0.35, "splash": 0.40}},
 		{"id": "ice", "name": "Ice", "color": Color(0.45, 0.90, 1.00),
 			"desc": "Single-target control: slows, freezes, and cold that cracks armor.",
-			"fx": {"slow": 0.50, "stun_chance": 0.20, "brittle": 1}},
+			"fx": {"slow": 0.50, "stun_chance": 0.20, "brittle": 1, "cc_reason": "frozen"}},
 		{"id": "wind", "name": "Wind", "color": Color(0.70, 1.00, 0.75),
 			"desc": "Speed and flurries: extra hits and swift movement.",
 			"fx": {"echo": 0.35, "speed_buff": 0.30}},
@@ -414,7 +416,7 @@ const ABILITY_THEMES := {
 			"fire": {"desc": "Explosive bolt: splashes on impact and leaves a DEEP burn on what survives.",
 				"fx": {"splash": 0.45, "dot": 0.60}},
 			"ice": {"desc": "An ice lance that PIERCES the whole line, freezing everything it runs through — repeated cold turns armor BRITTLE.",
-				"fx": {"pierce": 1, "slow": 0.55, "stun_chance": 0.15, "proj_speed": 0.75, "brittle": 1}},
+				"fx": {"pierce": 1, "slow": 0.55, "stun_chance": 0.15, "proj_speed": 0.75, "brittle": 1, "cc_reason": "frozen"}},
 			"wind": {"desc": "Split the bolt: TWO smaller bolts that SEEK their mark, flurrying with echoing hits and bursting in cutting gusts.",
 				"fx": {"twin": 1, "echo": 0.20, "splash": 0.05, "homing": 1}},
 		},
@@ -422,7 +424,7 @@ const ABILITY_THEMES := {
 			"fire": {"desc": "Flame ring: a wider, burning detonation — it ignites instead of shoving.",
 				"fx": {"radius_mult": 1.4, "dot": 0.45, "no_knock": 1}},
 			"ice": {"desc": "Deep freeze: the blast can freeze solid what it doesn't kill, and leaves everything BRITTLE.",
-				"fx": {"stun_chance": 0.35, "slow": 0.60, "brittle": 1}},
+				"fx": {"stun_chance": 0.35, "slow": 0.60, "brittle": 1, "cc_reason": "frozen"}},
 			"wind": {"desc": "Gale burst: BLAST everything away and ride the updraft out (+move speed). Bosses hold their ground — space with your feet, not by shoving.",
 				"fx": {"speed_buff": 0.35}},
 		},
@@ -430,7 +432,7 @@ const ABILITY_THEMES := {
 			"fire": {"desc": "Burn the path: everything you pass through is left on fire.",
 				"fx": {"dot": 0.50}},
 			"ice": {"desc": "Frostwalk: everything you pass through is frozen mid-step and turned BRITTLE.",
-				"fx": {"freeze_path": 0.7, "slow": 0.50, "brittle": 1}},
+				"fx": {"freeze_path": 0.7, "slow": 0.50, "brittle": 1, "cc_reason": "frozen"}},
 			"wind": {"desc": "Slipstream: blink 40% further and leave with a burst of speed.",
 				"fx": {"dash_mult": 1.4, "speed_buff": 0.35}},
 		},
@@ -438,7 +440,7 @@ const ABILITY_THEMES := {
 			"fire": {"desc": "A dying sun: a wider crater and a far heavier, longer burn.",
 				"fx": {"radius_mult": 1.4, "burn_mult": 2.0}},
 			"ice": {"desc": "Glacial comet: the impact FREEZES the whole field solid for 1.2s and cracks it BRITTLE.",
-				"fx": {"freeze": 1.2, "slow": 0.50, "brittle": 1}},
+				"fx": {"freeze": 1.2, "slow": 0.50, "brittle": 1, "cc_reason": "frozen"}},
 			"wind": {"desc": "Starfall: THREE comets fall in sequence on your lowest-health target — each successive hit on the same target lands weaker, but if it DIES the next comet snaps to a fresh priority at FULL power (execute and cascade). A TAILWIND follows for 5s: Blink and Frost Nova cool down 25% quicker. Bursts less than the Meteor and won't burn a pack — it focuses the kill.",
 				"fx": {"meteors": 3, "dmg_mult": 0.6, "stack_falloff": 0.40, "haste_cdr": 0.25, "haste_dur": 5.0}},
 		},

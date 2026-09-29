@@ -352,6 +352,9 @@ var party_stats_net := {}  # GUEST: the host's merged table (~1 Hz fan) — disp
 
 var shake_amt := 0.0
 var _shake_kick := Vector2.ZERO  # directional camera kick along the last hit vector (P1)
+var _shake_time := 0.0          # simulation-time waveform clock; holds during hit-stop
+var _shake_in_amt := 0.0        # impulses since the last camera tick: they reach
+var _shake_in_kick := Vector2.ZERO  # the screen at full size, then start to decay
 var _hitstop_active := false      # a real-time freeze is running (solo only)
 var _hitstop_end_ms := 0
 var _hitstop_restore := 1.0       # the time_scale to return to (dev slow-mo aware)
@@ -3341,14 +3344,50 @@ func sfx(name: String, pitch := 1.0, cutoff := 0.0, vol_db := 0.0) -> void:
 			sfx_cutoff_tweens.erase(chosen)
 		)
 
-## Camera shake. `amount` = the random jitter (existing beats), `dir` + `kick`
-## = a DIRECTIONAL push of `kick` px along the hit vector that decays
-## exponentially (Balance.HIT_SHAKE_KICK_DECAY) — the P1 hit-feedback stack
-## reads the direction of a blow, not just its size.
+## Camera shake. `amount` = the ambient envelope (existing beats; px per axis
+## after Balance.CAMERA_SHAKE_AMBIENT_GAIN), `dir` + `kick` = a DIRECTIONAL push
+## of `kick` px along the hit vector that decays exponentially
+## (Balance.HIT_SHAKE_KICK_DECAY) — the P1 hit-feedback stack reads the
+## direction of a blow, not just its size. Impulses wait for the next camera
+## tick (_tick_shake), which shows them at full size on that frame.
 func shake(amount: float, dir := Vector2.ZERO, kick := 0.0) -> void:
-	shake_amt = maxf(shake_amt, amount)
+	_shake_in_amt = maxf(_shake_in_amt, amount)
 	if kick > 0.0 and dir != Vector2.ZERO:
-		_shake_kick += dir.normalized() * kick
+		_shake_in_kick = (_shake_in_kick + dir.normalized() * kick) \
+			.limit_length(Balance.CAMERA_SHAKE_KICK_MAX_PX)
+
+
+func _tick_shake(delta: float) -> void:
+	# Decay what was already on screen by this frame's time, THEN add the new
+	# impulses: a hit shows at full size on its first rendered frame at 30, 60
+	# or 144 fps, and a hit-stop (scaled delta 0) holds it there. Exact
+	# exponential integration: subdividing time never changes recovery.
+	shake_amt *= exp(-Balance.CAMERA_SHAKE_DECAY * delta)
+	_shake_kick *= exp(-Balance.HIT_SHAKE_KICK_DECAY * delta)
+	# Every authored beat maps into the cap in proportion (no tier collapses).
+	shake_amt = minf(maxf(shake_amt, _shake_in_amt),
+		Balance.CAMERA_SHAKE_MAX_PX / Balance.CAMERA_SHAKE_AMBIENT_GAIN)
+	_shake_kick = (_shake_kick + _shake_in_kick).limit_length(Balance.CAMERA_SHAKE_KICK_MAX_PX)
+	_shake_in_amt = 0.0
+	_shake_in_kick = Vector2.ZERO
+	_shake_time += delta
+	if shake_amt * Balance.CAMERA_SHAKE_AMBIENT_GAIN < Balance.CAMERA_SHAKE_REST_PX:
+		shake_amt = 0.0
+	if _shake_kick.length() < Balance.CAMERA_SHAKE_REST_PX:
+		_shake_kick = Vector2.ZERO
+
+
+func _shake_offset() -> Vector2:
+	# One sine per axis at unrelated rates: a rattle that each axis peaks at the
+	# envelope (like the old per-axis jitter), with no per-frame randomness. The
+	# clock keeps running between beats, so they do not all start the same way.
+	var t := TAU * Balance.CAMERA_SHAKE_FREQUENCY * _shake_time
+	var ambient := Vector2(sin(t), cos(t * Balance.CAMERA_SHAKE_FREQUENCY_RATIO)) \
+		* shake_amt * Balance.CAMERA_SHAKE_AMBIENT_GAIN
+	# Clamp the SUM, not just each source. Apply the owner's linear comfort
+	# preference last: 0% is exactly still; 50% halves even a saturated impact.
+	return (_shake_kick + ambient).limit_length(Balance.CAMERA_SHAKE_MAX_PX) \
+		* float(settings.get("camera_shake", 1.0))
 
 
 ## HIT-STOP: freeze the world for `sec` of REAL time (Engine.time_scale 0,

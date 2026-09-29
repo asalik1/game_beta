@@ -563,7 +563,7 @@ func apply_freeze(dur: float, reason := "frozen") -> void:
 	if dead:
 		return
 	if dur * uniq_cc_mult >= frozen_time:
-		freeze_reason = "asleep" if reason == "asleep" else "frozen"
+		freeze_reason = reason if reason in ["asleep", "stunned"] else "frozen"
 	frozen_time = maxf(frozen_time, dur * uniq_cc_mult)  # pants_ward: grounded
 	_uniq_grounded_beat()
 	game.spawn_text(global_position + Vector2(0, -50), freeze_reason.to_upper() + "!", Color(0.6, 0.85, 1.0))

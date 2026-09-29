@@ -3519,20 +3519,21 @@ func _pvp_apply_strike(target_pid: int, amount: float, dmg_type: String, pen := 
 ## — stun crosses as a freeze, slow as a chill). Host-validated like a strike,
 ## then applied by the OWNER through the same status road enemy CC rides
 ## (host_player_status -> _rpc_player_status -> apply_freeze/apply_chill).
-func pvp_status(target_pid: int, kind: String, a: float, b: float) -> void:
+## `reason` names a freeze on the owner's HUD (apply_stun's label).
+func pvp_status(target_pid: int, kind: String, a: float, b: float, reason := "") -> void:
 	if game == null or not _net().is_online() or not bool(game.pvp_active):
 		return
 	if not (kind in ["freeze", "chill", "root"]):
 		return
 	if multiplayer.is_server():
 		if game.pvp != null and bool(game.pvp.combat_live()):
-			_pvp_apply_status(target_pid, kind, a, b)
+			_pvp_apply_status(target_pid, kind, a, b, reason)
 	else:
-		_rpc_pvp_status.rpc_id(1, target_pid, kind, a, b)
+		_rpc_pvp_status.rpc_id(1, target_pid, kind, a, b, reason)
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _rpc_pvp_status(target_pid: int, kind: String, a: float, b: float) -> void:
+func _rpc_pvp_status(target_pid: int, kind: String, a: float, b: float, reason := "") -> void:
 	if not multiplayer.is_server() or game == null or not bool(game.pvp_active):
 		return
 	var pid := multiplayer.get_remote_sender_id()
@@ -3542,25 +3543,31 @@ func _rpc_pvp_status(target_pid: int, kind: String, a: float, b: float) -> void:
 		return
 	if game.pvp == null or not bool(game.pvp.combat_live()):
 		return
-	_pvp_apply_status(target_pid, kind, a, b)
+	_pvp_apply_status(target_pid, kind, a, b, reason)
 
 
-func _pvp_apply_status(target_pid: int, kind: String, a: float, b: float) -> void:
+func _pvp_apply_status(target_pid: int, kind: String, a: float, b: float, label := "") -> void:
 	a = _finpos(a, Balance.NET_MAX_STATUS_DUR)
 	b = _finpos(b, Balance.NET_MAX_STATUS_DUR)
+	# apply_stun is the PvP freeze sender: the mechanics stay one hard CC, and
+	# the label comes from the rider (an Ice freeze stays Frozen). It is peer-
+	# supplied, so anything but "frozen" reads as the stun it is.
+	var reason := ""
+	if kind == "freeze":
+		reason = "frozen" if label == "frozen" else "stunned"
 	if target_pid == 1:
 		var p: Player = game.local_player
 		if p == null or not is_instance_valid(p) or p.dead:
 			return
 		match kind:
 			"freeze":
-				p.apply_freeze(a)
+				p.apply_freeze(a, reason)
 			"root":
 				p.apply_root(a)
 			"chill":
 				p.apply_chill(a, maxf(0.05, b))
 	else:
-		host_player_status(target_pid, kind, a, b)
+		host_player_status(target_pid, kind, a, b, reason)
 
 
 ## OWNER: my hero fell in the duel (player.gd lethal branch) — tell the host.

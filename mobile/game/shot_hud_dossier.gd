@@ -8,6 +8,7 @@ extends ShotRig
 ## --reward-plaques controls authored boss readouts and real reward UI clocks, without rewards.
 ## --attribute-readiness checks lent point pools with real allocation input.
 ## --skills-touch measures allocation targets and real touch spending/scrolling.
+## --enamel-bars captures fraction boundaries and chip drain at 720p, desktop/touch.
 const NetMgr := preload("res://scripts/net/net_manager.gd")
 
 const GAME_FIELDS := ["settings", "touch_mode", "dev_god", "player_title", "mailbox", "daily_last_day", "daily_streak",
@@ -36,6 +37,25 @@ var utility_reference: Dictionary = {}
 
 
 func _ready() -> void:
+	if flag("enamel-bars"):
+		shot_dir = shot_dir.path_join("enamel_bars")
+		await boot("warrior", "ch1", false)
+		game.play_started = true
+		game.state = Game.ST_PLAYING
+		game.menus.close()
+		game.request_pause(false)
+		game.hud.visible = true
+		await skip_dialogue()
+		if not await _settled():
+			print("HUD ENAMEL BARS FAILED: chapter reveal did not settle")
+			finish(1)
+			return
+		await preload("res://scripts/tests/hud_alignment_live.gd").run_bars(self)
+		complete = true
+		_write_report()
+		print("HUD ENAMEL BARS: %d checks, %d failures" % [checks.size(), failures])
+		finish(1 if failures > 0 else 0)
+		return
 	if flag("onboarding-guidance"):
 		var user_path := ProjectSettings.globalize_path("user://").replace("\\", "/")
 		if not user_path.to_lower().contains("/build/qa/"):

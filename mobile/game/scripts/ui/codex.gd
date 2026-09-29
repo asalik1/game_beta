@@ -1900,6 +1900,7 @@ static func _status_effects() -> Array:
 				int(round((1.0 - Balance.REACTIVE_CHILL_MULT) * 100.0)), String.num(Balance.REACTIVE_CHILL_DURATION)]]],
 		["Stun", Color(1.0, 0.85, 0.4), [
 			"The target can't move or act for a moment.",
+			"In duels, a stun shows the Stunned chip, which counts down until you can move and cast again. An Ice mage's freezes show the Frozen chip instead.",
 			"Bosses are CC-immune: a stun that would hit them lands as CONCUSSION instead — bonus damage of duration × ATK × %d%%, so stun-themed abilities keep their value in boss fights." % int(Balance.CONCUSSION_MULT * 100)]],
 		["Slow", Color(0.5, 0.65, 1.0), [
 			"Movement speed is cut for a duration (clinging murk −30%, void rifts drag). CC-immune bosses ignore it."]],
@@ -1925,7 +1926,7 @@ static func _statuses(m: Menus, list: VBoxContainer) -> void:
 		13, Color(0.7, 0.72, 0.78))
 	intro.custom_minimum_size = Vector2(PAGE_W, 0)
 	var row_note := m._lbl(list,
-		"When you're Frozen, Rooted or Chilled, a chip on the status row above your abilities shows it and counts down the time left. These chips come before ordinary buffs, so even a full row shows them, and each one disappears when its effect ends.",
+		"When you're Frozen, Rooted, Chilled, Asleep, Staggered or Stunned, a chip on the status row above your abilities shows it and counts down the time left. These chips come before ordinary buffs, so even a full row shows them, and each one disappears when its effect ends.",
 		13, Color(0.7, 0.72, 0.78))
 	row_note.custom_minimum_size = Vector2(PAGE_W, 0)
 	for e in _status_effects():

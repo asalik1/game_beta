@@ -12,6 +12,18 @@ class_name Balance
 const HUD_LOG_TEXT_WIDTH := 400.0
 const HUD_LOG_HEIGHT_BUDGET := 140.0
 
+# Static enamel on resource bars; overlays preserve semantic fill colours.
+const HUD_BAR_TROUGH_DARKEN := 0.82
+const HUD_BAR_TROUGH_ALPHA := 0.94
+const HUD_BAR_FRAME_ALPHA := 0.95
+const HUD_BAR_SHADE_TOP := 0.20
+const HUD_BAR_SHADE_BOTTOM := 0.30
+const HUD_BAR_SHEEN_ALPHA := 0.13
+const HUD_BAR_SHEEN_STOP := 0.28
+const HUD_BAR_EDGE_ALPHA := 0.36
+const HUD_BAR_EDGE_WIDTH := 1.0
+const HUD_BAR_CAP_ALPHA := 0.10
+
 # Ambient life: compact village/darkwood rooms retain social pairs without
 # carrying the full-sized room's population. Full/ordinary combat rooms stay exact.
 const AMBIENT_COMPACT_AREA_MAX := 0.65
@@ -159,8 +171,8 @@ const GROUND_FIELD_PERIOD := {
 }
 # The neutral stone master needs a small exposure lift under keep lighting.
 const GROUND_FIELD_GAIN := {"stone": 1.28}
-# Hit feel: camera kick (px) per landed single-target blow / crit. The heavy
-# beats (ults, slams) sit at 5-9; these stay a whisper under them.
+# Hit feel: ambient shake amount per landed single-target blow / crit. The
+# heavy beats (ults, slams) sit at 5-14; these stay a whisper under them.
 const HIT_SHAKE := 1.4
 const HIT_SHAKE_CRIT := 3.0
 # Hit-feedback STACK (POLISH_TASKS P1, 2026-08-18): the three synchronized
@@ -172,6 +184,21 @@ const HIT_SHAKE_CRIT := 3.0
 # kills and heavy blows do, in that order of weight.
 const HIT_SHAKE_KICK := 3.0
 const HIT_SHAKE_KICK_DECAY := 14.0
+# Impact envelope (world px, Hz, 1/s). shake(amount) drives a smooth waveform
+# of amount * GAIN px per axis: one sine per axis, the vertical at RATIO times
+# the horizontal rate, so it rattles instead of looping and never draws
+# per-frame random noise. GAIN keeps the old random jitter's average energy,
+# so the heavy beats (shake 6-14) stay louder than an ordinary hit and keep
+# their tiers; DECAY lets a slam read for about 0.4 s. Stacked directional
+# kicks cap at KICK_MAX_PX, under the heaviest beats; the rendered sum caps at
+# MAX_PX. Motion under REST_PX (sub-pixel) snaps to still.
+const CAMERA_SHAKE_MAX_PX := 12.0
+const CAMERA_SHAKE_KICK_MAX_PX := 9.0
+const CAMERA_SHAKE_AMBIENT_GAIN := 0.8
+const CAMERA_SHAKE_FREQUENCY := 6.0
+const CAMERA_SHAKE_FREQUENCY_RATIO := 1.62
+const CAMERA_SHAKE_DECAY := 6.0
+const CAMERA_SHAKE_REST_PX := 0.05
 const HIT_SPARKS := 5
 const HIT_STOP_CRIT := 0.045
 const HIT_STOP_KILL := 0.07
@@ -4085,6 +4112,15 @@ const DOOR_TORCH_HEIGHT := 64.0
 const DOOR_TORCH_PAIR_OFFSET := 26.0
 const DOOR_TORCH_GROUND_CLEARANCE := 6.0
 const DOOR_TORCH_FOOT_BAND := 0.25
+const DOOR_TORCH_HALO_SCALE := 2.5
+
+# One restrained envelope for prop illumination. A 4% energy dip leaves
+# headroom for authored strip luminance and HDR bloom under the 12% contract.
+const PROP_LIGHT_LOW := 0.96
+const PROP_LIGHT_PERIOD := 2.4  # static sources; animated sources use their strip duration
+# Hazard pools retain their separate, existing telegraph rhythm.
+const HAZARD_GLOW_PULSE_LOW := 0.72
+const HAZARD_GLOW_PULSE_PERIOD := Vector2(1.1, 1.6)
 
 # Shared field/Inventory potion eligibility (preserves held-input thresholds).
 const POTION_DRINK_COOLDOWN := 0.6

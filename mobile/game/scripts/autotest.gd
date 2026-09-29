@@ -1005,6 +1005,9 @@ func _run_systems() -> void:
 	var alchemy_error: String = preload("res://scripts/tests/test_alchemy.gd").run(self)
 	if alchemy_error != "":
 		return _fail(alchemy_error)
+	var potion_save_error: String = preload("res://scripts/tests/test_potion_save.gd").run(self)
+	if potion_save_error != "":
+		return _fail(potion_save_error)
 	var ward_desk_error: String = await preload("res://scripts/tests/test_ward_desks.gd").run(self)
 	if ward_desk_error != "":
 		return _fail(ward_desk_error)
@@ -4893,6 +4896,12 @@ func _test_mob_strip_anchor_consistency() -> void:
 ## wall decals (Lane 2), animated scenery props (Lane 3). Each is verified at
 ## the seam so a regression that re-freezes an asset lane fails the gate.
 func _test_asset_seams() -> void:
+	var illumination_error := preload("res://scripts/tests/test_prop_illumination.gd").run(self)
+	if illumination_error != "":
+		return _fail(illumination_error)
+	illumination_error = preload("res://scripts/tests/test_prop_illumination.gd").run_world(game)
+	if illumination_error != "":
+		return _fail(illumination_error)
 	# --- Lane 1: ground tile seam -------------------------------------
 	# An absent override leaves the procedural floor untouched...
 	if not Art._ground_tileset("no_such_ground_zzz").is_empty():
@@ -11111,13 +11120,15 @@ class DuelProbe extends PvpDuel:
 		return foe
 
 
-## Stands in for the net session and records every strike sent to the rival.
+## Stands in for the net session and records every strike and control rider
+## sent to the rival.
 class StrikeRecorder extends Node:
 	var strikes: Array = []
+	var statuses: Array = []
 	func pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0, dex := 0.0) -> void:
 		strikes.append([target_pid, amount, dmg_type, pen, dex])
-	func pvp_status(_target_pid: int, _kind: String, _a: float, _b: float) -> void:
-		pass
+	func pvp_status(target_pid: int, kind: String, a: float, _b: float, reason := "") -> void:
+		statuses.append([target_pid, kind, a, reason])
 
 
 ## T19: real cast dispatch and hit funnel, with disposable actors and fixed stats.
@@ -11157,6 +11168,7 @@ func _test_spell_damage_wiring() -> void:
 	await _probe_mage_cast_damage(p, errors)
 	_probe_wind_wound(p, errors)
 	_probe_wind_wound_duel(p, errors)
+	_probe_duel_cc_labels(p, errors)
 	await _probe_warlock_coefficients(p, errors)
 	p.queue_free()
 	await _frames(1)
@@ -11170,7 +11182,7 @@ func _test_spell_damage_wiring() -> void:
 			node.add_to_group("enemies")
 	if not errors.is_empty():
 		return _fail("spell damage wiring: " + "; ".join(errors))
-	print("ok: spell damage wiring (Mage gear, Starfall, Firmament, skins; physical Wind Cuts; duel burn/toxin penetration; independent Warlock knobs)")
+	print("ok: spell damage wiring (Mage gear, Starfall, Firmament, skins; physical Wind Cuts; duel burn/toxin penetration; duel Frozen vs Stunned labels; independent Warlock knobs)")
 
 
 func _spell_damage_dummy(p: Player) -> Enemy:
@@ -11399,6 +11411,80 @@ func _probe_wind_wound_duel(p: Player, errors: Array[String]) -> void:
 	recorder.free()
 	duel.free()
 	q.queue_free()
+
+
+## T27: a duel rival reads an Ice freeze as Frozen and a real stun as Stunned.
+## Frostwalk's Blink and the Glacial comet landing run their real sweeps on the
+## rival shell; the duel seam, foe list and session are swapped in for this
+## synchronous block only and restored before anything else runs.
+func _probe_duel_cc_labels(p: Player, errors: Array[String]) -> void:
+	var net: Node = get_node_or_null("/root/NetworkManager")
+	if net == null:
+		errors.append("duel CC label precondition: no NetworkManager")
+		return
+	var q := RivalShellProbe.new()
+	q.game = game
+	game.add_child(q)
+	q.set_process(false)
+	q.set_physics_process(false)
+	q.peer_id = 7
+	var duel := DuelProbe.new()
+	duel.game = game
+	duel.foe = q
+	duel.state = "fight"
+	duel.match_started = true
+	var recorder := StrikeRecorder.new()
+	var saved_pvp: Node = game.pvp
+	var saved_active: bool = game.pvp_active
+	var saved_players: Array[Player] = game.players
+	var saved_session: Node = net.session
+	var origin := p.global_position
+	var duel_players: Array[Player] = [q]
+	game.pvp = duel
+	game.pvp_active = true
+	game.players = duel_players
+	net.session = recorder
+	p.skin = ""
+	p.facing = Vector2.RIGHT
+	var cases: Array = []
+	# Frostwalk: the real Blink lane sweep, with the rival standing in it.
+	var frost: Dictionary = Classes.ability_fx("mage", "a3", "ice").duplicate()
+	p.global_position = origin
+	q.global_position = origin + p.dash_vec() * 95.0
+	p._tfx = frost
+	p._blink()
+	cases.append(["Frostwalk", float(frost.get("freeze_path", 0.0)), "frozen"])
+	p.global_position = origin
+	# Glacial comet: the real landing sweep, with the cast's own payload.
+	var comet: Dictionary = Classes.ability_fx("mage", "ult", "ice").duplicate()
+	p._tfx = {}
+	p._resolve_mage_skin_ult(q.global_position, 1.0, Callable(), comet, Color(0.75, 0.9, 1.0), "crystal")
+	cases.append(["Glacial comet", float(comet.get("freeze", 0.0)), "frozen"])
+	# The ice procs are freezes too; a stun from any other source stays a stun.
+	var nova: Dictionary = Classes.ability_fx("mage", "a2", "ice").duplicate()
+	nova["stun_chance"] = 1.0
+	p.hit_enemy(q, 1.0, nova)
+	cases.append(["ice Frost Nova proc", 0.5, "frozen"])
+	p.hit_enemy(q, 1.0, {"stun": 1.3})
+	cases.append(["Shield Bash stun", 1.3, "stunned"])
+	var freezes := recorder.statuses.filter(func(s: Array) -> bool: return s[1] == "freeze")
+	game.pvp = saved_pvp
+	game.pvp_active = saved_active
+	game.players = saved_players
+	net.session = saved_session
+	p.global_position = origin
+	p._tfx = {}
+	recorder.free()
+	duel.free()
+	q.queue_free()
+	if freezes.size() != cases.size():
+		errors.append("duel CC labels: expected %d hard CC riders, got %s" % [cases.size(), str(freezes)])
+		return
+	for i in cases.size():
+		var sent: Array = freezes[i]
+		if int(sent[0]) != 7 or not is_equal_approx(float(sent[2]), float(cases[i][1])) \
+				or String(sent[3]) != String(cases[i][2]):
+			errors.append("duel CC labels: %s sent %s, expected %s for %.1fs" % [cases[i][0], str(sent), cases[i][2], cases[i][1]])
 
 
 func _probe_warlock_coefficients(p: SpellDamageProbe, errors: Array[String]) -> void:

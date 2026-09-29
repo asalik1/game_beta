@@ -947,14 +947,18 @@ func _process(delta: float) -> void:
 		player.clear_local_intents()
 
 	_tick_room_clear(delta)   # phantom "N monsters left" guard + straggler wake (game_flow)
-	shake_amt = move_toward(shake_amt, 0.0, 20.0 * delta)
-	# The directional kick decays exponentially (holds through a hit-stop —
-	# delta is 0 there — then springs back), the jitter linearly.
-	_shake_kick = _shake_kick.lerp(Vector2.ZERO, clampf(Balance.HIT_SHAKE_KICK_DECAY * delta, 0.0, 1.0))
-	if camera:
-		camera_framing.tick(self, delta)
+	_tick_camera(delta)
 	# (The room-transition check at the top of _process is the safety
 	# net: any position outside the graph snaps back into the room.)
+
+
+## Shake first (older motion decays, this frame's impulses land at full
+## size), then the composition that writes it to the camera offset. The
+## framing suite drives this same entry point.
+func _tick_camera(delta: float) -> void:
+	_tick_shake(delta)
+	if camera:
+		camera_framing.tick(self, delta)
 
 
 ## Keep an eligible landmark's authored anchor unless the location tracker

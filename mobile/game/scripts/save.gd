@@ -727,7 +727,7 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 		var lg := String((lb as Dictionary).get("grade", "")) if lb is Dictionary else ""
 		if lg != "" and Items.BAG_NAMES.has(lg):
 			p.loose_bags.append(Items.make_bag(lg))
-	# Graded potions round-trip through make_potion so their effect params /
+	# Graded potions round-trip through their factory so their effect params /
 	# sprite / price stay current; a family/grade/lane that no longer exists
 	# simply drops (no-save-migration rule). Stones/scrolls/quest items pass
 	# through untouched. The ch1-3 gift flag is preserved (game_world reconciles).
@@ -737,8 +737,14 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 			continue
 		var cc: Dictionary = rawc
 		if String(cc.get("kind", "")) == "potion":
-			var np := Items.make_potion(String(cc.get("family", "")), String(cc.get("shape", "")),
-				String(cc.get("grade", "")), String(cc.get("lane", "")))
+			var np: Dictionary
+			if String(cc.get("grade", "")) == Items.POTION_GRAND_GRADE and String(cc.get("lane", "")) == "grand":
+				# Existing saves already contain these tags; Grand is outside the
+				# ordinary grade ladder and must retain its synthesis-only rules.
+				np = Items.make_grand_potion(Items.potion_shapekey(String(cc.get("family", "")), String(cc.get("shape", ""))))
+			else:
+				np = Items.make_potion(String(cc.get("family", "")), String(cc.get("shape", "")),
+					String(cc.get("grade", "")), String(cc.get("lane", "")))
 			if not np.is_empty():
 				if bool(cc.get("gift", false)):
 					np["gift"] = true

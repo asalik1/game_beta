@@ -3,6 +3,12 @@ extends ShotRig
 
 
 func _ready() -> void:
+	if flag("impacts"):
+		await boot("archer", "ch1", false)
+		var impact_error: String = await preload("res://scripts/tests/camera_impacts_live.gd").run(self)
+		if impact_error != "": push_error(impact_error)
+		finish(0 if impact_error == "" else 1)
+		return
 	if flag("soft-target"):
 		var qa_path := ProjectSettings.globalize_path("user://").replace("\\", "/")
 		if not qa_path.to_lower().contains("/build/qa/"):
