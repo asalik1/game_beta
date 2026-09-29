@@ -2612,48 +2612,9 @@ func _clump_size(rng: RandomNumberGenerator) -> int:
 	return n
 
 
-## (Re)build a room's decor + obstacles from its TERRAIN — tombstones in
-## the graveyard, snowy pines on the ice, crystals in the caverns...
-## FLOOR WEAR (gameplay-polish 2026-08-18): soft, low-contrast blotches over
-## the tiled floor — trodden dark patches and a few lighter worn/dusty ones —
-## so a room's ground has large-scale variation instead of reading as one
-## repeating tile with props on it (the "empty room" half of the outside
-## "beta" read; the anti-litter pass deliberately thinned the PROPS, this
-## layer adds no props). Non-colliding, under actors and shadows, cleaned
-## with the room's scenery. Sizes/alphas are presentation constants.
-const FLOOR_WEAR_PER_ROOM := Vector2i(14, 22)     # min/max blotches at full room area
-const FLOOR_WEAR_SIZE := Vector2(90.0, 230.0)     # px diameter band
-const FLOOR_WEAR_DARK_A := Vector2(0.12, 0.22)    # alpha band, dark blotches
-const FLOOR_WEAR_LIGHT_A := Vector2(0.06, 0.11)   # alpha band, light blotches
-const FLOOR_WEAR_LIGHT_SHARE := 0.3
-const FLOOR_WEAR_SQUASH := Vector2(0.55, 0.85)   # blotch height as a fraction of width
-func _spawn_floor_wear(zi: int, terrain: Dictionary, pr: Rect2) -> void:
-	var gk := String(terrain.get("ground", ""))
-	if not Art.GROUND.has(gk):
-		return
-	var rng := RandomNumberGenerator.new()
-	rng.seed = zi * 131 + terrain_by_zone[zi].hash() % 997
-	var area_frac := (pr.size.x * pr.size.y) / float(ROOM_W * ROOM_H)
-	var n := int(round(rng.randi_range(FLOOR_WEAR_PER_ROOM.x, FLOOR_WEAR_PER_ROOM.y) * area_frac))
-	var base_c: Color = Art.GROUND[gk][0]
-	var lum: float = 0.2126 * base_c.r + 0.7152 * base_c.g + 0.0722 * base_c.b
-	for i in n:
-		var s := Sprite2D.new()
-		s.texture = Art.tex("glow")   # soft radial falloff = a soft-edged blotch
-		var d := rng.randf_range(FLOOR_WEAR_SIZE.x, FLOOR_WEAR_SIZE.y)
-		s.scale = Vector2(d / GLOW_TEX_PX, d / GLOW_TEX_PX * rng.randf_range(FLOOR_WEAR_SQUASH.x, FLOOR_WEAR_SQUASH.y))
-		s.rotation = rng.randf_range(-0.5, 0.5)
-		s.position = pr.position + Vector2(rng.randf_range(80.0, pr.size.x - 80.0),
-			rng.randf_range(90.0, pr.size.y - 80.0))
-		if rng.randf() < FLOOR_WEAR_LIGHT_SHARE:
-			# Light wear: dark floors polish lighter, light floors dust darker.
-			var a := rng.randf_range(FLOOR_WEAR_LIGHT_A.x, FLOOR_WEAR_LIGHT_A.y)
-			s.modulate = Color(1, 1, 1, a) if lum < 0.45 else Color(0, 0, 0, a * 0.8)
-		else:
-			s.modulate = Color(0, 0, 0, rng.randf_range(FLOOR_WEAR_DARK_A.x, FLOOR_WEAR_DARK_A.y))
-		s.z_index = -9   # over the floor + road, under shadows/hazards/props
-		world.add_child(s)
-		zone_scenery[zi].append(s)
+## Floor presentation uses a private per-room RNG, separate from scenery rolls.
+func _spawn_floor_wear(zi: int, terrain: Dictionary, _pr: Rect2) -> void:
+	preload("res://scripts/floor_dressing.gd").spawn_wear(self, zi, terrain)
 
 
 func _spawn_scenery(zi: int) -> void:
@@ -3202,6 +3163,11 @@ func _spawn_scenery(zi: int) -> void:
 		preload("res://scripts/wayfarer.gd").install(self, zi)
 		preload("res://scripts/pocket_trial.gd").install(self, zi)
 		preload("res://scripts/prism_crystal.gd").install_room(self, zi)
+
+	# Post-placement dressing respects landmark/vegetation anchors and the same
+	# reservations/curved lanes used by the colliding scenery above.
+	preload("res://scripts/floor_dressing.gd").spawn_details(self, zi, reserved, placed,
+		[] if terrain_preview else zone.get("floor_dressing", []))
 
 	# Ambient critters (birds/crows/butterflies) live with the scenery:
 	# room rebuilds and terrain repaints sweep them up too.

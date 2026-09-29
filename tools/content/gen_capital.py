@@ -152,6 +152,45 @@ BACKDROPS = {
     "cin_court": [("capital_city_arcade", 1056, ARCADE_Y_HALL_ROOM, 1653.75)],
 }
 
+# Sparse non-colliding civic dressing, authored separately from furniture.
+# Reuse existing keys: the soft glow is tinted as a shallow damp patch.
+# Each (x, y) is the piece's y-sort anchor, so visibility is a sort question:
+# - banners anchor just SOUTH of the arcade base (+16) so they draw in front
+#   of the facade; Balance's banner "lift" (52) hangs them up the wall, the
+#   cloth's hem 36px above the base.
+# - planters stand on the arcade foot (+24) where no landmark covers it.
+# - puddles are z -8 floor decals: the arcade's foundation and contact shadow
+#   (to +70 world px) and any landmark art would bury them, so they lie on
+#   open floor, off the curved roads, per room.
+# Crown Plaza's arcade foot is hidden behind the Crown Spire Gate (and its
+# stairs), the forge and the archive, so its planters flank the benches and
+# its puddles sit by the south approach. test_world_read (systems tier) and
+# `shot.bat polish --floor-dressing` fail if a piece is dropped or buried.
+CIVIC_BANNER_SORT_DY = 16
+CIVIC_PLANTER_DY = 24
+
+
+def arcade_dressing(rid, puddles):
+    arcade_y = BACKDROPS[rid][0][2]
+    return [("library_planter", "planter", 740, arcade_y + CIVIC_PLANTER_DY),
+            ("library_planter", "planter", 1372, arcade_y + CIVIC_PLANTER_DY),
+            ("banner_blue", "banner", 620, arcade_y + CIVIC_BANNER_SORT_DY),
+            ("banner_blue", "banner", 1492, arcade_y + CIVIC_BANNER_SORT_DY)] \
+        + [("glow", "puddle", x, y) for x, y in puddles]
+
+
+FLOOR_DRESSING = {
+    "plaza": [("library_planter", "planter", 560, 990),
+              ("library_planter", "planter", 1552, 990),
+              ("banner_blue", "banner", 620, ARCADE_Y_OPEN_GATE + CIVIC_BANNER_SORT_DY),
+              ("banner_blue", "banner", 1492, ARCADE_Y_OPEN_GATE + CIVIC_BANNER_SORT_DY),
+              ("glow", "puddle", 760, 1120),
+              ("glow", "puddle", 1352, 1120)],
+    "archive": arcade_dressing("archive", [(700, 340), (1412, 340)]),
+    "tankard": arcade_dressing("tankard", [(560, 900), (1552, 900)]),
+    "gate": arcade_dressing("gate", [(760, 960), (1352, 960)]),
+}
+
 # Exact supporting furniture: deliberate social placements only.
 # 2026-08-18 plaza dressing (gameplay-polish, owner: the plaza read as one
 # facade on a bare cobble field): torch pillars mark the four plaza quarters
@@ -420,6 +459,12 @@ def gd_zone(i, room):
         for item in BACKDROPS.get(rid, [])
     ]
     lines.append('\t\t"backdrops": [%s],' % ", ".join(backdrop_lines))
+    dressing_lines = [
+        '{"key": "%s", "kind": "%s", "x": %d, "y": %d}' % item
+        for item in FLOOR_DRESSING.get(rid, [])
+    ]
+    if dressing_lines:
+        lines.append('\t\t"floor_dressing": [%s],' % ", ".join(dressing_lines))
     if rid in MERCHANTS:
         mx,my = MERCHANTS[rid]
         lines.append('\t\t"merchant": [%d, %d],' % (mx, my))

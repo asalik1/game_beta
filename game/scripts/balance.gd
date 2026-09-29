@@ -4246,6 +4246,50 @@ const ROOM_EDGE_DARKEN := 0.25
 const ROOM_CORNER_DARKEN := 0.08
 const ROOM_FLOOR_VALUE_MIN := 0.75
 const ROOM_FALLOFF_TEX_SIZE := 129
+# Room-scale wear stays visible beyond the vignette without bright patches
+# that could compete with ground tells. Two world-space noise fields multiply.
+const FLOOR_WEAR_COUNT := Vector2i(12, 16)
+const FLOOR_WEAR_MIN_COUNT := 6
+const FLOOR_WEAR_SIZE := Vector2(400.0, 900.0)
+const FLOOR_WEAR_DARK_A := Vector2(0.15, 0.30)
+const FLOOR_WEAR_SQUASH := Vector2(0.60, 0.85)
+const FLOOR_WEAR_ROTATION := 0.5
+const FLOOR_WEAR_INTERIOR_EVERY := 3
+const FLOOR_WEAR_INTERIOR_INSET := 0.30
+const FLOOR_WEAR_EDGE_BAND := Vector2(0.08, 0.20)
+const FLOOR_WEAR_NOISE_SCALES := Vector2(170.0, 610.0)
+const FLOOR_WEAR_NOISE_FLOOR := 0.55
+const FLOOR_WEAR_NOISE_OFFSET := 10000.0
+const FLOOR_WEAR_SOFT_CORE := 0.12
+const WALL_DRESS_CLUSTERS := 7
+const WALL_DRESS_TRIES := 72
+const WALL_DRESS_MEMBERS := Vector2i(3, 6)
+const WALL_DRESS_DEPTH := Vector2(38.0, 88.0)
+const WALL_DRESS_ALONG_INSET := 0.12
+const WALL_DRESS_CLUSTER_SPACING := 280.0
+const WALL_DRESS_MEMBER_SPACING := 46.0
+const WALL_DRESS_JITTER := 12.0
+# Member footprint (clearance box) and the moss/dust drift's soft patch size.
+const WALL_DRESS_SIZE := Vector2(94.0, 48.0)
+const WALL_DRESS_ANCHOR_CLEAR := 64.0
+# Stones render at their scatter family's width x this uniform multiple, solid
+# and dimmed through RGB (never see-through); only the soft drifts are translucent.
+const WALL_DRESS_STONE_SCALE := Vector2(1.0, 1.5)
+const WALL_DRESS_TINT := Color(0.80, 0.78, 0.74, 1.0)
+# The soft glow mask peaks at 0.55 alpha and the wear mottle thins it again, so
+# a drift's core lands near a quarter of these alphas: visible, still quiet.
+const WALL_DRESS_MOSS := Color(0.16, 0.20, 0.09, 0.80)
+const WALL_DRESS_DUST := Color(0.40, 0.36, 0.27, 0.65)
+# Authored capital pieces, sized in authored px (x room_scale). A banner hangs
+# `lift` px up the arcade facade above its authored point, which stays its
+# y-sort anchor just south of the arcade base (gen_capital FLOOR_DRESSING).
+# A puddle is the plain glow mask (no mottle), so its wet core reads at about
+# half this alpha on the lit plaza stone.
+const CIVIC_DRESS_STYLES := {
+	"planter": {"size": Vector2(82, 62), "tint": Color(0.86, 0.84, 0.78, 1.0)},
+	"banner": {"size": Vector2(48, 100), "tint": Color(0.84, 0.82, 0.78, 1.0), "lift": 52.0},
+	"puddle": {"size": Vector2(150, 48), "tint": Color(0.08, 0.11, 0.13, 0.85)},
+}
 const FIRE_POOL_LIGHT_MIN := 0.55
 const FIRE_CONTACT_ALPHA := 0.16
 const FIRE_CONTACT_INNER := 0.40

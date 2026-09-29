@@ -1152,6 +1152,11 @@ pools; `shot.bat polish [--rooms=2,17,20] [--zoom=1.4] [--class=warrior] [--hud]
 `tests/test_world_read.gd` plus its render check (the real road shader against
 `road_curve()`: bends, widths, door lanes, crossings, stone rim) and fails the rig on a miss,
 then adds the capital frames (gates, muster, arcade grounding) after the rooms.
+**`--floor-dressing`** (`shot.bat polish --floor-dressing --seed=42017 --timeout=540`) = the
+floor-dressing bundle: test_world_read + render check, then `dressing_room()` on real keep
+17/20, forest 2 and capital 0/2/3/4 rooms (macro wear, wall clusters, every authored capital
+piece landed, visible and off the lanes) with `floor_<room>_room/south/arcade` frames, then a
+scene handoff to capgap (`CAPGAP SUMMARY: 0 blocked route(s)`).
 **`--damage-numbers` mode** = the per-target
 damage-column check: test_quality's column fixture, then a live wolf burst (`damage_burst`), a mixed
 normal/crit/DoT stack (`damage_stack`) and a killing blow that must stay on screen (`damage_kill`);

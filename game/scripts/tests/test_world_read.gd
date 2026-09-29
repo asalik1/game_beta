@@ -1,5 +1,6 @@
 extends RefCounted
 const Floor := preload("res://scripts/room_floor.gd")
+const Dressing := preload("res://scripts/floor_dressing.gd")
 const FEATHER := 34.0   # the band's soft edge, pinned for the render check
 
 
@@ -117,6 +118,7 @@ static func run(t: Node) -> String:
 	g.rivers = rivers.duplicate(true)
 	g.zone_road_marks = {}
 	var error := _roads(g)
+	if error == "": error = _dressing(g)
 	for nodes in g.zone_road_marks.values():
 		for node in nodes:
 			node.free()
@@ -131,6 +133,284 @@ static func run(t: Node) -> String:
 	if error == "":
 		print("ok: world read (seeded road arms, crossings, prop clearance, dark wear, stone edge, warm value floor, grounded arches)")
 	return error
+
+
+## Pure layout probes use the isolated rooms/terrains in run(). Node probes
+## lend a fresh scenery dictionary (and the capital's chapter id, which keys
+## road seeds) and restore them on every failure path.
+static func _dressing(g: Game) -> String:
+	var scenery: Dictionary = g.zone_scenery
+	var kept_seed: int = g.wander_seed
+	var chapter: String = g.chapter_id
+	g.zone_scenery = {0: []}
+	g.wander_seed = 42017
+	var error := _dressing_contract(g)
+	_free_lent(g)
+	if error == "": error = _civic_contract(g)
+	_free_lent(g)
+	g.zone_scenery = scenery
+	g.wander_seed = kept_seed
+	g.chapter_id = chapter
+	return error
+
+
+static func _free_lent(g: Game) -> void:
+	for nodes in g.zone_scenery.values():
+		for node in nodes:
+			if is_instance_valid(node): node.free()
+	g.zone_scenery = {0: []}
+
+
+static func _dressing_contract(g: Game) -> String:
+	g.terrain_by_zone[0] = "keep"
+	g.rivers.erase(0)
+	g.zones[0] = {"type": "safe", "room_scale": 1.0, "backdrops": []}
+	g.rooms[0]["scale"] = Vector2.ONE
+	g.rooms[0]["exits"] = {"W": 1, "E": 1, "N": 1, "S": 1}
+	var first := Dressing.wear_plan(g, 0)
+	if first != Dressing.wear_plan(g, 0): return "floor wear rerolls on repaint"
+	g.wander_seed += 1
+	var changed := Dressing.wear_plan(g, 0)
+	g.wander_seed -= 1
+	if first == changed: return "floor wear ignores the room's run seed"
+	var lit := 0
+	var edge := 0
+	var bounds := Dressing.inner(g, 0)
+	for patch in first:
+		if patch.size.x < 400.0 or patch.size.x > 900.0: return "floor wear is not room-scale (400-900px)"
+		if patch.alpha < 0.15 or patch.alpha > 0.30: return "floor wear alpha leaves the quiet macro band"
+		var uv: Vector2 = (patch.pos - bounds.position) / bounds.size
+		if minf(minf(uv.x, 1.0 - uv.x), minf(uv.y, 1.0 - uv.y)) <= 0.20: edge += 1
+		if Floor.edge_value(patch.pos - g.room_rect(0).position, Floor.inner_floor(g, 0)) > 0.98: lit += 1
+	if lit < 2 or edge <= first.size() / 2: return "wear lacks lit-centre patches or a wall/corner bias"
+	# Exercise the production spawn, so keeping a correct unused planner cannot pass.
+	g._spawn_floor_wear(0, Terrains.DATA["keep"], g.play_rect(0))
+	if g.zone_scenery[0].size() != first.size(): return "production floor wear does not use the macro plan"
+	for i in first.size():
+		var sprite: Sprite2D = g.zone_scenery[0][i]
+		if not sprite.has_meta("floor_wear") or sprite.position != first[i].pos or not (sprite.texture.get_size() * sprite.scale).is_equal_approx(first[i].size):
+			return "production wear scale/position differs from the repaint-stable plan"
+		if sprite.z_index != -9 or sprite.modulate.r != 0.0: return "wear competes with ground tells"
+		if g._rustles(sprite): return "floor wear throws grass-rustle leaves"
+		var mat := sprite.material as ShaderMaterial
+		if mat == null or mat.get_shader_parameter("noise_scales") != Balance.FLOOR_WEAR_NOISE_SCALES: return "production wear misses the tuned noise scales"
+	# The second, lower-frequency field is the one that breaks the repeat.
+	var scales := Balance.FLOOR_WEAR_NOISE_SCALES
+	if scales.x <= 0.0 or scales.y < scales.x * 2.0 or not Dressing.WearShader.code.contains("noise_scales.y"):
+		return "wear lost its second low-frequency noise multiply"
+	# Only the shared wind material marks swaying decor.
+	var sway := Sprite2D.new()
+	sway.material = Art.wind_material()
+	var sways := g._rustles(sway)
+	sway.free()
+	if not sways: return "swaying decor no longer rustles"
+	var road := g.road_layout(0)
+	var pr := g.play_rect(0)
+	var group := Dressing.wall_plan(g, 0, [], [])
+	if group.is_empty(): return "no wall-base dressing in a clear keep fixture"
+	if group != Dressing.wall_plan(g, 0, [], []): return "wall dressing rerolls on repaint"
+	var counts := {}
+	for spec in group:
+		counts[spec.cluster] = int(counts.get(spec.cluster, 0)) + 1
+		var half: Vector2 = spec.size * 0.5
+		for off in [Vector2.ZERO, -half, half, Vector2(half.x, -half.y), Vector2(-half.x, half.y)]:
+			if g._lane_blocked(road, spec.pos + off - pr.position): return "wall dressing covers a door lane or curved road"
+		var gap: Vector2 = (spec.pos - bounds.position).min(bounds.end - spec.pos)
+		if minf(gap.x, gap.y) > 100.0: return "wall dressing drifted into fighting space"
+	for n in counts.values():
+		if n < 3 or n > 6: return "wall-base cluster is not 3-6 members"
+	# An occupied anchor and a reservation must EACH displace the first cluster.
+	var anchor: Vector2 = group[0].pos - pr.position
+	var keep_off := Balance.WALL_DRESS_ANCHOR_CLEAR + (Balance.WALL_DRESS_SIZE * 0.5).length()
+	for spec in Dressing.wall_plan(g, 0, [], [anchor]):
+		if spec.pos.distance_to(group[0].pos) < keep_off: return "wall dressing piles onto an existing prop or landmark"
+	for spec in Dressing.wall_plan(g, 0, [{"pos": anchor, "radius": 200.0}], []):
+		if spec.pos.distance_to(group[0].pos) < 200.0: return "wall dressing ignores reservations"
+	# The production spawn: every planned member lands as plain decor. Stones
+	# are the scatter's solid ground rock at a uniform scale; only the soft
+	# moss/dust drifts are translucent, and nothing throws rustle leaves.
+	Dressing.spawn_details(g, 0, [], [], [])
+	var members := 0
+	for node in g.zone_scenery[0]:
+		if not node.has_meta("wall_base"): continue
+		members += 1
+		var sprite := node as Sprite2D
+		if sprite == null or sprite.get_child_count() != 0: return "new floor dressing added collision/actor nodes"
+		if g._rustles(sprite): return "wall dressing throws grass-rustle leaves"
+		if sprite.material == null:
+			if sprite.texture == Art.tex("pebble"): return "wall pebbles use the round ambience stone, not the ground rock"
+			if sprite.modulate.a < 1.0 or not is_equal_approx(absf(sprite.scale.x), sprite.scale.y):
+				return "wall stones render see-through or squashed"
+	if members != group.size() or members < 3: return "production wall dressing does not use the cluster plan"
+	# Authored civic data belongs to the capital path, never random terrain scatter.
+	var authored_rooms := 0
+	for zone in CapitalHub.CHAPTER.zones:
+		if zone.terrain not in ["capital_civic", "capital_approach"]: continue
+		var kinds := {}
+		for spec in zone.get("floor_dressing", []):
+			kinds[spec.kind] = true
+			if spec.key != "glow" and not FileAccess.file_exists("res://assets/sprites/%s.png" % spec.key): return "civic dressing references missing art"
+		if kinds.size() != 3: return "civic room lacks authored planters, puddles and banners"
+		authored_rooms += 1
+	if authored_rooms != 4: return "capital dressing coverage changed"
+	print("ok: macro wear 400-900px, lit-centre coverage, seeded repaint, 3-6 wall clusters, lane/anchor clearance, decor-only walls, no stray rustle")
+	return ""
+
+
+## The authored capital pieces through the production spawn, each civic room
+## rebuilt from its own content (arcade, landmarks, furniture, wear) on the
+## capital's own road seed: dressing_room() then proves every piece landed,
+## stays decor-only and is not buried under later-drawn architecture.
+static func _civic_contract(g: Game) -> String:
+	g.chapter_id = "capital"   # the caller restores it
+	var rooms := 0
+	for zi in CapitalHub.CHAPTER.zones.size():
+		var zone: Dictionary = CapitalHub.CHAPTER.zones[zi]
+		if (zone.get("floor_dressing", []) as Array).is_empty(): continue
+		var error := _civic_room(g, zi, zone)
+		_free_lent(g)
+		if error != "": return error
+		rooms += 1
+	if rooms != 4: return "capital dressing coverage changed"
+	return ""
+
+
+static func _civic_room(g: Game, zi: int, zone: Dictionary) -> String:
+	g.zones[zi] = zone.duplicate(true)
+	g.terrain_by_zone[zi] = zone.terrain
+	g.rivers.erase(zi)
+	var exits := {}
+	for dir in zone.exits: exits[dir] = zi
+	g.rooms[zi]["exits"] = exits
+	g.rooms[zi]["scale"] = Vector2.ONE
+	g.zone_scenery[zi] = []
+	var origin := g.play_rect(zi).position
+	var room_scale := float(zone.get("room_scale", 1.0))
+	g._spawn_floor_wear(zi, Terrains.get_terrain(zone.terrain), g.play_rect(zi))
+	for backdrop in zone.get("backdrops", []):
+		g.zone_scenery[zi].append(g._add_backdrop(backdrop.name,
+			g.room_pos(zi, backdrop.x, backdrop.y), float(backdrop.w) * room_scale))
+	var reserved: Array = []
+	var placed: Array = []
+	for spec in zone.get("landmarks", []) + zone.get("furnishings", []):
+		var at := g.room_pos(zi, spec.x, spec.y)
+		placed.append(at - origin)
+		reserved.append({"pos": at - origin, "radius": float(spec.get("clearance", 190.0))})
+		g.zone_scenery[zi].append(g._add_structure(spec.name, at))
+	Dressing.spawn_details(g, zi, reserved, placed, zone.floor_dressing)
+	return dressing_room(g, zi)
+
+
+## Production room coverage (the bundled captures after placement, and the
+## systems tier's rebuilt capital rooms).
+static func dressing_room(g: Game, zi: int) -> String:
+	var wear := 0
+	var civic := 0
+	var walls := 0
+	var hidden := 0.0
+	var images := {}
+	var road := g.road_layout(zi)
+	var origin := g.play_rect(zi).position
+	for node in g.zone_scenery.get(zi, []):
+		if not is_instance_valid(node): continue
+		if node.has_meta("floor_wear"): wear += 1
+		if node.has_meta("civic_dressing"): civic += 1
+		if node.has_meta("wall_base"): walls += 1
+		if node.has_meta("civic_dressing") or node.has_meta("wall_base") or node.has_meta("floor_wear"):
+			var sprite := node as Sprite2D
+			if sprite == null or sprite.get_child_count() != 0: return "dressing added a collider in room %d" % zi
+			if g._rustles(sprite): return "floor dressing throws grass-rustle leaves in room %d" % zi
+			if node.has_meta("floor_wear"): continue
+			var centre := sprite.to_global(sprite.get_rect().get_center())
+			if g._lane_blocked(road, centre - origin): return "dressing entered a road lane in room %d" % zi
+			if not node.has_meta("civic_dressing"): continue
+			var share := _hidden_share(g, zi, sprite, images)
+			hidden = maxf(hidden, share)
+			if share > HIDDEN_MAX:
+				return "authored %s at %s is %d%% hidden behind later-drawn scenery in room %d" \
+					% [node.get_meta("civic_dressing"), sprite.position, roundi(share * 100.0), zi]
+	if wear < 6: return "production room %d lost its macro floor wear" % zi
+	if civic != (g.zones[zi].get("floor_dressing", []) as Array).size(): return "capital authored dressing was dropped by clearance in room %d" % zi
+	if g.terrain_by_zone[zi] == "keep" and walls < 3: return "keep room %d has no complete wall cluster" % zi
+	if String(g.terrain_by_zone[zi]).begins_with("capital_") and walls > 0: return "generated wall scatter leaked into capital room %d" % zi
+	print("ok: dressed room %d wear=%d wall-members=%d civic=%d worst-hidden=%d%%" % [zi, wear, walls, civic, roundi(hidden * 100.0)])
+	return ""
+
+
+const HIDDEN_MAX := 0.30   # share of an authored piece later-drawn scenery may cover
+
+## Share of a dressing sprite's painted samples that opaque scenery drawn
+## AFTER it covers: a higher z, or the same z sorted further south in the
+## y-sorted world. Occluders = structure/facade art (structure_occluders)
+## plus the arcade's foundation band and contact shadow.
+static func _hidden_share(g: Game, zi: int, sprite: Sprite2D, images: Dictionary) -> float:
+	var z := _z_of(sprite)
+	var sort_y := _sort_y(g, sprite)
+	var occluders: Array[Sprite2D] = []
+	for node in g.zone_scenery.get(zi, []):
+		if not is_instance_valid(node) or node == sprite: continue
+		var candidates: Array = [node]
+		candidates.append_array((node as Node).find_children("*", "Sprite2D", true, false))
+		for candidate in candidates:
+			var o := candidate as Sprite2D
+			if o == null or not o.visible: continue
+			if not o.is_in_group("structure_occluders") and String(o.get_parent().name) != "BackdropGrounding": continue
+			var oz := _z_of(o)
+			if oz > z or (oz == z and _sort_y(g, o) > sort_y):
+				occluders.append(o)
+	var painted := 0
+	var covered := 0
+	var rect := sprite.get_rect()
+	for i in 7:
+		for j in 7:
+			var local := rect.position + rect.size * Vector2(0.1 + i * 0.8 / 6.0, 0.1 + j * 0.8 / 6.0)
+			# The piece's own painted texels (a tinted puddle is faint by design).
+			if _alpha_at(sprite, local, images) / maxf(0.001, sprite.modulate.a) < 0.3: continue
+			painted += 1
+			var at := sprite.to_global(local)
+			for o in occluders:
+				if _alpha_at(o, o.to_local(at), images) >= 0.5:
+					covered += 1
+					break
+	return 1.0 if painted == 0 else float(covered) / float(painted)
+
+
+## Texture alpha x modulate alpha at a sprite-local point (0 off its art).
+static func _alpha_at(sprite: Sprite2D, local: Vector2, images: Dictionary) -> float:
+	var rect := sprite.get_rect()
+	if sprite.texture == null or not rect.has_point(local): return 0.0
+	var uv := (local - rect.position) / rect.size
+	if sprite.flip_h: uv.x = 1.0 - uv.x
+	if sprite.flip_v: uv.y = 1.0 - uv.y
+	if not images.has(sprite.texture):
+		var img := sprite.texture.get_image()
+		if img != null and img.is_compressed(): img.decompress()
+		images[sprite.texture] = img
+	var image: Image = images[sprite.texture]
+	if image == null: return 0.0
+	var px := Vector2i((uv * Vector2(image.get_size())).floor()).clamp(Vector2i.ZERO, image.get_size() - Vector2i.ONE)
+	return image.get_pixelv(px).a * sprite.modulate.a * sprite.self_modulate.a
+
+
+static func _z_of(item: CanvasItem) -> int:
+	var z := 0
+	var node: Node = item
+	while node is CanvasItem:
+		z += (node as CanvasItem).z_index
+		if not (node as CanvasItem).z_as_relative: break
+		node = node.get_parent()
+	return z
+
+
+## The world y-sorts each direct child on its own y, except that a child with
+## y_sort_enabled (a structure body) sorts its children individually.
+static func _sort_y(g: Game, item: Node2D) -> float:
+	var node := item
+	while node.get_parent() != g.world:
+		var parent := node.get_parent() as Node2D
+		if parent == null or parent.y_sort_enabled: break
+		node = parent
+	return node.global_position.y
 
 
 static func _road_material(g: Game, zi: int) -> ShaderMaterial:
