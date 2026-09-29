@@ -2029,10 +2029,7 @@ func _hit_rival(q: Player, mult: float, effects := {}) -> void:
 	# Attacker-side juice (the number here, their hurt flash on their machine,
 	# vitals re-truth the bars), then the wire.
 	game.sfx("ehit", 1.0, 0.0, 4.0)
-	if is_crit:
-		game.spawn_text(q.global_position + Vector2(0, -34), "%d!" % int(dmg), Color(1.0, 0.55, 0.1))
-	else:
-		game.spawn_text(q.global_position + Vector2(0, -30), str(int(dmg)), Color(1, 1, 1))
+	game.spawn_damage_number(q, int(dmg), is_crit)
 	game.net_session().pvp_strike(q.peer_id, dmg, dmg_type, pen, dex)
 
 

@@ -1129,7 +1129,10 @@ mid-room frame with a FROZEN wolf pack that has taken three hits (numbers, frame
 reticle tag, contact shadows), a north-wall frame (wall face + floor shadow + edged road +
 door torches) and a west-wall frame, then the same room painted magma for the lava light
 pools; `shot.bat polish [--rooms=2,17,20] [--zoom=1.4] [--class=warrior] [--hud]`; own dir
-`user://shots/polish`, never touches `shots/cine`. **`--gif` mode** = MOTION review: frame
+`user://shots/polish`, never touches `shots/cine`. **`--damage-numbers` mode** = the per-target
+damage-column check: test_quality's column fixture, then a live wolf burst (`damage_burst`), a mixed
+normal/crit/DoT stack (`damage_stack`) and a killing blow that must stay on screen (`damage_kill`);
+`shot.bat polish --damage-numbers --timeout=180`, prints `DAMAGE BURST PASS`. **`--gif` mode** = MOTION review: frame
 SERIES per beat (forest/keep/HUD fights with a LIVE pack and the hero driven through the real
 input path, road/magma/keep-wall walks) into `gif_<beat>/`; run with the runner's new
 `--fixed-fps=30` so each frame is a deterministic 1/30 s; then

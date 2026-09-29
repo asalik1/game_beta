@@ -5,6 +5,33 @@ class_name Balance
 ## monsters/zones) — this file is for the numbers you tweak, not the
 ## content you author.
 
+# Target damage columns: outline + crit pop need a full 44px row at world scale.
+const FLOAT_NUM_MAX := 22
+const DAMAGE_NUM_MERGE := 0.35
+# Burn and bleed tick every 0.5s (enemy.gd); a window just past that cadence
+# lets each DoT build one running total instead of a new row per tick.
+const DAMAGE_NUM_DOT_MERGE := 0.6
+const DAMAGE_NUM_LIFE := 0.85
+const DAMAGE_NUM_FADE := 0.25
+const DAMAGE_NUM_ROW := 44.0
+const DAMAGE_NUM_SHIFT := 0.12
+const DAMAGE_NUM_RISE_SPEED := 12.0
+const DAMAGE_NUM_RISE_MAX := 18.0
+const DAMAGE_NUM_HEIGHT := 42.0
+const DAMAGE_NUM_POP := 1.18
+const DAMAGE_NUM_POP_TIME := 0.14
+const DAMAGE_NUM_COUNT_TIME := 0.10
+const DAMAGE_NUM_SIZE := 21
+const DAMAGE_NUM_CRIT_SIZE := 27
+const DAMAGE_NUM_DOT_SIZE := 16
+const DAMAGE_NUM_ALLY_SIZE := 14
+const DAMAGE_NUM_OUTLINE := 5
+const DAMAGE_NUM_PADDING := 6.0
+const DAMAGE_NUM_NORMAL := Color.WHITE
+const DAMAGE_NUM_CRIT := Color(1.0, 0.79, 0.25)
+const DAMAGE_NUM_DOT := Color(0.65, 0.76, 0.79)
+const DAMAGE_NUM_ALLY_ALPHA := 0.65
+
 # Compact event feed: rows wrap in full (never cut short). The fixed
 # seven-line footprint holds two wide 64-character names plus their
 # consequence (three lines each); ordinary guidance uses two lines.

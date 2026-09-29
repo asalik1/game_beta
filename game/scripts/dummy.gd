@@ -42,7 +42,7 @@ func _make_dummy() -> void:
 
 	# Floating stat readout, pinned above the head. A dim panel keeps the
 	# text legible over any terrain; z_index rides above sprites like the
-	# damage numbers (game.spawn_text) do.
+	# damage numbers (game.spawn_damage_number) do.
 	readout_bg = ColorRect.new()
 	readout_bg.color = Color(0, 0, 0, 0.6)
 	readout_bg.position = Vector2(-118, -96)
@@ -88,14 +88,13 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 		return
 	if vuln_time > 0.0:
 		amount *= 1.5
+	if _damage_tick:
+		game.spawn_damage_number(self, int(amount), false, true)
 	_note_hit(amount, is_crit)
 	knock = Vector2.ZERO
 	if not silent:
 		game.sfx("ehit")
-		if is_crit:
-			game.spawn_text(global_position + Vector2(0, -34), "%d!" % int(amount), Color(1.0, 0.55, 0.1))
-		else:
-			game.spawn_text(global_position + Vector2(0, -30), str(int(amount)), Color(1, 1, 1))
+		game.spawn_damage_number(self, int(amount), is_crit)
 		sprite.modulate = Color(3, 3, 3)
 		var tween := create_tween()
 		tween.tween_property(sprite, "modulate", Color(1.15, 1.0, 0.6), 0.15)

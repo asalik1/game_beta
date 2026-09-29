@@ -4103,7 +4103,8 @@ const FLOAT_NUM_LIFE := 0.85
 # enemies under numbers. Keep at most this many floating numbers alive at once —
 # high enough that normal fights never notice, low enough to stay legible in an
 # AoE storm. Only bites past ~this-many hits inside one FLOAT_NUM_LIFE window.
-const FLOAT_NUM_MAX := 22
+const FLOAT_NUM_MAX := Balance.FLOAT_NUM_MAX
+var _damage_columns: Dictionary = {}
 var _float_nums: Array = []          # live floating-number labels, oldest first
 var _float_rng := RandomNumberGenerator.new()   # its own stream: never perturbs game RNG
 
@@ -4128,7 +4129,33 @@ func _float_kind(text: String) -> int:
 func _retire_float_num(l: Node) -> void:
 	_float_nums.erase(l)
 	if is_instance_valid(l):
-		l.queue_free()
+		if l.has_meta("damage_column"):
+			l.get_meta("damage_column").remove_label(l)
+		else:
+			l.queue_free()
+
+
+## Damage owns a target column; narrative/pickup text keeps spawn_text's path.
+func spawn_damage_number(target: Node2D, amount: int, crit := false, dot := false, ally := false) -> void:
+	if not is_instance_valid(target) or target.is_queued_for_deletion():
+		return
+	var id := target.get_instance_id()
+	if not _damage_columns.has(id):
+		var column := preload("res://scripts/fx/damage_column.gd").new()
+		column.game = self
+		column.target_ref = weakref(target)
+		column.target_id = id
+		column.room = cur_room
+		column.anchor = target.global_position
+		_damage_columns[id] = column
+		add_child(column)
+	_damage_columns[id].hit(amount, crit, dot, ally)
+
+
+func clear_damage_numbers(target_id: int = 0) -> void:
+	for id in _damage_columns.keys():
+		if target_id == 0 or id == target_id:
+			_damage_columns[id].retire()
 
 
 func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
@@ -4179,9 +4206,7 @@ func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
 		# hits stays legible instead of burying the pack under digits.
 		_float_nums.append(l)
 		while _float_nums.size() > FLOAT_NUM_MAX:
-			var oldest: Node = _float_nums.pop_front()
-			if is_instance_valid(oldest):
-				oldest.queue_free()
+			_retire_float_num(_float_nums.front())
 	var tween := l.create_tween()   # label-bound: dies cleanly if retired early
 	if kind > 0:
 		l.scale = Vector2(1.5, 1.5) if kind == 2 else Vector2(1.28, 1.28)
@@ -4464,31 +4489,14 @@ func spawn_text_all(pos: Vector2, text: String, color: Color, hold := 0.0) -> vo
 		net_session().host_spawn_text(pos, text, color, hold)
 
 
-## MP-14 (§5.6): an ALLY's hit number — deliberately smaller and dimmer than
-## your own (spawn_text), so a friend fighting beside you reads as background
-## chatter and your own big numbers stay legible. Fanned by the host to the
-## non-attacking party members (net_session.host_fan_damage). World-space, like
-## spawn_text, so it rises off the enemy it landed on.
-func spawn_ally_damage(pos: Vector2, amount: int, crit: bool) -> void:
-	var l := Label.new()
-	l.text = "%d!" % amount if crit else str(amount)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.z_index = 19  # under your own numbers (z 20)
-	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	UITheme.world(l, 14, 3)   # same face as your own numbers, two sizes down
-	# A cool, dim tint marks it as someone else's damage; crits warm slightly.
-	var col := Color(1.0, 0.72, 0.45, 0.8) if crit else Color(0.78, 0.86, 0.95, 0.72)
-	l.add_theme_color_override("font_color", col)
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
-	var lean := _float_rng.randf_range(-FLOAT_NUM_SPREAD * 0.6, FLOAT_NUM_SPREAD * 0.6)
-	l.size = Vector2(100, 20)
-	l.position = pos + Vector2(-50 + lean, -8)
-	add_child(l)
-	var tween := create_tween()
-	tween.tween_property(l, "position:y", l.position.y - 26.0, 0.75) \
-		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(l, "modulate:a", 0.0, 0.75)
-	tween.tween_callback(l.queue_free)
+## MP-14 (§5.6): an ALLY's hit number, deliberately smaller and dimmer than
+## your own (spawn_damage_number), so a friend fighting beside you reads as
+## background chatter and your own big numbers stay legible. Fanned by the host
+## to the non-attacking party members (net_session.host_fan_damage). It joins
+## the struck target's damage column as one quiet row per merge window (crits
+## included, marked "!"), sized/faded by Balance.DAMAGE_NUM_ALLY_SIZE/ALPHA.
+func spawn_ally_damage(target: Node2D, amount: int, crit: bool) -> void:
+	spawn_damage_number(target, amount, crit, false, true)
 
 
 # =================================================================== per-frame

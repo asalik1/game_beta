@@ -48,6 +48,9 @@ func _ready() -> void:
 	var z := float(arg("zoom", "1.4"))
 	zoom(z)
 	await sim_wait(1.5)   # title card clears
+	if flag("damage-numbers"):
+		await _damage_numbers()
+		return
 	if flag("illumination"):
 		# Native 1x prop/light loops, rendered luminance and stationary geometry.
 		var error: String = await preload("res://scripts/dev/prop_illumination_capture.gd").run(self)
@@ -581,3 +584,65 @@ func _motion_beat(beat: String) -> bool:
 		return false
 	var requested := arg("beats", "")
 	return requested.is_empty() or requested.split(",").has(beat)
+
+
+## One bounded mode combines deterministic regression with the requested burst capture.
+## shot.bat polish --damage-numbers --timeout=180
+func _damage_numbers() -> void:
+	var error: String = await preload("res://scripts/tests/test_quality.gd").damage_numbers(self)
+	if error != "":
+		push_error(error)
+		finish(1)
+		return
+	await _goto(2)
+	var center: Vector2 = game.room_center(2)
+	game.player.global_position = center + Vector2(-100, 70)
+	game.player.set_physics_process(false)
+	game.camera.global_position = center
+	_pack(["wolf", "wolf", "wolf"], center - Vector2(150, 0))
+	await sim_wait(0.5)
+	# No RNG in the damage sequence: each living wolf has ample HP.
+	for m in _mobs:
+		m.hp = 10000.0
+		m.max_hp = 10000.0
+	for amount in [28, 32, 16]:
+		_mobs[0].take_damage(amount)
+		await sim_wait(0.06)
+	await sim_wait(0.12)
+	var col: Node = game._damage_columns[_mobs[0].get_instance_id()]
+	if col.entries.size() != 1 or col.entries[0].label.text != "76":
+		push_error("live three-hit wolf burst did not display one 76")
+		finish(1)
+		return
+	shot("damage_burst", "28 + 32 + 16 = 76, one clean running total")
+	game.clear_damage_numbers()
+	# Mixed kinds on one target: normal, standalone crit, muted DoT.
+	_mobs[1].take_damage(28)
+	_mobs[1].take_damage(32, Vector2.ZERO, true)
+	_mobs[1]._take_dot_damage(16)
+	await sim_wait(0.2)
+	col = game._damage_columns[_mobs[1].get_instance_id()]
+	if col.entries.size() != 3:
+		push_error("live mixed-kind burst lost rows")
+		finish(1)
+		return
+	shot("damage_stack", "three-hit mixed burst: white 28, gold 32!, muted 16")
+	# The killing blow keeps its number where the wolf fell, then fades out normally.
+	var fallen: int = _mobs[1].get_instance_id()
+	_mobs[1].hp = 5.0
+	_mobs[1].take_damage(40, Vector2.ZERO, true)
+	col = game._damage_columns.get(fallen)
+	if not _mobs[1].dying or col == null or col.entries[0].label.text != "40!" \
+			or col.entries[0].label.is_queued_for_deletion():
+		push_error("the killing blow's number was not shown")
+		finish(1)
+		return
+	await sim_wait(0.1)
+	shot("damage_kill", "the killing blow's gold 40! stays where the wolf fell")
+	await sim_wait(Balance.DAMAGE_NUM_LIFE + 0.1)
+	if game._damage_columns.has(fallen):
+		push_error("a dead wolf's numbers never faded out")
+		finish(1)
+		return
+	print("DAMAGE BURST PASS: real enemy totals, mixed rows, killing blow shown then faded")
+	finish()

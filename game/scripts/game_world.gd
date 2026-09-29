@@ -1034,6 +1034,8 @@ func _enter_room(i: int, live := false) -> void:
 	if i < 0 or i >= zone_count:
 		return
 	var prev := cur_room
+	if i != prev:
+		clear_damage_numbers()
 	_build_room(i)
 	var first_visit: bool = not visited.get(i, false)
 	visited[i] = true
