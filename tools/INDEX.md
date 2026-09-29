@@ -1241,6 +1241,14 @@ substitute for his pass.
 
 ## Play / build
 
+Liquid prop review: `shot.bat polish --liquid-flow --gif --fixed-fps=30`
+captures four native 1x structures (outfall, mirrored outfall, garden and crown
+fountains) under `shots/polish/gif_liquid_flow`. Outfall re-derive:
+`python tools/art/derive_prop_anim.py sewer_outfall --motion flow --amp 0.10`.
+Its material region protects masonry/moss; travelling highlights reach the
+dark stream and puddle that the generic hue mask missed. Audit and visually
+review the loop after deriving; mask coverage alone is not visual acceptance.
+
 | tool | what it does |
 |---|---|
 | `run_game.bat` / `dev_mode.bat` | play normally / play with the F1 debug panel (class, level, gear, terrain, bosses instantly). |

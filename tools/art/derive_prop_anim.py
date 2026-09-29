@@ -23,9 +23,9 @@ Motions:
   sway     canopy sway: the same shear with its amplitude ramped from 0 at the
            trunk base to full at the crown, so a tree leans without sliding
   shimmer  cool (water) pixels breathe + a 1px horizontal jitter — well water
-  flow     a POURING liquid: the liquid mask (cool water OR olive sludge, minus the
-           2px keyed rim) scrolls its COLOUR downward and breathes; alpha untouched,
-           so the silhouette stays byte-stable — sewer outfalls, spillways
+  flow     a POURING liquid: a material profile sends highlights down the stream
+           and outward across the puddle (sewer_outfall). Unprofiled liquids use
+           the cool/olive colour mask and texture scroll. Alpha stays untouched.
   swirl    void/energy pixels churn: the whole glow breathes while rotating
            lobes + outward-traveling bright rings sweep through it. The rigid
            shell is NEVER touched (mask-gated), so it stays pixel-locked —
@@ -40,7 +40,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 
 REPO = Path(__file__).resolve().parents[2]
 DESK = REPO / "game" / "assets" / "sprites"
@@ -49,6 +49,36 @@ MOBILE = REPO / "mobile" / "game" / "assets" / "sprites"
 
 FLOW_STEPS = 4      # scroll steps per loop for motion "flow"
 FLOW_PX = 2         # px of colour scroll per step, at MASTER resolution
+
+
+def flow_profile(name, base):
+    """Material bounds for liquid whose dark paint defeats a hue-only mask.
+
+    Outfall coordinates belong to its 322x324 static master. Keep pipe, moss,
+    masonry and the keyed rim rigid. Fail on changed art rather than silently
+    applying an obsolete region. The phase field falls down the stream and
+    spreads across the puddle; 24 master pixels survive the 140px world width.
+    """
+    if name != "sewer_outfall":
+        return None
+    from scipy import ndimage
+    if base.shape[:2] != (324, 322):
+        raise ValueError("sewer_outfall flow region needs review against the new master")
+    region = Image.new("L", (322, 324))
+    ImageDraw.Draw(region).polygon([
+        (208,121), (228,124), (247,140), (249,191), (247,224),
+        (261,253), (278,260), (299,264), (319,272), (319,283),
+        (300,296), (289,315), (249,322), (209,315), (179,310),
+        (158,299), (124,298), (109,288), (115,278), (142,272),
+        (173,270), (193,261), (210,244), (215,221), (216,186),
+        (215,156),
+    ], fill=255)
+    mask = (np.asarray(region) > 0) & ndimage.binary_erosion(base[..., 3] > 40, iterations=2)
+    yy, xx = np.mgrid[:324, :322]
+    distance = np.hypot((xx - 234) * 0.45, (yy - 260) * 1.2)
+    blend = np.clip((yy - 254) / 20.0, 0, 1)
+    field = ((yy - 121) * (1 - blend) + (139 + distance) * blend) * (2 * np.pi / 24)
+    return mask.astype(np.float32), field
 
 
 def _lum(rgb):  # 0..1 per-pixel luminance
@@ -84,7 +114,8 @@ def _scale_rgb(a, factor):
     return out.astype(np.uint8)
 
 
-def frame(base: np.ndarray, motion: str, phase: float, amp: float, warm_only: bool = False) -> Image.Image:
+def frame(base: np.ndarray, motion: str, phase: float, amp: float, warm_only: bool = False,
+          flow=None) -> Image.Image:
     a = base.copy()
     lum = _lum(a[..., :3])
     s = np.sin(phase)
@@ -127,6 +158,14 @@ def frame(base: np.ndarray, motion: str, phase: float, amp: float, warm_only: bo
             m = water[..., 3:4] > 30
             a = np.where(m, water, a)
     elif motion == "flow":
+        if flow is not None:
+            liquid, field = flow
+            # A periodic travelling highlight, not a whole-puddle brightness
+            # pulse or a texture jump at the seam. Phase zero is the static.
+            # At amp .10 the pre-quantized liquid swings <= ~11%; alpha never changes.
+            factor = 1 + 0.5 * amp * (np.sin(field - phase) - np.sin(field)) * liquid
+            a[..., :3] = np.clip(np.rint(a[..., :3] * factor[..., None]), 0, 255).astype(np.uint8)
+            return Image.fromarray(a, "RGBA")
         # A liquid that POURS (sewer outfall, spillway): the masked liquid's COLOUR
         # scrolls downward and breathes. Alpha is never touched, so the silhouette
         # stays byte-stable and the rigid-prop contract holds. `shimmer` only knows
@@ -212,6 +251,7 @@ def main() -> int:
         return 2
     im = Image.open(src).convert("RGBA")
     base = np.asarray(im)
+    flow = flow_profile(args.name, base) if args.motion == "flow" else None
     w, h = im.width, im.height
     # A motion whose colour mask matches (almost) nothing produces a DEAD strip --
     # shimmer on olive sludge, flicker on an unlit pit, swirl on pale-blue light
@@ -223,7 +263,7 @@ def main() -> int:
     elif args.motion == "shimmer":
         cover = _cool_mask(base[..., :3])[al].mean()
     elif args.motion == "flow":
-        cover = _liquid_mask(base)[al].mean()
+        cover = (flow[0] if flow is not None else _liquid_mask(base))[al].mean()
     elif args.motion == "swirl":
         rgb = base[..., :3].astype(np.float32)
         cover = float((((rgb[..., 0] + rgb[..., 2]) > 2.0 * rgb[..., 1] + 30.0) & al)[al].mean())
@@ -236,7 +276,7 @@ def main() -> int:
     strip = Image.new("RGBA", (w * args.frames, h), (0, 0, 0, 0))
     for i in range(args.frames):
         phase = 2.0 * np.pi * i / args.frames    # frame 0 = static (sin 0 = 0)
-        strip.paste(frame(base, args.motion, phase, args.amp, args.warm), (i * w, 0))
+        strip.paste(frame(base, args.motion, phase, args.amp, args.warm, flow), (i * w, 0))
     print(f"{args.name}: {args.frames}x{w}x{h} ({args.motion})")
     for root, on in ((DESK, True), (MOBILE, not args.no_mobile)):
         if not on:

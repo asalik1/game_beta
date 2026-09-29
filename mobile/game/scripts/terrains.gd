@@ -1113,7 +1113,7 @@ const STRUCTURES := {
 	"spore_shrine": {"sprite": "spore_shrine", "w": 122.0,
 		"colliders": [{"shape": "circle", "radius": 38.0, "off": Vector2(0, -3)}]},
 	# A sewer outfall: a broad pipe spilling a pool of FLOWING sludge
-	# (sewer_flow ANIMATES) across a wide flat footprint.
+	# (sewer_outfall_anim: liquid-only flow) across a wide flat footprint.
 	"sewer_outfall": {"sprite": "sewer_outfall", "w": 140.0, "mirror": true,
 		"colliders": [{"shape": "rect", "size": Vector2(106.0, 42.0), "off": Vector2(0, -7)}]},
 	# A great hearth: a hall fireplace — a brazier base with a tall licking

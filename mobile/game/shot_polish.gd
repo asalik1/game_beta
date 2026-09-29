@@ -105,6 +105,11 @@ func _ready() -> void:
 
 # Continue the base capture flow after the optional room-lighting checks.
 func _after_room_lighting(cls: String, z: float) -> void:
+	if flag("liquid-flow"):
+		var error: String = await preload("res://scripts/dev/prop_flow_capture.gd").run(self)
+		if error != "": print("LIQUID FLOW FAIL: " + error)
+		finish(0 if error == "" else 1)
+		return
 	if flag("illumination"):
 		# Native 1x prop/light loops, rendered luminance and stationary geometry.
 		var error: String = await preload("res://scripts/dev/prop_illumination_capture.gd").run(self)
