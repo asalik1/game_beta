@@ -83,8 +83,8 @@ static func build(g, zi: int, doorway: Vector2, vertical: bool) -> void:
 			if live != null:
 				live.queue_free())
 		if zi >= 0:
-			var floor_glow: Node2D = g._floor_glow(g.world, source_at + Game.TORCH_GLOW_DROP,
-				Game.TORCH_GLOW_COLOR, Game.TORCH_GLOW_RADIUS, Game.TORCH_GLOW_STRENGTH, zi, true, illumination)
+			var floor_glow: Node2D = g._floor_glow(g.world, anchor,
+				Game.TORCH_GLOW_COLOR, Game.TORCH_GLOW_RADIUS, Game.TORCH_GLOW_STRENGTH, zi, true, illumination, false, true)
 			if floor_glow != null:
 				var floor_ref: WeakRef = weakref(floor_glow)
 				root.tree_exiting.connect(func() -> void:

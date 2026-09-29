@@ -158,6 +158,8 @@ static func write(game: Game, slot: int) -> void:
 		"world": world,
 	}
 	var stored := atomic_store(path(slot), JSON.stringify(data))
+	if stored:
+		game.sync_daily_renown(character)
 	preload("res://scripts/ui/save_feedback.gd").record(game, slot, stored)
 
 
@@ -229,6 +231,7 @@ static func _character_section(game: Game) -> Dictionary:
 		# it rides with them (a live co-op session uses the host's clock).
 		"clock_anchor": game.trusted_now(),
 		"daily_last_day": game.daily_last_day, "daily_streak": game.daily_streak,
+		"daily_renown_id": game.daily_renown_id, "daily_renown_total": game.daily_renown_total,
 		# Records — achievements, titles, per-boss PBs, lifetime kill tallies
 		# (codex lore thresholds) — are this hero's story, not this world's.
 		"achievements": game.achievements.keys(), "boss_records": game.boss_records,
@@ -278,6 +281,8 @@ static func write_character_home(game: Game, slot: int) -> void:
 		"world": world_of(data),
 	}
 	var stored := atomic_store(path(slot), JSON.stringify(out))
+	if stored:
+		game.sync_daily_renown(character)
 	preload("res://scripts/ui/save_feedback.gd").record(game, slot, stored)
 
 
@@ -737,14 +742,8 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 			continue
 		var cc: Dictionary = rawc
 		if String(cc.get("kind", "")) == "potion":
-			var np: Dictionary
-			if String(cc.get("grade", "")) == Items.POTION_GRAND_GRADE and String(cc.get("lane", "")) == "grand":
-				# Existing saves already contain these tags; Grand is outside the
-				# ordinary grade ladder and must retain its synthesis-only rules.
-				np = Items.make_grand_potion(Items.potion_shapekey(String(cc.get("family", "")), String(cc.get("shape", ""))))
-			else:
-				np = Items.make_potion(String(cc.get("family", "")), String(cc.get("shape", "")),
-					String(cc.get("grade", "")), String(cc.get("lane", "")))
+			var np := Items.rebuild_potion(String(cc.get("family", "")), String(cc.get("shape", "")),
+				String(cc.get("grade", "")), String(cc.get("lane", "")))
 			if not np.is_empty():
 				if bool(cc.get("gift", false)):
 					np["gift"] = true
@@ -796,6 +795,8 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	game.clock_anchor = maxi(game.clock_anchor, int(c.get("clock_anchor", 0)))
 	game.daily_last_day = int(c.get("daily_last_day", -1))
 	game.daily_streak = int(c.get("daily_streak", 0))
+	game.daily_renown_id = String(c.get("daily_renown_id", ""))
+	game.daily_renown_total = maxi(0, int(c.get("daily_renown_total", 0)))
 	game.capital_stock = []
 	for it in _as_arr(c.get("capital_stock", [])):
 		if it is Dictionary:
@@ -902,6 +903,7 @@ static func apply_character(game: Game, c: Dictionary, spawn_ground_loot := true
 	# Personal contents have no foreign geometry: solo resumes, guest joins and
 	# endgame returns all recover the owner's same frozen roll through mail.
 	preload("res://scripts/loot_recovery.gd").recover_saved(game, c.get("unclaimed_rewards", {}))
+	game.sync_daily_renown(c)
 
 
 ## JSON loads every number as float; re-cast the fields the game

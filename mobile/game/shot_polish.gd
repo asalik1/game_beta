@@ -4,7 +4,17 @@ extends ShotRig
 ## contact shadows, light pools, hit numbers / HP bars / reticle, HUD text —
 ## in the rooms the trailer footage was shot in, at the trailer zoom (1.4) and
 ## native (1.0). Never touches shots/cine (own dir: user://shots/polish).
-##   shot.bat polish [--rooms=2,17,20] [--zoom=1.4] [--class=warrior] [--hud] [--timeout=180]
+## --room-lighting --capital --rooms=17,20 --compare --terrains=keep
+## bundles the floor/light regressions, keep/capital composition and floorfield
+## comparison in ONE engine session (scene handoff, no second Godot process).
+## Capital stays in polish: its holystone has no painterly comparison texture,
+## so a --terrains entry without a painted field is refused before any capture.
+## Views per room: centre, north, west, corner and a doorway approach.
+##   shot.bat polish [--rooms=2,17,20] [--zoom=1.4] [--class=warrior] [--hud] [--world-read] [--timeout=180]
+## --world-read: first runs test_world_read (road curve/crossings/prop
+## clearance, stone rim, fortress palette, arcade grounding) plus its RENDER
+## check of the real road shader against road_curve(); fails the rig on any
+## miss. Then the usual room frames, and the capital frames at the end.
 ## Per room: "<room>_room" (hero mid-room with a wolf pack, three hits landed so
 ## numbers/bars/flash are live), "<room>_wall" (hero at the north wall: face,
 ## shadow, road arm, door torches). --hud adds a HUD-on shot per room.
@@ -48,6 +58,42 @@ func _ready() -> void:
 	var z := float(arg("zoom", "1.4"))
 	zoom(z)
 	await sim_wait(1.5)   # title card clears
+	if flag("enemy-rims"):
+		await _enemy_rims()
+		return
+	if flag("damage-numbers"):
+		await _damage_numbers()
+		return
+	if flag("room-lighting"):
+		if flag("compare"):
+			# The chained floorfield --compare needs a painted master per terrain;
+			# refuse up front instead of after every capture (capital_civic's
+			# holystone has none, so it can never pass that compare).
+			for tid in arg("terrains", "village,darkwood,desert,ice").split(",", false):
+				var kind := String(Terrains.get_terrain(tid).get("ground", ""))
+				if not ResourceLoader.exists("res://assets/sprites/ground_field_%s_painterly.png" % kind):
+					print("RIG FAIL: --terrains=%s has no painted field for its ground (%s); floorfield --compare needs one, use --terrains=keep" % [tid, kind])
+					finish(1)
+					return
+		var tests := preload("res://scripts/tests/test_prop_illumination.gd")
+		var error: String = tests.run(self)
+		if error == "": error = tests.run_world(game)
+		if error != "":
+			print("RIG FAIL: " + error)
+			finish(1)
+			return
+		for room_id in arg("rooms", "17,20").split(",", false):
+			await _goto(int(room_id))
+			if not await _room_light_views("keep_%s" % room_id):
+				finish(1)
+				return
+		await _after_room_lighting(cls, z)
+		return
+	await _after_room_lighting(cls, z)
+
+
+# Continue the base capture flow after the optional room-lighting checks.
+func _after_room_lighting(cls: String, z: float) -> void:
 	if flag("illumination"):
 		# Native 1x prop/light loops, rendered luminance and stationary geometry.
 		var error: String = await preload("res://scripts/dev/prop_illumination_capture.gd").run(self)
@@ -55,6 +101,21 @@ func _ready() -> void:
 			print("ILLUMINATION FAIL: " + error)
 		finish(0 if error == "" else 1)
 		return
+	if flag("world-read"):
+		var error: String = preload("res://scripts/tests/test_world_read.gd").run(self)
+		if error == "":
+			error = await preload("res://scripts/tests/test_world_read.gd").rendered(self)
+		if error != "":
+			push_error(error)
+			finish(1)
+			return
+		await _capture_views(cls, z)
+		return
+	await _capture_views(cls, z)
+
+
+# Shared captures also complete world-read and the capital/floorfield handoff.
+func _capture_views(cls: String, z: float) -> void:
 	if arg("menu", "") != "":
 		# --menu=stats|bag|class: one shot of a menu screen (review pack, P7.E/F/G)
 		game.hud.visible = true
@@ -90,37 +151,18 @@ func _ready() -> void:
 		finish()
 		return
 	if flag("capital"):
-		# The Wayfinder Sanctum's endgame gates: SEALED (fresh hero) vs OPEN
-		# (chapter 7 cleared) — the owner's locked-state ruling made visible.
-		game.enter_capital()
-		await frames(10)
-		await skip_dialogue()
-		var wf := _room_by_name("wayfinder_sanctum")
-		if wf >= 0:
-			game.fast_travel(wf)
-			await sim_wait(1.2)
-			game.player.global_position = game.room_pos(wf, 1056, 800)
-			game.camera.global_position = game.room_pos(wf, 1056, 560)
-			await sim_wait(0.4)
-			shot("capital_gates_sealed", "crucible + depths sealed (fresh hero)")
-			game.set_flag("completed_ch7")
-			game.switch_chapter("capital", true)
-			await frames(10)
-			await skip_dialogue()
-			game.fast_travel(wf)
-			await sim_wait(1.2)
-			game.player.global_position = game.room_pos(wf, 1056, 800)
-			game.camera.global_position = game.room_pos(wf, 1056, 560)
-			await sim_wait(0.4)
-			shot("capital_gates_open", "all three gates live (ch7 cleared)")
-		var em := _room_by_name("the_emberward_gate")
-		if em >= 0:
-			game.fast_travel(em)
-			await sim_wait(1.2)
-			game.player.global_position = game.room_pos(em, 1056, 820)
-			game.camera.global_position = game.room_pos(em, 1056, 600)
-			await sim_wait(0.4)
-			shot("capital_emberward_muster", "the muster point (no duplicate leave door)")
+		if not await _capital_shots():
+			finish(1)
+			return
+		if flag("room-lighting"):
+			print("ok: room lighting polish captures and regression checks; handing off to floorfield --compare")
+			# Free the polish scene/game before floorfield boots its own fixture.
+			# The runner's outer watchdog continues across the scene handoff.
+			var next := get_tree().change_scene_to_file("res://shot_floorfield.tscn")
+			if next != OK:
+				print("RIG FAIL: floorfield handoff failed")
+				finish(1)
+			return
 		finish()
 		return
 	if flag("review"):
@@ -191,7 +233,214 @@ func _ready() -> void:
 	game.camera.global_position = p2.global_position
 	await sim_wait(0.4)
 	shot("magma_room", "lava pools + glow")
+	if flag("world-read"):
+		if not await _capital_shots():
+			finish(1)
+			return
 	finish()
+
+
+## One bundled run: strict routing regression, a real-renderer check of the
+## shader's own output, and matched rim-on/off captures over real repainted
+## room floors, then keep again on a 1.5x window. --enemy-rims --no-import --timeout=300
+func _enemy_rims() -> void:
+	var error: String = preload("res://scripts/tests/test_quality.gd").enemy_rims(self)
+	if error == "":
+		error = await _rim_shader_output()
+	if error != "":
+		print("ENEMY RIM FAIL: " + error)
+		finish(1)
+		return
+	var room := 2
+	await _goto(room)
+	var terrain_before: String = game.terrain_by_zone[room]
+	var ambient_before := game.ambient.color
+	var window_before := get_window().size
+	var center := game.room_center(room)
+	game.player.global_position = center + Vector2(-220, 100)
+	game.player.set_physics_process(false)
+	game.camera.global_position = center
+	zoom(1.0)
+	for terrain: String in ["crystal", "keep", "void", "capital_civic"]:
+		# keep is the authored night-dark keep tint; void is in the Depths rotation.
+		error = await _rim_pass(room, center, terrain, terrain)
+		if error != "":
+			break
+	if error == "":
+		# Fullscreen 1080p: the edge must keep its canvas width. The OS may clamp
+		# the window; each SHOT line reports the stretch actually used.
+		get_window().size = Vector2i(Vector2(get_window().content_scale_size) * 1.5)
+		await frames(3)
+		error = await _rim_pass(room, center, "keep", "keep_1080p")
+	get_window().size = window_before
+	get_tree().paused = false
+	apply_terrain(terrain_before, room)
+	game.ambient.color = ambient_before
+	game.player.set_physics_process(true)
+	if error != "":
+		print("ENEMY RIM FAIL: " + error)
+		finish(1)
+		return
+	print("ENEMY RIM CAPTURES PASS: crystal, keep, Depths void and capital at 720p, keep at 1080p; 15 originals")
+	finish()
+
+
+## wolf / blightwolf / fangmaw on one repainted floor: the rim must follow its
+## body on its own frame and track the window stretch, then an on/off pair
+## taken with the world paused (identical frames apart from the rim) and a
+## 2x camera-zoom close-up.
+func _rim_pass(room: int, center: Vector2, terrain: String, tag: String) -> String:
+	step("enemy rims: " + tag)
+	apply_terrain(terrain, room)
+	await frames(3)
+	for i in 3:
+		var pos := center + Vector2(-120 + i * 150, 0)
+		var e: Enemy
+		if i == 2:
+			e = Boss.make_boss(game, "fangmaw", pos)
+			game.add_enemy(e)
+		else:
+			e = spawn_enemy("wolf" if i == 0 else "blightwolf", pos)
+		e.set_physics_process(false)
+		e.set_process(false)
+		e.hp_bar_bg.hide()
+		e.hp_bar_fg.hide()
+		_mobs.append(e)
+	await frames(3)
+	# The mobs' own processing is off, so only the rim's per-frame step can follow.
+	var probe: Enemy = _mobs[0]
+	var rim: Sprite2D = probe.sprite.get_node("EnemyRim")
+	for _turn in 2:
+		probe.sprite.flip_h = not probe.sprite.flip_h
+		await frames(2)
+		if rim.flip_h != probe.sprite.flip_h:
+			return "rim did not follow its turning body on the next frames (%s)" % tag
+	var stretch: float = get_viewport().get_final_transform().get_scale().y
+	var width: float = rim.material.get_shader_parameter("rim_offset_px")
+	if not is_equal_approx(width, Balance.ENEMY_RIM_OFFSET_PX * stretch):
+		return "rim width %.2f px did not follow the window stretch %.3f (%s)" % [width, stretch, tag]
+	var info := "stretch %.2f, rim offset %.2f framebuffer px" % [stretch, width]
+	# Camera framing and ambient life hold still while paused: the pair differs only by the rim.
+	get_tree().paused = true
+	await frames(2)
+	await RenderingServer.frame_post_draw
+	shot("rim_" + tag + "_on", "wolf / blightwolf / fangmaw; no HP bars; camera 1x; " + info)
+	for e: Enemy in _mobs:
+		e.sprite.get_node("EnemyRim").hide()
+	await frames(2)
+	await RenderingServer.frame_post_draw
+	shot("rim_" + tag + "_off", "same paused frame with the rim hidden")
+	for e: Enemy in _mobs:
+		e.sprite.get_node("EnemyRim").show()
+	get_tree().paused = false
+	# Close view: camera zoom must not change the edge's width.
+	zoom(2.0)
+	await frames(2)
+	await RenderingServer.frame_post_draw
+	shot("rim_" + tag + "_close", "2x camera zoom; edge stays %.1f canvas px; %s" % [Balance.ENEMY_RIM_OFFSET_PX, info])
+	zoom(1.0)
+	_clear()
+	await frames(2)
+	return ""
+
+
+## The shader's own output on the real renderer, which the headless routing
+## test cannot see: a black opaque square body in a SubViewport. Light may only
+## appear as warm additive gain on the lower-right inside edge. Misnamed
+## uniforms (no light, or a whole-body fill), light on the wrong side, and the
+## premultiplied COLOR trap (black texture times rim color = no light) all fail.
+func _rim_shader_output() -> String:
+	step("enemy rims: shader output")
+	var half := 12
+	var side := half * 2
+	var vp := SubViewport.new()
+	vp.size = Vector2i(64, 64)
+	vp.transparent_bg = false
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	add_child(vp)
+	var e := Enemy.make(null, "wolf", Vector2(32, 32), -1, 1.0)
+	e.remove_from_group("enemies")  # unseen by room-clear, targeting and AI
+	e.process_mode = Node.PROCESS_MODE_DISABLED  # nothing moves between the two renders
+	vp.add_child(e)
+	var square := Image.create(side, side, false, Image.FORMAT_RGBA8)
+	square.fill(Color.BLACK)
+	var body := e.sprite
+	body.texture = ImageTexture.create_from_image(square)
+	body.hframes = 1
+	body.vframes = 1
+	body.frame = 0
+	body.region_enabled = false
+	body.centered = true
+	body.offset = Vector2.ZERO
+	body.transform = Transform2D.IDENTITY
+	body.flip_h = false
+	body.flip_v = false
+	body.modulate = Color.WHITE
+	body.self_modulate = Color.WHITE
+	body.material = null
+	var rim: Sprite2D = body.get_node("EnemyRim")
+	rim.sync()
+	rim.material.set_shader_parameter("rim_strength", Balance.ENEMY_RIM_STRENGTH)
+	await frames(2)
+	await RenderingServer.frame_post_draw
+	var lit := vp.get_texture().get_image()
+	rim.hide()
+	await frames(2)
+	await RenderingServer.frame_post_draw
+	var unlit := vp.get_texture().get_image()
+	vp.queue_free()
+	if lit == null or unlit == null or lit.is_empty() or unlit.is_empty():
+		return "shader check could not read its SubViewport back"
+	var origin := Vector2i(32 - half, 32 - half)
+	var gain := Vector3.ZERO
+	var peak := 0.0
+	var upper_left := 0.0
+	for y in side:
+		for x in side:
+			var a := lit.get_pixelv(origin + Vector2i(x, y))
+			var b := unlit.get_pixelv(origin + Vector2i(x, y))
+			var d := Vector3(a.r - b.r, a.g - b.g, a.b - b.b)
+			gain += d
+			peak = maxf(peak, d.x)
+			if x < half and y < half:
+				upper_left += absf(d.x)
+	var numbers := "peak red gain %.3f, summed gain r %.2f g %.2f b %.2f, upper-left %.2f" % [peak, gain.x, gain.y, gain.z, upper_left]
+	# A fully lit edge pixel gains rim_color.r * strength (0.36) in red.
+	if peak < Balance.ENEMY_RIM_STRENGTH * 0.5:
+		return "rim adds no light (uniform names or the COLOR.a rule broke): " + numbers
+	if gain.x < 2.0 * maxf(gain.y, gain.z):
+		return "rim light is not warm: " + numbers
+	if upper_left > 0.1 * gain.x:
+		return "rim lights the upper-left or fills the body instead of the lower-right edge: " + numbers
+	print("ENEMY RIM SHADER PASS: " + numbers)
+	return ""
+
+
+func _room_light_views(prefix: String) -> bool:
+	var error := preload("res://scripts/tests/test_prop_illumination.gd").check_room(game, game.cur_room)
+	if error != "":
+		print("RIG FAIL: " + error)
+		return false
+	var zi: int = game.cur_room
+	var rect := game.play_rect(zi)
+	var views := {"centre": rect.get_center(),
+		"north": Vector2(rect.get_center().x, rect.position.y + 190.0),
+		"west": Vector2(rect.position.x + 230.0, rect.get_center().y),
+		"corner": rect.position + Vector2(230, 190)}
+	# A doorway approach: the camera opens onto the corridor (and the unbuilt
+	# neighbour's preview floor), where a play-rect-only falloff left a seam.
+	for side in ["W", "E", "S", "N"]:
+		if game.rooms[zi]["exits"].has(side) and game.neighbor(zi, side) >= 0:
+			var lane: Vector2 = game.door_pos(zi, side)
+			views["door"] = Vector2(clampf(lane.x, rect.position.x + 60.0, rect.end.x - 60.0),
+				clampf(lane.y, rect.position.y + 90.0, rect.end.y - 60.0))
+			break
+	for label: String in views:
+		game.player.global_position = views[label]
+		game.camera.global_position = views[label]
+		await sim_wait(0.5)
+		shot(prefix + "_" + label, "local floor falloff + fire contact/pools")
+	return true
 
 
 ## --review (2026-08-19): the in-world beats of the owner review pack.
@@ -581,3 +830,113 @@ func _motion_beat(beat: String) -> bool:
 		return false
 	var requested := arg("beats", "")
 	return requested.is_empty() or requested.split(",").has(beat)
+
+
+## --world-read bundles road/palette regressions, rooms, magma and capital.
+func _capital_shots() -> bool:
+	# The Wayfinder Sanctum's endgame gates: SEALED (fresh hero) vs OPEN
+	# (chapter 7 cleared) — the owner's locked-state ruling made visible.
+	game.enter_capital()
+	await frames(10)
+	await skip_dialogue()
+	var wf := _room_by_name("wayfinder_sanctum")
+	if wf >= 0:
+		game.fast_travel(wf)
+		await sim_wait(1.2)
+		game.player.global_position = game.room_pos(wf, 1056, 800)
+		game.camera.global_position = game.room_pos(wf, 1056, 560)
+		await sim_wait(0.4)
+		shot("capital_gates_sealed", "crucible + depths sealed (fresh hero)")
+		game.set_flag("completed_ch7")
+		game.switch_chapter("capital", true)
+		await frames(10)
+		await skip_dialogue()
+		game.fast_travel(wf)
+		await sim_wait(1.2)
+		game.player.global_position = game.room_pos(wf, 1056, 800)
+		game.camera.global_position = game.room_pos(wf, 1056, 560)
+		await sim_wait(0.4)
+		shot("capital_gates_open", "all three gates live (ch7 cleared)")
+	var em := _room_by_name("the_emberward_gate")
+	if em >= 0:
+		game.fast_travel(em)
+		await sim_wait(1.2)
+		game.player.global_position = game.room_pos(em, 1056, 820)
+		game.camera.global_position = game.room_pos(em, 1056, 600)
+		await sim_wait(0.4)
+		shot("capital_emberward_muster", "the muster point (no duplicate leave door)")
+	if flag("room-lighting"):
+		if wf < 0 or em < 0 or not await _room_light_views("capital"):
+			print("RIG FAIL: capital room composition unavailable")
+			return false
+	var plaza := _room_by_name("crown_plaza")
+	if plaza >= 0:
+		game.fast_travel(plaza)
+		await skip_dialogue()
+		game.player.global_position = game.room_pos(plaza, 1056, 600)
+		game.camera.global_position = game.room_pos(plaza, 1056, 450)
+		await sim_wait(0.8)
+		shot("capital_arcade_grounding", "arcade plinth, open arch and contact shadows")
+	return true
+
+
+## One bounded mode combines deterministic regression with the requested burst capture.
+## shot.bat polish --damage-numbers --timeout=180
+func _damage_numbers() -> void:
+	var error: String = await preload("res://scripts/tests/test_quality.gd").damage_numbers(self)
+	if error != "":
+		push_error(error)
+		finish(1)
+		return
+	await _goto(2)
+	var center: Vector2 = game.room_center(2)
+	game.player.global_position = center + Vector2(-100, 70)
+	game.player.set_physics_process(false)
+	game.camera.global_position = center
+	_pack(["wolf", "wolf", "wolf"], center - Vector2(150, 0))
+	await sim_wait(0.5)
+	# No RNG in the damage sequence: each living wolf has ample HP.
+	for m in _mobs:
+		m.hp = 10000.0
+		m.max_hp = 10000.0
+	for amount in [28, 32, 16]:
+		_mobs[0].take_damage(amount)
+		await sim_wait(0.06)
+	await sim_wait(0.12)
+	var col: Node = game._damage_columns[_mobs[0].get_instance_id()]
+	if col.entries.size() != 1 or col.entries[0].label.text != "76":
+		push_error("live three-hit wolf burst did not display one 76")
+		finish(1)
+		return
+	shot("damage_burst", "28 + 32 + 16 = 76, one clean running total")
+	game.clear_damage_numbers()
+	# Mixed kinds on one target: normal, standalone crit, muted DoT.
+	_mobs[1].take_damage(28)
+	_mobs[1].take_damage(32, Vector2.ZERO, true)
+	_mobs[1]._take_dot_damage(16)
+	await sim_wait(0.2)
+	col = game._damage_columns[_mobs[1].get_instance_id()]
+	if col.entries.size() != 3:
+		push_error("live mixed-kind burst lost rows")
+		finish(1)
+		return
+	shot("damage_stack", "three-hit mixed burst: white 28, gold 32!, muted 16")
+	# The killing blow keeps its number where the wolf fell, then fades out normally.
+	var fallen: int = _mobs[1].get_instance_id()
+	_mobs[1].hp = 5.0
+	_mobs[1].take_damage(40, Vector2.ZERO, true)
+	col = game._damage_columns.get(fallen)
+	if not _mobs[1].dying or col == null or col.entries[0].label.text != "40!" \
+			or col.entries[0].label.is_queued_for_deletion():
+		push_error("the killing blow's number was not shown")
+		finish(1)
+		return
+	await sim_wait(0.1)
+	shot("damage_kill", "the killing blow's gold 40! stays where the wolf fell")
+	await sim_wait(Balance.DAMAGE_NUM_LIFE + 0.1)
+	if game._damage_columns.has(fallen):
+		push_error("a dead wolf's numbers never faded out")
+		finish(1)
+		return
+	print("DAMAGE BURST PASS: real enemy totals, mixed rows, killing blow shown then faded")
+	finish()

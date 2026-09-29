@@ -474,7 +474,8 @@ var uniq_crits := 0            # hartsbreath: forced-crit shots left after a per
 var uniq_hp_atk := 0.0         # worldroot/lastpulse: atk derived from bonus max HP (set in recalc)
 var uniq_marks := {}           # remembrance: Enemy -> per-enemy re-hex ICD (seconds left)
 var tumble_perfect_t := 0.0    # live while Tumble's perfect-dodge window holds (hartsbreath reads it)
-var storm_mult := 1.0          # Arrow Storm damage scale (moonturn's echo storm rains at half)
+var storm_mult := 1.0          # Moonturn echo scale, separate from the original cast's bonuses
+var storm_cast_mult := 1.0     # Arrow Storm's cast-time multiplier, retained by its echo
 # ---- armor-family named passives (GEAR_ARMOR_UNIQUE_PASSIVES.md, 2026-07-27) ----
 # Helmet/gloves/pants uniques carry TEMPLATE passives (Balance.UNIQ helm_/glove_/
 # pants_*; bare id = S lane, `_a` = A lane). uniq_armor caches the equipped ids
@@ -1245,6 +1246,15 @@ func uniq_gk(base: String, key: String, default := 0.0) -> float:
 	if id == "":
 		return default
 	return float(Balance.uniq(id).get(key, default))
+
+
+## glove_bulwark's per-hit scale for one hit: only the S-lane grip (ids ending
+## "s", or the bare stand-in) halves its bulk on Arrow Storm arrows (the
+## uniq_storm marker); the A-lane card promises no storm clause, so it stays 1.
+func _storm_bulk_scale(effects: Dictionary) -> float:
+	if not effects.get("uniq_storm", 0):
+		return 1.0
+	return 1.0 if uniq_gear("glove_bulwark").ends_with("a") else 0.5
 
 
 ## Worn count of a profile SET's pieces (GEAR_UNIQUE_SETS.md).

@@ -387,6 +387,7 @@ var barrier_active := false
 var terrain_by_zone: Array = []       # terrain id per room
 var zone_grounds := {}                # room idx -> ground Sprite2D (repaintable)
 var zone_fields := {}                 # room idx -> GPU-tiled authored floor Polygon2D (native-res crisp base, see _apply_ground_field)
+var zone_floor_vignettes := {}        # room idx -> baked local multiply quad, rebuilt only with the floor
 var zone_road_marks := {}             # room idx -> worn-road overlay Sprite2Ds (see _mark_roads)
 var zone_scenery := {}                # room idx -> decor + obstacle nodes
 var zone_canopy := {}                 # room idx -> foreground canopy strips (P3 overhang)
@@ -472,6 +473,9 @@ var clock_anchor := 0          # highest unix time ever seen (persisted, monoton
 # --- daily login reward (trusted-clock day index; -1 = never claimed) ---
 var daily_last_day := -1       # day index of the last claim
 var daily_streak := 0          # consecutive-day claim count
+var daily_renown_id := ""      # stable receipt owner, independent of slot/name
+var daily_renown_total := 0    # lifetime daily Renown owed by this character
+var _daily_claiming := false  # no nested save may bank a partial delivery
 
 # --- records & achievements (persisted) ---
 var achievements := {}         # achievement id -> true (unlocked)
@@ -1024,7 +1028,7 @@ func gamble(tier: String) -> Dictionary:
 ## Guesting in another world (MP-08, §5.7): only the character block
 ## travels home — the host's world must never colonize the guest's save.
 func autosave() -> void:
-	if no_saves or restoring_save:
+	if no_saves or restoring_save or _daily_claiming:
 		return
 	# PVP (v1, 2026-08-01): the duel has NO stakes — nothing earned, nothing
 	# risked, so nothing is written from an arena world. (A guest's session-end
@@ -1065,14 +1069,16 @@ func trusted_now() -> int:
 
 ## Deliver a letter. items = loot payloads ({"kind": "item"/"gem"/
 ## "stone", ...}); body may be "" ("Dropped Loot" letters have none).
-## Also the dev/event gift API.
-func send_mail(subject: String, body: String, items: Array) -> void:
+## Also the dev/event gift API. `quiet` skips the world float and chime for
+## a caller whose own panel already says where the letter went (the daily
+## claim receipt); the HUD envelope's unread badge still lights.
+func send_mail(subject: String, body: String, items: Array, quiet := false) -> void:
 	mailbox.append({"subject": subject, "body": body, "items": items,
 		"sent_at": trusted_now(), "read": false})
-	if play_started and is_instance_valid(player):
+	if not quiet and play_started and is_instance_valid(player):
 		sfx("chest")
 		spawn_text(player.global_position + Vector2(0, -64),
-			"NEW MAIL — see the pause menu", Color(0.8, 0.9, 1.0))
+			"New mail! Open the envelope on your HUD.", Color(0.8, 0.9, 1.0))
 
 
 ## Unclaimed letters expire after Balance.MAIL_EXPIRY_DAYS on the
@@ -1107,16 +1113,30 @@ func daily_reward_for(streak: int) -> Dictionary:
 	return Balance.daily_reward_at(streak)
 
 
-## Claim today's reward: advance the streak, grant the loot, persist.
+## A claim must be saved the moment it lands (Renown is only paid from a
+## saved character), and autosave skips a fallen hero. So a downed or ghost
+## co-op hero waits until they stand; solo never sets either flag.
+func daily_claim_waits() -> bool:
+	return is_instance_valid(player) and (player.dead or player.downed or player.ghost)
+
+
+## Deliver and advance in one synchronous batch, then persist together.
+## A crash before that write leaves the old claim available; after it, every
+## item is in the saved bag/mail and account Renown has a replayable receipt.
 ## Returns human-readable lines of what was granted (for the panel/fx).
 func claim_daily() -> Array:
-	if not daily_available():
+	if _daily_claiming or not daily_available() or daily_claim_waits():
 		return []
-	daily_streak = daily_next_streak()
-	daily_last_day = daily_day_index()
+	var streak := daily_next_streak()
+	var day := daily_day_index()
+	_daily_claiming = true
+	var lines := _grant_daily_reward(streak)
+	daily_streak = streak
+	daily_last_day = day
+	_daily_claiming = false
+	# This achievement autosaves: it must only see the complete delivery.
 	if daily_streak >= 7:
 		unlock_achievement("streak_7")
-	var lines := _grant_daily_reward(daily_streak)
 	if is_instance_valid(player):
 		sfx("chest")
 		spawn_text(player.global_position + Vector2(0, -70),
@@ -1125,11 +1145,12 @@ func claim_daily() -> Array:
 	return lines
 
 
-## Hand over one day's reward. Gold scales with level; gems route through
-## give_loot so a full bag drops them safely (never silently lost).
+## Hand over one day's reward. Overflow goes directly to character-owned mail.
+## Renown is credited only from a durable character snapshot (see save.gd).
 func _grant_daily_reward(streak: int) -> Array:
 	var r := daily_reward_for(streak)
 	var lines: Array = []
+	var overflow: Array = []
 	if r.has("gold"):
 		var g := int(float(r["gold"]) * Balance.daily_gold_mult(player.level))
 		player.gold += g
@@ -1138,21 +1159,35 @@ func _grant_daily_reward(streak: int) -> Array:
 		var pc := int(r["potions"])
 		var got := 0
 		for i in pc:
-			# Graded bag items now (CONSUMABLE_GRADES): a low-grade clean Health
-			# Potion per unit, routed through add_consumable (a full bag stops it).
-			if player.add_consumable(Items.make_potion("health", "instant", "E", "accord")):
+			var potion := Items.make_potion("health", "instant", "E", "accord")
+			if player.add_consumable(potion):
 				got += 1
+			else:
+				overflow.append({"kind": "potion", "potion": potion})
 		if got > 0:
 			lines.append("%d Health Potion%s" % [got, "" if got == 1 else "s"])
+		if got < pc:
+			lines.append("%d Health Potion%s sent to Mailbox" % [pc - got, "" if pc - got == 1 else "s"])
 	if r.has("gems"):
 		var gc := int(r["gems"])
 		var lvl := int(r.get("gem_lvl", 1))
+		var mailed := 0
 		for i in gc:
-			give_loot({"kind": "gem", "gem": drop_gem(lvl)},
-				player.global_position + Vector2(-30.0 + 30.0 * i, 40.0))
-		lines.append("%d Lv%d gem%s" % [gc, lvl, "" if gc == 1 else "s"])
+			var gem := drop_gem(lvl)
+			if not player.gain_gem(gem):
+				overflow.append({"kind": "gem", "gem": gem})
+				mailed += 1
+		lines.append("%d Lv%d gem%s%s" % [gc, lvl, "" if gc == 1 else "s",
+			" (%d sent to Mailbox)" % mailed if mailed > 0 else ""])
+	if not overflow.is_empty():
+		# Quiet: the claim receipt names what went to the Mailbox, and a second
+		# world float would land on top of the streak line below.
+		send_mail("Daily Reward - Day %d" % streak,
+			"Your pack was full. Free some space, then claim your daily rewards here.", overflow, true)
 	if r.has("renown"):
-		call("add_renown", int(r["renown"]))  # wallet lives in the game_flow layer
+		if daily_renown_id.is_empty():
+			daily_renown_id = Crypto.new().generate_random_bytes(16).hex_encode()
+		daily_renown_total += int(r["renown"])
 		lines.append("%d Renown" % int(r["renown"]))
 	return lines
 
@@ -4103,7 +4138,8 @@ const FLOAT_NUM_LIFE := 0.85
 # enemies under numbers. Keep at most this many floating numbers alive at once —
 # high enough that normal fights never notice, low enough to stay legible in an
 # AoE storm. Only bites past ~this-many hits inside one FLOAT_NUM_LIFE window.
-const FLOAT_NUM_MAX := 22
+const FLOAT_NUM_MAX := Balance.FLOAT_NUM_MAX
+var _damage_columns: Dictionary = {}
 var _float_nums: Array = []          # live floating-number labels, oldest first
 var _float_rng := RandomNumberGenerator.new()   # its own stream: never perturbs game RNG
 
@@ -4128,7 +4164,33 @@ func _float_kind(text: String) -> int:
 func _retire_float_num(l: Node) -> void:
 	_float_nums.erase(l)
 	if is_instance_valid(l):
-		l.queue_free()
+		if l.has_meta("damage_column"):
+			l.get_meta("damage_column").remove_label(l)
+		else:
+			l.queue_free()
+
+
+## Damage owns a target column; narrative/pickup text keeps spawn_text's path.
+func spawn_damage_number(target: Node2D, amount: int, crit := false, dot := false, ally := false) -> void:
+	if not is_instance_valid(target) or target.is_queued_for_deletion():
+		return
+	var id := target.get_instance_id()
+	if not _damage_columns.has(id):
+		var column := preload("res://scripts/fx/damage_column.gd").new()
+		column.game = self
+		column.target_ref = weakref(target)
+		column.target_id = id
+		column.room = cur_room
+		column.anchor = target.global_position
+		_damage_columns[id] = column
+		add_child(column)
+	_damage_columns[id].hit(amount, crit, dot, ally)
+
+
+func clear_damage_numbers(target_id: int = 0) -> void:
+	for id in _damage_columns.keys():
+		if target_id == 0 or id == target_id:
+			_damage_columns[id].retire()
 
 
 func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
@@ -4179,9 +4241,7 @@ func spawn_text(pos: Vector2, text: String, color: Color, hold := 0.0) -> void:
 		# hits stays legible instead of burying the pack under digits.
 		_float_nums.append(l)
 		while _float_nums.size() > FLOAT_NUM_MAX:
-			var oldest: Node = _float_nums.pop_front()
-			if is_instance_valid(oldest):
-				oldest.queue_free()
+			_retire_float_num(_float_nums.front())
 	var tween := l.create_tween()   # label-bound: dies cleanly if retired early
 	if kind > 0:
 		l.scale = Vector2(1.5, 1.5) if kind == 2 else Vector2(1.28, 1.28)
@@ -4464,31 +4524,14 @@ func spawn_text_all(pos: Vector2, text: String, color: Color, hold := 0.0) -> vo
 		net_session().host_spawn_text(pos, text, color, hold)
 
 
-## MP-14 (§5.6): an ALLY's hit number — deliberately smaller and dimmer than
-## your own (spawn_text), so a friend fighting beside you reads as background
-## chatter and your own big numbers stay legible. Fanned by the host to the
-## non-attacking party members (net_session.host_fan_damage). World-space, like
-## spawn_text, so it rises off the enemy it landed on.
-func spawn_ally_damage(pos: Vector2, amount: int, crit: bool) -> void:
-	var l := Label.new()
-	l.text = "%d!" % amount if crit else str(amount)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.z_index = 19  # under your own numbers (z 20)
-	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	UITheme.world(l, 14, 3)   # same face as your own numbers, two sizes down
-	# A cool, dim tint marks it as someone else's damage; crits warm slightly.
-	var col := Color(1.0, 0.72, 0.45, 0.8) if crit else Color(0.78, 0.86, 0.95, 0.72)
-	l.add_theme_color_override("font_color", col)
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
-	var lean := _float_rng.randf_range(-FLOAT_NUM_SPREAD * 0.6, FLOAT_NUM_SPREAD * 0.6)
-	l.size = Vector2(100, 20)
-	l.position = pos + Vector2(-50 + lean, -8)
-	add_child(l)
-	var tween := create_tween()
-	tween.tween_property(l, "position:y", l.position.y - 26.0, 0.75) \
-		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(l, "modulate:a", 0.0, 0.75)
-	tween.tween_callback(l.queue_free)
+## MP-14 (§5.6): an ALLY's hit number, deliberately smaller and dimmer than
+## your own (spawn_damage_number), so a friend fighting beside you reads as
+## background chatter and your own big numbers stay legible. Fanned by the host
+## to the non-attacking party members (net_session.host_fan_damage). It joins
+## the struck target's damage column as one quiet row per merge window (crits
+## included, marked "!"), sized/faded by Balance.DAMAGE_NUM_ALLY_SIZE/ALPHA.
+func spawn_ally_damage(target: Node2D, amount: int, crit: bool) -> void:
+	spawn_damage_number(target, amount, crit, false, true)
 
 
 # =================================================================== per-frame

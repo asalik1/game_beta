@@ -646,6 +646,7 @@ func _feed_chat_case() -> String:
 	r._check("reward/feed_chat/max_pressure", full, {"logs": _logs(), "bottom": _feed_bottom(),
 		"top": (h._log_lines[0] as Control).position.y if not h._log_lines.is_empty() else -1.0})
 	_feed_geometry("chat")
+	_chat_clear("chat")
 	r.views.append({"view": "16_feed_chat", "path": r.shot("16_feed_chat", SCOPE), "scope": SCOPE})
 	_clear_feed()
 	g.binds = binds
@@ -661,40 +662,63 @@ func _feed_chat_case() -> String:
 	return ""
 
 
-## Party chat anchors to the screen bottom while the feed keeps a fixed y, so a
-## taller mobile canvas puts the chat beside or below the feed. This window stays
-## 1280x720; the loaned chat root moves to each taller canvas's anchored bottom
-## edge. The chat never costs the five classic one-line rows. Wrapped rows stay in
-## that classic footprint while the chat sits above the feed's bottom edge, and
-## keep the full budget once it sits below.
+## Party chat sits above the feed's reserved footprint on every canvas: its
+## history and input line (reserved even while closed) end a full gap above the
+## budget ceiling, so a taller mobile canvas (aspect "expand") never costs the
+## five classic rows or the wrapped rows' full budget. The rig loans each
+## 1280-wide canvas as this window's logical content size (window and aspect put
+## back after) and resizes the SAME mounted chat and feed; the resize alone must
+## re-seat the chat, before any new row.
 func _feed_tall_canvas() -> void:
-	var anchored: float = h.chat_root.position.y
+	var window := h.get_window()
+	var kept_size := window.content_scale_size
+	var kept_aspect := window.content_scale_aspect
+	window.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
 	var camp := "Stock up, then descend \u2014 this is the last safe ground. Rewards pay when you fall or cash out."
 	for canvas_h: float in TALL_CANVAS_HEIGHTS:
-		h.chat_root.position.y = canvas_h
+		window.content_scale_size = Vector2i(1280, int(canvas_h))
+		await r.frames(2)
 		var tag := "tall_%d" % int(canvas_h)
+		var visible := h.get_viewport().get_visible_rect()
+		r._check("reward/feed_tall/%d/canvas" % int(canvas_h), is_equal_approx(visible.size.y, float(int(canvas_h)))
+			and is_equal_approx(visible.size.x, 1280.0), {"visible": Geometry.rect(visible)})
+		_chat_clear(tag + "_resized")
 		var bottom := _feed_bottom()
-		var chat: Rect2 = h.chat_lines_box.get_global_rect()
 		var singles: Array = []
 		for i in h.LOG_MAX: singles.append("Found a Rusted Dagger (%d)" % (i + 1))
 		for text: String in singles: h.log_event(text, Color.WHITE, "note")
 		await r.frames(2)
 		r._check("reward/feed_tall/%d/classic_rows" % int(canvas_h), _logs() == singles,
-			{"logs": _logs(), "bottom": bottom, "chat": Geometry.rect(chat)})
-		_feed_geometry(tag + "_classic", false)
+			{"logs": _logs(), "bottom": bottom, "chat": Geometry.rect(h.chat_lines_box.get_global_rect())})
+		_feed_geometry(tag + "_classic")
+		_chat_clear(tag + "_classic")
 		var guidance: Array = []
 		for i in 3: guidance.append(camp + " " + str(i + 1))
 		for text: String in guidance: h.log_event(text, Color.WHITE, "note")
 		await r.frames(2)
-		var chat_above := chat.end.y < bottom
 		var top: float = (h._log_lines[0] as Control).position.y if not h._log_lines.is_empty() else -1.0
-		var kept := _logs() == (guidance.slice(1) if chat_above else guidance)
-		if chat_above: kept = kept and top >= bottom - h.LOG_MAX * h.LOG_LINE_H - 0.5
-		r._check("reward/feed_tall/%d/wrapped_rows" % int(canvas_h), kept,
-			{"logs": _logs(), "top": top, "bottom": bottom, "chat": Geometry.rect(chat), "chat_above": chat_above})
-		_feed_geometry(tag + "_wrapped", false)
+		r._check("reward/feed_tall/%d/wrapped_rows" % int(canvas_h), _logs() == guidance
+			and top >= bottom - Balance.HUD_LOG_HEIGHT_BUDGET - 0.5,
+			{"logs": _logs(), "top": top, "bottom": bottom, "chat": Geometry.rect(h.chat_lines_box.get_global_rect())})
+		_feed_geometry(tag + "_wrapped")
+		_chat_clear(tag + "_wrapped")
 		_clear_feed()
-	h.chat_root.position.y = anchored
+	window.content_scale_size = kept_size
+	window.content_scale_aspect = kept_aspect
+	await r.frames(2)
+
+
+## Chat history and the reserved input line end a full gap above the feed's
+## footprint (its budget ceiling, or a taller top row) and stay on the canvas.
+func _chat_clear(id: String) -> void:
+	var visible := h.get_viewport().get_visible_rect()
+	var feed_top := _feed_bottom() - Balance.HUD_LOG_HEIGHT_BUDGET
+	if not h._log_lines.is_empty(): feed_top = minf(feed_top, (h._log_lines[0] as Control).position.y)
+	for surface: Control in [h.chat_lines_box, h.chat_input]:
+		var rect := surface.get_global_rect()
+		r._check("reward/feed_chat/%s/%s_clear" % [id, "input" if surface == h.chat_input else "history"],
+			rect.end.y + Balance.HUD_CHAT_FEED_GAP <= feed_top + 0.01 and visible.grow(0.5).encloses(rect),
+			{"surface": Geometry.rect(rect), "feed_top": feed_top, "visible": Geometry.rect(visible)})
 
 
 func _clear_feed() -> void:
@@ -713,7 +737,7 @@ func _feed_bottom() -> float:
 	return bottom
 
 
-func _feed_geometry(id: String, chat_clear := true) -> void:
+func _feed_geometry(id: String) -> void:
 	var bottom := _feed_bottom()
 	var chat := Rect2()
 	var chat_floor := -INF
@@ -731,8 +755,11 @@ func _feed_geometry(id: String, chat_clear := true) -> void:
 		r._check(prefix + "complete", not label.clip_text and label.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING
 			and label.get_line_count() == label.get_visible_line_count() and shape.missing.is_empty()
 			and label.get_global_rect().grow(0.5).encloses(cells) and row.get_global_rect().grow(0.5).encloses(cells), shape)
-		r._check(prefix + "separate", row.position.y >= previous_end and row.position.y + row.size.y <= bottom)
-		if chat_clear and chat_floor > -INF:
+		# Float slack only: a scaled tall canvas gives fractional font metrics, and
+		# the stacked float32 row ends can overshoot the bottom by a rounding step.
+		r._check(prefix + "separate", row.position.y >= previous_end - 0.01 and row.position.y + row.size.y <= bottom + 0.01,
+			{"row": Geometry.rect(Rect2(row.position, row.size)), "bottom": bottom})
+		if chat_floor > -INF:
 			r._check(prefix + "chat_clear", row.position.y >= chat_floor and not row.get_global_rect().intersects(chat),
 				{"row": Geometry.rect(row.get_global_rect()), "chat": Geometry.rect(chat), "chat_floor": chat_floor})
 		if id == "guidance": r._check(prefix + "wrapped", label.get_line_count() >= 2 and label.get_line_count() <= WIDEST_ROW_LINES, shape)

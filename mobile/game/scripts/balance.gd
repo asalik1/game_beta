@@ -5,12 +5,43 @@ class_name Balance
 ## monsters/zones) — this file is for the numbers you tweak, not the
 ## content you author.
 
+# Target damage columns: outline + crit pop need a full 44px row at world scale.
+const FLOAT_NUM_MAX := 22
+const DAMAGE_NUM_MERGE := 0.35
+# Burn and bleed tick every 0.5s (enemy.gd); a window just past that cadence
+# lets each DoT build one running total instead of a new row per tick.
+const DAMAGE_NUM_DOT_MERGE := 0.6
+const DAMAGE_NUM_LIFE := 0.85
+const DAMAGE_NUM_FADE := 0.25
+const DAMAGE_NUM_ROW := 44.0
+const DAMAGE_NUM_SHIFT := 0.12
+const DAMAGE_NUM_RISE_SPEED := 12.0
+const DAMAGE_NUM_RISE_MAX := 18.0
+const DAMAGE_NUM_HEIGHT := 42.0
+const DAMAGE_NUM_POP := 1.18
+const DAMAGE_NUM_POP_TIME := 0.14
+const DAMAGE_NUM_COUNT_TIME := 0.10
+const DAMAGE_NUM_SIZE := 21
+const DAMAGE_NUM_CRIT_SIZE := 27
+const DAMAGE_NUM_DOT_SIZE := 16
+const DAMAGE_NUM_ALLY_SIZE := 14
+const DAMAGE_NUM_OUTLINE := 5
+const DAMAGE_NUM_PADDING := 6.0
+const DAMAGE_NUM_NORMAL := Color.WHITE
+const DAMAGE_NUM_CRIT := Color(1.0, 0.79, 0.25)
+const DAMAGE_NUM_DOT := Color(0.65, 0.76, 0.79)
+const DAMAGE_NUM_ALLY_ALPHA := 0.65
+
 # Compact event feed: rows wrap in full (never cut short). The fixed
 # seven-line footprint holds two wide 64-character names plus their
 # consequence (three lines each); ordinary guidance uses two lines.
 # One-line rows keep Hud.LOG_LINE_H; wrapped rows add their extra lines.
 const HUD_LOG_TEXT_WIDTH := 400.0
 const HUD_LOG_HEIGHT_BUDGET := 140.0
+const HUD_CHAT_FEED_GAP := 10.0
+const HUD_CHAT_HISTORY_GAP := 6.0
+# Dialogue follows the centered authored art on expand canvases.
+const DIALOG_DESIGN_HEIGHT := 720.0
 
 # Static enamel on resource bars; overlays preserve semantic fill colours.
 const HUD_BAR_TROUGH_DARKEN := 0.82
@@ -162,7 +193,54 @@ const CHAR_RENDER_SCALE := 1.7
 # 1.0 / 1.0 / white = the old look. Judge in-game (art-ingame-tonemap).
 const WORLD_CONTRAST := 1.0
 const WORLD_SATURATION := 1.06
+# Safe-zone screen cue: a quiet edge pulse and saturation-only world drain.
+# The rim rises over the first RISE_FRACTION of the fuse, then breathes (alpha
+# dips by PULSE_DEPTH once per PULSE_SECONDS, well under strobe rates) so the
+# pulse reads inside the 2.0-2.2 s boss fuses; the drain spans the whole fuse.
+# impact_flashes scales the pulse depth and the drain, never the rim itself.
+const DANGER_RIM_START := 0.68
+const DANGER_RIM_MASK_ALPHA := 0.85
+const DANGER_RIM_ALPHA := 0.55
+const DANGER_RIM_COLOR := Color(1.3, 0.25, 0.3)
+const DANGER_RIM_RISE_FRACTION := 0.35
+const DANGER_RIM_PULSE_SECONDS := 1.0
+const DANGER_RIM_PULSE_DEPTH := 0.30
+const DANGER_SATURATION := 0.70
+const DANGER_RELEASE_SECONDS := 0.35
+const DANGER_SAFE_COLOR := Color(0.5, 1.3, 0.7)
 const FLOOR_LAYER_MODULATE := Color(0.94, 0.94, 0.965)
+# Keep/capital stone loses the extra blue cast without regrading other biomes.
+const FORTRESS_FLOOR_MODULATE := Color(0.96, 0.95, 0.935)
+const ROAD_WIDTH_TILES := 3.0
+const ROAD_MEANDER_PX := 64.0
+const ROAD_MEANDER_CYCLES := 0.85
+const ROAD_WIDTH_VARIATION := 0.20
+const ROAD_DOOR_SETTLE_PX := 200.0
+# A road holds its straight lane where the lane is a real crossing (a river's
+# bridge, an arcade's arch): this far past the banks, then eases back into
+# its curve over ROAD_PIN_SETTLE_PX.
+const ROAD_CROSSING_PAD_PX := 30.0
+const ROAD_PIN_SETTLE_PX := 120.0
+# Colliding scenery keeps this far off the road's centreline: x = off a
+# north-south arm, y = off an east-west arm. Measured from the straight lane
+# AND from the drawn curve (widened with the band), so props never stand on
+# the painted road.
+const ROAD_PROP_CLEAR := Vector2(130.0, 90.0)
+const ROAD_ARM_PHASE := 2.4
+const ROAD_DARK_LUMA := 0.30
+const ROAD_LIGHT_LUMA := 0.45
+const ROAD_DARK_WEAR := Color(0, 0, 0, 0.045)
+const ROAD_MID_WEAR := Color(1, 1, 1, 0.085)
+const ROAD_LIGHT_WEAR := Color(0, 0, 0, 0.12)
+const ROAD_PATH_ALPHA := 0.72
+const ROAD_BRIGHT_PATH_ALPHA := 0.30
+const ROAD_STONE_EDGE_PX := 8.0
+const ROAD_STONE_EDGE_DARKEN := 0.55
+const BACKDROP_BASE_Y := 12.0
+const BACKDROP_SHADOW_HEIGHT := 50.0
+const BACKDROP_SHADOW_ALPHA := 0.50
+const BACKDROP_FOUNDATION_HEIGHT := 8.0
+const BACKDROP_FOUNDATION_COLOR := Color(0.22, 0.20, 0.17, 0.72)
 # World-pixel repeat periods for high-resolution floor masters. Unlisted
 # fields retain their authored native scale; the keep's stones stay human-sized.
 const GROUND_FIELD_PERIOD := {
@@ -375,6 +453,18 @@ const TARGET_DAMAGE_DRAIN := 0.6        # bar fractions / second after hold
 #    every PERIOD seconds; N chips, alpha A. 0 period = off.
 const CHAR_GROUND_AO := 0.30
 const CHAR_GROUND_AO_W := 1.7
+# Hostile back-light (EnemyRim): no expanded/black contour. OFFSET_PX is in
+# canvas pixels (the 1280x720 design space); EnemyRim multiplies it by the
+# window stretch so the edge keeps its width at 1080p/1440p/4K, and camera
+# zoom never changes it. The room tint's mean luminance matches
+# _zone_light_mult's proxy (crystal ~.927, keep .82, capital civic ~.953).
+# Bright floors get only a trace of warm light.
+const ENEMY_RIM_COLOR := Color(1.0, 0.28, 0.12, 1.0)
+const ENEMY_RIM_STRENGTH := 0.36
+const ENEMY_RIM_OFFSET_PX := 1.5
+const ENEMY_RIM_BOSS_MULT := 1.2
+const ENEMY_RIM_DARK_LUMA := 0.93
+const ENEMY_RIM_BRIGHT_LUMA := 0.96
 const CAST_SHADOW_A := 0.30
 const CAST_SHADOW_SKEW := 0.55
 const CAST_SHADOW_SQUASH := 0.45
@@ -4118,6 +4208,22 @@ const DOOR_TORCH_HALO_SCALE := 2.5
 # headroom for authored strip luminance and HDR bloom under the 12% contract.
 const PROP_LIGHT_LOW := 0.96
 const PROP_LIGHT_PERIOD := 2.4  # static sources; animated sources use their strip duration
+
+# Local floor composition, never a CanvasModulate or whole-frame grade
+# (room_floor.vignette, z -9 multiply over the whole cell). The falloff eases
+# in from the walls' inner faces; its grayscale multiply stays >= 0.75 in
+# DISPLAY terms (8-bit sRGB texels, same on HDR 2D and the phone renderer),
+# including overlapping corner falloff, and holds 0.75 in door corridors.
+const ROOM_EDGE_WIDTH := 260.0
+const ROOM_EDGE_DARKEN := 0.25
+const ROOM_CORNER_DARKEN := 0.08
+const ROOM_FLOOR_VALUE_MIN := 0.75
+const ROOM_FALLOFF_TEX_SIZE := 129
+const FIRE_POOL_LIGHT_MIN := 0.55
+const FIRE_CONTACT_ALPHA := 0.16
+const FIRE_CONTACT_INNER := 0.40
+const FIRE_CONTACT_PEAK := 0.68
+const FIRE_CONTACT_TEX_SIZE := 128
 # Hazard pools retain their separate, existing telegraph rhythm.
 const HAZARD_GLOW_PULSE_LOW := 0.72
 const HAZARD_GLOW_PULSE_PERIOD := Vector2(1.1, 1.6)

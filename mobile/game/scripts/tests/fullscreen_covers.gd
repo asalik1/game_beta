@@ -44,10 +44,16 @@ static func suite(game: Game) -> String:
 	_check(hud, cinematic, Vector2(1560, 720), errors)
 	# Resize the SAME mounted controls, including returning to the desktop size.
 	for dimensions in [Vector2i(1280, 720), Vector2i(1560, 720), Vector2i(1600, 720),
-			Vector2i(1280, 960), Vector2i(2400, 1080), Vector2i(1280, 720)]:
+			Vector2i(1280, 800), Vector2i(1280, 960), Vector2i(1280, 2276),
+			Vector2i(2560, 720), Vector2i(2400, 1080), Vector2i(1280, 720)]:
 		window.size = dimensions
 		await tree.process_frame
 		var expected := Vector2(1600, 720) if dimensions == Vector2i(2400, 1080) else Vector2(dimensions)
+		# The resize alone re-seats the chat left by the previous size, before any
+		# new chat line or feed row: the anchored root must not slide into the feed.
+		if hud.chat_root != null:
+			_check_chat_clear(hud, "after a resize", errors)
+		await _check_chat_feed(hud, errors)
 		_check(hud, cinematic, expected, errors)
 	window.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
 	window.size = Vector2i(2400, 1080)
@@ -90,6 +96,7 @@ static func _check(hud: Hud, cinematic: Cutscene, expected: Vector2, errors: Arr
 		errors.append("fixture visible rect %s, expected %s" % [visible.size, expected])
 		return
 	_check_dialogue(hud, visible, errors)
+	_check_reader_click(hud, visible, errors)
 	_check_log(hud, visible, "when opened", errors)
 	var covers := {
 		"death/fade overlay": hud.overlay,
@@ -142,7 +149,7 @@ static func _check_dialogue(hud: Hud, visible: Rect2, errors: Array[String]) -> 
 	if hud.choices_active:
 		_check_choice(hud, visible, "after a resize", errors)
 		hud.cancel_conversation()
-	var shift := Vector2(visible.get_center().x - 640.0, 0.0)
+	var shift := visible.get_center() - Vector2(640, 360)
 	var authored := {
 		hud.dialogue_frame: Vector2(138, 448),
 		hud.dialogue_inner: Vector2(141, 451),
@@ -162,10 +169,65 @@ static func _check_dialogue(hud: Hud, visible: Rect2, errors: Array[String]) -> 
 	# A filled gold rect leaks through the inner panel in HDR linear blending.
 	if not _gold_border_only(hud.dialogue_frame):
 		errors.append("dialogue frame fills behind its translucent inner panel or lost its gold border")
+	# Long text grows upward, then a short line returns to the shifted authored
+	# rectangle. A refit must not reset y or apply the canvas shift twice.
+	hud.text_label.text = "A long dialogue line must keep its canvas placement. ".repeat(24)
+	hud._fit_dialogue_box()
+	if not is_equal_approx(hud.text_label.get_rect().end.y, 640.0 + shift.y) \
+			or hud.dialogue_frame.position.y >= 448.0 + shift.y:
+		errors.append("wrapped dialogue lost its shifted bottom at %s" % visible.size)
+	hud.text_label.text = PROBE_TEXT
+	hud._fit_dialogue_box()
+	if not hud.dialogue_frame.position.is_equal_approx(Vector2(138, 448) + shift):
+		errors.append("dialogue refit lost its canvas offset at %s" % visible.size)
 	var kept_paused := hud.get_tree().paused
 	hud.dialogue_choice("Narrator", PROBE_TEXT, PROBE_OPTIONS, Callable())
 	hud.get_tree().paused = kept_paused
 	_check_choice(hud, visible, "when raised", errors)
+
+
+## The centered reader can sit over the ability bar (all of it at 4:3). The
+## slot rings keep their hover target, but while a dialogue or choice is up a
+## left click on one must reach the reader instead of opening a slot popover.
+## The control case (no reader up) proves the same click opens one. The STOP
+## stat labels are never under the reader and keep their popover during it.
+static func _check_reader_click(hud: Hud, visible: Rect2, errors: Array[String]) -> void:
+	if not hud.choices_active:
+		errors.append("reader click probe has no raised choice at %s" % visible.size)
+		return
+	var ring: Control = hud.slot_boxes[0].border
+	ring.set_meta("tip", PROBE_TEXT)
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	ring.gui_input.emit(click)
+	if is_instance_valid(hud.hud_popover):
+		errors.append("a click on the reader over the ability bar opened a slot popover at %s" % visible.size)
+	hud._close_hud_popover()
+	if not hud.game.menus.is_open():
+		# get_meta with a null default errors on a missing key; ask first.
+		var had_tip := hud.gold_label.has_meta("tip")
+		var kept_tip: Variant = hud.gold_label.get_meta("tip") if had_tip else null
+		hud.gold_label.set_meta("tip", PROBE_TEXT)
+		hud.gold_label.gui_input.emit(click)
+		if not is_instance_valid(hud.hud_popover):
+			errors.append("the gold label lost its popover while a reader is up at %s" % visible.size)
+		hud._close_hud_popover()
+		if had_tip:
+			hud.gold_label.set_meta("tip", kept_tip)
+		else:
+			hud.gold_label.remove_meta("tip")
+	if not hud.game.menus.is_open():
+		var kept := [hud.dialogue_active, hud.choices_active]
+		hud.dialogue_active = false
+		hud.choices_active = false
+		ring.gui_input.emit(click)
+		hud.dialogue_active = kept[0]
+		hud.choices_active = kept[1]
+		if not is_instance_valid(hud.hud_popover):
+			errors.append("slot popover probe opened nothing without a reader at %s" % visible.size)
+		hud._close_hud_popover()
+	ring.remove_meta("tip")
 
 
 ## Open the actual backlog and leave it up across the next viewport resize.
@@ -180,7 +242,8 @@ static func _check_log(hud: Hud, visible: Rect2, when: String, errors: Array[Str
 	var title: Label = hud.log_panel.get_child(3)
 	var close: Button = hud.log_panel.get_child(4)
 	var scroll: ScrollContainer = hud.log_list.get_parent()
-	var shift := Vector2(visible.get_center().x - 640.0, 0.0)
+	# The same canvas offset as the dialogue reader it opens from.
+	var shift := visible.get_center() - Vector2(640, 360)
 	var authored := {
 		frame: Vector2(238, 96), inner: Vector2(241, 99),
 		title: Vector2(262, 110), close: Vector2(956, 108), scroll: Vector2(262, 146),
@@ -284,3 +347,73 @@ static func _check_boss_splash(hud: Hud, expected: Vector2, errors: Array[String
 		errors.append("boss splash title lost its spacing from the bottom at %s" % expected)
 	layer.free()
 	hud._boss_splash_layer = null
+
+
+## Native chat containers and feed rows at every resized canvas. The disposable
+## HUD owns all rows/tweens; the suite restores window/game state on any failure.
+static func _check_chat_feed(hud: Hud, errors: Array[String]) -> void:
+	hud._ensure_chat()
+	for count in [1, hud.CHAT_SHOW_LINES]:
+		for line in hud.chat_lines_box.get_children():
+			line.free()
+		for i in count:
+			hud._on_chat_line("Party member", "party", "A wrapped chat message about the road ahead. ".repeat(3))
+		for feed_kind in ["short", "wrapped", "oversized"]:
+			preload("res://scripts/tests/test_reward_feedback.gd")._clear_feed(hud)
+			for i in hud.LOG_MAX:
+				var message := "Found a Rusted Dagger (%d)" % i
+				if feed_kind == "wrapped":
+					message = "W".repeat(64) + " left the party (%d)" % i
+				elif feed_kind == "oversized":
+					# One row past the budget, still short enough that a full
+					# wrapped chat history pushed above it stays on screen.
+					message = "Rewards pay when you fall or cash out. ".repeat(12) + str(i)
+				hud.log_event(message, Color.WHITE, "party")
+			# Container sorting and minimum-height growth are deferred by Godot.
+			await hud.get_tree().process_frame
+			await hud.get_tree().process_frame
+			if hud._log_lines.is_empty() or (feed_kind == "short" and hud._log_lines.size() != hud.LOG_MAX):
+				errors.append("chat cost the feed its classic rows")
+			if feed_kind == "oversized" and hud._log_lines[-1].size.y <= Balance.HUD_LOG_HEIGHT_BUDGET:
+				errors.append("oversized feed fixture did not exceed the normal budget")
+			# The history hugs its lines from the input up. Dropping from the last
+			# canvas's full window to one line must shrink the box, not leave the
+			# newest line floating where the tallest history once ended. Under a
+			# pixel of slack: at the 1.5x canvas (2400x1080) labels measure
+			# fractional heights and the VBox seats them on whole pixels.
+			var box := hud.chat_lines_box
+			var newest: Control = box.get_child(box.get_child_count() - 1)
+			var input_top := hud.chat_input.get_global_rect().position.y
+			var drift := input_top - Balance.HUD_CHAT_HISTORY_GAP - newest.get_global_rect().end.y
+			if absf(drift) >= 1.0 or absf(box.size.y - box.get_combined_minimum_size().y) >= 1.0:
+				errors.append("chat history's newest line is %.1fpx off its input gap (box %.1f, min %.1f) with %d chat lines at %s" % [
+					drift, box.size.y, box.get_combined_minimum_size().y, count, hud.get_viewport().get_visible_rect().size])
+			# The input line is reserved while closed, so opening it moves nothing.
+			var history := hud.chat_lines_box.get_global_rect()
+			for input_open in [false, true]:
+				hud.chat_input.visible = input_open
+				if not hud.chat_lines_box.get_global_rect().is_equal_approx(history):
+					errors.append("opening chat moved its history at %s" % hud.get_viewport().get_visible_rect().size)
+				_check_chat_clear(hud, "with a %s feed and %d chat lines" % [feed_kind, count], errors)
+	hud.chat_input.hide()
+
+
+## Chat history and the input line (reserved even while closed) end a full gap
+## above every feed row and above the feed's budget ceiling, and stay on the
+## visible canvas.
+static func _check_chat_clear(hud: Hud, when: String, errors: Array[String]) -> void:
+	var visible := hud.get_viewport().get_visible_rect()
+	# The production hint-gap rule: wrapped hint rows lift the feed bottom.
+	var bottom := hud.LOG_BOTTOM
+	if hud.hint_labels.size() == 2:
+		bottom = minf(bottom, (hud.hint_labels[0] as Label).position.y - (hud.HINT_ORIGIN.y - hud.LOG_BOTTOM))
+	var ceiling := bottom - Balance.HUD_LOG_HEIGHT_BUDGET
+	for row: Control in hud._log_lines:
+		ceiling = minf(ceiling, row.get_global_rect().position.y)
+	for surface: Control in [hud.chat_lines_box, hud.chat_input]:
+		var part := "input" if surface == hud.chat_input else "history"
+		var rect := surface.get_global_rect()
+		if rect.end.y + Balance.HUD_CHAT_FEED_GAP > ceiling + 0.01:
+			errors.append("chat %s overlaps the feed %s at %s" % [part, when, visible.size])
+		if not visible.grow(0.5).encloses(rect):
+			errors.append("chat %s left the screen %s at %s" % [part, when, visible.size])

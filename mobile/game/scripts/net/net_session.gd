@@ -3134,7 +3134,25 @@ func _rpc_ally_damage(net_id: int, amount: int, crit: bool) -> void:
 	var e: Enemy = net_enemies.get(net_id)
 	if e == null or not is_instance_valid(e) or e.dying:
 		return
-	game.spawn_ally_damage(e.global_position, amount, crit)
+	game.spawn_ally_damage(e, amount, crit)
+
+
+## DoTs are resolved only by the host; the source guest has no optimistic tick.
+func host_dot_damage(net_id: int, amount: int, source) -> void:
+	if net_id <= 0 or game == null or not _net().is_online() or not multiplayer.is_server():
+		return
+	var source_id: int = int(source.peer_id) if is_instance_valid(source) else 1
+	_rpc_dot_damage.rpc(net_id, amount, source_id)
+
+
+@rpc("authority", "call_remote", "unreliable")
+func _rpc_dot_damage(net_id: int, amount: int, source_id: int) -> void:
+	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	var e: Enemy = net_enemies.get(net_id)
+	if not is_instance_valid(e) or e.dying:
+		return
+	game.spawn_damage_number(e, amount, false, true, source_id != multiplayer.get_unique_id())
 
 
 # ---- synced victory (the final boss falls — each reader gets an ending) ----

@@ -449,6 +449,7 @@ func _setup(game_node: Node2D, enemy_kind: String, pos: Vector2, at_level := -1,
 		var big: bool = art_scale * render_mult >= 6.0
 		game.cast_shadow_for(self, sprite, 0.7 if big else 1.0)
 	add_child(sprite)
+	preload("res://scripts/enemy_rim.gd").attach(self, sprite)
 
 	# Small HP bar above the head, shown once the monster is damaged.
 	# Near-opaque bg = a full 1px dark outline all round the fill, so the bar
@@ -906,7 +907,7 @@ func _physics_process(delta: float) -> void:
 			if src != null and randf() < Stats.crit_curve(src.crit) * (1.0 - Stats.res_frac(critres * 6.0)):
 				tick *= src.crit_dmg
 			stat_src = src  # battle-stats credit only — never aggro
-			take_damage(tick, Vector2.ZERO, false, true)
+			_take_dot_damage(tick)
 			if dying:
 				return  # die() already ran; no second status, bite or AI this frame
 			# Eldritch Warlock reacts to the authoritative DoT beat. This is
@@ -930,7 +931,7 @@ func _physics_process(delta: float) -> void:
 			if bsrc != null and randf() < Stats.crit_curve(bsrc.crit) * (1.0 - Stats.res_frac(critres * 6.0)):
 				btick *= bsrc.crit_dmg
 			stat_src = bsrc  # battle-stats credit only — never aggro
-			take_damage(btick, Vector2.ZERO, false, true)
+			_take_dot_damage(btick)
 			if dying:
 				return  # death triggers/rewards are complete; cancel the pending attack
 			sprite.modulate = Color(1.5, 0.35, 0.4)  # crimson wound flash
@@ -2461,6 +2462,15 @@ func apply_slow(mult: float, dur: float) -> void:
 
 # --------------------------------------------------------------- damage ---
 
+var _damage_tick := false # presentation tag; silent damage still keeps its gameplay semantics
+
+
+func _take_dot_damage(amount: float) -> void:
+	_damage_tick = true
+	take_damage(amount, Vector2.ZERO, false, true)
+	_damage_tick = false
+
+
 func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, silent := false) -> void:
 	# MP-10: capture-and-clear the striking player FIRST, so no early
 	# return leaks it into an unrelated later hit. hit_enemy sets it for
@@ -2544,6 +2554,11 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 	if self is Boss:
 		amount *= (self as Boss).cast_window.damage_multiplier()
 	hp -= amount
+	if _damage_tick:
+		var ally := is_instance_valid(stat_credit) and not stat_credit.is_locally_controlled()
+		game.spawn_damage_number(self, int(amount), false, true, ally)
+		if game.net_host():
+			game.net_session().host_dot_damage(net_id, int(amount), stat_credit)
 	game.stat_dmg(stat_credit, amount)  # battle stats: the APPLIED number
 	knock = from_dir * (220.0 if is_crit else 160.0)
 	if not silent:
@@ -2558,11 +2573,9 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 		var mine := stat_credit == null or not is_instance_valid(stat_credit) \
 			or stat_credit.is_locally_controlled()
 		if not mine:
-			game.spawn_ally_damage(global_position + Vector2(0, -30), int(amount), is_crit)
-		elif is_crit:
-			game.spawn_text(global_position + Vector2(0, -34), "%d!" % int(amount), Color(1.0, 0.55, 0.1))
+			game.spawn_ally_damage(self, int(amount), is_crit)
 		else:
-			game.spawn_text(global_position + Vector2(0, -30), str(int(amount)), Color(1, 1, 1))
+			game.spawn_damage_number(self, int(amount), is_crit)
 		# The host is authority for every hit it applies. Fan the number to the
 		# party members who did NOT strike, who show it small. net_host() gates
 		# it, so solo/offline is untouched; the striker showed its own big.
@@ -2606,10 +2619,7 @@ func _net_mirror_hit(amount: float, from_dir: Vector2, is_crit: bool, silent: bo
 		shown *= (self as Boss).cast_window.damage_multiplier()
 	hp -= shown  # optimistic (kill-window reads: executes, dash refunds)
 	game.sfx("ehit", 1.0, 0.0, 4.0)
-	if is_crit:
-		game.spawn_text(global_position + Vector2(0, -34), "%d!" % int(shown), Color(1.0, 0.55, 0.1))
-	else:
-		game.spawn_text(global_position + Vector2(0, -30), str(int(shown)), Color(1, 1, 1))
+	game.spawn_damage_number(self, int(shown), is_crit)
 	sprite.modulate = Color(3, 3, 3)
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate", base_mod, 0.15)

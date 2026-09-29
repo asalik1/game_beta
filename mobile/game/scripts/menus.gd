@@ -4000,6 +4000,23 @@ func _item_gems_tab(body: VBoxContainer, item: Dictionary) -> void:
 					tile.mouse_default_cursor_shape = Control.CURSOR_FORBIDDEN
 
 
+## Keep unaffordable actions explainable, including when the wallet changes
+## after the panel opens. The successful callback owns the single charge.
+func _forge_can_afford(item: Dictionary, cost: int) -> bool:
+	if game.local_player.gold >= cost:
+		return true
+	_reforge_msg = "Need %s gold, you have %s." % [_fmt_gold(cost), _fmt_gold(game.local_player.gold)]
+	_reforge_msg_color = INV_REFUSAL_COLOR
+	open_item_panel(item, Vector2(-1, -1), "reforge")
+	return false
+
+
+func _forge_price(cost: int) -> String:
+	var price := "%s gold" % _fmt_gold(cost)
+	var missing: int = cost - game.local_player.gold
+	return price + (" (need %s more gold)" % _fmt_gold(missing) if missing > 0 else "")
+
+
 ## Reforge tab: Crownfall smithing actions and visible favor discounts.
 func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 	var p: Player = game.local_player
@@ -4041,7 +4058,7 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 		var qcost := int(ceil(Items.quench_cost(item, qs) * petra_mult))
 		var at_max: bool = cur >= float(band[1]) - 0.01
 		var q_cb := func() -> void:
-			if game.local_player.gold >= qcost:
+			if _forge_can_afford(item, qcost):
 				game.local_player.gold -= qcost
 				petra_spend.call(qcost)
 				var r := Items.quench_stat(item, qs, game.loot_rng)
@@ -4061,8 +4078,8 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 			_lbl(body, "   %s: %s / %s — MAX ROLL" % [Items.STAT_LABEL.get(qs, qs),
 				String.num(cur, 2), String.num(float(band[1]), 2)], 12, Color(0.6, 0.85, 0.6))
 		else:
-			_btn(body, "   Quench %s: %s / %s  —  %s gold" % [Items.STAT_LABEL.get(qs, qs),
-				String.num(cur, 2), String.num(float(band[1]), 2), _fmt_gold(qcost)], q_cb,
+			_btn(body, "   Quench %s: %s / %s  —  %s" % [Items.STAT_LABEL.get(qs, qs),
+				String.num(cur, 2), String.num(float(band[1]), 2), _forge_price(qcost)], q_cb,
 				Color(0.75, 0.85, 0.95) if p.gold >= qcost else Color(0.5, 0.5, 0.55))
 	# Reforge one selected substat slot.
 	var acost := int(ceil(Items.reforge_cost(item, "affix") * petra_mult))
@@ -4075,7 +4092,7 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 			_lbl(body, "Reforge — reroll a substat into a different affix:", 12, Color(1.0, 0.8, 0.6))
 			reforgeable = true
 		var rf_cb := func() -> void:
-			if game.local_player.gold >= acost:
+			if _forge_can_afford(item, acost):
 				game.local_player.gold -= acost
 				petra_spend.call(acost)
 				var new_stat := Items.reforge_affix(item, rs, rcls, game.loot_rng)
@@ -4085,7 +4102,7 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 					game.sfx("equip")
 				game.local_player.recalc()
 				open_item_panel(item, Vector2(-1, -1), "reforge")
-		_btn(body, "   Reforge %s → ?  —  %s gold" % [Items.STAT_LABEL.get(rs, rs), _fmt_gold(acost)], rf_cb,
+		_btn(body, "   Reforge %s → ?  —  %s" % [Items.STAT_LABEL.get(rs, rs), _forge_price(acost)], rf_cb,
 			Color(0.9, 0.82, 0.7) if p.gold >= acost else Color(0.5, 0.5, 0.55))
 	# Transmute redirects the main-stat budget without changing its roll.
 	if Items.can_transmute_main(item):
@@ -4095,7 +4112,7 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 		for target in Items.transmute_targets(item):
 			var tgt := String(target)
 			var t_cb := func() -> void:
-				if game.local_player.gold >= tcost:
+				if _forge_can_afford(item, tcost):
 					game.local_player.gold -= tcost
 					petra_spend.call(tcost)
 					var was := Items.transmute_main(item, tgt)
@@ -4106,15 +4123,15 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 						game.sfx("ward")
 					game.local_player.recalc()
 					open_item_panel(item, Vector2(-1, -1), "reforge")
-			_btn(body, "   %s → %s  —  %s gold" % [Items.STAT_LABEL.get(main_stat, main_stat),
-				Items.STAT_LABEL.get(tgt, tgt), _fmt_gold(tcost)], t_cb,
+			_btn(body, "   %s → %s  —  %s" % [Items.STAT_LABEL.get(main_stat, main_stat),
+				Items.STAT_LABEL.get(tgt, tgt), _forge_price(tcost)], t_cb,
 				Color(0.85, 0.75, 0.95) if p.gold >= tcost else Color(0.5, 0.5, 0.55))
 	# Socket cutting is a one-time, tier-scaled action.
 	if Items.can_add_socket(item):
 		# Socket-cutting is the LAPIDARY's trade — her favor rates this one.
 		var ccost := int(ceil(Items.reforge_cost(item, "socket") * game.favor_price_mult("lapidary")))
 		var sock_cb := func() -> void:
-			if game.local_player.gold >= ccost:
+			if _forge_can_afford(item, ccost):
 				game.local_player.gold -= ccost
 				game.favor_spend("lapidary", ccost)
 				Items.add_socket(item)
@@ -4123,7 +4140,7 @@ func _item_reforge_tab(body: VBoxContainer, item: Dictionary) -> void:
 				_reforge_msg = "Socket added — this is the only one this piece can take."
 				_reforge_msg_color = Color(0.6, 1.0, 0.6)
 				open_item_panel(item, Vector2(-1, -1), "reforge")
-		_btn(body, "Add gem socket (one-time)  —  %s gold" % _fmt_gold(ccost), sock_cb,
+		_btn(body, "Add gem socket (one-time)  —  %s" % _forge_price(ccost), sock_cb,
 			Color(0.6, 1.0, 0.6) if p.gold >= ccost else Color(0.5, 0.5, 0.55))
 	_lbl(body, "Your gold: %s" % _fmt_gold(p.gold), 13, Color(1.0, 0.85, 0.35))
 

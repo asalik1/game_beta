@@ -137,6 +137,8 @@ func _physics_process(delta: float) -> void:
 		# Moonturn fires ON expiry: the echo storm returns as the delay runs out.
 		var mt: float = float(uniq_t.get("moonturn_echo", 0.0))
 		if mt > 0.0 and mt <= delta and s_passive() == "moonturn":
+			# Like Crownfall/Firmament, echo the original empowered cast. Keep
+			# storm_cast_mult: this scale neither replaces nor consumes its bonus.
 			storm_mult = uniq_k("echo_mult")
 			storm_time = uniq_k("echo_dur")
 			storm_tick = 0.0

@@ -9,7 +9,7 @@ static func open(m: Menus) -> void:
 	m._lbl(body, "Tune the feedback to suit you. Changes take effect immediately.", 16, UITheme.TEXT_MUTED)
 	for spec in [["Camera shake", "camera_shake", "Impact shake and directional kicks."],
 		["Camera lead", "camera_lead", "How far the camera looks ahead of your movement."],
-		["Impact flashes", "impact_flashes", "Full-screen colour and splash washes from hits and abilities. Also calms the low-health pulse, which holds steady at 0%."]]:
+		["Impact flashes", "impact_flashes", "Full-screen colour and splash washes from hits and abilities, plus the colour drain during safe-zone attacks. Also calms the low-health pulse and the safe-zone edge warning, which both hold steady at 0%."]]:
 		var key := String(spec[1])
 		UITheme.rule(body)
 		var row := HBoxContainer.new()

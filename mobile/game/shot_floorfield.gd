@@ -61,6 +61,12 @@ func _compare_painted() -> void:
 	if not await _capture_color_check():
 		_finish_compare(1)
 		return
+	if flag("danger-rim"):
+		var error: String = await preload("res://scripts/tests/test_quality.gd").danger_rim(self)
+		if error != "":
+			push_error(error)
+			_finish_compare(1)
+			return
 	game.settings["camera_shake"] = 0.0
 	game.settings["combat_framing"] = false
 	game.camera.position_smoothing_enabled = false
@@ -138,9 +144,14 @@ func _compare_painted() -> void:
 		game.telegraph_safe([p.global_position + Vector2(160, 130)], 90, 2.0, 0,
 			{"net_visual": true, "decoys": [p.global_position + Vector2(-190, 140)]})
 		await sim_wait(1.25)
+		if flag("danger-rim"):
+			get_tree().paused = true  # retain precisely the same mid-fuse frame
 		if not await _material_shot(tid + "_combat_readability", tid):
 			_finish_compare(1)
 			return
+		if flag("danger-rim"):
+			await _danger_comparison(tid)
+			get_tree().paused = false
 		game.cancel_ground_attacks()
 		if candidate != null:
 			# Move only the diagnostic camera to inspect both tile axes. Posed
@@ -355,3 +366,35 @@ func _write_compare_report(complete: bool, exit_code: int) -> bool:
 func _finish_compare(exit_code := 0) -> void:
 	var written := _write_compare_report(exit_code == 0, exit_code)
 	finish(exit_code if written else 1)
+
+
+## Same frozen combat frame, with the old formula reconstructed ONLY in this
+## fixture. No baseline engine run or asset/cache mutation. Keep both PNGs.
+func _danger_comparison(tid: String) -> void:
+	var paused := get_tree().paused
+	get_tree().paused = true
+	var rim: TextureRect = game.hud.danger_rect
+	var texture := rim.texture
+	var tint := rim.modulate
+	var env: Environment = game.glow_env.environment
+	var saturation := env.adjustment_saturation
+	await RenderingServer.frame_post_draw
+	shot(tid + "_combat_readability_rim_after")
+	var old := Image.create_empty(320, 180, false, Image.FORMAT_RGBA8)
+	for y in 180:
+		for x in 320:
+			var dx := absf(x + 0.5 - 160.0) / 160.0
+			var dy := absf(y + 0.5 - 90.0) / 90.0
+			var a := clampf((maxf(dx, dy) - 0.45) / 0.55, 0.0, 1.0)
+			old.set_pixel(x, y, Color(1, 1, 1, a * a * 0.85))
+	rim.texture = ImageTexture.create_from_image(old)
+	# Match actual fuse progress captured above, independent of renderer speed.
+	var progress := clampf((game.hud._danger_saturation - saturation) / (game.hud._danger_saturation - Balance.DANGER_SATURATION), 0.0, 1.0)
+	rim.modulate = Color(1.9, 0.25, 0.3, 0.9 * progress)
+	env.adjustment_saturation = game.hud._danger_saturation
+	await RenderingServer.frame_post_draw
+	shot(tid + "_combat_readability_rim_before", "reconstructed legacy rim, same frozen fuse")
+	rim.texture = texture
+	rim.modulate = tint
+	env.adjustment_saturation = saturation
+	get_tree().paused = paused
