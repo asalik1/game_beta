@@ -3228,6 +3228,7 @@ func _spawn_scenery(zi: int) -> void:
 		zone_scenery[zi].append(water)
 		var plank := Sprite2D.new()
 		plank.texture = Art.tex("bridge")
+		plank.texture_filter = Art.prop_texture_filter("bridge")  # heavy downscale: same policy as scenery
 		plank.centered = false
 		plank.position = bridge.position
 		plank.scale = bridge.size / plank.texture.get_size()  # fit any-res bridge art to the span
@@ -3451,6 +3452,8 @@ func _prop_visual(name: String) -> Node2D:
 		# texture for floating ambience, which has a different sizing contract.
 		var texture_name := "rock2" if name == "pebble" else name
 		spr.texture = Art.tex(texture_name)
+		# Match the cast's downsampling; Art keeps legacy pixel art on nearest.
+		spr.texture_filter = Art.prop_texture_filter(texture_name)
 		vis = spr
 	return vis
 

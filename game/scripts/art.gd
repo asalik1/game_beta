@@ -3318,6 +3318,28 @@ static func _strip_info(base: String, hero_geometry := false) -> Dictionary:
 # prop with an _anim strip drops in with no call-site change; without one,
 # anim_prop returns null and the static Sprite2D path is untouched.
 static var _prop_frames_cache := {}
+# Speculative guard: legacy pixel-authored world art stays crisp if it is ever
+# routed through the scenery factories. Nothing on this list reaches them in the
+# shipped game today (walls, the door gate and the bone scatter take other
+# paths), and every shipped sprite that does reach them is painterly or shrunk.
+const PIXEL_PROP_TEXTURES := [
+	"bone", "wallblock", "wall_castle", "wall_grave", "wall_hedge",
+	"wall_ice", "wall_moss", "wall_sand", "wall_sewer", "wall_volcanic", "wall_wood",
+]
+
+
+static func prop_texture_filter(name: String, animated := false) -> CanvasItem.TextureFilter:
+	if name in PIXEL_PROP_TEXTURES:
+		return CanvasItem.TEXTURE_FILTER_NEAREST
+	# Procedural stand-ins with no PNG (the "glow" decal, the 20x22 "book") are
+	# pixel art too. Test the selected source: a painted strip may have no
+	# static counterpart.
+	var path := "res://assets/sprites/%s%s.png" % [name, "_anim" if animated else ""]
+	if not ResourceLoader.exists(path):
+		return CanvasItem.TEXTURE_FILTER_NEAREST
+	return CanvasItem.TEXTURE_FILTER_LINEAR
+
+
 static func _prop_frames(name: String, info: Dictionary) -> SpriteFrames:
 	if _prop_frames_cache.has(name):
 		return _prop_frames_cache[name]
@@ -3332,6 +3354,8 @@ static func _prop_frames(name: String, info: Dictionary) -> SpriteFrames:
 		at.atlas = tex
 		at.region = Rect2(
 			i * frame_size.x, 0, frame_size.x, frame_size.y)
+		# LINEAR must not sample the neighbouring frame in the strip.
+		at.filter_clip = true
 		frames.add_frame("default", at)
 	_prop_frames_cache[name] = frames
 	return frames
@@ -3346,6 +3370,7 @@ static func anim_prop(name: String) -> AnimatedSprite2D:
 	if info.is_empty():
 		return null
 	var spr := AnimatedSprite2D.new()
+	spr.texture_filter = prop_texture_filter(name, true)
 	spr.sprite_frames = _prop_frames(name, info)
 	spr.animation = "default"
 	# Random per-instance start frame so a row of identical props (a wall of

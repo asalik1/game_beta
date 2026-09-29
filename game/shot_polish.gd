@@ -175,7 +175,7 @@ func _capture_views(cls: String, z: float) -> void:
 		await _tour()
 		finish(1 if _motion_failed else 0)
 		return
-	if flag("gif"):
+	if flag("gif") and not flag("prop-sampling"):
 		for pass_index in maxi(1, int(arg("passes", "1"))):
 			step("motion pass %d" % (pass_index + 1))
 			await _gif_pass(cls)
@@ -183,6 +183,12 @@ func _capture_views(cls: String, z: float) -> void:
 				break
 		print("MOTION CHECK: %d frames; failed=%s" % [_motion_frames, _motion_failed])
 		finish(1 if _motion_failed else 0)
+		return
+	if flag("prop-sampling"):
+		var error: String = await preload("res://scripts/dev/prop_sampling_capture.gd").run(self)
+		if error != "":
+			print("PROP SAMPLING FAIL: " + error)
+		finish(0 if error == "" else 1)
 		return
 	var rooms := arg("rooms", "2,17,20").split(",", false)
 	for rs in rooms:
