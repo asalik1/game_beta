@@ -187,7 +187,7 @@ func _observe(id: String, anticipated := false) -> Dictionary:
 	_check(id + ".hero_in_view", contained, evidence, anticipated)
 	var bounds: Rect2 = q.bounds
 	_check(id + ".limits", g.camera.limit_left == int(bounds.position.x)
-		and g.camera.limit_top == int(bounds.position.y) and g.camera.limit_right == int(bounds.end.x)
+		and g.camera.limit_top == ceili(preload("res://scripts/wall_surface.gd").view_bounds(g, g.cur_room, bounds).position.y) and g.camera.limit_right == int(bounds.end.x)
 		and g.camera.limit_bottom == int(bounds.end.y) and g.camera.position_smoothing_enabled,
 		_frame())
 	q.r.shot("camera_" + id, "live camera/body proxy; frozen wolf; inspect original pixels; not an earned encounter")

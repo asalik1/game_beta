@@ -110,8 +110,13 @@ static func _add_piece(g: Game, gate: StaticBody2D, center: Vector2,
 		var wall_material: String = Terrains.wall_for(String(g.terrain_by_zone[zone]))
 		g._wall_dress(cap, wall_material, size)
 		cap.modulate = Terrains.wall_tint_for(String(g.terrain_by_zone[zone]))
+		cap.material = g._room_cap_material(zone)   # shaded like the room's wall tops
 		cap.centered = false
 		cap.position = local - size * 0.5
 		cap.z_index = -5
 		gate.add_child(cap)
-		g._wall_relief(cap, wall_material, Rect2(center - size * 0.5, size), "SE")
+		# Free-standing on walkable floor: the face stays on the block's own
+		# footprint instead of rising over the floor behind it.
+		var footprint := Rect2(center - size * 0.5, size)
+		g._wall_relief(cap, wall_material, footprint, "SE",
+			maxf(footprint.end.y - Balance.WALL_FACE_H, footprint.position.y))

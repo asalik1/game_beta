@@ -1160,7 +1160,9 @@ scene handoff to capgap (`CAPGAP SUMMARY: 0 blocked route(s)`).
 **`--damage-numbers` mode** = the per-target
 damage-column check: test_quality's column fixture, then a live wolf burst (`damage_burst`), a mixed
 normal/crit/DoT stack (`damage_stack`) and a killing blow that must stay on screen (`damage_kill`);
-`shot.bat polish --damage-numbers --timeout=180`, prints `DAMAGE BURST PASS`. **`--gif` mode** = MOTION review: frame
+`shot.bat polish --damage-numbers --timeout=180`, prints `DAMAGE BURST PASS`.
+**`--walls` mode** = the tall-wall review (`scripts/dev/wall_surface_capture.gd`): the wall geometry contract, rooms 2/17/20, the smallest ch2 room with a north door and the capital sanctum sealed/open, each framed room/north wall/west/east/south (the room to the south is built first), a live magma repaint, and every shot re-read for patches of the renderer's clear color; prints `WALL SURFACE PASS`.
+**`--gif` mode** = MOTION review: frame
 SERIES per beat (forest/keep/HUD fights with a LIVE pack and the hero driven through the real
 input path, road/magma/keep-wall walks) into `gif_<beat>/`; run with the runner's new
 `--fixed-fps=30` so each frame is a deterministic 1/30 s; then

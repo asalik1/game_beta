@@ -64,6 +64,11 @@ func _ready() -> void:
 	var z := float(arg("zoom", "1.4"))
 	zoom(z)
 	await sim_wait(1.5)   # title card clears
+	if flag("walls"):
+		var error: String = await preload("res://scripts/dev/wall_surface_capture.gd").run(self)
+		if error != "": print("WALL SURFACE FAIL: " + error)
+		finish(0 if error == "" else 1)
+		return
 	if flag("enemy-rims"):
 		await _enemy_rims()
 		return

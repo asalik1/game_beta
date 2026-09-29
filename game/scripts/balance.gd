@@ -5,6 +5,24 @@ class_name Balance
 ## monsters/zones) — this file is for the numbers you tweak, not the
 ## content you author.
 
+# Walls grow upward from the unchanged floor seam (hero body is ~88px).
+const WALL_FACE_H := 106.0
+const WALL_SIDE_FACE_W := 14.0
+const WALL_LIP_W := 3.0
+const WALL_AO_H := 12.0
+const WALL_SIDE_AO_W := 4.0
+const WALL_FACE_TOP := Color(0.66, 0.62, 0.59)
+const WALL_FACE_BASE := Color(0.30, 0.28, 0.28)
+const WALL_FACE_AO := Color(0.10, 0.09, 0.10)
+const WALL_FACE_LIP := Color(0.88, 0.76, 0.60)
+const WALL_CAP_DEPTH := 200.0
+const WALL_CAP_EDGE := Color(0.33, 0.31, 0.34)
+const WALL_CAP_DARK := Color(0.018, 0.016, 0.022)
+const WALL_SHADOW_H := 30.0
+const WALL_SHADOW_A := 0.55
+const WALL_SIDE_SHADOW_W := 18.0
+const WALL_SIDE_SHADOW_A := 0.38
+
 # Boot painting: generous crop reserve, a barely perceptible 80-second orbit.
 const BOOT_NIGHT := Color(0.02, 0.015, 0.045)
 const BOOT_OVERSCAN := 0.035

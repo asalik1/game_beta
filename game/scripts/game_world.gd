@@ -1051,11 +1051,10 @@ func _enter_room(i: int, live := false) -> void:
 		var nb := neighbor(i, dir)
 		if nb >= 0:
 			door_seen[nb] = true
-	# Camera clamps to the PLAYABLE rect — small rooms read small, and
-	# the empty margin outside their walls never shows.
-	var r := play_rect(i)
+	# Camera follows playable bounds plus the north wall's upward silhouette.
+	var r := WallSurface.view_bounds(self, i, play_rect(i))
 	camera.limit_left = int(r.position.x)
-	camera.limit_top = int(r.position.y)
+	camera.limit_top = ceili(r.position.y)   # never above the silhouette's (fractional) top
 	camera.limit_right = int(r.end.x)
 	camera.limit_bottom = int(r.end.y)
 	if room_safe(i):
@@ -3808,24 +3807,14 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 	world.add_child(body)
 	return body
 
-# Wall relief (gameplay-polish 2026-08-18; presentation constants). A wall used
-# to be ONE flat 48px strip of tile — no height, no shadow — so rooms read as
-# tinted rectangles. Now a north wall grows a shaded FACE below its cap (the
-# same tile in shade, so every terrain's wall keeps its material) and throws a
-# soft shadow onto the floor; a west wall throws a thin shadow east across the
-# floor. Light comes from the top-left, as everywhere else in the art.
-const WALL_FACE_H := 22.0                       # px of visible face under a north cap
-const WALL_FACE_SHADE := Color(0.56, 0.53, 0.54) # face = cap tile in shade
-const WALL_SHADOW_H := 30.0                     # floor shadow under the face
-const WALL_SHADOW_A := 0.55
-const WALL_SIDE_SHADOW_W := 18.0                # floor shadow east of a west wall
-const WALL_SIDE_SHADOW_A := 0.38
+# Wall presentation shares unchanged collider seams with doors and navigation.
+const WallSurface := preload("res://scripts/wall_surface.gd")
 
 
 ## A wall segment: collider + tiled wall visual. `wall_tex` is the terrain's
 ## seamless 16px wall tile (Terrains.wall_for); defaults to the stone block.
 ## `relief`: "S" = a north wall (face + floor shadow below), "E" = a west wall
-## (floor shadow to its east), "" = cap only (south/east walls, door stubs).
+## (face + shadow east), "W" = an east wall; "" = cap only.
 func _wall(rect: Rect2, wall_tex := "wallblock", relief := "") -> void:
 	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
 		return
@@ -3862,43 +3851,19 @@ func _wall(rect: Rect2, wall_tex := "wallblock", relief := "") -> void:
 	_wall_relief(spr, wall_tex, rect, relief)
 
 
-## Relief children live UNDER the cap sprite: they inherit its terrain tint
-## (modulate) and its scale, so cap-local units are world px / k (k = the
-## cap's scale: 3 for a legacy 16px tile, 1 for a native wall field). Rebuilt
-## by a terrain repaint (the scale can flip 3 <-> 1 across kinds).
-func _wall_relief(spr: Sprite2D, wall_tex: String, rect: Rect2, relief: String) -> void:
-	for c in spr.get_children():
-		c.queue_free()
-	var k: float = spr.scale.x
-	# "S" = south face + floor shadow below, "E" = shadow east; a corner bite
-	# block (P7.C) can carry both ("SE": its south face AND its east shadow).
-	if relief.contains("S"):
-		var face := Sprite2D.new()   # the visible south face: the cap's tile in shade
-		_wall_dress(face, wall_tex, Vector2(rect.size.x, WALL_FACE_H), Vector2(0, 5.0 * k))
-		face.scale = Vector2.ONE       # inherits the cap's scale
-		face.centered = false
-		face.position = Vector2(0, rect.size.y / k)
-		face.modulate = WALL_FACE_SHADE
-		face.z_index = -1              # relative: just under the cap
-		spr.add_child(face)
-		var sh := Sprite2D.new()      # cast shadow on the floor under the face
-		sh.texture = Art.tex("softshadow")
-		sh.centered = false
-		sh.position = Vector2(0, (rect.size.y + WALL_FACE_H) / k)
-		sh.scale = Vector2(rect.size.x / k / 8.0, WALL_SHADOW_H / k / 32.0)
-		sh.modulate = Color(1, 1, 1, WALL_SHADOW_A)
-		sh.z_index = -3               # relative: over the floor, under everything else
-		spr.add_child(sh)
-	if relief.contains("E"):
-		var sh := Sprite2D.new()      # a west wall's shadow across the floor to its east
-		sh.texture = Art.tex("softshadow")
-		sh.centered = false
-		sh.rotation = -PI / 2.0        # opaque edge on the wall, fading eastward
-		sh.position = Vector2(rect.size.x / k, rect.size.y / k)
-		sh.scale = Vector2(rect.size.y / k / 8.0, WALL_SIDE_SHADOW_W / k / 32.0)
-		sh.modulate = Color(1, 1, 1, WALL_SIDE_SHADOW_A)
-		sh.z_index = -3
-		spr.add_child(sh)
+## Repaint rebuilds relief in cap-local units (native field 1x / legacy 3x).
+## `face_top` (world y) pins where a south face starts (see WallSurface.face_rect).
+func _wall_relief(spr: Sprite2D, wall_tex: String, rect: Rect2, relief: String, face_top := INF) -> void:
+	WallSurface.relief(self, spr, wall_tex, rect, relief, face_top)
+
+
+## The room's shared wall-top material, built with its walls. Posts, shortcut
+## returns and repaints reuse it instead of allocating one per sprite.
+func _room_cap_material(i: int) -> ShaderMaterial:
+	for s in zone_wall_sprites.get(i, []):
+		if is_instance_valid(s) and not s.has_meta("wall_mass") and s.material is ShaderMaterial:
+			return s.material
+	return WallSurface.cap_material(self, i)
 
 
 ## Scale that draws a tile texture at ONE world tile (TILE px): x3 for the 16px
@@ -3962,8 +3927,8 @@ func _build_room_walls(i: int) -> void:
 			_door_torches(i, door_pos(i, dir), false)
 			if corridor > 0.0:
 				var cy := full.position.y if dir == "N" else r.end.y
-				_wall(Rect2(lane_x - gap / 2.0 - TILE, cy, TILE, corridor), wt)
-				_wall(Rect2(lane_x + gap / 2.0, cy, TILE, corridor), wt)
+				_wall(Rect2(lane_x - gap / 2.0 - TILE, cy, TILE, corridor), wt, "E")
+				_wall(Rect2(lane_x + gap / 2.0, cy, TILE, corridor), wt, "W")
 		else:
 			_wall(Rect2(r.position.x, y, r.size.x, TILE), wt, relief)
 	# West/east walls (gap on the lane).
@@ -3971,14 +3936,14 @@ func _build_room_walls(i: int) -> void:
 		var dir: String = spec[0]
 		var x: float = spec[1]
 		var corridor: float = spec[2]
-		var relief := "E" if dir == "W" else ""   # a west wall shades the floor east of it
+		var relief := "E" if dir == "W" else "W"
 		if exits.has(dir):
 			_wall(Rect2(x, r.position.y, TILE, lane_y - gap / 2.0 - r.position.y), wt, relief)
 			_wall(Rect2(x, lane_y + gap / 2.0, TILE, r.end.y - (lane_y + gap / 2.0)), wt, relief)
 			_door_torches(i, door_pos(i, dir), true)
 			if corridor > 0.0:
 				var cx2 := full.position.x if dir == "W" else r.end.x
-				_wall(Rect2(cx2, lane_y - gap / 2.0 - TILE, corridor, TILE), wt)
+				_wall(Rect2(cx2, lane_y - gap / 2.0 - TILE, corridor, TILE), wt, "S")
 				_wall(Rect2(cx2, lane_y + gap / 2.0, corridor, TILE), wt)
 		else:
 			_wall(Rect2(x, r.position.y, TILE, r.size.y), wt, relief)
@@ -3991,12 +3956,24 @@ func _build_room_walls(i: int) -> void:
 		var nr: Rect2 = n
 		var west := nr.position.x <= r.position.x + 1.0
 		var north := nr.position.y <= r.position.y + 1.0
-		var relief := ("S" if north else "") + ("E" if west else "")
+		var relief := ("S" if north else "") + ("E" if west else "W")
 		_wall(nr, wt, relief)
+	# Fill inaccessible inset margins with the same terrain field. The shader
+	# cuts out the playable floor AND cell-centred corridors, including gates.
+	# This is visual-only: no new collider, navigation rect or minimap shape.
+	var mass := WallSurface.mass(self, i, wt)
+	world.add_child(mass)
+	zone_wall_sprites[i].append(mass)
+	var backdrop := WallSurface.lane_backdrop(self, i)
+	if backdrop != null:
+		world.add_child(backdrop)
+	var cap_material := WallSurface.cap_material(self, i)
 	var wall_tint := Terrains.wall_tint_for(terrain_by_zone[i])
 	for wall_sprite in zone_wall_sprites[i]:
 		if is_instance_valid(wall_sprite):
 			wall_sprite.modulate = wall_tint
+			if not wall_sprite.has_meta("wall_mass"):
+				wall_sprite.material = cap_material
 	_canopy_overhang(i, r, exits, gap)
 	_wall_posts(i, r, exits, gap, wt)
 	# Locked edges get a gate — built once per edge, by whichever room
@@ -4027,7 +4004,7 @@ func _cell_curtain(i: int, full: Rect2, lt: Vector2, rb: Vector2, exits: Diction
 	var cy := full.position.y + ROOM_H / 2.0
 	# Each side closes on its own margin (asymmetric insets: one side may be
 	# deep enough for a curtain while the opposite wall sits on the cell edge).
-	for spec in [["N", full.position.y, "S", lt.y], ["S", full.end.y - TILE, "", rb.y]]:
+	for spec in [["N", full.position.y, "", lt.y], ["S", full.end.y - TILE, "", rb.y]]:
 		if float(spec[3]) < CURTAIN_MIN_INSET:
 			continue
 		var dir: String = spec[0]
@@ -4038,7 +4015,7 @@ func _cell_curtain(i: int, full: Rect2, lt: Vector2, rb: Vector2, exits: Diction
 			_wall(Rect2(cx + gap / 2.0, y, full.end.x - (cx + gap / 2.0), TILE), wt, relief)
 		else:
 			_wall(Rect2(full.position.x, y, full.size.x, TILE), wt, relief)
-	for spec in [["W", full.position.x, "E", lt.x], ["E", full.end.x - TILE, "", rb.x]]:
+	for spec in [["W", full.position.x, "", lt.x], ["E", full.end.x - TILE, "", rb.x]]:
 		if float(spec[3]) < CURTAIN_MIN_INSET:
 			continue
 		var dir: String = spec[0]
@@ -4092,7 +4069,9 @@ func _canopy_overhang(i: int, r: Rect2, exits: Dictionary, gap: float) -> void:
 		s.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 		# offset the region per span so the tile phase differs left/right
 		s.region_rect = Rect2(sp.position.x * 0.5, 0, sp.size.x, minf(CANOPY_H, tex.get_height()))
-		s.position = Vector2(sp.position.x, r.position.y - CANOPY_LIFT)
+		# Hang from the risen wall top, never over the floor of the room north.
+		var lift := minf(WallSurface.north_rise(self, i) + CANOPY_LIFT, WallSurface.north_headroom(self, i))
+		s.position = Vector2(sp.position.x, r.position.y - lift)
 		s.modulate = Color(1, 1, 1, CANOPY_ALPHA)
 		s.z_index = CANOPY_Z
 		s.z_as_relative = false
@@ -4128,6 +4107,8 @@ func _wall_posts(i: int, r: Rect2, exits: Dictionary, gap: float, wt: String) ->
 	var cx := door_pos(i, "N").x   # door lanes sit on the CELL's centre lines
 	var cy := door_pos(i, "W").y
 	var notches: Array = room_notches(i)   # posts and corner blocks skip a bite's span
+	# North pilasters share the north wall's face top (and lip).
+	var north_face_top := r.position.y + TILE - Balance.WALL_FACE_H
 	# north + south runs
 	for side in ["N", "S"]:
 		var x := r.position.x + CORNER_W + rng.randf_range(40.0, 120.0)
@@ -4139,11 +4120,11 @@ func _wall_posts(i: int, r: Rect2, exits: Dictionary, gap: float, wt: String) ->
 					in_door = true
 			if not in_door:
 				if side == "N":
-					_post(i, wt, Rect2(x, r.position.y, POST_W, TILE + POST_DROP), true)
+					_post(i, wt, Rect2(x, r.position.y, POST_W, TILE + POST_DROP), "S", north_face_top)
 				else:
-					_post(i, wt, Rect2(x, r.end.y - TILE - POST_DROP, POST_W, TILE + POST_DROP), false)
+					_post(i, wt, Rect2(x, r.end.y - TILE - POST_DROP, POST_W, TILE + POST_DROP), "")
 			x += POST_STEP + rng.randf_range(-48.0, 64.0)
-	# west + east runs (posts protrude sideways; no separate face)
+	# west + east runs (posts protrude sideways with their wall's side face)
 	for side in ["W", "E"]:
 		var y := r.position.y + CORNER_W + rng.randf_range(40.0, 120.0)
 		while y < r.end.y - CORNER_W - POST_W:
@@ -4154,61 +4135,48 @@ func _wall_posts(i: int, r: Rect2, exits: Dictionary, gap: float, wt: String) ->
 					in_door = true
 			if not in_door:
 				if side == "W":
-					_post(i, wt, Rect2(r.position.x, y, TILE + POST_DROP, POST_W), false)
+					_post(i, wt, Rect2(r.position.x, y, TILE + POST_DROP, POST_W), "E")
 				else:
-					_post(i, wt, Rect2(r.end.x - TILE - POST_DROP, y, TILE + POST_DROP, POST_W), false)
+					_post(i, wt, Rect2(r.end.x - TILE - POST_DROP, y, TILE + POST_DROP, POST_W), "W")
 			y += POST_STEP + rng.randf_range(-48.0, 64.0)
 	# corner blocks (a heavier tower foot at each corner) — a bitten corner is
 	# already a block; its foot moves to the bite's inner corner instead.
-	for spec in [[Vector2(r.position.x, r.position.y), true], [Vector2(r.end.x - CORNER_W, r.position.y), true],
-			[Vector2(r.position.x, r.end.y - CORNER_W), false], [Vector2(r.end.x - CORNER_W, r.end.y - CORNER_W), false]]:
+	for spec in [[Vector2(r.position.x, r.position.y), "SE"], [Vector2(r.end.x - CORNER_W, r.position.y), "SW"],
+			[Vector2(r.position.x, r.end.y - CORNER_W), "E"], [Vector2(r.end.x - CORNER_W, r.end.y - CORNER_W), "W"]]:
 		var at: Vector2 = spec[0]
 		var bitten := false
 		for n in notches:
 			if (n as Rect2).grow(2.0).has_point(at + Vector2(CORNER_W, CORNER_W) * 0.5):
 				bitten = true
 		if not bitten:
-			_post(i, wt, Rect2(at, Vector2(CORNER_W, CORNER_W)), spec[1])
+			_post(i, wt, Rect2(at, Vector2(CORNER_W, CORNER_W)), spec[1], north_face_top)
 	for n in notches:
 		var nr: Rect2 = n
 		var west := nr.position.x <= r.position.x + 1.0
 		var north := nr.position.y <= r.position.y + 1.0
-		# the bite's inner corner: where its two room-facing edges meet
+		# the bite's inner corner: where its two room-facing edges meet; its
+		# faces follow the bite's own (the default face top matches its seam)
 		var ix := nr.end.x - CORNER_W if west else nr.position.x
 		var iy := nr.end.y - CORNER_W if north else nr.position.y
-		_post(i, wt, Rect2(ix, iy, CORNER_W, CORNER_W), north)
+		_post(i, wt, Rect2(ix, iy, CORNER_W, CORNER_W), ("S" if north else "") + ("E" if west else "W"))
 
 
-## One post/corner block: the wall field as its cap (a touch darker), and on
-## the north side a short shaded face + floor shadow under it (same recipe as
-## the wall's own relief), so it reads as a solid block, not a decal.
-func _post(i: int, wt: String, rect: Rect2, face: bool) -> void:
+## One post/corner block, cut from the wall field. Its top shades like the
+## wall top it stands on, a step darker (self_modulate, so the faces skip it);
+## its faces match the wall it juts from: a north pilaster shares the wall's
+## face top and lip, a west/east one steps the wall's side face into the room.
+func _post(i: int, wt: String, rect: Rect2, relief: String, face_top := INF) -> void:
 	var s := Sprite2D.new()
 	zone_posts[i].append(s)
 	_wall_dress(s, wt, rect.size, Vector2(rect.position.x * 0.37, 7.0))
 	s.centered = false
 	s.position = rect.position
-	s.modulate = POST_SHADE
+	s.modulate = Terrains.wall_tint_for(terrain_by_zone[i])
+	s.self_modulate = POST_SHADE
 	s.z_index = -4   # over the wall cap (-5), under actors
+	s.material = _room_cap_material(i)
 	world.add_child(s)
-	if face:
-		var k: float = s.scale.x
-		var f := Sprite2D.new()
-		_wall_dress(f, wt, Vector2(rect.size.x, WALL_FACE_H * 0.7), Vector2(0, 5.0 * k))
-		f.scale = Vector2.ONE
-		f.centered = false
-		f.position = Vector2(0, rect.size.y / k)
-		f.modulate = WALL_FACE_SHADE
-		f.z_index = -1
-		s.add_child(f)
-		var sh := Sprite2D.new()
-		sh.texture = Art.tex("softshadow")
-		sh.centered = false
-		sh.position = Vector2(0, (rect.size.y + WALL_FACE_H * 0.7) / k)
-		sh.scale = Vector2(rect.size.x / k / 8.0, WALL_SHADOW_H * 0.6 / k / 32.0)
-		sh.modulate = Color(1, 1, 1, WALL_SHADOW_A)
-		sh.z_index = -3
-		s.add_child(sh)
+	_wall_relief(s, wt, rect, relief, face_top)
 
 
 ## Freestanding door pillars use their painted plinth to clear the wall and lane.

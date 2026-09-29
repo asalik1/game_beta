@@ -253,9 +253,12 @@ func _capture(label: String, room: int, direction: String, sources: Array[Sprite
 		var used := _world_rect(source, geometry["used"])
 		var wall_hits := 0
 		for wall in game.zone_wall_sprites.get(room, []):
+			# The room's dark surround covers the whole cell; it is not a wall.
+			# Faces rise UP from the floor seam into the cap region, so a
+			# segment's footprint is its collision rect alone.
+			if wall.has_meta("wall_mass"):
+				continue
 			var rect: Rect2 = wall.get_meta("wall_rect")
-			if String(wall.get_meta("wall_relief", "")).contains("S"):
-				rect.size.y += Game.WALL_FACE_H
 			if footprint.intersects(rect):
 				wall_hits += 1
 		var parent := source.get_parent() as Node2D

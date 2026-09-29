@@ -38,7 +38,8 @@ static func build(g, zi: int, doorway: Vector2, vertical: bool) -> void:
 			else:
 				var north: bool = doorway.y < center.y
 				direction = "N" if north else "S"
-				anchor.y = pr.position.y + Game.TILE + Game.WALL_FACE_H \
+				# The taller wall now rises UP from this seam; pillars stand on the floor.
+				anchor.y = pr.position.y + Game.TILE \
 					+ Balance.DOOR_TORCH_GROUND_CLEARANCE + extent.y \
 					if north else pr.end.y - Game.TILE - Balance.DOOR_TORCH_GROUND_CLEARANCE
 		else:

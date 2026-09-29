@@ -10,10 +10,10 @@ The existing four-frame `torch_pillar_anim.png` remains unchanged: 736x296 pixel
 | --- | --- | --- |
 | West | left edge +40px | left edge +73.892px |
 | East | right edge -40px | right edge -73.892px |
-| North | top edge +64px | top edge +92px |
+| North | top edge +64px | top edge +70px |
 | South | bottom edge -16px | bottom edge -54px |
 
-West/east plinth centers are symmetric around the lane. North placement clears the 48px cap plus 22px visible wall face. Bounds use the actual play rectangle, so small inset rooms keep their actual road-mouth alignment.
+West/east plinth centers are symmetric around the lane. North pillars stand on the floor seam: the 48px cap plus the 6px ground clearance. The north wall face now rises upward into the cap region (`Balance.WALL_FACE_H`), so it no longer reaches the floor (it was a 22px face hanging below the cap before the tall-wall change). Bounds use the actual play rectangle, so small inset rooms keep their actual road-mouth alignment.
 
 Each pillar sorts as one unit with ordinary actors. The root is 22px above its painted front foot, matching `Player.HERO_FEET_ANCHOR`; the sprite compensates locally, preserving its painted position. Existing `PropShadow` supplies the contact rim and follows source frames. Standard structure-occlusion metadata makes the player's existing clipped silhouette available behind the stone.
 
