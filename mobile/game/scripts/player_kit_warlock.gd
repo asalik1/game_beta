@@ -436,8 +436,9 @@ func _hex_detonate(pos: Vector2, scale := 1.0) -> void:
 	if hex_fx.has("hex_heal"):
 		# Pact: every cursed death feeds you.
 		var frac: float = hex_fx["hex_heal"]
-		hp = minf(max_hp, hp + max_hp * frac)
-		game.spawn_text(global_position + Vector2(0, -50), "+%d" % int(max_hp * frac), Color(0.5, 1.0, 0.5))
+		var pact_amt := healing_received(max_hp * frac)
+		hp = minf(max_hp, hp + pact_amt)
+		game.spawn_text(global_position + Vector2(0, -50), "+%d" % int(pact_amt), Color(0.5, 1.0, 0.5))
 
 
 ## Dark Pact: pay in blood for a soul-drain blast, then drink it back

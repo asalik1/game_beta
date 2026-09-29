@@ -3,7 +3,7 @@ class_name UICover
 ## full-screen title card shown before anything interactive. Any key or
 ## click advances to the character roster (menus.open_slots).
 ##
-## Procedural set by default — night sky, rising embers, the Ember
+## Persistent backdrop in boot_backdrop.gd; procedural fallback — night sky, rising embers, the Ember
 ## Crown floating in a bloom halo, the four founders' Embers circling
 ## it. Drop assets/sprites/cover.png to replace the whole set with
 ## hand-made art; the wordmark and the key prompt are drawn on top of
@@ -18,8 +18,6 @@ class_name UICover
 
 
 const COVER_MAX := 8      # cover.png + cover_2..cover_8
-const COVER_HOLD := 10.0  # seconds a cover is held before the next fades in
-const COVER_FADE := 1.4   # crossfade length
 
 
 ## Every hand-made cover, in order: cover.png, then cover_2.png, cover_3.png…
@@ -38,11 +36,12 @@ static func _covers() -> Array[Texture2D]:
 	return out
 
 
-## Crossfade the cover every COVER_HOLD seconds. Two layers: `back` holds what
+## Crossfade the cover every Balance.BOOT_COVER_HOLD seconds. Two layers: `back` holds what
 ## you see, `front` fades the next one in on top, then back takes it and front
 ## snaps invisible — so N covers need exactly 2 nodes and one looping tween.
 static func _cycle(root: Control, back: TextureRect, covers: Array[Texture2D]) -> void:
 	var front := TextureRect.new()
+	front.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	front.texture = back.texture
 	front.set_anchors_preset(Control.PRESET_FULL_RECT)
 	front.expand_mode = back.expand_mode
@@ -54,49 +53,21 @@ static func _cycle(root: Control, back: TextureRect, covers: Array[Texture2D]) -
 	var tw := front.create_tween().set_loops()
 	for i in covers.size():
 		var nxt: Texture2D = covers[(i + 1) % covers.size()]
-		tw.tween_interval(COVER_HOLD)
+		tw.tween_interval(Balance.BOOT_COVER_HOLD)
 		tw.tween_callback(func() -> void: front.texture = nxt)
-		tw.tween_property(front, "modulate:a", 1.0, COVER_FADE)
+		tw.tween_property(front, "modulate:a", 1.0, Balance.BOOT_COVER_FADE)
 		tw.tween_callback(func() -> void: back.texture = nxt)
 		tw.tween_property(front, "modulate:a", 0.0, 0.0)
 
 
 static func build(m: Menus, root: Control) -> void:
-	root.process_mode = Node.PROCESS_MODE_ALWAYS  # tweens run while paused
+	# The persistent setting is owned by Menus, independently of this text.
+	root.process_mode = Node.PROCESS_MODE_ALWAYS
+	_wordmark(root)
+	_prompt(root, m.game)
 
-	var bg := ColorRect.new()
-	bg.color = Color(0.02, 0.015, 0.045)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	root.add_child(bg)
 
-	# Hand-made cover art overrides the whole procedural set.
-	var covers := _covers()
-	if not covers.is_empty():
-		var ctex: Texture2D = covers[0]
-		if ctex != null:
-			var tr := TextureRect.new()
-			tr.texture = ctex
-			tr.set_anchors_preset(Control.PRESET_FULL_RECT)
-			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-			# The cover is drawn into the 1280x720 canvas rect, then the
-			# canvas_items stretch scales that to the real window — so a cover
-			# authored ABOVE 720p is net-DOWNSCALED on any sub-4K display
-			# (a 3840x2160 cover lands at 0.5x on 1080p, 0.667x on 1440p).
-			# The project filters NEAREST globally (pixel art wants that on the
-			# UPSCALE side), but nearest DOWNSCALING decimates — it drops whole
-			# pixels and shreds thin detail like the wordmark's edges (the same
-			# failure that fragmented the hero sword blade). This is a per-node
-			# override: full-screen chrome that shrinks, not a world sprite that
-			# grows, so it does NOT touch the crisp look anywhere else.
-			tr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-			root.add_child(tr)
-			if covers.size() > 1:
-				_cycle(root, tr, covers)
-			_wordmark(root)
-			_prompt(root, m.game)
-			return
-
+static func _procedural(root: Control) -> void:
 	# ---- procedural set -------------------------------------------
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 20260706
@@ -110,25 +81,6 @@ static func build(m: Menus, root: Control) -> void:
 			var stw := star.create_tween().set_loops()
 			stw.tween_property(star, "modulate:a", 0.15, rng.randf_range(0.8, 1.8))
 			stw.tween_property(star, "modulate:a", 1.0, rng.randf_range(0.8, 1.8))
-
-	# Embers rise off the bottom of the frame, pre-warmed so the very
-	# first frame already lives.
-	var embers := CPUParticles2D.new()
-	embers.amount = 42
-	embers.lifetime = 6.0
-	embers.preprocess = 6.0
-	embers.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	embers.emission_rect_extents = Vector2(660, 8)
-	embers.position = Vector2(640, 740)
-	embers.direction = Vector2(0, -1)
-	embers.spread = 12.0
-	embers.gravity = Vector2(0, -14)
-	embers.initial_velocity_min = 30.0
-	embers.initial_velocity_max = 90.0
-	embers.scale_amount_min = 1.5
-	embers.scale_amount_max = 3.0
-	embers.color = Color(1.0, 0.55, 0.2, 0.85)
-	root.add_child(embers)
 
 	# The Ember Crown, floating in a bloom halo (Forward+ glow).
 	var halo := Sprite2D.new()
@@ -166,9 +118,6 @@ static func build(m: Menus, root: Control) -> void:
 		orbit.add_child(mote)
 	var spin := orbit.create_tween().set_loops()
 	spin.tween_property(orbit, "rotation", TAU, 14.0).as_relative()
-
-	_wordmark(root)
-	_prompt(root, m.game)
 
 
 ## CROWNLESS / The Hollow King — drawn on BOTH the procedural set and the

@@ -846,9 +846,7 @@ func _process(delta: float) -> void:
 
 	_update_barrier()
 
-	# Ambient particles drift around the camera; NPCs chatter idly.
-	if is_instance_valid(ambient_fx):
-		ambient_fx.global_position = player.global_position + Vector2(0, -380.0 if ambient_above else 0.0)
+	# NPCs chatter idly.
 	npc_emote_t -= delta
 	if npc_emote_t <= 0.0:
 		npc_emote_t = randf_range(3.5, 7.0)
@@ -948,6 +946,7 @@ func _process(delta: float) -> void:
 
 	_tick_room_clear(delta)   # phantom "N monsters left" guard + straggler wake (game_flow)
 	_tick_camera(delta)
+	_update_ambient_fx()
 	# (The room-transition check at the top of _process is the safety
 	# net: any position outside the graph snaps back into the room.)
 

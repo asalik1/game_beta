@@ -5,6 +5,11 @@ extends "res://scripts/tests/test_base.gd"
 
 ## (1b) The Chapter 1 room graph: structural rules from DESIGN.md.
 func _test_room_graph() -> void:
+	var wall_error := preload("res://scripts/tests/test_wall_surface.gd").run(self)
+	if wall_error == "":
+		wall_error = preload("res://scripts/tests/test_wall_surface.gd").run_room(game, 0)
+	if wall_error != "":
+		return _fail(wall_error)
 	var n := game.zone_count
 	if n < 20 or n > 30:
 		return _fail("chapter size out of bounds: %d rooms (want 20-30)" % n)

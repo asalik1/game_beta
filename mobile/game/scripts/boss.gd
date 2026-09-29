@@ -12,6 +12,7 @@ var special_cd := 2.2        # telegraphed signature move (pounce / rain / blade
 var leaping := false         # fangmaw mid-pounce
 var summoned := false        # fangmaw's 50% wolves
 var enraged := false         # vargoth's 30% enrage
+var _enrage_fanned := false  # host: the enrage tint has been sent to guest mirrors
 
 # charge state (fangmaw)
 var charging := false
@@ -48,6 +49,23 @@ func _physics_process(delta: float) -> void:
 				if _cast_sync_t <= 0.0:
 					_sync_signature()
 	super(delta)
+	_sync_enrage_tint()
+
+
+## Hits no longer revert the body to base_mod, so an enrage tint now holds for
+## its phase on the host (MP #8 skipped syncing it only because the old hit
+## flash wiped it within 0.15 s). Fan it once, after the think that set it, as
+## a tell with no window: net_apply_tell holds it on the mirror until the next
+## tint. Un-enraging (reset_fight) fans base_mod back. No-op solo/on a mirror.
+func _sync_enrage_tint() -> void:
+	if net_mirror or sprite == null or enraged == _enrage_fanned:
+		return
+	_enrage_fanned = enraged
+	_net_tell(_enrage_tell_color(), 0.0)
+
+
+func _enrage_tell_color() -> Color:
+	return sprite.modulate if enraged else base_mod
 
 
 func _cast_has_prey() -> bool:
@@ -728,6 +746,8 @@ func _do_charge(_to_player: Vector2) -> void:
 	var tgt: Player = _get_target()  # re-read after the await (it may have died)
 	if dying or not is_instance_valid(tgt):
 		telegraphing = false
+		if not dying:
+			sprite.modulate = base_mod  # no charge is coming: drop its red tell
 		return
 	# Pick a heading with a clear lane so the charge doesn't just bash a wall or
 	# prop between us and the prey — the straight line if it's open, else the
@@ -739,6 +759,7 @@ func _do_charge(_to_player: Vector2) -> void:
 		telegraphing = false
 		charging = false
 		ability_cd = 1.0
+		sprite.modulate = base_mod  # skipped this cycle: the red tell ends with it
 		return
 	sprite.modulate = base_mod
 	roar()

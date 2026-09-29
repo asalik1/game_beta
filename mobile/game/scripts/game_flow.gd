@@ -2313,6 +2313,13 @@ func net_apply_terrain_fx(ev: String, pos: Vector2) -> void:
 ## (a membership list, not a tuning number — it stays out of balance.gd).
 const HAZARD_PHYSICAL := ["ice", "slow", "lava"]
 
+## Grass rustle targets swaying decor only: the ONE shared wind material marks
+## it. Floor wear, moss/dust drifts and puddles carry their own shader, and
+## water/planks are non-centered, so none of them throw leaves.
+func _rustles(ds: Sprite2D) -> bool:
+	return ds != null and ds.centered and ds.material == Art.wind_material()
+
+
 ## Apply floor-patch effects to the player and enemies (ticked at 2.5Hz).
 ## DEDICATED: the player half skips whole (each guest's own machine ticks
 ## its own player — §4.1 hazards row); the enemy half is authority work.
@@ -2370,7 +2377,7 @@ func _apply_hazards() -> void:
 					lp.hazard_speed = 0.7
 				"heal":
 					if lp.hp < lp.max_hp:
-						lp.hp = minf(lp.max_hp, lp.hp + lp.max_hp * 0.02)
+						lp.hp = minf(lp.max_hp, lp.hp + lp.healing_received(lp.max_hp * 0.02))
 		# Enemies share physical patches (ice, slow, lava).
 		if htype in HAZARD_PHYSICAL:
 			for node in mobs:
@@ -2410,9 +2417,8 @@ func _apply_hazards() -> void:
 				e.hazard_speed = minf(e.hazard_speed, Balance.RIVER_WADE_MULT)
 	was_wading = wading
 
-	# Grass rustle (visual pass): brushing past swaying decor (the wind
-	# material marks it; water/planks are non-centered and skipped) kicks
-	# a few leaves loose. Per-plant cooldown keeps it a whisper.
+	# Grass rustle (visual pass): brushing past swaying decor (see _rustles)
+	# kicks a few leaves loose. Per-plant cooldown keeps it a whisper.
 	if lp != null and not lp.dead and lp.velocity.length() > 30.0:
 		var scenery: Array = zone_scenery.get(cur_room, [])
 		for i in range(scenery.size() - 1, -1, -1):
@@ -2422,7 +2428,7 @@ func _apply_hazards() -> void:
 				scenery.remove_at(i)
 				continue
 			var ds := scenery[i] as Sprite2D
-			if ds == null or ds.material == null or not ds.centered:
+			if not _rustles(ds):
 				continue
 			if ds.global_position.distance_to(lp.global_position) > 30.0:
 				continue

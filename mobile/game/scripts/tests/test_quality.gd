@@ -2,6 +2,9 @@ extends RefCounted
 
 
 static func run(t: Node) -> String:
+	var weather_error: String = preload("res://scripts/tests/test_weather_depth.gd").run(t.game)
+	if weather_error != "":
+		return weather_error
 	var rim_error := enemy_rims(t)
 	if rim_error != "":
 		return rim_error
@@ -653,6 +656,15 @@ static func _danger_contracts(t: Node, hud: Hud, env: Environment) -> String:
 		var interrupted: bool = ending not in ["caught", "sheltered"]
 		hud.danger_ramp(0.2 if interrupted else 0.12)
 		await t.get_tree().create_timer(0.08 if interrupted else 0.18).timeout
+		if not interrupted:
+			# SceneTree resumes timers BEFORE it steps tweens, so one long frame
+			# can fire the wait above ahead of the ramp's final step. Poll the
+			# wall clock until the fuse itself has finished (never await its
+			# `finished`: it may already have fired and the await would hang).
+			var deadline := Time.get_ticks_msec() + 1000
+			while hud.danger_tw != null and hud.danger_tw.is_valid() and hud.danger_tw.is_running() \
+					and Time.get_ticks_msec() < deadline:
+				await t.get_tree().create_timer(0.02).timeout
 		if env.adjustment_saturation >= 0.93:
 			return "safe-zone fuse did not drain saturation: " + ending
 		if not interrupted and not is_equal_approx(env.adjustment_saturation, Balance.DANGER_SATURATION):

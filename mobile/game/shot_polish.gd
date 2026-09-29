@@ -15,6 +15,12 @@ extends ShotRig
 ## clearance, stone rim, fortress palette, arcade grounding) plus its RENDER
 ## check of the real road shader against road_curve(); fails the rig on any
 ## miss. Then the usual room frames, and the capital frames at the end.
+## --floor-dressing: test_world_read (+ its render check), then per keep 17/20,
+## forest 2 and capital rooms 0/2/3/4 the production dressing check
+## (dressing_room: macro wear, wall clusters, every authored capital piece
+## landed and visible, off the lanes, no rustle) and floor_<room>_room/south/
+## arcade frames, then hands off to capgap (exit 1 = a walled route):
+##   shot.bat polish --floor-dressing --seed=42017 --timeout=540
 ## Per room: "<room>_room" (hero mid-room with a wolf pack, three hits landed so
 ## numbers/bars/flash are live), "<room>_wall" (hero at the north wall: face,
 ## shadow, road arm, door torches). --hud adds a HUD-on shot per room.
@@ -58,6 +64,11 @@ func _ready() -> void:
 	var z := float(arg("zoom", "1.4"))
 	zoom(z)
 	await sim_wait(1.5)   # title card clears
+	if flag("walls"):
+		var error: String = await preload("res://scripts/dev/wall_surface_capture.gd").run(self)
+		if error != "": print("WALL SURFACE FAIL: " + error)
+		finish(0 if error == "" else 1)
+		return
 	if flag("enemy-rims"):
 		await _enemy_rims()
 		return
@@ -175,7 +186,7 @@ func _capture_views(cls: String, z: float) -> void:
 		await _tour()
 		finish(1 if _motion_failed else 0)
 		return
-	if flag("gif"):
+	if flag("gif") and not flag("prop-sampling"):
 		for pass_index in maxi(1, int(arg("passes", "1"))):
 			step("motion pass %d" % (pass_index + 1))
 			await _gif_pass(cls)
@@ -183,6 +194,15 @@ func _capture_views(cls: String, z: float) -> void:
 				break
 		print("MOTION CHECK: %d frames; failed=%s" % [_motion_frames, _motion_failed])
 		finish(1 if _motion_failed else 0)
+		return
+	if flag("floor-dressing"):
+		await _floor_dressing_bundle()
+		return
+	if flag("prop-sampling"):
+		var error: String = await preload("res://scripts/dev/prop_sampling_capture.gd").run(self)
+		if error != "":
+			print("PROP SAMPLING FAIL: " + error)
+		finish(0 if error == "" else 1)
 		return
 	var rooms := arg("rooms", "2,17,20").split(",", false)
 	for rs in rooms:
@@ -238,6 +258,53 @@ func _capture_views(cls: String, z: float) -> void:
 			finish(1)
 			return
 	finish()
+
+
+## One locked engine: regression, keep 17/20 + forest + capital frames, then
+## the existing real-input capgap routes. Its summary is the final pass gate.
+func _floor_dressing_bundle() -> void:
+	var tests := preload("res://scripts/tests/test_world_read.gd")
+	var error: String = tests.run(self)
+	if error == "": error = await tests.rendered(self)
+	if error != "":
+		print("RIG FAIL: " + error)
+		finish(1)
+		return
+	for zi in [2, 17, 20]:
+		await _goto(zi)
+		if not await _floor_views("%02d" % zi):
+			finish(1)
+			return
+	game.enter_capital()
+	await frames(10)
+	await skip_dialogue()
+	for zi in [0, 2, 3, 4]:
+		await _goto(zi)
+		if not await _floor_views("capital_%02d" % zi):
+			finish(1)
+			return
+	print("FLOOR DRESSING PASS: regression and composed floor captures; handing off to capgap")
+	if get_tree().change_scene_to_file("res://shot_capgap.tscn") != OK:
+		print("RIG FAIL: capgap handoff failed")
+		finish(1)
+
+
+func _floor_views(prefix: String) -> bool:
+	var error := preload("res://scripts/tests/test_world_read.gd").dressing_room(game, game.cur_room)
+	if error != "":
+		print("RIG FAIL: " + error)
+		return false
+	var rect := game.play_rect(game.cur_room)
+	for view in ["room", "south", "arcade"]:
+		zoom(0.70 if view == "room" else 1.0)
+		var pos := rect.get_center()
+		if view == "south": pos.y = rect.end.y - 260.0
+		if view == "arcade": pos.y = rect.position.y + 330.0
+		game.player.global_position = pos
+		game.camera.global_position = pos
+		await frames(6)
+		shot("floor_%s_%s" % [prefix, view], "composed macro floor, wall bases and clear lanes")
+	return true
 
 
 ## One bundled run: strict routing regression, a real-renderer check of the

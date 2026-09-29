@@ -5,6 +5,60 @@ class_name Balance
 ## monsters/zones) — this file is for the numbers you tweak, not the
 ## content you author.
 
+# Walls grow upward from the unchanged floor seam (hero body is ~88px).
+const WALL_FACE_H := 106.0
+const WALL_SIDE_FACE_W := 14.0
+const WALL_LIP_W := 3.0
+const WALL_AO_H := 12.0
+const WALL_SIDE_AO_W := 4.0
+const WALL_FACE_TOP := Color(0.66, 0.62, 0.59)
+const WALL_FACE_BASE := Color(0.30, 0.28, 0.28)
+const WALL_FACE_AO := Color(0.10, 0.09, 0.10)
+const WALL_FACE_LIP := Color(0.88, 0.76, 0.60)
+const WALL_CAP_DEPTH := 200.0
+const WALL_CAP_EDGE := Color(0.33, 0.31, 0.34)
+const WALL_CAP_DARK := Color(0.018, 0.016, 0.022)
+const WALL_SHADOW_H := 30.0
+const WALL_SHADOW_A := 0.55
+const WALL_SIDE_SHADOW_W := 18.0
+const WALL_SIDE_SHADOW_A := 0.38
+
+# Boot painting: generous crop reserve, a barely perceptible 80-second orbit.
+const BOOT_NIGHT := Color(0.02, 0.015, 0.045)
+const BOOT_OVERSCAN := 0.035
+const BOOT_DRIFT_RANGE := Vector2(0.009, 0.006)
+const BOOT_DRIFT_PERIOD := 80.0
+const BOOT_COVER_HOLD := 24.0
+const BOOT_COVER_FADE := 3.0
+const BOOT_EMBER_COUNT := 12
+const BOOT_EMBER_LIFE := 24.0
+const BOOT_EMBER_SPEED := Vector2(6.0, 14.0)
+const BOOT_EMBER_SCALE := Vector2(0.2, 0.45)
+const BOOT_EMBER_SPREAD := 10.0
+const BOOT_EMBER_ORIGIN := Vector2(0.5, 0.8)
+const BOOT_EMBER_EXTENTS := Vector2(0.5, 0.2)
+const BOOT_EMBER_COLOR := Color(1.0, 0.58, 0.25, 0.5)
+const BOOT_EMBER_FADE_IN := 0.18
+const BOOT_EMBER_FADE_OUT := 0.72
+const BOOT_PANEL_DIM := 0.28
+const BOOT_PANEL_ALPHA := 0.80
+const BOOT_NAV_TIME := 0.18
+const BOOT_NAV_SLIDE := 8.0
+
+# Story plates: preserve the original dissolve/beat timing and camera envelope.
+const STORY_FRAME_DISSOLVE := 0.82
+const STORY_FRAME_HOLD := 1.55
+const STORY_CAMERA_START_SCALE := Vector2(1.012, 1.012)
+const STORY_CAMERA_END_SCALE := Vector2(1.042, 1.042)
+const STORY_CAMERA_TRACK := 7.0
+# Advancing freezes the on-screen blend; a plate showing through less than
+# one 8-bit step is invisible and dropped from the frozen stack.
+const STORY_RETAIN_MIN_WEIGHT := 1.0 / 255.0
+# One finite, quieter continuation for readers who linger on the final plate.
+const STORY_READING_DRIFT_SECONDS := 24.0
+const STORY_READING_END_SCALE := Vector2(1.052, 1.052)
+const STORY_READING_TRACK := 3.0
+
 # Target damage columns: outline + crit pop need a full 44px row at world scale.
 const FLOAT_NUM_MAX := 22
 const DAMAGE_NUM_MERGE := 0.35
@@ -38,6 +92,11 @@ const DAMAGE_NUM_ALLY_ALPHA := 0.65
 # One-line rows keep Hud.LOG_LINE_H; wrapped rows add their extra lines.
 const HUD_LOG_TEXT_WIDTH := 400.0
 const HUD_LOG_HEIGHT_BUDGET := 140.0
+const HUD_MENU_HIDDEN_ALPHA := 0.0
+const HUD_MENU_FADE_SECONDS := 0.16
+const HUD_SIDE_COVER_ALPHA := 0.15
+const HUD_SIDE_FADE_SECONDS := 0.18
+const HUD_SIDE_RELEASE_PX := 20.0
 const HUD_CHAT_FEED_GAP := 10.0
 const HUD_CHAT_HISTORY_GAP := 6.0
 # Dialogue follows the centered authored art on expand canvases.
@@ -352,6 +411,13 @@ const MOB_GAIT_VAR := 0.06        # mobs: per-instance stride-rate personality (
 #  MOB_DEATH_* — a mob with a <sprite>_death strip plays it (fps below, last
 #    frame held) then fades; sheetless bodies collapse feet-pinned instead of
 #    inflating. MOB_SPAWN_IN_T — mid-fight summons grow out of the ground.
+#  MOB_HIT_HIGHLIGHT_* — peak and decay of the per-enemy hit highlight shader
+#    (enemy_hit.gdshader): a brightness gain of 1 + STRENGTH on the painted
+#    colours that never touches modulate, so tell/status/enrage tints stay
+#    readable through hits. 0.35 read only side by side on screen
+#    (shot.bat hit_highlight: ~+11/255 mean at the peak); 0.6 is a clear pulse.
+#  MOB_TETHER_RESTORE_TINT_T — how long the surviving twin wears the green
+#    "the bond restores it" flash before returning to its own palette.
 const MOB_WALK_CLOCK := 2.0
 const MOB_WALK_BOUNCE_FRAC := 0.014
 const MOB_WALK_LEAN_RAD := 0.04
@@ -374,6 +440,9 @@ const MOB_POUNCE_LEAN_RAD := 0.12
 const MOB_DEATH_FPS := 9.0
 const MOB_DEATH_HOLD := 0.25
 const MOB_DEATH_FADE := 0.35
+const MOB_HIT_HIGHLIGHT_STRENGTH := 0.6
+const MOB_HIT_HIGHLIGHT_TIME := 0.15
+const MOB_TETHER_RESTORE_TINT_T := 0.6
 const MOB_DEATH_COLLAPSE_T := 0.4
 const MOB_SPAWN_IN_T := 0.28
 # BOSS TELL STYLE (visual overhaul 2026-09-03) — the answer to "boss attacks all
@@ -489,6 +558,27 @@ const FOOT_DUST_A := 0.55
 #    get it. 0 = off.
 const GROUND_FOG_A := 0.14
 const GROUND_FOG_AMBIENTS := ["mist"]
+
+# Weather depth: quality scales the EXISTING terrain budget, never adds to it.
+# settings.weather_quality: low / medium / high, or "auto" (default): medium in
+# touch mode, high on desktop.
+const WEATHER_QUALITY_BUDGET := {"low": 0.5, "medium": 0.75, "high": 1.0}
+const WEATHER_NEAR_SHARE := 0.25
+const WEATHER_DISTANT_Z := -5 # above floor/wear (-8), below actors (0)
+const WEATHER_NEAR_Z := 12
+const WEATHER_DISTANT_SCALE := 0.65
+const WEATHER_NEAR_SCALE := 1.25
+const WEATHER_DISTANT_SPEED := 0.65
+const WEATHER_NEAR_SPEED := 1.2
+const WEATHER_DISTANT_ALPHA := 0.8
+const WEATHER_NEAR_ALPHA := 0.45 # always restrained, including during combat
+const WEATHER_FADE := 0.12 # fraction of a particle's life spent fading in and out
+const WEATHER_COVERAGE_PAD := Vector2(120, 100)
+const WEATHER_LIFETIME := 9.0
+const WEATHER_RAIN_LIFETIME := 1.5
+const WEATHER_PREPROCESS := 6.0
+const WEATHER_SPREAD := 30.0
+
 #  NPC_BREATH_PX   — single-frame roster NPCs rise/settle this many px per
 #    breath (random rest between breaths). 0 = frozen villagers.
 const NPC_BREATH_PX := 1.0
@@ -2004,6 +2094,7 @@ const NET_MAX_HIT := 1.0e9            # one guest→enemy hit (pre-mitigation)
 const NET_MAX_DPS := 1.0e8            # burn/toxin/bleed DPS from the wire
 const NET_MAX_STATUS_DUR := 60.0      # any wire status/effect duration (s)
 const NET_MAX_VITAL := 1.0e9          # remote hp/mp/max-hp/max-mp ceiling
+const NET_MAX_DOT_STAT := 1.0e6       # remote sheet crit/crit damage (join + live updates)
 const NET_LEVEL_CAP := 999            # remote player level clamp (real cap is LEVEL_CAP)
 const NET_MAX_POS := 1.0e7            # |x|,|y| a wire position may claim (world units)
 const NET_MAX_FLAG_LEN := 96          # longest world-flag name a guest may set
@@ -4219,6 +4310,50 @@ const ROOM_EDGE_DARKEN := 0.25
 const ROOM_CORNER_DARKEN := 0.08
 const ROOM_FLOOR_VALUE_MIN := 0.75
 const ROOM_FALLOFF_TEX_SIZE := 129
+# Room-scale wear stays visible beyond the vignette without bright patches
+# that could compete with ground tells. Two world-space noise fields multiply.
+const FLOOR_WEAR_COUNT := Vector2i(12, 16)
+const FLOOR_WEAR_MIN_COUNT := 6
+const FLOOR_WEAR_SIZE := Vector2(400.0, 900.0)
+const FLOOR_WEAR_DARK_A := Vector2(0.15, 0.30)
+const FLOOR_WEAR_SQUASH := Vector2(0.60, 0.85)
+const FLOOR_WEAR_ROTATION := 0.5
+const FLOOR_WEAR_INTERIOR_EVERY := 3
+const FLOOR_WEAR_INTERIOR_INSET := 0.30
+const FLOOR_WEAR_EDGE_BAND := Vector2(0.08, 0.20)
+const FLOOR_WEAR_NOISE_SCALES := Vector2(170.0, 610.0)
+const FLOOR_WEAR_NOISE_FLOOR := 0.55
+const FLOOR_WEAR_NOISE_OFFSET := 10000.0
+const FLOOR_WEAR_SOFT_CORE := 0.12
+const WALL_DRESS_CLUSTERS := 7
+const WALL_DRESS_TRIES := 72
+const WALL_DRESS_MEMBERS := Vector2i(3, 6)
+const WALL_DRESS_DEPTH := Vector2(38.0, 88.0)
+const WALL_DRESS_ALONG_INSET := 0.12
+const WALL_DRESS_CLUSTER_SPACING := 280.0
+const WALL_DRESS_MEMBER_SPACING := 46.0
+const WALL_DRESS_JITTER := 12.0
+# Member footprint (clearance box) and the moss/dust drift's soft patch size.
+const WALL_DRESS_SIZE := Vector2(94.0, 48.0)
+const WALL_DRESS_ANCHOR_CLEAR := 64.0
+# Stones render at their scatter family's width x this uniform multiple, solid
+# and dimmed through RGB (never see-through); only the soft drifts are translucent.
+const WALL_DRESS_STONE_SCALE := Vector2(1.0, 1.5)
+const WALL_DRESS_TINT := Color(0.80, 0.78, 0.74, 1.0)
+# The soft glow mask peaks at 0.55 alpha and the wear mottle thins it again, so
+# a drift's core lands near a quarter of these alphas: visible, still quiet.
+const WALL_DRESS_MOSS := Color(0.16, 0.20, 0.09, 0.80)
+const WALL_DRESS_DUST := Color(0.40, 0.36, 0.27, 0.65)
+# Authored capital pieces, sized in authored px (x room_scale). A banner hangs
+# `lift` px up the arcade facade above its authored point, which stays its
+# y-sort anchor just south of the arcade base (gen_capital FLOOR_DRESSING).
+# A puddle is the plain glow mask (no mottle), so its wet core reads at about
+# half this alpha on the lit plaza stone.
+const CIVIC_DRESS_STYLES := {
+	"planter": {"size": Vector2(82, 62), "tint": Color(0.86, 0.84, 0.78, 1.0)},
+	"banner": {"size": Vector2(48, 100), "tint": Color(0.84, 0.82, 0.78, 1.0), "lift": 52.0},
+	"puddle": {"size": Vector2(150, 48), "tint": Color(0.08, 0.11, 0.13, 0.85)},
+}
 const FIRE_POOL_LIGHT_MIN := 0.55
 const FIRE_CONTACT_ALPHA := 0.16
 const FIRE_CONTACT_INNER := 0.40

@@ -734,7 +734,9 @@ const AMBIENT_LOOPS := {
 }
 
 # Weather / ambient particle presets.
-# above=true spawns in a band above the camera (falling), else around it.
+# Non-mist presets emit over the whole camera view (plus a pad) as two depth
+# layers, distant and near (see Balance.WEATHER_*). above only matters for mist
+# and its wisps: true = a band above the hero, else around it.
 const AMBIENTS := {
 	"leaves_green":  {"color": Color(0.7, 0.9, 0.4), "dir": Vector2(0.4, 1), "gravity": Vector2(6, 22), "vel": [12.0, 30.0], "scale": [2.0, 3.2], "amount": 14, "above": true},
 	"leaves_autumn": {"color": Color(1.0, 0.55, 0.15), "dir": Vector2(0.4, 1), "gravity": Vector2(6, 22), "vel": [12.0, 30.0], "scale": [2.0, 3.2], "amount": 14, "above": true},

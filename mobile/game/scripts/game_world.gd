@@ -1051,11 +1051,10 @@ func _enter_room(i: int, live := false) -> void:
 		var nb := neighbor(i, dir)
 		if nb >= 0:
 			door_seen[nb] = true
-	# Camera clamps to the PLAYABLE rect — small rooms read small, and
-	# the empty margin outside their walls never shows.
-	var r := play_rect(i)
+	# Camera follows playable bounds plus the north wall's upward silhouette.
+	var r := WallSurface.view_bounds(self, i, play_rect(i))
 	camera.limit_left = int(r.position.x)
-	camera.limit_top = int(r.position.y)
+	camera.limit_top = ceili(r.position.y)   # never above the silhouette's (fractional) top
 	camera.limit_right = int(r.end.x)
 	camera.limit_bottom = int(r.end.y)
 	if room_safe(i):
@@ -2030,7 +2029,7 @@ func _road_toll_pay(room: int, npc: Variant, cost: int) -> void:
 	player.gold -= paid
 	add_standing("accord", Balance.ROAD_TOLL_STANDING)
 	if is_instance_valid(player):
-		player.hp = minf(player.max_hp, player.hp + player.max_hp * Balance.ROAD_TOLL_HEAL_FRACTION)
+		player.hp = minf(player.max_hp, player.hp + player.healing_received(player.max_hp * Balance.ROAD_TOLL_HEAL_FRACTION))
 	_road_resolve(room, npc,
 		"The toll is paid. He waves you across with a nod, and you catch your breath. (+%d accord)"
 			% Balance.ROAD_TOLL_STANDING, Color(0.75, 0.9, 0.7))
@@ -2612,48 +2611,9 @@ func _clump_size(rng: RandomNumberGenerator) -> int:
 	return n
 
 
-## (Re)build a room's decor + obstacles from its TERRAIN — tombstones in
-## the graveyard, snowy pines on the ice, crystals in the caverns...
-## FLOOR WEAR (gameplay-polish 2026-08-18): soft, low-contrast blotches over
-## the tiled floor — trodden dark patches and a few lighter worn/dusty ones —
-## so a room's ground has large-scale variation instead of reading as one
-## repeating tile with props on it (the "empty room" half of the outside
-## "beta" read; the anti-litter pass deliberately thinned the PROPS, this
-## layer adds no props). Non-colliding, under actors and shadows, cleaned
-## with the room's scenery. Sizes/alphas are presentation constants.
-const FLOOR_WEAR_PER_ROOM := Vector2i(14, 22)     # min/max blotches at full room area
-const FLOOR_WEAR_SIZE := Vector2(90.0, 230.0)     # px diameter band
-const FLOOR_WEAR_DARK_A := Vector2(0.12, 0.22)    # alpha band, dark blotches
-const FLOOR_WEAR_LIGHT_A := Vector2(0.06, 0.11)   # alpha band, light blotches
-const FLOOR_WEAR_LIGHT_SHARE := 0.3
-const FLOOR_WEAR_SQUASH := Vector2(0.55, 0.85)   # blotch height as a fraction of width
-func _spawn_floor_wear(zi: int, terrain: Dictionary, pr: Rect2) -> void:
-	var gk := String(terrain.get("ground", ""))
-	if not Art.GROUND.has(gk):
-		return
-	var rng := RandomNumberGenerator.new()
-	rng.seed = zi * 131 + terrain_by_zone[zi].hash() % 997
-	var area_frac := (pr.size.x * pr.size.y) / float(ROOM_W * ROOM_H)
-	var n := int(round(rng.randi_range(FLOOR_WEAR_PER_ROOM.x, FLOOR_WEAR_PER_ROOM.y) * area_frac))
-	var base_c: Color = Art.GROUND[gk][0]
-	var lum: float = 0.2126 * base_c.r + 0.7152 * base_c.g + 0.0722 * base_c.b
-	for i in n:
-		var s := Sprite2D.new()
-		s.texture = Art.tex("glow")   # soft radial falloff = a soft-edged blotch
-		var d := rng.randf_range(FLOOR_WEAR_SIZE.x, FLOOR_WEAR_SIZE.y)
-		s.scale = Vector2(d / GLOW_TEX_PX, d / GLOW_TEX_PX * rng.randf_range(FLOOR_WEAR_SQUASH.x, FLOOR_WEAR_SQUASH.y))
-		s.rotation = rng.randf_range(-0.5, 0.5)
-		s.position = pr.position + Vector2(rng.randf_range(80.0, pr.size.x - 80.0),
-			rng.randf_range(90.0, pr.size.y - 80.0))
-		if rng.randf() < FLOOR_WEAR_LIGHT_SHARE:
-			# Light wear: dark floors polish lighter, light floors dust darker.
-			var a := rng.randf_range(FLOOR_WEAR_LIGHT_A.x, FLOOR_WEAR_LIGHT_A.y)
-			s.modulate = Color(1, 1, 1, a) if lum < 0.45 else Color(0, 0, 0, a * 0.8)
-		else:
-			s.modulate = Color(0, 0, 0, rng.randf_range(FLOOR_WEAR_DARK_A.x, FLOOR_WEAR_DARK_A.y))
-		s.z_index = -9   # over the floor + road, under shadows/hazards/props
-		world.add_child(s)
-		zone_scenery[zi].append(s)
+## Floor presentation uses a private per-room RNG, separate from scenery rolls.
+func _spawn_floor_wear(zi: int, terrain: Dictionary, _pr: Rect2) -> void:
+	preload("res://scripts/floor_dressing.gd").spawn_wear(self, zi, terrain)
 
 
 func _spawn_scenery(zi: int) -> void:
@@ -3203,6 +3163,11 @@ func _spawn_scenery(zi: int) -> void:
 		preload("res://scripts/pocket_trial.gd").install(self, zi)
 		preload("res://scripts/prism_crystal.gd").install_room(self, zi)
 
+	# Post-placement dressing respects landmark/vegetation anchors and the same
+	# reservations/curved lanes used by the colliding scenery above.
+	preload("res://scripts/floor_dressing.gd").spawn_details(self, zi, reserved, placed,
+		[] if terrain_preview else zone.get("floor_dressing", []))
+
 	# Ambient critters (birds/crows/butterflies) live with the scenery:
 	# room rebuilds and terrain repaints sweep them up too.
 	for critter in Ambience.populate(self, zi):
@@ -3228,6 +3193,7 @@ func _spawn_scenery(zi: int) -> void:
 		zone_scenery[zi].append(water)
 		var plank := Sprite2D.new()
 		plank.texture = Art.tex("bridge")
+		plank.texture_filter = Art.prop_texture_filter("bridge")  # heavy downscale: same policy as scenery
 		plank.centered = false
 		plank.position = bridge.position
 		plank.scale = bridge.size / plank.texture.get_size()  # fit any-res bridge art to the span
@@ -3451,6 +3417,8 @@ func _prop_visual(name: String) -> Node2D:
 		# texture for floating ambience, which has a different sizing contract.
 		var texture_name := "rock2" if name == "pebble" else name
 		spr.texture = Art.tex(texture_name)
+		# Match the cast's downsampling; Art keeps legacy pixel art on nearest.
+		spr.texture_filter = Art.prop_texture_filter(texture_name)
 		vis = spr
 	return vis
 
@@ -3839,24 +3807,14 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 	world.add_child(body)
 	return body
 
-# Wall relief (gameplay-polish 2026-08-18; presentation constants). A wall used
-# to be ONE flat 48px strip of tile — no height, no shadow — so rooms read as
-# tinted rectangles. Now a north wall grows a shaded FACE below its cap (the
-# same tile in shade, so every terrain's wall keeps its material) and throws a
-# soft shadow onto the floor; a west wall throws a thin shadow east across the
-# floor. Light comes from the top-left, as everywhere else in the art.
-const WALL_FACE_H := 22.0                       # px of visible face under a north cap
-const WALL_FACE_SHADE := Color(0.56, 0.53, 0.54) # face = cap tile in shade
-const WALL_SHADOW_H := 30.0                     # floor shadow under the face
-const WALL_SHADOW_A := 0.55
-const WALL_SIDE_SHADOW_W := 18.0                # floor shadow east of a west wall
-const WALL_SIDE_SHADOW_A := 0.38
+# Wall presentation shares unchanged collider seams with doors and navigation.
+const WallSurface := preload("res://scripts/wall_surface.gd")
 
 
 ## A wall segment: collider + tiled wall visual. `wall_tex` is the terrain's
 ## seamless 16px wall tile (Terrains.wall_for); defaults to the stone block.
 ## `relief`: "S" = a north wall (face + floor shadow below), "E" = a west wall
-## (floor shadow to its east), "" = cap only (south/east walls, door stubs).
+## (face + shadow east), "W" = an east wall; "" = cap only.
 func _wall(rect: Rect2, wall_tex := "wallblock", relief := "") -> void:
 	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
 		return
@@ -3893,43 +3851,19 @@ func _wall(rect: Rect2, wall_tex := "wallblock", relief := "") -> void:
 	_wall_relief(spr, wall_tex, rect, relief)
 
 
-## Relief children live UNDER the cap sprite: they inherit its terrain tint
-## (modulate) and its scale, so cap-local units are world px / k (k = the
-## cap's scale: 3 for a legacy 16px tile, 1 for a native wall field). Rebuilt
-## by a terrain repaint (the scale can flip 3 <-> 1 across kinds).
-func _wall_relief(spr: Sprite2D, wall_tex: String, rect: Rect2, relief: String) -> void:
-	for c in spr.get_children():
-		c.queue_free()
-	var k: float = spr.scale.x
-	# "S" = south face + floor shadow below, "E" = shadow east; a corner bite
-	# block (P7.C) can carry both ("SE": its south face AND its east shadow).
-	if relief.contains("S"):
-		var face := Sprite2D.new()   # the visible south face: the cap's tile in shade
-		_wall_dress(face, wall_tex, Vector2(rect.size.x, WALL_FACE_H), Vector2(0, 5.0 * k))
-		face.scale = Vector2.ONE       # inherits the cap's scale
-		face.centered = false
-		face.position = Vector2(0, rect.size.y / k)
-		face.modulate = WALL_FACE_SHADE
-		face.z_index = -1              # relative: just under the cap
-		spr.add_child(face)
-		var sh := Sprite2D.new()      # cast shadow on the floor under the face
-		sh.texture = Art.tex("softshadow")
-		sh.centered = false
-		sh.position = Vector2(0, (rect.size.y + WALL_FACE_H) / k)
-		sh.scale = Vector2(rect.size.x / k / 8.0, WALL_SHADOW_H / k / 32.0)
-		sh.modulate = Color(1, 1, 1, WALL_SHADOW_A)
-		sh.z_index = -3               # relative: over the floor, under everything else
-		spr.add_child(sh)
-	if relief.contains("E"):
-		var sh := Sprite2D.new()      # a west wall's shadow across the floor to its east
-		sh.texture = Art.tex("softshadow")
-		sh.centered = false
-		sh.rotation = -PI / 2.0        # opaque edge on the wall, fading eastward
-		sh.position = Vector2(rect.size.x / k, rect.size.y / k)
-		sh.scale = Vector2(rect.size.y / k / 8.0, WALL_SIDE_SHADOW_W / k / 32.0)
-		sh.modulate = Color(1, 1, 1, WALL_SIDE_SHADOW_A)
-		sh.z_index = -3
-		spr.add_child(sh)
+## Repaint rebuilds relief in cap-local units (native field 1x / legacy 3x).
+## `face_top` (world y) pins where a south face starts (see WallSurface.face_rect).
+func _wall_relief(spr: Sprite2D, wall_tex: String, rect: Rect2, relief: String, face_top := INF) -> void:
+	WallSurface.relief(self, spr, wall_tex, rect, relief, face_top)
+
+
+## The room's shared wall-top material, built with its walls. Posts, shortcut
+## returns and repaints reuse it instead of allocating one per sprite.
+func _room_cap_material(i: int) -> ShaderMaterial:
+	for s in zone_wall_sprites.get(i, []):
+		if is_instance_valid(s) and not s.has_meta("wall_mass") and s.material is ShaderMaterial:
+			return s.material
+	return WallSurface.cap_material(self, i)
 
 
 ## Scale that draws a tile texture at ONE world tile (TILE px): x3 for the 16px
@@ -3993,8 +3927,8 @@ func _build_room_walls(i: int) -> void:
 			_door_torches(i, door_pos(i, dir), false)
 			if corridor > 0.0:
 				var cy := full.position.y if dir == "N" else r.end.y
-				_wall(Rect2(lane_x - gap / 2.0 - TILE, cy, TILE, corridor), wt)
-				_wall(Rect2(lane_x + gap / 2.0, cy, TILE, corridor), wt)
+				_wall(Rect2(lane_x - gap / 2.0 - TILE, cy, TILE, corridor), wt, "E")
+				_wall(Rect2(lane_x + gap / 2.0, cy, TILE, corridor), wt, "W")
 		else:
 			_wall(Rect2(r.position.x, y, r.size.x, TILE), wt, relief)
 	# West/east walls (gap on the lane).
@@ -4002,14 +3936,14 @@ func _build_room_walls(i: int) -> void:
 		var dir: String = spec[0]
 		var x: float = spec[1]
 		var corridor: float = spec[2]
-		var relief := "E" if dir == "W" else ""   # a west wall shades the floor east of it
+		var relief := "E" if dir == "W" else "W"
 		if exits.has(dir):
 			_wall(Rect2(x, r.position.y, TILE, lane_y - gap / 2.0 - r.position.y), wt, relief)
 			_wall(Rect2(x, lane_y + gap / 2.0, TILE, r.end.y - (lane_y + gap / 2.0)), wt, relief)
 			_door_torches(i, door_pos(i, dir), true)
 			if corridor > 0.0:
 				var cx2 := full.position.x if dir == "W" else r.end.x
-				_wall(Rect2(cx2, lane_y - gap / 2.0 - TILE, corridor, TILE), wt)
+				_wall(Rect2(cx2, lane_y - gap / 2.0 - TILE, corridor, TILE), wt, "S")
 				_wall(Rect2(cx2, lane_y + gap / 2.0, corridor, TILE), wt)
 		else:
 			_wall(Rect2(x, r.position.y, TILE, r.size.y), wt, relief)
@@ -4022,12 +3956,24 @@ func _build_room_walls(i: int) -> void:
 		var nr: Rect2 = n
 		var west := nr.position.x <= r.position.x + 1.0
 		var north := nr.position.y <= r.position.y + 1.0
-		var relief := ("S" if north else "") + ("E" if west else "")
+		var relief := ("S" if north else "") + ("E" if west else "W")
 		_wall(nr, wt, relief)
+	# Fill inaccessible inset margins with the same terrain field. The shader
+	# cuts out the playable floor AND cell-centred corridors, including gates.
+	# This is visual-only: no new collider, navigation rect or minimap shape.
+	var mass := WallSurface.mass(self, i, wt)
+	world.add_child(mass)
+	zone_wall_sprites[i].append(mass)
+	var backdrop := WallSurface.lane_backdrop(self, i)
+	if backdrop != null:
+		world.add_child(backdrop)
+	var cap_material := WallSurface.cap_material(self, i)
 	var wall_tint := Terrains.wall_tint_for(terrain_by_zone[i])
 	for wall_sprite in zone_wall_sprites[i]:
 		if is_instance_valid(wall_sprite):
 			wall_sprite.modulate = wall_tint
+			if not wall_sprite.has_meta("wall_mass"):
+				wall_sprite.material = cap_material
 	_canopy_overhang(i, r, exits, gap)
 	_wall_posts(i, r, exits, gap, wt)
 	# Locked edges get a gate — built once per edge, by whichever room
@@ -4058,7 +4004,7 @@ func _cell_curtain(i: int, full: Rect2, lt: Vector2, rb: Vector2, exits: Diction
 	var cy := full.position.y + ROOM_H / 2.0
 	# Each side closes on its own margin (asymmetric insets: one side may be
 	# deep enough for a curtain while the opposite wall sits on the cell edge).
-	for spec in [["N", full.position.y, "S", lt.y], ["S", full.end.y - TILE, "", rb.y]]:
+	for spec in [["N", full.position.y, "", lt.y], ["S", full.end.y - TILE, "", rb.y]]:
 		if float(spec[3]) < CURTAIN_MIN_INSET:
 			continue
 		var dir: String = spec[0]
@@ -4069,7 +4015,7 @@ func _cell_curtain(i: int, full: Rect2, lt: Vector2, rb: Vector2, exits: Diction
 			_wall(Rect2(cx + gap / 2.0, y, full.end.x - (cx + gap / 2.0), TILE), wt, relief)
 		else:
 			_wall(Rect2(full.position.x, y, full.size.x, TILE), wt, relief)
-	for spec in [["W", full.position.x, "E", lt.x], ["E", full.end.x - TILE, "", rb.x]]:
+	for spec in [["W", full.position.x, "", lt.x], ["E", full.end.x - TILE, "", rb.x]]:
 		if float(spec[3]) < CURTAIN_MIN_INSET:
 			continue
 		var dir: String = spec[0]
@@ -4123,7 +4069,9 @@ func _canopy_overhang(i: int, r: Rect2, exits: Dictionary, gap: float) -> void:
 		s.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 		# offset the region per span so the tile phase differs left/right
 		s.region_rect = Rect2(sp.position.x * 0.5, 0, sp.size.x, minf(CANOPY_H, tex.get_height()))
-		s.position = Vector2(sp.position.x, r.position.y - CANOPY_LIFT)
+		# Hang from the risen wall top, never over the floor of the room north.
+		var lift := minf(WallSurface.north_rise(self, i) + CANOPY_LIFT, WallSurface.north_headroom(self, i))
+		s.position = Vector2(sp.position.x, r.position.y - lift)
 		s.modulate = Color(1, 1, 1, CANOPY_ALPHA)
 		s.z_index = CANOPY_Z
 		s.z_as_relative = false
@@ -4159,6 +4107,8 @@ func _wall_posts(i: int, r: Rect2, exits: Dictionary, gap: float, wt: String) ->
 	var cx := door_pos(i, "N").x   # door lanes sit on the CELL's centre lines
 	var cy := door_pos(i, "W").y
 	var notches: Array = room_notches(i)   # posts and corner blocks skip a bite's span
+	# North pilasters share the north wall's face top (and lip).
+	var north_face_top := r.position.y + TILE - Balance.WALL_FACE_H
 	# north + south runs
 	for side in ["N", "S"]:
 		var x := r.position.x + CORNER_W + rng.randf_range(40.0, 120.0)
@@ -4170,11 +4120,11 @@ func _wall_posts(i: int, r: Rect2, exits: Dictionary, gap: float, wt: String) ->
 					in_door = true
 			if not in_door:
 				if side == "N":
-					_post(i, wt, Rect2(x, r.position.y, POST_W, TILE + POST_DROP), true)
+					_post(i, wt, Rect2(x, r.position.y, POST_W, TILE + POST_DROP), "S", north_face_top)
 				else:
-					_post(i, wt, Rect2(x, r.end.y - TILE - POST_DROP, POST_W, TILE + POST_DROP), false)
+					_post(i, wt, Rect2(x, r.end.y - TILE - POST_DROP, POST_W, TILE + POST_DROP), "")
 			x += POST_STEP + rng.randf_range(-48.0, 64.0)
-	# west + east runs (posts protrude sideways; no separate face)
+	# west + east runs (posts protrude sideways with their wall's side face)
 	for side in ["W", "E"]:
 		var y := r.position.y + CORNER_W + rng.randf_range(40.0, 120.0)
 		while y < r.end.y - CORNER_W - POST_W:
@@ -4185,61 +4135,48 @@ func _wall_posts(i: int, r: Rect2, exits: Dictionary, gap: float, wt: String) ->
 					in_door = true
 			if not in_door:
 				if side == "W":
-					_post(i, wt, Rect2(r.position.x, y, TILE + POST_DROP, POST_W), false)
+					_post(i, wt, Rect2(r.position.x, y, TILE + POST_DROP, POST_W), "E")
 				else:
-					_post(i, wt, Rect2(r.end.x - TILE - POST_DROP, y, TILE + POST_DROP, POST_W), false)
+					_post(i, wt, Rect2(r.end.x - TILE - POST_DROP, y, TILE + POST_DROP, POST_W), "W")
 			y += POST_STEP + rng.randf_range(-48.0, 64.0)
 	# corner blocks (a heavier tower foot at each corner) — a bitten corner is
 	# already a block; its foot moves to the bite's inner corner instead.
-	for spec in [[Vector2(r.position.x, r.position.y), true], [Vector2(r.end.x - CORNER_W, r.position.y), true],
-			[Vector2(r.position.x, r.end.y - CORNER_W), false], [Vector2(r.end.x - CORNER_W, r.end.y - CORNER_W), false]]:
+	for spec in [[Vector2(r.position.x, r.position.y), "SE"], [Vector2(r.end.x - CORNER_W, r.position.y), "SW"],
+			[Vector2(r.position.x, r.end.y - CORNER_W), "E"], [Vector2(r.end.x - CORNER_W, r.end.y - CORNER_W), "W"]]:
 		var at: Vector2 = spec[0]
 		var bitten := false
 		for n in notches:
 			if (n as Rect2).grow(2.0).has_point(at + Vector2(CORNER_W, CORNER_W) * 0.5):
 				bitten = true
 		if not bitten:
-			_post(i, wt, Rect2(at, Vector2(CORNER_W, CORNER_W)), spec[1])
+			_post(i, wt, Rect2(at, Vector2(CORNER_W, CORNER_W)), spec[1], north_face_top)
 	for n in notches:
 		var nr: Rect2 = n
 		var west := nr.position.x <= r.position.x + 1.0
 		var north := nr.position.y <= r.position.y + 1.0
-		# the bite's inner corner: where its two room-facing edges meet
+		# the bite's inner corner: where its two room-facing edges meet; its
+		# faces follow the bite's own (the default face top matches its seam)
 		var ix := nr.end.x - CORNER_W if west else nr.position.x
 		var iy := nr.end.y - CORNER_W if north else nr.position.y
-		_post(i, wt, Rect2(ix, iy, CORNER_W, CORNER_W), north)
+		_post(i, wt, Rect2(ix, iy, CORNER_W, CORNER_W), ("S" if north else "") + ("E" if west else "W"))
 
 
-## One post/corner block: the wall field as its cap (a touch darker), and on
-## the north side a short shaded face + floor shadow under it (same recipe as
-## the wall's own relief), so it reads as a solid block, not a decal.
-func _post(i: int, wt: String, rect: Rect2, face: bool) -> void:
+## One post/corner block, cut from the wall field. Its top shades like the
+## wall top it stands on, a step darker (self_modulate, so the faces skip it);
+## its faces match the wall it juts from: a north pilaster shares the wall's
+## face top and lip, a west/east one steps the wall's side face into the room.
+func _post(i: int, wt: String, rect: Rect2, relief: String, face_top := INF) -> void:
 	var s := Sprite2D.new()
 	zone_posts[i].append(s)
 	_wall_dress(s, wt, rect.size, Vector2(rect.position.x * 0.37, 7.0))
 	s.centered = false
 	s.position = rect.position
-	s.modulate = POST_SHADE
+	s.modulate = Terrains.wall_tint_for(terrain_by_zone[i])
+	s.self_modulate = POST_SHADE
 	s.z_index = -4   # over the wall cap (-5), under actors
+	s.material = _room_cap_material(i)
 	world.add_child(s)
-	if face:
-		var k: float = s.scale.x
-		var f := Sprite2D.new()
-		_wall_dress(f, wt, Vector2(rect.size.x, WALL_FACE_H * 0.7), Vector2(0, 5.0 * k))
-		f.scale = Vector2.ONE
-		f.centered = false
-		f.position = Vector2(0, rect.size.y / k)
-		f.modulate = WALL_FACE_SHADE
-		f.z_index = -1
-		s.add_child(f)
-		var sh := Sprite2D.new()
-		sh.texture = Art.tex("softshadow")
-		sh.centered = false
-		sh.position = Vector2(0, (rect.size.y + WALL_FACE_H * 0.7) / k)
-		sh.scale = Vector2(rect.size.x / k / 8.0, WALL_SHADOW_H * 0.6 / k / 32.0)
-		sh.modulate = Color(1, 1, 1, WALL_SHADOW_A)
-		sh.z_index = -3
-		s.add_child(sh)
+	_wall_relief(s, wt, rect, relief, face_top)
 
 
 ## Freestanding door pillars use their painted plinth to clear the wall and lane.
@@ -4674,51 +4611,127 @@ func _ground_fog(zi: int, terrain_id: String) -> void:
 	ground_fog = s
 
 
-## Weather particles driven by the terrain's ambient preset.
+## Weather particles driven by the terrain's ambient preset. Mist keeps its
+## original wisps and floor-fog recipe; all other presets share two depths.
 func _setup_ambient_fx(terrain_id: String) -> void:
-	if is_instance_valid(ambient_fx):
-		ambient_fx.queue_free()
+	for emitter in [ambient_fx, ambient_fx_distant]:
+		if is_instance_valid(emitter):
+			# Stop drawing/simulating immediately, even if rebuilt twice this frame.
+			emitter.emitting = false
+			remove_child(emitter)
+			emitter.queue_free()
+	ambient_fx = null
+	ambient_fx_distant = null
 	_ground_fog(cur_room, terrain_id)
-	var spec: Dictionary = Terrains.AMBIENTS.get(
-		Terrains.get_terrain(terrain_id).get("ambient", "leaves_green"), {})
+	var akey := String(Terrains.get_terrain(terrain_id).get("ambient", "leaves_green"))
+	var spec: Dictionary = Terrains.AMBIENTS.get(akey, {})
 	if spec.is_empty():
-		ambient_fx = null
 		return
-	ambient_fx = CPUParticles2D.new()
-	ambient_fx.amount = spec["amount"]
-	ambient_fx.lifetime = 9.0
-	ambient_fx.preprocess = 6.0
-	ambient_fx.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 	ambient_above = spec["above"]
-	ambient_fx.emission_rect_extents = Vector2(760, 60) if ambient_above else Vector2(760, 340)
-	ambient_fx.spread = 30.0
-	ambient_fx.z_index = 12
-	ambient_fx.color = spec["color"]
-	ambient_fx.direction = spec["dir"]
-	ambient_fx.gravity = spec["gravity"]
-	ambient_fx.initial_velocity_min = spec["vel"][0]
-	ambient_fx.initial_velocity_max = spec["vel"][1]
+	if akey == "mist":
+		ambient_fx = _ambient_emitter(spec, akey, int(spec["amount"]))
+		add_child(ambient_fx)
+	else:
+		var quality := String(settings.get("weather_quality", "auto"))
+		if quality == "auto":
+			quality = "medium" if touch_mode else "high"
+		var budget := mini(int(spec["amount"]), maxi(2, int(floor(float(spec["amount"])
+			* float(Balance.WEATHER_QUALITY_BUDGET.get(quality, 1.0))))))
+		var near_count := clampi(int(round(budget * Balance.WEATHER_NEAR_SHARE)), 1, budget - 1)
+		ambient_fx = _ambient_emitter(spec, akey, near_count)
+		ambient_fx_distant = _ambient_emitter(spec, akey, budget - near_count)
+		for emitter in [ambient_fx_distant, ambient_fx]:
+			var distant: bool = emitter == ambient_fx_distant
+			var size_ratio: float = Balance.WEATHER_DISTANT_SCALE if distant else Balance.WEATHER_NEAR_SCALE
+			var speed_ratio: float = Balance.WEATHER_DISTANT_SPEED if distant else Balance.WEATHER_NEAR_SPEED
+			emitter.z_index = Balance.WEATHER_DISTANT_Z if distant else Balance.WEATHER_NEAR_Z
+			emitter.local_coords = false # moving the source never moves living particles
+			emitter.scale_amount_min *= size_ratio
+			emitter.scale_amount_max *= size_ratio
+			emitter.initial_velocity_min *= speed_ratio
+			emitter.initial_velocity_max *= speed_ratio
+			emitter.gravity *= speed_ratio
+			emitter.color.a *= Balance.WEATHER_DISTANT_ALPHA if distant else Balance.WEATHER_NEAR_ALPHA
+			emitter.color_ramp = _weather_fade_ramp() # spawns inside the view fade in, not pop
+			add_child(emitter)
+	# Position before the first particle simulation/preprocess, including rebuilds.
+	_update_ambient_fx()
+
+
+## Where the camera will rest for the hero's current spot: the target position
+## clamped into the room limits. Smoothing lags behind this after a teleport, so
+## seeding the weather at the smoothed center would land it where the glide starts.
+func _ambient_view_center() -> Vector2:
+	if not camera.is_inside_tree():
+		return player.global_position
+	var half := get_viewport_rect().size / camera.zoom * 0.5
+	var center := camera.get_target_position()
+	var lo := Vector2(camera.limit_left, camera.limit_top) + half
+	var hi := Vector2(camera.limit_right, camera.limit_bottom) - half
+	center.x = clampf(center.x, lo.x, hi.x) if lo.x <= hi.x else (lo.x + hi.x) * 0.5
+	center.y = clampf(center.y, lo.y, hi.y) if lo.y <= hi.y else (lo.y + hi.y) * 0.5
+	return center
+
+
+func _update_ambient_fx() -> void:
+	# Dedicated hosts have no local hero and never render camera weather.
+	if not is_instance_valid(ambient_fx) or not is_instance_valid(player):
+		return
+	if not is_instance_valid(ambient_fx_distant):
+		# Mist's original wisps are intentionally unchanged.
+		ambient_fx.global_position = player.global_position + Vector2(0, -380.0 if ambient_above else 0.0)
+		return
+	var center := _ambient_view_center()
+	var coverage := get_viewport_rect().size / camera.zoom * 0.5 + Balance.WEATHER_COVERAGE_PAD
+	for emitter in [ambient_fx_distant, ambient_fx]:
+		# Emit throughout the visible field: a top-only band leaves slow distant
+		# flakes absent for seconds on lateral travel. Padding covers the edges.
+		emitter.global_position = center
+		emitter.emission_rect_extents = coverage
+
+
+func _weather_fade_ramp() -> Gradient:
+	var fade := Balance.WEATHER_FADE
+	var ramp := Gradient.new()
+	ramp.offsets = PackedFloat32Array([0.0, fade, 1.0 - fade, 1.0])
+	ramp.colors = PackedColorArray([Color(1, 1, 1, 0), Color.WHITE, Color.WHITE, Color(1, 1, 1, 0)])
+	return ramp
+
+
+func _ambient_emitter(spec: Dictionary, akey: String, count: int) -> CPUParticles2D:
+	var emitter := CPUParticles2D.new()
+	emitter.amount = count
+	emitter.lifetime = Balance.WEATHER_RAIN_LIFETIME if akey == "rain" else Balance.WEATHER_LIFETIME
+	emitter.preprocess = Balance.WEATHER_PREPROCESS
+	emitter.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	emitter.emission_rect_extents = Vector2(760, 60) if ambient_above else Vector2(760, 340)
+	emitter.spread = Balance.WEATHER_SPREAD
+	emitter.z_index = Balance.WEATHER_NEAR_Z
+	emitter.color = spec["color"]
+	emitter.direction = spec["dir"]
+	emitter.gravity = spec["gravity"]
+	emitter.initial_velocity_min = spec["vel"][0]
+	emitter.initial_velocity_max = spec["vel"][1]
 	# Soft particle art (P3, 2026-08-18): the layer used to draw the engine's
 	# 1px square scaled 1.2-7x — literal squares drifting past the hero. Now
 	# leaves are spinning soft ellipses, rain is streaks, everything else a
 	# soft chip; the AMBIENTS scale numbers still mean "about that many px".
-	var akey := String(Terrains.get_terrain(terrain_id).get("ambient", "leaves_green"))
 	var chip := 6.0   # a 12px chip at scale 1/6 = the old 2px footprint, softened
 	if akey.begins_with("leaves"):
-		ambient_fx.texture = Art.tex("leaf")
+		emitter.texture = Art.tex("leaf")
 		chip = 4.0
-		ambient_fx.angle_min = -180.0
-		ambient_fx.angle_max = 180.0
-		ambient_fx.angular_velocity_min = -90.0
-		ambient_fx.angular_velocity_max = 90.0
+		emitter.angle_min = -180.0
+		emitter.angle_max = 180.0
+		emitter.angular_velocity_min = -90.0
+		emitter.angular_velocity_max = 90.0
 	elif akey == "rain":
-		ambient_fx.texture = Art.tex("streak")
+		emitter.texture = Art.tex("streak")
 		chip = 1.2
 	else:
-		ambient_fx.texture = Art.tex("spark")
-	ambient_fx.scale_amount_min = float(spec["scale"][0]) / chip
-	ambient_fx.scale_amount_max = float(spec["scale"][1]) / chip
-	add_child(ambient_fx)
+		emitter.texture = Art.tex("spark")
+	emitter.scale_amount_min = float(spec["scale"][0]) / chip
+	emitter.scale_amount_max = float(spec["scale"][1]) / chip
+	return emitter
 
 
 # ================================================================= terrain

@@ -173,7 +173,7 @@ func _use_warrior(slot: String, f: float) -> void:
 				+ uniq_set_k("D", 4, "berserk_ext")  # Warhowl set: the rage runs longer
 			berserk_bonus = float(_tfx.get("berserk_dmg", 0.4))
 			if _tfx.has("berserk_heal"):
-				hp = minf(max_hp, hp + max_hp * float(_tfx["berserk_heal"]))
+				hp = minf(max_hp, hp + healing_received(max_hp * float(_tfx["berserk_heal"])))
 			if _tfx.has("berserk_guard"):
 				theme_guard_time = berserk_time
 				theme_guard_amt = float(_tfx["berserk_guard"])

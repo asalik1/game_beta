@@ -1648,3 +1648,269 @@ func _grouped_gold() -> void:
 	g.chapter_id = chapter
 	m._smith_msg = smith_message
 	m._reforge_msg = reforge_message
+
+
+## T44: use a private menu lifetime, restoring shared state even on early failure.
+## A single rig bundles native input, transition/refresh checks and six captures.
+static func run_boot_backdrop(rig: Node) -> Dictionary:
+	var probe := new()
+	probe.r = rig
+	probe.g = rig.game
+	var g: Game = rig.game
+	var window := g.get_window()
+	var saved := {"menus": g.menus, "paused": g.get_tree().paused,
+		"hud": g.hud.visible, "talk_cd": g.talk_cd, "track": g.current_track,
+		"size": window.size, "mode": window.mode, "position": window.position,
+		"aspect": window.content_scale_aspect,
+		"touch": g._touch_hud, "touch_mode": g.touch_mode, "language": Loc.lang}
+	var prompts := {}
+	for entry: Dictionary in g.interactables:
+		var prompt: Variant = entry.get("prompt")
+		if is_instance_valid(prompt) and prompt is CanvasItem:
+			prompts[prompt] = prompt.visible
+	g.remove_child(g.menus)
+	g.menus = Menus.new()
+	g.menus.game = g
+	g.add_child(g.menus)
+	g._touch_hud = null
+	probe.m = g.menus
+	Loc.lang = "en"
+	var error: String = await probe._boot_backdrop_checks()
+	probe._check("boot.completed", error == "", error)
+	g.menus.free()
+	g.menus = saved.menus
+	g.add_child(g.menus)
+	g._touch_hud = saved.touch
+	g.touch_mode = saved.touch_mode
+	g.hud.visible = saved.hud
+	g.talk_cd = saved.talk_cd
+	g.set_music(saved.track)
+	Loc.lang = saved.language
+	window.content_scale_aspect = saved.aspect
+	window.mode = saved.mode
+	window.size = saved.size
+	window.position = saved.position
+	for prompt: CanvasItem in prompts:
+		if is_instance_valid(prompt):
+			prompt.visible = prompts[prompt]
+	g.get_tree().paused = saved.paused
+	await rig.frames(3)
+	return probe._report()
+
+
+func _boot_backdrop_checks() -> String:
+	if not _check("boot.fixture", g.no_saves and not g.net_online() and not g.play_started
+			and g.chapter_id == String(Story.CHAPTER_LIST.keys()[0]),
+			"isolated boot Game required"):
+		return "boot fixture unavailable"
+	m.shell_motion = true
+	m.open_title()
+	var backdrop: Control = m.get("boot_backdrop")
+	# This fails on the old implementation before any new fields are accessed.
+	if not _check("boot.persistent_setting", is_instance_valid(backdrop), "Menus-owned painted backdrop"):
+		return "no persistent backdrop"
+	var identity := backdrop.get_instance_id()
+	var painting: Control = backdrop.get("painting")
+	_check("boot.painting_loaded", painting.get_child_count() > 0 and painting.get_child(0) is TextureRect,
+		"existing cover texture")
+	_check("boot.sparse_embers", backdrop.get("embers").amount == Balance.BOOT_EMBER_COUNT,
+		"soft spark particles under title text")
+	var ramp: Gradient = backdrop.get("embers").color_ramp
+	_check("boot.embers_fade", ramp.get_color(0).a == 0.0 and ramp.get_color(ramp.get_point_count() - 1).a == 0.0,
+		"particles fade at birth and death")
+	for control in backdrop.find_children("*", "Control", true, false):
+		_check("boot.decorative." + str(control.get_instance_id()),
+			control.mouse_filter == Control.MOUSE_FILTER_IGNORE and control.focus_mode == Control.FOCUS_NONE,
+			control.name)
+	g.get_window().mode = Window.MODE_WINDOWED
+	for window_size in [Vector2i(1280, 720), Vector2i(960, 640)]:
+		var tag := "%dx%d" % [window_size.x, window_size.y]
+		m.open_title()
+		g.get_window().size = window_size
+		await g.get_tree().create_timer(Balance.BOOT_NAV_TIME + 0.1).timeout
+		await r.frames(3)
+		_boot_coverage(backdrop, "title." + tag)
+		await _capture("title_" + tag)
+		var old: WeakRef = weakref(m.root)
+		await _key(KEY_SPACE)
+		_check("boot.one_advance." + tag, m.current == "title" and m.title_stage == "slots", _state())
+		await g.get_tree().create_timer(Balance.BOOT_NAV_TIME + 0.1).timeout
+		_check("boot.cover_freed." + tag, old.get_ref() == null, "cover shell retired")
+		_check("boot.roster_identity." + tag, m.get("boot_backdrop") == backdrop, identity)
+		_check("boot.panel_dim." + tag, is_equal_approx(backdrop.get("dim").color.a, Balance.BOOT_PANEL_DIM), "stable dim behind panels")
+		# Resize while each live shell is up, including its navigation tween.
+		await _boot_resize(backdrop, "roster_resize." + tag, window_size)
+		await _capture("roster_" + tag)
+		var age: float = backdrop.get("elapsed")
+		m.open_slots()
+		_check("boot.refresh_instant." + tag, m.root.modulate.a == 1.0 and m.root.position == Vector2.ZERO,
+			"same roster rebuild has no entry animation")
+		_check("boot.refresh_identity." + tag, m.get("boot_backdrop") == backdrop, identity)
+		_check("boot.refresh_clock." + tag, _boot_clock() >= age, "painting clock retained")
+		await r.frames(3)
+		var button := _find_button(m.root, "New Character")
+		if button == null:
+			return "isolated roster must have New Character"
+		var presses := [0]
+		button.pressed.connect(func() -> void: presses[0] += 1)
+		old = weakref(m.root)
+		# Viewport-local dispatch avoids applying window stretch twice at 960px.
+		await _boot_click(button.get_global_rect().get_center())
+		if not _check("boot.one_click." + tag, presses[0] == 1 and m.current == "class_select", _state()):
+			return "New Character input failed at " + tag
+		_check("boot.class_identity." + tag, m.get("boot_backdrop") == backdrop, identity)
+		await _boot_resize(backdrop, "class_resize." + tag, window_size)
+		await g.get_tree().create_timer(Balance.BOOT_NAV_TIME + 0.1).timeout
+		_check("boot.roster_freed." + tag, old.get_ref() == null, "roster shell retired")
+		_check("boot.class_shown." + tag, m.current == "class_select", _state())
+		await _capture("class_" + tag)
+		if window_size == Vector2i(1280, 720):
+			# Settled class selection on the phone stretch's taller canvas.
+			await _boot_resize(backdrop, "class_expand." + tag, window_size, "class_expand")
+		# Existing class selection has no Back control; exercise its return seam.
+		# The outgoing shell must drop focus and input in the frame it is replaced,
+		# not when queue_free finally deletes it at the end of the frame.
+		var outgoing: Control = m.root
+		var held := _boot_focusable(outgoing)
+		if held != null:
+			held.grab_focus()
+		m.open_slots()
+		var focus_now := g.get_viewport().gui_get_focus_owner()
+		_check("boot.retired_input." + tag, held != null and is_instance_valid(outgoing) and not outgoing.visible
+			and outgoing.process_mode == Node.PROCESS_MODE_DISABLED
+			and (focus_now == null or not outgoing.is_ancestor_of(focus_now)),
+			{"held": held != null, "focus": str(focus_now)})
+		_check("boot.return_animates." + tag, m.root.modulate.a == 0.0 and m.root.position.y == Balance.BOOT_NAV_SLIDE,
+			"actual navigation animates")
+		_check("boot.return_identity." + tag, m.get("boot_backdrop") == backdrop, identity)
+		# Replace in the same frame, while both deferred touch scans are pending.
+		var touch_mode := g.touch_mode
+		g.touch_mode = true
+		m.open_slots()
+		m.open_slots()
+		_check("boot.mid_transition_refresh." + tag, m.root.modulate.a == 1.0 and m.root.position == Vector2.ZERO,
+			"refresh cancels outgoing shell tween without replay")
+		_check("boot.mid_transition_identity." + tag, m.get("boot_backdrop") == backdrop, identity)
+		await r.frames(3)
+		g.touch_mode = touch_mode
+		_check("boot.only_setting_and_shell." + tag, m.get_child_count() == 2, m.get_child_count())
+	# The roster's Delete hero? confirm closes back into the roster on every
+	# answer: navigation on the same painting, never a rebuilt one.
+	for route in ["escape", "accept"]:
+		var clock := _boot_clock()
+		var accepted := [0]
+		var accept := func() -> void:
+			accepted[0] += 1
+			m.open_slots()
+		m.open_confirm("Boot backdrop probe.", accept, m.open_slots, {"title": "Delete hero?",
+			"accept_label": "Delete hero", "accept_tone": "destructive", "focus_cancel": true})
+		await r.frames(3)
+		if route == "escape":
+			await _key(KEY_ESCAPE)
+		else:
+			var delete_button := _find_button(m.root, "Delete hero", true)
+			if delete_button == null:
+				return "boot confirm lost its accept action"
+			await _boot_click(delete_button.get_global_rect().get_center())
+		await g.get_tree().create_timer(Menus.SHELL_OUT + 0.1).timeout
+		await r.frames(2)
+		if not _check("boot.confirm_keeps_setting." + route, m.get("boot_backdrop") == backdrop
+				and m.current == "title" and m.title_stage == "slots" and accepted[0] == int(route == "accept"),
+				_state()):
+			return "boot confirm rebuilt the painted setting"
+		_check("boot.confirm_keeps_clock." + route, _boot_clock() >= clock, "painting clock retained")
+		_check("boot.confirm_bounded." + route, m.get_child_count() == 2, m.get_child_count())
+	# Coverage at both extremes of the orbit; restores the live animation clock.
+	var age: float = backdrop.get("elapsed")
+	for phase in [0.0, 0.25, 0.5, 0.75]:
+		backdrop.set("elapsed", Balance.BOOT_DRIFT_PERIOD * phase)
+		backdrop.call("_drift")
+		_boot_coverage(backdrop, "orbit." + str(phase))
+	backdrop.set("elapsed", age)
+	backdrop.call("_drift")
+	for cycle in 4:
+		var retired: WeakRef = weakref(m.get("boot_backdrop"))
+		m.close()
+		await g.get_tree().create_timer(Menus.SHELL_OUT + 0.1).timeout
+		await r.frames(3)
+		_check("boot.close_releases.%d" % cycle, retired.get_ref() == null and m.get_child_count() == 0,
+			"no backdrop, particles, shell or tween owner left")
+		m.open_title()
+		m.open_slots()
+		m.open_class_select()
+		m.open_slots()
+		await r.frames(3)
+		_check("boot.cycle_bounded.%d" % cycle, m.get_child_count() == 2, m.get_child_count())
+	# Save/online startup may clear root without calling close().
+	m._retire_shell()
+	await r.frames(3)
+	_check("boot.direct_retirement", m.get("boot_backdrop") == null and m.get_child_count() == 0,
+		"boot setting released when its menu lifetime ends")
+	return ""
+
+
+func _boot_coverage(backdrop: Control, tag: String) -> void:
+	var painting: Control = backdrop.get("painting")
+	var viewport := g.get_viewport().get_visible_rect()
+	_check("boot.coverage." + tag, backdrop.get_global_rect().encloses(viewport)
+		and painting.get_global_rect().encloses(backdrop.get_global_rect()),
+		{"viewport": viewport, "backdrop": backdrop.get_global_rect(), "painting": painting.get_global_rect()})
+
+
+## Keep-aspect only letterboxes the fixed 1280x720 canvas, so a keep resize
+## never moves the backdrop. Expand (the phone stretch) really grows the
+## canvas: prove it did, then that the painting still covers all of it.
+## `shot` also captures the expanded canvas (glass panel over the painting).
+func _boot_resize(backdrop: Control, tag: String, restore: Vector2i, shot := "") -> void:
+	var window := g.get_window()
+	var aspect := window.content_scale_aspect
+	window.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
+	window.size = Vector2i(1000, 700)
+	await r.frames(3)
+	var canvas := g.get_viewport().get_visible_rect().size
+	if _check("boot.resize_fixture." + tag, canvas.y > 720.5 and absf(canvas.x - 1280.0) < 1.0, canvas):
+		_boot_coverage(backdrop, tag)
+		if shot != "":
+			await _capture(shot)
+	window.content_scale_aspect = aspect
+	window.size = restore
+	await r.frames(2)
+
+
+## The LIVE setting's clock: a rebuilt backdrop restarts at zero even while
+## the replaced one (only queued for deletion) still holds the old time.
+func _boot_clock() -> float:
+	var live: Variant = m.get("boot_backdrop")
+	return float(live.get("elapsed")) if is_instance_valid(live) else -1.0
+
+
+func _boot_focusable(node: Node) -> Button:
+	if not is_instance_valid(node):
+		return null
+	for child in node.find_children("*", "Button", true, false):
+		var button := child as Button
+		if button != null and button.is_visible_in_tree() and not button.disabled \
+				and button.focus_mode != Control.FOCUS_NONE:
+			return button
+	return null
+
+
+## The menu coordinates are already in the viewport's canvas, not OS pixels.
+## Keep real input/GUI dispatch (never emit pressed), with explicit local input.
+func _boot_click(at: Vector2) -> void:
+	var viewport := g.get_viewport()
+	var motion := InputEventMouseMotion.new()
+	motion.position = at
+	motion.global_position = at
+	viewport.push_input(motion, true)
+	for down in [true, false]:
+		var event := InputEventMouseButton.new()
+		event.button_index = MOUSE_BUTTON_LEFT
+		event.position = at
+		event.global_position = at
+		event.pressed = down
+		event.button_mask = MOUSE_BUTTON_MASK_LEFT if down else 0
+		viewport.push_input(event, true)
+		await r.frames(1)
+	mouse_clicks += 1
+	await r.frames(3)

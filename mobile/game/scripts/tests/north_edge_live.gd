@@ -164,7 +164,7 @@ func _capture(id: String, anticipated: bool) -> void:
 		and not g.hud.quest_label.text.is_empty() and viewport.encloses(panel)
 		and g.hud.quest_label.self_modulate.a == 1.0, view)
 	_check(id + ".production_camera", g.camera.position_smoothing_enabled
-		and g.camera.limit_left == int(bounds.position.x) and g.camera.limit_top == int(bounds.position.y)
+		and g.camera.limit_left == int(bounds.position.x) and g.camera.limit_top == ceili(preload("res://scripts/wall_surface.gd").view_bounds(g, g.cur_room, bounds).position.y)
 		and g.camera.limit_right == int(bounds.end.x) and g.camera.limit_bottom == int(bounds.end.y), view)
 	_check(id + ".tracker_clear", not body.intersects(panel), view, anticipated)
 	r.shot(id, "live-input edge probe; body bounds are a proxy; manual original-frame review required")

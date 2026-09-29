@@ -197,7 +197,7 @@ func _physics_process(delta: float) -> void:
 	if grit_stacks > 0:
 		regen_now += grit_regen * grit_stacks  # Grit: the beating IS the mending
 	if regen_now > 0.0 and not dead and hp > 0.0:
-		var regen_amt := max_hp * regen_now * delta
+		var regen_amt := healing_received(max_hp * regen_now * delta)
 		var regen_before := hp
 		hp = minf(max_hp, hp + regen_amt)
 		# Pool verb: regen/Second Wind/Grit overflow fills the shield — the
@@ -1065,7 +1065,7 @@ func drink_potion() -> void:
 ## So a HEAVY hit pierces a gate armed by chip damage; it is still blocked by
 ## a gate armed by another heavy hit (or a deliberate i-frame window), so two
 ## overlapping telegraphs can't double-tap someone instantly.
-func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy := false, pvp_pen := 0.0, pvp_dex := 0.0) -> void:
+func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy := false, pvp_pen := 0.0, pvp_dex := 0.0, pvp_true := 0.0) -> void:
 	# A late host hit still arrives while local survival is held above. Each
 	# OWNER protects only their reader; remote shells keep forwarding normally.
 	if game != null and is_locally_controlled() and game.chapter_finale.active:
@@ -1135,6 +1135,15 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 				return
 		else:
 			amount *= 1.0 - Balance.ENFEEBLE_ARCHER_DR * tox_frac
+	# A duel strike carries one total plus its true subset. Apply shared
+	# damage-taken amps to both; defenses below see only the typed component.
+	var true_amount := 0.0
+	if attacker == null and pvp_true > 0.0:
+		true_amount = pvp_true * debuff_dmg_in
+		if laced_dmg_in_time > 0.0:
+			true_amount *= 1.0 + laced_dmg_in_amt
+		true_amount = clampf(true_amount, 0.0, amount)
+		amount -= true_amount
 	var res := physres if dmg_type == "phys" else magres
 	if theme_guard_time > 0.0:
 		res += theme_guard_amt
@@ -1196,23 +1205,22 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		if dmg_type != "true":
 			var tier := Stats.dex_tier(pvp_dex, eff_eva)
 			if tier < 2 and randf() < Stats.eva_curve(eff_eva):
-				if tier == 0:
-					game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.7, 0.9, 1.0))
-					game.sfx("blink")
-					_uniq_on_evade(attacker)
-					return
-				# A graze that leaks ~nothing must NOT arm the 0.6s hurt gate:
-				# at the bottom of the band graze_through returns 0.0, and a
-				# 0-damage hit that locks out every follow-up for longer than any
-				# a1 cooldown would make low DEX WORSE for the striker than none
-				# at all. Below the floor it reads as the dodge it effectively is.
-				if Stats.graze_through(pvp_dex, eff_eva) < Balance.GRAZE_MIN_THROUGH:
-					game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.7, 0.9, 1.0))
-					game.sfx("blink")
-					_uniq_on_evade(attacker)
-					return
-				pvp_grazed = true  # tier 1: it connects, but only just
-				game.spawn_text(global_position + Vector2(0, -40), "GRAZE", Color(0.7, 0.9, 1.0))
+				# A full dodge or a below-floor graze erases only the typed
+				# component. (Below the floor a graze leaks ~nothing, so it
+				# reads as the dodge it effectively is and arms no hurt gate.)
+				if tier == 0 or Stats.graze_through(pvp_dex, eff_eva) < Balance.GRAZE_MIN_THROUGH:
+					if true_amount <= 0.0:
+						game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.7, 0.9, 1.0))
+						game.sfx("blink")
+						_uniq_on_evade(attacker)
+						return
+					# A surviving true portion still lands as ONE hit, and a
+					# blow that draws blood is not a dodge: no DODGE! callout,
+					# blink or evade beats (hit_enemy drops MISS the same way).
+					amount = 0.0
+				else:
+					pvp_grazed = true
+					game.spawn_text(global_position + Vector2(0, -40), "GRAZE", Color(0.7, 0.9, 1.0))
 		if dmg_type != "true":
 			# PvP: the striker's pen crosses the wire and cuts our resistance here
 			# (pvp_pen; 0 for enemy hits, which resolve pen attacker-side above).
@@ -1237,14 +1245,6 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		game.burst(global_position, Color(0.85, 0.9, 1.0), 8)
 		hit_enemy(attacker as Enemy, uniq_k("riposte"), {})
 		return
-	hurt_cd = 0.6
-	hurt_was_heavy = heavy  # a heavy-armed window blocks even other heavies
-	var uniq_prev_sh := since_hurt  # the swkeep beat restores this (armor ward)
-	since_hurt = 0.0
-	# Tempest Crown 4pc (archer ward set): spell chip can't reset Second Wind —
-	# the hit still lands, only the untouched-clock survives it.
-	if dmg_type == "magic" and uniq_set_k("A", 4, "sw_magic_keep") > 0.0:
-		since_hurt = uniq_prev_sh
 	if dr_time > 0.0 and dmg_type != "true":
 		# Arcane Ward (round 45): the mage's Blink cloak — a brief, strong
 		# damage cut that SOFTENS a misstep instead of erasing it (the old
@@ -1277,6 +1277,17 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 	if curse_dr > 0.0 and dmg_type != "true" and not hexed.is_empty():
 		# Doomward (warlock talent): maintaining a curse wards YOU as well.
 		amount *= (1.0 - curse_dr)
+	# Recombine once: shields, HP, hit hooks and the floating number consume
+	# the atomic hit. True damage also bypasses the typed DR clauses above.
+	amount += true_amount
+	hurt_cd = 0.6
+	hurt_was_heavy = heavy  # a heavy-armed window blocks even other heavies
+	var uniq_prev_sh := since_hurt  # the swkeep beat restores this (armor ward)
+	since_hurt = 0.0
+	# Tempest Crown 4pc (archer ward set): spell chip can't reset Second Wind —
+	# the hit still lands, only the untouched-clock survives it.
+	if dmg_type == "magic" and uniq_set_k("A", 4, "sw_magic_keep") > 0.0:
+		since_hurt = uniq_prev_sh
 	if shield > 0.0:
 		# Transfusion shield eats the blow first (any damage type).
 		var absorbed: float = minf(shield, amount)

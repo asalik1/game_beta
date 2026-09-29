@@ -35,6 +35,7 @@ const CHAPTER := {
 		"landmarks": [{"name": "capital_crown_spire_gate", "x": 1056, "y": 500, "clearance": 430, "uses": [{"type": "action", "prompt": "E — View the city map", "x": 0, "y": 30, "ref": "map"}]}, {"name": "capital_crown_fountain", "x": 1056, "y": 765, "clearance": 250, "uses": [{"type": "inspect", "prompt": "E — Inspect the Crown Fountain", "x": 0, "y": 60, "title": "Crown Fountain", "text": "All the ward roads meet at this basin. Companies use its crown as the easiest place in the city to rally up."}]}, {"name": "capital_ashfire_forge", "x": 430, "y": 560, "clearance": 260, "uses": []}, {"name": "capital_grand_archive", "x": 1680, "y": 560, "clearance": 235, "uses": []}, {"name": "capital_market_stall", "x": 1620, "y": 860, "clearance": 200, "uses": [{"type": "action", "prompt": "E — Browse the Wardrobe", "x": 0, "y": 100, "ref": "wardrobe"}]}, {"name": "capital_market_stall", "x": 490, "y": 860, "clearance": 200, "uses": [{"type": "action", "prompt": "E — Check your mailbox", "x": 0, "y": 100, "ref": "mail"}]}],
 		"furnishings": [{"name": "capital_city_bench", "x": 700, "y": 990, "clearance": 110}, {"name": "capital_city_bench", "x": 1410, "y": 990, "clearance": 110}, {"name": "torch_pillar", "x": 220, "y": 440, "clearance": 60}, {"name": "torch_pillar", "x": 220, "y": 810, "clearance": 60}, {"name": "torch_pillar", "x": 1892, "y": 440, "clearance": 60}, {"name": "torch_pillar", "x": 1892, "y": 810, "clearance": 60}, {"name": "torch_pillar", "x": 900, "y": 1090, "clearance": 60}, {"name": "torch_pillar", "x": 1212, "y": 1090, "clearance": 60}, {"name": "garden_urns", "x": 870, "y": 730, "clearance": 50}, {"name": "garden_urns", "x": 1242, "y": 730, "clearance": 50}, {"name": "clay_pot", "x": 360, "y": 985, "clearance": 30}, {"name": "clay_pot", "x": 1752, "y": 985, "clearance": 30}],
 		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 405, "w": 1653.75}],
+		"floor_dressing": [{"key": "library_planter", "kind": "planter", "x": 560, "y": 990}, {"key": "library_planter", "kind": "planter", "x": 1552, "y": 990}, {"key": "banner_blue", "kind": "banner", "x": 620, "y": 421}, {"key": "banner_blue", "kind": "banner", "x": 1492, "y": 421}, {"key": "glow", "kind": "puddle", "x": 760, "y": 1120}, {"key": "glow", "kind": "puddle", "x": 1352, "y": 1120}],
 		"merchant": [1470, 830],
 		"npcs": [
 			{"sprite": "factor_imre", "x": 1290, "y": 830, "prompt": "E — Ask for directions", "convo": "cap_citizen"},
@@ -63,6 +64,7 @@ const CHAPTER := {
 		"landmarks": [{"name": "capital_grand_archive", "x": 1056, "y": 585, "clearance": 285, "uses": [{"type": "action", "prompt": "E — Browse the Codex", "x": -170, "y": 100, "ref": "codex"}, {"type": "action", "prompt": "E — Read your journal", "x": 0, "y": 100, "ref": "journal"}, {"type": "action", "prompt": "E — Review your records", "x": 170, "y": 100, "ref": "records"}]}],
 		"furnishings": [],
 		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 225, "w": 1653.75}],
+		"floor_dressing": [{"key": "library_planter", "kind": "planter", "x": 740, "y": 249}, {"key": "library_planter", "kind": "planter", "x": 1372, "y": 249}, {"key": "banner_blue", "kind": "banner", "x": 620, "y": 241}, {"key": "banner_blue", "kind": "banner", "x": 1492, "y": 241}, {"key": "glow", "kind": "puddle", "x": 700, "y": 340}, {"key": "glow", "kind": "puddle", "x": 1412, "y": 340}],
 		"npcs": [],
 	},
 	{"name": "The Ashen Tankard", "terrain": "capital_civic", "type": "safe",
@@ -73,6 +75,7 @@ const CHAPTER := {
 		"landmarks": [{"name": "capital_ashen_tankard", "x": 1056, "y": 590, "clearance": 285, "uses": []}, {"name": "great_hearth", "x": 620, "y": 560, "clearance": 175, "uses": []}, {"name": "capital_alembic_station", "x": 1492, "y": 560, "clearance": 205, "uses": [{"type": "action", "prompt": "E — Prepare your potion loadout", "x": 0, "y": 80, "ref": "potions"}]}],
 		"furnishings": [{"name": "capital_city_bench", "x": 760, "y": 810, "clearance": 110}, {"name": "capital_city_bench", "x": 1352, "y": 810, "clearance": 110}],
 		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 225, "w": 1653.75}],
+		"floor_dressing": [{"key": "library_planter", "kind": "planter", "x": 740, "y": 249}, {"key": "library_planter", "kind": "planter", "x": 1372, "y": 249}, {"key": "banner_blue", "kind": "banner", "x": 620, "y": 241}, {"key": "banner_blue", "kind": "banner", "x": 1492, "y": 241}, {"key": "glow", "kind": "puddle", "x": 560, "y": 900}, {"key": "glow", "kind": "puddle", "x": 1552, "y": 900}],
 		"npcs": [
 			{"sprite": "peddler_nix", "x": 1056, "y": 814, "prompt": "E — Tavern Keeper Nix", "convo": "cap_tankard"},
 			{"sprite": "old_fenna", "x": 650, "y": 650, "prompt": "E — Old Fenna", "convo": "cap_fenna"}],
@@ -85,6 +88,7 @@ const CHAPTER := {
 		"landmarks": [{"name": "capital_emberward_gate", "x": 1056, "y": 560, "clearance": 280, "uses": [{"type": "action", "prompt": "E — Muster your party  (Play Together)", "x": 0, "y": 80, "ref": "guild"}]}],
 		"furnishings": [{"name": "torch_pillar", "x": 900, "y": 900, "clearance": 60}, {"name": "torch_pillar", "x": 1212, "y": 900, "clearance": 60}],
 		"backdrops": [{"name": "capital_city_arcade", "x": 1056, "y": 405, "w": 1653.75}],
+		"floor_dressing": [{"key": "library_planter", "kind": "planter", "x": 740, "y": 429}, {"key": "library_planter", "kind": "planter", "x": 1372, "y": 429}, {"key": "banner_blue", "kind": "banner", "x": 620, "y": 421}, {"key": "banner_blue", "kind": "banner", "x": 1492, "y": 421}, {"key": "glow", "kind": "puddle", "x": 760, "y": 960}, {"key": "glow", "kind": "puddle", "x": 1352, "y": 960}],
 		"npcs": [
 			{"sprite": "warden_sighne", "x": 1056, "y": 814, "prompt": "E — Gate Sergeant", "convo": "cap_gate"}],
 	},

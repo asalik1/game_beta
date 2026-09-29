@@ -35,12 +35,14 @@ static func vignette(g: Game, parent: Node2D, zi: int, existing: Polygon2D = nul
 	return poly
 
 
-## The walkable floor in cell-local space: the play rect less its wall band and
-## the north wall's visible face, where the darkest part of the band belongs.
+## The wall surface's inner floor in cell-local space. The north boundary is
+## the face top PLUS its actual height: upward faces end at the collision seam,
+## even when north headroom clips their height. Adding WALL_FACE_H below that
+## seam would incorrectly move the darkest band into the walkable room.
 static func inner_floor(g: Game, zi: int) -> Rect2:
-	var play := g.play_rect(zi)
-	play.position -= g.room_rect(zi).position
-	return play.grow_individual(-g.TILE, -(g.TILE + g.WALL_FACE_H), -g.TILE, -g.TILE)
+	var floor: Rect2 = preload("res://scripts/wall_surface.gd").floor_regions(g, zi)[0]
+	floor.position -= g.room_rect(zi).position
+	return floor
 
 
 ## One baked texture per cell-local layout, shared by every room (and repaint,

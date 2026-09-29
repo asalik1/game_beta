@@ -177,12 +177,24 @@ func _run_systems() -> void:
 	# 1. Chapter select -> class select -> opening.
 	if not (game.menus.is_open() and game.menus.current == "chapter_select"):
 		return _fail("chapter select did not open")
+	# T44: one painted boot setting spans the pre-play shells, then play frees it.
+	if not is_instance_valid(game.menus.boot_backdrop):
+		return _fail("boot menus lost the painted title backdrop")
+	var boot_setting_id := game.menus.boot_backdrop.get_instance_id()
 	game.menus.pick_chapter("ch1")
 	await _frames(2)
 	if not (game.menus.is_open() and game.menus.current == "class_select"):
 		return _fail("class select did not open")
+	if not is_instance_valid(game.menus.boot_backdrop) \
+			or game.menus.boot_backdrop.get_instance_id() != boot_setting_id:
+		return _fail("class select rebuilt the boot backdrop instead of keeping it")
 	game.menus.pick_class("warrior")
 	await _frames(5)
+	for child in game.menus.get_children():
+		if child.get_script() == Menus.BootBackdrop:
+			return _fail("the boot backdrop outlived the class pick into play")
+	if game.menus.boot_backdrop != null:
+		return _fail("menus still reference the boot backdrop in play")
 	if not game.hud.dialogue_active:
 		return _fail("warrior opening scene did not start after class select")
 	# The dialogue box lives UNDER the hud: if the menus left the hud hidden,
@@ -513,6 +525,9 @@ func _run_systems() -> void:
 	await _test_spell_damage_wiring()
 	if _failed:
 		return
+	var defense_error: String = await preload("res://scripts/tests/duel_defense.gd").suite(game)
+	if defense_error != "":
+		return _fail("duel defense: " + defense_error)
 
 	# Assassin STAB SURGE (round 25): a connecting cut buffs lifesteal,
 	# bigger the lower your health sits.
@@ -2348,7 +2363,13 @@ func _run_systems() -> void:
 	var impairment_error: String = await preload("res://scripts/tests/hud_impairments.gd").suite(game)
 	if impairment_error != "":
 		return _fail(impairment_error)
+	var dot_stats_error: String = await preload("res://scripts/tests/net_dot_stats.gd").suite(game)
+	if dot_stats_error != "":
+		return _fail(dot_stats_error)
 	_test_hud_icon_integrity()
+	var diet_error := preload("res://scripts/tests/hud_diet.gd").suite(game)
+	if diet_error != "":
+		return _fail(diet_error)
 	var alignment_error := preload("res://scripts/tests/hud_alignment_geometry.gd").suite(game.hud)
 	if alignment_error != "":
 		return _fail(alignment_error)
@@ -2357,6 +2378,10 @@ func _run_systems() -> void:
 	if covers_error != "":
 		return _fail(covers_error)
 	print("ok: full-screen HUD/cutscene covers, centered clipped art + motes, speaker/boss splash covers (wide phone, tablet, resize, desktop keep)")
+	var plates_error: String = await preload("res://scripts/tests/story_plate_motion.gd").suite(game)
+	if plates_error != "":
+		return _fail(plates_error)
+	print("ok: story plates (advance keeps the on-screen blend, registered dissolves, focal envelopes, bounded drift, SKIP/guarded finish)")
 	await _test_tell_shapes()
 
 	# 5c. Endgame modes (ACT2_DESIGN.md §II): The Crucible + The Waking Depths.
@@ -4459,7 +4484,7 @@ class StatusTarget extends Player:
 		pass
 
 	func take_damage(amount: float, _kind := "phys", _attacker: Node = null,
-			_heavy := false, _pen := 0.0, _dex := 0.0) -> void:
+			_heavy := false, _pen := 0.0, _dex := 0.0, _true := 0.0) -> void:
 		hp -= amount
 
 	func gain_xp(amount: int) -> void:
@@ -4486,6 +4511,7 @@ func _test_enemy_statuses() -> void:
 	var projectiles: Array = get_tree().get_nodes_in_group("projectiles")
 	var errors: Array[String] = []
 	_enemy_status_checks(receiver, probes, errors)
+	_enemy_hit_visual_checks(receiver, probes, errors)
 	game.player = keep_player
 	game.players = keep_players
 	game.party_stats = keep_party
@@ -4499,6 +4525,235 @@ func _test_enemy_statuses() -> void:
 	if not errors.is_empty():
 		return _fail("enemy statuses: " + "; ".join(errors))
 	print("ok: enemy statuses (fresh/refresh burn+bleed, toxin restart, lethal bite+shot exits, single XP award, bleed shatters ward)")
+	print("ok: hit highlights (host/mirror repeated hits, windup/guard/burn/enrage tints, envelope replacement, freeze, status tints end with their status, enrage tint fanned to and held by guests, killing-blow highlight, tether flash, rim isolation)")
+
+
+## State rig in the quick tier. Explicit tween steps keep the test independent
+## of headless frame speed; the enclosing fixture restores all shared stats.
+func _enemy_hit_visual_checks(receiver: StatusTarget, probes: Array[Enemy], errors: Array[String]) -> void:
+	for mirror in [false, true]:
+		for cue in ["windup", "guard", "burn", "enrage", "freeze"]:
+			var e: Enemy
+			if cue == "enrage":
+				var boss := Boss.make_boss(game, "vargoth", receiver.global_position + Vector2(300, 0))
+				game.world.add_child(boss)
+				boss.set_physics_process(false)
+				boss.traits = {}
+				boss.hp = boss.max_hp * 0.25
+				probes.append(boss)
+				# Host AI enrages, then hands its tint to the co-op tell event.
+				boss._vargoth(receiver, Vector2.LEFT, 1000.0)
+				var fanned := boss._enrage_tell_color()
+				boss._sync_enrage_tint()
+				if not boss.enraged or not boss._enrage_fanned or fanned.is_equal_approx(boss.base_mod) \
+						or not fanned.is_equal_approx(boss.sprite.modulate):
+					errors.append("host enrage did not fan its tint to guests")
+				e = boss
+				if mirror:
+					# A guest's boss never runs the AI: its tint arrives only through
+					# the tell handler, with no window (held until the next tint).
+					var guest := Boss.make_boss(game, "vargoth", receiver.global_position + Vector2(300, 60))
+					game.world.add_child(guest)
+					guest.set_physics_process(false)
+					guest.traits = {}
+					guest.net_mirror = true
+					guest.hp = guest.max_hp * 0.25
+					probes.append(guest)
+					guest.net_apply_tell(fanned, 0.0)
+					e = guest
+			else:
+				e = _status_probe(probes)
+				match cue:
+					"windup":
+						e.attack_cd = 0.0
+						e._think(0.0) # Actual melee entry owns tint + warning duration.
+					"guard": e._raise_guard()
+					"burn":
+						e.attack_cd = 10.0 # Keep the burn beat from starting a bite.
+						e.apply_burn(1.0, 5.0, Color(1.4, 0.8, 0.6), receiver)
+						e._physics_process(0.01) # Actual DoT beat paints burn tint.
+					"freeze":
+						e.apply_stun(2.0)
+						e.apply_slow(0.5, 2.0)
+			var tint := e.sprite.modulate
+			var duration := e.windup if cue == "windup" else 2.0
+			if cue == "windup" and duration <= 0.0:
+				errors.append("hit visual fixture failed to start melee warning")
+				duration = 0.27
+			e.net_mirror = mirror
+			e.net_target = e.global_position
+			if mirror and cue in ["windup", "guard"]:
+				e.net_apply_tell(tint, duration)
+			var rim: Sprite2D = e.sprite.get_node("EnemyRim")
+			var rim_material := rim.material
+			var rim_strength: float = rim_material.get_shader_parameter("rim_strength")
+			if cue == "guard":
+				# Isolate presentation from the counter's intentional consumption.
+				for repeat in range(3):
+					e._play_hit_highlight()
+					e._hit_highlight_tween.pause()
+					e._hit_highlight_tween.custom_step(Balance.MOB_HIT_HIGHLIGHT_TIME * 0.5)
+					if not e.sprite.modulate.is_equal_approx(tint) or e.counter_t != Balance.MOB_COUNTER_TIME:
+						errors.append("highlight erased an active guard")
+			for hit in range(3):
+				var previous := e._hit_highlight_tween
+				var hp_before := e.hp
+				var windup_before := e.windup
+				var tell_before := e._net_tell_t
+				var status_before := Vector3(e.burn_time, e.stun_time, e.slow_time)
+				var expected_damage := 1.0
+				# The authoritative counter intentionally consumes its blue guard
+				# on contact. Subsequent flashes must preserve the resulting base.
+				if cue == "guard" and not mirror and hit == 0:
+					expected_damage = 0.3
+					tint = e.base_mod
+				e.take_damage(1.0, Vector2.ZERO)
+				if not e.sprite.modulate.is_equal_approx(tint):
+					errors.append("%s mirror=%s: hit overwrote combat tint" % [cue, mirror])
+				if not is_equal_approx(hp_before - e.hp, expected_damage) \
+						or e.windup != windup_before or e._net_tell_t != tell_before \
+						or Vector3(e.burn_time, e.stun_time, e.slow_time) != status_before:
+					errors.append("hit changed damage or warning duration")
+				# A killed tween may remain valid until SceneTree's next sweep.
+				# Test the ownership contract: it cannot advance or write a stale
+				# endpoint over the newly restarted peak, even when stepped here.
+				if previous != null:
+					var old_advanced := previous.custom_step(Balance.MOB_HIT_HIGHLIGHT_TIME * 2.0)
+					var peak: float = e.sprite.material.get_shader_parameter("hit_strength")
+					if old_advanced or not is_equal_approx(peak, Balance.MOB_HIT_HIGHLIGHT_STRENGTH):
+						errors.append("repeated hit left a competing envelope")
+				if e._hit_highlight_tween == null:
+					errors.append("hit has no independent highlight envelope")
+					break
+				e._hit_highlight_tween.pause()
+				var strength: float = e.sprite.material.get_shader_parameter("hit_strength")
+				if not is_equal_approx(strength, Balance.MOB_HIT_HIGHLIGHT_STRENGTH):
+					errors.append("repeated hit did not restart at peak")
+				e._hit_highlight_tween.custom_step(Balance.MOB_HIT_HIGHLIGHT_TIME * 0.5)
+				var decayed: float = e.sprite.material.get_shader_parameter("hit_strength")
+				if decayed <= 0.0 or decayed >= strength:
+					errors.append("highlight did not decay independently")
+			if e._hit_highlight_tween == null:
+				continue
+			e._hit_highlight_tween.custom_step(Balance.MOB_HIT_HIGHLIGHT_TIME)
+			if not e.sprite.modulate.is_equal_approx(tint) \
+					or not is_zero_approx(float(e.sprite.material.get_shader_parameter("hit_strength"))):
+				errors.append("highlight expiry failed to leave combat tint intact")
+			if rim.material != rim_material or rim.material == e.sprite.material \
+					or rim_material.get_shader_parameter("rim_strength") != rim_strength:
+				errors.append("hit replaced or altered the independent rim pass")
+			for other in probes:
+				if other != e and other.sprite.material == e.sprite.material:
+					errors.append("enemy hit materials are shared across actors")
+			# Expire a tell DURING the next envelope: no stale tint may return.
+			if cue == "windup":
+				e._play_hit_highlight()
+				e._hit_highlight_tween.pause()
+				var receiver_hp := receiver.hp
+				if mirror:
+					e._net_mirror_tick(duration)
+				else:
+					e._physics_process(duration)
+				if not e.sprite.modulate.is_equal_approx(e.base_mod) \
+						or (mirror and receiver.hp != receiver_hp) \
+						or (not mirror and not is_equal_approx(receiver_hp - receiver.hp, e._hit_dmg())):
+					errors.append("windup expiry changed tint, bite damage or guest authority")
+				e._hit_highlight_tween.custom_step(Balance.MOB_HIT_HIGHLIGHT_TIME * 2.0)
+				if not e.sprite.modulate.is_equal_approx(e.base_mod):
+					errors.append("expired flash restored a stale warning")
+			# Hits never reset the body now, so each status must clear its own
+			# paint when it ends (host tick and mirror tick alike).
+			_status_expiry_checks(e, cue, mirror, tint, receiver, errors)
+			# Alpha never belongs to the hit envelope, including a mid-fade hit.
+			e.sprite.modulate.a = 0.4
+			e._play_hit_highlight()
+			e._hit_highlight_tween.pause()
+			e._hit_highlight_tween.custom_step(Balance.MOB_HIT_HIGHLIGHT_TIME * 2.0)
+			if not is_equal_approx(e.sprite.modulate.a, 0.4):
+				errors.append("hit restored fade alpha")
+			e._play_hit_highlight()
+			var hold := e._play_death_anim()
+			var expected_hold := Balance.MOB_DEATH_COLLAPSE_T * 0.7
+			if not e._strip_action.is_empty():
+				expected_hold = Balance.MOB_DEATH_HOLD + float(e.anim_frames) / Balance.MOB_DEATH_FPS
+			if e._hit_highlight_tween == null or not e._hit_highlight_tween.is_valid() \
+					or not is_equal_approx(hold, expected_hold) \
+					or not is_equal_approx(float(e.sprite.material.get_shader_parameter("hit_strength")),
+						Balance.MOB_HIT_HIGHLIGHT_STRENGTH):
+				errors.append("death cut the hit envelope or changed its hold timing")
+		# A real killing blow: its highlight plays out inside the death hold while
+		# the fade still owns alpha alone (host kill, and the guest's optimistic
+		# hit followed by the host's death event).
+		var victim := _status_probe(probes)
+		victim.hp = 1.0
+		victim.net_mirror = mirror
+		victim.take_damage(5.0, Vector2.ZERO)
+		if mirror:
+			victim.net_mirror_die()
+		var envelope := victim._hit_highlight_tween
+		if not victim.dying or envelope == null or not envelope.is_valid() \
+				or not is_equal_approx(float(victim.sprite.material.get_shader_parameter("hit_strength")),
+					Balance.MOB_HIT_HIGHLIGHT_STRENGTH):
+			errors.append("mirror=%s: the killing blow lost its hit highlight" % mirror)
+		else:
+			envelope.pause()
+			envelope.custom_step(Balance.MOB_HIT_HIGHLIGHT_TIME)
+			if not is_zero_approx(float(victim.sprite.material.get_shader_parameter("hit_strength"))) \
+					or not is_equal_approx(victim.sprite.modulate.a, 1.0):
+				errors.append("killing-blow highlight did not decay under an untouched fade")
+	# The tether's one-off heal flash times itself out instead of lingering as
+	# a toxin-green; a tint written over it in the meantime is left alone.
+	for repainted in [false, true]:
+		var twin := _status_probe(probes)
+		var flash := twin._flash_body_tint(Enemy.TETHER_RESTORE_TINT, Balance.MOB_TETHER_RESTORE_TINT_T)
+		flash.pause()
+		if repainted:
+			twin._raise_guard()
+		var shown := twin.sprite.modulate
+		flash.custom_step(Balance.MOB_TETHER_RESTORE_TINT_T * 1.01)
+		var want: Color = shown if repainted else twin.base_mod
+		if not twin.sprite.modulate.is_equal_approx(want):
+			errors.append("tether flash %s" % ("stomped a later tell" if repainted else "outlived its window"))
+
+
+## Status paint must end with its status. `tint` is what the cue left on the
+## body; attack_cd holds off a bite so no new tell repaints mid-step.
+func _status_expiry_checks(e: Enemy, cue: String, mirror: bool, tint: Color,
+		receiver: StatusTarget, errors: Array[String]) -> void:
+	var burn_tint := Color(1.4, 0.8, 0.6)
+	match cue:
+		"burn", "freeze":
+			var paint: String = "burn" if cue == "burn" else "slow"
+			if e._status_paint != paint:
+				errors.append("%s mirror=%s: status paint not tracked" % [cue, mirror])
+			e.attack_cd = 10.0
+			if mirror:
+				e._net_mirror_tick(5.0)
+			else:
+				e._physics_process(5.0)
+			if not e.sprite.modulate.is_equal_approx(e.base_mod) or e._status_paint != "":
+				errors.append("%s mirror=%s: status tint outlived its status" % [cue, mirror])
+		"enrage":
+			if mirror:
+				e._net_mirror_tick(30.0)
+				if not e.sprite.modulate.is_equal_approx(tint):
+					errors.append("guest dropped the held enrage tint")
+			else:
+				# Burn repaints over the enrage; its expiry hands the enrage back.
+				e.apply_burn(1.0, 0.3, burn_tint, receiver)
+				e.burn_tick = 0.0
+				e._physics_process(0.01)
+				var burning := e.sprite.modulate.is_equal_approx(burn_tint)
+				e._physics_process(0.3)
+				if not burning or not e.sprite.modulate.is_equal_approx(tint):
+					errors.append("burn over an enrage did not hand the enrage tint back")
+				# Un-enraging (reset_fight) fans the resting tint back to guests.
+				var boss := e as Boss
+				boss.enraged = false
+				var rest := boss._enrage_tell_color()
+				boss._sync_enrage_tint()
+				if not rest.is_equal_approx(boss.base_mod) or boss._enrage_fanned:
+					errors.append("un-enrage did not fan the resting tint back")
 
 
 func _status_probe(probes: Array[Enemy], kind := "wolf") -> Enemy:
@@ -11112,8 +11367,8 @@ class DuelProbe extends PvpDuel:
 class StrikeRecorder extends Node:
 	var strikes: Array = []
 	var statuses: Array = []
-	func pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0, dex := 0.0) -> void:
-		strikes.append([target_pid, amount, dmg_type, pen, dex])
+	func pvp_strike(target_pid: int, amount: float, dmg_type: String, pen := 0.0, dex := 0.0, true_amount := 0.0) -> void:
+		strikes.append([target_pid, amount, dmg_type, pen, dex, true_amount])
 	func pvp_status(target_pid: int, kind: String, a: float, _b: float, reason := "") -> void:
 		statuses.append([target_pid, kind, a, reason])
 
@@ -11152,6 +11407,7 @@ func _test_spell_damage_wiring() -> void:
 	p.max_mp = 10000.0
 	p.mp = p.max_mp
 	var errors: Array[String] = []
+	_probe_healing_received(errors)
 	await _probe_mage_cast_damage(p, errors)
 	_probe_wind_wound(p, errors)
 	_probe_wind_wound_duel(p, errors)
@@ -11171,6 +11427,190 @@ func _test_spell_damage_wiring() -> void:
 	if not errors.is_empty():
 		return _fail("spell damage wiring: " + "; ".join(errors))
 	print("ok: spell damage wiring (Mage gear, Starfall, Firmament, skins; physical Wind Cuts; duel burn/toxin penetration; duel Frozen vs Stunned labels; independent Warlock knobs; Arrow Storm skins, Bulwark, Advance and Moonturn)")
+
+
+## T48: only device input is stubbed; survival, healing and both hit funnels run live.
+class HealingReceivedProbe extends Player:
+	func _poll_local_intents() -> void:
+		clear_local_intents()
+
+
+## Runs inside spell-wiring's frozen world/stat snapshot. Disposable actors ensure
+## every case starts wounded/full by construction, never from an earlier section.
+func _probe_healing_received(errors: Array[String]) -> void:
+	var net: Node = get_node_or_null("/root/NetworkManager")
+	if net == null:
+		errors.append("healing received precondition: no NetworkManager")
+		return
+	var saved_pvp: Node = game.pvp
+	var saved_active: bool = game.pvp_active
+	var saved_session: Node = net.session
+	var q := RivalShellProbe.new()
+	q.game = game
+	game.add_child(q)
+	q.set_process(false)
+	q.set_physics_process(false)
+	q.peer_id = 7
+	var duel := DuelProbe.new()
+	duel.game = game
+	duel.foe = q
+	duel.state = "fight"
+	var recorder := StrikeRecorder.new()
+	net.session = recorder
+	var rust := Items.make_potion("health", "tonic", "A", "black")
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 48
+	var ward := Items.roll_item_of("pants", "A", rng, "warrior")
+	ward["passive"] = "warrior_pants_Aa"
+	var first_error := errors.size()
+	for wearing in [false, true]:
+		for stung in [false, true]:
+			game.pvp_active = false
+			game.pvp = saved_pvp
+			var p := HealingReceivedProbe.new()
+			p.game = game
+			p.cls = "warrior"
+			game.add_child(p)
+			p.set_process(false)
+			p.set_physics_process(false)
+			p.global_position = game.room_center(0)
+			q.global_position = p.global_position + Vector2(100, 0)
+			p.equipment = {"pants": ward} if wearing else {}
+			p.recalc()
+			var ward_mult := 1.0 - float(Balance.uniq("warrior_pants_Aa")["heal_tax"]) if wearing else 1.0
+			_healing_expect(errors, p.uniq_heal_in, ward_mult, "equipped ward tax")
+			p.max_hp = 1000.0
+			p.atk = 100.125
+			# Plate resistance also scales current_atk, including true damage.
+			# Pin it after recalc so ward rolls cannot alter the fixed hit.
+			p.physres = 0.0
+			p.magres = 0.0
+			p.crit = 0.0
+			p.combo = 0.0
+			p.lifesteal = 0.125
+			p.regen_pct = 0.017
+			p.sw_regen = 0.013
+			p.sw_delay = 0.0
+			p.grit_regen = 0.007
+			p.transfusion = 0.08
+			p.heal_fx_cd = 100.0
+			p.heal_accum = 0.0
+			var e := _spell_damage_dummy(p)
+			var factor := ward_mult
+			if stung:
+				p._apply_potion_sting(rust["sting"])
+				factor = (1.0 - float(rust["sting"]["amt"])) * ward_mult
+			# Fixed dt and true damage eliminate clock/randomness variance. Every
+			# source also checks carrier gating, capped overflow and quiet feedback.
+			for source in ["regen", "pve", "pvp"]:
+				for aoe in [false, true]:
+					if source == "regen" and aoe:
+						continue
+					for pool in [false, true]:
+						for starting_hp in [123.456, 999.0, 1000.0]:
+							var label := "healing %s ward=%s Rust=%s AoE=%s pool=%s HP=%s" % [source, wearing, stung, aoe, pool, starting_hp]
+							p.uniq_armor = ["warrior_pants_Aa"] if wearing else []
+							if pool:
+								p.uniq_armor.append("helm_bulwark")
+							p.hp = starting_hp
+							p.shield = 0.0
+							p.holy_charge = 0.0
+							p.grit_stacks = 2
+							p.grit_time = 10.0
+							p.laced_heal_in_time = 10.0 if stung else 0.0
+							game.pvp_active = source == "pvp"
+							game.pvp = duel if source == "pvp" else saved_pvp
+							var raw := p.max_hp * (p.regen_pct + p.sw_regen + p.grit_regen * p.grit_stacks) * 0.125
+							if source == "regen":
+								p._physics_process(0.125)
+							else:
+								raw = p.atk * (p.current_lifesteal() * (0.33 if aoe else 1.0))
+								if source == "pvp":
+									raw *= Balance.PVP_HEAL_MULT
+								p.hit_enemy(q if source == "pvp" else e, 1.0, {"type": "true", "aoe": aoe})
+							var amount := raw
+							if stung:
+								amount *= 1.0 - float(rust["sting"]["amt"])
+							amount *= ward_mult
+							var expected := minf(p.max_hp, starting_hp + amount)
+							_healing_expect(errors, p.hp, expected, label)
+							if not wearing and not stung and var_to_bytes(p.hp) != var_to_bytes(minf(p.max_hp, starting_hp + raw)):
+								errors.append(label + " changed unpenalized HP bits")
+							var overflow: float = amount - (expected - starting_hp)
+							_healing_expect(errors, p.shield, minf(p.max_hp * p.transfusion, maxf(0.0, overflow)) if pool else 0.0, label + " overflow")
+							if p.heal_accum != 0.0 or p.holy_charge != 0.0:
+								errors.append(label + " gained discrete-heal feedback/charge")
+			# Expire Rust through the real clock, then measure both hit funnels.
+			game.pvp_active = false
+			game.pvp = saved_pvp
+			p.hp = 100.0
+			p.laced_heal_in_time = 0.125
+			p._physics_process(0.125)
+			var regen := p.max_hp * (p.regen_pct + p.sw_regen + p.grit_regen * p.grit_stacks) * 0.125
+			_healing_expect(errors, p.hp, 100.0 + regen * ward_mult, "Rust expiry regen")
+			_healing_expect(errors, p.laced_heal_in_time, 0.0, "Rust clock expired")
+			for rival in [false, true]:
+				game.pvp_active = rival
+				game.pvp = duel if rival else saved_pvp
+				p.hp = 100.0
+				p.hit_enemy(q if rival else e, 1.0, {"type": "true"})
+				_healing_expect(errors, p.hp, 100.0 + p.atk * p.current_lifesteal() * (Balance.PVP_HEAL_MULT if rival else 1.0) * ward_mult, "Rust expiry lifesteal")
+			# Discrete heals retain Depths/PvP scalars and their existing rewards.
+			p.cls = "paladin"
+			p.debuff_heal_in = 0.75
+			p.laced_heal_in_time = 10.0 if stung else 0.0
+			# Wounded discrete heal: Rust and ward must dock ordinary gain_hp heals.
+			p.hp = 100.0
+			p.shield = 0.0
+			p.holy_charge = 0.0
+			p.gain_hp(40.0)
+			_healing_expect(errors, p.hp, 100.0 + 40.0 * p.debuff_heal_in * factor, "discrete wounded heal")
+			# Unsaturated overflow (50 is far under the shield and Holy Charge caps),
+			# so the pooled amounts depend on Rust/ward/Depths instead of the caps.
+			p.hp = p.max_hp
+			p.shield = 0.0
+			p.holy_charge = 0.0
+			p.gain_hp(50.0)
+			var discrete := 50.0 * p.debuff_heal_in * factor
+			_healing_expect(errors, p.shield, discrete, "discrete shield overflow")
+			_healing_expect(errors, p.holy_charge, discrete * Balance.PALADIN_OVERHEAL_DMG, "discrete Holy Charge")
+			# A tonic tick must skip Rust ONLY; ward, Depths and PvP still apply.
+			p.regen_pct = 0.0
+			p.sw_regen = 0.0
+			p.grit_stacks = 0
+			p.heal_tonic_rate = 80.0
+			p.heal_tonic_time = 1.0
+			p.heal_accum = 0.0   # the wounded gain_hp above banked its own tick
+			p.hp = 100.0
+			p._physics_process(0.125)
+			var tonic := 80.0 * 0.125 * p.debuff_heal_in * Balance.PVP_HEAL_MULT * ward_mult
+			_healing_expect(errors, p.hp, 100.0 + tonic, "tonic Rust exemption")
+			_healing_expect(errors, p.heal_accum, tonic, "tonic visible feedback bank")
+			# Pact hex detonation (a synchronous direct-write heal): docked by ward and
+			# Rust, and Depths/PvP scalars stay off it. Detonate far from every foe.
+			# (Aegis release, Berserk, healing ground and road toll take the same
+			# healing_received() call but sit behind timers/scenes; left to code review.)
+			p.hex_fx = {"hex_heal": 0.08}
+			p.lifesteal = 0.0
+			p.hp = 100.0
+			p._hex_detonate(p.global_position + Vector2(9000.0, 9000.0))
+			_healing_expect(errors, p.hp, 100.0 + p.max_hp * 0.08 * factor, "Pact hex heal")
+			p.hex_fx = {}
+			e.free()
+			p.queue_free()
+	game.pvp = saved_pvp
+	game.pvp_active = saved_active
+	net.session = saved_session
+	q.queue_free()
+	duel.free()
+	recorder.free()
+	if errors.size() == first_error:
+		print("ok: healing received (ward + Rust, fixed regen/Second Wind/Grit, PvE/PvP lifesteal + AoE, expiry, tonic exemption, quiet/capped/carrier-gated overflow, unpenalized HP bits)")
+
+
+func _healing_expect(errors: Array[String], actual: float, expected: float, label: String) -> void:
+	if not is_finite(actual) or absf(actual - expected) > 0.000001:
+		errors.append("%s: got %.9f, expected %.9f" % [label, actual, expected])
 
 
 ## T40: real casts and skin strike paths, fixed stats and one isolated victim.

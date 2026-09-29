@@ -9,8 +9,10 @@ static func apply(g: Game, p: Player) -> void:
 	var preview := {}
 	var bounds: Rect2 = effective_bounds(g, p, ordinary, preview)
 	preload("res://scripts/camera_corridor_preview.gd").update(g, preview)
+	bounds = preload("res://scripts/wall_surface.gd").view_bounds(g, g.cur_room, bounds)
 	g.camera.limit_left = int(bounds.position.x)
-	g.camera.limit_top = int(bounds.position.y)
+	# Round up: a fractional inset must not expose a row above the wall mass.
+	g.camera.limit_top = ceili(bounds.position.y)
 	g.camera.limit_right = int(bounds.end.x)
 	g.camera.limit_bottom = int(bounds.end.y)
 

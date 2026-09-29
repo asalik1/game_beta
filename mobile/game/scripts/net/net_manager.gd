@@ -40,7 +40,11 @@ enum Mode {
 ## (§3.4). Printed on the title screen later so "you're on 0.1.0, I'm on
 ## 0.1.1" is readable without debugging. The auth handshake compares this
 ## EXACTLY — mismatch means a clean refusal, never a half-join.
-const NET_VERSION := "0.3.18"  # Seeded earned shortcuts and host-validated latch requests.
+## 0.3.19: duel strikes carry a true-damage subset (_rpc_pvp_strike and
+## _rpc_player_hit gained a trailing arg) and vitals carry CritRes plus changed-only
+## DoT combat stats (_rpc_vitals). An older receiver rejects the longer call outright, so
+## mixed builds must be refused at the handshake instead.
+const NET_VERSION := "0.3.19"  # Duel CritRes/true damage and DoT combat-stat sync.
 
 # --------------------------------------------------- network constants ---
 # Transport plumbing, not gameplay tuning — so they live here, not in

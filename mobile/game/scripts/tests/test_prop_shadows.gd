@@ -13,6 +13,8 @@ static func run(_r: Node) -> String:
 		result = _cells(g, holder)
 	if result == "":
 		result = _animated(g, holder)
+	if result == "":
+		result = run_sampling()
 	# Every returned failure uses this same cleanup. No fixture enters the live
 	# scene tree; manual frame changes still emit AnimatedSprite2D.frame_changed.
 	holder.free()
@@ -20,6 +22,69 @@ static func run(_r: Node) -> String:
 	if result == "":
 		print("ok: prop shadow footprints, opaque-foot transforms, selected strip/atlas cells and animation lifetime")
 	return result
+
+
+## Fresh production visuals, independent of earlier suite/world state.
+static func run_sampling() -> String:
+	var cache := Art._cache.duplicate()
+	var anim_cache := Art._anim_cache.duplicate()
+	var frames_cache := Art._prop_frames_cache.duplicate()
+	var shadows := preload("res://scripts/prop_shadow.gd")
+	var shape_cache: Dictionary = shadows._shape_cache.duplicate()
+	var g := Game.new()
+	var holder := Node2D.new()
+	var result := _sampling(g, holder)
+	holder.free()
+	g.free()
+	Art._cache = cache
+	Art._anim_cache = anim_cache
+	Art._prop_frames_cache = frames_cache
+	shadows._shape_cache = shape_cache
+	if result == "":
+		print("ok: scenery sampling: static/animated painterly LINEAR, pixel/fallback NEAREST, direct animation and shadow copies")
+	return result
+
+
+static func _sampling(g: Game, holder: Node2D) -> String:
+	for name in ["camp_workbench", "hideout_table", "pebble", "tree_green", "camp_bonfire", "book", "bone", "wall_grave"]:
+		var src := g._prop_visual(name)
+		var body := _body(holder, src)
+		var pixel: bool = name in ["book", "bone", "wall_grave"]
+		var expected := CanvasItem.TEXTURE_FILTER_NEAREST if pixel else CanvasItem.TEXTURE_FILTER_LINEAR
+		if src.texture_filter != expected:
+			return "fresh scenery has wrong sampling: " + name
+		if name in ["tree_green", "camp_bonfire"] and not src is AnimatedSprite2D:
+			return "sampling fixture lost its animated source: " + name
+		if name == "camp_workbench" and not src is Sprite2D:
+			return "sampling fixture lost its static source"
+		g._prop_cast_shadow(body, src)
+		var cast := _cast(body)
+		if cast == null or cast.texture_filter != expected:
+			return "shadow did not inherit scenery sampling: " + name
+		body.free()
+	# Real production fallback: "glow" ships no PNG and is built procedurally.
+	var glow := g._prop_visual("glow")
+	holder.add_child(glow)
+	if glow.texture_filter != CanvasItem.TEXTURE_FILTER_NEAREST:
+		return "procedural fallback decal lost NEAREST"
+	var direct := Art.anim_prop("camp_bonfire")
+	holder.add_child(direct)
+	if direct.texture_filter != CanvasItem.TEXTURE_FILTER_LINEAR:
+		return "direct animated-prop consumer still inherits project NEAREST"
+	# Strip frames must not bleed into their neighbours under LINEAR.
+	var frame0: AtlasTexture = direct.sprite_frames.get_frame_texture("default", 0)
+	if not frame0.filter_clip:
+		return "animated strip frames lack filter_clip (LINEAR would bleed across frames)"
+	# A pixel-authored strip must use the same exception as its static source.
+	# Lend one frame locally; never depend on another section's cache contents.
+	Art._anim_cache["bone_anim"] = {"tex": Art.tex("bone"), "frames": 1, "fps": 6.0,
+		"frame_size": Vector2i(9, 12)}
+	Art._prop_frames_cache.erase("bone")
+	var pixel_anim := Art.anim_prop("bone")
+	holder.add_child(pixel_anim)
+	if pixel_anim.texture_filter != CanvasItem.TEXTURE_FILTER_NEAREST:
+		return "pixel-authored animation lost NEAREST exception"
+	return ""
 
 
 static func _body(holder: Node2D, src: Node2D) -> Node2D:

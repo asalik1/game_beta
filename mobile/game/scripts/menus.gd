@@ -2,6 +2,7 @@ class_name Menus extends CanvasLayer
 ## Per-client full-screen menus. All player reads use `game.local_player`.
 
 # Lobby remains path-loaded so it does not require class-name registration.
+const BootBackdrop := preload("res://scripts/ui/boot_backdrop.gd")
 const UILobby := preload("res://scripts/ui/lobby.gd")
 const UIFieldAtlas := preload("res://scripts/ui/field_atlas.gd")
 const GearCare := preload("res://scripts/gear_care.gd")
@@ -11,6 +12,8 @@ const UIGearInspect := preload("res://scripts/ui/gear_inspect.gd")
 const NetManager := preload("res://scripts/net/net_manager.gd")
 
 var game: Game
+var boot_backdrop: Control = null
+var _boot_shell := ""
 var root: Control = null          # the currently open panel (null = closed)
 var detail_popover: Control = null  # click-to-reveal item/gem/shop popover
 var detail_return := ""             # screen the popover overlays (restored on close)
@@ -54,6 +57,11 @@ func _ready() -> void:
 	layer = 20
 
 
+func _process(_delta: float) -> void:
+	# Loading a save / starting an online session can retire the shell directly.
+	_release_unowned_backdrop()
+
+
 func is_open() -> bool:
 	return root != null
 
@@ -76,7 +84,63 @@ func _shell_motion() -> bool:
 	return shell_motion and DisplayServer.get_name() != "headless"
 
 
+## The setting survives shell replacement, but belongs to this menu lifetime.
+## Standalone Fangmoot never starts play either, but it is not the title flow.
+func _boot_setting(shell_id: String) -> bool:
+	if game.play_started or game.fangmoot_mode or fm_standalone:
+		_release_boot_backdrop()
+		return false
+	var navigation := _boot_shell != "" and _boot_shell != shell_id
+	if not is_instance_valid(boot_backdrop):
+		boot_backdrop = BootBackdrop.new()
+		add_child(boot_backdrop)
+		move_child(boot_backdrop, 0)
+	if _boot_shell != shell_id:
+		boot_backdrop.set_panel_dim(shell_id != "cover", navigation and _shell_motion())
+	_boot_shell = shell_id
+	return navigation
+
+
+func _release_boot_backdrop() -> void:
+	if is_instance_valid(boot_backdrop):
+		boot_backdrop.hide()
+		boot_backdrop.queue_free()
+	boot_backdrop = null
+	_boot_shell = ""
+
+
+## Release once no boot shell holds the setting (or play began). Boot confirms
+## close straight into their return screen, which keeps the same painting.
+func _release_unowned_backdrop() -> void:
+	if is_instance_valid(boot_backdrop) and (game.play_started or not is_instance_valid(root)):
+		_release_boot_backdrop()
+
+
+## Retire input immediately; queue_free alone leaves controls alive this frame.
+func _retire_shell() -> void:
+	if is_instance_valid(root):
+		root.hide()
+		root.process_mode = Node.PROCESS_MODE_DISABLED
+		root.queue_free()
+	root = null
+
+
+func _boot_enter(navigation: bool) -> void:
+	if not navigation or not _shell_motion():
+		return
+	root.modulate.a = 0.0
+	root.position.y = Balance.BOOT_NAV_SLIDE
+	var tw := root.create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tw.tween_property(root, "modulate:a", 1.0, Balance.BOOT_NAV_TIME)
+	tw.parallel().tween_property(root, "position:y", 0.0, Balance.BOOT_NAV_TIME) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
 func close() -> void:
+	# Deferred calls run before the frame draws: a shell reopened by the caller
+	# (a confirm's return path) keeps the setting, otherwise it goes now.
+	if is_instance_valid(boot_backdrop):
+		_release_unowned_backdrop.call_deferred()
 	_card_tap = {}
 	if root:
 		var old := root
@@ -127,8 +191,8 @@ func _hide_world_interaction_prompts() -> void:
 ## build into; the caller owns the whole 1280x720 canvas.
 func _open_full() -> Control:
 	_card_tap = {}
-	if root:
-		root.queue_free()
+	_release_boot_backdrop()  # a full-screen shell owns the whole canvas
+	_retire_shell()
 	_hide_world_interaction_prompts()
 	game.request_pause(true)
 	_closable_now = false
@@ -154,8 +218,8 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 	# fade+settle on every refresh read as UI flicker (owner regression flag
 	# 2026-08-19).
 	var was_open := root != null
-	if root:
-		root.queue_free()
+	var boot_navigation := _boot_setting(title)
+	_retire_shell()
 	_hide_world_interaction_prompts()
 	game.request_pause(true)
 	_closable_now = closable  # so _hint tells the truth about the exits on touch
@@ -172,7 +236,7 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 	_confirm_cancel = Callable()
 	var shell := root  # queued callbacks from a replaced shell cannot dismiss its successor
 	# Ease the shell in: fade + a settle around the screen centre (P2).
-	if _shell_motion() and not was_open:
+	if _shell_motion() and not was_open and not boot_navigation:
 		root.pivot_offset = get_viewport().get_visible_rect().size * 0.5
 		root.modulate.a = 0.0
 		root.scale = Vector2(0.97, 0.97)
@@ -195,18 +259,27 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 				controller_back())
 	root.add_child(dim)
 
-	# Boot menus retain the cover's night background.
-	if not game.play_started:
+	# Boot dimming belongs to the persistent layer, so refreshes cannot flash it.
+	var boot_glass := is_instance_valid(boot_backdrop)
+	if boot_glass:
+		dim.color.a = 0.0
+	elif not game.play_started:
+		# Other pre-play shells (standalone Fangmoot) keep the opaque night.
 		var night := ColorRect.new()
-		night.color = Color(0.02, 0.015, 0.045)
+		night.color = Balance.BOOT_NIGHT
 		night.set_anchors_preset(Control.PRESET_FULL_RECT)
 		root.add_child(night)
 		root.move_child(night, 0)
+	_boot_enter(boot_navigation)
 
 	# UITheme owns the shell and all stock-widget styling.
 	UITheme.apply(root)
 	_shell_rect = Rect2(Vector2(640 - w / 2 - 3, 360 - h / 2 - 3), Vector2(w + 6, h + 6))
 	var frame := UITheme.panel(root, _shell_rect.position, _shell_rect.size)
+	if boot_glass:
+		var glass: StyleBoxFlat = frame.get_theme_stylebox("panel").duplicate()
+		glass.bg_color.a = Balance.BOOT_PANEL_ALPHA
+		frame.add_theme_stylebox_override("panel", glass)
 
 	var vbox := VBoxContainer.new()
 	vbox.position = Vector2(640 - w / 2, 360 - h / 2) + SHELL_INSET
@@ -253,7 +326,7 @@ func _open(title: String, w := 960.0, h := 560.0, closable := false) -> VBoxCont
 
 ## Let touch drags propagate from content controls to their ScrollContainer.
 func _enable_all_touch_scroll(node: Node) -> void:
-	if game == null or not game.touch_mode or node == null:
+	if game == null or not game.touch_mode or not is_instance_valid(node) or node.is_queued_for_deletion():
 		return
 	_scan_touch_scroll(node)
 
@@ -383,8 +456,8 @@ func _hint(vbox: Node, text := "ESC to close", touch_text := "") -> void:
 
 ## Opening cover; input advances to the roster.
 func open_title() -> void:
-	if root:
-		root.queue_free()
+	var navigation := _boot_setting("cover")
+	_retire_shell()
 	game.request_pause(true)
 	if game and game.hud:
 		game.hud.visible = false
@@ -395,6 +468,7 @@ func open_title() -> void:
 	title_stage = "cover"
 	game.set_music("title")
 	UICover.build(self, root)
+	_boot_enter(navigation)
 	var ver := Label.new()
 	ver.text = "build %s" % NetManager.NET_VERSION
 	ver.position = Vector2(10, 696)
@@ -470,6 +544,7 @@ func open_slots() -> void:
 		row.add_theme_constant_override("separation", 8)
 		save_list.add_child(row)
 		var resume := func() -> void:
+			_release_boot_backdrop()
 			if root:
 				root.queue_free()
 				root = null
@@ -1372,9 +1447,7 @@ func open_chapter_select(replay := false) -> void:
 
 
 func pick_chapter(id: String) -> void:
-	if root:
-		root.queue_free()
-		root = null
+	_retire_shell()
 	current = ""
 	game.switch_chapter(id)  # no-op if it is already the built chapter
 	open_class_select()
@@ -2094,6 +2167,7 @@ func _show_class_splash(id: String) -> void:
 
 
 func pick_class(id: String) -> void:
+	_release_boot_backdrop()
 	if root:
 		root.queue_free()
 		root = null

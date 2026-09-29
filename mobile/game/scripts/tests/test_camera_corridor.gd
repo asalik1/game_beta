@@ -148,6 +148,7 @@ static func _cases(g: Fixture, p: Player, horizontal: bool, errors: Array[String
 	var camera_before: Array = [g.camera.zoom, g.camera.offset, g.camera.position_smoothing_enabled, g.settings.duplicate(true)]
 	Corridor.apply(g, p)
 	var expected: Rect2 = Corridor.effective_bounds(g, p, g.play_rect(g.cur_room))
+	expected = preload("res://scripts/wall_surface.gd").view_bounds(g, g.cur_room, expected)
 	if Rect2(g.camera.limit_left, g.camera.limit_top, g.camera.limit_right - g.camera.limit_left, g.camera.limit_bottom - g.camera.limit_top) != expected:
 		errors.append(axis_name + " apply limits differ")
 	if camera_before != [g.camera.zoom, g.camera.offset, g.camera.position_smoothing_enabled, g.settings]:
