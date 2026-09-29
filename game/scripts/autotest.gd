@@ -2302,6 +2302,9 @@ func _run_systems() -> void:
 	await _frames(2)
 	if game.menus.current != "daily":
 		return _fail("daily reward screen did not open")
+	var forge_daily_error: String = await preload("res://scripts/tests/test_forge_daily_ui.gd").run(self)
+	if forge_daily_error != "":
+		return _fail(forge_daily_error)
 	# The claim receipt (no claim state touched): overflow names the Mailbox
 	# and points at the HUD envelope; a claim that all fit does not.
 	UIDaily.open(game.menus, ["1 Health Potion", "1 Health Potion sent to Mailbox", "5 Renown"])

@@ -72,6 +72,7 @@ static func open(m: Menus, just_claimed: Array = []) -> void:
 		what.custom_minimum_size = Vector2(560, 0)
 
 	# --- the four-week track: a row per week, seven tiles each ---
+	var claim: Button = null
 	var weeks: int = cycle_len / Balance.DAILY_REWARDS.size()
 	for w in weeks:
 		var row := HBoxContainer.new()
@@ -89,7 +90,9 @@ static func open(m: Menus, just_claimed: Array = []) -> void:
 				state = "claimed"
 			elif i == stand:
 				state = "claimed_today" if not avail else "today"
-			_tile(m, row, i, state)
+			var tile_claim := _tile(m, row, i, state)
+			if tile_claim != null:
+				claim = tile_claim
 
 	var note := m._lbl(vbox, "Miss a day and the streak resets to Day 1. Every week pays a notch more than the last; day 28 wraps back to week 1. Gold shown is scaled to your level (%d)." % g.player.level,
 		11, Color(0.55, 0.57, 0.63))
@@ -104,14 +107,26 @@ static func open(m: Menus, just_claimed: Array = []) -> void:
 			else "★  Select today's tile to claim it.", 14, GOLD)
 		cue.autowrap_mode = TextServer.AUTOWRAP_OFF
 		cue.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	m._btn(row, "   Close   ", func() -> void: m.close())
+	var close := m._btn(row, "   Close   ", func() -> void: m.close())
+	close.name = "DailyClose"
+	# A compact keyboard loop: today's claim, then Close. After a claim or
+	# while downed, Close is the only action. Pointer/pad-cursor paths stay live.
+	if claim != null:
+		claim.focus_next = claim.get_path_to(close)
+		claim.focus_previous = claim.get_path_to(close)
+		close.focus_next = close.get_path_to(claim)
+		close.focus_previous = close.get_path_to(claim)
+	# Initial keyboard focus only for keyboard users; touch and the pad cursor keep
+	# their existing selection behavior (same guard as the pause menu).
+	if not g.touch_mode and (g.gamepad == null or not g.gamepad.active):
+		(claim if claim != null else close).grab_focus()
 	m._hint(vbox, "ESC, ✕, or click anywhere outside to close")
 
 
 ## One day-tile of the track: DAY N over the reward's art, the amounts under
 ## it. `state`: "claimed" (behind you, ✓), "today" (lit, the one you claim),
 ## "claimed_today" (lit + ✓), "future" (quiet). `i` is the 0-based cycle day.
-static func _tile(m: Menus, row: HBoxContainer, i: int, state: String) -> void:
+static func _tile(m: Menus, row: HBoxContainer, i: int, state: String) -> Button:
 	var r: Dictionary = m.game.daily_reward_for(i + 1)
 	var jackpot: bool = (i % Balance.DAILY_REWARDS.size()) == Balance.DAILY_REWARDS.size() - 1
 	var lit: bool = state == "today" or state == "claimed_today"
@@ -197,7 +212,8 @@ static func _tile(m: Menus, row: HBoxContainer, i: int, state: String) -> void:
 	if state == "today" and not m.game.daily_claim_waits():
 		var hit := Button.new()
 		hit.flat = true
-		hit.focus_mode = Control.FOCUS_NONE
+		hit.name = "DailyClaim"
+		hit.focus_mode = Control.FOCUS_ALL
 		hit.tooltip_text = "Claim today's reward"
 		hit.set_anchors_preset(Control.PRESET_FULL_RECT)
 		var clear := StyleBoxFlat.new()
@@ -208,12 +224,14 @@ static func _tile(m: Menus, row: HBoxContainer, i: int, state: String) -> void:
 		hov.bg_color = Color(1.0, 0.9, 0.5, 0.12)
 		hit.add_theme_stylebox_override("hover", hov)
 		hit.add_theme_stylebox_override("pressed", hov)
-		hit.add_theme_stylebox_override("focus", clear)
+		# Inherit the UI family's visible gold focus outline.
 		hit.pressed.connect(func() -> void:
 			m.game.sfx("ui_click")
 			var lines: Array = m.game.claim_daily()
 			open(m, lines))
 		box.add_child(hit)
+		return hit
+	return null
 
 
 ## The picture for a day's reward: the gold chest on the week's jackpot day,

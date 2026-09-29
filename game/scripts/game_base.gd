@@ -1078,7 +1078,7 @@ func send_mail(subject: String, body: String, items: Array, quiet := false) -> v
 	if not quiet and play_started and is_instance_valid(player):
 		sfx("chest")
 		spawn_text(player.global_position + Vector2(0, -64),
-			"NEW MAIL — see the pause menu", Color(0.8, 0.9, 1.0))
+			"New mail! Open the envelope on your HUD.", Color(0.8, 0.9, 1.0))
 
 
 ## Unclaimed letters expire after Balance.MAIL_EXPIRY_DAYS on the
