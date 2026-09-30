@@ -37,11 +37,15 @@ in normal world saves/snapshots and resets on replay; it is not kept personal
 history. Network version 0.3.18 prevents mixed graph/protocol sessions.
 
 Open doorways now accommodate the camera between the two room interiors.
-Only the actual reciprocal, unlocked doorway lane widens the limits; the view
-returns to the room's normal bounds as the hero moves inside. Target framing,
-zoom, lead, shake and smoothing retain their existing settings. This also
-repairs ordinary corridors and touching room boundaries. Encounter seals and
-movement rules remain independent of this presentation change.
+Only an actual reciprocal, unlocked doorway widens the limits: fully in its
+lane and gap, partly on the approach from about half a view out, fading over
+a short band either side of the lane. The view returns to the room's normal
+bounds as the hero moves inside. Since September 29 the limits ease instead
+of jumping, walked crossings keep the camera and every other arrival snaps
+(COMBAT_FRAMING.md, "Doorway continuity"). Target framing, zoom, lead and
+shake retain their settings. This also repairs ordinary corridors and
+touching room boundaries. Encounter seals and movement rules remain
+independent of this presentation change.
 
 An unvisited destination previews its matching floor and entrance walls, with
 no collision, actors, encounter initialization or discovery changes. The same

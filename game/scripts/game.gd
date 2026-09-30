@@ -779,38 +779,7 @@ func _process(delta: float) -> void:
 
 	# Room transitions: walking through a doorway moves you next door.
 	# (Aggro is per-pack now — entering a room wakes nobody by itself.)
-	var zi := room_at_pos(player.global_position)
-	if zi == -1:
-		# Physics glitch outside the graph: snap back into the room. A NON-FINITE
-		# position lands here too (room_at_pos(nan) -> -1), but clampf(nan) stays
-		# nan — the clamp can't recover it, and the avatar is then invisible/off-
-		# map for good (death can't save you either: enemies read distance_to(nan)
-		# = nan and never land the killing hit). Same engine-depenetration NaN as
-		# the enemy twin (2026-08-19): hard-reset to the room centre, motion
-		# cleared, BEFORE the clamp.
-		var rr := play_rect(clampi(cur_room, 0, zone_count - 1))
-		if not player.global_position.is_finite():
-			player.global_position = rr.get_center()
-			player.velocity = Vector2.ZERO
-		else:
-			player.global_position.x = clampf(player.global_position.x, rr.position.x + 52.0, rr.end.x - 52.0)
-			player.global_position.y = clampf(player.global_position.y, rr.position.y + 62.0, rr.end.y - 62.0)
-		zi = cur_room
-	elif zi != cur_room and state == ST_PLAYING:
-		if _room_hot(cur_room) or _shortcut_closed(cur_room, zi):
-			# A closed earned shortcut also refuses this boundary crossing.
-			# Locked in: a HOT room seals every exit until it's purged (or
-			# the boss falls). The pulsing seal glow is feedback; THIS is
-			# the wall — the seal body sits a step outside the cell and
-			# races the boundary that flips cur_room, so it sometimes lets
-			# a fast turn-around slip out. Shoving the player back into the
-			# playable rect is frame-race-free. You only leave a live room
-			# by dying (respawn at the last safe room).
-			var pr := play_rect(cur_room)
-			player.global_position.x = clampf(player.global_position.x, pr.position.x + 52.0, pr.end.x - 52.0)
-			player.global_position.y = clampf(player.global_position.y, pr.position.y + 62.0, pr.end.y - 62.0)
-		else:
-			_enter_room(zi, true)
+	_poll_room_boundary()
 	_tick_gate_guidance(delta)
 	hud.set_zone(zones[cur_room]["name"])
 	# MP: the sim gate follows every player, every frame (remote players
@@ -949,6 +918,44 @@ func _process(delta: float) -> void:
 	_update_ambient_fx()
 	# (The room-transition check at the top of _process is the safety
 	# net: any position outside the graph snaps back into the room.)
+
+
+## The one WALKED arrival: the hero's own movement crossing a cell boundary
+## (the camera keeps its doorway envelope; every other arrival snaps). The
+## camera transition rig drives this same entry point.
+func _poll_room_boundary() -> void:
+	var zi := room_at_pos(player.global_position)
+	if zi == -1:
+		# Physics glitch outside the graph: snap back into the room. A NON-FINITE
+		# position lands here too (room_at_pos(nan) -> -1), but clampf(nan) stays
+		# nan — the clamp can't recover it, and the avatar is then invisible/off-
+		# map for good (death can't save you either: enemies read distance_to(nan)
+		# = nan and never land the killing hit). Same engine-depenetration NaN as
+		# the enemy twin (2026-08-19): hard-reset to the room centre, motion
+		# cleared, BEFORE the clamp.
+		var rr := play_rect(clampi(cur_room, 0, zone_count - 1))
+		if not player.global_position.is_finite():
+			player.global_position = rr.get_center()
+			player.velocity = Vector2.ZERO
+		else:
+			player.global_position.x = clampf(player.global_position.x, rr.position.x + 52.0, rr.end.x - 52.0)
+			player.global_position.y = clampf(player.global_position.y, rr.position.y + 62.0, rr.end.y - 62.0)
+		zi = cur_room
+	elif zi != cur_room and state == ST_PLAYING:
+		if _room_hot(cur_room) or _shortcut_closed(cur_room, zi):
+			# A closed earned shortcut also refuses this boundary crossing.
+			# Locked in: a HOT room seals every exit until it's purged (or
+			# the boss falls). The pulsing seal glow is feedback; THIS is
+			# the wall — the seal body sits a step outside the cell and
+			# races the boundary that flips cur_room, so it sometimes lets
+			# a fast turn-around slip out. Shoving the player back into the
+			# playable rect is frame-race-free. You only leave a live room
+			# by dying (respawn at the last safe room).
+			var pr := play_rect(cur_room)
+			player.global_position.x = clampf(player.global_position.x, pr.position.x + 52.0, pr.end.x - 52.0)
+			player.global_position.y = clampf(player.global_position.y, pr.position.y + 62.0, pr.end.y - 62.0)
+		else:
+			_enter_room(zi, true, true)
 
 
 ## Shake first (older motion decays, this frame's impulses land at full

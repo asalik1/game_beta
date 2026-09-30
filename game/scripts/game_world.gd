@@ -1031,7 +1031,8 @@ func _install_shortcut() -> void:
 ## _process boundary poll, pocket hops, map travel): a first visit then shows
 ## its card over live gameplay instead of fading from black. Rebuild-time
 ## callers (boot, load, chapter switch, net snapshot, respawn) keep default.
-func _enter_room(i: int, live := false) -> void:
+## Only the boundary poll opts into `walked`; live map/pocket hops still snap.
+func _enter_room(i: int, live := false, walked := false) -> void:
 	if i < 0 or i >= zone_count:
 		return
 	var prev := cur_room
@@ -1051,12 +1052,16 @@ func _enter_room(i: int, live := false) -> void:
 		var nb := neighbor(i, dir)
 		if nb >= 0:
 			door_seen[nb] = true
-	# Camera follows playable bounds plus the north wall's upward silhouette.
-	var r := WallSurface.view_bounds(self, i, play_rect(i))
-	camera.limit_left = int(r.position.x)
-	camera.limit_top = ceili(r.position.y)   # never above the silhouette's (fractional) top
-	camera.limit_right = int(r.end.x)
-	camera.limit_bottom = int(r.end.y)
+	# Keep the corridor envelope during a walk; all other arrivals snap.
+	# Dedicated hosts have no local camera subject.
+	if is_instance_valid(local_player):
+		camera_framing.enter_room(self, walked)
+	else:
+		var r := WallSurface.view_bounds(self, i, play_rect(i))
+		camera.limit_left = int(r.position.x)
+		camera.limit_top = ceili(r.position.y)
+		camera.limit_right = int(r.end.x)
+		camera.limit_bottom = int(r.end.y)
 	if room_safe(i):
 		last_safe_room = i
 	var terrain := Terrains.get_terrain(terrain_by_zone[i])

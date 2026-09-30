@@ -11,7 +11,7 @@ class RewardWorld extends Game:
 class RestartWorld extends RewardWorld:
 	func _install_shortcut() -> void: pass
 	func _build_door_seals() -> void: pass
-	func _enter_room(i: int, _live := false) -> void: cur_room = i
+	func _enter_room(i: int, _live := false, _walked := false) -> void: cur_room = i
 	func refresh_quest() -> void: pass
 
 class RewardPlayer extends Player:

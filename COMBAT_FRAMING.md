@@ -189,3 +189,41 @@ linear comfort, frozen time, the full-size first frame at 30/60/144 fps, the
 heavy-beat order and the camera tick wiring.
 `shot.bat framing --impacts --timeout=180` renders the scripted sequence at
 30/60/144 Hz and writes `user://shots/framing/camera_impacts.json`.
+
+## Doorway continuity (September 29)
+
+Owner playtest: the camera jumped when walking between rooms. The engine
+hard-clamps the view to the camera limits, so every sudden change of the
+doorway limits (entering the lane, the room handoff, stepping sideways off
+the lane, overlapping doorways) moved the view by the whole change at once.
+
+- Walking is the only arrival that keeps the camera. The boundary poll
+  (`Game._poll_room_boundary`) calls `_enter_room(i, true, true)`. Every other
+  arrival (map and pocket travel, recall, respawn, loads, net snapshots,
+  chapter switches, short same-room teleports) snaps the lead, zoom, limits
+  and smoothing through `camera_framing.enter_room(g, false)`.
+- `camera_corridor.apply` eases each limit toward its doorway target at
+  `Balance.CAMERA_LIMIT_EASE_SPEED` (480 px/s, 8 px per 60 Hz frame). A
+  narrowing limit first drops to just outside the visible rect, which moves
+  nothing on screen. `limit_smoothed` stays off: the engine's hard clamp keeps
+  the view inside the drawn area during a combat zoom-out or a closing
+  envelope. The corridor preview is built only when the limits reach past the
+  room's own cell and headroom, and stays while the eased limits still do.
+- A doorway begins to open when the hero is within half the view plus the
+  walking lead of its wall, and opens its side only that far, so the limit
+  keeps pace with the view. Off the lane the envelope fades over the body/HUD
+  allowance. In the gap the whole pair envelope applies as before.
+- Overlapping approaches (small rooms on wide or tall canvases) hand over
+  through the room's own rect: the leading doorway keeps only its margin over
+  the runner-up instead of flipping between envelopes.
+
+`test_camera_corridor` (quick/full systems tier, via `test_framing`) covers the
+walked handoff, snapping arrivals, the per-frame limit cap and settling, and
+1 px continuity across overlapping doorways on emulated phone and tablet
+canvases. `shot.bat framing --transitions --fixed-fps=60 --timeout=900` walks
+real rooms through the boundary poll at 1280x720, 1280x960 and 1560x720 (fresh
+lazy builds on each canvas, a sideways pass by each doorway, a small-room
+pass-through when ch1 has one), checks teleport and chapter snaps, then runs
+the quick systems and pause sections in the same engine. It prints `CAMERA TRANSITIONS PASS` and
+`CAMERA BUNDLE QUICK PASS` separately; receipt
+`user://shots/framing/transitions.json`.

@@ -741,6 +741,15 @@ recovery; receipt `user://shots/framing/camera_impacts.json`. The envelope math
 (`test_framing.shake_contracts`) also runs in the quick/full systems tier.
 See COMBAT_FRAMING.md.
 
+Camera transition QA: `shot.bat framing --transitions --fixed-fps=60 --timeout=900`
+walks real doorways through the production boundary poll at 1280x720, 1280x960
+and 1560x720 (fresh lazy builds, sideways passes, small-room pass-through), bounds
+the per-frame camera move by `CAMERA_TRANSITION_MAX_PAN_SPEED`, checks that
+teleports and chapter loads snap, then runs the quick systems and pause
+sections in the same engine (`CAMERA TRANSITIONS PASS`, `CAMERA BUNDLE QUICK
+PASS`, then `CAMERA TRANSITION BUNDLE PASS`). Receipt
+`user://shots/framing/transitions.json`. See COMBAT_FRAMING.md.
+
 Journal guardian QA: `shot.bat menu_navigation --quest-guardian --timeout=240`
 uses real reader input and controlled guardian metadata. Baseline requires exactly
 three false-clear strings and one missing reader rebuild; all other controls stay
@@ -1197,7 +1206,8 @@ cancellation, nearby-enemy gate, touch and repaint cleanup.
 `shot_framing` (`ShotRig`: target camera before/after east/north, damage trails,
 exploration and comfort controls. `--fault-probe` runs the finite-motion
 regression only; `--impacts` runs the camera impact capture (see Camera impact
-QA). `shot.bat framing --timeout=240`) ·
+QA); `--transitions` runs the doorway camera bundle (see Camera transition QA).
+`shot.bat framing --timeout=240`) ·
 `shot_quality` (`ShotRig`: paused/resumed/cancelled ground attacks and guest
 visual-only damage contracts; keep-floor before/after; early/late warnings on
 four terrains; targeted foliage restoration; queued announcements across

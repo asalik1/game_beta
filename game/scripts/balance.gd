@@ -504,6 +504,13 @@ const CAMERA_FRAME_MIN_ZOOM := 0.84
 const CAMERA_FRAME_MARGIN := Vector2(110, 105)
 const CAMERA_FRAME_BODY := Vector2(60, 75)
 const CAMERA_FRAME_TELEPORT := 360.0
+# Walk regression ceiling in world px/s (15 px per 60 Hz frame).
+const CAMERA_TRANSITION_MAX_PAN_SPEED := 900.0
+# Doorway limit easing, world px/s (8 px per 60 Hz frame). The engine keeps
+# its hard clamp (the view never shows past the drawn area), so this caps how
+# fast a doorway envelope opening, closing or handing over can push the view.
+# Explicit arrivals (travel, respawn, loads) snap instead.
+const CAMERA_LIMIT_EASE_SPEED := 480.0
 const TARGET_DAMAGE_HOLD := 0.4
 const TARGET_DAMAGE_DRAIN := 0.6        # bar fractions / second after hold
 # Readability + depth pass (2026-08-19 review, owner prompts: "sometimes it's a
