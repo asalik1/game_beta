@@ -808,6 +808,12 @@ pop/open previews, and two ordinary W-key pickup controls with exact payout
 and cleanup. `--baseline` expects the four original contact findings. Isolate
 APPDATA; mobile flags above select host rendering, not touch pickup.
 
+Tree contact QA: add `--tree-contacts` to `prop_shadows` (`--timeout=300`)
+for matched before/after captures of one frozen darkwood fixture (three
+scatter trees, the darkwood_hollow composite and a rock control), plus the
+full `test_prop_shadows` contract and a lore-tree NPC trunk check. See
+PROP_SHADOWS.md "Tree trunk contacts".
+
 Optional guardian QA: `shot.bat optional_discovery --timeout=420` checks real
 pocket/Unlisted entry, death and reentry with both campaign completion states,
 charted journal identities and actual map buttons. `--baseline` records the old

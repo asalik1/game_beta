@@ -579,6 +579,15 @@ const CAST_SHADOW_FOOT_BAND := 0.25
 const CAST_SHADOW_HUG_OFFSET_SCALE := 0.07
 const CAST_SHADOW_HUG_OFFSET_MIN := 5.0
 const CAST_SHADOW_HUG_OFFSET_MAX := 8.0
+# Trees ground their trunk, never a flattened copy of the entire canopy.
+const TREE_SHADOW_FOOT_BAND := 0.10
+# Root-band pixels at or below this alpha are export fringe, not trunk.
+const TREE_SHADOW_ALPHA_MIN := 0.5
+const TREE_SHADOW_WIDTH_SCALE := 1.35
+const TREE_SHADOW_WIDTH_MIN := 28.0
+const TREE_SHADOW_WIDTH_MAX := 88.0
+const TREE_SHADOW_CANOPY_FRACTION := 0.45
+const TREE_SHADOW_DEPTH := 0.38
 const FOOT_DUST_PERIOD := 0.22
 const FOOT_DUST_N := 2
 const FOOT_DUST_A := 0.55

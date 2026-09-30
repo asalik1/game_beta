@@ -15,7 +15,8 @@ cells and animated frames share the same measured geometry and frame cache.
 Atlas views have separate cache identities and include their draw margins;
 vertically flipped sprites measure their displayed lower footprint. A fitted
 broad shadow replaces the generic center ellipse, which otherwise still
-floated below diagonal groups and logs. Trunks and no-cast fallbacks retain it.
+floated below diagonal groups and logs. Narrow projected props and no-cast
+fallbacks retain it; canopy trees use the trunk contact described below.
 The source artwork, colliders and prop placement are unchanged.
 
 Lore objects made through the NPC interaction factory use the same scenery
@@ -79,3 +80,33 @@ Final acceptance, source pins, validation logs, visual manifests and commit
 identity are recorded in `chest-grounding-checkpoint-validation.json` there.
 Mobile validation uses the mobile source on the Windows host Compatibility
 renderer; it does not establish physical-device or touch-pickup behavior.
+
+## Tree trunk contacts — September 29, 2026
+
+Owner playtest: large trees threw no ground shadow while their sibling props
+did. Broad-rooted canopy art classified as a hugging copy, which hid the
+generic ellipse and left only a thin rim, and composite parts never cast.
+
+Canopy trees (`_canopy_tree`: the name contains `tree` and is not solid decor)
+now use a third mode, `trunk`, in `scripts/prop_shadow.gd`. It is a soft
+`shadow` ellipse, not a copy of the art, centred on the opaque root band: the
+bottom `TREE_SHADOW_FOOT_BAND` of the painted rows, counting only pixels above
+`TREE_SHADOW_ALPHA_MIN` alpha so export fringe cannot widen or shift it. Width
+is the root span times `TREE_SHADOW_WIDTH_SCALE`, capped at
+`TREE_SHADOW_CANOPY_FRACTION` of the canopy width and clamped to
+`TREE_SHADOW_WIDTH_MIN`/`MAX`; depth is `TREE_SHADOW_DEPTH` of the width. The
+generic prop ellipse is always hidden for trees, and the contact stays put
+while the canopy sways.
+
+Scatter trees, composite tree bases and parts, and lore trees built by the NPC
+interaction factory (the Hollow Oak's deadtree) all use it. Every other
+composite part (statues, pillars, cacti, rocks, braziers) now casts the same
+hugging or projected copy it gets standing alone. Each shadow sits below its
+source, and inside a composite below the lowest sunken part, so no rim or
+contact draws over a prop.
+
+`test_prop_shadows.run_trees` (quick tier) covers the factories, root-band
+position, trunk span, canopy cap, composite part coverage and layering, and
+the tree_green4 fringe. `shot.bat prop_shadows --tree-contacts` captures
+matched before/after frames of one frozen forest fixture and checks a lore
+tree NPC.

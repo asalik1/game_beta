@@ -1,10 +1,12 @@
 extends RefCounted
 ## Scenery shadows use the painted footprint, including frame padding and pose.
-## Wide bases keep a close contact rim; only narrow trunks project a figure.
+## Trees use soft trunk contacts; other props hug or project their silhouette.
 static var _shape_cache: Dictionary = {}
 
 
-static func shape(spr: Node2D) -> Dictionary:
+## `trunk` also measures the opaque root band that tree contacts sit on;
+## other callers skip that scan and cache their geometry separately.
+static func shape(spr: Node2D, trunk := false) -> Dictionary:
 	var tex: Texture2D = null
 	var hf := 1
 	var vf := 1
@@ -31,8 +33,8 @@ static func shape(spr: Node2D) -> Dictionary:
 	if tex is AtlasTexture:
 		atlas_view = "%s/%s" % [(tex as AtlasTexture).region, (tex as AtlasTexture).margin]
 	var flipped := bool(spr.get("flip_v"))
-	var key := "%s/%s/%d/%d/%d/%s/%s/%s" % [tex.get_instance_id(),
-		tex.get_rid().get_id(), hf, vf, frame, region, atlas_view, flipped]
+	var key := "%s/%s/%d/%d/%d/%s/%s/%s/%s" % [tex.get_instance_id(),
+		tex.get_rid().get_id(), hf, vf, frame, region, atlas_view, flipped, trunk]
 	if _shape_cache.has(key):
 		return _shape_cache[key]
 	var img: Image = tex.get_image()
@@ -52,6 +54,7 @@ static func shape(spr: Node2D) -> Dictionary:
 	if hf > 1 or vf > 1:
 		img = img.get_region(Rect2i(Vector2i(frame % hf, frame / hf) * cell_size, cell_size))
 	var used: Rect2i = img.get_used_rect()
+	var base := used
 	var ratio := 1.0
 	if used.size.x > 0 and used.size.y > 2:
 		# A perspective base occupies several rows: the very lowest edge alone
@@ -61,9 +64,64 @@ static func shape(spr: Node2D) -> Dictionary:
 		var band := Rect2i(used.position.x, band_y, used.size.x, band_h)
 		var width: int = img.get_region(band).get_used_rect().size.x
 		ratio = float(width) / float(used.size.x)
+	if trunk and used.size.x > 0 and used.size.y > 2:
+		var root_h := maxi(1, int(used.size.y * Balance.TREE_SHADOW_FOOT_BAND))
+		var root_band := Rect2i(used.position.x,
+			used.position.y if flipped else used.end.y - root_h, used.size.x, root_h)
+		base = _opaque_rect(img, root_band)
 	var result := {"size": Vector2(cell_size), "used": used, "ratio": ratio}
+	if trunk:
+		result["base"] = base
 	_shape_cache[key] = result
 	return result
+
+
+## Bounds of the clearly painted pixels inside `area`, in image coordinates.
+## get_used_rect counts any alpha above zero, so a near-invisible export
+## fringe (tree_green4 carries alpha-1 specks right of its roots) would widen
+## the trunk span and slide its contact off the trunk. The native used rect
+## bounds the scan; only its faint edge columns and rows are walked inward.
+static func _opaque_rect(img: Image, area: Rect2i) -> Rect2i:
+	var band := img.get_region(area)
+	var used := band.get_used_rect()
+	if not used.has_area():
+		return Rect2i(area.position, Vector2i.ZERO)
+	if band.is_compressed():
+		band.decompress()
+	band.convert(Image.FORMAT_RGBA8)
+	var data := band.get_data()
+	var stride := band.get_width() * 4
+	var cut := int(Balance.TREE_SHADOW_ALPHA_MIN * 255.0)
+	var x0 := used.position.x
+	var x1 := used.end.x - 1
+	var y0 := used.position.y
+	var y1 := used.end.y - 1
+	while x0 <= x1 and not _opaque_column(data, stride, x0, y0, y1, cut):
+		x0 += 1
+	if x0 > x1:
+		# Only faint pixels: keep the plain bounds rather than lose the contact.
+		return Rect2i(area.position + used.position, used.size)
+	while not _opaque_column(data, stride, x1, y0, y1, cut):
+		x1 -= 1
+	while not _opaque_row(data, stride, y0, x0, x1, cut):
+		y0 += 1
+	while not _opaque_row(data, stride, y1, x0, x1, cut):
+		y1 -= 1
+	return Rect2i(area.position + Vector2i(x0, y0), Vector2i(x1 - x0 + 1, y1 - y0 + 1))
+
+
+static func _opaque_column(data: PackedByteArray, stride: int, x: int, y0: int, y1: int, cut: int) -> bool:
+	for y in range(y0, y1 + 1):
+		if data[y * stride + x * 4 + 3] > cut:
+			return true
+	return false
+
+
+static func _opaque_row(data: PackedByteArray, stride: int, y: int, x0: int, x1: int, cut: int) -> bool:
+	for x in range(x0, x1 + 1):
+		if data[y * stride + x * 4 + 3] > cut:
+			return true
+	return false
 
 
 static func foot(spr: Node2D, geometry: Dictionary) -> Vector2:
@@ -79,12 +137,16 @@ static func foot(spr: Node2D, geometry: Dictionary) -> Vector2:
 	return at + Vector2(spr.get("offset"))
 
 
-static func attach(body: Node2D, spr: Node2D, base_y_override := NAN) -> void:
+static func attach(body: Node2D, spr: Node2D, base_y_override := NAN, trunk := false) -> void:
 	if Balance.CAST_SHADOW_A <= 0.0 or not (spr is Sprite2D or spr is AnimatedSprite2D):
 		return
-	var cast: Node2D = AnimatedSprite2D.new() if spr is AnimatedSprite2D else Sprite2D.new()
+	var cast: Node2D = AnimatedSprite2D.new() if spr is AnimatedSprite2D and not trunk else Sprite2D.new()
 	cast.set_meta("cast_shadow", true)
-	cast.z_index = -1
+	if trunk:
+		cast.set_meta("cast_shadow_mode", "trunk")
+	# Always beneath its own source: a sunken composite part (z < 0) would
+	# otherwise tie with its copy, and y-sort draws the lower copy on top.
+	cast.z_index = mini(-1, spr.z_index - 1)
 	body.add_child(cast)
 	body.move_child(cast, 0)
 	_sync(cast, spr, base_y_override)
@@ -111,6 +173,9 @@ static func _sync_if_alive(cast_ref: WeakRef, source_ref: WeakRef, base_y_overri
 
 
 static func _sync(cast: Node2D, spr: Node2D, base_y_override: float) -> void:
+	if cast.get_meta("cast_shadow_mode", "") == "trunk":
+		_sync_trunk(cast as Sprite2D, spr, base_y_override)
+		return
 	if spr is Sprite2D:
 		var source := spr as Sprite2D
 		var target := cast as Sprite2D
@@ -166,3 +231,27 @@ static func _sync(cast: Node2D, spr: Node2D, base_y_override: float) -> void:
 		opacity *= 0.9
 	cast.modulate = Color(0, 0, 0, opacity)
 	cast.set_meta("cast_shadow_mode", "projected" if projected else "hug")
+
+
+static func _sync_trunk(cast: Sprite2D, spr: Node2D, base_y_override: float) -> void:
+	var geometry := shape(spr, true)
+	var used: Rect2i = geometry["used"]
+	var base: Rect2i = geometry.get("base", used)
+	var canopy_w := used.size.x * spr.transform.x.length()
+	var width := clampf(minf(base.size.x * spr.transform.x.length() * Balance.TREE_SHADOW_WIDTH_SCALE,
+		canopy_w * Balance.TREE_SHADOW_CANOPY_FRACTION),
+		Balance.TREE_SHADOW_WIDTH_MIN, Balance.TREE_SHADOW_WIDTH_MAX)
+	# Use the lower painted band's centre, including source offset/mirroring.
+	# The soft ellipse stays on the ground while the authored canopy sways.
+	var ground := foot(spr, {"size": geometry["size"], "used": base})
+	cast.position = spr.transform * ground
+	if not is_nan(base_y_override):
+		cast.position.y = base_y_override
+	cast.texture = Art.tex("shadow")
+	cast.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	cast.scale = Vector2(width, width * Balance.TREE_SHADOW_DEPTH) / cast.texture.get_size()
+	cast.visible = spr.visible and used.has_area()
+	cast.modulate.a = spr.modulate.a * spr.self_modulate.a
+	for child in cast.get_parent().get_children():
+		if child is CanvasItem and child.has_meta("prop_contact_shadow"):
+			child.visible = false

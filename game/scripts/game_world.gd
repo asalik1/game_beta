@@ -2350,7 +2350,8 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	# this factory also hosts citizens. The mill keeps its existing footprint.
 	if sprite_name != "mill" and DisplayServer.get_name() != "headless":
 		if scenery_prop:
-			_prop_cast_shadow(npc, spr)
+			# Lore trees (the Hollow Oak's deadtree) get the scatter trees' trunk contact.
+			_prop_cast_shadow(npc, spr, NAN, _canopy_tree(Terrains.prop_base(sprite_name)))
 		else:
 			cast_shadow_for(npc, spr, 1.0, true)
 	npc.add_child(spr)
@@ -3348,10 +3349,9 @@ func _add_obstacle(sprite_name: String, pos: Vector2, visual_variation := 1.0) -
 	spr.add_to_group("structure_occluders")
 	if is_tree:
 		spr.add_to_group("combat_foliage")
-	# Broad bases keep a close contact rim; narrow trunks project from their
-	# visible feet. The shared helper follows both static-strip and animated
-	# frames and retains foliage sway.
-	_prop_cast_shadow(body, spr)
+	# Trees keep a bounded soft trunk contact; other broad bases keep a close
+	# silhouette rim. The shared helper follows static and animated feet.
+	_prop_cast_shadow(body, spr, NAN, is_tree)
 	body.add_child(spr)
 	if sprite_name == "camp_bonfire":
 		_attach_fire_audio(body)  # an open camp fire crackles like a hearth
@@ -3373,9 +3373,9 @@ func _add_fire_pool(body: Node2D, source: Node2D, pos: Vector2) -> void:
 
 
 ## Shared scenery shadow geometry: broad painted footprints keep a contact rim;
-## narrow trunks project from their opaque feet. See prop_shadow.gd.
-func _prop_cast_shadow(body: Node2D, spr: Node2D, base_y_override := NAN) -> void:
-	preload("res://scripts/prop_shadow.gd").attach(body, spr, base_y_override)
+## trees use bounded trunk contacts. See prop_shadow.gd.
+func _prop_cast_shadow(body: Node2D, spr: Node2D, base_y_override := NAN, trunk := false) -> void:
+	preload("res://scripts/prop_shadow.gd").attach(body, spr, base_y_override, trunk)
 
 
 func _shadow_bottom_ratio(spr: Node2D) -> float:
@@ -3673,7 +3673,8 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 	# safe base-hugging shadow instead of a giant projection. `"cast": false`
 	# opts a def out.
 	if def.get("cast", true):
-		_prop_cast_shadow(body, base_spr, 12.0)
+		_prop_cast_shadow(body, base_spr, 12.0,
+			_canopy_tree(Terrains.prop_base(base_key)))
 	body.add_child(base_spr)
 	var target_w: float = float(def.get("w", 180.0))
 
@@ -3706,8 +3707,22 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 			# them — no occlusion probe, and z keeps them under every actor.
 			ps.position = poff
 			ps.z_index = pz
+		# Every rooted part grounds itself the way the same art does standing
+		# alone: trees get the trunk contact, statues/pillars/rocks the
+		# hugging or projected copy. Previously only the main sprite cast.
+		if def.get("cast", true):
+			_prop_cast_shadow(body, ps, NAN,
+				_canopy_tree(Terrains.prop_base(String(part["sprite"]))))
 		body.add_child(ps)
 		part_visuals.append(ps)
+	# All shadows sit beneath the composite's lowest sprite, so no rim or
+	# trunk contact can y-sort over a sunken part's art.
+	var lowest_z := 0
+	for part in def.get("parts", []):
+		lowest_z = mini(lowest_z, int(part.get("z", 0)))
+	for child in body.get_children():
+		if child.has_meta("cast_shadow"):
+			child.z_index = mini(child.z_index, lowest_z - 1)
 
 	# Footprint collider(s): a composite of rects/circles. Default = one rect
 	# spanning ~62% of the base width, matching _add_building.

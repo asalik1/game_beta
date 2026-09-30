@@ -15,6 +15,8 @@ static func run(_r: Node) -> String:
 		result = _animated(g, holder)
 	if result == "":
 		result = run_sampling()
+	if result == "":
+		result = run_trees()
 	# Every returned failure uses this same cleanup. No fixture enters the live
 	# scene tree; manual frame changes still emit AnimatedSprite2D.frame_changed.
 	holder.free()
@@ -22,6 +24,171 @@ static func run(_r: Node) -> String:
 	if result == "":
 		print("ok: prop shadow footprints, opaque-foot transforms, selected strip/atlas cells and animation lifetime")
 	return result
+
+
+## Exercise the factories, not just detached sprites: broad-rooted tree art
+## used to hide the ellipse, and composite parts never received a cast.
+static func run_trees() -> String:
+	var cache := Art._cache.duplicate()
+	var anim_cache := Art._anim_cache.duplicate()
+	var frames_cache := Art._prop_frames_cache.duplicate()
+	var wind := Art._wind_mat
+	var shadows := preload("res://scripts/prop_shadow.gd")
+	var shape_cache: Dictionary = shadows._shape_cache.duplicate()
+	var g := Game.new()
+	var pads: Dictionary = g._pad_cache.duplicate()
+	var holder := Node2D.new()
+	g.world = holder
+	var result := _trees(g)
+	holder.free()
+	g._pad_cache = pads
+	g.free()
+	Art._cache = cache
+	Art._anim_cache = anim_cache
+	Art._prop_frames_cache = frames_cache
+	Art._wind_mat = wind
+	shadows._shape_cache = shape_cache
+	if result == "":
+		print("TREE SHADOW CONTRACT PASS: factory trees on their root band and trunk, canopy-capped size, every composite part grounded under sunken parts, fringe-proof trunk span, frames and unchanged rock/stump")
+	return result
+
+
+static func _trees(g: Game) -> String:
+	for name in ["tree_green", "tree_autumn", "tree_gnarled", "tree_teal", "tree_spore",
+			"tree_snow", "tree_winter", "deadtree", "grave_deadtree"]:
+		for variation in [0.85, 1.15]:
+			var body := g._add_obstacle(name, Vector2(100, 100), variation)
+			var cast := _cast(body) as Sprite2D
+			var error := tree_contact_error(cast)
+			if error != "": return name + ": " + error
+			var source: Node2D = null
+			for child in body.get_children():
+				if child is Node2D and child.is_in_group("combat_foliage"):
+					source = child
+				if child.has_meta("prop_contact_shadow") and child.visible:
+					return name + ": duplicate legacy ellipse still visible"
+			if source == null or cast.z_index >= source.z_index:
+				return name + ": trunk shadow is not below its canopy"
+			error = trunk_placement_error(cast, source)
+			if error != "": return name + ": " + error
+			if source is AnimatedSprite2D:
+				for frame in source.sprite_frames.get_frame_count(source.animation):
+					source.frame = frame
+					error = tree_contact_error(cast)
+					if error == "": error = trunk_placement_error(cast, source)
+					if error != "": return name + ": animated " + error
+			body.free()
+	# Every rooted part casts (trees the trunk contact, statues/pillars/cacti
+	# their copy), and every shadow stays under the composite's sunken parts.
+	for name in ["village_grove", "darkwood_hollow", "marsh_islet", "ice_waymarker", "grave_memorial",
+			"spore_cathedral", "keep_courtyard", "desert_hoodoo"]:
+		var body := g._add_structure(name, Vector2.ZERO)
+		var def: Dictionary = Terrains.STRUCTURES[name]
+		var parts: Array = def.get("parts", [])
+		var expected := int(g._canopy_tree(Terrains.prop_base(String(def.sprite))))
+		var lowest := 0
+		for part in parts:
+			expected += int(g._canopy_tree(Terrains.prop_base(String(part.sprite))))
+			lowest = mini(lowest, int(part.get("z", 0)))
+		var found := 0
+		var casts := 0
+		for child in body.get_children():
+			if not child.has_meta("cast_shadow"):
+				continue
+			casts += 1
+			if child.z_index >= lowest:
+				return name + ": a part shadow can sort over a sunken part"
+			if child.get_meta("cast_shadow_mode", "") == "trunk":
+				found += 1
+				var error := tree_contact_error(child as Sprite2D)
+				if error != "": return name + ": " + error
+		if found != expected: return name + ": missing composite trunk contacts"
+		if casts != 1 + parts.size(): return name + ": a rooted composite part has no ground shadow"
+		body.free()
+	var fringe_error := _fringe(g)
+	if fringe_error != "": return fringe_error
+	for name in ["rock", "tree_stump"]:
+		var body := g._add_obstacle(name, Vector2.ZERO)
+		if _cast(body).get_meta("cast_shadow_mode", "") != "hug":
+			return name + ": non-canopy prop lost its existing hugging shadow"
+		body.free()
+	return ""
+
+
+static func tree_contact_error(cast: Sprite2D) -> String:
+	if cast == null or cast.get_meta("cast_shadow_mode", "") != "trunk" or not cast.visible:
+		return "tree needs a visible soft trunk contact shadow"
+	var size := cast.texture.get_size() * cast.scale
+	if cast.texture != Art.tex("shadow") or cast.material != null:
+		return "tree shadow copied the canopy or its sway material"
+	if size.x < Balance.TREE_SHADOW_WIDTH_MIN - 0.01 or size.x > Balance.TREE_SHADOW_WIDTH_MAX + 0.01 \
+			or not is_equal_approx(size.y, size.x * Balance.TREE_SHADOW_DEPTH):
+		return "tree shadow escaped its trunk size class"
+	if cast.z_index <= -8 or cast.z_index >= 0:
+		return "tree shadow escaped the floor/prop layer interval"
+	return ""
+
+
+## Where the contact lands and how big it is: inside the painted root band
+## (not the sprite centre or canopy), within the trunk's opaque span, and
+## never wider than the canopy cap allows.
+static func trunk_placement_error(cast: Sprite2D, source: Node2D) -> String:
+	var shadows := preload("res://scripts/prop_shadow.gd")
+	var shape: Dictionary = shadows.shape(source, true)
+	var used: Rect2i = shape["used"]
+	var base: Rect2i = shape.get("base", used)
+	var size: Vector2 = shape["size"]
+	var roots: Vector2 = source.transform * shadows.foot(source, shape)
+	var band_h := used.size.y * Balance.TREE_SHADOW_FOOT_BAND * source.transform.y.length()
+	if absf(cast.position.y - roots.y) > band_h:
+		return "tree shadow left the painted root band"
+	var left: Vector2 = source.transform * shadows.foot(source,
+		{"size": size, "used": Rect2i(base.position, Vector2i(0, base.size.y))})
+	var right: Vector2 = source.transform * shadows.foot(source,
+		{"size": size, "used": Rect2i(Vector2i(base.end.x, base.position.y), Vector2i(0, base.size.y))})
+	if cast.position.x < minf(left.x, right.x) - 0.5 or cast.position.x > maxf(left.x, right.x) + 0.5:
+		return "tree shadow slid off its trunk"
+	var width := cast.texture.get_size().x * cast.scale.x
+	var canopy := used.size.x * source.transform.x.length()
+	if width > maxf(Balance.TREE_SHADOW_WIDTH_MIN, canopy * Balance.TREE_SHADOW_CANOPY_FRACTION) + 0.01:
+		return "tree shadow grew past its canopy cap"
+	return ""
+
+
+## tree_green4 ships alpha-1 specks right of its roots. They must not pull the
+## contact off the trunk: compare it with an independent opaque-pixel scan.
+static func _fringe(g: Game) -> String:
+	if not Art.has_sprite("tree_green4"):
+		return ""
+	var src := Sprite2D.new()
+	src.texture = Art.tex("tree_green4")
+	var render := float(g._scenery_render_scale(src, "tree_green", 1.0))
+	src.scale = Vector2(render, render)
+	var body := Node2D.new()
+	g.world.add_child(body)
+	body.add_child(src)
+	g._prop_cast_shadow(body, src, NAN, true)
+	var cast := _cast(body) as Sprite2D
+	var img := src.texture.get_image()
+	if img.is_compressed():
+		img.decompress()
+	var used := img.get_used_rect()
+	var rows := maxi(1, int(used.size.y * Balance.TREE_SHADOW_FOOT_BAND))
+	var left := -1
+	var right := -1
+	for x in range(used.position.x, used.end.x):
+		for y in range(used.end.y - rows, used.end.y):
+			if img.get_pixel(x, y).a > Balance.TREE_SHADOW_ALPHA_MIN:
+				if left < 0:
+					left = x
+				right = x
+				break
+	if cast == null or left < 0:
+		return "tree_green4 fringe fixture has no trunk contact"
+	var trunk: Vector2 = src.transform * (Vector2((left + right + 1) * 0.5, 0.0) - src.texture.get_size() * 0.5)
+	if absf(cast.position.x - trunk.x) > 3.0:
+		return "tree_green4 contact follows its invisible fringe (%.1f px off the trunk)" % (cast.position.x - trunk.x)
+	return ""
 
 
 ## Fresh production visuals, independent of earlier suite/world state.
