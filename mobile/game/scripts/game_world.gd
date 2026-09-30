@@ -1031,7 +1031,8 @@ func _install_shortcut() -> void:
 ## _process boundary poll, pocket hops, map travel): a first visit then shows
 ## its card over live gameplay instead of fading from black. Rebuild-time
 ## callers (boot, load, chapter switch, net snapshot, respawn) keep default.
-func _enter_room(i: int, live := false) -> void:
+## Only the boundary poll opts into `walked`; live map/pocket hops still snap.
+func _enter_room(i: int, live := false, walked := false) -> void:
 	if i < 0 or i >= zone_count:
 		return
 	var prev := cur_room
@@ -1051,12 +1052,16 @@ func _enter_room(i: int, live := false) -> void:
 		var nb := neighbor(i, dir)
 		if nb >= 0:
 			door_seen[nb] = true
-	# Camera follows playable bounds plus the north wall's upward silhouette.
-	var r := WallSurface.view_bounds(self, i, play_rect(i))
-	camera.limit_left = int(r.position.x)
-	camera.limit_top = ceili(r.position.y)   # never above the silhouette's (fractional) top
-	camera.limit_right = int(r.end.x)
-	camera.limit_bottom = int(r.end.y)
+	# Keep the corridor envelope during a walk; all other arrivals snap.
+	# Dedicated hosts have no local camera subject.
+	if is_instance_valid(local_player):
+		camera_framing.enter_room(self, walked)
+	else:
+		var r := WallSurface.view_bounds(self, i, play_rect(i))
+		camera.limit_left = int(r.position.x)
+		camera.limit_top = ceili(r.position.y)
+		camera.limit_right = int(r.end.x)
+		camera.limit_bottom = int(r.end.y)
 	if room_safe(i):
 		last_safe_room = i
 	var terrain := Terrains.get_terrain(terrain_by_zone[i])
@@ -1599,8 +1604,11 @@ func _spawn_risk_events(i: int) -> void:
 	rng.seed = wander_seed * 53 + i * 947 + chapter_id.hash() % 6659
 	if room_type(i) in ["social", "dead_end"]:
 		if rng.randf() < Balance.SHRINE_ROOM_CHANCE and not get_flag(_shrine_flag(i), false):
-			_gamble_shrine_node(i, room_center(i)
-				+ Vector2(rng.randf_range(-110.0, 110.0), rng.randf_range(-70.0, 70.0)))
+			# A short small room's door sits close to its centre: keep the
+			# pillar off that door's threshold.
+			_gamble_shrine_node(i, preload("res://scripts/door_threshold.gd").clear_point(self, i,
+				room_center(i) + Vector2(rng.randf_range(-110.0, 110.0), rng.randf_range(-70.0, 70.0)),
+				Balance.DOOR_THRESHOLD_OFFER_RADIUS))
 
 
 ## The cursed chest offers itself AT THE DOOR (playtest 2026-07-07): it
@@ -1622,7 +1630,8 @@ func _offer_cursed_chest(i: int) -> void:
 		return
 	var toward: Vector2 = room_center(i) - player.global_position
 	var dir := toward.normalized() if toward.length() > 1.0 else Vector2.RIGHT
-	_cursed_chest_node(i, player.global_position + dir * 150.0)
+	_cursed_chest_node(i, preload("res://scripts/door_threshold.gd").clear_point(
+		self, i, player.global_position + dir * 150.0, Balance.DOOR_THRESHOLD_OFFER_RADIUS))
 
 
 ## A buried chest in some dead ends (exploration premium): invisible
@@ -1639,8 +1648,9 @@ func _spawn_hidden_cache(i: int) -> void:
 		return
 	var room := i
 	var tier := "gold" if rng.randf() < Balance.HIDDEN_CACHE_GOLD_TIER else "silver"
-	var chest := Chest.drop(self, tier,
-		room_center(i) + Vector2(rng.randf_range(-220.0, 220.0), rng.randf_range(-130.0, 130.0)))
+	var chest := Chest.drop(self, tier, preload("res://scripts/door_threshold.gd").clear_point(self, i,
+		room_center(i) + Vector2(rng.randf_range(-220.0, 220.0), rng.randf_range(-130.0, 130.0)),
+		Balance.DOOR_THRESHOLD_OFFER_RADIUS))
 	chest.bury()
 	chest.on_open = func() -> void:
 		set_flag(_hidden_flag(room))
@@ -1876,7 +1886,9 @@ func _road_card_node(i: int, id: String) -> void:
 	var room := i
 	var toward: Vector2 = room_center(i) - player.global_position
 	var dir := toward.normalized() if toward.length() > 1.0 else Vector2.RIGHT
-	var pos := clamp_to_zone(player.global_position + dir * 150.0, player.global_position)
+	var pos := preload("res://scripts/door_threshold.gd").clear_point(self, i,
+		clamp_to_zone(player.global_position + dir * 150.0, player.global_position),
+		Balance.DOOR_THRESHOLD_OFFER_RADIUS)
 	var npc := _make_npc(String(card["sprite"]), pos,
 		String(card.get("prompt", "E — A stranger")), Callable())
 	npc.set_meta("road_context", {"chapter": chapter_id, "seed": wander_seed,
@@ -2345,7 +2357,8 @@ func _make_npc(sprite_name: String, pos: Vector2, prompt_text: String, action: C
 	# this factory also hosts citizens. The mill keeps its existing footprint.
 	if sprite_name != "mill" and DisplayServer.get_name() != "headless":
 		if scenery_prop:
-			_prop_cast_shadow(npc, spr)
+			# Lore trees (the Hollow Oak's deadtree) get the scatter trees' trunk contact.
+			_prop_cast_shadow(npc, spr, NAN, _canopy_tree(Terrains.prop_base(sprite_name)))
 		else:
 			cast_shadow_for(npc, spr, 1.0, true)
 	npc.add_child(spr)
@@ -2457,16 +2470,11 @@ func _canopy_tree(base: String) -> bool:
 	return base.contains("tree") and not Terrains.SOLID_DECOR.has(base)
 
 
-## Living scenery shares one restrained wind language. The earlier pass only
-## moved large trees plus two flower types, leaving reed beds and undergrowth
-## frozen like cardboard beneath a moving canopy.
-## (2026-08-18) Mushrooms and toadstools came OFF this list: a fungus has no
-## leaves to catch wind, and the sway read as the prop "shifting position"
-## (owner, spore/marsh rooms). Wind is for foliage — trees, bushes, grass,
-## flowers, reeds.
+## Trees retain their authored canopy loop and shared wind-shear lean.
+## The same foliage allow-list gives understory an interaction-only material
+## in _prop_visual; fungi, stumps and rigid scenery remain excluded.
 func _wind_scenery(name: String) -> bool:
-	return _canopy_tree(name) or name.begins_with("bush") \
-		or name.begins_with("grass") or name in ["flower", "cattail", "frost_reeds"]
+	return _canopy_tree(name) or preload("res://scripts/foliage_rustle.gd").understory(name)
 
 
 ## CANOPY vs FRONT — the "stall pasted on a tree" bug (owner 2026-08-19: a
@@ -2867,6 +2875,7 @@ func _spawn_scenery(zi: int) -> void:
 		var dside: int = dsp[1]
 		if _reserved_blocks(reserved, dcenter - origin):
 			continue
+		var dmoved := 0   # threshold-displaced members: re-rolled, not counted
 		for k in dclump:
 			var dpos := dcenter
 			if k > 0:
@@ -2878,6 +2887,10 @@ func _spawn_scenery(zi: int) -> void:
 				# takes a collider in there).
 				if _reserved_blocks(reserved, dpos - origin):
 					continue
+			if preload("res://scripts/door_threshold.gd").intersects(road.thresholds,
+					preload("res://scripts/door_threshold.gd").scatter_footprint(self, decor_name, dpos, true)):
+				dmoved += 1
+				continue
 			var decor_base := Terrains.prop_base(decor_name)
 			# Decor with real VOLUME (a domed cap, a stump, a post) spawns as a
 			# small OBSTACLE — collider + y-sort + shadow — instead of a
@@ -2907,11 +2920,11 @@ func _spawn_scenery(zi: int) -> void:
 				spr.position.y -= _visual_size(spr).y * decor_scale * 0.5 - 5.0
 			spr.z_index = -8
 			_apply_scenery_variation(spr, decor_base, dpos)
-			if _wind_scenery(decor_base):
+			if _wind_scenery(decor_base) and not preload("res://scripts/foliage_rustle.gd").understory(decor_base):
 				spr.material = Art.wind_material()
 			world.add_child(spr)
 			zone_scenery[zi].append(spr)
-		decor_n += dclump
+		decor_n += dclump - dmoved
 
 	# Colliding obstacles, kept off the road band and the door lanes.
 	var obstacles: Array = terrain.get("obstacles", ["rock"]) if terrain_preview \
@@ -2936,8 +2949,11 @@ func _spawn_scenery(zi: int) -> void:
 			if _reserved_blocks(reserved, bpos):   # never build on the river or a hazard
 				bok = false
 			if bok:
-				placed.append(bpos)
 				var bnode := _add_building(String(bname), origin + bpos)
+				if preload("res://scripts/door_threshold.gd").body_blocked(road.thresholds, bnode):
+					bnode.free()
+					continue
+				placed.append(bpos)
 				zone_scenery[zi].append(bnode)
 				fronts.append(_front_of(bnode, bpos))
 				break
@@ -2969,8 +2985,11 @@ func _spawn_scenery(zi: int) -> void:
 			if _reserved_blocks(reserved, spos):   # never place the landmark on water or a hazard
 				sok = false
 			if sok:
-				placed.append(spos)
 				var landmark_node := _add_structure(String(sname), origin + spos)
+				if preload("res://scripts/door_threshold.gd").body_blocked(road.thresholds, landmark_node):
+					landmark_node.free()
+					continue
+				placed.append(spos)
 				landmark_node.set_meta("terrain_landmark", String(sname))
 				zone_scenery[zi].append(landmark_node)
 				if not _structure_is_tree(String(sname)):
@@ -2999,6 +3018,9 @@ func _spawn_scenery(zi: int) -> void:
 	var count := int(ceil(float(obstacle_count) * Balance.SCENERY_OBSTACLE_MULT * area_frac * dens))
 	var placed_n := 0
 	var guard := 0
+	# The old count*3 ceiling bounds a saturated room's cost; a failed centre
+	# search no longer eats a slot, so a prop the thresholds displaced gets its
+	# spare iterations to relocate instead of vanishing.
 	while placed_n < count and guard < count * 3:
 		guard += 1
 		var prop: String = obstacles[rng.randi_range(0, obstacles.size() - 1)]
@@ -3021,7 +3043,7 @@ func _spawn_scenery(zi: int) -> void:
 			var sp := _scatter_point(rng, pw, ph, 90.0, max_x, 100.0, ph - 100.0, hug)
 			var pos: Vector2 = sp[0]
 			side = sp[1]
-			if _lane_blocked(road, pos):
+			if _lane_blocked(road, pos, preload("res://scripts/door_threshold.gd").scatter_footprint(self, prop, origin + pos)):
 				continue  # the road and both door lanes stay open
 			var ok := not _reserved_blocks(reserved, pos)
 			for other in placed:
@@ -3040,7 +3062,6 @@ func _spawn_scenery(zi: int) -> void:
 				got = true
 				break
 		if not got:
-			placed_n += 1  # couldn't fit this one; don't spin forever
 			continue
 		# Place the clump: centre first, then members on a tighter intra-clump
 		# spacing so a stand reads dense without canopies overlapping.
@@ -3051,7 +3072,7 @@ func _spawn_scenery(zi: int) -> void:
 				mpos = center + _clump_jitter(rng, side)   # stretched along a hugged wall
 				mpos.x = clampf(mpos.x, 90.0, max_x)
 				mpos.y = clampf(mpos.y, 100.0, ph - 100.0)
-				if _lane_blocked(road, mpos):
+				if _lane_blocked(road, mpos, preload("res://scripts/door_threshold.gd").scatter_footprint(self, prop, origin + mpos)):
 					continue
 				# The jitter reaches further than the clearance the accepted centre
 				# had, so a member can land back inside a reservation.
@@ -3069,9 +3090,11 @@ func _spawn_scenery(zi: int) -> void:
 				if not okc:
 					continue
 			placed.append(mpos)
-			zone_scenery[zi].append(_add_obstacle(
+			var obstacle_node := _add_obstacle(
 				prop, origin + mpos,
-				rng.randf_range(Balance.SCENERY_SCALE_JITTER.x, Balance.SCENERY_SCALE_JITTER.y)))
+				rng.randf_range(Balance.SCENERY_SCALE_JITTER.x, Balance.SCENERY_SCALE_JITTER.y))
+			obstacle_node.set_meta("scatter_obstacle", true)  # density audits count this loop only
+			zone_scenery[zi].append(obstacle_node)
 			if Terrains.is_unique_prop(prop_base):
 				unique_props_seen[prop_base] = true
 			placed_n += 1
@@ -3094,7 +3117,7 @@ func _spawn_scenery(zi: int) -> void:
 		var group_radius := float(spec.get("radius", Balance.SCENERY_ACCENT_GROUP_RADIUS))
 		for attempt in Balance.SCENERY_PLACE_TRIES:
 			var acenter := Vector2(rng.randf_range(90.0, max_x), rng.randf_range(100.0, ph - 100.0))
-			if _lane_blocked(road, acenter):
+			if _lane_blocked(road, acenter, preload("res://scripts/door_threshold.gd").scatter_footprint(self, aname, origin + acenter)):
 				continue
 			var aok := true
 			# Same reservation the obstacle loop honours: an authored landmark's
@@ -3125,7 +3148,7 @@ func _spawn_scenery(zi: int) -> void:
 						apos = acenter + Vector2.from_angle(angle) * distance
 						apos.x = clampf(apos.x, 90.0, max_x)
 						apos.y = clampf(apos.y, 100.0, ph - 100.0)
-						if _lane_blocked(road, apos):
+						if _lane_blocked(road, apos, preload("res://scripts/door_threshold.gd").scatter_footprint(self, aname, origin + apos)):
 							continue
 						# Members are thrown up to `group_radius` off the centre —
 						# re-roll one the centre's clearance does not cover.
@@ -3336,7 +3359,7 @@ func _add_obstacle(sprite_name: String, pos: Vector2, visual_variation := 1.0) -
 	elif is_tree:
 		spr.position = Vector2(0, -18)  # trunk base sits at the body origin
 	_apply_scenery_variation(spr, family_base, pos)
-	if _wind_scenery(family_base):
+	if _wind_scenery(family_base) and not preload("res://scripts/foliage_rustle.gd").understory(family_base):
 		spr.material = Art.wind_material()
 	# Scatter props y-sort over a hero north of their base exactly like
 	# buildings do, so they join the same occlusion-outline group (2026-07-28:
@@ -3348,10 +3371,9 @@ func _add_obstacle(sprite_name: String, pos: Vector2, visual_variation := 1.0) -
 	spr.add_to_group("structure_occluders")
 	if is_tree:
 		spr.add_to_group("combat_foliage")
-	# Broad bases keep a close contact rim; narrow trunks project from their
-	# visible feet. The shared helper follows both static-strip and animated
-	# frames and retains foliage sway.
-	_prop_cast_shadow(body, spr)
+	# Trees keep a bounded soft trunk contact; other broad bases keep a close
+	# silhouette rim. The shared helper follows static and animated feet.
+	_prop_cast_shadow(body, spr, NAN, is_tree)
 	body.add_child(spr)
 	if sprite_name == "camp_bonfire":
 		_attach_fire_audio(body)  # an open camp fire crackles like a hearth
@@ -3373,9 +3395,9 @@ func _add_fire_pool(body: Node2D, source: Node2D, pos: Vector2) -> void:
 
 
 ## Shared scenery shadow geometry: broad painted footprints keep a contact rim;
-## narrow trunks project from their opaque feet. See prop_shadow.gd.
-func _prop_cast_shadow(body: Node2D, spr: Node2D, base_y_override := NAN) -> void:
-	preload("res://scripts/prop_shadow.gd").attach(body, spr, base_y_override)
+## trees use bounded trunk contacts. See prop_shadow.gd.
+func _prop_cast_shadow(body: Node2D, spr: Node2D, base_y_override := NAN, trunk := false) -> void:
+	preload("res://scripts/prop_shadow.gd").attach(body, spr, base_y_override, trunk)
 
 
 func _shadow_bottom_ratio(spr: Node2D) -> float:
@@ -3420,6 +3442,8 @@ func _prop_visual(name: String) -> Node2D:
 		# Match the cast's downsampling; Art keeps legacy pixel art on nearest.
 		spr.texture_filter = Art.prop_texture_filter(texture_name)
 		vis = spr
+	if preload("res://scripts/foliage_rustle.gd").understory(Terrains.prop_base(name)):
+		preload("res://scripts/foliage_rustle.gd").attach(self, vis, _visual_size(vis))
 	return vis
 
 
@@ -3455,7 +3479,7 @@ func _structure_sprite(name: String, target_w: float, wind: bool) -> Node2D:
 	var native := _visual_size(vis)
 	var s := target_w / maxf(1.0, native.x)
 	vis.scale = Vector2(s, s)
-	if wind:
+	if wind and not preload("res://scripts/foliage_rustle.gd").understory(Terrains.prop_base(name)):
 		vis.material = Art.wind_material()
 	vis.set_meta("wpx", native.x * s)
 	vis.set_meta("hpx", native.y * s)
@@ -3671,7 +3695,8 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 	# safe base-hugging shadow instead of a giant projection. `"cast": false`
 	# opts a def out.
 	if def.get("cast", true):
-		_prop_cast_shadow(body, base_spr, 12.0)
+		_prop_cast_shadow(body, base_spr, 12.0,
+			_canopy_tree(Terrains.prop_base(base_key)))
 	body.add_child(base_spr)
 	var target_w: float = float(def.get("w", 180.0))
 
@@ -3704,8 +3729,22 @@ func _add_structure(name: String, pos: Vector2) -> StaticBody2D:
 			# them — no occlusion probe, and z keeps them under every actor.
 			ps.position = poff
 			ps.z_index = pz
+		# Every rooted part grounds itself the way the same art does standing
+		# alone: trees get the trunk contact, statues/pillars/rocks the
+		# hugging or projected copy. Previously only the main sprite cast.
+		if def.get("cast", true):
+			_prop_cast_shadow(body, ps, NAN,
+				_canopy_tree(Terrains.prop_base(String(part["sprite"]))))
 		body.add_child(ps)
 		part_visuals.append(ps)
+	# All shadows sit beneath the composite's lowest sprite, so no rim or
+	# trunk contact can y-sort over a sunken part's art.
+	var lowest_z := 0
+	for part in def.get("parts", []):
+		lowest_z = mini(lowest_z, int(part.get("z", 0)))
+	for child in body.get_children():
+		if child.has_meta("cast_shadow"):
+			child.z_index = mini(child.z_index, lowest_z - 1)
 
 	# Footprint collider(s): a composite of rects/circles. Default = one rect
 	# spanning ~62% of the base width, matching _add_building.
@@ -4027,17 +4066,13 @@ func _cell_curtain(i: int, full: Rect2, lt: Vector2, rb: Vector2, exits: Diction
 		else:
 			_wall(Rect2(x, full.position.y, TILE, full.size.y), wt, relief)
 
-## Foreground CANOPY overhang (P3, 2026-08-18): forest rooms hang a strip of
-## dark leaves along the north edge ABOVE the actors (z 20), so walking near
-## the top wall reads as passing under the trees — the one foreground layer the
-## flat top-down frame lacked. Left/right of the north door only (the door lane
+## CANOPY overhang: dark leaves dress the north wall behind rooted trees and
+## other tall props. Left/right of the north door only (the door lane
 ## and its torch pair stay clear); wall kind decides eligibility (mossy forest
 ## walls, hedges), the art is `canopy_forest.png` (seamless left-to-right).
 const CANOPY_WALLS := {"wall_moss": true, "wall_hedge": true}
-const CANOPY_H := 96.0        # world px of strip shown (art is 128 tall @1:1)
 const CANOPY_LIFT := 22.0     # how far above the wall's top edge the strip starts
 const CANOPY_ALPHA := 0.92
-const CANOPY_Z := 20
 const CANOPY_DOOR_CLEAR := 100.0   # px each side of the door lane left open (torch pair)
 func _canopy_overhang(i: int, r: Rect2, exits: Dictionary, gap: float) -> void:
 	# Free the old strip FIRST: a repaint from a forest to any other terrain
@@ -4062,18 +4097,30 @@ func _canopy_overhang(i: int, r: Rect2, exits: Dictionary, gap: float) -> void:
 	else:
 		spans.append(Rect2(r.position.x, 0, r.size.x, 0))
 	for sp in spans:
+		if sp.size.x <= 0.0:
+			continue
 		var s := Sprite2D.new()
 		s.texture = tex
 		s.centered = false
 		s.region_enabled = true
 		s.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-		# offset the region per span so the tile phase differs left/right
-		s.region_rect = Rect2(sp.position.x * 0.5, 0, sp.size.x, minf(CANOPY_H, tex.get_height()))
+		# offset the region per span so the tile phase differs left/right.
+		# The whole source height at unit scale: every painted row shows at its
+		# authored size (the art's fringe ends well above its transparent tail).
+		s.region_rect = Rect2(sp.position.x * 0.5, 0, sp.size.x, tex.get_height())
+		# T53: the strip used to draw at z=20 with hard top and span edges, so it
+		# cut green rectangles across tree crowns. It now sits behind rooted
+		# props (z WALL_CANOPY_Z) and fades in at its top and doorway ends.
+		var edge := ShaderMaterial.new()
+		edge.shader = preload("res://shaders/wall_canopy.gdshader")
+		edge.set_shader_parameter("extent", s.region_rect.size)
+		edge.set_shader_parameter("feather", Vector2.ONE * Balance.WALL_CANOPY_FEATHER)
+		s.material = edge
 		# Hang from the risen wall top, never over the floor of the room north.
 		var lift := minf(WallSurface.north_rise(self, i) + CANOPY_LIFT, WallSurface.north_headroom(self, i))
 		s.position = Vector2(sp.position.x, r.position.y - lift)
 		s.modulate = Color(1, 1, 1, CANOPY_ALPHA)
-		s.z_index = CANOPY_Z
+		s.z_index = Balance.WALL_CANOPY_Z
 		s.z_as_relative = false
 		world.add_child(s)
 		zone_canopy[i].append(s)
@@ -4947,7 +4994,9 @@ func road_layout(zi: int) -> Dictionary:
 		"meander": Balance.ROAD_MEANDER_PX if curved else 0.0,
 		"bounds": Vector4(pr.position.x - origin.x, pr.position.y - origin.y,
 			pr.end.x - origin.x, pr.end.y - origin.y),
-		"lane": lane, "band": band, "inset": pr.position - origin}
+		"lane": lane, "band": band, "inset": pr.position - origin,
+		"thresholds": preload("res://scripts/door_threshold.gd").zones(self, zi),
+		"origin": pr.position}
 
 
 ## Push a road_layout() into a road_band material.
@@ -5011,7 +5060,10 @@ static func road_curve(road: Dictionary, arm: int, along: float) -> Vector2:
 ## A colliding prop may not stand within ROAD_PROP_CLEAR of the straight door
 ## lanes, nor of the painted road's curved centreline (the reach widened with
 ## the band). `local` is play-rect-local, like _spawn_scenery's scatter points.
-static func _lane_blocked(road: Dictionary, local: Vector2) -> bool:
+static func _lane_blocked(road: Dictionary, local: Vector2, footprint := Rect2()) -> bool:
+	if preload("res://scripts/door_threshold.gd").intersects(road.get("thresholds", []),
+			footprint if footprint.has_area() else Rect2(local + road.get("origin", Vector2.ZERO), Vector2.ONE)):
+		return true
 	var p: Vector2 = local + (road["inset"] as Vector2)
 	var lane: Vector2 = road["lane"]
 	var clear := Balance.ROAD_PROP_CLEAR
@@ -5065,8 +5117,19 @@ func _decide_river(zi: int) -> void:
 		pr.position.x + pr.size.x * fx_pos - wpx / 2.0, pr.position.y, wpx, pr.size.y)}
 
 
-## A pool may not sit on the river or inside a corner bite (grown by its reach).
+## A pool may not sit on the river or inside a corner bite (grown by its reach),
+## on a door threshold, or under an authored prop body.
 func _pool_blocked(zi: int, pos: Vector2, radius := 0.0) -> bool:
+	if preload("res://scripts/door_threshold.gd").pool_blocked(self, zi, pos, radius):
+		return true
+	# Authored prop NPCs (Widow Sera's mill, the courier's bones) are built after
+	# the pools: keep their base and approach dry. Stable per room like the pools.
+	for npc_def in zones[zi].get("npcs", []):
+		if Terrains.is_prop_sprite(String(npc_def.get("sprite", ""))) \
+				and pos.distance_to(room_pos(zi, float(npc_def.get("x", ROOM_CENTER.x)),
+					float(npc_def.get("y", ROOM_CENTER.y)))) \
+				< Balance.AUTHORED_PROP_POOL_CLEAR + radius * Balance.DOOR_THRESHOLD_POOL_REACH:
+			return true
 	if preload("res://scripts/pocket_trial.gd").eligible(self, zi) \
 		and pos.distance_to(preload("res://scripts/pocket_trial.gd").point(self, zi)) < Balance.POCKET_PORTAL_CLEARANCE + radius:
 		return true
@@ -5100,7 +5163,7 @@ func _spawn_patches(zi: int) -> void:
 			# A hazard pool on the water (or inside a corner bite) makes no sense —
 			# keep it on dry, open ground.
 			var htries := 0
-			while _pool_blocked(zi, pos, float(spec["radius"][1])) and htries < 8:
+			while _pool_blocked(zi, pos, float(spec["radius"][1])) and htries < Balance.DOOR_THRESHOLD_PLACE_TRIES:
 				pos = Vector2(rng.randf_range(pr.position.x, pr.end.x), rng.randf_range(pr.position.y, pr.end.y))
 				htries += 1
 			if _pool_blocked(zi, pos, float(spec["radius"][1])):
@@ -5217,6 +5280,10 @@ func _floor_glow(parent: Node, pos: Vector2, color: Color, radius_px: float,
 
 
 ## Add a floor hazard (until < 0 = permanent, else expires at that time).
+## Never filtered here: a boss or mob pool lands where it was telegraphed (and
+## boss code tags hazards.back() right after this call). World-generated pools
+## keep off the door thresholds at their own placement (_pool_blocked, the
+## magma-rain pre-check).
 func _add_hazard(zi: int, type: String, pos: Vector2, radius: float, duration := -1.0, drift := Vector2.ZERO) -> void:
 	var spr := Sprite2D.new()
 	var strip: String = HAZARD_STRIP.get(type, "")

@@ -1,6 +1,7 @@
 extends Node2D
 ## Painted portal + host-owned arena rule. The pocket remains after victory
 ## so the player can collect the chest and leave by choice.
+const GroundTell := preload("res://scripts/ground_tell.gd")
 var game: Game
 var zone := -1
 var arena := false
@@ -203,7 +204,7 @@ func _refresh() -> void:
 		panel.get_node("Detail").text = "Victory · Collect your spoils" if game.pocket_done else \
 			"Bottles sealed · Class healing works" if game.pocket_id == "still_larder" else \
 			"Hot stone · %.1fs" % remaining if phase == 2 else \
-			"Floor heating · %.1fs" % remaining if phase == 1 else "Floor quiet · %.1fs" % remaining
+			"Floor heating up" if phase == 1 else "Floor quiet · %.1fs" % remaining
 		panel.get_node("Hint").text = "Use the exit stone when ready" if game.pocket_done else \
 			"Exit stone offers a free retreat" if game.pocket_id == "still_larder" else \
 			"Lure the guardian across hot stone" if phase == 2 else "Keep to the cold half or center seam"
@@ -214,7 +215,12 @@ func _draw() -> void:
 		return
 	var rect := hot_rect()
 	rect.position -= global_position
-	var rim := Color(1.0, 0.43, 0.18, 0.9) if phase == 2 else Color(1.0, 0.74, 0.3, 0.85)
+	# The warning is a ground danger tell: it bolds smoothly from a pale to the
+	# full hot-stone color, never a timer (DESIGN.md "Ground danger tells"),
+	# and ends on exactly the color the hot phase then holds.
+	var heat := Color(1.0, 0.43, 0.18)
+	var fuse_t := 1.0 if phase == 2 else 1.0 - remaining / Balance.POCKET_PULSE_WARNING
+	var rim := Color(GroundTell.ramp(heat, fuse_t), 0.9 if phase == 2 else 0.85)
 	draw_rect(rect, Color(rim, 0.16 if phase == 2 else 0.08), true)
 	draw_rect(rect, rim, false, 3.0)
 	# Slow, steady heat marks, with no flashes or screen-wide postprocessing.

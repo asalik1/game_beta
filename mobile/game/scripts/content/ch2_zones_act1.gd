@@ -36,7 +36,7 @@ const CHAPTER_ZONES := {
 			"npcs": [
 				# Playtest casting fix: the mill is a BUILDING (blue-doored
 				# sprite), not a villager standing in a bog.
-				{"sprite": "mill", "x": 1040, "y": 230, "prompt": "E — The Mill", "convo": "ch2_mill"},
+				{"sprite": "mill", "x": 1420, "y": 330, "prompt": "E — The Mill", "convo": "ch2_mill"},
 				{"sprite": "bones", "x": 800, "y": 990, "prompt": "E — A Fallen Courier", "convo": "ch2_courier"},
 			],
 		},

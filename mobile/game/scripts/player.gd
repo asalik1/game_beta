@@ -142,7 +142,7 @@ func _physics_process(delta: float) -> void:
 			storm_mult = uniq_k("echo_mult")
 			storm_time = uniq_k("echo_dur")
 			storm_tick = 0.0
-			game.spawn_text(global_position + Vector2(0, -60), "MOONTURN", Color(0.72, 0.78, 1.0))
+			game.spawn_combat_text(self, "MOONTURN", Color(0.72, 0.78, 1.0))
 			game.sfx("bow", 0.8)
 		for k in uniq_t:
 			uniq_t[k] = maxf(0.0, float(uniq_t[k]) - delta)
@@ -184,7 +184,7 @@ func _physics_process(delta: float) -> void:
 	heal_fx_cd = maxf(0.0, heal_fx_cd - delta)
 	if heal_accum >= 1.0 and heal_fx_cd <= 0.0:
 		heal_fx_cd = 0.3
-		game.spawn_text(global_position + Vector2(0, -46), "+%d" % int(heal_accum), Color(0.5, 1.0, 0.6))
+		game.spawn_combat_text(self, "+%d" % int(heal_accum), Color(0.5, 1.0, 0.6))
 		game.burst(global_position, Color(0.55, 1.0, 0.6), 5)
 		game.sfx("mend", 1.0, 0.0, -5.0)
 		heal_accum = 0.0
@@ -236,7 +236,7 @@ func _physics_process(delta: float) -> void:
 			var w_now: int = mini(int(float(wither[e]) / Balance.WITHER_STACK_EVERY),
 				Balance.WITHER_MAX_STACKS)
 			if w_now > w_before:
-				game.spawn_text(e.global_position + Vector2(0, -52),
+				game.spawn_combat_text(e,
 					"WITHER x%d" % w_now, Color(0.8, 0.45, 1.0))
 		for pos in booms:
 			_hex_detonate(pos)
@@ -568,7 +568,7 @@ func apply_freeze(dur: float, reason := "frozen") -> void:
 		freeze_reason = reason if reason in ["asleep", "stunned"] else "frozen"
 	frozen_time = maxf(frozen_time, dur * uniq_cc_mult)  # pants_ward: grounded
 	_uniq_grounded_beat()
-	game.spawn_text(global_position + Vector2(0, -50), freeze_reason.to_upper() + "!", Color(0.6, 0.85, 1.0))
+	game.spawn_combat_text(self, freeze_reason.to_upper() + "!", Color(0.6, 0.85, 1.0))
 	game.burst(global_position, Color(0.7, 0.9, 1.0), 14)
 
 
@@ -585,7 +585,7 @@ func apply_root(dur: float, reason := "rooted") -> void:
 		root_reason = "staggered" if reason == "staggered" else "rooted"
 	rooted_time = maxf(rooted_time, dur * uniq_cc_mult)  # pants_ward: grounded
 	_uniq_grounded_beat()
-	game.spawn_text(global_position + Vector2(0, -50), root_reason.to_upper() + "!", Color(0.5, 0.8, 0.6))
+	game.spawn_combat_text(self, root_reason.to_upper() + "!", Color(0.5, 0.8, 0.6))
 
 
 ## CHILLED: movement slowed to `mult` while inside a mob's frost aura.
@@ -948,7 +948,7 @@ func use_ability(slot: String) -> void:
 					and Classes.CLASSES[cls]["abilities"][slot].has("dmg") \
 					and uniq_take("pants_aggr"):
 				f *= 1.0 + uniq_gk("pants_aggr", "bonus")
-				game.spawn_text(global_position + Vector2(0, -66), "ADVANCE", Color(1.0, 0.8, 0.5))
+				game.spawn_combat_text(self, "ADVANCE", Color(1.0, 0.8, 0.5))
 				# Foe-targeted beats (wither/slow/...) can't fire at cast time —
 				# there is no foe yet, and they no-op'd silently (fix 2026-07-28).
 				# Defer them to the empowered cast's first landed hit; self-beats
@@ -1005,7 +1005,7 @@ func use_ability(slot: String) -> void:
 	if slot != "ult" and randf() < Stats.combo_curve(combo):
 		cds[slot] = 0.0
 		mp = minf(max_mp, mp + cost)
-		game.spawn_text(global_position + Vector2(0, -66), "COMBO!", Color(0.5, 1.0, 1.0))
+		game.spawn_combat_text(self, "COMBO!", Color(0.5, 1.0, 1.0))
 
 
 ## Deal damage to one enemy through the full stat pipeline.
@@ -1103,10 +1103,10 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			if s_passive() == "hartsbreath":
 				uniq_crits = int(uniq_k("crits"))
 				cds["a2"] = 0.0
-				game.spawn_text(global_position + Vector2(0, -60), "HART'S BREATH", Color(0.95, 1.0, 0.9))
+				game.spawn_combat_text(self, "HART'S BREATH", Color(0.95, 1.0, 0.9))
 			else:
 				next_crit = true
-				game.spawn_text(global_position + Vector2(0, -60), "LINED UP", Color(1, 0.7, 0.3))
+				game.spawn_combat_text(self, "LINED UP", Color(1, 0.7, 0.3))
 			game.sfx("blink", 1.2)
 			game.burst(global_position, Color(0.9, 1.0, 0.9), 10)
 		return
@@ -1129,7 +1129,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			/ float(Balance.TOXIN_MAX_STACKS)
 		if cls == "assassin":
 			if randf() < Balance.ENFEEBLE_ASSASSIN_EVA * tox_frac:
-				game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.55, 1.0, 0.6))
+				game.spawn_combat_text(self, "DODGE!", Color(0.55, 1.0, 0.6))
 				game.sfx("blink")
 				_uniq_on_evade(attacker)
 				return
@@ -1169,14 +1169,14 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		var result: Dictionary = Stats.resolve(amount, dmg_type,
 			attacker.crit, 1.5, pen, attacker.dex, res, eff_eva, critres)
 		if result["miss"]:
-			game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.7, 0.9, 1.0))
+			game.spawn_combat_text(self, "DODGE!", Color(0.7, 0.9, 1.0))
 			game.sfx("blink")
 			_uniq_on_evade(attacker)
 			return
 		# A GRAZE on the receiving end: their DEX is good enough that your
 		# evasion only clipped the blow instead of voiding it (Stats.dex_tier).
 		if result.get("graze", false):
-			game.spawn_text(global_position + Vector2(0, -40), "GRAZE", Color(0.7, 0.9, 1.0))
+			game.spawn_combat_text(self, "GRAZE", Color(0.7, 0.9, 1.0))
 		amount = result["dmg"]
 		was_crit = result["crit"]
 		# helm_guard: the crest BLUNTS — the first enemy crit per icd sheds
@@ -1191,7 +1191,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			amount = amount * (1.0 + 0.5 * (1.0 - blunt)) / 1.5
 			if blunt >= 1.0:
 				was_crit = false
-			game.spawn_text(global_position + Vector2(0, -52), "BLUNTED", Color(0.8, 0.85, 1.0))
+			game.spawn_combat_text(self, "BLUNTED", Color(0.8, 0.85, 1.0))
 			_uniq_beat(uniq_gear("helm_guard"), attacker as Enemy)
 			if uniq_set_k("B", 4, "holy_blunt") > 0.0:
 				holy_charge = minf(atk * Balance.PALADIN_CHARGE_CAP, holy_charge + atk * 0.4)
@@ -1210,7 +1210,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 				# reads as the dodge it effectively is and arms no hurt gate.)
 				if tier == 0 or Stats.graze_through(pvp_dex, eff_eva) < Balance.GRAZE_MIN_THROUGH:
 					if true_amount <= 0.0:
-						game.spawn_text(global_position + Vector2(0, -40), "DODGE!", Color(0.7, 0.9, 1.0))
+						game.spawn_combat_text(self, "DODGE!", Color(0.7, 0.9, 1.0))
 						game.sfx("blink")
 						_uniq_on_evade(attacker)
 						return
@@ -1220,7 +1220,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 					amount = 0.0
 				else:
 					pvp_grazed = true
-					game.spawn_text(global_position + Vector2(0, -40), "GRAZE", Color(0.7, 0.9, 1.0))
+					game.spawn_combat_text(self, "GRAZE", Color(0.7, 0.9, 1.0))
 		if dmg_type != "true":
 			# PvP: the striker's pen crosses the wire and cuts our resistance here
 			# (pvp_pen; 0 for enemy hits, which resolve pen attacker-side above).
@@ -1241,7 +1241,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			and global_position.distance_to((attacker as Enemy).global_position) < 120.0 \
 			and randf() < uniq_k("chance") + _uniq_set_parry_add():
 		game.sfx("parry")
-		game.spawn_text(global_position + Vector2(0, -40), "PARRY!", Color(0.85, 0.9, 1.0))
+		game.spawn_combat_text(self, "PARRY!", Color(0.85, 0.9, 1.0))
 		game.burst(global_position, Color(0.85, 0.9, 1.0), 8)
 		hit_enemy(attacker as Enemy, uniq_k("riposte"), {})
 		return
@@ -1307,7 +1307,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		# hurt_cd already throttles hits to ~1.6/s, so the ramp is rate-limited.
 		if grit_stacks < int(grit_cap):
 			grit_stacks += 1
-			game.spawn_text(global_position + Vector2(0, -56), "GRIT x%d" % grit_stacks,
+			game.spawn_combat_text(self, "GRIT x%d" % grit_stacks,
 				Color(1.0, 0.75, 0.35))
 		grit_time = 6.0
 	# The Cover Between Worlds: a blow that would break you (below the
@@ -1333,7 +1333,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 		var vamp := attacker as Enemy
 		vamp.hp = minf(vamp.max_hp, vamp.hp + amount * Balance.AFFIX_LIFESTEAL_FRAC)
 		vamp.refresh_hp_bar()
-		game.spawn_text(vamp.global_position + Vector2(0, -50), "DRINKS", Color(0.9, 0.35, 0.55))
+		game.spawn_combat_text(vamp, "DRINKS", Color(0.9, 0.35, 0.55))
 	_uniq_on_hit_taken(amount, attacker)
 	_uniq_armor_on_hit_taken(amount, attacker, dmg_type, uniq_prev_sh)
 	game.fight_note_damage(amount, attacker)
@@ -1345,9 +1345,9 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 	game.hud.flash_screen(Color(0.85, 0.1, 0.08),
 		clampf(0.18 + amount / max_hp * 0.5, 0.18, 0.4), 0.3)
 	if was_crit:
-		game.spawn_text(global_position + Vector2(0, -40), "-%d CRIT!" % int(amount), Color(1.0, 0.5, 0.1))
+		game.spawn_combat_text(self, "-%d CRIT!" % int(amount), Color(1.0, 0.5, 0.1))
 	else:
-		game.spawn_text(global_position + Vector2(0, -40), "-%d" % int(amount), Color(1.0, 0.35, 0.3))
+		game.spawn_combat_text(self, "-%d" % int(amount), Color(1.0, 0.35, 0.3))
 	if hp <= 0.0:
 		if s_passive() == "refusal" and not uniq_on("refusal_icd"):
 			# The Hand That Refused Death: the killing blow leaves you at 1 HP,
@@ -1359,7 +1359,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			hurt_was_heavy = true
 			_grant_stab_surge()
 			cds["ult"] = 0.0
-			game.spawn_text(global_position + Vector2(0, -60), "REFUSED", Color(0.82, 0.88, 1.0))
+			game.spawn_combat_text(self, "REFUSED", Color(0.82, 0.88, 1.0))
 			game.burst(global_position, Color(0.85, 0.9, 1.0), 22)
 			game.hud.flash_screen(Color(0.18, 0.24, 0.5), 0.5, 0.5)
 		elif last_rites > 0.0 and last_rites_cd <= 0.0:
@@ -1367,7 +1367,7 @@ func take_damage(amount: float, dmg_type := "phys", attacker: Node = null, heavy
 			# survive per point invested (up to 30% max HP at the 10-point cap).
 			hp = max_hp * Balance.LAST_RITES_HP_PER_PT * last_rites
 			last_rites_cd = 60.0
-			game.spawn_text(global_position + Vector2(0, -60), "LAST RITES", Color(0.85, 0.35, 1.0))
+			game.spawn_combat_text(self, "LAST RITES", Color(0.85, 0.35, 1.0))
 			game.burst(global_position, Color(0.7, 0.2, 1.0), 22)
 			game.hud.flash_screen(Color(0.5, 0.1, 0.7), 0.5, 0.5)
 		else:
@@ -1463,43 +1463,43 @@ func _uniq_on_evade(attacker: Node) -> void:
 		"outrider":
 			# Ashrider: the miss is an opening — the next Cleave strikes twice.
 			uniq_t["outrider"] = uniq_k("window")
-			game.spawn_text(global_position + Vector2(0, -56), "OPENING", Color(0.85, 0.9, 1.0))
+			game.spawn_combat_text(self, "OPENING", Color(0.85, 0.9, 1.0))
 		"horizon":
 			# Red Horizon: next Cleave is a guaranteed crit; Bash returns sooner.
 			uniq_t["horizon"] = uniq_k("window")
 			cds["a2"] = maxf(0.0, float(cds.get("a2", 0.0)) - uniq_k("bash_refund"))
-			game.spawn_text(global_position + Vector2(0, -56), "SIDESTEP", Color(1.0, 0.85, 0.6))
+			game.spawn_combat_text(self, "SIDESTEP", Color(1.0, 0.85, 0.6))
 		"foxfire":
 			uniq_t["foxfire"] = uniq_k("window")
-			game.spawn_text(global_position + Vector2(0, -56), "FOXFIRE", Color(1.0, 0.7, 0.4))
+			game.spawn_combat_text(self, "FOXFIRE", Color(1.0, 0.7, 0.4))
 		"mothdust":
 			# Mothknife: dust blooms where you stood — nearby enemies slowed.
 			game.burst(global_position, Color(0.82, 0.78, 0.9), 8)
 			_ring_fx(global_position, Color(0.82, 0.78, 0.9), uniq_k("radius"))
 			for e in _enemies_within(global_position, uniq_k("radius")):
 				e.apply_slow(1.0 - uniq_k("slow"), uniq_k("dur"))
-			game.spawn_text(global_position + Vector2(0, -56), "MOTH DUST", Color(0.82, 0.78, 0.9))
+			game.spawn_combat_text(self, "MOTH DUST", Color(0.82, 0.78, 0.9))
 		"heartbeat":
 			# Pale Flight: half the dash's remaining cd vanishes; next dash bites.
 			cds["a2"] = float(cds.get("a2", 0.0)) * (1.0 - uniq_k("refund"))
 			uniq_t["heartbeat"] = uniq_k("window", 4.0)
-			game.spawn_text(global_position + Vector2(0, -56), "HEARTBEAT", Color(0.8, 0.75, 1.0))
+			game.spawn_combat_text(self, "HEARTBEAT", Color(0.8, 0.75, 1.0))
 		"breathless":
 			# Breathless: the evade resets Blink; the next shock strikes doubled.
 			cds["a3"] = 0.0
 			uniq_t["breathless"] = uniq_k("window")
-			game.spawn_text(global_position + Vector2(0, -56), "BREATHLESS", Color(0.7, 0.9, 1.0))
+			game.spawn_combat_text(self, "BREATHLESS", Color(0.7, 0.9, 1.0))
 		"measure":
 			uniq_t["measure"] = uniq_k("window")
-			game.spawn_text(global_position + Vector2(0, -56), "MEASURED", Color(1.0, 0.92, 0.6))
+			game.spawn_combat_text(self, "MEASURED", Color(1.0, 0.92, 0.6))
 		"vigil":
 			# First Light: the leap rearms NOW; the next Judgment cannot miss its mark.
 			judgment_leap_cd = 0.0
 			uniq_t["vigil"] = uniq_k("window")
-			game.spawn_text(global_position + Vector2(0, -56), "VIGIL", Color(1.0, 0.95, 0.75))
+			game.spawn_combat_text(self, "VIGIL", Color(1.0, 0.95, 0.75))
 		"hush":
 			uniq_t["hush"] = uniq_k("window")
-			game.spawn_text(global_position + Vector2(0, -56), "HUSH", Color(0.75, 0.7, 0.9))
+			game.spawn_combat_text(self, "HUSH", Color(0.75, 0.7, 0.9))
 		"truename":
 			# The Name Beneath All Names: the attacker is hexed and lashed.
 			if attacker is Enemy and is_instance_valid(attacker) and not (attacker as Enemy).dying:
@@ -1508,7 +1508,7 @@ func _uniq_on_evade(attacker: Node) -> void:
 				hit_enemy(te, uniq_k("lash"), {"aoe": true})
 				if not te.dying:
 					_hex_mark(te)
-				game.spawn_text(te.global_position + Vector2(0, -50), "NAMED", Color(0.75, 0.4, 1.0))
+				game.spawn_combat_text(te, "NAMED", Color(0.75, 0.4, 1.0))
 			else:
 				armed = false  # nothing to name — don't burn the ICD
 		_:
@@ -1523,7 +1523,7 @@ func _uniq_on_evade(attacker: Node) -> void:
 		# Armor EXPOSE marks LIGHTER than Death Mark (Balance.UNIQ expose_mult
 		# — the default 1.5x let a dodge apply the ult's own amp).
 		ke.apply_vuln(uniq_gk("helm_finesse", "vuln_dur"), float(Balance.UNIQ["expose_mult"]))
-		game.spawn_text(ke.global_position + Vector2(0, -44), "EXPOSED", Color(1, 0.5, 0.3))
+		game.spawn_combat_text(ke, "EXPOSED", Color(1, 0.5, 0.3))
 		_uniq_beat(ex_id, ke)
 		armed = true
 	# Profile-set evade clauses (GEAR_UNIQUE_SETS.md) — they ride the same
@@ -1564,7 +1564,7 @@ func _uniq_on_hit_taken(amount: float, attacker: Node) -> void:
 					and randf() < uniq_k("chance"):
 				uniq_t["struck_icd"] = float(Balance.UNIQ["struck_icd"])  # weapon-first: armor clauses stand down
 				game.sfx("sword")
-				game.spawn_text(foe.global_position + Vector2(0, -44), "REPRISAL", Color(0.9, 0.85, 0.7))
+				game.spawn_combat_text(foe, "REPRISAL", Color(0.9, 0.85, 0.7))
 				hit_enemy(foe, uniq_k("counter"), {})
 		"thegate":
 			# The Gate That Walks: while the Gate holds, blows are answered.
@@ -1593,7 +1593,7 @@ func _uniq_on_hit_taken(amount: float, attacker: Node) -> void:
 				game.burst(global_position, Color(0.45, 0.85, 0.4), 12)
 				for e in _enemies_within(global_position, uniq_k("root_radius")):
 					e.apply_slow(0.05, uniq_k("root"))  # a near-total slow IS the root
-					game.spawn_text(e.global_position + Vector2(0, -44), "ROOTED", Color(0.5, 0.9, 0.45))
+					game.spawn_combat_text(e, "ROOTED", Color(0.5, 0.9, 0.45))
 		"witness":
 			# Bound Witness: the attacker is BOUND — withered and slowed.
 			if foe_live and not uniq_on("witness_icd"):
@@ -1602,7 +1602,7 @@ func _uniq_on_hit_taken(amount: float, attacker: Node) -> void:
 				foe.apply_burn(_dot_dps(foe, current_atk() * uniq_k("dot")),
 					uniq_k("dur"), Color(0.8, 0.45, 1.0), self)
 				foe.apply_slow(1.0 - uniq_k("slow"), uniq_k("dur"))
-				game.spawn_text(foe.global_position + Vector2(0, -44), "BOUND", Color(0.8, 0.45, 1.0))
+				game.spawn_combat_text(foe, "BOUND", Color(0.8, 0.45, 1.0))
 		"remembrance":
 			# The Book That Remembers You: whoever wounds you is HEXED
 			# (per-enemy ICD so a fast hitter isn't re-marked every frame).
@@ -1610,7 +1610,7 @@ func _uniq_on_hit_taken(amount: float, attacker: Node) -> void:
 				uniq_marks[foe] = uniq_k("enemy_icd")
 				uniq_t["struck_icd"] = float(Balance.UNIQ["struck_icd"])
 				_hex_mark(foe)
-				game.spawn_text(foe.global_position + Vector2(0, -50), "REMEMBERED", Color(0.8, 0.45, 1.0))
+				game.spawn_combat_text(foe, "REMEMBERED", Color(0.8, 0.45, 1.0))
 		"answer":
 			# The Bastion's Answer: a share of the blow banks as holy charge
 			# (the overheal bank's own cap keeps it honest).
@@ -1640,7 +1640,7 @@ func _uniq_armor_on_hit_taken(_amount: float, attacker: Node, dmg_type: String, 
 		uniq_mward_t = uniq_gk("helm_ward", "dur", float(Balance.SET_WARD["dur"]))
 		uniq_mward_amt = uniq_gk("helm_ward", "dr", float(Balance.SET_WARD["dr"]))
 		game.sfx("ward", 0.9)
-		game.spawn_text(global_position + Vector2(0, -52), "WARDED", Color(0.6, 0.8, 1.0))
+		game.spawn_combat_text(self, "WARDED", Color(0.6, 0.8, 1.0))
 		if wd_id != "":
 			if String(Balance.uniq(wd_id).get("beat", "")) == "swkeep":
 				since_hurt = prev_sh  # the ward holds your breath — SW clock keeps
@@ -1755,7 +1755,7 @@ func _cover_wave() -> void:
 	var col := Color(0.45, 0.55, 0.95)
 	_ring_fx(global_position, col, 300.0)
 	game.burst(global_position, col, 16)
-	game.spawn_text(global_position + Vector2(0, -60), "THE COVER", col)
+	game.spawn_combat_text(self, "THE COVER", col)
 	var max_reach := 520.0
 	for e in _enemies_within(global_position, max_reach):
 		var away: Vector2 = e.global_position - global_position
@@ -1800,7 +1800,7 @@ func _enter_downed() -> void:
 	locked_target = null
 	_revive_interrupt(false)  # can't keep channeling an ally from the floor
 	_refresh_down_visual()
-	game.spawn_text(global_position + Vector2(0, -56), "DOWNED!", Color(1.0, 0.35, 0.3))
+	game.spawn_combat_text(self, "DOWNED!", Color(1.0, 0.35, 0.3))
 	game.sfx("pdie")
 	game.hud.flash_screen(Color(0.7, 0.08, 0.06), 0.45, 0.5)
 	if game.net_online():
@@ -1835,7 +1835,7 @@ func net_stand_up(hp_frac: float) -> void:
 	hurt_cd = 1.5
 	hurt_was_heavy = true  # the same respawn grace revive() grants
 	_refresh_down_visual()
-	game.spawn_text(global_position + Vector2(0, -56), "BACK ON YOUR FEET", Color(0.5, 1.0, 0.6))
+	game.spawn_combat_text(self, "BACK ON YOUR FEET", Color(0.5, 1.0, 0.6))
 	game.burst(global_position, Color(0.5, 1.0, 0.6), 14)
 	game.sfx("mend")
 	if game.net_online():
@@ -1965,5 +1965,5 @@ func _revive_interrupt(loud: bool) -> void:
 	if game != null and game.net_online() and q != null and is_instance_valid(q):
 		game.net_session().cancel_revive(q.peer_id)
 	if loud:
-		game.spawn_text(global_position + Vector2(0, -56), "REVIVE INTERRUPTED", Color(1.0, 0.6, 0.4))
+		game.spawn_combat_text(self, "REVIVE INTERRUPTED", Color(1.0, 0.6, 0.4))
 		game.sfx("hurt", 0.6)

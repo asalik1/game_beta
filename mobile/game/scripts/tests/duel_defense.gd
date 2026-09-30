@@ -19,6 +19,7 @@ class ProbeGame extends Game:
 	var session: Node
 	var numbers: Array = []
 	var texts: Array[String] = []
+	var text_targets: Array = [] # parallel to texts: whose column each line joined
 	func _ready() -> void: pass
 	func _process(_delta: float) -> void: pass
 	func _physics_process(_delta: float) -> void: pass
@@ -27,8 +28,9 @@ class ProbeGame extends Game:
 	func shake(_amount: float, _dir := Vector2.ZERO, _kick := 0.0) -> void: pass
 	func spawn_damage_number(_target: Node2D, amount: int, crit := false, _dot := false, _ally := false) -> void:
 		numbers.append([amount, crit])
-	func spawn_text(_pos: Vector2, text: String, _color: Color, _hold := 0.0) -> void:
+	func spawn_combat_text(target: Node2D, text: String, _color: Color, _hold := 0.0) -> void:
 		texts.append(text)
+		text_targets.append(target)
 	func fight_note_damage(_amount: float, _attacker: Node) -> void: pass
 	func stat_taken(_p: Player, _amount: float) -> void: pass
 
@@ -285,6 +287,7 @@ static func _hit(g: Game, offense: ProbeGame, defense: ProbeGame, p: ProbePlayer
 	victim.hurt_cd = 0.0
 	victim.damage_memory.clear_recent()
 	defense.texts.clear()
+	defense.text_targets.clear()
 	offense.numbers.clear()
 	var received := victim.received
 	seed(roll_seed)
@@ -293,9 +296,10 @@ static func _hit(g: Game, offense: ProbeGame, defense: ProbeGame, p: ProbePlayer
 	if error != "": return error
 	if not is_equal_approx(victim.max_hp - victim.hp, expected):
 		return "damage %.6f, expected %.6f" % [victim.max_hp - victim.hp, expected]
+	# The incoming "-N" joins the victim's own column (never the striker's shell).
 	var floats := 0
-	for text in defense.texts:
-		if text.begins_with("-"): floats += 1
+	for i in defense.texts.size():
+		if defense.texts[i].begins_with("-") and defense.text_targets[i] == victim: floats += 1
 	if victim.received != received + 1 or victim.damage_memory.hits.size() != 1 \
 			or offense.numbers.size() != 1 or floats != 1 or victim.hurt_cd <= 0.0:
 		return "strike did not produce exactly one hit event/number and hurt window"

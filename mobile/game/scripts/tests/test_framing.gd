@@ -30,7 +30,8 @@ static func shake_contracts(g: Game) -> String:
 	var view := {"offset": cam.offset, "position": cam.position, "zoom": cam.zoom,
 		"limits": [cam.limit_left, cam.limit_top, cam.limit_right, cam.limit_bottom],
 		"look": g._cam_look, "mult": g._cam_zoom_mult, "room": framing.room,
-		"hero": framing.hero_id, "previous": framing.previous}
+		"hero": framing.hero_id, "previous": framing.previous,
+		"eased": framing.limits}
 	var error := _shake_contracts(g)
 	for key in saved:
 		g.set(key, saved[key])
@@ -46,6 +47,7 @@ static func shake_contracts(g: Game) -> String:
 	framing.room = view.room
 	framing.hero_id = view.hero
 	framing.previous = view.previous
+	framing.limits = view.eased
 	return error
 
 

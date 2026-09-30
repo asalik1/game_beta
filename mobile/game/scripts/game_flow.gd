@@ -2233,6 +2233,8 @@ func run_terrain_event(ev: String, zi_in := -1, anchor: Player = null) -> void:
 			# into a lingering lava pool instead.
 			if randf() < 0.3:
 				var pos := clamp_to_zone(p.global_position + Vector2(randf_range(-200, 200), randf_range(-150, 150)), p.global_position)
+				if preload("res://scripts/door_threshold.gd").pool_blocked(self, zi, pos, 70.0):
+					return
 				telegraph(pos, 75.0, 1.3, 10.0, {"color": Color(1.0, 0.35, 0.1, 0.5)})
 				_add_hazard.call_deferred(zi, "lava", pos, 70.0, 22.0)
 				# MP-10 hazard-event pattern: guests paint the same pool and
@@ -2313,11 +2315,14 @@ func net_apply_terrain_fx(ev: String, pos: Vector2) -> void:
 ## (a membership list, not a tuning number — it stays out of balance.gd).
 const HAZARD_PHYSICAL := ["ice", "slow", "lava"]
 
-## Grass rustle targets swaying decor only: the ONE shared wind material marks
-## it. Floor wear, moss/dust drifts and puddles carry their own shader, and
-## water/planks are non-centered, so none of them throw leaves.
+## Grass rustle targets foliage decor only. Understory (bush, grass, flower,
+## cattail, reeds) stands still until touched and carries its own contact
+## sensor (foliage_rustle.gd); the rest of the swaying set shares the ONE wind
+## material. Floor wear, moss/dust drifts and puddles carry their own shader
+## and no sensor, and water/planks are non-centered, so none throw leaves.
 func _rustles(ds: Sprite2D) -> bool:
-	return ds != null and ds.centered and ds.material == Art.wind_material()
+	return ds != null and ds.centered \
+		and (ds.material == Art.wind_material() or ds.has_node("FoliageRustle"))
 
 
 ## Apply floor-patch effects to the player and enemies (ticked at 2.5Hz).
@@ -2346,7 +2351,14 @@ func _apply_hazards() -> void:
 			hazards.remove_at(i)
 			continue
 		if h["drift"] != Vector2.ZERO:  # wandering spore clouds
-			h["pos"] += h["drift"] * 0.4
+			var next: Vector2 = h["pos"] + h["drift"] * 0.4
+			# Only a permanent seeded cloud bounces off a threshold; a timed
+			# combat pool drifts as it was cast (and one cast inside an apron
+			# must not freeze there reversing every tick).
+			if float(h["until"]) < 0.0 and preload("res://scripts/door_threshold.gd").pool_blocked(self, int(h["zone"]), next, float(h["radius"])):
+				h["drift"] *= -1.0
+			else:
+				h["pos"] = next
 			var hr := room_rect(int(h["zone"]))
 			if h["pos"].x < hr.position.x + 100 or h["pos"].x > hr.end.x - 100:
 				h["drift"].x *= -1.0
@@ -2417,7 +2429,7 @@ func _apply_hazards() -> void:
 				e.hazard_speed = minf(e.hazard_speed, Balance.RIVER_WADE_MULT)
 	was_wading = wading
 
-	# Grass rustle (visual pass): brushing past swaying decor (see _rustles)
+	# Grass rustle (visual pass): brushing past foliage decor (see _rustles)
 	# kicks a few leaves loose. Per-plant cooldown keeps it a whisper.
 	if lp != null and not lp.dead and lp.velocity.length() > 30.0:
 		var scenery: Array = zone_scenery.get(cur_room, [])

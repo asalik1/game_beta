@@ -21,6 +21,10 @@ extends ShotRig
 ## landed and visible, off the lanes, no rustle) and floor_<room>_room/south/
 ## arcade frames, then hands off to capgap (exit 1 = a walled route):
 ##   shot.bat polish --floor-dressing --seed=42017 --timeout=540
+## --door-thresholds: test_door_threshold, then the visual sweep's reported door
+## views of the booted chapter (the first seed from the booted one in which
+## every reported door exists; none = fail), then hands off to capgap:
+##   shot.bat polish --door-thresholds --seed=42017 [--chapter=ch2] --timeout=720
 ## Per room: "<room>_room" (hero mid-room with a wolf pack, three hits landed so
 ## numbers/bars/flash are live), "<room>_wall" (hero at the north wall: face,
 ## shadow, road arm, door torches). --hud adds a HUD-on shot per room.
@@ -208,6 +212,17 @@ func _capture_views(cls: String, z: float) -> void:
 		if error != "":
 			print("PROP SAMPLING FAIL: " + error)
 		finish(0 if error == "" else 1)
+		return
+	if flag("canopy-overlap"):
+		var error: String = await preload("res://scripts/dev/canopy_overlap_capture.gd").run(self)
+		if error != "": print("CANOPY OVERLAP FAIL: " + error)
+		finish(0 if error == "" else 1)
+		return
+	if flag("door-thresholds"):
+		var error: String = await preload("res://scripts/dev/door_threshold_capture.gd").run(self)
+		if error != "":
+			print("DOOR THRESHOLD FAIL: " + error)
+			finish(1)
 		return
 	var rooms := arg("rooms", "2,17,20").split(",", false)
 	for rs in rooms:
@@ -1010,5 +1025,45 @@ func _damage_numbers() -> void:
 		push_error("a dead wolf's numbers never faded out")
 		finish(1)
 		return
+	# One run bundles the regression with both floor-luminance extremes.
+	var subject: Enemy = _mobs[0]
+	var saved_lock: Enemy = game.player.locked_target
+	game.player.locked_target = subject
+	# Stand the subject beside the hero: the camera trails the hero, and the
+	# wolf's four rows plus the hero's own column must all fit in one frame.
+	subject.set_physics_process(false)
+	for terrain in ["ice", "keep"]:
+		apply_terrain(terrain, game.cur_room)
+		await sim_wait(0.25)
+		subject.global_position = game.player.global_position + Vector2(170, 20)
+		game.clear_damage_numbers()
+		subject.take_damage(16)
+		game.spawn_combat_text(subject, "CRIT X5", Balance.DAMAGE_NUM_CRIT)
+		game.spawn_combat_text(subject, "MISS", Color(0.7, 0.7, 0.7))
+		game.spawn_combat_text_all(subject, "WARD", Color(0.6, 0.9, 1.0))
+		game.spawn_combat_text(game.player, "-46", Color(1.0, 0.35, 0.3))
+		game.spawn_combat_text(game.player, "GRIT x3", Color(0.7, 0.8, 1.0))
+		await sim_wait(0.16)
+		col = game._damage_columns[subject.get_instance_id()]
+		var z_error := _combat_text_layers(col, subject)
+		if z_error != "":
+			game.player.locked_target = saved_lock
+			push_error(z_error)
+			finish(1)
+			return
+		shot("combat_text_" + terrain, "number + CRIT + MISS + WARD above HP/target; red incoming hit + GRIT")
+	game.player.locked_target = saved_lock
+	print("COMBAT TEXT PASS: mixed rows above live HP bars/target brackets, ice + keep captures")
 	print("DAMAGE BURST PASS: real enemy totals, mixed rows, killing blow shown then faded")
 	finish()
+
+
+func _combat_text_layers(column: Node, subject: Enemy) -> String:
+	var quality := preload("res://scripts/tests/test_quality.gd")
+	if column.entries.size() != 4 or not quality._rows_clear(column):
+		return "live mixed combat burst lost its four non-overlapping rows"
+	for entry in column.entries:
+		for overlay in [subject.hp_bar_bg, subject.hp_bar_fg, subject.hp_bar_cap, game.reticle]:
+			if entry.label.z_as_relative or entry.label.z_index <= quality._effective_z(overlay):
+				return "combat text draws beneath a live HP bar or target bracket"
+	return ""

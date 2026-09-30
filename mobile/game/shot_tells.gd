@@ -12,12 +12,24 @@ extends ShotRig
 ##
 ##   shot.bat tells --comet --fixed-fps=30 --timeout=240
 ##   --comet --baseline allows the older drawing for a before comparison.
-## Output: user://shots/tells/*.png (focused mode: comet/observations.json + 15 PNGs)
+##   shot.bat tells --urgency --timeout=240
+##   --urgency: the color-ramp contract (DESIGN.md "Ground danger tells") at
+##   exact posed fuse phases, opposite-pixel symmetry, and nine captures
+##   (Fangmaw, Morwen, then a primed Rimeheart + Whitepelt on ice, 0/50/90%).
+## Output: user://shots/tells/*.png (focused mode: comet/observations.json + 15 PNGs;
+## urgency/observations.json + 9 PNGs)
 
 const FUSE := 2.4
 
 
 func _ready() -> void:
+	if flag("urgency"):
+		var probe := preload("res://scripts/tests/comet_ground_live.gd").new()
+		var error: String = await probe.run_urgency(self)
+		if error != "":
+			push_error(error)
+		finish(0 if error == "" else 1)
+		return
 	if flag("comet"):
 		var probe := preload("res://scripts/tests/comet_ground_live.gd").new()
 		var error: String = await probe.run(self)

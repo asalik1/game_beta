@@ -31,6 +31,9 @@ var camera_restored := false
 
 
 func _ready() -> void:
+	if flag("tree-contacts"):
+		await _tree_contacts()
+		return
 	if flag("npc-contact"):
 		await preload("res://scripts/tests/npc_ground_contact_live.gd").run(self)
 		return
@@ -71,6 +74,113 @@ func _ready() -> void:
 	await _restore_fixture_camera()
 	_write_report()
 	print("PROP SHADOWS: %d checks, %d failures; real prop factories, frames and interactions" % [checks.size(), failures])
+	finish(1 if failures > 0 else 0)
+
+
+## One rendered session compares the outgoing geometry to the fix in the
+## same frozen forest fixture; no second baseline engine or asset changes.
+func _tree_contacts() -> void:
+	var contract := preload("res://scripts/tests/test_prop_shadows.gd")
+	var error: String = contract.run(self)
+	_check("tree/full_shadow_regression", error == "")
+	if error != "": print(error)
+	await boot("warrior", "ch1", false)
+	game.menus.close()
+	await skip_dialogue()
+	var zi := game.cur_room
+	var terrain: String = game.terrain_by_zone[zi]
+	var ambient := game.ambient.color
+	apply_terrain("darkwood", zi)
+	await frames(3)
+	_begin_fixture_camera()
+	fixture_origin = game.room_center(zi)
+	var hero_pos := game.player.global_position
+	game.player.global_position = fixture_origin + Vector2(450, 230)
+	_aim_fixture_camera(fixture_origin)
+	game.camera.zoom = Vector2.ONE
+	var hidden: Array[CanvasItem] = []
+	for node in game.zone_scenery.get(zi, []):
+		if is_instance_valid(node) and node is CanvasItem and node.visible:
+			hidden.append(node)
+			node.hide()
+	var bodies: Array[Node2D] = [
+		game._add_obstacle("tree_green", fixture_origin + Vector2(-300, -100)),
+		game._add_obstacle("tree_autumn", fixture_origin + Vector2(0, -100)),
+		game._add_obstacle("tree_gnarled", fixture_origin + Vector2(-300, 170)),
+		game._add_structure("darkwood_hollow", fixture_origin + Vector2(150, 170)),
+		game._add_obstacle("rock", fixture_origin + Vector2(320, -100))]
+	await frames(3)
+	var paused := get_tree().paused
+	get_tree().paused = true
+	var hud_visible := game.hud.visible
+	hide_hud()
+	# Freeze shared wind as well as sprite playback for matched captures.
+	var wind := Art.wind_material()
+	var speed: Variant = wind.get_shader_parameter("speed")
+	wind.set_shader_parameter("speed", 0.0)
+	var fixed: Array[Node2D] = []
+	var current: Array[Node2D] = []
+	var outgoing: Array[Node2D] = []
+	var contacts: Array[Dictionary] = []
+	for body in bodies:
+		var has_tree := false
+		for child in body.get_children():
+			if child.get_meta("cast_shadow_mode", "") == "trunk":
+				has_tree = true
+				fixed.append(child)
+		if not has_tree: continue
+		# Hide every current copy, including the composite's non-tree part rims.
+		for child in body.get_children():
+			if child.has_meta("cast_shadow") and child.visible:
+				current.append(child)
+				child.hide()
+		for child in body.get_children():
+			if child.has_meta("prop_contact_shadow"):
+				contacts.append({"node": child, "visible": child.visible})
+				child.show()
+		# Parent revision casts only the main sprite; composite parts have none.
+		var src := _source(body)
+		var existing := body.get_children()
+		game._prop_cast_shadow(body, src, 12.0 if body.has_meta("structure") else NAN)
+		for child in body.get_children():
+			if child.has_meta("cast_shadow") and not existing.has(child):
+				outgoing.append(child)
+				_check("tree/old_geometry_rejected", contract.tree_contact_error(child as Sprite2D) != "")
+	await RenderingServer.frame_post_draw
+	shot("trees_before", "outgoing silhouette/ellipse policy; same frozen forest, props and camera")
+	for cast in outgoing: cast.free()
+	for row in contacts: row.node.visible = row.visible
+	for cast in current: cast.show()
+	for cast in fixed:
+		_check("tree/fixed_contact", contract.tree_contact_error(cast as Sprite2D) == "")
+	await RenderingServer.frame_post_draw
+	shot("trees_after", "bounded soft trunk contacts; includes the composite's secondary tree")
+	_check("tree/composite_and_scatter_contacts", fixed.size() == 5)
+	# Lore trees (the Hollow Oak's deadtree) come from the NPC interaction
+	# factory and need the same trunk contact, not the old rim-only copy.
+	var saved_interactables: Array = game.interactables.duplicate()
+	var lore: Node2D = game._make_npc("deadtree", fixture_origin + Vector2(-450, 230), "E - Look", Callable())
+	var lore_contacts := 0
+	var lore_ellipse := false
+	for child in lore.get_children():
+		if child.get_meta("cast_shadow_mode", "") == "trunk" and contract.tree_contact_error(child as Sprite2D) == "":
+			lore_contacts += 1
+		if child.has_meta("prop_contact_shadow") and child.visible:
+			lore_ellipse = true
+	_check("tree/lore_npc_trunk_contact", lore_contacts == 1 and not lore_ellipse)
+	lore.queue_free()
+	game.interactables = saved_interactables
+	wind.set_shader_parameter("speed", speed)
+	get_tree().paused = paused
+	game.hud.visible = hud_visible
+	for body in bodies: body.free()
+	for node in hidden: node.show()
+	game.player.global_position = hero_pos
+	await _restore_fixture_camera()
+	apply_terrain(terrain, zi)
+	game.ambient.color = ambient
+	print("TREE SHADOWS: %d checks, %d failures" % [checks.size(), failures])
+	if failures == 0: print("TREE SHADOWS PASS: outgoing geometry rejected; matched forest captures and factory regression")
 	finish(1 if failures > 0 else 0)
 
 

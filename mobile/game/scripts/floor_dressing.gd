@@ -83,6 +83,8 @@ static func spawn_wear(g: Game, zi: int, terrain: Dictionary) -> void:
 ## reservations (hazards, water, notches, landmarks), and existing vegetation.
 static func clear(g: Game, road: Dictionary, local: Vector2, half: Vector2,
 		reserved: Array, placed: Array) -> bool:
+	if preload("res://scripts/door_threshold.gd").intersects(road.get("thresholds", []),
+			Rect2(local + road.get("origin", Vector2.ZERO) - half, half * 2.0)): return false
 	for off in [Vector2.ZERO, Vector2(-half.x, -half.y), Vector2(half.x, -half.y),
 			Vector2(-half.x, half.y), half]:
 		if g._lane_blocked(road, local + off) or g._reserved_blocks(reserved, local + off): return false

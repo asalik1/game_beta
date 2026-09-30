@@ -121,7 +121,7 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 		_end_tell()
 		knock = Vector2.ZERO
 		_pose_y = -Balance.BOSS_WINDUP_K
-		game.spawn_text_all(global_position + Vector2(0, -100), "CAST BROKEN!", Color(0.59, 1.0, 0.81))
+		game.spawn_combat_text_all(self, "CAST BROKEN!", Color(0.59, 1.0, 0.81))
 		game.burst(global_position + Vector2(0, -35), Color(0.59, 1.0, 0.81), 20)
 		game.sfx("ward")
 		_sync_signature()
@@ -404,6 +404,8 @@ func _apply_tell_style(o: Dictionary, pos: Vector2) -> void:
 	if style.is_empty():
 		return
 	for k: String in style:
+		if k == "hot_ramp" and bool(o.get("color_locked", false)):
+			continue
 		if k == "color":
 			if bool(o.get("color_locked", false)):
 				continue
@@ -683,7 +685,7 @@ func _fangmaw(player: Player, to_player: Vector2, dist: float, delta: float) -> 
 		summoned = true
 		roar()
 		play_action("pack")
-		game.spawn_text(global_position + Vector2(0, -80), "Fangmaw calls the pack!", Color(1, 0.5, 0.4))
+		game.spawn_combat_text(self, "Fangmaw calls the pack!", Color(1, 0.5, 0.4))
 		for offset in [Vector2(-90, -50), Vector2(90, 50)]:
 			var add := Enemy.make(game, "wolf", global_position + offset, level)
 			add.xp_value = 0   # summons pay nothing: die-and-retry
@@ -852,7 +854,7 @@ func _vargoth(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		speed *= 1.5
 		roar()
 		play_action("enrage")
-		game.spawn_text_all(global_position + Vector2(0, -90), "VARGOTH ENRAGES!", Color(1, 0.3, 0.3))
+		game.spawn_combat_text_all(self, "VARGOTH ENRAGES!", Color(1, 0.3, 0.3))
 
 	# Signature: BLADE STORM — greatswords fall from the sky onto marked
 	# ground, chasing the player's position. Dodge or take heavy damage.
@@ -962,7 +964,7 @@ func _stormwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		sprite.visible = true
 		roar()
 		play_action("pack", false)
-		game.spawn_text(global_position + Vector2(0, -84),
+		game.spawn_combat_text(self,
 			"Korrag whistles the pack in!", Color(1.0, 0.8, 0.3))
 		for offset in [Vector2(-100, -60), Vector2(100, 60)]:
 			var add := Enemy.make(game, "wolf", global_position + offset, level)
@@ -978,7 +980,7 @@ func _stormwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		speed *= 1.35
 		roar()
 		play_action("storm")
-		game.spawn_text(global_position + Vector2(0, -90), "THE STORM BREAKS!", Color(0.6, 0.8, 1.0))
+		game.spawn_combat_text(self, "THE STORM BREAKS!", Color(0.6, 0.8, 1.0))
 
 	# Signature: LIGHTNING LASH — a line of strikes whipped through you.
 	if special_cd <= 0.0 and dist < 640.0:
@@ -1035,13 +1037,13 @@ func _choirmother(_player: Player, to_player: Vector2, dist: float) -> Vector2:
 		speed *= 1.25
 		roar()
 		play_action("enrage")
-		game.spawn_text(global_position + Vector2(0, -90), "THE CHOIR CRESCENDOS!", Color(0.9, 0.5, 1.0))
+		game.spawn_combat_text(self, "THE CHOIR CRESCENDOS!", Color(0.9, 0.5, 1.0))
 
 	if hp <= max_hp * 0.6 and not adds_called:
 		adds_called = true
 		roar()
 		play_action("summon")
-		game.spawn_text(global_position + Vector2(0, -84),
+		game.spawn_combat_text(self,
 			"The choir answers her call!", Color(0.8, 0.5, 1.0))
 		for offset in [Vector2(-110, -40), Vector2(110, 40)]:
 			var add := Enemy.make(game, "cultist", global_position + offset, level)
@@ -1093,7 +1095,7 @@ func _hymn_of_hunger() -> void:
 		{"color": Color(0.8, 0.4, 1.0, 0.55)})
 	hp = minf(max_hp, hp + max_hp * Balance.BOSS_HUNGER_HEAL)
 	refresh_hp_bar()
-	game.spawn_text_all(global_position + Vector2(0, -70), "the choir feeds her", Color(0.8, 0.5, 1.0))
+	game.spawn_combat_text_all(self, "the choir feeds her", Color(0.8, 0.5, 1.0))
 
 
 func _requiem() -> void:
@@ -1121,7 +1123,7 @@ func _nullwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		sprite.modulate = Color(1.5, 1.0, 0.6)
 		roar()
 		play_action("enrage")
-		game.spawn_text(global_position + Vector2(0, -90),
+		game.spawn_combat_text(self,
 			"ARMOR SHED — THE CORE IS EXPOSED!", Color(1.0, 0.8, 0.3))
 
 	if hp <= max_hp * 0.25 and not enraged:
@@ -1129,7 +1131,7 @@ func _nullwarden(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		sprite.modulate = Color(1.7, 0.7, 0.5)
 		roar()
 		play_action("enrage")
-		game.spawn_text(global_position + Vector2(0, -90), "OVERDRIVE ENGAGED!", Color(1.0, 0.4, 0.2))
+		game.spawn_combat_text(self, "OVERDRIVE ENGAGED!", Color(1.0, 0.4, 0.2))
 
 	# Signature: PISTON PROTOCOL — a grid of slams stamps your ground.
 	if special_cd <= 0.0 and dist < 620.0:
@@ -1360,7 +1362,7 @@ func _vess(player: Player, to_player: Vector2, dist: float) -> Vector2:
 		speed *= 1.2
 		roar()
 		play_action("enrage")
-		game.spawn_text(global_position + Vector2(0, -90), "VESS KEENS!", Color(0.75, 0.8, 1.0))
+		game.spawn_combat_text(self, "VESS KEENS!", Color(0.75, 0.8, 1.0))
 
 	# Signature: THE SILENCE — find the quiet circle before the wail.
 	if special_cd <= 0.0:
@@ -1480,17 +1482,17 @@ func _saint_varo(player: Player, to_player: Vector2, dist: float, delta: float) 
 		heal_text_t -= delta
 		if heal_text_t <= 0.0:
 			heal_text_t = 3.0
-			game.spawn_text(global_position + Vector2(0, -70), "the incense sustains him", INCENSE)
+			game.spawn_combat_text(self, "the incense sustains him", INCENSE)
 
 	# The congregation relights the censers at 60% and 30%.
 	if censer_wave == 0 and hp <= max_hp * 0.6:
 		censer_wave = 1
 		_spawn_censers()
-		game.spawn_text(global_position + Vector2(0, -84), "The congregation relights the censers!", INCENSE)
+		game.spawn_combat_text(self, "The congregation relights the censers!", INCENSE)
 	elif censer_wave == 1 and hp <= max_hp * 0.3:
 		censer_wave = 2
 		_spawn_censers()
-		game.spawn_text(global_position + Vector2(0, -84), "The congregation relights the censers!", INCENSE)
+		game.spawn_combat_text(self, "The congregation relights the censers!", INCENSE)
 
 	if hp <= max_hp * 0.25 and not enraged:
 		enraged = true
@@ -1498,7 +1500,7 @@ func _saint_varo(player: Player, to_player: Vector2, dist: float, delta: float) 
 		sprite.modulate = Color(1.4, 1.3, 0.9)
 		roar()
 		play_action("enrage")
-		game.spawn_text(global_position + Vector2(0, -90), "SAINT VARO STANDS.", Color(1.0, 0.9, 0.5))
+		game.spawn_combat_text(self, "SAINT VARO STANDS.", Color(1.0, 0.9, 0.5))
 
 	# Signature: THE TOLL — shelter in a shadow; each toll cracks one.
 	if special_cd <= 0.0 and dist < 640.0:
@@ -1549,7 +1551,7 @@ func _varo_teleport(player: Player) -> void:
 		player.global_position + Vector2.from_angle(ang) * randf_range(240.0, 380.0), home)
 	global_position = dest
 	game.burst(dest, INCENSE, 14)
-	game.spawn_text(dest + Vector2(0, -84), "The throne is elsewhere.", INCENSE)
+	game.spawn_combat_text(self, "The throne is elsewhere.", INCENSE)
 
 
 func _spawn_censers() -> void:
@@ -1577,7 +1579,7 @@ func _spawn_censers() -> void:
 func _toll() -> void:
 	roar()
 	play_action("toll")
-	game.spawn_text(global_position + Vector2(0, -84), "THE BELL TOLLS — STAND IN A SHADOW!", INCENSE)
+	game.spawn_combat_text(self, "THE BELL TOLLS — STAND IN A SHADOW!", INCENSE)
 	var count := maxi(1, 3 - toll_count)
 	toll_count += 1
 	var centers: Array = []
@@ -1757,7 +1759,7 @@ func _forgemistress(player: Player, to_player: Vector2, dist: float, delta: floa
 		quenching = true
 		quench_target = _nearest_pool()
 		roar()
-		game.spawn_text(global_position + Vector2(0, -84), "Calda moves to quench!", FORGE)
+		game.spawn_combat_text(self, "Calda moves to quench!", FORGE)
 	if quenching:
 		if global_position.distance_to(quench_target) <= 60.0:
 			quenching = false
@@ -1845,7 +1847,7 @@ func _do_quench(_player: Player) -> void:
 	if blocked:
 		# Body-blocked: she quenches THROUGH the player — no buff, but the
 		# hardest hit in the fight lands where she meant the pool to be.
-		game.spawn_text(quench_target + Vector2(0, -60), "QUENCHED THROUGH!", FORGE)
+		game.spawn_combat_text(self, "QUENCHED THROUGH!", FORGE)
 		_boss_telegraph(quench_target, 130.0, 0.5, dmg * 2.2,
 			{"color": FORGE, "impact_sfx": "boss_fire_impact_v3"})
 		heat = 0.0
@@ -1853,7 +1855,7 @@ func _do_quench(_player: Player) -> void:
 		quench_stacks += 1
 		heat = 0.0
 		game.burst(quench_target, FORGE, 16)
-		game.spawn_text(global_position + Vector2(0, -70),
+		game.spawn_combat_text(self,
 			"Calda quenches — her edge sharpens (x%d)" % quench_stacks, FORGE)
 		# A clean quench isn't free even for a kiter who never contested the
 		# pool (r51): the slag flashes over in a ring, and two gouts of it
@@ -1902,7 +1904,7 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 		sprite.modulate = Color(1.6, 0.8, 0.5)
 		roar()
 		play_action("enrage")
-		game.spawn_text(global_position + Vector2(0, -90), "THE PLATING SHEDS!", Color(1.0, 0.7, 0.3))
+		game.spawn_combat_text(self, "THE PLATING SHEDS!", Color(1.0, 0.7, 0.3))
 		_tantrum()
 	if plate_shed_t > 0.0:
 		plate_shed_t -= delta
@@ -1910,7 +1912,7 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 			plated = true
 			plate_dr = PLATE_DR
 			sprite.modulate = base_mod
-			game.spawn_text(global_position + Vector2(0, -84), "The obsidian reforms.", LAVA)
+			game.spawn_combat_text(self, "The obsidian reforms.", LAVA)
 
 	if hp <= max_hp * 0.3 and not enraged:
 		enraged = true
@@ -1922,7 +1924,7 @@ func _cinderhide(player: Player, to_player: Vector2, dist: float, delta: float) 
 		sprite.modulate = Color(1.7, 0.6, 0.4)
 		roar()
 		play_action("enrage")
-		game.spawn_text_all(global_position + Vector2(0, -90), "CINDERHIDE ENRAGES!", Color(1.0, 0.4, 0.2))
+		game.spawn_combat_text_all(self, "CINDERHIDE ENRAGES!", Color(1.0, 0.4, 0.2))
 
 	if charging:
 		charge_time -= delta
@@ -1977,7 +1979,7 @@ func _vent_breath(player: Player) -> void:
 	roar()
 	game.sfx("boss_fire_cast_v1")
 	play_action("breath")
-	game.spawn_text(global_position + Vector2(0, -84), "Vent breath!", LAVA)
+	game.spawn_combat_text(self, "Vent breath!", LAVA)
 	var dir := (player.global_position - global_position).normalized()
 	# Plated, the beast is a rampaging tank you must survive while you set
 	# up the melt: the cone reaches wider and hits harder (r51 floor).
@@ -2027,7 +2029,7 @@ func _ashpriest(_player: Player, to_player: Vector2, dist: float, delta: float) 
 		sprite.modulate = Color(1.6, 0.7, 0.4)
 		roar()
 		play_action("enrage")
-		game.spawn_text(global_position + Vector2(0, -90), "THE JUDGE ATTENDS.", Color(1.0, 0.5, 0.2))
+		game.spawn_combat_text(self, "THE JUDGE ATTENDS.", Color(1.0, 0.5, 0.2))
 
 	# Signature: THE VERDICT — half the arena is judged.
 	if special_cd <= 0.0:
@@ -2074,7 +2076,7 @@ func _march_sons(delta: float) -> void:
 			hp = minf(max_hp, hp + max_hp * 0.08)
 			refresh_hp_bar()
 			verdict_speed = minf(2.5, verdict_speed + 0.15)
-			game.spawn_text(global_position + Vector2(0, -70), "the Judge consumes a Son", VERDICT)
+			game.spawn_combat_text(self, "the Judge consumes a Son", VERDICT)
 			s.queue_free()
 			continue
 		s.global_position += to.normalized() * 70.0 * delta
@@ -2092,7 +2094,7 @@ func _spawn_sons() -> void:
 	if is_instance_valid(callout_tgt):
 		# Wave-2 co-op fix #8: the intercept ORDER is a readability aid a guest's
 		# silent mirror never showed — fan it to the whole party.
-		game.spawn_text_all(callout_tgt.global_position + Vector2(0, -84),
+		game.spawn_combat_text_all(callout_tgt,
 			"SONS OF THE JUDGE — INTERCEPT THEM!", VERDICT)
 	var rect := _arena_rect()
 	var corners := [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]
@@ -2130,7 +2132,7 @@ func _verdict() -> void:
 			call += " — THEN THE %s" % ("EAST" if west else "WEST")
 		# Wave-2 co-op fix #8: fan the verdict — the guilty-half sentence is the
 		# tell that pairs with the washed floor below.
-		game.spawn_text_all(callout_tgt.global_position + Vector2(0, -84), call, VERDICT)
+		game.spawn_combat_text_all(callout_tgt, call, VERDICT)
 	_judge_half(rect, west, 2.4, false)
 	_half_wash(rect, west, 2.4, false)
 	_net_wash(west, 2.4, false)  # fix #8: paint the guilty-half glow on guests too
@@ -2170,9 +2172,10 @@ func _half_wash(rect: Rect2, west: bool, dur: float, muted: bool) -> void:
 		Vector2(x0 + rect.size.x * 0.5, rect.position.y),
 		Vector2(x0 + rect.size.x * 0.5, rect.end.y),
 		Vector2(x0, rect.end.y)])
-	wash.color = Color(VERDICT.r, VERDICT.g, VERDICT.b, 0.0)
+	wash.color = Color(1.0, 1.0, 1.0, 0.0)
 	wash.z_index = -7  # over the ground, under the tiles
 	game.add_child(wash)
+	preload("res://scripts/ground_tell.gd").animate_surface(wash, VERDICT, dur)
 	var tw := wash.create_tween()
 	if muted:
 		tw.tween_property(wash, "color:a", 0.06, 0.35)
@@ -2252,7 +2255,7 @@ func _whitepelt(player: Player, to_player: Vector2, dist: float, delta: float) -
 		pack_calls += 1
 		roar()
 		play_action("pack")
-		game.spawn_text(global_position + Vector2(0, -84), "Whitepelt calls the pack!", FROST)
+		game.spawn_combat_text(self, "Whitepelt calls the pack!", FROST)
 		for offset in [Vector2(-100, -60), Vector2(100, 60)]:
 			var add := Enemy.make(game, "wolf", global_position + offset, level)
 			add.xp_value = 0
@@ -2290,7 +2293,7 @@ func _whitepelt(player: Player, to_player: Vector2, dist: float, delta: float) -
 				vuln_time = maxf(vuln_time, 2.6)
 				game.shake(10.0)
 				play_action("slam")
-				game.spawn_text(global_position + Vector2(0, -90), "WHITEPELT SLAMS THE WALL!", Color(0.7, 0.85, 1.0))
+				game.spawn_combat_text(self, "WHITEPELT SLAMS THE WALL!", Color(0.7, 0.85, 1.0))
 		return charge_dir * 620.0
 
 	# Signature: ICE CHARGE — telegraph then charge (bait it onto ice).
@@ -2340,7 +2343,7 @@ func _icebound(player: Player, to_player: Vector2, dist: float, _delta: float) -
 		sprite.modulate = Color(0.7, 0.85, 1.6)
 		roar()
 		play_action("enrage")
-		game.spawn_text(global_position + Vector2(0, -90), "THE KEYSTONE CRACKS!", Color(0.6, 0.85, 1.0))
+		game.spawn_combat_text(self, "THE KEYSTONE CRACKS!", Color(0.6, 0.85, 1.0))
 		var rect := _arena_rect()
 		for i in 6:
 			var at: Vector2 = game.clamp_to_zone(rect.get_center() + Vector2.from_angle(TAU * i / 6.0) * 360.0, home)
@@ -2383,7 +2386,7 @@ func _flash_freeze(player: Player) -> void:
 	roar()
 	game.sfx("boss_frost_cast_v2")
 	play_action("freeze")
-	game.spawn_text(global_position + Vector2(0, -84), "FLASH FREEZE — FIND A VENT!", FROST)
+	game.spawn_combat_text(self, "FLASH FREEZE — FIND A VENT!", FROST)
 	var vents: Array = []
 	var n := 2 if enraged else 3   # fewer vents enraged = harder
 	var base_ang := randf() * TAU
@@ -2401,7 +2404,7 @@ func _shatter_lance(player: Player) -> void:
 	player.apply_root(1.0)
 	var from := global_position
 	var dir := (player.global_position - from).normalized()
-	game.spawn_text(player.global_position + Vector2(0, -50), "SHATTER LANCE!", FROST)
+	game.spawn_combat_text(player, "SHATTER LANCE!", FROST)
 	# The line lands AFTER the root breaks — move off the memory of your spot.
 	for i in 6:
 		_boss_telegraph(from + dir * (140.0 + i * 90.0), 72.0, 1.1 + i * 0.12,
@@ -2444,7 +2447,7 @@ func _sleepkeeper(player: Player, to_player: Vector2, dist: float, delta: float)
 			# The owner gets its callout from apply_freeze; keep the host's
 			# existing callout over a remote player as well.
 			if not p.is_locally_controlled():
-				game.spawn_text(p.global_position + Vector2(0, -50), "ASLEEP!", FROST)
+				game.spawn_combat_text(p, "ASLEEP!", FROST)
 		still_map[pid] = acc
 		dz_max = maxi(dz_max, dz)
 	drowse = dz_max
@@ -2464,7 +2467,7 @@ func _sleepkeeper(player: Player, to_player: Vector2, dist: float, delta: float)
 		sprite.modulate = Color(0.75, 0.85, 1.5)
 		roar()
 		play_action("enrage")
-		game.spawn_text(global_position + Vector2(0, -90), "THE QUEEN STIRS.", Color(0.6, 0.85, 1.0))
+		game.spawn_combat_text(self, "THE QUEEN STIRS.", Color(0.6, 0.85, 1.0))
 		_flash_freeze(player)
 
 	# Signature: FROST HYMNAL — slow big telegraphs that pave slow patches.
@@ -2516,7 +2519,7 @@ func _march_dreamers(delta: float) -> void:
 		var to: Vector2 = global_position - d.global_position
 		if to.length() <= 90.0:
 			aura_mult = minf(3.0, aura_mult + 0.15)
-			game.spawn_text(global_position + Vector2(0, -70), "a dreamer joins the hymn", FROST)
+			game.spawn_combat_text(self, "a dreamer joins the hymn", FROST)
 			# The hymn thickens the FLOOR, not just the aura (r51): each arrived
 			# dreamer paves another frost slow-patch under the prey and quickens
 			# the hymnal. A kiter who ignores the march watches their running
@@ -2642,7 +2645,7 @@ func _submerge(_player: Player) -> void:
 	telegraphing = false
 	game.sfx("boss_earth_impact_v2")
 	game.burst(global_position, BOG, 16)
-	game.spawn_text(global_position + Vector2(0, -84), "IT SINKS...", BOG)
+	game.spawn_combat_text(self, "IT SINKS...", BOG)
 	# Chasing eruption lines toward the prey + 2 bog-spawn adds.
 	# §5.2 FLOOR: while it's under, the eruptions chase a rotating
 	# non-target; the SURFACE (signature) still comes up beneath the
@@ -2703,7 +2706,7 @@ func _gardener(player: Player, to_player: Vector2, dist: float, delta: float) ->
 		sprite.modulate = Color(0.7, 1.3, 0.6)
 		roar()
 		play_action("enrage")
-		game.spawn_text(global_position + Vector2(0, -90), "FULL BLOOM!", ROOTC)
+		game.spawn_combat_text(self, "FULL BLOOM!", ROOTC)
 		_sprout_blooms()
 
 	# Signature: VINE LASH — root the player inside a closing ring.
@@ -2757,7 +2760,7 @@ func _tend_blooms() -> void:
 			if b.global_position.distance_to(global_position) <= 150.0:
 				hp = minf(max_hp, hp + max_hp * 0.04)
 				refresh_hp_bar()
-				game.spawn_text(global_position + Vector2(0, -70), "he composts the bloom", ROOTC)
+				game.spawn_combat_text(self, "he composts the bloom", ROOTC)
 			continue
 		still.append(b)
 		if randf() < 0.01:  # throttled drift-poison spread
@@ -2771,7 +2774,7 @@ func _vine_lash(player: Player) -> void:
 	game.sfx("nova")
 	play_action("lash")
 	player.apply_root(1.2)
-	game.spawn_text(player.global_position + Vector2(0, -50), "VINE LASH!", ROOTC)
+	game.spawn_combat_text(player, "VINE LASH!", ROOTC)
 	var center := player.global_position
 	for i in 8:  # a closing ring — break out once the root lets go
 		_boss_telegraph(center + Vector2.from_angle(TAU * i / 8.0) * 210.0, 74.0, 1.4,
@@ -2986,7 +2989,7 @@ func _veyx(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 		sprite.modulate = Color(0.8, 0.9, 1.7)
 		roar()
 		play_action("enrage")
-		game.spawn_text(global_position + Vector2(0, -90), "THE CURRENT UNBOUND!", STORMC)
+		game.spawn_combat_text(self, "THE CURRENT UNBOUND!", STORMC)
 		_spawn_rods()
 
 	# Signature: ARC — to the nearest rod the player is sheltering by, else
@@ -3074,7 +3077,7 @@ func _echo(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 		sprite.modulate = Color(0.85, 0.6, 1.4)
 		roar()
 		play_action("enrage")
-		game.spawn_text(global_position + Vector2(0, -90), "IT REFUSES TO BE FORGOTTEN!", VOIDC)
+		game.spawn_combat_text(self, "IT REFUSES TO BE FORGOTTEN!", VOIDC)
 
 	# Signature: UNNAMING — the mirror copies.
 	if special_cd <= 0.0:
@@ -3111,7 +3114,7 @@ func _echo(player: Player, to_player: Vector2, dist: float, _delta: float) -> Ve
 func _unnaming(player: Player) -> void:
 	roar()
 	play_action("split")
-	game.spawn_text(global_position + Vector2(0, -84), "UNNAMING!", VOIDC)
+	game.spawn_combat_text(self, "UNNAMING!", VOIDC)
 	# Four figures on one ring around the prey — three lies and him. He
 	# takes a random slot himself (the vanish-and-shuffle IS the fight;
 	# without it the copies are scenery and the hunt is trivial).
@@ -3160,14 +3163,14 @@ func _cyrraeth(player: Player, to_player: Vector2, dist: float, delta: float) ->
 		sprite.modulate = Color(0.8, 0.85, 1.5)
 		roar()
 		play_action("enrage")
-		game.spawn_text(global_position + Vector2(0, -90), "THE MOUTH OPENS.", STORMC)
+		game.spawn_combat_text(self, "THE MOUTH OPENS.", STORMC)
 	elif phase == 2 and hp <= max_hp * 0.25:
 		phase = 3
 		enraged = true
 		sprite.modulate = Color(1.0, 0.7, 1.4)
 		roar()
 		play_action("enrage")
-		game.spawn_text(global_position + Vector2(0, -90), "THE WORD, UNFINISHED.", STORMC)
+		game.spawn_combat_text(self, "THE WORD, UNFINISHED.", STORMC)
 
 	if phase == 1:
 		return _cyrraeth_speaker(player, to_player, dist)
@@ -3225,7 +3228,7 @@ func _cyrraeth_mouth(_player: Player, to_player: Vector2, dist: float, delta: fl
 func _storm_rotation() -> void:
 	roar()
 	play_action("storm")
-	game.spawn_text(global_position + Vector2(0, -84), "STAY IN THE QUIET.", STORMC)
+	game.spawn_combat_text(self, "STAY IN THE QUIET.", STORMC)
 	var sectors := 8 if phase == 3 else 4
 	safe_quad = (safe_quad + 1) % sectors
 	var center := _arena_rect().get_center()
@@ -3269,7 +3272,7 @@ func _march_vowkeepers(delta: float) -> void:
 		var to: Vector2 = global_position - v.global_position
 		if to.length() <= 90.0:
 			rotation_pause = maxf(rotation_pause, 10.0)  # it speaks in his place — the storm pauses
-			game.spawn_text(global_position + Vector2(0, -70), "a vow-keeper speaks — the storm pauses", STORMC)
+			game.spawn_combat_text(self, "a vow-keeper speaks — the storm pauses", STORMC)
 			v.queue_free()
 			continue
 		v.global_position += to.normalized() * 55.0 * delta

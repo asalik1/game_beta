@@ -85,7 +85,7 @@ func _use_paladin(slot: String, f: float) -> void:
 			if holy_charge > 0.0 and current_atk() > 0.0:
 				jcoeff += holy_charge / current_atk()
 				holy_charge = 0.0
-				game.spawn_text(global_position + Vector2(0, -50), "SMITE", Color(1.0, 0.95, 0.6))
+				game.spawn_combat_text(self, "SMITE", Color(1.0, 0.95, 0.6))
 			_melee_arc(jcoeff * f, 92.0, "slash", jeff, "swing", "sword")
 			# The hammer lands with weight: a golden shock at the impact.
 			# Eclipse Knight's shock is the CORONA — a dark inner ring inside
@@ -98,7 +98,7 @@ func _use_paladin(slot: String, f: float) -> void:
 				# Noonday: the 4th Judgment lances THROUGH — everything down the
 				# lane behind the target is seared by the unshadowed light.
 				game.sfx("nova", 1.2)
-				game.spawn_text(global_position + Vector2(0, -60), "NOONDAY", Color(1.0, 0.95, 0.7))
+				game.spawn_combat_text(self, "NOONDAY", Color(1.0, 0.95, 0.7))
 				_beam_fx(global_position + jdir * 30.0,
 					global_position + jdir * uniq_k("reach"), Color(1.0, 0.95, 0.7), 0.2)
 				for le in _enemies_within(global_position + jdir * (uniq_k("reach") * 0.5), uniq_k("reach") * 0.5):
@@ -366,7 +366,7 @@ func _consecration_pulse(pos: Vector2, radius: float, mult: float, col: Color, f
 	eff["heal"] = maxf(0.025, float(fx.get("heal", 0.0)))
 	if fx.get("pull", 0):
 		eff["pull"] = 1
-	for e in _enemies_within(pos, radius):
+	for e in _area_hit_targets(pos, radius):
 		# Judgment answers each sinner personally: a small light shaft.
 		_light_pillar(e.global_position, col, 0.5)
 		hit_enemy(e, mult, eff.duplicate())
@@ -397,7 +397,7 @@ func _aegis() -> void:
 			"frame_time": 0.07, "pingpong": true, "fade": 0.3}) == null:
 		_ring_fx(global_position, col, 95.0)
 		game.burst(global_position, col, 10)
-	game.spawn_text(global_position + Vector2(0, -60), "AEGIS", col)
+	game.spawn_combat_text(self, "AEGIS", col)
 	# The ward is an actual shield crest, with four smaller plates orbiting it;
 	# Eclipse carries a dark seal and the Fallen Arbiter a cold rune instead.
 	var ward_tex := "fx_aegis"
@@ -483,7 +483,7 @@ func _aegis_after(dur: float) -> void:
 				hp = minf(max_hp, hp + aegis_amt)
 				game.sfx("potion")
 				_soft_burst(global_position + Vector2(0, -30), Color(1.0, 0.95, 0.6), 12, 0.14, 100.0, 0.7, 0.55, 40.0)
-				game.spawn_text(global_position + Vector2(0, -50), "+%d" % int(aegis_amt), Color(0.5, 1.0, 0.5)))
+				game.spawn_combat_text(self, "+%d" % int(aegis_amt), Color(0.5, 1.0, 0.5)))
 
 
 ## Conviction (round 48): the paladin's "ult" is a STANCE SWAP, not a nuke —
@@ -499,7 +499,7 @@ func _conviction_swap(f := 1.0) -> void:
 	if paladin_mode == "holy":
 		paladin_mode = "retribution"
 		zeal_time = Balance.PALADIN_ZEAL_DUR   # Zeal: the swap into wrath ignites a burst window
-		game.spawn_text(global_position + Vector2(0, -64), "RETRIBUTION — ZEAL!", Color(1.0, 0.45, 0.25))
+		game.spawn_combat_text(self, "RETRIBUTION — ZEAL!", Color(1.0, 0.45, 0.25))
 		game.hud.flash_screen(Color(1.0, 0.4, 0.15), 0.3, 0.3)
 		# The wrath announces itself: chains drag the field in for the verdict.
 		var chain_f := f * Balance.PALADIN_SWAP_CHAINS
@@ -509,8 +509,8 @@ func _conviction_swap(f := 1.0) -> void:
 		_chains_of_wrath(chain_f)
 		if s_passive() == "dawnfall":
 			# Dawnfall: everything near the verdict is left burning and slowed.
-			game.spawn_text(global_position + Vector2(0, -80), "DAWNFALL", Color(1.0, 0.85, 0.5))
-			for de in _enemies_within(global_position, 170.0):
+			game.spawn_combat_text(self, "DAWNFALL", Color(1.0, 0.85, 0.5))
+			for de in _area_hit_targets(global_position, 170.0):
 				if not de.dying:
 					de.apply_burn(_dot_dps(de, current_atk() * uniq_k("burn")),
 						uniq_k("dur"), Color(1.4, 0.8, 0.6), self)
@@ -526,7 +526,7 @@ func _conviction_swap(f := 1.0) -> void:
 		# (Retribution's hot red flash stays UN-skinned — Zeal is a gameplay
 		# read; only the holy side wears the skin's light.)
 		var holy_col := _pal_skin_col(Color(1.0, 0.92, 0.55))
-		game.spawn_text(global_position + Vector2(0, -64), "HOLY", holy_col)
+		game.spawn_combat_text(self, "HOLY", holy_col)
 		game.hud.flash_screen(_pal_skin_col(Color(1.0, 0.9, 0.5)), 0.25, 0.3)
 		_ring_fx(global_position, holy_col, 130.0)
 		game.burst(global_position, _pal_skin_col(Color(1.0, 0.95, 0.7)), 14)
@@ -563,7 +563,7 @@ func _chains_of_wrath(f := 1.0) -> void:
 	var col := _pal_skin_col(_tcolor if _themed else Color(1.0, 0.85, 0.45))
 	if skin == "":
 		_ring_fx(global_position, col, radius, true)
-	game.spawn_text(global_position + Vector2(0, -64), "CHAINS OF WRATH", Color(1, 0.8, 0.4))
+	game.spawn_combat_text(self, "CHAINS OF WRATH", Color(1, 0.8, 0.4))
 	if _tfx.has("chain_guard"):
 		# Aegis: the chains anchor YOU.
 		theme_guard_time = 3.0
@@ -641,7 +641,7 @@ func _chains_of_wrath(f := 1.0) -> void:
 		_ring_fx(global_position, col, 150.0)
 		var saved := _tfx
 		_tfx = fx_copy
-		for e2 in _enemies_within(global_position, 150.0):
+		for e2 in _area_hit_targets(global_position, 150.0):
 			_smite_rip(e2.global_position, col)
 			hit_enemy(e2, ability_coeff("ult") * fmul, {"aoe": true, "stun": 0.5})
 			if heal_frac > 0.0:

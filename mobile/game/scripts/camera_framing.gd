@@ -4,6 +4,18 @@ extends RefCounted
 var room := -1
 var hero_id := 0
 var previous := Vector2.ZERO
+var limits := Rect2() # eased camera limits (world px); empty = snap
+
+
+func enter_room(g: Game, walked: bool) -> void:
+	# Only the boundary poll opts in: the walk keeps its lead, zoom and eased
+	# doorway limits. Map/pocket travel, respawn, snapshots and chapter loads
+	# must snap even when their landing is nearby.
+	if walked:
+		room = g.cur_room
+		return
+	hero_id = 0
+	tick(g, 0.0)
 
 
 static func compose(velocity: Vector2, speed: float, focus: Vector2, has_focus: bool,
@@ -55,8 +67,13 @@ func tick(g: Game, delta: float) -> void:
 		g._cam_look = g._cam_look.lerp(desired["look"], 1.0 - exp(-Balance.CAMERA_LOOKAHEAD_EASE * delta))
 		g._cam_zoom_mult = lerpf(g._cam_zoom_mult, desired["zoom"], 1.0 - exp(-Balance.CAMERA_ZOOM_EASE * delta))
 	g.camera.zoom = Vector2.ONE * base_zoom * g._cam_zoom_mult
-	preload("res://scripts/camera_corridor.gd").apply(g, p)
+	# Doorway limits ease under the engine's hard clamp (limit_smoothed stays
+	# off: a smoothed view would lag outside the drawn area). Resets snap.
+	limits = preload("res://scripts/camera_corridor.gd").apply(g, p, Rect2() if reset else limits, delta)
 	# Ordinary lead follows room clamping; offset deliberately bypasses limits
 	# and is reserved for the owner's impact-shake preference.
 	g.camera.position = g._cam_look
 	g.camera.offset = g._shake_offset()
+	if reset:
+		g.camera.reset_smoothing()
+		g.camera.force_update_scroll()

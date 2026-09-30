@@ -24,7 +24,7 @@ func _use_assassin(slot: String, f: float) -> void:
 					uniq_counter = 0
 					stab_mult *= 1.0 + uniq_k("bonus")
 					stab_eff["stagger"] = uniq_k("stagger")
-					game.spawn_text(global_position + Vector2(0, -56), "THE SUM", Color(0.95, 0.5, 0.4))
+					game.spawn_combat_text(self, "THE SUM", Color(0.95, 0.5, 0.4))
 			var cast_current: bool = await cast_wait(swing_delay(Balance.STAB_STRIKE_DELAY))
 			if not cast_current or dead or downed or ghost:
 				return
@@ -252,7 +252,7 @@ func _death_mark() -> void:
 		target.apply_toxin(_dot_dps(target, current_atk() * float(_tfx["mark_dot"])), 5.0, Color(0.5, 1.2, 0.5), self)
 	var mark_col: Color = Color(0.4, 0.72, 1.0) if phantom else \
 		(Color(1.0, 0.82, 0.3) if skin == "blade_dancer" else Color(1, 0.25, 0.3))
-	game.spawn_text(target.global_position + Vector2(0, -60), "DEATH MARK", mark_col)
+	game.spawn_combat_text(target, "DEATH MARK", mark_col)
 	if not phantom:
 		_mark_overhead_x(target)
 	_death_mark_execution(target, float(_tfx.get("execute", 0.0)))
@@ -456,7 +456,7 @@ func _death_mark_execution(target: CharacterBody2D, execute := 0.0) -> void:
 	_melee_arc(ability_coeff("ult"), 118.0, "slash", {"type": "true"}, "stab", "stab")
 	if execute > 0.0 and is_instance_valid(target) and not target.dying \
 			and target.hp < target.max_hp * 0.3:
-		game.spawn_text(target.global_position + Vector2(0, -70), "EXECUTED", Color(1, 0.15, 0.25))
+		game.spawn_combat_text(target, "EXECUTED", Color(1, 0.15, 0.25))
 		game.burst(target.global_position, Color(0.6, 0.2, 0.6), 16)
 		hit_enemy(target, execute, {"type": "true"})
 	_restore_cast_payload(ambient)

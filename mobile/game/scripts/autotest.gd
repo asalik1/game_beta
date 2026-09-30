@@ -2079,6 +2079,9 @@ func _run_systems() -> void:
 	var world_read_error: String = preload("res://scripts/tests/test_world_read.gd").run(self)
 	if world_read_error != "":
 		return _fail(world_read_error)
+	var foliage_error: String = await preload("res://scripts/tests/test_world_read.gd").foliage(self)
+	if foliage_error != "":
+		return _fail(foliage_error)
 	var boss_cast_error: String = preload("res://scripts/tests/test_boss_cast.gd").run(self)
 	if boss_cast_error != "":
 		return _fail("boss casts: " + boss_cast_error)
@@ -2088,6 +2091,9 @@ func _run_systems() -> void:
 	var wayfinder_error: String = await preload("res://scripts/tests/test_wayfinder.gd").run(self)
 	if wayfinder_error != "":
 		return _fail("wayfinder: " + wayfinder_error)
+	var boss_walk_error: String = preload("res://scripts/tests/test_boss_walk.gd").run(self)
+	if boss_walk_error != "":
+		return _fail("boss walk: " + boss_walk_error)
 
 	# 6. Shop + codex + map still open fine.
 	game.player.gold = 500
@@ -2383,6 +2389,9 @@ func _run_systems() -> void:
 		return _fail(plates_error)
 	print("ok: story plates (advance keeps the on-screen blend, registered dissolves, focal envelopes, bounded drift, SKIP/guarded finish)")
 	await _test_tell_shapes()
+	var urgency_error: String = await preload("res://scripts/tests/tell_urgency.gd").suite(self)
+	if urgency_error != "":
+		return _fail("ground tell urgency: " + urgency_error)
 
 	# 5c. Endgame modes (ACT2_DESIGN.md §II): The Crucible + The Waking Depths.
 	await _test_endgame()

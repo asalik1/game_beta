@@ -232,7 +232,9 @@ static func _stun_checks(g: Game, p: Player) -> String:
 	# Exercise the real PvP delivery branch, without borrowing a live duel.
 	var session := WireSession.new()
 	session.game = g
-	var children_before := g.get_child_count()
+	# The callout is combat text: it rides the player's damage column, which
+	# starts empty so only this delivery can satisfy the check.
+	g.clear_damage_numbers(p.get_instance_id())
 	session._pvp_apply_status(1, "freeze", 1.6, 0.0)
 	session.free()
 	var error := _chip_error(h, p, "stunned")
@@ -242,12 +244,7 @@ static func _stun_checks(g: Game, p: Player) -> String:
 		return "PvP stun still has a Frozen chip or incorrect restrictions"
 	if not is_equal_approx(p.frozen_time, 0.8):
 		return "stun label changed the reduced hard-CC duration"
-	var callout := false
-	for i in range(children_before, g.get_child_count()):
-		var child := g.get_child(i)
-		if child is Label and child.text == "STUNNED!":
-			callout = true
-	if not callout:
+	if not _column_shows(g, p, "STUNNED!"):
 		return "stun is missing the STUNNED! callout"
 	for other in Hud.BUFF_ICONS:
 		if other != "stunned" and Hud.BUFF_ICONS[other] == Hud.BUFF_ICONS.stunned:
@@ -286,7 +283,7 @@ static func _stun_checks(g: Game, p: Player) -> String:
 		p.frozen_time = 0.0
 		session = WireSession.new()
 		session.game = g
-		children_before = g.get_child_count()
+		g.clear_damage_numbers(p.get_instance_id())
 		session._pvp_apply_status(1, "freeze", 1.6, 0.0, row[0])
 		session.free()
 		error = _chip_error(h, p, row[1])
@@ -295,15 +292,21 @@ static func _stun_checks(g: Game, p: Player) -> String:
 		if not _entry(h, wrong).is_empty() or not _entry(h, "asleep").is_empty() \
 				or not is_equal_approx(p.frozen_time, 0.8):
 			return "PvP label '%s' showed the wrong chip or changed the duration" % row[0]
-		callout = false
-		for i in range(children_before, g.get_child_count()):
-			var child := g.get_child(i)
-			if child is Label and child.text == row[2]:
-				callout = true
-		if not callout:
+		if not _column_shows(g, p, row[2]):
 			return "PvP label '%s' is missing the %s callout" % [row[0], row[2]]
 	print("ok: HUD stun (Stunned chip, STUNNED! callout, reduced countdown, overlap, refresh, expiry, genuine freeze control, duel Frozen label, label whitelist)")
 	return ""
+
+
+## Hard-CC callouts are combat text: a row in the player's own damage column.
+static func _column_shows(g: Game, p: Player, text: String) -> bool:
+	var col: Node = g._damage_columns.get(p.get_instance_id())
+	if col == null:
+		return false
+	for entry in col.entries:
+		if is_instance_valid(entry.label) and entry.label.text == text:
+			return true
+	return false
 
 
 ## Two private ENet branches exercise shell -> host status RPC -> guest owner.

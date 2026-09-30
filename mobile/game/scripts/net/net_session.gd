@@ -1248,14 +1248,25 @@ func _rpc_telegraph_safe(centers: Array, radius: float, delay: float, opts: Dict
 
 ## HOST -> GUESTS: a boss/world callout banner at a world position. Fanned by
 ## game.spawn_text_all (the host renders its own copy inline). Guests render the
-## SAME text at the same world point — their boss mirror sits there.
-func host_spawn_text(pos: Vector2, text: String, color: Color, hold: float) -> void:
-	_rpc_spawn_text.rpc(pos, text, color, hold)
+## SAME text; combat payloads carry stable target identity to join its column.
+## Narrative payloads keep their original world-point presentation.
+func host_spawn_text(pos: Vector2, text: String, color: Color, hold: float, enemy_id := 0, player_id := 0) -> void:
+	_rpc_spawn_text.rpc(pos, text, color, hold, enemy_id, player_id)
 
 
 @rpc("authority", "call_remote", "reliable")
-func _rpc_spawn_text(pos: Vector2, text: String, color: Color, hold: float) -> void:
+func _rpc_spawn_text(pos: Vector2, text: String, color: Color, hold: float, enemy_id := 0, player_id := 0) -> void:
 	if game == null or multiplayer.is_server() or not world_ready:
+		return
+	_present_spawn_text(pos, text, color, hold, enemy_id, player_id)
+
+
+func _present_spawn_text(pos: Vector2, text: String, color: Color, hold: float, enemy_id: int, player_id: int) -> void:
+	if enemy_id > 0 or player_id > 0:
+		var target: Node2D = net_enemies.get(enemy_id) if enemy_id > 0 else _player_of(player_id)
+		# A despawned target's late packet must not fall back to an unqueued label.
+		if is_instance_valid(target):
+			game.spawn_combat_text(target, text, color, hold)
 		return
 	game.spawn_text(pos, text, color, hold)
 

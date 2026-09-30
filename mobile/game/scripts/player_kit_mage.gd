@@ -46,7 +46,7 @@ func _use_mage(slot: String, f: float) -> void:
 				if uniq_counter >= int(uniq_k("every")):
 					uniq_counter = 0
 					uniq_t["ninthstar_armed"] = 0.5
-					game.spawn_text(global_position + Vector2(0, -56), "NINTH STAR", Color(1.0, 0.95, 0.75))
+					game.spawn_combat_text(self, "NINTH STAR", Color(1.0, 0.95, 0.75))
 			if _tfx.get("twin", 0):
 				# Wind: split the bolt.
 				if skin == "crystal_archmage":
@@ -539,7 +539,7 @@ func _apply_nova_gameplay(f: float, radius: float, inward: bool, fiery: bool) ->
 	if not (fiery or inward):
 		eff["knock"] = 340.0
 		eff["knock_no_boss"] = 1
-	var caught := _enemies_within(global_position, radius)
+	var caught := _area_hit_targets(global_position, radius)
 	var root_dur: float = maxf(uniq_k("root") if s_passive() == "worldroot" else 0.0,
 		uniq_set_k("E", 6, "nova_root"))  # Verdancy AND/OR the bulwark set's 6pc
 	for e in caught:
@@ -548,7 +548,7 @@ func _apply_nova_gameplay(f: float, radius: float, inward: bool, fiery: bool) ->
 			# The worldroot HOLDS what the nova catches (a near-total slow is
 			# the root — mobs only; a boss converts it like any CC).
 			e.apply_slow(0.05, root_dur)
-			game.spawn_text(e.global_position + Vector2(0, -44), "ROOTED", Color(0.5, 0.9, 0.45))
+			game.spawn_combat_text(e, "ROOTED", Color(0.5, 0.9, 0.45))
 	if s_passive() == "springwake" and not caught.is_empty():
 		# Springwake: each enemy caught in the bloom mends you.
 		gain_hp(max_hp * uniq_k("heal_per") * caught.size())
@@ -650,7 +650,7 @@ func _blink(f := 1.0) -> void:
 		dr_time = blink_dr_dur
 		dr_amt = blink_dr
 		game.sfx("ward", 1.0, 0.0, -3.0)
-		game.spawn_text(global_position + Vector2(0, -52), "WARD", Color(0.6, 0.9, 1.0))
+		game.spawn_combat_text(self, "WARD", Color(0.6, 0.9, 1.0))
 
 
 func _mage_skin_blink_visual(start: Vector2, finish: Vector2) -> void:
@@ -797,7 +797,7 @@ func _meteor(f := 1.0) -> void:
 	if _tfx.has("haste_dur"):
 		cast_haste_cdr = float(_tfx.get("haste_cdr", 0.0))
 		cast_haste_time = float(_tfx.get("haste_dur", 5.0))
-		game.spawn_text(global_position + Vector2(0, -60), "TAILWIND", Color(0.7, 1.0, 0.75))
+		game.spawn_combat_text(self, "TAILWIND", Color(0.7, 1.0, 0.75))
 
 
 ## One comet of a Starfall, recursing through the previous comet's fall:
@@ -856,10 +856,11 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable(), f := 1.0) -> 
 	mark.scale = Vector2(1, 1)
 	mark.z_index = -6
 	game.add_child(mark)
+	preload("res://scripts/ground_tell.gd").animate_surface(mark, col, Balance.MAGE_METEOR_FALL_TIME)
 	var mark_tw := mark.create_tween()
 	var base_radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
 	var exact_mark_scale := base_radius / 32.0
-	mark_tw.tween_property(mark, "scale", Vector2.ONE * exact_mark_scale, 0.62)
+	mark_tw.tween_property(mark, "scale", Vector2.ONE * exact_mark_scale, Balance.MAGE_METEOR_FALL_TIME)
 
 	# The base meteor itself: big, burning, with a particle trail. Skin scenes
 	# returned above and never share this body or its impact language.
@@ -903,7 +904,7 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable(), f := 1.0) -> 
 	spr.add_child(trail)
 
 	var tween := spr.create_tween()
-	tween.tween_property(spr, "global_position", pos, 0.62).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_property(spr, "global_position", pos, Balance.MAGE_METEOR_FALL_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tween.tween_callback(func() -> void:
 		spr.queue_free()
 		if is_instance_valid(mark):
@@ -931,7 +932,7 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable(), f := 1.0) -> 
 		# landing time (the Consecration save-restore idiom).
 		var saved := _tfx
 		_tfx = fx_copy
-		for e in _enemies_within(pos, radius):
+		for e in _area_hit_targets(pos, radius):
 			var eff := fx_copy.duplicate()
 			eff["burn"] = current_atk() * 0.4 * float(fx_copy.get("burn_mult", 1.0)) * scale
 			eff["aoe"] = true
@@ -947,21 +948,24 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable(), f := 1.0) -> 
 	)
 
 
-func _mage_ult_mark(pos: Vector2, col: Color, radius: float) -> Sprite2D:
+func _mage_ult_mark(pos: Vector2, col: Color, radius: float, alpha := 0.30) -> Sprite2D:
 	# Retain a quiet hit-area telegraph for combat readability; the authored
 	# sequence above it owns the fantasy and never changes the real radius.
 	var mark := Sprite2D.new()
 	mark.texture = Art.tex("telegraph")
 	mark.global_position = pos
-	mark.modulate = Color(col, 0.30)
+	mark.modulate = Color(col, alpha)
 	mark.scale = Vector2(1.0, 1.0)
 	mark.z_index = -6
 	game.add_child(mark)
+	# The skin scenes resolve on MAGE_SKIN_ULT_IMPACT_DELAY; the ramp and the
+	# growth track that impact, not the base comet's fall.
+	preload("res://scripts/ground_tell.gd").animate_surface(mark, col, Balance.MAGE_SKIN_ULT_IMPACT_DELAY)
 	var tw := mark.create_tween()
 	# The procedural telegraph is exactly 64px wide: radius / 32 puts its rim
 	# on the literal gameplay-radius boundary rather than merely near it.
 	var exact_scale := radius / 32.0
-	tw.tween_property(mark, "scale", Vector2.ONE * exact_scale, 0.62)
+	tw.tween_property(mark, "scale", Vector2.ONE * exact_scale, Balance.MAGE_SKIN_ULT_IMPACT_DELAY)
 	return mark
 
 
@@ -969,8 +973,9 @@ func _void_weaver_ult_scene(pos: Vector2, hit_scale: float, on_land: Callable,
 		fx_copy: Dictionary, col: Color, f := 1.0) -> void:
 	var world_id := game.world.get_instance_id()
 	var radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
-	var mark := _mage_ult_mark(pos, col, radius)
-	mark.modulate = Color(0.58, 0.18, 0.94, 0.50)
+	# The Void Weaver's own purple is its ramp theme (a later modulate would
+	# be overwritten by the ramp every frame).
+	var mark := _mage_ult_mark(pos, Color(0.58, 0.18, 0.94), radius, 0.50)
 	var floor_light := Sprite2D.new()
 	floor_light.texture = Art.tex("glow")
 	floor_light.global_position = pos
@@ -1139,7 +1144,7 @@ func _resolve_mage_skin_ult(pos: Vector2, hit_scale: float, on_land: Callable,
 	var radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
 	var saved := _tfx
 	_tfx = fx_copy
-	for e in _enemies_within(pos, radius):
+	for e in _area_hit_targets(pos, radius):
 		var eff := fx_copy.duplicate()
 		eff["burn"] = current_atk() * 0.4 * float(fx_copy.get("burn_mult", 1.0)) * hit_scale
 		eff["aoe"] = true

@@ -3,6 +3,11 @@ extends ShotRig
 
 
 func _ready() -> void:
+	if flag("transitions"):
+		var transition_error: String = await preload("res://scripts/tests/camera_transitions_live.gd").run(self)
+		if transition_error != "": push_error(transition_error)
+		finish(0 if transition_error == "" else 1)
+		return
 	if flag("impacts"):
 		await boot("archer", "ch1", false)
 		var impact_error: String = await preload("res://scripts/tests/camera_impacts_live.gd").run(self)

@@ -5,6 +5,8 @@ const WORKING := 1
 const COMPLETE := 2
 const CLOSED := 3
 const ART := preload("res://assets/sprites/road_caravan_cart.png")
+# The wheel hub (59%, 76% of the art) is the cart's ground anchor.
+const ART_OFFSET := Vector2(0.5, 0.5) - Vector2(0.59, 0.76)
 const Hunt := preload("res://scripts/road_hunt.gd")
 const Context := preload("res://scripts/encounter_context.gd")
 var game: Game
@@ -84,7 +86,18 @@ static func placement(g: Game, room: int) -> Vector2:
 	return Vector2(INF, INF)
 
 
+## The painted cart body around its anchor, exactly as _ready places it.
+static func art_rect(point: Vector2) -> Rect2:
+	var art_size := ART.get_size() * Balance.CARAVAN_ART_WIDTH / ART.get_width()
+	return Rect2(point + ART_OFFSET * Balance.CARAVAN_ART_WIDTH - art_size * 0.5, art_size)
+
+
 static func _placement_clear(g: Game, room: int, point: Vector2) -> bool:
+	# The fallback grid reaches closer to an entrance than the centre rings:
+	# the painted cart body stays off every door threshold.
+	if preload("res://scripts/door_threshold.gd").intersects(
+			preload("res://scripts/door_threshold.gd").zones(g, room), art_rect(point)):
+		return false
 	for interaction in g.interactables:
 		var actor: Variant = interaction.get("node")
 		if is_instance_valid(actor) and actor is Node2D and not actor.is_queued_for_deletion() \
@@ -131,7 +144,7 @@ func _ready() -> void:
 	body.texture = ART
 	body.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	body.scale = Vector2.ONE * Balance.CARAVAN_ART_WIDTH / ART.get_width()
-	body.position = (Vector2(0.5, 0.5) - Vector2(0.59, 0.76)) * Balance.CARAVAN_ART_WIDTH
+	body.position = ART_OFFSET * Balance.CARAVAN_ART_WIDTH
 	add_child(body)
 	# The cart root owns its y-sort anchor; the art is raised above that base.
 	body.set_meta("occlusion_sort_y", global_position.y)

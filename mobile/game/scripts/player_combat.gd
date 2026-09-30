@@ -1313,13 +1313,13 @@ func hit_enemy(target: CharacterBody2D, mult: float, effects := {}) -> void:
 	var result := Stats.resolve(base_amt * (1.0 - true_frac), dmg_type,
 		crit, crit_dmg, pen, dex, e_res, e_eva, e.critres, crit_exempt)
 	if result["miss"] and true_frac <= 0.0:
-		game.spawn_text(e.global_position + Vector2(0, -30), "MISS", Color(0.7, 0.7, 0.7))
+		game.spawn_combat_text(e, "MISS", Color(0.7, 0.7, 0.7))
 		return
 	# GRAZE: your DEX is closing on their evasion, so the dodge only clipped
 	# you instead of erasing the hit. Called out loud — a half-damage number
 	# with no cause reads as a bad roll, and this one is a BUILD state.
 	if result.get("graze", false):
-		game.spawn_text(e.global_position + Vector2(0, -30), "GRAZE", Color(0.8, 0.85, 0.5))
+		game.spawn_combat_text(e, "GRAZE", Color(0.8, 0.85, 0.5))
 	var dmg: float = float(result["dmg"]) + base_amt * true_frac
 	var is_crit: bool = result["crit"]
 	# Shadow marked_crit: your MARKED / EXPOSED prey always crits. Keyed on
@@ -1383,7 +1383,7 @@ func hit_enemy(target: CharacterBody2D, mult: float, effects := {}) -> void:
 		# passive proc runs +35% — see Classes.THEMES). apply_vuln's expiry
 		# reset keeps a later full-weight mark from inheriting the lean amp.
 		e.apply_vuln(3.0, float(effects.get("vuln_amp", -1.0)))  # MP-10 seam: a mirror forwards the mark to the host
-		game.spawn_text(e.global_position + Vector2(0, -44), "EXPOSED", Color(1, 0.5, 0.3))
+		game.spawn_combat_text(e, "EXPOSED", Color(1, 0.5, 0.3))
 	if effects.has("shred"):
 		# Named-unique armor shred (pennon/wardcrack): the crack opens for the
 		# NEXT hit — this one resolved against the res read above.
@@ -1563,7 +1563,7 @@ func hit_enemy(target: CharacterBody2D, mult: float, effects := {}) -> void:
 		cds["a2"] = maxf(Balance.DASH_CONNECT_FLOOR, cds["a2"] * (1.0 - dash_refund_frac))
 		dash_refund_t = 0.0
 		dash_refund_frac = 0.0
-		game.spawn_text(global_position + Vector2(0, -60), "PHANTOM", Color(0.7, 0.5, 1.0))
+		game.spawn_combat_text(self, "PHANTOM", Color(0.7, 0.5, 1.0))
 	if uniq_sp != "":
 		_uniq_after_hit(e, uniq_sp, dmg, mult, is_crit, effects)
 	# Assassin aggressor-set 6pc: a Stab kill feeds the running blood surge
@@ -1603,7 +1603,7 @@ func hit_enemy(target: CharacterBody2D, mult: float, effects := {}) -> void:
 		e.apply_knock(dir * (sf * Balance.BOSS_SHOVE_FACTOR if e is Boss else sf), true)
 	if effects.has("splash"):
 		game.burst(e.global_position, _tcolor if _themed else Color(1.0, 0.6, 0.2), 8)
-		for n2 in _enemies_within(e.global_position, 80.0):
+		for n2 in _area_hit_targets(e.global_position, 80.0):
 			var e2 := n2 as Enemy  # splash sub-hits are the flat enemy path (a rival in the sweep skips)
 			if e2 != null and e2 != e and not e2.dying:
 				e2.hit_src = self
@@ -1711,7 +1711,7 @@ func _uniq_after_hit(e: Enemy, sp: String, dmg: float, mult: float, is_crit: boo
 				# Comet's Eye: the critical bolt bursts on the victim.
 				if effects.get("uniq_a1", 0):
 					game.burst(e.global_position, Color(1.0, 0.75, 0.4), 8)
-					for n2 in _enemies_within(e.global_position, 80.0):
+					for n2 in _area_hit_targets(e.global_position, 80.0):
 						var e2 := n2 as Enemy  # flat sub-hit: enemy path only
 						if e2 != null and e2 != e and not e2.dying:
 							e2.hit_src = self
@@ -1724,7 +1724,7 @@ func _uniq_after_hit(e: Enemy, sp: String, dmg: float, mult: float, is_crit: boo
 					game.sfx("parry", 0.8)
 					_ring_fx(e.global_position, Color(1.0, 0.9, 0.6), 70.0)
 					_stun_or_concuss(e, float(uk["stagger"]))
-					for n2 in _enemies_within(e.global_position, 80.0):
+					for n2 in _area_hit_targets(e.global_position, 80.0):
 						var e2 := n2 as Enemy  # flat sub-hit: enemy path only
 						if e2 != null and e2 != e and not e2.dying:
 							e2.hit_src = self
@@ -1752,7 +1752,7 @@ func _uniq_after_hit(e: Enemy, sp: String, dmg: float, mult: float, is_crit: boo
 			if not died and (effects.get("uniq_a1", 0) or effects.get("uniq_dash", 0)) \
 					and not (e is Boss) and e.gold_value > 0 and e.max_hp > 0.0 \
 					and e.hp < e.max_hp * float(uk["threshold"]):
-				game.spawn_text(e.global_position + Vector2(0, -44), "BEHEADED", Color(1.0, 0.35, 0.3))
+				game.spawn_combat_text(e, "BEHEADED", Color(1.0, 0.35, 0.3))
 				game.burst(e.global_position, Color(0.9, 0.2, 0.25), 10)
 				e.hit_src = self
 				e.take_damage(e.hp + 10.0, (e.global_position - global_position).normalized(), true)
@@ -1785,7 +1785,7 @@ func _uniq_after_hit(e: Enemy, sp: String, dmg: float, mult: float, is_crit: boo
 				uniq_kills += 1
 				if uniq_kills >= int(uk["kills"]):
 					uniq_kills = 0
-					game.spawn_text(global_position + Vector2(0, -64), "ABSOLUTION", Color(1.0, 0.92, 0.6))
+					game.spawn_combat_text(self, "ABSOLUTION", Color(1.0, 0.92, 0.6))
 					_uniq_toll(float(uk["mult"]))
 
 
@@ -1805,7 +1805,7 @@ func _uniq_beat(id: String, foe: Enemy = null) -> void:
 			# in practice; grit_cap is 0 elsewhere and the stack stays inert).
 			if grit_stacks < int(grit_cap):
 				grit_stacks += 1
-				game.spawn_text(global_position + Vector2(0, -56), "GRIT x%d" % grit_stacks,
+				game.spawn_combat_text(self, "GRIT x%d" % grit_stacks,
 					Color(1.0, 0.75, 0.35))
 			grit_time = 6.0
 		"holy":
@@ -1995,7 +1995,7 @@ func _hit_rival(q: Player, mult: float, effects := {}) -> void:
 		q.apply_stun(0.5, cc_reason)
 	if effects.has("vuln") and randf() < effects["vuln"]:
 		q.apply_vuln(3.0, float(effects.get("vuln_amp", -1.0)))
-		game.spawn_text(q.global_position + Vector2(0, -44), "EXPOSED", Color(1, 0.5, 0.3))
+		game.spawn_combat_text(q, "EXPOSED", Color(1, 0.5, 0.3))
 	if effects.has("heal"):
 		gain_hp(max_hp * effects["heal"])
 	if effects.has("blood_amp"):
@@ -2073,6 +2073,12 @@ func _stun_or_concuss(t: CharacterBody2D, dur: float) -> void:
 				(e.global_position - global_position).normalized())
 	else:
 		e.apply_stun(dur)
+
+
+## A damaging area touches foliage even when no combat target is present.
+func _area_hit_targets(center: Vector2, radius: float) -> Array:
+	preload("res://scripts/foliage_rustle.gd").strike_circle(game, center, radius)
+	return _enemies_within(center, radius)
 
 
 ## Every live combat target within radius — the AoE sweep. Union-aware since
@@ -2575,7 +2581,7 @@ func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style
 	var hits := 0
 	preload("res://scripts/reactive_terrain.gd").strike_circle(game, self,
 		global_position + dir * reach * 0.55, reach * 0.55)
-	for e in _enemies_within(global_position + dir * reach * 0.55, reach * 0.55):
+	for e in _area_hit_targets(global_position + dir * reach * 0.55, reach * 0.55):
 		hit_enemy(e, mult, effects.duplicate())
 		hits += 1
 	return hits
@@ -2646,7 +2652,7 @@ func _grant_stab_surge() -> void:
 			surge_col = Color(0.28, 0.50, 1.0)
 		elif skin == "blade_dancer":
 			surge_col = Color(1.0, 0.85, 0.35)
-		game.spawn_text(global_position + Vector2(0, -52), "BLOOD SURGE", surge_col)
+		game.spawn_combat_text(self, "BLOOD SURGE", surge_col)
 	stab_ls_time = 4.0
 	stab_ls_amt = Balance.SURGE_LS_FLOOR + Balance.SURGE_LS_SCALE * (1.0 - hp / max_hp)
 
@@ -2843,6 +2849,9 @@ func _mist(pos: Vector2, radius: float, dps_mult: float, color: Color, dur := 2.
 	var tint := Color(1, 1, 1) if (color.g > color.r and color.g > color.b) else color
 
 	# --- arrival: the venom SPLASH (impact) -------------------------------
+	# The splash shakes the plants it lands on once; the lingering gas ticks
+	# below stay target-only, or the cloud would thrash them for its whole life.
+	preload("res://scripts/foliage_rustle.gd").strike_circle(game, pos, radius)
 	# Body under the actors (z −1 abs), a half-alpha ghost of it over them:
 	# the splat engulfs the victim without hiding it (FX layering rule).
 	if have_art:

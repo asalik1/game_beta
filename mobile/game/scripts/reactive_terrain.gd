@@ -52,7 +52,10 @@ static func spawn_room(g: Game, zi: int, reserved: Array, placed: Array) -> void
 					+ Vector2.from_angle(rng.randf() * TAU) * rng.randf_range(Balance.REACTIVE_PACK_OFFSET.x, Balance.REACTIVE_PACK_OFFSET.y)
 				if not Rect2(Vector2.ONE * Balance.REACTIVE_MARGIN, rect.size - Vector2.ONE * Balance.REACTIVE_MARGIN * 2).has_point(local):
 					continue
-			if g._reserved_blocks(reserved, local):
+			if g._reserved_blocks(reserved, local) or preload("res://scripts/door_threshold.gd").intersects(
+					preload("res://scripts/door_threshold.gd").zones(g, zi),
+					Rect2(rect.position + local - Vector2.ONE * Balance.REACTIVE_ART_HEIGHT,
+						Vector2.ONE * Balance.REACTIVE_ART_HEIGHT * 2.0)):
 				continue
 			var blocked := false
 			for other: Vector2 in placed:
@@ -228,6 +231,7 @@ func apply_state(next: int, fuse: float, quiet := false) -> void:
 		clock = null
 		pop_age = Balance.REACTIVE_POP_TIME if quiet else 0.0
 		if not quiet:
+			preload("res://scripts/foliage_rustle.gd").strike_circle(game, global_position, Balance.REACTIVE_RADIUS)
 			game.burst(global_position + Vector2(0, -14), TYPES[kind].color, 20)
 			game.sfx("gate" if kind == "ember" else "nova", 0.9)
 	queue_redraw()
@@ -238,8 +242,8 @@ func _physics_process(delta: float) -> void:
 		caption.visible = false
 		return
 	if phase == 0:
-		_marker_age = fposmod(_marker_age + delta, Balance.REACTIVE_MARKER_ORBIT_SECONDS)
-		ready_marker.progress = _marker_age / Balance.REACTIVE_MARKER_ORBIT_SECONDS
+		_marker_age = fposmod(_marker_age + delta, Balance.REACTIVE_MARKER_BREATHE_SECONDS)
+		ready_marker.progress = _marker_age / Balance.REACTIVE_MARKER_BREATHE_SECONDS
 	if phase == 1:
 		# A deserted/reset encounter cannot fire a delayed blast into a return.
 		if not game.net_guest():
@@ -264,7 +268,7 @@ func _physics_process(delta: float) -> void:
 	if near and phase == 0:
 		prompt.text = game.touchify("E — " + String(TYPES[kind].verb))
 	caption.visible = near and phase != 2 and not game.input_overlay_up()
-	caption.text = ("BLAST — MOVE!  %.1f" % remaining if kind == "ember" else "FROST — MOVE!  %.1f" % remaining) if phase == 1 else String(TYPES[kind].name)
+	caption.text = ("Blast! Move away" if kind == "ember" else "Frost burst! Move away") if phase == 1 else String(TYPES[kind].name)
 	queue_redraw()
 
 

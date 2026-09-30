@@ -2,6 +2,8 @@ extends Node2D
 ## A small, nonblocking bridge-side prop and animated shoal. Kept with the
 ## room's scenery so terrain repaint and chapter teardown remove it together.
 const Fishing := preload("res://scripts/fishing.gd")
+const ART := preload("res://assets/sprites/fishing_nook.png")
+const LIFT := 0.43  # the nook art's centre sits this share of its height above the feet
 var game: Game
 var zone := -1
 var water_pos := Vector2.ZERO
@@ -13,8 +15,12 @@ static func install(g: Game, zi: int, bridge: Rect2) -> Node2D:
 	var spot := new()
 	spot.game = g
 	spot.zone = zi
-	spot.position = Vector2(bridge.position.x + 26, bridge.end.y - 26)
-	spot.water_pos = Vector2(bridge.get_center().x, bridge.end.y + 40) - spot.position
+	spot.position = bank_point(g, zi, bridge)
+	# The shoal ripples in the channel beside the nook, never on the planks.
+	var water := Vector2(bridge.get_center().x, spot.position.y + 66.0)
+	if bridge.grow(10.0).has_point(water):
+		water.y = bridge.position.y - 40.0
+	spot.water_pos = water - spot.position
 	g.world.add_child(spot)
 	g.interactables.append({"node": spot, "prompt": spot.prompt,
 		"action": spot.interact, "fishing": true})
@@ -22,13 +28,38 @@ static func install(g: Game, zi: int, bridge: Rect2) -> Node2D:
 	return spot
 
 
+## The nook's bank spot: beside the bridge's west end, unless that is inside a
+## door threshold (a near-wall river on the W/E lane). Then walk along the same
+## bank, away from the lane (south first, then north), until the painted nook
+## clears every threshold. If no bank point clears, keep the original spot.
+static func bank_point(g: Game, zi: int, bridge: Rect2) -> Vector2:
+	var start := Vector2(bridge.position.x + 26, bridge.end.y - 26)
+	var thresholds := preload("res://scripts/door_threshold.gd").zones(g, zi)
+	var bounds := g.play_rect(zi).grow(-Balance.FISH_BANK_MARGIN)
+	for step in Balance.DOOR_THRESHOLD_PLACE_TRIES:
+		for heading in ([1.0] if step == 0 else [1.0, -1.0]):
+			var pos := start + Vector2(0, heading * step * Balance.DOOR_THRESHOLD_RELOCATE_STEP)
+			if pos.y < bounds.position.y or pos.y > bounds.end.y:
+				continue
+			if not preload("res://scripts/door_threshold.gd").intersects(thresholds, footprint(pos)):
+				return pos
+	return start
+
+
+## The painted nook exactly as _ready draws it (feet at the node), plus the
+## shared art pad.
+static func footprint(pos: Vector2) -> Rect2:
+	var size := Vector2(float(ART.get_width()) / ART.get_height(), 1.0) * Balance.FISH_PROP_HEIGHT
+	return Rect2(pos + Vector2(-size.x * 0.5, -size.y * (LIFT + 0.5)), size).grow(Balance.DOOR_THRESHOLD_ART_PAD)
+
+
 func _ready() -> void:
 	add_to_group("fishing_spots")
 	var sprite := Sprite2D.new()
-	sprite.texture = load("res://assets/sprites/fishing_nook.png")
+	sprite.texture = ART
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	sprite.scale = Vector2.ONE * Balance.FISH_PROP_HEIGHT / sprite.texture.get_height()
-	sprite.position = Vector2(0, -Balance.FISH_PROP_HEIGHT * 0.43)
+	sprite.position = Vector2(0, -Balance.FISH_PROP_HEIGHT * LIFT)
 	add_child(sprite)
 	prompt = Label.new()
 	prompt.text = game.touchify("E — Fish the river")

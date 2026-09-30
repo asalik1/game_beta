@@ -2739,35 +2739,35 @@ func _use_potion(c: Dictionary, gate_key: String) -> String:
 		"heal_instant":
 			gain_hp((max_hp - hp) * amt * constancy_heal_mult())
 			game.sfx("potion")
-			game.spawn_text(global_position + Vector2(0, -56), "+HP", Color(0.4, 1.0, 0.4))
+			game.spawn_combat_text(self, "+HP", Color(0.4, 1.0, 0.4))
 		"heal_tonic":
 			heal_tonic_rate = ((max_hp - hp) * amt * constancy_heal_mult()) / maxf(0.1, dur)
 			heal_tonic_time = dur
 			game.sfx("potion", 1.1)
-			game.spawn_text(global_position + Vector2(0, -56), "MENDING…", Color(0.5, 1.0, 0.6))
+			game.spawn_combat_text(self, "MENDING…", Color(0.5, 1.0, 0.6))
 		"mana_instant":
 			mp = minf(max_mp, mp + (max_mp - mp) * amt)
 			game.sfx("potion", 1.3)
-			game.spawn_text(global_position + Vector2(0, -56), "MANA RESTORED", Color(0.5, 0.7, 1.0))
+			game.spawn_combat_text(self, "MANA RESTORED", Color(0.5, 0.7, 1.0))
 		"mana_tonic":
 			mana_tonic_rate = ((max_mp - mp) * amt) / maxf(0.1, dur)
 			mana_tonic_time = dur
 			game.sfx("potion", 1.25)
-			game.spawn_text(global_position + Vector2(0, -56), "MANA TIDE…", Color(0.5, 0.7, 1.0))
+			game.spawn_combat_text(self, "MANA TIDE…", Color(0.5, 0.7, 1.0))
 		"might":
 			elixir_time = dur
 			elixir_atk = amt
 			game.sfx("potion", 0.85)
-			game.spawn_text(global_position + Vector2(0, -56), "MIGHT!", Color(1.0, 0.6, 0.3))
+			game.spawn_combat_text(self, "MIGHT!", Color(1.0, 0.6, 0.3))
 		"ward":
 			dr_time = dur
 			dr_amt = amt
 			game.sfx("potion", 0.75)
-			game.spawn_text(global_position + Vector2(0, -56), "WARDED!", Color(0.5, 0.8, 1.0))
+			game.spawn_combat_text(self, "WARDED!", Color(0.5, 0.8, 1.0))
 		"renewal":
 			gain_hp(max_hp * amt * constancy_heal_mult())
 			game.sfx("potion", 1.15)
-			game.spawn_text(global_position + Vector2(0, -56), "RENEWED", Color(0.5, 1.0, 0.6))
+			game.spawn_combat_text(self, "RENEWED", Color(0.5, 1.0, 0.6))
 	_apply_potion_sting(c.get("sting", {}))
 	var idx: int = preload("res://scripts/gear_care.gd").index_of(consumables, c)
 	if idx >= 0:
@@ -2790,27 +2790,27 @@ func _apply_potion_sting(sting: Dictionary) -> void:
 		"dmg_taken":
 			laced_dmg_in_amt = a
 			laced_dmg_in_time = d
-			game.spawn_text(global_position + Vector2(0, -40), "WEAKENED", Color(0.9, 0.5, 0.4))
+			game.spawn_combat_text(self, "WEAKENED", Color(0.9, 0.5, 0.4))
 		"heal_recv_down":
 			laced_heal_in_amt = a
 			laced_heal_in_time = d
-			game.spawn_text(global_position + Vector2(0, -40), "SEALED WOUNDS", Color(0.85, 0.55, 0.5))
+			game.spawn_combat_text(self, "SEALED WOUNDS", Color(0.85, 0.55, 0.5))
 		"true_dmg":
 			# The blue is paid in blood (§4): true damage, bypassing DR/shield.
 			call("take_damage", max_hp * a, "true")
-			game.spawn_text(global_position + Vector2(0, -40), "BLOOD PRICE", Color(0.95, 0.4, 0.4))
+			game.spawn_combat_text(self, "BLOOD PRICE", Color(0.95, 0.4, 0.4))
 		"dmg_dealt_down":
 			laced_dmg_out_amt = a
 			laced_dmg_out_time = d
-			game.spawn_text(global_position + Vector2(0, -40), "DULLED", Color(0.7, 0.6, 0.85))
+			game.spawn_combat_text(self, "DULLED", Color(0.7, 0.6, 0.85))
 		"move_slow":
 			laced_move_amt = a
 			laced_move_time = d
-			game.spawn_text(global_position + Vector2(0, -40), "HEAVY LIMBS", Color(0.75, 0.68, 0.55))
+			game.spawn_combat_text(self, "HEAVY LIMBS", Color(0.75, 0.68, 0.55))
 		"bleed":
 			laced_bleed_rate = (max_hp * a) / maxf(0.1, d)
 			laced_bleed_time = d
-			game.spawn_text(global_position + Vector2(0, -40), "THE LOAN", Color(0.9, 0.4, 0.45))
+			game.spawn_combat_text(self, "THE LOAN", Color(0.9, 0.4, 0.45))
 
 
 ## A picked-up or awarded bag joins the pack as a LOOSE item (one pooled slot),
