@@ -139,3 +139,50 @@ Captures for all of these are under `build/qa/session-sept29/owner-review/` (per
   under the ignored `build/qa/session-sept29/`.
 - The branch was pushed to `origin/codex/crownless-wayfinder` at close (fast-forward, no merge),
   matching the September 28 close.
+
+---
+
+# Addendum: the owner playtest round and the visual sweep (2026-09-29 evening to 09-30)
+
+After the first close the owner played the branch and found 8 defects in about five minutes —
+all classes the review passes structurally could not see (motion, unstaged compositions,
+design sense). All 8 are fixed and landed with regression guards:
+- Tree crowns and wall foliage no longer cut into rectangles at wall bands (`15a56da`).
+- The camera pans continuously through doorways (a pre-existing bug, quantified at 22-44 px
+  single-frame lurches, now 5-11 px); teleports still snap (`f1c3ff9`).
+- Danger telegraphs lost every timer/sweep/countdown read and now bolden smoothly in the
+  ability's own theme palette — Morwen green, Fangmaw yellow to red — as a standing DESIGN.md
+  rule (`56b3927`).
+- Bushes rustle only when brushed or struck (`430d6bc`).
+- The white outlines on trees were matte fringes exposed by the linear-sampling change; six
+  sprites defringed, alpha and opaque art untouched (`3cd1e9e`).
+- Trees cast trunk-base shadows like their siblings (`1b412ce`).
+- The sewer outfall pours its painted sludge (`bfe1ba1`).
+- Morwen's walk jitter was IN THE ART (27.8 px per-frame torso jumps vs 0.5 healthy); repaired
+  translation-only with feet pinned, Korrag south too (`83be97f`), with walk-jitter acceptance
+  limits now in the quick tier (`45aacb4`).
+
+**The generalized sweep** the owner asked for then ran: a 176-capture corpus (all terrains,
+menus at four canvases, telegraphs, combat, walks, transitions — stills AND gifs) reviewed by
+18 vision agents against `build/qa/session-sept29/visual-sweep/RUBRIC.md` (nine seeded defect
+classes plus a mandatory open class), every owner-visible claim adversarially re-checked.
+Result: **81 confirmed defects (13 claims refuted), 42 newly named defect classes, 78 minors,
+136 hand-playtest smells**, and a meta-lens map of what captures cannot see (audio, latency,
+perf hitches, save/load in real play...). Everything is in
+`build/qa/session-sept29/visual-sweep/SWEEP_LEDGER.json` with a themed, prioritized
+`TRIAGE.md`. The two biggest systematic clusters were fixed the same night:
+- Door thresholds: 24 findings — trees, acid/void pools and the Greyrun mill sat on room
+  entrances. Every placement path now honors a threshold keep-out; boss combat mechanics still
+  land where telegraphed; 159 seeded rooms verified twice each (`ce77add`).
+- Combat text: CRIT/MISS/WARD labels join the per-target damage columns, text draws above HP
+  bars with an opaque outline readable on any floor; plaques, tells and refusals keep their
+  announcement paths (`3ff3df2`).
+
+**For the next round, in order:** the wall/side-wall/boundary art kit (flat strips and black
+voids — the sweep's biggest art ask, 5+ findings), the UI cluster (scroll-cut affordance, 4:3
+font collapse, remaining navy popups, 15 findings), capital facade depth and the sealed Sable
+Court door, FX quality (charge afterimages, Frost Nova ring, ember cask), stamped-decal
+variation and duplicate-prop placement, waterwheel/vent dead motion, green rims on crystal and
+statue sprites, plus the TRIAGE recheck list (11 items captured before that night's landings).
+The sweep itself is repeatable: rebuild the corpus AFTER the round's last landing, then run
+`build/qa/session-sept29/tools/visual_sweep.js`.
