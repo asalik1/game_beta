@@ -46,7 +46,7 @@ func _use_mage(slot: String, f: float) -> void:
 				if uniq_counter >= int(uniq_k("every")):
 					uniq_counter = 0
 					uniq_t["ninthstar_armed"] = 0.5
-					game.spawn_text(global_position + Vector2(0, -56), "NINTH STAR", Color(1.0, 0.95, 0.75))
+					game.spawn_combat_text(self, "NINTH STAR", Color(1.0, 0.95, 0.75))
 			if _tfx.get("twin", 0):
 				# Wind: split the bolt.
 				if skin == "crystal_archmage":
@@ -548,7 +548,7 @@ func _apply_nova_gameplay(f: float, radius: float, inward: bool, fiery: bool) ->
 			# The worldroot HOLDS what the nova catches (a near-total slow is
 			# the root — mobs only; a boss converts it like any CC).
 			e.apply_slow(0.05, root_dur)
-			game.spawn_text(e.global_position + Vector2(0, -44), "ROOTED", Color(0.5, 0.9, 0.45))
+			game.spawn_combat_text(e, "ROOTED", Color(0.5, 0.9, 0.45))
 	if s_passive() == "springwake" and not caught.is_empty():
 		# Springwake: each enemy caught in the bloom mends you.
 		gain_hp(max_hp * uniq_k("heal_per") * caught.size())
@@ -650,7 +650,7 @@ func _blink(f := 1.0) -> void:
 		dr_time = blink_dr_dur
 		dr_amt = blink_dr
 		game.sfx("ward", 1.0, 0.0, -3.0)
-		game.spawn_text(global_position + Vector2(0, -52), "WARD", Color(0.6, 0.9, 1.0))
+		game.spawn_combat_text(self, "WARD", Color(0.6, 0.9, 1.0))
 
 
 func _mage_skin_blink_visual(start: Vector2, finish: Vector2) -> void:
@@ -797,7 +797,7 @@ func _meteor(f := 1.0) -> void:
 	if _tfx.has("haste_dur"):
 		cast_haste_cdr = float(_tfx.get("haste_cdr", 0.0))
 		cast_haste_time = float(_tfx.get("haste_dur", 5.0))
-		game.spawn_text(global_position + Vector2(0, -60), "TAILWIND", Color(0.7, 1.0, 0.75))
+		game.spawn_combat_text(self, "TAILWIND", Color(0.7, 1.0, 0.75))
 
 
 ## One comet of a Starfall, recursing through the previous comet's fall:

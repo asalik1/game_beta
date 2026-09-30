@@ -87,6 +87,15 @@ const DAMAGE_NUM_NORMAL := Color.WHITE
 const DAMAGE_NUM_CRIT := Color(1.0, 0.79, 0.25)
 const DAMAGE_NUM_DOT := Color(0.65, 0.76, 0.79)
 const DAMAGE_NUM_ALLY_ALPHA := 0.65
+# Combat words and signed player hits share the damage column's rows/lifetime.
+const COMBAT_TEXT_Z := 60 # absolute world z, above HP bars and target brackets
+const COMBAT_TEXT_SIZE := 16
+const COMBAT_TEXT_LONG_SIZE := 14
+const COMBAT_TEXT_LONG_LENGTH := 18
+# Words used the shared 4px ring at 0.92 alpha; they now match the numbers'
+# 5px ring, and every column row's ring is fully opaque.
+const COMBAT_TEXT_OUTLINE := 5
+const COMBAT_TEXT_OUTLINE_COLOR := Color(0.0, 0.0, 0.0, 1.0)
 
 # Compact event feed: rows wrap in full (never cut short). The fixed
 # seven-line footprint holds two wide 64-character names plus their

@@ -43,7 +43,7 @@ func _use_warrior(slot: String, f: float) -> void:
 			if not cast_current or dead or downed or ghost:
 				return
 			if decree:
-				game.spawn_text(global_position + Vector2(0, -60), "DECREE", Color(0.95, 0.8, 0.5))
+				game.spawn_combat_text(self, "DECREE", Color(0.95, 0.8, 0.5))
 				game.sfx("stab", 0.9)
 			_melee_arc(cleave_mult, 96.0, "slash", cleave_eff, "swing", "sword", v)
 			if sp == "outrider" and uniq_take("outrider"):
@@ -120,7 +120,7 @@ func _use_warrior(slot: String, f: float) -> void:
 				theme_guard_time = maxf(theme_guard_time, uniq_k("dur"))
 				theme_guard_amt = maxf(theme_guard_amt, uniq_k("guard"))
 				uniq_t["thegate"] = uniq_k("dur")
-				game.spawn_text(global_position + Vector2(0, -60), "THE GATE", Color(0.75, 0.85, 1.0))
+				game.spawn_combat_text(self, "THE GATE", Color(0.75, 0.85, 1.0))
 			_dash_strike(170.0 * float(_tfx.get("dash_mult", 1.0)), ability_coeff("a2") * f,
 				bash_eff, 0.0, rider("a2", "iframe"), true)
 			var charge_col := _tcolor if _themed else Color(0.85, 0.85, 0.95)
@@ -243,7 +243,7 @@ func _use_warrior(slot: String, f: float) -> void:
 			game.hud.flash_screen(rage_flash, 0.22 if skinned else 0.4, 0.4)
 			if not skinned and not rage_burst_drawn:
 				game.burst(global_position, rage_col, 20)
-			game.spawn_text(global_position + Vector2(0, -60), "BERSERK!", rage_text)
+			game.spawn_combat_text(self, "BERSERK!", rage_text)
 
 
 func _whirlwind(f := 1.0) -> void:

@@ -438,7 +438,7 @@ func _hex_detonate(pos: Vector2, scale := 1.0) -> void:
 		var frac: float = hex_fx["hex_heal"]
 		var pact_amt := healing_received(max_hp * frac)
 		hp = minf(max_hp, hp + pact_amt)
-		game.spawn_text(global_position + Vector2(0, -50), "+%d" % int(pact_amt), Color(0.5, 1.0, 0.5))
+		game.spawn_combat_text(self, "+%d" % int(pact_amt), Color(0.5, 1.0, 0.5))
 
 
 ## Dark Pact: pay in blood for a soul-drain blast, then drink it back
@@ -462,7 +462,7 @@ func _dark_pact(f := 1.0) -> void:
 		cds["a3"] = 0.5  # you cannot pay in blood you don't have
 		return
 	hp -= sacrifice
-	game.spawn_text(global_position + Vector2(0, -44), "-%d" % int(sacrifice), Color(1.0, 0.3, 0.4))
+	game.spawn_combat_text(self, "-%d" % int(sacrifice), Color(1.0, 0.3, 0.4))
 	pact_time = 5.0 + uniq_set_k("E", 4, "pact_surge_ext")  # bulwark set: it lingers
 	pact_ls = float(_tfx.get("pact_ls", 0.15))
 	if s_passive() == "veinroot":
@@ -566,7 +566,7 @@ func _dark_pact(f := 1.0) -> void:
 		rt.parallel().tween_property(ray, "scale:x", 2.6, 0.2)
 		rt.parallel().tween_property(ray, "modulate:a", 0.0, 0.26)
 		rt.tween_callback(ray.queue_free)
-	game.spawn_text(global_position + Vector2(0, -64), "DARK PACT", col)
+	game.spawn_combat_text(self, "DARK PACT", col)
 	var eff := {"aoe": true}
 	if _tfx.get("pull", 0):
 		eff["pull"] = 1

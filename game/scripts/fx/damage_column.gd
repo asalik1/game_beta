@@ -49,24 +49,59 @@ func hit(amount: int, crit: bool, dot: bool, ally: bool) -> void:
 				game._float_nums.append(entry.label)
 				_pop(entry)
 				return
+	_add_entry({"kind": kind, "group": group, "ally": ally, "crit": crit and not dot,
+		"total": amount, "shown": float(amount), "last": clock, "row": 0.0})
+
+
+## Repeated words refresh one row; signed hits/heals retain their color and sum.
+func text(message: String, color: Color) -> void:
+	var numeric: int = game._float_kind(message)
+	var prefix := "+" if message.begins_with("+") else ""
+	var suffix := " CRIT!" if message.ends_with(" CRIT!") else ("!" if numeric == 2 else "")
+	var amount := message.to_int() if numeric > 0 else 0
+	var group := "text:" + (prefix + suffix + str(signi(amount)) if numeric > 0 else message)
+	for entry in entries:
+		if entry.group == group and entry.get("color") == color and clock - entry.last <= Balance.DAMAGE_NUM_MERGE:
+			entry.total += amount
+			entry.last = clock
+			if _capped(entry):
+				game._float_nums.erase(entry.label)
+				game._float_nums.append(entry.label)
+			_pop(entry)
+			return
+	_add_entry({"kind": "text", "group": group, "ally": false, "crit": numeric == 2,
+		"total": amount, "shown": float(amount), "last": clock, "row": 0.0,
+		"message": message, "color": color, "numeric": numeric, "prefix": prefix,
+		"suffix": suffix})
+
+
+## Only numbers join the global density cap. Words (mechanic tells, boss
+## instructions, status) were never capped, so a burst of AoE numbers can't
+## evict a dodge warning before it is read.
+func _capped(entry: Dictionary) -> bool:
+	return entry.kind != "text" or int(entry.numeric) > 0
+
+
+func _add_entry(entry: Dictionary) -> void:
 	var l := Label.new()
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	l.z_index = 19 if ally else 20
+	l.z_as_relative = false
+	l.z_index = Balance.COMBAT_TEXT_Z
 	l.set_meta("damage_column", self)
-	var entry := {"label": l, "kind": kind, "group": group, "ally": ally, "crit": crit and not dot,
-		"total": amount, "shown": float(amount), "last": clock, "row": 0.0}
+	entry.label = l
 	_style(entry)
 	add_child(l)
 	entries.push_front(entry)
-	_update_value(float(amount), entry)
+	_update_value(float(entry.total), entry)
 	# Enter from the row below: even during the shift, digits never share a row.
 	l.position.y = entries[1].label.position.y + Balance.DAMAGE_NUM_ROW if entries.size() > 1 else 0.0
 	_restack()
 	_pop(entry)
-	game._float_nums.append(l)
-	while game._float_nums.size() > Balance.FLOAT_NUM_MAX:
-		game._retire_float_num(game._float_nums.front())
+	if _capped(entry):
+		game._float_nums.append(l)
+		while game._float_nums.size() > Balance.FLOAT_NUM_MAX:
+			game._retire_float_num(game._float_nums.front())
 	_process(0.0)
 
 
@@ -74,7 +109,15 @@ func _style(entry: Dictionary) -> void:
 	var l: Label = entry.label
 	var size := Balance.DAMAGE_NUM_SIZE
 	var color := Balance.DAMAGE_NUM_NORMAL
-	if entry.kind == "dot":
+	var outline := Balance.DAMAGE_NUM_OUTLINE
+	if entry.kind == "text":
+		color = game._floor_text_color(entry.color)
+		if entry.numeric == 0:
+			size = Balance.COMBAT_TEXT_LONG_SIZE if entry.message.length() > Balance.COMBAT_TEXT_LONG_LENGTH else Balance.COMBAT_TEXT_SIZE
+			outline = Balance.COMBAT_TEXT_OUTLINE
+		elif entry.crit:
+			size = Balance.DAMAGE_NUM_CRIT_SIZE
+	elif entry.kind == "dot":
 		size = Balance.DAMAGE_NUM_DOT_SIZE
 		color = Balance.DAMAGE_NUM_DOT
 	elif entry.crit:
@@ -83,7 +126,10 @@ func _style(entry: Dictionary) -> void:
 	if entry.ally:
 		size = Balance.DAMAGE_NUM_ALLY_SIZE
 		color.a = Balance.DAMAGE_NUM_ALLY_ALPHA
-	UITheme.world(l, size, Balance.DAMAGE_NUM_OUTLINE)
+	UITheme.world(l, size, outline)
+	# Fully opaque ring (the shared world treatment is 0.92) so pale fills keep
+	# a hard dark edge on snow and ice.
+	l.add_theme_color_override("font_outline_color", Balance.COMBAT_TEXT_OUTLINE_COLOR)
 	l.add_theme_color_override("font_color", color)
 
 
@@ -108,10 +154,12 @@ func _update_value(value: float, entry: Dictionary) -> void:
 	var l: Label = entry.label
 	entry.shown = value
 	l.text = "%d!" % roundi(value) if entry.crit else str(roundi(value))
+	if entry.kind == "text":
+		l.text = entry.prefix + str(roundi(value)) + entry.suffix if entry.numeric > 0 else entry.message
 	var f: Font = l.get_theme_font("font")
 	var size: int = l.get_theme_font_size("font_size")
 	var measured := f.get_string_size(l.text, HORIZONTAL_ALIGNMENT_CENTER, -1, size)
-	l.size = measured + Vector2.ONE * (Balance.DAMAGE_NUM_OUTLINE * 2 + Balance.DAMAGE_NUM_PADDING)
+	l.size = measured + Vector2.ONE * (l.get_theme_constant("outline_size") * 2 + Balance.DAMAGE_NUM_PADDING)
 	l.position.x = -l.size.x * 0.5
 	# Scale around the label's top edge: a pop grows toward the newer row below,
 	# which the row pitch clears (test_quality checks it against the font).

@@ -3874,7 +3874,7 @@ func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, 
 	if net_host():
 		net_session().host_telegraph_safe(centers, radius, delay, opts)
 	if opts.has("callout") and is_instance_valid(player):
-		spawn_text(player.global_position + Vector2(0, -84), String(opts["callout"]),
+		spawn_combat_text(player, String(opts["callout"]),
 			opts.get("color", Color(0.5, 1.0, 0.7)))
 	if opts.has("sfx"):
 		sfx(String(opts["sfx"]))
@@ -4184,8 +4184,40 @@ func _retire_float_num(l: Node) -> void:
 
 ## Damage owns a target column; narrative/pickup text keeps spawn_text's path.
 func spawn_damage_number(target: Node2D, amount: int, crit := false, dot := false, ally := false) -> void:
+	var column := _damage_column(target)
+	if column != null:
+		column.hit(amount, crit, dot, ally)
+
+
+## Explicit combat path: no string heuristics can turn narrative/pickups into rows.
+## Words keep spawn_text's HUD contract: a line that asks for reading time
+## (hold > 0) is an announcement (plaque + event log) and takes no row, and a
+## "+" word ("+HP") also writes the event log.
+func spawn_combat_text(target: Node2D, text: String, color: Color, hold := 0.0) -> void:
 	if not is_instance_valid(target) or target.is_queued_for_deletion():
 		return
+	if _float_kind(text) == 0:
+		if hold > 0.0:
+			spawn_text(target.global_position + Vector2(0, -Balance.DAMAGE_NUM_HEIGHT), text, color, hold)
+			return
+		if text.begins_with("+") and hud != null and is_instance_valid(hud):
+			hud.log_event(text, color)
+	var column := _damage_column(target)
+	if column != null:
+		column.text(text, color)
+
+
+func spawn_combat_text_all(target: Node2D, text: String, color: Color, hold := 0.0) -> void:
+	spawn_combat_text(target, text, color, hold)
+	if net_host() and is_instance_valid(target):
+		net_session().host_spawn_text(target.global_position, text, color, hold,
+			int(target.net_id) if target is Enemy else 0,
+			int(target.peer_id) if target is Player else 0)
+
+
+func _damage_column(target: Node2D) -> Node:
+	if not is_instance_valid(target) or target.is_queued_for_deletion():
+		return null
 	var id := target.get_instance_id()
 	if not _damage_columns.has(id):
 		var column := preload("res://scripts/fx/damage_column.gd").new()
@@ -4196,7 +4228,7 @@ func spawn_damage_number(target: Node2D, amount: int, crit := false, dot := fals
 		column.anchor = target.global_position
 		_damage_columns[id] = column
 		add_child(column)
-	_damage_columns[id].hit(amount, crit, dot, ally)
+	return _damage_columns[id]
 
 
 func clear_damage_numbers(target_id: int = 0) -> void:

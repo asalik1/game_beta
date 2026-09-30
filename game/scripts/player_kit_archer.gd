@@ -45,7 +45,7 @@ func _use_archer(slot: String, f: float) -> void:
 				uniq_counter += 1
 				if uniq_counter >= int(uniq_k("every")):
 					uniq_counter = 0
-					game.spawn_text(global_position + Vector2(0, -56), "GALE", Color(0.7, 0.95, 0.8))
+					game.spawn_combat_text(self, "GALE", Color(0.7, 0.95, 0.8))
 					var gdir := aim_dir()
 					var g_n := int(uniq_k("arrows"))
 					for gi in g_n:
@@ -104,7 +104,7 @@ func _use_archer(slot: String, f: float) -> void:
 						"fade": 0.35}) == null:
 					_ring_fx(global_position, storm_call, 190.0)
 			game.hud.flash_screen(storm_call, 0.3, 0.35)
-			game.spawn_text(global_position + Vector2(0, -60), storm_name, storm_call)
+			game.spawn_combat_text(self, storm_name, storm_call)
 
 
 ## Hunt rhythm (2026-07-09): the free +25% cap-exempt crit is gone — instead
@@ -246,7 +246,7 @@ func _tumble() -> void:
 		# a proc most pilots never saw (owner: too conditional).
 		if uniq_crits < int(uniq_k("crits_roll")):
 			uniq_crits = int(uniq_k("crits_roll"))
-			game.spawn_text(global_position + Vector2(0, -56), "HART'S EYE", Color(0.9, 1.0, 0.9))
+			game.spawn_combat_text(self, "HART'S EYE", Color(0.9, 1.0, 0.9))
 	dodge_time = rider("a3", "eva_secs")
 	dodge_amt = rider("a3", "eva")
 	if tumble_dr > 0.0:
@@ -295,7 +295,7 @@ func _tumble() -> void:
 	if _tfx.get("next_crit", 0):
 		# Hunt: line up the next shot.
 		next_crit = true
-		game.spawn_text(global_position + Vector2(0, -60), "LINED UP", Color(1, 0.7, 0.3))
+		game.spawn_combat_text(self, "LINED UP", Color(1, 0.7, 0.3))
 
 
 ## Source-pixel anchor corrections from each directional dash's final planted

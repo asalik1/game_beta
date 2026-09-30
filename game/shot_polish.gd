@@ -1015,5 +1015,45 @@ func _damage_numbers() -> void:
 		push_error("a dead wolf's numbers never faded out")
 		finish(1)
 		return
+	# One run bundles the regression with both floor-luminance extremes.
+	var subject: Enemy = _mobs[0]
+	var saved_lock: Enemy = game.player.locked_target
+	game.player.locked_target = subject
+	# Stand the subject beside the hero: the camera trails the hero, and the
+	# wolf's four rows plus the hero's own column must all fit in one frame.
+	subject.set_physics_process(false)
+	for terrain in ["ice", "keep"]:
+		apply_terrain(terrain, game.cur_room)
+		await sim_wait(0.25)
+		subject.global_position = game.player.global_position + Vector2(170, 20)
+		game.clear_damage_numbers()
+		subject.take_damage(16)
+		game.spawn_combat_text(subject, "CRIT X5", Balance.DAMAGE_NUM_CRIT)
+		game.spawn_combat_text(subject, "MISS", Color(0.7, 0.7, 0.7))
+		game.spawn_combat_text_all(subject, "WARD", Color(0.6, 0.9, 1.0))
+		game.spawn_combat_text(game.player, "-46", Color(1.0, 0.35, 0.3))
+		game.spawn_combat_text(game.player, "GRIT x3", Color(0.7, 0.8, 1.0))
+		await sim_wait(0.16)
+		col = game._damage_columns[subject.get_instance_id()]
+		var z_error := _combat_text_layers(col, subject)
+		if z_error != "":
+			game.player.locked_target = saved_lock
+			push_error(z_error)
+			finish(1)
+			return
+		shot("combat_text_" + terrain, "number + CRIT + MISS + WARD above HP/target; red incoming hit + GRIT")
+	game.player.locked_target = saved_lock
+	print("COMBAT TEXT PASS: mixed rows above live HP bars/target brackets, ice + keep captures")
 	print("DAMAGE BURST PASS: real enemy totals, mixed rows, killing blow shown then faded")
 	finish()
+
+
+func _combat_text_layers(column: Node, subject: Enemy) -> String:
+	var quality := preload("res://scripts/tests/test_quality.gd")
+	if column.entries.size() != 4 or not quality._rows_clear(column):
+		return "live mixed combat burst lost its four non-overlapping rows"
+	for entry in column.entries:
+		for overlay in [subject.hp_bar_bg, subject.hp_bar_fg, subject.hp_bar_cap, game.reticle]:
+			if entry.label.z_as_relative or entry.label.z_index <= quality._effective_z(overlay):
+				return "combat text draws beneath a live HP bar or target bracket"
+	return ""

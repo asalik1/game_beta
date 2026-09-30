@@ -382,7 +382,7 @@ func _play_named(action: String) -> void:
 	# classes"), synced to the contact frame — so Transform previews the effect.
 	_driver_fire(action)
 	if plr.game != null:
-		plr.game.spawn_text(plr.global_position + Vector2(0, -70),
+		plr.game.spawn_combat_text(plr,
 			action.to_upper(), Color(0.7, 0.95, 0.85))
 
 

@@ -2033,7 +2033,7 @@ func _channel_target() -> Vector2:
 
 func _begin_channel() -> void:
 	channel_t = Balance.MOB_CHANNEL_TIME
-	game.spawn_text(global_position + Vector2(0, -64), "channeling...", Color(0.5, 1.0, 0.6))
+	game.spawn_combat_text(self, "channeling...", Color(0.5, 1.0, 0.6))
 	channel_beam = Line2D.new()
 	channel_beam.width = 4.0
 	channel_beam.default_color = Color(0.4, 1.0, 0.5, 0.7)
@@ -2054,7 +2054,7 @@ func _break_channel() -> void:
 	channel_cd = Balance.MOB_CHANNEL_CD * 0.6  # a short punish, then it may retry
 	if is_instance_valid(channel_beam):
 		channel_beam.queue_free()
-	game.spawn_text(global_position + Vector2(0, -64), "INTERRUPTED", Color(1.0, 0.7, 0.4))
+	game.spawn_combat_text(self, "INTERRUPTED", Color(1.0, 0.7, 0.4))
 
 
 ## The heal itself: mend nearby wounded allies (same room) and self.
@@ -2110,8 +2110,8 @@ func _raise_guard() -> void:
 	sprite.modulate = Color(0.7, 0.9, 1.6)  # blue guard glow
 	_net_tell(Color(0.7, 0.9, 1.6), Balance.MOB_COUNTER_TIME)  # fix #2: the counter tell
 	# The warn text is a punish tell — a guest firing into a raised guard gets
-	# staggered, so it must read it too (spawn_text_all no-ops solo).
-	game.spawn_text_all(global_position + Vector2(0, -60), "GUARD", Color(0.7, 0.85, 1.0))
+	# staggered, so it must read it too (combat-text fan-out no-ops solo).
+	game.spawn_combat_text_all(self, "GUARD", Color(0.7, 0.85, 1.0))
 
 func _raise_reflect() -> void:
 	reflect_t = Balance.MOB_REFLECT_TIME
@@ -2119,7 +2119,7 @@ func _raise_reflect() -> void:
 	sprite.modulate = Color(1.5, 1.2, 0.6)  # amber forge-shield
 	_net_tell(Color(1.5, 1.2, 0.6), Balance.MOB_REFLECT_TIME)  # fix #2: the reflect tell
 	# The warn text is a punish tell (a guest's shot bounces back) — fan it.
-	game.spawn_text_all(global_position + Vector2(0, -60), "WARDED", Color(1.0, 0.85, 0.4))
+	game.spawn_combat_text_all(self, "WARDED", Color(1.0, 0.85, 0.4))
 	game.burst(global_position, Color(1.0, 0.8, 0.4), 12)
 
 func _blink_to(player: Player) -> void:
@@ -2166,7 +2166,7 @@ func _spawn_add() -> void:
 		game.zone_alive[zone_idx] = game.zone_alive.get(zone_idx, 0) + 1
 	game.add_enemy(add)
 	add.spawn_in()
-	game.spawn_text(global_position + Vector2(0, -60), "a spawn crawls forth", Color(0.6, 0.9, 0.5))
+	game.spawn_combat_text(self, "a spawn crawls forth", Color(0.6, 0.9, 0.5))
 
 func _tick_tether() -> void:
 	if not is_instance_valid(tether_partner) or tether_partner.dying:
@@ -2204,7 +2204,7 @@ static func _dist_to_segment(p: Vector2, a: Vector2, b: Vector2) -> float:
 func _martyr_wail() -> void:
 	game.burst(global_position, Color(0.4, 1.0, 0.5), 22)
 	game.sfx("mend", 1.0)
-	game.spawn_text(global_position + Vector2(0, -60), "A DYING WAIL", Color(0.6, 1.0, 0.6), 2.0)
+	game.spawn_combat_text(self, "A DYING WAIL", Color(0.6, 1.0, 0.6), 2.0)
 	for node in get_tree().get_nodes_in_group("enemies"):
 		var e := node as Enemy
 		if e == null or e == self or e.dying or e is Boss or e.zone_idx != zone_idx:
@@ -2474,7 +2474,7 @@ func apply_slow(mult: float, dur: float) -> void:
 		# off the crawl, yet its footing is scuffed — it takes
 		# +HOBBLE_MULT damage from the player while the mark holds.
 		if hobble_t <= 0.0:
-			game.spawn_text(global_position + Vector2(0, -44), "HOBBLED", Color(0.55, 0.95, 0.75))
+			game.spawn_combat_text(self, "HOBBLED", Color(0.55, 0.95, 0.75))
 		hobble_t = maxf(hobble_t, Balance.HOBBLE_DUR)
 		return
 	slow_mult = minf(slow_mult, mult) if slow_time > 0.0 else mult
@@ -2539,12 +2539,12 @@ func take_damage(amount: float, from_dir := Vector2.ZERO, is_crit := false, sile
 		if is_crit or afflicted or amount >= max_hp * Balance.MOB_WARD_BREAK_HIT:
 			ward_broken = true
 			if not silent:
-				game.spawn_text(global_position + Vector2(0, -44), "WARD SHATTERED!", Color(1.0, 0.85, 0.4))
+				game.spawn_combat_text(self, "WARD SHATTERED!", Color(1.0, 0.85, 0.4))
 				game.burst(global_position, Color(1.0, 0.85, 0.4), 16)
 		else:
 			amount *= 1.0 - Balance.MOB_WARD_DR
 			if not silent:
-				game.spawn_text(global_position + Vector2(0, -44), "guarded", Color(0.7, 0.8, 1.0))
+				game.spawn_combat_text(self, "guarded", Color(0.7, 0.8, 1.0))
 	# POUNCE whiff: an overshot pouncer is exposed — punish it.
 	if pounce_whiff > 0.0:
 		amount *= 1.0 + Balance.MOB_POUNCE_PUNISH
@@ -2775,7 +2775,7 @@ func die() -> void:
 		tp.refresh_hp_bar()
 		# A one-off heal flash, not a state: timed, so it can't linger as a toxin green.
 		tp._flash_body_tint(TETHER_RESTORE_TINT, Balance.MOB_TETHER_RESTORE_TINT_T)
-		game.spawn_text(tp.global_position + Vector2(0, -60),
+		game.spawn_combat_text(tp,
 			"THE BOND RESTORES IT", Color(0.5, 1.0, 0.5), 2.5)
 		game.burst(tp.global_position, Color(0.5, 1.0, 0.5), 18)
 		game.sfx("mend", 0.7)

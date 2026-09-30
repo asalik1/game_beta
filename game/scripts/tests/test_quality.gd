@@ -361,12 +361,243 @@ static func damage_numbers(t: Node) -> String:
 	if error == "":
 		g.clear_damage_numbers()
 		error = _damage_merge_contracts(g)
+	if error == "":
+		g.clear_damage_numbers()
+		var session := preload("res://scripts/net/net_session.gd").new()
+		session.game = g
+		error = _combat_text_contracts(g, target, session)
+		session.free()
 	g.clear_damage_numbers()
 	g.queue_free()
+	if error == "":
+		error = _combat_text_wire(t)
 	await t.get_tree().process_frame
 	if error == "":
-		print("DAMAGE NUMBERS PASS: rapid totals, DoT cadence, rows clear the font, compaction, ally rows, cap, expiry, detach/room cleanup")
+		print("DAMAGE NUMBERS PASS: rapid totals, DoT cadence, mixed combat words, announcements keep their plaque path, host fan-out ids + guest replay, opaque outlines, compaction, ally rows, number-only cap, expiry, detach/room cleanup")
 	return error
+
+
+## Host fan-out carries the target's wire identity (an Enemy's net_id, a
+## Player's peer_id), and a guest replays each payload into that target's own
+## column. Private fixtures: net_host() is pinned, nothing touches a session.
+static func _combat_text_wire(t: Node) -> String:
+	var host := HostGame.new()
+	var wire := WireProbe.new()
+	host.wire = wire
+	host.add_child(wire)
+	t.add_child(host)
+	var foe := QuietEnemy.new()
+	foe.net_id = 71
+	host.add_child(foe)
+	var ally := QuietPlayer.new()
+	ally.peer_id = 5
+	host.add_child(ally)
+	host.spawn_combat_text_all(foe, "GUARD", Color(0.7, 0.85, 1.0))
+	host.spawn_combat_text_all(ally, "INTERCEPT THEM", Color(1.0, 0.5, 0.2))
+	var error := ""
+	if wire.sent.size() != 2 or wire.sent[0][4] != 71 or wire.sent[0][5] != 0 \
+			or wire.sent[1][4] != 0 or wire.sent[1][5] != 5:
+		error = "host combat-text fan-out lost the target's wire identity"
+	elif not _column_has(host, foe, "GUARD") or not _column_has(host, ally, "INTERCEPT THEM"):
+		error = "host combat-text fan-out skipped the host's own column"
+	if error == "":
+		var guest := preload("res://scripts/game_base.gd").new()
+		t.add_child(guest)
+		var session := preload("res://scripts/net/net_session.gd").new()
+		session.game = guest
+		var mirror := QuietEnemy.new()
+		guest.add_child(mirror)
+		session.net_enemies[71] = mirror
+		var shell := QuietPlayer.new()
+		shell.peer_id = 5
+		guest.add_child(shell)
+		guest.players.append(shell)
+		for sent in wire.sent:
+			session._present_spawn_text(sent[0], sent[1], sent[2], sent[3], sent[4], sent[5])
+		if not _column_has(guest, mirror, "GUARD") or not _column_has(guest, shell, "INTERCEPT THEM"):
+			error = "a guest did not replay host combat text into the target's column"
+		guest.clear_damage_numbers()
+		session.free()
+		guest.queue_free()
+	host.clear_damage_numbers()
+	host.queue_free()
+	return error
+
+
+class WireProbe extends Node:
+	var sent: Array = []
+	func host_spawn_text(pos: Vector2, text: String, color: Color, hold: float, enemy_id := 0, player_id := 0) -> void:
+		sent.append([pos, text, color, hold, enemy_id, player_id])
+
+
+class HostGame extends "res://scripts/game_base.gd":
+	var wire: Node
+	func net_host() -> bool: return true
+	func net_session() -> Node: return wire
+
+
+class QuietEnemy extends Enemy:
+	func _ready() -> void: pass
+	func _physics_process(_delta: float) -> void: pass
+
+
+class QuietPlayer extends Player:
+	func _ready() -> void: pass
+	func _process(_delta: float) -> void: pass
+	func _physics_process(_delta: float) -> void: pass
+
+
+static func _column_row(col: Node, l: Label) -> bool:
+	for entry in col.entries:
+		if entry.label == l:
+			return true
+	return false
+
+
+static func _column_has(g: Node, target: Node2D, text: String) -> bool:
+	var col: Node = g._damage_columns.get(target.get_instance_id())
+	if col == null:
+		return false
+	for entry in col.entries:
+		if is_instance_valid(entry.label) and entry.label.text == text:
+			return true
+	return false
+
+
+## The z a CanvasItem actually draws at: relative z accumulates up its parents.
+static func _effective_z(item: CanvasItem) -> int:
+	var z := item.z_index
+	while item.z_as_relative and item.get_parent() is CanvasItem:
+		item = item.get_parent()
+		z += item.z_index
+	return z
+
+
+static func _combat_text_contracts(g: Node, target: Node2D, session: Node) -> String:
+	# Own precondition: _damage_contracts leaves a legacy numeric spawn_text
+	# label ("99") in the density list; clear_damage_numbers only retires rows.
+	for l in g._float_nums.duplicate():
+		g._retire_float_num(l)
+	var words := ["CRIT X5", "MISS", "WARD"]
+	var colors := [Balance.DAMAGE_NUM_CRIT, Color(0.7, 0.7, 0.7), Color(0.6, 0.9, 1.0)]
+	g.spawn_damage_number(target, 16)
+	var col: Node = g._damage_columns[target.get_instance_id()]
+	for i in words.size():
+		g.spawn_combat_text(target, words[i], colors[i])
+		if not _rows_clear(col):
+			return "combat words overlap damage/each other on insertion"
+	if col.entries.size() != 4:
+		return "number + CRIT + MISS + WARD did not reserve four rows"
+	# Sample a simultaneous shift before settlement, not just its end positions.
+	for entry in col.entries:
+		(entry.shift as Tween).custom_step(Balance.DAMAGE_NUM_SHIFT * 0.5)
+	if not _rows_clear(col):
+		return "mixed combat rows cross while shifting"
+	_settle_damage(col)
+	var expected := ["WARD", "MISS", "CRIT X5", "16"]
+	for i in expected.size():
+		var l: Label = col.entries[i].label
+		if l.text != expected[i] or not is_equal_approx(l.position.y, -i * Balance.DAMAGE_NUM_ROW):
+			return "mixed combat rows lost newest-first order"
+		if l.z_as_relative or l.z_index != Balance.COMBAT_TEXT_Z:
+			return "combat text does not own an absolute foreground layer"
+		# The shared world treatment is a 4px ring at 0.92 alpha: rows get at
+		# least the combat knob's ring, fully opaque.
+		if l.get_theme_constant("outline_size") < Balance.COMBAT_TEXT_OUTLINE \
+				or l.get_theme_color("font_outline_color") != Balance.COMBAT_TEXT_OUTLINE_COLOR:
+			return "combat text lost its opaque dark outline"
+		if l.get_theme_color("font_color").a != 1.0:
+			return "local combat fill became translucent"
+	var miss: Label = col.entries[1].label
+	var old_life: Tween = col.entries[1].life
+	g.spawn_combat_text(target, "MISS", colors[1])
+	# kill() stops immediately; is_valid() only clears on SceneTree's next cleanup.
+	if col.entries.size() != 4 or col.entries[1].label != miss \
+			or old_life.is_running() or col.entries[1].life == old_life:
+		return "repeated status did not reuse its row and replace its expiry"
+	for i in words.size():
+		if g._float_nums.has(col.entries[i].label):
+			return "a combat word joined the number density cap"
+	(col.entries[0].life as Tween).custom_step(Balance.DAMAGE_NUM_LIFE + 0.01)
+	_settle_damage(col)
+	if col.entries.size() != 3 or col.entries[0].label != miss or not is_zero_approx(miss.position.y):
+		return "status expiry failed to compact the shared column"
+	col._process(Balance.DAMAGE_NUM_MERGE + 0.01)
+	g.spawn_combat_text(target, "MISS", colors[1])
+	if col.entries.size() != 4:
+		return "status merged outside the column merge window"
+	# Player damage is red, signed and opaque, and sums independently of healing.
+	g.clear_damage_numbers()
+	var red := Color(1.0, 0.35, 0.3, 0.3)
+	g.spawn_combat_text(target, "-46", red)
+	g.spawn_combat_text(target, "-15", red)
+	g.spawn_combat_text(target, "+12", Color(0.5, 1.0, 0.6))
+	g.spawn_combat_text(target, "-20 CRIT!", Color(1.0, 0.5, 0.1))
+	g.spawn_combat_text(target, "GRIT x3", colors[2])
+	col = g._damage_columns[target.get_instance_id()]
+	_settle_damage(col)
+	if not _rows_clear(col) or col.entries.size() != 4 or col.entries[3].label.text != "-61" \
+			or col.entries[2].label.text != "+12" or col.entries[1].label.text != "-20 CRIT!":
+		return "player hits/heals/status lost their signs, sums or spacing"
+	if col.entries[3].label.get_theme_color("font_color") != g._floor_text_color(red):
+		return "player damage lost its opaque red semantics"
+	# A line that asks for reading time (hold > 0: "A DYING WAIL") keeps
+	# spawn_text's announcement path and takes no row. This fixture has no HUD,
+	# so the announcement lands as spawn_text's world-label fallback.
+	g.clear_damage_numbers()
+	var children := g.get_child_count()
+	g.spawn_combat_text(target, "A DYING WAIL", colors[2], 2.0)
+	if g._damage_columns.has(target.get_instance_id()):
+		return "an announcement with reading time took a combat row"
+	var announced: Node = null
+	for i in range(children, g.get_child_count()):
+		var child := g.get_child(i)
+		if child is Label and child.text == "A DYING WAIL":
+			announced = child
+	if announced == null:
+		return "an announcement with reading time was dropped"
+	announced.free()
+	# Replay the exact host wire payload through the guest presentation entry point.
+	g.clear_damage_numbers()
+	session.net_enemies[71] = target
+	g.spawn_ally_damage(target, 16, false)
+	for i in words.size():
+		session._present_spawn_text(Vector2.ZERO, words[i], colors[i], 0.0, 71, 0)
+	col = g._damage_columns[target.get_instance_id()]
+	_settle_damage(col)
+	if col.entries.size() != 4 or not _rows_clear(col):
+		return "guest callouts did not join the ally damage column"
+	for i in words.size():
+		if col.entries[i].label.text != expected[i] or col.entries[i].label.get_theme_color("font_color") != g._floor_text_color(colors[2 - i]):
+			return "guest combat word order/color differs from host presentation"
+	session._present_spawn_text(Vector2.ZERO, "WARD", colors[2], 0.0, 999, 0)
+	if col.entries.size() != 4 or g._damage_columns.size() != 1:
+		return "late callout for a missing mirror spawned orphan combat text"
+	# Legacy story/pickup messages must not reserve or evict combat rows.
+	var floats_before: int = g._float_nums.size()
+	g.spawn_text(Vector2.ZERO, "A quiet road.", Color.WHITE)
+	g.spawn_text(Vector2.ZERO, "+ Bag", Color.WHITE)
+	if g._float_nums.size() != floats_before or col.entries.size() != 4:
+		return "narrative/pickup text entered the combat column"
+	# Only numbers are capped. A burst past the cap evicts the oldest numbers
+	# (the ally 16 first), never a live tell such as WARD.
+	var tells: Array = []
+	for i in words.size():
+		tells.append(col.entries[i].label)
+	for i in Balance.FLOAT_NUM_MAX + 3:
+		g.spawn_damage_number(target, i + 1, true)
+	if g._float_nums.size() != Balance.FLOAT_NUM_MAX:
+		return "damage numbers bypassed the shared density cap"
+	for tell in tells:
+		if not is_instance_valid(tell) or tell.is_queued_for_deletion() or not _column_row(col, tell):
+			return "a burst of numbers evicted a combat word before its life ended"
+	if col.entries.size() != Balance.FLOAT_NUM_MAX + words.size():
+		return "number eviction left the wrong rows in the column"
+	for entry in col.entries.duplicate():
+		(entry.life as Tween).custom_step(Balance.DAMAGE_NUM_LIFE + 0.01)
+	if not g._damage_columns.is_empty() or not g._float_nums.is_empty():
+		return "combat labels outlived their final expiry"
+	return ""
 
 
 static func _settle_damage(column: Node) -> void:
@@ -552,13 +783,52 @@ static func _live_damage_numbers(t: Node) -> String:
 	e.gold_value = 0
 	e.set_meta("ward_spawn", true)
 	var id := e.get_instance_id()
-	var error := _live_damage_contracts(g, e)
+	var error := _live_miss_contracts(g, p, e)
+	g.clear_damage_numbers(id)
+	if error == "":
+		error = _live_damage_contracts(g, e)
 	g.clear_damage_numbers(id)
 	e.queue_free()
 	await t.get_tree().process_frame
 	if error == "":
-		print("ok: live wolf hits, DoT ticks and the killing blow share one damage column")
+		print("ok: live wolf hits, a real MISS beside its number above the HP bar and reticle, DoT ticks and the killing blow share one damage column")
 	return error
+
+
+## The sweep's "MISS behind 16": hit_enemy's real miss branch must land in the
+## struck wolf's column as its own row beside the number, and every row must
+## draw above the wolf's HP bar and the target reticle.
+static func _live_miss_contracts(g: Game, p: Player, e: Enemy) -> String:
+	var saved := {"dex": p.dex, "eva": e.eva}
+	p.dex = 0.0  # DEX tier 0: an evade is a full miss, never a graze
+	e.eva = 1000.0
+	e.take_damage(16.0)
+	# The evade roll is the hit's first global randf: pin a seed that evades.
+	var hits := 0
+	for candidate in range(256):
+		if hits >= 8 or _column_has(g, e, "MISS"):
+			break
+		seed(candidate)
+		if randf() >= Stats.eva_curve(e.eva):
+			continue
+		seed(candidate)
+		hits += 1
+		p.hit_enemy(e, 1.0, {"type": "phys"})
+	randomize()  # global RNG has no snapshot API; leave later sections unseeded
+	p.dex = saved["dex"]
+	e.eva = saved["eva"]
+	var col: Node = g._damage_columns.get(e.get_instance_id())
+	if col == null or not _column_has(g, e, "MISS"):
+		return "a real player miss never reached the struck wolf's damage column"
+	_settle_damage(col)
+	if col.entries[0].label.text != "MISS" or col.entries.size() < 2 or not _rows_clear(col):
+		return "a real MISS overprinted the wolf's damage number"
+	for entry in col.entries:
+		var l: Label = entry.label
+		for overlay in [e.hp_bar_bg, e.hp_bar_fg, e.hp_bar_cap, g.reticle]:
+			if l.z_as_relative or l.z_index <= _effective_z(overlay):
+				return "combat text draws beneath the wolf's HP bar or the target reticle"
+	return ""
 
 
 static func _live_damage_contracts(g: Game, e: Enemy) -> String:
