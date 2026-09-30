@@ -1,0 +1,24 @@
+{
+  "morwen": {
+    "capture_samples": 61,
+    "every_rendered_feet_y_identical": true,
+    "node_trajectory_identical": true
+  },
+  "korrag": {
+    "capture_samples": 61,
+    "every_rendered_feet_y_identical": true,
+    "node_trajectory_identical": true
+  },
+  "verify_art": {
+    "before_fail": 0,
+    "after_fail": 0,
+    "before_warn": 56,
+    "after_warn": 56,
+    "FEETSLIDE": false,
+    "warning_lines_identical": true
+  },
+  "source_healthy_ceiling_px": 0.513298,
+  "all_source_lane_strips_pass": true,
+  "engine_after_sha256": "4937ea79617ba2f69ec07afbf79b11086ce7d5cc733a6bfd8de80deae4f0b9bd",
+  "engine_before_sha256": "dd0822a11926efb9df15ebac2a857b3ee44dfe01655cf4b84210a408b3f5e592"
+}

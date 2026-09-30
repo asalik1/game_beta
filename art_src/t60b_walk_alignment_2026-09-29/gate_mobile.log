@@ -1,0 +1,25 @@
+
+WARNING: game/ has uncommitted changes (below) -- this sync snapshots them into mobile/game/. If another agent is mid-edit, sync after their work lands.
+  M game/assets/sprites/korrag_walk_codex_s.png
+   M game/assets/sprites/morwen_walk.png
+  M  game/scripts/balance.gd
+  M  game/scripts/camera_corridor.gd
+  M  game/scripts/camera_framing.gd
+  M  game/scripts/game.gd
+  M  game/scripts/game_world.gd
+  A  game/scripts/tests/camera_transitions_live.gd
+  M  game/scripts/tests/test_camera_corridor.gd
+  M  game/scripts/tests/test_framing.gd
+  M  game/scripts/tests/test_loot_recovery.gd
+  M  game/shot_framing.gd
+   M game/shot_road_hunt.gd
+  ?? game/scripts/tests/journey_path.gd
+  ?? game/scripts/tests/journey_path.gd.uid
+
+APPLIED: 0 file(s) synced, 0 pruned.
+
+--gate: importing (close the Godot editor if it's open -- --import contends) ...
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+
+COMPILE OK (347 scripts)
+GATE OK: mobile quick suite passed

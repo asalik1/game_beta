@@ -1,0 +1,79 @@
+T60b validation: before
+choirmother_walk_codex_n: center 0.919px; upper 0.747px; feet 0.369px; PASS
+choirmother_walk_codex_ne: center 0.913px; upper 0.342px; feet 0.369px; PASS
+choirmother_walk_codex_nw: center 0.913px; upper 0.342px; feet 0.369px; PASS
+choirmother_walk_codex_s: center 2.456px; upper 0.419px; feet 0.369px; PASS
+choirmother_walk_codex_se: center 0.913px; upper 0.342px; feet 0.369px; PASS
+choirmother_walk_codex_sw: center 0.913px; upper 0.342px; feet 0.369px; PASS
+choirmother_walk_codex_w: center 0.913px; upper 0.342px; feet 0.369px; PASS
+T60b healthy-reference ceiling 0.513298px: FAIL
+{"boss": "morwen", "frames": 61, "backwards_center_frames": 6, "backwards_upper_frames": 6, "max_upper_residual_step": 27.801132202149006, "min_center_dx": -10.791381835938012, "max_center_dx": 18.45909118652301, "max_center_residual_step": 16.45909118652301, "max_feet_residual_step": 0.3905334472649997, "node_dx_min": 2.0, "node_dx_max": 2.0}
+{"boss": "vargoth", "frames": 61, "backwards_center_frames": 2, "backwards_upper_frames": 0, "max_upper_residual_step": 0.6800537109370453, "min_center_dx": -7.023681640625, "max_center_dx": 6.284301757812045, "max_center_residual_step": 9.223693847656023, "max_feet_residual_step": 0.15380859375, "node_dx_min": 2.2000122070310226, "node_dx_max": 2.200012207031932}
+{"boss": "korrag", "frames": 61, "backwards_center_frames": 6, "backwards_upper_frames": 6, "max_upper_residual_step": 9.994461059570938, "min_center_dx": -3.5665283203119884, "max_center_dx": 9.961273193358977, "max_center_residual_step": 7.127929687499943, "max_feet_residual_step": 0.4711303710939774, "node_dx_min": 2.83332824707, "node_dx_max": 2.8333435058600003}
+{"boss": "choirmother", "frames": 61, "backwards_center_frames": 0, "backwards_upper_frames": 0, "max_upper_residual_step": 0.35705566406204525, "min_center_dx": 1.0670166015629547, "max_center_dx": 2.6064453125, "max_center_residual_step": 0.9329833984370453, "max_feet_residual_step": 0.3694458007810226, "node_dx_min": 2.0, "node_dx_max": 2.0}
+T60b validation: after
+choirmother_walk_codex_n: center 0.919px; upper 0.747px; feet 0.369px; PASS
+choirmother_walk_codex_ne: center 0.913px; upper 0.342px; feet 0.369px; PASS
+choirmother_walk_codex_nw: center 0.913px; upper 0.342px; feet 0.369px; PASS
+choirmother_walk_codex_s: center 2.456px; upper 0.419px; feet 0.369px; PASS
+choirmother_walk_codex_se: center 0.913px; upper 0.342px; feet 0.369px; PASS
+choirmother_walk_codex_sw: center 0.913px; upper 0.342px; feet 0.369px; PASS
+choirmother_walk_codex_w: center 0.913px; upper 0.342px; feet 0.369px; PASS
+T60b healthy-reference ceiling 0.513298px: PASS
+{"boss": "morwen", "frames": 61, "backwards_center_frames": 3, "backwards_upper_frames": 0, "max_upper_residual_step": 0.47489929199201697, "min_center_dx": -8.871978759766023, "max_center_dx": 8.439758300782046, "max_center_residual_step": 10.871978759766023, "max_feet_residual_step": 0.3905334472649997, "node_dx_min": 2.0, "node_dx_max": 2.0}
+{"boss": "vargoth", "frames": 61, "backwards_center_frames": 2, "backwards_upper_frames": 0, "max_upper_residual_step": 0.6800537109370453, "min_center_dx": -7.023681640625, "max_center_dx": 6.284301757812045, "max_center_residual_step": 9.223693847656023, "max_feet_residual_step": 0.15380859375, "node_dx_min": 2.2000122070310226, "node_dx_max": 2.200012207031932}
+{"boss": "korrag", "frames": 61, "backwards_center_frames": 3, "backwards_upper_frames": 0, "max_upper_residual_step": 0.30590820312403366, "min_center_dx": -0.3356628417969887, "max_center_dx": 5.767669677733977, "max_center_residual_step": 3.168991088867017, "max_feet_residual_step": 0.4711303710939774, "node_dx_min": 2.83332824707, "node_dx_max": 2.8333435058600003}
+{"boss": "choirmother", "frames": 61, "backwards_center_frames": 0, "backwards_upper_frames": 0, "max_upper_residual_step": 0.35705566406204525, "min_center_dx": 1.0670166015629547, "max_center_dx": 2.6064453125, "max_center_residual_step": 0.9329833984370453, "max_feet_residual_step": 0.3694458007810226, "node_dx_min": 2.0, "node_dx_max": 2.0}
+T60b validation: quick
+STORY PLATE MOTION PASS: early/mid-dissolve/long-hold advances keep the on-screen blend (poses + opacity), same-tick advances, registered dissolves within and across cues, 21 focal envelopes, unlisted defaults, bounded drift, wide bars, SKIP and guarded finish
+ok: story plates (advance keeps the on-screen blend, registered dissolves, focal envelopes, bounded drift, SKIP/guarded finish)
+ok: boss tell accents (inside the danger disc, 22 styled bosses) + windup posture held
+ok: endgame modes (Crucible affixed boss / HP-carry / reward / cash-out; Depths camp+merchant / retheme / wave / debuff-cycle / death-settle)
+ok: touch HUD overlay gate (menu/dialogue/choice kill the controls with the world unpaused � co-op)
+ok: touch Act holds, tap/re-press, cancellation, and layout editor pause/settings/roster round-trip, ESC exit, menu-over exit
+ok: overlay intent gate (held keys stop moving + casting under dialogue + choice overlays, world unpaused � co-op)
+ok: two-regime growth (native band -> boss dial far-field; no L100 inversion; overcap blocks)
+ok: pause menu (pause/resume, audio settings, chapter replay)
+AUTOTEST QUICK PASS  (core systems only � run the FULL suite before staging)
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+   at: cleanup (core/object/object.cpp:2378)
+T60b validation: full
+ok: synthesis (7 Grand dicts+sprites+flavor+no-drawback+above-S, Codex learn-once+buy, S+A+fee consume, refuse without Codex/inputs, Grand off-shelf, _use_potion applies)
+ok: pvp arena (module shape + chapter routing + duel lobby stage)
+ok: dev morph (codex Transform: hide/puppet/cast-suppress + clean revert)
+ERROR: Condition "CryptoCore::b64_decode(&w[0], buf.size(), &len, (unsigned char *)cstr.get_data(), strlen) != OK" is true. Returning: String()
+   at: base64_to_utf8 (core/core_bind.cpp:1259)
+ok: fangmoot sim/moot/bot/codes/data/seam (0/800 stress fights capped)
+ok: ch2 bosses (spawn / signature / enrage / story-neutral death) � stormwarden, choirmother, nullwarden
+ok: chapter progression (victory carries the hero into ch2; ch1 stays farmable)
+ok: interludes (Moonfen standalone engine, enter/walk/band-read tempted, finale -> completed + back to capital)
+AUTOTEST PASS
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+   at: cleanup (core/object/object.cpp:2378)
+T60b validation: mobile
+  M  game/shot_framing.gd
+   M game/shot_road_hunt.gd
+  ?? game/scripts/tests/journey_path.gd
+  ?? game/scripts/tests/journey_path.gd.uid
+
+APPLIED: 0 file(s) synced, 0 pruned.
+
+--gate: importing (close the Godot editor if it's open -- --import contends) ...
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+
+COMPILE OK (347 scripts)
+GATE OK: mobile quick suite passed
+T60b validation: preflight
+WARN [BALANCE] game/scripts/game.gd:956: bare number(s) ['62.0', '62.0'] in a logic file -- if this tunes gameplay it belongs in balance.gd (#38f); ignore if it's structural
+WARN [CLIPSCALE] morwen_ability.png: renders at 0.18x the idle body height (clip 97px/627, idle 551px/627) -- clip plays smaller/larger than the body  (changed sprite; verify_art.py)
+WARN [CLIPSCALE] morwen_ability_e.png: renders at 0.18x the idle body height (clip 98px/627, idle 551px/627) -- clip plays smaller/larger than the body  (changed sprite; verify_art.py)
+WARN [CLIPSCALE] morwen_ability_n.png: renders at 0.17x the idle body height (clip 95px/627, idle 551px/627) -- clip plays smaller/larger than the body  (changed sprite; verify_art.py)
+WARN [CLIPSCALE] morwen_ability_ne.png: renders at 0.18x the idle body height (clip 97px/627, idle 551px/627) -- clip plays smaller/larger than the body  (changed sprite; verify_art.py)
+WARN [CLIPSCALE] morwen_ability_nw.png: renders at 0.18x the idle body height (clip 99px/627, idle 551px/627) -- clip plays smaller/larger than the body  (changed sprite; verify_art.py)
+WARN [CLIPSCALE] morwen_ability_s.png: renders at 0.18x the idle body height (clip 97px/627, idle 551px/627) -- clip plays smaller/larger than the body  (changed sprite; verify_art.py)
+WARN [CLIPSCALE] morwen_ability_se.png: renders at 0.18x the idle body height (clip 100px/627, idle 551px/627) -- clip plays smaller/larger than the body  (changed sprite; verify_art.py)
+WARN [CLIPSCALE] morwen_ability_sw.png: renders at 0.18x the idle body height (clip 101px/627, idle 551px/627) -- clip plays smaller/larger than the body  (changed sprite; verify_art.py)
+WARN [CLIPSCALE] morwen_ability_w.png: renders at 0.18x the idle body height (clip 100px/627, idle 551px/627) -- clip plays smaller/larger than the body  (changed sprite; verify_art.py)
+
+PREFLIGHT: 0 fail, 13 warn  (IMPORT MODULES BALANCE PHYSICS RIGS ARTQA SHOTRUN CODEX)
+T60b ALL VALIDATION GATES PASS

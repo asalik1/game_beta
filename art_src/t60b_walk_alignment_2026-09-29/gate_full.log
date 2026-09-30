@@ -1,0 +1,318 @@
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+
+COMPILE OK (350 scripts)
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+
+TEST VIEWPORT: (1280, 720) font oversampling=1.0
+ok: DEX vs evasion gradient (miss / graze / cancelled tiers)
+ok: stat curves + true damage + TTK retune
+ok: class select + warrior opening (owned the harm)
+ok: opening objective marker + live dialogue keys
+ok: vignette inner faces match native wall feet in full, inset and height-clipped stacked rooms
+ok: wall relief rises into cap, side faces meet unchanged colliders, native and legacy texture scales
+ok: stacked rooms keep faces, mass, camera and canopy off the next floor; pilasters, returns, lane backdrop
+ok: wall mass/corridors/torch seams chapter=ch1 room=0
+ok: room graph (26 rooms, 15 on the boss path, seeded layout, lazy build)
+ok: elder talk reads opening choice + village gate opens
+ok: warrior abilities
+ok: archer abilities
+ok: mage abilities
+ok: assassin abilities
+ok: paladin abilities
+ok: warlock abilities
+ok: melee passive regen
+ok: archer second wind (untouched -> recovery)
+ok: mage arcane ward (blink DR softens hits, pierced by true) + plate DR
+ok: mage Wind Cuts (wind-only bleed, bites + refreshes)
+ok: healing received (ward + Rust, fixed regen/Second Wind/Grit, PvE/PvP lifesteal + AoE, expiry, tonic exemption, quiet/capped/carrier-gated overflow, unpenalized HP bits)
+ok: spell damage wiring (Mage gear, Starfall, Firmament, skins; physical Wind Cuts; duel burn/toxin penetration; duel Frozen vs Stunned labels; independent Warlock knobs; Arrow Storm skins, Bulwark, Advance and Moonturn)
+ok: duel defense ENet (both directions, current CritRes, join-block CritRes, seeded crits, guaranteed crits, mixed true damage, damage-taken amps, true cap, one hit/number, no DODGE! on landed true damage, shields, legacy defaults, host gate)
+ok: assassin stab surge (stab + dash-stab, scales with missing health)
+ok: directional dash (held keys steer it, L/R art spins to match)
+ok: dash landing geometry / open endpoint beyond intervening terrain
+ok: dash landing geometry / terrain endpoint
+ok: dash landing geometry / enemy-layer endpoint
+ok: dash landing geometry / unscanned layer
+ok: dash landing geometry / areas do not block feet
+ok: dash landing geometry / actual offset shape
+ok: dash landing geometry / actual rotated offset
+ok: dash landing geometry / all shape owners
+ok: dash landing geometry / disabled shape owner
+ok: dash landing geometry / own RID excluded
+ok: dash landing geometry / explicit collision exception
+ok: dash landing geometry / zero collision mask
+ok: dash landing geometry / no active body shapes
+ok: dash landing geometry / no safe segment keeps preexisting origin
+ok: dash landing geometry / nonfinite request keeps origin
+ok: dash landing geometry / zero distance remains exact
+ok: shortcut swept landing / closed
+ok: shortcut swept landing / actor_offset
+ok: shortcut swept landing / actor_rotated
+ok: shortcut swept landing / actor_compound
+ok: shortcut swept landing / actor_disabled
+ok: shortcut swept landing / gate_offset
+ok: shortcut swept landing / gate_rotated
+ok: shortcut swept landing / gate_compound
+ok: shortcut swept landing / gate_disabled
+ok: shortcut swept landing / exception
+ok: shortcut swept landing / other_world
+ok: shortcut swept landing / open_fade
+ok: shortcut swept landing / mask_zero
+ok: shortcut swept landing / no_shape
+ok: shortcut swept landing / ordinary
+ok: shortcut swept landing / arrival
+ok: target lock cycling
+ok: themes unlock + assignment (fury on Cleave)
+ok: all-in theme loadout
+ok: per-ability theme variants (quake / berserk tune / venom bloom / lined shot)
+ok: paladin kit (aegis smite, holy mend, chains drag)
+ok: warlock kit (hex detonation, dark pact, void rift)
+ok: combo stat (134/200 resets)
+ok: attributes + combat rating (CR 389 -> 402)
+ok: substat allocation (PhysRes 80 -> 82)
+ok: monster levels + growth scaling
+ok: boss music (every BOSS_KINDS entry resolves to a real fight track)
+ok: elites (no-xp loot pinata) + reset stone + bag tiers + small rooms
+ok: mailbox (ground overflow, flush, claim, 30d expiry, trusted clock)
+ok: daily full/one-slot/two-slot potion delivery, mixed gem overflow, achievement save, quit/reload at delivery and account-write boundaries, mail recovery and exactly-once ledger/gold/Renown
+ok: records + achievements (best-time keeping, idempotent unlock)
+ok: battle stats (attribution buckets, fight window, record tracks) + gallery/archive UI
+ok: bounties + weekly vault (deterministic roll, progress reward, vault claim)
+ok: ward contracts (deterministic per-ward roll, progress-then-claim, 4/day cap, standing+favor, no double-claim)
+ok: activity current-day/current-entry claims, detached-copy rejection, expired-day credit, local/authority ownership, exact gold and bounded ready allowance
+ok: Alchemist recipe ceilings, exact quotes/ingredients, one-use orders, live world/owner/terms guards, overflow, distinct B/A knowledge and boss recipe payloads
+ok: potion save round-trip preserves every Grand/ordinary/laced/gift bottle, duplicate counts, identity, amount, duration, sting and sale/drop restrictions (existing v3 saves, solo/guest character load)
+ok: ward desk destinations, shared board selection, exact resonance favor, current-entry claims, cap, live scope/scroll/focus and honest directory services
+ok: charted independent guardian names/completion, Waking week, live readers, map inspection/focus and detached pocket isolation
+ok: scenery sampling: static/animated painterly LINEAR, pixel/fallback NEAREST, direct animation and shadow copies
+ok: prop shadow footprints, opaque-foot transforms, selected strip/atlas cells and animation lifetime
+ok: reforge bench (affix reroll, value reroll, add socket + cap incl. C, pen un-gate, transmute)
+ok: profile sets (membership by VERB family, A/S lanes count, tier stats, no cross-count)
+ok: set coverage (all 30 class x profile sets field all six slots)
+ok: account stash (deposit, withdraw to bag, capacity cap)
+ok: localization (lookup, key fallback, format, language swap)
+ok: consumables (drink gate refusal + budgeted mana/might/renewal, recall scroll)
+ok: consumable actions (shared field/Inventory potion rules + codes, field-only notices/throttles, bag Health slot, seal, exact one-use stock, stale Use/Drop, in-panel recall reasons, in-panel full-bag potion/scroll/gem/gamble/black-market refusals)
+ok: resonance band leans (Hunger / Constancy)
+ok: gold rush surge (sourceless baseline, window pay, touch trigger)
+ok: gamble vendor (afford gate, cost deduction, boss-band roll + pricing)
+ok: merchant economy (farm-cost buy, act-gated grades, upgrade curve, bag=1g, sell + quest-item guard, ward+renewal)
+ok: equip / unequip (slot empties to bag, bag-full guard)
+ok: auto-equip (empties + strict upgrades; gemmed/locked/side-grade left)
+ok: onboarding gate (fresh ch1 due; completed/replay/taught blocked; tut_ kept)
+ok: stacking bags (sum-capacity, loose-item pickup/equip/swap/sell — no auto-cash, +5/tier curve, UNIT-counting incl. health potions, grey-out, act drops, shop price, migration) + discard-throw
+ok: typed gem slots (C/B regular-only incl. C's new socket, A = 1 regular + 1 special, one special per stat across gear)
+ok: retention pass (grades + PBs, weekly fx, lore titles, curse, fanfare)
+ok: enemy statuses (fresh/refresh burn+bleed, toxin restart, lethal bite+shot exits, single XP award, bleed shatters ward)
+ok: hit highlights (host/mirror repeated hits, windup/guard/burn/enrage tints, envelope replacement, freeze, status tints end with their status, enrage tint fanned to and held by guests, killing-blow highlight, tether flash, rim isolation)
+ok: mob mechanics (presence + pounce/web/channel/warded/bloat... all ch1-7 tagged)
+ok: one-frame idle enters + advances quadruped walk strip
+ok: mob strip body scale + ground anchor persist across idle/walk/attack
+ok: melee swing alternation (attack/attackb 8-dir for warrior/paladin/assassin, parity flips on a1, skin fallback, assassin alt contact 0.18s)
+ok: prop illumination fixed geometry, shared strip/halo/pool phase, 4% envelope and lifetime
+ok: room floor vignette covers each whole cell (corridors held dim), 8-bit texels >= value floor, lit centre, z=-9 sorted last, repaint and corridor preview reuse it, corner bites shade
+ok: fire pools keep a minimum on bright capital/keep/void and their own budget on darker floors, contact rings, standalone and camp fires (no cottage pool), ordinary glow and player halo on the raw budget
+ok: door torches, all native structure light consumers per clock, sealed gate, standalone pools, hazard opt-out and inert props
+ok: asset seams (ground tilesets / composite structures + decals / animated props)
+ok: seam showcase (5 authored floors + living water/spores/rifts/storm/fire structures)
+ok: NPC interactions face the visitor (including Citizen/Fenna) + restore rest pose
+[room-clear] reconcile: room 0 'Emberfall Village' counter 2 but 1 living -> 1
+[room-clear] straggler: wolf at (-300.0, -300.0) (alerted=false, in_wall=false, outside_room=true) -> wake, nudge
+ok: room-clear counter reconciles to living monsters; quiet stragglers wake and come home
+ok: canopy-vs-front — 228 trees / 25 fronts across 26 rooms, no tree hides behind a building it overlaps
+ok: corner bites — 3 bitten room(s) of 26; bites clear the lanes, spawns and scenery
+ok: difficulty tiers (offsets, band shift + S table, gates, zero XP, unlock meta, tier PBs, save round-trip)
+ok: renown (prices, wallet, buy/own, PB + tier faucets pay once, weekly cache, save round-trip, wardrobe UI)
+ok: road deck (registry schema, diminishing chance, toll/courier/wager resolve deltas)
+ok: waking incursions (cross-domain seeded roster, pure injection, weekly bank + Renown sweep, stale refusal, save round-trip)
+ok: unlisted hidden bosses (roster/eligibility, deterministic injection, per-run bank + Renown/Wildfang, save round-trip)
+ok: pockets (roster/eligibility, deterministic float inject, complete reward+bank, save round-trip)
+ok: kill xp
+ok: chest loot + equip ([F] Bent Heart of the Wall)
+ok: weapon shape identities (budget order, zero granted stats, crit band + pool bias 293/600 vs 224/600)
+ok: class-aware drops (arsenal + S first-roll pen guarantee + B-gated lifesteal/combo)
+ok: legendary tier retired (generic S passive-less, 6 flagship transplants, old saves grandfather live)
+ok: named uniques (420 wired incl. gear verb/beat contracts, live on pickup, slot-generic drop split, worldroot conversion)
+ok: armor passive templates (30 knobbed, lane reader, bulwark/grip/ward effects, CC shorten)
+ok: gems (socket, synthesize, sell-return)
+ok: telegraph + unique boss falling weapons (heavy gate semantics)
+ok: all 11 boss projectile families use authored 64px art
+ok: skill tree rows (caps + gating + dual-key early open)
+ok: named talent loadouts (independent pages, shared 40-point budget)
+ok: auto-synthesize (equipped-first, 5 upgrades)
+ok: equipped synthesis respects gear caps before consuming gems, preserves old sockets, continues other vessels and bag merges, and keeps road work bag-only
+ok: save/load roundtrip (name, gold, talent pages, resonance, factions, gear, room state)
+ok: session-local name de-dup (#N on collision, case-insensitive)
+ok: chroma shader (apply, uniforms, clear)
+ok: every skin has an installed splash (Phantom teal-by-default, Umbral keeps blue)
+ok: hero dialogue splash follows the live equipped skin + dev opener class lens
+ok: choice dialogue engine (choices, flags, factions, resonance bands)
+ok: opening convo data integrity (289 convos)
+ok: buffered taps, overlay cancellation, damage history, gear protection and comfort controls
+ok: combat history ages with gameplay, preserves inclusive boundaries and isolates fall snapshots
+ok: online cinematics (busy, gathering, active/lone abort, accepted fade, same-class opener, busy scene parent continuation, no completion on refusal)
+ok: utility overlays, dialogue AUTO/pause ownership, and victory during death recovery
+WEATHER CONFIG PASS: every preset / quality, two depths, world space, camera coverage, budget and clean replacement; mist preserved
+ENEMY RIM PASS: hostile/boss/decoy/mirror routing by the body's own room, friendly exclusions, room luminance, material composition, per-frame follow and window-stretch width
+DAMAGE NUMBERS PASS: rapid totals, DoT cadence, rows clear the font, compaction, ally rows, cap, expiry, detach/room cleanup
+ok: live wolf hits, DoT ticks and the killing blow share one damage column
+DANGER RIM PASS: mask, pulse, comfort, pause, end/cancel, room/death/teardown restore
+ok: ground warnings pause/resume/cancel, guest effects cannot hurt, targeted foliage restores
+ok: impact cap, linear comfort, frozen waveform, full-size first frame at 30/60/144 fps, heavy-beat tiers, camera wiring and nine clock pairs
+ok: reciprocal camera corridors, locks, asymmetric lanes, touching rooms, read-only bounds, eased limits and overlapping doorways
+ok: target camera bounds, health-trail identity/heals and finite movement recovery
+ok: fishing timing, 120 seeded fights, 128 village/weekly layouts, lure habitats, claim-once and persistent catch records
+ok: cursed bargains close their own confirm on lapse and reject queued/freed offers before writes; a live offer still buffs the pack
+ok: quest fog, objective advancement, manual route handoff, personal save selection, six rescue sites, claim-once ownership and companion frame scale
+ok: bounded quest mirrors, JSON save projection, guest guide counts and journal quest invalidation
+ok: vigil content, fog target, hostile snapshot rejection, caller reach, reward-free wave deaths and purge isolation
+ok: quest schema (kinds / reward keys / scope; unscoped flags kept)
+ok: portal rules (belt/bag preserve bottles, budgets and records; independent guardian completion; finite clocks/return offsets; legacy float migration)
+ok: potion loot recovery preserves every Grand/ordinary/laced bottle, duplicate counts, full payload, no_sell and ground-marker claims
+ok: mail zero/exact/partial fit, full bag existing/new stacks, repeated claims, mixed attachments, short grouped notices and disposable save/reload conserve every unit
+ok: real chapter restart retires old caches, buried chests and Gold Rush after mailing earned loot
+ok: earned spoils freeze without opening/rerolling, exact per-coin gold, cache/owner/claim exclusion, recovery once, malformed records and typed mail attachments, chapter reward retirement, gift stash exclusion and gift-only Drop
+ok: stand-up/revive loot pays once in place; moved-off, respawn-teleport, charged, claimed, buried, foreign and remote-shell guards
+ok: loot travels home without foreign coordinates, live mutation or duplicate autosaves; immediate join mail, identical rewards, retired claim callbacks, detached restore and local drops
+ok: personal rescue history survives guest home saves, excludes host/account discoveries, lifts legacy home flags without mutation, honors explicit empty history and validates ids
+ok: target silhouettes follow real art behind opaque logs, reject ineligible targets, restore masks with shared hero owners, and clear on teardown
+ok: kiting away holds the committed soft target; a real steered-side enemy still takes the switch, same-side keep and idle acquisition unchanged
+ok: hero/target masks belong to their current world, reject a second canvas and foreign target, and release a retained old world's silhouettes
+ok: personal history excludes host flags, preserves home world and legacy achievements, honors explicit empty records, pairs durable quest payments, and reserves first-clear spoils exactly once
+ok: escort content, physical quest-giver discovery, completed-story retirement, finite/path snapshot guards and completion prerequisites
+ok: trial notice run/world/controller expiry with feed retained, campaign/achievement retention, and real session leave/rejoin departure retraction
+ok: level plaques/log/bindings/touch copy/world pop, multi-level awards, low-HP potion cue on bar and touch button, protected gear upgrade banners/stacking and bag badges
+ok: achievement/quest queue sharing, earned-notice overflow, overlay log clocks, complete fixed-width feed rows, party chat clear of a full feed and silent zero/negative XP
+ok: crystal fallback angles, finite guards, deferred contact reservation, payload/owner/hit-history preservation, bank budget and original range
+ok: all six pets load eight real movement frames, hold scale through the cycle, settle grounded idle and keep flying wingbeats alive
+ok: companion previews fit all six full cycles in both menu sizes, hold their scale, rest, stop outside clipped/hidden menus and safely rebuild
+ok: chapter finales isolate each reader, clear held input, reject duplicate/past callbacks, cancel pending dialogue, reset for a new world and resolve absent-art/dedicated endings
+ok: party appearance validates wire types/class/legacy IDs, preserves local identity/stats, shares warp/rest clocks, survives freed-world rebuilds and clears remote pets on ghost/death/unequip/unregister
+ok: road choices have explicit verbs and harmless leave/back; hold only their own offer; block duplicate, faded, freed, expired, dead, guest and changed-world decisions
+ok: dedicated pack clear raises Fangmaw, an empty-arena clear raises him on re-entry, death opens his gate, force arms an empty arena, and player-less quests settle once
+ok: road hunt ordered signs/reach/incapacity, bounded snapshots, blocked placement, death-only payment, personal saved receipt, purge/loot isolation, once-only rewards and abandonment cleanup
+ok: optional encounters reserve only their own room/world, permit existing orders and ignore inactive, retired or other-session actors
+ok: caravan reach/incapacity/rate/pressure, two-wave witnessed kills, run-scoped prices, bounded ordered snapshots, abandonment, missing-enemy cancellation and map world isolation
+ok: caravan finds an outer clear lane, preserves handle/footprint clearance and rejects a fully blocked room
+ok: reactive terrain single-use reservation, ordered states, invalid snapshots, rebuilds and room eligibility
+ok: macro wear 400-900px, lit-centre coverage, seeded repaint, 3-6 wall clusters, lane/anchor clearance, decor-only walls, no stray rustle
+ok: dressed room 0 wear=13 wall-members=0 civic=6 worst-hidden=0%
+ok: dressed room 2 wear=6 wall-members=0 civic=6 worst-hidden=0%
+ok: dressed room 3 wear=7 wall-members=0 civic=6 worst-hidden=0%
+ok: dressed room 4 wear=7 wall-members=0 civic=6 worst-hidden=0%
+ok: world read (seeded road arms, crossings, prop clearance, dark wear, stone edge, warm value floor, grounded arches)
+ok: 332 planted understory stickers are still, sensed and kick walk-through leaves
+FOLIAGE PASS: idle, player/enemy contact, settle, isolated materials, mirrored scatter bush, settles under pause, area and telegraph impacts, read-only targeting and canopy control
+ok: signature cast deadline, pressure, party scaling, damage attribution, expose and mirror authority
+ok: controller Ready/Decline, waiting/hidden/menu/keyboard gates, victory/downed/chat/choice/dialogue priority, card and hint labels, held-Y isolation
+ok: whole-key touch/controller copy plus gamepad radial deadzone, 216 directions, analog speed caps, invalid axes and inactive-device isolation
+ok: wayfinder fog, locked routes, pocket isolation, live loot and atlas selection
+ok: forged theme textures, protected slices, per-builder flat fallback, compact tabs and codex rail, exact grade rims, flat tracks, five-piece divider and 2px shell header footprint
+ok: forge exact shortfalls and single charges, daily keyboard claim/Close and fallen gating, HUD-envelope mail pointers
+ok: shop, codex, records, journal, daily, skill tree, theme, stats, map, dev UI
+ok: status icons (24 active ids, all authored PNGs, no procedural fallbacks)
+ok: HUD sleep/stagger (names, restrictions, art, reduced time, overlap, refresh, expiry, defaults)
+ok: HUD stun (Stunned chip, STUNNED! callout, reduced countdown, overlap, refresh, expiry, genuine freeze control, duel Frozen label, label whitelist)
+ok: HUD impairment ENet forwarding (sleep/stagger/defaults, PvP stun and Ice freeze labels to guest and host owners)
+ok: HUD impairments (real freeze/root/chill, reduced durations, countdown, refresh, expiry, full-row priority behind persistent chips, own art, casting detail)
+ok: DoT stats ENet (equip/respec, both directions, hosted/dedicated, seeded burn/bleed, late join, changed-only, legacy and hostile payloads)
+ok: HUD utility icons all painted, no fallback wiring (8 icons)
+ok: HUD diet dedup x2/x3 + currency totals, combat/hover/pause menu/dialogue pause/touch/duel, side fade by body/hysteresis both edges/input/geometry, live gate + HUD visibility off
+ok: ally arrow cost guard (200 mid-screen reservations: same spots, 0.22 ms for 3 searching arrows)
+ok: ally arrows (8 directions + party-column aims x 3 live viewport sizes x desktop/touch x up/downed/ghost through the pre-draw pass, independent painted-HUD oracle incl. portrait/damage meter, name-tag avoidance, no stacking with rescue priority, name handoff at the live edge, nearest edge and no-fit)
+ok: HUD alignment (shaped numeric baselines, quest/vitals/target clearance, full text, negative controls)
+ok: full-screen HUD/cutscene covers, centered clipped art + motes, speaker/boss splash covers (wide phone, tablet, resize, desktop keep)
+STORY PLATE MOTION PASS: early/mid-dissolve/long-hold advances keep the on-screen blend (poses + opacity), same-tick advances, registered dissolves within and across cues, 21 focal envelopes, unlisted defaults, bounded drift, wide bars, SKIP and guarded finish
+ok: story plates (advance keeps the on-screen blend, registered dissolves, focal envelopes, bounded drift, SKIP/guarded finish)
+ok: boss tell accents (inside the danger disc, 22 styled bosses) + windup posture held
+ok: endgame modes (Crucible affixed boss / HP-carry / reward / cash-out; Depths camp+merchant / retheme / wave / debuff-cycle / death-settle)
+ok: touch HUD overlay gate (menu/dialogue/choice kill the controls with the world unpaused — co-op)
+ok: touch Act holds, tap/re-press, cancellation, and layout editor pause/settings/roster round-trip, ESC exit, menu-over exit
+ok: overlay intent gate (held keys stop moving + casting under dialogue + choice overlays, world unpaused — co-op)
+ok: two-regime growth (native band -> boss dial far-field; no L100 inversion; overcap blocks)
+ok: all 46 terrains applied + events fired
+ok: hot room locks the exit (no walking out mid-fight)
+ok: darkwood road (lazy build, per-pack aggro, door seals, clear)
+ok: doorway walk-through (E door is passable, not painted shut)
+ok: dead-end cache (guarded, once per character)
+ok: social room (pool wanderer talks)
+ok: resonance shrine (+8, once)
+ok: fog of war (visited-only map state)
+ok: room cleared -> fangmaw spawned (Lv 5)
+[fight] fangmaw Lv5 | warrior Lv10 | ttk 0:00 | pool 8755 | dps 10769.5 | taken 26 | potions 0 | wipes 0
+ok: fangmaw killed + loot (gate opened)
+ok: fast travel (village <-> stilt camp; combat rooms excluded)
+ok: death -> last safe room + death room reset
+ok: morwen killed (Lv 8, gate opened)
+VARGOTH ENRAGE SETUP: hp=4912.18/24560.88 cast= remaining=0.00 recovery=0.00
+ok: vargoth enrage (observed after 0.056s)
+ok: death, respawn at nearest cleared/safe room, boss reset
+[fight] vargoth Lv12 | warrior Lv11 | ttk 0:02 | pool 24561 | dps 8379.2 | taken 0 | potions 0 | wipes 1
+ok: vargoth killed + victory screen
+ok: victory way-gates (card dismisses, gates rise, world live)
+ok: title screen + resume from save (map + clears intact)
+ok: assassin opening (temptation path)
+ok: paladin opening (virtue path)
+ok: warlock opening (virtue path)
+ok: chapter 2 hub boots on the spine layout (20 room[s])
+ok: T1 hub (Maren briefing reads flags, quest set, short-circuit)
+ok: T5 factions (exclusive join, standings, ambient Wildfang/Choir)
+ok: T6 Aldric (question hub, act gate, the truth)
+ok: T2 act 1 (Mills/Fields/Sporewood/Hollow, scaled bosses, arc flags)
+ok: T3 act 2 (crossings, scholar, Warden Null ends the chapter)
+ok: T7 resonance surfacing (haggle bands, NPCs read the shard)
+ok: ch2 side rooms (10 rooms / mix 3-2-2-2-1, refs resolve, wanderer pool, Font shrine, cache chest, waystation shop)
+ok: ch3 bosses (spawn / signature / phase / story-neutral death) — sexton, vess, saint_varo
+ok: ch4 bosses (spawn / signature / phase / story-neutral death) — forgemistress, cinderhide, ashpriest
+ok: ch5 bosses (spawn / signature / phase / story-neutral death) — whitepelt, icebound, sleepkeeper
+ok: ch6 bosses (spawn / signature / phase / story-neutral death) — auroch, gardener, curetwisted
+ok: ch7 bosses (spawn / signature / phase / story-neutral death) — veyx, echo, cyrraeth
+ok: ch3 chapter (Vale spine end-to-end — briefing, packs, sexton/vess/varo, victory)
+ok: ch4 chapter (Slagfields spine end-to-end — calda/cinderhide/ordo, victory)
+ok: ch5 chapter (Long Sleep spine end-to-end — whitepelt/serane/halla, victory)
+[fight] curetwisted Lv37 | warrior Lv37 | ttk 0:00 | pool 169200 | dps 639321.3 | taken 0 | potions 0 | wipes 0
+ok: ch6 chapter (Blooming Deep spine — auroch/rotmaw/kaethra strike-or-sheathe, victory)
+ok: ch7 chapter (Breaking Sky spine — veyx/echo/cyrraeth, ACT 1 COMPLETE)
+ok: eggs (the boy grows up — sq_kept_hat -> ch7 heron-feather recruit)
+ok: side quests (accept, step tracking, single payout)
+ok: quest verbs (kill step, item/gem/kept rewards, sq_kept_ persists, q_ cue family + scene)
+ok: quest quarry guard (loose quarry top up a cleared room; from_quest zero-reward; no over-spawn)
+ok: quest abandonment (pledge revoked + penalty, chapter-scoped, named) + discovery
+ok: quest scope (capital quest survives the wipe, never expiry-charged)
+ok: hunt step + keepsake reward (named-elite quarry spawn+flag completion; free cosmetic grant, no repeat)
+ok: ch1 side quests (oslas_debt, hunters_rounds, flame_at_window — single payouts)
+ok: pc_curios (SHIPPED relics gallery + Future tab: terrains/mobs/relics)
+ok: capital collider contract (17 landmark defs end at the grounded base line)
+ok: capital passability (every door lane reaches every other — 15 lanes; 6 north roads open through their arch; negative control sees the pre-fix strip; 9 rooms, hero-radius flood fill)
+ok: capital hub (9-room 3x3, NPC-owned services + dawn shelf + favor + lapidary quest end-to-end, bench gate holds on the road, leaves clean)
+ok: capital rework economy (deterministic clamped road-markup curve; favor + dawn shelf save round-trip)
+ok: ch2 side quests (9 chains — still_blue/bread/ash + bell/salt/straight-answer + widow/cage/ferryman, single payouts)
+ok: ch3 side quests (unfilled_row, bread_kneeling, sexton_stone — single payouts)
+ok: ch4 side quests (out_of_tolerance, nix_receipts, quench_prayer - single payouts)
+ok: ch5 side quests (forty_mouths, spring_song, count_sleepers - single payouts)
+ok: ch6 side quests (ch6_far_shore, ch6_gate_bread, ch6_kesh_tally — single payouts + standings)
+ok: ch7 side quests (relay_stands, void_letter, korrags_due — single payouts + standing)
+ok: promises kept (facing_home, nine_names — single payouts; beat variants resolve)
+ok: promises kept 2 (Osk's falling count on vess_dead; kneeling-field epilogue beat)
+ok: endgame boss pools exclude placeholder bosses (roster + fallback + earned kills)
+ok: Depths mob pool excludes placeholders and retains real mob ordering
+ok: pause menu (pause/resume, audio settings, chapter replay)
+ok: Play Together lobby screens + codex co-op page render (offline)
+ok: elixir_ward drink gate (off-plan refused, budgeted once, chain-chug closed)
+ok: crafting materials (5x7 dicts+sprites, stacking one-slot, icon, guaranteed elite drop)
+ok: graded potions (85 dicts+sprites+flavor, instant heal, might/ward buff, renewal burst, laced sting, tonic drip)
+ok: black market (laced F→A shelf, ~65% price, off the chartered merchant, fence + smuggler share it)
+ok: boss loot (1 gear chest + 1-3 supply chests, materials-first, S-from-gold, guaranteed gem, chest floor + bundle fallback, general A-cap)
+ok: professions (free lock+doubling swap+weekly reset+persist, gated craft, S-block, B/A blueprint gate, forced named-A promotion, price formula)
+ok: synthesis (7 Grand dicts+sprites+flavor+no-drawback+above-S, Codex learn-once+buy, S+A+fee consume, refuse without Codex/inputs, Grand off-shelf, _use_potion applies)
+ok: pvp arena (module shape + chapter routing + duel lobby stage)
+ok: dev morph (codex Transform: hide/puppet/cast-suppress + clean revert)
+ERROR: Condition "CryptoCore::b64_decode(&w[0], buf.size(), &len, (unsigned char *)cstr.get_data(), strlen) != OK" is true. Returning: String()
+   at: base64_to_utf8 (core/core_bind.cpp:1259)
+ok: fangmoot sim/moot/bot/codes/data/seam (0/800 stress fights capped)
+ok: ch2 bosses (spawn / signature / enrage / story-neutral death) — stormwarden, choirmother, nullwarden
+ok: chapter progression (victory carries the hero into ch2; ch1 stays farmable)
+ok: interludes (Moonfen standalone engine, enter/walk/band-read tempted, finale -> completed + back to capital)
+AUTOTEST PASS
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+   at: cleanup (core/object/object.cpp:2378)

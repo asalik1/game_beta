@@ -1,0 +1,15 @@
+WARN [BALANCE] game/scripts/game.gd:941: bare number(s) ['52.0', '52.0'] in a logic file -- if this tunes gameplay it belongs in balance.gd (#38f); ignore if it's structural
+WARN [BALANCE] game/scripts/game.gd:942: bare number(s) ['62.0', '62.0'] in a logic file -- if this tunes gameplay it belongs in balance.gd (#38f); ignore if it's structural
+WARN [BALANCE] game/scripts/game.gd:955: bare number(s) ['52.0', '52.0'] in a logic file -- if this tunes gameplay it belongs in balance.gd (#38f); ignore if it's structural
+WARN [BALANCE] game/scripts/game.gd:956: bare number(s) ['62.0', '62.0'] in a logic file -- if this tunes gameplay it belongs in balance.gd (#38f); ignore if it's structural
+WARN [CLIPSCALE] morwen_ability.png: renders at 0.18x the idle body height (clip 97px/627, idle 551px/627) -- clip plays smaller/larger than the body  (changed sprite; verify_art.py)
+WARN [CLIPSCALE] morwen_ability_e.png: renders at 0.18x the idle body height (clip 98px/627, idle 551px/627) -- clip plays smaller/larger than the body  (changed sprite; verify_art.py)
+WARN [CLIPSCALE] morwen_ability_n.png: renders at 0.17x the idle body height (clip 95px/627, idle 551px/627) -- clip plays smaller/larger than the body  (changed sprite; verify_art.py)
+WARN [CLIPSCALE] morwen_ability_ne.png: renders at 0.18x the idle body height (clip 97px/627, idle 551px/627) -- clip plays smaller/larger than the body  (changed sprite; verify_art.py)
+WARN [CLIPSCALE] morwen_ability_nw.png: renders at 0.18x the idle body height (clip 99px/627, idle 551px/627) -- clip plays smaller/larger than the body  (changed sprite; verify_art.py)
+WARN [CLIPSCALE] morwen_ability_s.png: renders at 0.18x the idle body height (clip 97px/627, idle 551px/627) -- clip plays smaller/larger than the body  (changed sprite; verify_art.py)
+WARN [CLIPSCALE] morwen_ability_se.png: renders at 0.18x the idle body height (clip 100px/627, idle 551px/627) -- clip plays smaller/larger than the body  (changed sprite; verify_art.py)
+WARN [CLIPSCALE] morwen_ability_sw.png: renders at 0.18x the idle body height (clip 101px/627, idle 551px/627) -- clip plays smaller/larger than the body  (changed sprite; verify_art.py)
+WARN [CLIPSCALE] morwen_ability_w.png: renders at 0.18x the idle body height (clip 100px/627, idle 551px/627) -- clip plays smaller/larger than the body  (changed sprite; verify_art.py)
+
+PREFLIGHT: 0 fail, 13 warn  (IMPORT MODULES BALANCE PHYSICS RIGS ARTQA SHOTRUN CODEX)

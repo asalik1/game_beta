@@ -1,0 +1,111 @@
+[shot] project=C:\Users\asali\Projects\MMO\.codex\worktrees\crownless-wayfinder\game rig=shot_t60b_walk.tscn timeout=240s (outer kill at 300s) args=[--timeout=240 --before]
+[shot] APPDATA=C:\Users\asali\Projects\MMO\.codex\worktrees\crownless-wayfinder\build\qa\t60b\before_profile (caller-supplied isolation, used as given)
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+
+COMPILE OK (351 scripts)
+[shot] C:\Users\asali\Projects\MMO\.codex\worktrees\crownless-wayfinder\tools\Godot_v4.4.1-stable_win64_console.exe --audio-driver Dummy --fixed-fps 60 --path C:\Users\asali\Projects\MMO\.codex\worktrees\crownless-wayfinder\game res://shot_t60b_walk.tscn -- --timeout=240 --before
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+Vulkan 1.3.260 - Forward+ - Using Device #0: AMD - AMD Radeon(TM) Graphics
+
+RIG START: t60b_walk  timeout=240s  master_muted=true  dummy_audio_driver=true
+RIG SHOTS DIR: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk
+WALK METRICS morwen feet_step=0.001595 center_step=0.113700
+WALK METRICS vargoth feet_step=0.000000 center_step=0.001452
+WALK METRICS korrag feet_step=0.001595 center_step=0.038725
+WALK METRICS choirmother feet_step=0.001595 center_step=0.001478
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0000.png  paused=false ts=1.00 pf=0 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0001.png  paused=false ts=1.00 pf=1 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0002.png  paused=false ts=1.00 pf=2 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0003.png  paused=false ts=1.00 pf=3 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0004.png  paused=false ts=1.00 pf=4 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0005.png  paused=false ts=1.00 pf=5 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0006.png  paused=false ts=1.00 pf=6 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0007.png  paused=false ts=1.00 pf=7 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0008.png  paused=false ts=1.00 pf=8 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0009.png  paused=false ts=1.00 pf=9 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0010.png  paused=false ts=1.00 pf=10 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0011.png  paused=false ts=1.00 pf=11 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0012.png  paused=false ts=1.00 pf=12 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0013.png  paused=false ts=1.00 pf=13 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0014.png  paused=false ts=1.00 pf=14 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0015.png  paused=false ts=1.00 pf=15 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0016.png  paused=false ts=1.00 pf=16 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0017.png  paused=false ts=1.00 pf=17 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0018.png  paused=false ts=1.00 pf=18 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0019.png  paused=false ts=1.00 pf=19 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0020.png  paused=false ts=1.00 pf=20 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0021.png  paused=false ts=1.00 pf=21 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0022.png  paused=false ts=1.00 pf=22 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0023.png  paused=false ts=1.00 pf=23 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0024.png  paused=false ts=1.00 pf=24 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0025.png  paused=false ts=1.00 pf=25 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0026.png  paused=false ts=1.00 pf=26 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0027.png  paused=false ts=1.00 pf=27 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0028.png  paused=false ts=1.00 pf=28 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0029.png  paused=false ts=1.00 pf=29 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0030.png  paused=false ts=1.00 pf=30 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0031.png  paused=false ts=1.00 pf=31 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0032.png  paused=false ts=1.00 pf=32 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0033.png  paused=false ts=1.00 pf=33 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0034.png  paused=false ts=1.00 pf=34 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0035.png  paused=false ts=1.00 pf=35 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0036.png  paused=false ts=1.00 pf=36 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0037.png  paused=false ts=1.00 pf=37 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0038.png  paused=false ts=1.00 pf=38 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0039.png  paused=false ts=1.00 pf=39 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0040.png  paused=false ts=1.00 pf=40 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0041.png  paused=false ts=1.00 pf=41 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0042.png  paused=false ts=1.00 pf=42 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0043.png  paused=false ts=1.00 pf=43 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0044.png  paused=false ts=1.00 pf=44 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0045.png  paused=false ts=1.00 pf=45 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0046.png  paused=false ts=1.00 pf=46 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0047.png  paused=false ts=1.00 pf=47 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0048.png  paused=false ts=1.00 pf=48 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0049.png  paused=false ts=1.00 pf=49 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0050.png  paused=false ts=1.00 pf=50 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0051.png  paused=false ts=1.00 pf=51 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0052.png  paused=false ts=1.00 pf=52 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0053.png  paused=false ts=1.00 pf=53 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0054.png  paused=false ts=1.00 pf=54 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0055.png  paused=false ts=1.00 pf=55 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0056.png  paused=false ts=1.00 pf=56 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0057.png  paused=false ts=1.00 pf=57 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0058.png  paused=false ts=1.00 pf=58 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0059.png  paused=false ts=1.00 pf=59 sim=0.00
+SHOT: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk/f_0060.png  paused=false ts=1.00 pf=60 sim=0.00
+BOSS WALK REGRESSION FAIL: morwen: upper-body center step 0.113700 > 0.020000
+BOSS WALK REGRESSION FAIL: korrag: upper-body center step 0.038725 > 0.020000
+RIG DONE: t60b_walk  shots=61  exit=1  dir=C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk
+[shot] VERDICT: FAIL in 90s, exit=1: engine exited 1. Logs: C:\Users\asali\Projects\MMO\.codex\worktrees\crownless-wayfinder\build\qa\t60b\temp\crownless_shots\shot_t60b_walk_20260929_205040.out / C:\Users\asali\Projects\MMO\.codex\worktrees\crownless-wayfinder\build\qa\t60b\temp\crownless_shots\shot_t60b_walk_20260929_205040.err
+[shot] shots: C:/Users/asali/Projects/MMO/.codex/worktrees/crownless-wayfinder/build/qa/t60b/before_profile/Godot/app_userdata/Crownless/shots/t60b_walk (61 png this run)
+morwen_walk: center 16.575px; upper 27.834px; feet 0.390px; FAIL
+vargoth_walk_codex_e: center 9.277px; upper 0.513px; feet 0.000px; PASS
+vargoth_walk_codex_n: center 0.426px; upper 0.422px; feet 0.442px; PASS
+vargoth_walk_codex_ne: center 9.277px; upper 0.513px; feet 0.000px; PASS
+vargoth_walk_codex_nw: center 9.277px; upper 0.513px; feet 0.000px; PASS
+vargoth_walk_codex_s: center 1.250px; upper 0.751px; feet 0.000px; PASS
+vargoth_walk_codex_se: center 9.277px; upper 0.513px; feet 0.000px; PASS
+vargoth_walk_codex_sw: center 9.277px; upper 0.513px; feet 0.000px; PASS
+vargoth_walk_codex_w: center 9.277px; upper 0.513px; feet 0.000px; PASS
+korrag_walk_codex_e: center 1.728px; upper 0.430px; feet 0.000px; PASS
+korrag_walk_codex_n: center 3.564px; upper 3.712px; feet 0.000px; PASS
+korrag_walk_codex_ne: center 1.728px; upper 0.430px; feet 0.000px; PASS
+korrag_walk_codex_nw: center 1.728px; upper 0.430px; feet 0.000px; PASS
+korrag_walk_codex_s: center 7.109px; upper 10.007px; feet 0.412px; FAIL
+korrag_walk_codex_se: center 1.728px; upper 0.430px; feet 0.000px; PASS
+korrag_walk_codex_sw: center 1.728px; upper 0.430px; feet 0.000px; PASS
+korrag_walk_codex_w: center 1.728px; upper 0.430px; feet 0.000px; PASS
+choirmother_walk_codex_e: center 0.913px; upper 0.342px; feet 0.369px; PASS
+choirmother_walk_codex_n: center 0.919px; upper 0.747px; feet 0.369px; PASS
+choirmother_walk_codex_ne: center 0.913px; upper 0.342px; feet 0.369px; PASS
+choirmother_walk_codex_nw: center 0.913px; upper 0.342px; feet 0.369px; PASS
+choirmother_walk_codex_s: center 2.456px; upper 0.419px; feet 0.369px; PASS
+choirmother_walk_codex_se: center 0.913px; upper 0.342px; feet 0.369px; PASS
+choirmother_walk_codex_sw: center 0.913px; upper 0.342px; feet 0.369px; PASS
+choirmother_walk_codex_w: center 0.913px; upper 0.342px; feet 0.369px; PASS
+T60b healthy-reference ceiling 0.513298px: FAIL
+{"boss": "morwen", "frames": 61, "backwards_center_frames": 6, "backwards_upper_frames": 6, "max_upper_residual_step": 27.801132202149006, "min_center_dx": -10.791381835938012, "max_center_dx": 18.45909118652301, "max_center_residual_step": 16.45909118652301, "max_feet_residual_step": 0.3905334472649997, "node_dx_min": 2.0, "node_dx_max": 2.0}
+{"boss": "vargoth", "frames": 61, "backwards_center_frames": 2, "backwards_upper_frames": 0, "max_upper_residual_step": 0.6800537109370453, "min_center_dx": -7.023681640625, "max_center_dx": 6.284301757812045, "max_center_residual_step": 9.223693847656023, "max_feet_residual_step": 0.15380859375, "node_dx_min": 2.2000122070310226, "node_dx_max": 2.200012207031932}
+{"boss": "korrag", "frames": 61, "backwards_center_frames": 6, "backwards_upper_frames": 6, "max_upper_residual_step": 9.994461059570938, "min_center_dx": -3.5665283203119884, "max_center_dx": 9.961273193358977, "max_center_residual_step": 7.127929687499943, "max_feet_residual_step": 0.4711303710939774, "node_dx_min": 2.83332824707, "node_dx_max": 2.8333435058600003}
+{"boss": "choirmother", "frames": 61, "backwards_center_frames": 0, "backwards_upper_frames": 0, "max_upper_residual_step": 0.35705566406204525, "min_center_dx": 1.0670166015629547, "max_center_dx": 2.6064453125, "max_center_residual_step": 0.9329833984370453, "max_feet_residual_step": 0.3694458007810226, "node_dx_min": 2.0, "node_dx_max": 2.0}

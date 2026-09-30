@@ -1,0 +1,76 @@
+[
+  {
+    "strip": "morwen_walk",
+    "before_sha256": "2755394eca87e7ad2b5207b6c59147b0106f42999c8e4cf53d1e0b734315cfa3",
+    "after_sha256": "21a3e7dbe91c35f1eae80b652cfdbee402d0b05d71c6a5057d272b2604133477",
+    "dx": [
+      0,
+      49,
+      -21,
+      21
+    ],
+    "dy": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "torso_x": [
+      317.0822906466471,
+      267.66888800835704,
+      337.6129685128245,
+      295.90617312423126
+    ],
+    "feet_before": [
+      587,
+      588,
+      588,
+      588
+    ],
+    "feet_after": [
+      587,
+      588,
+      588,
+      588
+    ],
+    "visible_rgba_lossless": true,
+    "clipped_pixels": 0
+  },
+  {
+    "strip": "korrag_walk_codex_s",
+    "before_sha256": "5620edd9518fe2a9286b740c877e7742b698c4f03707079b5fd0847df03fb369",
+    "after_sha256": "3b13f6c41df3d1f441b29bb1eaf2812cae0d246b93e00848f7a3bf210ae09ea6",
+    "dx": [
+      0,
+      19,
+      4,
+      25
+    ],
+    "dy": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "torso_x": [
+      364.2158936445314,
+      344.9204088061321,
+      360.1286460967796,
+      339.1999019401835
+    ],
+    "feet_before": [
+      529,
+      530,
+      530,
+      529
+    ],
+    "feet_after": [
+      529,
+      530,
+      530,
+      529
+    ],
+    "visible_rgba_lossless": true,
+    "clipped_pixels": 0
+  }
+]

@@ -1,0 +1,60 @@
+morwen: 17 file(s)
+korrag: 40 file(s)
+WARN [BLEED] morwen_anim_codex.png: 21672 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] morwen_attack.png: 70547 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] morwen_blink.png: 85504 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] morwen_death.png: 40337 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] morwen_rain.png: 69782 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] morwen_ring.png: 91196 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] morwen_walk.png: 46054 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [CLIPSCALE] morwen_ability.png: renders at 0.18x the idle body height (clip 97px/627, idle 551px/627) -- clip plays smaller/larger than the body
+WARN [CLIPSCALE] morwen_ability_e.png: renders at 0.18x the idle body height (clip 98px/627, idle 551px/627) -- clip plays smaller/larger than the body
+WARN [CLIPSCALE] morwen_ability_n.png: renders at 0.17x the idle body height (clip 95px/627, idle 551px/627) -- clip plays smaller/larger than the body
+WARN [CLIPSCALE] morwen_ability_ne.png: renders at 0.18x the idle body height (clip 97px/627, idle 551px/627) -- clip plays smaller/larger than the body
+WARN [CLIPSCALE] morwen_ability_nw.png: renders at 0.18x the idle body height (clip 99px/627, idle 551px/627) -- clip plays smaller/larger than the body
+WARN [CLIPSCALE] morwen_ability_s.png: renders at 0.18x the idle body height (clip 97px/627, idle 551px/627) -- clip plays smaller/larger than the body
+WARN [CLIPSCALE] morwen_ability_se.png: renders at 0.18x the idle body height (clip 100px/627, idle 551px/627) -- clip plays smaller/larger than the body
+WARN [CLIPSCALE] morwen_ability_sw.png: renders at 0.18x the idle body height (clip 101px/627, idle 551px/627) -- clip plays smaller/larger than the body
+WARN [CLIPSCALE] morwen_ability_w.png: renders at 0.18x the idle body height (clip 100px/627, idle 551px/627) -- clip plays smaller/larger than the body
+WARN [BLEED] korrag_anim_codex.png: 26519 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_attack.png: 53188 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_attack_e.png: 64024 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_attack_n.png: 67390 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_attack_ne.png: 64024 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_attack_nw.png: 64024 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_attack_s.png: 23998 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_attack_se.png: 64024 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_attack_sw.png: 64024 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_attack_w.png: 64024 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_death.png: 49046 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_lash.png: 78994 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_lash_e.png: 59166 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_lash_n.png: 69165 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_lash_ne.png: 59166 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_lash_nw.png: 59166 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_lash_s.png: 86903 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_lash_se.png: 59166 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_lash_sw.png: 59166 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_lash_w.png: 59166 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_pack.png: 78994 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_storm.png: 101387 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_walk_codex_e.png: 49691 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_walk_codex_n.png: 50007 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_walk_codex_ne.png: 49691 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_walk_codex_nw.png: 49691 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_walk_codex_s.png: 46134 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_walk_codex_se.png: 49691 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_walk_codex_sw.png: 49691 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [BLEED] korrag_walk_codex_w.png: 49691 semi-transparent pixel(s) -- extracted sprites must be 0 (green-bleed); small counts on generated art may be benign AA
+WARN [CLIPSCALE] korrag_ability.png: renders at 0.26x the idle body height (clip 103px/627, idle 389px/627) -- clip plays smaller/larger than the body
+WARN [CLIPSCALE] korrag_ability_e.png: renders at 0.27x the idle body height (clip 106px/627, idle 389px/627) -- clip plays smaller/larger than the body
+WARN [CLIPSCALE] korrag_ability_n.png: renders at 0.28x the idle body height (clip 107px/627, idle 389px/627) -- clip plays smaller/larger than the body
+WARN [CLIPSCALE] korrag_ability_ne.png: renders at 0.28x the idle body height (clip 107px/627, idle 389px/627) -- clip plays smaller/larger than the body
+WARN [CLIPSCALE] korrag_ability_nw.png: renders at 0.27x the idle body height (clip 106px/627, idle 389px/627) -- clip plays smaller/larger than the body
+WARN [CLIPSCALE] korrag_ability_s.png: renders at 0.26x the idle body height (clip 103px/627, idle 389px/627) -- clip plays smaller/larger than the body
+WARN [CLIPSCALE] korrag_ability_se.png: renders at 0.32x the idle body height (clip 126px/627, idle 389px/627) -- clip plays smaller/larger than the body
+WARN [CLIPSCALE] korrag_ability_sw.png: renders at 0.28x the idle body height (clip 108px/627, idle 389px/627) -- clip plays smaller/larger than the body
+WARN [CLIPSCALE] korrag_ability_w.png: renders at 0.26x the idle body height (clip 102px/627, idle 389px/627) -- clip plays smaller/larger than the body
+WARN [CLIPSCALE] korrag_storm.png: renders at 1.18x the idle body height (clip 460px/627, idle 389px/627) -- clip plays smaller/larger than the body
+
+VERIFY: 0 fail, 56 warn

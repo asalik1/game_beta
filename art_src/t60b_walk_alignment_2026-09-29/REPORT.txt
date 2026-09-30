@@ -1,0 +1,126 @@
+T60b -- Morwen / Korrag south whole-frame walk alignment
+
+Scope: codex/crownless-wayfinder. Only two desktop PNGs and their mobile
+copies change. No runtime rendering, clock, balance or animation code changes.
+
+DECISION
+Morwen: repair applied. The established install_gait_row.anchor_x(...,
+"torso") anchor produces integer X shifts [0,49,-21,21].
+Korrag south: repair applied, integer X shifts [0,19,4,25].
+All Y shifts are zero. No generation, frame-content assembly, part masks,
+mirroring, scaling, palette changes, frame duplication or frame reordering.
+
+FEASIBILITY
+The same torso correction stabilizes the head/chest as a unit while retaining
+the existing hem/boot poses. The fixed upper-half metric was NOT used to choose
+the shifts: that independent acceptance measure corroborates the installer's
+body-relative upper-40-percent centroid. Neither strip needs a re-roll for the
+reported horizontal jitter. Existing vertical bob and authored poses remain.
+
+Maximum adjacent upper-X jump at game render scale (includes loop wrap):
+                         before px    after px
+morwen_walk                  27.834       0.504
+korrag_walk_codex_s           10.007       0.324
+healthy vargoth east           0.513       unchanged
+healthy choirmother east       0.342       unchanged
+
+Every visible RGBA pixel is preserved exactly under its whole-cell translation;
+zero clipped pixels. See build_candidates.py assertions and translations.json.
+Frame-0 placement, cell size, frame count and animation timing are unchanged.
+Feet rows, before == after:
+  Morwen: [587,588,588,588]
+  Korrag: [529,530,530,529]
+The existing 1-source-pixel antialias variation remains; no baseline change.
+
+VISUAL REVIEW
+Reviewed all four decoded frames of each before/after comparison GIF, plus
+the decoded travel GIF poses at actual art scale/speed. Morwen's halo, face
+and belt stay horizontally together; the documented hovering caster's mist
+hem continues sweeping (see tools/art/recenter_strip.py's Morwen rationale).
+It is not a rigid planted boot footprint. Korrag keeps the raised/landing and
+opposite boot poses; the previous lateral whole-body shift is removed rather
+than replacing the gait with a rigid sliding pose.
+Korrag's measured feet-band X span decreases from 18.5 to 7 source pixels;
+the correction does not merely stabilize his chest while shoving his boots.
+Travel helper panes were enlarged to 320px high / ground Y=285 to fit bosses;
+the standard 150px hero pane clips these larger bodies. These GIFs reproduce
+the diagnosis's horizontal fixture travel, not a south-direction encounter.
+Also reviewed the actual before_report/walk_1x.gif and after_report/walk_1x.gif
+as decoded phase samples (engine_gif_review.png), covering all four authored
+poses. The torso no longer jumps backwards; boots/hem retain their pose cycle.
+Each engine GIF has 31 frames at an accurately distributed nominal 30fps clock.
+
+Engine capture, 61 fixed-60Hz samples / 1 second, before -> after:
+  Morwen backwards upper-body frames: 6 -> 0
+  Korrag backwards upper-body frames: 6 -> 0
+  Morwen max upper residual step: 27.801 -> 0.475 render px
+  Korrag max upper residual step: 9.994 -> 0.306 render px
+  Feet-line residual step is IDENTICAL before/after:
+    Morwen 0.390533 px; Korrag 0.471130 px (includes renderer presentation).
+  Every feet_y sample (not just the maximum) and node trajectory is identical
+  across all 61 ticks for each repaired boss; see acceptance.json.
+The whole-silhouette centroid still moves with cloth/limbs, as it does on the
+healthy Vargoth reference; the diagnosis explicitly measures the upper body.
+
+PROVENANCE / REPRODUCTION
+build_candidates.py reuses tools/art/install_gait_row.py's torso anchor.
+Only whole existing square cells are translated. Its source is before/*.png.
+install.py verifies source/candidate hashes and archives desktop/mobile
+originals to art_src/_backups/t60b_walk_alignment_2026-09-29 before replacing.
+Mobile copied with tools/sync_mobile.py --apply --paths
+  assets/sprites/morwen_walk.png assets/sprites/korrag_walk_codex_s.png
+
+boss_walk_report.py is copied from git object
+91853fe72438758838482b1f4f9975bf1a0ceca4:tools/art/boss_walk_report.py.
+Adaptations: local tools/art import path; literal lane thresholds 0.02 cell
+upper step / 0.005 cell feet step because the lane is not yet merged here;
+optional archived source overrides; an additional stricter healthy-reference
+ceiling (max of Vargoth E and Choirmother E). No relaxation of lane thresholds.
+Source audits cover all 25 walk strips from the diagnosis, not just the two
+edited files. Originals fail on exactly these two strips; repaired set passes.
+Matplotlib is absent here, so the adapter omits the optional trajectory plots;
+the lane's numerical capture metrics, full trajectory CSV and GIF are retained.
+
+prepare_capture.py extracts the same commit's Godot fixture and metrics to
+temporary game/shot_t60b_* files. Only fixture naming, literal lane constants,
+and --before loading of archived PNGs differ from the diagnosis. It uses the
+real Enemy loader, _apply_strip and _render_tail, 61 ticks at fixed 60Hz, muted
+shot.bat with compile gate and isolated workspace APPDATA. This is an engine
+presentation fixture, not an AI-driven encounter. Fixture files are removed
+after validation; they are not part of the art commit.
+The first fixture run was rejected: Godot re-enabled physics on tree entry,
+so unconfigured fixture enemies entered AI. The local adapter disables physics
+again immediately after add_child; no production code changes. Its first report
+also exposed APPDATA redirecting Python's user-site packages. The adapter now
+preserves the parent interpreter's module paths. Clean reruns are authoritative.
+
+All Godot work is serialized by tools/orchestration/glock.py. Its pre-existing
+machine-wide lock/queue is the only shared coordination outside this worktree;
+child logs, temporary profiles, captures and artifacts remain inside it.
+
+FINAL VALIDATION
+All required gates completed 2026-09-29 on codex/crownless-wayfinder.
+- verify_art morwen korrag: 0 FAIL / 56 WARN before AND after. Every warning
+  line is identical. No FEETSLIDE anywhere in either scoped report.
+- Source acceptance: all 25 diagnosis strips PASS; the two repaired strips
+  also pass the stricter measured healthy-reference ceiling of 0.513298 px.
+- Locked engine baseline: expected failure for the original Morwen/Korrag
+  strips, with no script/shader errors after correcting the fixture adapter.
+- Locked repaired engine capture: BOSS WALK REGRESSION PASS, exit 0.
+- Desktop compile + test_quick.bat: AUTOTEST QUICK PASS, exit 0.
+- Desktop compile + test.bat: AUTOTEST PASS, exit 0.
+- Scoped mobile sync + import + compile (347 scripts) + quick: GATE OK,
+  exit 0. Desktop/mobile PNG hashes match the reviewed candidates.
+- Final preflight: 0 FAIL / 13 WARN, exit 0. Warnings are nine existing
+  Morwen ability CLIPSCALE notices and four balance-literal notices in
+  concurrently edited, out-of-scope game code; none is a new walk defect.
+- All temporary game/t60b_metrics* and game/shot_t60b_walk* fixture files
+  removed after capture. Only art and provenance are committed.
+
+validation.json records each gate's exit and required marker. The baseline's
+exit 1 is the expected failing control. gate_*.log are the clean authoritative
+runs; initial rejected adapter/pre-import logs remain under build/qa/t60b.
+The desktop quick/full runners also printed ObjectDB shutdown warnings while
+returning their PASS verdicts; no script/shader errors occurred in these runs.
+Unrelated staged and unstaged work was left to its owners. No runtime code,
+balance knobs, gait timing, source identity, or other walk directions changed.
