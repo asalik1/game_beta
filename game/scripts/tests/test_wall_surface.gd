@@ -164,6 +164,7 @@ static func _stacked(g: Stack) -> String:
 	g._canopy_overhang(1, pr, g.rooms[1]["exits"], gap)
 	var canopies: Array = g.zone_canopy.get(1, [])
 	var canopy_error := "" if not canopies.is_empty() else "forest canopy fixture built nothing"
+	if canopy_error == "": canopy_error = canopy_overlap(g, 1)
 	for leaves: Sprite2D in canopies:
 		if leaves.position.y < upper_floor.end.y - 0.01:
 			canopy_error = "forest canopy covers the floor of the room above"
@@ -213,6 +214,65 @@ static func _stacked(g: Stack) -> String:
 	if not is_equal_approx(inset_rise, Balance.WALL_FACE_H - Game.TILE) or inset_mass != g.room_rect(1):
 		return "inset room lost its full wall rise or grew its mass out of its cell"
 	return ""
+
+
+## T53 draw order and extent: a rooted tree or backdrop crossing the north
+## wall band must draw over the wall foliage, and the foliage must stay above
+## the wall faces it dresses. Both bounds are measured from nodes the real
+## factories build (probe props are planted and freed here), never literals.
+## Also used by the capture rig's old-settings negative controls.
+static func canopy_overlap(g: Game, i: int) -> String:
+	var leaves: Array = g.zone_canopy.get(i, [])
+	if leaves.is_empty(): return "canopy overlap fixture has no wall foliage"
+	var carriers: Array = []
+	carriers.append_array(g.zone_wall_sprites.get(i, []))
+	carriers.append_array(g.zone_posts.get(i, []))
+	var face_z := -INF
+	for carrier in carriers:
+		if not is_instance_valid(carrier): continue
+		for side in ["S", "E", "W"]:
+			var face := (carrier as Node).get_node_or_null("Face" + side) as CanvasItem
+			if face != null: face_z = maxf(face_z, _abs_z(face))
+	if face_z == -INF: return "canopy overlap fixture has no wall face to order against"
+	var pr := g.play_rect(i)
+	var probe := g._add_obstacle("tree_autumn", pr.position + Vector2(120.0, 100.0), 1.0)
+	var backdrop := g._add_backdrop("tree_autumn", pr.position + Vector2(300.0, 80.0), 230.0)
+	var prop_z := INF
+	for root: Node in [probe, backdrop]:
+		for child in root.get_children():
+			if child.has_meta("occlusion_sort_y"): prop_z = minf(prop_z, _abs_z(child))
+	probe.free()
+	backdrop.free()
+	if prop_z == INF: return "canopy overlap probes built no rooted crown"
+	for strip: Sprite2D in leaves:
+		if _abs_z(strip) >= prop_z:
+			return "wall foliage overlays rooted canopies"
+		if _abs_z(strip) <= face_z:
+			return "wall foliage sits behind the wall faces it dresses"
+		# Unit scale over the whole source height: every painted row shows at
+		# its authored size (a 0.75 squash flattened the fringe in review).
+		if strip.scale != Vector2.ONE:
+			return "wall foliage is squashed off its painted scale"
+		if strip.region_rect.position.y != 0.0 or strip.region_rect.size.y != strip.texture.get_height():
+			return "wall foliage crops the painted canopy fringe"
+		var mat := strip.material as ShaderMaterial
+		if mat == null or mat.shader != preload("res://shaders/wall_canopy.gdshader"):
+			return "wall foliage has hard rectangular span edges"
+		if mat.get_shader_parameter("extent") != strip.region_rect.size \
+				or mat.get_shader_parameter("feather") != Vector2.ONE * Balance.WALL_CANOPY_FEATHER:
+			return "wall foliage feather misses its rendered span"
+	return ""
+
+
+## Effective canvas z of a node: relative z_index values sum up the chain.
+static func _abs_z(item: Node) -> float:
+	var z := 0
+	var node := item
+	while node is CanvasItem:
+		z += (node as CanvasItem).z_index
+		if not (node as CanvasItem).z_as_relative: break
+		node = node.get_parent()
+	return float(z)
 
 
 static func _lane_backdrop(g: Game, i: int) -> Node:
@@ -279,6 +339,9 @@ static func run_room(g: Game, i: int) -> String:
 	for leaves: Sprite2D in g.zone_canopy.get(i, []):
 		if leaves.position.y < pr.position.y - Surface.north_headroom(g, i) - 0.01:
 			return "forest canopy covers the floor of the room above"
+	if not g.zone_canopy.get(i, []).is_empty():
+		var canopy_error := canopy_overlap(g, i)
+		if canopy_error != "": return canopy_error
 	var error := _north_torches(g, i)
 	if error != "": return error
 	print("ok: wall mass/corridors/torch seams chapter=%s room=%d" % [g.chapter_id, i])

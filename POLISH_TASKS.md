@@ -279,9 +279,15 @@ should work".
 - [x] **P3.3 Flickering floor pools** — already true: `_floor_glow(pulse)` breathes every pool
   (`GLOW_PULSE_LOW/PERIOD`), the player carries a light with wall occluders. No change.
 - [x] **P3.4 Foreground overhang** — `canopy_forest.png` (Codex, seamless L→R, keyed at 512×128)
-  hangs along the north edge of forest/hedge-walled rooms ABOVE the actors (`_canopy_overhang`,
-  z 20, α 0.92, `CANOPY_*`), left/right of the door lane with the torch pair clear
-  (`CANOPY_DOOR_CLEAR`). Rig: darkwood road N door. Eaves for keep rooms: not done.
+  hangs along the north edge of forest/hedge-walled rooms (`_canopy_overhang`, α 0.92,
+  `CANOPY_*`), left/right of the door lane with the torch pair clear (`CANOPY_DOOR_CLEAR`).
+  Rig: darkwood road N door. Eaves for keep rooms: not done.
+  **Retired foreground layer (T53, 2026-09-29):** the strip used to draw ABOVE the actors at
+  z 20 with hard top and span edges, which cut green rectangles across tree crowns (owner
+  playtest). It now dresses the wall BEHIND rooted props and actors (`Balance.WALL_CANOPY_Z`,
+  above the wall faces), at unit scale over the whole texture, with its top and span ends
+  feathered (`wall_canopy.gdshader`, `WALL_CANOPY_FEATHER`). Heads near the north wall no longer
+  pass under the leaves; do not restore z 20. Rig: `shot.bat polish --canopy-overlap`.
 - [x] **P3.5 Vignette** — already true (`hud.vignette`, low-HP pulse rides it). No change.
 
 ### P4 — hero animation coverage (ART, the real cost)

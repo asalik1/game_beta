@@ -209,6 +209,11 @@ func _capture_views(cls: String, z: float) -> void:
 			print("PROP SAMPLING FAIL: " + error)
 		finish(0 if error == "" else 1)
 		return
+	if flag("canopy-overlap"):
+		var error: String = await preload("res://scripts/dev/canopy_overlap_capture.gd").run(self)
+		if error != "": print("CANOPY OVERLAP FAIL: " + error)
+		finish(0 if error == "" else 1)
+		return
 	var rooms := arg("rooms", "2,17,20").split(",", false)
 	for rs in rooms:
 		var room := int(rs)

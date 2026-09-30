@@ -22,6 +22,8 @@ const WALL_SHADOW_H := 30.0
 const WALL_SHADOW_A := 0.55
 const WALL_SIDE_SHADOW_W := 18.0
 const WALL_SIDE_SHADOW_A := 0.38
+const WALL_CANOPY_Z := -2       # above wall faces/posts, below rooted props
+const WALL_CANOPY_FEATHER := 18.0 # px (strip draws at unit scale) faded at the top and span ends
 
 # Boot painting: generous crop reserve, a barely perceptible 80-second orbit.
 const BOOT_NIGHT := Color(0.02, 0.015, 0.045)

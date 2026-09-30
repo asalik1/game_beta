@@ -4027,17 +4027,13 @@ func _cell_curtain(i: int, full: Rect2, lt: Vector2, rb: Vector2, exits: Diction
 		else:
 			_wall(Rect2(x, full.position.y, TILE, full.size.y), wt, relief)
 
-## Foreground CANOPY overhang (P3, 2026-08-18): forest rooms hang a strip of
-## dark leaves along the north edge ABOVE the actors (z 20), so walking near
-## the top wall reads as passing under the trees — the one foreground layer the
-## flat top-down frame lacked. Left/right of the north door only (the door lane
+## CANOPY overhang: dark leaves dress the north wall behind rooted trees and
+## other tall props. Left/right of the north door only (the door lane
 ## and its torch pair stay clear); wall kind decides eligibility (mossy forest
 ## walls, hedges), the art is `canopy_forest.png` (seamless left-to-right).
 const CANOPY_WALLS := {"wall_moss": true, "wall_hedge": true}
-const CANOPY_H := 96.0        # world px of strip shown (art is 128 tall @1:1)
 const CANOPY_LIFT := 22.0     # how far above the wall's top edge the strip starts
 const CANOPY_ALPHA := 0.92
-const CANOPY_Z := 20
 const CANOPY_DOOR_CLEAR := 100.0   # px each side of the door lane left open (torch pair)
 func _canopy_overhang(i: int, r: Rect2, exits: Dictionary, gap: float) -> void:
 	# Free the old strip FIRST: a repaint from a forest to any other terrain
@@ -4062,18 +4058,30 @@ func _canopy_overhang(i: int, r: Rect2, exits: Dictionary, gap: float) -> void:
 	else:
 		spans.append(Rect2(r.position.x, 0, r.size.x, 0))
 	for sp in spans:
+		if sp.size.x <= 0.0:
+			continue
 		var s := Sprite2D.new()
 		s.texture = tex
 		s.centered = false
 		s.region_enabled = true
 		s.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-		# offset the region per span so the tile phase differs left/right
-		s.region_rect = Rect2(sp.position.x * 0.5, 0, sp.size.x, minf(CANOPY_H, tex.get_height()))
+		# offset the region per span so the tile phase differs left/right.
+		# The whole source height at unit scale: every painted row shows at its
+		# authored size (the art's fringe ends well above its transparent tail).
+		s.region_rect = Rect2(sp.position.x * 0.5, 0, sp.size.x, tex.get_height())
+		# T53: the strip used to draw at z=20 with hard top and span edges, so it
+		# cut green rectangles across tree crowns. It now sits behind rooted
+		# props (z WALL_CANOPY_Z) and fades in at its top and doorway ends.
+		var edge := ShaderMaterial.new()
+		edge.shader = preload("res://shaders/wall_canopy.gdshader")
+		edge.set_shader_parameter("extent", s.region_rect.size)
+		edge.set_shader_parameter("feather", Vector2.ONE * Balance.WALL_CANOPY_FEATHER)
+		s.material = edge
 		# Hang from the risen wall top, never over the floor of the room north.
 		var lift := minf(WallSurface.north_rise(self, i) + CANOPY_LIFT, WallSurface.north_headroom(self, i))
 		s.position = Vector2(sp.position.x, r.position.y - lift)
 		s.modulate = Color(1, 1, 1, CANOPY_ALPHA)
-		s.z_index = CANOPY_Z
+		s.z_index = Balance.WALL_CANOPY_Z
 		s.z_as_relative = false
 		world.add_child(s)
 		zone_canopy[i].append(s)
