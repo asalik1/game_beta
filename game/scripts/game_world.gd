@@ -2457,16 +2457,11 @@ func _canopy_tree(base: String) -> bool:
 	return base.contains("tree") and not Terrains.SOLID_DECOR.has(base)
 
 
-## Living scenery shares one restrained wind language. The earlier pass only
-## moved large trees plus two flower types, leaving reed beds and undergrowth
-## frozen like cardboard beneath a moving canopy.
-## (2026-08-18) Mushrooms and toadstools came OFF this list: a fungus has no
-## leaves to catch wind, and the sway read as the prop "shifting position"
-## (owner, spore/marsh rooms). Wind is for foliage — trees, bushes, grass,
-## flowers, reeds.
+## Trees retain their authored canopy loop and shared wind-shear lean.
+## The same foliage allow-list gives understory an interaction-only material
+## in _prop_visual; fungi, stumps and rigid scenery remain excluded.
 func _wind_scenery(name: String) -> bool:
-	return _canopy_tree(name) or name.begins_with("bush") \
-		or name.begins_with("grass") or name in ["flower", "cattail", "frost_reeds"]
+	return _canopy_tree(name) or preload("res://scripts/foliage_rustle.gd").understory(name)
 
 
 ## CANOPY vs FRONT — the "stall pasted on a tree" bug (owner 2026-08-19: a
@@ -2907,7 +2902,7 @@ func _spawn_scenery(zi: int) -> void:
 				spr.position.y -= _visual_size(spr).y * decor_scale * 0.5 - 5.0
 			spr.z_index = -8
 			_apply_scenery_variation(spr, decor_base, dpos)
-			if _wind_scenery(decor_base):
+			if _wind_scenery(decor_base) and not preload("res://scripts/foliage_rustle.gd").understory(decor_base):
 				spr.material = Art.wind_material()
 			world.add_child(spr)
 			zone_scenery[zi].append(spr)
@@ -3336,7 +3331,7 @@ func _add_obstacle(sprite_name: String, pos: Vector2, visual_variation := 1.0) -
 	elif is_tree:
 		spr.position = Vector2(0, -18)  # trunk base sits at the body origin
 	_apply_scenery_variation(spr, family_base, pos)
-	if _wind_scenery(family_base):
+	if _wind_scenery(family_base) and not preload("res://scripts/foliage_rustle.gd").understory(family_base):
 		spr.material = Art.wind_material()
 	# Scatter props y-sort over a hero north of their base exactly like
 	# buildings do, so they join the same occlusion-outline group (2026-07-28:
@@ -3420,6 +3415,8 @@ func _prop_visual(name: String) -> Node2D:
 		# Match the cast's downsampling; Art keeps legacy pixel art on nearest.
 		spr.texture_filter = Art.prop_texture_filter(texture_name)
 		vis = spr
+	if preload("res://scripts/foliage_rustle.gd").understory(Terrains.prop_base(name)):
+		preload("res://scripts/foliage_rustle.gd").attach(self, vis, _visual_size(vis))
 	return vis
 
 
@@ -3455,7 +3452,7 @@ func _structure_sprite(name: String, target_w: float, wind: bool) -> Node2D:
 	var native := _visual_size(vis)
 	var s := target_w / maxf(1.0, native.x)
 	vis.scale = Vector2(s, s)
-	if wind:
+	if wind and not preload("res://scripts/foliage_rustle.gd").understory(Terrains.prop_base(name)):
 		vis.material = Art.wind_material()
 	vis.set_meta("wpx", native.x * s)
 	vis.set_meta("hpx", native.y * s)

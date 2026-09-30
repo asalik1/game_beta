@@ -1603,7 +1603,7 @@ func hit_enemy(target: CharacterBody2D, mult: float, effects := {}) -> void:
 		e.apply_knock(dir * (sf * Balance.BOSS_SHOVE_FACTOR if e is Boss else sf), true)
 	if effects.has("splash"):
 		game.burst(e.global_position, _tcolor if _themed else Color(1.0, 0.6, 0.2), 8)
-		for n2 in _enemies_within(e.global_position, 80.0):
+		for n2 in _area_hit_targets(e.global_position, 80.0):
 			var e2 := n2 as Enemy  # splash sub-hits are the flat enemy path (a rival in the sweep skips)
 			if e2 != null and e2 != e and not e2.dying:
 				e2.hit_src = self
@@ -1711,7 +1711,7 @@ func _uniq_after_hit(e: Enemy, sp: String, dmg: float, mult: float, is_crit: boo
 				# Comet's Eye: the critical bolt bursts on the victim.
 				if effects.get("uniq_a1", 0):
 					game.burst(e.global_position, Color(1.0, 0.75, 0.4), 8)
-					for n2 in _enemies_within(e.global_position, 80.0):
+					for n2 in _area_hit_targets(e.global_position, 80.0):
 						var e2 := n2 as Enemy  # flat sub-hit: enemy path only
 						if e2 != null and e2 != e and not e2.dying:
 							e2.hit_src = self
@@ -1724,7 +1724,7 @@ func _uniq_after_hit(e: Enemy, sp: String, dmg: float, mult: float, is_crit: boo
 					game.sfx("parry", 0.8)
 					_ring_fx(e.global_position, Color(1.0, 0.9, 0.6), 70.0)
 					_stun_or_concuss(e, float(uk["stagger"]))
-					for n2 in _enemies_within(e.global_position, 80.0):
+					for n2 in _area_hit_targets(e.global_position, 80.0):
 						var e2 := n2 as Enemy  # flat sub-hit: enemy path only
 						if e2 != null and e2 != e and not e2.dying:
 							e2.hit_src = self
@@ -2073,6 +2073,12 @@ func _stun_or_concuss(t: CharacterBody2D, dur: float) -> void:
 				(e.global_position - global_position).normalized())
 	else:
 		e.apply_stun(dur)
+
+
+## A damaging area touches foliage even when no combat target is present.
+func _area_hit_targets(center: Vector2, radius: float) -> Array:
+	preload("res://scripts/foliage_rustle.gd").strike_circle(game, center, radius)
+	return _enemies_within(center, radius)
 
 
 ## Every live combat target within radius — the AoE sweep. Union-aware since
@@ -2575,7 +2581,7 @@ func _melee_arc(mult: float, reach: float, fx_name: String, effects := {}, style
 	var hits := 0
 	preload("res://scripts/reactive_terrain.gd").strike_circle(game, self,
 		global_position + dir * reach * 0.55, reach * 0.55)
-	for e in _enemies_within(global_position + dir * reach * 0.55, reach * 0.55):
+	for e in _area_hit_targets(global_position + dir * reach * 0.55, reach * 0.55):
 		hit_enemy(e, mult, effects.duplicate())
 		hits += 1
 	return hits
@@ -2843,6 +2849,9 @@ func _mist(pos: Vector2, radius: float, dps_mult: float, color: Color, dur := 2.
 	var tint := Color(1, 1, 1) if (color.g > color.r and color.g > color.b) else color
 
 	# --- arrival: the venom SPLASH (impact) -------------------------------
+	# The splash shakes the plants it lands on once; the lingering gas ticks
+	# below stay target-only, or the cloud would thrash them for its whole life.
+	preload("res://scripts/foliage_rustle.gd").strike_circle(game, pos, radius)
 	# Body under the actors (z −1 abs), a half-alpha ghost of it over them:
 	# the splat engulfs the victim without hiding it (FX layering rule).
 	if have_art:

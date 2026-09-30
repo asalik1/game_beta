@@ -228,6 +228,7 @@ func apply_state(next: int, fuse: float, quiet := false) -> void:
 		clock = null
 		pop_age = Balance.REACTIVE_POP_TIME if quiet else 0.0
 		if not quiet:
+			preload("res://scripts/foliage_rustle.gd").strike_circle(game, global_position, Balance.REACTIVE_RADIUS)
 			game.burst(global_position + Vector2(0, -14), TYPES[kind].color, 20)
 			game.sfx("gate" if kind == "ember" else "nova", 0.9)
 	queue_redraw()

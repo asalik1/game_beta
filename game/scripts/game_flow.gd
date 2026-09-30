@@ -2313,11 +2313,14 @@ func net_apply_terrain_fx(ev: String, pos: Vector2) -> void:
 ## (a membership list, not a tuning number — it stays out of balance.gd).
 const HAZARD_PHYSICAL := ["ice", "slow", "lava"]
 
-## Grass rustle targets swaying decor only: the ONE shared wind material marks
-## it. Floor wear, moss/dust drifts and puddles carry their own shader, and
-## water/planks are non-centered, so none of them throw leaves.
+## Grass rustle targets foliage decor only. Understory (bush, grass, flower,
+## cattail, reeds) stands still until touched and carries its own contact
+## sensor (foliage_rustle.gd); the rest of the swaying set shares the ONE wind
+## material. Floor wear, moss/dust drifts and puddles carry their own shader
+## and no sensor, and water/planks are non-centered, so none throw leaves.
 func _rustles(ds: Sprite2D) -> bool:
-	return ds != null and ds.centered and ds.material == Art.wind_material()
+	return ds != null and ds.centered \
+		and (ds.material == Art.wind_material() or ds.has_node("FoliageRustle"))
 
 
 ## Apply floor-patch effects to the player and enemies (ticked at 2.5Hz).
@@ -2417,7 +2420,7 @@ func _apply_hazards() -> void:
 				e.hazard_speed = minf(e.hazard_speed, Balance.RIVER_WADE_MULT)
 	was_wading = wading
 
-	# Grass rustle (visual pass): brushing past swaying decor (see _rustles)
+	# Grass rustle (visual pass): brushing past foliage decor (see _rustles)
 	# kicks a few leaves loose. Per-plant cooldown keeps it a whisper.
 	if lp != null and not lp.dead and lp.velocity.length() > 30.0:
 		var scenery: Array = zone_scenery.get(cur_room, [])

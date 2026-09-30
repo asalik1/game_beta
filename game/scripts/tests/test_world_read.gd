@@ -4,6 +4,203 @@ const Dressing := preload("res://scripts/floor_dressing.gd")
 const FEATHER := 34.0   # the band's soft edge, pinned for the render check
 
 
+# Real actor types/layers, with no AI, input, stats or campaign side effects.
+class BrushPlayer extends Player:
+	func _ready() -> void:
+		collision_layer = 2
+		collision_mask = 0
+		var shape := CollisionShape2D.new()
+		shape.shape = CircleShape2D.new()
+		shape.shape.radius = 13.0
+		add_child(shape)
+		set_process(false)
+		set_physics_process(false)
+
+
+class BrushEnemy extends Enemy:
+	func _ready() -> void:
+		collision_layer = 4
+		collision_mask = 0
+		var shape := CollisionShape2D.new()
+		shape.shape = CircleShape2D.new()
+		shape.shape.radius = 13.0
+		add_child(shape)
+		set_physics_process(false)
+
+
+## Physics regression shared by systems and the walk-through capture rig.
+## All nodes are owned fixtures far from campaign actors; no shared state loan.
+static func foliage(t: Node) -> String:
+	var g: Game = t.game
+	var fixture := Node2D.new()
+	fixture.position = Vector2(-100000, -100000)
+	g.world.add_child(fixture)
+	var kept_shake := g.shake_amt
+	var kept_shake_input := g._shake_in_amt
+	var kept_attacks := g._ground_attacks.duplicate()
+	var kept_paused := g.get_tree().paused
+	var error := await _foliage_contract(g, fixture)
+	g.get_tree().paused = kept_paused
+	g.shake_amt = kept_shake
+	g._shake_in_amt = kept_shake_input
+	for attack in g._ground_attacks.duplicate():
+		if not attack in kept_attacks and is_instance_valid(attack):
+			attack.free()
+	fixture.free()  # also kills any bound decay tween on every failure path
+	if error == "": error = _planted_understory(g)
+	if error == "":
+		print("FOLIAGE PASS: idle, player/enemy contact, settle, isolated materials, mirrored scatter bush, settles under pause, area and telegraph impacts, read-only targeting and canopy control")
+	return error
+
+
+static func _foliage_contract(g: Game, fixture: Node2D) -> String:
+	var bushes: Array[Node2D] = []
+	var names := ["bush", "bush2", "bush3", "bush_autumn", "grass", "grass2",
+		"grass3", "grass_autumn", "grass_frost", "flower", "cattail", "cattail2",
+		"cattail3", "frost_reeds"]
+	for i in names.size():
+		var plant := g._structure_sprite(names[i], 100.0, true)
+		plant.position.x = i * 250.0
+		fixture.add_child(plant)
+		bushes.append(plant)
+		if not plant.has_node("FoliageRustle"):
+			return "%s has no interaction sensor (old idle-wind behavior)" % names[i]
+		if plant is AnimatedSprite2D and (plant.is_playing() or plant.frame != 0):
+			return "%s still plays an idle art loop" % names[i]
+		if plant.material == Art.wind_material() or float(plant.material.get_shader_parameter("amp")) != 0.0:
+			return "%s has idle wind motion" % names[i]
+	var tree := g._structure_sprite("tree_green", 180.0, true)
+	fixture.add_child(tree)
+	if tree.material != Art.wind_material() or (tree is AnimatedSprite2D and not tree.is_playing()):
+		return "canopy wind/animation changed"
+	var bush := bushes[0]
+	var sensor = bush.get_node("FoliageRustle")   # untyped: script members below
+	var wind: ShaderMaterial = bush.material
+	await g.get_tree().create_timer(0.15).timeout
+	if float(wind.get_shader_parameter("amp")) != 0.0:
+		return "empty bush started rustling"
+	var hero := BrushPlayer.new()
+	hero.game = g
+	hero.position = Vector2(-200, 0)
+	fixture.add_child(hero)
+	var enemy := BrushEnemy.new()
+	enemy.game = g
+	enemy.position = Vector2(-200, 100)
+	fixture.add_child(enemy)
+	for actor in [hero, enemy]:
+		var who := "player" if actor == hero else "enemy"
+		# A zero-velocity positional update is how remote shells can enter.
+		await g.get_tree().create_timer(0.08).timeout
+		actor.global_position = sensor.global_position
+		await g.get_tree().create_timer(0.08).timeout
+		if float(wind.get_shader_parameter("amp")) <= 0.0:
+			return "body-entered did not rustle for the %s" % who
+		if float(bushes[1].material.get_shader_parameter("amp")) != 0.0:
+			return "brushing one bush shook a distant bush"
+		# Staying inside must settle too: presence alone is not interaction.
+		await g.get_tree().create_timer(Balance.FOLIAGE_RUSTLE_DECAY + 0.15).timeout
+		if float(wind.get_shader_parameter("amp")) != 0.0:
+			return "stationary %s kept bush rustling" % who
+		actor.position = Vector2(-200, 0)
+		await g.get_tree().create_timer(0.08).timeout
+	var error := await _scatter_bush(g, fixture, hero)
+	if error != "":
+		return error
+	# Aim queries cannot stir foliage; an empty damaging sweep must do so.
+	g.player._enemies_within(sensor.global_position, 20.0)
+	if float(wind.get_shader_parameter("amp")) != 0.0:
+		return "target query rustled a bush"
+	g.player._area_hit_targets(sensor.global_position, 20.0)
+	if float(wind.get_shader_parameter("amp")) <= 0.0:
+		return "area damage missed an empty bush"
+	# A solo pause (menu, talk, choice) stops the tree but not the shader's
+	# clock: the rustle must still settle instead of shaking until it ends.
+	g.get_tree().paused = true
+	await g.get_tree().create_timer(Balance.FOLIAGE_RUSTLE_DECAY + 0.15).timeout
+	var paused_amp := float(wind.get_shader_parameter("amp"))
+	g.get_tree().paused = false   # the caller restores the entry state
+	if paused_amp != 0.0:
+		return "a rustle caught by a pause kept shaking through it"
+	# Real enemy impact seam: a zero-damage solo/host burst (the bloat pop) and
+	# the guest's visual-only mirror must both rustle, so every peer agrees.
+	for mirrored in [false, true]:
+		_still(sensor)
+		await g.telegraph(sensor.global_position, 20.0, 0.05, 0.0,
+			{"net_visual": mirrored, "impact_sfx": ""})
+		if float(wind.get_shader_parameter("amp")) <= 0.0:
+			return "%s zero-damage telegraph impact did not rustle" % ("mirrored" if mirrored else "solo")
+	return ""
+
+
+## The scatter path owners see most: a real bush obstacle from _add_obstacle,
+## mirrored like half the field, so the sensor must follow a negative x scale.
+static func _scatter_bush(g: Game, fixture: Node2D, hero: Node2D) -> String:
+	var plant: Node2D = null
+	var body: StaticBody2D = null
+	for k in 16:
+		body = g._add_obstacle("bush", fixture.global_position + Vector2(k * 250.0, 700.0))
+		body.reparent(fixture)   # freed with the fixture on every exit path
+		for child in body.get_children():
+			if child.has_node("FoliageRustle"):
+				plant = child
+		if plant != null and plant.scale.x < 0.0:
+			break
+		plant = null
+		body.free()
+		body = null
+	if plant == null:
+		return "no mirrored scatter bush with an interaction sensor"
+	var wind := plant.material as ShaderMaterial
+	if wind == null or wind == Art.wind_material() or float(wind.get_shader_parameter("amp")) != 0.0:
+		return "scatter bush obstacle idles in the shared wind"
+	if plant is AnimatedSprite2D and plant.is_playing():
+		return "scatter bush obstacle still plays its idle loop"
+	for child in body.get_children():
+		if child.has_meta("cast_shadow") and child.material != wind:
+			return "scatter bush cast shadow no longer sways with its bush"
+	var sensor = plant.get_node("FoliageRustle")
+	hero.global_position = sensor.global_position
+	await g.get_tree().create_timer(0.08).timeout
+	var amp := float(wind.get_shader_parameter("amp"))
+	hero.position = Vector2(-200, 0)
+	_still(sensor)
+	await g.get_tree().create_timer(0.08).timeout
+	if amp <= 0.0:
+		return "brushing a mirrored scatter bush did not rustle it"
+	return ""
+
+
+## Settle a fixture plant at once between probes (no wait on its decay).
+static func _still(sensor) -> void:
+	if sensor.decay != null:
+		sensor.decay.kill()
+	sensor.wind.set_shader_parameter("amp", 0.0)
+
+
+## Production decor as the procedural rooms planted it (the systems tier and
+## the capture rig both stand in Emberfall, whose terrain scatters grass,
+## flowers and bushes). Every understory sticker is still, carries its sensor
+## and still kicks leaves when walked through. Amplitude is not checked here:
+## a live actor may have brushed one a moment ago.
+static func _planted_understory(g: Game) -> String:
+	var stickers := 0
+	for zi in g.zone_scenery:
+		for node in g.zone_scenery[zi]:
+			if not is_instance_valid(node) or not (node is Sprite2D or node is AnimatedSprite2D):
+				continue
+			if not node.has_node("FoliageRustle"):
+				continue
+			stickers += 1
+			if node.material == Art.wind_material():
+				return "an understory sticker in room %d still sways in the idle wind" % zi
+			if node is AnimatedSprite2D and node.is_playing():
+				return "an understory sticker in room %d still plays its idle loop" % zi
+			if node is Sprite2D and not g._rustles(node):
+				return "walking through an understory sticker in room %d no longer kicks leaves" % zi
+	print("ok: %d planted understory stickers are still, sensed and kick walk-through leaves" % stickers)
+	return ""
+
+
 ## Renderer-only companion, run by `shot.bat polish --world-read` in the same
 ## locked session. Renders the real road_band shader from a real road_layout()
 ## (all four arms, an inset room, a river crossing, the stone rim) and checks
@@ -198,12 +395,22 @@ static func _dressing_contract(g: Game) -> String:
 	var scales := Balance.FLOOR_WEAR_NOISE_SCALES
 	if scales.x <= 0.0 or scales.y < scales.x * 2.0 or not Dressing.WearShader.code.contains("noise_scales.y"):
 		return "wear lost its second low-frequency noise multiply"
-	# Only the shared wind material marks swaying decor.
+	# Real production visuals: an understory grass tuft (still until touched)
+	# keeps kicking leaves, a tree sticker in the shared wind does too, and a
+	# rigid pebble beside them never does.
+	var tuft := g._prop_visual("grass")
+	var stone := g._prop_visual("pebble")
 	var sway := Sprite2D.new()
 	sway.material = Art.wind_material()
+	var tuft_rustles := tuft is Sprite2D and g._rustles(tuft as Sprite2D)
+	var stone_rustles := stone is Sprite2D and g._rustles(stone as Sprite2D)
 	var sways := g._rustles(sway)
+	tuft.free()
+	stone.free()
 	sway.free()
+	if not tuft_rustles: return "walking through grass no longer kicks leaves"
 	if not sways: return "swaying decor no longer rustles"
+	if stone_rustles: return "a rigid pebble throws grass-rustle leaves"
 	var road := g.road_layout(0)
 	var pr := g.play_rect(0)
 	var group := Dressing.wall_plan(g, 0, [], [])

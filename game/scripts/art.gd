@@ -2948,9 +2948,11 @@ static func _make_light() -> Image:
 	return image
 
 
-# One shared wind material sways all foliage: phase comes from each
+# One shared wind material sways the trees: phase comes from each
 # sprite's world position, so a single material desynchronizes the
-# whole forest for free (no per-instance uniforms).
+# whole forest for free (no per-instance uniforms). Understory (bush,
+# grass, flower, cattail, reeds) stays still and gets a duplicate only
+# to rustle when touched (foliage_rustle.gd, owner ruling 2026-09-29).
 static var _wind_mat: ShaderMaterial = null
 
 static func wind_material() -> ShaderMaterial:

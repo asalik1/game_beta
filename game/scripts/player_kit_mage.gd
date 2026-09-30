@@ -539,7 +539,7 @@ func _apply_nova_gameplay(f: float, radius: float, inward: bool, fiery: bool) ->
 	if not (fiery or inward):
 		eff["knock"] = 340.0
 		eff["knock_no_boss"] = 1
-	var caught := _enemies_within(global_position, radius)
+	var caught := _area_hit_targets(global_position, radius)
 	var root_dur: float = maxf(uniq_k("root") if s_passive() == "worldroot" else 0.0,
 		uniq_set_k("E", 6, "nova_root"))  # Verdancy AND/OR the bulwark set's 6pc
 	for e in caught:
@@ -931,7 +931,7 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable(), f := 1.0) -> 
 		# landing time (the Consecration save-restore idiom).
 		var saved := _tfx
 		_tfx = fx_copy
-		for e in _enemies_within(pos, radius):
+		for e in _area_hit_targets(pos, radius):
 			var eff := fx_copy.duplicate()
 			eff["burn"] = current_atk() * 0.4 * float(fx_copy.get("burn_mult", 1.0)) * scale
 			eff["aoe"] = true
@@ -1139,7 +1139,7 @@ func _resolve_mage_skin_ult(pos: Vector2, hit_scale: float, on_land: Callable,
 	var radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
 	var saved := _tfx
 	_tfx = fx_copy
-	for e in _enemies_within(pos, radius):
+	for e in _area_hit_targets(pos, radius):
 		var eff := fx_copy.duplicate()
 		eff["burn"] = current_atk() * 0.4 * float(fx_copy.get("burn_mult", 1.0)) * hit_scale
 		eff["aoe"] = true

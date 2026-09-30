@@ -366,7 +366,7 @@ func _consecration_pulse(pos: Vector2, radius: float, mult: float, col: Color, f
 	eff["heal"] = maxf(0.025, float(fx.get("heal", 0.0)))
 	if fx.get("pull", 0):
 		eff["pull"] = 1
-	for e in _enemies_within(pos, radius):
+	for e in _area_hit_targets(pos, radius):
 		# Judgment answers each sinner personally: a small light shaft.
 		_light_pillar(e.global_position, col, 0.5)
 		hit_enemy(e, mult, eff.duplicate())
@@ -510,7 +510,7 @@ func _conviction_swap(f := 1.0) -> void:
 		if s_passive() == "dawnfall":
 			# Dawnfall: everything near the verdict is left burning and slowed.
 			game.spawn_text(global_position + Vector2(0, -80), "DAWNFALL", Color(1.0, 0.85, 0.5))
-			for de in _enemies_within(global_position, 170.0):
+			for de in _area_hit_targets(global_position, 170.0):
 				if not de.dying:
 					de.apply_burn(_dot_dps(de, current_atk() * uniq_k("burn")),
 						uniq_k("dur"), Color(1.4, 0.8, 0.6), self)
@@ -641,7 +641,7 @@ func _chains_of_wrath(f := 1.0) -> void:
 		_ring_fx(global_position, col, 150.0)
 		var saved := _tfx
 		_tfx = fx_copy
-		for e2 in _enemies_within(global_position, 150.0):
+		for e2 in _area_hit_targets(global_position, 150.0):
 			_smite_rip(e2.global_position, col)
 			hit_enemy(e2, ability_coeff("ult") * fmul, {"aoe": true, "stun": 0.5})
 			if heal_frac > 0.0:

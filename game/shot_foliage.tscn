@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://shot_foliage.gd" id="1"]
+
+[node name="ShotFoliage" type="Node"]
+script = ExtResource("1")

@@ -287,7 +287,7 @@ func _tumble() -> void:
 		# Storm: discharge where you left.
 		game.sfx("nova", 1.2)
 		game.burst(origin, _tcolor, 12)
-		for e in _enemies_within(origin, 110.0):
+		for e in _area_hit_targets(origin, 110.0):
 			hit_enemy(e, float(_tfx["burst_origin"]), {"aoe": true})
 	if _tfx.get("mist_origin", 0):
 		# Venom: leave a toxin cloud behind.

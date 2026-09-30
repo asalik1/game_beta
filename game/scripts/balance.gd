@@ -4381,3 +4381,10 @@ const UI_FRAME_DISABLED_SHADE := 0.58
 const UI_FRAME_TAB_HEIGHT := 38.0
 const UI_FRAME_TAB_PAD_X := 9.0
 const UI_FRAME_DIVIDER_HEIGHT := 16.0
+
+# Understory is still until brushed or hit. World-pixel sway, no light pulse.
+const FOLIAGE_RUSTLE_DECAY := 0.85
+const FOLIAGE_RUSTLE_AMPLITUDE := 3.0
+const FOLIAGE_RUSTLE_SPEED := 16.0
+const FOLIAGE_CONTACT_RADIUS := 0.42
+const FOLIAGE_CONTACT_Y := 0.30

@@ -141,7 +141,7 @@ func _use_warrior(slot: String, f: float) -> void:
 				game.shake(5.0)
 				game.sfx("slam", 0.8)
 				_earth_slam_fx(global_position, 120.0, _tcolor)
-				for e in _enemies_within(global_position, 120.0):
+				for e in _area_hit_targets(global_position, 120.0):
 					hit_enemy(e, 0.7 * f, {"stun": 1.0, "aoe": true})
 			else:
 				# The ram's landing (2026-08-15): a generated dust puff at the feet
@@ -166,7 +166,7 @@ func _use_warrior(slot: String, f: float) -> void:
 						return
 					game.sfx("slam", 0.9)
 					_ring_fx(global_position, Color(0.9, 0.8, 0.6), uniq_k("radius"))
-					for e in _enemies_within(global_position, uniq_k("radius")):
+					for e in _area_hit_targets(global_position, uniq_k("radius")):
 						hit_enemy(e, ability_coeff("a3") * af * uniq_k("echo"), {"aoe": true, "stagger": uniq_k("stagger")}))
 		"ult":
 			berserk_time = float(_tfx.get("berserk_dur", 8.0)) \
@@ -181,7 +181,7 @@ func _use_warrior(slot: String, f: float) -> void:
 				# Earth: the roar itself is seismic — the ground shatters
 				# under the roar (the same slam strip as the charge's end).
 				_earth_slam_fx(global_position, 150.0, _tcolor)
-				for e in _enemies_within(global_position, 150.0):
+				for e in _area_hit_targets(global_position, 150.0):
 					hit_enemy(e, 0.8 * f, {"stun": 2.0, "aoe": true})
 			# Skin presentation of the rage (Ronin pattern — same roar, its
 			# own colour of fury): Dreadknight goes black-red with rising soul
@@ -316,7 +316,7 @@ func _whirlwind(f := 1.0) -> void:
 		eff["knock"] = 380.0
 	# Round 49 AoE pass: 0.9 -> 1.0 — the cyclone is the warrior's whole
 	# pack answer and it trailed the field.
-	for e in _enemies_within(global_position, radius):
+	for e in _area_hit_targets(global_position, radius):
 		hit_enemy(e, ability_coeff("a3") * f, eff.duplicate())
 
 

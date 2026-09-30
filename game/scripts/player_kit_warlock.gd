@@ -308,7 +308,7 @@ func _hex(f := 1.0) -> void:
 	hex_fx = _tfx.duplicate()
 	var eff := {"aoe": true, "vuln": 1.0}  # the curse always EXPOSES
 	eff["dot"] = maxf(0.25, float(_tfx.get("dot", 0.0)))
-	for e in _enemies_within(center, radius):
+	for e in _area_hit_targets(center, radius):
 		# A dark tendril lashes from the curse's heart to each victim.
 		_beam_fx(center, e.global_position, col, 0.16)
 		hit_enemy(e, ability_coeff("a2") * f, eff.duplicate())
@@ -430,7 +430,7 @@ func _hex_detonate(pos: Vector2, scale := 1.0) -> void:
 		* (1.0 + uniq_set_k("D", 6, "detonate_amp"))  # aggressor set: louder debts
 	var saved := _tfx
 	_tfx = {}
-	for e in _enemies_within(pos, 110.0):
+	for e in _area_hit_targets(pos, 110.0):
 		hit_enemy(e, mult, {"aoe": true})
 	_tfx = saved
 	if hex_fx.has("hex_heal"):
@@ -575,7 +575,7 @@ func _dark_pact(f := 1.0) -> void:
 		# Veinroot: the blast draws extra force from your reserve — a flat
 		# max-HP bite folded in as coeff (the holy_charge idiom: atk cancels).
 		pact_mult += max_hp * uniq_k("hp_dmg") / current_atk()
-	for e in _enemies_within(global_position, 170.0):
+	for e in _area_hit_targets(global_position, 170.0):
 		hit_enemy(e, pact_mult, eff.duplicate())
 
 
@@ -818,7 +818,7 @@ func _void_rift(f := 1.0) -> void:
 	var heal_frac := float(fx_copy.get("rift_heal", 0.0))
 	var saved := _tfx
 	_tfx = fx_copy
-	for e in _enemies_within(pos, radius):
+	for e in _area_hit_targets(pos, radius):
 		var eff := {"aoe": true}
 		if crit_cursed and hexed.has(e):
 			eff["force_crit"] = 1   # Void Rift always crits a cursed victim (single-sourced flag)
@@ -842,7 +842,7 @@ func _voidmaw_wave() -> void:
 	hex_fx = _tfx.duplicate()
 	var max_reach := 720.0
 	var eff := {"aoe": true, "vuln": 1.0, "dot": 0.30}
-	for e in _enemies_within(global_position, max_reach):
+	for e in _area_hit_targets(global_position, max_reach):
 		var away: Vector2 = e.global_position - global_position
 		var dist := away.length()
 		if dist > 12.0:

@@ -2079,6 +2079,9 @@ func _run_systems() -> void:
 	var world_read_error: String = preload("res://scripts/tests/test_world_read.gd").run(self)
 	if world_read_error != "":
 		return _fail(world_read_error)
+	var foliage_error: String = await preload("res://scripts/tests/test_world_read.gd").foliage(self)
+	if foliage_error != "":
+		return _fail(foliage_error)
 	var boss_cast_error: String = preload("res://scripts/tests/test_boss_cast.gd").run(self)
 	if boss_cast_error != "":
 		return _fail("boss casts: " + boss_cast_error)

@@ -3777,6 +3777,9 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 		var trail_linger := falling_trail.create_tween()
 		trail_linger.tween_interval(Balance.FALLING_FIREBALL_TRAIL_LIFETIME)
 		trail_linger.tween_callback(falling_trail.queue_free)
+	# Every landed tell shakes the plants under it, the same on every peer: a
+	# guest's mirror carries no damage, so a damage gate would split them.
+	preload("res://scripts/foliage_rustle.gd").strike_circle(self, pos, radius)
 	if opts.get("net_visual", false):
 		return  # MP-09: a mirror of the danger, not the danger — damage and
 		        # riders stay host-side (guest hits arrive via MP-10's RPC)
