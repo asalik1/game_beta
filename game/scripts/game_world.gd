@@ -1604,8 +1604,11 @@ func _spawn_risk_events(i: int) -> void:
 	rng.seed = wander_seed * 53 + i * 947 + chapter_id.hash() % 6659
 	if room_type(i) in ["social", "dead_end"]:
 		if rng.randf() < Balance.SHRINE_ROOM_CHANCE and not get_flag(_shrine_flag(i), false):
-			_gamble_shrine_node(i, room_center(i)
-				+ Vector2(rng.randf_range(-110.0, 110.0), rng.randf_range(-70.0, 70.0)))
+			# A short small room's door sits close to its centre: keep the
+			# pillar off that door's threshold.
+			_gamble_shrine_node(i, preload("res://scripts/door_threshold.gd").clear_point(self, i,
+				room_center(i) + Vector2(rng.randf_range(-110.0, 110.0), rng.randf_range(-70.0, 70.0)),
+				Balance.DOOR_THRESHOLD_OFFER_RADIUS))
 
 
 ## The cursed chest offers itself AT THE DOOR (playtest 2026-07-07): it
@@ -1627,7 +1630,8 @@ func _offer_cursed_chest(i: int) -> void:
 		return
 	var toward: Vector2 = room_center(i) - player.global_position
 	var dir := toward.normalized() if toward.length() > 1.0 else Vector2.RIGHT
-	_cursed_chest_node(i, player.global_position + dir * 150.0)
+	_cursed_chest_node(i, preload("res://scripts/door_threshold.gd").clear_point(
+		self, i, player.global_position + dir * 150.0, Balance.DOOR_THRESHOLD_OFFER_RADIUS))
 
 
 ## A buried chest in some dead ends (exploration premium): invisible
@@ -1644,8 +1648,9 @@ func _spawn_hidden_cache(i: int) -> void:
 		return
 	var room := i
 	var tier := "gold" if rng.randf() < Balance.HIDDEN_CACHE_GOLD_TIER else "silver"
-	var chest := Chest.drop(self, tier,
-		room_center(i) + Vector2(rng.randf_range(-220.0, 220.0), rng.randf_range(-130.0, 130.0)))
+	var chest := Chest.drop(self, tier, preload("res://scripts/door_threshold.gd").clear_point(self, i,
+		room_center(i) + Vector2(rng.randf_range(-220.0, 220.0), rng.randf_range(-130.0, 130.0)),
+		Balance.DOOR_THRESHOLD_OFFER_RADIUS))
 	chest.bury()
 	chest.on_open = func() -> void:
 		set_flag(_hidden_flag(room))
@@ -1881,7 +1886,9 @@ func _road_card_node(i: int, id: String) -> void:
 	var room := i
 	var toward: Vector2 = room_center(i) - player.global_position
 	var dir := toward.normalized() if toward.length() > 1.0 else Vector2.RIGHT
-	var pos := clamp_to_zone(player.global_position + dir * 150.0, player.global_position)
+	var pos := preload("res://scripts/door_threshold.gd").clear_point(self, i,
+		clamp_to_zone(player.global_position + dir * 150.0, player.global_position),
+		Balance.DOOR_THRESHOLD_OFFER_RADIUS)
 	var npc := _make_npc(String(card["sprite"]), pos,
 		String(card.get("prompt", "E — A stranger")), Callable())
 	npc.set_meta("road_context", {"chapter": chapter_id, "seed": wander_seed,
@@ -2868,6 +2875,7 @@ func _spawn_scenery(zi: int) -> void:
 		var dside: int = dsp[1]
 		if _reserved_blocks(reserved, dcenter - origin):
 			continue
+		var dmoved := 0   # threshold-displaced members: re-rolled, not counted
 		for k in dclump:
 			var dpos := dcenter
 			if k > 0:
@@ -2879,6 +2887,10 @@ func _spawn_scenery(zi: int) -> void:
 				# takes a collider in there).
 				if _reserved_blocks(reserved, dpos - origin):
 					continue
+			if preload("res://scripts/door_threshold.gd").intersects(road.thresholds,
+					preload("res://scripts/door_threshold.gd").scatter_footprint(self, decor_name, dpos, true)):
+				dmoved += 1
+				continue
 			var decor_base := Terrains.prop_base(decor_name)
 			# Decor with real VOLUME (a domed cap, a stump, a post) spawns as a
 			# small OBSTACLE — collider + y-sort + shadow — instead of a
@@ -2912,7 +2924,7 @@ func _spawn_scenery(zi: int) -> void:
 				spr.material = Art.wind_material()
 			world.add_child(spr)
 			zone_scenery[zi].append(spr)
-		decor_n += dclump
+		decor_n += dclump - dmoved
 
 	# Colliding obstacles, kept off the road band and the door lanes.
 	var obstacles: Array = terrain.get("obstacles", ["rock"]) if terrain_preview \
@@ -2937,8 +2949,11 @@ func _spawn_scenery(zi: int) -> void:
 			if _reserved_blocks(reserved, bpos):   # never build on the river or a hazard
 				bok = false
 			if bok:
-				placed.append(bpos)
 				var bnode := _add_building(String(bname), origin + bpos)
+				if preload("res://scripts/door_threshold.gd").body_blocked(road.thresholds, bnode):
+					bnode.free()
+					continue
+				placed.append(bpos)
 				zone_scenery[zi].append(bnode)
 				fronts.append(_front_of(bnode, bpos))
 				break
@@ -2970,8 +2985,11 @@ func _spawn_scenery(zi: int) -> void:
 			if _reserved_blocks(reserved, spos):   # never place the landmark on water or a hazard
 				sok = false
 			if sok:
-				placed.append(spos)
 				var landmark_node := _add_structure(String(sname), origin + spos)
+				if preload("res://scripts/door_threshold.gd").body_blocked(road.thresholds, landmark_node):
+					landmark_node.free()
+					continue
+				placed.append(spos)
 				landmark_node.set_meta("terrain_landmark", String(sname))
 				zone_scenery[zi].append(landmark_node)
 				if not _structure_is_tree(String(sname)):
@@ -3000,6 +3018,9 @@ func _spawn_scenery(zi: int) -> void:
 	var count := int(ceil(float(obstacle_count) * Balance.SCENERY_OBSTACLE_MULT * area_frac * dens))
 	var placed_n := 0
 	var guard := 0
+	# The old count*3 ceiling bounds a saturated room's cost; a failed centre
+	# search no longer eats a slot, so a prop the thresholds displaced gets its
+	# spare iterations to relocate instead of vanishing.
 	while placed_n < count and guard < count * 3:
 		guard += 1
 		var prop: String = obstacles[rng.randi_range(0, obstacles.size() - 1)]
@@ -3022,7 +3043,7 @@ func _spawn_scenery(zi: int) -> void:
 			var sp := _scatter_point(rng, pw, ph, 90.0, max_x, 100.0, ph - 100.0, hug)
 			var pos: Vector2 = sp[0]
 			side = sp[1]
-			if _lane_blocked(road, pos):
+			if _lane_blocked(road, pos, preload("res://scripts/door_threshold.gd").scatter_footprint(self, prop, origin + pos)):
 				continue  # the road and both door lanes stay open
 			var ok := not _reserved_blocks(reserved, pos)
 			for other in placed:
@@ -3041,7 +3062,6 @@ func _spawn_scenery(zi: int) -> void:
 				got = true
 				break
 		if not got:
-			placed_n += 1  # couldn't fit this one; don't spin forever
 			continue
 		# Place the clump: centre first, then members on a tighter intra-clump
 		# spacing so a stand reads dense without canopies overlapping.
@@ -3052,7 +3072,7 @@ func _spawn_scenery(zi: int) -> void:
 				mpos = center + _clump_jitter(rng, side)   # stretched along a hugged wall
 				mpos.x = clampf(mpos.x, 90.0, max_x)
 				mpos.y = clampf(mpos.y, 100.0, ph - 100.0)
-				if _lane_blocked(road, mpos):
+				if _lane_blocked(road, mpos, preload("res://scripts/door_threshold.gd").scatter_footprint(self, prop, origin + mpos)):
 					continue
 				# The jitter reaches further than the clearance the accepted centre
 				# had, so a member can land back inside a reservation.
@@ -3070,9 +3090,11 @@ func _spawn_scenery(zi: int) -> void:
 				if not okc:
 					continue
 			placed.append(mpos)
-			zone_scenery[zi].append(_add_obstacle(
+			var obstacle_node := _add_obstacle(
 				prop, origin + mpos,
-				rng.randf_range(Balance.SCENERY_SCALE_JITTER.x, Balance.SCENERY_SCALE_JITTER.y)))
+				rng.randf_range(Balance.SCENERY_SCALE_JITTER.x, Balance.SCENERY_SCALE_JITTER.y))
+			obstacle_node.set_meta("scatter_obstacle", true)  # density audits count this loop only
+			zone_scenery[zi].append(obstacle_node)
 			if Terrains.is_unique_prop(prop_base):
 				unique_props_seen[prop_base] = true
 			placed_n += 1
@@ -3095,7 +3117,7 @@ func _spawn_scenery(zi: int) -> void:
 		var group_radius := float(spec.get("radius", Balance.SCENERY_ACCENT_GROUP_RADIUS))
 		for attempt in Balance.SCENERY_PLACE_TRIES:
 			var acenter := Vector2(rng.randf_range(90.0, max_x), rng.randf_range(100.0, ph - 100.0))
-			if _lane_blocked(road, acenter):
+			if _lane_blocked(road, acenter, preload("res://scripts/door_threshold.gd").scatter_footprint(self, aname, origin + acenter)):
 				continue
 			var aok := true
 			# Same reservation the obstacle loop honours: an authored landmark's
@@ -3126,7 +3148,7 @@ func _spawn_scenery(zi: int) -> void:
 						apos = acenter + Vector2.from_angle(angle) * distance
 						apos.x = clampf(apos.x, 90.0, max_x)
 						apos.y = clampf(apos.y, 100.0, ph - 100.0)
-						if _lane_blocked(road, apos):
+						if _lane_blocked(road, apos, preload("res://scripts/door_threshold.gd").scatter_footprint(self, aname, origin + apos)):
 							continue
 						# Members are thrown up to `group_radius` off the centre —
 						# re-roll one the centre's clearance does not cover.
@@ -4972,7 +4994,9 @@ func road_layout(zi: int) -> Dictionary:
 		"meander": Balance.ROAD_MEANDER_PX if curved else 0.0,
 		"bounds": Vector4(pr.position.x - origin.x, pr.position.y - origin.y,
 			pr.end.x - origin.x, pr.end.y - origin.y),
-		"lane": lane, "band": band, "inset": pr.position - origin}
+		"lane": lane, "band": band, "inset": pr.position - origin,
+		"thresholds": preload("res://scripts/door_threshold.gd").zones(self, zi),
+		"origin": pr.position}
 
 
 ## Push a road_layout() into a road_band material.
@@ -5036,7 +5060,10 @@ static func road_curve(road: Dictionary, arm: int, along: float) -> Vector2:
 ## A colliding prop may not stand within ROAD_PROP_CLEAR of the straight door
 ## lanes, nor of the painted road's curved centreline (the reach widened with
 ## the band). `local` is play-rect-local, like _spawn_scenery's scatter points.
-static func _lane_blocked(road: Dictionary, local: Vector2) -> bool:
+static func _lane_blocked(road: Dictionary, local: Vector2, footprint := Rect2()) -> bool:
+	if preload("res://scripts/door_threshold.gd").intersects(road.get("thresholds", []),
+			footprint if footprint.has_area() else Rect2(local + road.get("origin", Vector2.ZERO), Vector2.ONE)):
+		return true
 	var p: Vector2 = local + (road["inset"] as Vector2)
 	var lane: Vector2 = road["lane"]
 	var clear := Balance.ROAD_PROP_CLEAR
@@ -5090,8 +5117,19 @@ func _decide_river(zi: int) -> void:
 		pr.position.x + pr.size.x * fx_pos - wpx / 2.0, pr.position.y, wpx, pr.size.y)}
 
 
-## A pool may not sit on the river or inside a corner bite (grown by its reach).
+## A pool may not sit on the river or inside a corner bite (grown by its reach),
+## on a door threshold, or under an authored prop body.
 func _pool_blocked(zi: int, pos: Vector2, radius := 0.0) -> bool:
+	if preload("res://scripts/door_threshold.gd").pool_blocked(self, zi, pos, radius):
+		return true
+	# Authored prop NPCs (Widow Sera's mill, the courier's bones) are built after
+	# the pools: keep their base and approach dry. Stable per room like the pools.
+	for npc_def in zones[zi].get("npcs", []):
+		if Terrains.is_prop_sprite(String(npc_def.get("sprite", ""))) \
+				and pos.distance_to(room_pos(zi, float(npc_def.get("x", ROOM_CENTER.x)),
+					float(npc_def.get("y", ROOM_CENTER.y)))) \
+				< Balance.AUTHORED_PROP_POOL_CLEAR + radius * Balance.DOOR_THRESHOLD_POOL_REACH:
+			return true
 	if preload("res://scripts/pocket_trial.gd").eligible(self, zi) \
 		and pos.distance_to(preload("res://scripts/pocket_trial.gd").point(self, zi)) < Balance.POCKET_PORTAL_CLEARANCE + radius:
 		return true
@@ -5125,7 +5163,7 @@ func _spawn_patches(zi: int) -> void:
 			# A hazard pool on the water (or inside a corner bite) makes no sense —
 			# keep it on dry, open ground.
 			var htries := 0
-			while _pool_blocked(zi, pos, float(spec["radius"][1])) and htries < 8:
+			while _pool_blocked(zi, pos, float(spec["radius"][1])) and htries < Balance.DOOR_THRESHOLD_PLACE_TRIES:
 				pos = Vector2(rng.randf_range(pr.position.x, pr.end.x), rng.randf_range(pr.position.y, pr.end.y))
 				htries += 1
 			if _pool_blocked(zi, pos, float(spec["radius"][1])):
@@ -5242,6 +5280,10 @@ func _floor_glow(parent: Node, pos: Vector2, color: Color, radius_px: float,
 
 
 ## Add a floor hazard (until < 0 = permanent, else expires at that time).
+## Never filtered here: a boss or mob pool lands where it was telegraphed (and
+## boss code tags hazards.back() right after this call). World-generated pools
+## keep off the door thresholds at their own placement (_pool_blocked, the
+## magma-rain pre-check).
 func _add_hazard(zi: int, type: String, pos: Vector2, radius: float, duration := -1.0, drift := Vector2.ZERO) -> void:
 	var spr := Sprite2D.new()
 	var strip: String = HAZARD_STRIP.get(type, "")

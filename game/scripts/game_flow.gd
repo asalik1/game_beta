@@ -2233,6 +2233,8 @@ func run_terrain_event(ev: String, zi_in := -1, anchor: Player = null) -> void:
 			# into a lingering lava pool instead.
 			if randf() < 0.3:
 				var pos := clamp_to_zone(p.global_position + Vector2(randf_range(-200, 200), randf_range(-150, 150)), p.global_position)
+				if preload("res://scripts/door_threshold.gd").pool_blocked(self, zi, pos, 70.0):
+					return
 				telegraph(pos, 75.0, 1.3, 10.0, {"color": Color(1.0, 0.35, 0.1, 0.5)})
 				_add_hazard.call_deferred(zi, "lava", pos, 70.0, 22.0)
 				# MP-10 hazard-event pattern: guests paint the same pool and
@@ -2349,7 +2351,14 @@ func _apply_hazards() -> void:
 			hazards.remove_at(i)
 			continue
 		if h["drift"] != Vector2.ZERO:  # wandering spore clouds
-			h["pos"] += h["drift"] * 0.4
+			var next: Vector2 = h["pos"] + h["drift"] * 0.4
+			# Only a permanent seeded cloud bounces off a threshold; a timed
+			# combat pool drifts as it was cast (and one cast inside an apron
+			# must not freeze there reversing every tick).
+			if float(h["until"]) < 0.0 and preload("res://scripts/door_threshold.gd").pool_blocked(self, int(h["zone"]), next, float(h["radius"])):
+				h["drift"] *= -1.0
+			else:
+				h["pos"] = next
 			var hr := room_rect(int(h["zone"]))
 			if h["pos"].x < hr.position.x + 100 or h["pos"].x > hr.end.x - 100:
 				h["drift"].x *= -1.0

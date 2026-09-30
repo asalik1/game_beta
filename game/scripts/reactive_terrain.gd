@@ -52,7 +52,10 @@ static func spawn_room(g: Game, zi: int, reserved: Array, placed: Array) -> void
 					+ Vector2.from_angle(rng.randf() * TAU) * rng.randf_range(Balance.REACTIVE_PACK_OFFSET.x, Balance.REACTIVE_PACK_OFFSET.y)
 				if not Rect2(Vector2.ONE * Balance.REACTIVE_MARGIN, rect.size - Vector2.ONE * Balance.REACTIVE_MARGIN * 2).has_point(local):
 					continue
-			if g._reserved_blocks(reserved, local):
+			if g._reserved_blocks(reserved, local) or preload("res://scripts/door_threshold.gd").intersects(
+					preload("res://scripts/door_threshold.gd").zones(g, zi),
+					Rect2(rect.position + local - Vector2.ONE * Balance.REACTIVE_ART_HEIGHT,
+						Vector2.ONE * Balance.REACTIVE_ART_HEIGHT * 2.0)):
 				continue
 			var blocked := false
 			for other: Vector2 in placed:

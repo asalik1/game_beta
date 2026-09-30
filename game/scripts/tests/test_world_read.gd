@@ -302,6 +302,8 @@ static func _run(img: Image, at: int, horizontal: bool) -> Vector2i:
 
 
 static func run(t: Node) -> String:
+	var threshold_error := preload("res://scripts/tests/test_door_threshold.gd").run(t)
+	if threshold_error != "": return threshold_error
 	var g: Game = t.game
 	# Isolate road probes from existing rooms/marks, including failure exits.
 	var rooms: Array = g.rooms

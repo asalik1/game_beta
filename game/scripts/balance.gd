@@ -212,6 +212,7 @@ const FISH_MAX_DELTA := 0.2
 const FISH_STEP := 1.0 / 60.0
 const FISH_SAFE_RADIUS := 560.0
 const FISH_PROP_HEIGHT := 128.0
+const FISH_BANK_MARGIN := 100.0  # a nook moved along the bank keeps this off the end walls
 
 # Wayfinder presentation: no combat or movement rules depend on these values.
 const WAYFINDER_SAMPLE_SECONDS := 0.15
@@ -317,6 +318,21 @@ const ROAD_PIN_SETTLE_PX := 120.0
 # AND from the drawn curve (widened with the band), so props never stand on
 # the painted road.
 const ROAD_PROP_CLEAR := Vector2(130.0, 90.0)
+# Door mouth + hero radius and roughly two-thirds of a second of walking.
+const DOOR_THRESHOLD_BODY_PAD := 24.0
+const DOOR_THRESHOLD_APRON := 240.0
+const DOOR_THRESHOLD_POOL_REACH := 1.5
+const DOOR_THRESHOLD_PLACE_TRIES := 32
+const DOOR_THRESHOLD_OFFER_RADIUS := 96.0
+const DOOR_THRESHOLD_RELOCATE_STEP := 32.0
+const DOOR_THRESHOLD_ART_PAD := 12.0  # seeded prop lean and wind at the painted edge
+# A short small room puts a door close to its centre: the apron stops this far
+# short of the room centre, so centre-pinned pieces (and an offer's fallback
+# spot) stay outside every threshold. Full-size and combat rooms are unaffected.
+const DOOR_THRESHOLD_CENTRE_CLEAR := 120.0
+# Seeded hazard pools keep this far (plus their painted reach) from an authored
+# prop body's anchor, so a building's door and base are never in a pool.
+const AUTHORED_PROP_POOL_CLEAR := 140.0
 const ROAD_ARM_PHASE := 2.4
 const ROAD_DARK_LUMA := 0.30
 const ROAD_LIGHT_LUMA := 0.45

@@ -21,6 +21,10 @@ extends ShotRig
 ## landed and visible, off the lanes, no rustle) and floor_<room>_room/south/
 ## arcade frames, then hands off to capgap (exit 1 = a walled route):
 ##   shot.bat polish --floor-dressing --seed=42017 --timeout=540
+## --door-thresholds: test_door_threshold, then the visual sweep's reported door
+## views of the booted chapter (the first seed from the booted one in which
+## every reported door exists; none = fail), then hands off to capgap:
+##   shot.bat polish --door-thresholds --seed=42017 [--chapter=ch2] --timeout=720
 ## Per room: "<room>_room" (hero mid-room with a wolf pack, three hits landed so
 ## numbers/bars/flash are live), "<room>_wall" (hero at the north wall: face,
 ## shadow, road arm, door torches). --hud adds a HUD-on shot per room.
@@ -213,6 +217,12 @@ func _capture_views(cls: String, z: float) -> void:
 		var error: String = await preload("res://scripts/dev/canopy_overlap_capture.gd").run(self)
 		if error != "": print("CANOPY OVERLAP FAIL: " + error)
 		finish(0 if error == "" else 1)
+		return
+	if flag("door-thresholds"):
+		var error: String = await preload("res://scripts/dev/door_threshold_capture.gd").run(self)
+		if error != "":
+			print("DOOR THRESHOLD FAIL: " + error)
+			finish(1)
 		return
 	var rooms := arg("rooms", "2,17,20").split(",", false)
 	for rs in rooms:
