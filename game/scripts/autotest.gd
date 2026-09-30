@@ -2091,6 +2091,9 @@ func _run_systems() -> void:
 	var wayfinder_error: String = await preload("res://scripts/tests/test_wayfinder.gd").run(self)
 	if wayfinder_error != "":
 		return _fail("wayfinder: " + wayfinder_error)
+	var boss_walk_error: String = preload("res://scripts/tests/test_boss_walk.gd").run(self)
+	if boss_walk_error != "":
+		return _fail("boss walk: " + boss_walk_error)
 
 	# 6. Shop + codex + map still open fine.
 	game.player.gold = 500

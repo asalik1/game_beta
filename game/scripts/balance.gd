@@ -442,6 +442,15 @@ const MOB_GAIT_VAR := 0.06        # mobs: per-instance stride-rate personality (
 #  MOB_TETHER_RESTORE_TINT_T — how long the surviving twin wears the green
 #    "the bond restores it" flash before returning to its own palette.
 const MOB_WALK_CLOCK := 2.0
+# Walk-art acceptance limits, fractions of the authored cell (including wrap).
+# Feet may antialias by a pixel; torso drift must not jump across the cell.
+const BOSS_WALK_FEET_STEP_MAX := 0.005
+const BOSS_WALK_CENTER_STEP_MAX := 0.02
+# Rendered feet line (shot.bat boss_walk), screen px per 60 Hz tick with the
+# node's travel removed. Healthy bosses measure 0.15-0.47 px (one antialiased
+# source row plus lean), so 1 px catches feet that pop between ticks from a
+# strip-offset or feet-pin regression in enemy.gd.
+const BOSS_WALK_RENDER_FEET_STEP_MAX := 1.0
 const MOB_WALK_BOUNCE_FRAC := 0.014
 const MOB_WALK_LEAN_RAD := 0.04
 const MOB_QUAD_BOB_FRAC := 0.010
