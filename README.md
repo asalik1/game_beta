@@ -107,7 +107,7 @@ Short ability taps are buffered across the end of a cooldown. The target HUD
 calls out reflection, counter stances and other immediate combat decisions;
 Pause → **Combat report** explains the last fall. Camera motion, flashes and
 hit-stop can be adjusted under Settings → **Combat & comfort**.
-Ground-warning rims now fill toward impact and pause with solo combat.
+Ground warnings grow bolder in their attack's own color as impact nears, and pause with solo combat.
 The **Combat foliage** setting reveals the current target through foreground
 trees. Discovery announcements appear one at a time and wait behind menus.
 Combat framing shifts the view toward your current target, widening for distant

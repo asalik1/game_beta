@@ -3621,11 +3621,12 @@ func cancel_ground_attacks() -> void:
 
 
 func _ground_clock(attack: Node2D, pos: Vector2, radius: float, delay: float,
-		tint: Color, safe := false, decoy := false) -> Node2D:
+		tint: Color, safe := false, decoy := false, hot_ramp := false) -> Node2D:
 	var clock := preload("res://scripts/ground_tell.gd").new()
 	clock.position = pos
 	clock.radius = radius
 	clock.tint = tint
+	clock.hot_ramp = hot_ramp
 	clock.safe = safe
 	clock.decoy = decoy
 	attack.add_child(clock)
@@ -3657,8 +3658,8 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 	# SHAPE VOCABULARY (2026-09-03). Every one of the 47 boss tell sites used to
 	# draw the same rimmed disc, differing only in tint and radius — the reason
 	# "boss attacks all look visually similar". opts["shape"] picks the ground
-	# figure; "disc" (the default) shares the same analytic fill and comet
-	# clock as mob traits and bloat bursts. The accent is DECORATION drawn
+	# figure; "disc" (the default) shares the same analytic fill and smooth color
+	# ramp as mob traits and bloat bursts. The accent is DECORATION drawn
 	# inside the disc: the hit test below stays a plain radius check on the
 	# FULL disc (see `_tell_accent`'s header). Do not "fix" it into a shaped
 	# test — a cone or bar hit shape would silently shrink all 47 boss danger
@@ -3670,33 +3671,34 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 	zone.modulate = tint
 	zone.z_index = -6
 	attack.add_child(zone)
-	var clock := _ground_clock(attack, pos, radius, delay, tint)
+	var clock := _ground_clock(attack, pos, radius, delay, tint, false, false,
+		bool(opts.get("hot_ramp", not opts.has("color"))))
+	clock.bind_surface(zone)
+	var accent: Node2D = null
 	if shape != "disc":
 		# The accent remains a SIBLING: its radius and the fill's local
 		# geometry are both already expressed in world pixels.
-		var accent := _tell_accent(shape, radius, opts)
+		accent = _tell_accent(shape, radius, opts)
 		accent.global_position = pos
 		accent.modulate = tint
 		accent.z_index = -5   # over the disc, still under the actors
 		attack.add_child(accent)
+		clock.bind_surface(accent)
+		# The disc's two smooth segments with the accent's own floor and
+		# ceiling: no pop at a fixed fraction of the fuse (that step doubled as
+		# a timing mark). It peaks at impact and retires with the disc below;
+		# an accent that faded early would tell the player the danger had passed.
 		var apulse := accent.create_tween()
-		apulse.tween_property(accent, "modulate:a", tint.a, maxf(0.06, delay * 0.72)) \
-			.from(tint.a * 0.20)
-		apulse.tween_property(accent, "modulate:a", minf(1.0, tint.a * 1.8), 0.14)
-		# Hold to the pop, then go with the disc — an accent that faded early
-		# would tell the player the danger had passed.
-		apulse.tween_interval(maxf(0.0, delay - maxf(0.06, delay * 0.72) - 0.14))
-		apulse.tween_callback(accent.queue_free)
-	# FUSE-READABLE FILL: the old loop pulsed 0.18s on/off no matter how long
-	# the fuse was, so a 0.35s crack and a 2.9s verdict read identically. Ramp
-	# the fill over the fuse instead (time-to-pop is now visible), then snap
-	# twice at the end. One-shot and delay-bounded, so it cannot drift.
+		apulse.tween_property(accent, "modulate:a", tint.a, delay * Balance.GROUND_TELL_FLASH_START) \
+			.from(tint.a * Balance.GROUND_TELL_ACCENT_START)
+		apulse.tween_property(accent, "modulate:a", minf(1.0, tint.a * Balance.GROUND_TELL_ACCENT_PEAK),
+			delay * (1.0 - Balance.GROUND_TELL_FLASH_START))
+	# Smooth opacity swell within the existing budget; retain the final flash.
 	var pulse := zone.create_tween()
-	pulse.tween_property(zone, "modulate:a", tint.a, maxf(0.06, delay * 0.72)) \
-		.from(tint.a * 0.34)
-	pulse.tween_property(zone, "modulate:a", tint.a * 0.5, 0.09)
-	pulse.tween_property(zone, "modulate:a", minf(1.0, tint.a * 1.7), 0.09)
-	pulse.tween_property(zone, "modulate:a", tint.a * 0.6, 0.08)
+	pulse.tween_property(zone, "modulate:a", tint.a, delay * Balance.GROUND_TELL_FLASH_START) \
+		.from(tint.a * Balance.GROUND_TELL_FILL_START)
+	pulse.tween_property(zone, "modulate:a", minf(1.0, tint.a * Balance.GROUND_TELL_FILL_PEAK),
+		delay * (1.0 - Balance.GROUND_TELL_FLASH_START))
 
 	var falling: Sprite2D = null
 	var falling_trail: CPUParticles2D = null
@@ -3761,6 +3763,8 @@ func telegraph(pos: Vector2, radius: float, delay: float, damage: float, opts :=
 	if not is_instance_valid(attack) or attack.is_queued_for_deletion() or not is_instance_valid(zone):
 		return
 	zone.queue_free()
+	if is_instance_valid(accent):
+		accent.queue_free()
 	clock.queue_free()
 	_ground_linger(attack, maxf(Balance.FALLING_OBJECT_FADE, Balance.FALLING_FIREBALL_TRAIL_LIFETIME) + Balance.GROUND_ATTACK_EFFECT_PADDING)
 	var impact_sfx := String(opts.get("impact_sfx", "slam"))
@@ -3884,7 +3888,9 @@ func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, 
 		zone.z_index = -6
 		attack.add_child(zone)
 		zones.append(zone)
-		zones.append(_ground_clock(attack, c, radius, delay, opts.get("color", Color(0.5, 1.0, 0.7)), true))
+		var tell := _ground_clock(attack, c, radius, delay, opts.get("color", Color(0.5, 1.0, 0.7)), true)
+		tell.bind_surface(zone)
+		zones.append(tell)
 		var pulse := zone.create_tween()
 		pulse.set_loops()
 		pulse.tween_property(zone, "modulate:a", 0.75, 0.22)
@@ -3908,7 +3914,9 @@ func telegraph_safe(centers: Array, radius: float, delay: float, damage: float, 
 		lie.z_index = -6
 		attack.add_child(lie)
 		zones.append(lie)
-		zones.append(_ground_clock(attack, c, radius, delay, opts.get("color", Color(0.5, 1.0, 0.7)), true, true))
+		var tell := _ground_clock(attack, c, radius, delay, opts.get("color", Color(0.5, 1.0, 0.7)), true, true)
+		tell.bind_surface(lie)
+		zones.append(tell)
 		var flicker := lie.create_tween()
 		flicker.set_loops()
 		flicker.tween_property(lie, "modulate:a", 0.15, 0.07)

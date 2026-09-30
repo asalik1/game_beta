@@ -404,6 +404,8 @@ func _apply_tell_style(o: Dictionary, pos: Vector2) -> void:
 	if style.is_empty():
 		return
 	for k: String in style:
+		if k == "hot_ramp" and bool(o.get("color_locked", false)):
+			continue
 		if k == "color":
 			if bool(o.get("color_locked", false)):
 				continue
@@ -2170,9 +2172,10 @@ func _half_wash(rect: Rect2, west: bool, dur: float, muted: bool) -> void:
 		Vector2(x0 + rect.size.x * 0.5, rect.position.y),
 		Vector2(x0 + rect.size.x * 0.5, rect.end.y),
 		Vector2(x0, rect.end.y)])
-	wash.color = Color(VERDICT.r, VERDICT.g, VERDICT.b, 0.0)
+	wash.color = Color(1.0, 1.0, 1.0, 0.0)
 	wash.z_index = -7  # over the ground, under the tiles
 	game.add_child(wash)
+	preload("res://scripts/ground_tell.gd").animate_surface(wash, VERDICT, dur)
 	var tw := wash.create_tween()
 	if muted:
 		tw.tween_property(wash, "color:a", 0.06, 0.35)

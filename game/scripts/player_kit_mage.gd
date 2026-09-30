@@ -856,10 +856,11 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable(), f := 1.0) -> 
 	mark.scale = Vector2(1, 1)
 	mark.z_index = -6
 	game.add_child(mark)
+	preload("res://scripts/ground_tell.gd").animate_surface(mark, col, Balance.MAGE_METEOR_FALL_TIME)
 	var mark_tw := mark.create_tween()
 	var base_radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
 	var exact_mark_scale := base_radius / 32.0
-	mark_tw.tween_property(mark, "scale", Vector2.ONE * exact_mark_scale, 0.62)
+	mark_tw.tween_property(mark, "scale", Vector2.ONE * exact_mark_scale, Balance.MAGE_METEOR_FALL_TIME)
 
 	# The base meteor itself: big, burning, with a particle trail. Skin scenes
 	# returned above and never share this body or its impact language.
@@ -903,7 +904,7 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable(), f := 1.0) -> 
 	spr.add_child(trail)
 
 	var tween := spr.create_tween()
-	tween.tween_property(spr, "global_position", pos, 0.62).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_property(spr, "global_position", pos, Balance.MAGE_METEOR_FALL_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tween.tween_callback(func() -> void:
 		spr.queue_free()
 		if is_instance_valid(mark):
@@ -947,21 +948,24 @@ func _meteor_at(pos: Vector2, scale := 1.0, on_land := Callable(), f := 1.0) -> 
 	)
 
 
-func _mage_ult_mark(pos: Vector2, col: Color, radius: float) -> Sprite2D:
+func _mage_ult_mark(pos: Vector2, col: Color, radius: float, alpha := 0.30) -> Sprite2D:
 	# Retain a quiet hit-area telegraph for combat readability; the authored
 	# sequence above it owns the fantasy and never changes the real radius.
 	var mark := Sprite2D.new()
 	mark.texture = Art.tex("telegraph")
 	mark.global_position = pos
-	mark.modulate = Color(col, 0.30)
+	mark.modulate = Color(col, alpha)
 	mark.scale = Vector2(1.0, 1.0)
 	mark.z_index = -6
 	game.add_child(mark)
+	# The skin scenes resolve on MAGE_SKIN_ULT_IMPACT_DELAY; the ramp and the
+	# growth track that impact, not the base comet's fall.
+	preload("res://scripts/ground_tell.gd").animate_surface(mark, col, Balance.MAGE_SKIN_ULT_IMPACT_DELAY)
 	var tw := mark.create_tween()
 	# The procedural telegraph is exactly 64px wide: radius / 32 puts its rim
 	# on the literal gameplay-radius boundary rather than merely near it.
 	var exact_scale := radius / 32.0
-	tw.tween_property(mark, "scale", Vector2.ONE * exact_scale, 0.62)
+	tw.tween_property(mark, "scale", Vector2.ONE * exact_scale, Balance.MAGE_SKIN_ULT_IMPACT_DELAY)
 	return mark
 
 
@@ -969,8 +973,9 @@ func _void_weaver_ult_scene(pos: Vector2, hit_scale: float, on_land: Callable,
 		fx_copy: Dictionary, col: Color, f := 1.0) -> void:
 	var world_id := game.world.get_instance_id()
 	var radius := 150.0 * float(fx_copy.get("radius_mult", 1.0))
-	var mark := _mage_ult_mark(pos, col, radius)
-	mark.modulate = Color(0.58, 0.18, 0.94, 0.50)
+	# The Void Weaver's own purple is its ramp theme (a later modulate would
+	# be overwritten by the ramp every frame).
+	var mark := _mage_ult_mark(pos, Color(0.58, 0.18, 0.94), radius, 0.50)
 	var floor_light := Sprite2D.new()
 	floor_light.texture = Art.tex("glow")
 	floor_light.global_position = pos

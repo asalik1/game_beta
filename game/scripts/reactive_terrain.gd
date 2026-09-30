@@ -239,8 +239,8 @@ func _physics_process(delta: float) -> void:
 		caption.visible = false
 		return
 	if phase == 0:
-		_marker_age = fposmod(_marker_age + delta, Balance.REACTIVE_MARKER_ORBIT_SECONDS)
-		ready_marker.progress = _marker_age / Balance.REACTIVE_MARKER_ORBIT_SECONDS
+		_marker_age = fposmod(_marker_age + delta, Balance.REACTIVE_MARKER_BREATHE_SECONDS)
+		ready_marker.progress = _marker_age / Balance.REACTIVE_MARKER_BREATHE_SECONDS
 	if phase == 1:
 		# A deserted/reset encounter cannot fire a delayed blast into a return.
 		if not game.net_guest():
@@ -265,7 +265,7 @@ func _physics_process(delta: float) -> void:
 	if near and phase == 0:
 		prompt.text = game.touchify("E — " + String(TYPES[kind].verb))
 	caption.visible = near and phase != 2 and not game.input_overlay_up()
-	caption.text = ("BLAST — MOVE!  %.1f" % remaining if kind == "ember" else "FROST — MOVE!  %.1f" % remaining) if phase == 1 else String(TYPES[kind].name)
+	caption.text = ("Blast! Move away" if kind == "ember" else "Frost burst! Move away") if phase == 1 else String(TYPES[kind].name)
 	queue_redraw()
 
 

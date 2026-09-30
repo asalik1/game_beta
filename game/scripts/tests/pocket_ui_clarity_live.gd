@@ -245,7 +245,7 @@ func _card(tag: String, portal: Node2D, done: bool) -> void:
 	var expected_detail := "Victory · Collect your spoils" if done else \
 		"Bottles sealed · Class healing works" if larder else \
 		"Hot stone · %.1fs" % seconds if phase == 2 else \
-		"Floor heating · %.1fs" % seconds if phase == 1 else "Floor quiet · %.1fs" % seconds
+		"Floor heating up" if phase == 1 else "Floor quiet · %.1fs" % seconds
 	var expected_hint := "Use the exit stone when ready" if done else \
 		"Exit stone offers a free retreat" if larder else \
 		"Lure the guardian across hot stone" if phase == 2 else "Keep to the cold half or center seam"

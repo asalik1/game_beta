@@ -14,7 +14,8 @@ isolated activity: draw a pack toward a marked object, prime it, and get clear.
   projectile. Hostile projectiles can prime them too. Arbitrary area spells
   do not implicitly activate props; all classes can use the interaction.
 - Both have a **1.5-second fuse and a 220-unit blast radius**. A fixed boundary
-  and filling fuse show the danger. Nearby labels name the object; approaching
+  whose color grows bolder toward the burst shows the danger (no countdown).
+  An intact object's small ring breathes gently. Nearby labels name the object; approaching
   shows the existing keyboard/controller/touch action and a radius preview.
 - Heroes inside either blast take 18% max-health raw magic damage, with their
   normal mitigation and defenses. Rimehearts also chill heroes. These are

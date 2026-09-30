@@ -2386,6 +2386,9 @@ func _run_systems() -> void:
 		return _fail(plates_error)
 	print("ok: story plates (advance keeps the on-screen blend, registered dissolves, focal envelopes, bounded drift, SKIP/guarded finish)")
 	await _test_tell_shapes()
+	var urgency_error: String = await preload("res://scripts/tests/tell_urgency.gd").suite(self)
+	if urgency_error != "":
+		return _fail("ground tell urgency: " + urgency_error)
 
 	# 5c. Endgame modes (ACT2_DESIGN.md §II): The Crucible + The Waking Depths.
 	await _test_endgame()

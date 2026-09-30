@@ -257,6 +257,11 @@ static func _ground_contracts(t: Node) -> String:
 		var attack: Node2D = g._ground_attacks.back()
 		var clock: Node2D = attack.get_node("GroundTellClock")
 		await t.get_tree().create_timer(0.06).timeout
+		# SceneTree resumes timers BEFORE it steps tweens, so one long frame
+		# (memory pressure) can end the wait above before the danger ramp's
+		# first step. Resuming on the next frame start follows that frame's
+		# tween step without advancing game time any further.
+		await t.get_tree().process_frame
 		if safe and env.adjustment_saturation >= grade:
 			return "shelter fuse did not drain the real world saturation"
 		t.get_tree().paused = true

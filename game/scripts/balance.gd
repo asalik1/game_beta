@@ -145,16 +145,37 @@ const REACTIVE_CHILL_DURATION := 3.0
 const REACTIVE_POP_TIME := 0.55
 # Intact terrain marker: presentation only; never the blast radius or fuse.
 const REACTIVE_MARKER_RADIUS := 27.0
-const REACTIVE_MARKER_ORBIT_SECONDS := 5.4
+# One slow, even breath of the whole ring (alpha floor to full and back):
+# an idle interactable cue that never circles, so it cannot read as a clock.
+const REACTIVE_MARKER_BREATHE_SECONDS := 5.4
+const REACTIVE_MARKER_BREATHE_FLOOR := 0.5
 const REACTIVE_MARKER_ALPHA := 0.78
 
-# Smooth ground-warning rim/comet geometry, in world pixels. The attack's
+# Smooth ground-warning geometry, in world pixels. The attack's
 # original circle and delay stay authoritative; these are only drawing knobs.
+# The rim is a thin dark chromatic keyline (rim_value) at the exact boundary,
+# so it reads on pale ice and bright lava from the first frame; the band just
+# inside it and the halo carry the urgency color.
 const GROUND_TELL_STYLE := {
 	"rim_width": 1.4, "halo_width": 5.5, "rim_alpha": 0.90, "rim_value": 0.22, "halo_alpha": 0.13,
-	"sweep_width": 1.8, "sweep_alpha": 0.68, "head_width": 3.1,
-	"tail_turns": 0.22, "fill_alpha": 0.30,
+	"band_width": 3.5, "band_alpha": 0.65, "fill_alpha": 0.30,
 }
+const GROUND_TELL_RAMP_CURVE := 1.2
+const GROUND_TELL_PALE_SATURATION := 0.25
+const GROUND_TELL_BOLD_SATURATION := 0.90
+const GROUND_TELL_PALE_VALUE := 0.78
+const GROUND_TELL_BOLD_VALUE := 1.0
+const GROUND_TELL_HOT_START := Color(1.0, 0.92, 0.38)
+const GROUND_TELL_HOT_END := Color(1.0, 0.12, 0.04)
+# Disc fill and shape accent share two smooth alpha segments: a swell to the
+# call site's alpha by FLASH_START of the fuse, then a rise to the peak at impact.
+const GROUND_TELL_FLASH_START := 0.90
+const GROUND_TELL_FILL_START := 0.34
+const GROUND_TELL_FILL_PEAK := 1.7
+const GROUND_TELL_ACCENT_START := 0.20
+const GROUND_TELL_ACCENT_PEAK := 1.8
+# The base Meteor's fall: its comet, its ground mark's growth and color ramp.
+const MAGE_METEOR_FALL_TIME := 0.62
 
 # Fishing: a short catch-and-release skill loop, with no currency faucet.
 const FISH_WEIGHTS := [38.0, 30.0, 22.0, 10.0]
@@ -463,7 +484,7 @@ const MOB_SPAWN_IN_T := 0.28
 # `"color_locked": true`. Shape/arc/width are defaults a call site may override.
 const BOSS_TELL := {
 	# --- ch1-2 ---
-	"fangmaw":        {"color": Color(0.95, 0.45, 0.18), "shape": "cone", "arc": 0.70, "windup": "crouch"},
+	"fangmaw":        {"color": Color(0.95, 0.45, 0.18), "hot_ramp": true, "shape": "cone", "arc": 0.70, "windup": "crouch"},
 	"morwen":         {"color": Color(0.55, 1.00, 0.25), "shape": "ring", "windup": "rise"},
 	"vargoth":        {"color": Color(1.00, 0.32, 0.10), "shape": "cross", "windup": "crouch"},
 	"stormwarden":    {"color": Color(1.00, 0.95, 0.40), "shape": "line", "windup": "lean"},

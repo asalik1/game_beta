@@ -475,8 +475,17 @@ HUD_CLEARANCE.md "HUD diet".
 Ground comet QA: `shot.bat tells --comet --fixed-fps=30 --timeout=240`
 captures early/mid/late warning phases on stone, ice and magma, shelters/decoys,
 intact prop markers and an actual falling fireball warning. It verifies live
-progress, radius, pause and cancellation. Add `--motion --timeout=360` for
-81 native prop-orbit crops at 15fps, in addition to the 15 full frames.
+progress, radius, ramp tint, pause and cancellation. Add `--motion --timeout=360`
+for 81 native crops of one intact-marker breath at 15fps, in addition to the 15
+full frames.
+
+Ground tell urgency QA: `shot.bat tells --urgency --timeout=240` checks the
+owner's color-ramp rule (DESIGN.md "Ground danger tells") at exact posed fuse
+phases: Fangmaw yellow to red, Morwen green throughout, every shape's surfaces,
+opposite rim pixels equal (no sweep), and nine captures including a primed
+Rimeheart and a Whitepelt tell on ice. Completion line: "URGENCY CHECKS: N
+checks, 0 failures, 9 captures". The renderer-free half of the contract runs
+in the quick tier (`tests/tell_urgency.gd`).
 Use an isolated APPDATA and the same mobile/renderer flags as above.
 
 Door torch mounting QA: `shot.bat wall_torch_mount --timeout=300` checks actual
